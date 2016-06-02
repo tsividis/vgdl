@@ -13,11 +13,14 @@ import os
 import uuid
 import subprocess
 import glob
+import ipdb
 
+keyPresses = {273: 'up', 274: 'down', 276: 'left', 275: 'right', 32: 'spacebar'}
+emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
 
 class VGDLParser(object):
     """ Parses a string into a Game object. """
-    verbose = False
+    verbose = True
 
     @staticmethod
     def playGame(game_str, map_str, headless = False, persist_movie = False, movie_dir = "./tmpl"):
@@ -480,6 +483,7 @@ class BasicGame(object):
                     # deal with the collision effects
                     if score:
                         self.score += score
+                        print 'score', self.score
                     if switch:
                         # CHECKME: this is not a bullet-proof way, but seems to work
                         if s2 not in self.kill_list:
@@ -498,6 +502,9 @@ class BasicGame(object):
 
         win = False
         i = 0
+        lastKeyPress=(0,0,1) # PT: initialize to fake keypress index
+        lastKeyPressTime=0 #PT
+
         while not self.ended:
             clock.tick(self.frame_rate)
             self.time += 1
@@ -505,7 +512,19 @@ class BasicGame(object):
 
             # gather events
             pygame.event.pump()
+
             self.keystate = pygame.key.get_pressed()
+            
+            # PT: Disables mistaken contiguous key presses, prints to terminal
+            if self.keystate != emptyKeyState:
+                if (self.time-lastKeyPressTime)<2 and self.keystate==lastKeyPress:
+                    self.keystate = emptyKeyState
+                else:
+                    lastKeyPress = self.keystate
+                    if lastKeyPress.index(1) in keyPresses.keys():
+                        print keyPresses[lastKeyPress.index(1)]
+                lastKeyPressTime = self.time
+
 
             # load/save handling
             if self.load_save_enabled:
@@ -553,11 +572,11 @@ class BasicGame(object):
             print "Game won, with score %s" % self.score
         else:
             print "Game lost. Score=%s" % self.score
+        ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(50)
         return win, self.score
-
 
 
     def getPossibleActions(self):

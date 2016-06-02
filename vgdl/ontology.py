@@ -39,6 +39,25 @@ RIGHT = (1, 0)
 
 BASEDIRS = [UP, LEFT, DOWN, RIGHT]
 
+colorDict = {str((0, 200, 0)): 'GREEN',\
+            str((0, 0, 200)): 'BLUE',\
+            str((200, 0, 0)): 'RED',\
+            str((90, 90, 90)): 'GRAY',\
+            str((250, 250, 250)): 'WHITE',\
+            str((140, 120, 100)): 'BROWN',\
+            str((0, 0, 0)): 'BLACK',\
+            str((250, 160, 0)): 'ORANGE',\
+            str((250, 250, 0)): 'YELLOW',\
+            str((250, 200, 200)): 'PINK',\
+            str((250, 212, 0)): 'GOLD',\
+            str((250, 50, 50)): 'LIGHTRED',\
+            str((250, 200, 100)): 'LIGHTORANGE',\
+            str((50, 100, 250)): 'LIGHTBLUE',\
+            str((50, 250, 50)): 'LIGHTGREEN',\
+            str((150, 150, 150)): 'LIGHTGRAY',\
+            str((30, 30, 30)): 'DARKGRAY',\
+            str((20, 20, 100)): 'DARKBLUE',\
+            }
 # ---------------------------------------------------------------------
 #     Types of physics
 # ---------------------------------------------------------------------
@@ -723,6 +742,7 @@ class MultiSpriteCounter(Termination):
 # ---------------------------------------------------------------------
 def killSprite(sprite, partner, game):
     """ Kill command """
+    print 'killing', colorDict[str(sprite.color)]
     game.kill_list.append(sprite)
 
 def cloneSprite(sprite, partner, game):
@@ -741,10 +761,12 @@ def stepBack(sprite, partner, game):
 
 def undoAll(sprite, partner, game):
     """ Revert last moves of all sprites. """
+    print 'undo', colorDict[str(sprite.color)], colorDict[str(partner.color)]
     for s in game:
         s.rect = s.lastrect
 
 def bounceForward(sprite, partner, game):
+    print 'bounceForward', colorDict[str(sprite.color)], colorDict[str(partner.color)]
     """ The partner sprite pushed, so if possible move in the opposite direction. """
     sprite.physics.activeMovement(sprite, unitVector(partner.lastdirection))
     game._updateCollisionDict(sprite)
@@ -858,11 +880,14 @@ def collectResource(sprite, partner, game):
     """ Adds/increments the resource type of sprite in partner """
     assert isinstance(sprite, Resource)
     r = sprite.resourceType
-    partner.resources[r] = max(0, min(partner.resources[r]+sprite.value, game.resources_limits[r]))
+    partner.resources[r] = max(-1, min(partner.resources[r]+sprite.value, game.resources_limits[r]))
+    print 'collected/changed', colorDict[str(sprite.color)]#partner.resources[r]
 
 def changeResource(sprite, partner, game, resource, value=1):
     """ Increments a specific resource type in sprite """
-    sprite.resources[resource] = max(0, min(sprite.resources[resource]+value, game.resources_limits[resource]))
+    sprite.resources[resource] = max(-1, min(sprite.resources[resource]+value, game.resources_limits[resource]))
+    # print resource, sprite.resources[resource]
+    print 'collected/changed', colorDict[str(partner.color)]
 
 def spawnIfHasMore(sprite, partner, game, resource, stype, limit=1):
     """ If 'sprite' has more than a limit of the resource type given, it spawns a sprite of 'stype'. """
