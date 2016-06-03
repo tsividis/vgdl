@@ -530,7 +530,8 @@ class FlakAvatar(HorizontalAvatar, SpriteProducer):
             a = game._createSprite([self.stype], (self.rect.left, self.rect.top))
 			
             ## Print event tuple
-            print "({}, {},[({},{},SPAWN)])".format(dict(self.resources), "K_SPACE", colorDict[str(self.color)], colorDict[str(a[0].color)])
+            # print "({}, {},[({},{},SPAWN)])".format(dict(self.resources), "K_SPACE", colorDict[str(self.color)], colorDict[str(a[0].color)])
+            return "shoot"
 
 class OrientedAvatar(OrientedSprite, MovingAvatar):
     """ Avatar retains its orientation, but moves in cardinal directions. """
@@ -745,11 +746,12 @@ class MultiSpriteCounter(Termination):
 # ---------------------------------------------------------------------
 def killSprite(sprite, partner, game):
     """ Kill command """
-    try:
-        print '{} object killed {} object'.format(colorDict[str(partner.color)], colorDict[str(sprite.color)])
-    except:
-        pass
+    # try:
+    #     print '{} object killed {} object'.format(colorDict[str(partner.color)], colorDict[str(sprite.color)])
+    # except:
+    #     pass
     game.kill_list.append(sprite)
+    return ("killSprite",sprite, partner)
 
 def cloneSprite(sprite, partner, game):
     game._createSprite([sprite.name], (sprite.rect.left, sprite.rect.top))
