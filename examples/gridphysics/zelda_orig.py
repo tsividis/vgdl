@@ -27,7 +27,7 @@ BasicGame
       avatar  > ShootAvatar   stype=sword 
         nokey   >
         withkey > color=ORANGE
-    monster > Immovable 
+      monster > RandomNPC cooldown=4 
   LevelMapping
     G > goal
     + > key        

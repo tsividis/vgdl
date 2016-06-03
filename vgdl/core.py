@@ -559,7 +559,8 @@ class BasicGame(object):
                 s.update(self)
             # handle collision effects
             effectList = self._eventHandling()
-            agentState = {}
+            print self.getAvatars() #TODO: Figure out how to display key in the avatar resources
+            agentState = dict(self.getAvatars()[0].resources)
             if len(effectList) > 0:
                 print {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList}
 
