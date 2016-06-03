@@ -486,7 +486,7 @@ class BasicGame(object):
                     # deal with the collision effects
                     if score:
                         self.score += score
-                        print 'score', self.score
+                        #print 'score', self.score  ## ORIGINALLY UNCOMMENTED
                     if switch:
                         # CHECKME: this is not a bullet-proof way, but seems to work
                         if s2 not in self.kill_list:
@@ -559,7 +559,6 @@ class BasicGame(object):
                 s.update(self)
             # handle collision effects
             effectList = self._eventHandling()
-            print self.getAvatars() #TODO: Figure out how to display key in the avatar resources
             agentState = dict(self.getAvatars()[0].resources)
             if len(effectList) > 0:
                 print {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList}
