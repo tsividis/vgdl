@@ -755,7 +755,12 @@ def killSprite(sprite, partner, game):
     """ Kill command """
     game.kill_list.append(sprite)
     if not None in {sprite, partner}:
-        return ("killSprite",colorDict[str(sprite.color)],colorDict[str(partner.color)])
+        # sprite_info = {'color':colorDict[str(sprite.color)],'location':(sprite.rect.left, sprite.rect.top)}
+        # partner_info = {'color':colorDict[str(partner.color)],'location':(partner.rect.left, partner.rect.top)}
+        sprite_info = colorDict[str(sprite.color)]
+        partner_info = colorDict[str(partner.color)]
+        # return ("killSprite",sprite_info,partner_info)
+        return ("killSprite",sprite,partner)
     # return ("killSprite",sprite,partner)
 
 def cloneSprite(sprite, partner, game):
@@ -779,10 +784,11 @@ def undoAll(sprite, partner, game):
         s.rect = s.lastrect
 
 def bounceForward(sprite, partner, game):
-    print 'bounceForward', colorDict[str(sprite.color)], colorDict[str(partner.color)]
+    # print 'bounceForward', colorDict[str(sprite.color)], colorDict[str(partner.color)]
     """ The partner sprite pushed, so if possible move in the opposite direction. """
     sprite.physics.activeMovement(sprite, unitVector(partner.lastdirection))
     game._updateCollisionDict(sprite)
+    return ('bounceForward', colorDict[str(sprite.color)], colorDict[str(partner.color)])
 
 def conveySprite(sprite, partner, game):
     """ Moves the partner in target direction by some step size. """
