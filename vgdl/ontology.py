@@ -58,6 +58,8 @@ colorDict = {str((0, 200, 0)): 'GREEN',\
             str((30, 30, 30)): 'DARKGRAY',\
             str((20, 20, 100)): 'DARKBLUE',\
             }
+
+
 # ---------------------------------------------------------------------
 #     Types of physics
 # ---------------------------------------------------------------------
@@ -527,11 +529,16 @@ class FlakAvatar(HorizontalAvatar, SpriteProducer):
     def _shoot(self, game):
         from pygame.locals import K_SPACE
         if self.stype and game.keystate[K_SPACE]:
-            a = game._createSprite([self.stype], (self.rect.left, self.rect.top))
-			
-            ## Print event tuple
-            # print "({}, {},[({},{},SPAWN)])".format(dict(self.resources), "K_SPACE", colorDict[str(self.color)], colorDict[str(a[0].color)])
-            return "shoot"
+            spawn = game._createSprite([self.stype], (self.rect.left, self.rect.top))
+            if spawn:	
+			    ## Print event tuple
+			    resources = dict(self.resources)
+			    action = "K_SPACE"
+			    agent_color = colorDict[str(self.color)]
+			    obj_color = colorDict[str(spawn[0].color)]
+			    effect = "SPAWN"
+			    event_tuple = (resources, action, [(agent_color, obj_color, effect)])
+			    print event_tuple
 
 class OrientedAvatar(OrientedSprite, MovingAvatar):
     """ Avatar retains its orientation, but moves in cardinal directions. """
@@ -746,12 +753,9 @@ class MultiSpriteCounter(Termination):
 # ---------------------------------------------------------------------
 def killSprite(sprite, partner, game):
     """ Kill command """
-    # try:
-    #     print '{} object killed {} object'.format(colorDict[str(partner.color)], colorDict[str(sprite.color)])
-    # except:
-    #     pass
     game.kill_list.append(sprite)
-    return ("killSprite",sprite, partner)
+    # return ("killSprite",colorDict[str(sprite.color)],colorDict[str(partner.color)])
+    return ("killSprite",sprite,partner)
 
 def cloneSprite(sprite, partner, game):
     game._createSprite([sprite.name], (sprite.rect.left, sprite.rect.top))
