@@ -760,7 +760,7 @@ def killSprite(sprite, partner, game):
         sprite_info = colorDict[str(sprite.color)]
         partner_info = colorDict[str(partner.color)]
         # return ("killSprite",sprite_info,partner_info)
-        return ("killSprite",sprite,partner)
+        return ("killSprite",sprite_info,partner_info)
     # return ("killSprite",sprite,partner)
 
 def cloneSprite(sprite, partner, game):
