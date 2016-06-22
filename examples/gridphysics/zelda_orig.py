@@ -21,23 +21,26 @@ zelda_game = """
 BasicGame
   SpriteSet         
     goal  > Immovable color=GREEN
-    key   > Resource color=ORANGE limit=1
+    key   > Immovable color=ORANGE
     sword > Flicker limit=5 singleton=True
     movable > 
-      avatar  > ShootAvatar   stype=sword
-    monster > Immovable 
+      avatar  > ShootAvatar   stype=sword 
+        nokey   >
+        withkey > color=ORANGE
+      monster > RandomNPC cooldown=4 
   LevelMapping
     G > goal
     + > key        
-    A > avatar
+    A > nokey
     1 > monster            
   InteractionSet
     movable wall  > stepBack
-    goal avatar  > killSprite        
+    nokey goal    > stepBack
+    goal withkey  > killSprite        
     monster sword > killSprite        
     avatar monster> killSprite
-    key avatar    > collectResource scoreChange=1
-    key avatar    > killSprite
+    key  avatar   > killSprite
+    nokey key     > transformTo stype=withkey                
   TerminationSet
     SpriteCounter stype=goal   win=True
     SpriteCounter stype=avatar win=False

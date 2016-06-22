@@ -58,6 +58,8 @@ colorDict = {str((0, 200, 0)): 'GREEN',\
             str((30, 30, 30)): 'DARKGRAY',\
             str((20, 20, 100)): 'DARKBLUE',\
             }
+
+
 # ---------------------------------------------------------------------
 #     Types of physics
 # ---------------------------------------------------------------------
@@ -527,10 +529,16 @@ class FlakAvatar(HorizontalAvatar, SpriteProducer):
     def _shoot(self, game):
         from pygame.locals import K_SPACE
         if self.stype and game.keystate[K_SPACE]:
-            a = game._createSprite([self.stype], (self.rect.left, self.rect.top))
-			
-            ## Print event tuple
-            print "({}, {},[({},{},SPAWN)])".format(dict(self.resources), "K_SPACE", colorDict[str(self.color)], colorDict[str(a[0].color)])
+            spawn = game._createSprite([self.stype], (self.rect.left, self.rect.top))
+            if spawn:	
+			    ## Print event tuple
+			    resources = dict(self.resources)
+			    action = "K_SPACE"
+			    agent_color = colorDict[str(self.color)]
+			    obj_color = colorDict[str(spawn[0].color)]
+			    effect = "SPAWN"
+			    event_tuple = (resources, action, [(agent_color, obj_color, effect)])
+			    print event_tuple
 
 class OrientedAvatar(OrientedSprite, MovingAvatar):
     """ Avatar retains its orientation, but moves in cardinal directions. """
@@ -745,11 +753,15 @@ class MultiSpriteCounter(Termination):
 # ---------------------------------------------------------------------
 def killSprite(sprite, partner, game):
     """ Kill command """
-    try:
-        print '{} object killed {} object'.format(colorDict[str(partner.color)], colorDict[str(sprite.color)])
-    except:
-        pass
     game.kill_list.append(sprite)
+    if not None in {sprite, partner}:
+        # sprite_info = {'color':colorDict[str(sprite.color)],'location':(sprite.rect.left, sprite.rect.top)}
+        # partner_info = {'color':colorDict[str(partner.color)],'location':(partner.rect.left, partner.rect.top)}
+        sprite_info = colorDict[str(sprite.color)]
+        partner_info = colorDict[str(partner.color)]
+        # return ("killSprite",sprite_info,partner_info)
+        return ("killSprite",sprite_info,partner_info)
+    # return ("killSprite",sprite,partner)
 
 def cloneSprite(sprite, partner, game):
     game._createSprite([sprite.name], (sprite.rect.left, sprite.rect.top))
@@ -772,10 +784,11 @@ def undoAll(sprite, partner, game):
         s.rect = s.lastrect
 
 def bounceForward(sprite, partner, game):
-    print 'bounceForward', colorDict[str(sprite.color)], colorDict[str(partner.color)]
+    # print 'bounceForward', colorDict[str(sprite.color)], colorDict[str(partner.color)]
     """ The partner sprite pushed, so if possible move in the opposite direction. """
     sprite.physics.activeMovement(sprite, unitVector(partner.lastdirection))
     game._updateCollisionDict(sprite)
+    return ('bounceForward', colorDict[str(sprite.color)], colorDict[str(partner.color)])
 
 def conveySprite(sprite, partner, game):
     """ Moves the partner in target direction by some step size. """
@@ -888,12 +901,14 @@ def collectResource(sprite, partner, game):
     r = sprite.resourceType
     partner.resources[r] = max(-1, min(partner.resources[r]+sprite.value, game.resources_limits[r]))
     print 'collected/changed', colorDict[str(sprite.color)]#partner.resources[r]
+    return ('collectResource', colorDict[str(sprite.color)], colorDict[str(partner.color)])
 
 def changeResource(sprite, partner, game, resource, value=1):
     """ Increments a specific resource type in sprite """
     sprite.resources[resource] = max(-1, min(sprite.resources[resource]+value, game.resources_limits[resource]))
     # print resource, sprite.resources[resource]
     print 'collected/changed', colorDict[str(partner.color)]
+    return ('changeResource', colorDict[str(sprite.color)], colorDict[str(partner.color)])
 
 def spawnIfHasMore(sprite, partner, game, resource, stype, limit=1):
     """ If 'sprite' has more than a limit of the resource type given, it spawns a sprite of 'stype'. """

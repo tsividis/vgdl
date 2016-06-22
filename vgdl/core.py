@@ -79,6 +79,7 @@ class VGDLParser(object):
         return eval(estr)
 
     def parseInteractions(self, inodes):
+
         for inode in inodes:
             if ">" in inode.content:
                 pair, edef = [x.strip() for x in inode.content.split(">")]
@@ -437,6 +438,7 @@ class BasicGame(object):
     def _eventHandling(self):
         self.lastcollisions = {}
         ss = self.lastcollisions
+        effectList = []
         for g1, g2, effect, kwargs in self.collision_eff:
             # build the current sprite lists (if not yet available)
             for g in [g1, g2]:
@@ -475,6 +477,7 @@ class BasicGame(object):
                 del kwargs['scoreChange']
 
             # do collision detection
+            
             for s1 in shortss:
                 for ci in s1.rect.collidelistall(longss):
                     s2 = longss[ci]
@@ -483,15 +486,22 @@ class BasicGame(object):
                     # deal with the collision effects
                     if score:
                         self.score += score
-                        print 'score', self.score
+                        #print 'score', self.score  ## ORIGINALLY UNCOMMENTED
                     if switch:
                         # CHECKME: this is not a bullet-proof way, but seems to work
                         if s2 not in self.kill_list:
-                            effect(s2, s1, self, **kwargs)
+                            e = effect(s2, s1, self, **kwargs)
+                            if e != None:
+                                effectList.append(e)
+
                     else:
                         # CHECKME: this is not a bullet-proof way, but seems to work
                         if s1 not in self.kill_list:
-                            effect(s1, s2, self, **kwargs)
+                            e = effect(s1, s2, self, **kwargs)
+                            if e != None:
+                                effectList.append(e)
+
+        return effectList
 
 
     def startGame(self, headless, persist_movie):
@@ -516,13 +526,16 @@ class BasicGame(object):
             self.keystate = pygame.key.get_pressed()
             
             # PT: Disables mistaken contiguous key presses, prints to terminal
+            keyPressType = None
             if self.keystate != emptyKeyState:
                 if (self.time-lastKeyPressTime)<2 and self.keystate==lastKeyPress:
                     self.keystate = emptyKeyState
                 else:
                     lastKeyPress = self.keystate
                     if lastKeyPress.index(1) in keyPresses.keys():
-                        print keyPresses[lastKeyPress.index(1)]
+                        keyPressType = keyPresses[lastKeyPress.index(1)]
+                        print keyPressType
+
                 lastKeyPressTime = self.time
 
 
@@ -545,7 +558,11 @@ class BasicGame(object):
             for s in self:
                 s.update(self)
             # handle collision effects
-            self._eventHandling()
+            effectList = self._eventHandling()
+            agentState = dict(self.getAvatars()[0].resources)
+            if len(effectList) > 0:
+                print {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList}
+
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
 
