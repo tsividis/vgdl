@@ -464,6 +464,7 @@ class BasicGame(object):
             # iterate over the shorter one
             ss1, l1 = ss[g1]
             ss2, l2 = ss[g2]
+
             if l1 < l2:
                 shortss, longss, switch = ss1, ss2, False
             else:
@@ -477,7 +478,6 @@ class BasicGame(object):
                 del kwargs['scoreChange']
 
             # do collision detection
-            
             for s1 in shortss:
                 for ci in s1.rect.collidelistall(longss):
                     s2 = longss[ci]
@@ -505,6 +505,11 @@ class BasicGame(object):
 
 
     def startGame(self, headless, persist_movie):
+        """
+        Main method to run game. 
+        """
+
+        # ----------- Initialization ----------
         self._initScreen(self.screensize,headless)
         pygame.display.flip()
         self.reset()
@@ -515,6 +520,7 @@ class BasicGame(object):
         lastKeyPress=(0,0,1) # PT: initialize to fake keypress index
         lastKeyPressTime=0 #PT
 
+        # --------- Game-play ------------
         while not self.ended:
             clock.tick(self.frame_rate)
             self.time += 1
@@ -549,16 +555,23 @@ class BasicGame(object):
                 if self.keystate[K_1]:
                     self._lastsaved = self.getFullState()
 
-            # termination criteria
+            # Termination #1
             for t in self.terminations:
                 self.ended, win = t.isDone(self)
                 if self.ended:
                     break
+
             # update sprites
             for s in self:
                 s.update(self)
+
             # handle collision effects
             effectList = self._eventHandling()
+            
+            # Termination #2 : Avatars have been killed
+            if len(self.getAvatars()) == 0:
+                break
+
             agentState = dict(self.getAvatars()[0].resources)
             if len(effectList) > 0:
                 print {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList}
@@ -685,7 +698,7 @@ class VGDLSprite(object):
         self.physics.gridsize = size
         self.speed = speed or self.speed
         self.cooldown = cooldown or self.cooldown
-        self.color =color or self.color or (choice(self.COLOR_DISC), choice(self.COLOR_DISC), choice(self.COLOR_DISC))
+        self.color = color or self.color or (choice(self.COLOR_DISC), choice(self.COLOR_DISC), choice(self.COLOR_DISC))
         for name, value in kwargs.iteritems():
             try:
                 self.__dict__[name] = value

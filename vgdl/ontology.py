@@ -759,7 +759,6 @@ def killSprite(sprite, partner, game):
         # partner_info = {'color':colorDict[str(partner.color)],'location':(partner.rect.left, partner.rect.top)}
         sprite_info = colorDict[str(sprite.color)]
         partner_info = colorDict[str(partner.color)]
-        # return ("killSprite",sprite_info,partner_info)
         return ("killSprite",sprite_info,partner_info)
     # return ("killSprite",sprite,partner)
 
@@ -776,19 +775,31 @@ def transformTo(sprite, partner, game, stype='wall'):
 def stepBack(sprite, partner, game):
     """ Revert last move. """
     sprite.rect = sprite.lastrect
+    print "\nstepBack!!\n"
 
 def undoAll(sprite, partner, game):
     """ Revert last moves of all sprites. """
-    print 'undo', colorDict[str(sprite.color)], colorDict[str(partner.color)]
+    #print 'undo', colorDict[str(sprite.color)], colorDict[str(partner.color)]
     for s in game:
         s.rect = s.lastrect
+    return ('undoAll', colorDict[str(sprite.color)], colorDict[str(partner.color)])
 
 def bounceForward(sprite, partner, game):
-    # print 'bounceForward', colorDict[str(sprite.color)], colorDict[str(partner.color)]
     """ The partner sprite pushed, so if possible move in the opposite direction. """
+
+
+    print "PARTNER: {} --> {}".format(partner.lastrect, partner.rect)
     sprite.physics.activeMovement(sprite, unitVector(partner.lastdirection))
     game._updateCollisionDict(sprite)
+    print "SPRITE: {} --> {}".format(sprite.lastrect, sprite.rect)
+    
+    '''if sprite_start == sprite_end:
+        print "NO CHANGE in SPRITE position"
+    if partner_start == partner_start:
+        print "NO CHANGE in PARTNER position"
+    '''
     return ('bounceForward', colorDict[str(sprite.color)], colorDict[str(partner.color)])
+
 
 def conveySprite(sprite, partner, game):
     """ Moves the partner in target direction by some step size. """
