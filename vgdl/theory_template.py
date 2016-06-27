@@ -286,7 +286,7 @@ class Theory(object):
 		else:
 			if event[0] in self.predicates and not (self.getClass(event[1]) and self.getClass(event[2])):
 				#known predicate, but current assignments don't fit
-				print "known predicate, but current assignments don't fit. Proposing:"
+				print event[0], "is a known predicate, but current assignments don't fit. Proposing:"
 				new_proposals = self.keepRulesAddAssignments(event)
 				for p in new_proposals:
 					print p[1]
@@ -323,24 +323,25 @@ e = ('killSprite', 'WHITE', 'DARKBLUE')
 e2 = ('killSprite', 'WHITE', 'PURPLE')
 e3 = ('bounceForward', 'BLUE', 'PINK')
 
+print ""
 print "trying to interpret event", e
 print "result:", t.interpret(e) #False
 print "likelihood", t.likelihood(e) #0
 proposals = t.generateProposals(e) #proposals is a list of proposals
 t.addProposal(proposals[0])
 print "likelihood", t.likelihood(e) #1
-print ""
+t.displayRules() #one rule
+t.displayClasses()
 
+print ""
 print "likelihood of new event", e2, t.likelihood(e2)
 proposals = t.generateProposals(e2)
 t.addProposal(proposals[0])
 print "likelihood", t.likelihood(e2)
-print ""
 proposal = proposals[0]
 
-print "Class assignments at this point:", t.classes
-print "Rules at this point:"
 t.displayRules() #one rule
+t.displayClasses()
 print ""
 
 print "likelihood of new event", e3, t.likelihood(e3)
