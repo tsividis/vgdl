@@ -1,36 +1,10 @@
 import itertools, random
 
-"""
-
-TODO:
--Fix inheritance properties. E.g., everything should have access
-to the game object, which contains the backpack, etc. Right now 'backpack' is 
-just defined as a global var.
--Adding/changing rules: it *should* be ok to just add things in the way that I'm suggesting,
-but just to be sure, it should go back and check that the likelihood of *all* previous events
-is 1. If it's not, it shouldn't add the rule.
--Figure out how to deal with multiple events in one time-step. Related: think about how
-to deal with things that are events in VGDL but that aren't visible (e.g.,
-attempt to push immovable object yields bounceForward and undoAll).
-
-TODO (later):
--When you get the new proposals, fork off all the hypotheses separately. 
--You've been working on induction over interaction rules. Next: Do induction 
-over property rules and simple events like movement
-
-To solve:
--Think about a good data structure for maintaining all the theories. Probably a tree.
--How to deal with directionality? Right now it might infer:
-(killSprite c1 c2) as well as (bounceForward c2 c1). If these rules were directional,
-two separate events couldn't produce these two separately.
--If you add a precondition when something works, you probably need to
-add the negative precondition when it doesn't.
-
-"""
 
 class Game(object):
 	def __init__(self):
 		self.backpack = {}
+
 
 class Precondition(object):
 	"""
@@ -42,23 +16,24 @@ class Precondition(object):
 		self.item = item
 		self.num = num
 
-	def check(self):
+	def check(self, backpack):
 		return backpack[self.item]>self.num 
 
 	def display(self):
 		print self.text
 
-# class Precondition(object):
+'''
+class Precondition(object):
+	def __init__(self, text, fn):
+		self.text = text
+		self.fn = fn
 
-# 	def __init__(self, text, fn):
-# 		self.text = text
-# 		self.fn = fn
+	def check(self, arg):
+		return self.fn(arg) #1 is dummy arg
 
-# 	def check(self):
-# 		return self.fn(1) #1 is dummy arg
-
-# 	def display(self):
-# 		print self.text
+	def display(self):
+		print self.text
+'''
 
 class Property(object):
 	def __init__(self, vgdlType, color, args):
@@ -96,8 +71,10 @@ class InteractionRule(object):
 				self.preconditions.append(precondition)
 		return
 
-	def checkPreconditions(self):
-		return all([p.check() for p in self.preconditions])
+	def checkPreconditions(self, backpack):
+		return all([p.check(backpack) for p in self.preconditions])
+
+
 
 
 #each hypothesis is a full theory. If you need to improve a theory and
@@ -170,14 +147,14 @@ class Theory(object):
 		else:
 			return False
 
-	def likelihood(self, event):
+	def likelihood(self, backpack, event):
 		interpretation = self.interpret(event)
 		if interpretation is not False:
-			if any([self.checkRule(i, event) for i in self.interactionSet]):
+			if any([self.checkRule(backpack, i, event) for i in self.interactionSet]):
 				return 1.
 		return 0.
 
-	def checkRule(self, rule, event):
+	def checkRule(self, backpack, rule, event):
 		interpretation = self.interpret(event)
 		if interpretation is not False:
 			if rule.preconditions == False:
@@ -185,7 +162,7 @@ class Theory(object):
 					return True
 				else: return False
 			else:
-				if rule.asTuple() == interpretation.asTuple() and all([p.check() for p in rule.preconditions]):
+				if rule.asTuple() == interpretation.asTuple() and all([p.check(backpack) for p in rule.preconditions]):
 					return True
 				else: return False
 		return False
@@ -250,7 +227,7 @@ class Theory(object):
 		return possibleRules
 
 
-	def keepAssignmentsAddPreconditions(self, event):
+	def keepAssignmentsAddPreconditions(self, backpack, event):
 		concepts = []
 		for b in backpack.keys():
 			concepts.extend(generateNumberConcepts(b, backpack[b]))
@@ -258,11 +235,12 @@ class Theory(object):
 		possibleRules = []
 		for p in preconditions:
 			interpretation = self.interpret(event)
-			interpretation.addPrecondition(p)
-			possibleRules.append(interpretation)
+			if interpretation:
+				interpretation.addPrecondition(p)
+				possibleRules.append(interpretation)
 		return possibleRules
 
-	def generateProposals(self, event):
+	def generateProposals(self, backpack, event):
 		"""Right now this is mostly greedy. If no rules in ruleset, adds
 		rules necessary to explain current event.
 		Otherwise:
@@ -271,7 +249,7 @@ class Theory(object):
 			-Add totally new rule
 		"""
 		print "generating proposals..."
-		if self.likelihood(event) == 1.:
+		if self.likelihood(backpack, event) == 1.:
 			print "no proposals needed; event already fully explained!"
 			return
 		proposals = []
@@ -316,7 +294,7 @@ def generateNumberConcepts(c,n):
 		concepts.append((text,c,i))
 	return concepts
 
-
+'''
 g = Game()
 t = Theory()
 
@@ -328,52 +306,52 @@ e3 = ('bounceForward', 'BLUE', 'PINK')
 print ""
 print "trying to interpret event", e
 print "result:", t.interpret(e) #False
-print "likelihood", t.likelihood(e) #0
-proposals = t.generateProposals(e) #proposals is a list of proposals
+print "likelihood", t.likelihood(g.backpack, e) #0
+proposals = t.generateProposals(g.backpack, e) #proposals is a list of proposals
 t.addProposal(proposals[0])
-print "likelihood", t.likelihood(e) #1
+print "likelihood", t.likelihood(g.backpack, e) #1
 t.displayRules() #one rule
 t.displayClasses()
 
 print ""
-print "likelihood of new event", e2, t.likelihood(e2)
-proposals = t.generateProposals(e2)
+print "likelihood of new event", e2, t.likelihood(g.backpack, e2)
+proposals = t.generateProposals(g.backpack, e2)
 t.addProposal(proposals[0])
-print "likelihood", t.likelihood(e2)
+print "likelihood", t.likelihood(g.backpack, e2)
 proposal = proposals[0]
 
 t.displayRules() #one rule
 t.displayClasses()
 print ""
 
-print "likelihood of new event", e3, t.likelihood(e3)
-proposals = t.generateProposals(e3) #
+print "likelihood of new event", e3, t.likelihood(g.backpack, e3)
+proposals = t.generateProposals(g.backpack, e3) #
 print "generated", len(proposals), "proposals in total"
 proposal = random.choice(proposals)
 print "Randomly selecting one of these"
 t.addProposal(proposal)
 t.displayRules()
 t.displayClasses()
-print "likelihood", t.likelihood(e3)
+print "likelihood", t.likelihood(g.backpack, e3)
 print ""
 
-backpack = {'health':0, 'treasure':1, 'coin':3}
+g.backpack = {'health':0, 'treasure':1, 'coin':3}
 e4 = ('bounceForward', 'RED', 'ORANGE')
 
 """tests for preconditions"""
 print "Now let's explicitly call keepAssignmentsAddPreconditions() on e2", e2
-proposals = t.keepAssignmentsAddPreconditions(e2)
+proposals = t.keepAssignmentsAddPreconditions(g.backpack, e2)
 print "this generates the following proposals:"
 [p.display() for p in proposals]
 print "notice that because health was 0 when this was called, it doesn't generate any health-related hypotheses"
 print "specifically checking proposal", proposals[3].display()
-print "result:", proposals[3].checkPreconditions() #False
+print "result:", proposals[3].checkPreconditions(g.backpack) #False --> Should be True
 p = Precondition('health>1','health',1)
 print "adding", p.text, "to those preconditions"
-proposals[3].addPrecondition(p)
-print "result", proposals[3].checkPreconditions() #False
+proposals[3].addPrecondition(p) # Adds p to the fourth precondition
+[p.display() for p in proposals]
+print "result", proposals[3].checkPreconditions(g.backpack) #False
 print "Now adding 2 health to backpack"
-backpack['health'] = 2
-print "And re-checking preconditions:", proposals[3].checkPreconditions() #True
-
-
+g.backpack['health'] = 2
+print "And re-checking preconditions:", proposals[3].checkPreconditions(g.backpack) #True
+'''
