@@ -503,7 +503,6 @@ class BasicGame(object):
                     else:
                         # CHECKME: this is not a bullet-proof way, but seems to work
                         if s1 not in self.kill_list:
-                            print effect
                             if effect.__name__ == "changeResource":
                                 resource = kwargs['resource']
                                 (sclass, args, stypes) = self.sprite_constr[resource]
