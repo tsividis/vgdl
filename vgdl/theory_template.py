@@ -1,9 +1,11 @@
-import itertools, random
+import itertools, random, copy
 
 
 class Game(object):
 	def __init__(self):
 		self.backpack = {}
+		self.hypothesisSpace = []
+		self.theoryCount = 0
 
 
 class Precondition(object):
@@ -76,7 +78,7 @@ class InteractionRule(object):
 
 
 
-
+# hypothesisSpace = []
 #each hypothesis is a full theory. If you need to improve a theory and
 #this yields multiple theories, then return all of them and store them in your
 #hypothesis space.
@@ -88,6 +90,33 @@ class Theory(object):
 		self.terminationSet = []
 		self.classes = {} #k:classes, v:objects
 		self.predicates = []
+		self.parent = None
+		self.children = []
+		self.depth = 0
+		self.theoryID = False
+
+		# if self.parent is not None:
+		# 	self.depth = self.parent.depth + 1
+		# else:
+		# 	self.depth = 0
+
+	def addChild(self, theory):
+		self.children.append(theory)
+		g.hypothesisSpace.append(theory)
+
+	def extend(self, proposals, events):
+
+		for p in proposals:
+			newTheory = copy.deepcopy(self)
+			newTheory.depth = self.depth + 1
+			newTheory.parent = self
+			newTheory.addProposal(p)
+			if all([newTheory.likelihood(g.backpack, e) for e in events]):
+				newTheory.theoryID = g.theoryCount
+				g.theoryCount = g.theoryCount + 1
+				self.addChild(newTheory)		
+		return g.hypothesisSpace.index(self)
+
 
 	def displayRules(self):
 		print ""
@@ -100,16 +129,22 @@ class Theory(object):
 		print "Current class assignments:"
 		print self.classes
 
+	def display(self):
+		print "ID:", self.theoryID
+		self.displayRules()
+		self.displayClasses()
+		return
+
 	def assignClass(self, classObjectPair):
 		#Adds object-class assignments; avoids duplicates
 		c, o = classObjectPair[0], classObjectPair[1]
 		if c in self.classes.keys():
 			if o not in self.classes[c]:
 				self.classes[c].append(o)
-				print "added", o, "to class", c
+				# print "added", o, "to class", c
 		else:
 			self.classes[c] = [o]
-			print "added", o, "to class", c
+			# print "added", o, "to class", c
 
 	def addRule(self, rule):
 		#Adds rule if it is not in interactionSet
@@ -123,10 +158,12 @@ class Theory(object):
 	def addProposal(self, proposal):
 		#Adds proposal to theory; takes care of rule and assignments
 		rule, assignments = proposal[0], proposal[1]
-		if self.addRule(rule):
-			print "Added", rule.asTuple()
+		added = self.addRule(rule)
+		# if added:
+			# print "Added", rule.asTuple()
 		for assignment in assignments:
 			self.assignClass(assignment)
+		# hypothesisSpace.append(self)
 
 	def getClass(self, o):
 		for k,v in self.classes.iteritems():
@@ -248,10 +285,10 @@ class Theory(object):
 			-Add preconditions to existing rules but don't change assignments
 			-Add totally new rule
 		"""
-		print "generating proposals..."
+		# print "generating proposals..."
 		if self.likelihood(backpack, event) == 1.:
 			print "no proposals needed; event already fully explained!"
-			return
+			return []
 		proposals = []
 		#The below should not be if/else; it should do all but the first 
 		#condition simultaneously.
@@ -264,28 +301,27 @@ class Theory(object):
 		else:
 			if event[0] in self.predicates and not (self.getClass(event[1]) and self.getClass(event[2])):
 				#known predicate, but current assignments don't fit
-				print event[0], "is a known predicate, but current assignments don't fit. Proposing:"
+				print event[0], "is a known predicate, but current assignments don't fit. Proposing extensions"
 				new_proposals = self.keepRulesAddAssignments(event)
-				for p in new_proposals:
-					print p[1]
+				# for p in new_proposals:
+					# print p[1]
 				proposals.extend(new_proposals)
 			if event[0] in self.predicates and (self.getClass(event[1]) and self.getClass(event[2])) and len(backpack.keys())>0:
 				#if we know the predicate and the classes but for some reason we've been sent to generate proposals,
 				#generate precondition proposals:
 				print "known predicate and classes. Proposing extensions:"
 				new_proposals = self.keepAssignmentsAddPreconditions(event)
-				for p in new_proposals:
-					p.display()
+				# for p in new_proposals:
+					# p.display()
 				proposals.extend(new_proposals)
 			if event[0] not in self.predicates:
 				#new predicate. propose new predicate with all possible new assignments.
 				print "encountered new predicate", event[0]+". Proposing new predicate + new assignments:"
 				new_proposals = self.keepAssignmentsAddRules(event)
-				for p in new_proposals:
-					p[0].display(), p[1]
+				# for p in new_proposals:
+					# p[0].display(), p[1]
 				proposals.extend(new_proposals)
 		return proposals
-
 
 def generateNumberConcepts(c,n):
 	concepts = []
@@ -294,62 +330,124 @@ def generateNumberConcepts(c,n):
 		concepts.append((text,c,i))
 	return concepts
 
-'''
 g = Game()
-t = Theory()
+
 e = ('killSprite', 'WHITE', 'DARKBLUE')
 e2 = ('killSprite', 'WHITE', 'PURPLE')
 e3 = ('bounceForward', 'BLUE', 'PINK')
-
-print ""
-print "trying to interpret event", e
-print "result:", t.interpret(e) #False
-print "likelihood", t.likelihood(g.backpack, e) #0
-proposals = t.generateProposals(g.backpack, e) #proposals is a list of proposals
-t.addProposal(proposals[0])
-print "likelihood", t.likelihood(g.backpack, e) #1
-t.displayRules() #one rule
-t.displayClasses()
-
-print ""
-print "likelihood of new event", e2, t.likelihood(g.backpack, e2)
-proposals = t.generateProposals(g.backpack, e2)
-t.addProposal(proposals[0])
-print "likelihood", t.likelihood(g.backpack, e2)
-proposal = proposals[0]
-
-t.displayRules() #one rule
-t.displayClasses()
-print ""
-
-print "likelihood of new event", e3, t.likelihood(g.backpack, e3)
-proposals = t.generateProposals(g.backpack, e3) #
-print "generated", len(proposals), "proposals in total"
-proposal = random.choice(proposals)
-print "Randomly selecting one of these"
-t.addProposal(proposal)
-t.displayRules()
-t.displayClasses()
-print "likelihood", t.likelihood(g.backpack, e3)
-print ""
-
-g.backpack = {'health':0, 'treasure':1, 'coin':3}
 e4 = ('bounceForward', 'RED', 'ORANGE')
+events = [e,e2,e3, e4]
 
-"""tests for preconditions"""
-print "Now let's explicitly call keepAssignmentsAddPreconditions() on e2", e2
-proposals = t.keepAssignmentsAddPreconditions(g.backpack, e2)
-print "this generates the following proposals:"
-[p.display() for p in proposals]
-print "notice that because health was 0 when this was called, it doesn't generate any health-related hypotheses"
-print "specifically checking proposal", proposals[3].display()
-print "result:", proposals[3].checkPreconditions(g.backpack) #False --> Should be True
-p = Precondition('health>1','health',1)
-print "adding", p.text, "to those preconditions"
-proposals[3].addPrecondition(p) # Adds p to the fourth precondition
-[p.display() for p in proposals]
-print "result", proposals[3].checkPreconditions(g.backpack) #False
-print "Now adding 2 health to backpack"
-g.backpack['health'] = 2
-print "And re-checking preconditions:", proposals[3].checkPreconditions(g.backpack) #True
-'''
+def induction(events):
+	t = Theory()
+	g.hypothesisSpace = [t]
+	to_remove = []
+	for i in range(len(events)):
+		event = events[i]
+		print "interpreting event", event
+		print "(theory IDs, likelihoods):"
+		print [(h.theoryID, h.likelihood(g.backpack, event)) for h in g.hypothesisSpace]
+		for h in g.hypothesisSpace:
+			if h.likelihood(g.backpack, event) < 1.0:
+				proposals = h.generateProposals(g.backpack, event)
+				if len(proposals)>0:
+					print "generated", len(proposals), "proposals. extending now"
+					h.extend(proposals, events[0:i+1])
+		g.hypothesisSpace = [h for h in g.hypothesisSpace if h.likelihood(g.backpack, event)>0.0]
+		print "(theoryID, likelihood) for", event
+		print [(h.theoryID, h.likelihood(g.backpack, event)) for h in g.hypothesisSpace]
+		print "_____"
+	return g.hypothesisSpace
+
+
+"""The below won't work. extend() has been changed"""
+# t = Theory()
+# g.hypothesisSpace.append(t)
+# print hypothesisSpace[0].likelihood(g.backpack, e)
+# proposals = hypothesisSpace[0].generateProposals(g.backpack, e)
+# hypothesisSpace[0].extend(proposals, [e])
+# print hypothesisSpace[0].likelihood(g.backpack, e)
+# print "____"
+# print len(hypothesisSpace), "hypotheses"
+# proposals = hypothesisSpace[0].generateProposals(g.backpack, e2)
+# hypothesisSpace[0].extend(proposals, [2])
+# print len(hypothesisSpace), "hypotheses"
+# print hypothesisSpace[0].likelihood(g.backpack, e2)
+# print "____"
+# print [h.likelihood(g.backpack, e3) for h in hypothesisSpace]
+
+# proposals = hypothesisSpace[0].generateProposals(g.backpack, e3)
+# hypothesisSpace[0].extend(proposals)
+# print [h.likelihood(g.backpack, e3) for h in hypothesisSpace]
+
+# [h.interpret(e3) for h in hypothesisSpace]
+# [h.interpret(e4) for h in hypothesisSpace]
+
+# for h in hypothesisSpace:
+# 	proposals = h.generateProposals(g.backpack, e4)
+# 	print len(proposals), "proposals. extending now"
+# 	if len(proposals)>0:
+# 		h.extend(proposals)
+# 	print ""
+
+# print "___"
+# for h in hypothesisSpace:
+# 	h.display()
+# 	print [h.likelihood(g.backpack,e) for e in events]
+# 	print "___"
+
+
+
+# print ""
+# print "trying to interpret event", e
+# print "result:", t.interpret(e) #False
+# print "likelihood", t.likelihood(g.backpack, e) #0
+# proposals = t.generateProposals(g.backpack, e) #proposals is a list of proposals
+# t.addProposal(proposals[0])
+# print "likelihood", t.likelihood(g.backpack, e) #1
+# t.displayRules() #one rule
+# t.displayClasses()
+
+# # h1 = Hypothesis(None, t)
+# print ""
+# print "likelihood of new event", e2, t.likelihood(g.backpack, e2)
+# proposals = t.generateProposals(g.backpack, e2)
+# t.addProposal(proposals[0])
+# print "likelihood", t.likelihood(g.backpack, e2)
+# proposal = proposals[0]
+
+# t.displayRules() #one rule
+# t.displayClasses()
+# print ""
+
+# print "likelihood of new event", e3, t.likelihood(g.backpack, e3)
+# proposals = t.generateProposals(g.backpack, e3) #
+# print "generated", len(proposals), "proposals in total"
+# proposal = random.choice(proposals)
+# print "Randomly selecting one of these"
+# t.addProposal(proposal)
+# t.displayRules()
+# t.displayClasses()
+# print "likelihood", t.likelihood(g.backpack, e3)
+# print ""
+
+# g.backpack = {'health':0, 'treasure':1, 'coin':3}
+# 
+
+# """tests for preconditions"""
+# print "Now let's explicitly call keepAssignmentsAddPreconditions() on e2", e2
+# proposals = t.keepAssignmentsAddPreconditions(g.backpack, e2)
+# print "this generates the following proposals:"
+# [p.display() for p in proposals]
+# print "notice that because health was 0 when this was called, it doesn't generate any health-related hypotheses"
+# print "specifically checking proposal", proposals[3].display()
+# print "result:", proposals[3].checkPreconditions(g.backpack) #False --> Should be True
+# p = Precondition('health>1','health',1)
+# print "adding", p.text, "to those preconditions"
+# proposals[3].addPrecondition(p) # Adds p to the fourth precondition
+# [p.display() for p in proposals]
+# print "result", proposals[3].checkPreconditions(g.backpack) #False
+# print "Now adding 2 health to backpack"
+# g.backpack['health'] = 2
+# print "And re-checking preconditions:", proposals[3].checkPreconditions(g.backpack) #True
+
