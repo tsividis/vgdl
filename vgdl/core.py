@@ -79,7 +79,6 @@ class VGDLParser(object):
         return eval(estr)
 
     def parseInteractions(self, inodes):
-
         for inode in inodes:
             if ">" in inode.content:
                 pair, edef = [x.strip() for x in inode.content.split(">")]
@@ -88,6 +87,7 @@ class VGDLParser(object):
                                                      +[eclass, args]))
                 if self.verbose:
                     print "Collision", pair, "has effect:", edef
+        print self.game.collision_eff
 
     def parseTerminations(self, tnodes):
         for tn in tnodes:
@@ -437,7 +437,7 @@ class BasicGame(object):
 
     def _eventHandling(self):
         self.lastcollisions = {}
-        ss = self.lastcollisions
+        ss = self.lastcollisions # List of possible interactions in the game
         effectList = []
         for g1, g2, effect, kwargs in self.collision_eff:
             # build the current sprite lists (if not yet available)
@@ -462,7 +462,7 @@ class BasicGame(object):
                 continue
 
             # iterate over the shorter one
-            ss1, l1 = ss[g1]
+            ss1, l1 = ss[g1] #Ex. ([medicine at (305,61), medicine at (305,305)], 2)
             ss2, l2 = ss[g2]
 
             if l1 < l2:
@@ -477,7 +477,6 @@ class BasicGame(object):
                 score = kwargs['scoreChange']
                 del kwargs['scoreChange']
 
-            # do collision detection
             for s1 in shortss:
                 for ci in s1.rect.collidelistall(longss):
                     s2 = longss[ci]
@@ -490,14 +489,28 @@ class BasicGame(object):
                     if switch:
                         # CHECKME: this is not a bullet-proof way, but seems to work
                         if s2 not in self.kill_list:
-                            e = effect(s2, s1, self, **kwargs)
+                            if effect.__name__ == "changeResource":
+                                resource = kwargs['resource']
+                                (sclass, args, stypes) = self.sprite_constr[resource]
+                                resource_color = args['color']
+                                e = effect(s2, resource_color, self, **kwargs)
+                            
+                            else:
+                                e = effect(s2, s1, self, **kwargs)
                             if e != None:
                                 effectList.append(e)
 
                     else:
                         # CHECKME: this is not a bullet-proof way, but seems to work
                         if s1 not in self.kill_list:
-                            e = effect(s1, s2, self, **kwargs)
+                            if effect.__name__ == "changeResource":
+                                resource = kwargs['resource']
+                                (sclass, args, stypes) = self.sprite_constr[resource]
+                                resource_color = args['color']
+                                e = effect(s1, resource_color, self, **kwargs)
+                            
+                            else:
+                                e = effect(s1, s2, self, **kwargs)
                             if e != None:
                                 effectList.append(e)
 
