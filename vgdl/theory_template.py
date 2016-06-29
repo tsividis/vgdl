@@ -323,30 +323,6 @@ class Theory(object):
 				proposals.extend(new_proposals)
 		return proposals
 
-# class Hypothesis(object):
-# 	def __init__(self, parent, theory):
-# 		self.parent = parent
-# 		self.theory = theory
-# 		self.children = []
-# 		if parent is not None:
-# 			self.depth = self.parent.depth + 1
-# 		else:
-# 			self.depth = 0
-
-# 	def addChild(self, theory):
-# 		self.children.append(theory)
-
-# 	def extend(self, proposals):
-# 		for i in range(len(proposals)):
-# 			newTheory = copy.deepcopy(self.theory)
-# 			newTheory.addProposal(proposals[i])
-# 			self.addChild(newTheory)
-
-# 	def display(self):
-# 		self.theory.displayRules()
-# 		self.theory.displayClasses()
-# 		return
-
 def generateNumberConcepts(c,n):
 	concepts = []
 	for i in range(n):
@@ -354,9 +330,7 @@ def generateNumberConcepts(c,n):
 		concepts.append((text,c,i))
 	return concepts
 
-
 g = Game()
-
 
 e = ('killSprite', 'WHITE', 'DARKBLUE')
 e2 = ('killSprite', 'WHITE', 'PURPLE')
@@ -375,7 +349,6 @@ def induction(events):
 		print [(h.theoryID, h.likelihood(g.backpack, event)) for h in g.hypothesisSpace]
 		for h in g.hypothesisSpace:
 			if h.likelihood(g.backpack, event) < 1.0:
-				# print "theory", h.theoryID, "doesn't explain the data:"
 				proposals = h.generateProposals(g.backpack, event)
 				if len(proposals)>0:
 					print "generated", len(proposals), "proposals. extending now"
@@ -387,10 +360,9 @@ def induction(events):
 	return g.hypothesisSpace
 
 
+"""The below won't work. extend() has been changed"""
 # t = Theory()
 # g.hypothesisSpace.append(t)
-
-"""The below won't work. extend() has been changed"""
 # print hypothesisSpace[0].likelihood(g.backpack, e)
 # proposals = hypothesisSpace[0].generateProposals(g.backpack, e)
 # hypothesisSpace[0].extend(proposals, [e])
