@@ -26,8 +26,8 @@ class Precondition(object):
 
 	def display(self):
 		print self.text
-
 '''
+
 class Precondition(object):
 	def __init__(self, text, fn):
 		self.text = text

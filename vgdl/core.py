@@ -534,6 +534,11 @@ class BasicGame(object):
         lastKeyPressTime=0 #PT
 
         # --------- Game-play ------------
+        agentState = dict(self.getAvatars()[0].resources)
+        initial = {'agentState': agentState, 'agentAction': None, 'effectList': []}
+        print initial
+        finalEventList = []
+
         while not self.ended:
             clock.tick(self.frame_rate)
             self.time += 1
@@ -585,9 +590,13 @@ class BasicGame(object):
             if len(self.getAvatars()) == 0:
                 break
 
+            # Display the updated agentState (TODO: move above the terminations?)
             agentState = dict(self.getAvatars()[0].resources)
             if len(effectList) > 0:
-                print {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList}
+                event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList}
+                print event
+                finalEventList.append(event)
+
 
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
@@ -607,6 +616,8 @@ class BasicGame(object):
             subprocess.call(["ffmpeg","-y",  "-r", "30", "-b", "800", "-i", tmpl, self.video_file ])
             [os.remove(f) for f in glob.glob(tmp_dir + "*" + str(self.uiud) + "*")]
 
+        # Print entire history of effects
+        print finalEventList
 
         if win:
             # winning a game always gives a positive score.
