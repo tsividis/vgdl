@@ -311,7 +311,6 @@ class Theory(object):
 				print "Proposal failed. Can't fit into existing theory."
 				return []
 
-
 	def keepAssignmentsAddRules(self, event):
 		#In response to a new predicate: Generates new rule
 		#that applies either to combinations of existing classes, or adds new classes
