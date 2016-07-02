@@ -7,6 +7,9 @@ class Game(object):
 		self.hypothesisSpace = []
 		self.theoryCount = 0
 
+class TimeStep(object):
+	def __init__(self, events):
+		self.events = events
 
 class Precondition(object):
 	"""
@@ -95,27 +98,59 @@ class Theory(object):
 		self.depth = 0
 		self.theoryID = False
 
-		# if self.parent is not None:
-		# 	self.depth = self.parent.depth + 1
-		# else:
-		# 	self.depth = 0
-
 	def addChild(self, theory):
 		self.children.append(theory)
 		g.hypothesisSpace.append(theory)
 
-	def extend(self, proposals, events):
+	def extend(self, proposals, timesteps, hypothetical=False):
+		"""
+		-If hypothetical is false: actually extends g.hypothesisSpace to include theories
+		that are built by incorporating the proposals
+		-If hypothetical is True, it generates theories that incorporate the proposals,
+		but doesn't add them to g.hypothesisSpace. This is so that if you have, say,
+		[e1,e2,e3] at a single timestep, you can generate theories that can explain
+		all three events. This necessitates generating theories for e1, and then
+		conditioning on those to generate theories for e2, and so on.
+		"""
 
+		hypotheticals = []
 		for p in proposals:
 			newTheory = copy.deepcopy(self)
 			newTheory.depth = self.depth + 1
 			newTheory.parent = self
 			newTheory.addProposal(p)
-			if all([newTheory.likelihood(g.backpack, e) for e in events]):
-				newTheory.theoryID = g.theoryCount
-				g.theoryCount = g.theoryCount + 1
-				self.addChild(newTheory)		
-		return g.hypothesisSpace.index(self)
+			likelihoods = [newTheory.likelihood(g.backpack, timestep) for timestep in timesteps]
+			# print likelihoods
+			newTheory.display()
+
+			if not hypothetical:
+				if all(likelihoods):
+					newTheory.theoryID = g.theoryCount
+					print 'theory', newTheory.theoryID, 'worked. adding it:'
+					g.theoryCount = g.theoryCount + 1
+					self.addChild(newTheory)
+			elif hypothetical:
+				#TODO: increment theoryID appropriately.
+				hypotheticals.append(newTheory)
+
+		if hypothetical:
+			return hypotheticals
+		else:
+			return g.hypothesisSpace.index(self)
+
+	def replace(self, hypotheses, timesteps):
+		#eliminates current hypothesis from g.hypothesisSpace; replaces it with all the ones it spawned.
+		madeChange = False
+		for hypothesis in hypotheses:
+			print all([hypothesis.likelihood(g.backpack, timestep) for timestep in timesteps])
+			likelihood = all([hypothesis.likelihood(g.backpack, timestep) for timestep in timesteps])
+			if likelihood:
+				madeChange=True
+				print "adding", hypothesis.display()
+				print ""
+				g.hypothesisSpace.append(hypothesis)
+		if madeChange:
+			g.hypothesisSpace.remove(self)
 
 
 	def displayRules(self):
@@ -184,11 +219,38 @@ class Theory(object):
 		else:
 			return False
 
-	def likelihood(self, backpack, event):
+	def findRelevantRules(self, event):
+		#Helper function for likelihood. If an event involves c1 and c2, 
+		#returns rules that use c1 and c2 in those slots.
 		interpretation = self.interpret(event)
-		if interpretation is not False:
-			if any([self.checkRule(backpack, i, event) for i in self.interactionSet]):
+		relevantRules = []
+		# for interpretation in interpretations:
+		if interpretation:
+			class1, class2 = interpretation.asTuple()[1], interpretation.asTuple()[2]
+			rules = [rule.asTuple() for rule in self.interactionSet]
+			relevantRules.extend([rule for rule in rules if rule[1]==class1 and rule[2]==class2])
+		else:
+			relevantRules.append(False)
+		if False not in relevantRules:
+			return relevantRules
+		else:
+			return False
+
+	def likelihood(self, backpack, timestep):
+		#Makes sure both that event was covered by the ruleset and that everything predicted in the ruleset happened.
+		#list of everything that happened, according to current class assignments and interaction rules
+		interpretations = [self.interpret(event) for event in timestep.events]
+		if False not in interpretations:
+			interpretations = [interpretation.asTuple() for interpretation in interpretations]
+			ruleSet = [rule.asTuple() for rule in self.interactionSet]
+			if all([i in ruleSet for i in interpretations]):
+				#if everything in the interpretation is accounted for by the ruleset
+				relevantRules = [self.findRelevantRules(event) for event in timestep.events]
+				for rules in relevantRules:
+					if not all([r in interpretations for r in rules]):
+						return 0.
 				return 1.
+			return 0.
 		return 0.
 
 	def checkRule(self, backpack, rule, event):
@@ -263,7 +325,6 @@ class Theory(object):
 			possibleRules.append([interaction, classAssignments])
 		return possibleRules
 
-
 	def keepAssignmentsAddPreconditions(self, backpack, event):
 		concepts = []
 		for b in backpack.keys():
@@ -277,7 +338,23 @@ class Theory(object):
 				possibleRules.append(interpretation)
 		return possibleRules
 
-	def generateProposals(self, backpack, event):
+	def generateHypotheses(self, timestep, hypotheticals=False):
+		#Base case
+		if len([e for e in timestep.events if type(e)==tuple])==1: 	#count how many events are in the list. If only one tuple:
+			if hypotheticals==False:
+				return self.generateProposals(g.backpack, timestep.events[0], hypothetical=True)
+			else:
+				proposals = []
+				for h in hypotheticals:
+					proposals.extend(h.generateProposals(g.backpack, timestep.events[0], hypothetical=True))
+				return proposals #which are instantiated as hypothetical theories because of the hypothetical=True argument just above.
+		#Recursive case
+		else:
+			firstEvent = TimeStep([timestep.events[0]])
+			allOtherEvents = TimeStep(timestep.events[1:])
+			return self.generateHypotheses(allOtherEvents, self.generateHypotheses(firstEvent))
+
+	def generateProposals(self, backpack, event, hypothetical=False):
 		"""Right now this is mostly greedy. If no rules in ruleset, adds
 		rules necessary to explain current event.
 		Otherwise:
@@ -286,9 +363,11 @@ class Theory(object):
 			-Add totally new rule
 		"""
 		# print "generating proposals..."
-		if self.likelihood(backpack, event) == 1.:
+		timestep = TimeStep([event]) #hacked this rather than making a more complex likelihood function
+		if self.likelihood(backpack, timestep) == 1.:
 			print "no proposals needed; event already fully explained!"
 			return []
+
 		proposals = []
 		#The below should not be if/else; it should do all but the first 
 		#condition simultaneously.
@@ -299,29 +378,35 @@ class Theory(object):
 			print "no theory yet. Proposing", interaction.asTuple(), "with class assignments:", classAssignments
 			proposals.append([interaction, classAssignments])
 		else:
-			if event[0] in self.predicates and not (self.getClass(event[1]) and self.getClass(event[2])):
-				#known predicate, but current assignments don't fit
-				print event[0], "is a known predicate, but current assignments don't fit. Proposing extensions"
-				new_proposals = self.keepRulesAddAssignments(event)
-				# for p in new_proposals:
-					# print p[1]
-				proposals.extend(new_proposals)
-			if event[0] in self.predicates and (self.getClass(event[1]) and self.getClass(event[2])) and len(backpack.keys())>0:
+			if event[0] in self.predicates:
+				relevantRules = [rule for rule in self.interactionSet if rule.interaction==event[0]]
+				if not (self.getClass(event[1]) and self.getClass(event[2])):
+					#known predicate, but current assignments don't fit
+					print event[0], "is a known predicate, but current assignments don't fit. Proposing extensions"
+					new_proposals = self.keepRulesAddAssignments(event)
+					proposals.extend(new_proposals)	
+
+			 	if not any([rule.slot1==self.getClass(event[1]) and rule.slot2==self.getClass(event[2]) for rule in relevantRules]):				
+			 		new_proposals = self.keepAssignmentsAddRules(event)
+			 		proposals.extend(new_proposals)
+
+			elif event[0] in self.predicates and (self.getClass(event[1]) and self.getClass(event[2])) and len(backpack.keys())>0:
 				#if we know the predicate and the classes but for some reason we've been sent to generate proposals,
 				#generate precondition proposals:
 				print "known predicate and classes. Proposing extensions:"
 				new_proposals = self.keepAssignmentsAddPreconditions(event)
-				# for p in new_proposals:
-					# p.display()
 				proposals.extend(new_proposals)
-			if event[0] not in self.predicates:
+			elif event[0] not in self.predicates:
 				#new predicate. propose new predicate with all possible new assignments.
 				print "encountered new predicate", event[0]+". Proposing new predicate + new assignments:"
 				new_proposals = self.keepAssignmentsAddRules(event)
-				# for p in new_proposals:
-					# p[0].display(), p[1]
 				proposals.extend(new_proposals)
-		return proposals
+		
+		if not hypothetical:
+			return proposals
+		elif hypothetical:
+			return self.extend(proposals, [timestep], hypothetical=True)
+
 
 def generateNumberConcepts(c,n):
 	concepts = []
@@ -332,122 +417,38 @@ def generateNumberConcepts(c,n):
 
 g = Game()
 
-e = ('killSprite', 'WHITE', 'DARKBLUE')
-e2 = ('killSprite', 'WHITE', 'PURPLE')
-e3 = ('bounceForward', 'BLUE', 'PINK')
-e4 = ('bounceForward', 'RED', 'ORANGE')
-events = [e,e2,e3, e4]
+t1 = TimeStep([('killSprite', 'DARKBLUE', 'RED')])
+t2 = TimeStep([('killSprite', 'DARKBLUE', 'BLUE')])
+t3 = TimeStep([('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')])
+t4 = TimeStep([('bounceForward', 'RED', 'ORANGE')])
+timesteps = [t1,t2,t3]
 
-def induction(events):
-	t = Theory()
-	g.hypothesisSpace = [t]
+def induction(timesteps):
+	theory = Theory()
+	g.hypothesisSpace = [theory]
+	print g.theoryCount, "theories"
 	to_remove = []
-	for i in range(len(events)):
-		event = events[i]
-		print "interpreting event", event
+	for i in range(len(timesteps)):
+		timestep = timesteps[i]
+		print "interpreting timestep", i, "events:", timestep.events
 		print "(theory IDs, likelihoods):"
-		print [(h.theoryID, h.likelihood(g.backpack, event)) for h in g.hypothesisSpace]
+		print [(h.theoryID, h.likelihood(g.backpack, timestep)) for h in g.hypothesisSpace]
 		for h in g.hypothesisSpace:
-			if h.likelihood(g.backpack, event) < 1.0:
-				proposals = h.generateProposals(g.backpack, event)
-				if len(proposals)>0:
-					print "generated", len(proposals), "proposals. extending now"
-					h.extend(proposals, events[0:i+1])
-		g.hypothesisSpace = [h for h in g.hypothesisSpace if h.likelihood(g.backpack, event)>0.0]
-		print "(theoryID, likelihood) for", event
-		print [(h.theoryID, h.likelihood(g.backpack, event)) for h in g.hypothesisSpace]
+			if h.likelihood(g.backpack, timestep) < 1.0:
+				newHypotheses = h.generateHypotheses(timestep)
+				if len(newHypotheses)>0:
+					print newHypotheses
+					print "generated", len(newHypotheses), "proposals. extending now"
+					h.replace(newHypotheses, timesteps[0:i+1])
+		g.hypothesisSpace = [h for h in g.hypothesisSpace if h.likelihood(g.backpack, timesteps[i])==1.]
+		print "(theoryID, likelihood) for", timestep.events
+		print [(h.theoryID, h.likelihood(g.backpack, timestep)) for h in g.hypothesisSpace]
 		print "_____"
 	return g.hypothesisSpace
 
-
-"""The below won't work. extend() has been changed"""
-# t = Theory()
-# g.hypothesisSpace.append(t)
-# print hypothesisSpace[0].likelihood(g.backpack, e)
-# proposals = hypothesisSpace[0].generateProposals(g.backpack, e)
-# hypothesisSpace[0].extend(proposals, [e])
-# print hypothesisSpace[0].likelihood(g.backpack, e)
-# print "____"
-# print len(hypothesisSpace), "hypotheses"
-# proposals = hypothesisSpace[0].generateProposals(g.backpack, e2)
-# hypothesisSpace[0].extend(proposals, [2])
-# print len(hypothesisSpace), "hypotheses"
-# print hypothesisSpace[0].likelihood(g.backpack, e2)
-# print "____"
-# print [h.likelihood(g.backpack, e3) for h in hypothesisSpace]
-
-# proposals = hypothesisSpace[0].generateProposals(g.backpack, e3)
-# hypothesisSpace[0].extend(proposals)
-# print [h.likelihood(g.backpack, e3) for h in hypothesisSpace]
-
-# [h.interpret(e3) for h in hypothesisSpace]
-# [h.interpret(e4) for h in hypothesisSpace]
-
-# for h in hypothesisSpace:
-# 	proposals = h.generateProposals(g.backpack, e4)
-# 	print len(proposals), "proposals. extending now"
-# 	if len(proposals)>0:
-# 		h.extend(proposals)
-# 	print ""
-
-# print "___"
-# for h in hypothesisSpace:
-# 	h.display()
-# 	print [h.likelihood(g.backpack,e) for e in events]
-# 	print "___"
+hypotheses = induction([timesteps[0]])
+g.backpack = {'health':1}
 
 
 
-# print ""
-# print "trying to interpret event", e
-# print "result:", t.interpret(e) #False
-# print "likelihood", t.likelihood(g.backpack, e) #0
-# proposals = t.generateProposals(g.backpack, e) #proposals is a list of proposals
-# t.addProposal(proposals[0])
-# print "likelihood", t.likelihood(g.backpack, e) #1
-# t.displayRules() #one rule
-# t.displayClasses()
-
-# # h1 = Hypothesis(None, t)
-# print ""
-# print "likelihood of new event", e2, t.likelihood(g.backpack, e2)
-# proposals = t.generateProposals(g.backpack, e2)
-# t.addProposal(proposals[0])
-# print "likelihood", t.likelihood(g.backpack, e2)
-# proposal = proposals[0]
-
-# t.displayRules() #one rule
-# t.displayClasses()
-# print ""
-
-# print "likelihood of new event", e3, t.likelihood(g.backpack, e3)
-# proposals = t.generateProposals(g.backpack, e3) #
-# print "generated", len(proposals), "proposals in total"
-# proposal = random.choice(proposals)
-# print "Randomly selecting one of these"
-# t.addProposal(proposal)
-# t.displayRules()
-# t.displayClasses()
-# print "likelihood", t.likelihood(g.backpack, e3)
-# print ""
-
-# g.backpack = {'health':0, 'treasure':1, 'coin':3}
-# 
-
-# """tests for preconditions"""
-# print "Now let's explicitly call keepAssignmentsAddPreconditions() on e2", e2
-# proposals = t.keepAssignmentsAddPreconditions(g.backpack, e2)
-# print "this generates the following proposals:"
-# [p.display() for p in proposals]
-# print "notice that because health was 0 when this was called, it doesn't generate any health-related hypotheses"
-# print "specifically checking proposal", proposals[3].display()
-# print "result:", proposals[3].checkPreconditions(g.backpack) #False --> Should be True
-# p = Precondition('health>1','health',1)
-# print "adding", p.text, "to those preconditions"
-# proposals[3].addPrecondition(p) # Adds p to the fourth precondition
-# [p.display() for p in proposals]
-# print "result", proposals[3].checkPreconditions(g.backpack) #False
-# print "Now adding 2 health to backpack"
-# g.backpack['health'] = 2
-# print "And re-checking preconditions:", proposals[3].checkPreconditions(g.backpack) #True
 
