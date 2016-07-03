@@ -8,8 +8,11 @@ class Game(object):
 		self.theoryCount = 0
 
 class TimeStep(object):
-	def __init__(self, events):
+	def __init__(self, agentAction, agentState, events):
+		self.agentAction = agentAction
+		self.agentState = agentState
 		self.events = events
+		self.t = False
 
 class Precondition(object):
 	"""
@@ -119,7 +122,7 @@ class Theory(object):
 			newTheory.depth = self.depth + 1
 			newTheory.parent = self
 			newTheory.addProposal(p)
-			likelihoods = [newTheory.likelihood(g.backpack, timestep) for timestep in timesteps]
+			likelihoods = [newTheory.likelihood(timestep) for timestep in timesteps]
 			# print likelihoods
 			newTheory.display()
 
@@ -142,8 +145,8 @@ class Theory(object):
 		#eliminates current hypothesis from g.hypothesisSpace; replaces it with all the ones it spawned.
 		madeChange = False
 		for hypothesis in hypotheses:
-			print all([hypothesis.likelihood(g.backpack, timestep) for timestep in timesteps])
-			likelihood = all([hypothesis.likelihood(g.backpack, timestep) for timestep in timesteps])
+			print all([hypothesis.likelihood(timestep) for timestep in timesteps])
+			likelihood = all([hypothesis.likelihood(timestep) for timestep in timesteps])
 			if likelihood:
 				madeChange=True
 				print "adding", hypothesis.display()
@@ -236,7 +239,7 @@ class Theory(object):
 		else:
 			return False
 
-	def likelihood(self, backpack, timestep):
+	def likelihood(self, timestep):
 		#Makes sure both that event was covered by the ruleset and that everything predicted in the ruleset happened.
 		#list of everything that happened, according to current class assignments and interaction rules
 		interpretations = [self.interpret(event) for event in timestep.events]
@@ -253,18 +256,18 @@ class Theory(object):
 			return 0.
 		return 0.
 
-	def checkRule(self, backpack, rule, event):
-		interpretation = self.interpret(event)
-		if interpretation is not False:
-			if rule.preconditions == False:
-				if rule.asTuple() == interpretation.asTuple():
-					return True
-				else: return False
-			else:
-				if rule.asTuple() == interpretation.asTuple() and all([p.check(backpack) for p in rule.preconditions]):
-					return True
-				else: return False
-		return False
+	# def checkRule(self, backpack, rule, event):
+	# 	interpretation = self.interpret(event)
+	# 	if interpretation is not False:
+	# 		if rule.preconditions == False:
+	# 			if rule.asTuple() == interpretation.asTuple():
+	# 				return True
+	# 			else: return False
+	# 		else:
+	# 			if rule.asTuple() == interpretation.asTuple() and all([p.check(backpack) for p in rule.preconditions]):
+	# 				return True
+	# 			else: return False
+	# 	return False
 
 	def searchForPossibleClasses(self, o, newClasses=0):
 		#if the object has been assigned, return it. Otherwise return all
@@ -340,17 +343,24 @@ class Theory(object):
 	def generateHypotheses(self, timestep, hypotheticals=False):
 		#Base case
 		if len([e for e in timestep.events if type(e)==tuple])==1: 	#count how many events are in the list. If only one tuple:
+			print "in base case"
 			if hypotheticals==False:
-				return self.generateProposals(g.backpack, timestep.events[0], hypothetical=True)
+				print "generating proposals without appending them to hypotheticals"
+				return self.generateProposals(timestep.agentState, timestep.events[0], hypothetical=True)
 			else:
 				proposals = []
 				for h in hypotheticals:
-					proposals.extend(h.generateProposals(g.backpack, timestep.events[0], hypothetical=True))
+					proposals.extend(h.generateProposals(timestep.agentState, timestep.events[0], hypothetical=True))
+				print "appending hypotheses to these hypotheticals:"
+				print hypotheticals
+				print proposals
 				return proposals #which are instantiated as hypothetical theories because of the hypothetical=True argument just above.
 		#Recursive case
 		else:
-			firstEvent = TimeStep([timestep.events[0]])
-			allOtherEvents = TimeStep(timestep.events[1:])
+			print "in recursive case. First event", timestep.events[0]
+			firstEvent = TimeStep(timestep.agentAction, timestep.agentState, [timestep.events[0]])
+			allOtherEvents = TimeStep(timestep.agentAction, timestep.agentState, timestep.events[1:])
+			print "other events", timestep.events[1:]
 			return self.generateHypotheses(allOtherEvents, self.generateHypotheses(firstEvent))
 
 	def generateProposals(self, backpack, event, hypothetical=False):
@@ -362,10 +372,11 @@ class Theory(object):
 			-Add totally new rule
 		"""
 		# print "generating proposals..."
-		timestep = TimeStep([event]) #hacked this rather than making a more complex likelihood function
-		if self.likelihood(backpack, timestep) == 1.:
-			print "no proposals needed; event already fully explained!"
-			return []
+		timestep = TimeStep(False, backpack, [event]) #hacked this rather than making a more complex likelihood function
+		if self.likelihood(timestep) == 1.:
+			print "no proposals needed; event", event, "already fully explained!"
+			if hypothetical==True:
+				return [self] #Returning a workable hypothesis (self) so that generateHypotheses can build on it.
 
 		proposals = []
 		#The below should not be if/else; it should do all but the first 
@@ -416,11 +427,13 @@ def generateNumberConcepts(c,n):
 
 g = Game()
 
-t1 = TimeStep([('killSprite', 'DARKBLUE', 'RED')])
-t2 = TimeStep([('killSprite', 'DARKBLUE', 'BLUE')])
-t3 = TimeStep([('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')])
-t4 = TimeStep([('bounceForward', 'RED', 'ORANGE')])
-timesteps = [t1,t2,t3]
+v1 = [{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, {'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': 'up', 'agentState': {'medicine': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', 1), ('killSprite', 'DARKBLUE', 'WHITE')]}, {'agentAction': 'down', 'agentState': {'medicine': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
+# t1 = TimeStep([('killSprite', 'DARKBLUE', 'RED')])
+# t2 = TimeStep([('killSprite', 'DARKBLUE', 'BLUE')])
+# t3 = TimeStep([('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')])
+# t4 = TimeStep([('bounceForward', 'RED', 'ORANGE')])
+
+timesteps = [TimeStep(v['agentAction'], v['agentState'], v['effectList']) for v in v1]
 
 def induction(timesteps):
 	theory = Theory()
@@ -431,22 +444,22 @@ def induction(timesteps):
 		timestep = timesteps[i]
 		print "interpreting timestep", i, "events:", timestep.events
 		print "(theory IDs, likelihoods):"
-		print [(h.theoryID, h.likelihood(g.backpack, timestep)) for h in g.hypothesisSpace]
+		print [(h.theoryID, h.likelihood(timestep)) for h in g.hypothesisSpace]
 		for h in g.hypothesisSpace:
-			if h.likelihood(g.backpack, timestep) < 1.0:
+			if h.likelihood(timestep) < 1.0:
 				newHypotheses = h.generateHypotheses(timestep)
 				if len(newHypotheses)>0:
 					print newHypotheses
 					print "generated", len(newHypotheses), "proposals. extending now"
 					h.replace(newHypotheses, timesteps[0:i+1])
-		g.hypothesisSpace = [h for h in g.hypothesisSpace if h.likelihood(g.backpack, timesteps[i])==1.]
+		g.hypothesisSpace = [h for h in g.hypothesisSpace if h.likelihood(timesteps[i])==1.]
 		print "(theoryID, likelihood) for", timestep.events
-		print [(h.theoryID, h.likelihood(g.backpack, timestep)) for h in g.hypothesisSpace]
+		print [(h.theoryID, h.likelihood(timestep)) for h in g.hypothesisSpace]
 		print "_____"
 	return g.hypothesisSpace
 
-hypotheses = induction([timesteps[0]])
-g.backpack = {'health':1}
+# hypotheses = induction([timesteps[0]])
+# g.backpack = {'health':1}
 
 
 
