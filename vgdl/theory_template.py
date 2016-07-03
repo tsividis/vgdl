@@ -25,7 +25,11 @@ class Precondition(object):
 		self.num = num
 
 	def check(self, backpack):
-		return backpack[self.item]>self.num 
+		if self.item in backpack.keys():
+			return backpack[self.item]>self.num 
+		else: 
+			print "agent has not encountered", self.item
+			return False
 
 	def display(self):
 		print self.text
@@ -188,20 +192,29 @@ class Theory(object):
 		#Adds rule if it is not in interactionSet
 		if rule.interaction not in self.predicates:
 			self.predicates.append(rule.interaction)
-		if rule.asTuple() not in [i.asTuple() for i in self.interactionSet]:
+		if not self.findRule(rule):
 			self.interactionSet.append(rule)
 			return True
+		return False
+
+	def findRule(self, rule):
+		#finds if a rule is in the interaction set
+		for interactionRule in self.interactionSet:
+			if interactionRule.asTuple()==rule.asTuple and interactionRule.preconditions==rule.preconditions:
+				return True
 		return False
 
 	def addProposal(self, proposal):
 		#Adds proposal to theory; takes care of rule and assignments
 		rule, assignments = proposal[0], proposal[1]
+		print "adding rule:"
+		rule.display()
 		added = self.addRule(rule)
 		# if added:
 			# print "Added", rule.asTuple()
-		for assignment in assignments:
-			self.assignClass(assignment)
-		# hypothesisSpace.append(self)
+		if assignments is not False:
+			for assignment in assignments:
+				self.assignClass(assignment)
 
 	def getClass(self, o):
 		for k,v in self.classes.iteritems():
@@ -239,22 +252,43 @@ class Theory(object):
 		else:
 			return False
 
-	def likelihood(self, timestep):
+	def likelihood(self, timestep, verbose=False):
 		#Makes sure both that event was covered by the ruleset and that everything predicted in the ruleset happened.
 		#list of everything that happened, according to current class assignments and interaction rules
 		interpretations = [self.interpret(event) for event in timestep.events]
+		if verbose:
+			print "Interpretation of event:"
+			print [interpretation.asTuple() for interpretation in interpretations if interpretation is not False]
 		if False not in interpretations:
 			interpretations = [interpretation.asTuple() for interpretation in interpretations]
 			ruleSet = [rule.asTuple() for rule in self.interactionSet]
-			if all([i in ruleSet for i in interpretations]):
+			if all([self.checkInterpretation(i, timestep) for i in interpretations]):
+			# if all([i in ruleSet for i in interpretations]):
 				#if everything in the interpretation is accounted for by the ruleset
 				relevantRules = [self.findRelevantRules(event) for event in timestep.events]
 				for rules in relevantRules:
 					if not all([r in interpretations for r in rules]):
+						if verbose:
+							print "Likelihood failed because not all events predicted by the theory happened."
 						return 0.
 				return 1.
+			if verbose:
+				print "Likelihood failed because the event was parseable by the theory, but not in the theory. Likely due to preconditions"
 			return 0.
+		if verbose:
+			print "Likelihood failed because some aspect of the event wasn't interpretable by the current theory."
 		return 0.
+
+	def checkInterpretation(self, interpretation, timestep):
+		if interpretation is not False:
+			for rule in self.interactionSet:
+				if rule.asTuple()==interpretation:
+					if rule.preconditions == False:
+						return True
+					elif all([p.check(timestep.agentState) for p in rule.preconditions]):
+						return True
+			return False #If we've checked everything and found no matching rule or rule+precondition, reutrn false.
+		return False #uninterpretable interpretation returns False, too.
 
 	# def checkRule(self, backpack, rule, event):
 	# 	interpretation = self.interpret(event)
@@ -329,41 +363,51 @@ class Theory(object):
 
 	def keepAssignmentsAddPreconditions(self, backpack, event):
 		concepts = []
+		print backpack
 		for b in backpack.keys():
 			concepts.extend(generateNumberConcepts(b, backpack[b]))
+		print "concepts", concepts
 		preconditions = [Precondition(c[0], c[1], c[2]) for c in concepts]
 		possibleRules = []
 		for p in preconditions:
 			interpretation = self.interpret(event)
 			if interpretation:
 				interpretation.addPrecondition(p)
-				possibleRules.append(interpretation)
+				possibleRules.append([interpretation, False]) #second slot is for new assignments
+		for rule in possibleRules:
+			rule[0].display()
+		# print [rule[0].asTuple() for rule in possibleRules]
 		return possibleRules
 
-	def generateHypotheses(self, timestep, hypotheticals=False):
+	def generateHypotheses(self, timestep, hypotheticals=False, verbose=False):
 		#Base case
 		if len([e for e in timestep.events if type(e)==tuple])==1: 	#count how many events are in the list. If only one tuple:
-			print "in base case"
+			if verbose:
+				print "in base case"
 			if hypotheticals==False:
-				print "generating proposals without appending them to hypotheticals"
-				return self.generateProposals(timestep.agentState, timestep.events[0], hypothetical=True)
+				if verbose:
+					print "generating proposals without appending them to hypotheticals"
+				return self.generateProposals(timestep.agentState, timestep.events[0], hypothetical=True, verbose=verbose)
 			else:
 				proposals = []
 				for h in hypotheticals:
-					proposals.extend(h.generateProposals(timestep.agentState, timestep.events[0], hypothetical=True))
-				print "appending hypotheses to these hypotheticals:"
-				print hypotheticals
-				print proposals
+					proposals.extend(h.generateProposals(timestep.agentState, timestep.events[0], hypothetical=True, verbose=verbose))
+				if verbose:
+					print "appending hypotheses to these hypotheticals:"
+					print hypotheticals
+					print proposals
 				return proposals #which are instantiated as hypothetical theories because of the hypothetical=True argument just above.
 		#Recursive case
 		else:
-			print "in recursive case. First event", timestep.events[0]
+			if verbose:
+				print "in recursive case. First event", timestep.events[0]
 			firstEvent = TimeStep(timestep.agentAction, timestep.agentState, [timestep.events[0]])
 			allOtherEvents = TimeStep(timestep.agentAction, timestep.agentState, timestep.events[1:])
-			print "other events", timestep.events[1:]
-			return self.generateHypotheses(allOtherEvents, self.generateHypotheses(firstEvent))
+			if verbose:
+				print "other events", timestep.events[1:]
+			return self.generateHypotheses(allOtherEvents, self.generateHypotheses(firstEvent), verbose=verbose)
 
-	def generateProposals(self, backpack, event, hypothetical=False):
+	def generateProposals(self, backpack, event, hypothetical=False, verbose=False):
 		"""Right now this is mostly greedy. If no rules in ruleset, adds
 		rules necessary to explain current event.
 		Otherwise:
@@ -371,10 +415,14 @@ class Theory(object):
 			-Add preconditions to existing rules but don't change assignments
 			-Add totally new rule
 		"""
-		# print "generating proposals..."
+		if verbose:
+			print "In verbose mode."
+			print "generating proposals..."
+
 		timestep = TimeStep(False, backpack, [event]) #hacked this rather than making a more complex likelihood function
 		if self.likelihood(timestep) == 1.:
-			print "no proposals needed; event", event, "already fully explained!"
+			if verbose:
+				print "no proposals needed; event", event, "already fully explained!"
 			if hypothetical==True:
 				return [self] #Returning a workable hypothesis (self) so that generateHypotheses can build on it.
 
@@ -385,33 +433,55 @@ class Theory(object):
 			#base case: no theory yet.
 			interaction = InteractionRule(event[0], 'c1', 'c2')
 			classAssignments = [('c1', event[1]), ('c2', event[2])]
-			print "no theory yet. Proposing", interaction.asTuple(), "with class assignments:", classAssignments
+			if verbose:
+				print "no theory yet. Proposing", interaction.asTuple(), "with class assignments:", classAssignments
 			proposals.append([interaction, classAssignments])
 		else:
 			if event[0] in self.predicates:
 				relevantRules = [rule for rule in self.interactionSet if rule.interaction==event[0]]
 				if not (self.getClass(event[1]) and self.getClass(event[2])):
 					#known predicate, but current assignments don't fit
-					print event[0], "is a known predicate, but current assignments don't fit. Proposing extensions"
+					if verbose:
+						print event[0], "is a known predicate, but current assignments don't fit. Proposing extensions"
 					new_proposals = self.keepRulesAddAssignments(event)
 					proposals.extend(new_proposals)	
 
-			 	if not any([rule.slot1==self.getClass(event[1]) and rule.slot2==self.getClass(event[2]) for rule in relevantRules]):				
+			 	elif not any([rule.slot1==self.getClass(event[1]) and rule.slot2==self.getClass(event[2]) for rule in relevantRules]):				
+			 		if verbose:
+						print event[0], "uses a known predicate, but current rules don't cover it. Proposing extensions"
 			 		new_proposals = self.keepAssignmentsAddRules(event)
 			 		proposals.extend(new_proposals)
-
+			 	else:
+			 		if verbose:
+			 			print event[0], "is a known predicate and classes are known. Proposing preconditions."
+			 		new_proposals = self.keepAssignmentsAddPreconditions(backpack, event)
+					proposals.extend(new_proposals)
 			elif event[0] in self.predicates and (self.getClass(event[1]) and self.getClass(event[2])) and len(backpack.keys())>0:
+				#FIX: This is sketchy; it's not checking for predicates being in the right slots.
 				#if we know the predicate and the classes but for some reason we've been sent to generate proposals,
 				#generate precondition proposals:
-				print "known predicate and classes. Proposing extensions:"
-				new_proposals = self.keepAssignmentsAddPreconditions(event)
+				if verbose:
+					print "known predicate and classes. Proposing preconditions:"
+				new_proposals = self.keepAssignmentsAddPreconditions(backpack, event)
 				proposals.extend(new_proposals)
 			elif event[0] not in self.predicates:
 				#new predicate. propose new predicate with all possible new assignments.
-				print "encountered new predicate", event[0]+". Proposing new predicate + new assignments:"
+				if verbose:
+					print "encountered new predicate", event[0]+". Proposing new predicate + new assignments:"
 				new_proposals = self.keepAssignmentsAddRules(event)
 				proposals.extend(new_proposals)
+			else:
+				if verbose:
+					print "timestep doesn't match any theory-induction conditions."
 		
+		if verbose:
+			print ""
+			print "Proposals:"
+			for p in proposals:
+				p[0].display()
+				print p[1]
+			print "____"
+			# print proposals
 		if not hypothetical:
 			return proposals
 		elif hypothetical:
@@ -426,14 +496,9 @@ def generateNumberConcepts(c,n):
 	return concepts
 
 g = Game()
+trace = [{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, {'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': 'up', 'agentState': {'medicine': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', 1), ('killSprite', 'DARKBLUE', 'WHITE')]}, {'agentAction': 'down', 'agentState': {'medicine': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
 
-v1 = [{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, {'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': 'up', 'agentState': {'medicine': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', 1), ('killSprite', 'DARKBLUE', 'WHITE')]}, {'agentAction': 'down', 'agentState': {'medicine': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
-# t1 = TimeStep([('killSprite', 'DARKBLUE', 'RED')])
-# t2 = TimeStep([('killSprite', 'DARKBLUE', 'BLUE')])
-# t3 = TimeStep([('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')])
-# t4 = TimeStep([('bounceForward', 'RED', 'ORANGE')])
-
-timesteps = [TimeStep(v['agentAction'], v['agentState'], v['effectList']) for v in v1]
+timesteps = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in trace]
 
 def induction(timesteps):
 	theory = Theory()
@@ -458,9 +523,35 @@ def induction(timesteps):
 		print "_____"
 	return g.hypothesisSpace
 
-# hypotheses = induction([timesteps[0]])
-# g.backpack = {'health':1}
+"""Testing precondition machinery"""
+t = Theory()
+g.hypothesisSpace = [t]
+
+# i1 = InteractionRule('killSprite', 'c1', 'c2')
+# p1 = Precondition('health>1','health',1)
+# p2 = Precondition('treasure>2', 'treasure',2)
+# i1.addPrecondition(p1)
+# i1.addPrecondition(p2)
+# a1 = [('c1', 'DARKBLUE'), ('c2', 'RED')]
+# t.addProposal([i1,a1])
+# e = TimeStep(False, {'health':2, 'treasure':1}, [('killSprite', 'DARKBLUE', 'RED')])
+# print t.likelihood(e,verbose=True) #0.0
+# e = TimeStep(False, {'health':2, 'treasure':3}, [('killSprite', 'DARKBLUE', 'RED')]) 
+# print t.likelihood(e,verbose=True) #1.0
+#_________
+# e1 = TimeStep(False, {'health':2, 'treasure':1}, [('killSprite', 'DARKBLUE', 'RED')])
+# print t.likelihood(e1) #0.0
+# e2 = TimeStep(False, {'health':0, 'treasure':0}, [('bounceForward', 'DARKBLUE', 'RED')])
+# print t.likelihood(e2) #0.0
+# nh = t.generateHypotheses(e2, hypotheticals=False, verbose=False)
+# #Conditioned on the hypotheses it generated to explain *e2*, it can easily generate good ones for e1.
+# nh2 = nh[0].generateHypotheses(e1, hypotheticals=False, verbose=True) 
+# #But it currently can't do things in the other direction: conditioned on a simple hypothesis that ignored the
+# #AgentState at e1, modify in a way that explains e2
 
 
 
+#TODO:
+#When you're explaining e2, you have to retroactively change rules that explained e1 for it to make sense.
+#fix generateHypotheses(): should iterate over and over until what it returns is useful.
 
