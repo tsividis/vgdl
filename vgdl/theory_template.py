@@ -133,7 +133,7 @@ class Theory(object):
 			if not hypothetical:
 				if all(likelihoods):
 					newTheory.theoryID = g.theoryCount
-					print 'theory', newTheory.theoryID, 'worked. adding it:'
+					# print 'theory', newTheory.theoryID, 'worked. adding it:'
 					g.theoryCount = g.theoryCount + 1
 					self.addChild(newTheory)
 			elif hypothetical:
@@ -149,12 +149,12 @@ class Theory(object):
 		#eliminates current hypothesis from g.hypothesisSpace; replaces it with all the ones it spawned.
 		madeChange = False
 		for hypothesis in hypotheses:
-			print all([hypothesis.likelihood(timestep) for timestep in timesteps])
+			# print all([hypothesis.likelihood(timestep) for timestep in timesteps])
 			likelihood = all([hypothesis.likelihood(timestep) for timestep in timesteps])
 			if likelihood:
 				madeChange=True
-				print "adding", hypothesis.display()
-				print ""
+				# print "adding", hypothesis.display()
+				# print ""
 				g.hypothesisSpace.append(hypothesis)
 		if madeChange:
 			g.hypothesisSpace.remove(self)
@@ -167,7 +167,7 @@ class Theory(object):
 			rule.display()
 
 	def displayClasses(self):
-		print ""
+		# print ""
 		print "Current class assignments:"
 		print self.classes
 
@@ -207,8 +207,8 @@ class Theory(object):
 	def addProposal(self, proposal):
 		#Adds proposal to theory; takes care of rule and assignments
 		rule, assignments = proposal[0], proposal[1]
-		print "adding rule:"
-		rule.display()
+		# print "adding rule:"
+		# rule.display()
 		added = self.addRule(rule)
 		# if added:
 			# print "Added", rule.asTuple()
@@ -363,10 +363,10 @@ class Theory(object):
 
 	def keepAssignmentsAddPreconditions(self, backpack, event):
 		concepts = []
-		print backpack
+		# print backpack
 		for b in backpack.keys():
 			concepts.extend(generateNumberConcepts(b, backpack[b]))
-		print "concepts", concepts
+		# print "concepts", concepts
 		preconditions = [Precondition(c[0], c[1], c[2]) for c in concepts]
 		possibleRules = []
 		for p in preconditions:
@@ -374,9 +374,8 @@ class Theory(object):
 			if interpretation:
 				interpretation.addPrecondition(p)
 				possibleRules.append([interpretation, False]) #second slot is for new assignments
-		for rule in possibleRules:
-			rule[0].display()
-		# print [rule[0].asTuple() for rule in possibleRules]
+		# for rule in possibleRules:
+			# rule[0].display()
 		return possibleRules
 
 	def generateHypotheses(self, timestep, hypotheticals=False, verbose=False):
@@ -495,11 +494,6 @@ def generateNumberConcepts(c,n):
 		concepts.append((text,c,i))
 	return concepts
 
-g = Game()
-trace = [{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, {'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': 'up', 'agentState': {'medicine': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', 1), ('killSprite', 'DARKBLUE', 'WHITE')]}, {'agentAction': 'down', 'agentState': {'medicine': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
-
-timesteps = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in trace]
-
 def induction(timesteps):
 	theory = Theory()
 	g.hypothesisSpace = [theory]
@@ -514,7 +508,7 @@ def induction(timesteps):
 			if h.likelihood(timestep) < 1.0:
 				newHypotheses = h.generateHypotheses(timestep)
 				if len(newHypotheses)>0:
-					print newHypotheses
+					# print newHypotheses
 					print "generated", len(newHypotheses), "proposals. extending now"
 					h.replace(newHypotheses, timesteps[0:i+1])
 		g.hypothesisSpace = [h for h in g.hypothesisSpace if h.likelihood(timesteps[i])==1.]
@@ -523,9 +517,15 @@ def induction(timesteps):
 		print "_____"
 	return g.hypothesisSpace
 
+g = Game()
+trace = [{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, {'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': 'up', 'agentState': {'medicine': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', 1), ('killSprite', 'DARKBLUE', 'WHITE')]}]
+#,{'agentAction': 'down', 'agentState': {'medicine': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
+timesteps = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in trace]
+
+
 """Testing precondition machinery"""
-t = Theory()
-g.hypothesisSpace = [t]
+# t = Theory()
+# g.hypothesisSpace = [t]
 
 # i1 = InteractionRule('killSprite', 'c1', 'c2')
 # p1 = Precondition('health>1','health',1)
