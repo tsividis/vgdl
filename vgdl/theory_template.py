@@ -7,7 +7,7 @@ class Game(object):
 		self.hypothesisSpace = []
 		self.theoryCount = 0
 
-
+'''
 class Precondition(object):
 	"""
 	Eventually, this needs to be extended to handle a logical grammar over preconditions
@@ -35,7 +35,7 @@ class Precondition(object):
 
 	def display(self):
 		print self.text
-'''
+
 
 class Property(object):
 	def __init__(self, vgdlType, color, args):
@@ -186,22 +186,18 @@ class Theory(object):
 
 	def likelihood(self, backpack, event):
 		interpretation = self.interpret(event)
-		if interpretation is not False:
+		if interpretation:
 			if any([self.checkRule(backpack, i, event) for i in self.interactionSet]):
 				return 1.
 		return 0.
 
 	def checkRule(self, backpack, rule, event):
 		interpretation = self.interpret(event)
-		if interpretation is not False:
+		if interpretation:
 			if rule.preconditions == False:
-				if rule.asTuple() == interpretation.asTuple():
-					return True
-				else: return False
+				return rule.asTuple() == interpretation.asTuple():
 			else:
-				if rule.asTuple() == interpretation.asTuple() and all([p.check(backpack) for p in rule.preconditions]):
-					return True
-				else: return False
+				return (rule.asTuple() == interpretation.asTuple() and all([p.check(backpack) for p in rule.preconditions])):
 		return False
 
 	def searchForPossibleClasses(self, o, newClasses=0):
@@ -222,7 +218,7 @@ class Theory(object):
 
 	def searchForAssignments(self, event):
 		x1, x2 = self.searchForPossibleClasses(event[1]), self.searchForPossibleClasses(event[2])
-		if x1 is not False and x2 is not False: #if both yielded possibilities
+		if x1 and x2: #if both yielded possibilities
 			return list(itertools.product(x1,x2))
 		else: return False
 
@@ -234,7 +230,7 @@ class Theory(object):
 		Each proposal is a [rule, assignments] pair.
 		"""
 		possibleAssignments = self.searchForAssignments(event)
-		if possibleAssignments is not False:
+		if possibleAssignments:
 			possibleRules = []
 			for assignment in possibleAssignments:
 				if (event[0], assignment[0], assignment[1]) in [i.asTuple() for i in self.interactionSet]:
@@ -290,6 +286,7 @@ class Theory(object):
 			print "no proposals needed; event already fully explained!"
 			return []
 		proposals = []
+		
 		#The below should not be if/else; it should do all but the first 
 		#condition simultaneously.
 		if len(self.interactionSet) == 0:
@@ -298,6 +295,7 @@ class Theory(object):
 			classAssignments = [('c1', event[1]), ('c2', event[2])]
 			print "no theory yet. Proposing", interaction.asTuple(), "with class assignments:", classAssignments
 			proposals.append([interaction, classAssignments])
+		
 		else:
 			if event[0] in self.predicates and not (self.getClass(event[1]) and self.getClass(event[2])):
 				#known predicate, but current assignments don't fit
@@ -310,7 +308,7 @@ class Theory(object):
 				#if we know the predicate and the classes but for some reason we've been sent to generate proposals,
 				#generate precondition proposals:
 				print "known predicate and classes. Proposing extensions:"
-				new_proposals = self.keepAssignmentsAddPreconditions(event)
+				new_proposals = self.keepAssignmentsAddPreconditions(backpack, event)
 				# for p in new_proposals:
 					# p.display()
 				proposals.extend(new_proposals)
