@@ -489,7 +489,7 @@ class BasicGame(object):
                     if switch:
                         # CHECKME: this is not a bullet-proof way, but seems to work
                         if s2 not in self.kill_list:
-                            if effect.__name__ == "changeResource":
+                            if effect.__name__ == "changeResource": # TODO: A little hack-y, but works for now.
                                 resource = kwargs['resource']
                                 (sclass, args, stypes) = self.sprite_constr[resource]
                                 resource_color = args['color']
@@ -503,7 +503,7 @@ class BasicGame(object):
                     else:
                         # CHECKME: this is not a bullet-proof way, but seems to work
                         if s1 not in self.kill_list:
-                            if effect.__name__ == "changeResource":
+                            if effect.__name__ == "changeResource":  # TODO: A little hack-y, but works for now.
                                 resource = kwargs['resource']
                                 (sclass, args, stypes) = self.sprite_constr[resource]
                                 resource_color = args['color']
@@ -617,6 +617,10 @@ class BasicGame(object):
             [os.remove(f) for f in glob.glob(tmp_dir + "*" + str(self.uiud) + "*")]
 
         # Print entire history of effects
+        gameEndEvent = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': [('gameEnd')]}
+        print gameEndEvent
+        
+        finalEventList.append((gameEndEvent))
         print finalEventList
 
         if win:

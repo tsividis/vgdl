@@ -602,7 +602,6 @@ if __name__ == "__main__":
 	#AgentState at e1, modify in a way that explains e2
 
 
-
 	#TODO:
 	#When you're explaining e2, you have to retroactively change rules that explained e1 for it to make sense.
 	#fix generateHypotheses(): should iterate over and over until what it returns is useful.
