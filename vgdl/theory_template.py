@@ -540,7 +540,7 @@ def generateNumberConcepts(c,n):
 		concepts.append((text,c,i))
 	return concepts
 
-def induction(timesteps):
+def induction(g, theory, timesteps):
 	theory = Theory()
 	g.hypothesisSpace = [theory]
 	print g.theoryCount, "theories"
@@ -549,7 +549,7 @@ def induction(timesteps):
 		timestep = timesteps[i]
 		print "interpreting timestep", i, "events:", timestep.events
 		print "(theory IDs, likelihoods):"
-		print [(h.theoryID, h.likelihood(timestep)) for h in g.hypothesisSpace]
+		print [(h.theoryID, h.likelihood(timestep)) for h in g.hypothesisSpace] # TODO: Why are theoryIDs appearing as False?
 		for h in g.hypothesisSpace:
 			if h.likelihood(timestep) < 1.0:
 				newHypotheses = h.generateHypotheses(timestep)
