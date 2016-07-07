@@ -573,6 +573,13 @@ class BasicGame(object):
                 if self.keystate[K_1]:
                     self._lastsaved = self.getFullState()
 
+
+            # handle collision effects
+            effectList = self._eventHandling()
+            if effectList:
+                print 'EFFECT FOUND --> '
+                print effectList
+
             # Termination #1
             for t in self.terminations:
                 self.ended, win = t.isDone(self)
@@ -583,8 +590,6 @@ class BasicGame(object):
             for s in self:
                 s.update(self)
 
-            # handle collision effects
-            effectList = self._eventHandling()
             
             # Termination #2 : Avatars have been killed
             if len(self.getAvatars()) == 0:
@@ -617,9 +622,9 @@ class BasicGame(object):
             [os.remove(f) for f in glob.glob(tmp_dir + "*" + str(self.uiud) + "*")]
 
         # Print entire history of effects
-        gameEndEvent = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': [('gameEnd')]}
+        gameEndEvent = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList.append('gameEnd')}
         print gameEndEvent
-        
+
         finalEventList.append((gameEndEvent))
         print finalEventList
 

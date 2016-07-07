@@ -109,7 +109,7 @@ this yields multiple theories, then return all of them and store them in your
 hypothesis space.
 '''
 class Theory(object):
-	def __init__(self):
+	def __init__(self, game):
 		self.spriteSet = [] # property rules
 		self.levelMapping = []
 		self.interactionSet = [] # interaction rules
@@ -119,7 +119,8 @@ class Theory(object):
 		self.parent = None
 		self.children = []
 		self.depth = 0
-		self.theoryID = False
+		self.theoryID = 0
+		self.game = game
 
 	def displayRules(self):
 		print ""
@@ -140,17 +141,17 @@ class Theory(object):
 
 	def addChild(self, theory):
 		self.children.append(theory)
-		g.hypothesisSpace.append(theory)
+		self.game.hypothesisSpace.append(theory)
 
 	def extend(self, proposals, timesteps, hypothetical=False):
 		"""
 		Add new theories to hypothesis space. Can add hypothetical hypotheses.
 
 		- If hypothetical is False: 
-			Actually extends g.hypothesisSpace to include theories that are built by incorporating the proposals
+			Actually extends self.game.hypothesisSpace to include theories that are built by incorporating the proposals
 		
 		- If hypothetical is True:
-			Generates theories that incorporate the proposals, but doesn't add them to g.hypothesisSpace. 
+			Generates theories that incorporate the proposals, but doesn't add them to self.game.hypothesisSpace. 
 			This is so that if you have, say, [e1,e2,e3] at a single timestep, you can generate theories that can explain
 			all three events. 
 			This necessitates generating theories for e1, and then conditioning on those to generate theories for e2, and so on.
@@ -167,9 +168,9 @@ class Theory(object):
 
 			if not hypothetical:
 				if all(likelihoods):
-					newTheory.theoryID = g.theoryCount
+					newTheory.theoryID = self.game.theoryCount
 					# print 'theory', newTheory.theoryID, 'worked. adding it:'
-					g.theoryCount = g.theoryCount + 1
+					self.game.theoryCount = self.game.theoryCount + 1
 					self.addChild(newTheory)
 			elif hypothetical:
 				#TODO: increment theoryID appropriately.
@@ -182,7 +183,7 @@ class Theory(object):
 
 	def replace(self, hypotheses, timesteps):
 		'''
-		Eliminates current hypothesis from g.hypothesisSpace; replaces it with all the ones it spawned.
+		Eliminates current hypothesis from self.game.hypothesisSpace; replaces it with all the ones it spawned.
 		'''
 		madeChange = False
 		for hypothesis in hypotheses:
@@ -192,9 +193,9 @@ class Theory(object):
 				madeChange=True
 				# print "adding", hypothesis.display()
 				# print ""
-				g.hypothesisSpace.append(hypothesis)
+				self.game.hypothesisSpace.append(hypothesis)
 		if madeChange:
-			g.hypothesisSpace.remove(self)
+			self.game.hypothesisSpace.remove(self)
 
 	def assignClass(self, classObjectPair):
 		'''
@@ -420,8 +421,9 @@ class Theory(object):
 
 	def generateHypotheses(self, timestep, hypotheticals=False, verbose=False):
 		# Count how many events are in the list. 
-		#Base case: Only one tuple
-		if len([e for e in timestep.events if type(e)==tuple])==1: # TODO: When would there be different event data types (i.e. not tuples?)
+		
+		#Base case: Only one tuple	
+		if len([e for e in timestep.events if type(e)==tuple])==1: # TODO: When would there be different event data types (i.e. not tuples?); change to "if len(timestep.events)==1:"?
 			if verbose:
 				print "in base case"
 
@@ -473,34 +475,42 @@ class Theory(object):
 		
 		#The below should not be if/else; it should do all but the first 
 		#condition simultaneously.
+
+		# Empty theory: first interaction encountered.
 		if len(self.interactionSet) == 0:
-			#base case: no theory yet.
 			interaction = InteractionRule(event[0], 'c1', 'c2')
 			classAssignments = [('c1', event[1]), ('c2', event[2])]
 			if verbose:
 				print "no theory yet. Proposing", interaction.asTuple(), "with class assignments:", classAssignments
 			proposals.append([interaction, classAssignments])
 		
+		# Non-empty theory
 		else:
+			# Case 1: Event predicate previously seen. 
 			if event[0] in self.predicates:
 				relevantRules = [rule for rule in self.interactionSet if rule.interaction==event[0]]
+
+				# Case 1A: Known predicate, but current assignments don't fit
 				if not (self.getClass(event[1]) and self.getClass(event[2])):
-					#known predicate, but current assignments don't fit
 					if verbose:
 						print event[0], "is a known predicate, but current assignments don't fit. Proposing extensions"
 					new_proposals = self.keepRulesAddAssignments(event)
 					proposals.extend(new_proposals)	
 
+				# Case 2A: Known predicate, and one of the assignments fit
 			 	elif not any([rule.slot1==self.getClass(event[1]) and rule.slot2==self.getClass(event[2]) for rule in relevantRules]):				
 			 		if verbose:
 						print event[0], "uses a known predicate, but current rules don't cover it. Proposing extensions"
 			 		new_proposals = self.keepAssignmentsAddRules(event)
 			 		proposals.extend(new_proposals)
+			 	
 			 	else:
 			 		if verbose:
 			 			print event[0], "is a known predicate and classes are known. Proposing preconditions."
 			 		new_proposals = self.keepAssignmentsAddPreconditions(backpack, event)
 					proposals.extend(new_proposals)
+
+			# Case 2: (May be unused) Object classes known, and resources collected
 			elif event[0] in self.predicates and (self.getClass(event[1]) and self.getClass(event[2])) and len(backpack.keys())>0:
 				#FIX: This is sketchy; it's not checking for predicates being in the right slots.
 				#if we know the predicate and the classes but for some reason we've been sent to generate proposals,
@@ -509,12 +519,15 @@ class Theory(object):
 					print "known predicate and classes. Proposing preconditions:"
 				new_proposals = self.keepAssignmentsAddPreconditions(backpack, event)
 				proposals.extend(new_proposals)
+			
+			# Case 3: New predicate; propose new predicate with all possible new assignments.
 			elif event[0] not in self.predicates:
-				#new predicate. propose new predicate with all possible new assignments.
 				if verbose:
 					print "encountered new predicate", event[0]+". Proposing new predicate + new assignments:"
-				new_proposals = self.keepAssignmentsAddRules(event)
+				new_proposals = self.keepAssignmentsAddRules(event) # Keep class assignments, add new rules/predicates
 				proposals.extend(new_proposals)
+			
+			# Case 4: (TODO: is this used?) Not covered by other cases...
 			else:
 				if verbose:
 					print "timestep doesn't match any theory-induction conditions."
@@ -526,11 +539,11 @@ class Theory(object):
 				p[0].display()
 				print p[1]
 			print "____"
-			# print proposals
+
 		if not hypothetical:
 			return proposals
 		elif hypothetical:
-			return self.extend(proposals, [timestep], hypothetical=True)
+			return self.extend(proposals, [timestep], hypothetical=True) #TODO: Combine self.extend and generateProposals/generateHypotheses somehow?
 
 
 def generateNumberConcepts(c,n):
@@ -540,16 +553,21 @@ def generateNumberConcepts(c,n):
 		concepts.append((text,c,i))
 	return concepts
 
-def induction(g, theory, timesteps):
-	theory = Theory()
+def induction(g, timesteps):
+	'''
+	Main induction function.
+	'''
+	theory = Theory(g)
 	g.hypothesisSpace = [theory]
-	print g.theoryCount, "theories"
+	print g.theoryCount, "theories \n\n"
 	to_remove = []
 	for i in range(len(timesteps)):
 		timestep = timesteps[i]
-		print "interpreting timestep", i, "events:", timestep.events
-		print "(theory IDs, likelihoods):"
-		print [(h.theoryID, h.likelihood(timestep)) for h in g.hypothesisSpace] # TODO: Why are theoryIDs appearing as False?
+		print "Interpreting events from time {}: {}".format(i, timestep.events)
+
+		theories = [(h.theoryID, h.likelihood(timestep)) for h in g.hypothesisSpace] # TODO: Need to fix how theoryIDs are updated
+		print "Current theories (theory IDs, likelihoods): \n\t {}".format(theories)
+		
 		for h in g.hypothesisSpace:
 			if h.likelihood(timestep) < 1.0:
 				newHypotheses = h.generateHypotheses(timestep)
@@ -565,13 +583,17 @@ def induction(g, theory, timesteps):
 
 if __name__ == "__main__":
 	g = Game()
-	trace = [{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, {'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': 'up', 'agentState': {'medicine': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', 1), ('killSprite', 'DARKBLUE', 'WHITE')]}]
+	trace = [{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
+	{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, 
+	{'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
+	{'agentAction': 'up', 'agentState': {'medicine': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', 1), ('killSprite', 'DARKBLUE', 'WHITE')]}]
+	
 	#,{'agentAction': 'down', 'agentState': {'medicine': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
 	timesteps = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in trace]
 
 
 	"""Testing precondition machinery"""
-	t = Theory()
+	t = Theory(g)
 	g.hypothesisSpace = [t]
 	g.backpack = {'health':0, 'treasure':1, 'coin':3}
 
