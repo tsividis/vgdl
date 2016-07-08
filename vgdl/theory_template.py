@@ -159,7 +159,6 @@ class Theory(object):
 		if madeChange:
 			g.hypothesisSpace.remove(self)
 
-
 	def displayRules(self):
 		print ""
 		print "Current rule set:"
@@ -325,7 +324,7 @@ class Theory(object):
 			return list(itertools.product(x1,x2))
 		else: return False
 
-	def keepRulesAddAssignments(self, event):
+	def addAssignmentsKeepRules(self, event):
 		"""
 		Try to make it fit according to the current rules by searching
 		over possible class assignments for the objects
@@ -361,7 +360,7 @@ class Theory(object):
 			possibleRules.append([interaction, classAssignments])
 		return possibleRules
 
-	def keepAssignmentsAddPreconditions(self, backpack, event):
+	def addPreconditions(self, backpack, event):
 		concepts = []
 		# print backpack
 		for b in backpack.keys():
@@ -442,7 +441,7 @@ class Theory(object):
 					#known predicate, but current assignments don't fit
 					if verbose:
 						print event[0], "is a known predicate, but current assignments don't fit. Proposing extensions"
-					new_proposals = self.keepRulesAddAssignments(event)
+					new_proposals = self.addAssignmentsKeepRules(event)
 					proposals.extend(new_proposals)	
 
 			 	elif not any([rule.slot1==self.getClass(event[1]) and rule.slot2==self.getClass(event[2]) for rule in relevantRules]):				
@@ -453,7 +452,7 @@ class Theory(object):
 			 	else:
 			 		if verbose:
 			 			print event[0], "is a known predicate and classes are known. Proposing preconditions."
-			 		new_proposals = self.keepAssignmentsAddPreconditions(backpack, event)
+			 		new_proposals = self.addPreconditions(backpack, event)
 					proposals.extend(new_proposals)
 			elif event[0] in self.predicates and (self.getClass(event[1]) and self.getClass(event[2])) and len(backpack.keys())>0:
 				#FIX: This is sketchy; it's not checking for predicates being in the right slots.
@@ -461,13 +460,13 @@ class Theory(object):
 				#generate precondition proposals:
 				if verbose:
 					print "known predicate and classes. Proposing preconditions:"
-				new_proposals = self.keepAssignmentsAddPreconditions(backpack, event)
+				new_proposals = self.addPreconditions(backpack, event)
 				proposals.extend(new_proposals)
 			elif event[0] not in self.predicates:
 				#new predicate. propose new predicate with all possible new assignments.
 				if verbose:
 					print "encountered new predicate", event[0]+". Proposing new predicate + new assignments:"
-				new_proposals = self.keepAssignmentsAddRules(event)
+				new_proposals = self.keepAssignmentsAddRules(event) #this isn't trying to make new assignments -- seems wrong.
 				proposals.extend(new_proposals)
 			else:
 				if verbose:
