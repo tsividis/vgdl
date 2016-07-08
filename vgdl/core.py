@@ -534,10 +534,16 @@ class BasicGame(object):
         lastKeyPressTime=0 #PT
 
         # --------- Game-play ------------
+        finalEventList = []
+        agentStatePrev = {}
         agentState = dict(self.getAvatars()[0].resources)
+        keyPressPrev = None
         initial = {'agentState': agentState, 'agentAction': None, 'effectList': []}
         print initial
-        finalEventList = []
+        
+
+        finalEventList.append(initial)
+
 
         while not self.ended:
             clock.tick(self.frame_rate)
@@ -576,9 +582,23 @@ class BasicGame(object):
 
             # handle collision effects
             effectList = self._eventHandling()
+
+            # Save the event and agent state
+            try:
+                agentState = dict(self.getAvatars()[0].resources)
+                agentStatePrev = agentState
+                keyPressPrev = keyPressType
+
+            # If agent is killed before we get agentState
+            except Exception as e:              # TODO: how to process changes in resources that led to termination state?
+                agentState = agentStatePrev
+                keyPressType = keyPressPrev
+                print "ERROR: {} --> {}".format(e, "Using previous agent state...")
+
             if effectList:
-                print 'EFFECT FOUND --> '
-                print effectList
+                event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList}
+                print "event: ", event
+                finalEventList.append(event)
 
             # Termination #1
             for t in self.terminations:
@@ -594,14 +614,6 @@ class BasicGame(object):
             # Termination #2 : Avatars have been killed
             if len(self.getAvatars()) == 0:
                 break
-
-            # Display the updated agentState (TODO: move above the terminations?)
-            agentState = dict(self.getAvatars()[0].resources)
-            if len(effectList) > 0:
-                event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList}
-                print event
-                finalEventList.append(event)
-
 
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
@@ -622,7 +634,7 @@ class BasicGame(object):
             [os.remove(f) for f in glob.glob(tmp_dir + "*" + str(self.uiud) + "*")]
 
         # Print entire history of effects
-        gameEndEvent = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList.append('gameEnd')}
+        gameEndEvent = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': ['gameEnd']}
         print gameEndEvent
 
         finalEventList.append((gameEndEvent))
