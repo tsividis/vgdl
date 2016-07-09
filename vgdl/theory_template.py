@@ -7,12 +7,12 @@ class Game(object):
 		self.hypothesisSpace = []
 		self.theoryCount = 0
 
-class TimeStep(object): # TODO: Rename to "Event"?
+class TimeStep(object): 
 	def __init__(self, agentAction, agentState, events):
 		self.agentAction = agentAction
 		self.agentState = agentState
 		self.events = events
-		self.t = False # TODO: What is self.t?
+		self.t = False # Timestep number
 '''
 class Precondition(object):
 	"""
@@ -587,7 +587,7 @@ if __name__ == "__main__":
 	{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, 
 	{'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
 	{'agentAction': 'up', 'agentState': {'medicine': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', 1), ('killSprite', 'DARKBLUE', 'WHITE')]}]
-	
+
 	#,{'agentAction': 'down', 'agentState': {'medicine': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
 	timesteps = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in trace]
 
