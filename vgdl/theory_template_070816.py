@@ -1,4 +1,5 @@
 import itertools, random, copy
+
 """
 Theory induction on VGDL Games
 """
@@ -45,6 +46,7 @@ class Game(object):
 		"""
 		self.hypothesisSpace = [t for t in self.hypothesisSpace if all([t.likelihood(s)>=threshold for s in subtrace])]
 		return
+
 
 class Theory:
 	"""
@@ -437,7 +439,6 @@ class Theory:
 		self.displayClasses()
 		return
 
-
 class TimeStep: 
 	"""
 	Everything that happened in a time step in the game.
@@ -454,7 +455,6 @@ class TimeStep:
 		self.agentState = agentState # agent's backpack
 		self.events = events 
 		self.t = False # Number timestep
-
 
 
 class Precondition(object): # TODO: Icorporate into framework
@@ -533,4 +533,3 @@ trace = [{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward'
 #,{'agentAction': 'down', 'agentState': {'medicine': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
 timesteps = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in trace]
 h=g.induction(timesteps[0:4])
-
