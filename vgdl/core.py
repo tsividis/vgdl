@@ -489,7 +489,7 @@ class BasicGame(object):
                     if switch:
                         # CHECKME: this is not a bullet-proof way, but seems to work
                         if s2 not in self.kill_list:
-                            if effect.__name__ == "changeResource":
+                            if effect.__name__ == "changeResource": # TODO: A little hack-y, but works for now.
                                 resource = kwargs['resource']
                                 (sclass, args, stypes) = self.sprite_constr[resource]
                                 resource_color = args['color']
@@ -503,7 +503,7 @@ class BasicGame(object):
                     else:
                         # CHECKME: this is not a bullet-proof way, but seems to work
                         if s1 not in self.kill_list:
-                            if effect.__name__ == "changeResource":
+                            if effect.__name__ == "changeResource":  # TODO: A little hack-y, but works for now.
                                 resource = kwargs['resource']
                                 (sclass, args, stypes) = self.sprite_constr[resource]
                                 resource_color = args['color']
@@ -573,6 +573,13 @@ class BasicGame(object):
                 if self.keystate[K_1]:
                     self._lastsaved = self.getFullState()
 
+
+            # handle collision effects
+            effectList = self._eventHandling()
+            if effectList:
+                print 'EFFECT FOUND --> '
+                print effectList
+
             # Termination #1
             for t in self.terminations:
                 self.ended, win = t.isDone(self)
@@ -583,8 +590,6 @@ class BasicGame(object):
             for s in self:
                 s.update(self)
 
-            # handle collision effects
-            effectList = self._eventHandling()
             
             # Termination #2 : Avatars have been killed
             if len(self.getAvatars()) == 0:
@@ -617,6 +622,10 @@ class BasicGame(object):
             [os.remove(f) for f in glob.glob(tmp_dir + "*" + str(self.uiud) + "*")]
 
         # Print entire history of effects
+        gameEndEvent = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList.append('gameEnd')}
+        print gameEndEvent
+
+        finalEventList.append((gameEndEvent))
         print finalEventList
 
         if win:

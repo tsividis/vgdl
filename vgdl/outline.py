@@ -80,22 +80,24 @@ def theory.generateTheories(event):
 
 	Else, the problem is due to one of the following cases:
 
-		Case 1: We know the event name and the object classes,
+		Case 1: The interpreted event is in the interactionSet,
 				but the current theory didn't predict what happened.
 		Solution: 	Add preconditions
-		Call: 		AddPreconditions(event)
+		Call: 		addPreconditions(event)
 
-		Case 2: We know the event name, but don't know at least one of the object classes.
+		Case 2: We know the event name and the object classes, 
+				but the interpetation is not in the interactionSet
+		Solution:	Add a line to the interactionSet
+		Call:		addRules(event) <<?
+
+		Case 3: We know the event name, but don't know at least one of the object classes.
 		Solution:	Add assignments (e.g., assign objects to existing or new classes)
-		Call:		addAssignmentsKeepRules(event)
+		Call:		addAssignments(event)
 		
-		Case 3: We don't know event name, but we do know the object classes.
-		Solution: 	Add a new line to the ruleset: (eventName, class(obj1), class(obj2))
-		Call: 		keepAssignmentsAddRules(event)
-
-		Case 4: We don't know the event name or the object classes.
-		Solution:	Add a new line to the ruleset. Class assignments could be anything!
-		Call:		addAssignmentsAddRules(event)
+		Case 3: We don't know event name.
+		Solution: 	Add a new line to the ruleset: (eventName, class(obj1), class(obj2)).
+						class(obj1) and class(obj2) are either the known ones or new ones; function takes care of all proposals.
+		Call: 		AddRules(event)
 
 		Each of these appends to theories []
 
