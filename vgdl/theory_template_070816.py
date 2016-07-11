@@ -525,11 +525,11 @@ class InteractionRule(object):
 
 
 g = Game()
-trace = [{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
+rawTrace = [{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
 {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, 
 {'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
 {'agentAction': 'up', 'agentState': {}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', 1), ('killSprite', 'DARKBLUE', 'WHITE')]}]
 
 #,{'agentAction': 'down', 'agentState': {'medicine': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
-timesteps = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in trace]
-h=g.induction(timesteps[0:4])
+trace = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in rawTrace]
+h=g.induction(trace[0:4])
