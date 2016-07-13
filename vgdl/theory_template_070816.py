@@ -1,5 +1,4 @@
 import itertools, random, copy
-
 """
 Theory induction on VGDL Games
 """
@@ -15,7 +14,7 @@ class Game(object):
 		#self.trace = [] # list of TimeStep objects that happened during a gameplay
 
 		# Induction states
-		self.hypothesisSpace = []
+		self.hypothesisSpace = set()
 		self.theoryCount = 0
 	
 	def display(self):
@@ -25,18 +24,28 @@ class Game(object):
 		"""
 		Iterates through trace, performing theory induction on each timestep
 		"""
-		self.hypothesisSpace = [Theory(self)]
+		self.hypothesisSpace = set([Theory(self)])
+		newTheories = []
 
-		for i in range(len(trace)): #iterate through each timestep
+		# For every timestep
+		for i in range(len(trace)): 
 			timestep = trace[i]
 			print "explaining events {}".format(timestep.events)
-			for theory in self.hypothesisSpace: 			# Iterate through each theory
+
+			# For every theory
+			for theory in self.hypothesisSpace: 			
 				if theory.likelihood(timestep) < 1.0: 	# Theory needs to be changed
-					newTheories = theory.explainTimeStep(timestep)
-					self.hypothesisSpace.extend(newTheories) #TODO: numbering of theories should take place here.
+					newTheories.extend(theory.explainTimeStep(timestep))
+
+			for theory in newTheories:
+				if theory not in self.hypothesisSpace:
+					self.hypothesisSpace.add(theory)
+			#self.hypothesisSpace.update(newTheories) #TODO: numbering of theories should take place here.	
+			
 			self.cleanHypothesisSpace(trace[0:i+1], 1) #All timesteps up to now should be fully explained
 			print "{} hypotheses".format(len(self.hypothesisSpace))
 			print "_______"
+		
 		return self.hypothesisSpace
 
 	def cleanHypothesisSpace(self, subtrace, threshold):
@@ -44,11 +53,119 @@ class Game(object):
 		Removes theories from hypothesisSpace if their likelihood for the timesteps
 		passed in 'subtrace' is below threshold.
 		"""
-		self.hypothesisSpace = [t for t in self.hypothesisSpace if all([t.likelihood(s)>=threshold for s in subtrace])]
+		self.hypothesisSpace = set([t for t in self.hypothesisSpace if all([t.likelihood(s)>=threshold for s in subtrace])])
 		return
 
 
-class Theory:
+class TimeStep: 
+	"""
+	Everything that happened in a time step in the game.
+	
+	Ex.)
+	TimeStep.agentAction = 'up'
+	TimeStep.agentState = {'health':1, 'treasure':2}
+	TimeStep.events = [(bounceForward, BLUE, ORANGE), (undoAll, ORANGE, BLACK)]
+	TimeStep.t = 4  --> meaning all of this took place at t_4
+	"""
+
+	def __init__(self, agentAction, agentState, events):
+		self.agentAction = agentAction 
+		self.agentState = agentState # agent's backpack
+		self.events = events 
+		self.t = False # Number timestep
+
+
+class Precondition(object): # TODO: Icorporate into framework
+	"""
+
+	"""
+	def __init__(self, text, fn):
+		self.text = text
+		self.fn = fn
+
+	def check(self, arg):	# TODO: Is 'arg' most likely 'backpack'?
+		return self.fn(arg) # Need to pass in backpack into this function to get updated values
+
+	def display(self):
+		print self.text
+
+	def __eq__(self, other):
+		print "Using Precondition new equality function."
+		return self.text == other.text
+
+	def __ne__(self, other):
+		return not self.__eq__(other)
+
+class Property(object):
+	"""
+	TODO: 
+	Incorporate properties into theory induction loop.
+	"""
+	def __init__(self, vgdlType, color, args):
+		self.vgdlType = vgdlType
+		self.color = color 
+		self.args = args
+
+	# TODO: Should enforce proper syntax for properties
+	def display():
+		pass
+
+
+class InteractionRule(object):
+	"""
+	Rule defining how 2 classes of objects interact with each other.
+	# TODO: Should enforce proper syntax for interaction rules
+
+	"""
+	def __init__(self, interaction, c1, c2, preconditions=set()):
+		self.interaction = interaction
+		self.slot1 = c1
+		self.slot2 = c2
+		self.preconditions = preconditions
+
+	def display(self):
+		if not self.preconditions:
+			print self.interaction, self.slot1, self.slot2
+		else:
+			print self.interaction, self.slot1, self.slot2, [p.text for p in self.preconditions]
+		return
+
+	def asTuple(self):
+		return (self.interaction, self.slot1, self.slot2)
+
+	def addPrecondition(self, precondition):
+		"""
+		TODO: Now that we've reimplemented preconditions as lambda functions,
+		it can't properly check for equality of preconditions. You *may*
+		be able to get around this by checking for the equality of precondition.text
+		and making sure that precondition.text always reflects the functioning of the
+		lambda function.
+		"""
+		if precondition.text not in [p.text for p in self.preconditions]:
+			self.preconditions.add(precondition)
+		return
+
+	def checkPreconditions(self, agentState):
+		return all([p.check(agentState) for p in self.preconditions])
+
+	def __eq__(self, other):
+		print "Using Precondition new equality function"
+		if isinstance(other, self.__class__):
+			print "ALMOST THERE"
+			return all([
+				self.asTuple()==other.asTuple(),
+				self.preconditions==other.preconditions
+				])
+		else:
+			return False
+
+	def __ne__(self, other):
+		return not self.__eq__(other)
+
+
+
+
+class Theory(object):
 	"""
 	A VGDL description of a game
 	"""
@@ -391,7 +508,7 @@ class Theory:
 		return False 				# Uninterpretable interpretation returns False, too.
 
 
-	def searchForPossibleClasses(self, o, newClasses=0):
+	def searchForPossibleClasses(self, o, newClasses=0): #TODO: Seems to add an extra class
 		'''
 		If the object has been assigned, return it. Otherwise return all
 		possible classes. Optional argument can posit existence of a new class;
@@ -411,7 +528,7 @@ class Theory:
 		else: return []
 
 	def searchForAssignments(self, event):
-		x1, x2 = self.searchForPossibleClasses(event[1]), self.searchForPossibleClasses(event[2])
+		x1, x2 = self.searchForPossibleClasses(event[1]), self.searchForPossibleClasses(event[2]) #TODO: should consider that there could be a new class
 		if x1 and x2: #if both yielded possibilities
 			return list(itertools.product(x1,x2))
 		else: return False
@@ -439,93 +556,27 @@ class Theory:
 		self.displayClasses()
 		return
 
-class TimeStep: 
-	"""
-	Everything that happened in a time step in the game.
-	
-	Ex.)
-	TimeStep.agentAction = 'up'
-	TimeStep.agentState = {'health':1, 'treasure':2}
-	TimeStep.events = [(bounceForward, BLUE, ORANGE), (undoAll, ORANGE, BLACK)]
-	TimeStep.t = 4  --> meaning all of this took place at t_4
-	"""
-
-	def __init__(self, agentAction, agentState, events):
-		self.agentAction = agentAction 
-		self.agentState = agentState # agent's backpack
-		self.events = events 
-		self.t = False # Number timestep
-
-
-class Precondition(object): # TODO: Icorporate into framework
-	def __init__(self, text, fn):
-		self.text = text
-		self.fn = fn
-
-	def check(self, arg):	# TODO: Is 'arg' most likely 'backpack'?
-		return self.fn(arg) # Need to pass in backpack into this function to get updated values
-
-	def display(self):
-		print self.text
-
-
-
-class Property(object):
-	"""
-	TODO: 
-	Incorporate properties into theory induction loop.
-	"""
-	def __init__(self, vgdlType, color, args):
-		self.vgdlType = vgdlType
-		self.color = color 
-		self.args = args
-
-	# TODO: Should enforce proper syntax for properties
-	def display():
-		pass
-
-
-
-class InteractionRule(object):
-	'''
-	Rule defining how 2 classes of objects interact with each other.
-	# TODO: Should enforce proper syntax for interaction rules
-
-	'''
-	def __init__(self, interaction, c1, c2, preconditions=[]):
-		self.interaction = interaction
-		self.slot1 = c1
-		self.slot2 = c2
-		self.preconditions = preconditions
-
-	def display(self):
-		if not self.preconditions:
-			print self.interaction, self.slot1, self.slot2
+	def __eq__(self, other):
+		if isinstance(other, self.__class__):
+			return all([
+				self.spriteSet == other.spriteSet, 
+				self.levelMapping == other.levelMapping, 
+				self.interactionSet == other.interactionSet,
+				self.terminationSet == other.terminationSet,
+				self.classes == other.classes,
+				self.predicates == other.predicates])
 		else:
-			print self.interaction, self.slot1, self.slot2, [p.text for p in self.preconditions]
-		return
+			return False
 
-	def asTuple(self):
-		return (self.interaction, self.slot1, self.slot2)
+	def __ne__(self, other):
+		return not self.__eq__(other)
 
-	def addPrecondition(self, precondition):
-		"""
-		TODO: Now that we've reimplemented preconditions as lambda functions,
-		it can't properly check for equality of preconditions. You *may*
-		be able to get around this by checking for the equality of precondition.text
-		and making sure that precondition.text always reflects the functioning of the
-		lambda function.
-		"""
-		if precondition.text not in [p.text for p in self.preconditions]:
-			self.preconditions.append(precondition)
-		return
 
-	def checkPreconditions(self, agentState):
-		return all([p.check(agentState) for p in self.preconditions])
 
 
 g = Game()
-rawTrace = [{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
+rawTrace = [
+{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
 {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, 
 {'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
 {'agentAction': 'up', 'agentState': {}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', 1), ('killSprite', 'DARKBLUE', 'WHITE')]}]
