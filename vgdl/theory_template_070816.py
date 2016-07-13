@@ -327,10 +327,10 @@ class Theory(object):
 
 	AddPreconditions:
 		Numerical preconditions:
-		Make precondition generator make: >=1, <1, >0, <=0 
+			Make precondition generator make: >=1, <1, >0, <=0 
 		x Make negation operator
 		x And anytime you add the precondition, add the negation to any other rule about the same classes.
-	For now:
+	Current assumptions:
 		no grammar over preconditions
 		preconditions limited to claims about a SINGLE object
 		preconditions limited to simple comparison operators.
@@ -405,8 +405,9 @@ class Theory(object):
 		if not copiedPreconditions:
 			newTheories = []
 			concepts = []
-			for k in agentState.keys():
-				concepts.extend(self.generateNumberConcepts(k, agentState[k]))
+			for item in agentState.keys():
+				concepts.extend(self.generateNumberConcepts(item, agentState[item]))
+			
 			preconditions = []
 			for c in concepts:
 				def f(x):
@@ -581,11 +582,11 @@ class Theory(object):
 		# print "didn't find it"
 		return False
 
-	def addChild(self, theory):
-		'''
-		'''
-		self.children.append(theory)
-		self.game.hypothesisSpace.append(theory)
+	# def addChild(self, theory): #TODO: Doesn't seem to be used anywhere
+	# 	'''
+	# 	'''
+	# 	self.children.append(theory)
+	# 	self.game.hypothesisSpace.append(theory)
 	
 	def interpret(self, event): 
 		'''
@@ -644,7 +645,7 @@ class Theory(object):
 		return False 				# Uninterpretable interpretation returns False, too.
 
 
-	def searchForPossibleClasses(self, o, newClasses=0): #TODO: Seems to add an extra class
+	def searchForPossibleClasses(self, o, newClasses=0): # TODO: Seems to add an extra class
 		'''
 		If the object has been assigned, return it. Otherwise return all
 		possible classes. Optional argument can posit existence of a new class;
@@ -676,12 +677,19 @@ class Theory(object):
 			return list(itertools.product(x1,x2))
 		else: return False
 
-	def generateNumberConcepts(self, c, n):
+	def generateNumberConcepts(self, item, num):
+		"""
+		Preconditions can be drawn from a pre-defined set of number concepts:
+		n >= 0  --> any numbers from 0 to inf (having this amount of health is fine)
+		n < 0 --> any negative numbers 		  (having this amount of health is bad)
+		n >= 1 --> any numbers from 1 to inf  (having this amount of medicine and touching poison = safe)
+		n < 1 --> any numbers from -inf to 0  (having this amount of medicine and touching poison = death)
+		"""
 		concepts = []
-		for i in range(n):
-			text = c+">"+str(i)
-			concepts.append((text,c,i))
-		return concepts
+		for n in range(num):
+			text = item+">"+str(n)
+			concepts.append((text,item,n))
+		return concepts 					# TODO: Should this return functions and text? (text, function) tuples?
 
 	def displayRules(self):
 		print ""
