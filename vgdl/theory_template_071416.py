@@ -7,62 +7,17 @@ Theory induction on VGDL Games
 '''
 
 TODO: 7/14/16:
-	debug
-	other cleanup
+	Debug
+	Other cleanup
+	Change generateNumberConcepts to make the simpler possibilities:  >=1, <1, >0, <=0 
 
-AddPreconditions:
-	Numerical preconditions:
-		Make precondition generator make: >=1, <1, >0, <=0 
+
+NOTES:
 Current assumptions:
 	no grammar over preconditions
 	preconditions limited to claims about a SINGLE object
 	preconditions limited to simple comparison operators.
 	Events that take place at same timestep can only be because of the same preconditions.
-TODO: 7/13/16:
-	What this returns needs to be a function of BOTH checkIfEventsAreInRules and checkIfAllPredictionsHappened.
-	checkIfAllPredictionsHappened needs to return False, True, or [] (for rules that succeeded because there were not relevant rules)
-	You will need to change checkIfAllPredictionsHappened, to deal with what happens
-	when any of relevantRules are empty. It needs to return three different potential values:
-		-relevant rules exist and all are fulfilled
-		-no relevant rules exist
-		-relevant rules exist and are not fulfilled
-
-	See photo, for appropriate failCase and corresponding addPreconditions(), addRules(), addPreconditions(newrules) behavior.
-
-	Likelihood now explaining events, not timesteps? Clean up.
-
-	Check whether the case-checking functions are working properly.
-
-	AddPreconditions:
-		Numerical preconditions:
-			Make precondition generator make: >=1, <1, >0, <=0 
-		x Make negation operator
-		x And anytime you add the precondition, add the negation to any other rule about the same classes.
-	Current assumptions:
-		no grammar over preconditions
-		preconditions limited to claims about a SINGLE object
-		preconditions limited to simple comparison operators.
-		Events that take place at same timestep can only be because of the same preconditions.
-
-	Change generateNumberConcepts to make the simpler possibilities.
-
-	You're debugging the case where 2 interactions with the same classes happen in a single timestep.
-	You need to rethink your cases with a clear head. Case 1 is definitely wrong; probably so are the others.
-
-		make preconditions for current state.
-		heath:1, sword:1
-		health>0, s>0
-
-	add preconditions to any unexplained events
-	add negations of preconditions to any unfulfilled predictions.
-
-### Test Cases ###
-Same classes, difference in expected events + actual events
-- Rules: {ks c2 c3, cR c2 c3, aB c2 c3}; Events: {ks c2 c3, cR c2 c3}, health=5 --> add precondition to aB, not to ks or cR (checkEvents pass, checkRules fail)
-- Rules: {ks c2 c3}; Events: {ks c2 c3, cR c2 c3}, health=1 --> add new rule cR with precondition (checkEvents fail, checkRules pass)
-- Rules: {ks c2 c3}; Events: {cR c2 c3} --> add precondition to ks and add new rule cR with precondition (checkEvents fail, checkRules fail)
-- Rules: {} (checkEvents fails, checkRules [] b/c no knowledge about current event/objects)
-
 
 '''
 
@@ -93,11 +48,12 @@ class Game(object):
 		for i in range(len(trace)): 
 			timestep = trace[i]
 			print "explaining events {}".format(timestep.events)
+			print "___________________________________________________________________________________________________"
 
 			# For every theory
 			for theory in self.hypothesisSpace: 			
 				if theory.likelihood(timestep) < 1.0: 	# Theory needs to be changed
-					print "likelihood", theory.likelihood(timestep)
+					# print "likelihood", theory.likelihood(timestep)
 					newTheories.extend(theory.explainTimeStep(timestep, timestep))
 
 			for theory in newTheories:
@@ -105,8 +61,14 @@ class Game(object):
 					self.hypothesisSpace.add(theory) #TODO: numbering of theories should take place here.	
 			
 			self.cleanHypothesisSpace(trace[0:i+1], 1) #All timesteps up to now should be fully explained
-			print "{} hypotheses".format(len(self.hypothesisSpace))
-			print "_______"
+			print "{} hypotheses:".format(len(self.hypothesisSpace))
+			
+			#Sort hypotheses (right now by simple length metric), then print.
+			hypotheses = sorted(list(self.hypothesisSpace), key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
+			for h in hypotheses:
+				h.display()
+			print "___________________________________________________________________________________________________"
+			print ""
 		
 		return self.hypothesisSpace
 
@@ -130,7 +92,6 @@ class Game(object):
 
 		return
 
-
 class TimeStep: 
 	"""
 	Everything that happened in a time step in the game.
@@ -147,7 +108,6 @@ class TimeStep:
 		self.agentState = agentState # agent's backpack
 		self.events = events 
 		self.t = False # Number timestep
-
 
 class Precondition(object):
 	def __init__(self, text, fn):
@@ -171,12 +131,11 @@ class Precondition(object):
 		print self.text
 
 	def __eq__(self, other):
-		print "Using Precondition new equality function."
+		# print "Using Precondition new equality function."
 		return self.text == other.text
 
 	def __ne__(self, other):
 		return not self.__eq__(other)
-
 
 class Property(object):
 	"""
@@ -191,8 +150,6 @@ class Property(object):
 	# TODO: Should enforce proper syntax for properties
 	def display():
 		pass
-
-
 
 class InteractionRule(object):
 	"""
@@ -225,14 +182,14 @@ class InteractionRule(object):
 		lambda function.
 		"""
 		if precondition.text not in [p.text for p in self.preconditions]:
-			self.preconditions.append(precondition)
+			self.preconditions.add(precondition)
 		return
 
 	def checkPreconditions(self, agentState):
 		return all([p.check(agentState) for p in self.preconditions])
 
 	def __eq__(self, other):
-		print "Using Precondition new equality function"
+		# print "Using Precondition new equality function"
 		if isinstance(other, self.__class__):
 			return all([
 				self.asTuple()==other.asTuple(),
@@ -267,38 +224,29 @@ class Theory(object):
 
 		self.dryingPaint = set()
 		self.inModification = {}
+
+
 	"""Main functions"""
 
-	#FLAG: Potential problem with passing in preconditions=False..
 	def explainTimeStep(self, timestep, fullTimestep, currTheories=False):
-
 		"""
 		Returns a set of theories that explain all the events that took place at timestep.
 		Hypotheticals can be passed as args to enable the explanation of multiple events in a single timestep.
 		"""
 		# Base Case
-		print "events:", timestep.events
+
 		if len(timestep.events) == 1:
-			print "in base case. currTheories:", currTheories
 			theories = []
 			if not currTheories:
 				theories.extend(self.explainEvent(timestep.events[0], fullTimestep))
 			else: # Generate theories based on hypothetical theories
 				for theory in currTheories:
-					print "explaining", timestep.events
-					print "trying to expand:"
-					theory.display()
 					newTheory = theory.explainEvent(timestep.events[0], fullTimestep)
-					print "Expansions:"
-					for n in newTheory:
-						n.display()
-					print ""
 					theories.extend(newTheory)
 			return theories
 
-		# Recursive case
+		# Recursive Case
 		else:
-			print "in recursive case"
 			theories = self.explainEvent(timestep.events[0], fullTimestep)
 			updatedTimeStep = TimeStep(timestep.agentAction, timestep.agentState, timestep.events[1:])
 			return self.explainTimeStep(updatedTimeStep, fullTimestep, theories)
@@ -315,13 +263,13 @@ class Theory(object):
 		if likelihood == 1:
 			theories.append(self)
 		else:
-			failCase = self.getFailCases(event, timestep, verbose=True)
+			failCase = self.getFailCases(event, timestep)
 			if failCase in [1,2,3]:
 				theories.extend(self.addPreconditions(event, timestep))
 			elif failCase == 4: 
 				theories.extend(self.addRules(event))
 
-		print "added {} theories in total".format(len(theories))
+		# print "added {} theories in total".format(len(theories))
 
 		return theories
 
@@ -331,6 +279,8 @@ class Theory(object):
 		return all([self.checkInterpretation(i, timestep) for i in interpretations])
 
 	def checkIfAllPredictionsHappened(self, timestep):
+		#Note: This fn cannot be exactly like checkPredictions(), becase here we don't care whether 'drying paint' is 
+		#T or F. We need to actually check all the predictions.
 		interpretations = [self.interpret(event) for event in timestep.events if self.interpret(event) is not False]
 		if False not in interpretations:
 			interpretations = [interpretation.asTuple() for interpretation in interpretations]
@@ -345,15 +295,11 @@ class Theory(object):
 		return self.checkInterpretation(self.interpret(event), timestep)
 
 	def checkPredictions(self, event, timestep):
-		print "timestep events", timestep.events
 		interpretations = [self.interpret(e) for e in timestep.events if self.interpret(e) is not False]
 		if False not in interpretations:
 			interpretations = [interpretation.asTuple() for interpretation in interpretations]
 			relevantRules = self.findRelevantRules(event, timestep.agentState, checkDryingPaint=True)
 			if relevantRules:
-				print "relevant rules:",[r for r in relevantRules]
-				print "checking those rules:", all([rule in interpretations for rule in relevantRules])
-				print "interpretations", interpretations
 				return all([rule in interpretations for rule in relevantRules])
 			else:
 				return () #There were no relevant rules; need to create new rule.
@@ -441,7 +387,7 @@ class Theory(object):
 			preconditions = self.makePreconditions(concepts)
 			for precondition in preconditions:
 				interpretation = self.interpret(event)
-				interpretation.addPrecondition(p)
+				interpretation.addPrecondition(precondition)
 				newTheory = self.createChild([interpretation, False]) #TODO: make sure this is properly negating all other similar events
 
 				#Find what rules you will need to negate
@@ -635,7 +581,6 @@ class Theory(object):
 		'''
 		if interpretation:
 			interpretation = interpretation.asTuple()
-			print "interpretation", interpretation
 			for rule in self.interactionSet:
 				if rule.asTuple()==interpretation:
 					if rule.preconditions == False:
@@ -645,8 +590,6 @@ class Theory(object):
 					elif all([p.check(timestep.agentState) for p in rule.preconditions]):
 						return True
 			return False 			# If we've checked everything and found no matching rule or rule+precondition, reutrn false.
-		else:
-			print "interpetation: False"
 		return False 				# Uninterpretable interpretation returns False, too.
 
 
@@ -697,14 +640,15 @@ class Theory(object):
 
 	def displayRules(self):
 		print ""
-		print "Current rule set:"
+		print "InteractionSet:"
 		for rule in self.interactionSet:
 			rule.display()
 
 	def displayClasses(self):
-		# print ""
-		print "Current class assignments:"
+		print ""
+		print "Class assignments:"
 		print self.classes
+		print "_______"
 
 	def display(self):
 		self.displayRules()
@@ -738,21 +682,11 @@ rawTrace = [
 {'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
 {'agentAction': 'up', 'agentState': {}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE'), ('killSprite', 'DARKBLUE', 'WHITE')]}
 ]
-
-rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BROWN')]}, {'agentAction': None, 'agentState': {'medicine': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', 1), ('killSprite', 'DARKBLUE', 'WHITE')]}, {'agentAction': None, 'agentState': {'medicine': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'medicine': 0}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', -1), ('killSprite', 'DARKBLUE', 'BROWN')]}, {'agentAction': None, 'agentState': {'medicine': 0}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}, {'agentAction': None, 'agentState': {'medicine': 0}, 'effectList': ['gameEnd']}]
-'''
-eatApple BLUE WHITE
-(bounceForward BLUE WHITE) If h>1
-
-, (killSprite BLUE WHITE) 
-
-eatApple Blue white if h<=1
-bF blue WHITe if h>1
-ks blue white if h>
-'''
+rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': ['gameEnd']}]
+# rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BROWN')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'GREEN'), ('killSprite', 'DARKBLUE', 'GREEN')]}, {'agentAction': 'down', 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', -1), ('killSprite', 'DARKBLUE', 'BROWN')]}]
 
 
 trace = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in rawTrace]
 
-
-hypotheses=list(g.induction(trace))
+hypotheses=list(g.induction(trace[0:-1]))
+sorted(hypotheses, key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
