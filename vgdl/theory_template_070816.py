@@ -14,10 +14,45 @@ TODO: 7/13/16:
 
 	See photo, for appropriate failCase and corresponding addPreconditions(), addRules(), addPreconditions(newrules) behavior.
 
+	Likelihood now explaining events, not timesteps? Clean up.
+
 '''
 
+"""TODO:
 
-"""TODO: Likelihood now explaining events, not timesteps? Clean up."""
+	Check whether the case-checking functions are working properly.
+
+	AddPreconditions:
+		Numerical preconditions:
+			Make precondition generator make: >=1, <1, >0, <=0 
+		x Make negation operator
+		x And anytime you add the precondition, add the negation to any other rule about the same classes.
+	Current assumptions:
+		no grammar over preconditions
+		preconditions limited to claims about a SINGLE object
+		preconditions limited to simple comparison operators.
+		Events that take place at same timestep can only be because of the same preconditions.
+
+	Change generateNumberConcepts to make the simpler possibilities.
+
+	You're debugging the case where 2 interactions with the same classes happen in a single timestep.
+	You need to rethink your cases with a clear head. Case 1 is definitely wrong; probably so are the others.
+	"""
+
+"""
+Test Cases:
+Same classes, difference in expected events + actual events
+- Rules: {ks c2 c3, cR c2 c3, aB c2 c3}; Events: {ks c2 c3, cR c2 c3}, health=5 --> add precondition to aB, not to ks or cR (checkEvents pass, checkRules fail)
+- Rules: {ks c2 c3}; Events: {ks c2 c3, cR c2 c3}, health=1 --> add new rule cR with precondition (checkEvents fail, checkRules pass)
+- Rules: {ks c2 c3}; Events: {cR c2 c3} --> add precondition to ks and add new rule cR with precondition (checkEvents fail, checkRules fail)
+- Rules: {} (checkEvents fails, checkRules [] b/c no knowledge about current event/objects)
+
+Diff classes, difference in expected events + actual events
+- Rules: {ks c2 c3, cR c2 c3}; Events: {ks c2 c3}, 
+
+"""
+
+
 class Game(object):
 	"""
 	VGDL Game and Induction State.
@@ -320,27 +355,6 @@ class Theory(object):
 		# print ""
 		return theories
 	
-
-	"""TODO:
-
-	Check whether the case-checking functions are working properly.
-
-	AddPreconditions:
-		Numerical preconditions:
-			Make precondition generator make: >=1, <1, >0, <=0 
-		x Make negation operator
-		x And anytime you add the precondition, add the negation to any other rule about the same classes.
-	Current assumptions:
-		no grammar over preconditions
-		preconditions limited to claims about a SINGLE object
-		preconditions limited to simple comparison operators.
-		Events that take place at same timestep can only be because of the same preconditions.
-
-	Change generateNumberConcepts to make the simpler possibilities.
-
-	You're debugging the case where 2 interactions with the same classes happen in a single timestep.
-	You need to rethink your cases with a clear head. Case 1 is definitely wrong; probably so are the others.
-	"""
 
 	def case1(self, event, agentState):
 		'''
