@@ -48,7 +48,7 @@ class Game(object):
 		for i in range(len(trace)): 
 			timestep = trace[i]
 			print "explaining events {}".format(timestep.events)
-			print "___________________________________________________________________________________________________"
+			print "___________________________________________________________________"
 
 			# For every theory
 			for theory in self.hypothesisSpace: 			
@@ -63,11 +63,11 @@ class Game(object):
 			self.cleanHypothesisSpace(trace[0:i+1], 1) #All timesteps up to now should be fully explained
 			print "{} hypotheses:".format(len(self.hypothesisSpace))
 			
-			#Sort hypotheses (right now by simple length metric), then print.
+			# Sort hypotheses (right now by simple length metric), then print.
 			hypotheses = sorted(list(self.hypothesisSpace), key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
-			for h in hypotheses:
-				h.display()
-			print "___________________________________________________________________________________________________"
+			# for h in hypotheses:
+			# 	h.display()
+			print "_____________________________________________________________________"
 			print ""
 		
 		return self.hypothesisSpace
@@ -78,18 +78,12 @@ class Game(object):
 		passed in 'subtrace' is below threshold.
 		"""
 		newHypothesisSpace = []
-
 		for t in self.hypothesisSpace:
+			print [t.likelihood(s)>=threshold for s in subtrace]
 			if all([t.likelihood(s)>=threshold for s in subtrace]):
 				t.dryingPaint = set()
 				newHypothesisSpace.append(t)
-
-		# for t in self.hypothesisSpace:
-		# 	t.dryingPaint = set()
-		# 	newHypothesisSpace.append(t)
-
 		self.hypothesisSpace = set(newHypothesisSpace)
-
 		return
 
 class TimeStep: 
@@ -113,25 +107,25 @@ class Precondition(object):
 	def __init__(self, text, fn):
 		self.text = text
 		self.fn = fn
-		self.negate = False
+		self.negated = False
 
 	def check(self, arg):	# TODO: Is 'arg' most likely 'backpack'?
 		if len(arg.keys())>0:
-			if not self.negate:
-				return self.fn(arg) # Need to pass in backpack into this function to get updated values
-			else:
+			if self.negated:
 				return not self.fn(arg)
+			else:
+				return self.fn(arg) # Need to pass in backpack into this function to get updated values
+
 		else: return True
 
 	def negate(self):
-		self.negate = not self.negate
+		self.negated = not self.negated
 		self.text = 'not '+ self.text
 
 	def display(self):
 		print self.text
 
 	def __eq__(self, other):
-		# print "Using Precondition new equality function."
 		return self.text == other.text
 
 	def __ne__(self, other):
@@ -173,7 +167,7 @@ class InteractionRule(object):
 	def asTuple(self):
 		return (self.interaction, self.slot1, self.slot2)
 
-	def addPrecondition(self, precondition):
+	def addPrecondition(self, theory, precondition):
 		"""
 		TODO: Now that we've reimplemented preconditions as lambda functions,
 		it can't properly check for equality of preconditions. You *may*
@@ -181,15 +175,15 @@ class InteractionRule(object):
 		and making sure that precondition.text always reflects the functioning of the
 		lambda function.
 		"""
-		if precondition.text not in [p.text for p in self.preconditions]:
-			self.preconditions.add(precondition)
-		return
+		curr_preconditions = [p.text for p in self.preconditions]	
+		if precondition.text not in curr_preconditions: #TODO: change equality for preconditions?
+			self.preconditions = set([precondition]) #TODO: Need to change this, if we accept more than one precondition for an interaction rule
+
 
 	def checkPreconditions(self, agentState):
 		return all([p.check(agentState) for p in self.preconditions])
 
 	def __eq__(self, other):
-		# print "Using Precondition new equality function"
 		if isinstance(other, self.__class__):
 			return all([
 				self.asTuple()==other.asTuple(),
@@ -243,6 +237,7 @@ class Theory(object):
 				for theory in currTheories:
 					newTheory = theory.explainEvent(timestep.events[0], fullTimestep)
 					theories.extend(newTheory)
+
 			return theories
 
 		# Recursive Case
@@ -270,7 +265,6 @@ class Theory(object):
 				theories.extend(self.addRules(event))
 
 		# print "added {} theories in total".format(len(theories))
-
 		return theories
 
 	#TODO: Fix names for these functions or collapse them.
@@ -304,7 +298,6 @@ class Theory(object):
 			else:
 				return () #There were no relevant rules; need to create new rule.
 		else:
-			# print "relevant rules: False was in interpretations"
 			return ()
 
 	def likelihood(self, timestep, verbose=False):
@@ -324,7 +317,6 @@ class Theory(object):
 		return likelihood
 
 	def getFailCases(self, event, timestep, verbose=False):
-
 		'''
 		Note: the only predictions we care about checking for here are the ones that are in the original theory.
 		Predictions made by 'drying-paint' theories shouldn't be taken into account in the sense that all of these should receive
@@ -353,70 +345,6 @@ class Theory(object):
 		return failCases[(eventInRules, predictionsHappened)][0]
 
 
-	def getClassPair(self, event):
-		return (event[1], event[2])
-
-	def findRelatedRules(self, classPair, interactionList):
-		#needs to take a list of interpretations or a list of interaction rules
-		if type(interactionList[0]) == tuple:
-			return [interaction for interaction in interactionList if classPair == self.getClassPair(interaction)]
-		elif type(interactionList[0] == InteractionRule):
-			return [interaction for interaction in interactionList if classPair == self.getClassPair(interaction.asTuple())]
-
-	def addPreconditions(self, event, timestep):
-		'''
-		Creates preconditions based on the agentState that might help to explain the event.
-		Returns a list of theories.
-		'''
-
-		newTheories = []
-
-		classPair = self.getClassPair(event)
-
-		if classPair in self.inModification.keys():
-			precondition = self.inModification[classPair]
-			interpretation = self.interpret(event)
-			interpretation.addPrecondition(p) #TODO: maybe you should be only doing this if interpreting worked in the line above.
-			newTheory = self.createChild([interpretation, False])
-			if newTheory:
-				newTheories.append(newTheory)
-		else:
-			concepts = []
-			for k in timestep.agentState.keys():
-				concepts.extend(self.generateNumberConcepts(k, timestep.agentState[k]))
-			preconditions = self.makePreconditions(concepts)
-			for precondition in preconditions:
-				interpretation = self.interpret(event)
-				interpretation.addPrecondition(precondition)
-				newTheory = self.createChild([interpretation, False]) #TODO: make sure this is properly negating all other similar events
-
-				#Find what rules you will need to negate
-				relevantInteractionSetRules = self.findRelatedRules(classPair, newTheory.interactionSet)
-				relevantEvents = self.findRelatedRules(classPair, [self.interpret(e) for e in timestep.events])
-				unfulfilledPredictions = set(relevantInteractionSetRules) - set(relevantEvents)
-				newTheory.inModification[classPair] = precondition
-
-				#Negate all interactionRules that didn't happen in this timestep.
-				#Note: this only has to happen for the base case when you're recursing; after that these have already been negated and should not be touched.
-				for uP in unfulfilledPredictions:
-					uP.addPrecondition(precondition.negate())
-
-				if newTheory:
-					newTheories.append(newTheory)
-
-		return newTheories
-
-
-	def makePreconditions(self, concepts):
-		preconditions = []
-		for c in concepts:
-			def f(x):
-				if c[1] in x.keys():
-					return x[c[1]]>c[2]
-				else:return True
-			preconditions.append(Precondition(c[0], f))
-		return preconditions
-
 	def addRules(self, event):
 		'''
 		Search over possible assignments for classes; posit new classes if necessary
@@ -434,45 +362,146 @@ class Theory(object):
 				interaction = InteractionRule(event[0], assignment[0], assignment[1]) #This isn't strictly necessary, but follows createChild requirements.
 				classAssignments = [(assignment[0], event[1]), (assignment[1],event[2])]
 				newTheory = self.createChild([interaction, classAssignments])
-				#Checks and only adds to newTheories if the created theory was actually different.
+				# Checks and only adds to newTheories if the created theory was actually different.
 				if newTheory:
 					newTheories.append(newTheory)
 
 		# print "adding {} theories with new assignments".format(len(newTheories))
 		return newTheories
 
+
+	def addPreconditions(self, event, timestep):
+		'''
+		Creates preconditions based on the agentState that might help to explain the event.
+		Returns a list of theories.
+		'''
+		newTheories = []
+		classPair = self.getClassPair(event)
+
+		# If object classes are currently being modified in the same timestep, obtain the same preconditions as before
+		if classPair in self.inModification.keys():
+			p = self.inModification[classPair]
+			interpretation = self.interpret(event)
+			interpretation.addPrecondition(p) #TODO: maybe you should be only doing this if interpreting worked in the line above.
+			newTheory = self.createChild([interpretation, False])
+			if newTheory:
+				newTheories.append(newTheory)
+		else:
+			# Create possible preconditions
+			concepts = []
+			for k in timestep.agentState.keys():
+				concepts.extend(self.generateNumberConcepts(k, timestep.agentState[k])) #TODO: Combine generateNumberConcpets and makePreconditions
+
+			generatedPreconditions = self.makePreconditions(concepts)
+			for p in generatedPreconditions:
+				interpretation = self.interpret(event)
+				interpretation.addPrecondition(self, p)
+
+				# Find what rules you will need to negate
+				relevantInteractionSetRules = self.findRelatedRules(classPair, self.interactionSet)
+				relevantEvents = self.findRelatedRules(classPair, [self.interpret(e) for e in timestep.events])
+				unfulfilledPredictions = set(relevantInteractionSetRules) - set(relevantEvents) # Will be negated
+				
+				newTheory = self.createChild([interpretation, False]) #TODO: make sure this is properly negating all other similar events
+
+				newTheory.inModification[classPair] = p
+				newTheory.negatePreconditions(unfulfilledPredictions) # Must be after classPair is added to inModification
+
+
+				# TODO: See if you need to use these lines, or if newTheory = self.createChild(...) completes the task
+				#Negate all interactionRules that didn't happen in this timestep.
+				#Note: this only has to happen for the base case when you're recursing; after that these have already been negated and should not be touched.
+				# for uP in unfulfilledPredictions:
+				# 	uP.addPrecondition(precondition.negate())
+				
+				if newTheory:
+					newTheories.append(newTheory)
+
+		return newTheories
+
+	def negatePreconditions(self, unfulfilledPredictions):
+		# Iterate through relevant rules, negate them if they're not in the drying paint
+		for r in unfulfilledPredictions:
+			if r.asTuple() not in [new_r.asTuple() for new_r in self.dryingPaint]:
+				precondition = self.inModification[r.asTuple()[1:]] # Single precondition object
+				preconditionToNegate = copy.deepcopy(precondition)
+				preconditionToNegate.negate()
+				r.preconditions = [preconditionToNegate]
+		
+		# Generate new interaction set with new preconditioned rules
+		newInteractionSet = []
+
+		for r1 in self.interactionSet:
+			for r2 in unfulfilledPredictions:
+				if r1.asTuple()==r2.asTuple():
+					newInteractionSet.append(r2)
+				else:
+					newInteractionSet.append(r1)
+
+		self.interactionSet = newInteractionSet
+
+
+
+	def makePreconditions(self, concepts):
+		preconditions = []
+		for c in concepts:
+			def f(x):
+				if c[1] in x.keys():
+					return x[c[1]]>c[2]
+				else:return True
+			preconditions.append(Precondition(c[0], f))
+		return preconditions
+
+
 	"""Helper functions"""
 
 
-	def createChild(self, proposal, negatePreconditions=False):
+	def createChild(self, proposal):
 		newTheory = copy.deepcopy(self)
 		newTheory.depth = self.depth + 1
 		newTheory.parent = self
 		newTheory.children = []
-		generatedNewTheory = newTheory.addProposal(proposal, negatePreconditions)
+		generatedNewTheory = newTheory.addProposal(proposal)
 		if generatedNewTheory:
 			self.children.append(newTheory)
 			return newTheory
 		else:
 			return False
 
-	def addProposal(self, proposal, negatePreconditions=False):
+	def addProposal(self, proposal):
 		'''
 		Adds proposal to theory; takes care of rule and assignments
 		'''
 		rule, assignments = proposal[0], proposal[1]
-		addedRule = self.addInteractionRule(rule, negatePreconditions)
-		# if added:
-			# print "Added", rule.asTuple()
+		# Add the proposed rule to the Theory's InteractionSet
+		addedRule = self.addInteractionRule(rule)
+		# Add the proposed class assignments to the Theory 
 		addedClass = False
 		if assignments:
 			addedClass = any([self.assignClass(assignment) for assignment in assignments])
 		return (addedRule or addedClass)
 
-	def getClass(self, obj):
-		for c, o in self.classes.iteritems():
-			if obj in o:
-				return c
+
+	def addInteractionRule(self, rule):
+		'''
+		Adds interactionRule if it is not in interactionSet.
+		'''
+		if rule.interaction not in self.predicates:
+			self.predicates.add(rule.interaction)
+		if not self.findRule(rule, self.interactionSet):
+			self.interactionSet.append(rule)
+			self.dryingPaint.add(rule)
+			return True
+		return False
+
+
+	def findRule(self, rule, lst):
+		'''
+		Finds if a rule is in the interaction set.
+		'''
+		for interactionRule in lst:
+			if interactionRule.asTuple()==rule.asTuple() and set([r.text for r in interactionRule.preconditions]) == set([r.text for r in rule.preconditions]):
+				return True
 		return False
 
 	def assignClass(self, classObjectPair):
@@ -485,50 +514,33 @@ class Theory(object):
 				self.classes[c].append(o)
 				return True
 			return False
-				# print "added", o, "to class", c
 		else:
 			self.classes[c] = [o]
 			return True
-			# print "added", o, "to class", c
 
-	def addInteractionRule(self, rule, negatePreconditions=False):
+
+	def findRelatedRules(self, classPair, interactionList):
+		#needs to take a list of interpretations or a list of interaction rules
+
+		if type(interactionList[0]) == tuple:
+			print "DOES THIS EVER ENTER HERE?" # TODO: Check if this is ever entered...
+			return [interaction for interaction in interactionList if classPair == interaction]
+		elif type(interactionList[0] == InteractionRule):
+			return [interaction for interaction in interactionList if classPair == interaction.asTuple()[1:]]
+
+	def getClassPair(self, event):
+		return (self.getClass(event[1]), self.getClass(event[2]))
+
+	def getClass(self, obj):
 		'''
-		Adds interactionRule if it is not in interactionSet.
+		Obtains the classes of the object; otherwise returns False if class not found.
 		'''
-		if rule.interaction not in self.predicates:
-			self.predicates.add(rule.interaction)
-		if not self.findRule(rule, self.interactionSet):
-			self.interactionSet.append(rule)
-			self.dryingPaint.add(rule)
-			#Iterate through relevant rules, negate them if they're not in the drying paint
-			if negatePreconditions:
-				for r in self.interactionSet:
-					if all([
-							r.slot1==rule.slot1, 
-							r.slot2==rule.slot2,
-						 	r.asTuple() not in [paint.asTuple() for paint in self.dryingPaint],
-						 	r.preconditions==[]
-					 	]):
-						r.preconditions = rule.preconditions.deepcopy()
-						r.preconditions[0].negate()
-			return True
+		for c, o in self.classes.iteritems():
+			if obj in o:
+				return c
 		return False
 
-	def findRule(self, rule, lst):
-		'''
-		Finds if a rule is in the interaction set.
-		'''
-		# print ""
-		# print "looking for rule:", rule.asTuple(), rule.preconditions
-		# print "in"
-		# self.display()
-		for interactionRule in lst:
-			# print interactionRule.asTuple()
-			if interactionRule.asTuple()==rule.asTuple() and set([r.text for r in interactionRule.preconditions]) == set([r.text for r in rule.preconditions]):
-				# print "found it"
-				return True
-		# print "didn't find it"
-		return False
+	
 	
 	def interpret(self, event): 
 		'''
@@ -541,8 +553,6 @@ class Theory(object):
 		If we know that ORANGE=c1 and DARKBLUE=c2, returns the InteractionRule
 		that corresponds to (bounceForward, c1, c2)
 		'''
-		# print "in interpret:"
-		# self.display()
 		c1, c2 = self.getClass(event[1]), self.getClass(event[2])
 		if c1 and c2:
 			return InteractionRule(event[0], c1, c2)
@@ -554,7 +564,6 @@ class Theory(object):
 		Helper function for likelihood. If an event involves c1 and c2, 
 		returns rules that use c1 and c2 in those slots.
 		'''
-		# print "event", event
 		interpretation = self.interpret(event)
 		relevantRules = []
 		if interpretation:
@@ -564,10 +573,9 @@ class Theory(object):
 			if not checkDryingPaint:
 				relevantRules.extend([rule.asTuple() for rule in rules if rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 and all(p.check(agentState) for p in rule.preconditions)])
 			else:
-				#here we only return rules that are not in the drying paint. 
+				# Here we only return rules that are not in the drying paint. 
 				relevantRules.extend([rule.asTuple() for rule in rules if not self.findRule(rule, self.dryingPaint) and rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 and all(p.check(agentState) for p in rule.preconditions)])
 		else:
-			# print "interpretation", interpretation
 			relevantRules.append(False)
 		if False not in relevantRules:
 			return relevantRules
@@ -648,9 +656,10 @@ class Theory(object):
 		print ""
 		print "Class assignments:"
 		print self.classes
-		print "_______"
+		print
 
 	def display(self):
+		print "_______"
 		self.displayRules()
 		self.displayClasses()
 		return
@@ -674,19 +683,30 @@ class Theory(object):
 
 
 
-g = Game()
+# g = Game()
 
-rawTrace = [
-{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
-{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, 
-{'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
-{'agentAction': 'up', 'agentState': {}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE'), ('killSprite', 'DARKBLUE', 'WHITE')]}
-]
-rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': ['gameEnd']}]
-# rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BROWN')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'GREEN'), ('killSprite', 'DARKBLUE', 'GREEN')]}, {'agentAction': 'down', 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', -1), ('killSprite', 'DARKBLUE', 'BROWN')]}]
+# # Use to test equality of theories
+# rawTrace = [
+# {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
+# {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, 
+# {'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
+# {'agentAction': 'up', 'agentState': {}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE'), ('killSprite', 'DARKBLUE', 'WHITE')]}
+# ]
+
+# # Use to test preconditions and end game handling
+# rawTrace = [
+# {'agentAction': None, 'agentState': {}, 'effectList': []}, 
+# {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, 
+# {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, 
+# {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, 
+# {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
+# {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, 
+# {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}, {
+# 'agentAction': None, 'agentState': {'trap': 1}, 'effectList': ['gameEnd']}]
+# # rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BROWN')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'GREEN'), ('killSprite', 'DARKBLUE', 'GREEN')]}, {'agentAction': 'down', 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', -1), ('killSprite', 'DARKBLUE', 'BROWN')]}]
 
 
-trace = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in rawTrace]
+# trace = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in rawTrace]
 
-hypotheses=list(g.induction(trace[0:-1]))
-sorted(hypotheses, key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
+# hypotheses=list(g.induction(trace[0:-1]))
+# sorted(hypotheses, key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
