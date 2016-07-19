@@ -1,0 +1,74 @@
+
+push_game = """
+BasicGame frame_rate=30
+    SpriteSet        
+        hole   > ResourcePack color=LIGHTBLUE
+        avatar > MovingAvatar color=DARKBLUE #cooldown=4 
+        box    > ResourcePack 
+            box1 > color=ORANGE               
+            box2 > color=PINK
+        treasure > ResourcePack color=GREEN limit=5
+        goal > Passive color=GOLD
+        trap > ResourcePack color=RED limit=5
+        cloud > Passive color=BLUE
+        medicine > Resource limit=3 color=WHITE
+        poison > Resource limit=3 color=BROWN
+        wall > Immovable color=BLACK      
+        score > Resource color=PINK limit=10         
+    LevelMapping
+        0 > hole
+        1 > box1
+        2 > box2  
+        3 > treasure 
+        t > trap    
+        c > cloud 
+        m > medicine
+        p > poison
+        w > wall   
+        g > goal 
+        h > hole
+    InteractionSet
+        avatar wall > stepBack  
+        hole avatar > killSprite
+        treasure avatar > changeResource resource=score value=5
+        treasure avatar > killSprite
+        trap avatar > changeResource resource=score value=-5
+        trap avatar > killSprite
+        cloud avatar > killSprite
+        avatar medicine > changeResource resource=medicine value=1
+        medicine avatar > killSprite
+        avatar poison > changeResource resource=medicine value=-1
+        poison avatar > killSprite
+        avatar poison > killIfHasLess resource=medicine limit=-1
+        box avatar  > bounceForward
+        box wall    > undoAll        
+        box box     > undoAll
+        box hole    > killSprite
+        box treasure > undoAll
+        box poison > undoAll
+        box medicine > undoAll
+        goal avatar > killSprite  
+    TerminationSet
+        SpriteCounter stype=box     limit=0 win=True
+        SpriteCounter stype=goal    limit=0 win=True
+        SpriteCounter stype=avatar  limit=0 win=False          
+"""
+
+# g = Game(push_game)
+# #for now, making them here. normally you will make game and upon initialization, parse the sprites.
+# sprites = [Sprite('MovingAvatar', 'DARKBLUE', 'c0'), Sprite('ResourcePack', 'LIGHTBLUE', 'c1'), Sprite('ResourcePack', 'ORANGE', 'c2'), Sprite('ResourcePack', 'PINK', 'c3'), Sprite('ResourcePack', 'BLACK', 'c4'), Sprite('ResourcePack', 'WHITE', 'c5')]
+# g.vgdlSpriteParse = sprites
+
+# rawTrace = [
+# {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
+# {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, 
+# {'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
+# {'agentAction': 'up', 'agentState': {}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE'), ('killSprite', 'DARKBLUE', 'WHITE')]}
+# ]
+
+
+# trace = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in rawTrace]
+
+# t = Theory(g)
+# t.initializeSpriteSet(sprites)
+
