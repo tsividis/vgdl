@@ -11,9 +11,6 @@ TODO: 7/14/16:
 	Other cleanup
 	Change generateNumberConcepts to make the simpler possibilities:  >=1, <1, >0, <=0 
 
-Anticipated problems:
-	Dealing with resources that are changed without there being a direct interaction
-	(e.g., interacting with white or brown objects changes health, but health is not an object)
 
 NOTES:
 Current assumptions:
@@ -24,77 +21,18 @@ Current assumptions:
 
 '''
 
-class Game(object):
+class Property(object):
 	"""
-	VGDL Game and Induction State.
+	TODO: Incorporate properties into theory induction loop.
 	"""
-	def __init__(self):
-		# Game states #TODO: May not need these
-		#self.backpack = {}
-		#self.trace = [] # list of TimeStep objects that happened during a gameplay
+	def __init__(self, vgdlType, color, args):
+		self.vgdlType = vgdlType
+		self.color = color 
+		self.args = args
 
-		# Induction states
-		self.hypothesisSpace = set()
-		self.theoryCount = 0
-	
-	def display(self):
-		print self.theoryCount
-
-	def induction(self, trace):
-		"""
-		Iterates through trace, performing theory induction on each timestep
-		"""
-		self.hypothesisSpace = set([Theory(self)])
-		newTheories = []
-
-		# For every timestep
-		for i in range(len(trace)): 
-			timestep = trace[i]
-			print "explaining events {}".format(timestep.events)
-			print "___________________________________________________________________________________________________"
-
-			# For every theory
-			for theory in self.hypothesisSpace: 			
-				if theory.likelihood(timestep) < 1.0: 	# Theory needs to be changed
-					# print "likelihood", theory.likelihood(timestep)
-					newTheories.extend(theory.explainTimeStep(timestep, timestep))
-
-			for theory in newTheories:
-				if theory not in self.hypothesisSpace:
-					self.hypothesisSpace.add(theory) #TODO: numbering of theories should take place here.	
-			if i>0:
-				self.cleanHypothesisSpace(trace[0:i+1], 1) #All timesteps up to now should be fully explained
-			print "{} hypotheses:".format(len(self.hypothesisSpace))
-			
-			#Sort hypotheses (right now by simple length metric), then print.
-			hypotheses = sorted(list(self.hypothesisSpace), key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
-			for h in hypotheses:
-				h.display()
-			print "___________________________________________________________________________________________________"
-			print ""
-		
-		return self.hypothesisSpace
-
-	def cleanHypothesisSpace(self, subtrace, threshold):
-		"""
-		Removes theories from hypothesisSpace if their likelihood for the timesteps
-		passed in 'subtrace' is below threshold.
-		"""
-		newHypothesisSpace = []
-
-		for t in self.hypothesisSpace:
-			#Second clause here is temporary; take for granted that we know the agent.
-			if all([t.likelihood(s)>=threshold for s in subtrace]) and len(t.classes[t.getClass('DARKBLUE')])==1:
-				t.dryingPaint = set()
-				newHypothesisSpace.append(t)
-
-		# for t in self.hypothesisSpace:
-		# 	t.dryingPaint = set()
-		# 	newHypothesisSpace.append(t)
-
-		self.hypothesisSpace = set(newHypothesisSpace)
-
-		return
+	# TODO: Should enforce proper syntax for properties
+	def display():
+		pass
 
 class TimeStep: 
 	"""
@@ -113,47 +51,41 @@ class TimeStep:
 		self.events = events 
 		self.t = False # Number timestep
 
+	def display(self):
+		print (self.agentAction, self.agentState, self.events)
+
+
 class Precondition(object):
+	"""
+	Appended to InteractionRules if conflicting effects occur from the same interaction, due to changed resources.
+	"""
 	def __init__(self, text, fn):
 		self.text = text
 		self.fn = fn
-		self.negate = False
+		self.negated = False
 
 	def check(self, arg):	# TODO: Is 'arg' most likely 'backpack'?
 		if len(arg.keys())>0:
-			if not self.negate:
-				return self.fn(arg) # Need to pass in backpack into this function to get updated values
-			else:
+			if self.negated:
 				return not self.fn(arg)
+			else:
+				return self.fn(arg) # Need to pass in backpack into this function to get updated values
+
 		else: return True
 
 	def negate(self):
-		self.negate = not self.negate
+		self.negated = not self.negated
 		self.text = 'not '+ self.text
 
 	def display(self):
 		print self.text
 
 	def __eq__(self, other):
-		# print "Using Precondition new equality function."
 		return self.text == other.text
 
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
-class Property(object):
-	"""
-	TODO: 
-	Incorporate properties into theory induction loop.
-	"""
-	def __init__(self, vgdlType, color, args):
-		self.vgdlType = vgdlType
-		self.color = color 
-		self.args = args
-
-	# TODO: Should enforce proper syntax for properties
-	def display():
-		pass
 
 class InteractionRule(object):
 	"""
@@ -185,15 +117,15 @@ class InteractionRule(object):
 		and making sure that precondition.text always reflects the functioning of the
 		lambda function.
 		"""
-		if precondition.text not in [p.text for p in self.preconditions]:
-			self.preconditions.add(precondition)
-		return
+		curr_preconditions = [p.text for p in self.preconditions]	
+		if precondition.text not in curr_preconditions: #TODO: change equality for preconditions?
+			self.preconditions = set([precondition]) #TODO: Need to change this, if we accept more than one precondition for an interaction rule
+
 
 	def checkPreconditions(self, agentState):
 		return all([p.check(agentState) for p in self.preconditions])
 
 	def __eq__(self, other):
-		# print "Using Precondition new equality function"
 		if isinstance(other, self.__class__):
 			return all([
 				self.asTuple()==other.asTuple(),
@@ -238,8 +170,8 @@ class Theory(object):
 		Hypotheticals can be passed as args to enable the explanation of multiple events in a single timestep.
 		"""
 		# Base Case
-
 		if len(timestep.events) == 1:
+			print "In base case of explainTimeStep..."
 			theories = []
 			if not currTheories:
 				theories.extend(self.explainEvent(timestep.events[0], fullTimestep))
@@ -247,10 +179,12 @@ class Theory(object):
 				for theory in currTheories:
 					newTheory = theory.explainEvent(timestep.events[0], fullTimestep)
 					theories.extend(newTheory)
+
 			return theories
 
 		# Recursive Case
 		else:
+			print "Recursing in explainTimeStep..."
 			theories = self.explainEvent(timestep.events[0], fullTimestep)
 			updatedTimeStep = TimeStep(timestep.agentAction, timestep.agentState, timestep.events[1:])
 			return self.explainTimeStep(updatedTimeStep, fullTimestep, theories)
@@ -260,7 +194,8 @@ class Theory(object):
 		Returns theories that explain the event, which is a tuple like:
 		(bounceForward, BLUE, ORANGE)
 		"""
-
+		print "In explainEvent, checking event {}, with ruleset".format(event)
+		print "\t", [r.display() for r in self.interactionSet]
 		theories = []
 
 		likelihood = self.likelihood(timestep)
@@ -269,20 +204,48 @@ class Theory(object):
 		else:
 			failCase = self.getFailCases(event, timestep)
 			if failCase in [1,2,3]:
+				print "Will add a precondition."
 				theories.extend(self.addPreconditions(event, timestep))
 			elif failCase == 4: 
+				print "Will add a rule."
 				theories.extend(self.addRules(event))
-
+		# print "new theories: "
+		# for t in range(len(theories)):
+		# 	print "\tnew theory", t
+		# 	print "\t", [r.display() for r in theories[t].interactionSet]
 		# print "added {} theories in total".format(len(theories))
-
 		return theories
 
-	#TODO: Fix names for these functions or collapse them.
-	def checkIfEventsAreInRules(self, timestep):
+	def likelihood(self, timestep, verbose=False):
+		"""
+		Makes sure that:
+			-all events in the timestep were covered by the ruleset 
+			-everything predicted in the ruleset happened.
+
+		Right now returns only 1 or 0.
+		"""
+		print '\nevents are in rules', self.checkEventsInTimeStep(timestep)
+		print 'predictions happened\n', self.checkPredictionsInTimeStep(timestep) #TODO: LEFT OF
+
+		if self.checkEventsInTimeStep(timestep) and self.checkPredictionsInTimeStep(timestep):
+			likelihood = 1.
+		else:
+			likelihood = 0.
+
+		return likelihood
+
+
+	def checkEventsInTimeStep(self, timestep):
+		"""
+		Check if all events in the timestep are covered by the interaction rule set.
+		"""
 		interpretations = [self.interpret(event) for event in timestep.events]
 		return all([self.checkInterpretation(i, timestep) for i in interpretations])
 
-	def checkIfAllPredictionsHappened(self, timestep):
+	def checkPredictionsInTimeStep(self, timestep):
+		"""
+		Check if all predictions for the timestep actually occurred. 
+		"""
 		#Note: This fn cannot be exactly like checkPredictions(), becase here we don't care whether 'drying paint' is 
 		#T or F. We need to actually check all the predictions.
 		interpretations = [self.interpret(event) for event in timestep.events if self.interpret(event) is not False]
@@ -294,41 +257,9 @@ class Theory(object):
 		for event in timestep.events:
 			relevantRules.extend(self.findRelevantRules(event, timestep.agentState))
 		return all([rule in interpretations for rule in relevantRules])
-
-	def checkEvents(self, event, timestep):
-		return self.checkInterpretation(self.interpret(event), timestep)
-
-	def checkPredictions(self, event, timestep):
-		interpretations = [self.interpret(e) for e in timestep.events if self.interpret(e) is not False]
-		if False not in interpretations:
-			interpretations = [interpretation.asTuple() for interpretation in interpretations]
-			relevantRules = self.findRelevantRules(event, timestep.agentState, checkDryingPaint=True)
-			if relevantRules:
-				return all([rule in interpretations for rule in relevantRules])
-			else:
-				return () #There were no relevant rules; need to create new rule.
-		else:
-			# print "relevant rules: False was in interpretations"
-			return ()
-
-	def likelihood(self, timestep, verbose=False):
-		'''
-		Makes sure that:
-			-all events in the timestep were covered by the ruleset 
-			-everything predicted in the ruleset happened.
-
-		Right now returns only 1 or 0.
-		'''
-		if self.checkIfEventsAreInRules(timestep) and self.checkIfAllPredictionsHappened(timestep):
-			likelihood = 1.
-		else:
-			likelihood = 0.
-
-		return likelihood
-
+	
 	def getFailCases(self, event, timestep, verbose=False):
-
-		'''
+		"""
 		Note: the only predictions we care about checking for here are the ones that are in the original theory.
 		Predictions made by 'drying-paint' theories shouldn't be taken into account in the sense that all of these should receive
 		the same treatment. That is, if we have (bf c1 c2) in the original theory, and are currently explaining the events:
@@ -336,7 +267,7 @@ class Theory(object):
 		what we want to do is realize that (ks c1 c2) needs a precondition on it. Then we add this to a theory (as drying paint)
 		and when we explain (uA c1 c2), we want to do exactly what we did with (ks c1 c2); recognize that it needs a single precondition.
 		So checkPredictions only checks for theories that are not in dryingPaint.
-		'''
+		"""
 
 		failCases = {(True, True): 	 [0, "Event likelihood = 1"],
 					 (True, False):  [1, "Event likelihood failed because the interactionSet predicts things that didn't happen. "+
@@ -356,64 +287,135 @@ class Theory(object):
 		return failCases[(eventInRules, predictionsHappened)][0]
 
 
-	def getClassPair(self, event):
-		return (event[1], event[2])
+	def checkEvents(self, event, timestep):
+		"""
+		Check if a single event has an interpretation (i.e. if it is in the interaction rule set).
+		"""
+		return self.checkInterpretation(self.interpret(event), timestep)
 
-	def findRelatedRules(self, classPair, interactionList):
-		#needs to take a list of interpretations or a list of interaction rules
-		if type(interactionList[0]) == tuple:
-			return [interaction for interaction in interactionList if classPair == self.getClassPair(interaction)]
-		elif type(interactionList[0] == InteractionRule):
-			return [interaction for interaction in interactionList if classPair == self.getClassPair(interaction.asTuple())]
+	def checkPredictions(self, event, timestep):
+		"""
+		Check if the relevant predictions to a specific event occurred. 
+		"""
+		# TODO: Add comments here
+		interpretations = [self.interpret(e).asTuple() for e in timestep.events if self.interpret(e) is not False] 
+		if interpretations:
+			#interpretations = [interpretation.asTuple() for interpretation in interpretations]
+			relevantRules = self.findRelevantRules(event, timestep.agentState, checkDryingPaint=True)
+			if relevantRules:
+				return all([rule in interpretations for rule in relevantRules])
+			else:
+				return () #There were no relevant rules; need to create new rule.
+		else:
+			return ()
 
-	def addPreconditions(self, event, timestep):
-		'''
-		Creates preconditions based on the agentState that might help to explain the event.
+
+	def addRules(self, event):
+		"""
+		Search over possible assignments for classes; posit new classes if necessary
+		Return theories that have either 
+		Try to make it fit according to the current rules by searching
+		over possible class assignments for the objects.
 		Returns a list of theories.
-
-		Note about self.inModification logic (used below):
-		If we're in a case where there are many events in a timestep and we're explaining one of those,
-		we only want to add a new precondition to the first one (for a given class pair). So check if this pair
-		has been marked as being inModification, and if it is, copy the precondition we already decided on.
-		Otherwise make a new precondition and add the current pair to self.inModification
-		'''
-
+		"""
 		newTheories = []
 
-		classPair = self.getClassPair(event)
+		possibleAssignments = self.searchForAssignments(event)
 
+		if possibleAssignments:
+			for assignment in possibleAssignments:
+				interaction = InteractionRule(event[0], assignment[0], assignment[1]) #This isn't strictly necessary, but follows createChild requirements.
+				classAssignments = [(assignment[0], event[1]), (assignment[1],event[2])]
+				newTheory = self.createChild([interaction, classAssignments])
+				# Checks and only adds to newTheories if the created theory was actually different.
+				if newTheory:
+					newTheories.append(newTheory)
+
+		# print "adding {} theories with new assignments".format(len(newTheories))
+		return newTheories
+
+
+	def addPreconditions(self, event, timestep):
+		"""
+		Creates preconditions based on the agentState that might help to explain the event.
+		Returns a list of theories.
+		"""
+		newTheories = []
+		classPair = (self.getClass(event[1]), self.getClass(event[2]))
+
+		# If object classes are currently being modified in the same timestep, obtain the same preconditions as before
 		if classPair in self.inModification.keys():
-			precondition = self.inModification[classPair]
+			p = self.inModification[classPair]
 			interpretation = self.interpret(event)
 			interpretation.addPrecondition(p) #TODO: maybe you should be only doing this if interpreting worked in the line above.
 			newTheory = self.createChild([interpretation, False])
 			if newTheory:
 				newTheories.append(newTheory)
 		else:
+			# Create possible preconditions
 			concepts = []
 			for k in timestep.agentState.keys():
-				concepts.extend(self.generateNumberConcepts(k, timestep.agentState[k]))
-			preconditions = self.makePreconditions(concepts)
-			for precondition in preconditions:
+				concepts.extend(self.generateNumberConcepts(k, timestep.agentState[k])) #TODO: Combine generateNumberConcpets and makePreconditions
+
+			generatedPreconditions = self.makePreconditions(concepts)
+			for p in generatedPreconditions:
 				interpretation = self.interpret(event)
-				interpretation.addPrecondition(precondition)
+				interpretation.addPrecondition(p)
+
+				# Find what rules you will need to negate
+				relevantInteractionSetRules = self.findRelatedRules(classPair, self.interactionSet)
+				relevantEvents = self.findRelatedRules(classPair, [self.interpret(e) for e in timestep.events])
+				unfulfilledPredictions = set(relevantInteractionSetRules) - set(relevantEvents) # Will be negated
+				
 				newTheory = self.createChild([interpretation, False]) #TODO: make sure this is properly negating all other similar events
 
-				#Find what rules you will need to negate
-				relevantInteractionSetRules = self.findRelatedRules(classPair, newTheory.interactionSet)
-				relevantEvents = self.findRelatedRules(classPair, [self.interpret(e) for e in timestep.events])
-				unfulfilledPredictions = set(relevantInteractionSetRules) - set(relevantEvents)
-				newTheory.inModification[classPair] = precondition
+				newTheory.inModification[classPair] = p
+				newTheory.negatePreconditions(unfulfilledPredictions) # Must be after classPair is added to inModification
 
+
+				# TODO: See if you need to use these lines, or if newTheory = self.createChild(...) completes the task
 				#Negate all interactionRules that didn't happen in this timestep.
 				#Note: this only has to happen for the base case when you're recursing; after that these have already been negated and should not be touched.
-				for uP in unfulfilledPredictions:
-					uP.addPrecondition(precondition.negate())
-
+				# for uP in unfulfilledPredictions:
+				# 	uP.addPrecondition(precondition.negate())
+				
 				if newTheory:
 					newTheories.append(newTheory)
 
 		return newTheories
+
+	
+
+
+	"""Helper functions"""
+
+	def findRelatedRules(self, classPair, interactionList):
+		#needs to take a list of interpretations or a list of interaction rules
+		return [interaction for interaction in interactionList if classPair == interaction.asTuple()[1:]]
+	
+	def negatePreconditions(self, unfulfilledPredictions):
+		"""
+		Given a list of Interaction rules, will add a negation to each rule, if rule is not in drying paint.
+		"""
+		# Iterate through relevant rules, negate them if they're not in the drying paint
+		for r in unfulfilledPredictions:
+			if r.asTuple() not in [new_r.asTuple() for new_r in self.dryingPaint]:
+				precondition = self.inModification[r.asTuple()[1:]] # Single precondition object
+				preconditionToNegate = copy.deepcopy(precondition)
+				preconditionToNegate.negate()
+				r.preconditions = [preconditionToNegate]
+		
+		# Generate new interaction set with new preconditioned rules
+		newInteractionSet = []
+
+		for r1 in self.interactionSet:
+			for r2 in unfulfilledPredictions:
+				if r1.asTuple()==r2.asTuple():
+					newInteractionSet.append(r2)
+				else:
+					newInteractionSet.append(r1)
+
+		self.interactionSet = newInteractionSet
 
 
 	def makePreconditions(self, concepts):
@@ -426,110 +428,87 @@ class Theory(object):
 			preconditions.append(Precondition(c[0], f))
 		return preconditions
 
-	def addRules(self, event):
-		'''
-		Search over possible assignments for classes; posit new classes if necessary
-		Return theories that have either 
-		Try to make it fit according to the current rules by searching
-		over possible class assignments for the objects.
-		Returns a list of theories.
-		'''
-		newTheories = []
 
-		possibleAssignments = self.searchForAssignments(event)
-
-		if possibleAssignments:
-			for assignment in possibleAssignments:
-				interaction = InteractionRule(event[0], assignment[0], assignment[1]) #This isn't strictly necessary, but follows createChild requirements.
-				classAssignments = [(assignment[0], event[1]), (assignment[1],event[2])]
-				newTheory = self.createChild([interaction, classAssignments])
-				#createChild returns False if the theory we gave it is identical to the original one.
-				#Checks and only adds to newTheories if the created theory was actually different.
-				if newTheory:
-					newTheories.append(newTheory)
-
-		# print "adding {} theories with new assignments".format(len(newTheories))
-		return newTheories
-
-	"""Helper functions"""
-
-	def createChild(self, proposal, negatePreconditions=False):
+	def createChild(self, proposal):
+		"""
+		Spawns a new child theory with the new proposal incorporated
+		"""
 		newTheory = copy.deepcopy(self)
 		newTheory.depth = self.depth + 1
 		newTheory.parent = self
 		newTheory.children = []
-		generatedNewTheory = newTheory.addProposal(proposal, negatePreconditions)
+		generatedNewTheory = newTheory.addProposal(proposal)
 		if generatedNewTheory:
 			self.children.append(newTheory)
 			return newTheory
 		else:
 			return False
 
-	def addProposal(self, proposal, negatePreconditions=False):
-		'''
+	def addProposal(self, proposal):
+		"""
 		Adds proposal to theory; takes care of rule and assignments
-		'''
+		"""
+		
+		## Helper functions
+		def assignClass(classObjectPair):
+			'''
+			Adds object-class assignments; avoids duplicates.
+			'''
+			c, o = classObjectPair[0], classObjectPair[1]
+			if c in self.classes.keys():
+				if o not in self.classes[c]:
+					self.classes[c].append(o)
+					return True
+				return False
+			else:
+				self.classes[c] = [o]
+				return True
+
+		def addInteractionRule(rule):
+			"""
+			Adds interactionRule if it is not in interactionSet.
+			"""
+			if rule.interaction not in self.predicates:
+				self.predicates.add(rule.interaction)
+			if not self.findRule(rule, self.interactionSet):
+				self.interactionSet.append(rule)
+				self.dryingPaint.add(rule)
+				return True
+			return False
+
 		rule, assignments = proposal[0], proposal[1]
-		addedRule = self.addInteractionRule(rule, negatePreconditions)
+		# Add the proposed rule to the Theory's InteractionSet
+		addedRule = addInteractionRule(rule)
+		# Add the proposed class assignments to the Theory 
 		addedClass = False
 		if assignments:
-			addedClass = any([self.assignClass(assignment) for assignment in assignments])
+			addedClass = any([assignClass(assignment) for assignment in assignments])
 		return (addedRule or addedClass)
 
+
+
+	def findRule(self, rule, lst):
+		"""
+		Finds if a rule is in the interaction set.
+		"""
+		for interactionRule in lst:
+			if interactionRule == rule:
+				return True
+		return False
+
+
 	def getClass(self, obj):
+		"""
+		Obtains the classes of the object; otherwise returns False if class not found.
+		"""
 		for c, o in self.classes.iteritems():
 			if obj in o:
 				return c
 		return False
 
-	def assignClass(self, classObjectPair):
-		'''
-		Adds object-class assignments; avoids duplicates.
-		'''
-		c, o = classObjectPair[0], classObjectPair[1]
-		if c in self.classes.keys():
-			if o not in self.classes[c]:
-				self.classes[c].append(o)
-				return True
-			return False
-		else:
-			self.classes[c] = [o]
-			return True
-
-	def addInteractionRule(self, rule, negatePreconditions=False):
-		'''
-		Adds interactionRule if it is not in interactionSet.
-		'''
-		if rule.interaction not in self.predicates:
-			self.predicates.add(rule.interaction)
-		if not self.findRule(rule, self.interactionSet):
-			self.interactionSet.append(rule)
-			self.dryingPaint.add(rule)
-			if negatePreconditions:
-				#Iterate through relevant rules, negate them if they're not in the drying paint
-				for r in self.interactionSet:
-					if all([
-							r.slot1==rule.slot1, 
-							r.slot2==rule.slot2,
-						 	r.asTuple() not in [paint.asTuple() for paint in self.dryingPaint],
-						 	r.preconditions==[]
-					 	]):
-						r.preconditions = rule.preconditions.deepcopy()
-						r.preconditions[0].negate()
-			return True
-		return False
-
-	def findRule(self, rule, lst):
-		'''
-		Finds if a rule is in the interaction set.
-		'''
-		for interactionRule in lst:
-			if interactionRule.asTuple()==rule.asTuple() and set([r.text for r in interactionRule.preconditions]) == set([r.text for r in rule.preconditions]):
-				return True
-		return False
 	
 	def interpret(self, event): 
-		'''
+		"""
 		Looks up objects by their corresponding class under the theory,
 		returns a corresponding interactionRule.
 		
@@ -538,7 +517,7 @@ class Theory(object):
 		Ex) Event is a tuple: ('bounceForward', 'ORANGE', 'DARKBLUE')
 		If we know that ORANGE=c1 and DARKBLUE=c2, returns the InteractionRule
 		that corresponds to (bounceForward, c1, c2)
-		'''
+		"""
 		c1, c2 = self.getClass(event[1]), self.getClass(event[2])
 		if c1 and c2:
 			return InteractionRule(event[0], c1, c2)
@@ -546,10 +525,11 @@ class Theory(object):
 			return False
 
 	def findRelevantRules(self, event, agentState, checkDryingPaint=False):
-		'''
+		"""
 		Helper function for likelihood. If an event involves c1 and c2, 
 		returns rules that use c1 and c2 in those slots.
-		'''
+		"""
+
 		interpretation = self.interpret(event)
 		relevantRules = []
 		if interpretation:
@@ -559,26 +539,28 @@ class Theory(object):
 			if not checkDryingPaint:
 				relevantRules.extend([rule.asTuple() for rule in rules if rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 and all(p.check(agentState) for p in rule.preconditions)])
 			else:
-				#here we only return rules that are not in the drying paint. 
+				# Here we only return rules that are not in the drying paint. 
 				relevantRules.extend([rule.asTuple() for rule in rules if not self.findRule(rule, self.dryingPaint) and rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 and all(p.check(agentState) for p in rule.preconditions)])
 		else:
 			relevantRules.append(False)
 		if False not in relevantRules:
 			return relevantRules
 		else:
-			return False
+			return [False]
 
 	def checkInterpretation(self, interpretation, timestep):
-		'''
+		"""
 		Helper function for likelihood(). Checks whether everything in the interpretation is 
 		accounted for by the interactionSet.
-		'''
+		"""
 		if interpretation:
 			interpretation = interpretation.asTuple()
 			for rule in self.interactionSet:
 				if rule.asTuple()==interpretation:
 					if rule.preconditions == False:
-						return True
+						return True # TODO: Should this be False? or should line above be True? 
+									#Pedro's comment: Should be as is; the interpretation is fine if it matches the rule
+									#and there were no preconditions to check.
 					elif all([p.check(timestep.agentState) for p in rule.preconditions]):
 						return True
 			return False 			# If we've checked everything and found no matching rule or rule+precondition, reutrn false.
@@ -586,11 +568,11 @@ class Theory(object):
 
 
 	def searchForPossibleClasses(self, o, newClasses=0): # TODO: Seems to add an extra class
-		'''
+		"""
 		If the object has been assigned, return it. Otherwise return all
 		possible classes. Optional argument can posit existence of a new class;
 		user specifies whether to add 0, 1, or 2 new classes.
-		'''
+		"""
 		gotNewClass = False
 		if self.getClass(o):
 			return [self.getClass(o)], gotNewClass
@@ -629,10 +611,6 @@ class Theory(object):
 			text = item+">"+str(n)
 			concepts.append((text,item,n))
 		return concepts 					# TODO: Should this return functions and text? (text, function) tuples?
-											# Yes. We need the text to come from here so that we can be sure
-											# the function is equal to the description. And we need the text
-											# to check for equality of preconditions (bc checking lambda-function equality)
-											# doesn't work.
 
 	def displayRules(self):
 		print ""
@@ -644,9 +622,10 @@ class Theory(object):
 		print ""
 		print "Class assignments:"
 		print self.classes
-		print "_______"
+		print
 
 	def display(self):
+		print "_______"
 		self.displayRules()
 		self.displayClasses()
 		return
@@ -666,29 +645,97 @@ class Theory(object):
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
+class Game(object):
+	"""
+	VGDL Game and Induction State.
+	"""
+	def __init__(self):
+		# Game states #TODO: May not need these
+		#self.backpack = {}
+		#self.trace = [] # list of TimeStep objects that happened during a gameplay
 
-g = Game()
+		# Induction states
+		self.hypothesisSpace = set()
+		self.theoryCount = 0
+	
+	def display(self):
+		print self.theoryCount
 
-rawTrace = [
-{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
-{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, 
-{'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
-{'agentAction': 'up', 'agentState': {}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE'), ('killSprite', 'DARKBLUE', 'WHITE')]}
-]
-# rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': ['gameEnd']}]
-# rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {}, 'effectList': [('stepBack', 'DARKBLUE', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('stepBack', 'DARKBLUE', 'BLACK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('stepBack', 'DARKBLUE', 'BLACK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'GREEN'), ('killSprite', 'DARKBLUE', 'GREEN')]}, {'agentAction': None, 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
-# rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BROWN')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'GREEN'), ('killSprite', 'DARKBLUE', 'GREEN')]}, {'agentAction': 'down', 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', -1), ('killSprite', 'DARKBLUE', 'BROWN')]}]
-# rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'GREEN')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
+	def induction(self, trace):
+		"""
+		Iterates through trace, performing theory induction on each timestep
+		"""
+		self.hypothesisSpace = set([Theory(self)])
+		newTheories = []
 
-#Without ever interacting with BLACK
-rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK'), ('undoAll', 'PINK', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK'), ('undoAll', 'PINK', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'DARKBLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'DARKBLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
-#After interacting with it.
-rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {}, 'effectList': [('stepBack', 'DARKBLUE', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'DARKBLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'DARKBLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK'), ('undoAll', 'PINK', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
-rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {}, 'effectList': [('stepBack', 'DARKBLUE', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK'), ('undoAll', 'PINK', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK'), ('undoAll', 'PINK', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'LIGHTBLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('killSprite', 'LIGHTBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
+		# For every timestep
+		for i in range(len(trace)): 
+			timestep = trace[i]
+			print "explaining events {}".format(timestep.events)
+			print "___________________________________________________________________"
 
-rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'LIGHTBLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('stepBack', 'DARKBLUE', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
-rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'LIGHTBLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'LIGHTBLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('stepBack', 'DARKBLUE', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
-trace = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in rawTrace]
+			# For every theory
+			for theory in self.hypothesisSpace: 			
+				if theory.likelihood(timestep) < 1.0: 	# Theory needs to be changed
+					# print "likelihood", theory.likelihood(timestep)
+					newTheories.extend(theory.explainTimeStep(timestep, timestep))
+			
+			for theory in newTheories:
+				if theory not in self.hypothesisSpace:
+					self.hypothesisSpace.add(theory) #TODO: numbering of theories should take place here.	
+			
+			self.cleanHypothesisSpace(trace[0:i+1], 1) #All timesteps up to now should be fully explained
+			print "{} hypotheses:".format(len(self.hypothesisSpace))
+			
+			# Sort hypotheses (right now by simple length metric), then print.
+			hypotheses = sorted(list(self.hypothesisSpace), key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
+			for h in hypotheses:
+				h.display()
+			print "___________________________________________________________________"
+			print ""
+		
+		return self.hypothesisSpace
 
-hypotheses=list(g.induction(trace))
-sorted(hypotheses, key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
+	def cleanHypothesisSpace(self, subtrace, threshold):
+		"""
+		Removes theories from hypothesisSpace if their likelihood for the timesteps
+		passed in 'subtrace' is below threshold.
+		"""
+		newHypothesisSpace = []
+		for t in self.hypothesisSpace:
+			print [t.likelihood(s)>=threshold for s in subtrace]
+			if all([t.likelihood(s)>=threshold for s in subtrace]):
+				t.dryingPaint = set()
+				newHypothesisSpace.append(t)
+		self.hypothesisSpace = set(newHypothesisSpace)
+		return
+
+
+
+# g = Game()
+
+# # Use to test equality of theories
+# rawTrace = [
+# {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
+# {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, 
+# {'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
+# {'agentAction': 'up', 'agentState': {}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE'), ('killSprite', 'DARKBLUE', 'WHITE')]}
+# ]
+
+# # Use to test preconditions and end game handling
+# rawTrace = [
+# {'agentAction': None, 'agentState': {}, 'effectList': []}, 
+# {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, 
+# {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, 
+# {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, 
+# {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
+# {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, 
+# {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}, {
+# 'agentAction': None, 'agentState': {'trap': 1}, 'effectList': ['gameEnd']}]
+# # rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BROWN')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'GREEN'), ('killSprite', 'DARKBLUE', 'GREEN')]}, {'agentAction': 'down', 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', -1), ('killSprite', 'DARKBLUE', 'BROWN')]}]
+
+
+# trace = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in rawTrace]
+
+# hypotheses=list(g.induction(trace[0:-1]))
+# sorted(hypotheses, key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
