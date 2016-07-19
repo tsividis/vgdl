@@ -11,6 +11,9 @@ TODO: 7/14/16:
 	Other cleanup
 	Change generateNumberConcepts to make the simpler possibilities:  >=1, <1, >0, <=0 
 
+Anticipated problems:
+	Dealing with resources that are changed without there being a direct interaction
+	(e.g., interacting with white or brown objects changes health, but health is not an object)
 
 NOTES:
 Current assumptions:
@@ -59,8 +62,8 @@ class Game(object):
 			for theory in newTheories:
 				if theory not in self.hypothesisSpace:
 					self.hypothesisSpace.add(theory) #TODO: numbering of theories should take place here.	
-			
-			self.cleanHypothesisSpace(trace[0:i+1], 1) #All timesteps up to now should be fully explained
+			if i>0:
+				self.cleanHypothesisSpace(trace[0:i+1], 1) #All timesteps up to now should be fully explained
 			print "{} hypotheses:".format(len(self.hypothesisSpace))
 			
 			#Sort hypotheses (right now by simple length metric), then print.
@@ -80,7 +83,8 @@ class Game(object):
 		newHypothesisSpace = []
 
 		for t in self.hypothesisSpace:
-			if all([t.likelihood(s)>=threshold for s in subtrace]):
+			#Second clause here is temporary; take for granted that we know the agent.
+			if all([t.likelihood(s)>=threshold for s in subtrace]) and len(t.classes[t.getClass('DARKBLUE')])==1:
 				t.dryingPaint = set()
 				newHypothesisSpace.append(t)
 
@@ -315,7 +319,6 @@ class Theory(object):
 
 		Right now returns only 1 or 0.
 		'''
-
 		if self.checkIfEventsAreInRules(timestep) and self.checkIfAllPredictionsHappened(timestep):
 			likelihood = 1.
 		else:
@@ -367,6 +370,12 @@ class Theory(object):
 		'''
 		Creates preconditions based on the agentState that might help to explain the event.
 		Returns a list of theories.
+
+		Note about self.inModification logic (used below):
+		If we're in a case where there are many events in a timestep and we're explaining one of those,
+		we only want to add a new precondition to the first one (for a given class pair). So check if this pair
+		has been marked as being inModification, and if it is, copy the precondition we already decided on.
+		Otherwise make a new precondition and add the current pair to self.inModification
 		'''
 
 		newTheories = []
@@ -434,6 +443,7 @@ class Theory(object):
 				interaction = InteractionRule(event[0], assignment[0], assignment[1]) #This isn't strictly necessary, but follows createChild requirements.
 				classAssignments = [(assignment[0], event[1]), (assignment[1],event[2])]
 				newTheory = self.createChild([interaction, classAssignments])
+				#createChild returns False if the theory we gave it is identical to the original one.
 				#Checks and only adds to newTheories if the created theory was actually different.
 				if newTheory:
 					newTheories.append(newTheory)
@@ -442,7 +452,6 @@ class Theory(object):
 		return newTheories
 
 	"""Helper functions"""
-
 
 	def createChild(self, proposal, negatePreconditions=False):
 		newTheory = copy.deepcopy(self)
@@ -462,8 +471,6 @@ class Theory(object):
 		'''
 		rule, assignments = proposal[0], proposal[1]
 		addedRule = self.addInteractionRule(rule, negatePreconditions)
-		# if added:
-			# print "Added", rule.asTuple()
 		addedClass = False
 		if assignments:
 			addedClass = any([self.assignClass(assignment) for assignment in assignments])
@@ -485,11 +492,9 @@ class Theory(object):
 				self.classes[c].append(o)
 				return True
 			return False
-				# print "added", o, "to class", c
 		else:
 			self.classes[c] = [o]
 			return True
-			# print "added", o, "to class", c
 
 	def addInteractionRule(self, rule, negatePreconditions=False):
 		'''
@@ -500,8 +505,8 @@ class Theory(object):
 		if not self.findRule(rule, self.interactionSet):
 			self.interactionSet.append(rule)
 			self.dryingPaint.add(rule)
-			#Iterate through relevant rules, negate them if they're not in the drying paint
 			if negatePreconditions:
+				#Iterate through relevant rules, negate them if they're not in the drying paint
 				for r in self.interactionSet:
 					if all([
 							r.slot1==rule.slot1, 
@@ -518,16 +523,9 @@ class Theory(object):
 		'''
 		Finds if a rule is in the interaction set.
 		'''
-		# print ""
-		# print "looking for rule:", rule.asTuple(), rule.preconditions
-		# print "in"
-		# self.display()
 		for interactionRule in lst:
-			# print interactionRule.asTuple()
 			if interactionRule.asTuple()==rule.asTuple() and set([r.text for r in interactionRule.preconditions]) == set([r.text for r in rule.preconditions]):
-				# print "found it"
 				return True
-		# print "didn't find it"
 		return False
 	
 	def interpret(self, event): 
@@ -541,8 +539,6 @@ class Theory(object):
 		If we know that ORANGE=c1 and DARKBLUE=c2, returns the InteractionRule
 		that corresponds to (bounceForward, c1, c2)
 		'''
-		# print "in interpret:"
-		# self.display()
 		c1, c2 = self.getClass(event[1]), self.getClass(event[2])
 		if c1 and c2:
 			return InteractionRule(event[0], c1, c2)
@@ -554,7 +550,6 @@ class Theory(object):
 		Helper function for likelihood. If an event involves c1 and c2, 
 		returns rules that use c1 and c2 in those slots.
 		'''
-		# print "event", event
 		interpretation = self.interpret(event)
 		relevantRules = []
 		if interpretation:
@@ -567,7 +562,6 @@ class Theory(object):
 				#here we only return rules that are not in the drying paint. 
 				relevantRules.extend([rule.asTuple() for rule in rules if not self.findRule(rule, self.dryingPaint) and rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 and all(p.check(agentState) for p in rule.preconditions)])
 		else:
-			# print "interpretation", interpretation
 			relevantRules.append(False)
 		if False not in relevantRules:
 			return relevantRules
@@ -584,9 +578,7 @@ class Theory(object):
 			for rule in self.interactionSet:
 				if rule.asTuple()==interpretation:
 					if rule.preconditions == False:
-						return True # TODO: Should this be False? or should line above be True? 
-									#Pedro's comment: Should be as is; the interpretation is fine if it matches the rule
-									#and there were no preconditions to check.
+						return True
 					elif all([p.check(timestep.agentState) for p in rule.preconditions]):
 						return True
 			return False 			# If we've checked everything and found no matching rule or rule+precondition, reutrn false.
@@ -637,6 +629,10 @@ class Theory(object):
 			text = item+">"+str(n)
 			concepts.append((text,item,n))
 		return concepts 					# TODO: Should this return functions and text? (text, function) tuples?
+											# Yes. We need the text to come from here so that we can be sure
+											# the function is equal to the description. And we need the text
+											# to check for equality of preconditions (bc checking lambda-function equality)
+											# doesn't work.
 
 	def displayRules(self):
 		print ""
@@ -671,9 +667,6 @@ class Theory(object):
 		return not self.__eq__(other)
 
 
-
-
-
 g = Game()
 
 rawTrace = [
@@ -682,11 +675,20 @@ rawTrace = [
 {'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
 {'agentAction': 'up', 'agentState': {}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE'), ('killSprite', 'DARKBLUE', 'WHITE')]}
 ]
-rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': ['gameEnd']}]
+# rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': ['gameEnd']}]
+# rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {}, 'effectList': [('stepBack', 'DARKBLUE', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('stepBack', 'DARKBLUE', 'BLACK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('stepBack', 'DARKBLUE', 'BLACK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'GREEN'), ('killSprite', 'DARKBLUE', 'GREEN')]}, {'agentAction': None, 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
 # rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BROWN')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'GREEN'), ('killSprite', 'DARKBLUE', 'GREEN')]}, {'agentAction': 'down', 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', -1), ('killSprite', 'DARKBLUE', 'BROWN')]}]
+# rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'GREEN')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
 
+#Without ever interacting with BLACK
+rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK'), ('undoAll', 'PINK', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK'), ('undoAll', 'PINK', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'DARKBLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'DARKBLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
+#After interacting with it.
+rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {}, 'effectList': [('stepBack', 'DARKBLUE', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'DARKBLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'DARKBLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK'), ('undoAll', 'PINK', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
+rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {}, 'effectList': [('stepBack', 'DARKBLUE', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK'), ('undoAll', 'PINK', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK'), ('undoAll', 'PINK', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'LIGHTBLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('killSprite', 'LIGHTBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
 
+rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'LIGHTBLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('stepBack', 'DARKBLUE', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
+rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'LIGHTBLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'LIGHTBLUE')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('stepBack', 'DARKBLUE', 'BLACK')]}, {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}]
 trace = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in rawTrace]
 
-hypotheses=list(g.induction(trace[0:-1]))
+hypotheses=list(g.induction(trace))
 sorted(hypotheses, key=lambda x:len(x.interactionSet)*len(x.classes.keys()))

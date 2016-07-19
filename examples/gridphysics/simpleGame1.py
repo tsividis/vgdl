@@ -7,7 +7,7 @@ wwwwwwwwwwwww
 w  2 m   w  w
 w   1       w
 w t A 1 p  gw
-www     wwwww
+www    hwwwww
 w c  m  w   w
 w 1  t     3w
 w  2 c  p  ww
@@ -18,9 +18,9 @@ wwwwwwwwwwwww
 push_game = """
 BasicGame frame_rate=30
     SpriteSet        
-        hole   > Immovable color=DARKBLUE
+        hole   > ResourcePack color=LIGHTBLUE
         avatar > MovingAvatar color=DARKBLUE #cooldown=4 
-        box    > Passive 
+        box    > ResourcePack 
             box1 > color=ORANGE               
             box2 > color=PINK
         treasure > ResourcePack color=GREEN limit=5
@@ -29,7 +29,8 @@ BasicGame frame_rate=30
         cloud > Passive color=BLUE
         medicine > Resource limit=3 color=WHITE
         poison > Resource limit=3 color=BROWN
-        wall > Immovable color=BLACK               
+        wall > Immovable color=BLACK      
+        score > Resource color=PINK limit=10         
     LevelMapping
         0 > hole
         1 > box1
@@ -41,11 +42,13 @@ BasicGame frame_rate=30
         p > poison
         w > wall   
         g > goal 
+        h > hole
     InteractionSet
         avatar wall > stepBack  
-        treasure avatar > collectResource scoreChange=5
+        hole avatar > killSprite
+        treasure avatar > changeResource resource=score value=5
         treasure avatar > killSprite
-        trap avatar > collectResource scoreChange=0
+        trap avatar > changeResource resource=score value=-5
         trap avatar > killSprite
         cloud avatar > killSprite
         avatar medicine > changeResource resource=medicine value=1
@@ -66,6 +69,9 @@ BasicGame frame_rate=30
         SpriteCounter stype=goal    limit=0 win=True
         SpriteCounter stype=avatar  limit=0 win=False          
 """
+
+#        treasure avatar > collectResource scoreChange=5
+#        trap avatar > collectResource scoreChange=-5
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
