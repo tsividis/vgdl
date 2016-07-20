@@ -19,17 +19,18 @@ from ontology import colorDict
 from copy import deepcopy
 
 class Sprite(object):
-	"""
-	TODO: Incorporate properties into theory induction loop.
-	"""
-	def __init__(self, vgdlType, color, args):
-		self.vgdlType = vgdlType
-		self.color = color 
-		self.args = args
+    """
+    TODO: Incorporate properties into theory induction loop.
+    """
+    def __init__(self, vgdlType, color, args):
+        """color=None if there's no color for the sprite"""
+        self.vgdlType = vgdlType
+        self.color = color 
+        self.args = args
 
-	# TODO: Should enforce proper syntax for properties
-	def display():
-		pass
+    # TODO: Should enforce proper syntax for properties
+    def display():
+        pass
 
 class SpriteParser(object):
     resourcePackTypeStrings = {'Immovable', 'Passive', 'ResourcePack', 'Spreader', 'Portal', 'SpawnPoint', 'Conveyor'}
@@ -79,7 +80,10 @@ class SpriteParser(object):
             assert ">" in sn.content
             key, sdef = [x.strip() for x in sn.content.split(">")]
             sclass, args = self._parseArgs(sdef, parentclass, parentargs.copy())
+            print key
+            print sn.children
             print sclass
+
             stypes = parenttypes+[key]
             if 'singleton' in args:
                 if args['singleton']==True:
@@ -88,17 +92,25 @@ class SpriteParser(object):
                 del args['singleton']
 
             if len(sn.children) == 0:
-            	# print (sclass, args, stypes)
-            	color_type = colorDict[str(args['color'])]
-            	args_without_color = deepcopy(args)
-            	del args_without_color['color']
-            	if sclass in resourcePackTypes:
-            		self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args_without_color)
-            		# self.sprite_types[key] = (self._eval('ResourcePack'), colorized_args, stypes)
-                else:
-	                self.sprite_types[key] = Sprite(sclass, color_type, args_without_color)
+                # print (sclass, args, stypes)
+                if 'color' in args:
+                    color_type = colorDict[str(args['color'])]
+                    args_without_color = deepcopy(args)
+                    del args_without_color['color']
+                    if sclass in resourcePackTypes:
+                        self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args_without_color)
+                        # self.sprite_types[key] = (self._eval('ResourcePack'), colorized_args, stypes)
+                    else:
+                        self.sprite_types[key] = Sprite(sclass, color_type, args_without_color)
 
-	                # print self.sprite_types[key]
+
+                        # print self.sprite_types[key]
+                else:
+                    if sclass in resourcePackTypes:
+                        self.sprite_types[key] = Sprite(self._eval('ResourcePack'), None, args)
+                        # self.sprite_types[key] = (self._eval('ResourcePack'), colorized_args, stypes)
+                    else:
+                        self.sprite_types[key] = Sprite(sclass, None, args)
 
                 if key in self.game.sprite_order:
                     # last one counts
