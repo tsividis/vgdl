@@ -18,18 +18,21 @@ from ontology import colorDict
 # from vgdl.ontology import colorDict
 from copy import deepcopy
 
-class Sprite(object):
-	"""
-	TODO: Incorporate properties into theory induction loop.
-	"""
-	def __init__(self, vgdlType, color, args):
-		self.vgdlType = vgdlType
-		self.color = color 
-		self.args = args
 
-	# TODO: Should enforce proper syntax for properties
-	def display():
-		pass
+class Sprite(object):
+    """
+    TODO: Incorporate properties into theory induction loop.
+    """
+    def __init__(self, vgdlType, color, className=None, args=None):
+        self.vgdlType = vgdlType
+        self.color = color 
+        self.className = className
+        self.args = args
+
+    # TODO: Should enforce proper syntax for properties
+    def display():
+        pass
+        # print self.className
 
 class SpriteParser(object):
     resourcePackTypeStrings = {'Immovable', 'Passive', 'ResourcePack', 'Spreader', 'Portal', 'SpawnPoint', 'Conveyor'}
