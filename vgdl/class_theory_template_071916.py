@@ -32,7 +32,6 @@ class Sprite(object):
     # TODO: Should enforce proper syntax for properties
     def display():
         pass
-        # print self.className
 
 class SpriteParser(object):
     resourcePackTypeStrings = {'Immovable', 'Passive', 'ResourcePack', 'Spreader', 'Portal', 'SpawnPoint', 'Conveyor'}
@@ -73,6 +72,8 @@ class SpriteParser(object):
             if c.content == "SpriteSet":
                 self.parseSprites(c.children)
         #Return list of sprite types.
+        print "checking."
+        print self.sprite_types.values()
         return self.sprite_types.values()
 
 
@@ -82,26 +83,37 @@ class SpriteParser(object):
             assert ">" in sn.content
             key, sdef = [x.strip() for x in sn.content.split(">")]
             sclass, args = self._parseArgs(sdef, parentclass, parentargs.copy())
-            print sclass
+            # print key
+            # print sn.children
+            # print sclass
+
             stypes = parenttypes+[key]
             if 'singleton' in args:
                 if args['singleton']==True:
                     self.game.singletons.append(key)
+                print args
                 args = args.copy()
                 del args['singleton']
 
             if len(sn.children) == 0:
-            	print (sclass, args, stypes)
-            	color_type = colorDict[str(args['color'])]
-            	args_without_color = deepcopy(args)
-            	del args_without_color['color']
-            	if sclass in resourcePackTypes:
-            		self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args_without_color)
-            		# self.sprite_types[key] = (self._eval('ResourcePack'), colorized_args, stypes)
-                else:
-	                self.sprite_types[key] = Sprite(sclass, color_type, args_without_color)
+                if 'color' in args:
+                    color_type = colorDict[str(args['color'])]
+                    args_without_color = deepcopy(args)
+                    del args_without_color['color']
+                    if sclass in resourcePackTypes:
+                        self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args_without_color)
+                        # self.sprite_types[key] = (self._eval('ResourcePack'), colorized_args, stypes)
+                    else:
+                        self.sprite_types[key] = Sprite(sclass, color_type, args_without_color)
 
-	                # print self.sprite_types[key]
+
+                        # print self.sprite_types[key]
+                else:
+                    if sclass in resourcePackTypes:
+                        self.sprite_types[key] = Sprite(self._eval('ResourcePack'), None, args)
+                        # self.sprite_types[key] = (self._eval('ResourcePack'), colorized_args, stypes)
+                    else:
+                        self.sprite_types[key] = Sprite(sclass, None, args)
 
                 if key in self.game.sprite_order:
                     # last one counts
