@@ -1,20 +1,4 @@
-'''
-Simple interactions: get/lose points, can't pass through walls, object gets pushed.
-'''
 
-box_level = """
-wwwwwwwwwwwww
-w  2 m   w  w
-w   1       w
-w t A 1 p  gw
-www    hwwwww
-w c  m  w   w
-w 1  t     3w
-w  2 c  p  ww
-wwwwwwwwwwwww
-"""
-
-        
 push_game = """
 BasicGame frame_rate=30
     SpriteSet        
@@ -70,9 +54,3 @@ BasicGame frame_rate=30
         SpriteCounter stype=avatar  limit=0 win=False          
 """
 
-#        treasure avatar > collectResource scoreChange=5
-#        trap avatar > collectResource scoreChange=-5
-
-if __name__ == "__main__":
-    from vgdl.core import VGDLParser
-    VGDLParser.playGame(push_game, box_level)    

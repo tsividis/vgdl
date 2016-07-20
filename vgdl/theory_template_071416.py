@@ -1,5 +1,6 @@
 import itertools, random, copy
-
+from sampleVGDLString import *
+from class_theory_template_071916 import *
 """
 Theory induction on VGDL Games
 """
@@ -21,19 +22,20 @@ Current assumptions:
 
 '''
 
-class Property(object):
+class Sprite(object):
 	"""
 	TODO: Incorporate properties into theory induction loop.
 	"""
-	def __init__(self, vgdlType, color, args):
+	def __init__(self, vgdlType, color, className=None, args=None):
 		self.vgdlType = vgdlType
 		self.color = color 
+		self.className = className
 		self.args = args
 
 	# TODO: Should enforce proper syntax for properties
 	def display():
 		pass
-
+	
 class TimeStep: 
 	"""
 	Everything that happened in a time step in the game.
@@ -167,6 +169,13 @@ class Theory(object):
 		self.dryingPaint = set()
 		self.inModification = {}
 
+
+	def initializeSpriteSet(self, vgdlSpriteParse):
+		self.spriteSet = vgdlSpriteParse
+		for i in range(len(self.spriteSet)):
+			sprite = self.spriteSet[i]
+			sprite.className = 'c'+str(i)
+			self.classes[sprite.className] = sprite.color
 
 	"""Main functions"""
 
@@ -675,15 +684,21 @@ class Game(object):
 	"""
 	VGDL Game and Induction State.
 	"""
-	def __init__(self):
+	def __init__(self, vgdlString):
 		# Game states #TODO: May not need these
 		#self.backpack = {}
 		#self.trace = [] # list of TimeStep objects that happened during a gameplay
 
+		self.vgdlString = vgdlString
 		# Induction states
 		self.hypothesisSpace = set()
 		self.theoryCount = 0
-	
+		self.vgdlSpriteParse = self.makeSpriteParse()
+
+	def makeSpriteParse(self):
+		s = SpriteParser()
+		return s.parseGame(self.vgdlString)
+
 	def display(self):
 		print self.theoryCount
 
@@ -691,7 +706,10 @@ class Game(object):
 		"""
 		Iterates through trace, performing theory induction on each timestep
 		"""
-		self.hypothesisSpace = set([Theory(self)])
+		T = Theory(self)
+		T.initializeSpriteSet(self.vgdlSpriteParse)
+		print T.classes
+		self.hypothesisSpace = set([T])
 		newTheories = []
 
 		# For every timestep
@@ -703,7 +721,7 @@ class Game(object):
 			# For every theory
 			for theory in self.hypothesisSpace:
 				if theory.likelihood(timestep) < 1.0: 	# Theory needs to be changed
-					# print "likelihood", theory.likelihood(timestep)
+					print "likelihood", theory.likelihood(timestep)
 					newTheories.extend(theory.explainTimeStep(timestep, timestep))
 
 			for theory in newTheories:
@@ -735,17 +753,15 @@ class Game(object):
 		self.hypothesisSpace = set(newHypothesisSpace)
 		return
 
-
-
-# g = Game()
+g = Game(push_game)
 
 # # Use to test equality of theories
-# rawTrace = [
-# {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
-# {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, 
-# {'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
-# {'agentAction': 'up', 'agentState': {}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE'), ('killSprite', 'DARKBLUE', 'WHITE')]}
-# ]
+rawTrace = [
+{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
+{'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, 
+{'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
+{'agentAction': 'up', 'agentState': {}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE'), ('killSprite', 'DARKBLUE', 'WHITE')]}
+]
 
 # # Use to test preconditions and end game handling
 # rawTrace = [
@@ -759,8 +775,7 @@ class Game(object):
 # 'agentAction': None, 'agentState': {'trap': 1}, 'effectList': ['gameEnd']}]
 # # rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BROWN')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'GREEN'), ('killSprite', 'DARKBLUE', 'GREEN')]}, {'agentAction': 'down', 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', -1), ('killSprite', 'DARKBLUE', 'BROWN')]}]
 
-
-# trace = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in rawTrace]
+trace = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in rawTrace]
 
 # hypotheses=list(g.induction(trace[0:-1]))
 # sorted(hypotheses, key=lambda x:len(x.interactionSet)*len(x.classes.keys()))

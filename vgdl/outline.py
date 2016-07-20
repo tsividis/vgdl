@@ -67,6 +67,8 @@ def theory.explain(timestep, hypotheticals):
 
 ___________
 
+also fix predicates
+
 def theory.generateTheories(event):
 	#Returns theories that explain the event, which is a tuple like:
 	# (bounceForward, BLUE, ORANGE)
