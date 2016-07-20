@@ -72,7 +72,6 @@ class SpriteParser(object):
             if c.content == "SpriteSet":
                 self.parseSprites(c.children)
         #Return list of sprite types.
-        print "checking."
         print self.sprite_types.values()
         return self.sprite_types.values()
 
