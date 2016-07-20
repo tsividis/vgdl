@@ -1,19 +1,24 @@
 import pygame
+import sys
+sys.path.insert(0, '../')
 from random import choice
 from tools import Node, indentTreeParser
 from collections import defaultdict
-from vgdl.tools import roundedPoints
 import os
 import uuid
 import subprocess
 import glob
 import ipdb
 from IPython import embed
-from vgdl.core import *
-from vgdl.ontology import colorDict
+from core import *
+from tools import roundedPoints
+from ontology import colorDict
+# from vgdl.core import *
+# from vgdl.tools import roundedPoints
+# from vgdl.ontology import colorDict
 from copy import deepcopy
 
-class Property(object):
+class Sprite(object):
 	"""
 	TODO: Incorporate properties into theory induction loop.
 	"""
@@ -26,7 +31,7 @@ class Property(object):
 	def display():
 		pass
 
-class SpriteParser:
+class SpriteParser(object):
     resourcePackTypeStrings = {'Immovable', 'Passive', 'ResourcePack', 'Spreader', 'Portal', 'SpawnPoint', 'Conveyor'}
     def __init__(self):
     	self.sprite_types = dict()
@@ -64,6 +69,9 @@ class SpriteParser:
         for c in tree.children:
             if c.content == "SpriteSet":
                 self.parseSprites(c.children)
+        #Return list of sprite types.
+        return self.sprite_types.values()
+
 
     def parseSprites(self, snodes, parentclass=None, parentargs={}, parenttypes=[]):
         resourcePackTypes = {self._eval(obj_type) for obj_type in SpriteParser.resourcePackTypeStrings}
@@ -85,10 +93,10 @@ class SpriteParser:
             	args_without_color = deepcopy(args)
             	del args_without_color['color']
             	if sclass in resourcePackTypes:
-            		self.sprite_types[key] = Property(self._eval('ResourcePack'), color_type, args_without_color)
+            		self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args_without_color)
             		# self.sprite_types[key] = (self._eval('ResourcePack'), colorized_args, stypes)
                 else:
-	                self.sprite_types[key] = Property(sclass, color_type, args_without_color)
+	                self.sprite_types[key] = Sprite(sclass, color_type, args_without_color)
 
 	                # print self.sprite_types[key]
 

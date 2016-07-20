@@ -1,5 +1,6 @@
 import itertools, random, copy
-from SpriteParser import *
+from sampleVGDLString import *
+from class_theory_template_071916 import *
 """
 Theory induction on VGDL Games
 """
@@ -657,19 +658,20 @@ class Game(object):
 	"""
 	VGDL Game and Induction State.
 	"""
-	def __init__(self, vgdlParse):
+	def __init__(self, vgdlString):
 		# Game states #TODO: May not need these
 		#self.backpack = {}
 		#self.trace = [] # list of TimeStep objects that happened during a gameplay
 
-		self.vgdlParse = vgdlParse
+		self.vgdlString = vgdlString
 		# Induction states
 		self.hypothesisSpace = set()
 		self.theoryCount = 0
 		self.vgdlSpriteParse = self.makeSpriteParse()
 
 	def makeSpriteParse(self):
-		return False
+		s = SpriteParser()
+		return s.parseGame(self.vgdlString)
 
 	def display(self):
 		print self.theoryCount
@@ -726,13 +728,7 @@ class Game(object):
 		self.hypothesisSpace = set(newHypothesisSpace)
 		return
 
-
-
 g = Game(push_game)
-#for now, making them here. normally you will make game and upon initialization, parse the sprites.
-sprites = [Sprite('MovingAvatar', 'DARKBLUE', 'c0'), Sprite('ResourcePack', 'LIGHTBLUE', 'c1'), Sprite('ResourcePack', 'ORANGE', 'c2'), Sprite('ResourcePack', 'PINK', 'c3'), Sprite('ResourcePack', 'BLACK', 'c4'), Sprite('ResourcePack', 'WHITE', 'c5')]
-g.vgdlSpriteParse = sprites
-
 
 # # Use to test equality of theories
 rawTrace = [
@@ -756,8 +752,5 @@ rawTrace = [
 
 trace = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in rawTrace]
 
-# t = Theory(g)
-# sprites = [Sprite('MovingAvatar', 'DARKBLUE', 'c0'), Sprite('ResourcePack', 'LIGHTBLUE', 'c1'), Sprite('ResourcePack', 'ORANGE', 'c2'), Sprite('ResourcePack', 'PINK', 'c3'), Sprite('ResourcePack', 'BLACK', 'c4'), Sprite('ResourcePack', 'WHITE', 'c5')]
-# t.initializeSpriteSet(sprites)
 # hypotheses=list(g.induction(trace[0:-1]))
 # sorted(hypotheses, key=lambda x:len(x.interactionSet)*len(x.classes.keys()))

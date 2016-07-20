@@ -54,21 +54,3 @@ BasicGame frame_rate=30
         SpriteCounter stype=avatar  limit=0 win=False          
 """
 
-# g = Game(push_game)
-# #for now, making them here. normally you will make game and upon initialization, parse the sprites.
-# sprites = [Sprite('MovingAvatar', 'DARKBLUE', 'c0'), Sprite('ResourcePack', 'LIGHTBLUE', 'c1'), Sprite('ResourcePack', 'ORANGE', 'c2'), Sprite('ResourcePack', 'PINK', 'c3'), Sprite('ResourcePack', 'BLACK', 'c4'), Sprite('ResourcePack', 'WHITE', 'c5')]
-# g.vgdlSpriteParse = sprites
-
-# rawTrace = [
-# {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
-# {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, 
-# {'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
-# {'agentAction': 'up', 'agentState': {}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE'), ('killSprite', 'DARKBLUE', 'WHITE')]}
-# ]
-
-
-# trace = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in rawTrace]
-
-# t = Theory(g)
-# t.initializeSpriteSet(sprites)
-
