@@ -53,25 +53,31 @@ class TimeStep:
 
 	def display(self):
 		print (self.agentAction, self.agentState, self.events)
+		return (self.agentAction, self.agentState, self.events)
 
 
 class Precondition(object):
 	"""
 	Appended to InteractionRules if conflicting effects occur from the same interaction, due to changed resources.
 	"""
-	def __init__(self, text, fn):
+	def __init__(self, text, fn, item):
 		self.text = text
 		self.fn = fn
+		self.item = item
 		self.negated = False
 
-	def check(self, arg):	# TODO: Is 'arg' most likely 'backpack'?
-		if len(arg.keys())>0:
+	def check(self, backpack):	# TODO: Is 'arg' most likely 'backpack'?
+		# TODO: Incorporate something about if the item isn't even found in the backpack? Always return True in that case?
+		try:
+			answer = self.fn(backpack)
 			if self.negated:
-				return not self.fn(arg)
+				return not answer
 			else:
-				return self.fn(arg) # Need to pass in backpack into this function to get updated values
-
-		else: return True
+				return answer
+		except Exception as e:
+			print e
+			backpack[self.item] = 0
+			return self.fn(backpack)
 
 	def negate(self):
 		self.negated = not self.negated
@@ -171,7 +177,6 @@ class Theory(object):
 		"""
 		# Base Case
 		if len(timestep.events) == 1:
-			print "In base case of explainTimeStep..."
 			theories = []
 			if not currTheories:
 				theories.extend(self.explainEvent(timestep.events[0], fullTimestep))
@@ -184,7 +189,6 @@ class Theory(object):
 
 		# Recursive Case
 		else:
-			print "Recursing in explainTimeStep..."
 			theories = self.explainEvent(timestep.events[0], fullTimestep)
 			updatedTimeStep = TimeStep(timestep.agentAction, timestep.agentState, timestep.events[1:])
 			return self.explainTimeStep(updatedTimeStep, fullTimestep, theories)
@@ -194,8 +198,7 @@ class Theory(object):
 		Returns theories that explain the event, which is a tuple like:
 		(bounceForward, BLUE, ORANGE)
 		"""
-		print "In explainEvent, checking event {}, with ruleset".format(event)
-		print "\t", [r.display() for r in self.interactionSet]
+		
 		theories = []
 
 		likelihood = self.likelihood(timestep)
@@ -204,16 +207,10 @@ class Theory(object):
 		else:
 			failCase = self.getFailCases(event, timestep)
 			if failCase in [1,2,3]:
-				print "Will add a precondition."
 				theories.extend(self.addPreconditions(event, timestep))
 			elif failCase == 4: 
-				print "Will add a rule."
 				theories.extend(self.addRules(event))
-		# print "new theories: "
-		# for t in range(len(theories)):
-		# 	print "\tnew theory", t
-		# 	print "\t", [r.display() for r in theories[t].interactionSet]
-		# print "added {} theories in total".format(len(theories))
+	
 		return theories
 
 	def likelihood(self, timestep, verbose=False):
@@ -224,9 +221,6 @@ class Theory(object):
 
 		Right now returns only 1 or 0.
 		"""
-		print '\nevents are in rules', self.checkEventsInTimeStep(timestep)
-		print 'predictions happened\n', self.checkPredictionsInTimeStep(timestep) #TODO: LEFT OF
-
 		if self.checkEventsInTimeStep(timestep) and self.checkPredictionsInTimeStep(timestep):
 			likelihood = 1.
 		else:
@@ -240,7 +234,8 @@ class Theory(object):
 		Check if all events in the timestep are covered by the interaction rule set.
 		"""
 		interpretations = [self.interpret(event) for event in timestep.events]
-		return all([self.checkInterpretation(i, timestep) for i in interpretations])
+		return all([self.checkEvents(i, timestep) for i in interpretations])
+
 
 	def checkPredictionsInTimeStep(self, timestep):
 		"""
@@ -248,15 +243,36 @@ class Theory(object):
 		"""
 		#Note: This fn cannot be exactly like checkPredictions(), becase here we don't care whether 'drying paint' is 
 		#T or F. We need to actually check all the predictions.
-		interpretations = [self.interpret(event) for event in timestep.events if self.interpret(event) is not False]
-		if False not in interpretations:
-			interpretations = [interpretation.asTuple() for interpretation in interpretations]
-		else:
-			return False
+		interpretations = [self.interpret(event).asTuple() for event in timestep.events if self.interpret(event) is not False]
+
 		relevantRules = []
 		for event in timestep.events:
 			relevantRules.extend(self.findRelevantRules(event, timestep.agentState))
-		return all([rule in interpretations for rule in relevantRules])
+
+		if False in relevantRules: #TODO: Can probably condense this
+			rules_list = []
+			for r in relevantRules:
+				if r==False:
+					rules_list.append(r)
+				else:
+					rules_list.append(r.asTuple())
+			return False
+		else:
+			rules_list = []
+			for r in relevantRules:
+				if r==False:
+					rules_list.append(r)
+
+				else:
+					rules_list.append(r.asTuple())
+			
+			for rule in relevantRules:
+				if rule.asTuple() not in interpretations:
+					return False
+			return True
+
+			#return allPredictionsSeen
+
 	
 	def getFailCases(self, event, timestep, verbose=False):
 		"""
@@ -279,7 +295,7 @@ class Theory(object):
 					 (False, ()):    [4, "Event likelihood failed because interactionSet hasn't seen the event."+
 					 "Solution: AddRule()"]}
 
-		(eventInRules, predictionsHappened) = self.checkEvents(event, timestep), self.checkPredictions(event, timestep)
+		(eventInRules, predictionsHappened) = self.checkEvents(self.interpret(event), timestep), self.checkPredictions(event, timestep)
 		
 		if verbose:
 			print failCases[(eventInRules, predictionsHappened)][1]
@@ -287,11 +303,24 @@ class Theory(object):
 		return failCases[(eventInRules, predictionsHappened)][0]
 
 
-	def checkEvents(self, event, timestep):
+	def checkEvents(self, interpretation, timestep):
 		"""
-		Check if a single event has an interpretation (i.e. if it is in the interaction rule set).
+		Checks whether everything in the interpretation is accounted for by the interactionSet.
 		"""
-		return self.checkInterpretation(self.interpret(event), timestep)
+		if interpretation:
+			interpretation = interpretation.asTuple()
+			for rule in self.interactionSet:
+				precon_list = [p.text for p in rule.preconditions]
+				if rule.asTuple()==interpretation:
+					if not rule.preconditions: # If no preconditions for the rule, then all is well.
+						return True 
+					else:
+						return all([p.check(timestep.agentState) for p in rule.preconditions])
+
+		# If we've checked everything and found no matching rule or rule+precondition, return False.			
+		return False 
+
+
 
 	def checkPredictions(self, event, timestep):
 		"""
@@ -300,10 +329,9 @@ class Theory(object):
 		# TODO: Add comments here
 		interpretations = [self.interpret(e).asTuple() for e in timestep.events if self.interpret(e) is not False] 
 		if interpretations:
-			#interpretations = [interpretation.asTuple() for interpretation in interpretations]
 			relevantRules = self.findRelevantRules(event, timestep.agentState, checkDryingPaint=True)
 			if relevantRules:
-				return all([rule in interpretations for rule in relevantRules])
+				return all([rule.asTuple() in interpretations for rule in relevantRules])
 			else:
 				return () #There were no relevant rules; need to create new rule.
 		else:
@@ -389,6 +417,24 @@ class Theory(object):
 
 	"""Helper functions"""
 
+	#TODO: Could be named "suggestRules"
+	def interpret(self, event): #TODO: How should this take in preconditions?
+		"""
+		Looks up objects by their corresponding class under the theory,
+		returns a corresponding interactionRule.
+		
+		If those objects aren't known, returns false.
+
+		Ex) Event is a tuple: ('bounceForward', 'ORANGE', 'DARKBLUE')
+		If we know that ORANGE=c1 and DARKBLUE=c2, returns the InteractionRule
+		that corresponds to (bounceForward, c1, c2)
+		"""
+		c1, c2 = self.getClass(event[1]), self.getClass(event[2])
+		if c1 and c2:
+			return InteractionRule(event[0], c1, c2)
+		else:
+			return False
+
 	def findRelatedRules(self, classPair, interactionList):
 		#needs to take a list of interpretations or a list of interaction rules
 		return [interaction for interaction in interactionList if classPair == interaction.asTuple()[1:]]
@@ -421,11 +467,13 @@ class Theory(object):
 	def makePreconditions(self, concepts):
 		preconditions = []
 		for c in concepts:
-			def f(x):
-				if c[1] in x.keys():
-					return x[c[1]]>c[2]
-				else:return True
-			preconditions.append(Precondition(c[0], f))
+			text = c[0]
+			item = c[1]
+			num = c[2]
+			
+			f = lambda x: x[item]>num
+			
+			preconditions.append(Precondition(text, f, item))
 		return preconditions
 
 
@@ -507,40 +555,32 @@ class Theory(object):
 		return False
 
 	
-	def interpret(self, event): 
-		"""
-		Looks up objects by their corresponding class under the theory,
-		returns a corresponding interactionRule.
-		
-		If those objects aren't known, returns false.
-
-		Ex) Event is a tuple: ('bounceForward', 'ORANGE', 'DARKBLUE')
-		If we know that ORANGE=c1 and DARKBLUE=c2, returns the InteractionRule
-		that corresponds to (bounceForward, c1, c2)
-		"""
-		c1, c2 = self.getClass(event[1]), self.getClass(event[2])
-		if c1 and c2:
-			return InteractionRule(event[0], c1, c2)
-		else:
-			return False
 
 	def findRelevantRules(self, event, agentState, checkDryingPaint=False):
 		"""
-		Helper function for likelihood. If an event involves c1 and c2, 
-		returns rules that use c1 and c2 in those slots.
+		If an event involves c1 and c2, returns rules that use c1 and c2 in those slots.
 		"""
-
 		interpretation = self.interpret(event)
 		relevantRules = []
 		if interpretation:
 			class1, class2 = interpretation.asTuple()[1], interpretation.asTuple()[2]
 			
 			rules = [rule for rule in self.interactionSet]
+			# This should not include any rules that don't satisfy the current preconditions
+			# for rule in rules: 
+			# 	if rule.asTupel()[1]==class1 and rule.asTuple()[2]==class2:
+			# 		if checkDryingPaint:
+			# 			if not self.findRule(rule, self.dryingPaint)
+
 			if not checkDryingPaint:
-				relevantRules.extend([rule.asTuple() for rule in rules if rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 and all(p.check(agentState) for p in rule.preconditions)])
+				# for rule in rules:
+				# 	if rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2:
+				# 		for p in rule.preconditions:
+				# 			all(p.check(agentState) for p in rule.preconditions)
+				relevantRules.extend([rule for rule in rules if rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 and all(p.check(agentState) for p in rule.preconditions)])
 			else:
 				# Here we only return rules that are not in the drying paint. 
-				relevantRules.extend([rule.asTuple() for rule in rules if not self.findRule(rule, self.dryingPaint) and rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 and all(p.check(agentState) for p in rule.preconditions)])
+				relevantRules.extend([rule for rule in rules if not self.findRule(rule, self.dryingPaint) and rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 and all(p.check(agentState) for p in rule.preconditions)])
 		else:
 			relevantRules.append(False)
 		if False not in relevantRules:
@@ -548,23 +588,6 @@ class Theory(object):
 		else:
 			return [False]
 
-	def checkInterpretation(self, interpretation, timestep):
-		"""
-		Helper function for likelihood(). Checks whether everything in the interpretation is 
-		accounted for by the interactionSet.
-		"""
-		if interpretation:
-			interpretation = interpretation.asTuple()
-			for rule in self.interactionSet:
-				if rule.asTuple()==interpretation:
-					if rule.preconditions == False:
-						return True # TODO: Should this be False? or should line above be True? 
-									#Pedro's comment: Should be as is; the interpretation is fine if it matches the rule
-									#and there were no preconditions to check.
-					elif all([p.check(timestep.agentState) for p in rule.preconditions]):
-						return True
-			return False 			# If we've checked everything and found no matching rule or rule+precondition, reutrn false.
-		return False 				# Uninterpretable interpretation returns False, too.
 
 
 	def searchForPossibleClasses(self, o, newClasses=0): # TODO: Seems to add an extra class
@@ -645,6 +668,9 @@ class Theory(object):
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
+
+
+
 class Game(object):
 	"""
 	VGDL Game and Induction State.
@@ -675,11 +701,11 @@ class Game(object):
 			print "___________________________________________________________________"
 
 			# For every theory
-			for theory in self.hypothesisSpace: 			
+			for theory in self.hypothesisSpace:
 				if theory.likelihood(timestep) < 1.0: 	# Theory needs to be changed
 					# print "likelihood", theory.likelihood(timestep)
 					newTheories.extend(theory.explainTimeStep(timestep, timestep))
-			
+
 			for theory in newTheories:
 				if theory not in self.hypothesisSpace:
 					self.hypothesisSpace.add(theory) #TODO: numbering of theories should take place here.	
@@ -703,7 +729,6 @@ class Game(object):
 		"""
 		newHypothesisSpace = []
 		for t in self.hypothesisSpace:
-			print [t.likelihood(s)>=threshold for s in subtrace]
 			if all([t.likelihood(s)>=threshold for s in subtrace]):
 				t.dryingPaint = set()
 				newHypothesisSpace.append(t)
