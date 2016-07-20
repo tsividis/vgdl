@@ -88,7 +88,7 @@ class SpriteParser(object):
                 del args['singleton']
 
             if len(sn.children) == 0:
-            	# print (sclass, args, stypes)
+            	print (sclass, args, stypes)
             	color_type = colorDict[str(args['color'])]
             	args_without_color = deepcopy(args)
             	del args_without_color['color']

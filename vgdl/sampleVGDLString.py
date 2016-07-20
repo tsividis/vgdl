@@ -54,3 +54,33 @@ BasicGame frame_rate=30
         SpriteCounter stype=avatar  limit=0 win=False          
 """
 
+mario_game = """
+BasicGame
+    SpriteSet 
+        elevator > Missile orientation=UP speed=0.1 color=BLUE
+        moving > physicstype=GravityPhysics
+            avatar > MarioAvatar airsteering=True
+            evil   >  orientation=LEFT
+                goomba     > Walker     color=BROWN 
+                paratroopa > WalkJumper color=RED
+        goal > Immovable color=GREEN
+            
+    TerminationSet
+        SpriteCounter stype=goal      win=True     
+        SpriteCounter stype=avatar    win=False     
+           
+    InteractionSet
+        evil avatar > killIfFromAbove scoreChange=1
+        avatar evil > killIfAlive
+        moving EOS  > killSprite 
+        goal avatar > killSprite
+        moving wall > wallStop friction=0.1
+        moving elevator > pullWithIt        
+        elevator EOS    > wrapAround
+        
+    LevelMapping
+        G > goal
+        1 > goomba
+        2 > paratroopa
+        = > elevator
+"""
