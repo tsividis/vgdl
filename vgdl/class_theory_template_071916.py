@@ -18,15 +18,14 @@ from ontology import colorDict
 # from vgdl.ontology import colorDict
 from copy import deepcopy
 
-
 class Sprite(object):
     """
     TODO: Incorporate properties into theory induction loop.
     """
-    def __init__(self, vgdlType, color, className=None, args=None):
+    def __init__(self, vgdlType, color, args):
+        """color=None if there's no color for the sprite"""
         self.vgdlType = vgdlType
         self.color = color 
-        self.className = className
         self.args = args
 
     # TODO: Should enforce proper syntax for properties
@@ -72,7 +71,6 @@ class SpriteParser(object):
             if c.content == "SpriteSet":
                 self.parseSprites(c.children)
         #Return list of sprite types.
-        print self.sprite_types.values()
         return self.sprite_types.values()
 
 
@@ -90,11 +88,11 @@ class SpriteParser(object):
             if 'singleton' in args:
                 if args['singleton']==True:
                     self.game.singletons.append(key)
-                print args
                 args = args.copy()
                 del args['singleton']
 
             if len(sn.children) == 0:
+                # print (sclass, args, stypes)
                 if 'color' in args:
                     color_type = colorDict[str(args['color'])]
                     args_without_color = deepcopy(args)

@@ -26,11 +26,12 @@ class Sprite(object):
 	"""
 	TODO: Incorporate properties into theory induction loop.
 	"""
-	def __init__(self, vgdlType, color, className=None, args=None):
+	def __init__(self, vgdlType, color, className=None, args=None, levelMappingSymbol=None):
 		self.vgdlType = vgdlType
 		self.color = color 
 		self.className = className
 		self.args = args
+		self.levelMappingSymbol = levelMappingSymbol
 
 	# TODO: Should enforce proper syntax for properties
 	def display():
@@ -175,7 +176,7 @@ class Theory(object):
 		for i in range(len(self.spriteSet)):
 			sprite = self.spriteSet[i]
 			sprite.className = 'c'+str(i)
-			self.classes[sprite.className] = sprite.color
+			self.classes[sprite.className] = [sprite.color]
 
 	"""Main functions"""
 
