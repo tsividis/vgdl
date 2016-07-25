@@ -6,7 +6,6 @@ Theory induction on VGDL Games
 """
 
 '''
-
 TODO: 7/14/16:
 	Debug
 	Other cleanup
@@ -21,21 +20,8 @@ Current assumptions:
 	Events that take place at same timestep can only be because of the same preconditions.
 
 '''
+# TODO: Make a dictionary mapping the colors to a sprite object.
 
-class Sprite(object):
-	"""
-	TODO: Incorporate properties into theory induction loop.
-	"""
-	def __init__(self, vgdlType, color, className=None, args=None):
-		self.vgdlType = vgdlType
-		self.color = color 
-		self.className = className
-		self.args = args
-
-	# TODO: Should enforce proper syntax for properties
-	def display():
-		pass
-	
 class TimeStep: 
 	"""
 	Everything that happened in a time step in the game.
@@ -163,6 +149,7 @@ class Theory(object):
 		self.interactionSet = [] # Interaction rules
 		self.terminationSet = [] # Conditions that lead to game termination
 
+		self.spriteObjects = {} # Maps sprite color -> Sprite object
 		self.classes = {} # Maps classes -> objects
 		self.predicates = set() # Types of possible interactions
 
@@ -172,10 +159,18 @@ class Theory(object):
 
 	def initializeSpriteSet(self, vgdlSpriteParse):
 		self.spriteSet = vgdlSpriteParse
-		for i in range(len(self.spriteSet)):
-			sprite = self.spriteSet[i]
-			sprite.className = 'c'+str(i)
-			self.classes[sprite.className] = [sprite.color]
+		for i in self.spriteSet:
+			print i.color, i
+		print 
+
+		# Get mapping from sprite color to Sprite object
+		for s in self.spriteSet:
+			self.spriteObjects[s.color] = s
+
+		# for i in range(len(self.spriteSet)): #TODO: Build this up from scratch, rather than initialize all objs into separate classes?
+		# 	sprite = self.spriteSet[i]
+		# 	sprite.className = 'c'+str(i)			# TODO: Use classes based on vgdl type?
+		# 	self.classes[sprite.className] = [sprite]
 
 	"""Main functions"""
 
@@ -207,20 +202,22 @@ class Theory(object):
 		Returns theories that explain the event, which is a tuple like:
 		(bounceForward, BLUE, ORANGE)
 		"""
-		
+		#print "in explainEvent..."
 		theories = []
 
 		likelihood = self.likelihood(timestep)
+		#print '\tlikelihood', likelihood
+
 		if likelihood == 1:
 			theories.append(self)
 		else:
 			failCase = self.getFailCases(event, timestep)
-			#print "Fail case: ", failCase
+			#print "\tFail case: ", failCase
 			if failCase in [1,2,3]:
 				theories.extend(self.addPreconditions(event, timestep))
 			elif failCase == 4: 
 				theories.extend(self.addRules(event))
-	
+
 		return theories
 
 	def likelihood(self, timestep, verbose=False):
@@ -342,17 +339,19 @@ class Theory(object):
 		over possible class assignments for the objects.
 		Returns a list of theories.
 		"""
+		#print 'in addRules...'
 		newTheories = []
-
 		possibleAssignments = self.searchForAssignments(event)
+
+		obj1 = self.spriteObjects[event[1]]
+		obj2 = self.spriteObjects[event[2]]
+
 
 		if possibleAssignments:
 			for assignment in possibleAssignments:
 				interaction = InteractionRule(event[0], assignment[0], assignment[1]) #This isn't strictly necessary, but follows createChild requirements.
 				
-				#print "new interaction rule:", interaction.asTuple()
-				
-				classAssignments = [(assignment[0], event[1]), (assignment[1],event[2])]
+				classAssignments = [(assignment[0], obj1), (assignment[1], obj2)]
 				newTheory = self.createChild([interaction, classAssignments])
 
 				# Checks and only adds to newTheories if the created theory was actually different.
@@ -369,7 +368,11 @@ class Theory(object):
 		Returns a list of theories.
 		"""
 		newTheories = []
-		classPair = (self.getClass(event[1]), self.getClass(event[2]))
+
+		obj1 = self.spriteObjects[event[1]]
+		obj2 = self.spriteObjects[event[2]]
+
+		classPair = (self.getClass(obj1), self.getClass(obj2))
 
 		# If object classes are currently being modified in the same timestep, obtain the same preconditions as before
 		if classPair in self.inModification.keys():
@@ -419,7 +422,7 @@ class Theory(object):
 	"""Helper functions"""
 
 	#TODO: Could be named "suggestRules"
-	def interpret(self, event): #TODO: How should this take in preconditions?
+	def interpret(self, event):
 		"""
 		Looks up objects by their corresponding class under the theory,
 		returns a corresponding interactionRule.
@@ -430,9 +433,13 @@ class Theory(object):
 		If we know that ORANGE=c1 and DARKBLUE=c2, returns the InteractionRule
 		that corresponds to (bounceForward, c1, c2)
 		"""
-		c1, c2 = self.getClass(event[1]), self.getClass(event[2])
+		obj1 = self.spriteObjects[event[1]]
+		obj2 = self.spriteObjects[event[2]]
 
+		c1, c2 = self.getClass(obj1), self.getClass(obj2)
+		#print 'classes:', c1, c2
 		if c1 and c2:
+			#print 'new interaction rule!'
 			return InteractionRule(event[0], c1, c2)
 		else:
 			return False
@@ -487,6 +494,9 @@ class Theory(object):
 		newTheory.depth = self.depth + 1
 		newTheory.parent = self
 		newTheory.children = []
+
+		#TODO: Could copy over the spriteSet and self.classes?
+
 		generatedNewTheory = newTheory.addProposal(proposal)
 
 		if generatedNewTheory:
@@ -552,9 +562,10 @@ class Theory(object):
 		"""
 		Obtains the classes of the object; otherwise returns False if class not found.
 		"""
-		for c, o in self.classes.iteritems():
-			if obj in o:
-				return c
+		for classNum, objList in self.classes.iteritems(): #TODO: The issue is here w/ objects not found in the classes list
+			for obj2 in objList:
+				if obj == obj2:
+					return classNum
 		return False
 
 	
@@ -568,18 +579,11 @@ class Theory(object):
 		if interpretation:
 			class1, class2 = interpretation.asTuple()[1], interpretation.asTuple()[2]
 			
-			rules = [rule for rule in self.interactionSet]
 			# This should not include any rules that don't satisfy the current preconditions
-			# for rule in rules: 
-			# 	if rule.asTupel()[1]==class1 and rule.asTuple()[2]==class2:
-			# 		if checkDryingPaint:
-			# 			if not self.findRule(rule, self.dryingPaint)
+			rules = [rule for rule in self.interactionSet]
+
 
 			if not checkDryingPaint:
-				# for rule in rules:
-				# 	if rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2:
-				# 		for p in rule.preconditions:
-				# 			all(p.check(agentState) for p in rule.preconditions)
 				relevantRules.extend([rule for rule in rules if rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 and all(p.check(agentState) for p in rule.preconditions)])
 			else:
 				# Here we only return rules that are not in the drying paint. 
@@ -593,35 +597,57 @@ class Theory(object):
 
 
 
-	def searchForPossibleClasses(self, o, newClasses=0): # TODO: Seems to add an extra class
+	def searchForPossibleClasses(self, obj_Sprite, newClasses=0):
 		"""
 		If the object has been assigned, return it. Otherwise return all
 		possible classes. Optional argument can posit existence of a new class;
 		user specifies whether to add 0, 1, or 2 new classes.
 		"""
 		gotNewClass = False
-		if self.getClass(o):
-			return [self.getClass(o)], gotNewClass
-		elif len(self.classes.keys())>0 and newClasses==0:
-			return self.classes.keys(), gotNewClass
-		elif newClasses>0:
+		
+		# Get classes of sprites of the same VGDL Type 
+		possibleClasses = []
+		for s in self.spriteSet:
+			if s.vgdlType == obj_Sprite.vgdlType and self.getClass(s):
+				possibleClasses.append(self.getClass(s))
+
+		# Class exists
+		if self.getClass(obj_Sprite):
+			return [self.getClass(obj_Sprite)], gotNewClass
+
+		# Propose new classes and classes with sprites of the same vgdlType
+		elif newClasses > 0: 
 			numClasses = len(self.classes.keys())
-			classes = self.classes.keys()
 			for i in range(1, newClasses+1):
-				classes.append('c'+str(numClasses+i))
+				possibleClasses.append('c'+str(numClasses+i)) # Classes that extend off number of existing classes
 			gotNewClass = True
-			return classes, gotNewClass
+			return possibleClasses, gotNewClass
 		else: return [], gotNewClass
 
-	def searchForAssignments(self, event):
-		x1, gotNewClass = self.searchForPossibleClasses(event[1], newClasses=1)
-		if gotNewClass:
-			x2 = self.searchForPossibleClasses(event[2], newClasses=2)[0]
-		else:
-			x2 = self.searchForPossibleClasses(event[2], newClasses=1)[0]
 
-		if x1 and x2: #if both yielded possibilities
-			return list(itertools.product(x1,x2))
+	def searchForAssignments(self, event):
+		obj1 = self.spriteObjects[event[1]]
+		obj2 = self.spriteObjects[event[2]]
+		#print "in searchForAssignments...."
+		#print "\tboth objects are still in spriteset? {} | {}".format(obj1 in self.spriteSet, obj2 in self.spriteSet)
+
+		x1, gotNewClass = self.searchForPossibleClasses(obj1, newClasses=1)
+		if gotNewClass:
+			x2 = self.searchForPossibleClasses(obj2, newClasses=2)[0]
+		else:
+			x2 = self.searchForPossibleClasses(obj2, newClasses=1)[0]
+
+		if x1 and x2: # If both yielded possibilities
+			classAssignments = []
+
+			# If objects are the same type, any combo of classes is accepted
+			if obj1.vgdlType == obj2.vgdlType:
+				return list(itertools.product(x1,x2))
+
+			 # If objects are diff type, want diff classes
+			else:
+				classAssignments = [(c1, c2) for c1 in x1 for c2 in x2 if c1!=c2]
+				return classAssignments
 		else: return False
 
 	def generateNumberConcepts(self, item, num): # TODO: Make this set of preconditions smaller
@@ -684,6 +710,7 @@ class Game(object):
 		#self.trace = [] # list of TimeStep objects that happened during a gameplay
 
 		self.vgdlString = vgdlString
+
 		# Induction states
 		self.hypothesisSpace = set()
 		self.theoryCount = 0
@@ -702,7 +729,7 @@ class Game(object):
 		"""
 		T = Theory(self)
 		T.initializeSpriteSet(self.vgdlSpriteParse)
-		print T.classes
+
 		self.hypothesisSpace = set([T])
 		newTheories = []
 

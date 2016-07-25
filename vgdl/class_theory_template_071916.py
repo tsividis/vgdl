@@ -22,15 +22,26 @@ class Sprite(object):
     """
     TODO: Incorporate properties into theory induction loop.
     """
-    def __init__(self, vgdlType, color, args):
-        """color=None if there's no color for the sprite"""
+    def __init__(self, vgdlType, color, className=None, args=None): 
         self.vgdlType = vgdlType
         self.color = color 
+        self.className = className
         self.args = args
 
     # TODO: Should enforce proper syntax for properties
-    def display():
-        pass
+    def display(self):
+        print (self.vgdlType, self.color, self.className, self.args)
+
+    def __eq__(self, other):
+        return all([
+            self.vgdlType==other.vgdlType,
+            self.color==other.color,
+            self.className==other.className,
+            self.args==other.args
+            ])
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 class SpriteParser(object):
     resourcePackTypeStrings = {'Immovable', 'Passive', 'ResourcePack', 'Spreader', 'Portal', 'SpawnPoint', 'Conveyor'}
