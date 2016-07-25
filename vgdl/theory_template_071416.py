@@ -78,7 +78,7 @@ class Precondition(object):
 			else:
 				return answer
 		except Exception as e:
-			print e
+			#print e
 			backpack[self.item] = 0
 			return self.fn(backpack)
 
@@ -216,6 +216,7 @@ class Theory(object):
 			theories.append(self)
 		else:
 			failCase = self.getFailCases(event, timestep)
+			#print "Fail case: ", failCase
 			if failCase in [1,2,3]:
 				theories.extend(self.addPreconditions(event, timestep))
 			elif failCase == 4: 
@@ -231,6 +232,7 @@ class Theory(object):
 
 		Right now returns only 1 or 0.
 		"""
+		#print "events in timestep {} | predictions in timestep {}".format(self.checkEventsInTimeStep(timestep), self.checkPredictionsInTimeStep(timestep))
 		if self.checkEventsInTimeStep(timestep) and self.checkPredictionsInTimeStep(timestep):
 			likelihood = 1.
 		else:
@@ -259,29 +261,14 @@ class Theory(object):
 		for event in timestep.events:
 			relevantRules.extend(self.findRelevantRules(event, timestep.agentState))
 
-		if False in relevantRules: #TODO: Can probably condense this
-			rules_list = []
-			for r in relevantRules:
-				if r==False:
-					rules_list.append(r)
-				else:
-					rules_list.append(r.asTuple())
+		if False in relevantRules: 
 			return False
 		else:
-			rules_list = []
-			for r in relevantRules:
-				if r==False:
-					rules_list.append(r)
-
-				else:
-					rules_list.append(r.asTuple())
-			
 			for rule in relevantRules:
 				if rule.asTuple() not in interpretations:
 					return False
 			return True
 
-			#return allPredictionsSeen
 
 	
 	def getFailCases(self, event, timestep, verbose=False):
@@ -363,8 +350,12 @@ class Theory(object):
 		if possibleAssignments:
 			for assignment in possibleAssignments:
 				interaction = InteractionRule(event[0], assignment[0], assignment[1]) #This isn't strictly necessary, but follows createChild requirements.
+				
+				#print "new interaction rule:", interaction.asTuple()
+				
 				classAssignments = [(assignment[0], event[1]), (assignment[1],event[2])]
 				newTheory = self.createChild([interaction, classAssignments])
+
 				# Checks and only adds to newTheories if the created theory was actually different.
 				if newTheory:
 					newTheories.append(newTheory)
@@ -383,6 +374,7 @@ class Theory(object):
 
 		# If object classes are currently being modified in the same timestep, obtain the same preconditions as before
 		if classPair in self.inModification.keys():
+
 			p = self.inModification[classPair]
 			interpretation = self.interpret(event)
 			interpretation.addPrecondition(p) #TODO: maybe you should be only doing this if interpreting worked in the line above.
@@ -440,6 +432,7 @@ class Theory(object):
 		that corresponds to (bounceForward, c1, c2)
 		"""
 		c1, c2 = self.getClass(event[1]), self.getClass(event[2])
+
 		if c1 and c2:
 			return InteractionRule(event[0], c1, c2)
 		else:
@@ -496,6 +489,7 @@ class Theory(object):
 		newTheory.parent = self
 		newTheory.children = []
 		generatedNewTheory = newTheory.addProposal(proposal)
+
 		if generatedNewTheory:
 			self.children.append(newTheory)
 			return newTheory
@@ -631,7 +625,7 @@ class Theory(object):
 			return list(itertools.product(x1,x2))
 		else: return False
 
-	def generateNumberConcepts(self, item, num):
+	def generateNumberConcepts(self, item, num): # TODO: Make this set of preconditions smaller
 		"""
 		Preconditions can be drawn from a pre-defined set of number concepts:
 		n >= 0  --> any numbers from 0 to inf (having this amount of health is fine)
@@ -722,13 +716,13 @@ class Game(object):
 			# For every theory
 			for theory in self.hypothesisSpace:
 				if theory.likelihood(timestep) < 1.0: 	# Theory needs to be changed
-					print "likelihood", theory.likelihood(timestep)
+					#print "likelihood", theory.likelihood(timestep)
 					newTheories.extend(theory.explainTimeStep(timestep, timestep))
 
 			for theory in newTheories:
 				if theory not in self.hypothesisSpace:
 					self.hypothesisSpace.add(theory) #TODO: numbering of theories should take place here.	
-			
+
 			self.cleanHypothesisSpace(trace[0:i+1], 1) #All timesteps up to now should be fully explained
 			print "{} hypotheses:".format(len(self.hypothesisSpace))
 			
@@ -748,7 +742,7 @@ class Game(object):
 		"""
 		newHypothesisSpace = []
 		for t in self.hypothesisSpace:
-			if all([t.likelihood(s)>=threshold for s in subtrace]):
+			if all(t.likelihood(s)>=threshold for s in subtrace):
 				t.dryingPaint = set()
 				newHypothesisSpace.append(t)
 		self.hypothesisSpace = set(newHypothesisSpace)
@@ -756,26 +750,34 @@ class Game(object):
 
 g = Game(push_game)
 
-# # Use to test equality of theories
-# rawTrace = [
-# {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
-# {'agentAction': 'up', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, 
-# {'agentAction': 'right', 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
-# {'agentAction': 'up', 'agentState': {}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE'), ('killSprite', 'DARKBLUE', 'WHITE')]}
-# ]
 
-# # Use to test preconditions and end game handling
-rawTrace = [
+# Testing preconditions
+rawTrace = [ 
+{'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, 
 {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, 
-{'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, 
-{'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, 
+{'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'BLUE')]}, 
 {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
-{'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, 
-{'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}, {
-'agentAction': None, 'agentState': {'trap': 1}, 'effectList': ['gameEnd']}]
-# # rawTrace = [{'agentAction': None, 'agentState': {}, 'effectList': []}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BROWN')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, {'agentAction': None, 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'GREEN'), ('killSprite', 'DARKBLUE', 'GREEN')]}, {'agentAction': 'down', 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', -1), ('killSprite', 'DARKBLUE', 'BROWN')]}]
+{'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}
+]
+
+
+'''
+# Testing lots of different actions
+rawTrace = [
+        {'agentAction': None, 'agentState': {}, 'effectList': []}, 
+        {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'RED'), ('killSprite', 'DARKBLUE', 'RED')]}, 
+        {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, 
+        {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
+        {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BROWN')]}, 
+        {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
+        {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]}, 
+        {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'PINK')]},
+        {'agentAction': None, 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('collectResource', 'DARKBLUE', 'GREEN'), ('killSprite', 'DARKBLUE', 'GREEN')]}, 
+        {'agentAction': 'down', 'agentState': {'treasure': 1, 'trap': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', -1), ('killSprite', 'DARKBLUE', 'BROWN')]}]
+'''
 
 trace = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in rawTrace]
 
-# hypotheses=list(g.induction(trace[0:-1]))
-# sorted(hypotheses, key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
+hypotheses=list(g.induction(trace))
+
+#sorted(hypotheses, key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
