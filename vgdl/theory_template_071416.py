@@ -1,4 +1,4 @@
-import itertools, random, copy
+import itertools, random, copy, numpy.random, scipy.misc
 from sampleVGDLString import *
 from class_theory_template_071916 import *
 """
@@ -179,6 +179,21 @@ class Theory(object):
 			self.classes[sprite.className] = [sprite.color]
 
 	"""Main functions"""
+
+	def prior(self):
+
+		def phi(numClasses, numRules, lamda):
+			#TODO: Refine this to take into account the minimum necessary size of the ruleset.
+			return lamda*numClasses + (1-lamda)*numRules
+
+		#Mode is p(r-1) / (1-p). For now we pick p=.5, r=5 to reflect that phi=4 is modal.
+		def negBin(k, r, p):
+			return scipy.misc.comb(k+r-1, k) * p**k * (1-p)**r
+
+		numClasses, numRules = len(self.classes.keys()), len(self.interactionSet)
+		k = phi(numClasses, numRules, .5)
+
+		return negBin(k,5,.5)
 
 	def explainTimeStep(self, timestep, fullTimestep, currTheories=False):
 		"""
@@ -697,14 +712,18 @@ class Game(object):
 	def display(self):
 		print self.theoryCount
 
-	def induction(self, trace):
+
+	def induction(self, trace, hypothesisSpace = False):
 		"""
 		Iterates through trace, performing theory induction on each timestep
 		"""
-		T = Theory(self)
-		T.initializeSpriteSet(self.vgdlSpriteParse)
-		print T.classes
-		self.hypothesisSpace = set([T])
+
+		if not hypothesisSpace:
+			T = Theory(self)
+			T.initializeSpriteSet(self.vgdlSpriteParse)
+			print T.classes
+			self.hypothesisSpace = set([T])
+		
 		newTheories = []
 
 		# For every timestep
@@ -726,13 +745,15 @@ class Game(object):
 			self.cleanHypothesisSpace(trace[0:i+1], 1) #All timesteps up to now should be fully explained
 			print "{} hypotheses:".format(len(self.hypothesisSpace))
 			
-			# Sort hypotheses (right now by simple length metric), then print.
-			hypotheses = sorted(list(self.hypothesisSpace), key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
+			# Sort hypotheses according to prior, then print.
+			hypotheses = sorted(list(self.hypothesisSpace), key=lambda x:x.prior())
+
 			for h in hypotheses:
 				h.display()
 			print "___________________________________________________________________"
 			print ""
 		
+			newTheories = []
 		return self.hypothesisSpace
 
 	def cleanHypothesisSpace(self, subtrace, threshold):
@@ -778,6 +799,6 @@ rawTrace = [
 
 trace = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in rawTrace]
 
-hypotheses=list(g.induction(trace))
+hypotheses=list(g.induction(trace[0:2]))
 
 #sorted(hypotheses, key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
