@@ -33,15 +33,16 @@ class TimeStep:
 	TimeStep.t = 4  --> meaning all of this took place at t_4
 	"""
 
-	def __init__(self, agentAction, agentState, events):
+	def __init__(self, agentAction, agentState, events, gameState):
 		self.agentAction = agentAction 
 		self.agentState = agentState # agent's backpack
 		self.events = events 
 		self.t = False # Number timestep
+		self.gameState = gameState
 
 	def display(self):
-		print (self.agentAction, self.agentState, self.events)
-		return (self.agentAction, self.agentState, self.events)
+		print (self.agentAction, self.agentState, self.events, self.gameState)
+		return (self.agentAction, self.agentState, self.events, self.gameState)
 
 
 class Precondition(object):
@@ -219,6 +220,35 @@ class Theory(object):
 				theories.extend(self.addRules(event))
 
 		return theories
+
+	def explainTermination(self, timestep, prevTimeSteps):
+		"""
+		adds all hypotheses about the termination conditions to the terminationSet
+		params:
+		timestep: the very last time step (at which termination occurs)
+		prevTimeSteps: all time steps previous to the termination time step
+		"""
+		objsWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
+		for obj in timestep['objects']:
+			timestep_amt = len(timestep['objects'][obj])
+			timestep_amt_unique = timestep_amt in [len(prevTimeStep['objects'][obj]) for prevTimeStep in prevTimeSteps]
+			if timestep_amt_unique:
+				objsWithDiffAmounts[obj] = timestep_amt
+
+			# timestep_amt_unique = True
+			# for prevTimeStep in prevTimeSteps:
+			# 	prev_timestep_amt = len(prevTimeStep['objects'][obj])
+			# 	if timestep_amt == prev_timestep_amt:
+			# 		timestep_amt_unique = False
+
+		for event in timestep.events:
+			for i in [1,2]:
+				terminationClass = self.getClass(event[i])
+				if terminationClass in objsWithDiffAmounts:
+					self.terminationSet.append((terminationClass,objsWithDiffAmounts[terminationClass]))
+
+
+
 
 	def likelihood(self, timestep, verbose=False):
 		"""

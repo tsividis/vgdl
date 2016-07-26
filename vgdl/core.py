@@ -596,7 +596,7 @@ class BasicGame(object):
                 print "ERROR: {} --> {}".format(e, "Using previous agent state...")
 
             if effectList:
-                event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList}
+                event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList, 'gameState': self.getFullState()}
                 print "event: ", event
                 finalEventList.append(event)
 
