@@ -131,6 +131,22 @@ class InteractionRule(object):
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
+class TerminationCondition:
+	"""
+	TODO: eventually incorporate multiple sprite termination conditions and timeout termination conditions.
+	At the moment, we assume single sprite condtions
+	"""
+	def __init___(self,sclass,snumber,win):
+		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
+		self.sclass = sclass
+		self.snumber = snumber
+		self.win = win
+
+	def asTuple(self):
+		return (self.sclass, self.snumber, self.win)
+
+	def __eq__(self,other):
+		return self.asTuple() == other.asTuple()
 
 class Theory(object):
 	"""
