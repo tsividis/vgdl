@@ -1,4 +1,4 @@
-import itertools, random, copy, numpy.random, scipy.misc
+import itertools, random, copy
 from sampleVGDLString import *
 from class_theory_template_071916 import *
 """
@@ -22,21 +22,6 @@ Current assumptions:
 '''
 # TODO: Make a dictionary mapping the colors to a sprite object.
 
-class Sprite(object):
-	"""
-	TODO: Incorporate properties into theory induction loop.
-	"""
-	def __init__(self, vgdlType, color, className=None, args=None, levelMappingSymbol=None):
-		self.vgdlType = vgdlType
-		self.color = color 
-		self.className = className
-		self.args = args
-		self.levelMappingSymbol = levelMappingSymbol
-
-	# TODO: Should enforce proper syntax for properties
-	def display():
-		pass
-	
 class TimeStep: 
 	"""
 	Everything that happened in a time step in the game.
@@ -53,11 +38,10 @@ class TimeStep:
 		self.agentState = agentState # agent's backpack
 		self.events = events 
 		self.t = False # Number timestep
-		# self.gameState = gameState
 
 	def display(self):
-		print (self.agentAction, self.agentState, self.events, self.gameState)
-		return (self.agentAction, self.agentState, self.events, self.gameState)
+		print (self.agentAction, self.agentState, self.events)
+		return (self.agentAction, self.agentState, self.events)
 
 
 class Precondition(object):
@@ -147,6 +131,22 @@ class InteractionRule(object):
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
+class TerminationCondition:
+	"""
+	TODO: eventually incorporate multiple sprite termination conditions and timeout termination conditions.
+	At the moment, we assume single sprite condtions
+	"""
+	def __init___(self,sclass,snumber,win):
+		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
+		self.sclass = sclass
+		self.snumber = snumber
+		self.win = win
+
+	def asTuple(self):
+		return (self.sclass, self.snumber, self.win)
+
+	def __eq__(self,other):
+		return self.asTuple() == other.asTuple()
 
 class Theory(object):
 	"""
@@ -189,21 +189,6 @@ class Theory(object):
 		# 	self.classes[sprite.className] = [sprite]
 
 	"""Main functions"""
-
-	def prior(self):
-
-		def phi(numClasses, numRules, lamda):
-			#TODO: Refine this to take into account the minimum necessary size of the ruleset.
-			return lamda*numClasses + (1-lamda)*numRules
-
-		#Mode is p(r-1) / (1-p). For now we pick p=.5, r=5 to reflect that phi=4 is modal.
-		def negBin(k, r, p):
-			return scipy.misc.comb(k+r-1, k) * p**k * (1-p)**r
-
-		numClasses, numRules = len(self.classes.keys()), len(self.interactionSet)
-		k = phi(numClasses, numRules, .5)
-
-		return negBin(k,5,.5)
 
 	def explainTimeStep(self, timestep, fullTimestep, currTheories=False):
 		"""
@@ -261,9 +246,10 @@ class Theory(object):
 		objsWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
 		for obj in timestep['objects']:
 			timestep_amt = len(timestep['objects'][obj])
+			win = timestep['gameState']['win']
 			timestep_amt_unique = timestep_amt in [len(prevTimeStep['objects'][obj]) for prevTimeStep in prevTimeSteps]
 			if timestep_amt_unique:
-				objsWithDiffAmounts[obj] = timestep_amt
+				objsWithDiffAmounts[obj] = (win,timestep_amt)
 
 			# timestep_amt_unique = True
 			# for prevTimeStep in prevTimeSteps:
@@ -275,9 +261,9 @@ class Theory(object):
 			for i in [1,2]:
 				terminationClass = self.getClass(event[i])
 				if terminationClass in objsWithDiffAmounts:
-					self.terminationSet.append((terminationClass,objsWithDiffAmounts[terminationClass]))
-
-
+					win,timestep_amt = objsWithDiffAmounts[terminationClass]
+					terminationCondition = TerminationCondition(terminationClass,timestep_amt,win)
+					self.terminationSet.append(terminationCondition)
 
 
 	def likelihood(self, timestep, verbose=False):
@@ -781,17 +767,14 @@ class Game(object):
 	def display(self):
 		print self.theoryCount
 
-
-	def induction(self, trace, hypothesisSpace = False):
+	def induction(self, trace):
 		"""
 		Iterates through trace, performing theory induction on each timestep
 		"""
-		if not hypothesisSpace:
-			T = Theory(self)
-			T.initializeSpriteSet(self.vgdlSpriteParse)
-			print T.classes
-			self.hypothesisSpace = set([T])
-		
+		T = Theory(self)
+		T.initializeSpriteSet(self.vgdlSpriteParse)
+
+		self.hypothesisSpace = set([T])
 		newTheories = []
 
 		# For every timestep
@@ -813,18 +796,20 @@ class Game(object):
 			self.cleanHypothesisSpace(trace[0:i+1], 1) #All timesteps up to now should be fully explained
 			print "{} hypotheses:".format(len(self.hypothesisSpace))
 			
-			# Sort hypotheses according to prior, then print.
-			hypotheses = sorted(list(self.hypothesisSpace), key=lambda x:x.prior())
-
+			# Sort hypotheses (right now by simple length metric), then print.
+			hypotheses = sorted(list(self.hypothesisSpace), key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
 			for h in hypotheses:
 				h.display()
 			print "___________________________________________________________________"
 			print ""
-
+		
+		hypothesisSpaceWithTermConditions = set()
 		for theory in self.hypothesisSpace:
 			theory.explainTermination(trace[-1], trace[:-1])
+			hypothesisSpaceWithTermConditions.add(theory)
+
+		self.hypothesisSpace = hypothesisSpaceWithTermConditions
 		
-			newTheories = []
 		return self.hypothesisSpace
 
 	def cleanHypothesisSpace(self, subtrace, threshold):
@@ -841,7 +826,6 @@ class Game(object):
 		return
 
 g = Game(push_game)
-
 
 # Testing preconditions
 rawTrace = [ 
@@ -870,6 +854,6 @@ rawTrace = [
 
 trace = [TimeStep(tr['agentAction'], tr['agentState'], tr['effectList']) for tr in rawTrace]
 
-hypotheses=list(g.induction(trace[0:2]))
+hypotheses=list(g.induction(trace))
 
 #sorted(hypotheses, key=lambda x:len(x.interactionSet)*len(x.classes.keys()))

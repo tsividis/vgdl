@@ -22,15 +22,26 @@ class Sprite(object):
     """
     TODO: Incorporate properties into theory induction loop.
     """
-    def __init__(self, vgdlType, color, args):
-        """color=None if there's no color for the sprite"""
+    def __init__(self, vgdlType, color, className=None, args=None): 
         self.vgdlType = vgdlType
         self.color = color 
+        self.className = className
         self.args = args
 
     # TODO: Should enforce proper syntax for properties
-    def display():
-        pass
+    def display(self):
+        print (self.vgdlType, self.color, self.className, self.args)
+
+    def __eq__(self, other):
+        return all([
+            self.vgdlType==other.vgdlType,
+            self.color==other.color,
+            self.className==other.className,
+            self.args==other.args
+            ])
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 class SpriteParser(object):
     resourcePackTypeStrings = {'Immovable', 'Passive', 'ResourcePack', 'Spreader', 'Portal', 'SpawnPoint', 'Conveyor'}
@@ -76,13 +87,11 @@ class SpriteParser(object):
 
     def parseSprites(self, snodes, parentclass=None, parentargs={}, parenttypes=[]):
         resourcePackTypes = {self._eval(obj_type) for obj_type in SpriteParser.resourcePackTypeStrings}
+        resourceType = self._eval("Resource")
         for sn in snodes:
             assert ">" in sn.content
             key, sdef = [x.strip() for x in sn.content.split(">")]
             sclass, args = self._parseArgs(sdef, parentclass, parentargs.copy())
-            # print key
-            # print sn.children
-            # print sclass
 
             stypes = parenttypes+[key]
             if 'singleton' in args:
@@ -100,6 +109,9 @@ class SpriteParser(object):
                     if sclass in resourcePackTypes:
                         self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args_without_color)
                         # self.sprite_types[key] = (self._eval('ResourcePack'), colorized_args, stypes)
+                    elif sclass == resourceType:
+                        self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args_without_color)
+                        self.sprite_types[key+"_resource"] = Sprite(self._eval('ResourcePack'), color_type+"_resource", args_without_color)
                     else:
                         self.sprite_types[key] = Sprite(sclass, color_type, args_without_color)
 
@@ -109,6 +121,9 @@ class SpriteParser(object):
                     if sclass in resourcePackTypes:
                         self.sprite_types[key] = Sprite(self._eval('ResourcePack'), None, args)
                         # self.sprite_types[key] = (self._eval('ResourcePack'), colorized_args, stypes)
+                    elif sclass == resourceType:
+                        self.sprite_types[key] = Sprite(self._eval('ResourcePack'), None, args_without_color)
+                        self.sprite_types[key+"_resource"] = Sprite(self._eval('ResourcePack'), None, args_without_color)
                     else:
                         self.sprite_types[key] = Sprite(sclass, None, args)
 
