@@ -236,6 +236,36 @@ class Theory(object):
 
 		return theories
 
+	def explainTermination(self, timestep, prevTimeSteps):
+		"""
+		adds all hypotheses about the termination conditions to the terminationSet
+		params:
+		timestep: the very last time step (at which termination occurs)
+		prevTimeSteps: all time steps previous to the termination time step
+		"""
+		objsWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
+		for obj in timestep['objects']:
+			timestep_amt = len(timestep['objects'][obj])
+			win = timestep['gameState']['win']
+			timestep_amt_unique = timestep_amt in [len(prevTimeStep['objects'][obj]) for prevTimeStep in prevTimeSteps]
+			if timestep_amt_unique:
+				objsWithDiffAmounts[obj] = (win,timestep_amt)
+
+			# timestep_amt_unique = True
+			# for prevTimeStep in prevTimeSteps:
+			# 	prev_timestep_amt = len(prevTimeStep['objects'][obj])
+			# 	if timestep_amt == prev_timestep_amt:
+			# 		timestep_amt_unique = False
+
+		for event in timestep.events:
+			for i in [1,2]:
+				terminationClass = self.getClass(event[i])
+				if terminationClass in objsWithDiffAmounts:
+					win,timestep_amt = objsWithDiffAmounts[terminationClass]
+					terminationCondition = TerminationCondition(terminationClass,timestep_amt,win)
+					self.terminationSet.append(terminationCondition)
+
+
 	def likelihood(self, timestep, verbose=False):
 		"""
 		Makes sure that:
@@ -772,6 +802,13 @@ class Game(object):
 				h.display()
 			print "___________________________________________________________________"
 			print ""
+		
+		hypothesisSpaceWithTermConditions = set()
+		for theory in self.hypothesisSpace:
+			theory.explainTermination(trace[-1], trace[:-1])
+			hypothesisSpaceWithTermConditions.add(theory)
+
+		self.hypothesisSpace = hypothesisSpaceWithTermConditions
 		
 		return self.hypothesisSpace
 
