@@ -786,6 +786,9 @@ class Game(object):
 				h.display()
 			print "___________________________________________________________________"
 			print ""
+
+		for theory in self.hypothesisSpace:
+			theory.explainTermination(trace[-1], trace[:-1])
 		
 		return self.hypothesisSpace
 
