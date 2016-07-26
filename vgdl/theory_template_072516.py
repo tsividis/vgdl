@@ -144,6 +144,10 @@ class TerminationCondition:
 		self.snumber = snumber
 		self.win = win
 
+	def display(self):
+		print self.sclass, self.snumber, self.win
+		return
+
 	def asTuple(self):
 		return (self.sclass, self.snumber, self.win)
 
@@ -724,10 +728,17 @@ class Theory(object):
 		print self.classes
 		print
 
+	def displayTerminationSet(self):
+		print ""
+		print "TerminationSet:"
+		for rule in self.terminationSet:
+			rule.display()
+
 	def display(self):
 		print "_______"
 		self.displayRules()
 		self.displayClasses()
+		self.displayTerminationSet()
 		return
 
 	def __eq__(self, other):
