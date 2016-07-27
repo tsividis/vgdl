@@ -572,12 +572,6 @@ class BasicGame(object):
         agentStatePrev = {}
         agentState = dict(self.getAvatars()[0].resources)
         keyPressPrev = None
-        initial = {'agentState': agentState, 'agentAction': None, 'effectList': []}
-        print initial
-        
-
-        finalEventList.append(initial)
-
 
         while not self.ended:
             clock.tick(self.frame_rate)
@@ -631,7 +625,7 @@ class BasicGame(object):
 
             if effectList:
                 event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList, 'gameState': self.getFullStateColorized()}
-                print "event: ", event
+                print event
                 finalEventList.append(event)
 
             # Termination #1
@@ -668,11 +662,8 @@ class BasicGame(object):
             [os.remove(f) for f in glob.glob(tmp_dir + "*" + str(self.uiud) + "*")]
 
         # Print entire history of effects
-        gameEndEvent = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': ['gameEnd']}
-        print gameEndEvent
-
-        finalEventList.append((gameEndEvent))
-        print finalEventList
+        terminationCondition = {'ended': True, 'win':win}
+        print "({}, {})".format(finalEventList, terminationCondition)
 
         if win:
             # winning a game always gives a positive score.

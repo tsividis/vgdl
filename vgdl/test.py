@@ -22,7 +22,9 @@ def testTrace(rawTrace, expectedHypotheses, name, verbose):
 
 if __name__ == '__main__':
 
-	## TEST: Win conditions, # of classes = # of objects
+	"""
+	Testing win termination conditions in simple game setting
+	"""
 	rawTrace_simple_win = [
 		[
 			{
@@ -78,20 +80,57 @@ if __name__ == '__main__':
 		{'ended': True, 'win': True}
 	]
 
-	'''
-	'''
+	"""
+	Testing for loss termination conditions in a simple game setting
+	"""
 	rawTrace_simple_loss = [
 	[
-	{'gameState': {
+	{
+	'gameState': {
 		'ended': False, 
 		'score': 0, 
 		'objects': {'BLUE': {(305, 427): {'speed': None}, (122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {(427, 244): {'speed': None}}, 'DARKBLUE': {}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'PINK': {(183, 427): {'speed': None}, (183, 61): {'speed': None}}, 'ORANGE': {(244, 122): {'speed': None}, (122, 366): {'speed': None}, (366, 183): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {(305, 61): {'speed': None, 'limit': 3}, (305, 305): {'speed': None, 'limit': 3}}, 'RED': {(122, 183): {'speed': None, 'limit': 5}, (305, 366): {'speed': None, 'limit': 5}}}, 
 		'win': None}, 
-		'agentAction': 'down', 'agentState': {}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', -1), ('killSprite', 'DARKBLUE', 'BROWN')]}
+	'agentAction': 'down', 
+	'agentState': {}, 
+	'effectList': [('changeResource', 'DARKBLUE', 'WHITE', -1), ('killSprite', 'DARKBLUE', 'BROWN')]}
 	],
 	{'ended': True, 'win': False}
 	]
 
+
+	"""
+	Testing preconditions
+	"""
+
+	rawTrace_preconditions_simple = (
+		[{'gameState': {
+			'ended': False, 
+			'score': 0, 
+			'objects': {'BLUE': {(305, 427): {'speed': None}, (122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {(427, 244): {'speed': None}}, 'DARKBLUE': {(305, 61): {'speed': 1, 'resources': {'medicine': 1}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 122): {'speed': None}, (122, 366): {'speed': None}, (366, 183): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {(305, 305): {'speed': None, 'limit': 3}}, 'RED': {(122, 183): {'speed': None, 'limit': 5}, (305, 366): {'speed': None, 'limit': 5}}}, 
+			'win': None}, 
+		'agentAction': None, 
+		'agentState': {'medicine': 1}, 
+		'effectList': [('changeResource', 'DARKBLUE', 'WHITE', 1), ('killSprite', 'DARKBLUE', 'WHITE')]}, 
+
+		{'gameState': {
+			'ended': False, 
+			'score': 0, 
+			'objects': {'BLUE': {(305, 427): {'speed': None}, (122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {(427, 244): {'speed': None}}, 'DARKBLUE': {(488, 183): {'speed': 1, 'resources': {'medicine': 0}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 122): {'speed': None}, (122, 366): {'speed': None}, (366, 183): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {(305, 305): {'speed': None, 'limit': 3}}, 'RED': {(122, 183): {'speed': None, 'limit': 5}, (305, 366): {'speed': None, 'limit': 5}}}, 
+			'win': None}, 
+		'agentAction': None, 
+		'agentState': {'medicine': 0}, 
+		'effectList': [('changeResource', 'DARKBLUE', 'WHITE', -1), ('killSprite', 'DARKBLUE', 'BROWN')]}, 
+
+		{'gameState': {
+			'ended': False, 
+			'score': 0, 
+			'objects': {'BLUE': {(305, 427): {'speed': None}, (122, 305): {'speed': None}}, 'BROWN': {}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {(427, 244): {'speed': None}}, 'DARKBLUE': {}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 122): {'speed': None}, (122, 366): {'speed': None}, (366, 183): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {(305, 305): {'speed': None, 'limit': 3}}, 'RED': {(122, 183): {'speed': None, 'limit': 5}, (305, 366): {'speed': None, 'limit': 5}}}, 
+			'win': None}, 
+		'agentAction': 'right', 
+		'agentState': {'medicine': 0}, 
+		'effectList': [('changeResource', 'DARKBLUE', 'WHITE', -1), ('killSprite', 'DARKBLUE', 'BROWN')]}], 
+		{'ended': True, 'win': False})
 
 
 
@@ -101,7 +140,8 @@ if __name__ == '__main__':
 
 	traces = [
 		(rawTrace_simple_win, 1, "rawTrace_simple_win", False), 
-		(rawTrace_simple_loss, 1, "rawTrace_simple_loss", True)
+		(rawTrace_simple_loss, 2, "rawTrace_simple_loss", False),
+		(rawTrace_preconditions_simple, 2, "rawTrace_preconditions_simple", True)
 		]
 
 
