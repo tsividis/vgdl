@@ -1,6 +1,7 @@
 import itertools, copy
 from sampleVGDLString import *
 from class_theory_template_071916 import *
+from IPython import embed
 """
 Theory induction on VGDL Games
 """
@@ -33,15 +34,16 @@ class TimeStep:
 	TimeStep.t = 4  --> meaning all of this took place at t_4
 	"""
 
-	def __init__(self, agentAction, agentState, events):
+	def __init__(self, agentAction, agentState, events, gameState):
 		self.agentAction = agentAction 
 		self.agentState = agentState # agent's backpack
 		self.events = events 
 		self.t = False # Number timestep
+		self.gameState = gameState
 
 	def display(self):
-		print (self.agentAction, self.agentState, self.events)
-		return (self.agentAction, self.agentState, self.events)
+		print (self.agentAction, self.agentState, self.events, self.gameState)
+		return (self.agentAction, self.agentState, self.events, self.gameState)
 
 
 class Precondition(object):
@@ -131,6 +133,26 @@ class InteractionRule(object):
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
+class TerminationCondition:
+	"""
+	TODO: eventually incorporate multiple sprite termination conditions and timeout termination conditions.
+	At the moment, we assume single sprite condtions
+	"""
+	def __init__(self,sclass,snumber,win):
+		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
+		self.sclass = sclass
+		self.snumber = snumber
+		self.win = win
+
+	def display(self):
+		print self.sclass, self.snumber, self.win
+		return
+
+	def asTuple(self):
+		return (self.sclass, self.snumber, self.win)
+
+	def __eq__(self,other):
+		return self.asTuple() == other.asTuple()
 
 class Theory(object):
 	"""
@@ -187,7 +209,7 @@ class Theory(object):
 		# Recursive Case
 		else:
 			theories = self.explainEvent(timestep.events[0], fullTimestep)
-			updatedTimeStep = TimeStep(timestep.agentAction, timestep.agentState, timestep.events[1:])
+			updatedTimeStep = TimeStep(timestep.agentAction, timestep.agentState, timestep.events[1:], timestep.gameState)
 			return self.explainTimeStep(updatedTimeStep, fullTimestep, theories)
 
 	def explainEvent(self, event, timestep):
@@ -215,6 +237,37 @@ class Theory(object):
 				theories.extend(self.addRules(event))
 
 		return theories
+
+	def explainTermination(self, timestep, prevTimeSteps,result):
+		"""
+		adds all hypotheses about the termination conditions to the terminationSet
+		params:
+		timestep: the very last time step (at which termination occurs)
+		prevTimeSteps: all time steps previous to the termination time step
+		result: a dictionary for which the key 'win' is a boolean describing whether the game was won
+		"""
+		win = result['win']
+		objsWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
+		for obj in timestep.gameState['objects']:
+			timestep_amt = len(timestep.gameState['objects'][obj])
+			timestep_amt_unique = not timestep_amt in [len(prevTimeStep.gameState['objects'][obj]) for prevTimeStep in prevTimeSteps]
+			if timestep_amt_unique:
+				objsWithDiffAmounts[obj] = (win,timestep_amt)
+
+			# timestep_amt_unique = True
+			# for prevTimeStep in prevTimeSteps:
+			# 	prev_timestep_amt = len(prevTimeStep['objects'][obj])
+			# 	if timestep_amt == prev_timestep_amt:
+			# 		timestep_amt_unique = False
+
+		for event in timestep.events:
+			for i in [1,2]:
+				terminationClass = event[i] #self.getClass(event[i])
+				if terminationClass in objsWithDiffAmounts:
+					win,timestep_amt = objsWithDiffAmounts[terminationClass]
+					terminationCondition = TerminationCondition(terminationClass,timestep_amt,win)
+					self.terminationSet.append(terminationCondition)
+
 
 	def likelihood(self, timestep, verbose=False):
 		"""
@@ -256,7 +309,8 @@ class Theory(object):
 
 		relevantRules = []
 		for event in timestep.events:
-			relevantRules.extend(self.findRelevantRules(event, timestep.agentState))
+			relevantRules.extend(self.findRelevantRules(
+				event, timestep.agentState))
 
 		if False in relevantRules: 
 			return False
@@ -677,10 +731,17 @@ class Theory(object):
 		print self.classes
 		print
 
+	def displayTerminationSet(self):
+		print ""
+		print "TerminationSet:"
+		for rule in self.terminationSet:
+			rule.display()
+
 	def display(self):
 		print "_______"
 		self.displayRules()
 		self.displayClasses()
+		self.displayTerminationSet()
 		return
 
 	def __eq__(self, other):
@@ -740,12 +801,11 @@ class Game(object):
 		newTheories = []
 
 		# For every timestep
-		for i in range(len(trace)): 
-			timestep = trace[i]
-
-			if verbose: 
-				print "explaining events {}".format(timestep.events)
-				print "___________________________________________________________________"
+		timesteps, result = trace
+		for i in range(len(timesteps)): 
+			timestep = timesteps[i]
+			print "explaining events {}".format(timestep.events)
+			print "___________________________________________________________________"
 
 			# For every theory
 			for theory in self.hypothesisSpace:
@@ -771,20 +831,23 @@ class Game(object):
 				# 	theory.display()
 
 
-			self.cleanHypothesisSpace(trace[0:i+1], 1) #All timesteps up to now should be fully explained
-
-			if verbose:
-				print "{} hypotheses:".format(len(self.hypothesisSpace))
+			self.cleanHypothesisSpace(timesteps[0:i+1], 1) #All timesteps up to now should be fully explained
+			print "{} hypotheses:".format(len(self.hypothesisSpace))
 			
 			# Sort hypotheses (right now by simple length metric), then print.
 			hypotheses = sorted(list(self.hypothesisSpace), key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
-			
-			if verbose:
-				for h in hypotheses:
-					h.display()
-				print "___________________________________________________________________"
-				print ""
-			
+			for h in hypotheses:
+				h.display()
+			print "___________________________________________________________________"
+			print ""
+		
+		hypothesisSpaceWithTermConditions = set()
+		for theory in self.hypothesisSpace:
+			theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+			hypothesisSpaceWithTermConditions.add(theory)
+
+		self.hypothesisSpace = hypothesisSpaceWithTermConditions
+		
 		return self.hypothesisSpace
 
 	def cleanHypothesisSpace(self, subtrace, threshold):

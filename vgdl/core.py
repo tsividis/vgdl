@@ -14,9 +14,29 @@ import uuid
 import subprocess
 import glob
 import ipdb
+from copy import deepcopy
 
 keyPresses = {273: 'up', 274: 'down', 276: 'left', 275: 'right', 32: 'spacebar'}
 emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
+colorDict = {str((0, 200, 0)): 'GREEN',\
+            str((0, 0, 200)): 'BLUE',\
+            str((200, 0, 0)): 'RED',\
+            str((90, 90, 90)): 'GRAY',\
+            str((250, 250, 250)): 'WHITE',\
+            str((140, 120, 100)): 'BROWN',\
+            str((0, 0, 0)): 'BLACK',\
+            str((250, 160, 0)): 'ORANGE',\
+            str((250, 250, 0)): 'YELLOW',\
+            str((250, 200, 200)): 'PINK',\
+            str((250, 212, 0)): 'GOLD',\
+            str((250, 50, 50)): 'LIGHTRED',\
+            str((250, 200, 100)): 'LIGHTORANGE',\
+            str((50, 100, 250)): 'LIGHTBLUE',\
+            str((50, 250, 50)): 'LIGHTGREEN',\
+            str((150, 150, 150)): 'LIGHTGRAY',\
+            str((30, 30, 30)): 'DARKGRAY',\
+            str((20, 20, 100)): 'DARKBLUE',\
+            }
 
 class VGDLParser(object):
     """ Parses a string into a Game object. """
@@ -191,6 +211,7 @@ class BasicGame(object):
 
         self.is_stochastic = False
         self._lastsaved = None
+        self.win = None
         self.reset()
 
     def reset(self):
@@ -393,6 +414,7 @@ class BasicGame(object):
 
         fs = {'score': self.score,
               'ended': self.ended,
+              'win': self.win,
               'objects': obs}
         return fs
 
@@ -415,6 +437,18 @@ class BasicGame(object):
                             s.resources[r] = v
                     else:
                         s.__setattr__(a, val)
+
+    def getFullStateColorized(self,as_string=False):
+        fs = self.getFullState(as_string=as_string)
+        fs_colorized = deepcopy(fs)
+        fs_colorized['objects'] = {}
+        for sprite_name in fs['objects']:
+            sclass, args, stypes = self.sprite_constr[sprite_name]
+            fs_colorized['objects'][colorDict[str(args['color'])]] = fs['objects'][sprite_name]
+
+        return fs_colorized
+
+
 
     def _clearAll(self, onscreen=True):
         for s in set(self.kill_list):
@@ -596,7 +630,7 @@ class BasicGame(object):
                 print "ERROR: {} --> {}".format(e, "Using previous agent state...")
 
             if effectList:
-                event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList}
+                event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList, 'gameState': self.getFullStateColorized()}
                 print "event: ", event
                 finalEventList.append(event)
 
@@ -644,8 +678,11 @@ class BasicGame(object):
             # winning a game always gives a positive score.
             if self.score <= 0:
                 self.score = 1
+
+            self.win = True
             print "Game won, with score %s" % self.score
         else:
+            self.win = False
             print "Game lost. Score=%s" % self.score
         ipdb.set_trace()
 

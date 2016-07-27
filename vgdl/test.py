@@ -18,14 +18,14 @@ if __name__ == "__main__":
 	{'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}
 	]
 
-	# # Testing preconditions: one item in backpack changes twice
-	# rawTrace = [ 
-	# {'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, 
-	# {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'RED')]}, 
-	# {'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'BLUE')]}, 
-	# {'agentAction': None, 'agentState': {'trap': 0}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
-	# {'agentAction': None, 'agentState': {'trap': 0}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}
-	# ]
+	# Testing preconditions: one item in backpack changes twice
+	rawTrace = [ 
+	{'agentAction': None, 'agentState': {}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, 
+	{'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'RED')]}, 
+	{'agentAction': None, 'agentState': {'trap': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'BLUE')]}, 
+	{'agentAction': None, 'agentState': {'trap': 0}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
+	{'agentAction': None, 'agentState': {'trap': 0}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}
+	]
 
 
 	'''
