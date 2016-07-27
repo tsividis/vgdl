@@ -1,7 +1,6 @@
 import pygame
 import sys
 sys.path.insert(0, '../')
-from random import choice
 from tools import Node, indentTreeParser
 from collections import defaultdict
 import os
