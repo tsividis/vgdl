@@ -133,10 +133,12 @@ class InteractionRule(object):
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
+
+
 class TerminationCondition:
 	"""
 	TODO: eventually incorporate multiple sprite termination conditions and timeout termination conditions.
-	At the moment, we assume single sprite condtions
+	At the moment, we assume single sprite conditions
 	"""
 	def __init__(self,sclass,snumber,win):
 		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
@@ -153,6 +155,8 @@ class TerminationCondition:
 
 	def __eq__(self,other):
 		return self.asTuple() == other.asTuple()
+
+
 
 class Theory(object):
 	"""
@@ -734,14 +738,14 @@ class Theory(object):
 	def displayTerminationSet(self):
 		print ""
 		print "TerminationSet:"
-		for rule in self.terminationSet:
-			rule.display()
+		for tc in self.terminationSet:
+			tc.display()
 
 	def display(self):
 		print "_______"
 		self.displayRules()
 		self.displayClasses()
-		self.displayTerminationSet()
+		self.displayTerminationSet() #TODO: Figure out why this isn't printing
 		return
 
 	def __eq__(self, other):
@@ -804,8 +808,10 @@ class Game(object):
 		timesteps, result = trace
 		for i in range(len(timesteps)): 
 			timestep = timesteps[i]
-			print "explaining events {}".format(timestep.events)
-			print "___________________________________________________________________"
+
+			if verbose:
+				print "explaining events {}".format(timestep.events)
+				print "___________________________________________________________________"
 
 			# For every theory
 			for theory in self.hypothesisSpace:
@@ -832,15 +838,20 @@ class Game(object):
 
 
 			self.cleanHypothesisSpace(timesteps[0:i+1], 1) #All timesteps up to now should be fully explained
-			print "{} hypotheses:".format(len(self.hypothesisSpace))
+			
+			if verbose:
+				print "{} hypotheses:".format(len(self.hypothesisSpace))
 			
 			# Sort hypotheses (right now by simple length metric), then print.
 			hypotheses = sorted(list(self.hypothesisSpace), key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
-			for h in hypotheses:
-				h.display()
-			print "___________________________________________________________________"
-			print ""
+			
+			if verbose:
+				for h in hypotheses:
+					h.display()
+				print "___________________________________________________________________"
+				print ""
 		
+		# Termination set induction
 		if result:
 			hypothesisSpaceWithTermConditions = set()
 			for theory in self.hypothesisSpace:
@@ -865,9 +876,9 @@ class Game(object):
 			#print " --> will check likelihood to see if the theory explains all of the timesteps (final check)"
 			
 			# print subtrace
-			for s in subtrace:
-				print "timestep: "
-				s.display()
+			# for s in subtrace:
+			# 	print "timestep: "
+			# 	s.display()
 			# 	print "likelihood:", t.likelihood(s)
 
 			if all(t.likelihood(s)>=threshold for s in subtrace): #TODO: Issue might be here ?
