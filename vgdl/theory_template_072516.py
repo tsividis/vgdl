@@ -841,12 +841,13 @@ class Game(object):
 			print "___________________________________________________________________"
 			print ""
 		
-		hypothesisSpaceWithTermConditions = set()
-		for theory in self.hypothesisSpace:
-			theory.explainTermination(timesteps[-1], timesteps[:-1], result)
-			hypothesisSpaceWithTermConditions.add(theory)
+		if result:
+			hypothesisSpaceWithTermConditions = set()
+			for theory in self.hypothesisSpace:
+				theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+				hypothesisSpaceWithTermConditions.add(theory)
 
-		self.hypothesisSpace = hypothesisSpaceWithTermConditions
+			self.hypothesisSpace = hypothesisSpaceWithTermConditions
 		
 		return self.hypothesisSpace
 
