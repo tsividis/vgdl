@@ -266,10 +266,16 @@ class Theory(object):
 
 		for event in timestep.events:
 			for i in [1,2]:
-				terminationClass = event[i] #self.getClass(event[i])
-				if terminationClass in objsWithDiffAmounts:
-					win,timestep_amt = objsWithDiffAmounts[terminationClass]
-					terminationCondition = TerminationCondition(terminationClass,timestep_amt,win)
+				terminationClassColor = event[i] #self.getClass(event[i])
+				if terminationClassColor in objsWithDiffAmounts:
+					win,timestep_amt = objsWithDiffAmounts[terminationClassColor]
+					terminationClassSymbol = None
+					for c in self.classes:
+						for c_class in self.classes[c]:
+							if c_class.color == terminationClassColor:
+								terminationClassSymbol = c
+
+					terminationCondition = TerminationCondition(terminationClassSymbol,timestep_amt,win)
 					self.terminationSet.append(terminationCondition)
 
 
@@ -409,6 +415,8 @@ class Theory(object):
 
 		if possibleAssignments:
 			for assignment in possibleAssignments:
+				print "ASSIGNMENT"
+				print assignment
 				interaction = InteractionRule(event[0], assignment[0], assignment[1]) #This isn't strictly necessary, but follows createChild requirements.
 				
 				classAssignments = [(assignment[0], obj1), (assignment[1], obj2)]
