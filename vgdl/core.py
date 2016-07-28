@@ -589,9 +589,11 @@ class BasicGame(object):
         s = sys.argv[0]
         m = re.search('([a-z]+)\.py', s)
         name = m.group(1)
-        print "System input: ", name
         gamelog = "{}.log".format(name)
-        logging.basicConfig(filename=gamelog)
+        #logging.basicConfig(filename=gamelog, level=logging.INFO)
+
+        game_output = "output/{}.txt".format(name)
+
 
         # --------- Game-play ------------
         finalEventList = []
@@ -689,8 +691,11 @@ class BasicGame(object):
 
         # Print entire history of effects
         terminationCondition = {'ended': True, 'win':win}
-        logging.info("test")
-        logging.info((finalEventList, terminationCondition))
+        # logging.info((finalEventList, terminationCondition))
+
+
+        with open(game_output, 'w') as f:
+            f.write(str((finalEventList, terminationCondition)))
 
         # print "\n\n"
         # print "(["
@@ -698,6 +703,7 @@ class BasicGame(object):
         #     print finalEvent, "," 
         # print finalEventList[-1]
         # print "],\n{}\n)\n\n".format(terminationCondition)
+
         print "Expecting {} events".format(len(finalEventList))
 
         if win:

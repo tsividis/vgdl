@@ -1,5 +1,4 @@
 import itertools, copy
-from sampleVGDLString import *
 from class_theory_template_071916 import *
 from IPython import embed
 """
@@ -897,5 +896,3 @@ class Game(object):
 		self.hypothesisSpace = set(newHypothesisSpace)
 		# print "Done cleanHypothesisSpace...\n"
 		return
-
-
