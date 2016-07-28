@@ -15,6 +15,11 @@ import subprocess
 import glob
 import ipdb
 from copy import deepcopy
+import logging
+import sys
+import re
+
+
 
 keyPresses = {273: 'up', 274: 'down', 276: 'left', 275: 'right', 32: 'spacebar'}
 emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
@@ -46,6 +51,7 @@ class VGDLParser(object):
     def playGame(game_str, map_str, headless = False, persist_movie = False, movie_dir = "./tmpl"):
         """ Parses the game and level map strings, and starts the game. """
         g = VGDLParser().parseGame(game_str)
+        
         g.buildLevel(map_str)
         g.uiud = uuid.uuid4()
         if(headless):
@@ -182,6 +188,7 @@ class BasicGame(object):
     def __init__(self, **kwargs):
         from ontology import Immovable, DARKGRAY, MovingAvatar, GOLD
         for name, value in kwargs.iteritems():
+            print "NAME: ", name
             if hasattr(self, name):
                 self.__dict__[name] = value
             else:
@@ -444,7 +451,18 @@ class BasicGame(object):
         fs_colorized['objects'] = {}
         for sprite_name in fs['objects']:
             sclass, args, stypes = self.sprite_constr[sprite_name]
-            fs_colorized['objects'][colorDict[str(args['color'])]] = fs['objects'][sprite_name]
+            try:
+                fs_colorized['objects'][colorDict[str(args['color'])]] = fs['objects'][sprite_name]
+            except: # Object color isn't immediately available
+                sprite_type = self.sprite_groups[stypes[0]]
+                if sprite_type:
+                    sprite_rep = sprite_type[0]
+                    fs_colorized['objects'][colorDict[str(sprite_rep.color)]] = fs['objects'][sprite_name]
+                
+                # No more sprites left?
+                else:
+                    print self.sprite_groups[stypes[0]]
+                    pass
 
         return fs_colorized
 
@@ -567,6 +585,14 @@ class BasicGame(object):
         lastKeyPress=(0,0,1) # PT: initialize to fake keypress index
         lastKeyPressTime=0 #PT
 
+        # Logging
+        s = sys.argv[0]
+        m = re.search('([a-z]+)\.py', s)
+        name = m.group(1)
+        print "System input: ", name
+        gamelog = "{}.log".format(name)
+        logging.basicConfig(filename=gamelog)
+
         # --------- Game-play ------------
         finalEventList = []
         agentStatePrev = {}
@@ -663,7 +689,16 @@ class BasicGame(object):
 
         # Print entire history of effects
         terminationCondition = {'ended': True, 'win':win}
-        print "({}, {})".format(finalEventList, terminationCondition)
+        logging.info("test")
+        logging.info((finalEventList, terminationCondition))
+
+        # print "\n\n"
+        # print "(["
+        # for finalEvent in finalEventList[:-1]:
+        #     print finalEvent, "," 
+        # print finalEventList[-1]
+        # print "],\n{}\n)\n\n".format(terminationCondition)
+        print "Expecting {} events".format(len(finalEventList))
 
         if win:
             # winning a game always gives a positive score.

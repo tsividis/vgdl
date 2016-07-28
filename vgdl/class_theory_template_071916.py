@@ -87,6 +87,7 @@ class SpriteParser(object):
     def parseSprites(self, snodes, parentclass=None, parentargs={}, parenttypes=[]):
         resourcePackTypes = {self._eval(obj_type) for obj_type in SpriteParser.resourcePackTypeStrings}
         resourceType = self._eval("Resource")
+       
         for sn in snodes:
             assert ">" in sn.content
             key, sdef = [x.strip() for x in sn.content.split(">")]
@@ -105,17 +106,25 @@ class SpriteParser(object):
                     color_type = colorDict[str(args['color'])]
                     args_without_color = deepcopy(args)
                     del args_without_color['color']
+
+                    print "CLASS TYPE:", sclass
+
                     if sclass in resourcePackTypes:
+                        print "--> will be converted to ResourcePack"
                         self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args_without_color)
                         # self.sprite_types[key] = (self._eval('ResourcePack'), colorized_args, stypes)
                     elif sclass == resourceType:
+                        print "--> will be converted to ResourcePack"
                         self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args_without_color)
                         self.sprite_types[key+"_resource"] = Sprite(self._eval('ResourcePack'), color_type+"_resource", args_without_color)
                     else:
+                        print "--> will be ITSELF"
+
                         self.sprite_types[key] = Sprite(sclass, color_type, args_without_color)
 
 
-                        # print self.sprite_types[key]
+                        print self.sprite_types[key].vgdlType
+                        print self.sprite_types[key].color
                 else:
                     if sclass in resourcePackTypes:
                         self.sprite_types[key] = Sprite(self._eval('ResourcePack'), None, args)

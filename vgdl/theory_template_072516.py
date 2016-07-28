@@ -839,8 +839,8 @@ class Game(object):
 
 			self.cleanHypothesisSpace(timesteps[0:i+1], 1) #All timesteps up to now should be fully explained
 			
-			if verbose:
-				print "{} hypotheses:".format(len(self.hypothesisSpace))
+			#if verbose:
+			print "{} hypotheses:".format(len(self.hypothesisSpace))
 			
 			# Sort hypotheses (right now by simple length metric), then print.
 			hypotheses = sorted(list(self.hypothesisSpace), key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
