@@ -507,15 +507,15 @@ KeyError: '(140, 200, 140)'
 	traces = [
 		(rawTrace_simple_win, 2, "rawTrace_simple_win", False), 
 		(rawTrace_simple_loss, 3, "rawTrace_simple_loss", False),
-		(rawTrace_preconditions_simple, 1, "rawTrace_preconditions_simple", False), 
-		(rawTrace_preconditions_simple_2, 1, "rawTrace_preconditions_simple_2", False),
-		(rawTrace_simpleGame1_loss, 1, "rawTrace_simpleGame1_loss", False), # TODO: need to check number expected
+		(rawTrace_preconditions_simple, 2, "rawTrace_preconditions_simple", False), 
+		(rawTrace_preconditions_simple_2, 2, "rawTrace_preconditions_simple_2", False),
+		(rawTrace_simpleGame1_loss, 2, "rawTrace_simpleGame1_loss", False), # TODO: need to check number expected
 		
-		(rawTrace_aliens_win, 5, "rawTrace_aliens_win", False), # TODO: need to check number expected, because SPAWN event not registered...
-		(rawTrace_aliens_loss, 15, "rawTrace_aliens_loss", False), #TODO: need to check number expected b/c too many things are registered as resource packs
-		(rawTrace_dodge_win, 1, "rawtrace_dodge_win", True),
-		(rawTrace_dodge_loss_1, 1, "rawTrace_dodge_loss_1", False), #TODO: not sure that avatar should be in same class as other things
-		(rawTrace_dodge_loss_2, 1, "rawTrace_dodge_loss_2", False)
+		(rawTrace_aliens_win, 6, "rawTrace_aliens_win", False), # TODO: need to check number expected, because SPAWN event not registered...
+		(rawTrace_aliens_loss, 16, "rawTrace_aliens_loss", False), #TODO: need to check number expected b/c too many things are registered as resource packs
+		(rawTrace_dodge_win, 2, "rawtrace_dodge_win", True),
+		(rawTrace_dodge_loss_1, 2, "rawTrace_dodge_loss_1", False), #TODO: not sure that avatar should be in same class as other things
+		(rawTrace_dodge_loss_2, 2, "rawTrace_dodge_loss_2", False)
 		]
 	
 	# traces = [(rawTrace_simple_win, 1, "rawTrace_simple_win", False),
