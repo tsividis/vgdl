@@ -1,6 +1,7 @@
 import itertools, copy
 from class_theory_template_071916 import *
 from IPython import embed
+from ontology import *
 """
 Theory induction on VGDL Games
 """
