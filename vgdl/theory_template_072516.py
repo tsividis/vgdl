@@ -325,11 +325,11 @@ class Theory(object):
 			if timestep_amt_unique:
 				classesWithDiffAmounts[c] = timestep_amt
 
-		print "IN TERMINATION CONDITIONS"
-		print timestep
-		# print timestep.events
-		print classesWithDiffAmounts
-		print {k:[c.asTuple() for c in v] for k,v in self.classes.items()}
+		# print "IN TERMINATION CONDITIONS"
+		# print timestep
+		# # print timestep.events
+		# print classesWithDiffAmounts
+		# print {k:[c.asTuple() for c in v] for k,v in self.classes.items()}
 
 		for event in timestep.events:
 			for i in [1,2]:
@@ -337,17 +337,11 @@ class Theory(object):
 				terminationClassSymbol = self.colorToClassMapper(terminationClassColor)
 				if terminationClassSymbol in classesWithDiffAmounts:
 					timestep_amt = classesWithDiffAmounts[terminationClassSymbol]
-					print terminationClassSymbol
-					# for c in self.classes:
-					# 	for c_class in self.classes[c]:
-					# 		if c_class.color == terminationClassColor:
-					# 			terminationClassSymbol = c
-
 					spriteCounterRule= SpriteCounterRule(terminationClassSymbol,timestep_amt,win)
 					if not spriteCounterRule in self.terminationSet:
 						self.terminationSet.append(spriteCounterRule)
 
-		print [t.asTuple() for t in self.terminationSet]
+		# print [t.asTuple() for t in self.terminationSet]
 		time = result["time"]
 		timeoutRule = TimeoutRule(limit=time, win=win)
 		self.terminationSet.append(timeoutRule)
