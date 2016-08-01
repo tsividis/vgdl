@@ -44,7 +44,7 @@ class TimeStep:
 		self.gameState = gameState
 
 	def display(self):
-		print (self.agentAction, self.agentState, self.events, self.gameState)
+		# print (self.agentAction, self.agentState, self.events, self.gameState)
 		return (self.agentAction, self.agentState, self.events, self.gameState)
 
 
@@ -152,7 +152,7 @@ class TerminationRule:
 class TimeoutRule(TerminationRule):
 	def __init__(self, limit=0, win=False):
 		self.termination = Timeout(limit=limit, win=win)
-		self.ruleType = "TerminationRule"
+		self.ruleType = "TimeoutRule"
 
 	def display(self):
 		print (self.ruleType, self.termination.limit, self.termination.win)
@@ -169,7 +169,7 @@ class SpriteCounterRule(TerminationRule):
 		self.ruleType = "SpriteCounterRule"
 
 	def display(self):
-		print self.termination.stype, self.termination.limit, self.termination.win
+		print (self.termination.stype, self.termination.limit, self.termination.win)
 		return 
 
 	def asTuple(self):
@@ -183,7 +183,7 @@ class MultiSpriteCounterRule(TerminationRule):
 		self.ruleType = "MultiSpriteCounterRule"
 
 	def display(self):
-		print self.termination.stypes, self.termination.limit, self.termination.win
+		print (self.termination.stypes, self.termination.limit, self.termination.win)
 		return 
 
 	def asTuple(self):
@@ -237,6 +237,9 @@ class Theory(object):
 		# Get mapping from sprite color to Sprite object
 		for s in self.spriteSet:
 			self.spriteObjects[s.color] = s
+
+	def addNewTerminationConditions(self, newTermConditions):
+		self.terminationSet.extend(newTermConditions)
 
 	"""Main functions"""
 
@@ -344,7 +347,8 @@ class Theory(object):
 		# print [t.asTuple() for t in self.terminationSet]
 		time = result["time"]
 		timeoutRule = TimeoutRule(limit=time, win=win)
-		self.terminationSet.append(timeoutRule)
+		if not timeoutRule in self.terminationSet:
+			self.terminationSet.append(timeoutRule)
 
 	def likelihood(self, timestep, verbose=False):
 		"""
@@ -1010,14 +1014,18 @@ class Game(object):
 	def display(self):
 		print self.theoryCount
 
-	def induction(self, trace, verbose=True):
+	def induction(self, trace, verbose=True, allTraces = None):
 		"""
 		Iterates through trace, performing theory induction on each timestep
 		"""
-		T = Theory(self)
-		T.initializeSpriteSet(self.vgdlSpriteParse)
+		if allTraces == None:
+			allTraces = [trace]
 
-		self.hypothesisSpace = set([T])
+		if len(self.hypothesisSpace) == 0:
+			T = Theory(self)
+			T.initializeSpriteSet(self.vgdlSpriteParse)
+			self.hypothesisSpace = set([T])
+
 		newTheories = []
 
 		# For every timestep
@@ -1035,6 +1043,7 @@ class Game(object):
 				#print " --> will check likelihood to see if we need to extend our theory to explain the new TimeStep"
 				if theory.likelihood(timestep) < 1.0: 	# Theory needs to be changed
 					#print "likelihood", theory.likelihood(timestep)
+					print "THEORY SHOULD CHANGE"
 					newTheories.extend(theory.explainTimeStep(timestep, timestep))
 			
 			# Make sure only to add unique theories
@@ -1046,7 +1055,7 @@ class Game(object):
 					if theory==existingTheory:
 						theoryIsNew = False
 				if theoryIsNew:
-					#print "ADDING NEW THEORIES IN INDUCTION --> now {} theories".format(len(self.hypothesisSpace))
+					# print "ADDING NEW THEORIES IN INDUCTION --> now {} theories".format(len(self.hypothesisSpace))
 					self.hypothesisSpace.add(theory) #TODO: numbering of theories should take place here.	
 				# else:
 				# 	print "THEORY exists IN HYPOTHESIS SPACE"
@@ -1068,15 +1077,26 @@ class Game(object):
 				print ""
 		
 		# Termination set induction
-		if result:
-			hypothesisSpaceWithTermConditions = set()
-			for theory in self.hypothesisSpace:
-				theory.explainTermination(timesteps[-1], timesteps[:-1], result)
-				hypothesisSpaceWithTermConditions.add(theory)
+		hypothesisSpaceWithTermConditions = set()
+		for timesteps,result in allTraces:
 
-			self.hypothesisSpace = hypothesisSpaceWithTermConditions
-		
+			if result:
+				for theory in self.hypothesisSpace:
+					print result, len(allTraces)
+					theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+					hypothesisSpaceWithTermConditions.add(theory)
+
+		self.hypothesisSpace = hypothesisSpaceWithTermConditions
 		return self.hypothesisSpace
+
+
+	def inductionOverMultipleTraces(self, traces, verbose=True):
+		for i in range(len(traces)):
+			trace = traces[i]
+			self.induction(trace,verbose=verbose,allTraces=traces[:i+1])
+
+		return self.hypothesisSpace
+
 
 	def cleanHypothesisSpace(self, subtrace, threshold):
 		"""
