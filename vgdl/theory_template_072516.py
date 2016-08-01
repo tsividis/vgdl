@@ -804,10 +804,7 @@ class Theory(object):
 	def displayClasses(self):
 		print ""
 		print "Class assignments:"
-		for c in self.classes:
-			c_list = [ob.color for ob in self.classes[c]]
-			print "\t{}: {}".format(c, c_list)
-		#print self.classes
+		print self.classes
 		print
 
 	def displayTerminationSet(self):
