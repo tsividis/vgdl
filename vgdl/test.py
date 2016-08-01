@@ -480,23 +480,21 @@ KeyError: '(140, 200, 140)'
 	generatedHypotheses = {}
 
 	# Format:  (rawTrace, numHypotheses, name, verbose)
-	traces = [
-		(rawTrace_simple_win, 1, "rawTrace_simple_win", False), 
-		(rawTrace_simple_loss, 2, "rawTrace_simple_loss", False),
-		(rawTrace_preconditions_simple, 1, "rawTrace_preconditions_simple", False), 
-		(rawTrace_preconditions_simple_2, 1, "rawTrace_preconditions_simple_2", False),
-		(rawTrace_simpleGame1_loss, 1, "rawTrace_simpleGame1_loss", False), # TODO: need to check number expected
+	# traces = [
+	# 	(rawTrace_simple_win, 1, "rawTrace_simple_win", False), 
+	# 	(rawTrace_simple_loss, 2, "rawTrace_simple_loss", False),
+	# 	(rawTrace_preconditions_simple, 1, "rawTrace_preconditions_simple", False), 
+	# 	(rawTrace_preconditions_simple_2, 1, "rawTrace_preconditions_simple_2", False),
+	# 	(rawTrace_simpleGame1_loss, 1, "rawTrace_simpleGame1_loss", False), # TODO: need to check number expected
 		
-		(rawTrace_aliens_win, 5, "rawTrace_aliens_win", False), # TODO: need to check number expected, because SPAWN event not registered...
-		(rawTrace_aliens_loss, 15, "rawTrace_aliens_loss", False), #TODO: need to check number expected b/c too many things are registered as resource packs
-		(rawTrace_dodge_win, 1, "rawtrace_dodge_win", True),
-		(rawTrace_dodge_loss_1, 1, "rawTrace_dodge_loss_1", False), #TODO: not sure that avatar should be in same class as other things
-		(rawTrace_dodge_loss_2, 1, "rawTrace_dodge_loss_2", False)
-		]
+	# 	(rawTrace_aliens_win, 5, "rawTrace_aliens_win", False), # TODO: need to check number expected, because SPAWN event not registered...
+	# 	(rawTrace_aliens_loss, 15, "rawTrace_aliens_loss", False), #TODO: need to check number expected b/c too many things are registered as resource packs
+	# 	(rawTrace_dodge_win, 1, "rawtrace_dodge_win", True),
+	# 	(rawTrace_dodge_loss_1, 1, "rawTrace_dodge_loss_1", False), #TODO: not sure that avatar should be in same class as other things
+	# 	(rawTrace_dodge_loss_2, 1, "rawTrace_dodge_loss_2", False)
+	# 	]
 	
-	# traces = [(rawTrace_simple_win, 1, "rawTrace_simple_win", False),
-	# (rawTrace_simpleGame1_win, 1, "rawTrace_simpleGame1_win", False)
-	# ]
+	traces = [(rawTrace_simple_win, 1, "rawTrace_simple_win", False)]
 
 	'''
 	Longer traces:
