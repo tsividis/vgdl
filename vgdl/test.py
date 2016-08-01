@@ -504,6 +504,7 @@ KeyError: '(140, 200, 140)'
 	generatedHypotheses = {}
 
 	# Format:  (rawTrace, numHypotheses, name, verbose)
+
 	# traces = [
 	# 	(rawTrace_simple_win, 2, "rawTrace_simple_win", False), 
 	# 	(rawTrace_simple_loss, 3, "rawTrace_simple_loss", False),
@@ -517,7 +518,6 @@ KeyError: '(140, 200, 140)'
 	# 	(rawTrace_dodge_loss_1, 1, "rawTrace_dodge_loss_1", False), #TODO: not sure that avatar should be in same class as other things
 	# 	(rawTrace_dodge_loss_2, 1, "rawTrace_dodge_loss_2", False)
 	# 	]
-	
 
 	traces = [(rawTrace_simple_win, 1, "rawTrace_simple_win", False)
 	]
