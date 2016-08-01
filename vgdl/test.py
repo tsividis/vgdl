@@ -1,5 +1,6 @@
 import theory_template_072516 as tt
 from sampleVGDLString import *
+from taxonomy import *
 from class_theory_template_071916 import *
 from IPython import embed
 import time
@@ -18,6 +19,7 @@ def testTrace(rawTrace, expectedHypotheses, name, verbose):
 
 	# New game generated
 	g = tt.Game(push_game)
+	g.VGDLTree = VGDLTree
 	trace = ([tt.TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace[0]],rawTrace[1])
 	start = time.time()
 	hypotheses=list(g.induction(trace, verbose))
@@ -41,6 +43,7 @@ def testMultipleTraces(rawTraces, expectedHypotheses, names, verbose):
 
 	# New game generated
 	g = tt.Game(push_game)
+	g.VGDLTree = VGDLTree
 	start = time.time()
 	for i in range(len(rawTraces)):
 		trace = ([tt.TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace[0]],rawTrace[1])
@@ -505,21 +508,21 @@ KeyError: '(140, 200, 140)'
 
 	# Format:  (rawTrace, numHypotheses, name, verbose)
 
-	traces = [
-		(rawTrace_simple_win, 2, "rawTrace_simple_win", False), 
-		(rawTrace_simple_loss, 3, "rawTrace_simple_loss", False),
-		(rawTrace_preconditions_simple, 2, "rawTrace_preconditions_simple", False), 
-		(rawTrace_preconditions_simple_2, 2, "rawTrace_preconditions_simple_2", False),
-		(rawTrace_simpleGame1_loss, 2, "rawTrace_simpleGame1_loss", False), # TODO: need to check number expected
+	# traces = [
+	# 	(rawTrace_simple_win, 2, "rawTrace_simple_win", False), 
+	# 	(rawTrace_simple_loss, 3, "rawTrace_simple_loss", False),
+	# 	(rawTrace_preconditions_simple, 2, "rawTrace_preconditions_simple", False), 
+	# 	(rawTrace_preconditions_simple_2, 2, "rawTrace_preconditions_simple_2", False),
+	# 	(rawTrace_simpleGame1_loss, 2, "rawTrace_simpleGame1_loss", False), # TODO: need to check number expected
 		
-		(rawTrace_aliens_win, 6, "rawTrace_aliens_win", False), # TODO: need to check number expected, because SPAWN event not registered...
-		(rawTrace_aliens_loss, 16, "rawTrace_aliens_loss", False), #TODO: need to check number expected b/c too many things are registered as resource packs
-		(rawTrace_dodge_win, 2, "rawtrace_dodge_win", True),
-		(rawTrace_dodge_loss_1, 2, "rawTrace_dodge_loss_1", False), #TODO: not sure that avatar should be in same class as other things
-		(rawTrace_dodge_loss_2, 2, "rawTrace_dodge_loss_2", False)
-		]
+	# 	(rawTrace_aliens_win, 6, "rawTrace_aliens_win", False), # TODO: need to check number expected, because SPAWN event not registered...
+	# 	(rawTrace_aliens_loss, 16, "rawTrace_aliens_loss", False), #TODO: need to check number expected b/c too many things are registered as resource packs
+	# 	(rawTrace_dodge_win, 2, "rawtrace_dodge_win", True),
+	# 	(rawTrace_dodge_loss_1, 2, "rawTrace_dodge_loss_1", False), #TODO: not sure that avatar should be in same class as other things
+	# 	(rawTrace_dodge_loss_2, 2, "rawTrace_dodge_loss_2", False)
+	# 	]
 	
-	# traces = [(rawTrace_simple_win, 1, "rawTrace_simple_win", False)]
+	traces = [(rawTrace_simple_win, 1, "rawTrace_simple_win", False)]
 
 
 	'''
