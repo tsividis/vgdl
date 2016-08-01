@@ -521,6 +521,7 @@ KeyError: '(140, 200, 140)'
 	
 	# traces = [(rawTrace_simple_win, 1, "rawTrace_simple_win", False)]
 
+
 	'''
 	Longer traces:
 	(rawTrace_simpleGame1_win, 1, "rawTrace_simpleGame1_win", False)
