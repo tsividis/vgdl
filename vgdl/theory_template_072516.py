@@ -1,6 +1,7 @@
 import itertools, copy
 from class_theory_template_071916 import *
 from IPython import embed
+from ontology import *
 """
 Theory induction on VGDL Games
 """
@@ -803,10 +804,7 @@ class Theory(object):
 	def displayClasses(self):
 		print ""
 		print "Class assignments:"
-		for c in self.classes:
-			c_list = [ob.color for ob in self.classes[c]]
-			print "\t{}: {}".format(c, c_list)
-		#print self.classes
+		print self.classes
 		print
 
 	def displayTerminationSet(self):
