@@ -1,5 +1,7 @@
-import itertools, copy
+import itertools, random, copy, numpy.random, scipy.misc
+import numpy as np
 from class_theory_template_071916 import *
+from taxonomy import *
 from IPython import embed
 from ontology import *
 """
@@ -187,6 +189,21 @@ class MultiSpriteCounterRule(TerminationRule):
 	def asTuple(self):
 		return (self.ruleType, self.termination.stypes, self.termination.limit, self.termination.win)
 
+
+class ruleCluster(object):
+	def __init__(self, interactionAndPreconditionList, pairList):
+		self.clusteredRules = interactionAndPreconditionList
+		self.pairs = pairList
+		self.score = 0.
+
+	def __eq__(self, other):
+		if len(self.clusteredRules)!=len(other.clusteredRules):
+			return False
+		else:
+			return all([r1 in [r2 for r2 in other.clusteredRules] for r1 in self.clusteredRules])
+
+	def __ne__(self, other):
+		return not self.__eq__(other)
 
 
 class Theory(object):
@@ -744,6 +761,134 @@ class Theory(object):
 				return classAssignments
 		else: return False
 
+	"""Prediction/generalization functions"""
+	def findRuleClusters(self):
+		ruleClusters = []
+		uniquePairs = list(set([(rule.slot1, rule.slot2) for rule in self.interactionSet]))
+		for pair in uniquePairs:
+			rules = [(r.interaction, r.preconditions) for r in self.interactionSet if (r.slot1,r.slot2)==pair]
+			ruleClusters.append(ruleCluster(rules, pair))
+		return ruleClusters
+
+	def predict(self, pair, lamda, tree, beta=1.,softmaxTemp=.1):
+		print ""
+		print "predicting interactions for {} with parameters:".format(pair)
+		print "lambda = {}. beta = {}. tree = {}. softmax temp = {}".format(lamda, beta, tree.name, softmaxTemp)
+		print "(lambda: extrapolation (1) vs. guess (0) balance)"
+		print "(beta: ontology (1) vs. rule-similarity (0) balance)"
+		print ""
+
+		extrapolatedRules = [[r[0], r[1]*lamda] for r in self.extrapolateRule(pair, tree, beta)]
+		guessedRules = [[r[0], r[1]*(1-lamda)] for r in self.guessRule()]
+		
+		allRules = extrapolatedRules + guessedRules
+		scores = softmax([r[1] for r in allRules], softmaxTemp)
+		outList = [list(z) for z in zip([e[0] for e in allRules], scores)]
+		
+		#merge original extrapolated rules if they use the same predicates
+		mergedRules = [outList[0]]
+		for i in range(1, len(extrapolatedRules)):
+			rule = outList[i]
+			for m in mergedRules:
+				if m[0]==rule[0]:
+					m[1] += rule[1]
+			if all([rule[0]!=m for m in [mR[0] for mR in mergedRules]]):
+				mergedRules.append(rule)
+
+		#convert ruleCluster rules to simple predicate form for ease of reading.
+		#TODO: figure out what format you really want eventually, if you're going to
+		#take actions, rather than just get a distribution over actions.
+		mergedRules = [[m[0].clusteredRules, m[1]] for m in mergedRules]
+		outList = mergedRules + outList[len(extrapolatedRules)+1:]
+		
+		for o in outList:
+			print o
+		return outList
+
+	def guessRule(self):
+		#Currently returns interactions (no preconditions, and not in the form of interactionRules)
+		#TODO: changeResource, spawnifHasMore require another argument. Add these and figure out how
+		#to pass those args. Maybe this is best done in the step that creates interactionRules
+		#in predict(). Also decide how to deal with values of optional args. Right now you'll
+		#just make predictions based on default args.
+		predicateList = ['killSprite', 'cloneSprite', 'stepBack', 'transformTo', 'undoAll',
+		'bounceForward', 'conveySprite', 'windGust', 'slipForward', 'attractGaze', 'turnAround',
+		'reverseDirection', 'flipDirection', 'bounceDirection', 'wallBounce', 'wallStop',
+		'killIfSlow', 'killIfFromAbove', 'killIfAlive', 'collectResource', 'killIfHasMore',
+		'killIfOtherHasMore', 'killIfHasLess', 'killIfOtherHasLess', 'wrapAround',
+		'pullWithIt', 'teleportToExit']
+		remainingPredicates = list(set(predicateList)-set([rule.interaction for rule in self.interactionSet]))
+		scores = [1./len(remainingPredicates)]*len(remainingPredicates)
+		return zip(remainingPredicates, scores)
+
+	def extrapolateRule(self, pair, tree, beta=1.,softmaxTemp=False):
+		#returns interactionRules (including preconditions) that are already in the interactionSet
+		#weighted by their similarity to the provided pair.
+		#TODO: think about default softmaxTemp.
+		if len(self.interactionSet)==0:
+			print "Can't extrapolate; our theory has no rules in the interactionSet!"
+			return
+		classPairs = list(set([(rule.slot1, rule.slot2) for rule in self.interactionSet]))
+		similarityScores = [self.pairSimilarity(pair, classPair, tree, beta) for classPair in classPairs]
+		similarityScores = normalize(similarityScores)
+		if softmaxTemp:
+			similarityScores = softmax(similarityScores,softmaxTemp)
+
+
+		classSimilarities = zip(classPairs, similarityScores)
+
+		ruleClusters = self.findRuleClusters()
+		for ruleCluster in ruleClusters:
+			ruleCluster.score = [cS[1] for cS in classSimilarities if cS[0]==ruleCluster.pairs][0]
+
+		return ([[rc, rc.score] for rc in ruleClusters])
+
+	def levenshtein(self, s1, s2):
+		#Levenshtein (edit) distance. additions and deletions cost the same. No replacements.
+		count = 0
+		s1, s2 = list(s1), list(s2)
+		for i in range(len(s1)):
+			if s1[i] not in s2:
+				s2.append(s1[i])
+				count += 1
+		to_remove = []
+		for i in range(len(s2)):
+			if s2[i] not in s1:
+				to_remove.append(s2[i])
+				count += 1
+		for i in range(len(to_remove)):
+			s2.remove(to_remove[i])
+		return 1./(1+count)
+
+	def ruleSimilarity(self, cx, cy):
+		#Looks at rules in which cx participated in as slot 1, compares them to rules in which
+		#cy participated as slot 1. Compares in terms of their edit distance.
+		#Then does the same for slot 2.
+		cxSlot1 = [(r.interaction, r.slot2, r.preconditions) for r in self.interactionSet 
+		if r.slot1==cx]
+		cySlot1 = [(r.interaction, r.slot2, r.preconditions) for r in self.interactionSet 
+		if r.slot1==cy]
+
+		cxSlot2 = [(r.interaction, r.slot1, r.preconditions) for r in self.interactionSet 
+		if r.slot2==cx]
+		cySlot2 = [(r.interaction, r.slot1, r.preconditions) for r in self.interactionSet 
+		if r.slot2==cy]
+
+		return .5*self.levenshtein(cxSlot1, cySlot1) + .5*self.levenshtein(cxSlot2, cySlot2)
+	
+	def pairSimilarity(self, pair1, pair2, tree, beta=1.):
+		cx, cm, cy, cn = pair1[0], pair1[1], pair2[0], pair2[1]
+		return (self.similarity(cx, cy, tree, beta) + self.similarity(cm, cn, tree, beta)) / 2.
+
+	def similarity(self, cx, cy, tree, beta=1.):
+		# Returns beta*treeSimilarity(c1,c2) + (1-beta)*ruleSimilarity(c1,c2)
+		# Uses whatever tree is passed in. Currently we only have VGDLTree, which is
+		# the original tree based on the VGDL ontology.
+		n1, n2 = self.classes[cx][0].vgdlType, self.classes[cy][0].vgdlType
+		treeSimilarity = tree.similarity(n1, n2)
+		ruleSimilarity = self.ruleSimilarity(cx,cy)
+		return beta*treeSimilarity + (1-beta)*ruleSimilarity
+
 	def generateNumberConcepts(self, item, num): # TODO: Make this set of preconditions smaller
 		"""
 		Preconditions can be drawn from a pre-defined set of number concepts:
@@ -807,6 +952,16 @@ class Theory(object):
 		return not self.__eq__(other)
 
 
+def softmax(w, t = 1.0):
+    e = np.exp(np.array(w) / t)
+    dist = e / np.sum(e)
+    return dist	
+def normalize(array):
+	z = float(sum(array))
+	if z == 0:
+		return [1./len(array)]*len(array) #if all items have the same score of 0, return the same score for all.
+	else:
+		return [a/z for a in array]
 
 
 class Game(object):
@@ -824,6 +979,9 @@ class Game(object):
 		self.hypothesisSpace = set()
 		self.theoryCount = 0
 		self.vgdlSpriteParse = self.makeSpriteParse()
+
+		#inherit ontology from VGDL
+		self.VGDLTree = VGDLTree
 
 	def makeSpriteParse(self):
 		s = SpriteParser()

@@ -263,7 +263,6 @@ class WalkJumper(Walker):
                 self.physics.activeMovement(self, (0, -self.strength))
         Walker.update(self, game)
 
-
 class RandomInertial(OrientedSprite, RandomNPC):
     physicstype = ContinuousPhysics
 

@@ -21,7 +21,8 @@ BasicGame frame_rate=30
         hole   > ResourcePack color=LIGHTBLUE
         avatar > MovingAvatar color=DARKBLUE #cooldown=4 
         box    > ResourcePack 
-            box1 > color=ORANGE               
+            box1 > color=ORANGE
+            box2 > color=PINK               
         treasure > ResourcePack color=GREEN limit=5
         goal > Passive color=GOLD
         trap > ResourcePack color=RED limit=5
@@ -56,7 +57,6 @@ BasicGame frame_rate=30
         avatar poison > killIfHasLess resource=medicine limit=-1
         box avatar  > bounceForward
         box wall    > undoAll        
-        box box     > undoAll
         box hole    > killSprite
         box treasure > undoAll
         box poison > undoAll
@@ -70,6 +70,7 @@ BasicGame frame_rate=30
 
 #        treasure avatar > collectResource scoreChange=5
 #        trap avatar > collectResource scoreChange=-5
+#        box box     > undoAll
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
