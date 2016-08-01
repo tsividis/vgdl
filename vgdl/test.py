@@ -17,7 +17,7 @@ def testTrace(rawTrace, expectedHypotheses, name, verbose):
 	"""
 
 	# New game generated
-	g = tt.Game(push_game)
+	g = tt.Game(push_game) #TODO: Fix this to take in whatever game file we're looking at
 	trace = ([tt.TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace[0]],rawTrace[1])
 	start = time.time()
 	hypotheses=list(g.induction(trace, verbose))

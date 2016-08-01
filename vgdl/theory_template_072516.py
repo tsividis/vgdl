@@ -273,42 +273,6 @@ class Theory(object):
 
 		return theories
 
-	# def explainTermination(self, timestep, prevTimeSteps,result):
-	# 	"""
-	# 	adds all hypotheses about the termination conditions to the terminationSet
-	# 	params:
-	# 	timestep: the very last time step (at which termination occurs)
-	# 	prevTimeSteps: all time steps previous to the termination time step
-	# 	result: a dictionary for which the key 'win' is a boolean describing whether the game was won
-	# 	"""
-	# 	win = result['win']
-	# 	objsWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
-	# 	for obj in timestep.gameState['objects']:
-	# 		timestep_amt = len(timestep.gameState['objects'][obj])
-	# 		timestep_amt_unique = not timestep_amt in [len(prevTimeStep.gameState['objects'][obj]) for prevTimeStep in prevTimeSteps]
-	# 		if timestep_amt_unique:
-	# 			objsWithDiffAmounts[obj] = (win,timestep_amt)
-
-	# 		# timestep_amt_unique = True
-	# 		# for prevTimeStep in prevTimeSteps:
-	# 		# 	prev_timestep_amt = len(prevTimeStep['objects'][obj])
-	# 		# 	if timestep_amt == prev_timestep_amt:
-	# 		# 		timestep_amt_unique = False
-
-	# 	for event in timestep.events:
-	# 		for i in [1,2]:
-	# 			terminationClassColor = event[i] #self.getClass(event[i])
-	# 			if terminationClassColor in objsWithDiffAmounts:
-	# 				win,timestep_amt = objsWithDiffAmounts[terminationClassColor]
-	# 				terminationClassSymbol = None
-	# 				for c in self.classes:
-	# 					for c_class in self.classes[c]:
-	# 						if c_class.color == terminationClassColor:
-	# 							terminationClassSymbol = c
-
-	# 				terminationCondition = TerminationCondition(terminationClassSymbol,timestep_amt,win)
-	# 				self.terminationSet.append(terminationCondition)
-
 	def explainTermination(self, timestep, prevTimeSteps,result):
 		"""
 		adds all hypotheses about the termination conditions to the terminationSet
@@ -395,7 +359,6 @@ class Theory(object):
 				if rule.asTuple() not in interpretations:
 					return False
 			return True
-
 
 	
 	def getFailCases(self, event, timestep, verbose=False):
