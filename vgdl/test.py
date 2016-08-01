@@ -499,8 +499,7 @@ if __name__ == '__main__':
 	# 	(rawTrace_dodge_loss_2, 1, "rawTrace_dodge_loss_2", False)
 	# 	]
 	
-	traces = [(rawTrace_simple_win, 1, "rawTrace_simple_win", False),
-	(rawTrace_simpleGame1_win, 1, "rawTrace_simpleGame1_win", True)
+	traces = [(rawTrace_simple_win, 1, "rawTrace_simple_win", False)
 	]
 
 	'''
