@@ -34,7 +34,6 @@ BasicGame frame_rate=30
     LevelMapping
         0 > hole
         1 > box1
-        2 > box2  
         3 > treasure 
         t > trap    
         c > cloud 

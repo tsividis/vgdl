@@ -529,15 +529,7 @@ class FlakAvatar(HorizontalAvatar, SpriteProducer):
         from pygame.locals import K_SPACE
         if self.stype and game.keystate[K_SPACE]:
             spawn = game._createSprite([self.stype], (self.rect.left, self.rect.top))
-            if spawn:	
-			    ## Print event tuple
-			    resources = dict(self.resources)
-			    action = "K_SPACE"
-			    agent_color = colorDict[str(self.color)]
-			    obj_color = colorDict[str(spawn[0].color)]
-			    effect = "SPAWN"
-			    event_tuple = (resources, action, [(agent_color, obj_color, effect)])
-			    print event_tuple
+            
 
 class OrientedAvatar(OrientedSprite, MovingAvatar):
     """ Avatar retains its orientation, but moves in cardinal directions. """

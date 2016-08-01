@@ -14,9 +14,34 @@ import uuid
 import subprocess
 import glob
 import ipdb
+from copy import deepcopy
+import logging
+import sys
+import re
+
+
 
 keyPresses = {273: 'up', 274: 'down', 276: 'left', 275: 'right', 32: 'spacebar'}
 emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
+colorDict = {str((0, 200, 0)): 'GREEN',\
+            str((0, 0, 200)): 'BLUE',\
+            str((200, 0, 0)): 'RED',\
+            str((90, 90, 90)): 'GRAY',\
+            str((250, 250, 250)): 'WHITE',\
+            str((140, 120, 100)): 'BROWN',\
+            str((0, 0, 0)): 'BLACK',\
+            str((250, 160, 0)): 'ORANGE',\
+            str((250, 250, 0)): 'YELLOW',\
+            str((250, 200, 200)): 'PINK',\
+            str((250, 212, 0)): 'GOLD',\
+            str((250, 50, 50)): 'LIGHTRED',\
+            str((250, 200, 100)): 'LIGHTORANGE',\
+            str((50, 100, 250)): 'LIGHTBLUE',\
+            str((50, 250, 50)): 'LIGHTGREEN',\
+            str((150, 150, 150)): 'LIGHTGRAY',\
+            str((30, 30, 30)): 'DARKGRAY',\
+            str((20, 20, 100)): 'DARKBLUE',\
+            }
 
 class VGDLParser(object):
     """ Parses a string into a Game object. """
@@ -26,6 +51,7 @@ class VGDLParser(object):
     def playGame(game_str, map_str, headless = False, persist_movie = False, movie_dir = "./tmpl"):
         """ Parses the game and level map strings, and starts the game. """
         g = VGDLParser().parseGame(game_str)
+        
         g.buildLevel(map_str)
         g.uiud = uuid.uuid4()
         if(headless):
@@ -162,6 +188,7 @@ class BasicGame(object):
     def __init__(self, **kwargs):
         from ontology import Immovable, DARKGRAY, MovingAvatar, GOLD
         for name, value in kwargs.iteritems():
+            print "NAME: ", name
             if hasattr(self, name):
                 self.__dict__[name] = value
             else:
@@ -191,6 +218,7 @@ class BasicGame(object):
 
         self.is_stochastic = False
         self._lastsaved = None
+        self.win = None
         self.reset()
 
     def reset(self):
@@ -393,6 +421,7 @@ class BasicGame(object):
 
         fs = {'score': self.score,
               'ended': self.ended,
+              'win': self.win,
               'objects': obs}
         return fs
 
@@ -415,6 +444,29 @@ class BasicGame(object):
                             s.resources[r] = v
                     else:
                         s.__setattr__(a, val)
+
+    def getFullStateColorized(self,as_string=False):
+        fs = self.getFullState(as_string=as_string)
+        fs_colorized = deepcopy(fs)
+        fs_colorized['objects'] = {}
+        for sprite_name in fs['objects']:
+            sclass, args, stypes = self.sprite_constr[sprite_name]
+            try:
+                fs_colorized['objects'][colorDict[str(args['color'])]] = fs['objects'][sprite_name]
+            except: # Object color isn't immediately available
+                sprite_type = self.sprite_groups[stypes[0]]
+                if sprite_type:
+                    sprite_rep = sprite_type[0]
+                    fs_colorized['objects'][colorDict[str(sprite_rep.color)]] = fs['objects'][sprite_name]
+                
+                # No more sprites left?
+                else:
+                    print self.sprite_groups[stypes[0]]
+                    pass
+
+        return fs_colorized
+
+
 
     def _clearAll(self, onscreen=True):
         for s in set(self.kill_list):
@@ -533,17 +585,21 @@ class BasicGame(object):
         lastKeyPress=(0,0,1) # PT: initialize to fake keypress index
         lastKeyPressTime=0 #PT
 
+        # Logging
+        s = sys.argv[0]
+        m = re.search('([a-z]+)\.py', s)
+        name = m.group(1)
+        gamelog = "{}.log".format(name)
+        #logging.basicConfig(filename=gamelog, level=logging.INFO)
+
+        game_output = "output/{}.txt".format(name)
+
+
         # --------- Game-play ------------
         finalEventList = []
         agentStatePrev = {}
         agentState = dict(self.getAvatars()[0].resources)
         keyPressPrev = None
-        initial = {'agentState': agentState, 'agentAction': None, 'effectList': []}
-        print initial
-        
-
-        finalEventList.append(initial)
-
 
         while not self.ended:
             clock.tick(self.frame_rate)
@@ -596,8 +652,8 @@ class BasicGame(object):
                 print "ERROR: {} --> {}".format(e, "Using previous agent state...")
 
             if effectList:
-                event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList, 'gameState': self.getFullState()}
-                print "event: ", event
+                event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList, 'gameState': self.getFullStateColorized()}
+                print event
                 finalEventList.append(event)
 
             # Termination #1
@@ -634,18 +690,31 @@ class BasicGame(object):
             [os.remove(f) for f in glob.glob(tmp_dir + "*" + str(self.uiud) + "*")]
 
         # Print entire history of effects
-        gameEndEvent = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': ['gameEnd']}
-        print gameEndEvent
+        terminationCondition = {'ended': True, 'win':win}
+        # logging.info((finalEventList, terminationCondition))
 
-        finalEventList.append((gameEndEvent))
-        print finalEventList
+
+        with open(game_output, 'w') as f:
+            f.write(str((finalEventList, terminationCondition)))
+
+        # print "\n\n"
+        # print "(["
+        # for finalEvent in finalEventList[:-1]:
+        #     print finalEvent, "," 
+        # print finalEventList[-1]
+        # print "],\n{}\n)\n\n".format(terminationCondition)
+
+        print "Expecting {} events".format(len(finalEventList))
 
         if win:
             # winning a game always gives a positive score.
             if self.score <= 0:
                 self.score = 1
+
+            self.win = True
             print "Game won, with score %s" % self.score
         else:
+            self.win = False
             print "Game lost. Score=%s" % self.score
         ipdb.set_trace()
 
