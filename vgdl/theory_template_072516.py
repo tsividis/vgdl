@@ -414,8 +414,8 @@ class Theory(object):
 
 		if possibleAssignments:
 			for assignment in possibleAssignments:
-				print "ASSIGNMENT"
-				print assignment
+				# print "ASSIGNMENT"
+				# print assignment
 				interaction = InteractionRule(event[0], assignment[0], assignment[1]) #This isn't strictly necessary, but follows createChild requirements.
 				
 				classAssignments = [(assignment[0], obj1), (assignment[1], obj2)]
@@ -739,7 +739,10 @@ class Theory(object):
 	def displayClasses(self):
 		print ""
 		print "Class assignments:"
-		print self.classes
+		for c in self.classes:
+			c_list = [ob.color for ob in self.classes[c]]
+			print "\t{}: {}".format(c, c_list)
+		#print self.classes
 		print
 
 	def displayTerminationSet(self):

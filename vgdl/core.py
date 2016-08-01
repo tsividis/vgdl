@@ -587,7 +587,7 @@ class BasicGame(object):
 
         # Logging
         s = sys.argv[0]
-        m = re.search('([a-z]+)\.py', s)
+        m = re.search('([a-z0-9]+)\.py', s)
         name = m.group(1)
         gamelog = "{}.log".format(name)
         #logging.basicConfig(filename=gamelog, level=logging.INFO)
