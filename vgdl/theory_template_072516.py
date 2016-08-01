@@ -134,26 +134,57 @@ class InteractionRule(object):
 
 
 
-class TerminationCondition:
+class TerminationRule:
 	"""
 	TODO: eventually incorporate multiple sprite termination conditions and timeout termination conditions.
 	At the moment, we assume single sprite conditions
 	"""
-	def __init__(self,sclass,snumber,win):
-		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
-		self.sclass = sclass
-		self.snumber = snumber
-		self.win = win
-
-	def display(self):
-		print self.sclass, self.snumber, self.win
-		return
-
-	def asTuple(self):
-		return (self.sclass, self.snumber, self.win)
+	def isDone(self, game):
+		return self.termination.isDone()
 
 	def __eq__(self,other):
 		return self.asTuple() == other.asTuple()
+
+
+class TimeoutRule(TerminationRule):
+	def __init__(self, limit=0, win=False):
+		self.termination = Timeout(limit=limit, win=win)
+		self.ruleType = "TerminationRule"
+
+	def display(self):
+		print (self.ruleType, self.termination.limit, self.termination.win)
+
+	def asTuple(self):
+		return (self.ruleType, self.termination.limit, self.termination.win)
+
+
+class SpriteCounterRule(TerminationRule):
+	""" Game ends when the number of sprites of type 'stype' hits 'limit' (or below). """
+	def __init__(self,stype,limit,win):
+		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
+		self.termination = SpriteCounter(limit=limit, stype=stype, win=win)
+		self.ruleType = "SpriteCounterRule"
+
+	def display(self):
+		print self.termination.stype, self.termination.limit, self.termination.win
+		return 
+
+	def asTuple(self):
+		return (self.ruleType, self.termination.stype, self.termination.limit, self.termination.win)
+
+
+class MultiSpriteCounterRule(TerminationRule):
+	""" Game ends when the sum of all sprites of types 'stypes' hits 'limit'. """
+	def __init__(self, limit=0, win=True, stypes = []):
+		self.termination = MultiSpriteCounter(limit=limit,win=win,stypes=stypes)
+		self.ruleType = "MultiSpriteCounterRule"
+
+	def display(self):
+		print self.termination.stypes, self.termination.limit, self.termination.win
+		return 
+
+	def asTuple(self):
+		return (self.ruleType, self.termination.stypes, self.termination.limit, self.termination.win)
 
 
 
@@ -241,6 +272,42 @@ class Theory(object):
 
 		return theories
 
+	# def explainTermination(self, timestep, prevTimeSteps,result):
+	# 	"""
+	# 	adds all hypotheses about the termination conditions to the terminationSet
+	# 	params:
+	# 	timestep: the very last time step (at which termination occurs)
+	# 	prevTimeSteps: all time steps previous to the termination time step
+	# 	result: a dictionary for which the key 'win' is a boolean describing whether the game was won
+	# 	"""
+	# 	win = result['win']
+	# 	objsWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
+	# 	for obj in timestep.gameState['objects']:
+	# 		timestep_amt = len(timestep.gameState['objects'][obj])
+	# 		timestep_amt_unique = not timestep_amt in [len(prevTimeStep.gameState['objects'][obj]) for prevTimeStep in prevTimeSteps]
+	# 		if timestep_amt_unique:
+	# 			objsWithDiffAmounts[obj] = (win,timestep_amt)
+
+	# 		# timestep_amt_unique = True
+	# 		# for prevTimeStep in prevTimeSteps:
+	# 		# 	prev_timestep_amt = len(prevTimeStep['objects'][obj])
+	# 		# 	if timestep_amt == prev_timestep_amt:
+	# 		# 		timestep_amt_unique = False
+
+	# 	for event in timestep.events:
+	# 		for i in [1,2]:
+	# 			terminationClassColor = event[i] #self.getClass(event[i])
+	# 			if terminationClassColor in objsWithDiffAmounts:
+	# 				win,timestep_amt = objsWithDiffAmounts[terminationClassColor]
+	# 				terminationClassSymbol = None
+	# 				for c in self.classes:
+	# 					for c_class in self.classes[c]:
+	# 						if c_class.color == terminationClassColor:
+	# 							terminationClassSymbol = c
+
+	# 				terminationCondition = TerminationCondition(terminationClassSymbol,timestep_amt,win)
+	# 				self.terminationSet.append(terminationCondition)
+
 	def explainTermination(self, timestep, prevTimeSteps,result):
 		"""
 		adds all hypotheses about the termination conditions to the terminationSet
@@ -257,25 +324,24 @@ class Theory(object):
 			if timestep_amt_unique:
 				objsWithDiffAmounts[obj] = (win,timestep_amt)
 
-			# timestep_amt_unique = True
-			# for prevTimeStep in prevTimeSteps:
-			# 	prev_timestep_amt = len(prevTimeStep['objects'][obj])
-			# 	if timestep_amt == prev_timestep_amt:
-			# 		timestep_amt_unique = False
-
 		for event in timestep.events:
 			for i in [1,2]:
 				terminationClassColor = event[i] #self.getClass(event[i])
 				if terminationClassColor in objsWithDiffAmounts:
 					win,timestep_amt = objsWithDiffAmounts[terminationClassColor]
 					terminationClassSymbol = None
+					limit = None
 					for c in self.classes:
 						for c_class in self.classes[c]:
 							if c_class.color == terminationClassColor:
 								terminationClassSymbol = c
 
-					terminationCondition = TerminationCondition(terminationClassSymbol,timestep_amt,win)
-					self.terminationSet.append(terminationCondition)
+					spriteCounterRule= SpriteCounterRule(terminationClassSymbol,timestep_amt,win)
+					self.terminationSet.append(spriteCounterRule)
+
+		time = result["time"]
+		timeoutRule = TimeoutRule(limit=time, win=win)
+		self.terminationSet.append(timeoutRule)
 
 
 	def likelihood(self, timestep, verbose=False):
@@ -414,8 +480,6 @@ class Theory(object):
 
 		if possibleAssignments:
 			for assignment in possibleAssignments:
-				# print "ASSIGNMENT"
-				# print assignment
 				interaction = InteractionRule(event[0], assignment[0], assignment[1]) #This isn't strictly necessary, but follows createChild requirements.
 				
 				classAssignments = [(assignment[0], obj1), (assignment[1], obj2)]
