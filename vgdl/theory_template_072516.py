@@ -39,7 +39,7 @@ class TimeStep:
 		self.gameState = gameState
 
 	def display(self):
-		print (self.agentAction, self.agentState, self.events, self.gameState)
+		# print (self.agentAction, self.agentState, self.events, self.gameState)
 		return (self.agentAction, self.agentState, self.events, self.gameState)
 
 
@@ -147,7 +147,7 @@ class TerminationRule:
 class TimeoutRule(TerminationRule):
 	def __init__(self, limit=0, win=False):
 		self.termination = Timeout(limit=limit, win=win)
-		self.ruleType = "TerminationRule"
+		self.ruleType = "TimeoutRule"
 
 	def display(self):
 		print (self.ruleType, self.termination.limit, self.termination.win)
@@ -164,7 +164,7 @@ class SpriteCounterRule(TerminationRule):
 		self.ruleType = "SpriteCounterRule"
 
 	def display(self):
-		print self.termination.stype, self.termination.limit, self.termination.win
+		print (self.ruleType, self.termination.stype, self.termination.limit, self.termination.win)
 		return 
 
 	def asTuple(self):
@@ -178,7 +178,7 @@ class MultiSpriteCounterRule(TerminationRule):
 		self.ruleType = "MultiSpriteCounterRule"
 
 	def display(self):
-		print self.termination.stypes, self.termination.limit, self.termination.win
+		print (self.ruleType, self.termination.stypes, self.termination.limit, self.termination.win)
 		return 
 
 	def asTuple(self):
@@ -233,6 +233,9 @@ class Theory(object):
 		for s in self.spriteSet:
 			self.spriteObjects[s.color] = s
 
+	def addNewTerminationConditions(self, newTermConditions):
+		self.terminationSet.extend(newTermConditions)
+
 	"""Main functions"""
 
 	def explainTimeStep(self, timestep, fullTimestep, currTheories=False):
@@ -285,41 +288,22 @@ class Theory(object):
 
 		return theories
 
-	# def explainTermination(self, timestep, prevTimeSteps,result):
-	# 	"""
-	# 	adds all hypotheses about the termination conditions to the terminationSet
-	# 	params:
-	# 	timestep: the very last time step (at which termination occurs)
-	# 	prevTimeSteps: all time steps previous to the termination time step
-	# 	result: a dictionary for which the key 'win' is a boolean describing whether the game was won
-	# 	"""
-	# 	win = result['win']
-	# 	objsWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
-	# 	for obj in timestep.gameState['objects']:
-	# 		timestep_amt = len(timestep.gameState['objects'][obj])
-	# 		timestep_amt_unique = not timestep_amt in [len(prevTimeStep.gameState['objects'][obj]) for prevTimeStep in prevTimeSteps]
-	# 		if timestep_amt_unique:
-	# 			objsWithDiffAmounts[obj] = (win,timestep_amt)
+	def colorToClassMapper(self,color):
+		for c in self.classes:
+			for c_class in self.classes[c]:
+				if c_class.color == color:
+					return c
 
-	# 		# timestep_amt_unique = True
-	# 		# for prevTimeStep in prevTimeSteps:
-	# 		# 	prev_timestep_amt = len(prevTimeStep['objects'][obj])
-	# 		# 	if timestep_amt == prev_timestep_amt:
-	# 		# 		timestep_amt_unique = False
+		raise Exception("No corresponding class found for color")
 
-	# 	for event in timestep.events:
-	# 		for i in [1,2]:
-	# 			terminationClassColor = event[i] #self.getClass(event[i])
-	# 			if terminationClassColor in objsWithDiffAmounts:
-	# 				win,timestep_amt = objsWithDiffAmounts[terminationClassColor]
-	# 				terminationClassSymbol = None
-	# 				for c in self.classes:
-	# 					for c_class in self.classes[c]:
-	# 						if c_class.color == terminationClassColor:
-	# 							terminationClassSymbol = c
+	def makeGameStateWithClasses(self, gameState):
+		classGameState = {k: 0 for k in self.classes.keys()}
+		for c in self.classes:
+			for s in self.classes[c]:
+				classGameState[c] += len(gameState[s.color])
 
-	# 				terminationCondition = TerminationCondition(terminationClassSymbol,timestep_amt,win)
-	# 				self.terminationSet.append(terminationCondition)
+		return classGameState
+
 
 	def explainTermination(self, timestep, prevTimeSteps,result):
 		"""
@@ -330,32 +314,36 @@ class Theory(object):
 		result: a dictionary for which the key 'win' is a boolean describing whether the game was won
 		"""
 		win = result['win']
-		objsWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
-		for obj in timestep.gameState['objects']:
-			timestep_amt = len(timestep.gameState['objects'][obj])
-			timestep_amt_unique = not timestep_amt in [len(prevTimeStep.gameState['objects'][obj]) for prevTimeStep in prevTimeSteps]
+		classesWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
+		prevClassGameStates = [self.makeGameStateWithClasses(t.gameState['objects']) for t in prevTimeSteps]
+		classGameState = self.makeGameStateWithClasses(timestep.gameState['objects'])
+		for c in classGameState:
+			timestep_amt = classGameState[c]
+			timestep_amt_unique = not timestep_amt in [g[c] for g in prevClassGameStates]
 			if timestep_amt_unique:
-				objsWithDiffAmounts[obj] = (win,timestep_amt)
+				classesWithDiffAmounts[c] = timestep_amt
+
+		# print "IN TERMINATION CONDITIONS"
+		# print timestep
+		# # print timestep.events
+		# print classesWithDiffAmounts
+		# print {k:[c.asTuple() for c in v] for k,v in self.classes.items()}
 
 		for event in timestep.events:
 			for i in [1,2]:
 				terminationClassColor = event[i] #self.getClass(event[i])
-				if terminationClassColor in objsWithDiffAmounts:
-					win,timestep_amt = objsWithDiffAmounts[terminationClassColor]
-					terminationClassSymbol = None
-					limit = None
-					for c in self.classes:
-						for c_class in self.classes[c]:
-							if c_class.color == terminationClassColor:
-								terminationClassSymbol = c
-
+				terminationClassSymbol = self.colorToClassMapper(terminationClassColor)
+				if terminationClassSymbol in classesWithDiffAmounts:
+					timestep_amt = classesWithDiffAmounts[terminationClassSymbol]
 					spriteCounterRule= SpriteCounterRule(terminationClassSymbol,timestep_amt,win)
-					self.terminationSet.append(spriteCounterRule)
+					if not spriteCounterRule in self.terminationSet:
+						self.terminationSet.append(spriteCounterRule)
 
+		# print [t.asTuple() for t in self.terminationSet]
 		time = result["time"]
 		timeoutRule = TimeoutRule(limit=time, win=win)
-		self.terminationSet.append(timeoutRule)
-
+		if not timeoutRule in self.terminationSet:
+			self.terminationSet.append(timeoutRule)
 
 	def likelihood(self, timestep, verbose=False):
 		"""
@@ -365,6 +353,57 @@ class Theory(object):
 
 		Right now returns only 1 or 0.
 		"""
+		#CE = self.checkEventsInTimeStep(timestep)
+		#CP = self.checkPredictionsInTimeStep(timestep)
+		
+		#print "events in timestep {} | predictions in timestep {}".format(self.checkEventsInTimeStep(timestep), self.checkPredictionsInTimeStep(timestep))
+		if self.checkEventsInTimeStep(timestep) and self.checkPredictionsInTimeStep(timestep):
+			likelihood = 1.
+		else:
+			likelihood = 0.
+		#print "Initial check", CE, CP
+		#print "Second check", self.checkEventsInTimeStep(timestep), self.checkPredictionsInTimeStep(timestep)
+		#print "\n"
+		return likelihood
+
+	def checkTerminationCounterInState(self, c, termCondition):
+		"""
+		c = game state with classes instead of colors
+		"""
+		return c[termCondition.termination.stype] == termCondition.termination.limit
+
+
+	def getBadTerminationConditions(self, allTraces, verbose=False):
+		"""
+		Right now returns the list of termination conditions which are contradicted by the data.
+		"""
+		badTerminationConditions = []
+		for termCondition in self.terminationSet:
+			if termCondition.ruleType == "SpriteCounterRule":
+				for timesteps,result in allTraces:
+					for i in range(len(timesteps)):
+						t = timesteps[i]
+						c = self.makeGameStateWithClasses(t.gameState["objects"])
+						if i == len(timesteps) - 1:
+							if self.checkTerminationCounterInState(c, termCondition) and termCondition.termination.win != result["win"]:
+								if not termCondition in badTerminationConditions:
+									badTerminationConditions.append(termCondition)
+						else:
+							if self.checkTerminationCounterInState(c, termCondition): # if condition were true, would have ended on this time step.
+								if not termCondition in badTerminationConditions:
+									badTerminationConditions.append(termCondition)
+
+			elif termCondition.ruleType == "TimeoutRule":
+				for timesteps, result in allTraces:
+					if result["time"] > termCondition.termination.limit:
+						if not termCondition in badTerminationConditions:
+							badTerminationConditions.append(termCondition)
+
+		return badTerminationConditions
+
+
+
+
 		#CE = self.checkEventsInTimeStep(timestep)
 		#CP = self.checkPredictionsInTimeStep(timestep)
 		
@@ -407,7 +446,6 @@ class Theory(object):
 				if rule.asTuple() not in interpretations:
 					return False
 			return True
-
 
 	
 	def getFailCases(self, event, timestep, verbose=False):
@@ -1024,14 +1062,18 @@ class Game(object):
 	def display(self):
 		print self.theoryCount
 
-	def induction(self, trace, verbose=True):
+	def induction(self, trace, verbose=True, allTraces = None):
 		"""
 		Iterates through trace, performing theory induction on each timestep
 		"""
-		T = Theory(self)
-		T.initializeSpriteSet(self.vgdlSpriteParse)
+		if allTraces == None:
+			allTraces = [trace]
 
-		self.hypothesisSpace = set([T])
+		if len(self.hypothesisSpace) == 0:
+			T = Theory(self)
+			T.initializeSpriteSet(self.vgdlSpriteParse)
+			self.hypothesisSpace = set([T])
+
 		newTheories = []
 
 		# For every timestep
@@ -1049,18 +1091,19 @@ class Game(object):
 				#print " --> will check likelihood to see if we need to extend our theory to explain the new TimeStep"
 				if theory.likelihood(timestep) < 1.0: 	# Theory needs to be changed
 					#print "likelihood", theory.likelihood(timestep)
+					theory.display()
 					newTheories.extend(theory.explainTimeStep(timestep, timestep))
 			
 			# Make sure only to add unique theories
 			#print "Iterating through new theories"
 			for theory in newTheories:
-				# theory.display()
+				theory.display()
 				theoryIsNew = True
 				for existingTheory in self.hypothesisSpace:
 					if theory==existingTheory:
 						theoryIsNew = False
 				if theoryIsNew:
-					#print "ADDING NEW THEORIES IN INDUCTION --> now {} theories".format(len(self.hypothesisSpace))
+					# print "ADDING NEW THEORIES IN INDUCTION --> now {} theories".format(len(self.hypothesisSpace))
 					self.hypothesisSpace.add(theory) #TODO: numbering of theories should take place here.	
 				# else:
 				# 	print "THEORY exists IN HYPOTHESIS SPACE"
@@ -1068,7 +1111,6 @@ class Game(object):
 
 
 			self.cleanHypothesisSpace(timesteps[0:i+1], 1) #All timesteps up to now should be fully explained
-			
 			#if verbose:
 			print "{} hypotheses:".format(len(self.hypothesisSpace))
 			
@@ -1082,15 +1124,30 @@ class Game(object):
 				print ""
 		
 		# Termination set induction
-		if result:
-			hypothesisSpaceWithTermConditions = set()
-			for theory in self.hypothesisSpace:
-				theory.explainTermination(timesteps[-1], timesteps[:-1], result)
-				hypothesisSpaceWithTermConditions.add(theory)
 
-			self.hypothesisSpace = hypothesisSpaceWithTermConditions
-		
+		# hypothesisSpaceWithTermConditions = set()
+		for theory in self.hypothesisSpace:
+			for timesteps,result in allTraces:
+				if result:
+					theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+					
+			badTerminationSet = theory.getBadTerminationConditions(allTraces)
+			for t in badTerminationSet:
+				theory.terminationSet.remove(t)
+
+			# hypothesisSpaceWithTermConditions.add(theory)
+
+		# self.hypothesisSpace = hypothesisSpaceWithTermConditions
 		return self.hypothesisSpace
+
+
+	def inductionOverMultipleTraces(self, traces, verbose=True):
+		for i in range(len(traces)):
+			trace = traces[i]
+			self.induction(trace,verbose=verbose,allTraces=traces[:i+1])
+
+		return self.hypothesisSpace
+
 
 	def cleanHypothesisSpace(self, subtrace, threshold):
 		"""
