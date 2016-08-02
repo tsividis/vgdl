@@ -107,18 +107,18 @@ class SpriteParser(object):
                     args_without_color = deepcopy(args)
                     del args_without_color['color']
 
-                    print "CLASS TYPE:", sclass
+                    #print "CLASS TYPE:", sclass
 
                     if sclass in resourcePackTypes:
-                        print "--> will be converted to ResourcePack"
+                        #print "--> will be converted to ResourcePack"
                         self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args_without_color)
                         # self.sprite_types[key] = (self._eval('ResourcePack'), colorized_args, stypes)
                     elif sclass == resourceType:
-                        print "--> will be converted to ResourcePack"
+                        #print "--> will be converted to ResourcePack"
                         self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args_without_color)
                         self.sprite_types[key+"_resource"] = Sprite(self._eval('ResourcePack'), color_type+"_resource", args_without_color)
                     else:
-                        print "--> will be ITSELF"
+                        #print "--> will be ITSELF"
 
                         self.sprite_types[key] = Sprite(sclass, color_type, args_without_color)
 

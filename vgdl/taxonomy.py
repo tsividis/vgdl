@@ -1,6 +1,7 @@
 # from theory_template_071416 import *
 from ontology import *
-import pygraphviz as PG
+from sampleVGDLString import *
+# import pygraphviz as PG
 
 '''
 TODO:
@@ -9,7 +10,7 @@ moving avatars. Distance function will be very wrong because of this, at least w
 
 Make our own tree -- for now, just use our own intuitions.
 '''
-A = PG.AGraph(directed=True, strict=True)
+# A = PG.AGraph(directed=True, strict=True)
 
 class Tree(object):
 	def __init__(self, name, VGDLType, parent=False):
@@ -39,7 +40,7 @@ class Tree(object):
 			t.head = self.head #inherit head from head of tree
 			parent.children.append(t)
 			t.head.members[str(sprite)] = t
-			A.add_edge(str(parent.VGDLType), str(sprite))
+			# A.add_edge(str(parent.VGDLType), str(sprite))
 			print "added self, {}".format(sprite)
 		 #Otherwise, add the sprite's parent and then add the sprite.
 		else:
@@ -84,5 +85,5 @@ for vgdltype in types:
 	VGDLTree.addChild(vgdltype)
 
 #Make graph visualization
-A.write('VGDL_ontology.dot ')
-A.layout(prog='dot')
+#A.write('VGDL_ontology.dot ')
+#A.layout(prog='dot')
