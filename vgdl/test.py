@@ -527,14 +527,14 @@ KeyError: '(140, 200, 140)'
 	# 	(rawTrace_dodge_loss_1, 2, "rawTrace_dodge_loss_1", False), #TODO: not sure that avatar should be in same class as other things
 	# 	(rawTrace_dodge_loss_2, 2, "rawTrace_dodge_loss_2", False)
 	# # 	]
-	traces = [(rawTrace_simple_win, 1, "rawTrace_simple_win", False)]
+	# traces = [(rawTrace_simple_win, 1, "rawTrace_simple_win", False)]
 
-	for trace, expectedHypotheses, name, verbose in traces:
-		hypotheses = testTrace(trace, expectedHypotheses, name, verbose)
-		generatedHypotheses[name] = hypotheses
+	# for trace, expectedHypotheses, name, verbose in traces:
+	# 	hypotheses = testTrace(trace, expectedHypotheses, name, verbose)
+	# 	generatedHypotheses[name] = hypotheses
 	
-	# traces = [rawTrace_preconditions_simple, rawTrace_simple_win, rawTrace_simple_loss]
-	# hypotheses = testMultipleTraces(traces, 0, ["rawTrace_simple_win","rawTrace_simple_loss", "rawTrace_preconditions_simple"], False)
+	traces = [rawTrace_preconditions_simple, rawTrace_simple_win, rawTrace_simple_loss]
+	hypotheses = testMultipleTraces(traces, 0, ["rawTrace_simple_win","rawTrace_simple_loss", "rawTrace_preconditions_simple"], False)
 
 	'''
 	Longer traces:
