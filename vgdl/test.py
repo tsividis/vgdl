@@ -46,13 +46,17 @@ def testMultipleTraces(rawTraces, expectedHypotheses, names, verbose):
 	g = tt.Game(push_game)
 	g.VGDLTree = VGDLTree
 	start = time.time()
+	traces =[]
 	for i in range(len(rawTraces)):
+		rawTrace = rawTraces[i]
+		# print rawTrace
 		trace = ([tt.TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace[0]],rawTrace[1])
-		hypotheses=list(g.induction(trace, verbose))
-		
+		traces.append(trace)
+
+	hypotheses=list(g.inductionOverMultipleTraces(traces, verbose))
 	end = time.time()
 	print "########################"
-	print "Checking {}...".format(name)
+	print "Checking {}...".format(names)
 	print "TIME TO RUN: {}".format(end-start)
 	print "Expected number of hypotheses {} = actual number of hypotheses {}? {}".format(expectedHypotheses, len(hypotheses), expectedHypotheses==len(hypotheses))
 	if expectedHypotheses==len(hypotheses):
@@ -61,6 +65,7 @@ def testMultipleTraces(rawTraces, expectedHypotheses, names, verbose):
 		print ">>>> FAIL :("
 	# TODO: Are there other parameters which we want to check?
 	print "\n########################\n\n\n\n\n\n\n"
+	# embed()
 	return hypotheses
 
 
@@ -521,10 +526,15 @@ KeyError: '(140, 200, 140)'
 	# 	(rawTrace_dodge_win, 2, "rawtrace_dodge_win", True),
 	# 	(rawTrace_dodge_loss_1, 2, "rawTrace_dodge_loss_1", False), #TODO: not sure that avatar should be in same class as other things
 	# 	(rawTrace_dodge_loss_2, 2, "rawTrace_dodge_loss_2", False)
-	# 	]
-	
+	# # 	]
 	traces = [(rawTrace_simple_win, 1, "rawTrace_simple_win", False)]
 
+	for trace, expectedHypotheses, name, verbose in traces:
+		hypotheses = testTrace(trace, expectedHypotheses, name, verbose)
+		generatedHypotheses[name] = hypotheses
+	
+	# traces = [rawTrace_preconditions_simple, rawTrace_simple_win, rawTrace_simple_loss]
+	# hypotheses = testMultipleTraces(traces, 0, ["rawTrace_simple_win","rawTrace_simple_loss", "rawTrace_preconditions_simple"], False)
 
 	'''
 	Longer traces:
@@ -534,9 +544,7 @@ KeyError: '(140, 200, 140)'
 		(rawTrace_chase_win, 1, "rawTrace_chase_win", True)
 	'''
 
-	for trace, expectedHypotheses, name, verbose in traces:
-		hypotheses = testTrace(trace, expectedHypotheses, name, verbose)
-		generatedHypotheses[name] = hypotheses
+	
 
 
 	embed()

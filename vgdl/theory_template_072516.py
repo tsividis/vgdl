@@ -169,7 +169,7 @@ class SpriteCounterRule(TerminationRule):
 		self.ruleType = "SpriteCounterRule"
 
 	def display(self):
-		print (self.termination.stype, self.termination.limit, self.termination.win)
+		print (self.ruleType, self.termination.stype, self.termination.limit, self.termination.win)
 		return 
 
 	def asTuple(self):
@@ -183,7 +183,7 @@ class MultiSpriteCounterRule(TerminationRule):
 		self.ruleType = "MultiSpriteCounterRule"
 
 	def display(self):
-		print (self.termination.stypes, self.termination.limit, self.termination.win)
+		print (self.ruleType, self.termination.stypes, self.termination.limit, self.termination.win)
 		return 
 
 	def asTuple(self):
@@ -358,6 +358,57 @@ class Theory(object):
 
 		Right now returns only 1 or 0.
 		"""
+		#CE = self.checkEventsInTimeStep(timestep)
+		#CP = self.checkPredictionsInTimeStep(timestep)
+		
+		#print "events in timestep {} | predictions in timestep {}".format(self.checkEventsInTimeStep(timestep), self.checkPredictionsInTimeStep(timestep))
+		if self.checkEventsInTimeStep(timestep) and self.checkPredictionsInTimeStep(timestep):
+			likelihood = 1.
+		else:
+			likelihood = 0.
+		#print "Initial check", CE, CP
+		#print "Second check", self.checkEventsInTimeStep(timestep), self.checkPredictionsInTimeStep(timestep)
+		#print "\n"
+		return likelihood
+
+	def checkTerminationCounterInState(self, c, termCondition):
+		"""
+		c = game state with classes instead of colors
+		"""
+		return c[termCondition.termination.stype] == termCondition.termination.limit
+
+
+	def getBadTerminationConditions(self, allTraces, verbose=False):
+		"""
+		Right now returns the list of termination conditions which are contradicted by the data.
+		"""
+		badTerminationConditions = []
+		for termCondition in self.terminationSet:
+			if termCondition.ruleType == "SpriteCounterRule":
+				for timesteps,result in allTraces:
+					for i in range(len(timesteps)):
+						t = timesteps[i]
+						c = self.makeGameStateWithClasses(t.gameState["objects"])
+						if i == len(timesteps) - 1:
+							if self.checkTerminationCounterInState(c, termCondition) and termCondition.termination.win != result["win"]:
+								if not termCondition in badTerminationConditions:
+									badTerminationConditions.append(termCondition)
+						else:
+							if self.checkTerminationCounterInState(c, termCondition): # if condition were true, would have ended on this time step.
+								if not termCondition in badTerminationConditions:
+									badTerminationConditions.append(termCondition)
+
+			elif termCondition.ruleType == "TimeoutRule":
+				for timesteps, result in allTraces:
+					if result["time"] > termCondition.termination.limit:
+						if not termCondition in badTerminationConditions:
+							badTerminationConditions.append(termCondition)
+
+		return badTerminationConditions
+
+
+
+
 		#CE = self.checkEventsInTimeStep(timestep)
 		#CP = self.checkPredictionsInTimeStep(timestep)
 		
@@ -1043,13 +1094,13 @@ class Game(object):
 				#print " --> will check likelihood to see if we need to extend our theory to explain the new TimeStep"
 				if theory.likelihood(timestep) < 1.0: 	# Theory needs to be changed
 					#print "likelihood", theory.likelihood(timestep)
-					print "THEORY SHOULD CHANGE"
+					theory.display()
 					newTheories.extend(theory.explainTimeStep(timestep, timestep))
 			
 			# Make sure only to add unique theories
 			#print "Iterating through new theories"
 			for theory in newTheories:
-				# theory.display()
+				theory.display()
 				theoryIsNew = True
 				for existingTheory in self.hypothesisSpace:
 					if theory==existingTheory:
@@ -1063,7 +1114,6 @@ class Game(object):
 
 
 			self.cleanHypothesisSpace(timesteps[0:i+1], 1) #All timesteps up to now should be fully explained
-			
 			#if verbose:
 			print "{} hypotheses:".format(len(self.hypothesisSpace))
 			
@@ -1077,16 +1127,20 @@ class Game(object):
 				print ""
 		
 		# Termination set induction
-		hypothesisSpaceWithTermConditions = set()
-		for timesteps,result in allTraces:
 
-			if result:
-				for theory in self.hypothesisSpace:
-					print result, len(allTraces)
+		# hypothesisSpaceWithTermConditions = set()
+		for theory in self.hypothesisSpace:
+			for timesteps,result in allTraces:
+				if result:
 					theory.explainTermination(timesteps[-1], timesteps[:-1], result)
-					hypothesisSpaceWithTermConditions.add(theory)
+					
+			badTerminationSet = theory.getBadTerminationConditions(allTraces)
+			for t in badTerminationSet:
+				theory.terminationSet.remove(t)
 
-		self.hypothesisSpace = hypothesisSpaceWithTermConditions
+			# hypothesisSpaceWithTermConditions.add(theory)
+
+		# self.hypothesisSpace = hypothesisSpaceWithTermConditions
 		return self.hypothesisSpace
 
 
