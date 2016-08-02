@@ -1,4 +1,4 @@
-import theory_template_072516 as tt
+import theory_template_080116 as tt
 from sampleVGDLString import *
 from taxonomy import *
 from class_theory_template_071916 import *
@@ -12,19 +12,27 @@ import time
 #TODO: Any ways to split the termination conditions between "win" and "lose"?
 #TODO: 
 
-def testTrace(rawTrace, expectedHypotheses, name, verbose):
+def testTraceDFS(vgdlFile, rawTrace, expectedHypotheses, name, verbose):
+	with open(vgdlFile, 'r') as vf:
+        vgdlString = ast.literal_eval(vf.read())
+
+def testTrace(vgdlFile, rawTrace, expectedHypotheses, name, verbose):
 	"""
 	Streamlined method to test a trace and see the number of outputted hypotheses.
 	"""
 
-	# New game generated
+	with open(vgdlFile, 'r') as vf:
+        vgdlString = ast.literal_eval(vf.read())
 
-	g = tt.Game(push_game)
+	# New game generated
+	g = tt.Game(vgdlString)
 	g.VGDLTree = VGDLTree
 	trace = ([tt.TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace[0]],rawTrace[1])
 	start = time.time()
 	hypotheses=list(g.induction(trace, verbose))
 	end = time.time()
+	
+	# Printing items here
 	print "########################"
 	print "Checking {}...".format(name)
 	print "TIME TO RUN: {}".format(end-start)
@@ -35,6 +43,7 @@ def testTrace(rawTrace, expectedHypotheses, name, verbose):
 		print ">>>> FAIL :("
 	# TODO: Are there other parameters which we want to check?
 	print "\n########################\n\n\n\n\n\n\n"
+	
 	return hypotheses
 
 
@@ -181,13 +190,11 @@ if __name__ == '__main__':
 
 
 	"""
-	Testing preconditions #2
+	Testing preconditions #2 - made up scenario
 
-	#TODO: The induction doesn't seem to capture that if you have medicine 1, you can kill BROWN, 
-			but when you have medicine < 1, BROWN kills you - might be an issue with the game setup
 	"""
 
-	rawTrace_preconditions_simple_2 = (
+	rawTrace_preconditions = (
 		[{'gameState': {
 			'ended': False, 
 			'score': 0, 
