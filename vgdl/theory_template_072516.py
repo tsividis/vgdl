@@ -312,6 +312,8 @@ class Theory(object):
 		timestep: the very last time step (at which termination occurs)
 		prevTimeSteps: all time steps previous to the termination time step
 		result: a dictionary for which the key 'win' is a boolean describing whether the game was won
+
+		TODO: currently not handling mulitpleSpriteCounterRule.
 		"""
 		win = result['win']
 		classesWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
@@ -1027,7 +1029,8 @@ class Theory(object):
 def softmax(w, t = 1.0):
     e = np.exp(np.array(w) / t)
     dist = e / np.sum(e)
-    return dist	
+    return dist
+
 def normalize(array):
 	z = float(sum(array))
 	if z == 0:
