@@ -1202,6 +1202,15 @@ class Game(object):
 				# 	print "THEORY exists IN HYPOTHESIS SPACE"
 				# 	theory.display()
 
+			for theory in self.hypothesisSpace:
+				for timesteps,result in allTraces:
+					if result:
+						theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+						
+				badTerminationSet = theory.getBadTerminationConditions(allTraces)
+				for t in badTerminationSet:
+					theory.terminationSet.remove(t)
+
 
 			self.cleanHypothesisSpace(timesteps[0:i+1], 1) #All timesteps up to now should be fully explained
 			
