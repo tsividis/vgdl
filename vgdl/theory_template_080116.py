@@ -710,11 +710,15 @@ class Theory(object):
 
 		rule, assignments = proposal[0], proposal[1]
 		# Add the proposed rule to the Theory's InteractionSet
-		addedRule = addInteractionRule(rule)
+		if rule:
+			addedRule = addInteractionRule(rule)
+		else:
+			addedRule = False
 		# Add the proposed class assignments to the Theory 
 		addedClass = False
 		if assignments:
 			addedClass = any([assignClass(assignment) for assignment in assignments])
+
 		return (addedRule or addedClass)
 
 
@@ -806,6 +810,7 @@ class Theory(object):
 				possibleClasses.append('c'+str(numClasses+i)) # Classes that extend off number of existing classes
 			gotNewClass = True
 			return possibleClasses, gotNewClass
+
 		else: return [], gotNewClass
 
 
@@ -1183,18 +1188,18 @@ class Game(object):
 		
 
 		# Termination set induction
-		# if result:
-		# 	hypothesisSpaceWithTermConditions = []
-		# 	for theory in self.hypothesisSpace:
-		# 		theory.explainTermination(timesteps[-1], timesteps[:-1], result)
-		# 		hypothesisSpaceWithTermConditions.append(theory)
+		if result:
+			hypothesisSpaceWithTermConditions = []
+			for theory in self.hypothesisSpace:
+				theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+				hypothesisSpaceWithTermConditions.append(theory)
 
-		# 	self.hypothesisSpace = hypothesisSpaceWithTermConditions
+			self.hypothesisSpace = hypothesisSpaceWithTermConditions
+
+		print "initial hypothesis space: ", len(self.hypothesisSpace)
 
 		end = time.time()
-		# if verbose:
-		# 	for t in self.hypothesisSpace:
-		# 		t.display()
+	
 		print "generated {} hypotheses in {} seconds".format(len(self.hypothesisSpace), end-start)
 
 		return self.hypothesisSpace
@@ -1238,15 +1243,15 @@ class Game(object):
 					#print "ADDING NEW THEORIES IN INDUCTION --> now {} theories".format(len(self.hypothesisSpace))
 					self.hypothesisSpace.append(theory) #TODO: numbering of theories should take place here.	
 
-			if allTraces:
-				for theory in self.hypothesisSpace:
-					for timesteps,result in allTraces:
-						if result:
-							theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+			# if allTraces:
+			# 	for theory in self.hypothesisSpace:
+			# 		for timesteps,result in allTraces:
+			# 			if result:
+			# 				theory.explainTermination(timesteps[-1], timesteps[:-1], result)
 							
-					badTerminationSet = theory.getBadTerminationConditions(allTraces)
-					for t in badTerminationSet:
-						theory.terminationSet.remove(t)
+			# 		badTerminationSet = theory.getBadTerminationConditions(allTraces)
+			# 		for t in badTerminationSet:
+			# 			theory.terminationSet.remove(t)
 
 
 			self.cleanHypothesisSpace(timesteps[0:i+1], 1) #All timesteps up to now should be fully explained
@@ -1301,6 +1306,57 @@ class Game(object):
 		self.hypothesisSpace = newHypothesisSpace
 		# print "Done cleanHypothesisSpace...\n"
 		return
+
+
+def completeClassAssignments(game, allPossible=False):
+	
+	if allPossible:
+		# Assign all remaining sprites to a class for each theory
+		for theory in game.hypothesisSpace:
+			
+			# Get all possible classes for all remaining sprites not in classes
+			allPossibleClasses = {}
+
+			newSprites = 0
+			for sprite in theory.spriteSet:
+				if not theory.getClass(sprite):
+					newSprites += 1
+
+					possibleClasses,gotNewClass = theory.searchForPossibleClasses(sprite, 1)
+					possibleClasses = [(c,sprite) for c in possibleClasses] # Probably can cut this time down
+					allPossibleClasses[sprite] = possibleClasses
+			# print allPossibleClasses
+			# print "number of new sprites: ", newSprites
+			# Get all permutations of the class assignments and create new theories
+			params = [allPossibleClasses[c] for c in allPossibleClasses.keys()]
+			possibleClassAssignments = list(itertools.product(*params))
+			# print "number of new theories to be made...", len(possibleClassAssignments)
+			for classAssignments in possibleClassAssignments:
+				newTheory = theory.createChild([None, classAssignments])
+
+				if newTheory:
+					game.hypothesisSpace.append(newTheory)
+
+	else:
+		print "orig hypoth space", len(game.hypothesisSpace)
+		for theory in game.hypothesisSpace:
+			classAssignments = []
+			newSprites = 0
+			for sprite in theory.spriteSet:
+				if not theory.getClass(sprite):
+					newSprites += 1
+					numClasses = len(theory.classes.keys())
+					newClassAssignment = ('c'+str(numClasses+newSprites), sprite)
+					classAssignments.append(newClassAssignment)
+
+			newTheory = theory.createChild([None, classAssignments])
+
+			if newTheory:
+				game.hypothesisSpace.append(newTheory)
+		print "new hypoth space", len(game.hypothesisSpace)
+	
+	return game.hypothesisSpace
+
 
 if __name__ == "__main__":
 	g = Game(push_game)
@@ -1397,8 +1453,8 @@ if __name__ == "__main__":
 		{'ended': True, 'win': True, 'time': 260}
 		)
 
-	trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace_long[0]],rawTrace_long[1])
+	trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace_precond[0]],rawTrace_precond[1])
 	trace = (trace[0], trace[1])
-	hypotheses = g.runDFSinduction(trace, 12)
+	hypotheses = g.runDFSinduction(trace, 1)
 	#reg_hypotheses = g.induction(trace)
-	# embed()
+	embed()
