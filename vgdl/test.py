@@ -12,6 +12,12 @@ import time
 #TODO: Any ways to split the termination conditions between "win" and "lose"?
 #TODO: 
 
+def testTraceDFS(vgdlFile, rawTrace, expectedHypotheses, name, verbose):
+	with open(vgdlFile, 'r') as vf:
+		vgdlString = ast.literal_eval(vf.read())
+	pass
+    #TODO
+
 def testTrace(vgdlFile, rawTrace, expectedHypotheses, name, verbose):
 	"""
 	Streamlined method to test a trace and see the number of outputted hypotheses.

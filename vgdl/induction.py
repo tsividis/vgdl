@@ -17,6 +17,9 @@ def runInduction(vgdlString, gameOutput):
 
 
 if __name__ == "__main__":
+    """
+    Run: "python induction.py ../vgdl_text/aliens.txt ../output/aliens.txt" 
+    """
     vgdlFile = sys.argv[1]
     with open(vgdlFile, 'r') as vf:
         vgdlString = ast.literal_eval(vf.read())
