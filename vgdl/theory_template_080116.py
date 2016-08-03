@@ -349,6 +349,62 @@ class Theory(object):
 		#print "\n"
 		return likelihood
 
+		def likelihood(self, timestep, verbose=False):
+		"""
+		Makes sure that:
+			-all events in the timestep were covered by the ruleset 
+			-everything predicted in the ruleset happened.
+
+		Right now returns only 1 or 0.
+		"""
+		#CE = self.checkEventsInTimeStep(timestep)
+		#CP = self.checkPredictionsInTimeStep(timestep)
+		
+		#print "events in timestep {} | predictions in timestep {}".format(self.checkEventsInTimeStep(timestep), self.checkPredictionsInTimeStep(timestep))
+		if self.checkEventsInTimeStep(timestep) and self.checkPredictionsInTimeStep(timestep):
+			likelihood = 1.
+		else:
+			likelihood = 0.
+		#print "Initial check", CE, CP
+		#print "Second check", self.checkEventsInTimeStep(timestep), self.checkPredictionsInTimeStep(timestep)
+		#print "\n"
+		return likelihood
+
+	def checkTerminationCounterInState(self, c, termCondition):
+		"""
+		c = game state with classes instead of colors
+		"""
+		return c[termCondition.termination.stype] == termCondition.termination.limit
+
+
+	def getBadTerminationConditions(self, allTraces, verbose=False):
+		"""
+		Right now returns the list of termination conditions which are contradicted by the data.
+		"""
+		badTerminationConditions = []
+		for termCondition in self.terminationSet:
+			if termCondition.ruleType == "SpriteCounterRule":
+				for timesteps,result in allTraces:
+					for i in range(len(timesteps)):
+						t = timesteps[i]
+						c = self.makeGameStateWithClasses(t.gameState["objects"])
+						if i == len(timesteps) - 1:
+							if self.checkTerminationCounterInState(c, termCondition) and termCondition.termination.win != result["win"]:
+								if not termCondition in badTerminationConditions:
+									badTerminationConditions.append(termCondition)
+						else:
+							if self.checkTerminationCounterInState(c, termCondition): # if condition were true, would have ended on this time step.
+								if not termCondition in badTerminationConditions:
+									badTerminationConditions.append(termCondition)
+
+			elif termCondition.ruleType == "TimeoutRule":
+				for timesteps, result in allTraces:
+					if result["time"] > termCondition.termination.limit:
+						if not termCondition in badTerminationConditions:
+							badTerminationConditions.append(termCondition)
+
+		return badTerminationConditions
+
 
 	def checkEventsInTimeStep(self, timestep):
 		"""
@@ -1159,7 +1215,7 @@ class Game(object):
 
 
 
-	def induction(self, trace, verbose=True):
+	def induction(self, trace, verbose=True, allTraces = None):
 		"""
 		Iterates through trace, performing theory induction on each timestep
 		"""
