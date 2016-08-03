@@ -292,6 +292,23 @@ class Theory(object):
 
 		return theories
 
+	def colorToClassMapper(self,color):
+		for c in self.classes:
+			for c_class in self.classes[c]:
+				if c_class.color == color:
+					return c
+
+		raise Exception("No corresponding class found for color")
+
+	def makeGameStateWithClasses(self, gameState):
+		classGameState = {k: 0 for k in self.classes.keys()}
+		for c in self.classes:
+			for s in self.classes[c]:
+				classGameState[c] += len(gameState[s.color])
+
+		return classGameState
+
+
 	def explainTermination(self, timestep, prevTimeSteps,result):
 		"""
 		adds all hypotheses about the termination conditions to the terminationSet
@@ -301,31 +318,36 @@ class Theory(object):
 		result: a dictionary for which the key 'win' is a boolean describing whether the game was won
 		"""
 		win = result['win']
-		objsWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
-		for obj in timestep.gameState['objects']:
-			timestep_amt = len(timestep.gameState['objects'][obj])
-			timestep_amt_unique = not timestep_amt in [len(prevTimeStep.gameState['objects'][obj]) for prevTimeStep in prevTimeSteps]
+		classesWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
+		prevClassGameStates = [self.makeGameStateWithClasses(t.gameState['objects']) for t in prevTimeSteps]
+		classGameState = self.makeGameStateWithClasses(timestep.gameState['objects'])
+		for c in classGameState:
+			timestep_amt = classGameState[c]
+			timestep_amt_unique = not timestep_amt in [g[c] for g in prevClassGameStates]
 			if timestep_amt_unique:
-				objsWithDiffAmounts[obj] = (win,timestep_amt)
+				classesWithDiffAmounts[c] = timestep_amt
+
+		# print "IN TERMINATION CONDITIONS"
+		# print timestep
+		# # print timestep.events
+		# print classesWithDiffAmounts
+		# print {k:[c.asTuple() for c in v] for k,v in self.classes.items()}
 
 		for event in timestep.events:
 			for i in [1,2]:
 				terminationClassColor = event[i] #self.getClass(event[i])
-				if terminationClassColor in objsWithDiffAmounts:
-					win,timestep_amt = objsWithDiffAmounts[terminationClassColor]
-					terminationClassSymbol = None
-					limit = None
-					for c in self.classes:
-						for c_class in self.classes[c]:
-							if c_class.color == terminationClassColor:
-								terminationClassSymbol = c
-
+				terminationClassSymbol = self.colorToClassMapper(terminationClassColor)
+				if terminationClassSymbol in classesWithDiffAmounts:
+					timestep_amt = classesWithDiffAmounts[terminationClassSymbol]
 					spriteCounterRule= SpriteCounterRule(terminationClassSymbol,timestep_amt,win)
-					self.terminationSet.append(spriteCounterRule)
+					if not spriteCounterRule in self.terminationSet:
+						self.terminationSet.append(spriteCounterRule)
 
+		# print [t.asTuple() for t in self.terminationSet]
 		time = result["time"]
 		timeoutRule = TimeoutRule(limit=time, win=win)
-		self.terminationSet.append(timeoutRule)
+		if not timeoutRule in self.terminationSet:
+			self.terminationSet.append(timeoutRule)
 
 
 	def likelihood(self, timestep, verbose=False):
