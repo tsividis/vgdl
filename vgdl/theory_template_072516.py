@@ -404,22 +404,6 @@ class Theory(object):
 		return badTerminationConditions
 
 
-
-
-		#CE = self.checkEventsInTimeStep(timestep)
-		#CP = self.checkPredictionsInTimeStep(timestep)
-		
-		#print "events in timestep {} | predictions in timestep {}".format(self.checkEventsInTimeStep(timestep), self.checkPredictionsInTimeStep(timestep))
-		if self.checkEventsInTimeStep(timestep) and self.checkPredictionsInTimeStep(timestep):
-			likelihood = 1.
-		else:
-			likelihood = 0.
-		#print "Initial check", CE, CP
-		#print "Second check", self.checkEventsInTimeStep(timestep), self.checkPredictionsInTimeStep(timestep)
-		#print "\n"
-		return likelihood
-
-
 	def checkEventsInTimeStep(self, timestep):
 		"""
 		Check if all events in the timestep are covered by the interaction rule set.

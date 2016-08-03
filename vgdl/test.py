@@ -12,11 +12,12 @@ import time
 #TODO: Any ways to split the termination conditions between "win" and "lose"?
 #TODO: 
 
-def testTrace(rawTrace, expectedHypotheses, name, verbose):
+def testTrace(vgdlFile, rawTrace, expectedHypotheses, name, verbose):
 	"""
 	Streamlined method to test a trace and see the number of outputted hypotheses.
 	"""
-
+	with open(vgdlFile, 'r') as vf:
+		vgdlString = ast.literal_eval(vf.read())
 	# New game generated
 
 	g = tt.Game(push_game)
