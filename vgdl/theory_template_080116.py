@@ -1041,11 +1041,14 @@ class Game(object):
 
 			# If at the end of the timesteps list, add new theories to finalHypotheses
 			if ts_index+1 == len(timesteps): # Need to add one, because you will create a theory of depth one greater than the length of the timesteps
+				newTheoriesCount = 0
 				for newTheory in newTheories:
 					if all(newTheory.likelihood(ts)==1.0 for ts in timesteps):
+						newTheoriesCount += 1
 						self.hypothesisSpace.append(newTheory)
 				
 				if verbose: 
+					print "New theories that passed likelihood tests: ", newTheoriesCount
 					print "New hyp space length: ", len(self.hypothesisSpace)
 
 			# If in middle of timesteps, explain first timestep and add theories to final Hypotheses
@@ -1054,7 +1057,7 @@ class Game(object):
 				newTheories = self.orderHypotheses(newTheories) #TODO: check that ordering is working
 				
 				if verbose:
-					print "Possible new theories: ", len(newTheories)
+					print "New theories that passed likelihood tests: ", len(newTheories)
 				
 				for t in newTheories:
 					t.dryingPaint = set()
