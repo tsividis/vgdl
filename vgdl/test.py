@@ -1,4 +1,4 @@
-import theory_template_080116 as tt
+import theory_template_072516 as tt
 from sampleVGDLString import *
 from taxonomy import *
 from class_theory_template_071916 import *
@@ -15,26 +15,23 @@ import time
 def testTraceDFS(vgdlFile, rawTrace, expectedHypotheses, name, verbose):
 	with open(vgdlFile, 'r') as vf:
 		vgdlString = ast.literal_eval(vf.read())
-
+	pass
     #TODO
 
 def testTrace(vgdlFile, rawTrace, expectedHypotheses, name, verbose):
 	"""
 	Streamlined method to test a trace and see the number of outputted hypotheses.
 	"""
-
 	with open(vgdlFile, 'r') as vf:
 		vgdlString = ast.literal_eval(vf.read())
-
 	# New game generated
-	g = tt.Game(vgdlString)
+
+	g = tt.Game(push_game)
 	g.VGDLTree = VGDLTree
 	trace = ([tt.TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace[0]],rawTrace[1])
 	start = time.time()
 	hypotheses=list(g.induction(trace, verbose))
 	end = time.time()
-	
-	# Printing items here
 	print "########################"
 	print "Checking {}...".format(name)
 	print "TIME TO RUN: {}".format(end-start)
@@ -45,7 +42,6 @@ def testTrace(vgdlFile, rawTrace, expectedHypotheses, name, verbose):
 		print ">>>> FAIL :("
 	# TODO: Are there other parameters which we want to check?
 	print "\n########################\n\n\n\n\n\n\n"
-	
 	return hypotheses
 
 
@@ -197,11 +193,13 @@ if __name__ == '__main__':
 
 
 	"""
-	Testing preconditions #2 - made up scenario
+	Testing preconditions #2
 
+	#TODO: The induction doesn't seem to capture that if you have medicine 1, you can kill BROWN, 
+			but when you have medicine < 1, BROWN kills you - might be an issue with the game setup
 	"""
 
-	rawTrace_preconditions = (
+	rawTrace_preconditions_simple_2 = (
 		[{'gameState': {
 			'ended': False, 
 			'score': 0, 
@@ -543,7 +541,7 @@ KeyError: '(140, 200, 140)'
 	# 	generatedHypotheses[name] = hypotheses
 	
 	traces = [rawTrace_preconditions_simple, rawTrace_simple_win, rawTrace_simple_loss]
-	hypotheses = testMultipleTraces(traces, 0, ["rawTrace_simple_win","rawTrace_simple_loss", "rawTrace_preconditions_simple"], False)
+	hypotheses = testMultipleTraces(traces, 1, ["rawTrace_simple_win","rawTrace_simple_loss", "rawTrace_preconditions_simple"], False)
 
 	'''
 	Longer traces:

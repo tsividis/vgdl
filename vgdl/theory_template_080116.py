@@ -6,6 +6,7 @@ from taxonomy import *
 from IPython import embed
 from ontology import *
 import operator
+import time
 """
 Theory induction on VGDL Games
 """
@@ -354,7 +355,7 @@ class Theory(object):
 			self.terminationSet.append(timeoutRule)
 
 
-	def likelihood(self, timestep, verbose=False):
+	def likelihood(self, timestep, sparse=False):
 		"""
 		Makes sure that:
 			-all events in the timestep were covered by the ruleset 
@@ -363,14 +364,12 @@ class Theory(object):
 		Right now returns only 1 or 0.
 		"""
 		#print "events in timestep {} | predictions in timestep {}".format(self.checkEventsInTimeStep(timestep), self.checkPredictionsInTimeStep(timestep))
-		if self.checkEventsInTimeStep(timestep) and self.checkPredictionsInTimeStep(timestep):
+		if self.checkEventsInTimeStep(timestep) and self.checkPredictionsInTimeStep(timestep, sparse):
 			likelihood = 1.
 		else:
 			likelihood = 0.
-
 		return likelihood
 
-		
 
 	def checkTerminationCounterInState(self, c, termCondition):
 		"""
@@ -416,7 +415,7 @@ class Theory(object):
 		return all([self.checkEvents(i, timestep) for i in interpretations])
 
 
-	def checkPredictionsInTimeStep(self, timestep):
+	def checkPredictionsInTimeStep(self, timestep, sparse=False):
 		"""
 		Check if all predictions for the timestep actually occurred. 
 		"""
@@ -426,7 +425,7 @@ class Theory(object):
 
 		relevantRules = []
 		for event in timestep.events:
-			relevantRules.extend(self.findRelevantRules(event, timestep.agentState))
+			relevantRules.extend(self.findRelevantRules(event, timestep.agentState, checkDryingPaint=False, sparse=sparse))
 
 		if False in relevantRules: 
 			return False
@@ -742,7 +741,7 @@ class Theory(object):
 
 	
 
-	def findRelevantRules(self, event, agentState, checkDryingPaint=False):
+	def findRelevantRules(self, event, agentState, checkDryingPaint=False, sparse=False):
 		"""
 		If an event involves c1 and c2, returns rules that use c1 and c2 in those slots.
 		"""
@@ -759,11 +758,18 @@ class Theory(object):
 			# This should not include any rules that don't satisfy the current preconditions
 			rules = [rule for rule in self.interactionSet]
 
-			if not checkDryingPaint:
-				relevantRules.extend([rule for rule in rules if rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 and all(p.check(agentState) for p in rule.preconditions)])
+			if not sparse:
+				#Default behavior
+				if not checkDryingPaint:
+					relevantRules.extend([rule for rule in rules if rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 and all(p.check(agentState) for p in rule.preconditions)])
+				else:
+					# Here we only return rules that are not in the drying paint. 
+					relevantRules.extend([rule for rule in rules if not self.findRule(rule, self.dryingPaint) and rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 and all(p.check(agentState) for p in rule.preconditions)])
 			else:
-				# Here we only return rules that are not in the drying paint. 
-				relevantRules.extend([rule for rule in rules if not self.findRule(rule, self.dryingPaint) and rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 and all(p.check(agentState) for p in rule.preconditions)])
+				#'sparse' is passed when we check likelihood of lots of previous timesteps. The logic here is to
+				#only check predictions for previous timesteps when the predictions may have changed. Meaning, only return rules that
+				#are both relevant to the event *and* are new.
+				relevantRules.extend([rule for rule in list(self.dryingPaint) if rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 and all(p.check(agentState) for p in rule.preconditions)])
 
 		# If both classes don't exist
 		else:
@@ -1048,6 +1054,10 @@ class Game(object):
 		#inherit ontology from VGDL
 		self.VGDLTree = VGDLTree
 
+		self.nodes_generated = 0
+		self.nodes_eliminated = 0
+		self.nodes_accepted = 0
+
 	def display(self):
 		print self.theoryCount
 
@@ -1089,7 +1099,7 @@ class Game(object):
 				print "Current theory depth: ", ts_index
 			
 			newTheories = theory.explainTimeStep(timesteps[ts_index], timesteps[ts_index])
-			
+			self.nodes_generated += len(newTheories)
 			if verbose:
 				print "Possible new theories: ", len(newTheories)
 
@@ -1098,30 +1108,66 @@ class Game(object):
 				newTheoriesCount = 0
 				for newTheory in newTheories:
 					if all(newTheory.likelihood(ts)==1.0 for ts in timesteps):
+						self.nodes_accepted +=1
 						newTheoriesCount += 1
 						self.hypothesisSpace.append(newTheory)
+					else:
+						self.nodes_eliminated +=1
 				
 				if verbose: 
 					print "New theories that passed likelihood tests: ", newTheoriesCount
 					print "New hyp space length: ", len(self.hypothesisSpace)
+					print "Nodes created: {}. Nodes eliminated: {}. Nodes accepted: {}".format(self.nodes_generated, self.nodes_eliminated, self.nodes_accepted)
+
 
 			# If in middle of timesteps, explain first timestep and add theories to final Hypotheses
-			else:			
-				newTheories = [t for t in newTheories if all([t.likelihood(ts) == 1.0 for ts in timesteps[:t.depth-1]])]
-				newTheories = self.orderHypotheses(newTheories) #TODO: check that ordering is working
+			else:
+				acceptedTheories = []
+				for t in newTheories:
+					# if t.checkEventsInTimeStep(timesteps[t.depth-1]):
+					all_passed = True
+					# 	for ts in timesteps[:t.depth-1]:
+					# 		if not t.checkPredictionsInTimeStep(ts, sparse=True):
+					# 			self.nodes_eliminated +=1
+					# 			all_passed = False
+					# 			break
+					for ts in timesteps[:t.depth-1]:
+						if not t.likelihood(ts, sparse=True):
+							self.nodes_eliminated +=1
+							all_passed = False
+							break
+						# likelihood_list = [t.likelihood(ts)==1.0 for ts in timesteps[:t.depth-1]]
+						# if all(likelihood_list):
+						# 	print 1.
+						# else:
+						# 	print likelihood_list.index(False)/float(len(likelihood_list))
+						# if not all(likelihood_list):
+						# if not all([t.likelihood(ts)==1.0 for ts in timesteps[:t.depth-1]]):
+						# 	self.nodes_eliminated += 1
+						# else:
+					if all_passed:
+						self.nodes_accepted += 1
+						acceptedTheories.append(t)
+				# newTheories = [t for t in newTheories if all([t.likelihood(ts) == 1.0 for ts in timesteps[:t.depth-1]])]
+				newTheories = self.orderHypotheses(acceptedTheories) #TODO: check that ordering is working
 				
 				if verbose:
-					print "New theories that passed likelihood tests: ", len(newTheories)
+					print "Nodes created: {}. Nodes eliminated: {}. Nodes accepted: {}".format(self.nodes_generated, self.nodes_eliminated, self.nodes_accepted)
+					# print "New theories that passed likelihood tests: ", len(newTheories)
 				
 				for t in newTheories:
 					t.dryingPaint = set()
 				
+				print
 				[self.DFSinduction(t, timesteps, maxNumTheories, verbose) for t in newTheories]
 
+		
 
 	def runDFSinduction(self, trace, maxNumTheories, verbose=True):
 		"""
 		"""
+
+		start = time.time()
 		timesteps, result = trace
 		temp_new_trace = ([timesteps[0]], None) # Just to run regular induction on first timestep
 
@@ -1137,17 +1183,19 @@ class Game(object):
 		
 
 		# Termination set induction
-		if result:
-			hypothesisSpaceWithTermConditions = []
-			for theory in self.hypothesisSpace:
-				theory.explainTermination(timesteps[-1], timesteps[:-1], result)
-				hypothesisSpaceWithTermConditions.append(theory)
+		# if result:
+		# 	hypothesisSpaceWithTermConditions = []
+		# 	for theory in self.hypothesisSpace:
+		# 		theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+		# 		hypothesisSpaceWithTermConditions.append(theory)
 
-			self.hypothesisSpace = hypothesisSpaceWithTermConditions
+		# 	self.hypothesisSpace = hypothesisSpaceWithTermConditions
 
-		if verbose:
-			for t in self.hypothesisSpace:
-				t.display()
+		end = time.time()
+		# if verbose:
+		# 	for t in self.hypothesisSpace:
+		# 		t.display()
+		print "generated {} hypotheses in {} seconds".format(len(self.hypothesisSpace), end-start)
 
 		return self.hypothesisSpace
 
@@ -1190,14 +1238,15 @@ class Game(object):
 					#print "ADDING NEW THEORIES IN INDUCTION --> now {} theories".format(len(self.hypothesisSpace))
 					self.hypothesisSpace.append(theory) #TODO: numbering of theories should take place here.	
 
-			for theory in self.hypothesisSpace:
-				for timesteps,result in allTraces:
-					if result:
-						theory.explainTermination(timesteps[-1], timesteps[:-1], result)
-						
-				badTerminationSet = theory.getBadTerminationConditions(allTraces)
-				for t in badTerminationSet:
-					theory.terminationSet.remove(t)
+			if allTraces:
+				for theory in self.hypothesisSpace:
+					for timesteps,result in allTraces:
+						if result:
+							theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+							
+					badTerminationSet = theory.getBadTerminationConditions(allTraces)
+					for t in badTerminationSet:
+						theory.terminationSet.remove(t)
 
 
 			self.cleanHypothesisSpace(timesteps[0:i+1], 1) #All timesteps up to now should be fully explained
@@ -1349,7 +1398,7 @@ if __name__ == "__main__":
 		)
 
 	trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace_long[0]],rawTrace_long[1])
-	trace = (trace[0][:13], trace[1])
+	trace = (trace[0], trace[1])
 	hypotheses = g.runDFSinduction(trace, 12)
 	#reg_hypotheses = g.induction(trace)
-	embed()
+	# embed()

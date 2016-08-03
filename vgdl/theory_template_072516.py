@@ -9,18 +9,13 @@ Theory induction on VGDL Games
 """
 
 '''
-TODO: 7/14/16:
-	Debug
-	Other cleanup
-	Change generateNumberConcepts to make the simpler possibilities:  >=1, <1, >0, <=0 
-
-
 NOTES:
 Current assumptions:
 	no grammar over preconditions
 	preconditions limited to claims about a SINGLE object
 	preconditions limited to simple comparison operators.
 	Events that take place at same timestep can only be because of the same preconditions.
+	Preconditions are limited to simple possibilities; just: >=1, <1, >0, <=0 
 
 '''
 # TODO: Make a dictionary mapping the colors to a sprite object.
@@ -317,6 +312,8 @@ class Theory(object):
 		timestep: the very last time step (at which termination occurs)
 		prevTimeSteps: all time steps previous to the termination time step
 		result: a dictionary for which the key 'win' is a boolean describing whether the game was won
+
+		TODO: currently not handling mulitpleSpriteCounterRule.
 		"""
 		win = result['win']
 		classesWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
@@ -870,6 +867,8 @@ class Theory(object):
 		#to pass those args. Maybe this is best done in the step that creates interactionRules
 		#in predict(). Also decide how to deal with values of optional args. Right now you'll
 		#just make predictions based on default args.
+		#ChangeResource can be taken care of by looking at all the possible resources and adding one
+		#for each. Should you split probability of each?
 		predicateList = ['killSprite', 'cloneSprite', 'stepBack', 'transformTo', 'undoAll',
 		'bounceForward', 'conveySprite', 'windGust', 'slipForward', 'attractGaze', 'turnAround',
 		'reverseDirection', 'flipDirection', 'bounceDirection', 'wallBounce', 'wallStop',
@@ -1014,7 +1013,8 @@ class Theory(object):
 def softmax(w, t = 1.0):
     e = np.exp(np.array(w) / t)
     dist = e / np.sum(e)
-    return dist	
+    return dist
+
 def normalize(array):
 	z = float(sum(array))
 	if z == 0:
