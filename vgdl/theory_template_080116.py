@@ -362,39 +362,15 @@ class Theory(object):
 
 		Right now returns only 1 or 0.
 		"""
-		#CE = self.checkEventsInTimeStep(timestep)
-		#CP = self.checkPredictionsInTimeStep(timestep)
-		
 		#print "events in timestep {} | predictions in timestep {}".format(self.checkEventsInTimeStep(timestep), self.checkPredictionsInTimeStep(timestep))
 		if self.checkEventsInTimeStep(timestep) and self.checkPredictionsInTimeStep(timestep):
 			likelihood = 1.
 		else:
 			likelihood = 0.
-		#print "Initial check", CE, CP
-		#print "Second check", self.checkEventsInTimeStep(timestep), self.checkPredictionsInTimeStep(timestep)
-		#print "\n"
+
 		return likelihood
 
-		def likelihood(self, timestep, verbose=False):
-		"""
-		Makes sure that:
-			-all events in the timestep were covered by the ruleset 
-			-everything predicted in the ruleset happened.
-
-		Right now returns only 1 or 0.
-		"""
-		#CE = self.checkEventsInTimeStep(timestep)
-		#CP = self.checkPredictionsInTimeStep(timestep)
 		
-		#print "events in timestep {} | predictions in timestep {}".format(self.checkEventsInTimeStep(timestep), self.checkPredictionsInTimeStep(timestep))
-		if self.checkEventsInTimeStep(timestep) and self.checkPredictionsInTimeStep(timestep):
-			likelihood = 1.
-		else:
-			likelihood = 0.
-		#print "Initial check", CE, CP
-		#print "Second check", self.checkEventsInTimeStep(timestep), self.checkPredictionsInTimeStep(timestep)
-		#print "\n"
-		return likelihood
 
 	def checkTerminationCounterInState(self, c, termCondition):
 		"""
@@ -1177,7 +1153,7 @@ class Game(object):
 
 
 
-	def induction(self, trace, verbose=True, allTraces = None):
+	def induction(self, trace, verbose=True, allTraces=None):
 		"""
 		Iterates through trace, performing theory induction on each timestep
 		"""
