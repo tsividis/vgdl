@@ -14,7 +14,7 @@ import time
 
 def testTraceDFS(vgdlFile, rawTrace, expectedHypotheses, name, verbose):
 	with open(vgdlFile, 'r') as vf:
-        vgdlString = ast.literal_eval(vf.read())
+		vgdlString = ast.literal_eval(vf.read())
 
 def testTrace(vgdlFile, rawTrace, expectedHypotheses, name, verbose):
 	"""
@@ -22,7 +22,7 @@ def testTrace(vgdlFile, rawTrace, expectedHypotheses, name, verbose):
 	"""
 
 	with open(vgdlFile, 'r') as vf:
-        vgdlString = ast.literal_eval(vf.read())
+		vgdlString = ast.literal_eval(vf.read())
 
 	# New game generated
 	g = tt.Game(vgdlString)
