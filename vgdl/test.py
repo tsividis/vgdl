@@ -1,49 +1,74 @@
-import theory_template_080116 as tt
+from theory_template_080116 import Game, TimeStep
 from sampleVGDLString import *
 from taxonomy import *
 from class_theory_template_071916 import *
 from IPython import embed
-import time
+import time, ast
 
 
 #TODO: If this is still an issue... Figure out issue where hypotheses only are found when you run this more than once; always breaks once the precondition event happens
 #TODO: Figure out why DARKBLUE agent appears twice in the termination set
 #TODO: Green agent often thought to be DARKBLUE, and then GREEN is considered a resource pack, but is actually an agent
 #TODO: Any ways to split the termination conditions between "win" and "lose"?
-#TODO: 
 
-def testTraceDFS(vgdlFile, rawTrace, expectedHypotheses, name, verbose):
+def testTraceDFS(vgdlFile, rawTrace, expectedHypotheses, name, maxNumTheories, verbose=False):
+	"""
+	Streamlined method to test DFS induction on a trace and see the number of outputted hypotheses.
+	"""
+	# Obtaining appropriate game information
 	with open(vgdlFile, 'r') as vf:
 		vgdlString = ast.literal_eval(vf.read())
-
-def testTrace(vgdlFile, rawTrace, expectedHypotheses, name, verbose):
-	"""
-	Streamlined method to test a trace and see the number of outputted hypotheses.
-	"""
-
-	with open(vgdlFile, 'r') as vf:
-		vgdlString = ast.literal_eval(vf.read())
-
-	# New game generated
-	g = tt.Game(vgdlString)
-	g.VGDLTree = VGDLTree
-	trace = ([tt.TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace[0]],rawTrace[1])
-	start = time.time()
-	hypotheses=list(g.induction(trace, verbose))
-	end = time.time()
 	
-	# Printing items here
+	g = Game(vgdlString)
+	g.VGDLTree = VGDLTree
+	trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace[0]],rawTrace[1])
+	start = time.time()
+	hypotheses=g.runDFSInduction(trace, maxNumTheories, verbose)
+	end = time.time()
+
+	# Useful for quick view of test results
 	print "########################"
 	print "Checking {}...".format(name)
 	print "TIME TO RUN: {}".format(end-start)
 	print "Expected number of hypotheses {} = actual number of hypotheses {}? {}".format(expectedHypotheses, len(hypotheses), expectedHypotheses==len(hypotheses))
-	if expectedHypotheses==len(hypotheses):
+	
+	if expectedHypotheses==len(hypotheses): 	# TODO: Are there other parameters which we want to check?
 		print ">>>> PASS!"
 	else:
 		print ">>>> FAIL :("
-	# TODO: Are there other parameters which we want to check?
 	print "\n########################\n\n\n\n\n\n\n"
+
+	return hypotheses
+
+
+def testTrace(vgdlFile, rawTrace, expectedHypotheses, name, verbose=False):
+	"""
+	Streamlined method to test induction on a trace and see the number of outputted hypotheses.
+	"""
+
+	# Obtaining appropriate game information
+	with open(vgdlFile, 'r') as vf:
+		vgdlString = ast.literal_eval(vf.read())
+
+	g = Game(vgdlString)
+	g.VGDLTree = VGDLTree
+	trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace[0]],rawTrace[1])
+	start = time.time()
+	hypotheses=g.induction(trace, verbose)
+	end = time.time()
+
+	# Useful for quick view of test results
+	print "########################"
+	print "Checking {}...".format(name)
+	print "TIME TO RUN: {}".format(end-start)
+	print "Expected number of hypotheses {} = actual number of hypotheses {}? {}".format(expectedHypotheses, len(hypotheses), expectedHypotheses==len(hypotheses))
 	
+	if expectedHypotheses==len(hypotheses): 	# TODO: Are there other parameters which we want to check?
+		print ">>>> PASS!"
+	else:
+		print ">>>> FAIL :("
+	print "\n########################\n\n\n\n\n\n\n"
+
 	return hypotheses
 
 
@@ -52,14 +77,14 @@ def testMultipleTraces(rawTraces, expectedHypotheses, names, verbose):
 	"""
 
 	# New game generated
-	g = tt.Game(push_game)
+	g = Game(push_game)
 	g.VGDLTree = VGDLTree
 	start = time.time()
 	traces =[]
 	for i in range(len(rawTraces)):
 		rawTrace = rawTraces[i]
 		# print rawTrace
-		trace = ([tt.TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace[0]],rawTrace[1])
+		trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace[0]],rawTrace[1])
 		traces.append(trace)
 
 	hypotheses=list(g.inductionOverMultipleTraces(traces, verbose))
@@ -79,6 +104,10 @@ def testMultipleTraces(rawTraces, expectedHypotheses, names, verbose):
 
 
 if __name__ == '__main__':
+
+	###################################
+	## TEST CASES
+	###################################
 
 	"""
 	Testing win termination conditions in simple game setting
@@ -195,11 +224,13 @@ if __name__ == '__main__':
 
 
 	"""
-	Testing preconditions #2 - made up scenario
+	Testing preconditions #2
 
+	#TODO: The induction doesn't seem to capture that if you have medicine 1, you can kill BROWN, 
+			but when you have medicine < 1, BROWN kills you - might be an issue with the game setup
 	"""
 
-	rawTrace_preconditions = (
+	rawTrace_preconditions_simple_2 = (
 		[{'gameState': {
 			'ended': False, 
 			'score': 0, 
@@ -515,34 +546,11 @@ KeyError: '(140, 200, 140)'
 	"""
 	rawTrace_zelda_win = None
 
-	#################################
 
-	generatedHypotheses = {}
-
-	# Format:  (rawTrace, numHypotheses, name, verbose)
-
-	# traces = [
-	# 	(rawTrace_simple_win, 2, "rawTrace_simple_win", False), 
-	# 	(rawTrace_simple_loss, 3, "rawTrace_simple_loss", False),
-	# 	(rawTrace_preconditions_simple, 2, "rawTrace_preconditions_simple", False), 
-	# 	(rawTrace_preconditions_simple_2, 2, "rawTrace_preconditions_simple_2", False),
-	# 	(rawTrace_simpleGame1_loss, 2, "rawTrace_simpleGame1_loss", False), # TODO: need to check number expected
-		
-	# 	(rawTrace_aliens_win, 6, "rawTrace_aliens_win", False), # TODO: need to check number expected, because SPAWN event not registered...
-	# 	(rawTrace_aliens_loss, 16, "rawTrace_aliens_loss", False), #TODO: need to check number expected b/c too many things are registered as resource packs
-	# 	(rawTrace_dodge_win, 2, "rawtrace_dodge_win", True),
-	# 	(rawTrace_dodge_loss_1, 2, "rawTrace_dodge_loss_1", False), #TODO: not sure that avatar should be in same class as other things
-	# 	(rawTrace_dodge_loss_2, 2, "rawTrace_dodge_loss_2", False)
-	# # 	]
-	# traces = [(rawTrace_simple_win, 1, "rawTrace_simple_win", False)]
-
-	# for trace, expectedHypotheses, name, verbose in traces:
-	# 	hypotheses = testTrace(trace, expectedHypotheses, name, verbose)
-	# 	generatedHypotheses[name] = hypotheses
+	###################################
+	## TESTING SINGLE TRACES
+	###################################
 	
-	traces = [rawTrace_preconditions_simple, rawTrace_simple_win, rawTrace_simple_loss]
-	hypotheses = testMultipleTraces(traces, 0, ["rawTrace_simple_win","rawTrace_simple_loss", "rawTrace_preconditions_simple"], False)
-
 	'''
 	Longer traces:
 	(rawTrace_simpleGame1_win, 1, "rawTrace_simpleGame1_win", False)
@@ -551,8 +559,57 @@ KeyError: '(140, 200, 140)'
 		(rawTrace_chase_win, 1, "rawTrace_chase_win", True)
 	'''
 
+	generatedHypotheses = {}
+
+	# Regular Induction Format: (vgdlFile, rawTrace, expectedHypotheses, name, verbose=True)
+
+	# traces = [
+	# 	("../vgdl_text/simpleGame1.txt", rawTrace_simple_win, 2, "rawTrace_simple_win", False), 
+	# 	("../vgdl_text/simpleGame1.txt", rawTrace_simple_loss, 3, "rawTrace_simple_loss", False),
+	# 	("../vgdl_text/simpleGame1.txt", rawTrace_preconditions_simple, 2, "rawTrace_preconditions_simple", False), 
+	# 	("../vgdl_text/simpleGame1.txt", rawTrace_preconditions_simple_2, 2, "rawTrace_preconditions_simple_2", False),
+	# 	("../vgdl_text/simpleGame1.txt", rawTrace_simpleGame1_loss, 2, "rawTrace_simpleGame1_loss", False), # TODO: need to check number expected
+		
+	# 	("../vgdl_text/aliens.txt", rawTrace_aliens_win, 6, "rawTrace_aliens_win", False), # TODO: need to check number expected, because SPAWN event not registered...
+	# 	("../vgdl_text/aliens.txt", rawTrace_aliens_loss, 16, "rawTrace_aliens_loss", False), #TODO: need to check number expected b/c too many things are registered as resource packs
+	# 	("../vgdl_text/dodge.txt", rawTrace_dodge_win, 2, "rawtrace_dodge_win", True),
+	# 	("../vgdl_text/dodge.txt", rawTrace_dodge_loss_1, 2, "rawTrace_dodge_loss_1", False), #TODO: not sure that avatar should be in same class as other things
+	# 	("../vgdl_text/dodge.txt", rawTrace_dodge_loss_2, 2, "rawTrace_dodge_loss_2", False)
+	#  	]
+
+	# for params in traces:
+	# 	params = list(params)
+	#	name = param[2]
+	# 	hypotheses = testTrace(*params)
+	# 	generatedHypotheses[name] = hypotheses
 	
 
+	###################################
+	## TESTING SINGLE DFS TRACES
+	###################################
+
+	# DFS Format: (vgdlFile, rawTrace, expectedHypotheses, name, maxNumTheories, verbose=True)
+
+	DFS_traces = [
+	("../vgdl_text/simpleGame1.txt", rawTrace_simple_win, 2, "rawTrace_simple_win", 1, False)
+	]
+
+	for params in DFS_traces:
+		params = list(params)
+		name = params[3]
+		hypotheses = testTraceDFS(*params)
+		generatedHypotheses[name] = hypotheses
+	
+
+
+	###################################
+	## TESTING MULTIPLE TRACES
+	###################################
+
+	# traces = [rawTrace_preconditions_simple, rawTrace_simple_win, rawTrace_simple_loss]
+	# hypotheses = testMultipleTraces(traces, 1, ["rawTrace_simple_win","rawTrace_simple_loss", "rawTrace_preconditions_simple"], False)
+
+	
 
 	embed()
 
