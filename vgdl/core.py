@@ -510,7 +510,10 @@ class BasicGame(object):
                 ss1, l1 = ss[g1]
                 for s1 in ss1:
                     if not pygame.Rect((0,0), self.screensize).contains(s1.rect):
-                        effect(s1, None, self, **kwargs)
+                        e = effect(s1, None, self, **kwargs)
+                        if e != None:
+                            effectList.append(e)
+
                 continue
 
             # iterate over the shorter one
@@ -716,6 +719,8 @@ class BasicGame(object):
         else:
             self.win = False
             print "Game lost. Score=%s" % self.score
+
+        print {'win': self.win, 'time': self.time, }
         ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.
