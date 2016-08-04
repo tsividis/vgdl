@@ -690,7 +690,7 @@ class BasicGame(object):
             [os.remove(f) for f in glob.glob(tmp_dir + "*" + str(self.uiud) + "*")]
 
         # Print entire history of effects
-        terminationCondition = {'ended': True, 'win':win}
+        terminationCondition = {'ended': True, 'win':win, 'time':self.time}
         # logging.info((finalEventList, terminationCondition))
 
 

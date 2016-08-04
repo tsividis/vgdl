@@ -1130,36 +1130,22 @@ class Game(object):
 			else:
 				acceptedTheories = []
 				for t in newTheories:
-					# if t.checkEventsInTimeStep(timesteps[t.depth-1]):
 					all_passed = True
-					# 	for ts in timesteps[:t.depth-1]:
-					# 		if not t.checkPredictionsInTimeStep(ts, sparse=True):
-					# 			self.nodes_eliminated +=1
-					# 			all_passed = False
-					# 			break
+					
 					for ts in timesteps[:t.depth-1]:
 						if not t.likelihood(ts, sparse=True):
 							self.nodes_eliminated +=1
 							all_passed = False
 							break
-						# likelihood_list = [t.likelihood(ts)==1.0 for ts in timesteps[:t.depth-1]]
-						# if all(likelihood_list):
-						# 	print 1.
-						# else:
-						# 	print likelihood_list.index(False)/float(len(likelihood_list))
-						# if not all(likelihood_list):
-						# if not all([t.likelihood(ts)==1.0 for ts in timesteps[:t.depth-1]]):
-						# 	self.nodes_eliminated += 1
-						# else:
+					
 					if all_passed:
 						self.nodes_accepted += 1
 						acceptedTheories.append(t)
-				# newTheories = [t for t in newTheories if all([t.likelihood(ts) == 1.0 for ts in timesteps[:t.depth-1]])]
 				newTheories = self.orderHypotheses(acceptedTheories) #TODO: check that ordering is working
 				
 				if verbose:
+					print "New theories that passed likelihood tests: ", len(newTheories)
 					print "Nodes created: {}. Nodes eliminated: {}. Nodes accepted: {}".format(self.nodes_generated, self.nodes_eliminated, self.nodes_accepted)
-					# print "New theories that passed likelihood tests: ", len(newTheories)
 				
 				for t in newTheories:
 					t.dryingPaint = set()
@@ -1169,7 +1155,7 @@ class Game(object):
 
 		
 
-	def runDFSinduction(self, trace, maxNumTheories, verbose=True):
+	def runDFSInduction(self, trace, maxNumTheories, verbose=True):
 		"""
 		"""
 
@@ -1342,11 +1328,11 @@ def sampleCompletedTheory(game, theory):
 
 
 if __name__ == "__main__":
-	g = Game(push_game)
-	T = Theory(g)
-	T.initializeSpriteSet(g.vgdlSpriteParse)
-	g.hypothesisSpace = [T]
-	finalHypotheses = []
+	# g = Game(push_game)
+	# T = Theory(g)
+	# T.initializeSpriteSet(g.vgdlSpriteParse)
+	# g.hypothesisSpace = [T]
+	# finalHypotheses = []
 
 
 	rawTrace_precond = (
@@ -1436,8 +1422,8 @@ if __name__ == "__main__":
 		{'ended': True, 'win': True, 'time': 260}
 		)
 
-	trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace_precond[0]],rawTrace_precond[1])
-	trace = (trace[0], trace[1])
-	hypotheses = g.runDFSinduction(trace, 1)
-	#reg_hypotheses = g.induction(trace)
-	embed()
+	# trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace_precond[0]],rawTrace_precond[1])
+	# trace = (trace[0], trace[1])
+	# hypotheses = g.runDFSInduction(trace, 1)
+	# #reg_hypotheses = g.induction(trace)
+	# embed()

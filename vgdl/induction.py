@@ -1,7 +1,7 @@
-import sys
-from theory_template_072516 import Game, TimeStep
-import ast
-import time
+import sys, ast, time
+from theory_template_080116 import Game, TimeStep
+from IPython import embed
+
 
 def runInduction(vgdlString, gameOutput):
    
@@ -31,4 +31,5 @@ if __name__ == "__main__":
         print output_tuple
 
     hypotheses = runInduction(vgdlString, output_tuple)
+    embed()
 
