@@ -1,4 +1,5 @@
-import itertools, random, copy, numpy.random, scipy.misc
+from random import choice
+import itertools, copy, scipy.misc
 import numpy as np
 from sampleVGDLString import *
 from class_theory_template_071916 import *
@@ -1308,54 +1309,36 @@ class Game(object):
 		return
 
 
-def completeClassAssignments(game, allPossible=False):
-	
-	if allPossible:
-		# Assign all remaining sprites to a class for each theory
-		for theory in game.hypothesisSpace:
-			
-			# Get all possible classes for all remaining sprites not in classes
-			allPossibleClasses = {}
 
-			newSprites = 0
-			for sprite in theory.spriteSet:
-				if not theory.getClass(sprite):
-					newSprites += 1
+def sampleCompletedTheory(game, theory):
+	"""
+	Assign all remaining sprites to a class for a given theory in a given game.
+	"""	
+	# Find all remaining sprites
+	spritesLeft = []
+	for sprite in theory.spriteSet:
+		if not theory.getClass(sprite):
+			spritesLeft.append(sprite)
 
-					possibleClasses,gotNewClass = theory.searchForPossibleClasses(sprite, 1)
-					possibleClasses = [(c,sprite) for c in possibleClasses] # Probably can cut this time down
-					allPossibleClasses[sprite] = possibleClasses
-			# print allPossibleClasses
-			# print "number of new sprites: ", newSprites
-			# Get all permutations of the class assignments and create new theories
-			params = [allPossibleClasses[c] for c in allPossibleClasses.keys()]
-			possibleClassAssignments = list(itertools.product(*params))
-			# print "number of new theories to be made...", len(possibleClassAssignments)
-			for classAssignments in possibleClassAssignments:
-				newTheory = theory.createChild([None, classAssignments])
+	# For each sprite, assign it to a random possible class 
+	allClassAssignments = []			# Will save the class assignments here
+	tempTheory = copy.deepcopy(theory) 	# Temporary theory
+	for sprite in spritesLeft:
+		possibleClasses,gotNewClass = tempTheory.searchForPossibleClasses(sprite, 1) # Second param is possible number of new classes
+		sampledClass = choice(possibleClasses)
 
-				if newTheory:
-					game.hypothesisSpace.append(newTheory)
+		classAssignments = [(sampledClass, sprite)]
+		allClassAssignments.extend(classAssignments)
+		tempTheory = tempTheory.createChild([None, classAssignments]) # Update the tempTheory; don't really want to save these theories
 
-	else:
-		print "orig hypoth space", len(game.hypothesisSpace)
-		for theory in game.hypothesisSpace:
-			classAssignments = []
-			newSprites = 0
-			for sprite in theory.spriteSet:
-				if not theory.getClass(sprite):
-					newSprites += 1
-					numClasses = len(theory.classes.keys())
-					newClassAssignment = ('c'+str(numClasses+newSprites), sprite)
-					classAssignments.append(newClassAssignment)
-
-			newTheory = theory.createChild([None, classAssignments])
-
-			if newTheory:
-				game.hypothesisSpace.append(newTheory)
-		print "new hypoth space", len(game.hypothesisSpace)
+	# Finalize the temporary theory
+	if tempTheory:
+		newTheory = theory.createChild([None, allClassAssignments])
+		game.hypothesisSpace.append(newTheory)
 	
 	return game.hypothesisSpace
+
+
 
 
 if __name__ == "__main__":
