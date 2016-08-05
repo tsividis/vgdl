@@ -903,7 +903,7 @@ def changeResource(sprite, partner, resourceColor, game, resource, value=1):
     #print 'Changed ', colorDict[str(partner.color)]
 
     # NOTE: partner is the color of the resource (see _eventHandling() in core.py)
-    return ('changeResource', colorDict[str(sprite.color)], colorDict[str(partner.color)], colorDict[str(resourceColor)], value)
+    return ('changeResource', colorDict[str(sprite.color)], colorDict[str(partner.color)], resource, value)
 
 def spawnIfHasMore(sprite, partner, game, resource, stype, limit=1):
     """ If 'sprite' has more than a limit of the resource type given, it spawns a sprite of 'stype'. """
