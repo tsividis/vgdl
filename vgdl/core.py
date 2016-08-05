@@ -545,7 +545,7 @@ class BasicGame(object):
                                 resource = kwargs['resource']
                                 (sclass, args, stypes) = self.sprite_constr[resource]
                                 resource_color = args['color']
-                                e = effect(s2, resource_color, self, **kwargs)
+                                e = effect(s2, s1, resource_color, self, **kwargs) # TODO: is 's1' the actual thing we ran into?
                             
                             else:
                                 e = effect(s2, s1, self, **kwargs)
@@ -559,7 +559,7 @@ class BasicGame(object):
                                 resource = kwargs['resource']
                                 (sclass, args, stypes) = self.sprite_constr[resource]
                                 resource_color = args['color']
-                                e = effect(s1, resource_color, self, **kwargs)
+                                e = effect(s1, s2, resource_color, self, **kwargs)
                             
                             else:
                                 e = effect(s1, s2, self, **kwargs)

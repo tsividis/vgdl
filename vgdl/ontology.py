@@ -896,14 +896,14 @@ def collectResource(sprite, partner, game):
     #print 'Collected ', colorDict[str(sprite.color)]#partner.resources[r]
     return ('collectResource', colorDict[str(partner.color)], colorDict[str(sprite.color)])
 
-def changeResource(sprite, partner, game, resource, value=1):
+def changeResource(sprite, partner, resourceColor, game, resource, value=1):
     """ Increments a specific resource type in sprite """
     sprite.resources[resource] = max(-1, min(sprite.resources[resource]+value, game.resources_limits[resource]))
     #print resource, sprite.resources[resource]
     #print 'Changed ', colorDict[str(partner.color)]
 
     # NOTE: partner is the color of the resource (see _eventHandling() in core.py)
-    return ('changeResource', colorDict[str(sprite.color)], colorDict[str(partner)], value)
+    return ('changeResource', colorDict[str(sprite.color)], colorDict[str(partner.color)], colorDict[str(resourceColor)], value)
 
 def spawnIfHasMore(sprite, partner, game, resource, stype, limit=1):
     """ If 'sprite' has more than a limit of the resource type given, it spawns a sprite of 'stype'. """

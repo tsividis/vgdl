@@ -15,10 +15,22 @@ def runInduction(vgdlString, gameOutput):
     
     return hypotheses
 
+def runInduction_DFS(vgdlString, gameOutput):
+
+    verbose = True
+
+    g = Game(vgdlString)
+    trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in gameOutput[0]],gameOutput[1])
+    # start = time.time()
+    hypotheses=list(g.runDFSInduction(trace, verbose))
+    # end = time.time()
+    
+    return hypotheses
+
 
 if __name__ == "__main__":
     """
-    Run: "python induction.py ../vgdl_text/aliens.txt ../output/aliens.txt" 
+    Run: "python induction.py ../vgdl_text/simpleGame1.txt ../output/simpleGame1.txt" 
     """
     vgdlFile = sys.argv[1]
     with open(vgdlFile, 'r') as vf:
