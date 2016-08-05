@@ -887,7 +887,7 @@ class Theory(object):
 		'reverseDirection', 'flipDirection', 'bounceDirection', 'wallBounce', 'wallStop',
 		'killIfSlow', 'killIfFromAbove', 'killIfAlive', 'collectResource', 'killIfHasMore',
 		'killIfOtherHasMore', 'killIfHasLess', 'killIfOtherHasLess', 'wrapAround',
-		'pullWithIt', 'teleportToExit']
+		'pullWithIt', 'teleportToExit', 'changeResource', 'spawnIfHasMore']
 		remainingPredicates = list(set(predicateList)-set([rule.interaction for rule in self.interactionSet]))
 		scores = [1./len(remainingPredicates)]*len(remainingPredicates)
 		return zip(remainingPredicates, scores)
@@ -1398,7 +1398,8 @@ if __name__ == "__main__":
 		)
 
 	trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace_long[0]],rawTrace_long[1])
+	trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace_precond[0]],rawTrace_precond[1])
 	trace = (trace[0], trace[1])
-	hypotheses = g.runDFSinduction(trace, 12)
+	# hypotheses = g.runDFSinduction(trace, 12)
 	#reg_hypotheses = g.induction(trace)
 	# embed()
