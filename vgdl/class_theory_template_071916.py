@@ -123,17 +123,57 @@ class SpriteParser(object):
                         self.sprite_types[key] = Sprite(sclass, color_type, args_without_color)
 
 
-                        print self.sprite_types[key].vgdlType
-                        print self.sprite_types[key].color
+                        # print self.sprite_types[key].vgdlType
+                        # print self.sprite_types[key].color
                 else:
+                    isResourceType = False
                     if sclass in resourcePackTypes:
-                        self.sprite_types[key] = Sprite(self._eval('ResourcePack'), None, args)
-                        # self.sprite_types[key] = (self._eval('ResourcePack'), colorized_args, stypes)
+                        s = self._eval('ResourcePack')
+                        # self.sprite_types[key] = Sprite(self._eval('ResourcePack'), None, args)
                     elif sclass == resourceType:
-                        self.sprite_types[key] = Sprite(self._eval('ResourcePack'), None, args_without_color)
-                        self.sprite_types[key+"_resource"] = Sprite(self._eval('ResourcePack'), None, args_without_color)
+                        isResourceType = True
+                        s = self._eval('ResourcePack')
+                        # self.sprite_types[key] = Sprite(self._eval('ResourcePack'), None, args_without_color)
+                        # self.sprite_types[key+"_resource"] = Sprite(self._eval('ResourcePack'), None, args_without_color)
                     else:
+                        s = sclass
                         self.sprite_types[key] = Sprite(sclass, None, args)
+
+                    try:
+                        color = str(s.color)
+                        if color in colorDict:
+                            color = colorDict[color]
+
+                        if isResourceType:
+                            self.sprite_types[key] = Sprite(s, color, args_without_color)
+                            self.sprite_types[key+"_resource"] = Sprite(s, color, args_without_color)
+                        else:
+                            self.sprite_types[key] = Sprite(s, color, args_without_color)
+                            
+                    except AttributeError:
+                        if isResourceType:
+                            self.sprite_types[key] = Sprite(s, None, args_without_color)
+                            self.sprite_types[key+"_resource"] = Sprite(s, None, args_without_color)
+                        else:
+                            self.sprite_types[key] = Sprite(s, None, args_without_color)
+
+                        # if sclass in resourcePackTypes:
+                        #     self.sprite_types[key] = Sprite(self._eval('ResourcePack'), None, args)
+                        #     # self.sprite_types[key] = (self._eval('ResourcePack'), colorized_args, stypes)
+                        # elif sclass == resourceType:
+                        #     self.sprite_types[key] = Sprite(self._eval('ResourcePack'), None, args_without_color)
+                        #     self.sprite_types[key+"_resource"] = Sprite(self._eval('ResourcePack'), None, args_without_color)
+                        # else:
+                        #     self.sprite_types[key] = Sprite(sclass, None, args)
+
+                        # if sclass in resourcePackTypes:
+                        #     self.sprite_types[key] = Sprite(self._eval('ResourcePack'), None, args)
+                        #     # self.sprite_types[key] = (self._eval('ResourcePack'), colorized_args, stypes)
+                        # elif sclass == resourceType:
+                        #     self.sprite_types[key] = Sprite(self._eval('ResourcePack'), None, args_without_color)
+                        #     self.sprite_types[key+"_resource"] = Sprite(self._eval('ResourcePack'), None, args_without_color)
+                        # else:
+                        #     self.sprite_types[key] = Sprite(sclass, None, args)
 
                 if key in self.game.sprite_order:
                     # last one counts

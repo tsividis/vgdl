@@ -313,7 +313,8 @@ class Theory(object):
 		classGameState = {k: 0 for k in self.classes.keys()}
 		for c in self.classes:
 			for s in self.classes[c]:
-				classGameState[c] += len(gameState[s.color])
+				if s.color in gameState:
+					classGameState[c] += len(gameState[s.color])
 
 		return classGameState
 
@@ -353,6 +354,7 @@ class Theory(object):
 						self.terminationSet.append(spriteCounterRule)
 
 		# print [t.asTuple() for t in self.terminationSet]
+		embed()
 		time = result["time"]
 		timeoutRule = TimeoutRule(limit=time, win=win)
 		if not timeoutRule in self.terminationSet:
@@ -625,6 +627,7 @@ class Theory(object):
 			value = 0
 			resource = None
 
+		# embed()
 		obj1 = self.spriteObjects[event[1]]
 		obj2 = self.spriteObjects[event[2]]
 
