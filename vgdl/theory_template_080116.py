@@ -98,21 +98,25 @@ class InteractionRule(object):
 	# TODO: Should enforce proper syntax for interaction rules
 
 	"""
-	def __init__(self, interaction, c1, c2, preconditions=set()):
+	def __init__(self, interaction, c1, c2, resource, value, preconditions=set()):
 		self.interaction = interaction
 		self.slot1 = c1
 		self.slot2 = c2
+		self.valueChanges = {} # Change in value for resources
 		self.preconditions = preconditions
+
+		if resource:
+			self.valueChanges[resource]=value
 
 	def display(self):
 		if not self.preconditions:
-			print self.interaction, self.slot1, self.slot2
+			print self.interaction, self.slot1, self.slot2, self.valueChanges
 		else:
-			print self.interaction, self.slot1, self.slot2, [p.text for p in self.preconditions]
+			print self.interaction, self.slot1, self.slot2, self.valueChanges, [p.text for p in self.preconditions]
 		return
 
 	def asTuple(self):
-		return (self.interaction, self.slot1, self.slot2)
+		return (self.interaction, self.slot1, self.slot2, self.valueChanges) #TODO: Check that adding the value here doesn't mess up equality checks elsewhere
 
 	def addPrecondition(self, precondition):
 		"""
@@ -125,7 +129,6 @@ class InteractionRule(object):
 		curr_preconditions = [p.text for p in self.preconditions]	
 		if precondition.text not in curr_preconditions: #TODO: change equality for preconditions?
 			self.preconditions = set([precondition]) #TODO: Need to change this, if we accept more than one precondition for an interaction rule
-
 
 	def checkPreconditions(self, agentState):
 		return all([p.check(agentState) for p in self.preconditions])
@@ -518,13 +521,21 @@ class Theory(object):
 		newTheories = []
 		possibleAssignments = self.searchForAssignments(event)
 
+		try: 
+			resource = event[3]
+			value = event[4]
+
+		except:
+			resource = None
+			value = 0
+
 		obj1 = self.spriteObjects[event[1]]
 		obj2 = self.spriteObjects[event[2]]
 
 
 		if possibleAssignments:
 			for assignment in possibleAssignments:
-				interaction = InteractionRule(event[0], assignment[0], assignment[1]) #This isn't strictly necessary, but follows createChild requirements.
+				interaction = InteractionRule(event[0], assignment[0], assignment[1], resource, value) #This isn't strictly necessary, but follows createChild requirements.
 				
 				classAssignments = [(assignment[0], obj1), (assignment[1], obj2)]
 				newTheory = self.createChild([interaction, classAssignments])
@@ -601,10 +612,19 @@ class Theory(object):
 		
 		If those objects aren't known, returns false.
 
-		Ex) Event is a tuple: ('bounceForward', 'ORANGE', 'DARKBLUE')
+		Ex) Event is a tuple: ('bounceForward', 'ORANGE', 'DARKBLUE') or ('changeResource', 'BLUE', 'RED', 1)
 		If we know that ORANGE=c1 and DARKBLUE=c2, returns the InteractionRule
 		that corresponds to (bounceForward, c1, c2)
 		"""
+		# Check if there is an extra value argument in event
+		try: 
+			value = event[3]
+			resource = event[4]
+
+		except:
+			value = 0
+			resource = None
+
 		obj1 = self.spriteObjects[event[1]]
 		obj2 = self.spriteObjects[event[2]]
 
@@ -612,7 +632,7 @@ class Theory(object):
 		#print 'classes:', c1, c2
 		if c1 and c2:
 			#print 'new interaction rule!'
-			return InteractionRule(event[0], c1, c2)
+			return InteractionRule(event[0], c1, c2, value, resource)
 		else:
 			return False
 
