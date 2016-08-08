@@ -10,6 +10,7 @@ from tools import Node, indentTreeParser
 from collections import defaultdict
 from vgdl.tools import roundedPoints
 import os
+import datetime
 import uuid
 import subprocess
 import glob
@@ -510,7 +511,10 @@ class BasicGame(object):
                 ss1, l1 = ss[g1]
                 for s1 in ss1:
                     if not pygame.Rect((0,0), self.screensize).contains(s1.rect):
-                        effect(s1, None, self, **kwargs)
+                        e = effect(s1, None, self, **kwargs)
+                        if e != None:
+                            effectList.append(e)
+
                 continue
 
             # iterate over the shorter one
@@ -591,8 +595,8 @@ class BasicGame(object):
         name = m.group(1)
         gamelog = "{}.log".format(name)
         #logging.basicConfig(filename=gamelog, level=logging.INFO)
-
-        game_output = "output/{}.txt".format(name)
+        timestamp = datetime.datetime.strftime(datetime.datetime.now(), '%Y_%m_%d_%H_%M_%S')
+        game_output = "output/{}_{}.txt".format(name, timestamp)
 
 
         # --------- Game-play ------------
@@ -690,7 +694,7 @@ class BasicGame(object):
             [os.remove(f) for f in glob.glob(tmp_dir + "*" + str(self.uiud) + "*")]
 
         # Print entire history of effects
-        terminationCondition = {'ended': True, 'win':win}
+        terminationCondition = {'ended': True, 'win':win, 'time':self.time}
         # logging.info((finalEventList, terminationCondition))
 
 
@@ -716,6 +720,8 @@ class BasicGame(object):
         else:
             self.win = False
             print "Game lost. Score=%s" % self.score
+
+        print {'win': self.win, 'time': self.time, }
         ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.

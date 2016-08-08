@@ -1,4 +1,5 @@
-import itertools, random, copy, numpy.random, scipy.misc
+from random import choice
+import itertools, copy, scipy.misc
 import numpy as np
 from sampleVGDLString import *
 from class_theory_template_071916 import *
@@ -363,13 +364,13 @@ class Theory(object):
 
 		Right now returns only 1 or 0.
 		"""
-
 		#print "events in timestep {} | predictions in timestep {}".format(self.checkEventsInTimeStep(timestep), self.checkPredictionsInTimeStep(timestep))
 		if self.checkEventsInTimeStep(timestep) and self.checkPredictionsInTimeStep(timestep, sparse):
 			likelihood = 1.
 		else:
 			likelihood = 0.
 		return likelihood
+
 
 	def checkTerminationCounterInState(self, c, termCondition):
 		"""
@@ -710,11 +711,15 @@ class Theory(object):
 
 		rule, assignments = proposal[0], proposal[1]
 		# Add the proposed rule to the Theory's InteractionSet
-		addedRule = addInteractionRule(rule)
+		if rule:
+			addedRule = addInteractionRule(rule)
+		else:
+			addedRule = False
 		# Add the proposed class assignments to the Theory 
 		addedClass = False
 		if assignments:
 			addedClass = any([assignClass(assignment) for assignment in assignments])
+
 		return (addedRule or addedClass)
 
 
@@ -806,6 +811,7 @@ class Theory(object):
 				possibleClasses.append('c'+str(numClasses+i)) # Classes that extend off number of existing classes
 			gotNewClass = True
 			return possibleClasses, gotNewClass
+
 		else: return [], gotNewClass
 
 
@@ -1124,36 +1130,22 @@ class Game(object):
 			else:
 				acceptedTheories = []
 				for t in newTheories:
-					# if t.checkEventsInTimeStep(timesteps[t.depth-1]):
 					all_passed = True
-					# 	for ts in timesteps[:t.depth-1]:
-					# 		if not t.checkPredictionsInTimeStep(ts, sparse=True):
-					# 			self.nodes_eliminated +=1
-					# 			all_passed = False
-					# 			break
+					
 					for ts in timesteps[:t.depth-1]:
 						if not t.likelihood(ts, sparse=True):
 							self.nodes_eliminated +=1
 							all_passed = False
 							break
-						# likelihood_list = [t.likelihood(ts)==1.0 for ts in timesteps[:t.depth-1]]
-						# if all(likelihood_list):
-						# 	print 1.
-						# else:
-						# 	print likelihood_list.index(False)/float(len(likelihood_list))
-						# if not all(likelihood_list):
-						# if not all([t.likelihood(ts)==1.0 for ts in timesteps[:t.depth-1]]):
-						# 	self.nodes_eliminated += 1
-						# else:
+					
 					if all_passed:
 						self.nodes_accepted += 1
 						acceptedTheories.append(t)
-				# newTheories = [t for t in newTheories if all([t.likelihood(ts) == 1.0 for ts in timesteps[:t.depth-1]])]
 				newTheories = self.orderHypotheses(acceptedTheories) #TODO: check that ordering is working
 				
 				if verbose:
+					print "New theories that passed likelihood tests: ", len(newTheories)
 					print "Nodes created: {}. Nodes eliminated: {}. Nodes accepted: {}".format(self.nodes_generated, self.nodes_eliminated, self.nodes_accepted)
-					# print "New theories that passed likelihood tests: ", len(newTheories)
 				
 				for t in newTheories:
 					t.dryingPaint = set()
@@ -1163,7 +1155,7 @@ class Game(object):
 
 		
 
-	def runDFSinduction(self, trace, maxNumTheories, verbose=True):
+	def runDFSInduction(self, trace, maxNumTheories, verbose=True):
 		"""
 		"""
 
@@ -1183,25 +1175,25 @@ class Game(object):
 		
 
 		# Termination set induction
-		# if result:
-		# 	hypothesisSpaceWithTermConditions = []
-		# 	for theory in self.hypothesisSpace:
-		# 		theory.explainTermination(timesteps[-1], timesteps[:-1], result)
-		# 		hypothesisSpaceWithTermConditions.append(theory)
+		if result:
+			hypothesisSpaceWithTermConditions = []
+			for theory in self.hypothesisSpace:
+				theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+				hypothesisSpaceWithTermConditions.append(theory)
 
-		# 	self.hypothesisSpace = hypothesisSpaceWithTermConditions
+			self.hypothesisSpace = hypothesisSpaceWithTermConditions
+
+		print "initial hypothesis space: ", len(self.hypothesisSpace)
 
 		end = time.time()
-		# if verbose:
-		# 	for t in self.hypothesisSpace:
-		# 		t.display()
+	
 		print "generated {} hypotheses in {} seconds".format(len(self.hypothesisSpace), end-start)
 
 		return self.hypothesisSpace
 
 
 
-	def induction(self, trace, verbose=True, allTraces = None):
+	def induction(self, trace, verbose=True, allTraces=None):
 		"""
 		Iterates through trace, performing theory induction on each timestep
 		"""
@@ -1238,15 +1230,15 @@ class Game(object):
 					#print "ADDING NEW THEORIES IN INDUCTION --> now {} theories".format(len(self.hypothesisSpace))
 					self.hypothesisSpace.append(theory) #TODO: numbering of theories should take place here.	
 
-			if allTraces:
-				for theory in self.hypothesisSpace:
-					for timesteps,result in allTraces:
-						if result:
-							theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+			# if allTraces:
+			# 	for theory in self.hypothesisSpace:
+			# 		for timesteps,result in allTraces:
+			# 			if result:
+			# 				theory.explainTermination(timesteps[-1], timesteps[:-1], result)
 							
-					badTerminationSet = theory.getBadTerminationConditions(allTraces)
-					for t in badTerminationSet:
-						theory.terminationSet.remove(t)
+			# 		badTerminationSet = theory.getBadTerminationConditions(allTraces)
+			# 		for t in badTerminationSet:
+			# 			theory.terminationSet.remove(t)
 
 
 			self.cleanHypothesisSpace(timesteps[0:i+1], 1) #All timesteps up to now should be fully explained
@@ -1302,12 +1294,45 @@ class Game(object):
 		# print "Done cleanHypothesisSpace...\n"
 		return
 
+
+
+def sampleCompletedTheory(game, theory):
+	"""
+	Assign all remaining sprites to a class for a given theory in a given game.
+	"""	
+	# Find all remaining sprites
+	spritesLeft = []
+	for sprite in theory.spriteSet:
+		if not theory.getClass(sprite):
+			spritesLeft.append(sprite)
+
+	# For each sprite, assign it to a random possible class 
+	allClassAssignments = []			# Will save the class assignments here
+	tempTheory = copy.deepcopy(theory) 	# Temporary theory
+	for sprite in spritesLeft:
+		possibleClasses,gotNewClass = tempTheory.searchForPossibleClasses(sprite, 1) # Second param is possible number of new classes
+		sampledClass = choice(possibleClasses)
+
+		classAssignments = [(sampledClass, sprite)]
+		allClassAssignments.extend(classAssignments)
+		tempTheory = tempTheory.createChild([None, classAssignments]) # Update the tempTheory; don't really want to save these theories
+
+	# Finalize the temporary theory
+	if tempTheory:
+		newTheory = theory.createChild([None, allClassAssignments])
+		game.hypothesisSpace.append(newTheory)
+	
+	return game.hypothesisSpace
+
+
+
+
 if __name__ == "__main__":
-	g = Game(push_game)
-	T = Theory(g)
-	T.initializeSpriteSet(g.vgdlSpriteParse)
-	g.hypothesisSpace = [T]
-	finalHypotheses = []
+	# g = Game(push_game)
+	# T = Theory(g)
+	# T.initializeSpriteSet(g.vgdlSpriteParse)
+	# g.hypothesisSpace = [T]
+	# finalHypotheses = []
 
 
 	rawTrace_precond = (
@@ -1397,9 +1422,8 @@ if __name__ == "__main__":
 		{'ended': True, 'win': True, 'time': 260}
 		)
 
-	trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace_long[0]],rawTrace_long[1])
-	trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace_precond[0]],rawTrace_precond[1])
-	trace = (trace[0], trace[1])
-	# hypotheses = g.runDFSinduction(trace, 12)
-	#reg_hypotheses = g.induction(trace)
+	# trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace_precond[0]],rawTrace_precond[1])
+	# trace = (trace[0], trace[1])
+	# hypotheses = g.runDFSInduction(trace, 1)
+	# #reg_hypotheses = g.induction(trace)
 	# embed()
