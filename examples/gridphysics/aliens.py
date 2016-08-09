@@ -28,7 +28,7 @@ aliens_game="""
 BasicGame
     SpriteSet
         base    > Immovable    color=WHITE
-        avatar  > FlakAvatar   stype=sam
+        avatar  > FlakAvatar stype=sam
         missile > Missile
             sam  > orientation=UP    color=BLUE singleton=True
             bomb > orientation=DOWN  color=RED  speed=0.5

@@ -616,17 +616,17 @@ class BasicGame(object):
             self.keystate = pygame.key.get_pressed()
             
             # PT: Disables mistaken contiguous key presses, prints to terminal
-            keyPressType = None
-            if self.keystate != emptyKeyState:
-                if (self.time-lastKeyPressTime)<2 and self.keystate==lastKeyPress:
-                    self.keystate = emptyKeyState
-                else:
-                    lastKeyPress = self.keystate
-                    if lastKeyPress.index(1) in keyPresses.keys():
-                        keyPressType = keyPresses[lastKeyPress.index(1)]
-                        print keyPressType
+            # keyPressType = None
+            # if self.keystate != emptyKeyState:
+            #     if (self.time-lastKeyPressTime)<2 and self.keystate==lastKeyPress:
+            #         self.keystate = emptyKeyState
+            #     else:
+            #         lastKeyPress = self.keystate
+            #         if lastKeyPress.index(1) in keyPresses.keys():
+            #             keyPressType = keyPresses[lastKeyPress.index(1)]
+            #             # print keyPressType
 
-                lastKeyPressTime = self.time
+            #     lastKeyPressTime = self.time
 
 
             # load/save handling
@@ -657,7 +657,7 @@ class BasicGame(object):
 
             if effectList:
                 event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList, 'gameState': self.getFullStateColorized()}
-                print event
+                # print event
                 finalEventList.append(event)
 
             # Termination #1
