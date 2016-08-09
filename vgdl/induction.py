@@ -40,8 +40,8 @@ if __name__ == "__main__":
     with open(gameOutput, 'r') as f:
         output = f.readline()
         output_tuple = ast.literal_eval(output)
-        print output_tuple
+        #print output_tuple
 
-    hypotheses = runInduction(vgdlString, output_tuple)
+    hypotheses = runInduction_DFS(vgdlString, output_tuple)
     embed()
 

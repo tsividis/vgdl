@@ -57,6 +57,7 @@ colorDict = {str((0, 200, 0)): 'GREEN',\
             str((150, 150, 150)): 'LIGHTGRAY',\
             str((30, 30, 30)): 'DARKGRAY',\
             str((20, 20, 100)): 'DARKBLUE',\
+            str((140, 20, 140)): 'PURPLE',\
             }
 
 
@@ -747,6 +748,8 @@ def killSprite(sprite, partner, game):
     game.kill_list.append(sprite)
     if not None in {sprite, partner}:
         sprite_info = colorDict[str(sprite.color)]
+        print partner.color
+        print sprite.color
         partner_info = colorDict[str(partner.color)]
         return ("killSprite",partner_info,sprite_info) # partner = agent, sprite = what's being killed
 

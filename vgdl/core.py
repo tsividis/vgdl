@@ -41,6 +41,7 @@ colorDict = {str((0, 200, 0)): 'GREEN',\
             str((150, 150, 150)): 'LIGHTGRAY',\
             str((30, 30, 30)): 'DARKGRAY',\
             str((20, 20, 100)): 'DARKBLUE',\
+            str((140, 20, 140)): 'PURPLE',\
             }
 
 class VGDLParser(object):
@@ -113,7 +114,7 @@ class VGDLParser(object):
                                                      +[eclass, args]))
                 if self.verbose:
                     print "Collision", pair, "has effect:", edef
-        print self.game.collision_eff
+        #print self.game.collision_eff
 
     def parseTerminations(self, tnodes):
         for tn in tnodes:
@@ -461,7 +462,7 @@ class BasicGame(object):
                 
                 # No more sprites left?
                 else:
-                    print self.sprite_groups[stypes[0]]
+                    #print self.sprite_groups[stypes[0]]
                     pass
 
         return fs_colorized
@@ -623,7 +624,7 @@ class BasicGame(object):
                     lastKeyPress = self.keystate
                     if lastKeyPress.index(1) in keyPresses.keys():
                         keyPressType = keyPresses[lastKeyPress.index(1)]
-                        print keyPressType
+                        #print keyPressType
 
                 lastKeyPressTime = self.time
 
@@ -652,11 +653,11 @@ class BasicGame(object):
             except Exception as e:              # TODO: how to process changes in resources that led to termination state?
                 agentState = agentStatePrev
                 keyPressType = keyPressPrev
-                print "ERROR: {} --> {}".format(e, "Using previous agent state...")
+                #print "ERROR: {} --> {}".format(e, "Using previous agent state...")
 
             if effectList:
                 event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList, 'gameState': self.getFullStateColorized()}
-                print event
+                #print event
                 finalEventList.append(event)
 
             # Termination #1
@@ -720,7 +721,6 @@ class BasicGame(object):
             self.win = False
             print "Game lost. Score=%s" % self.score
 
-        print {'win': self.win, 'time': self.time, }
         ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.
@@ -788,9 +788,6 @@ class BasicGame(object):
 
 
 
-
-
-
 class VGDLSprite(object):
     """ Base class for all sprite types. """
     name = None
@@ -817,7 +814,11 @@ class VGDLSprite(object):
         self.physics.gridsize = size
         self.speed = speed or self.speed
         self.cooldown = cooldown or self.cooldown
-        self.color = color or self.color or (choice(self.COLOR_DISC), choice(self.COLOR_DISC), choice(self.COLOR_DISC))
+
+        #TODO: change the choice to be from colors that are not taken?
+        self.color = color or self.color or (140, 20, 140)
+
+        #self.color = color or self.color or (choice(self.COLOR_DISC), choice(self.COLOR_DISC), choice(self.COLOR_DISC))
         for name, value in kwargs.iteritems():
             try:
                 self.__dict__[name] = value
