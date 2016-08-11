@@ -31,6 +31,7 @@ LIGHTGREEN = (50, 250, 50)
 LIGHTGRAY = (150, 150, 150)
 DARKGRAY = (30, 30, 30)
 DARKBLUE = (20, 20, 100)
+PURPLE = (140, 20, 140)
 
 UP = (0, -1)
 DOWN = (0, 1)
@@ -234,6 +235,7 @@ class Conveyor(OrientedSprite):
 class Missile(OrientedSprite):
     """ A sprite that constantly moves in the same direction. """
     speed = 1
+    color = PURPLE
 
 class OrientedFlicker(OrientedSprite, Flicker):
     """ Preserves directionality """

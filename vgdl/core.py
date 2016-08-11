@@ -817,7 +817,8 @@ class VGDLSprite(object):
 
         #TODO: change the choice to be from colors that are not taken?
         self.color = color or self.color or (140, 20, 140)
-
+        print 'color', self.color
+                
         #self.color = color or self.color or (choice(self.COLOR_DISC), choice(self.COLOR_DISC), choice(self.COLOR_DISC))
         for name, value in kwargs.iteritems():
             try:

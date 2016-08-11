@@ -102,6 +102,8 @@ class SpriteParser(object):
 
             if len(sn.children) == 0:
                 # print (sclass, args, stypes)
+
+                # Check for color in the vgdl text
                 if 'color' in args:
                     color_type = colorDict[str(args['color'])]
                     args_without_color = deepcopy(args)
@@ -125,6 +127,8 @@ class SpriteParser(object):
 
                         # print self.sprite_types[key].vgdlType
                         # print self.sprite_types[key].color
+                
+                # Check for color in vgdl super classes  
                 else:
                     isResourceType = False
                     if sclass in resourcePackTypes:
@@ -137,8 +141,10 @@ class SpriteParser(object):
                         # self.sprite_types[key+"_resource"] = Sprite(self._eval('ResourcePack'), None, args_without_color)
                     else:
                         s = sclass
-                        self.sprite_types[key] = Sprite(sclass, None, args)
+                        self.sprite_types[key] = Sprite(sclass, None, args) # TODO: Fix color initialized to "None"
 
+                    if key == 'bullet':
+                        embed()
                     try:
                         color = str(s.color)
                         if color in colorDict:
@@ -174,7 +180,7 @@ class SpriteParser(object):
                         #     self.sprite_types[key+"_resource"] = Sprite(self._eval('ResourcePack'), None, args_without_color)
                         # else:
                         #     self.sprite_types[key] = Sprite(sclass, None, args)
-
+                    
                 if key in self.game.sprite_order:
                     # last one counts
                     self.game.sprite_order.remove(key)

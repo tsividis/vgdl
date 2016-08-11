@@ -354,7 +354,7 @@ class Theory(object):
 						self.terminationSet.append(spriteCounterRule)
 
 		# print [t.asTuple() for t in self.terminationSet]
-		embed()
+		#embed()
 		time = result["time"]
 		timeoutRule = TimeoutRule(limit=time, win=win)
 		if not timeoutRule in self.terminationSet:
@@ -627,7 +627,7 @@ class Theory(object):
 			value = 0
 			resource = None
 
-		# embed()
+		#embed()
 		obj1 = self.spriteObjects[event[1]]
 		obj2 = self.spriteObjects[event[2]]
 
