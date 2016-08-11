@@ -9,8 +9,8 @@ w2  1  3    w
 w   A 1    gw
 wwwn    wwwww
 w c     w   w
-w 1      4  w
-w  2 c 3   ww
+w 1 2    4  w
+w    c 3   ww
 wwwwwwwwwwwww
 """
 
@@ -20,11 +20,11 @@ BasicGame frame_rate=30
     SpriteSet        
         breakbox   > ResourcePack 
             breakbox1 > color=LIGHTBLUE
-            breakbox2 > color=RED
         avatar > MovingAvatar color=DARKBLUE #cooldown=4 
         box    > ResourcePack 
             box1 > color=ORANGE               
             box2 > color=PINK
+            box3 > color=RED
         goal > ResourcePack color=GOLD
         cloud > ResourcePack color=BLUE
         wall > ResourcePack color=BLACK  
@@ -36,7 +36,7 @@ BasicGame frame_rate=30
         1 > box1
         2 > box2  
         3 > breakbox1
-        4 > breakbox2
+        4 > box3
         c > cloud 
         w > wall   
         g > goal 
@@ -54,6 +54,7 @@ BasicGame frame_rate=30
         goal avatar > killSprite  
         missile wall > reverseDirection
         missile avatar > killSprite 
+        box missile > killSprite
     TerminationSet
         SpriteCounter stype=box     limit=0 win=True
         SpriteCounter stype=goal    limit=0 win=True
