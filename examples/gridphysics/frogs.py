@@ -15,7 +15,7 @@ w00===000===000====0000===02
 www   ww   www    www  wwwww
 w   ----   ---   -  ----   w
 w-     xxx       xxx    xx w
-t -   ---     -   ---- --  w
+w -   ---     -   ---- --  w
 w       A                  w
 wwwwwwwwwwwwwwwwwwwwwwwwwwww
 """

@@ -916,7 +916,7 @@ class Theory(object):
 		'reverseDirection', 'flipDirection', 'bounceDirection', 'wallBounce', 'wallStop',
 		'killIfSlow', 'killIfFromAbove', 'killIfAlive', 'collectResource', 'killIfHasMore',
 		'killIfOtherHasMore', 'killIfHasLess', 'killIfOtherHasLess', 'wrapAround',
-		'pullWithIt', 'teleportToExit']
+		'pullWithIt', 'teleportToExit', 'changeResource', 'spawnIfHasMore']
 		remainingPredicates = list(set(predicateList)-set([rule.interaction for rule in self.interactionSet]))
 		scores = [1./len(remainingPredicates)]*len(remainingPredicates)
 		return zip(remainingPredicates, scores)
