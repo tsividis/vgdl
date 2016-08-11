@@ -42,6 +42,7 @@ colorDict = {str((0, 200, 0)): 'GREEN',\
             str((150, 150, 150)): 'LIGHTGRAY',\
             str((30, 30, 30)): 'DARKGRAY',\
             str((20, 20, 100)): 'DARKBLUE',\
+            str((140, 20, 140)): 'PURPLE',\
             }
 
 class VGDLParser(object):
@@ -114,7 +115,7 @@ class VGDLParser(object):
                                                      +[eclass, args]))
                 if self.verbose:
                     print "Collision", pair, "has effect:", edef
-        print self.game.collision_eff
+        #print self.game.collision_eff
 
     def parseTerminations(self, tnodes):
         for tn in tnodes:
@@ -462,7 +463,7 @@ class BasicGame(object):
                 
                 # No more sprites left?
                 else:
-                    print self.sprite_groups[stypes[0]]
+                    #print self.sprite_groups[stypes[0]]
                     pass
 
         return fs_colorized
@@ -616,17 +617,18 @@ class BasicGame(object):
             self.keystate = pygame.key.get_pressed()
             
             # PT: Disables mistaken contiguous key presses, prints to terminal
-            # keyPressType = None
-            # if self.keystate != emptyKeyState:
-            #     if (self.time-lastKeyPressTime)<2 and self.keystate==lastKeyPress:
-            #         self.keystate = emptyKeyState
-            #     else:
-            #         lastKeyPress = self.keystate
-            #         if lastKeyPress.index(1) in keyPresses.keys():
-            #             keyPressType = keyPresses[lastKeyPress.index(1)]
-            #             # print keyPressType
+            keyPressType = None
+            if self.keystate != emptyKeyState:
+                if (self.time-lastKeyPressTime)<2 and self.keystate==lastKeyPress:
+                    self.keystate = emptyKeyState
+                else:
+                    lastKeyPress = self.keystate
+                    if lastKeyPress.index(1) in keyPresses.keys():
+                        keyPressType = keyPresses[lastKeyPress.index(1)]
+                        # print keyPressType
 
-            #     lastKeyPressTime = self.time
+
+                lastKeyPressTime = self.time
 
 
             # load/save handling
@@ -653,7 +655,7 @@ class BasicGame(object):
             except Exception as e:              # TODO: how to process changes in resources that led to termination state?
                 agentState = agentStatePrev
                 keyPressType = keyPressPrev
-                print "ERROR: {} --> {}".format(e, "Using previous agent state...")
+                #print "ERROR: {} --> {}".format(e, "Using previous agent state...")
 
             if effectList:
                 event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList, 'gameState': self.getFullStateColorized()}
@@ -721,7 +723,6 @@ class BasicGame(object):
             self.win = False
             print "Game lost. Score=%s" % self.score
 
-        print {'win': self.win, 'time': self.time, }
         ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.
@@ -789,9 +790,6 @@ class BasicGame(object):
 
 
 
-
-
-
 class VGDLSprite(object):
     """ Base class for all sprite types. """
     name = None
@@ -818,7 +816,11 @@ class VGDLSprite(object):
         self.physics.gridsize = size
         self.speed = speed or self.speed
         self.cooldown = cooldown or self.cooldown
-        self.color = color or self.color or (choice(self.COLOR_DISC), choice(self.COLOR_DISC), choice(self.COLOR_DISC))
+
+        #TODO: change the choice to be from colors that are not taken?
+        self.color = color or self.color or (140, 20, 140)
+
+        #self.color = color or self.color or (choice(self.COLOR_DISC), choice(self.COLOR_DISC), choice(self.COLOR_DISC))
         for name, value in kwargs.iteritems():
             try:
                 self.__dict__[name] = value

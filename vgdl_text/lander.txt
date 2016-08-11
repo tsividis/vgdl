@@ -1,0 +1,18 @@
+"""
+BasicGame
+    SpriteSet 
+        pad    > Passive color=BLUE 
+        avatar > InertialAvatar physicstype=GravityPhysics
+            
+    TerminationSet
+        SpriteCounter stype=pad limit=4 win=True     
+        SpriteCounter stype=avatar      win=False     
+           
+    InteractionSet
+        avatar wall > killSprite 
+        avatar EOS > killSprite 
+        pad avatar  > killIfSlow    # relative velocity
+        
+    LevelMapping
+        G > pad
+"""
