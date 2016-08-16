@@ -140,6 +140,9 @@ class SpriteParser(object):
                         self.sprite_types[key] = Sprite(sclass, None, args)
 
                     try:
+                        # if s.color == None:
+                        #     embed()
+                            
                         color = str(s.color)
                         if color in colorDict:
                             color = colorDict[color]
