@@ -313,8 +313,7 @@ class Theory(object):
 		classGameState = {k: 0 for k in self.classes.keys()}
 		for c in self.classes:
 			for s in self.classes[c]:
-				if s.color in gameState:
-					classGameState[c] += len(gameState[s.color])
+				classGameState[c] += len(gameState[s.color])
 
 		return classGameState
 
@@ -354,7 +353,6 @@ class Theory(object):
 						self.terminationSet.append(spriteCounterRule)
 
 		# print [t.asTuple() for t in self.terminationSet]
-		embed()
 		time = result["time"]
 		timeoutRule = TimeoutRule(limit=time, win=win)
 		if not timeoutRule in self.terminationSet:
@@ -627,7 +625,6 @@ class Theory(object):
 			value = 0
 			resource = None
 
-		# embed()
 		obj1 = self.spriteObjects[event[1]]
 		obj2 = self.spriteObjects[event[2]]
 
@@ -943,22 +940,66 @@ class Theory(object):
 
 		return ([[rc, rc.score] for rc in ruleClusters])
 
-	def levenshtein(self, s1, s2):
-		#Levenshtein (edit) distance. additions and deletions cost the same. No replacements.
-		count = 0
-		s1, s2 = list(s1), list(s2)
-		for i in range(len(s1)):
-			if s1[i] not in s2:
-				s2.append(s1[i])
-				count += 1
-		to_remove = []
-		for i in range(len(s2)):
-			if s2[i] not in s1:
-				to_remove.append(s2[i])
-				count += 1
-		for i in range(len(to_remove)):
-			s2.remove(to_remove[i])
-		return 1./(1+count)
+	def levenshtein(self, source, target):
+		z = 1.*max(len(source), len(target))
+		return 1. - self.levenshteinDistance(source, target)/z
+
+	def levenshteinDistance(self, source, target):
+	    if len(source) < len(target):
+	        return self.levenshteinDistance(target, source)
+
+	    # So now we have len(source) >= len(target).
+	    if len(target) == 0:
+	        return len(source)
+
+	    # We call tuple() to force strings to be used as sequences
+	    # ('c', 'a', 't', 's') - numpy uses them as values by default.
+	    source = np.array(tuple(source))
+	    target = np.array(tuple(target))
+
+	    # We use a dynamic programming algorithm, but with the
+	    # added optimization that we only need the last two rows
+	    # of the matrix.
+	    previous_row = np.arange(target.size + 1)
+	    for s in source:
+	        # Insertion (target grows longer than source):
+	        current_row = previous_row + 1
+
+	        # Substitution or matching:
+	        # Target and source items are aligned, and either
+	        # are different (cost of 1), or are the same (cost of 0).
+	        current_row[1:] = np.minimum(
+	                current_row[1:],
+	                np.add(previous_row[:-1], target != s))
+
+	        # Deletion (target grows shorter than source):
+	        current_row[1:] = np.minimum(
+	                current_row[1:],
+	                current_row[0:-1] + 1)
+
+	        previous_row = current_row
+
+	    return previous_row[-1]
+
+	# def levenshtein(s1, s2):
+	# 	#Levenshtein (edit) similarity. additions and deletions cost the same. No replacements.
+	# 	z = max(len(s1), len(s2))
+	# 	count = 0.
+	# 	s1, s2 = list(s1), list(s2)
+	# 	for i in range(len(s1)):
+	# 		if s1[i] not in s2:
+	# 			s2.append(s1[i])
+	# 			count += 1
+	# 	to_remove = []
+	# 	for i in range(len(s2)):
+	# 		if s2[i] not in s1:
+	# 			to_remove.append(s2[i])
+	# 			count += 1
+	# 	for i in range(len(to_remove)):
+	# 		s2.remove(to_remove[i])
+	# 	return 1. - count/z
+		# lDistance = count/min(len(s1), len(s2))
+		# return 1./(1+lDistance)
 
 	def ruleSimilarity(self, cx, cy):
 		#Looks at rules in which cx participated in as slot 1, compares them to rules in which

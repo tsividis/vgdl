@@ -3,15 +3,15 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 '''
 
 box_level = """
-wwwwwwwwwwwww
-w m      w  w
-w2  1  3    w
-w   A 1    gw
-wwwn    wwwww
-w c     w   w
-w 1 2    4  w
-w    c 3   ww
-wwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwww
+w m                  w  w
+w2  1  3                w
+w   A 1                gw
+wwwn                wwwww
+w c                 w   w
+w 1 2       4           w
+w    c             3   ww
+wwwwwwwwwwwwwwwwwwwwwwwww
 """
 
         

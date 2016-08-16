@@ -723,7 +723,7 @@ class BasicGame(object):
             self.win = False
             print "Game lost. Score=%s" % self.score
 
-        ipdb.set_trace()
+        # ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(50)
