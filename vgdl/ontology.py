@@ -830,9 +830,12 @@ def turnAround(sprite, partner, game):
 
 def reverseDirection(sprite, partner, game):
     sprite.orientation = (-sprite.orientation[0], -sprite.orientation[1])
+    return ('reverseDirection', colorDict[str(partner.color)], colorDict[str(sprite.color)])
+
 
 def flipDirection(sprite, partner, game):
     sprite.orientation = choice(BASEDIRS)
+    return ('flipDirection', colorDict[str(partner.color)], colorDict[str(sprite.color)])
 
 def bounceDirection(sprite, partner, game, friction=0):
     """ The centers of the objects determine the direction"""
@@ -843,6 +846,7 @@ def bounceDirection(sprite, partner, game, friction=0):
     dp = snorm[0] * inc[0] + snorm[1] * inc[1]
     sprite.orientation = (-2 * dp * snorm[0] + inc[0], -2 * dp * snorm[1] + inc[1])
     sprite.speed *= (1. - friction)
+    return ('bounceDirection', colorDict[str(partner.color)], colorDict[str(sprite.color)])
 
 def wallBounce(sprite, partner, game, friction=0):
     """ Bounce off orthogonally to the wall. """
@@ -854,6 +858,7 @@ def wallBounce(sprite, partner, game, friction=0):
         sprite.orientation = (-sprite.orientation[0], sprite.orientation[1])
     else:
         sprite.orientation = (sprite.orientation[0], -sprite.orientation[1])
+    return ('wallBounce', colorDict[str(partner.color)], colorDict[str(sprite.color)])
 
 def wallStop(sprite, partner, game, friction=0):
     """ Stop just in front of the wall, removing that velocity component,
@@ -867,6 +872,7 @@ def wallStop(sprite, partner, game, friction=0):
         sprite.orientation = (sprite.orientation[0] * (1. - friction), 0)
     sprite.speed = vectNorm(sprite.orientation) * sprite.speed
     sprite.orientation = unitVector(sprite.orientation)
+    return ('wallStop', colorDict[str(partner.color)], colorDict[str(sprite.color)])
 
 def killIfSlow(sprite, partner, game, limitspeed=1):
     """ Take a decision based on relative speed. """
@@ -879,6 +885,7 @@ def killIfSlow(sprite, partner, game, limitspeed=1):
                              sprite._velocity()[1] - partner._velocity()[1]))
     if relspeed < limitspeed:
         killSprite(sprite, partner, game)
+
 
 def killIfFromAbove(sprite, partner, game):
     """ Kills the sprite, only if the other one is higher and moving down. """

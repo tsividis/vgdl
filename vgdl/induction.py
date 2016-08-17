@@ -1,5 +1,5 @@
 import sys, ast, time
-from theory_template_080116 import Game, TimeStep
+from theory_template import Game, TimeStep
 from IPython import embed
 
 
