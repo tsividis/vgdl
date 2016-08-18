@@ -240,7 +240,7 @@ class Theory(object):
 		self.dryingPaint = set()
 		self.inModification = {}
 
-
+		self.posterior = False
 	def initializeSpriteSet(self, vgdlSpriteParse):
 		self.spriteSet = vgdlSpriteParse
 
@@ -249,6 +249,22 @@ class Theory(object):
 			self.spriteObjects[s.color] = s
 
 	"""Main functions"""
+
+	def prior(self):
+
+		def phi(numClasses, numRules, lamda):
+			#TODO: Refine this to take into account the minimum necessary size of the ruleset.
+			return lamda*numClasses + (1-lamda)*numRules
+
+		#Mode is p(r-1) / (1-p). For now we pick p=.5, r=5 to reflect that phi=4 is modal.
+		def negBin(k, r, p):
+			return scipy.misc.comb(k+r-1, k) * p**k * (1-p)**r
+
+		numClasses, numRules = len(self.classes.keys()), len(self.interactionSet)
+		k = phi(numClasses, numRules, .5)
+
+		return negBin(k,5,.5)
+
 
 	def explainTimeStep(self, timestep, fullTimestep, currTheories=False):
 		"""
@@ -944,8 +960,12 @@ class Theory(object):
 		return ([[rc, rc.score] for rc in ruleClusters])
 
 	def levenshtein(self, source, target):
-		z = 1.*max(len(source), len(target))
-		return 1. - self.levenshteinDistance(source, target)/z
+		source, target = list(source), list(target)
+		if max(len(source), len(target)) == 0:
+			return 1.
+		else:
+			z = 1.*max(len(source), len(target))
+			return 1. - self.levenshteinDistance(source, target)/z
 
 	def levenshteinDistance(self, source, target):
 	    if len(source) < len(target):
@@ -983,23 +1003,6 @@ class Theory(object):
 	        previous_row = current_row
 
 	    return previous_row[-1]  
-
-	# def levenshtein(self, s1, s2):
-	# 	#Levenshtein (edit) distance. additions and deletions cost the same. No replacements.
-	# 	count = 0
-	# 	s1, s2 = list(s1), list(s2)
-	# 	for i in range(len(s1)):
-	# 		if s1[i] not in s2:
-	# 			s2.append(s1[i])
-	# 			count += 1
-	# 	to_remove = []
-	# 	for i in range(len(s2)):
-	# 		if s2[i] not in s1:
-	# 			to_remove.append(s2[i])
-	# 			count += 1
-	# 	for i in range(len(to_remove)):
-	# 		s2.remove(to_remove[i])
-	# 	return 1./(1+count)
 
 	def ruleSimilarity(self, cx, cy):
 		#Looks at rules in which cx participated in as slot 1, compares them to rules in which
@@ -1135,6 +1138,17 @@ class Game(object):
 		s = SpriteParser()
 		return s.parseGame(self.vgdlString)
 
+	def posterior(self):
+		#TODO: Consider allowing some amount of probability mass to uninstantiated hypotheses
+		#The problem with this is it's not clear what the content of those hypotheses,
+		#so it's unclear what you'd do with this new distribution.
+		if len(self.hypothesisSpace)>0:
+			z = 1.*sum([t.prior() for t in self.hypothesisSpace])
+			for t in self.hypothesisSpace:
+				t.posterior = t.prior()/z
+			return [t.posterior for t in self.hypothesisSpace]
+		else:
+			print "Empty hypothesis space; can't give you a posterior."
 	def entropy(self, theory):
 		entropySum = 0
 		numSpritesInClasses = float(sum([1 for c in theory.classes for i in c]))
@@ -1160,14 +1174,15 @@ class Game(object):
 
 		if verbose:
 			print "\nStart hyp space length:", len(self.hypothesisSpace)
-
+			print "running induction on theory"
+			theory.display()
 		# If still have time to generate more theories
 		if len(self.hypothesisSpace) - 1 < maxNumTheories:
 			ts_index = theory.depth
 			
 			if verbose:
 				print "Current theory depth: ", ts_index
-			
+				print "Explaining event", timesteps[ts_index].events
 			newTheories = theory.explainTimeStep(timesteps[ts_index], timesteps[ts_index])
 			self.nodes_generated += len(newTheories)
 			if verbose:
@@ -1209,11 +1224,14 @@ class Game(object):
 				
 				if verbose:
 					print "New theories that passed likelihood tests: ", len(newTheories)
+					for t in newTheories:
+						t.display()
 					print "Nodes created: {}. Nodes eliminated: {}. Nodes accepted: {}".format(self.nodes_generated, self.nodes_eliminated, self.nodes_accepted)
 				
 				for t in newTheories:
 					t.dryingPaint = set()
 				
+				# embed()
 				print
 				[self.DFSinduction(t, timesteps, maxNumTheories, verbose) for t in newTheories]
 
@@ -1224,6 +1242,7 @@ class Game(object):
 		"""
 
 		start = time.time()
+
 		timesteps, result = trace
 		temp_new_trace = ([timesteps[0]], None) # Just to run regular induction on first timestep
 

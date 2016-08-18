@@ -31,6 +31,7 @@ LIGHTGREEN = (50, 250, 50)
 LIGHTGRAY = (150, 150, 150)
 DARKGRAY = (30, 30, 30)
 DARKBLUE = (20, 20, 100)
+PURPLE = (140, 20, 140)
 
 UP = (0, -1)
 DOWN = (0, 1)
@@ -121,7 +122,7 @@ class NoFrictionPhysics(ContinuousPhysics):
     friction = 0
 
 class GravityPhysics(ContinuousPhysics):
-    gravity = 0.5
+    gravity = 0.8
 
 
 # ---------------------------------------------------------------------
