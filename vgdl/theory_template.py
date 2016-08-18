@@ -658,7 +658,8 @@ class Theory(object):
 
 	def findRelatedRules(self, classPair, interactionList):
 		#needs to take a list of interpretations or a list of interaction rules
-		return [interaction for interaction in interactionList if classPair == interaction.asTuple()[1:]]
+		#Note: PT changed this on 8/19; weird that we hadn't caught the bug before -- was checking interaction.asTuple()[1:].
+		return [interaction for interaction in interactionList if classPair == interaction.asTuple()[1:3]]
 	
 	def negatePreconditions(self, unfulfilledPredictions):
 		"""
@@ -889,6 +890,12 @@ class Theory(object):
 
 	def predict(self, pair, lamda, tree, beta=1.,softmaxTemp=.1):
 		
+		predicateList = ['killSprite', 'cloneSprite', 'stepBack', 'transformTo', 'undoAll',
+		'bounceForward', 'conveySprite', 'windGust', 'slipForward', 'attractGaze', 'turnAround',
+		'reverseDirection', 'flipDirection', 'bounceDirection', 'wallBounce', 'wallStop',
+		'killIfSlow', 'killIfFromAbove', 'killIfAlive', 'collectResource', 'killIfHasMore',
+		'killIfOtherHasMore', 'killIfHasLess', 'killIfOtherHasLess', 'wrapAround',
+		'pullWithIt', 'teleportToExit']
 
 		print ""
 		print "predicting interactions for {} with parameters:".format(pair)
@@ -901,8 +908,20 @@ class Theory(object):
 
 		print 'making predictions for', pair[0], pair[1]
 
+
+
+		knownRules = [rc for rc in self.findRuleClusters() if rc.pairs==pair]
+		if len(knownRules)>0:
+			#findRuleClusters will only return a single element if it works. It's a cluster, and contains all the matching rules.
+			knownRules = knownRules[0].clusteredRules 
+			restOfRules = [p for p in predicateList if p not in [k[0] for k in knownRules]]
+			
+			knownRules = [[k, 1.] for k in knownRules]
+			allRules = knownRules + [[r, 0.] for r in restOfRules]
+
+			return allRules
 		extrapolatedRules = [[r[0], r[1]*lamda] for r in self.extrapolateRule(pair, tree, beta)]
-		guessedRules = [[r[0], r[1]*(1-lamda)] for r in self.guessRule()]
+		guessedRules = [[r[0], r[1]*(1-lamda)] for r in self.guessRule(predicateList)]
 		
 		allRules = extrapolatedRules + guessedRules
 		scores = softmax([r[1] for r in allRules], softmaxTemp)
@@ -924,22 +943,17 @@ class Theory(object):
 		mergedRules = [[m[0].clusteredRules, m[1]] for m in mergedRules]
 		outList = mergedRules + outList[len(extrapolatedRules)+1:]
 		
-		for o in outList:
-			print o
+		# for o in outList:
+		# 	print o
 		return outList
 
-	def guessRule(self):
+	def guessRule(self, predicateList):
 		#Currently returns interactions (no preconditions, and not in the form of interactionRules)
 		#TODO: changeResource, spawnifHasMore require another argument. Add these and figure out how
 		#to pass those args. Maybe this is best done in the step that creates interactionRules
 		#in predict(). Also decide how to deal with values of optional args. Right now you'll
 		#just make predictions based on default args.
-		predicateList = ['killSprite', 'cloneSprite', 'stepBack', 'transformTo', 'undoAll',
-		'bounceForward', 'conveySprite', 'windGust', 'slipForward', 'attractGaze', 'turnAround',
-		'reverseDirection', 'flipDirection', 'bounceDirection', 'wallBounce', 'wallStop',
-		'killIfSlow', 'killIfFromAbove', 'killIfAlive', 'collectResource', 'killIfHasMore',
-		'killIfOtherHasMore', 'killIfHasLess', 'killIfOtherHasLess', 'wrapAround',
-		'pullWithIt', 'teleportToExit']
+
 		remainingPredicates = list(set(predicateList)-set([rule.interaction for rule in self.interactionSet]))
 		scores = [1./len(remainingPredicates)]*len(remainingPredicates)
 		return zip(remainingPredicates, scores)
@@ -982,7 +996,7 @@ class Theory(object):
 	    if len(target) == 0:
 	        return len(source)
 
-	    print 'source', source
+	    # print 'source', source
 	    # We call tuple() to force strings to be used as sequences
 	    # ('c', 'a', 't', 's') - numpy uses them as values by default.
 	    source = np.array(tuple(source))
@@ -1043,11 +1057,6 @@ class Theory(object):
 		cySlot2 = [(r.interaction, r.slot1, r.preconditions) for r in self.interactionSet 
 		if r.slot2==cy]
 
-		print 'classes', cx, cy
-		print 'cxslot1', cxSlot1
-		print 'cyslot1', cySlot1
-		print 'cxSlot2', cxSlot2
-		print 'cySlot2', cySlot2
 		return .5*self.levenshtein(cxSlot1, cySlot1) + .5*self.levenshtein(cxSlot2, cySlot2)
 	
 	def pairSimilarity(self, pair1, pair2, tree, beta=1.):

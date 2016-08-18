@@ -45,23 +45,4 @@ if __name__ == "__main__":
     game, hypotheses = runInduction_DFS(vgdlString, output_tuple)
     embed()
 
-t = hypotheses[0]
-cx='c1'
-cy='c1'
-self=t
-cxSlot1 = [(r.interaction, r.slot2, r.preconditions) for r in self.interactionSet 
-if r.slot1==cx]
-cySlot1 = [(r.interaction, r.slot2, r.preconditions) for r in self.interactionSet 
-if r.slot1==cy]
-
-cxSlot2 = [(r.interaction, r.slot1, r.preconditions) for r in self.interactionSet 
-if r.slot2==cx]
-cySlot2 = [(r.interaction, r.slot1, r.preconditions) for r in self.interactionSet 
-if r.slot2==cy]
-
-b = ['1','2','3','4','5']
-a = ['1','2','3','4','5']
-
-self.levenshteinDistance(cxSlot1,cySlot1)
-
 
