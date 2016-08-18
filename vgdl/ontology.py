@@ -9,6 +9,7 @@ from math import sqrt
 import pygame
 from tools import triPoints, unitVector, vectNorm, oncePerStep
 from ai import AStarWorld
+from IPython import embed
 
 # ---------------------------------------------------------------------
 #     Constants
@@ -740,19 +741,32 @@ class MultiSpriteCounter(Termination):
         else:
             return False, None
 
+# ---------------------------------------------------------------------
+#     Helper functions
+# ---------------------------------------------------------------------
+def getColor(sprite):
+    try:
+        color_tuple = str( sprite.color)
+        try: 
+            return colorDict[color_tuple]
+        except KeyError:
+            return color_tuple
+
+    except AttributeError:
+        return None
 
 # ---------------------------------------------------------------------
 #     Effect types (invoked after an event).
 # ---------------------------------------------------------------------
-def killSprite(sprite, partner, game):
+def killSprite(sprite, partner, game): ## FLAG
     """ Kill command """
     game.kill_list.append(sprite)
     if not None in {sprite, partner}:
-        sprite_info = colorDict[str(sprite.color)]
+        # sprite_info = colorDict[str(sprite.color)]
         print partner.color
         print sprite.color
-        partner_info = colorDict[str(partner.color)]
-        return ("killSprite",partner_info,sprite_info) # partner = agent, sprite = what's being killed
+        # partner_info = colorDict[str(partner.color)]
+        return ("killSprite",getColor(sprite),getColor(partner)) # partner = agent, sprite = what's being killed
 
 
 def cloneSprite(sprite, partner, game):
@@ -760,17 +774,21 @@ def cloneSprite(sprite, partner, game):
 
 def transformTo(sprite, partner, game, stype='wall'):
     newones = game._createSprite([stype], (sprite.rect.left, sprite.rect.top))
+    # sprite_info = colorDict[str(sprite.color)]
+    # partner_info = colorDict[str(partner.color)]
     if len(newones) > 0:
         if isinstance(sprite, OrientedSprite) and isinstance(newones[0], OrientedSprite):
             newones[0].orientation = sprite.orientation
         killSprite(sprite, partner, game)
 
-def stepBack(sprite, partner, game):
+    # return ("transformTo",sprite_info,partner_info)
+    return ("transformTo",getColor(sprite),getColor(partner))
+
+def stepBack(sprite, partner, game): 
     """ Revert last move. """
     sprite.rect = sprite.lastrect
-    sprite_info = colorDict[str(sprite.color)]
-    partner_info = colorDict[str(partner.color)]
-    return ("stepBack",sprite_info,partner_info)
+    # sprite_info = colorDict[str(sprite.color)]
+    return ("stepBack",getColor(sprite),getColor(partner))
 
 def undoAll(sprite, partner, game):
     """ Revert last moves of all sprites. """
@@ -778,13 +796,19 @@ def undoAll(sprite, partner, game):
     print 
     for s in game:
         s.rect = s.lastrect
-    return ('undoAll', colorDict[str(sprite.color)], colorDict[str(partner.color)])
 
-def bounceForward(sprite, partner, game):
+    return ('undoAll', getColor(sprite),getColor(partner))
+
+def bounceForward(sprite, partner, game): # FLAG
     """ The partner sprite pushed, so if possible move in the opposite direction. """
+    # print "in beginning of bounceForward"
+    # embed()
     sprite.physics.activeMovement(sprite, unitVector(partner.lastdirection))
     game._updateCollisionDict(sprite)
-    return ('bounceForward', colorDict[str(partner.color)], colorDict[str(sprite.color)])
+    # print "in second part of bounceForward"
+    # embed()
+    # return ('bounceForward', colorDict[str(partner.color)], colorDict[str(sprite.color)])
+    return ('bounceForward', getColor(sprite), getColor(partner))
 
 
 def conveySprite(sprite, partner, game):
@@ -794,6 +818,8 @@ def conveySprite(sprite, partner, game):
     sprite.physics.activeMovement(sprite, v, speed=partner.strength)
     sprite.lastrect = tmp
     game._updateCollisionDict(sprite)
+    # return ('conveySprite', colorDict[str(sprite.color)], colorDict[str(partner.color)])
+    return ('conveySprite', getColor(sprite), getColor(partner))
 
 def windGust(sprite, partner, game):
     """ Moves the partner in target direction by some step size, but stochastically
@@ -805,6 +831,8 @@ def windGust(sprite, partner, game):
         sprite.physics.activeMovement(sprite, v, speed=s)
         sprite.lastrect = tmp
         game._updateCollisionDict(sprite)
+        # return ("windGust", colorDict[str(sprite.color)], colorDict[str(partner.color)])
+        return ('windGust',getColor(sprite),getColor(partner))
 
 def slipForward(sprite, partner, game, prob=0.5):
     """ Slip forward in the direction of the current orientation, sometimes."""
@@ -814,11 +842,15 @@ def slipForward(sprite, partner, game, prob=0.5):
         sprite.physics.activeMovement(sprite, v, speed=1)
         sprite.lastrect = tmp
         game._updateCollisionDict(sprite)
+        # return ("slipForward" , colorDict[str(sprite.color)], colorDict[str(partner.color)])
+        return ('slipForward', getColor(sprite), getColor(partner))
 
 def attractGaze(sprite, partner, game, prob=0.5):
     """ Turn the orientation to the value given by the partner. """
     if prob > random():
         sprite.orientation = partner.orientation
+        # return ("attractGaze" , colorDict[str(sprite.color)], colorDict[str(partner.color)])
+        return ('attractGaze', getColor(sprite), getColor(partner))
 
 def turnAround(sprite, partner, game):
     sprite.rect = sprite.lastrect
@@ -828,17 +860,20 @@ def turnAround(sprite, partner, game):
     sprite.physics.activeMovement(sprite, DOWN)
     reverseDirection(sprite, partner, game)
     game._updateCollisionDict(sprite)
+    return ('turnAround', getColor(sprite), getColor(partner))
 
-def reverseDirection(sprite, partner, game):
+def reverseDirection(sprite, partner, game): # FLAG
     sprite.orientation = (-sprite.orientation[0], -sprite.orientation[1])
-    return ('reverseDirection', colorDict[str(partner.color)], colorDict[str(sprite.color)])
+
+    return ('reverseDirection', getColor(sprite), getColor(partner))
 
 
-def flipDirection(sprite, partner, game):
+def flipDirection(sprite, partner, game): # FLAG
     sprite.orientation = choice(BASEDIRS)
-    return ('flipDirection', colorDict[str(partner.color)], colorDict[str(sprite.color)])
 
-def bounceDirection(sprite, partner, game, friction=0):
+    return ('flipDirection' , getColor(sprite), getColor(partner))
+
+def bounceDirection(sprite, partner, game, friction=0): # FLAG
     """ The centers of the objects determine the direction"""
     stepBack(sprite, partner, game)
     inc = sprite.orientation
@@ -847,9 +882,10 @@ def bounceDirection(sprite, partner, game, friction=0):
     dp = snorm[0] * inc[0] + snorm[1] * inc[1]
     sprite.orientation = (-2 * dp * snorm[0] + inc[0], -2 * dp * snorm[1] + inc[1])
     sprite.speed *= (1. - friction)
-    return ('bounceDirection', colorDict[str(partner.color)], colorDict[str(sprite.color)])
+    return ('bounceDirection' , getColor(sprite), getColor(partner))
 
-def wallBounce(sprite, partner, game, friction=0):
+
+def wallBounce(sprite, partner, game, friction=0): # FLAG
     """ Bounce off orthogonally to the wall. """
     if not oncePerStep(sprite, game, 'lastbounce'):
         return
@@ -861,7 +897,9 @@ def wallBounce(sprite, partner, game, friction=0):
         sprite.orientation = (sprite.orientation[0], -sprite.orientation[1])
     return ('wallBounce', colorDict[str(partner.color)], colorDict[str(sprite.color)])
 
-def wallStop(sprite, partner, game, friction=0):
+    return ('wallBounce' , getColor(sprite), getColor(partner))
+
+def wallStop(sprite, partner, game, friction=0): # FLAG
     """ Stop just in front of the wall, removing that velocity component,
     but possibly sliding along it. """
     if not oncePerStep(sprite, game, 'laststop'):
@@ -873,7 +911,7 @@ def wallStop(sprite, partner, game, friction=0):
         sprite.orientation = (sprite.orientation[0] * (1. - friction), 0)
     sprite.speed = vectNorm(sprite.orientation) * sprite.speed
     sprite.orientation = unitVector(sprite.orientation)
-    return ('wallStop', colorDict[str(partner.color)], colorDict[str(sprite.color)])
+    return ('wallStop' , getColor(sprite), getColor(partner))
 
 def killIfSlow(sprite, partner, game, limitspeed=1):
     """ Take a decision based on relative speed. """
@@ -885,27 +923,31 @@ def killIfSlow(sprite, partner, game, limitspeed=1):
         relspeed = vectNorm((sprite._velocity()[0] - partner._velocity()[0],
                              sprite._velocity()[1] - partner._velocity()[1]))
     if relspeed < limitspeed:
-        killSprite(sprite, partner, game)
+        return killSprite(sprite, partner, game)
+        # return ('killIfSlow' , getColor(sprite), getColor(partner))
 
 
 def killIfFromAbove(sprite, partner, game):
     """ Kills the sprite, only if the other one is higher and moving down. """
     if (sprite.lastrect.top > partner.lastrect.top
         and partner.rect.top > partner.lastrect.top):
-        killSprite(sprite, partner, game)
+        return killSprite(sprite, partner, game)
+        # return ('killIfFromAbove' , getColor(sprite), getColor(partner))
 
 def killIfAlive(sprite, partner, game):
     """ Perform the killing action, only if no previous collision effect has removed the partner. """
     if partner not in game.kill_list:
-        killSprite(sprite, partner, game)
+        return killSprite(sprite, partner, game)
+        # return ('killIfAlive' , getColor(sprite), getColor(partner))
 
-def collectResource(sprite, partner, game):
+def collectResource(sprite, partner, game): # FLAG
     """ Adds/increments the resource type of sprite in partner """
     assert isinstance(sprite, Resource)
     r = sprite.resourceType
     partner.resources[r] = max(-1, min(partner.resources[r]+sprite.value, game.resources_limits[r]))
     #print 'Collected ', colorDict[str(sprite.color)]#partner.resources[r]
-    return ('collectResource', colorDict[str(partner.color)], colorDict[str(sprite.color)])
+    # return ('collectResource', colorDict[str(partner.color)], colorDict[str(sprite.color)])
+    return ('collectResource' , getColor(sprite), getColor(partner))
 
 def changeResource(sprite, partner, resourceColor, game, resource, value=1):
     """ Increments a specific resource type in sprite """
@@ -914,32 +956,38 @@ def changeResource(sprite, partner, resourceColor, game, resource, value=1):
     #print 'Changed ', colorDict[str(partner.color)]
 
     # NOTE: partner is the color of the resource (see _eventHandling() in core.py)
-    return ('changeResource', colorDict[str(sprite.color)], colorDict[str(partner.color)], resource, value)
+    # return ('changeResource', colorDict[str(sprite.color)], colorDict[str(partner.color)], resource, value)
+    return ('changeResource' , getColor(sprite), getColor(partner))
 
 def spawnIfHasMore(sprite, partner, game, resource, stype, limit=1):
     """ If 'sprite' has more than a limit of the resource type given, it spawns a sprite of 'stype'. """
     if sprite.resources[resource] >= limit:
         game._createSprite([stype], (sprite.rect.left, sprite.rect.top))
+        return ('spawnIfHasMore', getColor(sprite), getColor(partner)) ### NOTE - there is no default 'spawn' function we could return instead, but we should then make one
 
 def killIfHasMore(sprite, partner, game, resource, limit=1):
     """ If 'sprite' has more than a limit of the resource type given, it dies. """
     if sprite.resources[resource] >= limit:
-        killSprite(sprite, partner, game)
+        return killSprite(sprite, partner, game)
+        # return ('killIfHasMore' , getColor(sprite), getColor(partner))
 
 def killIfOtherHasMore(sprite, partner, game, resource, limit=1):
     """ If 'partner' has more than a limit of the resource type given, sprite dies. """
     if partner.resources[resource] >= limit:
-        killSprite(sprite, partner, game)
+        return killSprite(sprite, partner, game)
+        # return ('killIfOtherHasMore' , getColor(sprite), getColor(partner))
 
 def killIfHasLess(sprite, partner, game, resource, limit=1):
     """ If 'sprite' has less than a limit of the resource type given, it dies. """
     if sprite.resources[resource] <= limit:
-        killSprite(sprite, partner, game)
+        return killSprite(sprite, partner, game)
+        # return ('killIfHasLess' , getColor(sprite), getColor(partner))
 
 def killIfOtherHasLess(sprite, partner, game, resource, limit=1):
     """ If 'partner' has less than a limit of the resource type given, sprite dies. """
     if partner.resources[resource] <= limit:
-        killSprite(sprite, partner, game)
+        return killSprite(sprite, partner, game)
+        # return ('killIfOtherHasLess' , getColor(sprite), getColor(partner))
 
 def wrapAround(sprite, partner, game, offset=0):
     """ Move to the edge of the screen in the direction the sprite is coming from.
@@ -953,6 +1001,7 @@ def wrapAround(sprite, partner, game, offset=0):
     elif sprite.orientation[1] < 0:
         sprite.rect.top = game.screensize[1] - sprite.rect.size[1] * (1 + offset)
     sprite.lastmove = 0
+    return ('wrapAround' , getColor(sprite), getColor(partner))
 
 def pullWithIt(sprite, partner, game):
     """ The partner sprite adds its movement to the sprite's. """
@@ -965,11 +1014,13 @@ def pullWithIt(sprite, partner, game):
         sprite.speed = partner.speed
         sprite.orientation = partner.lastdirection
     sprite.lastrect = tmp
+    return ('pullWithIt' , getColor(sprite), getColor(partner))
 
 def teleportToExit(sprite, partner, game):
     e = choice(game.sprite_groups[partner.stype])
     sprite.rect = e.rect
     sprite.lastmove = 0
+    return ('teleportToExit' , getColor(sprite), getColor(partner))
 
 # this allows us to determine whether the game has stochastic elements or not
 stochastic_effects = [teleportToExit, windGust, slipForward, attractGaze, flipDirection]
