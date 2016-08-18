@@ -241,6 +241,7 @@ class Theory(object):
 		self.inModification = {}
 
 		self.posterior = False
+
 	def initializeSpriteSet(self, vgdlSpriteParse):
 		self.spriteSet = vgdlSpriteParse
 
@@ -887,12 +888,18 @@ class Theory(object):
 		return ruleClusters
 
 	def predict(self, pair, lamda, tree, beta=1.,softmaxTemp=.1):
+		
+
 		print ""
 		print "predicting interactions for {} with parameters:".format(pair)
 		print "lambda = {}. beta = {}. tree = {}. softmax temp = {}".format(lamda, beta, tree.name, softmaxTemp)
 		print "(lambda: extrapolation (1) vs. guess (0) balance)"
 		print "(beta: ontology (1) vs. rule-similarity (0) balance)"
 		print ""
+
+		pair = (self.getClassFromColor(pair[0]), self.getClassFromColor(pair[1]))
+
+		print 'making predictions for', pair[0], pair[1]
 
 		extrapolatedRules = [[r[0], r[1]*lamda] for r in self.extrapolateRule(pair, tree, beta)]
 		guessedRules = [[r[0], r[1]*(1-lamda)] for r in self.guessRule()]
@@ -975,15 +982,15 @@ class Theory(object):
 	    if len(target) == 0:
 	        return len(source)
 
+	    print 'source', source
 	    # We call tuple() to force strings to be used as sequences
 	    # ('c', 'a', 't', 's') - numpy uses them as values by default.
 	    source = np.array(tuple(source))
 	    target = np.array(tuple(target))
-
 	    # We use a dynamic programming algorithm, but with the
 	    # added optimization that we only need the last two rows
 	    # of the matrix.
-	    previous_row = np.arange(target.size + 1)
+	    previous_row = np.arange(len(target) + 1)
 	    for s in source:
 	        # Insertion (target grows longer than source):
 	        current_row = previous_row + 1
@@ -991,9 +998,10 @@ class Theory(object):
 	        # Substitution or matching:
 	        # Target and source items are aligned, and either
 	        # are different (cost of 1), or are the same (cost of 0).
+
 	        current_row[1:] = np.minimum(
 	                current_row[1:],
-	                np.add(previous_row[:-1], target != s))
+	               	np.add(previous_row[:-1], [(t!=s).any() for t in target]))
 
 	        # Deletion (target grows shorter than source):
 	        current_row[1:] = np.minimum(
@@ -1003,6 +1011,23 @@ class Theory(object):
 	        previous_row = current_row
 
 	    return previous_row[-1]  
+
+	def levenshtein2(self, s1, s2):
+		#Levenshtein (edit) distance. additions and deletions cost the same. No replacements.
+		count = 0
+		s1, s2 = list(s1), list(s2)
+		for i in range(len(s1)):
+			if s1[i] not in s2:
+				s2.append(s1[i])
+				count += 1
+		to_remove = []
+		for i in range(len(s2)):
+			if s2[i] not in s1:
+				to_remove.append(s2[i])
+				count += 1
+		for i in range(len(to_remove)):
+			s2.remove(to_remove[i])
+		return 1./(1+count)
 
 	def ruleSimilarity(self, cx, cy):
 		#Looks at rules in which cx participated in as slot 1, compares them to rules in which
@@ -1018,6 +1043,11 @@ class Theory(object):
 		cySlot2 = [(r.interaction, r.slot1, r.preconditions) for r in self.interactionSet 
 		if r.slot2==cy]
 
+		print 'classes', cx, cy
+		print 'cxslot1', cxSlot1
+		print 'cyslot1', cySlot1
+		print 'cxSlot2', cxSlot2
+		print 'cySlot2', cySlot2
 		return .5*self.levenshtein(cxSlot1, cySlot1) + .5*self.levenshtein(cxSlot2, cySlot2)
 	
 	def pairSimilarity(self, pair1, pair2, tree, beta=1.):
@@ -1046,6 +1076,11 @@ class Theory(object):
 			text = item+">"+str(n)
 			concepts.append((text,item,n))
 		return concepts 					# TODO: Should this return functions and text? (text, function) tuples?
+
+	def getClassFromColor(self, color):
+		for c in self.classes:
+			if color in [cl.color for cl in self.classes[c]]:
+				return c
 
 	def displayRules(self):
 		print ""
