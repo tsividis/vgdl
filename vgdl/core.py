@@ -10,6 +10,7 @@ from tools import Node, indentTreeParser
 from collections import defaultdict
 from vgdl.tools import roundedPoints
 import os
+import datetime
 import uuid
 import subprocess
 import glob
@@ -595,8 +596,8 @@ class BasicGame(object):
         name = m.group(1)
         gamelog = "{}.log".format(name)
         #logging.basicConfig(filename=gamelog, level=logging.INFO)
-
-        game_output = "output/{}.txt".format(name)
+        timestamp = datetime.datetime.strftime(datetime.datetime.now(), '%Y_%m_%d_%H_%M_%S')
+        game_output = "output/{}_{}.txt".format(name, timestamp)
 
 
         # --------- Game-play ------------
@@ -624,7 +625,8 @@ class BasicGame(object):
                     lastKeyPress = self.keystate
                     if lastKeyPress.index(1) in keyPresses.keys():
                         keyPressType = keyPresses[lastKeyPress.index(1)]
-                        #print keyPressType
+                        # print keyPressType
+
 
                 lastKeyPressTime = self.time
 
@@ -657,7 +659,7 @@ class BasicGame(object):
 
             if effectList:
                 event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList, 'gameState': self.getFullStateColorized()}
-                #print event
+                # print event
                 finalEventList.append(event)
 
             # Termination #1
@@ -721,7 +723,7 @@ class BasicGame(object):
             self.win = False
             print "Game lost. Score=%s" % self.score
 
-        ipdb.set_trace()
+        # ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(50)

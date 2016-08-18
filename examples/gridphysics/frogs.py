@@ -7,6 +7,7 @@ Logs spawn randomly, but trucks wrap around the screen and come back.
 '''
 
 frog_level = """
+
 wwwwwwwwwwwwwwwwwwwwwwwwwwww
 w           wGw            w
 w00==000000===0000=====000=2
@@ -15,18 +16,18 @@ w00===000===000====0000===02
 www   ww   www    www  wwwww
 w   ----   ---   -  ----   w
 w-     xxx       xxx    xx w
-t -   ---     -   ---- --  w
+w -   ---     -   ---- --  w
 w       A                  w
 wwwwwwwwwwwwwwwwwwwwwwwwwwww
+
 """
 
 
 frog_game = """
+
 BasicGame
     SpriteSet
         forest > SpawnPoint stype=log prob=0.4  cooldown=10
-        fasttruckdepot > SpawnPoint stype=fasttruck prob=0.05 cooldown=10
-        slowtruckdepot > SpawnPoint stype=slowtruck prob=0.4 cooldown=10
         structure > Immovable
             water > color=BLUE
             goal  > color=GREEN
@@ -36,19 +37,18 @@ BasicGame
             fasttruck  > speed=0.2  color=ORANGE
             slowtruck  > speed=0.1  color=RED
         # defining 'wall' last, makes the walls show on top of all other sprites
-        wall > Immovable color=BLACK               
+        wall > Immovable color=BLACK           
         
     InteractionSet
         goal avatar  > killSprite
         avatar log   > changeResource resource=safety value=2
         avatar log   > pullWithIt   # note how one collision can have multiple effects
-        avatar water > changeResource resource=safety value=-1
         avatar wall  > stepBack
         avatar water > killIfHasLess  resource=safety limit=0
+        avatar water > changeResource resource=safety value=-1
         avatar truck > killSprite
-        slowtruck fasttruck > killSprite
         log    EOS   > killSprite
-        truck  EOS   > killSprite
+        truck  EOS   > wrapAround
     
     TerminationSet
         SpriteCounter stype=goal   limit=0 win=True
@@ -62,8 +62,6 @@ BasicGame
         - > slowtruck
         x > fasttruck
         = > log water
-        t > fasttruckdepot slowtruckdepot wall
-
 """
 
 if __name__ == "__main__":
