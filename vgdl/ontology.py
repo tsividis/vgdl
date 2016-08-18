@@ -863,20 +863,14 @@ def turnAround(sprite, partner, game):
 
 def reverseDirection(sprite, partner, game): # FLAG
     sprite.orientation = (-sprite.orientation[0], -sprite.orientation[1])
-<<<<<<< HEAD
-    return ('reverseDirection', getColor(sprite), getColor(partner))
-=======
-    return ('reverseDirection', colorDict[str(partner.color)], colorDict[str(sprite.color)])
 
->>>>>>> 25079c41c3cc421148b37b8d6610f847155a8202
+    return ('reverseDirection', getColor(sprite), getColor(partner))
+
 
 def flipDirection(sprite, partner, game): # FLAG
     sprite.orientation = choice(BASEDIRS)
-<<<<<<< HEAD
+
     return ('flipDirection' , getColor(sprite), getColor(partner))
-=======
-    return ('flipDirection', colorDict[str(partner.color)], colorDict[str(sprite.color)])
->>>>>>> 25079c41c3cc421148b37b8d6610f847155a8202
 
 def bounceDirection(sprite, partner, game, friction=0): # FLAG
     """ The centers of the objects determine the direction"""
@@ -887,11 +881,8 @@ def bounceDirection(sprite, partner, game, friction=0): # FLAG
     dp = snorm[0] * inc[0] + snorm[1] * inc[1]
     sprite.orientation = (-2 * dp * snorm[0] + inc[0], -2 * dp * snorm[1] + inc[1])
     sprite.speed *= (1. - friction)
-<<<<<<< HEAD
     return ('bounceDirection' , getColor(sprite), getColor(partner))
-=======
-    return ('bounceDirection', colorDict[str(partner.color)], colorDict[str(sprite.color)])
->>>>>>> 25079c41c3cc421148b37b8d6610f847155a8202
+
 
 def wallBounce(sprite, partner, game, friction=0): # FLAG
     """ Bounce off orthogonally to the wall. """
@@ -919,11 +910,7 @@ def wallStop(sprite, partner, game, friction=0): # FLAG
         sprite.orientation = (sprite.orientation[0] * (1. - friction), 0)
     sprite.speed = vectNorm(sprite.orientation) * sprite.speed
     sprite.orientation = unitVector(sprite.orientation)
-<<<<<<< HEAD
     return ('wallStop' , getColor(sprite), getColor(partner))
-=======
-    return ('wallStop', colorDict[str(partner.color)], colorDict[str(sprite.color)])
->>>>>>> 25079c41c3cc421148b37b8d6610f847155a8202
 
 def killIfSlow(sprite, partner, game, limitspeed=1):
     """ Take a decision based on relative speed. """
