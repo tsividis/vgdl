@@ -897,7 +897,7 @@ def wallBounce(sprite, partner, game, friction=0): # FLAG
         sprite.orientation = (sprite.orientation[0], -sprite.orientation[1])
     return ('wallBounce', colorDict[str(partner.color)], colorDict[str(sprite.color)])
 
-    return ('wallBounce' , getColor(sprite), getColor(partner))
+    return ('wallBounce' , getColor(sprite), getColor   (partner))
 
 def wallStop(sprite, partner, game, friction=0): # FLAG
     """ Stop just in front of the wall, removing that velocity component,
