@@ -895,9 +895,10 @@ def wallBounce(sprite, partner, game, friction=0): # FLAG
         sprite.orientation = (-sprite.orientation[0], sprite.orientation[1])
     else:
         sprite.orientation = (sprite.orientation[0], -sprite.orientation[1])
-    return ('wallBounce', colorDict[str(partner.color)], colorDict[str(sprite.color)])
+    # return ('wallBounce', colorDict[str(partner.color)], colorDict[str(sprite.color)])
 
-    return ('wallBounce' , getColor(sprite), getColor   (partner))
+    # return ('wallBounce' , getColor(sprite), getColor   (partner))
+    return ('wallBounce' , getColor(sprite), getColor(partner))
 
 def wallStop(sprite, partner, game, friction=0): # FLAG
     """ Stop just in front of the wall, removing that velocity component,
@@ -911,7 +912,7 @@ def wallStop(sprite, partner, game, friction=0): # FLAG
         sprite.orientation = (sprite.orientation[0] * (1. - friction), 0)
     sprite.speed = vectNorm(sprite.orientation) * sprite.speed
     sprite.orientation = unitVector(sprite.orientation)
-    return ('wallStop' , getColor(sprite), getColor(partner))
+    # return ('wallStop' , getColor(sprite), getColor(partner))
 
 def killIfSlow(sprite, partner, game, limitspeed=1):
     """ Take a decision based on relative speed. """
@@ -923,7 +924,7 @@ def killIfSlow(sprite, partner, game, limitspeed=1):
         relspeed = vectNorm((sprite._velocity()[0] - partner._velocity()[0],
                              sprite._velocity()[1] - partner._velocity()[1]))
     if relspeed < limitspeed:
-        return killSprite(sprite, partner, game)
+        killSprite(sprite, partner, game)
         # return ('killIfSlow' , getColor(sprite), getColor(partner))
 
 
@@ -931,13 +932,13 @@ def killIfFromAbove(sprite, partner, game):
     """ Kills the sprite, only if the other one is higher and moving down. """
     if (sprite.lastrect.top > partner.lastrect.top
         and partner.rect.top > partner.lastrect.top):
-        return killSprite(sprite, partner, game)
+        killSprite(sprite, partner, game)
         # return ('killIfFromAbove' , getColor(sprite), getColor(partner))
 
 def killIfAlive(sprite, partner, game):
     """ Perform the killing action, only if no previous collision effect has removed the partner. """
     if partner not in game.kill_list:
-        return killSprite(sprite, partner, game)
+        killSprite(sprite, partner, game)
         # return ('killIfAlive' , getColor(sprite), getColor(partner))
 
 def collectResource(sprite, partner, game): # FLAG
@@ -968,25 +969,25 @@ def spawnIfHasMore(sprite, partner, game, resource, stype, limit=1):
 def killIfHasMore(sprite, partner, game, resource, limit=1):
     """ If 'sprite' has more than a limit of the resource type given, it dies. """
     if sprite.resources[resource] >= limit:
-        return killSprite(sprite, partner, game)
+        killSprite(sprite, partner, game)
         # return ('killIfHasMore' , getColor(sprite), getColor(partner))
 
 def killIfOtherHasMore(sprite, partner, game, resource, limit=1):
     """ If 'partner' has more than a limit of the resource type given, sprite dies. """
     if partner.resources[resource] >= limit:
-        return killSprite(sprite, partner, game)
+        killSprite(sprite, partner, game)
         # return ('killIfOtherHasMore' , getColor(sprite), getColor(partner))
 
 def killIfHasLess(sprite, partner, game, resource, limit=1):
     """ If 'sprite' has less than a limit of the resource type given, it dies. """
     if sprite.resources[resource] <= limit:
-        return killSprite(sprite, partner, game)
+        killSprite(sprite, partner, game)
         # return ('killIfHasLess' , getColor(sprite), getColor(partner))
 
 def killIfOtherHasLess(sprite, partner, game, resource, limit=1):
     """ If 'partner' has less than a limit of the resource type given, sprite dies. """
     if partner.resources[resource] <= limit:
-        return killSprite(sprite, partner, game)
+        killSprite(sprite, partner, game)
         # return ('killIfOtherHasLess' , getColor(sprite), getColor(partner))
 
 def wrapAround(sprite, partner, game, offset=0):
@@ -1001,7 +1002,7 @@ def wrapAround(sprite, partner, game, offset=0):
     elif sprite.orientation[1] < 0:
         sprite.rect.top = game.screensize[1] - sprite.rect.size[1] * (1 + offset)
     sprite.lastmove = 0
-    return ('wrapAround' , getColor(sprite), getColor(partner))
+    # return ('wrapAround' , getColor(sprite), getColor(partner))
 
 def pullWithIt(sprite, partner, game):
     """ The partner sprite adds its movement to the sprite's. """
@@ -1014,7 +1015,7 @@ def pullWithIt(sprite, partner, game):
         sprite.speed = partner.speed
         sprite.orientation = partner.lastdirection
     sprite.lastrect = tmp
-    return ('pullWithIt' , getColor(sprite), getColor(partner))
+    # return ('pullWithIt' , getColor(sprite), getColor(partner))
 
 def teleportToExit(sprite, partner, game):
     e = choice(game.sprite_groups[partner.stype])
