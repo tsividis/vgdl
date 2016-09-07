@@ -15,14 +15,14 @@ def runInduction(vgdlString, gameOutput):
     
     return hypotheses
 
-def runInduction_DFS(vgdlString, gameOutput):
+def runInduction_DFS(vgdlString, gameOutput, maxTheories):
 
     verbose = True
 
     g = Game(vgdlString)
     trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in gameOutput[0]],gameOutput[1])
     # start = time.time()
-    hypotheses=list(g.runDFSInduction(trace, verbose))
+    hypotheses=list(g.runDFSInduction(trace, maxTheories, verbose))
     # end = time.time()
     
     return hypotheses
@@ -41,7 +41,7 @@ if __name__ == "__main__":
         output = f.readline()
         output_tuple = ast.literal_eval(output)
         #print output_tuple
-
-    hypotheses = runInduction_DFS(vgdlString, output_tuple)
+    maxTheories = 10
+    hypotheses = runInduction_DFS(vgdlString, output_tuple, maxTheories)
     embed()
 
