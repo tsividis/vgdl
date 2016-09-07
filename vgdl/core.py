@@ -20,7 +20,7 @@ import logging
 import sys
 import re
 
-
+disableContinuousKeyPress = True
 
 keyPresses = {273: 'up', 274: 'down', 276: 'left', 275: 'right', 32: 'spacebar'}
 emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
@@ -587,6 +587,7 @@ class BasicGame(object):
 
         win = False
         i = 0
+        
         lastKeyPress=(0,0,1) # PT: initialize to fake keypress index
         lastKeyPressTime=0 #PT
 
@@ -617,18 +618,19 @@ class BasicGame(object):
             self.keystate = pygame.key.get_pressed()
             
             # PT: Disables mistaken contiguous key presses, prints to terminal
-            keyPressType = None
-            if self.keystate != emptyKeyState:
-                if (self.time-lastKeyPressTime)<2 and self.keystate==lastKeyPress:
-                    self.keystate = emptyKeyState
-                else:
-                    lastKeyPress = self.keystate
-                    if lastKeyPress.index(1) in keyPresses.keys():
-                        keyPressType = keyPresses[lastKeyPress.index(1)]
-                        # print keyPressType
+            if disableContinuousKeyPress:
+                keyPressType = None
+                if self.keystate != emptyKeyState:
+                    if (self.time-lastKeyPressTime)<2 and self.keystate==lastKeyPress:
+                        self.keystate = emptyKeyState
+                    else:
+                        lastKeyPress = self.keystate
+                        if lastKeyPress.index(1) in keyPresses.keys():
+                            keyPressType = keyPresses[lastKeyPress.index(1)]
+                            # print keyPressType
 
 
-                lastKeyPressTime = self.time
+                    lastKeyPressTime = self.time
 
 
             # load/save handling
@@ -723,7 +725,7 @@ class BasicGame(object):
             self.win = False
             print "Game lost. Score=%s" % self.score
 
-        ipdb.set_trace()
+        # ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(50)

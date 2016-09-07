@@ -146,6 +146,9 @@ class SpriteParser(object):
                     if key == 'bullet':
                         embed()
                     try:
+                        # if s.color == None:
+                        #     embed()
+                            
                         color = str(s.color)
                         if color in colorDict:
                             color = colorDict[color]

@@ -1,5 +1,5 @@
 import sys, ast, time
-from theory_template_080116 import Game, TimeStep
+from theory_template import Game, TimeStep
 from IPython import embed
 
 
@@ -22,10 +22,11 @@ def runInduction_DFS(vgdlString, gameOutput, maxTheories):
     g = Game(vgdlString)
     trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in gameOutput[0]],gameOutput[1])
     # start = time.time()
+
     hypotheses=list(g.runDFSInduction(trace, maxTheories, verbose))
     # end = time.time()
     
-    return hypotheses
+    return g, hypotheses
 
 
 if __name__ == "__main__":
@@ -41,7 +42,11 @@ if __name__ == "__main__":
         output = f.readline()
         output_tuple = ast.literal_eval(output)
         #print output_tuple
-    maxTheories = 10
-    hypotheses = runInduction_DFS(vgdlString, output_tuple, maxTheories)
+
+    maxTheories = 100
+    game, hypotheses = runInduction_DFS(vgdlString, output_tuple, maxTheories)
+
+
     embed()
+
 
