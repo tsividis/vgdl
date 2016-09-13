@@ -87,6 +87,8 @@ class SpriteParser(object):
     def parseSprites(self, snodes, parentclass=None, parentargs={}, parenttypes=[]):
         resourcePackTypes = {self._eval(obj_type) for obj_type in SpriteParser.resourcePackTypeStrings}
         resourceType = self._eval("Resource")
+        EOS = "EOS"
+        self.sprite_types[EOS] = Sprite(EOS,None,{})
        
         for sn in snodes:
             assert ">" in sn.content
@@ -102,8 +104,6 @@ class SpriteParser(object):
 
             if len(sn.children) == 0:
                 # print (sclass, args, stypes)
-
-                # Check for color in the vgdl text
                 if 'color' in args:
                     color_type = colorDict[str(args['color'])]
                     args_without_color = deepcopy(args)
@@ -127,9 +127,8 @@ class SpriteParser(object):
 
                         # print self.sprite_types[key].vgdlType
                         # print self.sprite_types[key].color
-                
-                # Check for color in vgdl super classes  
                 else:
+                    args_without_color = deepcopy(args)
                     isResourceType = False
                     if sclass in resourcePackTypes:
                         s = self._eval('ResourcePack')
@@ -141,10 +140,8 @@ class SpriteParser(object):
                         # self.sprite_types[key+"_resource"] = Sprite(self._eval('ResourcePack'), None, args_without_color)
                     else:
                         s = sclass
-                        self.sprite_types[key] = Sprite(sclass, None, args) # TODO: Fix color initialized to "None"
+                        self.sprite_types[key] = Sprite(sclass, None, args)
 
-                    if key == 'bullet':
-                        embed()
                     try:
                         # if s.color == None:
                         #     embed()
@@ -183,7 +180,7 @@ class SpriteParser(object):
                         #     self.sprite_types[key+"_resource"] = Sprite(self._eval('ResourcePack'), None, args_without_color)
                         # else:
                         #     self.sprite_types[key] = Sprite(sclass, None, args)
-                    
+
                 if key in self.game.sprite_order:
                     # last one counts
                     self.game.sprite_order.remove(key)
