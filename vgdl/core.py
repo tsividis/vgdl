@@ -3,7 +3,6 @@ Video game description language -- parser, framework and core game classes.
 
 @author: Tom Schaul
 '''
-
 import pygame
 from random import choice
 from tools import Node, indentTreeParser
@@ -19,6 +18,7 @@ from copy import deepcopy
 import logging
 import sys
 import re
+from IPython import embed
 
 disableContinuousKeyPress = True
 
@@ -221,6 +221,7 @@ class BasicGame(object):
         self.is_stochastic = False
         self._lastsaved = None
         self.win = None
+        self.effectList = [] # list of effects that happened this current timestep
         self.reset()
 
     def reset(self):
@@ -456,7 +457,10 @@ class BasicGame(object):
             try:
                 fs_colorized['objects'][colorDict[str(args['color'])]] = fs['objects'][sprite_name]
             except: # Object color isn't immediately available
-                sprite_type = self.sprite_groups[stypes[0]]
+                sprite_type = []
+                if stypes[0] in self.sprite_groups: # be CAREFUL. self.sprite_groups is a defaultdict. caused bugs for mario.
+                    sprite_type = self.sprite_groups[stypes[0]]
+
                 if sprite_type:
                     sprite_rep = sprite_type[0]
                     fs_colorized['objects'][colorDict[str(sprite_rep.color)]] = fs['objects'][sprite_name]
@@ -490,9 +494,10 @@ class BasicGame(object):
                 del self.lastcollisions[key]
 
     def _eventHandling(self):
+        from ontology import *
         self.lastcollisions = {}
         ss = self.lastcollisions # List of possible interactions in the game
-        effectList = []
+        self.effectList = []
         for g1, g2, effect, kwargs in self.collision_eff:
             # build the current sprite lists (if not yet available)
             for g in [g1, g2]:
@@ -514,7 +519,7 @@ class BasicGame(object):
                     if not pygame.Rect((0,0), self.screensize).contains(s1.rect):
                         e = effect(s1, None, self, **kwargs)
                         if e != None:
-                            effectList.append(e)
+                            self.effectList.append(e)
 
                 continue
 
@@ -551,11 +556,13 @@ class BasicGame(object):
                                 (sclass, args, stypes) = self.sprite_constr[resource]
                                 resource_color = args['color']
                                 e = effect(s2, s1, resource_color, self, **kwargs) # TODO: is 's1' the actual thing we ran into?
-                            
                             else:
                                 e = effect(s2, s1, self, **kwargs)
+                                # if effect == killIfFromAbove:
+                                #     self.effectList.append(("killIfFromAbove",getColor(s2),getColor(s1)))
+                                # print effect
                             if e != None:
-                                effectList.append(e)
+                                self.effectList.append(e)
 
                     else:
                         # CHECKME: this is not a bullet-proof way, but seems to work
@@ -569,9 +576,12 @@ class BasicGame(object):
                             else:
                                 e = effect(s1, s2, self, **kwargs)
                             if e != None:
-                                effectList.append(e)
+                                self.effectList.append(e)
 
-        return effectList
+        if len(self.effectList) > 0:
+            print self.effectList
+
+        # return effectList
 
 
     def startGame(self, headless, persist_movie):
@@ -645,7 +655,7 @@ class BasicGame(object):
 
 
             # handle collision effects
-            effectList = self._eventHandling()
+            self._eventHandling()
 
             # Save the event and agent state
             try:
@@ -659,10 +669,12 @@ class BasicGame(object):
                 keyPressType = keyPressPrev
                 #print "ERROR: {} --> {}".format(e, "Using previous agent state...")
 
-            if effectList:
-                event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': effectList, 'gameState': self.getFullStateColorized()}
+            if self.effectList:
+                event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': self.effectList, 'gameState': self.getFullStateColorized()}
+                # event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': self.effectList, 'gameState': self.getFullStateColorized()}
                 # print event
                 finalEventList.append(event)
+                # finalEventList.append(self.effectList)
 
             # Termination #1
             for t in self.terminations:
