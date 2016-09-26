@@ -8,6 +8,7 @@ BasicGame
                 goomba     > Walker     color=BROWN 
                 paratroopa > WalkJumper color=RED
         goal > Immovable color=GREEN
+        wall > ResourcePack color=BLACK
             
     TerminationSet
         SpriteCounter stype=goal      win=True     
@@ -23,6 +24,7 @@ BasicGame
         elevator EOS    > wrapAround
         
     LevelMapping
+        w > wall
         G > goal
         1 > goomba
         2 > paratroopa

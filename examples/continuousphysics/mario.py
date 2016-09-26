@@ -14,6 +14,7 @@ BasicGame
                 goomba     > Walker     color=BROWN 
                 paratroopa > WalkJumper color=RED
         goal > Immovable color=GREEN
+        wall > ResourcePack color=BLACK
             
     TerminationSet
         SpriteCounter stype=goal      win=True     
@@ -24,11 +25,14 @@ BasicGame
         avatar evil > killIfAlive
         moving EOS  > killSprite 
         goal avatar > killSprite
-        moving wall > wallStop friction=0.1
+        avatar wall > wallStop friction=0.1
+        goomba wall > wallStop friction=0.1
+        paratroopa wall > wallStop friction=0.1
         moving elevator > pullWithIt        
         elevator EOS    > wrapAround
         
     LevelMapping
+        w > wall
         G > goal
         1 > goomba
         2 > paratroopa
