@@ -1358,7 +1358,6 @@ class Game(object):
 				for t in newTheories:
 					t.dryingPaint = set()
 				
-				# embed()
 				print
 				[self.DFSinduction(t, timesteps, maxNumTheories, verbose) for t in newTheories]
 

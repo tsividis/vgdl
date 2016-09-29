@@ -87,6 +87,8 @@ class SpriteParser(object):
     def parseSprites(self, snodes, parentclass=None, parentargs={}, parenttypes=[]):
         resourcePackTypes = {self._eval(obj_type) for obj_type in SpriteParser.resourcePackTypeStrings}
         resourceType = self._eval("Resource")
+        EOS = "EOS"
+        self.sprite_types[EOS] = Sprite(EOS,None,{})
        
         for sn in snodes:
             assert ">" in sn.content
@@ -126,6 +128,7 @@ class SpriteParser(object):
                         # print self.sprite_types[key].vgdlType
                         # print self.sprite_types[key].color
                 else:
+                    args_without_color = deepcopy(args)
                     isResourceType = False
                     if sclass in resourcePackTypes:
                         s = self._eval('ResourcePack')

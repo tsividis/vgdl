@@ -22,7 +22,7 @@ BasicGame frame_rate=30
     SpriteSet        
         hole   > Immovable color=DARKBLUE
         avatar > MovingAvatar #cooldown=4
-        box    > Passive                
+        box    > Passive  color=RED              
     LevelMapping
         0 > hole
         1 > box            
