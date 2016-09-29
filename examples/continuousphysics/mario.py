@@ -8,7 +8,7 @@ mario_game = """
 BasicGame
     SpriteSet 
         elevator > Missile orientation=UP speed=0.1 color=BLUE
-        moving > physicstype=GravityPhysics
+        moving > physicstype=GravityPhysics color=WHITE
             avatar > MarioAvatar airsteering=True
             evil   >  orientation=LEFT
                 goomba     > Walker     color=BROWN 
