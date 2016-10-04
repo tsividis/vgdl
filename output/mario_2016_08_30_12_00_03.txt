@@ -1,1 +1,0 @@
-([], {'ended': True, 'time': 139, 'win': False})
