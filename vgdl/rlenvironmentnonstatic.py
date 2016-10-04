@@ -256,6 +256,10 @@ def defSimpleGame1():
     from examples.gridphysics.simpleGame1 import push_game, box_level
     return (push_game, box_level)
 
+def defFrogs():
+    from examples.gridphysics.frogs import frog_game, frog_level
+    return (frog_game, frog_level)
+
 def defAliens():
     from examples.gridphysics.aliens import aliens_game, aliens_level
     return (aliens_game, aliens_level)
@@ -277,6 +281,12 @@ def playTestMaze():
 
 def playTestSimpleGame1():
     game = _createVGDLGame( *defSimpleGame1() )
+    headless = False
+    persist_movie = False
+    game.startGame(headless,persist_movie)
+
+def playTestFrogs():
+    game = _createVGDLGame( *defFrogs() )
     headless = False
     persist_movie = False
     game.startGame(headless,persist_movie)
@@ -328,6 +338,9 @@ def createRLMaze( obsType=OBSERVATION_LOCAL ):
 
 def createRLSimpleGame1( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defSimpleGame1(), observationType=obsType )
+
+def createRLFrogs( obsType=OBSERVATION_LOCAL ):
+    return RLEnvironmentNonStatic( *defFrogs(), observationType=obsType )
 
 def createRLAliens( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defAliens(), observationType=obsType )
@@ -400,34 +413,26 @@ def testSimpleGame1(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
         print "in testSimpleGame1"
         embed()
         
-        # res = rle.step(0) #up
-        # if verify:
-        #     _verify( res, {'pcontinue': 1, 'reward': 0, 'observation': [ 0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.]} )
-        # res = rle.step(1) #left (there's a wall so expect no change in observations)
-        # if verify:
-        #     _verify( res, {'pcontinue': 1, 'reward': 0, 'observation': [ 0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.]} )
-        # res = rle.step(3) #right
-        # if verify:
-        #     _verify( res, {'pcontinue': 1, 'reward': 0, 'observation': [ 0.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.]} )
-        
-        # # Hop backwards and forwards 
-        # for j in range (0,int(numJogOnSpot)):
-        #     res = rle.step(1) #left
-        #     if verify:
-        #         _verify( res, {'pcontinue': 1, 'reward': 0, 'observation': [ 0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.]} )
-        #     res = rle.step(3) #right
-        #     if verify:
-        #         _verify( res, {'pcontinue': 1, 'reward': 0, 'observation': [ 0.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.]} )
-     
-        # res = rle.step(3) #right
-        # if verify:
-        #     _verify( res, {'pcontinue': 1, 'reward': 0, 'observation': [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.]} )
-        # res = rle.step(3) #right
-        # if verify:
-        #     _verify( res, {'pcontinue': 1, 'reward': 0, 'observation': [ 0.,  0.,  0.,  0.,  1.,  0.,  1.,  0.,  0.,  0.]} )
-        # res = rle.step(0) #up
-        # if verify:
-        #     _verify( res, {'pcontinue': 0, 'reward': 1, 'observation': [ 0.,  1.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.]} )
+def testFrogs(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
+    rle = createRLFrogs ( obsType )
+
+    # uncomment following two lines to see the walk (causes internal warning)
+    #rle.visualize = True
+    for i in range(0,numEpisodes):
+       
+        if reuseGame:
+            # Purely for testing: reuse the game and by calling _postInitReset(True).
+            # This should be faster but self.setState(_initstate) in _postInitReset() 
+            # causes the game to slow down with hunreds of calls.
+             rle._postInitReset(True)
+        else:
+            # Re-create the game.
+            rle = createRLFrogs( obsType )
+
+        # rle = createRLSimpleGame1( obsType )
+        print "in testFrogs"
+        embed()
+
 
 def testAliens(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
     rle = createRLAliens ( obsType )
@@ -518,6 +523,7 @@ if __name__ == "__main__":
         # testMaze(args.numEpisodes, args.jog_on_spot, True, args.reuse_game, args.observation_type)
         # testMaze(1, 0, True, True, OBSERVATION_GLOBAL)
 
-        # testSimpleGame1(1, 0, True, True, OBSERVATION_GLOBAL)
-        testAliens(1, 0, True, True, OBSERVATION_GLOBAL)
+        testSimpleGame1(1, 0, True, True, OBSERVATION_GLOBAL)
+        # testFrogs(1, 0, True, True, OBSERVATION_GLOBAL)
+        # testAliens(1, 0, True, True, OBSERVATION_GLOBAL)
 
