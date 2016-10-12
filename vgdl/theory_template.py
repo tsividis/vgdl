@@ -215,6 +215,9 @@ class ruleCluster(object):
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
+## Helper print function
+def printInteractionSet(interactionSet):
+		print [i.display() for i in interactionSet]
 
 class Theory(object):
 	"""
@@ -272,23 +275,44 @@ class Theory(object):
 		Returns a set of theories that explain all the events that took place at timestep.
 		Hypotheticals can be passed as args to enable the explanation of multiple events in a single timestep.
 		"""
-		#print "in explainTimeStep..."
+		# print "in explainTimeStep..."
+		
 		# Base Case
 		if len(timestep.events) == 1:
+			# print "in base case of explainTimeStep"
 			theories = []
+			
 			if not currTheories:
 				theories.extend(self.explainEvent(timestep.events[0], fullTimestep))
-			else: # Generate theories based on hypothetical theories
+			
+			# Generate theories based on hypothetical theories
+			else: 
 				for theory in currTheories:
 					newTheory = theory.explainEvent(timestep.events[0], fullTimestep)
 					theories.extend(newTheory)
+			
 			for t in theories:
 				t.depth = self.depth+1
 			return theories
 
 		# Recursive Case
 		else:
-			theories = self.explainEvent(timestep.events[0], fullTimestep)
+			# print "in recursive case"
+			theories = []
+
+			if not currTheories:
+				theories.extend(self.explainEvent(timestep.events[0], fullTimestep))
+			
+			# Generate theories based on hypothetical theories
+			else: 
+				for theory in currTheories:
+					newTheory = theory.explainEvent(timestep.events[0], fullTimestep)
+					theories.extend(newTheory)
+
+			#theories = self.explainEvent(timestep.events[0], fullTimestep)
+
+
+
 			updatedTimeStep = TimeStep(timestep.agentAction, timestep.agentState, timestep.events[1:], timestep.gameState)
 			return self.explainTimeStep(updatedTimeStep, fullTimestep, theories)
 
@@ -297,23 +321,26 @@ class Theory(object):
 		Returns theories that explain the event, which is a tuple like:
 		(bounceForward, BLUE, ORANGE)
 		"""
-		#print "in explainEvent..."
+		# print "in explainEvent..."
+		# print "event: ", event
 		theories = []
 
 		#print " --> will check likelihood to get failCase (or just add the theory if the event is explained)"
 		likelihood = self.likelihood(timestep)
-		#print '\tlikelihood', likelihood
+		# print '\tlikelihood', likelihood
 
 		if likelihood == 1:
 			theories.append(self)
 		else:
 			failCase = self.getFailCases(event, timestep)
-			#print "\tFail case: ", failCase
+			# print "\tFail case: ", failCase
+
+			# Add preconditions
 			if failCase in [1,2,3]:
-				#print "ADD PRECONDITIONS"
 				theories.extend(self.addPreconditions(event, timestep))
+			
+			# Add new rule
 			elif failCase == 4: 
-				#print "ADD RULE"
 				theories.extend(self.addRules(event))
 
 		return theories
@@ -496,6 +523,7 @@ class Theory(object):
 		"""
 		Checks whether everything in the interpretation is accounted for by the interactionSet.
 		"""
+		
 		if interpretation:
 			interpretation = interpretation.asTuple()
 			for rule in self.interactionSet:
@@ -536,10 +564,9 @@ class Theory(object):
 		over possible class assignments for the objects.
 		Returns a list of theories.
 		"""
-		#print 'in addRules...'
+		# print 'in addRules...'
 		newTheories = []
 		possibleAssignments = self.searchForAssignments(event)
-
 		try: 
 			resource = event[3]
 			value = event[4]
@@ -555,10 +582,10 @@ class Theory(object):
 		if possibleAssignments:
 			for assignment in possibleAssignments:
 				interaction = InteractionRule(event[0], assignment[0], assignment[1], resource, value) #This isn't strictly necessary, but follows createChild requirements.
-				
+				# print "interaction ", interaction.display()
 				classAssignments = [(assignment[0], obj1), (assignment[1], obj2)]
 				newTheory = self.createChild([interaction, classAssignments])
-
+				newTheory.display()
 				# Checks and only adds to newTheories if the created theory was actually different.
 				if newTheory:
 					newTheories.append(newTheory)
@@ -910,7 +937,7 @@ class Theory(object):
 		#Get class memberships
 		classes = (self.getClassFromColor(pair[0]), self.getClassFromColor(pair[1]))
 		if False in classes:
-			print "Can't make predicitons; theory does not contain {}".format([el[0] for el in zip(pair, classes) if not el[1]])
+			print "Can't make predictions; theory does not contain {}".format([el[0] for el in zip(pair, classes) if not el[1]])
 			return False
 		else:
 			pair = classes
@@ -1303,6 +1330,7 @@ class Game(object):
 			print "\nStart hyp space length:", len(self.hypothesisSpace)
 			print "running induction on theory"
 			theory.display()
+
 		# If still have time to generate more theories
 		if len(self.hypothesisSpace) - 1 < maxNumTheories:
 			ts_index = theory.depth
@@ -1310,6 +1338,8 @@ class Game(object):
 			if verbose:
 				print "Current theory depth: ", ts_index
 				print "Explaining event", timesteps[ts_index].events
+			
+			# Explain current timestep
 			newTheories = theory.explainTimeStep(timesteps[ts_index], timesteps[ts_index])
 			self.nodes_generated += len(newTheories)
 			if verbose:
@@ -1347,7 +1377,7 @@ class Game(object):
 					if all_passed:
 						self.nodes_accepted += 1
 						acceptedTheories.append(t)
-				newTheories = self.orderHypotheses(acceptedTheories) #TODO: check that ordering is working
+				newTheories = self.orderHypotheses(acceptedTheories)
 				
 				if verbose:
 					print "New theories that passed likelihood tests: ", len(newTheories)
@@ -1358,8 +1388,7 @@ class Game(object):
 				for t in newTheories:
 					t.dryingPaint = set()
 				
-				print
-				[self.DFSinduction(t, timesteps, maxNumTheories, verbose) for t in newTheories]
+				print [self.DFSinduction(t, timesteps, maxNumTheories, verbose) for t in newTheories]
 
 		
 
@@ -1373,14 +1402,18 @@ class Game(object):
 		temp_new_trace = ([timesteps[0]], None) # Just to run regular induction on first timestep
 
 		# Analyze first timestep (to get some sprites in theory classes so that entropy doesn't face divide by zero error)
-		self.induction(temp_new_trace, verbose=False)
+		self.induction(temp_new_trace, verbose=True)
+
 		self.cleanHypothesisSpace([timesteps[0]], 1)
 		init_hypotheses = self.orderHypotheses(self.hypothesisSpace) 
+		
+		
 		self.hypothesisSpace = [] # Refresh the hypothesis space before DFS induction
 
 		# This does DFS induction x times; not sure how to make it more like the behavior we want.
-		for t in init_hypotheses: 	# each of these theories has depth 1
-			self.DFSinduction(t, timesteps, maxNumTheories, verbose=True)
+		for theory in init_hypotheses: 	# each of these theories has depth 1
+			theory.display()
+			self.DFSinduction(theory, timesteps, maxNumTheories, verbose=True)
 		
 
 		# Termination set induction
@@ -1424,9 +1457,7 @@ class Game(object):
 			# For every theory
 			for theory in self.hypothesisSpace:
 				if theory.likelihood(timestep) < 1.0: 	# Theory needs to be changed
-					#print "likelihood", theory.likelihood(timestep)
 					newTheories.extend(theory.explainTimeStep(timestep, timestep))
-			
 			# Make sure only to add unique theories
 			#print "Iterating through new theories"
 			for theory in newTheories:
@@ -1505,108 +1536,3 @@ class Game(object):
 
 
 
-
-
-
-
-
-# if __name__ == "__main__":
-	# g = Game(push_game)
-	# T = Theory(g)
-	# T.initializeSpriteSet(g.vgdlSpriteParse)
-	# g.hypothesisSpace = [T]
-	# finalHypotheses = []
-
-
-	# rawTrace_precond = (
-	# 	[{'gameState': {
-	# 		'ended': False, 
-	# 		'score': 0, 
-	# 		'objects': {'BLUE': {(305, 427): {'speed': None}, (122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {(427, 244): {'speed': None}}, 'DARKBLUE': {(305, 61): {'speed': 1, 'resources': {'medicine': 1}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 122): {'speed': None}, (122, 366): {'speed': None}, (366, 183): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {(305, 305): {'speed': None, 'limit': 3}}, 'RED': {(122, 183): {'speed': None, 'limit': 5}, (305, 366): {'speed': None, 'limit': 5}}}, 
-	# 		'win': None}, 
-	# 	'agentAction': None, 
-	# 	'agentState': {}, 
-	# 	'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, 
-
-	# 	{'gameState': {
-	# 		'ended': False, 
-	# 		'score': 0, 
-	# 		'objects': {'BLUE': {(305, 427): {'speed': None}, (122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {(427, 244): {'speed': None}}, 'DARKBLUE': {(488, 183): {'speed': 1, 'resources': {'medicine': 0}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 122): {'speed': None}, (122, 366): {'speed': None}, (366, 183): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {(305, 305): {'speed': None, 'limit': 3}}, 'RED': {(122, 183): {'speed': None, 'limit': 5}, (305, 366): {'speed': None, 'limit': 5}}}, 
-	# 		'win': None}, 
-	# 	'agentAction': None, 
-	# 	'agentState': {'trap': 1}, 
-	# 	'effectList': [('killSprite', 'DARKBLUE', 'RED')]}, 
-
-	# 	{'gameState': {
-	# 		'ended': False, 
-	# 		'score': 0, 
-	# 		'objects': {'BLUE': {(305, 427): {'speed': None}, (122, 305): {'speed': None}}, 'BROWN': {}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {(427, 244): {'speed': None}}, 'DARKBLUE': {}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 122): {'speed': None}, (122, 366): {'speed': None}, (366, 183): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {(305, 305): {'speed': None, 'limit': 3}}, 'RED': {(122, 183): {'speed': None, 'limit': 5}, (305, 366): {'speed': None, 'limit': 5}}}, 
-	# 		'win': None}, 
-	# 	'agentAction': None, 
-	# 	'agentState': {'trap': 1}, 
-	# 	'effectList': [('bounceForward', 'DARKBLUE', 'BLUE')]}], 
-		
-	# 	{'ended': True, 'win': False, 'time': 200})
-
-
-	# rawTrace_long = (
-	# 	[
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {(305, 427): {'speed': None}, (122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {(427, 244): {'speed': None}}, 'DARKBLUE': {(122, 183): {'speed': 1}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 122): {'speed': None}, (122, 366): {'speed': None}, (366, 183): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {(305, 61): {'speed': None, 'limit': 3}, (305, 305): {'speed': None, 'limit': 3}}, 'RED': {(305, 366): {'speed': None, 'limit': 5}}}, 'win': None}, 
-	# 	'agentAction': None, 'agentState': {}, 'effectList': [('changeResource', 'RED', 'PINK', -5), ('killSprite', 'DARKBLUE', 'RED')]}, 
-		
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {(305, 427): {'speed': None}, (122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {(427, 244): {'speed': None}}, 'DARKBLUE': {(244, 122): {'speed': 1}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 61): {'speed': None}, (122, 366): {'speed': None}, (366, 183): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {(305, 61): {'speed': None, 'limit': 3}, (305, 305): {'speed': None, 'limit': 3}}, 'RED': {(305, 366): {'speed': None, 'limit': 5}}}, 'win': None}, 
-	# 	'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
-		
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {(305, 427): {'speed': None}, (122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {(427, 244): {'speed': None}}, 'DARKBLUE': {(244, 122): {'speed': 1}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 61): {'speed': None}, (122, 366): {'speed': None}, (366, 183): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {(305, 61): {'speed': None, 'limit': 3}, (305, 305): {'speed': None, 'limit': 3}}, 'RED': {(305, 366): {'speed': None, 'limit': 5}}}, 'win': None}, 
-	# 	'agentAction': None, 'agentState': {}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, 
-		
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {(305, 427): {'speed': None}, (122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {(427, 244): {'speed': None}}, 'DARKBLUE': {(305, 61): {'speed': 1, 'resources': {'medicine': 1}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 61): {'speed': None}, (122, 366): {'speed': None}, (366, 183): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {(305, 305): {'speed': None, 'limit': 3}}, 'RED': {(305, 366): {'speed': None, 'limit': 5}}}, 'win': None}, 
-	# 	'agentAction': None, 'agentState': {'medicine': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', 1), ('killSprite', 'DARKBLUE', 'WHITE')]}, 
-		
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {(305, 427): {'speed': None}, (122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {(427, 244): {'speed': None}}, 'DARKBLUE': {(366, 183): {'speed': 1, 'resources': {'medicine': 1}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 61): {'speed': None}, (427, 183): {'speed': None}, (122, 366): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {(305, 305): {'speed': None, 'limit': 3}}, 'RED': {(305, 366): {'speed': None, 'limit': 5}}}, 'win': None}, 
-	# 	'agentAction': None, 'agentState': {'medicine': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, # 17 hypotheses
-		
-	# 	# 5
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {(305, 427): {'speed': None}, (122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {(427, 244): {'speed': None}}, 'DARKBLUE': {(366, 183): {'speed': 1, 'resources': {'medicine': 1}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 61): {'speed': None}, (427, 183): {'speed': None}, (122, 366): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {(305, 305): {'speed': None, 'limit': 3}}, 'RED': {(305, 366): {'speed': None, 'limit': 5}}}, 'win': None}, 
-	# 	'agentAction': None, 'agentState': {'medicine': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BROWN')]}, # 77 hypotheses
-		
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {(305, 427): {'speed': None}, (122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {(427, 244): {'speed': None}}, 'DARKBLUE': {(427, 183): {'speed': 1, 'resources': {'medicine': 1}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 61): {'speed': None}, (122, 366): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {(305, 305): {'speed': None, 'limit': 3}}, 'RED': {(305, 366): {'speed': None, 'limit': 5}}}, 'win': None}, 
-	# 	'agentAction': None, 'agentState': {'medicine': 1}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('killSprite', 'LIGHTBLUE', 'ORANGE')]}, # Has 325 hypotheses at this point
-		
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {(305, 427): {'speed': None}, (122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {}, 'DARKBLUE': {(427, 244): {'speed': 1, 'resources': {'medicine': 1}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 61): {'speed': None}, (122, 366): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {(305, 305): {'speed': None, 'limit': 3}}, 'RED': {(305, 366): {'speed': None, 'limit': 5}}}, 'win': None}, 
-	# 	'agentAction': None, 'agentState': {'medicine': 1}, 'effectList': [('killSprite', 'DARKBLUE', 'LIGHTBLUE')]}, 
-
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {(305, 427): {'speed': None}, (122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {}, 'DARKBLUE': {(305, 305): {'speed': 1, 'resources': {'medicine': 2}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 61): {'speed': None}, (122, 366): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {}, 'RED': {(305, 366): {'speed': None, 'limit': 5}}}, 'win': None}, 
-	# 	'agentAction': None, 'agentState': {'medicine': 2}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', 1), ('killSprite', 'DARKBLUE', 'WHITE')]}, 
-		
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {(305, 427): {'speed': None}, (122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {}, 'DARKBLUE': {(305, 366): {'speed': 1, 'resources': {'medicine': 2}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 61): {'speed': None}, (122, 366): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {}, 'RED': {}}, 'win': None}, 
-	# 	'agentAction': None, 'agentState': {'medicine': 2}, 'effectList': [('changeResource', 'RED', 'PINK', -5), ('killSprite', 'DARKBLUE', 'RED')]}, 
-		
-	# 	# 10
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {(122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {}, 'DARKBLUE': {(305, 427): {'speed': 1, 'resources': {'medicine': 2}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 61): {'speed': None}, (122, 366): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {}, 'RED': {}}, 'win': None}, 
-	# 	'agentAction': None, 'agentState': {'medicine': 2}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE')]}, 
-		
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {(122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {}, 'DARKBLUE': {(305, 427): {'speed': 1, 'resources': {'medicine': 2}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 61): {'speed': None}, (122, 366): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {}, 'RED': {}}, 'win': None}, 
-	# 	'agentAction': None, 'agentState': {'medicine': 2}, 'effectList': [('stepBack', 'DARKBLUE', 'BLACK')]}, 
-		
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {(122, 305): {'speed': None}}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {}, 'DARKBLUE': {(122, 366): {'speed': 1, 'resources': {'medicine': 2}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 61): {'speed': None}, (122, 305): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {}, 'RED': {}}, 'win': None}, 
-	# 	'agentAction': None, 'agentState': {'medicine': 2}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
-		
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {}, 'DARKBLUE': {(122, 305): {'speed': 1, 'resources': {'medicine': 2}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 61): {'speed': None}, (61, 305): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {}, 'RED': {}}, 'win': None}, 
-	# 	'agentAction': None, 'agentState': {'medicine': 2}, 'effectList': [('killSprite', 'DARKBLUE', 'BLUE'), ('bounceForward', 'DARKBLUE', 'ORANGE')]}, 
-		
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {}, 'DARKBLUE': {(122, 305): {'speed': 1, 'resources': {'medicine': 2}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 61): {'speed': None}, (61, 305): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {}, 'RED': {}}, 'win': None}, 'agentAction': None, 'agentState': {'medicine': 2}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, 
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}, (488, 183): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {}, 'DARKBLUE': {(244, 122): {'speed': 1, 'resources': {'medicine': 2}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 61): {'speed': None}, (61, 305): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {}, 'RED': {}}, 'win': None}, 'agentAction': None, 'agentState': {'medicine': 2}, 'effectList': [('bounceForward', 'DARKBLUE', 'ORANGE'), ('undoAll', 'ORANGE', 'BLACK')]}, 
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {}, 'DARKBLUE': {(488, 183): {'speed': 1, 'resources': {'medicine': 1}}}, 'GREEN': {(671, 366): {'speed': None, 'limit': 5}}, 'ORANGE': {(244, 61): {'speed': None}, (61, 305): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {}, 'RED': {}}, 'win': None}, 'agentAction': None, 'agentState': {'medicine': 1}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', -1), ('killSprite', 'DARKBLUE', 'BROWN')]}, 
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {}, 'BROWN': {(488, 427): {'speed': None, 'limit': 3}}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {}, 'DARKBLUE': {(671, 366): {'speed': 1, 'resources': {'medicine': 1}}}, 'GREEN': {}, 'ORANGE': {(244, 61): {'speed': None}, (61, 305): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {}, 'RED': {}}, 'win': None}, 'agentAction': None, 'agentState': {'medicine': 1}, 'effectList': [('changeResource', 'GREEN', 'PINK', 5), ('killSprite', 'DARKBLUE', 'GREEN')]}, 
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {}, 'BROWN': {}, 'GOLD': {(671, 183): {'speed': None}}, 'LIGHTBLUE': {}, 'DARKBLUE': {(488, 427): {'speed': 1, 'resources': {'medicine': 0}}}, 'GREEN': {}, 'ORANGE': {(244, 61): {'speed': None}, (61, 305): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {}, 'RED': {}}, 'win': None}, 'agentAction': None, 'agentState': {'medicine': 0}, 'effectList': [('changeResource', 'DARKBLUE', 'WHITE', -1), ('killSprite', 'DARKBLUE', 'BROWN')]}, 
-	# 	{'gameState': {'ended': False, 'score': 0, 'objects': {'BLUE': {}, 'BROWN': {}, 'GOLD': {}, 'LIGHTBLUE': {}, 'DARKBLUE': {(671, 183): {'speed': 1, 'resources': {'medicine': 0}}}, 'GREEN': {}, 'ORANGE': {(244, 61): {'speed': None}, (61, 305): {'speed': None}}, 'BLACK': {(305, 488): {'speed': None}, (732, 305): {'speed': None}, (0, 122): {'speed': None}, (732, 427): {'speed': None}, (305, 0): {'speed': None}, (610, 244): {'speed': None}, (427, 488): {'speed': None}, (244, 0): {'speed': None}, (0, 305): {'speed': None}, (488, 305): {'speed': None}, (0, 427): {'speed': None}, (183, 0): {'speed': None}, (244, 488): {'speed': None}, (671, 244): {'speed': None}, (0, 61): {'speed': None}, (549, 488): {'speed': None}, (671, 427): {'speed': None}, (61, 488): {'speed': None}, (0, 244): {'speed': None}, (732, 61): {'speed': None}, (122, 0): {'speed': None}, (61, 0): {'speed': None}, (488, 244): {'speed': None}, (732, 244): {'speed': None}, (732, 366): {'speed': None}, (732, 0): {'speed': None}, (671, 0): {'speed': None}, (366, 488): {'speed': None}, (0, 183): {'speed': None}, (0, 0): {'speed': None}, (671, 488): {'speed': None}, (610, 488): {'speed': None}, (732, 183): {'speed': None}, (183, 488): {'speed': None}, (610, 0): {'speed': None}, (549, 0): {'speed': None}, (122, 244): {'speed': None}, (61, 244): {'speed': None}, (488, 0): {'speed': None}, (732, 488): {'speed': None}, (427, 0): {'speed': None}, (122, 488): {'speed': None}, (549, 244): {'speed': None}, (488, 488): {'speed': None}, (366, 0): {'speed': None}, (0, 366): {'speed': None}, (732, 122): {'speed': None}, (0, 488): {'speed': None}, (549, 61): {'speed': None}}, 'WHITE': {}, 'RED': {}}, 'win': None}, 'agentAction': None, 'agentState': {'medicine': 0}, 'effectList': [('killSprite', 'DARKBLUE', 'GOLD')]}
-	# 	], 
-	# 	{'ended': True, 'win': True, 'time': 260}
-	# 	)
-
-	# trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in rawTrace_precond[0]],rawTrace_precond[1])
-	# trace = (trace[0], trace[1])
-	# hypotheses = g.runDFSInduction(trace, 1)
-	# #reg_hypotheses = g.induction(trace)
-	# embed()

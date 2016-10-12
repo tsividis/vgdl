@@ -2,7 +2,7 @@ from random import choice
 import itertools, copy, scipy.misc
 import numpy as np
 from sampleVGDLString import *
-from class_theory_template_071916 import *
+from class_theory_template import *
 from taxonomy import *
 from IPython import embed
 from ontology import *

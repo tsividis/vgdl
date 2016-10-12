@@ -897,7 +897,8 @@ def wallBounce(sprite, partner, game, friction=0): # FLAG
     else:
         sprite.orientation = (sprite.orientation[0], -sprite.orientation[1])
     # return ('wallBounce', colorDict[str(partner.color)], colorDict[str(sprite.color)])
-    return ('wallBounce' , getColor(sprite), getColor(partner))
+    ## TODO: Not printing for now   
+    #return ('wallBounce' , getColor(sprite), getColor(partner))
 
 def wallStop(sprite, partner, game, friction=0): # FLAG
     """ Stop just in front of the wall, removing that velocity component,
@@ -911,7 +912,8 @@ def wallStop(sprite, partner, game, friction=0): # FLAG
         sprite.orientation = (sprite.orientation[0] * (1. - friction), 0)
     sprite.speed = vectNorm(sprite.orientation) * sprite.speed
     sprite.orientation = unitVector(sprite.orientation)
-    return ('wallStop' , getColor(sprite), getColor(partner))
+    ## TODO: Not printing for now   
+    #return ('wallStop' , getColor(sprite), getColor(partner))
 
 def killIfSlow(sprite, partner, game, limitspeed=1):
     """ Take a decision based on relative speed. """
@@ -932,7 +934,7 @@ def killIfFromAbove(sprite, partner, game):
     if (sprite.lastrect.top > partner.lastrect.top
         and partner.rect.top > partner.lastrect.top):
         killSprite(sprite, partner, game)
-        return ('killIfFromAbove' , getColor(sprite), getColor(partner))
+        return ('killIfFromAbove' , getColor(partner),  getColor(sprite))
 
 def killIfAlive(sprite, partner, game):
     """ Perform the killing action, only if no previous collision effect has removed the partner. """
@@ -1014,7 +1016,7 @@ def pullWithIt(sprite, partner, game):
         sprite.speed = partner.speed
         sprite.orientation = partner.lastdirection
     sprite.lastrect = tmp
-    # return ('pullWithIt' , getColor(sprite), getColor(partner))
+    return ('pullWithIt' , getColor(sprite), getColor(partner))
 
 def teleportToExit(sprite, partner, game):
     e = choice(game.sprite_groups[partner.stype])
