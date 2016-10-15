@@ -1332,7 +1332,7 @@ class Game(object):
 			theory.display()
 
 		# If still have time to generate more theories
-		if len(self.hypothesisSpace) - 1 < maxNumTheories:
+		if len(self.hypothesisSpace) - 1 < maxNumTheories: # Subtracting one because of the initial hypothesis we must start out with to do induction
 			ts_index = theory.depth
 			
 			if verbose:
@@ -1363,12 +1363,12 @@ class Game(object):
 
 
 			# If in middle of timesteps, explain first timestep and add theories to final Hypotheses
-			else:
+			elif ts_index+1 != len(timesteps):
 				acceptedTheories = []
 				for t in newTheories:
 					all_passed = True
 					
-					for ts in timesteps[:t.depth-1]:
+					for ts in timesteps[:t.depth-1]: 			# Check that the theory can explain all timesteps
 						if not t.likelihood(ts, sparse=True):
 							self.nodes_eliminated +=1
 							all_passed = False

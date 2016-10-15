@@ -52,8 +52,12 @@ if __name__ == '__main__':
 	###################################
 	"""
 	Artillery
+
+	TODO:
+	- KeyError: 'DARKGRAY'
+	- Can't get a termination condition
 	"""
-	artillery_output = ""
+	artillery_output = "artillery.txt"
 	max_theories = 100
 	expectedHypotheses = 1
 	artillery_info = ("../vgdl_text/artillery.txt", artillery_output, expectedHypotheses, "artillery")
@@ -82,7 +86,8 @@ if __name__ == '__main__':
 
 	TODO: 
 	- Termination conditions seem incorrect (they are generally about time limit, but should be about hitting an end of screen, for instance)
-	- had to stop printing/recording wallStop command because something to do with the repeated events / 2 different events about the same objects in a timestep; also induction theory depth is high, over >300 (use "mario_induction_forever.txt")
+	- Had to stop printing/recording wallStop command because something to do with the repeated events / 2 different events about the same objects in a timestep; also induction theory depth is high, over >300 (use "mario_induction_forever.txt")
+	- If you limit the max_theories for the "mario_induction_forever.txt", get: "RuntimeError: maximum recursion depth exceeded in cmp"
 	"""
 	mario_output = "mario_runme.txt"
 	
@@ -133,10 +138,10 @@ if __name__ == '__main__':
 	# DFS Format: 
 	# def testTrace(vgdlFile, gameOutputFile, expectedHypotheses, name, maxNumTheories=100, verbose=False)
 	DFS_traces = [
-	#artillery_info, 
+	artillery_info, 
 	#lander_info,
-	mario_info,
-	pong_info#, 
+	mario_info#,
+	#pong_info, 
 	#ptsp_info,
 	#tankwars_info
 	]
