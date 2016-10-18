@@ -177,7 +177,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # take action and compute consequences
         # replace the method that reads multiple action keys with a fn that just
         # returns the currently desired action
-        self._avatar._readMultiActions = lambda *x: [self._actionset[action]]        
+        self._avatar._readMultiActions = lambda *x: [action]
+        # self._avatar._readMultiActions = lambda *x: [self._actionset[action]] # old      
         if self.visualize:
             self._game._clearAll(self.visualize)
         
@@ -256,6 +257,14 @@ def defSimpleGame1():
     from examples.gridphysics.simpleGame1 import push_game, box_level
     return (push_game, box_level)
 
+def defSimpleGame3():
+    from examples.gridphysics.simpleGame3 import push_game, box_level
+    return (push_game, box_level)
+
+def defSimpleGame4():
+    from examples.gridphysics.simpleGame4 import push_game, box_level
+    return (push_game, box_level)
+
 def defFrogs():
     from examples.gridphysics.frogs import frog_game, frog_level
     return (frog_game, frog_level)
@@ -281,6 +290,12 @@ def playTestMaze():
 
 def playTestSimpleGame1():
     game = _createVGDLGame( *defSimpleGame1() )
+    headless = False
+    persist_movie = False
+    game.startGame(headless,persist_movie)
+
+def playTestSimpleGame3():
+    game = _createVGDLGame( *defSimpleGame3() )
     headless = False
     persist_movie = False
     game.startGame(headless,persist_movie)
@@ -338,6 +353,12 @@ def createRLMaze( obsType=OBSERVATION_LOCAL ):
 
 def createRLSimpleGame1( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defSimpleGame1(), observationType=obsType )
+
+def createRLSimpleGame3( obsType=OBSERVATION_LOCAL ):
+    return RLEnvironmentNonStatic( *defSimpleGame3(), observationType=obsType )
+
+def createRLSimpleGame4( obsType=OBSERVATION_LOCAL ):
+    return RLEnvironmentNonStatic( *defSimpleGame4(), observationType=obsType )
 
 def createRLFrogs( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defFrogs(), observationType=obsType )
@@ -496,7 +517,7 @@ def defaultTest():
     testMaze(1, 2, True, False, OBSERVATION_LOCAL)
 
 if __name__ == "__main__":
-    #playTestMaze()
+    # playTestSimpleGame1()
     parser = argparse.ArgumentParser()
     parser.add_argument("--numEpisodes", default=1, help="Number of episodes to run",
                     type=int)
@@ -522,8 +543,8 @@ if __name__ == "__main__":
         # defaultTest()
         # testMaze(args.numEpisodes, args.jog_on_spot, True, args.reuse_game, args.observation_type)
         # testMaze(1, 0, True, True, OBSERVATION_GLOBAL)
-
-        testSimpleGame1(1, 0, True, True, OBSERVATION_GLOBAL)
+        
+        testSimpleGame1(1, 0, True, True, OBSERVATION_GLOBAL) # to uncomment
         # testFrogs(1, 0, True, True, OBSERVATION_GLOBAL)
         # testAliens(1, 0, True, True, OBSERVATION_GLOBAL)
 
