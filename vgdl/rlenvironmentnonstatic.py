@@ -61,7 +61,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             for y in range(0, game.height):
                 for x in range(0, game.width):
                     self.nsAllCells.append( (x, y) )
-        self._postInitReset()                
+        self._postInitReset()
+        self._game.reset()                
 
     # Get definition of the observation data expected
     def observationSpec(self):
@@ -177,6 +178,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # take action and compute consequences
         # replace the method that reads multiple action keys with a fn that just
         # returns the currently desired action
+
         self._avatar._readMultiActions = lambda *x: [action]
         # self._avatar._readMultiActions = lambda *x: [self._actionset[action]] # old      
         if self.visualize:
@@ -188,11 +190,15 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         else:
             for s in self._game:
                 s.update(self._game)
+
         
         # handle collision effects 
         # print "in _performAction"
         # embed()               
-        effectList = self._game._eventHandling()
+        self._game._eventHandling()
+        # if "killSprite" in [e[0] for e in self._game.effectList]:
+        #     embed()
+            
         # embed()
         # ### BEGINNING OF CHANGES
         for skey in self._other_types:
@@ -210,10 +216,11 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # #     print "before updating"
         # #     embed()
 
-        # for s in self:
+        # for s in self._game:
         #     s.update(self._game)
-        #     # if s.lastrect != s.rect:
-        #     #     embed()
+            # if s.lastrect != s.rect:
+            #     embed()
+
 
         ## END OF CHANGES
 
@@ -263,6 +270,10 @@ def defSimpleGame3():
 
 def defSimpleGame4():
     from examples.gridphysics.simpleGame4 import push_game, box_level
+    return (push_game, box_level)
+
+def defSimpleGame5():
+    from examples.gridphysics.simpleGame5 import push_game, box_level
     return (push_game, box_level)
 
 def defFrogs():
@@ -359,6 +370,9 @@ def createRLSimpleGame3( obsType=OBSERVATION_LOCAL ):
 
 def createRLSimpleGame4( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defSimpleGame4(), observationType=obsType )
+
+def createRLSimpleGame5( obsType=OBSERVATION_LOCAL ):
+    return RLEnvironmentNonStatic( *defSimpleGame5(), observationType=obsType )
 
 def createRLFrogs( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defFrogs(), observationType=obsType )
