@@ -285,7 +285,7 @@ class ErraticMissile(Missile):
 
     def update(self, game):
         Missile.update(self, game)
-        if random() < self.prob:
+        if random() < self.prob: 
             self.orientation = choice(BASEDIRS)
 
 class Bomber(SpawnPoint, Missile):
