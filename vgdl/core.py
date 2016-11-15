@@ -21,6 +21,8 @@ import re
 from IPython import embed
 
 disableContinuousKeyPress = True
+actionToKeyPress = {(-1,0): pygame.K_LEFT, (1,0): pygame.K_RIGHT,
+                    (0,1): pygame.K_DOWN, (0,-1): pygame.K_UP}
 
 keyPresses = {273: 'up', 274: 'down', 276: 'left', 275: 'right', 32: 'spacebar'}
 emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
@@ -50,12 +52,14 @@ class VGDLParser(object):
     verbose = True
 
     @staticmethod
-    def playGame(game_str, map_str, headless = False, persist_movie = False, movie_dir = "./tmpl"):
+    def playGame(game_str, map_str, playback_actions = None, headless = False, persist_movie = False, movie_dir = "./tmpl"):
         """ Parses the game and level map strings, and starts the game. """
         g = VGDLParser().parseGame(game_str)
         
         g.buildLevel(map_str)
         g.uiud = uuid.uuid4()
+        if playback_actions:
+            g.playback_actions = playback_actions
         if(headless):
             g.startGameExternalPlayer(headless, persist_movie, movie_dir )
             #g.startGame(headless,persist_movie)
@@ -210,6 +214,9 @@ class BasicGame(object):
         self.singletons = []
         # collision effects (ordered by execution order)
         self.collision_eff = []
+
+        self.playback_actions = []
+        self.playback_index = 0
         # for reading levels
         self.char_mapping = {}
         # termination criteria
@@ -558,6 +565,8 @@ class BasicGame(object):
                                 e = effect(s2, s1, resource_color, self, **kwargs) # TODO: is 's1' the actual thing we ran into?
                             else:
                                 e = effect(s2, s1, self, **kwargs)
+                                # if e[0] == "killSprite":
+                                #     embed()
                                 # if effect == killIfFromAbove:
                                 #     self.effectList.append(("killIfFromAbove",getColor(s2),getColor(s1)))
                                 # print effect
@@ -575,6 +584,9 @@ class BasicGame(object):
                             
                             else:
                                 e = effect(s1, s2, self, **kwargs)
+                                # if e[0] == "killSprite":
+                                #     embed()
+
                             if e != None:
                                 self.effectList.append(e)
 
@@ -625,9 +637,13 @@ class BasicGame(object):
             # gather events
             pygame.event.pump()
 
+
+
+            
             self.keystate = pygame.key.get_pressed()
             
-            # PT: Disables mistaken contiguous key presses, prints to terminal
+
+            # # PT: Disables mistaken contiguous key presses, prints to terminal
             if disableContinuousKeyPress:
                 keyPressType = None
                 if self.keystate != emptyKeyState:
@@ -635,23 +651,29 @@ class BasicGame(object):
                         self.keystate = emptyKeyState
                     else:
                         lastKeyPress = self.keystate
+                        if self.keystate[pygame.K_RETURN] and self.playback_actions:
+                            self.keystate = list(self.keystate)
+                            self.keystate[actionToKeyPress[self.playback_actions[self.playback_index]]] = True
+                            self.keystate = tuple(self.keystate)
+                            self.playback_index += 1
+                            
                         if lastKeyPress.index(1) in keyPresses.keys():
                             keyPressType = keyPresses[lastKeyPress.index(1)]
-                            # print keyPressType
+                            print keyPressType
 
 
                     lastKeyPressTime = self.time
 
 
-            # load/save handling
-            if self.load_save_enabled:
-                from pygame.locals import K_1, K_2
-                if self.keystate[K_2] and self._lastsaved is not None:
-                    self.setFullState(self._lastsaved)
-                    self._initScreen(self.screensize,headless)
-                    pygame.display.flip()
-                if self.keystate[K_1]:
-                    self._lastsaved = self.getFullState()
+            # # load/save handling
+            # if self.load_.save_enabled:
+            #     from pygame.locals import K_1, K_2
+            #     if self.keystate[K_2] and self._lastsaved is not None:
+            #         self.setFullState(self._lastsaved)
+            #         self._initScreen(self.screensize,headless)
+            #         pygame.display.flip()
+            #     if self.keystate[K_1]:
+            #         self._lastsaved = self.getFullState()
 
 
             # handle collision effects
@@ -693,6 +715,7 @@ class BasicGame(object):
 
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
+            
 
             #if(headless):
             if(persist_movie):
@@ -736,6 +759,9 @@ class BasicGame(object):
         else:
             self.win = False
             print "Game lost. Score=%s" % self.score
+
+        if "killSprite" in [e[0] for e in self.effectList]:
+                embed()
 
         # ipdb.set_trace()
 

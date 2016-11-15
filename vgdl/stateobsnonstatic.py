@@ -12,6 +12,7 @@ from pybrain.utilities import setAllArgs
 from ontology import RotatingAvatar, BASEDIRS, GridPhysics, ShootAvatar, kill_effects
 from core import Avatar
 from tools import listRotate
+from IPython import embed
 
 
 
@@ -176,10 +177,13 @@ class StateObsHandlerNonStatic(object):
     def _rawSensor(self, state):
         ## modified to handle killed sprites
         sprite_sensor = []
-        grid_kill_list = [self._sprite2state(sprite, oriented=False) for sprite in self._game.kill_list]
-        for _, ostates in sorted(self._obstypes.items())[::-1]:
-            alive_ostates = [s for s in ostates if not s in grid_kill_list]
+        grid_kill_list = [(sprite.name, self._sprite2state(sprite, oriented=False)) for sprite in self._game.kill_list]
+        for o_type, ostates in sorted(self._obstypes.items())[::-1]:
+            o_type_and_states = [(o_type, s) for s in ostates]
+            alive_ostates = [s[1] for s in o_type_and_states if not s in grid_kill_list]
             sprite_sensor.append((state in alive_ostates))
+
+        # embed()
 
         return sprite_sensor
 
