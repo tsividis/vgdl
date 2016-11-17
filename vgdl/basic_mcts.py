@@ -9,10 +9,11 @@ import argparse
 import random
 from IPython import embed
 import math
-
+from Queue import Queue
+from threading import Thread
 
 class Basic_MCTS:
-	def __init__(self, rleCreateFunc, obsType):
+	def __init__(self, rleCreateFunc, obsType, num_workers):
 		# assumption: not starting on terminal state
 		"""
 		root = the root node of the MCTS tree 
@@ -23,13 +24,16 @@ class Basic_MCTS:
 		"""
 		self.rleCreateFunc = rleCreateFunc
 		self.obsType = obsType
-		# self.rle = rle
-		self.rle = self.rleCreateFunc(OBSERVATION_GLOBAL)
-		self.root = MCTS_node(self.rle._getSensors(None), False, self.rle._actionset)
-		self.actions = self.rle._actionset
+		rle = self.rleCreateFunc(OBSERVATION_GLOBAL) # WARNING: do NOT use this right now.
+		# always compute using a separate rle. This is only meant to be used for manhattan distance.
+		self._obstypes = rle._obstypes
+		self.outdim = rle.outdim
+		self.root = MCTS_node(rle._getSensors(None), False, rle._actionset)
+		self.actions = rle._actionset
 		self.currentNode = self.root
 		self.defaultTime = 0
 		self.treeTime = 0
+		self.num_workers = num_workers
 
 	def getManhattanDistanceComponents(self, node):
 		"""
@@ -37,14 +41,28 @@ class Basic_MCTS:
 		expect goal to be called 'goal' in class section of theory
 		currently expects the state observation to follow a grid string format (orignal default format)
 		"""
-		reshaped_state = np.reshape(node.state, self.rle.outdim)
+		reshaped_state = np.reshape(node.state, self.outdim)
 		# np_state = np.array([[j for j in i.split('\t')] for i in node.state.splitlines()])
 		avatar = 1
 		# avatar = 2**(1+sorted(rle._obstypes.keys())[::-1].index("avatar"))
-		goal = 2**(1+sorted(self.rle._obstypes.keys())[::-1].index("goal"))
-		avatar_loc = np.where(reshaped_state == avatar)
-		goal_loc = np.where(reshaped_state == goal)
-		return avatar_loc[0][0]-goal_loc[0][0], avatar_loc[1][0] - goal_loc[1][0]
+		goal = 2**(1+sorted(self._obstypes.keys())[::-1].index("goal"))
+		# avatar_loc = np.where(reshaped_state == avatar)
+		# goal_loc = np.where(reshaped_state == goal)
+		avatar_loc = None
+		goal_loc = None
+		numRows, numCols = self.outdim
+		for i in range(numRows): 
+			for j in range(numCols):
+				if (reshaped_state[i,j] / goal) % 2 == 1:
+					goal_loc = (i,j)
+
+				if (reshaped_state[i,j]/ avatar) % 2 == 1:
+					avatar_loc = (i,j)
+
+		try:
+			return avatar_loc[0]-goal_loc[0], avatar_loc[1] - goal_loc[1]
+		except TypeError:
+			embed()
 
 	def getManhattanDistance(self, node):
 		"""
@@ -57,24 +75,40 @@ class Basic_MCTS:
 
 	def startTrainingPhase(self, numTrainingCycles):
 		# apparently the reset method is inefficient
+		def createRLE(q, rle_total):
+			for i in range(rle_total):
+				q.put(self.rleCreateFunc(OBSERVATION_GLOBAL))
+
+		q = Queue()
+		workers = []
+		for i in range(self.num_workers):
+			rle_total = (numTrainingCycles/self.num_workers) + (i < (numTrainingCycles % self.num_workers))
+			worker = Thread(target=createRLE, args=(q, rle_total,))
+			worker.setDaemon(True)
+			worker.start()
+			workers.append(worker)
+
 		for i in range(numTrainingCycles):
-			# self.rle._postInitReset()
-			# self.rle._game.reset()
-			self.rle = self.rleCreateFunc(OBSERVATION_GLOBAL)
+			# rle._postInitReset()
+			# rle._game.reset()
+			rle = q.get()
 			print "Training cycle: %i"%i
 
-			# self.rle = self.rleCreateFunc(self.obsType)
-			reward, vl = self.treePolicy(self.root)
+			# rle = self.rleCreateFunc(self.obsType)
+			reward, vl = self.treePolicy(self.root, rle)
 			if not vl.terminal:
-				reward = self.defaultPolicy(vl)
+				reward = self.defaultPolicy(vl, rle)
 
 			self.backup(vl, reward)
+
+		for worker in workers:
+			worker.join()
 
 	# def startTestingPhase(self, numTestingCycles):
 	# 	rewardSum = 0
 	# 	# for i in range(numTestingCycles):
-	# 	#self.rle = createRLSimpleGame3(OBSERVATION_GLOBAL)
-	# 	self.rle = self.rleCreateFunc(self.obsType)
+	# 	#rle = createRLSimpleGame3(OBSERVATION_GLOBAL)
+	# 	rle = self.rleCreateFunc(self.obsType)
 	# 	v = self.root
 	# 	Cp = 0
 	# 	reward = 0
@@ -83,7 +117,7 @@ class Basic_MCTS:
 	# 		a, v = self.bestChild(v,Cp)
 	# 		actionList.append(a)
 	# 		embed()
-	# 		res = self.rle.step(a)
+	# 		res = rle.step(a)
 	# 		terminal = res['pcontinue']
 	# 		if terminal:
 	# 			reward = res['reward']
@@ -100,7 +134,7 @@ class Basic_MCTS:
 		while not v.terminal:
 			a, v = self.bestChild(v,0)
 			actions.append(a)
-			# res = self.rle.step(a)
+			# res = rle.step(a)
 			# terminal = not res['pcontinue']
 			# if terminal:
 			# 	reward = res['reward']
@@ -108,40 +142,40 @@ class Basic_MCTS:
 		return actions
 
 
-	def treePolicy(self, v):
+	def treePolicy(self, v, rle):
 		count = 0
 		while not v.terminal:
 			self.treeTime += 1
 			count += 1
 			if not v.expanded:
-				reward, c = self.expand(v)
+				reward, c = self.expand(v, rle)
 				# rle.step(a)
 				return reward, c
 
 			else:
 				Cp = 0.70710 # suggested exploration weight
 				a, v = self.bestChild(v,Cp) 
-				res = self.rle.step(a)
+				res = rle.step(a)
 				terminal = not res['pcontinue']
 				if terminal:
 					reward = res['reward']
 					return reward, v
 
 
-	def expand(self,v):
+	def expand(self,v, rle):
 		expan_action = None
 		child = None
 		reward = 0
 		for a in self.actions:
 			if a not in v.children:
 				expand_action = a
-				res = self.rle.step(a)
+				res = rle.step(a)
 				new_state = res["observation"]
 				terminal = not res['pcontinue']
 				if terminal:
 					reward = res['reward']
 
-				child = MCTS_node(new_state, terminal, self.rle._actionset, parent = v)
+				child = MCTS_node(new_state, terminal, rle._actionset, parent = v)
 				v.createChild(a,child)
 				break
 
@@ -185,7 +219,7 @@ class Basic_MCTS:
 
 		return bestAction, bestChild
 
-	def defaultPolicy(self, s):
+	def defaultPolicy(self, s, rle):
 		reward = 0
 		stepSize = 1 # try 13 later
 		rotatedVecMap = {(0,1):(1,0), (1,0):(0,-1), (0,-1):(-1,0), (-1,0):(0,1)}
@@ -198,7 +232,11 @@ class Basic_MCTS:
 				rotatedVec = rotatedVecMap[preRotatedVec]
 				for i in range(stepSize):
 					vec = tuple(i*np.array(preRotatedVec) + (stepSize-i)*np.array(rotatedVec))
-					deltaY, deltaX = self.getManhattanDistanceComponents(s)
+					comps = self.getManhattanDistanceComponents(s)
+					if comps:
+						deltaY, deltaX = comps
+					else:
+						embed()
 					manhattanDistance = abs(deltaX + vec[0]) + abs(deltaY + vec[1])
 					vecDist[vec] = math.exp(-temperature * manhattanDistance)
 					vecDistSum += vecDist[vec]
@@ -216,25 +254,6 @@ class Basic_MCTS:
 			# embed()
 			a = sample
 
-
-
-
-			# preRotatedVec = [0,0]
-			# preRotatedVec[random.randint(0,1)] = 2*random.randint(0,1)-1
-			# preRotatedVec = tuple(preRotatedVec)
-			# rotatedVec = rotatedVecMap[preRotatedVec]
-			# preRotatedMagnitude = random.randint(0,stepSize-1)
-			# rotatedMagnitude = stepSize - preRotatedMagnitude
-			# preRotatedMagnitudeCopy = preRotatedMagnitude
-			# rotatedMagnitudeCopy = rotatedMagnitude
-
-			# xUnitVec = (2*random.randint(0,1)-1, 0)
-			# yUnitVec = (0, 2*random.randint(0,1)-1)
-			# xMagnitude = random.randint(0,stepSize)
-			# yMagnitude = stepSize - xMagnitude
-			# xMagnitudeCopy = xMagnitude
-			# yMagnitudeCopy = yMagnitude
-			
 			# actionList = []
 			# for i in range(stepSize):
 			# 	if s.terminal:
@@ -256,14 +275,14 @@ class Basic_MCTS:
 			# 		a = yUnitVec
 
 				# a = self.actions[random.randint(0,len(self.actions)-1)] # COMMENT OUT
-			res = self.rle.step(a)
+			res = rle.step(a)
 			new_state = res["observation"]
 			terminal = not res['pcontinue']
 			if terminal:
 				reward = res['reward']
 
-			s_new = MCTS_node(new_state,terminal, self.rle._actionset, parent = s)
-			s.createChild(a,s_new)
+			s_new = MCTS_node(new_state,terminal, rle._actionset, parent = s)
+			# s.createChild(a,s_new)
 
 			s = s_new
 			self.defaultTime += 1
@@ -321,13 +340,13 @@ class Basic_MCTS:
 	# 				a = preRotatedVec
 
 	# 			# a = self.actions[random.randint(0,len(self.actions)-1)] # COMMENT OUT
-	# 			res = self.rle.step(a)
+	# 			res = rle.step(a)
 	# 			new_state = res["observation"]
 	# 			terminal = not res['pcontinue']
 	# 			if terminal:
 	# 				reward = res['reward']
 
-	# 			s_new = MCTS_node(new_state,terminal, self.rle._actionset, parent = s)
+	# 			s_new = MCTS_node(new_state,terminal, rle._actionset, parent = s)
 	# 			s.createChild(a,s_new)
 
 	# 			s = s_new
@@ -392,15 +411,16 @@ class MCTS_node:
 
 if __name__ == "__main__":
 	obsType = OBSERVATION_GLOBAL
-	rleCreateFunc = createRLSimpleGame5
-	mcts = Basic_MCTS(rleCreateFunc, obsType)
-	mcts.startTrainingPhase(2000)
+	# self.rleCreateFunc = createRLSimpleGame4
+	rleCreateFunc = createRLSimpleGame_missile
+	mcts = Basic_MCTS(rleCreateFunc, obsType, 3)
+	mcts.startTrainingPhase(5000)
 	# from vgdl.playback import VGDLParser
 	from vgdl.core import VGDLParser
-	from examples.gridphysics.simpleGame5 import box_level, push_game
+	from examples.gridphysics.simpleGame_missile import box_level, push_game
 	game = push_game
 	level = box_level
-	# embed()
+	embed()
 	# VGDLParser.playGame(game, level)
 	VGDLParser.playGame(game, level,mcts.getBestActionsForPlayout())
 	# VGDLPlaybackParser.playGame(game, level, mcts.getBestActionsForPlayout())  
