@@ -77,10 +77,10 @@ def testMultipleTraces(rawTraces, expectedHypotheses, names, verbose):
 
 if __name__ == '__main__':
 
-	###################################
+	#############################################
+	
 	## TEST CASES
-	###################################
-
+	
 	
 	"""
 	SimpleGames (short)
@@ -246,9 +246,10 @@ if __name__ == '__main__':
 
 	
 
-	###################################
+	#############################################
+
 	## TESTING SINGLE TRACES
-	###################################
+	
 
 	# DFS Format: 
 	# def testTrace(vgdlFile, gameOutputFile, expectedHypotheses, name, maxNumTheories=100, verbose=False)
@@ -275,9 +276,8 @@ if __name__ == '__main__':
 	
 
 
-	###################################
+	#############################################	
 	## TESTING MULTIPLE TRACES
-	###################################
 
 	# traces = [rawTrace_preconditions_simple, rawTrace_simple_win, rawTrace_simple_loss]
 	# hypotheses = testMultipleTraces(traces, 1, ["rawTrace_simple_win","rawTrace_simple_loss", "rawTrace_preconditions_simple"], False)
