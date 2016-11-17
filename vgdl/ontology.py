@@ -463,6 +463,7 @@ class MovingAvatar(VGDLSprite, Avatar):
         """ Read multiple simultaneously pressed button actions. """
         from pygame.locals import K_LEFT, K_RIGHT, K_UP, K_DOWN, K_a, K_s, K_d, K_w
         res = []
+        # res += [RIGHT]
         if self.alternate_keys:
             if   game.keystate[K_d]: res += [RIGHT]
             elif game.keystate[K_a]:  res += [LEFT]
