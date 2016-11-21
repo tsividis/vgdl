@@ -644,6 +644,7 @@ class BasicGame(object):
         agentStatePrev = {}
         agentState = dict(self.getAvatars()[0].resources)
         keyPressPrev = None
+        f_obj = open(object_output,"w")
 
         while not self.ended:
             clock.tick(self.frame_rate)
@@ -703,9 +704,8 @@ class BasicGame(object):
             self._eventHandling()
 
             # Print the objects in the game out
-            with open(object_output,"w") as f:
-                f.write(str(self.getObjects()) + "\n")
-                #print self.getObjects()
+            f_obj.write(str(self.getObjects()) + "\n")
+            #print self.getObjects()
 
             # Save the event and agent state
             try:
