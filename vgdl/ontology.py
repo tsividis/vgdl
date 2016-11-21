@@ -136,6 +136,9 @@ class Immovable(VGDLSprite):
     color = GRAY
     is_static = True
 
+    def updateOptions(self, prev_pos):
+        pass
+
 class Passive(VGDLSprite):
     """ A square that may budge. """
     color = RED
