@@ -620,6 +620,8 @@ class BasicGame(object):
         pygame.display.flip()
         self.reset()
         clock = pygame.time.Clock()
+        if self.playback_actions:
+            self.frame_rate = 5
 
         win = False
         i = 0
@@ -656,18 +658,18 @@ class BasicGame(object):
             
 
             # # PT: Disables mistaken contiguous key presses, prints to terminal
-            if disableContinuousKeyPress:
+            if disableContinuousKeyPress and not self.playback_actions:
                 keyPressType = None
                 if self.keystate != emptyKeyState:
                     if (self.time-lastKeyPressTime)<2 and self.keystate==lastKeyPress:
                         self.keystate = emptyKeyState
                     else:
                         lastKeyPress = self.keystate
-                        if self.keystate[pygame.K_RETURN] and self.playback_actions:
-                            self.keystate = list(self.keystate)
-                            self.keystate[actionToKeyPress[self.playback_actions[self.playback_index]]] = True
-                            self.keystate = tuple(self.keystate)
-                            self.playback_index += 1
+                        # if self.keystate[pygame.K_RETURN] and self.playback_actions:
+                        #     self.keystate = list(self.keystate)
+                        #     self.keystate[actionToKeyPress[self.playback_actions[self.playback_index]]] = True
+                        #     self.keystate = tuple(self.keystate)
+                        #     self.playback_index += 1
                             
                         if lastKeyPress.index(1) in keyPresses.keys():
                             keyPressType = keyPresses[lastKeyPress.index(1)]
@@ -675,6 +677,15 @@ class BasicGame(object):
 
 
                     lastKeyPressTime = self.time
+
+            if self.playback_actions:
+                
+                self.keystate = list(self.keystate)
+                self.keystate[actionToKeyPress[self.playback_actions[self.playback_index]]] = True
+                self.keystate = tuple(self.keystate)
+                self.playback_index += 1
+
+
 
 
             # # load/save handling

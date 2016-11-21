@@ -276,6 +276,10 @@ def defSimpleGame5():
     from examples.gridphysics.simpleGame5 import push_game, box_level
     return (push_game, box_level)
 
+def defSimpleGame_missile():
+    from examples.gridphysics.simpleGame_missile import push_game, box_level
+    return (push_game, box_level)
+
 def defFrogs():
     from examples.gridphysics.frogs import frog_game, frog_level
     return (frog_game, frog_level)
@@ -374,6 +378,9 @@ def createRLSimpleGame4( obsType=OBSERVATION_LOCAL ):
 def createRLSimpleGame5( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defSimpleGame5(), observationType=obsType )
 
+def createRLSimpleGame_missile( obsType=OBSERVATION_LOCAL ):
+    return RLEnvironmentNonStatic( *defSimpleGame_missile(), observationType=obsType )
+
 def createRLFrogs( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defFrogs(), observationType=obsType )
 
@@ -447,6 +454,8 @@ def testSimpleGame1(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
         # rle = createRLSimpleGame1( obsType )
         print "in testSimpleGame1"
         embed()
+
+
         
 def testFrogs(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
     rle = createRLFrogs ( obsType )
@@ -468,6 +477,25 @@ def testFrogs(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
         print "in testFrogs"
         embed()
 
+def testSimpleGame_missile(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
+    rle = createRLSimpleGame_missile( obsType )
+
+    # uncomment following two lines to see the walk (causes internal warning)
+    #rle.visualize = True
+    for i in range(0,numEpisodes):
+       
+        if reuseGame:
+            # Purely for testing: reuse the game and by calling _postInitReset(True).
+            # This should be faster but self.setState(_initstate) in _postInitReset() 
+            # causes the game to slow down with hunreds of calls.
+             rle._postInitReset(True)
+        else:
+            # Re-create the game.
+            rle = createRLSimpleGame1( obsType )
+
+        # rle = createRLSimpleGame1( obsType )
+        print "in testSimpleGame1"
+        embed()
 
 def testAliens(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
     rle = createRLAliens ( obsType )
@@ -557,8 +585,8 @@ if __name__ == "__main__":
         # defaultTest()
         # testMaze(args.numEpisodes, args.jog_on_spot, True, args.reuse_game, args.observation_type)
         # testMaze(1, 0, True, True, OBSERVATION_GLOBAL)
-        
-        testSimpleGame1(1, 0, True, True, OBSERVATION_GLOBAL) # to uncomment
+        testSimpleGame_missile(1, 0, True, True, OBSERVATION_GLOBAL)
+        # testSimpleGame1(1, 0, True, True, OBSERVATION_GLOBAL) # to uncomment
         # testFrogs(1, 0, True, True, OBSERVATION_GLOBAL)
         # testAliens(1, 0, True, True, OBSERVATION_GLOBAL)
 
