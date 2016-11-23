@@ -136,6 +136,9 @@ class Immovable(VGDLSprite):
     color = GRAY
     is_static = True
 
+    def updateOptions(self, prev_pos):
+        pass
+
 class Passive(VGDLSprite):
     """ A square that may budge. """
     color = RED
@@ -285,7 +288,7 @@ class ErraticMissile(Missile):
 
     def update(self, game):
         Missile.update(self, game)
-        if random() < self.prob:
+        if random() < self.prob: 
             self.orientation = choice(BASEDIRS)
 
 class Bomber(SpawnPoint, Missile):
@@ -463,6 +466,7 @@ class MovingAvatar(VGDLSprite, Avatar):
         """ Read multiple simultaneously pressed button actions. """
         from pygame.locals import K_LEFT, K_RIGHT, K_UP, K_DOWN, K_a, K_s, K_d, K_w
         res = []
+        # res += [RIGHT]
         if self.alternate_keys:
             if   game.keystate[K_d]: res += [RIGHT]
             elif game.keystate[K_a]:  res += [LEFT]

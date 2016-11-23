@@ -402,6 +402,20 @@ class BasicGame(object):
                              'airsteering',
                              'strength',
                              ]
+    def getObjects(self):
+        """
+        Return dictionary with all the objects, and their parameters, from the full state.
+        """
+        obj_list = {}
+        fs = self.getFullState()
+        obs = fs['objects']
+
+        for ob_type in obs:
+            for ob in self.getSprites(ob_type):
+                features = {'color':colorDict[str(ob.color)], 'row':(ob.rect.right)}
+                type_vector = {'color':colorDict[str(ob.color)], 'row':(ob.rect.right)}
+                obj_list[ob.ID] = {'position':(ob.rect.left, ob.rect.right), 'features':features, 'type': type_vector}
+        return obj_list
 
     def getFullState(self,as_string = False):
         """ Return a dictionary that allows full reconstruction of the game state,
@@ -606,6 +620,8 @@ class BasicGame(object):
         pygame.display.flip()
         self.reset()
         clock = pygame.time.Clock()
+        if self.playback_actions:
+            self.frame_rate = 5
 
         win = False
         i = 0
@@ -621,13 +637,14 @@ class BasicGame(object):
         #logging.basicConfig(filename=gamelog, level=logging.INFO)
         timestamp = datetime.datetime.strftime(datetime.datetime.now(), '%Y_%m_%d_%H_%M_%S')
         game_output = "output/{}_{}.txt".format(name, timestamp)
-
+        object_output = "output/{}_{}_objects.txt".format(name,timestamp)
 
         # --------- Game-play ------------
         finalEventList = []
         agentStatePrev = {}
         agentState = dict(self.getAvatars()[0].resources)
         keyPressPrev = None
+        f_obj = open(object_output,"w")
 
         while not self.ended:
             clock.tick(self.frame_rate)
@@ -637,25 +654,23 @@ class BasicGame(object):
             # gather events
             pygame.event.pump()
 
-
-
-            
+            # get action pressed
             self.keystate = pygame.key.get_pressed()
             
 
             # # PT: Disables mistaken contiguous key presses, prints to terminal
-            if disableContinuousKeyPress:
+            if disableContinuousKeyPress and not self.playback_actions:
                 keyPressType = None
                 if self.keystate != emptyKeyState:
                     if (self.time-lastKeyPressTime)<2 and self.keystate==lastKeyPress:
                         self.keystate = emptyKeyState
                     else:
                         lastKeyPress = self.keystate
-                        if self.keystate[pygame.K_RETURN] and self.playback_actions:
-                            self.keystate = list(self.keystate)
-                            self.keystate[actionToKeyPress[self.playback_actions[self.playback_index]]] = True
-                            self.keystate = tuple(self.keystate)
-                            self.playback_index += 1
+                        # if self.keystate[pygame.K_RETURN] and self.playback_actions:
+                        #     self.keystate = list(self.keystate)
+                        #     self.keystate[actionToKeyPress[self.playback_actions[self.playback_index]]] = True
+                        #     self.keystate = tuple(self.keystate)
+                        #     self.playback_index += 1
                             
                         if lastKeyPress.index(1) in keyPresses.keys():
                             keyPressType = keyPresses[lastKeyPress.index(1)]
@@ -663,6 +678,15 @@ class BasicGame(object):
 
 
                     lastKeyPressTime = self.time
+
+            if self.playback_actions:
+                
+                self.keystate = list(self.keystate)
+                self.keystate[actionToKeyPress[self.playback_actions[self.playback_index]]] = True
+                self.keystate = tuple(self.keystate)
+                self.playback_index += 1
+
+
 
 
             # # load/save handling
@@ -679,6 +703,10 @@ class BasicGame(object):
             # handle collision effects
             self._eventHandling()
 
+            # Print the objects in the game out
+            f_obj.write(str(self.getObjects()) + "\n")
+            #print self.getObjects()
+
             # Save the event and agent state
             try:
                 agentState = dict(self.getAvatars()[0].resources)
@@ -692,11 +720,11 @@ class BasicGame(object):
                 #print "ERROR: {} --> {}".format(e, "Using previous agent state...")
 
             if self.effectList:
+                state = self.getFullState()
+                # Print the objects in the game out -- just when event occurs
+                #print self.getObjects()
                 event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': self.effectList, 'gameState': self.getFullStateColorized()}
-                # event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': self.effectList, 'gameState': self.getFullStateColorized()}
-                # print event
                 finalEventList.append(event)
-                # finalEventList.append(self.effectList)
 
             # Termination #1
             for t in self.terminations:
@@ -708,7 +736,6 @@ class BasicGame(object):
             for s in self:
                 s.update(self)
 
-            
             # Termination #2 : Avatars have been killed
             if len(self.getAvatars()) == 0:
                 break
@@ -740,12 +767,6 @@ class BasicGame(object):
         with open(game_output, 'w') as f:
             f.write(str((finalEventList, terminationCondition)))
 
-        # print "\n\n"
-        # print "(["
-        # for finalEvent in finalEventList[:-1]:
-        #     print finalEvent, "," 
-        # print finalEventList[-1]
-        # print "],\n{}\n)\n\n".format(terminationCondition)
 
         print "Expecting {} events".format(len(finalEventList))
 
@@ -835,7 +856,6 @@ class VGDLSprite(object):
     name = None
     COLOR_DISC = [20,80,140,200]
     dirtyrects = []
-
     is_static= False
     only_active =False
     is_avatar= False
@@ -856,7 +876,7 @@ class VGDLSprite(object):
         self.physics.gridsize = size
         self.speed = speed or self.speed
         self.cooldown = cooldown or self.cooldown
-
+        self.ID = id(self) # TODO: Make sure that these are unique, maintained during the lifetime of the object
         #TODO: change the choice to be from colors that are not taken?
         self.color = color or self.color or (140, 20, 140)
         print 'color', self.color
