@@ -163,7 +163,7 @@ class Basic_MCTS:
 
 
 	def expand(self,v, rle):
-		expan_action = None
+		expand_action = None
 		child = None
 		reward = 0
 		for a in self.actions:
@@ -210,7 +210,7 @@ class Basic_MCTS:
 
 				else:
 					manhattanDistanceTransform = transform(self.getManhattanDistance(c))
-					funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) + float(manhattanDistanceTransform)/c.visitCount
+					funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(c.visitCount)/v.visitCount) + float(manhattanDistanceTransform)/c.visitCount
 
 			if funcVal > maxFuncVal:
 				maxFuncVal = funcVal
