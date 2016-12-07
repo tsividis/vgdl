@@ -32,7 +32,7 @@ def runInduction_DFS(vgdlString, gameOutput, maxTheories):
 
 if __name__ == "__main__":
     """
-    Run: "python induction.py simpleGame1.txt simpleGame1.txt" 
+    Run: "python induction.py simpleGame1.txt simpleGame1_game_output.txt" 
     """
     game = sys.argv[1]
     output = sys.argv[2]

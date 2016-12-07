@@ -61,7 +61,7 @@ BasicGame frame_rate=30
         box treasure > undoAll
         box poison > undoAll
         box medicine > undoAll
-        goal avatar > killSprite  
+        goal avatar > killSprite
     TerminationSet
         SpriteCounter stype=box     limit=0 win=True
         SpriteCounter stype=goal    limit=0 win=True
