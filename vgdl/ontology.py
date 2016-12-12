@@ -136,17 +136,23 @@ class Immovable(VGDLSprite):
     color = GRAY
     is_static = True
 
-    def updateOptions(self, prev_pos):
-        pass
+    def updateOptions(self, game, object_info):
+        return {object_info.position:1}
 
 class Passive(VGDLSprite):
     """ A square that may budge. """
     color = RED
 
+    def updateOptions(self, game, object_info):
+        return {object_info.position:1}
+
 class ResourcePack(Resource):
     """ Can be collected, and in that case adds/increases a progress bar on the collecting sprite.
     Multiple resource packs can refer to the same type of base resource. """
     is_static = True
+
+    def updateOptions(self, game, object_info):
+        return {object_info.position:1}
 
 class Flicker(VGDLSprite):
     """ A square that persists just a few timesteps. """
