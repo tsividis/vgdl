@@ -877,6 +877,7 @@ class VGDLSprite(object):
         self.speed = speed or self.speed
         self.cooldown = cooldown or self.cooldown
         self.ID = id(self) # TODO: Make sure that these are unique, maintained during the lifetime of the object
+        self.direction = None
         #TODO: change the choice to be from colors that are not taken?
         self.color = color or self.color or (140, 20, 140)
         print 'color', self.color
@@ -900,6 +901,11 @@ class VGDLSprite(object):
         self.lastmove += 1
         if not self.is_static and not self.only_active:
             self.physics.passiveMovement(self)
+
+    def updateOptions(self, game, object_info):
+        """ The main place where subclasses differ. """
+        if not self.is_static and not self.only_active:
+            return {self.physics.calculatePassiveMovement(self):1}
 
     def _updatePos(self, orientation, speed=None):
         if speed is None:

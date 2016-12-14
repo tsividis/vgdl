@@ -77,6 +77,20 @@ class GridPhysics():
         if speed != 0 and hasattr(sprite, 'orientation'):
             sprite._updatePos(sprite.orientation, speed * self.gridsize[0])
 
+    def calculatePassiveMovement(self, sprite):
+        if sprite.speed is None:
+            speed = 1
+        else:
+            speed = sprite.speed
+        if speed != 0 and hasattr(sprite, 'orientation'):
+            orientation = sprite.orientation
+            speed = speed * self.gridsize[0]
+            if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
+                coords = self.rect.move((orientation[0]*speed, orientation[1]*speed))
+                return coords
+            return sprite.rect
+                  
+
     def activeMovement(self, sprite, action, speed=None):
         if speed is None:
             if sprite.speed is None:
@@ -84,8 +98,25 @@ class GridPhysics():
             else:
                 speed = sprite.speed
         if speed != 0 and action is not None:
-            sprite._updatePos(action, speed * self.gridsize[0])
+            position = sprite._updatePos(action, speed * self.gridsize[0])
 
+    def calculateActiveMovement(self, sprite, action, speed=None):
+        """
+        Calculate where the sprite would end up in a timestep, without actually updating its position.
+        """
+        if speed is None:
+            if sprite.speed is None:
+                speed = 1
+            else:
+                speed = sprite.speed
+        if speed != 0 and action is not None:
+            orientation = action
+            speed = speed * self.gridsize[0]
+        
+            if not(sprite.cooldown > sprite.lastmove or abs(orientation[0])+abs(orientation[1])==0):
+                coords = sprite.rect.move((orientation[0]*speed, orientation[1]*speed)) # TODO: Make sure this doesn't actually update the sprite position in game
+                return coords
+        return sprite.rect
 
     def distance(self, r1, r2):
         """ Grid physics use Hamming distances. """
@@ -130,29 +161,32 @@ class GravityPhysics(ContinuousPhysics):
 #     Sprite types
 # ---------------------------------------------------------------------
 from core import VGDLSprite, Resource
-
+'''
+In updateOptions function, object_info has form 
+    {'position':(ob.rect.left, ob.rect.right), 'features':features, 'type': type_vector}
+'''
 class Immovable(VGDLSprite):
     """ A gray square that does not budge. """
     color = GRAY
     is_static = True
 
-    def updateOptions(self, game, object_info):
-        return {object_info.position:1}
+    def updateOptions(self, game):
+        return {self.rect:1}
 
 class Passive(VGDLSprite):
     """ A square that may budge. """
     color = RED
 
-    def updateOptions(self, game, object_info):
-        return {object_info.position:1}
+    def updateOptions(self, game):
+        return {self.rect:1}
 
 class ResourcePack(Resource):
     """ Can be collected, and in that case adds/increases a progress bar on the collecting sprite.
     Multiple resource packs can refer to the same type of base resource. """
     is_static = True
 
-    def updateOptions(self, game, object_info):
-        return {object_info.position:1}
+    def updateOptions(self, game):
+        return {self.rect:1}
 
 class Flicker(VGDLSprite):
     """ A square that persists just a few timesteps. """
@@ -220,9 +254,17 @@ class RandomNPC(VGDLSprite):
 
     def update(self, game):
         VGDLSprite.update(self, game)
-        self.physics.activeMovement(self, choice(BASEDIRS))
+        self.direction = choice(BASEDIRS)
+        self.physics.activeMovement(self, self.direction)
 
-class OrientedSprite(VGDLSprite):
+    def updateOptions(self, game):
+        options = {}
+        for direction in BASEDIRS:
+            options[self.physics.calculateActiveMovement(self, direction)] = 1.0/len(BASEDIRS)
+        return options
+
+
+class OrientedSprite(VGDLSprite): ##
     """ A sprite that maintains the current orientation. """
     draw_arrow = False
     orientation = RIGHT
@@ -234,6 +276,7 @@ class OrientedSprite(VGDLSprite):
             col = (self.color[0], 255 - self.color[1], self.color[2])
             pygame.draw.polygon(game.screen, col, triPoints(self.rect, unitVector(self.orientation)))
 
+
 class Conveyor(OrientedSprite):
     """ A static object that used jointly with the 'conveySprite' interaction to move
     other sprites around."""
@@ -242,7 +285,7 @@ class Conveyor(OrientedSprite):
     strength = 1
     draw_arrow = True
 
-class Missile(OrientedSprite):
+class Missile(OrientedSprite): ##
     """ A sprite that constantly moves in the same direction. """
     speed = 1
     color = PURPLE
@@ -304,7 +347,7 @@ class Bomber(SpawnPoint, Missile):
         Missile.update(self, game)
         SpawnPoint.update(self, game)
 
-class Chaser(RandomNPC):
+class Chaser(RandomNPC): ##
     """ Pick an action that will move toward the closest sprite of the provided target type. """
     stype = None
     fleeing = False
@@ -314,6 +357,18 @@ class Chaser(RandomNPC):
         res = []
         for target in game.getSprites(self.stype):
             d = self.physics.distance(self.rect, target.rect)
+            if d < bestd:
+                bestd = d
+                res = [target]
+            elif d == bestd:
+                res.append(target)
+        return res
+
+    def _calculateClosestTargets(self, game, rect):
+        bestd = 1e100
+        res = []
+        for target in game.getSprites(self.stype):
+            d = self.physics.distance(rect, target.rect)
             if d < bestd:
                 bestd = d
                 res = [target]
@@ -345,11 +400,40 @@ class Chaser(RandomNPC):
             options = BASEDIRS
         self.physics.activeMovement(self, choice(options))
 
+
+    def updateOptions(self, game): #TODO: Need to make sure to feed in a copy of the game, so as not to actually update the current game? 
+        VGDLSprite.update(self, game)
+        options = []
+        position_options = {}
+        for target in self._closestTargets(game):
+            options.extend(self._movesToward(game, target))
+        if len(options) == 0:
+            options = BASEDIRS
+        for option in options:
+            position_options[self.physics.calculateActiveMovement(self, option)] = 1.0/len(options)
+        return position_options
+        
+        # first_positions = VGDLSprite.updateOptions(self, game)
+        # options = []
+        # position_options = {}
+
+        # for position in first_positions.keys():
+        #     for target in self._calculateClosestTargets(self, game, position):
+        #         options.extend(self._movesToward(game, target))
+        #     if len(options) == 0:
+        #         options = BASEDIRS
+
+        #     for option in options: 
+        #         #TODO: This won't work as is...
+        #         position_options[self.physics.calculateActiveMovement(self, option)] = first_positions[position] * 1.0/len(options) # Multiply the probabilities
+        # return position_options
+
+
 class Fleeing(Chaser):
     """ Just reversing directions"""
     fleeing = True
 
-class AStarChaser(RandomNPC):
+class AStarChaser(RandomNPC): ##
     """ Move towards the character using A* search. """
     stype = None
     fleeing = False
@@ -437,6 +521,39 @@ class AStarChaser(RandomNPC):
                     movement = LEFT
                     
         self.physics.activeMovement(self, movement)
+
+    def updateOptions(self, game):
+        VGDLSprite.update(self, game)  #TODO: Need to make sure to feed in a copy of the game, so as not to actually update the current game? 
+
+        world = AStarWorld(game)
+        path = world.getMoveFor(self)
+        
+        # Uncomment below to draw debug paths.
+        # self._setDebugVariables(world,path)
+        
+        if len(path)>1:
+            move = path[1]
+            
+            nextX, nextY = world.get_sprite_tile_position(move.sprite)
+            nowX, nowY = world.get_sprite_tile_position(self)
+            
+            movement = None
+            
+            if nowX == nextX:
+                if nextY > nowY:
+                    #logToFile('DOWN')
+                    movement = DOWN
+                else:
+                    #logToFile('UP')
+                    movement = UP
+            else:
+                if nextX > nowX:
+                    #logToFile('RIGHT')
+                    movement = RIGHT
+                else:
+                    #logToFile('LEFT')
+                    movement = LEFT
+        return {self.physics.calculateActiveMovement(self, movement):1}
 
 
 # ---------------------------------------------------------------------

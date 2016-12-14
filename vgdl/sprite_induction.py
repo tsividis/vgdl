@@ -4,7 +4,7 @@ Sprite Induction
 from ontology import *
 
 
-# Create dictionary with transition updates : should we do this manually, or can we do it automatically? 
+# Create dictionary with transition updates: (TODO) should we do this manually, or can we do it automatically? 
 sprite_types = [Immovable, Passive, Resource, 
 ResourcePack, RandomNPC, Chaser, AStarChaser, 
 OrientedSprite, Missile]
