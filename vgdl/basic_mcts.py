@@ -12,6 +12,24 @@ import math
 from Queue import Queue
 from threading import Thread
 
+"""
+Run: python -m vgdl.basic_mcts
+(from the top-level vgdl directory.)
+
+
+Calling rle.step(a). Returns a dictionary with:
+'reward', 'observation' and 'pcontinue': whether it was a terminal state
+
+
+when you do rle.step(a), what happens to the state in other branches of the tree?
+
+##Helps learning time to not use manhattan distance in bestchild.
+## But manhattan distance is helpful for default policy.
+
+## try working with bellemare_mcts
+"""
+
+
 class Basic_MCTS:
 	def __init__(self, rleCreateFunc, obsType, num_workers):
 		# assumption: not starting on terminal state
@@ -22,16 +40,30 @@ class Basic_MCTS:
 		             in the selection step
 		defaultPolicy = the policy used in the simulation step.
 		"""
-		self.rleCreateFunc = rleCreateFunc
+
+		## Each time you call self.rleCreateFunc, it returns an rle (rl environment) to you.
+		## We do this once per episode.
+		self.rleCreateFunc = rleCreateFunc 
 		self.obsType = obsType
-		rle = self.rleCreateFunc(OBSERVATION_GLOBAL) # WARNING: do NOT use this right now.
+		## A few different ways to get observations of the game-state.
+		## Observations of everything that's happening on the screen: OBSERVATION_GLOBAL
+		## or just of the squares surrounding your avatar: some_other_keyword.
+		rle = self.rleCreateFunc(OBSERVATION_GLOBAL)
 		# always compute using a separate rle. This is only meant to be used for manhattan distance.
 		self._obstypes = rle._obstypes
 		self.outdim = rle.outdim
-		self.root = MCTS_node(rle._getSensors(None), False, rle._actionset)
+		## returns a representation of the current state.
+		## numpy array. Each location in the array is a different grid cell.
+		## Each sprite is a unique number. Empty:0, boxes can be 1, agent: 4
+		## Assignments of types:number come from the rle instead
+		## Different instances of same type have same number.
+		## You can have multiple sprites on same square. Number we are shown 
+		## is the sum of the IDs.
+		## IDs are generated such that the objects are recoverable from the sum.
+		self.root = MCTS_node(rle._getSensors(None), False, rle._actionset) 
 		self.actions = rle._actionset
 		self.currentNode = self.root
-		self.defaultTime = 0
+		self.defaultTime = 0 ## Just for comparing defaultPolicy and treePolity
 		self.treeTime = 0
 		self.num_workers = num_workers
 
@@ -45,6 +77,8 @@ class Basic_MCTS:
 		# np_state = np.array([[j for j in i.split('\t')] for i in node.state.splitlines()])
 		avatar = 1
 		# avatar = 2**(1+sorted(rle._obstypes.keys())[::-1].index("avatar"))
+		## Example: to find what ID a box would have, you'd just do ...index("box"). This is the
+		## Schaul function for figuring the sprite IDs.
 		goal = 2**(1+sorted(self._obstypes.keys())[::-1].index("goal"))
 		# avatar_loc = np.where(reshaped_state == avatar)
 		# goal_loc = np.where(reshaped_state == goal)
@@ -129,11 +163,14 @@ class Basic_MCTS:
 	# 	return rewardSum
 
 	def getBestActionsForPlayout(self):
+		cntr = 0
 		v = self.root
 		actions = []
 		while not v.terminal:
 			a, v = self.bestChild(v,0)
 			actions.append(a)
+			print cntr
+			cntr+=1
 			# res = rle.step(a)
 			# terminal = not res['pcontinue']
 			# if terminal:
@@ -184,9 +221,9 @@ class Basic_MCTS:
 	def bestChild(self, v, Cp):
 		def transform(x):
 			# return 1./x
-			coefficient = 7.
-			slowdown_factor = 1./3
-			return coefficient/(1+math.exp(-slowdown_factor * x)) # sigmoid
+			coefficient = 0.#7.
+			temperature = 1./3
+			return coefficient/(1+math.exp(-temperature * x)) # sigmoid
 
 		maxFuncVal = -float('inf')
 		bestChild = None
@@ -226,6 +263,9 @@ class Basic_MCTS:
 		vecDist = dict()
 		temperature = 0.2
 		
+		## Generates all the vectors that have 'stepSize' size.
+		## We'd have to enter a sequence of actions if we changed stepSize.
+		## Have Aritro fix it if you want to do that (or do it yourself)
 		while not s.terminal:
 			vecDistSum = 0
 			for preRotatedVec in rotatedVecMap:
@@ -239,7 +279,7 @@ class Basic_MCTS:
 						embed()
 					manhattanDistance = abs(deltaX + vec[0]) + abs(deltaY + vec[1])
 					vecDist[vec] = math.exp(-temperature * manhattanDistance)
-					vecDistSum += vecDist[vec]
+					vecDistSum += vecDist[vec] ## 
 
 			for vec in vecDist:
 				vecDist[vec] /= vecDistSum
@@ -400,29 +440,34 @@ class MCTS_node:
 		    if len(self.children) == len(self.actions):
 		    	self.expanded = True
 
-	def getReward(self):
-		if self.visitCount > 0:
-			return float(self.qVal)/self.visitCount
+ #    ## Maybe delete this; not getting called.
+	# def getReward(self):
+	# 	if self.visitCount > 0:
+	# 		return float(self.qVal)/self.visitCount
 
-		else:
-			return -1
+	# 	else:
+	# 		return -1 #WHY
 
 
 
 if __name__ == "__main__":
 	obsType = OBSERVATION_GLOBAL
-	# self.rleCreateFunc = createRLSimpleGame4
-	rleCreateFunc = createRLSimpleGame_missile
+	## passing a function. That function contains things set in
+	## 'rlenvironmentnonstatic' file
+	## You have to make a function that creates the environment.
+	## Make the game, then follow the layout in 'rlenvironmentnonstatic'
+	rleCreateFunc = createRLSimpleGame4
 	mcts = Basic_MCTS(rleCreateFunc, obsType, 3)
-	mcts.startTrainingPhase(5000)
+	mcts.startTrainingPhase(1000)
 	# from vgdl.playback import VGDLParser
+	## Now open a copy of the game and play through it.
 	from vgdl.core import VGDLParser
-	from examples.gridphysics.simpleGame_missile import box_level, push_game
+	from examples.gridphysics.simpleGame4 import box_level, push_game
 	game = push_game
 	level = box_level
 	embed()
 	# VGDLParser.playGame(game, level)
-	VGDLParser.playGame(game, level,mcts.getBestActionsForPlayout())
+	VGDLParser.playGame(game, level, mcts.getBestActionsForPlayout())
 	# VGDLPlaybackParser.playGame(game, level, mcts.getBestActionsForPlayout())  
 
 	# rewardSum = mcts.startTestingPhase(50)

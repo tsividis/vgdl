@@ -362,6 +362,10 @@ def _verify( obs, targetObs ):
         return False
     return True
 
+##TODO: Add these functions here to make a new game. 
+## That is, Make the def createRLSimpleGame1...
+##          and define defSimpleGame1...
+## Star in these args unzips the tuple.
 # simple maze test, moved to goal and win
 def createRLMaze( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defMaze(), observationType=obsType )
