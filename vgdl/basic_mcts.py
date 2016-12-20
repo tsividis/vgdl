@@ -182,8 +182,7 @@ class Basic_MCTS:
 
 	def bestChild(self, v, Cp):
 		def transform(x):
-			# return 1./x
-			coefficient = 7.
+			coefficient = 0.
 			slowdown_factor = 1./3
 			return coefficient/(1+math.exp(-slowdown_factor * x)) # sigmoid
 
@@ -191,7 +190,6 @@ class Basic_MCTS:
 		bestChild = None
 		bestAction = None
 		for a,c in v.children.items():
-			# embed()
 			if v.equals(c):
 				funcVal = -float('inf')
 			elif c.visitCount == 0:
@@ -226,7 +224,7 @@ class Basic_MCTS:
 		stepSize = 1 # try 13 later
 		rotatedVecMap = {(0,1):(1,0), (1,0):(0,-1), (0,-1):(-1,0), (-1,0):(0,1)}
 		vecDist = dict()
-		temperature = 0.2
+		temperature = 3
 		terminal = False
 		iters = 0
 		state = s.state
@@ -239,10 +237,7 @@ class Basic_MCTS:
 				for i in range(stepSize):
 					vec = tuple(i*np.array(preRotatedVec) + (stepSize-i)*np.array(rotatedVec))
 					comps = self.getManhattanDistanceComponents(state) # needs to change
-					if comps:
-						deltaY, deltaX = comps
-					else:
-						embed()
+					deltaY, deltaX = comps
 					manhattanDistance = abs(deltaX + vec[0]) + abs(deltaY + vec[1])
 					vecDist[vec] = math.exp(-temperature * manhattanDistance)
 					vecDistSum += vecDist[vec]
@@ -338,8 +333,8 @@ if __name__ == "__main__":
 	obsType = OBSERVATION_GLOBAL
 	# self.rleCreateFunc = createRLSimpleGame4
 	rleCreateFunc = createRLSimpleGame_missile
-	mcts = Basic_MCTS(0.8, rleCreateFunc, obsType, 1)
-	mcts.startTrainingPhase(20000, 30)
+	mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1)
+	mcts.startTrainingPhase(125, 30)
 	# from vgdl.playback import VGDLParser
 	from vgdl.core import VGDLParser
 	from examples.gridphysics.simpleGame_missile import box_level, push_game
@@ -347,7 +342,7 @@ if __name__ == "__main__":
 	level = box_level
 	embed()
 	# VGDLParser.playGame(game, level)
-	VGDLParser.playGame(game, level,mcts.getBestActionsForPlayout())
+	VGDLParser.playGame(game, level, mcts.getBestActionsForPlayout())
 	# VGDLPlaybackParser.playGame(game, level, mcts.getBestActionsForPlayout())  
 
 	# rewardSum = mcts.startTestingPhase(50)
