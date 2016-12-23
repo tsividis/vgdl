@@ -58,8 +58,8 @@ class Basic_MCTS:
 		## You can have multiple sprites on same square. Number we are shown 
 		## is the sum of the IDs.
 		## IDs are generated such that the objects are recoverable from the sum.
-		self.root = MCTS_node(rle._getSensors(None), False, rle._actionset)
-		self.actions = rle._actionset
+		self.actions = rle._actionset + [(0,0)]
+		self.root = MCTS_node(rle._getSensors(None), False, self.actions)
 		self.currentNode = self.root
 		self.defaultTime = 0
 		self.treeTime = 0
@@ -122,7 +122,8 @@ class Basic_MCTS:
 			# rle._game.reset()
 			rle = self.rleCreateFunc(OBSERVATION_GLOBAL)
 			# rle = q.get()
-			print "Training cycle: %i"%i
+			if i%10==0:
+				print "Training cycle: %i"%i
 
 			# rle = self.rleCreateFunc(self.obsType)
 			reward, vl, iters = self.treePolicy(self.root, rle, step_horizon)
@@ -220,7 +221,8 @@ class Basic_MCTS:
 				if terminal:
 					reward = res['reward']
 
-				child = MCTS_node(new_state, terminal, rle._actionset, parent = v)
+				# child = MCTS_node(new_state, terminal, rle._actionset, parent = v)
+				child = MCTS_node(new_state, terminal, self.actions, parent = v)
 
 				v.createChild(a,child)
 				break
@@ -385,7 +387,7 @@ if __name__ == "__main__":
 	## Make the game, then follow the layout in 'rlenvironmentnonstatic'
 	rleCreateFunc = createRLSimpleGame4
 	mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1)
-	mcts.startTrainingPhase(20, 20)
+	mcts.startTrainingPhase(120, 20)
 	# from vgdl.playback import VGDLParser
 	from vgdl.core import VGDLParser
 	from examples.gridphysics.simpleGame4 import box_level, push_game
