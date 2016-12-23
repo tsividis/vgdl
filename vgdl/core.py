@@ -7,7 +7,7 @@ import pygame
 from random import choice
 from tools import Node, indentTreeParser
 from collections import defaultdict
-from vgdl.tools import roundedPoints
+from tools import roundedPoints
 import os
 import datetime
 import uuid
@@ -414,7 +414,8 @@ class BasicGame(object):
             for ob in self.getSprites(ob_type):
                 features = {'color':colorDict[str(ob.color)], 'row':(ob.rect.right)}
                 type_vector = {'color':colorDict[str(ob.color)], 'row':(ob.rect.right)}
-                obj_list[ob.ID] = {'position':(ob.rect.left, ob.rect.right), 'features':features, 'type': type_vector}
+                sprite = ob
+                obj_list[ob.ID] = {'sprite': sprite, 'position':(ob.rect.left, ob.rect.right), 'features':features, 'type': type_vector}
         return obj_list
 
     def getFullState(self,as_string = False):
@@ -640,16 +641,44 @@ class BasicGame(object):
         object_output = "output/{}_{}_objects.txt".format(name,timestamp)
 
         # --------- Game-play ------------
+        from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
+        from ontology import initializeDistribution, updateDistribution
         finalEventList = []
         agentStatePrev = {}
         agentState = dict(self.getAvatars()[0].resources)
         keyPressPrev = None
         f_obj = open(object_output,"w")
 
+        # For sprite induction
+        sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
+        objects = self.getObjects()
+        spriteDistribution = {}
+        for obj in objects:
+            spriteDistribution[obj] = initializeDistribution(sprite_types) # Indexed by object ID
+        #print spriteDistribution
+        prev_states = {}
+
         while not self.ended:
             clock.tick(self.frame_rate)
             self.time += 1
             self._clearAll()
+
+            # TODO: get current game state
+            objects = self.getObjects()
+            for sprite in spriteDistribution.keys(): # Here the keys are the IDs of the game objects
+                game = self
+                
+                sprite_obj = objects[sprite]["sprite"] #TODO: update when a sprite is killed but the game isn't over, need not to check that sprite
+                if sprite_obj.name != 'avatar': # TODO: Avatar does not have an updateOptions function (yet)
+                    #print sprite_obj
+                    options = sprite_obj.updateOptions(game)
+                    # if sprite_obj.name != "wall":
+                    #     print sprite_obj.name, objects[sprite]["position"]
+                    #     print options
+                    prev_states[sprite] = {"game":game, "sprite":sprite, "options":options, "outcome": None}
+                    #TODO: Issue with Chaser's position options
+                    #TODO: Save these options somewhere, to access when we see the game outcome
+            
 
             # gather events
             pygame.event.pump()
@@ -687,8 +716,6 @@ class BasicGame(object):
                 self.playback_index += 1
 
 
-
-
             # # load/save handling
             # if self.load_.save_enabled:
             #     from pygame.locals import K_1, K_2
@@ -717,14 +744,28 @@ class BasicGame(object):
             except Exception as e:              # TODO: how to process changes in resources that led to termination state?
                 agentState = agentStatePrev
                 keyPressType = keyPressPrev
-                #print "ERROR: {} --> {}".format(e, "Using previous agent state...")
 
             if self.effectList:
                 state = self.getFullState()
-                # Print the objects in the game out -- just when event occurs
-                #print self.getObjects()
                 event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': self.effectList, 'gameState': self.getFullStateColorized()}
                 finalEventList.append(event)
+
+                # Get objects involved in the effectList
+                collision_objects = set()
+                for effect in event['effectList']:
+                    collision_objects.add(effect[1])
+                    collision_objects.add(effect[2])
+            
+            # TODO: observe all objects here; look at the options we found previously, update the distribution for each avatar....
+            objects = self.getObjects()
+            for sprite in spriteDistribution.keys(): # Here the keys are the IDs of the game objects
+                if sprite not in collision_objects:
+                    sprite_obj = objects[sprite]["sprite"] #TODO: update when a sprite is killed but the game isn't over, need not to check that sprite
+                    if sprite_obj.name != 'avatar': # TODO: Avatar does not have an updateOptions function (yet)
+                        prev_states[sprite]["outcome"] = objects[sprite]["position"]
+                       
+                    new_dist = updateDistribution(sprite, objects, spriteDistribution, prev_states)
+                    spriteDistribution[sprite] = new_dist
 
             # Termination #1
             for t in self.terminations:
@@ -905,7 +946,8 @@ class VGDLSprite(object):
     def updateOptions(self, game, object_info):
         """ The main place where subclasses differ. """
         if not self.is_static and not self.only_active:
-            return {self.physics.calculatePassiveMovement(self):1}
+            rect = self.physics.calculatePassiveMovement(self)
+            return {(rect.left, rect.right): 1.0}
 
     def _updatePos(self, orientation, speed=None):
         if speed is None:
