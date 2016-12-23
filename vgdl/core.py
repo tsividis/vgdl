@@ -49,7 +49,7 @@ colorDict = {str((0, 200, 0)): 'GREEN',\
 
 class VGDLParser(object):
     """ Parses a string into a Game object. """
-    verbose = True
+    verbose = False
 
     @staticmethod
     def playGame(game_str, map_str, playback_actions = None, headless = False, persist_movie = False, movie_dir = "./tmpl"):
@@ -64,7 +64,7 @@ class VGDLParser(object):
             g.startGameExternalPlayer(headless, persist_movie, movie_dir )
             #g.startGame(headless,persist_movie)
         else:
-            g.startGame(headless,persist_movie)
+            g.startGame(headless, persist_movie)
 
         return g
 
@@ -194,7 +194,7 @@ class BasicGame(object):
     def __init__(self, **kwargs):
         from ontology import Immovable, DARKGRAY, MovingAvatar, GOLD
         for name, value in kwargs.iteritems():
-            print "NAME: ", name
+            # print "NAME: ", name
             if hasattr(self, name):
                 self.__dict__[name] = value
             else:
@@ -604,8 +604,8 @@ class BasicGame(object):
                             if e != None:
                                 self.effectList.append(e)
 
-        if len(self.effectList) > 0:
-            print self.effectList
+        # if len(self.effectList) > 0:
+        #     print self.effectList
 
         # return effectList
 
@@ -674,7 +674,7 @@ class BasicGame(object):
                             
                         if lastKeyPress.index(1) in keyPresses.keys():
                             keyPressType = keyPresses[lastKeyPress.index(1)]
-                            print keyPressType
+                            # print keyPressType
 
 
                     lastKeyPressTime = self.time
@@ -879,7 +879,7 @@ class VGDLSprite(object):
         self.ID = id(self) # TODO: Make sure that these are unique, maintained during the lifetime of the object
         #TODO: change the choice to be from colors that are not taken?
         self.color = color or self.color or (140, 20, 140)
-        print 'color', self.color
+        # print 'color', self.color
                 
         #self.color = color or self.color or (choice(self.COLOR_DISC), choice(self.COLOR_DISC), choice(self.COLOR_DISC))
         for name, value in kwargs.iteritems():

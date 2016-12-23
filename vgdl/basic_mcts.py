@@ -11,9 +11,25 @@ from IPython import embed
 import math
 from Queue import Queue
 from threading import Thread
+import time
+
+"""
+Run: python -m vgdl.basic_mcts
+(from the top-level vgdl directory.)
+
+
+Calling rle.step(a). Returns a dictionary with:
+'reward', 'observation' and 'pcontinue': whether it was a terminal state
+
+
+when you do rle.step(a), what happens to the state in other branches of the tree?
+
+##Helps learning time to not use manhattan distance in bestchild.
+## But manhattan distance is helpful for default policy.
+"""
 
 class Basic_MCTS:
-	def __init__(self, rleCreateFunc, obsType, num_workers):
+	def __init__(self, decay_factor, rleCreateFunc, obsType, num_workers):
 		# assumption: not starting on terminal state
 		"""
 		root = the root node of the MCTS tree 
@@ -22,12 +38,26 @@ class Basic_MCTS:
 		             in the selection step
 		defaultPolicy = the policy used in the simulation step.
 		"""
+		self.decay_factor = decay_factor
+		## Each time you call self.rleCreateFunc, it returns an rle (rl environment) to you.
+		## We do this once per episode.
 		self.rleCreateFunc = rleCreateFunc
 		self.obsType = obsType
+		## A few different ways to get observations of the game-state.
+		## Observations of everything that's happening on the screen: OBSERVATION_GLOBAL
+		## or just of the squares surrounding your avatar: some_other_keyword.
 		rle = self.rleCreateFunc(OBSERVATION_GLOBAL) # WARNING: do NOT use this right now.
 		# always compute using a separate rle. This is only meant to be used for manhattan distance.
 		self._obstypes = rle._obstypes
 		self.outdim = rle.outdim
+		## returns a representation of the current state.
+		## numpy array. Each location in the array is a different grid cell.
+		## Each sprite is a unique number. Empty:0, boxes can be 1, agent: 4
+		## Assignments of types:number come from the rle instead
+		## Different instances of same type have same number.
+		## You can have multiple sprites on same square. Number we are shown 
+		## is the sum of the IDs.
+		## IDs are generated such that the objects are recoverable from the sum.
 		self.root = MCTS_node(rle._getSensors(None), False, rle._actionset)
 		self.actions = rle._actionset
 		self.currentNode = self.root
@@ -35,19 +65,18 @@ class Basic_MCTS:
 		self.treeTime = 0
 		self.num_workers = num_workers
 
-	def getManhattanDistanceComponents(self, node):
+	def getManhattanDistanceComponents(self, state):
 		"""
 		expect avatar to be called 'avatar' in class section of theory
 		expect goal to be called 'goal' in class section of theory
 		currently expects the state observation to follow a grid string format (orignal default format)
 		"""
-		reshaped_state = np.reshape(node.state, self.outdim)
-		# np_state = np.array([[j for j in i.split('\t')] for i in node.state.splitlines()])
+		reshaped_state = np.reshape(state, self.outdim)
+		# np_state = np.array([[j for j in i.split('\t')] for i in state.splitlines()])
 		avatar = 1
-		# avatar = 2**(1+sorted(rle._obstypes.keys())[::-1].index("avatar"))
+		## Example: to find what ID a box would have, you'd just do ...index("box"). This is the
+		## Schaul function for figuring the sprite IDs.
 		goal = 2**(1+sorted(self._obstypes.keys())[::-1].index("goal"))
-		# avatar_loc = np.where(reshaped_state == avatar)
-		# goal_loc = np.where(reshaped_state == goal)
 		avatar_loc = None
 		goal_loc = None
 		numRows, numCols = self.outdim
@@ -59,81 +88,75 @@ class Basic_MCTS:
 				if (reshaped_state[i,j]/ avatar) % 2 == 1:
 					avatar_loc = (i,j)
 
-		try:
-			return avatar_loc[0]-goal_loc[0], avatar_loc[1] - goal_loc[1]
-		except TypeError:
-			embed()
+		return avatar_loc[0]-goal_loc[0], avatar_loc[1] - goal_loc[1]
 
-	def getManhattanDistance(self, node):
+	def getManhattanDistance(self, state):
 		"""
 		expect avatar to be called 'avatar' in class section of theory
 		expect goal to be called 'goal' in class section of theory
 		currently expects the state observation to follow a grid string format (orignal default format)
 		"""
-		deltaY, deltaX = self.getManhattanDistanceComponents(node)
+		deltaY, deltaX = self.getManhattanDistanceComponents(state)
 		return abs(deltaX) + abs(deltaY)
 
-	def startTrainingPhase(self, numTrainingCycles):
+	def startTrainingPhase(self, numTrainingCycles, step_horizon):
 		# apparently the reset method is inefficient
 		def createRLE(q, rle_total):
 			for i in range(rle_total):
 				q.put(self.rleCreateFunc(OBSERVATION_GLOBAL))
 
-		q = Queue()
-		workers = []
-		for i in range(self.num_workers):
-			rle_total = (numTrainingCycles/self.num_workers) + (i < (numTrainingCycles % self.num_workers))
-			worker = Thread(target=createRLE, args=(q, rle_total,))
-			worker.setDaemon(True)
-			worker.start()
-			workers.append(worker)
+		oldTime = time.time()
+		# q = Queue()
+		# workers = []
+		# for i in range(self.num_workers):
+		# 	rle_total = (numTrainingCycles/self.num_workers) + (i < (numTrainingCycles % self.num_workers))
+		# 	worker = Thread(target=createRLE, args=(q, rle_total,))
+		# 	worker.setDaemon(True)
+		# 	worker.start()
+		# 	workers.append(worker)
 
+		#track total iterations spent in treePolicy
+		tree_policy_iters, default_policy_iters = 0, 0
 		for i in range(numTrainingCycles):
 			# rle._postInitReset()
 			# rle._game.reset()
-			rle = q.get()
+			rle = self.rleCreateFunc(OBSERVATION_GLOBAL)
+			# rle = q.get()
 			print "Training cycle: %i"%i
 
 			# rle = self.rleCreateFunc(self.obsType)
-			reward, vl = self.treePolicy(self.root, rle)
+			reward, vl, iters = self.treePolicy(self.root, rle, step_horizon)
+			tree_policy_iters += iters
 			if not vl.terminal:
-				reward = self.defaultPolicy(vl, rle)
-
+				reward, dPiters = self.defaultPolicy(vl, rle, step_horizon - iters)
+				default_policy_iters += dPiters
 			self.backup(vl, reward)
 
-		for worker in workers:
-			worker.join()
+		# for worker in workers:
+		# 	worker.join()
+		print "Tree policy iters:", tree_policy_iters
+		print "Default policy iters:", default_policy_iters
+		print "Total time: %f"%(time.time()-oldTime)
 
-	# def startTestingPhase(self, numTestingCycles):
-	# 	rewardSum = 0
-	# 	# for i in range(numTestingCycles):
-	# 	#rle = createRLSimpleGame3(OBSERVATION_GLOBAL)
-	# 	rle = self.rleCreateFunc(self.obsType)
-	# 	v = self.root
-	# 	Cp = 0
-	# 	reward = 0
-	# 	actionList = []
-	# 	while not v.terminal:
-	# 		a, v = self.bestChild(v,Cp)
-	# 		actionList.append(a)
-	# 		embed()
-	# 		res = rle.step(a)
-	# 		terminal = res['pcontinue']
-	# 		if terminal:
-	# 			reward = res['reward']
-
-	# 	rewardSum += reward
-	# 	print "finished startTestingPhase"
-	# 	embed()
-
-	# 	return rewardSum
 
 	def getBestActionsForPlayout(self):
 		v = self.root
 		actions = []
-		while not v.terminal:
+		while v and not v.terminal:
 			a, v = self.bestChild(v,0)
 			actions.append(a)
+			# bestVisitCount = 0
+			# bestChild = None
+			# for a,c in v.children.items():
+			# 	if c.visitCount > bestVisitCount:
+			# 		bestVisitCount = c.visitCount
+			# 		bestAction = a
+			# 		bestChild = c
+			#
+			# v = bestChild
+			# actions.append(bestAction)
+			
+
 			# res = rle.step(a)
 			# terminal = not res['pcontinue']
 			# if terminal:
@@ -141,16 +164,38 @@ class Basic_MCTS:
 
 		return actions
 
+	def debug(self):
+		v = self.root
+		print np.reshape(v.state, self.outdim)
+		actions, nodes = [], []
+		while v and not v.terminal:
+			# print v.children.iteritems()
+			print [(k,c.qVal) for k,c in v.children.iteritems()]
+			a, v = self.bestChild(v,0)
+			actions.append(a)
+			nodes.append(v)
+			if v:
+				print a
+				print np.reshape(v.state, self.outdim)
+				print ""
 
-	def treePolicy(self, v, rle):
+		return actions, nodes
+
+
+	def treePolicy(self, v, rle, step_horizon):
+		"""
+		i = iteration number
+		"""
 		count = 0
-		while not v.terminal:
+		iters = 0
+		while not v.terminal and iters < step_horizon:
+			iters += 1
 			self.treeTime += 1
 			count += 1
 			if not v.expanded:
 				reward, c = self.expand(v, rle)
 				# rle.step(a)
-				return reward, c
+				return reward, c, iters
 
 			else:
 				Cp = 0.70710 # suggested exploration weight
@@ -159,7 +204,7 @@ class Basic_MCTS:
 				terminal = not res['pcontinue']
 				if terminal:
 					reward = res['reward']
-					return reward, v
+					return reward, v, iters
 
 
 	def expand(self,v, rle):
@@ -176,6 +221,7 @@ class Basic_MCTS:
 					reward = res['reward']
 
 				child = MCTS_node(new_state, terminal, rle._actionset, parent = v)
+
 				v.createChild(a,child)
 				break
 
@@ -183,8 +229,7 @@ class Basic_MCTS:
 
 	def bestChild(self, v, Cp):
 		def transform(x):
-			# return 1./x
-			coefficient = 7.
+			coefficient = 0.
 			slowdown_factor = 1./3
 			return coefficient/(1+math.exp(-slowdown_factor * x)) # sigmoid
 
@@ -192,14 +237,13 @@ class Basic_MCTS:
 		bestChild = None
 		bestAction = None
 		for a,c in v.children.items():
-			# embed()
 			if v.equals(c):
 				funcVal = -float('inf')
 			elif c.visitCount == 0:
 				funcVal = float('inf')
 			else:
 				if c.terminal:
-					deltaY, deltaX = self.getManhattanDistanceComponents(v)
+					deltaY, deltaX = self.getManhattanDistanceComponents(v.state)
 					manhattanDistance = abs(deltaX + a[0]) + abs(deltaY + a[1])
 					if manhattanDistance:
 						manhattanDistanceTransform = transform(manhattanDistance)
@@ -209,7 +253,7 @@ class Basic_MCTS:
 						funcVal = float('inf')
 
 				else:
-					manhattanDistanceTransform = transform(self.getManhattanDistance(c))
+					manhattanDistanceTransform = transform(self.getManhattanDistance(c.state))
 					funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) + float(manhattanDistanceTransform)/c.visitCount
 
 			if funcVal > maxFuncVal:
@@ -219,24 +263,28 @@ class Basic_MCTS:
 
 		return bestAction, bestChild
 
-	def defaultPolicy(self, s, rle):
+	def defaultPolicy(self, s, rle, step_horizon):
+		"""
+		i = iteration number
+		"""
 		reward = 0
 		stepSize = 1 # try 13 later
 		rotatedVecMap = {(0,1):(1,0), (1,0):(0,-1), (0,-1):(-1,0), (-1,0):(0,1)}
 		vecDist = dict()
-		temperature = 0.2
-		
-		while not s.terminal:
+		temperature = 3
+		terminal = False
+		iters = 0
+		state = s.state
+		g = 1
+		while not terminal and iters < step_horizon:
+			iters += 1
 			vecDistSum = 0
 			for preRotatedVec in rotatedVecMap:
 				rotatedVec = rotatedVecMap[preRotatedVec]
 				for i in range(stepSize):
 					vec = tuple(i*np.array(preRotatedVec) + (stepSize-i)*np.array(rotatedVec))
-					comps = self.getManhattanDistanceComponents(s)
-					if comps:
-						deltaY, deltaX = comps
-					else:
-						embed()
+					comps = self.getManhattanDistanceComponents(state) # needs to change
+					deltaY, deltaX = comps
 					manhattanDistance = abs(deltaX + vec[0]) + abs(deltaY + vec[1])
 					vecDist[vec] = math.exp(-temperature * manhattanDistance)
 					vecDistSum += vecDist[vec]
@@ -246,122 +294,40 @@ class Basic_MCTS:
 
 			samples = np.random.multinomial(1, vecDist.values(), size=1)
 			sample_index = np.nonzero(samples)[1][0]
-			# embed()
 			sample = vecDist.keys()[sample_index]
-			# embed()
 			# print vecDist, samples, sample_index, sample
 			# sample = np.random.choice(vecDist.keys(), 1, vecDist.values())[0]
-			# embed()
 			a = sample
 
-			# actionList = []
-			# for i in range(stepSize):
-			# 	if s.terminal:
-			# 		break
 
-			# 	if xMagnitude == 0:
-			# 		xPick = False
-			# 	elif yMagnitude == 0:
-			# 		xPick = True
-			# 	else:
-			# 		xPick = random.random() > float(xMagnitude)/(xMagnitude + yMagnitude)
-
-			# 	if xPick:
-			# 		xMagnitude -= 1
-			# 		a = xUnitVec
-
-			# 	else:
-			# 		yMagnitude -= 1
-			# 		a = yUnitVec
 
 				# a = self.actions[random.randint(0,len(self.actions)-1)] # COMMENT OUT
 			res = rle.step(a)
 			new_state = res["observation"]
+			state = new_state
 			terminal = not res['pcontinue']
-			if terminal:
-				reward = res['reward']
+			reward += g*res['reward']
+			g *= self.decay_factor
+			# if terminal:
+			# 	reward = res['reward']
 
-			s_new = MCTS_node(new_state,terminal, rle._actionset, parent = s)
+			# s_new = MCTS_node(new_state,terminal, rle._actionset, parent = s)
 			# s.createChild(a,s_new)
 
-			s = s_new
-			self.defaultTime += 1
+			# s = s_new
+			self.defaultTime += 1 # useless right now.
 			# actionList.append(a)
 
 			# embed()
 			# stepSize = (stepSize + 1)/2
 
-		return reward
-
-	# def defaultPolicy(self, s):
-	# 	reward = 0
-	# 	stepSize = 13
-	# 	rotatedVecMap = {(0,1):(1,0), (1,0):(0,-1), (0,-1):(-1,0), (-1,0):(0,1)}
-	# 	vecDist = dict()
-	# 	while not s.terminal:
-	# 		for preRotatedVec in rotatedVecMap:
-	# 			rotatedVec = rotatedVecMap[preRotatedVec]
-	# 			for i in range(stepSize):
-	# 				vec = tuple(i*np.array(preRotatedVec) + (stepSize-i)*np.array(rotatedVec))
-	# 				vecDist[vec] = 0
-
-	# 		preRotatedVec = [0,0]
-	# 		preRotatedVec[random.randint(0,1)] = 2*random.randint(0,1)-1
-	# 		preRotatedVec = tuple(preRotatedVec)
-	# 		rotatedVec = rotatedVecMap[preRotatedVec]
-	# 		preRotatedMagnitude = random.randint(0,stepSize-1)
-	# 		rotatedMagnitude = stepSize - preRotatedMagnitude
-	# 		preRotatedMagnitudeCopy = preRotatedMagnitude
-	# 		rotatedMagnitudeCopy = rotatedMagnitude
-	# 		# xUnitVec = (2*random.randint(0,1)-1, 0)
-	# 		# yUnitVec = (0, 2*random.randint(0,1)-1)
-	# 		# xMagnitude = random.randint(0,stepSize)
-	# 		# yMagnitude = stepSize - xMagnitude
-	# 		# xMagnitudeCopy = xMagnitude
-	# 		# yMagnitudeCopy = yMagnitude
-	# 		actionList = []
-	# 		for i in range(stepSize):
-	# 			if s.terminal:
-	# 				break
-
-	# 			if rotatedMagnitude == 0:
-	# 				rotatedPick = False
-	# 			elif preRotatedMagnitude == 0:
-	# 				rotatedPick = True
-	# 			else:
-	# 				rotatedPick = random.random() > float(rotatedMagnitude)/(rotatedMagnitude + preRotatedMagnitude)
-
-	# 			if rotatedPick:
-	# 				rotatedMagnitude -= 1
-	# 				a = rotatedVec
-
-	# 			else:
-	# 				preRotatedMagnitude -= 1
-	# 				a = preRotatedVec
-
-	# 			# a = self.actions[random.randint(0,len(self.actions)-1)] # COMMENT OUT
-	# 			res = rle.step(a)
-	# 			new_state = res["observation"]
-	# 			terminal = not res['pcontinue']
-	# 			if terminal:
-	# 				reward = res['reward']
-
-	# 			s_new = MCTS_node(new_state,terminal, rle._actionset, parent = s)
-	# 			s.createChild(a,s_new)
-
-	# 			s = s_new
-	# 			self.defaultTime += 1
-	# 			actionList.append(a)
-
-	# 		# embed()
-	# 		stepSize = (stepSize + 1)/2
-
-	# 	return reward
+		return reward, iters
 
 	def backup(self, v,reward):
 		"""reward = 1 if win, -1 if loss"""
 		while v:
 			v.backProp(reward)
+			reward *= self.decay_factor
 			v = v.parent
 
 
@@ -380,6 +346,7 @@ class MCTS_node:
 		self.expanded = False
 		self.parent = parent # set to None if root node
 		self.children = dict()
+		self.exploredChildren = dict()
 		self.expanded = False
 
 	def equals(self,v):
@@ -412,17 +379,21 @@ class MCTS_node:
 if __name__ == "__main__":
 	obsType = OBSERVATION_GLOBAL
 	# self.rleCreateFunc = createRLSimpleGame4
-	rleCreateFunc = createRLSimpleGame_missile
-	mcts = Basic_MCTS(rleCreateFunc, obsType, 3)
-	mcts.startTrainingPhase(5000)
+	## passing a function. That function contains things set in
+	## 'rlenvironmentnonstatic' file
+	## You have to make a function that creates the environment.
+	## Make the game, then follow the layout in 'rlenvironmentnonstatic'
+	rleCreateFunc = createRLSimpleGame4
+	mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1)
+	mcts.startTrainingPhase(20, 20)
 	# from vgdl.playback import VGDLParser
 	from vgdl.core import VGDLParser
-	from examples.gridphysics.simpleGame_missile import box_level, push_game
+	from examples.gridphysics.simpleGame4 import box_level, push_game
 	game = push_game
 	level = box_level
 	embed()
 	# VGDLParser.playGame(game, level)
-	VGDLParser.playGame(game, level,mcts.getBestActionsForPlayout())
+	# VGDLParser.playGame(game, level, mcts.getBestActionsForPlayout())
 	# VGDLPlaybackParser.playGame(game, level, mcts.getBestActionsForPlayout())  
 
 	# rewardSum = mcts.startTestingPhase(50)

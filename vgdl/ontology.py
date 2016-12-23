@@ -768,8 +768,8 @@ def killSprite(sprite, partner, game): ## FLAG
     game.kill_list.append(sprite)
     if not None in {sprite, partner}:
         # sprite_info = colorDict[str(sprite.color)]
-        print partner.color
-        print sprite.color
+        # print partner.color
+        # print sprite.color
         # partner_info = colorDict[str(partner.color)]
         return ("killSprite",getColor(sprite),getColor(partner)) # partner = agent, sprite = what's being killed
 
@@ -798,7 +798,7 @@ def stepBack(sprite, partner, game):
 def undoAll(sprite, partner, game):
     """ Revert last moves of all sprites. """
     #print 'undo', colorDict[str(sprite.color)], colorDict[str(partner.color)]
-    print 
+    # print 
     for s in game:
         s.rect = s.lastrect
 
