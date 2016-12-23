@@ -221,7 +221,6 @@ class Basic_MCTS:
 				if terminal:
 					reward = res['reward']
 
-				# child = MCTS_node(new_state, terminal, rle._actionset, parent = v)
 				child = MCTS_node(new_state, terminal, self.actions, parent = v)
 
 				v.createChild(a,child)
