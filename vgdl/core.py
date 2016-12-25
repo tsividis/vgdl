@@ -655,7 +655,6 @@ class BasicGame(object):
         spriteDistribution = {}
         for obj in objects:
             spriteDistribution[obj] = initializeDistribution(sprite_types) # Indexed by object ID
-        #print spriteDistribution
         prev_states = {}
 
         while not self.ended:
@@ -670,7 +669,7 @@ class BasicGame(object):
                 
                 sprite_obj = objects[sprite]["sprite"] #TODO: update when a sprite is killed but the game isn't over, need not to check that sprite
                 if sprite_obj.name != 'avatar': # TODO: Avatar does not have an updateOptions function (yet)
-                    #print sprite_obj
+                    # print sprite_obj
                     options = sprite_obj.updateOptions(game)
                     # if sprite_obj.name != "wall":
                     #     print sprite_obj.name, objects[sprite]["position"]
@@ -745,13 +744,14 @@ class BasicGame(object):
                 agentState = agentStatePrev
                 keyPressType = keyPressPrev
 
+            collision_objects = set()
+
             if self.effectList:
                 state = self.getFullState()
                 event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': self.effectList, 'gameState': self.getFullStateColorized()}
                 finalEventList.append(event)
 
                 # Get objects involved in the effectList
-                collision_objects = set()
                 for effect in event['effectList']:
                     collision_objects.add(effect[1])
                     collision_objects.add(effect[2])
@@ -759,13 +759,16 @@ class BasicGame(object):
             # TODO: observe all objects here; look at the options we found previously, update the distribution for each avatar....
             objects = self.getObjects()
             for sprite in spriteDistribution.keys(): # Here the keys are the IDs of the game objects
-                if sprite not in collision_objects:
+                sprite_obj = objects[sprite]["sprite"] 
+                if sprite not in collision_objects and sprite_obj.name != 'avatar':
                     sprite_obj = objects[sprite]["sprite"] #TODO: update when a sprite is killed but the game isn't over, need not to check that sprite
                     if sprite_obj.name != 'avatar': # TODO: Avatar does not have an updateOptions function (yet)
                         prev_states[sprite]["outcome"] = objects[sprite]["position"]
                        
                     new_dist = updateDistribution(sprite, objects, spriteDistribution, prev_states)
-                    spriteDistribution[sprite] = new_dist
+                    spriteDistribution = new_dist
+
+            print spriteDistribution
 
             # Termination #1
             for t in self.terminations:

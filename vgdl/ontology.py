@@ -393,9 +393,7 @@ class Chaser(RandomNPC): ##
         return res
 
     def update(self, game):
-        print "Before Position:", (self.rect.left, self.rect.right)
         VGDLSprite.update(self, game) # This makes the sprite start to move?
-        print "Actual Position: ", (self.rect.left, self.rect.right)
 
         options = []
         for target in self._closestTargets(game):
@@ -406,9 +404,7 @@ class Chaser(RandomNPC): ##
 
 
     def updateOptions(self, game): #TODO: Need to make sure to feed in a copy of the game, so as not to actually update the current game? 
-        print "Should be same as before position:", (self.rect.left, self.rect.right)        
         VGDLSprite.update(self, game)
-        print "Should be same as actual position: ", (self.rect.left, self.rect.right)
         options = []
         position_options = {}
         for target in self._closestTargets(game):
@@ -899,12 +895,12 @@ def transformTo(sprite, partner, game, stype='wall'):
         if isinstance(sprite, OrientedSprite) and isinstance(newones[0], OrientedSprite):
             newones[0].orientation = sprite.orientation
         killSprite(sprite, partner, game)
-    return ("transformTo",sprite.ID,partner.ID
+    return ("transformTo",sprite.ID,partner.ID)
 
 def stepBack(sprite, partner, game): 
     """ Revert last move. """
     sprite.rect = sprite.lastrect
-    return ("stepBack",sprite.ID,partner.ID)
+    return ("stepBack", sprite.ID, partner.ID)
 
 def undoAll(sprite, partner, game):
     """ Revert last moves of all sprites. """
@@ -1164,14 +1160,12 @@ def initializeDistribution(sprite_types):
 
 # Create function that takes in object last state and new state and updates the object distribution
 def updateDistribution(sprite, objects, curr_distribution, state_transition):
-    prev_game, prev_sprite = state_transition["game"], state_transition["sprite"]
-    dist, outcome = state_transition["options"], state_transition["outcome"]
+    prev_game, prev_sprite = state_transition[sprite]["game"], state_transition[sprite]["sprite"]
+    dist, outcome = state_transition[sprite]["options"], state_transition[sprite]["outcome"]
 
-    sprite_obj = objects[sprite]["sprite"]
-
-    for sprite_type in curr_distribution: 
+    for sprite_type in curr_distribution[sprite]:
         if outcome in dist:
-            curr_distribution[sprite_type] *= dist[outcome]
+            curr_distribution[sprite][sprite_type] *= dist[outcome]
         else:
             curr_distribution[sprite] = 0.0
 
