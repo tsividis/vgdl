@@ -66,34 +66,6 @@ class Basic_MCTS:
 		self.treeTime = 0
 		self.num_workers = num_workers
 
-	def getManhattanDistanceComponents(self, state):
-		"""
-		expect avatar to be called 'avatar' in class section of theory
-		expect goal to be called 'goal' in class section of theory
-		currently expects the state observation to follow a grid string format (orignal default format)
-		"""
-		# oldTime = time.time()
-		reshaped_state = np.reshape(state, self.outdim)
-		# np_state = np.array([[j for j in i.split('\t')] for i in state.splitlines()])
-		avatar = 1
-		## Example: to find what ID a box would have, you'd just do ...index("box"). This is the
-		## Schaul function for figuring the sprite IDs.
-		goal = 2**(1+sorted(self._obstypes.keys())[::-1].index("goal"))
-		avatar_loc = None
-		goal_loc = None
-		numRows, numCols = self.outdim
-		for i in range(numRows): 
-			for j in range(numCols):
-				if (reshaped_state[i,j] / goal) % 2 == 1:
-					goal_loc = (i,j)
-
-				if (reshaped_state[i,j]/ avatar) % 2 == 1:
-					avatar_loc = (i,j)
-		dist = avatar_loc[0]-goal_loc[0], avatar_loc[1] - goal_loc[1]
-		# newTime = time.time()
-		# print newTime-oldTime
-		return dist
-
 
 	def getManhattanDistance(self, state): ##used to be passed self, state
 		"""
@@ -103,6 +75,46 @@ class Basic_MCTS:
 		"""
 		deltaY, deltaX = self.getManhattanDistanceComponents(state)
 		return abs(deltaX) + abs(deltaY)
+
+	def getManhattanDistanceComponents(self, state):
+		
+		reshaped_state = np.reshape(state, self.outdim)
+		avatar = 1
+		goal = 2**(1+sorted(self._obstypes.keys())[::-1].index("goal"))
+		avatar_loc = np.where(reshaped_state==1)
+		goal_loc = np.where(reshaped_state==goal)
+		dist = avatar_loc[0][0]-goal_loc[0][0], avatar_loc[1][0]-goal_loc[1][0]
+
+		return dist
+
+	# def getManhattanDistanceComponents(self, state):
+	# 	"""
+	# 	expect avatar to be called 'avatar' in class section of theory
+	# 	expect goal to be called 'goal' in class section of theory
+	# 	currently expects the state observation to follow a grid string format (orignal default format)
+	# 	"""
+	# 	# oldTime = time.time()
+	# 	reshaped_state = np.reshape(state, self.outdim)
+	# 	# np_state = np.array([[j for j in i.split('\t')] for i in state.splitlines()])
+	# 	avatar = 1
+	# 	## Example: to find what ID a box would have, you'd just do ...index("box"). This is the
+	# 	## Schaul function for figuring the sprite IDs.
+	# 	goal = 2**(1+sorted(self._obstypes.keys())[::-1].index("goal"))
+	# 	avatar_loc = None
+	# 	goal_loc = None
+	# 	numRows, numCols = self.outdim
+	# 	for i in range(numRows): 
+	# 		for j in range(numCols):
+	# 			if (reshaped_state[i,j] / goal) % 2 == 1:
+	# 				goal_loc = (i,j)
+
+	# 			if (reshaped_state[i,j]/ avatar) % 2 == 1:
+	# 				avatar_loc = (i,j)
+	# 	dist = avatar_loc[0]-goal_loc[0], avatar_loc[1] - goal_loc[1]
+	# 	# newTime = time.time()
+	# 	# print newTime-oldTime
+	# 	return dist
+
 
 	def startTrainingPhase(self, numTrainingCycles, step_horizon):
 		# apparently the reset method is inefficient
