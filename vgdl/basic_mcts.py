@@ -104,16 +104,6 @@ class Basic_MCTS:
 		deltaY, deltaX = self.getManhattanDistanceComponents(state)
 		return abs(deltaX) + abs(deltaY)
 
-	def getManhattanDistanceComps(self, rle):
-		# oldTime = time.time()
-		avatarPos = rle._rect2pos(rle._game.sprite_groups['avatar'][0].rect)
-		goalPos = rle._rect2pos(rle._game.sprite_groups['goal'][0].rect)
-
-		dist = avatarPos[0]-goalPos[0], avatarPos[1]-goalPos[1]
-		# newTime = time.time()
-		# print newTime-oldTime
-		return dist
-
 	def startTrainingPhase(self, numTrainingCycles, step_horizon):
 		# apparently the reset method is inefficient
 		def createRLE(q, rle_total):
