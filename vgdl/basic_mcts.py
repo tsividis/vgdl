@@ -444,8 +444,8 @@ if __name__ == "__main__":
 	params = []
 	# cycles = [200]
 	# steps = [50, 100]
-	cycles = [200, 300, 400, 500]
-	steps = [100, 200, 300, 400]
+	cycles = [200, 300, 400]
+	steps = [30, 60, 90, 120, 200]
 	for i in range(len(cycles)):
 		for j in range(len(steps)):
 			params.append((cycles[i], steps[j]))
