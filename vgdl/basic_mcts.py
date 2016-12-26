@@ -46,7 +46,8 @@ class Basic_MCTS:
 		## A few different ways to get observations of the game-state.
 		## Observations of everything that's happening on the screen: OBSERVATION_GLOBAL
 		## or just of the squares surrounding your avatar: some_other_keyword.
-		rle = self.rleCreateFunc(OBSERVATION_GLOBAL) # WARNING: do NOT use this right now.
+		rle = self.rleCreateFunc(OBSERVATION_GLOBAL)
+		self.rle = rle
 		# always compute using a separate rle. This is only meant to be used for manhattan distance.
 		self._obstypes = rle._obstypes
 		self.outdim = rle.outdim
@@ -71,6 +72,7 @@ class Basic_MCTS:
 		expect goal to be called 'goal' in class section of theory
 		currently expects the state observation to follow a grid string format (orignal default format)
 		"""
+		# oldTime = time.time()
 		reshaped_state = np.reshape(state, self.outdim)
 		# np_state = np.array([[j for j in i.split('\t')] for i in state.splitlines()])
 		avatar = 1
@@ -87,10 +89,13 @@ class Basic_MCTS:
 
 				if (reshaped_state[i,j]/ avatar) % 2 == 1:
 					avatar_loc = (i,j)
+		dist = avatar_loc[0]-goal_loc[0], avatar_loc[1] - goal_loc[1]
+		# newTime = time.time()
+		# print newTime-oldTime
+		return dist
 
-		return avatar_loc[0]-goal_loc[0], avatar_loc[1] - goal_loc[1]
 
-	def getManhattanDistance(self, state):
+	def getManhattanDistance(self, state): ##used to be passed self, state
 		"""
 		expect avatar to be called 'avatar' in class section of theory
 		expect goal to be called 'goal' in class section of theory
@@ -98,6 +103,16 @@ class Basic_MCTS:
 		"""
 		deltaY, deltaX = self.getManhattanDistanceComponents(state)
 		return abs(deltaX) + abs(deltaY)
+
+	def getManhattanDistanceComps(self, rle):
+		# oldTime = time.time()
+		avatarPos = rle._rect2pos(rle._game.sprite_groups['avatar'][0].rect)
+		goalPos = rle._rect2pos(rle._game.sprite_groups['goal'][0].rect)
+
+		dist = avatarPos[0]-goalPos[0], avatarPos[1]-goalPos[1]
+		# newTime = time.time()
+		# print newTime-oldTime
+		return dist
 
 	def startTrainingPhase(self, numTrainingCycles, step_horizon):
 		# apparently the reset method is inefficient
@@ -121,24 +136,33 @@ class Basic_MCTS:
 			# rle._postInitReset()
 			# rle._game.reset()
 			rle = self.rleCreateFunc(OBSERVATION_GLOBAL)
+			# embed()
 			# rle = q.get()
-			if i%10==0:
-				print "Training cycle: %i"%i
+			# if i%10==0:
+				# print "Training cycle: %i"%i
 
 			# rle = self.rleCreateFunc(self.obsType)
 			reward, vl, iters = self.treePolicy(self.root, rle, step_horizon)
 			tree_policy_iters += iters
 			if not vl.terminal:
 				reward, dPiters = self.defaultPolicy(vl, rle, step_horizon - iters)
+				if reward==0:
+					# deltaX, deltaY = self.getManhattanDistanceComps(rle)
+					deltaX, deltaY = self.getManhattanDistanceComponents(vl.state)
+					heuristicValue = 1./(abs(deltaX)+abs(deltaY))
+					reward = heuristicValue
 				default_policy_iters += dPiters
 			self.backup(vl, reward)
 
 		# for worker in workers:
 		# 	worker.join()
-		print "Tree policy iters:", tree_policy_iters
-		print "Default policy iters:", default_policy_iters
-		print "Total time: %f"%(time.time()-oldTime)
-
+		# print "Tree policy iters:", tree_policy_iters
+		# print "Default policy iters:", default_policy_iters
+		# print "Ratio:", 1.*tree_policy_iters/default_policy_iters
+		# print "Total time: %f"%(time.time()-oldTime)
+		outTime = time.time()-oldTime
+		# print outTime
+		return outTime
 
 	def getBestActionsForPlayout(self):
 		v = self.root
@@ -165,22 +189,27 @@ class Basic_MCTS:
 
 		return actions
 
-	def debug(self):
+	def debug(self, rle, output=False):
 		v = self.root
-		print np.reshape(v.state, self.outdim)
+		if output:
+			print np.reshape(v.state, self.outdim)
 		actions, nodes = [], []
 		while v and not v.terminal:
 			# print v.children.iteritems()
-			print [(k,c.qVal) for k,c in v.children.iteritems()]
-			a, v = self.bestChild(v,0)
+			if output:
+				print [(k,c.qVal) for k,c in v.children.iteritems()]
+			a, v = self.bestChild(v,0, rle)
 			actions.append(a)
 			nodes.append(v)
-			if v:
-				print a
-				print np.reshape(v.state, self.outdim)
-				print ""
-
-		return actions, nodes
+			if output:
+				if v:
+					print a
+					print np.reshape(v.state, self.outdim)
+					print ""
+		state = nodes[-2].state
+		deltaX, deltaY = self.getManhattanDistanceComponents(state)
+		distance = abs(deltaX)+abs(deltaY)
+		return actions, nodes, distance
 
 
 	def treePolicy(self, v, rle, step_horizon):
@@ -200,7 +229,7 @@ class Basic_MCTS:
 
 			else:
 				Cp = 0.70710 # suggested exploration weight
-				a, v = self.bestChild(v,Cp) 
+				a, v = self.bestChild(v,Cp, rle) 
 				res = rle.step(a)
 				terminal = not res['pcontinue']
 				if terminal:
@@ -228,7 +257,7 @@ class Basic_MCTS:
 
 		return reward, child
 
-	def bestChild(self, v, Cp):
+	def bestChild(self, v, Cp, rle):
 		def transform(x):
 			coefficient = 0.
 			slowdown_factor = 1./3
@@ -245,6 +274,7 @@ class Basic_MCTS:
 			else:
 				if c.terminal:
 					deltaY, deltaX = self.getManhattanDistanceComponents(v.state)
+					# deltaY, deltaX = self.getManhattanDistanceComps(rle)
 					manhattanDistance = abs(deltaX + a[0]) + abs(deltaY + a[1])
 					if manhattanDistance:
 						manhattanDistanceTransform = transform(manhattanDistance)
@@ -285,6 +315,7 @@ class Basic_MCTS:
 				for i in range(stepSize):
 					vec = tuple(i*np.array(preRotatedVec) + (stepSize-i)*np.array(rotatedVec))
 					comps = self.getManhattanDistanceComponents(state) # needs to change
+					# comps = self.getManhattanDistanceComps(rle) # needs to change
 					deltaY, deltaX = comps
 					manhattanDistance = abs(deltaX + vec[0]) + abs(deltaY + vec[1])
 					vecDist[vec] = math.exp(-temperature * manhattanDistance)
@@ -296,6 +327,9 @@ class Basic_MCTS:
 			samples = np.random.multinomial(1, vecDist.values(), size=1)
 			sample_index = np.nonzero(samples)[1][0]
 			sample = vecDist.keys()[sample_index]
+			# print "sample", sample
+			# print vecDist
+
 			# print vecDist, samples, sample_index, sample
 			# sample = np.random.choice(vecDist.keys(), 1, vecDist.values())[0]
 			a = sample
@@ -321,8 +355,17 @@ class Basic_MCTS:
 
 			# embed()
 			# stepSize = (stepSize + 1)/2
+		# print reward, vecDist[sample], iters
+		# if reward == 0:
+		# 	deltaX, deltaY = self.getManhattanDistanceComponents(state)
+		# 	heuristicValue = abs(deltaX) + abs(deltaY)
 
-		return reward, iters
+		# 	print deltaX, deltaY, 1./heuristicValue
+		# 	return 1./heuristicValue, iters
+		# # 	return .5*vecDist[sample], iters
+		# else:
+			return reward, iters
+		# return reward+vecDist[sample], iters
 
 	def backup(self, v,reward):
 		"""reward = 1 if win, -1 if loss"""
@@ -384,16 +427,49 @@ if __name__ == "__main__":
 	## 'rlenvironmentnonstatic' file
 	## You have to make a function that creates the environment.
 	## Make the game, then follow the layout in 'rlenvironmentnonstatic'
-	rleCreateFunc = createRLSimpleGame4
-	mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1)
-	mcts.startTrainingPhase(120, 20)
-	# from vgdl.playback import VGDLParser
-	from vgdl.core import VGDLParser
-	from examples.gridphysics.simpleGame4 import box_level, push_game
-	game = push_game
-	level = box_level
-	embed()
+	
+
+	# rleCreateFunc = createRLSimpleGame4
+	# mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1)
+	# outTime = mcts.startTrainingPhase(1, 30)
+	# print outTime
+	# distance = mcts.debug(mcts.rle)[2]
+	# print distance
+
+
+
+	#cycle through different parameter settings; run everything at once.
+	params = []
+	# cycles = [200]
+	# steps = [50, 100]
+	cycles = [200, 300, 400, 500]
+	steps = [100, 200, 300, 400]
+	for i in range(len(cycles)):
+		for j in range(len(steps)):
+			params.append((cycles[i], steps[j]))
+	# params = zip(cycles, steps)
+
+	for param in params:
+		distances, times = [], []
+		for i in range(10):
+			rleCreateFunc = createRLSimpleGame4
+			mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1)
+			outTime = mcts.startTrainingPhase(param[0], param[1])
+			distance = mcts.debug(mcts.rle)[2] 
+			distances.append(distance)
+			times.append(outTime)
+		print ""
+		print "cycles:", param[0], "steps:", param[1], "avg. distance:", np.mean(distances), "avg. time", np.mean(times)
+
+
+	##Uncomment for playback
+	# from vgdl.core import VGDLParser
+	# from examples.gridphysics.simpleGame4 import box_level, push_game
+	# game = push_game
+	# level = box_level
 	# VGDLParser.playGame(game, level)
+
+	# embed()
 	# VGDLParser.playGame(game, level, mcts.getBestActionsForPlayout())
 	# VGDLPlaybackParser.playGame(game, level, mcts.getBestActionsForPlayout())  
 
