@@ -662,22 +662,22 @@ class BasicGame(object):
             self.time += 1
             self._clearAll()
 
-            # TODO: get current game state
             objects = self.getObjects()
             for sprite in spriteDistribution.keys(): # Here the keys are the IDs of the game objects
                 game = self
                 
-                sprite_obj = objects[sprite]["sprite"] #TODO: update when a sprite is killed but the game isn't over, need not to check that sprite
-                if sprite_obj.name != 'avatar': # TODO: Avatar does not have an updateOptions function (yet)
-                    # print sprite_obj
-                    options = sprite_obj.updateOptions(game)
-                    # if sprite_obj.name != "wall":
-                    #     print sprite_obj.name, objects[sprite]["position"]
-                    #     print options
-                    prev_states[sprite] = {"game":game, "sprite":sprite, "options":options, "outcome": None}
-                    #TODO: Issue with Chaser's position options
-                    #TODO: Save these options somewhere, to access when we see the game outcome
-            
+
+                try: 
+                    sprite_obj = objects[sprite]["sprite"] 
+                    if sprite_obj.name != 'avatar': # TODO: Avatar does not have an updateOptions function (yet)
+                        options = sprite_obj.updateOptions(game)
+                        prev_states[sprite] = {"game":game, "sprite":sprite, "options":options, "outcome": None}
+                        #TODO: Issue with Chaser's position options
+                        #TODO: Save these options somewhere, to access when we see the game outcome
+                
+                except Exception as e:
+                    pass
+
 
             # gather events
             pygame.event.pump()
@@ -756,19 +756,20 @@ class BasicGame(object):
                     collision_objects.add(effect[1])
                     collision_objects.add(effect[2])
             
-            # TODO: observe all objects here; look at the options we found previously, update the distribution for each avatar....
+            # Update sprite distribution based on observations
             objects = self.getObjects()
             for sprite in spriteDistribution.keys(): # Here the keys are the IDs of the game objects
-                sprite_obj = objects[sprite]["sprite"] 
-                if sprite not in collision_objects and sprite_obj.name != 'avatar':
-                    sprite_obj = objects[sprite]["sprite"] #TODO: update when a sprite is killed but the game isn't over, need not to check that sprite
-                    if sprite_obj.name != 'avatar': # TODO: Avatar does not have an updateOptions function (yet)
-                        prev_states[sprite]["outcome"] = objects[sprite]["position"]
-                       
-                    new_dist = updateDistribution(sprite, objects, spriteDistribution, prev_states)
-                    spriteDistribution = new_dist
-
-            print spriteDistribution
+                # If sprite is killed, then will skip update
+                try: 
+                    sprite_obj = objects[sprite]["sprite"] 
+                    if sprite not in collision_objects and sprite_obj.name != 'avatar':
+                        sprite_obj = objects[sprite]["sprite"] 
+                        if sprite_obj.name != 'avatar': # TODO: Avatar does not have an updateOptions function (yet)
+                            prev_states[sprite]["outcome"] = objects[sprite]["position"]  
+                        new_dist = updateDistribution(sprite, objects, spriteDistribution, prev_states)
+                        spriteDistribution = new_dist
+                except Exception as e:
+                    pass
 
             # Termination #1
             for t in self.terminations:
