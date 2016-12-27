@@ -116,7 +116,7 @@ class Basic_MCTS:
 	# 	return dist
 
 
-	def startTrainingPhase(self, numTrainingCycles, step_horizon):
+	def startTrainingPhase(self, numTrainingCycles, step_horizon, test=False):
 		# apparently the reset method is inefficient
 		def createRLE(q, rle_total):
 			for i in range(rle_total):
@@ -138,7 +138,8 @@ class Basic_MCTS:
 			# rle._postInitReset()
 			# rle._game.reset()
 			rle = self.rleCreateFunc(OBSERVATION_GLOBAL)
-			# embed()
+			if test:
+				embed()
 			# rle = q.get()
 			# if i%10==0:
 				# print "Training cycle: %i"%i
@@ -147,7 +148,8 @@ class Basic_MCTS:
 			reward, vl, iters = self.treePolicy(self.root, rle, step_horizon)
 			tree_policy_iters += iters
 			if not vl.terminal:
-				reward, dPiters = self.defaultPolicy(vl, rle, step_horizon - iters)
+				# reward, dPiters = self.defaultPolicy(vl, rle, step_horizon - iters)
+				reward, dPiters = self.defaultPolicy(vl, rle, step_horizon)
 				if reward==0:
 					# deltaX, deltaY = self.getManhattanDistanceComps(rle)
 					deltaX, deltaY = self.getManhattanDistanceComponents(vl.state)
@@ -200,7 +202,7 @@ class Basic_MCTS:
 			# print v.children.iteritems()
 			if output:
 				print [(k,c.qVal) for k,c in v.children.iteritems()]
-			a, v = self.bestChild(v,0, rle)
+			a, v = self.bestChild(v,0)
 			actions.append(a)
 			nodes.append(v)
 			if output:
@@ -231,7 +233,7 @@ class Basic_MCTS:
 
 			else:
 				Cp = 0.70710 # suggested exploration weight
-				a, v = self.bestChild(v,Cp, rle) 
+				a, v = self.bestChild(v,Cp) 
 				res = rle.step(a)
 				terminal = not res['pcontinue']
 				if terminal:
@@ -259,7 +261,7 @@ class Basic_MCTS:
 
 		return reward, child
 
-	def bestChild(self, v, Cp, rle):
+	def bestChild(self, v, Cp):
 		def transform(x):
 			coefficient = 0.
 			slowdown_factor = 1./3
@@ -420,10 +422,35 @@ class MCTS_node:
 		else:
 			return -1
 
+## you need a global RLE whose state you can change.
+def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps):
+	obsType = OBSERVATION_GLOBAL
+	rleCreateFunc = createRLSimpleGame5
+	rle = rleCreateFunc(OBSERVATION_GLOBAL)
 
+	res = rle.step((0,0)) #get first observation
+	terminal = not res['pcontinue']
+	
+	# for i in range(3):
+	i=0
+	while not terminal:
+		mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1)
+		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, test=False)
+		actions = mcts.getBestActionsForPlayout()
+		for j in range(max_actions_per_plan):
+			print "cycle", i, "action", j
+			if actions[j] is not None and not terminal:
+				# rle._getSensors
+				res = rle.step(actions[j])
+				new_state = res["observation"]
+				dist = mcts.getManhattanDistanceComponents(new_state)
+				terminal = not res['pcontinue']
+				print dist
+		i+=1
+	return
 
 if __name__ == "__main__":
-	obsType = OBSERVATION_GLOBAL
+	# obsType = OBSERVATION_GLOBAL
 	# self.rleCreateFunc = createRLSimpleGame4
 	## passing a function. That function contains things set in
 	## 'rlenvironmentnonstatic' file
@@ -431,44 +458,47 @@ if __name__ == "__main__":
 	## Make the game, then follow the layout in 'rlenvironmentnonstatic'
 	
 
-	# rleCreateFunc = createRLSimpleGame4
+	# rleCreateFunc = createRLSimpleGame5
 	# mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1)
-	# outTime = mcts.startTrainingPhase(1, 30)
+	# outTime = mcts.startTrainingPhase(100, 100, test=False)
 	# print outTime
 	# distance = mcts.debug(mcts.rle)[2]
+	embed()
 	# print distance
 
 
 
 	#cycle through different parameter settings; run everything at once.
-	params = []
-	# cycles = [200]
-	# steps = [50, 100]
-	cycles = [200, 300, 400]
-	steps = [30, 60, 90, 120, 200]
-	for i in range(len(cycles)):
-		for j in range(len(steps)):
-			params.append((cycles[i], steps[j]))
-	# params = zip(cycles, steps)
+	# params = []
+	# # cycles = [200]
+	# # steps = [50, 100]
+	# cycles = [200, 300]#, 400]
+	# steps = [100, 200]#, 90, 120, 200]
+	# for i in range(len(cycles)):
+	# 	for j in range(len(steps)):
+	# 		params.append((cycles[i], steps[j]))
+	# # params = zip(cycles, steps)
 
-	for param in params:
-		distances, times = [], []
-		for i in range(10):
-			rleCreateFunc = createRLSimpleGame4
-			mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1)
-			outTime = mcts.startTrainingPhase(param[0], param[1])
-			distance = mcts.debug(mcts.rle)[2] 
-			distances.append(distance)
-			times.append(outTime)
-		print ""
-		print "cycles:", param[0], "steps:", param[1], "avg. distance:", np.mean(distances), "avg. time", np.mean(times)
+	# for param in params:
+	# 	distances, times = [], []
+	# 	for i in range(3):
+	# 		rleCreateFunc = createRLSimpleGame5
+	# 		mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1)
+	# 		outTime = mcts.startTrainingPhase(param[0], param[1])
+	# 		distance = mcts.debug(mcts.rle)[2] 
+	# 		distances.append(distance)
+	# 		times.append(outTime)
+	# 	print ""
+	# 	print "cycles:", param[0], "steps:", param[1], "avg. distance:", np.mean(distances), "avg. time", np.mean(times)
 
 
 	##Uncomment for playback
 	# from vgdl.core import VGDLParser
-	# from examples.gridphysics.simpleGame4 import box_level, push_game
+	# from examples.gridphysics.simpleGame5 import box_level, push_game
 	# game = push_game
 	# level = box_level
+	# embed()
+
 	# VGDLParser.playGame(game, level)
 
 	# embed()
