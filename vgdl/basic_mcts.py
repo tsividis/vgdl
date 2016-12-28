@@ -13,6 +13,9 @@ from Queue import Queue
 from threading import Thread
 import time
 
+#A hack to display things to the terminal conveniently.
+np.core.arrayprint._line_width=150
+
 """
 Run: python -m vgdl.basic_mcts
 (from the top-level vgdl directory.)
@@ -29,7 +32,7 @@ when you do rle.step(a), what happens to the state in other branches of the tree
 """
 
 class Basic_MCTS:
-	def __init__(self, decay_factor, rleCreateFunc, obsType, num_workers):
+	def __init__(self, decay_factor, rleCreateFunc, obsType, num_workers, existing_rle=False):
 		# assumption: not starting on terminal state
 		"""
 		root = the root node of the MCTS tree 
@@ -46,7 +49,13 @@ class Basic_MCTS:
 		## A few different ways to get observations of the game-state.
 		## Observations of everything that's happening on the screen: OBSERVATION_GLOBAL
 		## or just of the squares surrounding your avatar: some_other_keyword.
-		rle = self.rleCreateFunc(OBSERVATION_GLOBAL)
+		if existing_rle:
+			rle = existing_rle
+			print "got an existing RLE. State:"
+			res = rle.step((0,0)) #get first observation
+			print np.reshape(res['observation'], (18,27))
+		else:
+			rle = self.rleCreateFunc(OBSERVATION_GLOBAL)
 		self.rle = rle
 		# always compute using a separate rle. This is only meant to be used for manhattan distance.
 		self._obstypes = rle._obstypes
@@ -65,6 +74,10 @@ class Basic_MCTS:
 		self.defaultTime = 0
 		self.treeTime = 0
 		self.num_workers = num_workers
+		self.actionDict = {}
+		##Populate dictionary for use in action-sampling in defaultPolicy. Not sampling (0,0).
+		for i in range(len(rle._actionset)):
+			self.actionDict[i] = rle._actionset[i]
 
 
 	def getManhattanDistance(self, state): ##used to be passed self, state
@@ -83,6 +96,7 @@ class Basic_MCTS:
 		goal = 2**(1+sorted(self._obstypes.keys())[::-1].index("goal"))
 		avatar_loc = np.where(reshaped_state==1)
 		goal_loc = np.where(reshaped_state==goal)
+		# if goal in reshaped_state and 
 		dist = avatar_loc[0][0]-goal_loc[0][0], avatar_loc[1][0]-goal_loc[1][0]
 
 		return dist
@@ -149,12 +163,24 @@ class Basic_MCTS:
 			tree_policy_iters += iters
 			if not vl.terminal:
 				# reward, dPiters = self.defaultPolicy(vl, rle, step_horizon - iters)
+				# print ""
+				# print "before defaultPolicy"
+				# print np.reshape(vl.state, self.outdim)
+				# print ""
 				reward, dPiters = self.defaultPolicy(vl, rle, step_horizon)
-				if reward==0:
-					# deltaX, deltaY = self.getManhattanDistanceComps(rle)
-					deltaX, deltaY = self.getManhattanDistanceComponents(vl.state)
-					heuristicValue = 1./(abs(deltaX)+abs(deltaY))
-					reward = heuristicValue
+				# print reward
+				# print 'default policy', dPiters
+				# print ""
+				# print "after defaultPolicy"
+				# print np.reshape(vl.state, self.outdim)
+				# if reward==0:
+				# 	# deltaX, deltaY = self.getManhattanDistanceComps(rle)
+				# 	deltaX, deltaY = self.getManhattanDistanceComponents(vl.state)
+				# 	if abs(deltaX)+abs(deltaY) == 0:
+				# 		heuristicValue = float('inf')
+				# 	else:
+				# 		heuristicValue = 1./(abs(deltaX)+abs(deltaY))
+				# 	reward = heuristicValue
 				default_policy_iters += dPiters
 			self.backup(vl, reward)
 
@@ -173,7 +199,10 @@ class Basic_MCTS:
 		actions = []
 		while v and not v.terminal:
 			a, v = self.bestChild(v,0)
+			# for a,c in v.children.items():
+
 			actions.append(a)
+
 			# bestVisitCount = 0
 			# bestChild = None
 			# for a,c in v.children.items():
@@ -196,18 +225,22 @@ class Basic_MCTS:
 	def debug(self, rle, output=False):
 		v = self.root
 		if output:
+			print "current state"
 			print np.reshape(v.state, self.outdim)
 		actions, nodes = [], []
 		while v and not v.terminal:
 			# print v.children.iteritems()
 			if output:
+				print "options"
 				print [(k,c.qVal) for k,c in v.children.iteritems()]
 			a, v = self.bestChild(v,0)
 			actions.append(a)
 			nodes.append(v)
 			if output:
 				if v:
+					print "selected"
 					print a
+					print "resulted in"
 					print np.reshape(v.state, self.outdim)
 					print ""
 		state = nodes[-2].state
@@ -282,14 +315,13 @@ class Basic_MCTS:
 					manhattanDistance = abs(deltaX + a[0]) + abs(deltaY + a[1])
 					if manhattanDistance:
 						manhattanDistanceTransform = transform(manhattanDistance)
-						funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) + float(manhattanDistanceTransform)/c.visitCount
+						funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) + Cp*float(manhattanDistanceTransform)/c.visitCount
 
 					else:
 						funcVal = float('inf')
-
 				else:
 					manhattanDistanceTransform = transform(self.getManhattanDistance(c.state))
-					funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) + float(manhattanDistanceTransform)/c.visitCount
+					funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) + Cp*float(manhattanDistanceTransform)/c.visitCount
 
 			if funcVal > maxFuncVal:
 				maxFuncVal = funcVal
@@ -298,10 +330,110 @@ class Basic_MCTS:
 
 		return bestAction, bestChild
 
+	def makeActionSet(self, n_samples):
+		# import numpy as np
+		# import random
+		outList = []
+		numActions = 4
+		actionKeys = range(4)
+		## Returns shuffled list of n_samples drawn from 'actions'.
+		# partition = np.random.multinomial(n_samples, np.random.dirichlet([1]*numActions,1)[0])
+		partition = np.random.dirichlet([1]*numActions,1)[0]
+		outList = [self.actionDict[np.random.choice(actionKeys, p=partition)] for _ in range(n_samples)]
+		# for i in range(numActions):
+		# 	for j in range(partition[i]):
+		# 		outList.append(actions[i])
+		# random.shuffle(outList)
+		return outList
+
+	def defaultPolicyB(self, s, rle, step_horizon):
+		"""
+		i = iteration number
+		"""
+		t1 = time.time()
+		reward = 0
+		stepSize = 1 # try 13 later
+		# rotatedVecMap = {(0,1):(1,0), (1,0):(0,-1), (0,-1):(-1,0), (-1,0):(0,1)}
+		# vecDist = dict()
+		temperature = 3
+		terminal = False
+		iters = 0
+		state = s.state
+		g = .5
+		# reshaped_state = np.reshape(state, self.outdim)
+		# avatar_initial_loc = np.where(reshaped_state==1)
+
+		samples = self.makeActionSet(step_horizon)
+
+		for i in range(len(samples)):
+			iters += 1
+			if not terminal:
+				a = samples[i]
+				t2 = time.time()
+				res = rle.step(a)
+				new_state = res["observation"]
+				state = new_state
+				terminal = not res['pcontinue']
+				reward += g*res['reward']
+				g *= self.decay_factor
+
+				self.defaultTime += 1 # useless right now.
+			else:
+				break
+		# print "end of defaultPolicy:"
+		# print np.reshape(new_state, self.outdim)
+		# reshaped_state = np.reshape(state, self.outdim)
+		# avatar_end_loc = np.where(reshaped_state==1)
+		# dist = abs(avatar_end_loc[0][0]-avatar_initial_loc[0][0]) + abs(avatar_end_loc[1][0]-avatar_initial_loc[1][0])
+		# print "end of defaultPolicy"
+		# print dist
+		# print time.time()-t1
+		return reward, iters
+
+		# while not terminal and iters < step_horizon:
+		# 	iters += 1
+		# 	vecDistSum = 0
+		# 	for preRotatedVec in rotatedVecMap:
+		# 		rotatedVec = rotatedVecMap[preRotatedVec]
+		# 		for i in range(stepSize):
+		# 			vec = tuple(i*np.array(preRotatedVec) + (stepSize-i)*np.array(rotatedVec))
+		# 			comps = self.getManhattanDistanceComponents(state) # needs to change
+		# 			# comps = self.getManhattanDistanceComps(rle) # needs to change
+		# 			deltaY, deltaX = comps
+		# 			manhattanDistance = abs(deltaX + vec[0]) + abs(deltaY + vec[1])
+		# 			vecDist[vec] = math.exp(-temperature * manhattanDistance)
+		# 			vecDistSum += vecDist[vec]
+
+		# 	for vec in vecDist:
+		# 		vecDist[vec] /= vecDistSum
+
+		# 	samples = np.random.multinomial(1, vecDist.values(), size=1)
+		# 	sample_index = np.nonzero(samples)[1][0]
+		# 	sample = vecDist.keys()[sample_index]
+			
+		# 	sample = random.choice([(-1,0), (1,0), (0,-1), (0,1)])
+
+
+		# 	a = sample
+
+		# 	res = rle.step(a)
+		# 	new_state = res["observation"]
+		# 	state = new_state
+		# 	terminal = not res['pcontinue']
+		# 	reward += g*res['reward']
+		# 	g *= self.decay_factor
+
+		# 	self.defaultTime += 1 # useless right now.
+
+		# 	print "end of defaultPolicy:"
+		# 	print np.reshape(new_state, self.outdim)
+		# 	return reward, iters
+
 	def defaultPolicy(self, s, rle, step_horizon):
 		"""
 		i = iteration number
 		"""
+		t1 = time.time()
 		reward = 0
 		stepSize = 1 # try 13 later
 		rotatedVecMap = {(0,1):(1,0), (1,0):(0,-1), (0,-1):(-1,0), (-1,0):(0,1)}
@@ -310,7 +442,9 @@ class Basic_MCTS:
 		terminal = False
 		iters = 0
 		state = s.state
-		g = 1
+		g = .5
+		reshaped_state = np.reshape(state, self.outdim)
+		avatar_initial_loc = np.where(reshaped_state==1)
 		while not terminal and iters < step_horizon:
 			iters += 1
 			vecDistSum = 0
@@ -331,6 +465,9 @@ class Basic_MCTS:
 			samples = np.random.multinomial(1, vecDist.values(), size=1)
 			sample_index = np.nonzero(samples)[1][0]
 			sample = vecDist.keys()[sample_index]
+			
+			# sample = random.choice([(-1,0), (1,0), (0,-1), (0,1)])
+
 			# print "sample", sample
 			# print vecDist
 
@@ -368,7 +505,14 @@ class Basic_MCTS:
 		# 	return 1./heuristicValue, iters
 		# # 	return .5*vecDist[sample], iters
 		# else:
-			return reward, iters
+		reshaped_state = np.reshape(state, self.outdim)
+		avatar_end_loc = np.where(reshaped_state==1)
+		# dist = abs(avatar_end_loc[0][0]-avatar_initial_loc[0][0]) + abs(avatar_end_loc[1][0]-avatar_initial_loc[1][0])
+		# print "end of defaultPolicy:"
+		# print dist
+		# print np.reshape(new_state, self.outdim)
+		# print time.time()-t1, iters
+		return reward, iters
 		# return reward+vecDist[sample], iters
 
 	def backup(self, v,reward):
@@ -429,23 +573,39 @@ def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps):
 	rle = rleCreateFunc(OBSERVATION_GLOBAL)
 
 	res = rle.step((0,0)) #get first observation
+	# print np.reshape(res['observation'], (18,27))
 	terminal = not res['pcontinue']
 	
 	# for i in range(3):
 	i=0
 	while not terminal:
-		mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1)
+		## Warning -- won't run if end state is only one action away.
+		mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1, rle)
 		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, test=False)
+		mcts.debug(mcts.rle, output=True)
 		actions = mcts.getBestActionsForPlayout()
+		res = rle.step((0,0))
+		new_state = res["observation"]
+		terminal = not res['pcontinue']
 		for j in range(max_actions_per_plan):
 			print "cycle", i, "action", j
 			if actions[j] is not None and not terminal:
-				# rle._getSensors
+				# reshaped_state = np.reshape(new_state, mcts.outdim)
+				# avatar = 1
+				# goal = 2**(1+sorted(mcts._obstypes.keys())[::-1].index("goal"))
+				# avatar_loc = np.where(reshaped_state==1)
+				# goal_loc = np.where(reshaped_state==goal)
+				# print "avatar, goal", avatar_loc, goal_loc
+				dist = mcts.getManhattanDistanceComponents(new_state)
+				print ""
+				# print 'dist', dist
+				print 'action', actions[j]
 				res = rle.step(actions[j])
 				new_state = res["observation"]
-				dist = mcts.getManhattanDistanceComponents(new_state)
 				terminal = not res['pcontinue']
-				print dist
+
+				# print np.reshape(new_state, mcts.outdim)
+
 		i+=1
 	return
 

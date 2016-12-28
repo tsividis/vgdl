@@ -781,8 +781,8 @@ class BasicGame(object):
             self.win = False
             print "Game lost. Score=%s" % self.score
 
-        if "killSprite" in [e[0] for e in self.effectList]:
-                embed()
+        # if "killSprite" in [e[0] for e in self.effectList]:
+                # embed()
 
         # ipdb.set_trace()
 
