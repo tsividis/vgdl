@@ -112,9 +112,9 @@ class GridPhysics():
         if speed != 0 and action is not None:
             orientation = action
             speed = speed * self.gridsize[0]
-        
+
             if not(sprite.cooldown > sprite.lastmove or abs(orientation[0])+abs(orientation[1])==0):
-                coords = sprite.rect.move((orientation[0]*speed, orientation[1]*speed)) # TODO: Make sure this doesn't actually update the sprite position in game
+                coords = sprite.rect.move((orientation[0]*speed, orientation[1]*speed)) 
                 return coords
         return sprite.rect
 
@@ -258,11 +258,17 @@ class RandomNPC(VGDLSprite):
         self.physics.activeMovement(self, self.direction)
 
     def updateOptions(self, game):
-        options = {}
-        for direction in BASEDIRS:
-            rect = self.physics.calculateActiveMovement(self, direction)
-            options[(rect.left, rect.right)] = 1.0/len(BASEDIRS)
-        return options
+        position_options = {}
+        options = BASEDIRS
+    
+        for option in options:
+            rect = self.physics.calculateActiveMovement(self, option)
+            if (rect.left, rect.right) in position_options.keys():
+                position_options[(rect.left, rect.right)] += 1.0/len(options) 
+            else:
+                position_options[(rect.left, rect.right)] = 1.0/len(options)
+        
+        return position_options
 
 
 class OrientedSprite(VGDLSprite): ##
@@ -365,18 +371,6 @@ class Chaser(RandomNPC): ##
                 res.append(target)
         return res
 
-    def _calculateClosestTargets(self, game, rect):
-        bestd = 1e100
-        res = []
-        for target in game.getSprites(self.stype):
-            d = self.physics.distance(rect, target.rect)
-            if d < bestd:
-                bestd = d
-                res = [target]
-            elif d == bestd:
-                res.append(target)
-        return res
-
     def _movesToward(self, game, target):
         """ Find the canonical direction(s) which move toward
         the target. """
@@ -411,9 +405,14 @@ class Chaser(RandomNPC): ##
             options.extend(self._movesToward(game, target))
         if len(options) == 0:
             options = BASEDIRS
+
         for option in options:
             rect = self.physics.calculateActiveMovement(self, option)
-            position_options[(rect.left, rect.right)] = 1.0/len(options) # TODO: Need to fix something here; the results are off.
+            if (rect.left, rect.right) in position_options.keys():
+                position_options[(rect.left, rect.right)] += 1.0/len(options) 
+            else:
+                position_options[(rect.left, rect.right)] = 1.0/len(options)
+        
         return position_options
         
 
@@ -543,7 +542,7 @@ class AStarChaser(RandomNPC): ##
                     #logToFile('LEFT')
                     movement = LEFT
         rect = self.physics.calculateActiveMovement(self, movement)
-        return {(rect.left, rect.right): 1.} #TODO: change hashing
+        return {(rect.left, rect.right): 1.} 
 
 
 # ---------------------------------------------------------------------
@@ -1147,6 +1146,62 @@ kill_effects = [killSprite, killIfSlow, transformTo, killIfOtherHasLess, killIfO
 
 # Create dictionary with transition updates: (TODO) should we do this manually, or can we do it automatically? 
 
+def chaserClosestTargets(sprite, game):
+    bestd = 1e100
+    res = []
+    for target in game.getSprites(sprite.stype):
+        d = sprite.physics.distance(sprite.rect, target.rect)
+        if d < bestd:
+            bestd = d
+            res = [target]
+        elif d == bestd:
+            res.append(target)
+    return res
+
+def chaserMovesToward(sprite, game, target):
+    """ Find the canonical direction(s) which move toward
+    the target. """
+    res = []
+    basedist = sprite.physics.distance(sprite.rect, target.rect)
+    for a in BASEDIRS:
+        r = sprite.rect.copy()
+        r = r.move(a)
+        newdist = sprite.physics.distance(r, target.rect)
+        if sprite.fleeing and basedist < newdist:
+            res.append(a)
+        if not sprite.fleeing and basedist > newdist:
+            res.append(a)
+    return res
+
+
+def updateOptions(game, sprite_type, current_sprite):
+    # Immovable, Passive, ResourcePack
+    if (sprite_type == Immovable) or (sprite_type == Passive) or (sprite_type == ResourcePack):
+        return {(current_sprite.rect.left, current_sprite.rect.right):1.}
+
+    # Chaser
+    elif sprite_type == Chaser:
+        options = []
+        position_options = {}
+        for target in chaserClosestTargets(current_sprite, game):
+            options.extend(chaserMovesToward(current_sprite, game, target))
+            # print "new options:", options
+        if len(options) == 0:
+            options = BASEDIRS
+
+        for option in options:
+            rect = current_sprite.physics.calculateActiveMovement(current_sprite, option) #TODO: Check why this calculation isn't correct
+            if (rect.left, rect.right) in position_options.keys():
+                position_options[(rect.left, rect.right)] += 1.0/len(options) 
+            else:
+                position_options[(rect.left, rect.right)] = 1.0/len(options)
+        return position_options
+
+    # VGDLSprite
+    else: 
+        if not current_sprite.is_static and not current_sprite.only_active:
+            rect = current_sprite.physics.calculatePassiveMovement(current_sprite)
+            return {(rect.left, rect.right): 1.0}
 
 # Initialize distribution
 def initializeDistribution(sprite_types):
@@ -1159,15 +1214,23 @@ def initializeDistribution(sprite_types):
     return initial_distribution
 
 # Create function that takes in object last state and new state and updates the object distribution
-def updateDistribution(sprite, objects, curr_distribution, state_transition):
-    prev_game, prev_sprite = state_transition[sprite]["game"], state_transition[sprite]["sprite"]
-    dist, outcome = state_transition[sprite]["options"], state_transition[sprite]["outcome"]
+def updateDistribution(sprite, curr_distribution, movement_options, outcome):
+    """
+    Updates the sprite distribution for a given object in the game.
 
+    Input:
+
+        curr_distribution - the current sprite distribution for the given object
+        movement_options - possible next locations that the sprite of that sprite type can be in
+        outcome - the resulting location that the sprite went to
+    Output:
+
+    """
     for sprite_type in curr_distribution[sprite]:
-        if outcome in dist:
-            curr_distribution[sprite][sprite_type] *= dist[outcome]
+        if outcome in movement_options[sprite][sprite_type]:
+            curr_distribution[sprite_type] *=  movement_options[sprite][sprite_type][outcome]
         else:
-            curr_distribution[sprite] = 0.0
+            curr_distribution[sprite_type] = 0.0
 
     return curr_distribution
 
