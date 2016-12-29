@@ -12,6 +12,7 @@ import math
 from Queue import Queue
 from threading import Thread
 import time
+import copy
 
 #A hack to display things to the terminal conveniently.
 np.core.arrayprint._line_width=150
@@ -53,7 +54,9 @@ class Basic_MCTS:
 			rle = existing_rle
 			print "got an existing RLE. State:"
 			res = rle.step((0,0)) #get first observation
-			print np.reshape(res['observation'], (18,27))
+			print np.reshape(res['observation'], rle.outdim)
+			print "________________________________________"
+			print ""
 		else:
 			rle = self.rleCreateFunc(OBSERVATION_GLOBAL)
 		self.rle = rle
@@ -130,11 +133,11 @@ class Basic_MCTS:
 	# 	return dist
 
 
-	def startTrainingPhase(self, numTrainingCycles, step_horizon, test=False):
+	def startTrainingPhase(self, numTrainingCycles, step_horizon, VRLE,  test=False):
 		# apparently the reset method is inefficient
-		def createRLE(q, rle_total):
-			for i in range(rle_total):
-				q.put(self.rleCreateFunc(OBSERVATION_GLOBAL))
+		# def createRLE(q, rle_total):
+		# 	for i in range(rle_total):
+		# 		q.put(self.rleCreateFunc(OBSERVATION_GLOBAL))
 
 		oldTime = time.time()
 		# q = Queue()
@@ -149,30 +152,20 @@ class Basic_MCTS:
 		#track total iterations spent in treePolicy
 		tree_policy_iters, default_policy_iters = 0, 0
 		for i in range(numTrainingCycles):
-			# rle._postInitReset()
-			# rle._game.reset()
-			rle = self.rleCreateFunc(OBSERVATION_GLOBAL)
+			# Vrle = self.rleCreateFunc(OBSERVATION_GLOBAL)
+			Vrle = copy.deepcopy(VRLE)
+			res = Vrle.step((0,0))
+			# print "in training phase.", np.where(res['observation']==1)
 			if test:
 				embed()
-			# rle = q.get()
-			# if i%10==0:
-				# print "Training cycle: %i"%i
 
-			# rle = self.rleCreateFunc(self.obsType)
-			reward, vl, iters = self.treePolicy(self.root, rle, step_horizon)
+			if i%10==0:
+				print "Training cycle: %i"%i
+
+			reward, vl, iters = self.treePolicy(self.root, Vrle, step_horizon)
 			tree_policy_iters += iters
 			if not vl.terminal:
-				# reward, dPiters = self.defaultPolicy(vl, rle, step_horizon - iters)
-				# print ""
-				# print "before defaultPolicy"
-				# print np.reshape(vl.state, self.outdim)
-				# print ""
-				reward, dPiters = self.defaultPolicy(vl, rle, step_horizon)
-				# print reward
-				# print 'default policy', dPiters
-				# print ""
-				# print "after defaultPolicy"
-				# print np.reshape(vl.state, self.outdim)
+				reward, dPiters = self.defaultPolicy(vl, Vrle, step_horizon)
 				# if reward==0:
 				# 	# deltaX, deltaY = self.getManhattanDistanceComps(rle)
 				# 	deltaX, deltaY = self.getManhattanDistanceComponents(vl.state)
@@ -191,7 +184,7 @@ class Basic_MCTS:
 		# print "Ratio:", 1.*tree_policy_iters/default_policy_iters
 		# print "Total time: %f"%(time.time()-oldTime)
 		outTime = time.time()-oldTime
-		# print outTime
+		print outTime
 		return outTime
 
 	def getBestActionsForPlayout(self):
@@ -199,36 +192,17 @@ class Basic_MCTS:
 		actions = []
 		while v and not v.terminal:
 			a, v = self.bestChild(v,0)
-			# for a,c in v.children.items():
-
 			actions.append(a)
-
-			# bestVisitCount = 0
-			# bestChild = None
-			# for a,c in v.children.items():
-			# 	if c.visitCount > bestVisitCount:
-			# 		bestVisitCount = c.visitCount
-			# 		bestAction = a
-			# 		bestChild = c
-			#
-			# v = bestChild
-			# actions.append(bestAction)
-			
-
-			# res = rle.step(a)
-			# terminal = not res['pcontinue']
-			# if terminal:
-			# 	reward = res['reward']
-
 		return actions
 
-	def debug(self, rle, output=False):
+	def debug(self, rle, output=False, numActions=1):
+		cntr=0
 		v = self.root
 		if output:
 			print "current state"
 			print np.reshape(v.state, self.outdim)
 		actions, nodes = [], []
-		while v and not v.terminal:
+		while v and not v.terminal and cntr<numActions:
 			# print v.children.iteritems()
 			if output:
 				print "options"
@@ -243,9 +217,13 @@ class Basic_MCTS:
 					print "resulted in"
 					print np.reshape(v.state, self.outdim)
 					print ""
-		state = nodes[-2].state
-		deltaX, deltaY = self.getManhattanDistanceComponents(state)
-		distance = abs(deltaX)+abs(deltaY)
+			cntr+=1
+		if v.terminal:
+			distance = 0
+		else:
+			state = nodes[-1].state
+			deltaX, deltaY = self.getManhattanDistanceComponents(state)
+			distance = abs(deltaX)+abs(deltaY)
 		return actions, nodes, distance
 
 
@@ -261,7 +239,6 @@ class Basic_MCTS:
 			count += 1
 			if not v.expanded:
 				reward, c = self.expand(v, rle)
-				# rle.step(a)
 				return reward, c, iters
 
 			else:
@@ -572,17 +549,20 @@ def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps):
 	rleCreateFunc = createRLSimpleGame5
 	rle = rleCreateFunc(OBSERVATION_GLOBAL)
 
+	outdim = rle.outdim
+
 	res = rle.step((0,0)) #get first observation
-	# print np.reshape(res['observation'], (18,27))
+	# print np.reshape(res['observation'], outdim)
 	terminal = not res['pcontinue']
 	
-	# for i in range(3):
 	i=0
 	while not terminal:
-		## Warning -- won't run if end state is only one action away.
 		mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1, rle)
-		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, test=False)
-		mcts.debug(mcts.rle, output=True)
+		res = rle.step((0,0))
+		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, rle, test=False)
+		res = rle.step((0,0))
+		# mcts.debug(mcts.rle, output=True, numActions=1)
+		# break
 		actions = mcts.getBestActionsForPlayout()
 		res = rle.step((0,0))
 		new_state = res["observation"]

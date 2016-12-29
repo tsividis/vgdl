@@ -18,6 +18,15 @@ w    w ww
 wwwwwwwww
 """
 
+# box_level = """
+# wwwwwwwww
+# w     A w
+# w       w
+# w    wgww
+# w    w ww
+# wwwwwwwww
+# """
+
 push_game = """
 BasicGame frame_rate=30
     SpriteSet        
