@@ -166,14 +166,13 @@ class Basic_MCTS:
 			tree_policy_iters += iters
 			if not vl.terminal:
 				reward, dPiters = self.defaultPolicy(vl, Vrle, step_horizon)
-				# if reward==0:
-				# 	# deltaX, deltaY = self.getManhattanDistanceComps(rle)
-				# 	deltaX, deltaY = self.getManhattanDistanceComponents(vl.state)
-				# 	if abs(deltaX)+abs(deltaY) == 0:
-				# 		heuristicValue = float('inf')
-				# 	else:
-				# 		heuristicValue = 1./(abs(deltaX)+abs(deltaY))
-				# 	reward = heuristicValue
+				if reward==0:
+					deltaX, deltaY = self.getManhattanDistanceComponents(vl.state)
+					if abs(deltaX)+abs(deltaY) == 0:
+						heuristicValue = float('inf')
+					else:
+						heuristicValue = 1./(abs(deltaX)+abs(deltaY))
+					reward = heuristicValue
 				default_policy_iters += dPiters
 			self.backup(vl, reward)
 
@@ -184,7 +183,7 @@ class Basic_MCTS:
 		# print "Ratio:", 1.*tree_policy_iters/default_policy_iters
 		# print "Total time: %f"%(time.time()-oldTime)
 		outTime = time.time()-oldTime
-		print outTime
+		# print "training phase time", outTime
 		return outTime
 
 	def getBestActionsForPlayout(self):
@@ -231,6 +230,7 @@ class Basic_MCTS:
 		"""
 		i = iteration number
 		"""
+		t1 = time.time()
 		count = 0
 		iters = 0
 		while not v.terminal and iters < step_horizon:
@@ -239,6 +239,7 @@ class Basic_MCTS:
 			count += 1
 			if not v.expanded:
 				reward, c = self.expand(v, rle)
+				# print "treePolicy", time.time()-t1
 				return reward, c, iters
 
 			else:
@@ -248,6 +249,7 @@ class Basic_MCTS:
 				terminal = not res['pcontinue']
 				if terminal:
 					reward = res['reward']
+					# print "treePolicy", time.time()-t1
 					return reward, v, iters
 
 
@@ -488,7 +490,7 @@ class Basic_MCTS:
 		# print "end of defaultPolicy:"
 		# print dist
 		# print np.reshape(new_state, self.outdim)
-		# print time.time()-t1, iters
+		# print "defaultpolicy", time.time()-t1
 		return reward, iters
 		# return reward+vecDist[sample], iters
 
@@ -561,13 +563,15 @@ def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps):
 		res = rle.step((0,0))
 		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, rle, test=False)
 		res = rle.step((0,0))
-		# mcts.debug(mcts.rle, output=True, numActions=1)
+		# mcts.debug(mcts.rle, output=True, numActions=3)
 		# break
 		actions = mcts.getBestActionsForPlayout()
+		if len(actions)<max_actions_per_plan:
+			print "We only computed", len(actions), "actions."
 		res = rle.step((0,0))
 		new_state = res["observation"]
 		terminal = not res['pcontinue']
-		for j in range(max_actions_per_plan):
+		for j in range(min(len(actions), max_actions_per_plan)):
 			print "cycle", i, "action", j
 			if actions[j] is not None and not terminal:
 				# reshaped_state = np.reshape(new_state, mcts.outdim)
@@ -583,8 +587,7 @@ def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps):
 				res = rle.step(actions[j])
 				new_state = res["observation"]
 				terminal = not res['pcontinue']
-
-				# print np.reshape(new_state, mcts.outdim)
+				print np.reshape(new_state, mcts.outdim)
 
 		i+=1
 	return

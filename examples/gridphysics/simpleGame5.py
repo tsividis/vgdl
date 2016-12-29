@@ -34,33 +34,12 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 # w                      w ww
 # wwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
-# box_level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                    1   ww
-# w     p1                1 w
-# w    pAp               wgww
-# w    p mp              w ww
-# w     ppp         1    w ww
-# w         1            w ww
-# w                      w ww
-# w                      w ww
-# w                      w ww
-# w                      w ww
-# w                      w ww
-# w                      w ww
-# w                      w ww
-# w                      w ww
-# w                      w ww
-# w                        ww
-# wwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
-
 box_level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwww
 w                    1   ww
-w     p1                  w
-w    p p               wgww
-w    pA                w ww
+w     p1                1 w
+w    pAp               wgww
+w    p mp              w ww
 w     ppp         1    w ww
 w         1            w ww
 w                      w ww
@@ -75,6 +54,27 @@ w                      w ww
 w                        ww
 wwwwwwwwwwwwwwwwwwwwwwwwwww
 """
+
+# box_level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                    1   ww
+# w     p1                  w
+# w    p p               wgww
+# w    pA                w ww
+# w     ppp         1    w ww
+# w         1            w ww
+# w                      w ww
+# w                      w ww
+# w                      w ww
+# w                      w ww
+# w                      w ww
+# w                      w ww
+# w                      w ww
+# w                      w ww
+# w                      w ww
+# w                        ww
+# wwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 push_game = """
 BasicGame frame_rate=30
