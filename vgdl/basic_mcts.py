@@ -445,7 +445,7 @@ class Basic_MCTS:
 			sample_index = np.nonzero(samples)[1][0]
 			sample = vecDist.keys()[sample_index]
 			
-			# sample = random.choice([(-1,0), (1,0), (0,-1), (0,1)])
+			sample = random.choice([(-1,0), (1,0), (0,-1), (0,1)])
 
 			# print "sample", sample
 			# print vecDist
@@ -545,8 +545,7 @@ class MCTS_node:
 		else:
 			return -1
 
-## you need a global RLE whose state you can change.
-def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps):
+def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, playback=False):
 	obsType = OBSERVATION_GLOBAL
 	rleCreateFunc = createRLSimpleGame5
 	rle = rleCreateFunc(OBSERVATION_GLOBAL)
@@ -558,21 +557,22 @@ def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps):
 	terminal = not res['pcontinue']
 	
 	i=0
+	finalActions = []
 	while not terminal:
 		mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1, rle)
-		res = rle.step((0,0))
 		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, rle, test=False)
-		res = rle.step((0,0))
 		# mcts.debug(mcts.rle, output=True, numActions=3)
 		# break
 		actions = mcts.getBestActionsForPlayout()
+
 		if len(actions)<max_actions_per_plan:
 			print "We only computed", len(actions), "actions."
+
 		res = rle.step((0,0))
 		new_state = res["observation"]
 		terminal = not res['pcontinue']
 		for j in range(min(len(actions), max_actions_per_plan)):
-			print "cycle", i, "action", j
+			# print "cycle", i, "action", j
 			if actions[j] is not None and not terminal:
 				# reshaped_state = np.reshape(new_state, mcts.outdim)
 				# avatar = 1
@@ -581,16 +581,24 @@ def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps):
 				# goal_loc = np.where(reshaped_state==goal)
 				# print "avatar, goal", avatar_loc, goal_loc
 				dist = mcts.getManhattanDistanceComponents(new_state)
-				print ""
+				# print ""
 				# print 'dist', dist
 				print 'action', actions[j]
 				res = rle.step(actions[j])
 				new_state = res["observation"]
 				terminal = not res['pcontinue']
 				print np.reshape(new_state, mcts.outdim)
+				finalActions.append(actions[j])
 
 		i+=1
-	return
+	if playback:
+		from vgdl.core import VGDLParser
+		from examples.gridphysics.simpleGame5 import box_level, push_game
+		game = push_game
+		level = box_level
+		VGDLParser.playGame(game, level, finalActions)
+
+	return finalActions
 
 if __name__ == "__main__":
 	# obsType = OBSERVATION_GLOBAL
@@ -607,6 +615,8 @@ if __name__ == "__main__":
 	# print outTime
 	# distance = mcts.debug(mcts.rle)[2]
 	embed()
+
+
 	# print distance
 
 

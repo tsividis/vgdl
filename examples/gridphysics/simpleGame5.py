@@ -37,8 +37,8 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 box_level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwww
 w                    1   ww
-w     p1                1 w
-w    pAp               wgww
+w     p1                w w
+w    p p              Awgww
 w    p mp              w ww
 w     ppp         1    w ww
 w         1            w ww
@@ -58,9 +58,9 @@ wwwwwwwwwwwwwwwwwwwwwwwwwww
 # box_level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                    1   ww
-# w     p1                  w
+# w     p1                w w
 # w    p p               wgww
-# w    pA                w ww
+# w    pAmp              w ww
 # w     ppp         1    w ww
 # w         1            w ww
 # w                      w ww
