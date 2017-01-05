@@ -98,7 +98,8 @@ class GridPhysics():
             else:
                 speed = sprite.speed
         if speed != 0 and action is not None:
-            position = sprite._updatePos(action, speed * self.gridsize[0])
+            sprite._updatePos(action, speed * self.gridsize[0])
+        return (sprite.rect.left, sprite.rect.right) 
 
     def calculateActiveMovement(self, sprite, action, speed=None):
         """
@@ -110,12 +111,25 @@ class GridPhysics():
             else:
                 speed = sprite.speed
         if speed != 0 and action is not None:
-            orientation = action
             speed = speed * self.gridsize[0]
+            if speed is None:
+                speed = sprite.speed
+            orientation = action
 
-            if not(sprite.cooldown > sprite.lastmove or abs(orientation[0])+abs(orientation[1])==0):
-                coords = sprite.rect.move((orientation[0]*speed, orientation[1]*speed)) 
+            print orientation
+            print "Before:", (sprite.rect.left, sprite.rect.right)
+
+            if not(sprite.cooldown > sprite.lastmove or abs(orientation[0])+abs(orientation[1])==0): 
+                coords = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
+                print "Potential after 1:", (int(coords.left), int(coords.right))
+                coords = (sprite.rect.left+orientation[0]*speed, sprite.rect.right+orientation[1]*speed)
+                print "Potential after 2:", (int(coords[0]), int(coords[1])) #TODO: Why are these different?
+
                 return coords
+            else:
+                coords = (sprite.rect.left, sprite.rect.right)
+        print "Potential after 3:", (int(coords[0]), int(coords[1])) #TODO: Why are these different?
+
         return sprite.rect
 
     def distance(self, r1, r2):
@@ -386,16 +400,28 @@ class Chaser(RandomNPC): ##
                 res.append(a)
         return res
 
+
     def update(self, game):
         VGDLSprite.update(self, game) # This makes the sprite start to move?
 
         options = []
+        position_options = {}
+
         for target in self._closestTargets(game):
             options.extend(self._movesToward(game, target))
         if len(options) == 0:
             options = BASEDIRS
-        self.physics.activeMovement(self, choice(options))
+        # c = choice(options)
+        # print "CHOICE: ", c
 
+        for option in options:
+            pos = self.physics.activeMovement(self, option)
+            if pos in position_options.keys():
+                position_options[pos] += 1.0/len(options) 
+            else:
+                position_options[pos] = 1.0/len(options)
+        
+        return position_options
 
     def updateOptions(self, game): #TODO: Need to make sure to feed in a copy of the game, so as not to actually update the current game? 
         VGDLSprite.update(self, game)
@@ -1175,10 +1201,15 @@ def chaserMovesToward(sprite, game, target):
 
 
 def updateOptions(game, sprite_type, current_sprite):
+    """
+    game - current game object
+    sprite_type - the sprite type class
+    current_sprite - the current sprite object
+    """
     # Immovable, Passive, ResourcePack
     if (sprite_type == Immovable) or (sprite_type == Passive) or (sprite_type == ResourcePack):
         return {(current_sprite.rect.left, current_sprite.rect.right):1.}
-
+    
     # Chaser
     elif sprite_type == Chaser:
         options = []
@@ -1191,10 +1222,12 @@ def updateOptions(game, sprite_type, current_sprite):
 
         for option in options:
             rect = current_sprite.physics.calculateActiveMovement(current_sprite, option) #TODO: Check why this calculation isn't correct
+
             if (rect.left, rect.right) in position_options.keys():
                 position_options[(rect.left, rect.right)] += 1.0/len(options) 
             else:
                 position_options[(rect.left, rect.right)] = 1.0/len(options)
+
         return position_options
 
     # VGDLSprite
@@ -1219,10 +1252,10 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
     Updates the sprite distribution for a given object in the game.
 
     Input:
-
+        sprite - the current sprite ID
         curr_distribution - the current sprite distribution for the given object
         movement_options - possible next locations that the sprite of that sprite type can be in
-        outcome - the resulting location that the sprite went to
+        outcome - the resulting location that the sprite went to 
     Output:
 
     """
