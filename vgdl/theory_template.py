@@ -1458,6 +1458,7 @@ class Game(object):
 			for theory in self.hypothesisSpace:
 				if theory.likelihood(timestep) < 1.0: 	# Theory needs to be changed
 					newTheories.extend(theory.explainTimeStep(timestep, timestep))
+			
 			# Make sure only to add unique theories
 			#print "Iterating through new theories"
 			for theory in newTheories:
