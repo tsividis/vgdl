@@ -86,7 +86,7 @@ class GridPhysics():
             orientation = sprite.orientation
             speed = speed * self.gridsize[0]
             if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
-                coords = self.rect.move((orientation[0]*speed, orientation[1]*speed))
+                coords = self.rect.move((orientation[0]*speed, orientation[1]*speed)) # rect.move doesn't move the rectangle
                 return coords
             return sprite.rect
                   
@@ -116,19 +116,21 @@ class GridPhysics():
                 speed = sprite.speed
             orientation = action
 
-            print orientation
-            print "Before:", (sprite.rect.left, sprite.rect.right)
+            # print orientation
+            # print "Before:", (sprite.rect.left, sprite.rect.right)
 
-            if not(sprite.cooldown > sprite.lastmove or abs(orientation[0])+abs(orientation[1])==0): 
-                coords = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
-                print "Potential after 1:", (int(coords.left), int(coords.right))
+            # TODO: This if-statement isn't being entered for some reason
+            if not(sprite.cooldown > sprite.lastmove or abs(orientation[0])+abs(orientation[1])==0):
                 coords = (sprite.rect.left+orientation[0]*speed, sprite.rect.right+orientation[1]*speed)
-                print "Potential after 2:", (int(coords[0]), int(coords[1])) #TODO: Why are these different?
-
+                # print "Potential after 1:", (int(coords[0]), int(coords[1])) #TODO: Why are these different? 
+                coords = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
+                # print "Potential after 2:", (int(coords.left), int(coords.right))
+                
+                self.lastmove = 0
                 return coords
             else:
                 coords = (sprite.rect.left, sprite.rect.right)
-        print "Potential after 3:", (int(coords[0]), int(coords[1])) #TODO: Why are these different?
+                # print "Potential after 3:", (int(coords[0]), int(coords[1])) #TODO: Why are these different?
 
         return sprite.rect
 
@@ -184,23 +186,23 @@ class Immovable(VGDLSprite):
     color = GRAY #TODO: can these be commented out?
     is_static = True
 
-    def updateOptions(self, game):
-        return {(self.rect.left, self.rect.right):1.}
+    # def updateOptions(self, game):
+    #     return {(self.rect.left, self.rect.right):1.}
 
 class Passive(VGDLSprite):
     """ A square that may budge. """
     color = RED
 
-    def updateOptions(self, game):
-        return {(self.rect.left, self.rect.right):1.}
+    # def updateOptions(self, game):
+        # return {(self.rect.left, self.rect.right):1.}
 
 class ResourcePack(Resource):
     """ Can be collected, and in that case adds/increases a progress bar on the collecting sprite.
     Multiple resource packs can refer to the same type of base resource. """
     is_static = True
 
-    def updateOptions(self, game):
-        return {(self.rect.left, self.rect.right):1.}
+    # def updateOptions(self, game):
+    #     return {(self.rect.left, self.rect.right):1.}
 
 class Flicker(VGDLSprite):
     """ A square that persists just a few timesteps. """
@@ -271,18 +273,18 @@ class RandomNPC(VGDLSprite):
         self.direction = choice(BASEDIRS)
         self.physics.activeMovement(self, self.direction)
 
-    def updateOptions(self, game):
-        position_options = {}
-        options = BASEDIRS
+    # def updateOptions(self, game):
+    #     position_options = {}
+    #     options = BASEDIRS
     
-        for option in options:
-            rect = self.physics.calculateActiveMovement(self, option)
-            if (rect.left, rect.right) in position_options.keys():
-                position_options[(rect.left, rect.right)] += 1.0/len(options) 
-            else:
-                position_options[(rect.left, rect.right)] = 1.0/len(options)
+    #     for option in options:
+    #         rect = self.physics.calculateActiveMovement(self, option)
+    #         if (rect.left, rect.right) in position_options.keys():
+    #             position_options[(rect.left, rect.right)] += 1.0/len(options) 
+    #         else:
+    #             position_options[(rect.left, rect.right)] = 1.0/len(options)
         
-        return position_options
+    #     return position_options
 
 
 class OrientedSprite(VGDLSprite): ##
@@ -423,23 +425,23 @@ class Chaser(RandomNPC): ##
         
         return position_options
 
-    def updateOptions(self, game): #TODO: Need to make sure to feed in a copy of the game, so as not to actually update the current game? 
-        VGDLSprite.update(self, game)
-        options = []
-        position_options = {}
-        for target in self._closestTargets(game):
-            options.extend(self._movesToward(game, target))
-        if len(options) == 0:
-            options = BASEDIRS
+    # def updateOptions(self, game): 
+    #     VGDLSprite.update(self, game)
+    #     options = []
+    #     position_options = {}
+    #     for target in self._closestTargets(game):
+    #         options.extend(self._movesToward(game, target))
+    #     if len(options) == 0:
+    #         options = BASEDIRS
 
-        for option in options:
-            rect = self.physics.calculateActiveMovement(self, option)
-            if (rect.left, rect.right) in position_options.keys():
-                position_options[(rect.left, rect.right)] += 1.0/len(options) 
-            else:
-                position_options[(rect.left, rect.right)] = 1.0/len(options)
+    #     for option in options:
+    #         rect = self.physics.calculateActiveMovement(self, option)
+    #         if (rect.left, rect.right) in position_options.keys():
+    #             position_options[(rect.left, rect.right)] += 1.0/len(options) 
+    #         else:
+    #             position_options[(rect.left, rect.right)] = 1.0/len(options)
         
-        return position_options
+    #     return position_options
         
 
 
@@ -536,39 +538,39 @@ class AStarChaser(RandomNPC): ##
                     
         self.physics.activeMovement(self, movement)
 
-    def updateOptions(self, game):
-        VGDLSprite.update(self, game)  #TODO: Need to make sure to feed in a copy of the game, so as not to actually update the current game? 
+    # def updateOptions(self, game):
+    #     VGDLSprite.update(self, game)  #TODO: Need to make sure to feed in a copy of the game, so as not to actually update the current game? 
 
-        world = AStarWorld(game)
-        path = world.getMoveFor(self)
+    #     world = AStarWorld(game)
+    #     path = world.getMoveFor(self)
         
-        # Uncomment below to draw debug paths.
-        # self._setDebugVariables(world,path)
+    #     # Uncomment below to draw debug paths.
+    #     # self._setDebugVariables(world,path)
         
-        if len(path)>1:
-            move = path[1]
+    #     if len(path)>1:
+    #         move = path[1]
             
-            nextX, nextY = world.get_sprite_tile_position(move.sprite)
-            nowX, nowY = world.get_sprite_tile_position(self)
+    #         nextX, nextY = world.get_sprite_tile_position(move.sprite)
+    #         nowX, nowY = world.get_sprite_tile_position(self)
             
-            movement = None
+    #         movement = None
             
-            if nowX == nextX:
-                if nextY > nowY:
-                    #logToFile('DOWN')
-                    movement = DOWN
-                else:
-                    #logToFile('UP')
-                    movement = UP
-            else:
-                if nextX > nowX:
-                    #logToFile('RIGHT')
-                    movement = RIGHT
-                else:
-                    #logToFile('LEFT')
-                    movement = LEFT
-        rect = self.physics.calculateActiveMovement(self, movement)
-        return {(rect.left, rect.right): 1.} 
+    #         if nowX == nextX:
+    #             if nextY > nowY:
+    #                 #logToFile('DOWN')
+    #                 movement = DOWN
+    #             else:
+    #                 #logToFile('UP')
+    #                 movement = UP
+    #         else:
+    #             if nextX > nowX:
+    #                 #logToFile('RIGHT')
+    #                 movement = RIGHT
+    #             else:
+    #                 #logToFile('LEFT')
+    #                 movement = LEFT
+    #     rect = self.physics.calculateActiveMovement(self, movement)
+    #     return {(rect.left, rect.right): 1.} 
 
 
 # ---------------------------------------------------------------------
@@ -1170,8 +1172,6 @@ kill_effects = [killSprite, killIfSlow, transformTo, killIfOtherHasLess, killIfO
 #     Sprite Induction
 # ---------------------------------------------------------------------
 
-# Create dictionary with transition updates: (TODO) should we do this manually, or can we do it automatically? 
-
 def chaserClosestTargets(sprite, game):
     bestd = 1e100
     res = []
@@ -1216,7 +1216,6 @@ def updateOptions(game, sprite_type, current_sprite):
         position_options = {}
         for target in chaserClosestTargets(current_sprite, game):
             options.extend(chaserMovesToward(current_sprite, game, target))
-            # print "new options:", options
         if len(options) == 0:
             options = BASEDIRS
 
@@ -1236,7 +1235,6 @@ def updateOptions(game, sprite_type, current_sprite):
             rect = current_sprite.physics.calculatePassiveMovement(current_sprite)
             return {(rect.left, rect.right): 1.0}
 
-# Initialize distribution
 def initializeDistribution(sprite_types):
     """
     Creates a uniform distribution over all the sprite types.
@@ -1246,7 +1244,7 @@ def initializeDistribution(sprite_types):
         initial_distribution[sprite] = 1.0/len(sprite_types) # uniform distribution
     return initial_distribution
 
-# Create function that takes in object last state and new state and updates the object distribution
+
 def updateDistribution(sprite, curr_distribution, movement_options, outcome):
     """
     Updates the sprite distribution for a given object in the game.
@@ -1255,15 +1253,22 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
         sprite - the current sprite ID
         curr_distribution - the current sprite distribution for the given object
         movement_options - possible next locations that the sprite of that sprite type can be in
-        outcome - the resulting location that the sprite went to 
+        outcome - the sprite's resulting location after the update
+    
     Output:
-
+        curr_distribution - renormalized updated distribution over sprite types for a given object
     """
-    for sprite_type in curr_distribution[sprite]:
+    for sprite_type in curr_distribution:
         if outcome in movement_options[sprite][sprite_type]:
             curr_distribution[sprite_type] *=  movement_options[sprite][sprite_type][outcome]
         else:
             curr_distribution[sprite_type] = 0.0
+
+
+    # Re-normalize the distribution
+    denom = sum(curr_distribution.values())
+    for k in curr_distribution.keys():
+        curr_distribution[k] = curr_distribution[k] / denom
 
     return curr_distribution
 

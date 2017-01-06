@@ -650,7 +650,7 @@ class BasicGame(object):
         f_obj = open(object_output,"w")
 
         # For sprite induction
-        sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
+        #sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
         sprite_types = [Immovable, Passive, Chaser]
         objects = self.getObjects()
         spriteDistribution = {}
@@ -750,34 +750,37 @@ class BasicGame(object):
                 if self.ended:
                     break
 
-            # Sprite Induction Part 1: See the update options for each sprite type the sprite could be
+            # Sprite Induction Part 1: See the update options for each potential sprite type
             objects = self.getObjects()
-            for sprite in spriteDistribution.keys(): # Keys are the IDs of the game objects
-                game = self
-                for sprite_type in spriteDistribution[sprite].keys(): # Check each potential sprite type                    
-                    # Object may have been killed, so apply try/except
+            for sprite in spriteDistribution.keys():                    # Keys are the IDs of the game objects
+                game = self                                             # Save game state
+                sprite_types = spriteDistribution[sprite].keys()
+                
+                for sprite_type in sprite_types:                        # Check each potential sprite type                        
+                    # Object may have been killed, so apply try/except; TODO: other errors picked up here
                     try: 
                         sprite_obj = objects[sprite]["sprite"]
-                        if sprite_obj.name != 'avatar': # TODO: Implement Avatar updateOptions function
-                            options = updateOptions(game, sprite_type, sprite_obj) 
-                            if sprite_obj.name == "angry": # For debugging
-                                print "Sprite: ", sprite_obj.name
-                                print "Sprite type: ", sprite_type
-                                print "Current sprite position: ", objects[sprite]["position"]
-                                print "Options: ", options
-                                print
+                        if sprite_obj.name != 'avatar':                            # TODO: Implement Avatar updateOptions function
+                            options = updateOptions(game, sprite_type, sprite_obj) # Get potential next positions for sprite if it were that sprite type
+                            
+                            # if sprite_obj.name == "angry": # For debugging
+                            #     print "Sprite: ", sprite_obj.name
+                            #     print "Sprite type: ", sprite_type
+                            #     print "Current sprite position: ", objects[sprite]["position"]
+                            #     print "Options: ", options
+                            #     print
+                            
                             movement_options[sprite][sprite_type] = options
                     
                     except Exception as e:
                         pass
                         # print "--> error:", e
-            print 
-            
-            # update sprites
-            objects = self.getObjects()
-            for s in self:
-                # game = self
 
+            # update sprites
+            # objects = self.getObjects() # For debugging
+            for s in self:
+                ## For debugging
+                # game = self
                 # sprite = s.ID
                 # sprite_obj = objects[sprite]["sprite"]
                 # print "Current sprite / position: {}, {}".format(sprite_obj.name, (sprite_obj.rect.left, sprite_obj.rect.right))
@@ -795,19 +798,23 @@ class BasicGame(object):
                 
             # Sprite Induction Part 2: Update sprite distribution based on observations
             objects = self.getObjects()
-            for sprite in spriteDistribution.keys(): # Here the keys are the IDs of the game objects
+            for sprite in spriteDistribution.keys(): # Keys are the IDs of the game objects
                 try: 
                     sprite_obj = objects[sprite]["sprite"] 
-                    if sprite_obj.name != 'avatar': # TODO: Avatar does not have an updateOptions function (yet)
-                        if sprite not in collision_objects and sprite_obj.name != 'avatar':
-                            outcome = objects[sprite]["position"]
-                            if sprite_obj.name == "angry":
-                                print "Outcome:", outcome
-                                print
-                            new_dist = updateDistribution(sprite, curr_distribution, movement_options, outcome)
-                            spriteDistribution[sprite] = new_dist
+                    if sprite_obj.name != 'avatar' and sprite not in collision_objects:
+                        outcome = objects[sprite]["position"]   # Get object's current position after the update
+                        
+                        # if sprite_obj.name == "angry": # For debugging
+                            # print "Outcome:", outcome
+                            # print
+                        
+                        # Update the distribution for an object's potential sprite types
+                        curr_dist = spriteDistribution[sprite]
+                        spriteDistribution[sprite] = updateDistribution(sprite, curr_dist, movement_options, outcome)
+                        
                 except Exception as e:
                     pass
+                    # print "error", e
 
 
             # Termination #2 : Avatars have been killed
@@ -977,11 +984,11 @@ class VGDLSprite(object):
             self.physics.passiveMovement(self)
             return {(self.rect.left, self.rect.right): 1.0}
 
-    def updateOptions(self, game):
-        """ The main place where subclasses differ. """
-        if not self.is_static and not self.only_active:
-            rect = self.physics.calculatePassiveMovement(self)
-            return {(rect.left, rect.right): 1.0}
+    # def updateOptions(self, game):
+    #     """ The main place where subclasses differ. """
+    #     if not self.is_static and not self.only_active:
+    #         rect = self.physics.calculatePassiveMovement(self)
+    #         return {(rect.left, rect.right): 1.0}
 
     def _updatePos(self, orientation, speed=None):
         if speed is None:
@@ -989,6 +996,9 @@ class VGDLSprite(object):
         if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
             self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
             self.lastmove = 0
+            # print "entered"
+        # else:
+            # print "not entered"
         return (self.rect.left, self.rect.right)
 
     def _velocity(self):
