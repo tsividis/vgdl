@@ -649,8 +649,8 @@ class BasicGame(object):
         keyPressPrev = None
         f_obj = open(object_output,"w")
 
-        ## For sprite induction
-        # sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
+        #sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
+
         sprite_types = [Immovable, Passive, Chaser]
         objects = self.getObjects()
         spriteDistribution = {}
@@ -759,14 +759,15 @@ class BasicGame(object):
             objects = self.getObjects()
 
             for sprite in spriteDistribution.keys(): # Keys are the IDs of the game objects
-                game = self
+                game = self                          # Save game state
                 for sprite_type in spriteDistribution[sprite].keys(): # Check each potential sprite type                    
-                    # Object may have been killed, so apply try/except
+                    # Object may have been killed, so apply try/except TODO: other errors picked up here
                     try: 
                         sprite_obj = objects[sprite]["sprite"]
                         if sprite_obj.name != 'avatar': # TODO: Implement Avatar updateOptions function
 
-                            options = updateOptions(game, sprite_type, sprite_obj) 
+                            options = updateOptions(game, sprite_type, sprite_obj) # Get potential next positions for sprite if it were that sprite type
+
                             movement_options[sprite][sprite_type] = options
                     except Exception as e:
                         pass
@@ -774,13 +775,14 @@ class BasicGame(object):
             
             ## Update actual sprite positions.
             for s in self:
+                ## For debugging
                 # game = self
                 sprite = s.ID
                 options_1 = s.update(self)
 
             ## Sprite Induction Part 2: Update sprite distribution based on observations
             objects = self.getObjects()
-            for sprite in spriteDistribution.keys(): # Here the keys are the IDs of the game objects
+            for sprite in spriteDistribution.keys(): # Keys are the IDs of the game objects
                 try: 
                     sprite_obj = objects[sprite]["sprite"] 
                     if sprite_obj.name != 'avatar': # TODO: Avatar does not have an updateOptions function (yet)
@@ -797,6 +799,7 @@ class BasicGame(object):
 
                 except Exception as e:
                     pass
+                    # print "error", e
 
 
             # Termination #2 : Avatars have been killed
@@ -980,6 +983,9 @@ class VGDLSprite(object):
         if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
             self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
             self.lastmove = 0
+            # print "entered"
+        # else:
+            # print "not entered"
         return (self.rect.left, self.rect.right)
 
     def _velocity(self):

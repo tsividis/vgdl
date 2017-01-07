@@ -91,8 +91,8 @@ class GridPhysics():
         if speed != 0 and hasattr(sprite, 'orientation'):
             orientation = sprite.orientation
             speed = speed * self.gridsize[0]
+
             if not(self.cooldown > self.lastmove + 1 or abs(orientation[0])+abs(orientation[1])==0):
-                # print "about to move", sprite.name
                 coords = self.rect.move((orientation[0]*speed, orientation[1]*speed))
                 return coords
             return sprite.rect
@@ -200,6 +200,7 @@ class Passive(VGDLSprite):
     def updateOptions(self, game):
         return {(self.rect.left, self.rect.top):1.}
 
+
 class ResourcePack(Resource):
     """ Can be collected, and in that case adds/increases a progress bar on the collecting sprite.
     Multiple resource packs can refer to the same type of base resource. """
@@ -277,9 +278,9 @@ class RandomNPC(VGDLSprite):
         self.direction = choice(BASEDIRS)
         self.physics.activeMovement(self, self.direction)
 
-    def updateOptions(self, game):
-        position_options = {}
-        options = BASEDIRS
+    # def updateOptions(self, game):
+    #     position_options = {}
+    #     options = BASEDIRS
     
         for option in options:
 
@@ -289,7 +290,7 @@ class RandomNPC(VGDLSprite):
             else:
                 position_options[(left, top)] = 1.0/len(options)
         
-        return position_options
+    #     return position_options
 
 
 class OrientedSprite(VGDLSprite): ##
@@ -446,7 +447,7 @@ class Chaser(RandomNPC): ##
             else:
                 position_options[(left, top)] = 1.0/len(options)
         
-        return position_options
+    #     return position_options
         
 
 
@@ -549,8 +550,8 @@ class AStarChaser(RandomNPC): ##
         world = AStarWorld(game)
         path = world.getMoveFor(self)
         
-        # Uncomment below to draw debug paths.
-        # self._setDebugVariables(world,path)
+    #     # Uncomment below to draw debug paths.
+    #     # self._setDebugVariables(world,path)
         
         if len(path)>1:
             move = path[1]
@@ -576,6 +577,7 @@ class AStarChaser(RandomNPC): ##
                     movement = LEFT
         left, top = self.physics.calculateActiveMovement(self, movement)
         return {(left, top): 1.} 
+
 
 
 # ---------------------------------------------------------------------
@@ -1177,10 +1179,6 @@ kill_effects = [killSprite, killIfSlow, transformTo, killIfOtherHasLess, killIfO
 #     Sprite Induction
 # ---------------------------------------------------------------------
 
-# Create dictionary with transition updates: (TODO) should we do this manually, or can we do it automatically? 
-
-## some syncing problem between screen time and the internal while loop that's calculating positions
-
 def chaserClosestTargets(sprite, game):
     bestd = 1e100
     res = []
@@ -1237,7 +1235,6 @@ def updateOptions(game, sprite_type, current_sprite):
         ## TODO: Why not just use BASEDIRS from the beginning?
         for target in chaserClosestTargets(current_sprite, game):
             options.extend(chaserMovesToward(current_sprite, game, target))
-            # print "new options:", options
         if len(options) == 0:
             options = BASEDIRS
 
@@ -1259,7 +1256,6 @@ def updateOptions(game, sprite_type, current_sprite):
             rect = current_sprite.physics.calculatePassiveMovement(current_sprite)
             return {(rect.left, rect.top): 1.0}
 
-# Initialize distribution
 def initializeDistribution(sprite_types):
     """
     Creates a uniform distribution over all the sprite types.
@@ -1270,7 +1266,6 @@ def initializeDistribution(sprite_types):
     return initial_distribution
 
 
-# Create function that takes in object last state and new state and updates the object distribution
 def updateDistribution(sprite, curr_distribution, movement_options, outcome):
     """
     Updates the sprite distribution for a given object in the game.
@@ -1279,11 +1274,11 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
         sprite - the current sprite ID
         curr_distribution - the current sprite distribution for the given object
         movement_options - possible next locations that the sprite of that sprite type can be in
-        outcome - the resulting location that the sprite went to 
+        outcome - the sprite's resulting location after the update
+    
     Output:
-
+        curr_distribution - renormalized updated distribution over sprite types for a given object
     """
-
     if sprite in curr_distribution.keys():
         for sprite_type in curr_distribution[sprite].keys():
             if outcome in movement_options[sprite][sprite_type].keys():
@@ -1294,6 +1289,13 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
         z = sum([curr_distribution[sprite][k] for k in curr_distribution[sprite].keys()])
         for sprite_type in curr_distribution[sprite].keys():
             curr_distribution[sprite][sprite_type] /= z
+
+
+
+    # Re-normalize the distribution
+    denom = sum(curr_distribution.values())
+    for k in curr_distribution.keys():
+        curr_distribution[k] = curr_distribution[k] / denom
 
     return curr_distribution
 
