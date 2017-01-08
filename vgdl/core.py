@@ -718,12 +718,6 @@ class BasicGame(object):
             # handle collision effects
             self._eventHandling()
 
-            
-
-
-            # Print the objects in the game out
-            # f_obj.write(str(self.getObjects()) + "\n")
-            #print self.getObjects()
 
             # Save the event and agent state
             try:
@@ -758,48 +752,27 @@ class BasicGame(object):
             ## Sprite Induction Part 1: See the update options for each sprite type the sprite could be
             objects = self.getObjects()
 
-            for sprite in spriteDistribution.keys(): # Keys are the IDs of the game objects
-                game = self                          # Save game state
+            for sprite in spriteDistribution.keys():                  # Keys are the IDs of the game objects
+                game = self                                           # Save game state
                 for sprite_type in spriteDistribution[sprite].keys(): # Check each potential sprite type                    
-                    # Object may have been killed, so apply try/except TODO: other errors picked up here
-                    try: 
+                    if sprite in objects.keys():                      # Sprite may have been killed
                         sprite_obj = objects[sprite]["sprite"]
-                        if sprite_obj.name != 'avatar': # TODO: Implement Avatar updateOptions function
-
+                        if sprite_obj.name != 'avatar':                            # TODO: Implement Avatar updateOptions function
                             options = updateOptions(game, sprite_type, sprite_obj) # Get potential next positions for sprite if it were that sprite type
-
                             movement_options[sprite][sprite_type] = options
-                    except Exception as e:
-                        pass
-                        # print "--> error:", e
             
             ## Update actual sprite positions.
             for s in self:
-                ## For debugging
-                # game = self
-                sprite = s.ID
-                options_1 = s.update(self)
+                s.update(self)
 
             ## Sprite Induction Part 2: Update sprite distribution based on observations
             objects = self.getObjects()
-            for sprite in spriteDistribution.keys(): # Keys are the IDs of the game objects
-                try: 
+            for sprite in spriteDistribution.keys():        # Keys are the IDs of the game objects
+                if sprite in objects.keys():                # Sprite may have been killed
                     sprite_obj = objects[sprite]["sprite"] 
-                    if sprite_obj.name != 'avatar': # TODO: Avatar does not have an updateOptions function (yet)
-                        if sprite not in collision_objects and sprite_obj.name != 'avatar':
-                            outcome = objects[sprite]["position"]
-                            if sprite_obj.name == "angry":
-                                angry_ID = sprite
-
-
-                            new_dist = updateDistribution(sprite, spriteDistribution, movement_options, outcome)
-
-
-                            spriteDistribution = new_dist
-
-                except Exception as e:
-                    pass
-                    # print "error", e
+                    if sprite not in collision_objects and sprite_obj.name != 'avatar':
+                        outcome = objects[sprite]["position"]
+                        spriteDistribution = updateDistribution(sprite, spriteDistribution, movement_options, outcome)
 
 
             # Termination #2 : Avatars have been killed
