@@ -20,6 +20,7 @@ class AStarWorld(object):
 		self.food = game.getSprites('food')
 		self.nest = game.getSprites('nest')
 		self.moving = game.getSprites('moving')
+		self.avatar = game.getSprites('avatar')
 		self.empty = [core.VGDLSprite(pos, (self.game.block_size, self.game.block_size)) for pos in self.game.emptyBlocks()]
 
 		##print "food=%s, nest=%s, moving=%s" %(len(food), len(nest), len(moving))
@@ -41,7 +42,7 @@ class AStarWorld(object):
 		self.walkable_tiles = {}
 		self.walkable_tile_indices = []
 
-		combined = self.food + self.nest + self.moving + self.empty
+		combined = self.food + self.nest + self.moving + self.empty + self.avatar
 		#print combined
 		for sprite in combined:
 			#print sprite
@@ -60,6 +61,9 @@ class AStarWorld(object):
 		return index/self.game.width, index%self.game.width
 
 	def h(self, start, goal):
+		"""
+		Distance from start to goal; taxicab distance or euclidean distance.
+		"""
 		#return self.euclidean(start, goal)
 		return self.distance(start, goal)
 
@@ -83,6 +87,9 @@ class AStarWorld(object):
 
 
 	def get_lowest_f(self, nodes, f_score):
+		"""
+		Searches for the node with the lowest f_score
+		"""
 		f_best = 9999 
 		node_best = None
 		for node in nodes:
@@ -124,6 +131,9 @@ class AStarWorld(object):
 		return neighbors
 
 	def distance(self, node1, node2):
+		"""
+		Taxicab distance
+		"""
 		x1, y1 = self.get_sprite_tile_position(node1.sprite)
 		x2, y2 = self.get_sprite_tile_position(node2.sprite)
 
@@ -133,16 +143,16 @@ class AStarWorld(object):
 		tileX, tileY = self.get_sprite_tile_position(startSprite)
 		index = self.get_index(tileX, tileY)
 		startNode = AStarNode(index, startSprite)
-		# print "start node:", startNode.index
-		try:
+		
+		if 'pacman' in self.game.sprite_groups:
 			pacman = self.game.getSprites('pacman')[0]
-		except IndexError:
+		elif 'avatar' in self.game.sprite_groups:
 			pacman = self.game.getSprites('avatar')[0]
-		# print "avatar: ", pacman
+		
 		goalX, goalY = self.get_sprite_tile_position(pacman)
 		goalIndex = self.get_index(goalX, goalY)
 		goalNode = AStarNode(goalIndex, pacman)
-		# print "goal node:", goalNode.index
+		
 		# logToFile('Goal: (%s,%s) --> (%s, %s)' %(tileX, tileY, goalX, goalY))
 
 		return self.search(startNode, goalNode)
@@ -157,17 +167,14 @@ class AStarWorld(object):
 
 		openset = [start]
 		g_score[start.index] = 0
-		f_score[start.index] = g_score[start.index] + self.h(start, goal)
+		f_score[start.index] = g_score[start.index] + self.h(start, goal) 	# Score of start index is the distance between start to goal
 		while (len(openset) > 0):
-			current = self.get_lowest_f(openset, f_score)
-			# print "current index", current.index
-			# print "goal index", goal.index
-			# print "check 3"
+			current = self.get_lowest_f(openset, f_score) 					# Get node with lowest distance to goal
+
+			# Reached the goal
 			if current.index == goal.index:
-				# print "check 4"
 				# print came_from
 				path = self.reconstruct_path(came_from, goal)
-				# Debugging
 				# path_sprites = [node.sprite for node in path]
 				# pathh = map(self.get_sprite_tile_position, path_sprites)
 				# print pathh
@@ -177,9 +184,10 @@ class AStarWorld(object):
 			closedset.append(current)
 
 			for neighbor in self.neighbor_nodes(current):
-				temp_g = g_score[current.index] + self.distance(current, neighbor)
+				temp_g = g_score[current.index] + self.distance(current, neighbor)				# g_score is the distance from the start node
 				if self.nodeInSet(neighbor, closedset) and temp_g >= g_score[neighbor.index]:
 					continue
+				# New node 
 				if not self.nodeInSet(neighbor, openset) or temp_g < g_score[neighbor.index]:
 					came_from[neighbor.index] = current
 					# print 'came_from[%s]=%s' % (self.get_tile_from_index(neighbor.index), self.get_tile_from_index(current.index))
@@ -188,7 +196,7 @@ class AStarWorld(object):
 					if neighbor not in openset:
 						openset.append(neighbor)
 
-		return None
+		return []
 
 	def nodeInSet(self, node, nodeSet):
 		nodeSetIndices = [n.index for n in nodeSet]

@@ -237,6 +237,7 @@ class BasicGame(object):
         self.ended = False
         self.num_sprites = 0
         self.kill_list=[]
+        self.all_killed=[] # All items that have been killed
 
     def buildLevel(self, lstr):
         from ontology import stochastic_effects
@@ -498,6 +499,7 @@ class BasicGame(object):
 
     def _clearAll(self, onscreen=True):
         for s in set(self.kill_list):
+            self.all_killed.append(s)
             if onscreen:
                 s._clear(self.screen, self.background, double=True)
             self.sprite_groups[s.name].remove(s)
@@ -580,11 +582,6 @@ class BasicGame(object):
                                 e = effect(s2, s1, resource_color, self, **kwargs) # TODO: is 's1' the actual thing we ran into?
                             else:
                                 e = effect(s2, s1, self, **kwargs)
-                                # if e[0] == "killSprite":
-                                #     embed()
-                                # if effect == killIfFromAbove:
-                                #     self.effectList.append(("killIfFromAbove",getColor(s2),getColor(s1)))
-                                # print effect
                             if e != None:
                                 self.effectList.append(e)
 
@@ -599,8 +596,6 @@ class BasicGame(object):
                             
                             else:
                                 e = effect(s1, s2, self, **kwargs)
-                                # if e[0] == "killSprite":
-                                #     embed()
 
                             if e != None:
                                 self.effectList.append(e)
@@ -649,23 +644,34 @@ class BasicGame(object):
         keyPressPrev = None
         f_obj = open(object_output,"w")
 
+        # Prep for Sprite Induction
         sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
-
+        all_objects = self.getObjects() # Save all objects, some which may be killed in game
         objects = self.getObjects()
         spriteDistribution = {}
         movement_options = {}
-
+        
         for sprite in objects:
             spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
-            movement_options[sprite] = {}
+            movement_options[sprite] = {"OTHER":{}}
             for sprite_type in sprite_types:
-                movement_options[sprite][sprite_type] = None
+                movement_options[sprite][sprite_type] = {}
 
         while not self.ended:
             clock.tick(self.frame_rate)
             self.time += 1
             print "t=", self.time
             self._clearAll()
+
+            # For new objects that appear; sprite induction
+            objects = self.getObjects()
+            for sprite in objects:
+                if sprite not in spriteDistribution:
+                    all_objects[sprite] = objects[sprite]
+                    spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
+                    movement_options[sprite] = {"OTHER":{}}
+                    for sprite_type in sprite_types:
+                        movement_options[sprite][sprite_type] = {}
 
             # gather events
             pygame.event.pump()
@@ -738,8 +744,11 @@ class BasicGame(object):
 
                 # Get objects involved in the effectList
                 for effect in event['effectList']:
-                    collision_objects.add(effect[1])
-                    collision_objects.add(effect[2])
+                    if len(effect) == 3:
+                        collision_objects.add(effect[1])
+                        collision_objects.add(effect[2])
+                    elif len(effect) == 2:
+                        collision_objects.add(effect[1])
             
 
             # Termination #1
@@ -750,19 +759,20 @@ class BasicGame(object):
 
             ## Sprite Induction Part 1: See the update options for each sprite type the sprite could be
             objects = self.getObjects()
-
+            game = self                                               # Save game state
             for sprite in spriteDistribution.keys():                  # Keys are the IDs of the game objects
-                game = self                                           # Save game state
                 for sprite_type in spriteDistribution[sprite].keys(): # Check each potential sprite type                    
-                    if spriteDistribution[sprite][sprite_type] > 0:
-                        if sprite in objects.keys():                      # Sprite may have been killed
-                            sprite_obj = objects[sprite]["sprite"]
-                            if sprite_obj.name != 'avatar':                            # TODO: Implement Avatar updateOptions function
-                                options = updateOptions(game, sprite_type, sprite_obj) # Get potential next positions for sprite if it were that sprite type
-                                if options == None:
-                                    options = {}
-                                movement_options[sprite][sprite_type] = options
-                
+                    if spriteDistribution[sprite][sprite_type] > 0 and sprite in objects.keys():    # Make sure sprite_type is an option for sprite, and sprite is not killed
+                        sprite_obj = objects[sprite]["sprite"]
+
+                        # Get potential next positions for sprite if it were that sprite type
+                        # TODO: Implement Avatar updateOptions function
+                        if sprite_obj.name != 'avatar':
+                            movement_options[sprite][sprite_type] = updateOptions(game, sprite_type, sprite_obj) 
+                          
+                            # print sprite_obj.name, sprite_type # For debugging
+                            # print movement_options[sprite][sprite_type]
+           
             ## Update actual sprite positions.
             for s in self:
                 s.update(self)
@@ -772,10 +782,12 @@ class BasicGame(object):
             for sprite in spriteDistribution.keys():        # Keys are the IDs of the game objects
                 if sprite in objects.keys():                # Sprite may have been killed
                     sprite_obj = objects[sprite]["sprite"] 
+                    
                     if sprite not in collision_objects and sprite_obj.name != 'avatar':
+                        # print sprite_obj # For debugging
+
                         outcome = objects[sprite]["position"]
                         spriteDistribution = updateDistribution(sprite, spriteDistribution, movement_options, outcome)
-
 
             # Termination #2 : Avatars have been killed
             if len(self.getAvatars()) == 0:
@@ -881,6 +893,7 @@ class BasicGame(object):
         for s in self:
             s.update(self)
 
+
         # handle collision effects
         self._eventHandling()
         if not headless:
@@ -943,13 +956,6 @@ class VGDLSprite(object):
         self.lastmove += 1
         if not self.is_static and not self.only_active:
             self.physics.passiveMovement(self)
-            return {(self.rect.left, self.rect.top): 1.0}
-
-    def updateOptions(self, game):
-        """ The main place where subclasses differ. """
-        if not self.is_static and not self.only_active:
-            left, top = self.physics.calculatePassiveMovement(self)
-            return {(left, top): 1.0}
 
     def _updatePos(self, orientation, speed=None):
         if speed is None:
@@ -958,10 +964,7 @@ class VGDLSprite(object):
         if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
             self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
             self.lastmove = 0
-            # print "entered"
-        # else:
-            # print "not entered"
-        return (self.rect.left, self.rect.right)
+
 
     def _velocity(self):
         """ Current velocity vector. """

@@ -11,13 +11,11 @@ chase_game = """
 BasicGame
     SpriteSet
         carcass > Immovable color=BROWN
-        goat > stype=avatar cooldown=3
-            angry  > Missile speed=0.5 color=ORANGE
+        angry  > Missile color=ORANGE
         hay > Passive color=YELLOW
 
 
     InteractionSet
-        goat    wall   > stepBack
         avatar  wall   > stepBack
         angry   wall   > stepBack
         avatar  angry  > killSprite
