@@ -101,6 +101,8 @@ class VGDLParser(object):
                 self.parseMappings(c.children)
             if c.content == "TerminationSet":
                 self.parseTerminations(c.children)
+            if c.content == "ConditionalSet":
+                self.parseTerminations(c.children)
         return self.game
 
     def _eval(self, estr):
@@ -127,6 +129,14 @@ class VGDLParser(object):
             if self.verbose:
                 print "Adding:", sclass, args
             self.game.terminations.append(sclass(**args))
+
+    def parseConditions(self, cnodes):
+        for cnode in cnodes:
+            if ">" in cnode.content:
+                conditional, interaction = [x.strip() for x in cnode.content.split(">")]
+                cclass, cargs = self._parseArgs(conditional)
+                eclass, eargs = self._parseArgs(interaction)
+                self.game.conditions.append([cclass(**cargs), [eclass, eargs]])               
 
     def parseSprites(self, snodes, parentclass=None, parentargs={}, parenttypes=[]):
         for sn in snodes:
@@ -516,7 +526,7 @@ class BasicGame(object):
                 del self.lastcollisions[key]
 
     def _eventHandling(self):
-        from ontology import *
+        # from ontology import *    
         self.lastcollisions = {}
         ss = self.lastcollisions # List of possible interactions in the game
         self.effectList = []
@@ -561,6 +571,12 @@ class BasicGame(object):
                 score = kwargs['scoreChange']
                 del kwargs['scoreChange']
 
+            dim = None
+            if 'dim' in kwargs:
+                kwargs = kwargs.copy()
+                dim = kwargs['dim']
+                del kwargs['dim']
+
             for s1 in shortss:
                 for ci in s1.rect.collidelistall(longss):
                     s2 = longss[ci]
@@ -570,40 +586,50 @@ class BasicGame(object):
                     if score:
                         self.score += score
                         #print 'score', self.score  ## ORIGINALLY UNCOMMENTED
+
+                    if 'applyto' in kwargs:
+
+                        stype = kwargs['applyto']
+
+                        kwargs_use = deepcopy(kwargs)
+                        kwargs_use.pop('applyto')
+                        for sC in self.getSprites(stype):
+                            e = effect(sC, None, self, **kwargs_use)
+                        self.effectList.append(e)
+                        continue
+
+                    if dim:
+                        sprites = self.getSprites(g1)
+                        spritesFiltered = filter(lambda sprite: sprite.__dict__[dim] == s2.__dict__[dim], sprites)
+                        for sC in spritesFiltered:
+                            if s1 not in kill_list:
+                                if switch:
+                                    e = effect(sC, s1, self, **kwargs)
+                                else:
+                                    e = effect(s1, sC, self, **kwargs)
+                        self.effectList.append(e)
+                        continue
+
                     if switch:
-                        # CHECKME: this is not a bullet-proof way, but seems to work
-                        if s2 not in self.kill_list:
-                            if effect.__name__ == "changeResource": # TODO: A little hack-y, but works for now.
-                                resource = kwargs['resource']
-                                (sclass, args, stypes) = self.sprite_constr[resource]
-                                resource_color = args['color']
-                                e = effect(s2, s1, resource_color, self, **kwargs) # TODO: is 's1' the actual thing we ran into?
-                            else:
-                                e = effect(s2, s1, self, **kwargs)
-                                # if e[0] == "killSprite":
-                                #     embed()
-                                # if effect == killIfFromAbove:
-                                #     self.effectList.append(("killIfFromAbove",getColor(s2),getColor(s1)))
-                                # print effect
-                            if e != None:
-                                self.effectList.append(e)
+                        s1, s2 = s2, s1
 
-                    else:
                         # CHECKME: this is not a bullet-proof way, but seems to work
-                        if s1 not in self.kill_list:
-                            if effect.__name__ == "changeResource":  # TODO: A little hack-y, but works for now.
-                                resource = kwargs['resource']
-                                (sclass, args, stypes) = self.sprite_constr[resource]
-                                resource_color = args['color']
-                                e = effect(s1, s2, resource_color, self, **kwargs)
-                            
-                            else:
-                                e = effect(s1, s2, self, **kwargs)
-                                # if e[0] == "killSprite":
-                                #     embed()
-
-                            if e != None:
-                                self.effectList.append(e)
+                    if s1 not in self.kill_list:
+                        if effect.__name__ == "changeResource":  # TODO: A little hack-y, but works for now.
+                            resource = kwargs['resource']
+                            (sclass, args, stypes) = self.sprite_constr[resource]
+                            resource_color = args['color']
+                            e = effect(s1, s2, resource_color, self, **kwargs)
+                        
+                        else:
+                            e = effect(s1, s2, self, **kwargs)
+                            # if e[0] == "killSprite":
+                            #     embed()
+                            # if effect == killIfFromAbove:
+                            #     self.effectList.append(("killIfFromAbove",getColor(s2),getColor(s1)))
+                            # print effect
+                        if e != None:
+                            self.effectList.append(e)
 
         # if len(self.effectList) > 0:
         #     print self.effectList
@@ -823,9 +849,9 @@ class BasicGame(object):
             self.win = False
             print "Game lost. Score=%s" % self.score
 
-        # if "killSprite" in [e[0] for e in self.effectList]:
-                # embed()
-        # ipdb.set_trace()
+        if "killSprite" in [e[0] for e in self.effectList]:
+                embed()
+        ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(50)
