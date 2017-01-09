@@ -70,22 +70,77 @@ class GridPhysics():
     """ Define actions and key-mappings for grid-world dynamics. """
 
     def passiveMovement(self, sprite):
+        # print "passive movement for", sprite.name
         if sprite.speed is None:
             speed = 1
         else:
             speed = sprite.speed
         if speed != 0 and hasattr(sprite, 'orientation'):
+            # print "in passive movement update for", sprite.name
             sprite._updatePos(sprite.orientation, speed * self.gridsize[0])
+        # else:
+            # print "no passive movement update for", sprite.name
+
+    def calculatePassiveMovement(self, sprite):
+        # print ""
+        # print "in calculate passive movement for", sprite.name
+        if sprite.speed is None:
+            speed = 1
+        else:
+            speed = sprite.speed
+        if speed != 0 and hasattr(sprite, 'orientation'):
+            orientation = sprite.orientation
+            speed = speed * self.gridsize[0]
+
+            if not(self.cooldown > self.lastmove + 1 or abs(orientation[0])+abs(orientation[1])==0):
+                coords = round(sprite.rect[0]+orientation[0]*speed), round(sprite.rect[1]+orientation[1]*speed)
+                return coords
+            else:
+                coords = (sprite.rect.left, sprite.rect.top)
+        else:
+            coords = (sprite.rect.left, sprite.rect.top)
+        return coords
+                  
 
     def activeMovement(self, sprite, action, speed=None):
+        # print "action", action
         if speed is None:
             if sprite.speed is None:
                 speed = 1
             else:
                 speed = sprite.speed
         if speed != 0 and action is not None:
+            # print "in active movement update for", sprite.name
             sprite._updatePos(action, speed * self.gridsize[0])
+        # else:
+            # print "no active movement update for", sprite.name
+        # print "after activeMovement", (sprite.rect.left, sprite.rect.top) 
+        # print "__"
 
+    def calculateActiveMovement(self, sprite, action, speed=None):
+        """
+        Calculate where the sprite would end up in a timestep, without actually updating its position.
+        """
+        if speed is None:
+            if sprite.speed is None:
+                speed = 1
+            else:
+                speed = sprite.speed
+        if speed != 0 and action is not None:
+            speed = speed * self.gridsize[0]
+            if speed is None:
+                speed = sprite.speed
+            
+            orientation = action
+
+            if not(sprite.cooldown > sprite.lastmove + 1 or abs(orientation[0])+abs(orientation[1])==0): 
+                # print "coords", sprite.rect[0]+orientation[0]*speed, sprite.rect[1]+orientation[1]*speed # debugging
+                coords = round(sprite.rect[0]+orientation[0]*speed), round(sprite.rect[1]+orientation[1]*speed)
+                return coords
+            else:
+                coords = (sprite.rect.left, sprite.rect.top)
+
+        return coords
 
     def distance(self, r1, r2):
         """ Grid physics use Hamming distances. """
@@ -130,14 +185,14 @@ class GravityPhysics(ContinuousPhysics):
 #     Sprite types
 # ---------------------------------------------------------------------
 from core import VGDLSprite, Resource
-
+'''
+In updateOptions function, object_info has form 
+    {'position':(ob.rect.left, ob.rect.right), 'features':features, 'type': type_vector}
+'''
 class Immovable(VGDLSprite):
     """ A gray square that does not budge. """
-    color = GRAY
+    color = GRAY #TODO: can these be commented out?
     is_static = True
-
-    def updateOptions(self, prev_pos):
-        pass
 
 class Passive(VGDLSprite):
     """ A square that may budge. """
@@ -214,9 +269,12 @@ class RandomNPC(VGDLSprite):
 
     def update(self, game):
         VGDLSprite.update(self, game)
-        self.physics.activeMovement(self, choice(BASEDIRS))
+        # self.direction = choice(BASEDIRS) #TODO: Make work with random direction
+        self.direction = BASEDIRS[0]
+        self.physics.activeMovement(self, self.direction)
 
-class OrientedSprite(VGDLSprite):
+
+class OrientedSprite(VGDLSprite): ##
     """ A sprite that maintains the current orientation. """
     draw_arrow = False
     orientation = RIGHT
@@ -228,6 +286,7 @@ class OrientedSprite(VGDLSprite):
             col = (self.color[0], 255 - self.color[1], self.color[2])
             pygame.draw.polygon(game.screen, col, triPoints(self.rect, unitVector(self.orientation)))
 
+
 class Conveyor(OrientedSprite):
     """ A static object that used jointly with the 'conveySprite' interaction to move
     other sprites around."""
@@ -236,7 +295,7 @@ class Conveyor(OrientedSprite):
     strength = 1
     draw_arrow = True
 
-class Missile(OrientedSprite):
+class Missile(OrientedSprite): ##
     """ A sprite that constantly moves in the same direction. """
     speed = 1
     color = PURPLE
@@ -318,7 +377,7 @@ class Bomber(SpawnPoint, Missile):
         Missile.update(self, game)
         SpawnPoint.update(self, game)
 
-class Chaser(RandomNPC):
+class Chaser(RandomNPC): ##
     """ Pick an action that will move toward the closest sprite of the provided target type. """
     stype = None
     fleeing = False
@@ -350,20 +409,27 @@ class Chaser(RandomNPC):
                 res.append(a)
         return res
 
+
     def update(self, game):
-        VGDLSprite.update(self, game)
+        VGDLSprite.update(self, game) # This increments self.lastmove by 1
+
         options = []
+        position_options = {}
+
         for target in self._closestTargets(game):
             options.extend(self._movesToward(game, target))
         if len(options) == 0:
             options = BASEDIRS
-        self.physics.activeMovement(self, choice(options))
+
+        self.physics.activeMovement(self, options[0]) #TODO: make this work with a random direction picked
+        # self.physics.activeMovement(self, choice(options))
+
 
 class Fleeing(Chaser):
     """ Just reversing directions"""
     fleeing = True
 
-class AStarChaser(RandomNPC):
+class AStarChaser(RandomNPC): ##
     """ Move towards the character using A* search. """
     stype = None
     fleeing = False
@@ -900,10 +966,7 @@ def killSprite(sprite, partner, game): ## FLAG
     game.kill_list.append(sprite)
     if not None in {sprite, partner}:
         # sprite_info = colorDict[str(sprite.color)]
-        # print partner.color
-        # print sprite.color
-        # partner_info = colorDict[str(partner.color)]
-        return ("killSprite",getColor(sprite),getColor(partner)) # partner = agent, sprite = what's being killed
+        return ("killSprite",sprite.ID ,partner.ID) # partner = agent, sprite = what's being killed
 
 
 def cloneSprite(sprite, partner, game):
@@ -911,15 +974,12 @@ def cloneSprite(sprite, partner, game):
 
 def transformTo(sprite, partner, game, stype='wall'):
     newones = game._createSprite([stype], (sprite.rect.left, sprite.rect.top))
-    # sprite_info = colorDict[str(sprite.color)]
-    # partner_info = colorDict[str(partner.color)]
+   
     if len(newones) > 0:
         if isinstance(sprite, OrientedSprite) and isinstance(newones[0], OrientedSprite):
             newones[0].orientation = sprite.orientation
         killSprite(sprite, partner, game)
-
-    # return ("transformTo",sprite_info,partner_info)
-    return ("transformTo",getColor(sprite),getColor(partner))
+    return ("transformTo",sprite.ID,partner.ID)
 
 def transformToOnLanding(sprite, partner, game, stype='wall'):
     """sprite will be transformed to stype when partner (avatar) lands on it from above"""
@@ -938,8 +998,7 @@ def triggerOnLanding(sprite, partner, game, strigger=None):
 def stepBack(sprite, partner, game): 
     """ Revert last move. """
     sprite.rect = sprite.lastrect
-    # sprite_info = colorDict[str(sprite.color)]
-    return ("stepBack",getColor(sprite),getColor(partner))
+    return ("stepBack", sprite.ID, partner.ID)
 
 def undoAll(sprite, partner, game):
     """ Revert last moves of all sprites. """
@@ -948,7 +1007,7 @@ def undoAll(sprite, partner, game):
     for s in game:
         s.rect = s.lastrect
 
-    return ('undoAll', getColor(sprite),getColor(partner))
+    return ('undoAll', sprite.ID , partner.ID)
 
 def bounceForward(sprite, partner, game): # FLAG
     """ The partner sprite pushed, so if possible move in the opposite direction. """
@@ -959,7 +1018,7 @@ def bounceForward(sprite, partner, game): # FLAG
     # print "in second part of bounceForward"
     # embed()
     # return ('bounceForward', colorDict[str(partner.color)], colorDict[str(sprite.color)])
-    return ('bounceForward', getColor(sprite), getColor(partner))
+    return ('bounceForward', sprite.ID, partner.ID)
 
 
 def conveySprite(sprite, partner, game):
@@ -970,7 +1029,7 @@ def conveySprite(sprite, partner, game):
     sprite.lastrect = tmp
     game._updateCollisionDict(sprite)
     # return ('conveySprite', colorDict[str(sprite.color)], colorDict[str(partner.color)])
-    return ('conveySprite', getColor(sprite), getColor(partner))
+    return ('conveySprite', sprite.ID, partner.ID)
 
 def windGust(sprite, partner, game):
     """ Moves the partner in target direction by some step size, but stochastically
@@ -983,7 +1042,7 @@ def windGust(sprite, partner, game):
         sprite.lastrect = tmp
         game._updateCollisionDict(sprite)
         # return ("windGust", colorDict[str(sprite.color)], colorDict[str(partner.color)])
-        return ('windGust',getColor(sprite),getColor(partner))
+        return ('windGust', sprite.ID, partner.ID)
 
 def slipForward(sprite, partner, game, prob=0.5):
     """ Slip forward in the direction of the current orientation, sometimes."""
@@ -994,14 +1053,14 @@ def slipForward(sprite, partner, game, prob=0.5):
         sprite.lastrect = tmp
         game._updateCollisionDict(sprite)
         # return ("slipForward" , colorDict[str(sprite.color)], colorDict[str(partner.color)])
-        return ('slipForward', getColor(sprite), getColor(partner))
+        return ('slipForward', sprite.ID, partner.ID)
 
 def attractGaze(sprite, partner, game, prob=0.5):
     """ Turn the orientation to the value given by the partner. """
     if prob > random():
         sprite.orientation = partner.orientation
         # return ("attractGaze" , colorDict[str(sprite.color)], colorDict[str(partner.color)])
-        return ('attractGaze', getColor(sprite), getColor(partner))
+        return ('attractGaze', sprite.ID, partner.ID)
 
 def turnAround(sprite, partner, game):
     sprite.rect = sprite.lastrect
@@ -1011,12 +1070,12 @@ def turnAround(sprite, partner, game):
     sprite.physics.activeMovement(sprite, DOWN)
     reverseDirection(sprite, partner, game)
     game._updateCollisionDict(sprite)
-    return ('turnAround', getColor(sprite), getColor(partner))
+    return ('turnAround', sprite.ID, partner.ID)
 
 def reverseDirection(sprite, partner, game): # FLAG
     sprite.orientation = (-sprite.orientation[0], -sprite.orientation[1])
 
-    return ('reverseDirection', getColor(sprite), getColor(partner))
+    return ('reverseDirection', sprite.ID, partner.ID)
 
 ##TODO: add event labels for the below effects
 def reverseFlowIfActivated(sprite, partner, game, strigger=None):
@@ -1048,7 +1107,7 @@ def detrigger(sprite, partner, game, strigger=None):
 def flipDirection(sprite, partner, game): # FLAG
     sprite.orientation = choice(BASEDIRS)
 
-    return ('flipDirection' , getColor(sprite), getColor(partner))
+    return ('flipDirection' , sprite.ID, partner.ID)
 
 def bounceDirection(sprite, partner, game, friction=0): # FLAG
     """ The centers of the objects determine the direction"""
@@ -1059,7 +1118,7 @@ def bounceDirection(sprite, partner, game, friction=0): # FLAG
     dp = snorm[0] * inc[0] + snorm[1] * inc[1]
     sprite.orientation = (-2 * dp * snorm[0] + inc[0], -2 * dp * snorm[1] + inc[1])
     sprite.speed *= (1. - friction)
-    return ('bounceDirection' , getColor(sprite), getColor(partner))
+    return ('bounceDirection' , sprite.ID, partner.ID)
 
 
 def wallBounce(sprite, partner, game, friction=0): # FLAG
@@ -1074,7 +1133,7 @@ def wallBounce(sprite, partner, game, friction=0): # FLAG
         sprite.orientation = (sprite.orientation[0], -sprite.orientation[1])
     # return ('wallBounce', colorDict[str(partner.color)], colorDict[str(sprite.color)])
     ## TODO: Not printing for now   
-    #return ('wallBounce' , getColor(sprite), getColor(partner))
+    #return ('wallBounce' , sprite.ID, partner.ID)
 
 def wallStop(sprite, partner, game, friction=0): # FLAG
     """ Stop just in front of the wall, removing that velocity component,
@@ -1089,7 +1148,7 @@ def wallStop(sprite, partner, game, friction=0): # FLAG
     sprite.speed = vectNorm(sprite.orientation) * sprite.speed
     sprite.orientation = unitVector(sprite.orientation)
     ## TODO: Not printing for now   
-    #return ('wallStop' , getColor(sprite), getColor(partner))
+    #return ('wallStop' , sprite.ID, partner.ID)
 
 def killIfSlow(sprite, partner, game, limitspeed=1):
     """ Take a decision based on relative speed. """
@@ -1102,7 +1161,7 @@ def killIfSlow(sprite, partner, game, limitspeed=1):
                              sprite._velocity()[1] - partner._velocity()[1]))
     if relspeed < limitspeed:
         killSprite(sprite, partner, game)
-        # return ('killIfSlow' , getColor(sprite), getColor(partner))
+        # return ('killIfSlow' , sprite.ID, partner.ID)
 
 
 def killIfFromAbove(sprite, partner, game):
@@ -1110,13 +1169,13 @@ def killIfFromAbove(sprite, partner, game):
     if (sprite.lastrect.top > partner.lastrect.top
         and partner.rect.top > partner.lastrect.top):
         killSprite(sprite, partner, game)
-        return ('killIfFromAbove' , getColor(partner),  getColor(sprite))
+        return ('killIfFromAbove' , parter.ID, sprite.ID)
 
 def killIfAlive(sprite, partner, game):
     """ Perform the killing action, only if no previous collision effect has removed the partner. """
     if partner not in game.kill_list:
         killSprite(sprite, partner, game)
-        return ('killIfAlive' , getColor(sprite), getColor(partner))
+        return ('killIfAlive' , sprite.ID, partner.ID)
 
 def collectResource(sprite, partner, game): # FLAG
     """ Adds/increments the resource type of sprite in partner """
@@ -1125,7 +1184,7 @@ def collectResource(sprite, partner, game): # FLAG
     partner.resources[r] = max(-1, min(partner.resources[r]+sprite.value, game.resources_limits[r]))
     #print 'Collected ', colorDict[str(sprite.color)]#partner.resources[r]
     # return ('collectResource', colorDict[str(partner.color)], colorDict[str(sprite.color)])
-    return ('collectResource' , getColor(sprite), getColor(partner))
+    return ('collectResource' , sprite.ID, partner.ID)
 
 def changeResource(sprite, partner, resourceColor, game, resource, value=1):
     """ Increments a specific resource type in sprite """
@@ -1135,37 +1194,37 @@ def changeResource(sprite, partner, resourceColor, game, resource, value=1):
 
     # NOTE: partner is the color of the resource (see _eventHandling() in core.py)
     # return ('changeResource', colorDict[str(sprite.color)], colorDict[str(partner.color)], resource, value)
-    return ('changeResource' , getColor(sprite), getColor(partner))
+    return ('changeResource' , sprite.ID, partner.ID)
 
 def spawnIfHasMore(sprite, partner, game, resource, stype, limit=1):
     """ If 'sprite' has more than a limit of the resource type given, it spawns a sprite of 'stype'. """
     if sprite.resources[resource] >= limit:
         game._createSprite([stype], (sprite.rect.left, sprite.rect.top))
-        return ('spawnIfHasMore', getColor(sprite), getColor(partner)) ### NOTE - there is no default 'spawn' function we could return instead, but we should then make one
+        return ('spawnIfHasMore', sprite.ID, partner.ID) ### NOTE - there is no default 'spawn' function we could return instead, but we should then make one
 
 def killIfHasMore(sprite, partner, game, resource, limit=1):
     """ If 'sprite' has more than a limit of the resource type given, it dies. """
     if sprite.resources[resource] >= limit:
         killSprite(sprite, partner, game)
-        # return ('killIfHasMore' , getColor(sprite), getColor(partner))
+        # return ('killIfHasMore' , sprite.ID, partner.ID)
 
 def killIfOtherHasMore(sprite, partner, game, resource, limit=1):
     """ If 'partner' has more than a limit of the resource type given, sprite dies. """
     if partner.resources[resource] >= limit:
         killSprite(sprite, partner, game)
-        # return ('killIfOtherHasMore' , getColor(sprite), getColor(partner))
+        # return ('killIfOtherHasMore' , sprite.ID, partner.ID)
 
 def killIfHasLess(sprite, partner, game, resource, limit=1):
     """ If 'sprite' has less than a limit of the resource type given, it dies. """
     if sprite.resources[resource] <= limit:
         killSprite(sprite, partner, game)
-        # return ('killIfHasLess' , getColor(sprite), getColor(partner))
+        # return ('killIfHasLess' , sprite.ID, partner.ID)
 
 def killIfOtherHasLess(sprite, partner, game, resource, limit=1):
     """ If 'partner' has less than a limit of the resource type given, sprite dies. """
     if partner.resources[resource] <= limit:
         killSprite(sprite, partner, game)
-        # return ('killIfOtherHasLess' , getColor(sprite), getColor(partner))
+        # return ('killIfOtherHasLess' , sprite.ID, partner.ID)
 
 def wrapAround(sprite, partner, game, offset=0):
     """ Move to the edge of the screen in the direction the sprite is coming from.
@@ -1179,7 +1238,7 @@ def wrapAround(sprite, partner, game, offset=0):
     elif sprite.orientation[1] < 0:
         sprite.rect.top = game.screensize[1] - sprite.rect.size[1] * (1 + offset)
     sprite.lastmove = 0
-    # return ('wrapAround' , getColor(sprite), getColor(partner))
+    # return ('wrapAround' , sprite.ID, partner.ID)
 
 def pullWithIt(sprite, partner, game):
     """ The partner sprite adds its movement to the sprite's. """
@@ -1192,13 +1251,13 @@ def pullWithIt(sprite, partner, game):
         sprite.speed = partner.speed
         sprite.orientation = partner.lastdirection
     sprite.lastrect = tmp
-    return ('pullWithIt' , getColor(sprite), getColor(partner))
+    return ('pullWithIt' , sprite.ID, partner.ID)
 
 def teleportToExit(sprite, partner, game):
     e = choice(game.sprite_groups[partner.stype])
     sprite.rect = e.rect
     sprite.lastmove = 0
-    return ('teleportToExit' , getColor(sprite), getColor(partner))
+    return ('teleportToExit', sprite.ID, partner.ID)
 
 # this allows us to determine whether the game has stochastic elements or not
 stochastic_effects = [teleportToExit, windGust, slipForward, attractGaze, flipDirection]
@@ -1206,3 +1265,169 @@ stochastic_effects = [teleportToExit, windGust, slipForward, attractGaze, flipDi
 # this allows is to determine which effects might kill a sprite
 kill_effects = [killSprite, killIfSlow, transformTo, killIfOtherHasLess, killIfOtherHasMore, killIfHasMore, killIfHasLess,
                 killIfFromAbove, killIfAlive]
+
+
+
+
+# ---------------------------------------------------------------------
+#     Sprite Induction
+# ---------------------------------------------------------------------
+
+def chaserClosestTargets(sprite, game):
+    bestd = 1e100
+    res = []
+    for target in game.getSprites(sprite.stype):
+        d = sprite.physics.distance(sprite.rect, target.rect)
+        if d < bestd:
+            bestd = d
+            res = [target]
+        elif d == bestd:
+            res.append(target)
+    return res
+
+def chaserMovesToward(sprite, game, target):
+    """ Find the canonical direction(s) which move toward
+    the target. """
+    res = []
+    basedist = sprite.physics.distance(sprite.rect, target.rect)
+    for a in BASEDIRS:
+        r = sprite.rect.copy()
+        r = r.move(a)
+        newdist = sprite.physics.distance(r, target.rect)
+        if sprite.fleeing and basedist < newdist:
+            res.append(a)
+        if not sprite.fleeing and basedist > newdist:
+            res.append(a)
+    return res
+
+
+def updateOptions(game, sprite_type, current_sprite):
+    """
+    game - current game object
+    sprite_type - the sprite type class
+    current_sprite - the current sprite object
+    """
+
+    # Immovable, Passive, ResourcePack
+    if (sprite_type == Immovable) or (sprite_type == Passive) or (sprite_type == ResourcePack) or (sprite_type == Resource):
+        return {(current_sprite.rect.left, current_sprite.rect.top):1.} ##object stays in position
+    
+    # Chaser
+    elif sprite_type == Chaser:
+        options = []
+        position_options = {}
+
+        try:
+            for target in chaserClosestTargets(current_sprite, game):
+                options.extend(chaserMovesToward(current_sprite, game, target))
+            if len(options) == 0:
+                options = BASEDIRS
+
+            for option in options:
+                left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option)
+                if (left, top) in position_options.keys():
+                    position_options[(left, top)] += 1.0/len(options) 
+                else:
+                    position_options[(left, top)] = 1.0/len(options)
+        except AttributeError: # For error: 'Immovable' object has no attribute 'stype'
+            position_options = {} 
+        # if current_sprite.name == "angry": # debugging
+        #     print "sprite: ", current_sprite
+        #     print "position options: ", position_options
+        # print
+        return position_options
+
+    # AStarChaser
+    elif sprite_type == AStarChaser:
+        world = AStarWorld(game)
+        try:
+            path = world.getMoveFor(current_sprite)
+            # print "path", path
+            if len(path)>1:
+                move = path[1]
+                
+                nextX, nextY = world.get_sprite_tile_position(move.sprite)
+                nowX, nowY = world.get_sprite_tile_position(current_sprite)
+                
+                movement = None
+                
+                if nowX == nextX:
+                    if nextY > nowY:
+                        #logToFile('DOWN')
+                        movement = DOWN
+                    else:
+                        #logToFile('UP')
+                        movement = UP
+                else:
+                    if nextX > nowX:
+                        #logToFile('RIGHT')
+                        movement = RIGHT
+                    else:
+                        #logToFile('LEFT')
+                        movement = LEFT
+            left, top = current_sprite.physics.calculateActiveMovement(current_sprite, movement)
+            return {(left, top): 1.} 
+        except TypeError:
+            return {}
+
+    # Random NPC
+    elif sprite_type == RandomNPC:
+        position_options = {}
+        for option in BASEDIRS:
+                left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option)
+                if (left, top) in position_options.keys():
+                    position_options[(left, top)] += 1.0/len(BASEDIRS) 
+                else:
+                    position_options[(left, top)] = 1.0/len(BASEDIRS)
+        return position_options
+
+    # VGDLSprite
+    else: 
+        if not current_sprite.is_static and not current_sprite.only_active:
+            coords = current_sprite.physics.calculatePassiveMovement(current_sprite)
+            return {(coords[0], coords[1]): 1.0}
+
+def initializeDistribution(sprite_types):
+    """
+    Creates a uniform distribution over all the sprite types.
+    """
+    initial_distribution = {}
+    for sprite_type in sprite_types:
+        initial_distribution[sprite_type] = 1.0/len(sprite_types) # uniform distribution
+    return initial_distribution
+
+
+def updateDistribution(sprite, curr_distribution, movement_options, outcome):
+    """
+    Updates the sprite distribution for a given object in the game.
+
+    Input:
+        sprite - the current sprite ID
+        curr_distribution - the current sprite distribution for all objects
+        movement_options - possible next locations that the sprite of that sprite type can be in
+        outcome - the sprite's resulting location after the update
+    
+    Output:
+        curr_distribution - renormalized updated distribution over sprite types for a given object
+    """
+    
+    if sprite in curr_distribution.keys():
+        for sprite_type in curr_distribution[sprite].keys():
+            if curr_distribution[sprite][sprite_type] > 0:
+                # if sprite_type == Chaser: #debugging
+                    # print "movement options", movement_options[sprite][sprite_type]
+                    # print "outcome", outcome
+                
+                # If the outcome is an option for the sprite type, update probability
+                if outcome in movement_options[sprite][sprite_type].keys():
+                    curr_distribution[sprite][sprite_type] *=  movement_options[sprite][sprite_type][outcome]
+                else:
+                    curr_distribution[sprite][sprite_type] = 0.0
+
+        # Re-normalize the distribution
+        z = sum(curr_distribution[sprite].values())
+        for sprite_type in curr_distribution[sprite].keys():
+            curr_distribution[sprite][sprite_type] /= z
+
+    return curr_distribution
+

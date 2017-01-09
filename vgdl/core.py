@@ -7,7 +7,7 @@ import pygame
 from random import choice
 from tools import Node, indentTreeParser
 from collections import defaultdict
-from vgdl.tools import roundedPoints
+from tools import roundedPoints
 import os
 import datetime
 import uuid
@@ -412,9 +412,10 @@ class BasicGame(object):
 
         for ob_type in obs:
             for ob in self.getSprites(ob_type):
-                features = {'color':colorDict[str(ob.color)], 'row':(ob.rect.right)}
-                type_vector = {'color':colorDict[str(ob.color)], 'row':(ob.rect.right)}
-                obj_list[ob.ID] = {'position':(ob.rect.left, ob.rect.right), 'features':features, 'type': type_vector}
+                features = {'color':colorDict[str(ob.color)], 'row':(ob.rect.top)}
+                type_vector = {'color':colorDict[str(ob.color)], 'row':(ob.rect.top)}
+                sprite = ob
+                obj_list[ob.ID] = {'sprite': sprite, 'position':(ob.rect.left, ob.rect.top), 'features':features, 'type': type_vector}
         return obj_list
 
     def getFullState(self,as_string = False):
@@ -631,8 +632,8 @@ class BasicGame(object):
         lastKeyPressTime=0 #PT
 
         # Logging
-        s = sys.argv[0]
-        m = re.search('([A-Za-z0-9]+)\.py', s)
+        f = sys.argv[0]
+        m = re.search('([A-Za-z0-9]+)\.py', f)
         name = m.group(1)
         gamelog = "{}.log".format(name)
         #logging.basicConfig(filename=gamelog, level=logging.INFO)
@@ -641,15 +642,30 @@ class BasicGame(object):
         object_output = "output/{}_{}_objects.txt".format(name,timestamp)
 
         # --------- Game-play ------------
+        from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
+        from ontology import initializeDistribution, updateDistribution, updateOptions
         finalEventList = []
         agentStatePrev = {}
         agentState = dict(self.getAvatars()[0].resources)
         keyPressPrev = None
         f_obj = open(object_output,"w")
 
+        sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
+
+        objects = self.getObjects()
+        spriteDistribution = {}
+        movement_options = {}
+
+        for sprite in objects:
+            spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
+            movement_options[sprite] = {}
+            for sprite_type in sprite_types:
+                movement_options[sprite][sprite_type] = None
+
         while not self.ended:
             clock.tick(self.frame_rate)
             self.time += 1
+            print "t=", self.time
             self._clearAll()
 
             # gather events
@@ -688,8 +704,6 @@ class BasicGame(object):
                 self.playback_index += 1
 
 
-
-
             # # load/save handling
             # if self.load_.save_enabled:
             #     from pygame.locals import K_1, K_2
@@ -704,9 +718,6 @@ class BasicGame(object):
             # handle collision effects
             self._eventHandling()
 
-            # Print the objects in the game out
-            f_obj.write(str(self.getObjects()) + "\n")
-            #print self.getObjects()
 
             # Save the event and agent state
             try:
@@ -718,14 +729,19 @@ class BasicGame(object):
             except Exception as e:              # TODO: how to process changes in resources that led to termination state?
                 agentState = agentStatePrev
                 keyPressType = keyPressPrev
-                #print "ERROR: {} --> {}".format(e, "Using previous agent state...")
+
+            collision_objects = set()
 
             if self.effectList:
                 state = self.getFullState()
-                # Print the objects in the game out -- just when event occurs
-                #print self.getObjects()
                 event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': self.effectList, 'gameState': self.getFullStateColorized()}
                 finalEventList.append(event)
+
+                # Get objects involved in the effectList
+                for effect in event['effectList']:
+                    collision_objects.add(effect[1])
+                    collision_objects.add(effect[2])
+            
 
             # Termination #1
             for t in self.terminations:
@@ -733,9 +749,34 @@ class BasicGame(object):
                 if self.ended:
                     break
 
-            # update sprites
+            ## Sprite Induction Part 1: See the update options for each sprite type the sprite could be
+            objects = self.getObjects()
+
+            for sprite in spriteDistribution.keys():                  # Keys are the IDs of the game objects
+                game = self                                           # Save game state
+                for sprite_type in spriteDistribution[sprite].keys(): # Check each potential sprite type                    
+                    if spriteDistribution[sprite][sprite_type] > 0:
+                        if sprite in objects.keys():                      # Sprite may have been killed
+                            sprite_obj = objects[sprite]["sprite"]
+                            if sprite_obj.name != 'avatar':                            # TODO: Implement Avatar updateOptions function
+                                options = updateOptions(game, sprite_type, sprite_obj) # Get potential next positions for sprite if it were that sprite type
+                                if options == None:
+                                    options = {}
+                                movement_options[sprite][sprite_type] = options
+                
+            ## Update actual sprite positions.
             for s in self:
                 s.update(self)
+
+            ## Sprite Induction Part 2: Update sprite distribution based on observations
+            objects = self.getObjects()
+            for sprite in spriteDistribution.keys():        # Keys are the IDs of the game objects
+                if sprite in objects.keys():                # Sprite may have been killed
+                    sprite_obj = objects[sprite]["sprite"] 
+                    if sprite not in collision_objects and sprite_obj.name != 'avatar':
+                        outcome = objects[sprite]["position"]
+                        spriteDistribution = updateDistribution(sprite, spriteDistribution, movement_options, outcome)
+
 
             # Termination #2 : Avatars have been killed
             if len(self.getAvatars()) == 0:
@@ -784,7 +825,6 @@ class BasicGame(object):
 
         # if "killSprite" in [e[0] for e in self.effectList]:
                 # embed()
-
         # ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.
@@ -878,6 +918,7 @@ class VGDLSprite(object):
         self.speed = speed or self.speed
         self.cooldown = cooldown or self.cooldown
         self.ID = id(self) # TODO: Make sure that these are unique, maintained during the lifetime of the object
+        self.direction = None
         #TODO: change the choice to be from colors that are not taken?
         self.color = color or self.color or (140, 20, 140)
         # print 'color', self.color
@@ -901,13 +942,25 @@ class VGDLSprite(object):
         self.lastmove += 1
         if not self.is_static and not self.only_active:
             self.physics.passiveMovement(self)
+            return {(self.rect.left, self.rect.top): 1.0}
+
+    def updateOptions(self, game):
+        """ The main place where subclasses differ. """
+        if not self.is_static and not self.only_active:
+            left, top = self.physics.calculatePassiveMovement(self)
+            return {(left, top): 1.0}
 
     def _updatePos(self, orientation, speed=None):
         if speed is None:
             speed = self.speed
+
         if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
             self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
             self.lastmove = 0
+            # print "entered"
+        # else:
+            # print "not entered"
+        return (self.rect.left, self.rect.right)
 
     def _velocity(self):
         """ Current velocity vector. """

@@ -12,7 +12,7 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 box_level = """
 wwwwwwwww
 w       w
-w     1 w
+w       w
 wAp  wgww
 w    w ww
 wwwwwwwww

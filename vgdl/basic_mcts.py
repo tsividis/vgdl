@@ -32,6 +32,24 @@ when you do rle.step(a), what happens to the state in other branches of the tree
 ## But manhattan distance is helpful for default policy.
 """
 
+"""
+Run: python -m vgdl.basic_mcts
+(from the top-level vgdl directory.)
+
+
+Calling rle.step(a). Returns a dictionary with:
+'reward', 'observation' and 'pcontinue': whether it was a terminal state
+
+
+when you do rle.step(a), what happens to the state in other branches of the tree?
+
+##Helps learning time to not use manhattan distance in bestchild.
+## But manhattan distance is helpful for default policy.
+
+## try working with bellemare_mcts
+"""
+
+
 class Basic_MCTS:
 	def __init__(self, decay_factor, rleCreateFunc, obsType, num_workers, existing_rle=False):
 		# assumption: not starting on terminal state
@@ -50,6 +68,7 @@ class Basic_MCTS:
 		## A few different ways to get observations of the game-state.
 		## Observations of everything that's happening on the screen: OBSERVATION_GLOBAL
 		## or just of the squares surrounding your avatar: some_other_keyword.
+<<<<<<< HEAD
 		if existing_rle:
 			rle = existing_rle
 			print "got an existing RLE. State:"
@@ -74,7 +93,7 @@ class Basic_MCTS:
 		self.actions = rle._actionset + [(0,0)]
 		self.root = MCTS_node(rle._getSensors(None), False, self.actions)
 		self.currentNode = self.root
-		self.defaultTime = 0
+		self.defaultTime = 0 ## Just for comparing defaultPolicy and treePolity
 		self.treeTime = 0
 		self.num_workers = num_workers
 		self.actionDict = {}
@@ -187,6 +206,7 @@ class Basic_MCTS:
 		return outTime
 
 	def getBestActionsForPlayout(self):
+		cntr = 0
 		v = self.root
 		actions = []
 		while v and not v.terminal:
@@ -254,7 +274,7 @@ class Basic_MCTS:
 
 
 	def expand(self,v, rle):
-		expan_action = None
+		expand_action = None
 		child = None
 		reward = 0
 		for a in self.actions:
@@ -276,8 +296,8 @@ class Basic_MCTS:
 	def bestChild(self, v, Cp):
 		def transform(x):
 			coefficient = 0.
-			slowdown_factor = 1./3
-			return coefficient/(1+math.exp(-slowdown_factor * x)) # sigmoid
+			temperature = 1./3
+			return coefficient/(1+math.exp(-temperature * x)) # sigmoid
 
 		maxFuncVal = -float('inf')
 		bestChild = None
@@ -301,6 +321,7 @@ class Basic_MCTS:
 				else:
 					manhattanDistanceTransform = transform(self.getManhattanDistance(c.state))
 					funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) + Cp*float(manhattanDistanceTransform)/c.visitCount
+
 
 			if funcVal > maxFuncVal:
 				maxFuncVal = funcVal
@@ -436,7 +457,7 @@ class Basic_MCTS:
 					deltaY, deltaX = comps
 					manhattanDistance = abs(deltaX + vec[0]) + abs(deltaY + vec[1])
 					vecDist[vec] = math.exp(-temperature * manhattanDistance)
-					vecDistSum += vecDist[vec]
+					vecDistSum += vecDist[vec] ## 
 
 			for vec in vecDist:
 				vecDist[vec] /= vecDistSum
@@ -538,12 +559,13 @@ class MCTS_node:
 		    if len(self.children) == len(self.actions):
 		    	self.expanded = True
 
-	def getReward(self):
-		if self.visitCount > 0:
-			return float(self.qVal)/self.visitCount
+ #    ## Maybe delete this; not getting called.
+	# def getReward(self):
+	# 	if self.visitCount > 0:
+	# 		return float(self.qVal)/self.visitCount
 
-		else:
-			return -1
+	# 	else:
+	# 		return -1 #WHY
 
 def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, playback=False):
 	obsType = OBSERVATION_GLOBAL
@@ -603,12 +625,11 @@ def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, pla
 if __name__ == "__main__":
 	# obsType = OBSERVATION_GLOBAL
 	# self.rleCreateFunc = createRLSimpleGame4
+
 	## passing a function. That function contains things set in
 	## 'rlenvironmentnonstatic' file
 	## You have to make a function that creates the environment.
 	## Make the game, then follow the layout in 'rlenvironmentnonstatic'
-	
-
 	# rleCreateFunc = createRLSimpleGame5
 	# mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1)
 	# outTime = mcts.startTrainingPhase(100, 100, test=False)
@@ -653,7 +674,6 @@ if __name__ == "__main__":
 	# embed()
 
 	# VGDLParser.playGame(game, level)
-
 	# embed()
 	# VGDLParser.playGame(game, level, mcts.getBestActionsForPlayout())
 	# VGDLPlaybackParser.playGame(game, level, mcts.getBestActionsForPlayout())  
