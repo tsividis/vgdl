@@ -102,7 +102,7 @@ class VGDLParser(object):
             if c.content == "TerminationSet":
                 self.parseTerminations(c.children)
             if c.content == "ConditionalSet":
-                self.parseTerminations(c.children)
+                self.parseConditions(c.children)
         return self.game
 
     def _eval(self, estr):
@@ -231,6 +231,8 @@ class BasicGame(object):
         self.char_mapping = {}
         # termination criteria
         self.terminations = [Termination()]
+        # conditional criteria
+        self.conditions = []
         # resource properties
         self.resources_limits = defaultdict(lambda: 2)
         self.resources_colors = defaultdict(lambda: GOLD)
@@ -594,7 +596,7 @@ class BasicGame(object):
                         kwargs_use = deepcopy(kwargs)
                         kwargs_use.pop('applyto')
                         for sC in self.getSprites(stype):
-                            e = effect(sC, None, self, **kwargs_use)
+                            e = effect(sC, s1, self, **kwargs_use)
                         self.effectList.append(e)
                         continue
 
@@ -774,6 +776,19 @@ class BasicGame(object):
                 self.ended, win = t.isDone(self)
                 if self.ended:
                     break
+
+            # Conditional Criteria
+            for conditional in self.conditions:
+                condition, eclass = conditional
+                effect, kwargs = eclass
+                
+                if condition.condition(self):
+                    stype = kwargs['applyto']
+                    kwargs_use = deepcopy(kwargs)
+                    kwargs_use.pop('applyto')
+                    for sC in self.getSprites(stype):
+
+                        effect(sC, sC, self, **kwargs_use)
 
             ## Sprite Induction Part 1: See the update options for each sprite type the sprite could be
             objects = self.getObjects()
@@ -1079,3 +1094,9 @@ class Termination(object):
             return True, False
         else:
             return False, None
+
+class Conditional(object):
+    """ Base class for all conditional criteria"""
+    def condition(self, game):
+        """ returns true if condition is met. default returns false"""
+        return False

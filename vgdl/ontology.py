@@ -68,7 +68,6 @@ colorDict = {str((0, 200, 0)): 'GREEN',\
 # ---------------------------------------------------------------------
 class GridPhysics():
     """ Define actions and key-mappings for grid-world dynamics. """
-
     def passiveMovement(self, sprite):
         # print "passive movement for", sprite.name
         if sprite.speed is None:
@@ -903,6 +902,35 @@ class FrostbiteIgloo(SpawnPoint, Switch):
             self.detriggered = False
 
 # ---------------------------------------------------------------------
+#     Conditional criteria
+# ---------------------------------------------------------------------
+from core import Conditional
+
+class SpriteCount(Conditional):
+    ops = {'equ': lambda x, y: x == y,
+           'lss': lambda x, y: x < y,
+           'grt': lambda x, y: x > y,
+           'leq': lambda x, y: x <= y,
+           'geq': lambda x, y: x >= y,
+           'neq': lambda x, y: x != y
+           }
+    def __init__(self, stype=None, count=0, op='equ'):
+        self.stype = stype
+        self.count = count
+        self.op = op
+    def condition(self, game):
+        if self.ops[self.op](game.numSprites(self.stype), self.count):
+            return True
+        else:
+            return False
+
+class OnStart(Conditional):
+    def condition(self, game):
+        if game.started:
+            return True
+        return False
+
+# ---------------------------------------------------------------------
 #     Termination criteria
 # ---------------------------------------------------------------------
 from core import Termination
@@ -1253,6 +1281,25 @@ def pullWithIt(sprite, partner, game):
     sprite.lastrect = tmp
     return ('pullWithIt' , sprite.ID, partner.ID)
 
+def collideFromAbove(sprite, partner, game):
+    """ Allows the sprite to pass through the bottom and collide with the top."""
+    if (sprite.lastrect.top < partner.lastrect.top 
+        and sprite.lastrect.bottom < partner.lastrect.bottom) and sprite.solid and not sprite.jumping:
+        pullWithIt(sprite, partner, game)
+    elif (sprite.lastrect.bottom > partner.lastrect.bottom or 
+        sprite.lastrect.right < partner.lastrect.left or 
+        sprite.lastrect.left > partner.lastrect.right) and not(sprite.solid):
+        sprite.solid = True
+    return ('collideFromAbove', sprite.ID, partner.ID)
+
+def killSpriteOnLanding(sprite, partner, game):
+    """ kills the sprite given the collision condition from collide from above"""
+    if (sprite.lastrect.top < partner.lastrect.top 
+        and sprite.lastrect.bottom < partner.lastrect.bottom
+         and sprite.solid and not sprite.jumping):
+        killSprite(sprite, partner, game)
+    return ('killSpriteOnLanding', sprite.ID, partner.ID)
+
 def teleportToExit(sprite, partner, game):
     e = choice(game.sprite_groups[partner.stype])
     sprite.rect = e.rect
@@ -1267,8 +1314,13 @@ kill_effects = [killSprite, killIfSlow, transformTo, killIfOtherHasLess, killIfO
                 killIfFromAbove, killIfAlive]
 
 
+def canActivateSwitch(sprite, partner, game):
+    sprite.can_switch = True
+    return ('canActivateSwitch', sprite.ID, partner.ID)
 
-
+def cannotActivateSwitch(sprite, partner, game):
+    sprite.can_switch = False
+    return ('cannotActivateSwitch', sprite.ID, partner.ID)
 # ---------------------------------------------------------------------
 #     Sprite Induction
 # ---------------------------------------------------------------------
