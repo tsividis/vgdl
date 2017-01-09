@@ -631,8 +631,8 @@ class BasicGame(object):
         lastKeyPressTime=0 #PT
 
         # Logging
-        s = sys.argv[0]
-        m = re.search('([A-Za-z0-9]+)\.py', s)
+        f = sys.argv[0]
+        m = re.search('([A-Za-z0-9]+)\.py', f)
         name = m.group(1)
         gamelog = "{}.log".format(name)
         #logging.basicConfig(filename=gamelog, level=logging.INFO)
@@ -649,9 +649,8 @@ class BasicGame(object):
         keyPressPrev = None
         f_obj = open(object_output,"w")
 
-        #sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
+        sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
 
-        sprite_types = [Immovable, Passive, Chaser]
         objects = self.getObjects()
         spriteDistribution = {}
         movement_options = {}
@@ -755,12 +754,15 @@ class BasicGame(object):
             for sprite in spriteDistribution.keys():                  # Keys are the IDs of the game objects
                 game = self                                           # Save game state
                 for sprite_type in spriteDistribution[sprite].keys(): # Check each potential sprite type                    
-                    if sprite in objects.keys():                      # Sprite may have been killed
-                        sprite_obj = objects[sprite]["sprite"]
-                        if sprite_obj.name != 'avatar':                            # TODO: Implement Avatar updateOptions function
-                            options = updateOptions(game, sprite_type, sprite_obj) # Get potential next positions for sprite if it were that sprite type
-                            movement_options[sprite][sprite_type] = options
-            
+                    if spriteDistribution[sprite][sprite_type] > 0:
+                        if sprite in objects.keys():                      # Sprite may have been killed
+                            sprite_obj = objects[sprite]["sprite"]
+                            if sprite_obj.name != 'avatar':                            # TODO: Implement Avatar updateOptions function
+                                options = updateOptions(game, sprite_type, sprite_obj) # Get potential next positions for sprite if it were that sprite type
+                                if options == None:
+                                    options = {}
+                                movement_options[sprite][sprite_type] = options
+                
             ## Update actual sprite positions.
             for s in self:
                 s.update(self)
@@ -920,7 +922,7 @@ class VGDLSprite(object):
         self.direction = None
         #TODO: change the choice to be from colors that are not taken?
         self.color = color or self.color or (140, 20, 140)
-        print 'color', self.color
+        # print 'color', self.color
                 
         #self.color = color or self.color or (choice(self.COLOR_DISC), choice(self.COLOR_DISC), choice(self.COLOR_DISC))
         for name, value in kwargs.iteritems():

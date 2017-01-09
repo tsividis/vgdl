@@ -10,10 +10,10 @@ Careful: goats get angry when you see a dead goat...
 chase_game = """
 BasicGame
     SpriteSet
-        carcass > Immovable color=BROWN
+        carcass > ResourcePack color=BROWN
         goat > stype=avatar cooldown=3
-            angry  > Chaser speed=0.5 color=ORANGE
-        hay > Passive color=YELLOW
+            angry  > RandomNPC speed=0.5 color=ORANGE
+        hay > Resource color=YELLOW
 
 
     InteractionSet
@@ -40,11 +40,7 @@ wwwwwwwwwwwwwwwwwwwwwwww
 wwww        ww        ww
 w                     ww
 w         h    A       w
-w wwww               www
-w                     ww
-ww                     w
-ww                     w
-www                    w
+w                    www
 www              a c   w
 w                      w
 wwwwwwwwwwwwwwwwwwwwwwww

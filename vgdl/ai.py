@@ -133,18 +133,21 @@ class AStarWorld(object):
 		tileX, tileY = self.get_sprite_tile_position(startSprite)
 		index = self.get_index(tileX, tileY)
 		startNode = AStarNode(index, startSprite)
-
-		pacman = self.game.getSprites('pacman')[0]
+		# print "start node:", startNode.index
+		try:
+			pacman = self.game.getSprites('pacman')[0]
+		except IndexError:
+			pacman = self.game.getSprites('avatar')[0]
+		# print "avatar: ", pacman
 		goalX, goalY = self.get_sprite_tile_position(pacman)
 		goalIndex = self.get_index(goalX, goalY)
 		goalNode = AStarNode(goalIndex, pacman)
-
+		# print "goal node:", goalNode.index
 		# logToFile('Goal: (%s,%s) --> (%s, %s)' %(tileX, tileY, goalX, goalY))
 
 		return self.search(startNode, goalNode)
 
 	def search(self, start, goal):
-
 		# Initialize the variables.
 		closedset = []
 		openset = []
@@ -155,13 +158,16 @@ class AStarWorld(object):
 		openset = [start]
 		g_score[start.index] = 0
 		f_score[start.index] = g_score[start.index] + self.h(start, goal)
-
 		while (len(openset) > 0):
-			
 			current = self.get_lowest_f(openset, f_score)
+			# print "current index", current.index
+			# print "goal index", goal.index
+			# print "check 3"
 			if current.index == goal.index:
+				# print "check 4"
 				# print came_from
 				path = self.reconstruct_path(came_from, goal)
+				# Debugging
 				# path_sprites = [node.sprite for node in path]
 				# pathh = map(self.get_sprite_tile_position, path_sprites)
 				# print pathh
@@ -176,7 +182,7 @@ class AStarWorld(object):
 					continue
 				if not self.nodeInSet(neighbor, openset) or temp_g < g_score[neighbor.index]:
 					came_from[neighbor.index] = current
-					#print 'came_from[%s]=%s' % (self.get_tile_from_index(neighbor.index), self.get_tile_from_index(current.index))
+					# print 'came_from[%s]=%s' % (self.get_tile_from_index(neighbor.index), self.get_tile_from_index(current.index))
 					g_score[neighbor.index] = temp_g
 					f_score[neighbor.index] = g_score[neighbor.index] + self.h(neighbor, goal)
 					if neighbor not in openset:
