@@ -20,7 +20,6 @@ OBSERVATION_GLOBAL = 'global'
 
 class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     """ Wrapping a VGDL game with a generic interface suitable for reinforcement learning.
-        Currently limited to single avatar games, with gridphysics, where all other sprites are static.
     """
 
     name = "VGDL-RLEnvironment"
