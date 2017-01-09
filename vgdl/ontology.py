@@ -241,6 +241,26 @@ class Missile(OrientedSprite):
     speed = 1
     color = PURPLE
 
+class Switch(VGDLSprite):
+    activated = False
+    wait_for_release = False
+    can_switch = False
+    def __init__(self, **kwargs):
+        VGDLSprite.__init__(self, **kwargs)
+
+    def update(self, game):
+        if not self.can_switch: return
+        from pygame.locals import K_SPACE
+
+        if game.keystate[K_SPACE] and not self.wait_for_release:
+            self.activated = True
+            self.wait_for_release = True
+        else:
+            self.activated = False
+
+        if not game.keystate[K_SPACE]:
+            self.wait_for_release = False
+
 class OrientedFlicker(OrientedSprite, Flicker):
     """ Preserves directionality """
     draw_arrow = True
@@ -704,6 +724,118 @@ class MarioAvatar(InertialAvatar):
 
 
 
+class ClimbingAvatar(MarioAvatar, MovingAvatar): 
+    climbing = False
+    saved_gravity = GravityPhysics.gravity
+    saved_steering = MarioAvatar.airsteering
+    jumping = False
+    def update(self, game):
+        action = self._readAction(game)
+        if action is None:
+            action = (0, 0)
+        from pygame.locals import K_SPACE, K_UP, K_DOWN
+
+        if self.climbing: 
+            self.physics.gravity = 0
+            self.airsteering = True
+        else:
+            self.physics.gravity = self.saved_gravity
+            self.airsteering = self.saved_steering
+
+        if game.keystate[K_SPACE] and self.orientation[1] == 0:
+            self.climbing = False
+            self.jumping = True
+            self.physicstype = GravityPhysics
+            action = (action[0] * sqrt(self.strength), -self.strength)
+        elif game.keystate[K_UP] and self.climbing:
+            climbing = True
+        elif game.keystate[K_DOWN] and self.climbing:
+            climbing = True
+        elif self.orientation[1] == 0 or self.airsteering:
+            action = (action[0] * sqrt(self.strength), 0)
+        else:
+            action = (0, 0)
+            if self._velocity()[1] > 0:
+                self.jumping = False
+        self.climbing = False
+        self.physics.activeMovement(self, action)
+        VGDLSprite.update(self, game)       
+
+
+class FrostBiteAvatar(HorizontalAvatar, InertialAvatar):
+    physicstype = GravityPhysics
+    draw_arrow = False
+    strength = 6
+    airsteering = True
+    speed = .25
+    solid = True
+    jumping = False
+
+    def update(self, game):
+        action = self._readAction(game)
+        if action is None:
+            action = (0, 0)
+        from pygame.locals import K_UP, K_DOWN
+        if game.keystate[K_UP] and self.orientation[1] == 0:
+            action = (action[0] * sqrt(self.strength), -self.strength)
+            self.jumping = True
+        elif game.keystate[K_DOWN] and self.orientation[1] == 0:
+            self.solid = False
+        elif self.orientation[1] == 0 or self.airsteering:
+            action = (action[0] * sqrt(self.strength), 0)
+        else:
+            action = (0, 0)
+        if self._velocity()[1] > 0:
+            self.jumping = False
+
+        self.physics.activeMovement(self, action)
+        HorizontalAvatar.update(self, game)
+        VGDLSprite.update(self, game)
+
+class Flow(Missile, Switch):
+    speed = 0.05
+    def update(self, game):
+        Missile.update(self, game)
+        Switch.update(self, game)
+
+class FrostbiteIgloo(SpawnPoint, Switch):
+    offsets = [[-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0]]
+    total = None
+    triggered = False
+    detriggered = False
+    triggers = 0
+    def __init__(self, platforms=8, **kwargs):
+        SpawnPoint.__init__(self, **kwargs)
+        Switch.__init__(self, **kwargs)
+        self.total = 5
+        self.platforms = platforms
+        self.last_count = 0
+
+
+    def update(self, game):
+        Switch.update(self, game)
+        new_count = (self.triggers * self.total) / (self.platforms)
+
+        if new_count > self.last_count:
+            self.last_count = new_count
+            SpawnPoint.update(self, game)
+
+        if new_count < self.last_count:
+            game.kill_list.append(self.last_sprites.pop())
+            self.counter -= 1
+            self.last_count = new_count
+
+        if self.triggered and self.counter < self.total:
+            self.xoffset = self.offsets[new_count][0]
+            self.yoffset = self.offsets[new_count][1]
+
+            self.triggers += 1
+            self.triggered = False
+
+        if self.detriggered and self.triggers > 0:
+            self.triggers -= 1
+            self.detriggered = False
+
 # ---------------------------------------------------------------------
 #     Termination criteria
 # ---------------------------------------------------------------------
@@ -789,6 +921,20 @@ def transformTo(sprite, partner, game, stype='wall'):
     # return ("transformTo",sprite_info,partner_info)
     return ("transformTo",getColor(sprite),getColor(partner))
 
+def transformToOnLanding(sprite, partner, game, stype='wall'):
+    """sprite will be transformed to stype when partner (avatar) lands on it from above"""
+    if partner.speed*partner.orientation[1] == 0 and partner.lastrect.y != partner.rect.y:
+        transformTo(sprite, partner, game, stype)
+        ##Decide whether it's "fair" to know this was transformToOnLanding
+        return ("transformToOnLanding", getColor(sprite), getColor(partner))
+
+def triggerOnLanding(sprite, partner, game, strigger=None):
+    '''triggers a triggerable sprite. triggerable is interesting. should change this?'''
+    if partner.speed*partner.orientation[1] == 0 and partner.lastrect.y != partner.rect.y:
+        trigger(sprite, partner, game, strigger)
+        ##TODO: This needs more info.
+        return ("trigger", getColor(sprite), getColor(partner))
+
 def stepBack(sprite, partner, game): 
     """ Revert last move. """
     sprite.rect = sprite.lastrect
@@ -871,6 +1017,32 @@ def reverseDirection(sprite, partner, game): # FLAG
     sprite.orientation = (-sprite.orientation[0], -sprite.orientation[1])
 
     return ('reverseDirection', getColor(sprite), getColor(partner))
+
+##TODO: add event labels for the below effects
+def reverseFlowIfActivated(sprite, partner, game, strigger=None):
+    '''sprite is Flow, partner is FrostbiteAvatar'''
+    if sprite.activated:
+        detrigger(sprite, partner, game, strigger)
+        reverseDirection(sprite, partner, game)
+        sprite.activated = False
+
+def trigger(sprite, partner, game, strigger=None):
+    if strigger == None:
+        triggers = [sprite]
+    else:
+        triggers = game.getSprites(strigger)
+
+    for sprite in triggers:
+        sprite.triggered = True
+
+def detrigger(sprite, partner, game, strigger=None):
+    if strigger == None:
+        triggers = [sprite]
+    else:
+        triggers = game.getSprites(strigger)
+
+    for sprite in triggers:
+        sprite.detriggered = True
 
 
 def flipDirection(sprite, partner, game): # FLAG

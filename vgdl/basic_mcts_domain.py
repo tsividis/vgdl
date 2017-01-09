@@ -22,15 +22,15 @@ np.core.arrayprint._line_width=250
 Run: python -m vgdl.basic_mcts
 (from the top-level vgdl directory.)
 
+Then run: actions = planActLoop(max_actions_per_plan=10, planning_steps=100, defaultPolicyMaxSteps=50)
+
+__
 
 Calling rle.step(a). Returns a dictionary with:
 'reward', 'observation' and 'pcontinue': whether it was a terminal state
 
-
-when you do rle.step(a), what happens to the state in other branches of the tree?
-
-##Helps learning time to not use manhattan distance in bestchild.
-## But manhattan distance is helpful for default policy.
+Getting sprites:
+mcts._game.sprite_groups
 """
 
 class Basic_MCTS:

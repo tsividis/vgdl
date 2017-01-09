@@ -610,6 +610,7 @@ class BasicGame(object):
         # return effectList
 
 
+
     def startGame(self, headless, persist_movie):
         """
         Main method to run game. 
