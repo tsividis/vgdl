@@ -604,7 +604,7 @@ class BasicGame(object):
                         sprites = self.getSprites(g1)
                         spritesFiltered = filter(lambda sprite: sprite.__dict__[dim] == s2.__dict__[dim], sprites)
                         for sC in spritesFiltered:
-                            if s1 not in kill_list:
+                            if s1 not in self.kill_list:
                                 if switch:
                                     e = effect(sC, s1, self, **kwargs)
                                 else:
@@ -952,6 +952,8 @@ class VGDLSprite(object):
     def __init__(self, pos, size=(10,10), color=None, speed=None, cooldown=None, physicstype=None, **kwargs):
         from ontology import GridPhysics
         self.rect = pygame.Rect(pos, size)
+        self.x = pos[0]
+        self.y = pos[1]
         self.lastrect = self.rect
         self.physicstype = physicstype or self.physicstype or GridPhysics
         self.physics = self.physicstype()
@@ -978,6 +980,8 @@ class VGDLSprite(object):
 
     def update(self, game):
         """ The main place where subclasses differ. """
+        self.x = self.rect.x
+        self.y = self.rect.y
         self.lastrect = self.rect
         # no need to redraw if nothing was updated
         self.lastmove += 1
