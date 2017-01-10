@@ -1017,7 +1017,6 @@ class VGDLSprite(object):
             speed = self.speed
 
         if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
-            orig_left, orig_top = self.rect.left, self.rect.top
             self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed)) 
             self.lastmove = 0
 

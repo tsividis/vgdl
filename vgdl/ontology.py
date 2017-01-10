@@ -147,15 +147,13 @@ class ContinuousPhysics(GridPhysics):
 
     def calculatePassiveMovement(self, sprite):
         if sprite.speed != 0 and hasattr(sprite, 'orientation'):
-            orientation = sprite.orientation
-            speed = sprite.speed * self.gridsize[0]
-            if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
-                pos = round(sprite.rect[0]+orientation[0]*speed), round(sprite.rect[1]+orientation[1]*speed)
+            if not(sprite.cooldown > sprite.lastmove+1 or abs(sprite.orientation[0])+abs(sprite.orientation[1])==0):
+                pos = sprite.rect.move((sprite.orientation[0]*sprite.speed, sprite.orientation[1]*sprite.speed))
+            if self.gravity > 0 and sprite.mass > 0:  
+                return self.calculateActiveMovement(sprite, (0, self.gravity * sprite.mass))
         else:   # If object has speed = 0 or no 'orientation' attribute
-            pos = sprite.rect[0], sprite.rect[1]
-
-        if self.gravity > 0 and sprite.mass > 0:  
-            return self.calculateActiveMovement(sprite, (0, self.gravity * sprite.mass))
+            pos = rect
+        return pos.left, pos.top
 
 
     def activeMovement(self, sprite, action, speed=None):
