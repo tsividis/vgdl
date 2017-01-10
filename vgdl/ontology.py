@@ -285,8 +285,8 @@ class RandomNPC(VGDLSprite):
 
     def update(self, game):
         VGDLSprite.update(self, game)
-        # self.direction = choice(BASEDIRS) #TODO: Make work with random direction
-        self.direction = BASEDIRS[0]
+        self.direction = choice(BASEDIRS) #TODO: Make work with random direction
+        # self.direction = BASEDIRS[0]
         self.physics.activeMovement(self, self.direction)
 
 
@@ -1508,7 +1508,7 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
     if sprite in curr_distribution.keys():
         for sprite_type in curr_distribution[sprite].keys():
             if sprite_type == "OTHER":
-                movement_options[sprite][sprite_type] = {outcome: 1.0}
+                movement_options[sprite][sprite_type] = {outcome: 1.0/5} #up dowm left right stay
             if curr_distribution[sprite][sprite_type] > 0:
 
                 # For debugging

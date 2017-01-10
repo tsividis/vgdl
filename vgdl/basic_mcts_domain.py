@@ -115,6 +115,7 @@ class Basic_MCTS:
 	def scanDomainForMovementOptions(self):
 		##TODO: Take a state, so that you can re-perform this scan as needed and take changes into account.
 		##TODO: query VGDL description for penetrable/nonpenetrable objects, add to list.
+		
 		immovables = ['wall']
 		immovable_codes = [2**(1+sorted(self._obstypes.keys())[::-1].index(i)) for i in immovables]
 
