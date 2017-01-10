@@ -96,7 +96,6 @@ class GridPhysics():
                 return round(sprite.rect[0]+orientation[0]*speed), round(sprite.rect[1]+orientation[1]*speed)
         else:   # If object has speed = 0 or no 'orientation' attribute
             return None   
-        #return (sprite.rect.left, sprite.rect.top)
                   
 
     def activeMovement(self, sprite, action, speed=None):
@@ -152,6 +151,21 @@ class ContinuousPhysics(GridPhysics):
                 self.activeMovement(sprite, (0, self.gravity * sprite.mass))
             sprite.speed *= (1 - self.friction)
 
+    def calculatePassiveMovement(self, sprite):
+        # print "in calculate passive movement for", sprite.name
+        
+        if sprite.speed != 0 and hasattr(sprite, 'orientation'):
+            orientation = sprite.orientation
+            speed = sprite.speed * self.gridsize[0]
+            if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
+                pos = round(sprite.rect[0]+orientation[0]*speed), round(sprite.rect[1]+orientation[1]*speed)
+        else:   # If object has speed = 0 or no 'orientation' attribute
+            pos = sprite.rect[0], sprite.rect[1]
+
+        if self.gravity > 0 and sprite.mass > 0:  
+            return self.calculateActiveMovement(sprite, (0, self.gravity * sprite.mass))
+
+
     def activeMovement(self, sprite, action, speed=None):
         """ Here the assumption is that the controls determine the direction of
         acceleration of the sprite. """
@@ -161,6 +175,18 @@ class ContinuousPhysics(GridPhysics):
         v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed
         sprite.orientation = unitVector((v1, v2))
         sprite.speed = vectNorm((v1, v2)) / vectNorm(sprite.orientation)
+
+    def calculateActiveMovement(self, sprite, action, speed=None):
+        """ Here the assumption is that the controls determine the direction of
+        acceleration of the sprite. """
+        if speed is None:
+            speed = sprite.speed
+        v1 = action[0] / float(sprite.mass) + sprite.orientation[0] * speed
+        v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed
+        sprite.orientation = unitVector((v1, v2))
+        sprite.speed = vectNorm((v1, v2)) / vectNorm(sprite.orientation)
+        
+        return sprite.rect.left, sprite.rect.top
 
     def distance(self, r1, r2):
         """ Continuous physics use Euclidean distances. """
