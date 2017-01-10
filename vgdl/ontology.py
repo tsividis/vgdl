@@ -78,6 +78,10 @@ class GridPhysics():
             sprite._updatePos(sprite.orientation, speed * self.gridsize[0])
 
     def calculatePassiveMovement(self, sprite):
+        """
+        Calculate where the sprite would end up in a timestep, without actually updating its position.
+        """
+        ## This is where you could make hypotheses about speed, etc. for the object.
         if sprite.speed is None:
             speed = 1
         else:
@@ -105,6 +109,7 @@ class GridPhysics():
         """
         Calculate where the sprite would end up in a timestep, without actually updating its position.
         """
+         ## This is where you could make hypotheses about speed, etc. for the object.
         if speed is None:
             if sprite.speed is None:
                 speed = 1
@@ -423,7 +428,6 @@ class Chaser(RandomNPC): ##
         if len(options) == 0:
             options = BASEDIRS
 
-        # self.physics.activeMovement(self, options[0]) #TODO: make this work with a random direction picked
         self.physics.activeMovement(self, choice(options))
 
 
@@ -1400,7 +1404,7 @@ def updateOptions(game, sprite_type, current_sprite):
 
     # AStarChaser
     elif sprite_type == AStarChaser:
-        world = AStarWorld(game)
+        world = AStarWorld(game) ##how the AStarChaser makes its own calculations (see ai.py)
         
         # If nothing to chase, then will stay in place
         killed = [s.name for s in game.kill_list]
@@ -1467,9 +1471,12 @@ def initializeDistribution(sprite_types):
     """
     Creates a uniform distribution over all the sprite types.
     """
-    initial_distribution = {"OTHER":1.0/(len(sprite_types)+1)}
+    catch_all_prior = .000001
+    # initial_distribution = {"OTHER":1.0/(len(sprite_types)+1)}
+    initial_distribution = {"OTHER":catch_all_prior}
+
     for sprite_type in sprite_types:
-        initial_distribution[sprite_type] = 1.0/(len(sprite_types)+1) # uniform distribution
+        initial_distribution[sprite_type] = (1.0-catch_all_prior)/(len(sprite_types)+1) # uniform distribution
     return initial_distribution
 
 
@@ -1489,7 +1496,8 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
     if sprite in curr_distribution.keys():
         for sprite_type in curr_distribution[sprite].keys():
             if sprite_type == "OTHER":
-                movement_options[sprite][sprite_type] = {outcome: 0.2}
+                movement_options[sprite][sprite_type] = {outcome: 1.0/5} #up down left right stay
+
             if curr_distribution[sprite][sprite_type] > 0:
 
                 # # For debugging

@@ -679,6 +679,10 @@ class BasicGame(object):
         # Prep for Sprite Induction
         sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
         all_objects = self.getObjects() # Save all objects, some which may be killed in game
+        
+        ##figure out keypress type:
+        disableContinuousKeyPress = all([all_objects[k]['sprite'].physicstype.__name__=='GridPhysics' for k in all_objects.keys()])
+        
         objects = self.getObjects()
         spriteDistribution = {}
         movement_options = {}
@@ -711,7 +715,6 @@ class BasicGame(object):
             # get action pressed
             self.keystate = pygame.key.get_pressed()
             
-
             # # PT: Disables mistaken contiguous key presses, prints to terminal
             if disableContinuousKeyPress and not self.playback_actions:
                 keyPressType = None

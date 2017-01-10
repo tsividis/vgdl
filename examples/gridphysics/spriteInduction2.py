@@ -12,7 +12,7 @@ BasicGame
     SpriteSet
         carcass > ResourcePack color=BROWN
         goat > stype=avatar cooldown=3
-            angry  > RandomNPC speed=0.5 color=ORANGE
+            angry  > RandomNPC speed=1 color=ORANGE
         hay > Resource color=YELLOW
 
 
