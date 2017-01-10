@@ -665,7 +665,7 @@ class BasicGame(object):
         #logging.basicConfig(filename=gamelog, level=logging.INFO)
         timestamp = datetime.datetime.strftime(datetime.datetime.now(), '%Y_%m_%d_%H_%M_%S')
         game_output = "output/{}_{}.txt".format(name, timestamp)
-        object_output = "output/{}_{}_objects.txt".format(name,timestamp)
+        sprite_output = "output/{}_{}_sprites.txt".format(name,timestamp)
 
         # --------- Game-play ------------
         from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
@@ -674,7 +674,7 @@ class BasicGame(object):
         agentStatePrev = {}
         agentState = dict(self.getAvatars()[0].resources)
         keyPressPrev = None
-        f_obj = open(object_output,"w")
+        f_sprite = open(sprite_output,"w")
 
         # Prep for Sprite Induction
         sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
@@ -861,10 +861,12 @@ class BasicGame(object):
         terminationCondition = {'ended': True, 'win':win, 'time':self.time}
         # logging.info((finalEventList, terminationCondition))
 
-
+        # Recording results into files
         with open(game_output, 'w') as f:
             f.write(str((finalEventList, terminationCondition)))
-
+        f_sprite.write(str(all_objects) + "\n")
+        f_sprite.write(str(spriteDistribution))
+        f_sprite.close()
 
         print "Expecting {} events".format(len(finalEventList))
 
