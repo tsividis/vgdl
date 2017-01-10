@@ -1209,7 +1209,7 @@ def killIfFromAbove(sprite, partner, game):
     if (sprite.lastrect.top > partner.lastrect.top
         and partner.rect.top > partner.lastrect.top):
         killSprite(sprite, partner, game)
-        return ('killIfFromAbove' , parter.ID, sprite.ID)
+        return ('killIfFromAbove' , partner.ID, sprite.ID)
 
 def killIfAlive(sprite, partner, game):
     """ Perform the killing action, only if no previous collision effect has removed the partner. """
