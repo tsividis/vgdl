@@ -75,13 +75,9 @@ class GridPhysics():
         else:
             speed = sprite.speed
         if speed != 0 and hasattr(sprite, 'orientation'):
-            # print "in passive movement update for", sprite.name
             sprite._updatePos(sprite.orientation, speed * self.gridsize[0])
-        # else:
-            # print "no passive movement update for", sprite.name
 
     def calculatePassiveMovement(self, sprite):
-        # print "in calculate passive movement for", sprite.name
         if sprite.speed is None:
             speed = 1
         else:
@@ -90,26 +86,21 @@ class GridPhysics():
             orientation = sprite.orientation
             speed = speed * self.gridsize[0]
             if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
-                return round(sprite.rect[0]+orientation[0]*speed), round(sprite.rect[1]+orientation[1]*speed)
+                pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
+                return pos.left, pos.top
         else:   # If object has speed = 0 or no 'orientation' attribute
             return None   
                   
 
     def activeMovement(self, sprite, action, speed=None):
-        # print "action", action
         if speed is None:
             if sprite.speed is None:
-                speed = 1
+                speed = 1.0
             else:
-                speed = sprite.speed
+                speed = float(sprite.speed)
         if speed != 0 and action is not None:
-            # print "in active movement update for", sprite.name
             sprite._updatePos(action, speed * self.gridsize[0])
-        # else:
-            # print "no active movement update for", sprite.name
-        # print "after activeMovement", (sprite.rect.left, sprite.rect.top) 
-        # print "__"
-
+        
     def calculateActiveMovement(self, sprite, action, speed=None):
         """
         Calculate where the sprite would end up in a timestep, without actually updating its position.
@@ -120,14 +111,15 @@ class GridPhysics():
             else:
                 speed = sprite.speed
         if speed != 0 and action is not None:
-            speed = speed * self.gridsize[0]
+            speed = float(speed) * self.gridsize[0]
             if speed is None:
                 speed = sprite.speed
             
             orientation = action
 
             if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0): 
-                return round(sprite.rect[0]+orientation[0]*speed), round(sprite.rect[1]+orientation[1]*speed)
+                pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
+                return pos.left, pos.top
         return(sprite.rect.left, sprite.rect.top)
         
 
@@ -149,8 +141,6 @@ class ContinuousPhysics(GridPhysics):
             sprite.speed *= (1 - self.friction)
 
     def calculatePassiveMovement(self, sprite):
-        # print "in calculate passive movement for", sprite.name
-        
         if sprite.speed != 0 and hasattr(sprite, 'orientation'):
             orientation = sprite.orientation
             speed = sprite.speed * self.gridsize[0]
@@ -282,8 +272,7 @@ class RandomNPC(VGDLSprite):
 
     def update(self, game):
         VGDLSprite.update(self, game)
-        # self.direction = choice(BASEDIRS) #TODO: Make work with random direction
-        self.direction = BASEDIRS[0]
+        self.direction = choice(BASEDIRS) #TODO: Make work with random direction
         self.physics.activeMovement(self, self.direction)
 
 
@@ -434,8 +423,8 @@ class Chaser(RandomNPC): ##
         if len(options) == 0:
             options = BASEDIRS
 
-        self.physics.activeMovement(self, options[0]) #TODO: make this work with a random direction picked
-        # self.physics.activeMovement(self, choice(options))
+        # self.physics.activeMovement(self, options[0]) #TODO: make this work with a random direction picked
+        self.physics.activeMovement(self, choice(options))
 
 
 class Fleeing(Chaser):
@@ -1451,11 +1440,11 @@ def updateOptions(game, sprite_type, current_sprite):
     elif sprite_type == RandomNPC:
         position_options = {}
         for option in BASEDIRS:
-                left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option)
-                if (left, top) in position_options.keys():
-                    position_options[(left, top)] += 1.0/len(BASEDIRS) 
-                else:
-                    position_options[(left, top)] = 1.0/len(BASEDIRS)
+            left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option)
+            if (left, top) in position_options.keys(): 
+                position_options[(left, top)] += 1.0/len(BASEDIRS) 
+            else:
+                position_options[(left, top)] = 1.0/len(BASEDIRS)
         return position_options
 
     # Missile or OrientedSprite
@@ -1465,13 +1454,11 @@ def updateOptions(game, sprite_type, current_sprite):
             
             # If object has speed = 0 or no 'orientation' attribute
             if coords == None:
-                # print "speed = 0 or no orientation"
                 return {}
             
             return {(coords[0], coords[1]): 1.0}
         
         # Catches objects that can't be Oriented Sprite and Missile types b/c fails the if-statement
-        # print "failed test to be oriented sprite or missile"
         return {}
 
     
@@ -1502,12 +1489,12 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
     if sprite in curr_distribution.keys():
         for sprite_type in curr_distribution[sprite].keys():
             if sprite_type == "OTHER":
-                movement_options[sprite][sprite_type] = {outcome: 1.0}
+                movement_options[sprite][sprite_type] = {outcome: 0.2}
             if curr_distribution[sprite][sprite_type] > 0:
 
-                # For debugging
-                if movement_options[sprite][sprite_type] == None:
-                    embed()
+                # # For debugging
+                # if movement_options[sprite][sprite_type] == None:
+                #     embed()
                 
                 # If the outcome is an option for the sprite type, update probability
                 if outcome in movement_options[sprite][sprite_type].keys():

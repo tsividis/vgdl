@@ -811,13 +811,12 @@ class BasicGame(object):
                         sprite_obj = objects[sprite]["sprite"]
 
                         # Get potential next positions for sprite if it were that sprite type
-                        # TODO: Implement Avatar updateOptions function
+                        # TODO: Implement Avatar updateOptions function (if desired)
                         if sprite_obj.name != 'avatar':
                             movement_options[sprite][sprite_type] = updateOptions(game, sprite_type, sprite_obj) 
-                          
                             # print sprite_obj.name, sprite_type # For debugging
                             # print movement_options[sprite][sprite_type]
-           
+
             ## Update actual sprite positions.
             for s in self:
                 s.update(self)
@@ -829,10 +828,12 @@ class BasicGame(object):
                     sprite_obj = objects[sprite]["sprite"] 
                     
                     if sprite not in collision_objects and sprite_obj.name != 'avatar':
-                        # print sprite_obj # For debugging
 
                         outcome = objects[sprite]["position"]
                         spriteDistribution = updateDistribution(sprite, spriteDistribution, movement_options, outcome)
+
+                        # print sprite_obj # For debugging
+                        # print 'outcome', outcome                        
 
             # Termination #2 : Avatars have been killed
             if len(self.getAvatars()) == 0:
@@ -881,8 +882,8 @@ class BasicGame(object):
             self.win = False
             print "Game lost. Score=%s" % self.score
 
-        if "killSprite" in [e[0] for e in self.effectList]:
-                embed()
+        # if "killSprite" in [e[0] for e in self.effectList]:
+        #         embed()
         
         ipdb.set_trace()
 
@@ -1013,7 +1014,8 @@ class VGDLSprite(object):
             speed = self.speed
 
         if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
-            self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
+            orig_left, orig_top = self.rect.left, self.rect.top
+            self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed)) 
             self.lastmove = 0
 
 

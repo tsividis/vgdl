@@ -11,7 +11,7 @@ chase_game = """
 BasicGame
     SpriteSet
         carcass > Immovable color=BROWN
-        angry  > Missile color=ORANGE
+        angry  > Missile color=ORANGE speed=0.5
         hay > Passive color=YELLOW
 
 
