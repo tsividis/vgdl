@@ -82,6 +82,9 @@ class GridPhysics():
 
     def calculatePassiveMovement(self, sprite):
         # print "in calculate passive movement for", sprite.name
+        
+        ## This is where you could make hypotheses about speed, etc. for the object.
+
         if sprite.speed is None:
             speed = 1
         else:
@@ -1385,7 +1388,7 @@ def updateOptions(game, sprite_type, current_sprite):
 
     # AStarChaser
     elif sprite_type == AStarChaser:
-        world = AStarWorld(game)
+        world = AStarWorld(game) ##how the AStarChaser makes its own calculations (see ai.py)
         
         # If nothing to chase, then will stay in place
         killed = [s.name for s in game.kill_list]
@@ -1454,9 +1457,12 @@ def initializeDistribution(sprite_types):
     """
     Creates a uniform distribution over all the sprite types.
     """
-    initial_distribution = {"OTHER":1.0/(len(sprite_types)+1)}
+    catch_all_prior = .000001
+    # initial_distribution = {"OTHER":1.0/(len(sprite_types)+1)}
+    initial_distribution = {"OTHER":catch_all_prior}
+
     for sprite_type in sprite_types:
-        initial_distribution[sprite_type] = 1.0/(len(sprite_types)+1) # uniform distribution
+        initial_distribution[sprite_type] = (1.0-catch_all_prior)/(len(sprite_types)+1) # uniform distribution
     return initial_distribution
 
 
