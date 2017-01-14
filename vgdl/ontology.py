@@ -1463,7 +1463,6 @@ def updateOptions(game, sprite_type, current_sprite):
         # Catches objects that can't be Oriented Sprite and Missile types b/c fails the if-statement
         return {}
 
-    
 
 def initializeDistribution(sprite_types):
     """
@@ -1514,4 +1513,49 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
             curr_distribution[sprite][sprite_type] /= z
 
     return curr_distribution
+
+def sampleFromDistribution(curr_distribution, all_objects):
+    ## TODO: Rewrite this when you've slept.
+
+    import random
+    import numpy as np
+    from class_theory_template import Sprite
+
+    sample = []
+
+    ##remove avatar. For now let's just assume we know which one it is.
+    ##TODO: You need to do avatarInduction, unless there's a generic type that can cover all types.
+    non_avatar_keys = []
+    for k in all_objects.keys():
+        if all_objects[k]['sprite'].name is not 'avatar':
+            non_avatar_keys.append(k)
+        else:
+            from ontology import MovingAvatar
+            sample.append(Sprite(vgdlType=MovingAvatar, color=all_objects[k]['type']['color']))
+
+    ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
+    types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys])) #  if all_objects[k][['sprite'].name is not 'avatar']]))
+
+    for obj_type in types:
+        options = [k for k in all_objects.keys() if all_objects[k]['type']['color'] == obj_type]
+        k = random.choice(options)
+
+        sprite_possibilities = curr_distribution[k]
+        lst = sprite_possibilities.keys()
+        lst.sort()
+        probs = [sprite_possibilities[l] for l in lst]
+        index = np.random.choice(range(len(probs)), p=probs)
+        sprite_type = lst[index] ##you might also want to return sprite_possibilities[lst[index]], which is the associated probability.
+        color = all_objects[k]['type']['color']
+        s = Sprite(vgdlType=sprite_type, color=color)
+        sample.append(s)
+
+    return sample
+
+## always alphabetize the keys
+
+## sample multinomially from the spriteDistribution[key] dictionary, to get the spriteType
+## add that to the color info for that object.
+
+
 

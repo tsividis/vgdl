@@ -245,9 +245,14 @@ class Theory(object):
 
 		self.posterior = False
 
-	def initializeSpriteSet(self, vgdlSpriteParse):
-		self.spriteSet = vgdlSpriteParse
-
+	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
+		if not (vgdlSpriteParse or spriteInductionResult):
+			print "You must provide either a vgdlSpriteParse or the result of having performed sprite induction."
+			return
+		if vgdlSpriteParse:
+			self.spriteSet = vgdlSpriteParse
+		if spriteInductionResult:
+			self.spriteSet = spriteInductionResult
 		# Get mapping from sprite color to Sprite object
 		for s in self.spriteSet:
 			self.spriteObjects[s.color] = s
@@ -1192,17 +1197,21 @@ class Game(object):
 	"""
 	VGDL Game and Induction State.
 	"""
-	def __init__(self, vgdlString):
+	def __init__(self, vgdlString=False, spriteInductionResult=False):
 		# Game states #TODO: May not need these
 		#self.backpack = {}
 		#self.trace = [] # list of TimeStep objects that happened during a gameplay
 
 		self.vgdlString = vgdlString
+		self.spriteInductionResult = spriteInductionResult
+		if self.vgdlString:
+			self.vgdlSpriteParse = self.makeSpriteParse()
+		else:
+			self.vgdlSpriteParse = False
 
 		# Induction states
 		self.hypothesisSpace = []
 		self.theoryCount = 0
-		self.vgdlSpriteParse = self.makeSpriteParse()
 
 		#inherit ontology from VGDL
 		self.VGDLTree = VGDLTree
@@ -1440,7 +1449,13 @@ class Game(object):
 		Iterates through trace, performing theory induction on each timestep
 		"""
 		T = Theory(self)
-		T.initializeSpriteSet(self.vgdlSpriteParse)
+		
+		##change this!
+		if self.spriteInductionResult:
+			T.initializeSpriteSet(vgdlSpriteParse=False, spriteInductionResult=self.spriteInductionResult)
+		elif self.vgdlSpriteParse:
+			T.initializeSpriteSet(vgdlSpriteParse=self.vgdlSpriteParse, spriteInductionResult=False)
+
 
 		self.hypothesisSpace = [T]
 		newTheories = []
