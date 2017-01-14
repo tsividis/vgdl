@@ -888,7 +888,7 @@ class BasicGame(object):
         # if "killSprite" in [e[0] for e in self.effectList]:
         #         embed()
         
-        ipdb.set_trace()
+        # ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(50)
