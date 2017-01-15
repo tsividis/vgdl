@@ -21,7 +21,7 @@ def runInduction_DFS(vgdlString, gameOutput, maxTheories):
     verbose = True
 
     g = Game(vgdlString) # Use specific game specifications
-    # g = Game()
+
     trace = ([TimeStep(tr['agentAction'], tr['agentState'], tr['effectList'], tr['gameState']) for tr in gameOutput[0]],gameOutput[1])
     
 
@@ -51,9 +51,10 @@ def runInduction_DFS(vgdlString, gameOutput, maxTheories):
 
 
     # start = time.time()
-    embed()
 
     hypotheses=list(g.runDFSInduction(trace, maxTheories, verbose))
+    embed()
+
     # end = time.time()
     
     return g, hypotheses
