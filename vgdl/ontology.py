@@ -1540,6 +1540,9 @@ def sampleFromDistribution(curr_distribution, all_objects):
         options = [k for k in all_objects.keys() if all_objects[k]['type']['color'] == obj_type]
         k = random.choice(options)
 
+        ## always alphabetize the keys
+        ## sample multinomially from the spriteDistribution[key] dictionary, to get the spriteType
+        ## add that to the color info for that object.
         sprite_possibilities = curr_distribution[k]
         lst = sprite_possibilities.keys()
         lst.sort()
@@ -1552,10 +1555,7 @@ def sampleFromDistribution(curr_distribution, all_objects):
 
     return sample
 
-## always alphabetize the keys
 
-## sample multinomially from the spriteDistribution[key] dictionary, to get the spriteType
-## add that to the color info for that object.
 
 
 

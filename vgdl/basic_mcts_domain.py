@@ -88,6 +88,13 @@ class Basic_MCTS:
 		goal_code = 2**(1+sorted(self._obstypes.keys())[::-1].index("goal"))
 		goal_loc = np.where(np.reshape(self.rle._getSensors(), self.outdim)==goal_code)
 		goal_loc = goal_loc[0][0], goal_loc[1][0]
+		if 'avatar' in self._obstypes.keys():
+			inverted_avatar_loc=self._obstypes['avatar'][0]
+			avatar_loc = (inverted_avatar_loc[1], inverted_avatar_loc[0])
+			self.avatar_code = np.reshape(self.rle._getSensors(), self.outdim)[avatar_loc[0]][avatar_loc[1]]
+		else:
+			self.avatar_code = 1
+		print "initial avatar code", self.avatar_code
 		self.maxPseudoReward = 1000
 		self.rewardDict = {goal_loc:self.maxPseudoReward}
 		self.processed = [goal_loc]
@@ -171,7 +178,7 @@ class Basic_MCTS:
 		reshaped_state = np.reshape(state, self.outdim)
 		avatar = 1
 		goal = 2**(1+sorted(self._obstypes.keys())[::-1].index("goal"))
-		avatar_loc = np.where(reshaped_state==1)
+		avatar_loc = np.where(reshaped_state==self.avatar_code)
 		goal_loc = np.where(reshaped_state==goal)
 		# if goal in reshaped_state and 
 		dist = avatar_loc[0][0]-goal_loc[0][0], avatar_loc[1][0]-goal_loc[1][0]
@@ -198,7 +205,7 @@ class Basic_MCTS:
 			tree_policy_iters += iters
 			if not vl.terminal:
 				reward, dPiters = self.defaultPolicy(vl, Vrle, step_horizon, domain_knowledge=False)
-				loc = np.where(np.reshape(vl.state, self.outdim)==1)
+				loc = np.where(np.reshape(vl.state, self.outdim)==self.avatar_code)
 				loc = loc[0][0], loc[1][0]
 				reward = reward + self.rewardDict[loc]
 				# if reward==0:
@@ -291,11 +298,8 @@ class Basic_MCTS:
 
 		if domain_knowledge:
 			state  = np.reshape(v.state, self.outdim)
-			avatar_loc = np.where(state==1)
+			avatar_loc = np.where(state==self.avatar_code)
 			avatar_loc = (avatar_loc[0][0], avatar_loc[1][0])
-			# print "in", avatar_loc
-			# print "choices", self.actionDict[avatar_loc]
-			# print "self.actions", self.actions
 			action_choices = self.actionDict[avatar_loc]
 		else:
 			action_choices = self.actions
@@ -434,16 +438,15 @@ class Basic_MCTS:
 		reshaped_state = np.reshape(state, self.outdim)
 
 		##TODO: can delete this if you're not calculating distances at the end of this func
-		avatar_initial_loc = np.where(reshaped_state==1)
 
+		avatar_initial_loc = np.where(reshaped_state==self.avatar_code)
 		avatar_loc = (avatar_initial_loc[0][0], avatar_initial_loc[1][0])
-
 		res = rle.step((0,0))
 		terminal = not res['pcontinue']
 		while not terminal and iters < step_horizon:
 
 			reshaped_state = np.reshape(state, self.outdim)
-			avatar_loc = np.where(reshaped_state==1)
+			avatar_loc = np.where(reshaped_state==self.avatar_code, True, False)
 			avatar_loc = (avatar_loc[0][0], avatar_loc[1][0])
 
 			iters += 1
@@ -515,9 +518,7 @@ class MCTS_node:
 		    	self.expanded = len(self.children) == len(self.tree.actionDict[avatar_loc])
 		    else:
 		    	self.expanded = len(self.children) == len(self.actions)
-		    	# if len(self.children) == len(self.tree.actionDict[avatar_loc]):
-		    	# self.expanded = True
-		    # if len(self.children) == len(self.actions):
+
 
 
 	def getReward(self):
@@ -554,17 +555,8 @@ def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, pla
 		new_state = res["observation"]
 		terminal = not res['pcontinue']
 		for j in range(min(len(actions), max_actions_per_plan)):
-			# print "cycle", i, "action", j
 			if actions[j] is not None and not terminal:
-				# reshaped_state = np.reshape(new_state, mcts.outdim)
-				# avatar = 1
-				# goal = 2**(1+sorted(mcts._obstypes.keys())[::-1].index("goal"))
-				# avatar_loc = np.where(reshaped_state==1)
-				# goal_loc = np.where(reshaped_state==goal)
-				# print "avatar, goal", avatar_loc, goal_loc
 				dist = mcts.getManhattanDistanceComponents(new_state)
-				# print ""
-				# print 'dist', dist
 				print 'action', actions[j]
 				res = rle.step(actions[j])
 				new_state = res["observation"]

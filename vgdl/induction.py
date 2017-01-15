@@ -47,7 +47,11 @@ def runInduction_DFS(vgdlString, gameOutput, maxTheories):
         for j in range(len(timestep.events)):
             event = timestep.events[j]
             print event
-            timestep.events[j] = (event[0], getObjectType(timestep, event[1], trace[0]), getObjectType(timestep, event[2], trace[0]))
+            if len(event)==3:
+                timestep.events[j] = (event[0], getObjectType(timestep, event[1], trace[0]), getObjectType(timestep, event[2], trace[0]))
+            elif len(event)==2:
+                timestep.events[j] = (event[0], getObjectType(timestep, event[1], trace[0]))
+
 
 
     # start = time.time()

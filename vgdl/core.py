@@ -702,31 +702,33 @@ class BasicGame(object):
 
             ## The below will pause at t=100 and run a theory-induction loop, using everything the agent has seen so far.
             ## Should work as long as we're using a gridphysics game with a movingAvatar
-            # if self.time==100:
+            if self.time==100:
                 
-            #     from theory_template import *
-            #     sample = sampleFromDistribution(spriteDistribution, all_objects)
-            #     g = Game(spriteInductionResult=sample)
-            #     terminationCondition = {'ended': False, 'win':False, 'time':self.time}
-            #     trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
+                from theory_template import *
+                sample = sampleFromDistribution(spriteDistribution, all_objects)
+                g = Game(spriteInductionResult=sample)
+                terminationCondition = {'ended': False, 'win':False, 'time':self.time}
+                trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
 
-            #     ##clean up trace
-            #     def getObjectType(timestep, objectID, all_objects):
-            #         return all_objects[objectID]['type']['color']
+                ##clean up trace; convert object IDs to object types (for now this is just object color).
+                def getObjectType(timestep, objectID, all_objects):
+                    return all_objects[objectID]['type']['color']
                 
+                for i in range(len(trace[0])):
+                    timestep = trace[0][i]
+                    for j in range(len(timestep.events)):
+                        event = timestep.events[j]
+                        if len(event)==3:
+                            timestep.events[j] = (event[0], getObjectType(timestep, event[1], all_objects), getObjectType(timestep, event[2], all_objects))
+                        elif len(event)==2:
+                            timestep.events[j] = (event[0], getObjectType(timestep, event[1], all_objects))
 
-            #     for i in range(len(trace[0])):
-            #         timestep = trace[0][i]
-            #         for j in range(len(timestep.events)):
-            #             event = timestep.events[j]
-            #             print event
-            #             timestep.events[j] = (event[0], getObjectType(timestep, event[1], all_objects), getObjectType(timestep, event[2], all_objects))
 
-            #     hypotheses = list(g.runDFSInduction(trace, 20, True))
-            #     embed()
+                hypotheses = list(g.runDFSInduction(trace, 20, True))
+                embed()
 
-            # if self.time>100:
-            #     break
+            if self.time>100:
+                break
 
 
             print "t=", self.time
