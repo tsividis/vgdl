@@ -51,8 +51,14 @@ if __name__ == "__main__":
 	goals = ['box1', 'box2']
 	theories = [createRLVirtualGame, createRLVirtualGame2]
 	
+	## 1/15/17:
 	##TODO: It looks like it's planning and achieving each of the two goals.
 	## The loop isn't properly made; it doesn't ned after achieving both of its goals.
+
+	##Then: you have goal selection and plans to achieve those goals finished. What you need is:
+	## Selected goal + theory writes to VGDL file, which you then use to initialize the Vrle.
+	## any movement of objects you use to do spriteSet induction
+	## any events you've observed you use to do interactionSet induction (should be easy)
 
 	## separate outer and inner loops better.
 
