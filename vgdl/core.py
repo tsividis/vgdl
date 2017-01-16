@@ -241,6 +241,10 @@ class BasicGame(object):
         self._lastsaved = None
         self.win = None
         self.effectList = [] # list of effects that happened this current timestep
+        self.spriteDistribution = {}
+        self.movement_options = {}
+        self.all_objects = None
+
         self.reset()
 
     def reset(self):
@@ -632,9 +636,9 @@ class BasicGame(object):
                             self.effectList.append(e)
 
         # if len(self.effectList) > 0:
-        #     print self.effectList
+        # print self.effectList
 
-        # return effectList
+        return self.effectList
 
 
 
@@ -679,20 +683,20 @@ class BasicGame(object):
 
         # Prep for Sprite Induction
         sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
-        all_objects = self.getObjects() # Save all objects, some which may be killed in game
+        self.all_objects = self.getObjects() # Save all objects, some which may be killed in game
         
         ##figure out keypress type:
-        disableContinuousKeyPress = all([all_objects[k]['sprite'].physicstype.__name__=='GridPhysics' for k in all_objects.keys()])
+        disableContinuousKeyPress = all([self.all_objects[k]['sprite'].physicstype.__name__=='GridPhysics' for k in self.all_objects.keys()])
         
         objects = self.getObjects()
-        spriteDistribution = {}
-        movement_options = {}
+        self.spriteDistribution = {}
+        self.movement_options = {}
         
         for sprite in objects:
-            spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
-            movement_options[sprite] = {"OTHER":{}}
+            self.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
+            self.movement_options[sprite] = {"OTHER":{}}
             for sprite_type in sprite_types:
-                movement_options[sprite][sprite_type] = {}
+                self.movement_options[sprite][sprite_type] = {}
 
         while not self.ended:
             clock.tick(self.frame_rate)
@@ -702,47 +706,48 @@ class BasicGame(object):
 
             ## The below will pause at t=100 and run a theory-induction loop, using everything the agent has seen so far.
             ## Should work as long as we're using a gridphysics game with a movingAvatar
-            if self.time==100:
+            ## Note: this won't work right now; complaining about importing from theory template.
+            # if self.time==100:
+                # def getObjectType(objectID):
+                #     return self.all_objects[objectID]['type']['color']
+            #     from theory_template import *
+            #     sample = sampleFromDistribution(self.spriteDistribution, self.all_objects)
+            #     g = Game(spriteInductionResult=sample)
+            #     terminationCondition = {'ended': False, 'win':False, 'time':self.time}
+            #     trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
+
+            #     ##clean up trace; convert object IDs to object types (for now this is just object color).
+            #     
                 
-                from theory_template import *
-                sample = sampleFromDistribution(spriteDistribution, all_objects)
-                g = Game(spriteInductionResult=sample)
-                terminationCondition = {'ended': False, 'win':False, 'time':self.time}
-                trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
-
-                ##clean up trace; convert object IDs to object types (for now this is just object color).
-                def getObjectType(timestep, objectID, all_objects):
-                    return all_objects[objectID]['type']['color']
-                
-                for i in range(len(trace[0])):
-                    timestep = trace[0][i]
-                    for j in range(len(timestep.events)):
-                        event = timestep.events[j]
-                        if len(event)==3:
-                            timestep.events[j] = (event[0], getObjectType(timestep, event[1], all_objects), getObjectType(timestep, event[2], all_objects))
-                        elif len(event)==2:
-                            timestep.events[j] = (event[0], getObjectType(timestep, event[1], all_objects))
+            #     for i in range(len(trace[0])):
+            #         timestep = trace[0][i]
+            #         for j in range(len(timestep.events)):
+            #             event = timestep.events[j]
+            #             if len(event)==3:
+            #                 timestep.events[j] = (event[0], getObjectType(timestep, event[1], all_objects), getObjectType(timestep, event[2], all_objects))
+            #             elif len(event)==2:
+            #                 timestep.events[j] = (event[0], getObjectType(timestep, event[1], all_objects))
 
 
-                hypotheses = list(g.runDFSInduction(trace, 20, True))
-                embed()
+            #     hypotheses = list(g.runDFSInduction(trace, 20, True))
+            #     embed()
 
-            if self.time>100:
-                break
+            # if self.time>100:
+            #     break
 
 
-            print "t=", self.time
+            # print "t=", self.time
             self._clearAll()
 
             # For new objects that appear; sprite induction
             objects = self.getObjects()
             for sprite in objects:
-                if sprite not in spriteDistribution:
-                    all_objects[sprite] = objects[sprite]
-                    spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
-                    movement_options[sprite] = {"OTHER":{}}
+                if sprite not in self.spriteDistribution:
+                    self.all_objects[sprite] = objects[sprite]
+                    self.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
+                    self.movement_options[sprite] = {"OTHER":{}}
                     for sprite_type in sprite_types:
-                        movement_options[sprite][sprite_type] = {}
+                        self.movement_options[sprite][sprite_type] = {}
 
             # gather events
             pygame.event.pump()
@@ -843,15 +848,15 @@ class BasicGame(object):
             ## Sprite Induction Part 1: See the update options for each sprite type the sprite could be
             objects = self.getObjects()
             game = self                                               # Save game state
-            for sprite in spriteDistribution.keys():                  # Keys are the IDs of the game objects
-                for sprite_type in spriteDistribution[sprite].keys(): # Check each potential sprite type                    
-                    if spriteDistribution[sprite][sprite_type] > 0 and sprite in objects.keys():    # Make sure sprite_type is an option for sprite, and sprite is not killed
+            for sprite in self.spriteDistribution.keys():                  # Keys are the IDs of the game objects
+                for sprite_type in self.spriteDistribution[sprite].keys(): # Check each potential sprite type                    
+                    if self.spriteDistribution[sprite][sprite_type] > 0 and sprite in objects.keys():    # Make sure sprite_type is an option for sprite, and sprite is not killed
                         sprite_obj = objects[sprite]["sprite"]
 
                         # Get potential next positions for sprite if it were that sprite type
                         # TODO: Implement Avatar updateOptions function (if desired)
                         if sprite_obj.name != 'avatar':
-                            movement_options[sprite][sprite_type] = updateOptions(game, sprite_type, sprite_obj) 
+                            self.movement_options[sprite][sprite_type] = updateOptions(game, sprite_type, sprite_obj) 
                             # print sprite_obj.name, sprite_type # For debugging
                             # print movement_options[sprite][sprite_type]
 
@@ -861,14 +866,14 @@ class BasicGame(object):
 
             ## Sprite Induction Part 2: Update sprite distribution based on observations
             objects = self.getObjects()
-            for sprite in spriteDistribution.keys():        # Keys are the IDs of the game objects
+            for sprite in self.spriteDistribution.keys():        # Keys are the IDs of the game objects
                 if sprite in objects.keys():                # Sprite may have been killed
                     sprite_obj = objects[sprite]["sprite"] 
                     
                     if sprite not in collision_objects and sprite_obj.name != 'avatar':
 
                         outcome = objects[sprite]["position"]
-                        spriteDistribution = updateDistribution(sprite, spriteDistribution, movement_options, outcome)
+                        self.spriteDistribution = updateDistribution(sprite, self.spriteDistribution, self.movement_options, outcome)
 
                         # print sprite_obj # For debugging
                         # print 'outcome', outcome                        
@@ -903,8 +908,8 @@ class BasicGame(object):
         # Recording results into files
         with open(game_output, 'w') as f:
             f.write(str((finalEventList, terminationCondition)))
-        f_sprite.write(str(all_objects) + "\n")
-        f_sprite.write(str(spriteDistribution))
+        f_sprite.write(str(self.all_objects) + "\n")
+        f_sprite.write(str(self.spriteDistribution))
         f_sprite.close()
 
         print "Expecting {} events".format(len(finalEventList))

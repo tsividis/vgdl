@@ -149,6 +149,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 #print("i="+str(i)+" res="+str(res)+" res[..]="+str(res[i::len(ns)]))
                 res[i::len(ns)] = os
         else:
+            # OBSERVATION_GLOBAL
             # Returns 2D array of ints where bits set represent object types
             # present at that position. Bit 1 = Avatar. The other bits are set
             # in order that they are set in _obstypes (stateobs.py) 
@@ -191,19 +192,16 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 s.update(self._game)
 
         
-        # handle collision effects 
-        # print "in _performAction"
-        # embed()               
-        self._game._eventHandling()
-        # if "killSprite" in [e[0] for e in self._game.effectList]:
-        #     embed()
-            
-        # embed()
+        ## get events (e.g., (stepBack obj1ID, obj2ID))
+        events = self._game._eventHandling()
+
         # ### BEGINNING OF CHANGES
         for skey in self._other_types:
             ss = self._game.sprite_groups[skey]
             self._obstypes[skey] = [self._sprite2state(sprite, oriented=False) 
                                         for sprite in ss]
+        
+        return events
         # # Termination #1
         # for t in self._game.terminations:
         #     self.ended, win = t.isDone(self._game)
@@ -240,8 +238,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
     def step(self, action):
         if action != None:
-            self._performAction(action) 
-
+            events = self._performAction(action) 
+        else:
+            events = None
         observation = self._getSensors(None) #state)
         (ended, won) = self._isDone()
         if ended:
@@ -253,7 +252,16 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         else:
             pcontinue = 1
             reward = 0
-        return{ 'observation':observation, 'reward':reward, 'pcontinue':pcontinue }
+        return{ 'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'events':events }
+
+## the game in the agent's 'head'
+def defVirtualGame():
+    from examples.gridphysics.virtualGame import push_game, box_level
+    return (push_game, box_level)
+
+def defVirtualGame2():
+    from examples.gridphysics.virtualGame2 import push_game, box_level
+    return (push_game, box_level)
 
 def defMaze():
     from examples.gridphysics.mazes import maze_game, maze_level_1
@@ -366,6 +374,13 @@ def _verify( obs, targetObs ):
 ##          and define defSimpleGame1...
 ## Star in these args unzips the tuple.
 # simple maze test, moved to goal and win
+
+def createRLVirtualGame( obsType=OBSERVATION_LOCAL ):
+    return RLEnvironmentNonStatic( *defVirtualGame(), observationType=obsType )
+
+def createRLVirtualGame2( obsType=OBSERVATION_LOCAL ):
+    return RLEnvironmentNonStatic( *defVirtualGame2(), observationType=obsType )
+
 def createRLMaze( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defMaze(), observationType=obsType )
 

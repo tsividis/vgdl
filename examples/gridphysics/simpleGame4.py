@@ -11,8 +11,8 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 
 box_level = """
 wwwwwwwww
-w       w
-w       w
+w  1    w
+w    2  w
 wAp  wgww
 w    w ww
 wwwwwwwww
@@ -20,9 +20,18 @@ wwwwwwwww
 
 # box_level = """
 # wwwwwwwww
-# w     A w
 # w       w
-# w    wgww
+# w       w
+# wAp  wgww
+# w    w ww
+# wwwwwwwww
+# """
+
+# box_level = """
+# wwwwwwwww
+# w     m w
+# w       w
+# wAp  wgww
 # w    w ww
 # wwwwwwwww
 # """
@@ -31,19 +40,24 @@ push_game = """
 BasicGame frame_rate=30
     SpriteSet        
         avatar > MovingAvatar color=DARKBLUE #cooldown=4 
-        goal > Passive color=GOLD
-        poison > Resource limit=3 color=BROWN
-        box  > ResourcePack color=ORANGE
+        goal > ResourcePack color=GOLD
+        poison > ResourcePack limit=3 color=BROWN
+        box  > ResourcePack 
+            box1 > color=ORANGE
+            box2 > color=RED
         wall > Immovable color=BLACK      
-        score > Resource color=PINK limit=10         
+        score > Resource color=PINK limit=10  
+        missile > Missile color=RED speed=.2      
     LevelMapping
         p > poison
-        1 > box
+        1 > box1
+        2 > box2
         w > wall   
         g > goal 
-        h > hole
+        m > missile
     InteractionSet
         avatar wall > stepBack  
+        missile wall > reverseDirection
         poison avatar > killSprite
         avatar poison > killSprite
         goal avatar > killSprite

@@ -30,7 +30,7 @@ Calling rle.step(a). Returns a dictionary with:
 'reward', 'observation' and 'pcontinue': whether it was a terminal state
 
 Getting sprites:
-mcts._game.sprite_groups
+mcts.rle._game.sprite_groups
 """
 
 class Basic_MCTS:
@@ -122,9 +122,12 @@ class Basic_MCTS:
 	def scanDomainForMovementOptions(self):
 		##TODO: Take a state, so that you can re-perform this scan as needed and take changes into account.
 		##TODO: query VGDL description for penetrable/nonpenetrable objects, add to list.
-		
+		immovable_codes = []
 		immovables = ['wall']
-		immovable_codes = [2**(1+sorted(self._obstypes.keys())[::-1].index(i)) for i in immovables]
+		for i in immovables:
+			if i in self._obstypes.keys():
+				immovable_codes.append(2**(1+sorted(self._obstypes.keys())[::-1].index(i)))
+		# immovable_codes = [2**(1+sorted(self._obstypes.keys())[::-1].index(i)) for i in immovables]
 
 		actionDict = defaultdict(list)
 		neighborDict = defaultdict(list)
@@ -139,7 +142,7 @@ class Basic_MCTS:
 					for action in action_superset:
 						nextPos = (i+action[0], j+action[1])
 						## Don't look at positions off the board.
-						if nextPos[0]<x and nextPos[1]<y:
+						if 0<=nextPos[0]<x and 0<=nextPos[1]<y:
 							if board[nextPos] not in immovable_codes:
 								actionDict[(i,j)].append(action)
 								neighborDict[(i,j)].append(nextPos)
@@ -580,9 +583,9 @@ if __name__ == "__main__":
 	## You have to make a function that creates the environment.
 	## Make the game, then follow the layout in 'rlenvironmentnonstatic'
 	
-	# obsType = OBSERVATION_GLOBAL
-	# rleCreateFunc = createRLSimpleGame5
-	# mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1)
+	obsType = OBSERVATION_GLOBAL
+	rleCreateFunc = createRLSimpleGame4
+	mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1)
 
 	# outTime = mcts.startTrainingPhase(100, 100, test=False)
 	# print outTime
