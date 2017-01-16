@@ -1546,7 +1546,6 @@ def sampleFromDistribution(curr_distribution, all_objects):
         lst = sprite_possibilities.keys()
         lst.sort()
         probs = [sprite_possibilities[l] for l in lst]
-        print all_objects[k]['type']['color'], sum(probs)
         index = np.random.choice(range(len(probs)), p=probs)
         sprite_type = lst[index] ##you might also want to return sprite_possibilities[lst[index]], which is the associated probability.
         color = all_objects[k]['type']['color']

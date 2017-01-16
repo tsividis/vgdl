@@ -590,7 +590,7 @@ class Theory(object):
 				# print "interaction ", interaction.display()
 				classAssignments = [(assignment[0], obj1), (assignment[1], obj2)]
 				newTheory = self.createChild([interaction, classAssignments])
-				newTheory.display()
+				# newTheory.display()
 				# Checks and only adds to newTheories if the created theory was actually different.
 				if newTheory:
 					newTheories.append(newTheory)
@@ -1330,7 +1330,7 @@ class Game(object):
 		return zip(predicates, sums)
 
 
-	def DFSinduction(self, theory, timesteps, maxNumTheories, verbose=True):
+	def DFSinduction(self, theory, timesteps, maxNumTheories, verbose=False):
 		"""
 		DFS implementation of induction function to deal with very long induction time.
 		"""
@@ -1397,11 +1397,11 @@ class Game(object):
 				for t in newTheories:
 					t.dryingPaint = set()
 				
-				print [self.DFSinduction(t, timesteps, maxNumTheories, verbose) for t in newTheories]
+				# print [self.DFSinduction(t, timesteps, maxNumTheories, verbose) for t in newTheories]
 
 		
 
-	def runDFSInduction(self, trace, maxNumTheories, verbose=True):
+	def runDFSInduction(self, trace, maxNumTheories, verbose=False):
 		"""
 		"""
 
@@ -1411,7 +1411,7 @@ class Game(object):
 		temp_new_trace = ([timesteps[0]], None) # Just to run regular induction on first timestep
 
 		# Analyze first timestep (to get some sprites in theory classes so that entropy doesn't face divide by zero error)
-		self.induction(temp_new_trace, verbose=True)
+		self.induction(temp_new_trace, verbose=False)
 
 		self.cleanHypothesisSpace([timesteps[0]], 1)
 		init_hypotheses = self.orderHypotheses(self.hypothesisSpace) 
@@ -1421,8 +1421,9 @@ class Game(object):
 
 		# This does DFS induction x times; not sure how to make it more like the behavior we want.
 		for theory in init_hypotheses: 	# each of these theories has depth 1
-			theory.display()
-			self.DFSinduction(theory, timesteps, maxNumTheories, verbose=True)
+			if verbose:
+				theory.display()
+			self.DFSinduction(theory, timesteps, maxNumTheories, verbose=verbose)
 		
 
 		# Termination set induction
@@ -1434,17 +1435,18 @@ class Game(object):
 
 			self.hypothesisSpace = hypothesisSpaceWithTermConditions
 
-		print "initial hypothesis space: ", len(self.hypothesisSpace)
+		if verbose:
+			print "initial hypothesis space: ", len(self.hypothesisSpace)
 
 		end = time.time()
-	
-		print "generated {} hypotheses in {} seconds".format(len(self.hypothesisSpace), end-start)
+		if verbose:
+			print "generated {} hypotheses in {} seconds".format(len(self.hypothesisSpace), end-start)
 
 		return self.hypothesisSpace
 
 
 
-	def induction(self, trace, verbose=True, allTraces=None):
+	def induction(self, trace, verbose=False, allTraces=None):
 		"""
 		Iterates through trace, performing theory induction on each timestep
 		"""
@@ -1499,8 +1501,8 @@ class Game(object):
 
 			self.cleanHypothesisSpace(timesteps[0:i+1], 1) #All timesteps up to now should be fully explained
 			
-			#if verbose:
-			print "{} hypotheses:".format(len(self.hypothesisSpace))
+			if verbose:
+				print "{} hypotheses:".format(len(self.hypothesisSpace))
 			
 			# Sort hypotheses (right now by simple length metric), then print.
 			hypotheses = sorted(self.hypothesisSpace, key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
