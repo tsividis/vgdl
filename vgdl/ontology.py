@@ -3,8 +3,8 @@ Video game description language -- ontology of concepts.
 
 @author: Tom Schaul
 '''
-
-from random import choice, random
+import random
+# from random import choice#, random
 from math import sqrt
 import pygame
 from tools import triPoints, unitVector, vectNorm, oncePerStep
@@ -231,7 +231,7 @@ class Spreader(Flicker):
         Flicker.update(self, game)
         if self._age == 2:
             for u in BASEDIRS:
-                if random() < self.spreadprob:
+                if random.random() < self.spreadprob:
                     game._createSprite([self.name], (self.lastrect.left + u[0] * self.lastrect.size[0],
                                                      self.lastrect.top + u[1] * self.lastrect.size[1]))
 
@@ -261,7 +261,7 @@ class SpawnPoint(SpriteProducer):
         self.counter = 0
 
     def update(self, game):
-        if (game.time % self.cooldown == 0 and random() < self.prob):
+        if (game.time % self.cooldown == 0 and random.random() < self.prob):
             game._createSprite([self.stype], (self.rect.left, self.rect.top))
             self.counter += 1
 
@@ -350,7 +350,7 @@ class WalkJumper(Walker):
     strength = 10
     def update(self, game):
         if self.lastdirection[0] == 0:
-            if self.prob < random():
+            if self.prob < random.random():
                 self.physics.activeMovement(self, (0, -self.strength))
         Walker.update(self, game)
 
@@ -372,7 +372,7 @@ class ErraticMissile(Missile):
 
     def update(self, game):
         Missile.update(self, game)
-        if random() < self.prob: 
+        if random.random() < self.prob: 
             self.orientation = choice(BASEDIRS)
 
 class Bomber(SpawnPoint, Missile):
@@ -683,7 +683,7 @@ class RotatingFlippingAvatar(RotatingAvatar):
         actions = self._readMultiActions(game)
         if len(actions) > 0 and self.noiseLevel > 0:
             # pick a random one instead
-            if random() < self.noiseLevel*4:
+            if random.random() < self.noiseLevel*4:
                 actions = [choice([UP, LEFT, DOWN, RIGHT])]
         if UP in actions:
             self.speed = 1
@@ -1085,7 +1085,7 @@ def windGust(sprite, partner, game):
 
 def slipForward(sprite, partner, game, prob=0.5):
     """ Slip forward in the direction of the current orientation, sometimes."""
-    if prob > random():
+    if prob > random.random():
         tmp = sprite.lastrect
         v = unitVector(sprite.orientation)
         sprite.physics.activeMovement(sprite, v, speed=1)
@@ -1096,7 +1096,7 @@ def slipForward(sprite, partner, game, prob=0.5):
 
 def attractGaze(sprite, partner, game, prob=0.5):
     """ Turn the orientation to the value given by the partner. """
-    if prob > random():
+    if prob > random.random():
         sprite.orientation = partner.orientation
         # return ("attractGaze" , colorDict[str(sprite.color)], colorDict[str(partner.color)])
         return ('attractGaze', sprite.ID, partner.ID)
@@ -1469,11 +1469,10 @@ def initializeDistribution(sprite_types):
     Creates a uniform distribution over all the sprite types.
     """
     catch_all_prior = .000001
-    # initial_distribution = {"OTHER":1.0/(len(sprite_types)+1)}
     initial_distribution = {"OTHER":catch_all_prior}
 
     for sprite_type in sprite_types:
-        initial_distribution[sprite_type] = (1.0-catch_all_prior)/(len(sprite_types)+1) # uniform distribution
+        initial_distribution[sprite_type] = (1.0-catch_all_prior)/(len(sprite_types)) # uniform distribution
     return initial_distribution
 
 
@@ -1547,6 +1546,7 @@ def sampleFromDistribution(curr_distribution, all_objects):
         lst = sprite_possibilities.keys()
         lst.sort()
         probs = [sprite_possibilities[l] for l in lst]
+        print all_objects[k]['type']['color'], sum(probs)
         index = np.random.choice(range(len(probs)), p=probs)
         sprite_type = lst[index] ##you might also want to return sprite_possibilities[lst[index]], which is the associated probability.
         color = all_objects[k]['type']['color']
@@ -1555,7 +1555,69 @@ def sampleFromDistribution(curr_distribution, all_objects):
 
     return sample
 
+def spriteInduction(rle, step):
+    sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
 
+    if step==0:
+    ## Prep for sprite induction
 
+        for sprite in rle._game.getObjects():
+            rle._game.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
+            rle._game.movement_options[sprite] = {"OTHER":{}}
+            for sprite_type in sprite_types:
+                rle._game.movement_options[sprite][sprite_type] = {}
+
+    elif step==1:
+
+        ## Sprite Induction Part 1:
+        ## every time you act, make sure there aren't new object
+        ## if there are, update spriteDistribution etc.
+        objects = rle._game.getObjects()
+        for sprite in objects:
+            if sprite not in rle._game.spriteDistribution:
+                rle._game.all_objects[sprite] = objects[sprite]
+                rle._game.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
+                rle._game.movement_options[sprite] = {"OTHER":{}}
+                for sprite_type in sprite_types:
+                    rle._game.movement_options[sprite][sprite_type] = {}
+
+        ## See the update options for each sprite type the sprite could be
+        objects = rle._game.getObjects()
+        game = rle._game                                               # Save game state
+        for sprite in rle._game.spriteDistribution.keys():                  # Keys are the IDs of the game objects
+            for sprite_type in rle._game.spriteDistribution[sprite].keys(): # Check each potential sprite type                    
+                if rle._game.spriteDistribution[sprite][sprite_type] > 0 and sprite in objects.keys():    # Make sure sprite_type is an option for sprite, and sprite is not killed
+                    sprite_obj = objects[sprite]["sprite"]
+
+                    # Get potential next positions for sprite if it were that sprite type
+                    # TODO: Implement Avatar updateOptions function (if desired)
+                    if sprite_obj.name != 'avatar':
+                        rle._game.movement_options[sprite][sprite_type] = updateOptions(game, sprite_type, sprite_obj) 
+                        # print sprite_obj.name, sprite_type # For debugging
+                        # print movement_options[sprite][sprite_type]
+
+        rle._game.collision_objects = set()
+    elif step==2:
+        ## Sprite Induction Part 2: Update sprite distribution based on observations
+        objects = rle._game.getObjects()
+        for sprite in rle._game.spriteDistribution.keys():        # Keys are the IDs of the game objects
+            if sprite in objects.keys():                # Sprite may have been killed
+                sprite_obj = objects[sprite]["sprite"] 
+
+                if sprite not in rle._game.collision_objects and sprite_obj.name != 'avatar':
+
+                    outcome = objects[sprite]["position"]
+                    rle._game.spriteDistribution = updateDistribution(sprite, rle._game.spriteDistribution, rle._game.movement_options, outcome)
+
+def selectSubgoal(rle, method):
+    if method=='random':
+        object_goal =random.choice(rle._game.unknown_objects)
+        instantiated_goal = random.choice(rle._game.sprite_groups[object_goal]) # TODO: instead, find nearest instance of that object. Not necessarily trivial becase you could mistakenly pick something that's impossible to get to.
+        return instantiated_goal
+    ## TODO: delete
+    elif method=='preselected':
+        object_goal = random.choice(['box1','box2'])
+        instantiated_goal = random.choice(rle._game.sprite_groups[object_goal]) # TODO: instead, find nearest instance of that object. Not necessarily trivial becase you could mistakenly pick something that's impossible to get to.
+        return instantiated_goal
 
 

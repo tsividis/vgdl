@@ -252,7 +252,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         else:
             pcontinue = 1
             reward = 0
-        return{ 'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'events':events }
+        return{ 'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
 
 ## the game in the agent's 'head'
 def defVirtualGame():

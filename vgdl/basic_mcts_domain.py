@@ -94,7 +94,6 @@ class Basic_MCTS:
 			self.avatar_code = np.reshape(self.rle._getSensors(), self.outdim)[avatar_loc[0]][avatar_loc[1]]
 		else:
 			self.avatar_code = 1
-		print "initial avatar code", self.avatar_code
 		self.maxPseudoReward = 1000
 		self.rewardDict = {goal_loc:self.maxPseudoReward}
 		self.processed = [goal_loc]
@@ -201,8 +200,8 @@ class Basic_MCTS:
 			if test:
 				embed()
 
-			if i%10==0:
-				print "Training cycle: %i"%i
+			# if i%10==0:
+			# 	print "Training cycle: %i"%i
 
 			reward, vl, iters = self.treePolicy(self.root, Vrle, step_horizon)
 			tree_policy_iters += iters

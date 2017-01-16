@@ -1342,7 +1342,7 @@ class Game(object):
 
 		# If still have time to generate more theories
 		if len(self.hypothesisSpace) - 1 < maxNumTheories: # Subtracting one because of the initial hypothesis we must start out with to do induction
-			ts_index = theory.depth
+			ts_index = min(theory.depth, len(timesteps)-1) ## don't try to access nonexistent timesteps.
 			
 			if verbose:
 				print "Current theory depth: ", ts_index

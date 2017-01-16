@@ -708,8 +708,8 @@ class BasicGame(object):
             ## Should work as long as we're using a gridphysics game with a movingAvatar
             ## Note: this won't work right now; complaining about importing from theory template.
             # if self.time==100:
-                # def getObjectType(objectID):
-                #     return self.all_objects[objectID]['type']['color']
+            #     def getObjectType(objectID):
+            #         return self.all_objects[objectID]['type']['color']
             #     from theory_template import *
             #     sample = sampleFromDistribution(self.spriteDistribution, self.all_objects)
             #     g = Game(spriteInductionResult=sample)
@@ -717,7 +717,7 @@ class BasicGame(object):
             #     trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
 
             #     ##clean up trace; convert object IDs to object types (for now this is just object color).
-            #     
+                
                 
             #     for i in range(len(trace[0])):
             #         timestep = trace[0][i]
