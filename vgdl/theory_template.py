@@ -1427,9 +1427,12 @@ class Game(object):
 			rule = InteractionRule('bounceForward', obj.className, avatar.className, None, 0, generic=True)
 			T.interactionSet.append(rule)
 
+
 		## Aritro to-do.
 		## Add relevant terminationRule to terminationSet.
 		## just do count(avatar)=0.
+		rule =  SpriteCounterRule("avatar", 0, False)
+		T.terminationSet.append(rule)
 
 		return T
 
