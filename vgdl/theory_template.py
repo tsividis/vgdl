@@ -162,7 +162,7 @@ class TerminationRule:
 class TimeoutRule(TerminationRule):
 	def __init__(self, limit=0, win=False):
 		self.termination = Timeout(limit=limit, win=win)
-		self.ruleType = "TerminationRule"
+		self.ruleType = "TimeoutRule"
 
 	def display(self):
 		print (self.ruleType, self.termination.limit, self.termination.win)
@@ -179,7 +179,7 @@ class SpriteCounterRule(TerminationRule):
 		self.ruleType = "SpriteCounterRule"
 
 	def display(self):
-		print self.termination.stype, self.termination.limit, self.termination.win
+		print self.ruleType, self.termination.stype, self.termination.limit, self.termination.win
 		return 
 
 	def asTuple(self):
@@ -1712,10 +1712,10 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	# third phase: the termination rules
 	theoryString += "\tTerminationSet\n"
 	for terminationRule in theory.terminationSet:
-		if terminationRule.ruleType == "Timeout":
+		if terminationRule.ruleType == "TimeoutRule":
 			theoryString += "\t\tTimeout limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
 
-		elif terminationRule.ruleType == "SpriteCounter":
+		elif terminationRule.ruleType == "SpriteCounterRule":
 			theoryString += "\t\tSpriteCounter stype=%s limit=%s win=%s\n" % \
 						(terminationRule.termination.stype, \
 						str(terminationRule.termination.limit), str(terminationRule.termination.win))
