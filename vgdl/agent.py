@@ -65,7 +65,10 @@ if __name__ == "__main__":
 		# g = Game(spriteInductionResult=sample)
 		# t = g.buildGenericTheory(sample)
 		# embed()
-		writeTheoryToTxt(rle,hypotheses[0], "./examples/gridphysics/textTheorytest.py")
+
+		newsubgoal = random.choice(rle._game.sprite_groups['box2'])
+		pos = rle._rect2pos(newsubgoal.rect)
+		writeTheoryToTxt(rle,hypotheses[0], "./examples/gridphysics/textTheorytest.py", pos)
 		embed()
 		## Select hypothesis according to whichever method, make new VRLE
 		## theory_to_world(hypotheses[0]) ## should write new .py file

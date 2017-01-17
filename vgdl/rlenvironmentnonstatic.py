@@ -255,6 +255,10 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         return{ 'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
 
 ## the game in the agent's 'head'
+def defTheoryTest():
+    from examples.gridphysics.theorytest import game, level
+    return (game, level)
+
 def defVirtualGame():
     from examples.gridphysics.virtualGame import push_game, box_level
     return (push_game, box_level)
@@ -382,6 +386,9 @@ def _verify( obs, targetObs ):
 ##          and define defSimpleGame1...
 ## Star in these args unzips the tuple.
 # simple maze test, moved to goal and win
+
+def createRLTheoryTest( obsType=OBSERVATION_LOCAL):
+    return RLEnvironmentNonStatic( *defTheoryTest(), observationType=obsType )
 
 def createRLVirtualGame( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defVirtualGame(), observationType=obsType )

@@ -1722,34 +1722,41 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	theoryString += "\tInteractionSet\n"
 	for interactionRule in theory.interactionSet:
 		theoryString += "\t\t%s %s > %s\n"%(interactionRule.slot1, interactionRule.slot2, interactionRule.interaction)
+	
+
+
 	# third phase: the termination rules
 	theoryString += "\tTerminationSet\n"
-	for terminationRule in theory.terminationSet:
-		if terminationRule.ruleType == "TimeoutRule":
-			theoryString += "\t\tTimeout limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
+	theoryString += "\t\tSpriteCounter stype=avatar limit=0 win=False\n"
+	theoryString += "\t\tSpriteCounter stype=goal limit=0 win=True\n"
 
-		elif terminationRule.ruleType == "SpriteCounterRule":
-			theoryString += "\t\tSpriteCounter stype=%s limit=%s win=%s\n" % \
-						(terminationRule.termination.stype, \
-						str(terminationRule.termination.limit), str(terminationRule.termination.win))
+	# for terminationRule in theory.terminationSet:
+	# 	if terminationRule.ruleType == "TimeoutRule":
+	# 		theoryString += "\t\tTimeout limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
+
+	# 	elif terminationRule.ruleType == "SpriteCounterRule":
+	# 		theoryString += "\t\tSpriteCounter stype=%s limit=%s win=%s\n" % \
+	# 					(terminationRule.termination.stype, \
+	# 					str(terminationRule.termination.limit), str(terminationRule.termination.win))
 			
-		else:
-			# multi sprite counter rule
-			theoryString += "\t\tMultiSpriteCounter "
-			for i in range(len(terminationRule.termination.stypes)):
-				theoryString += "stype%i = %s " % (i, terminationRule.termination.stypes[i])
+	# 	else:
+	# 		# multi sprite counter rule
+	# 		theoryString += "\t\tMultiSpriteCounter "
+	# 		for i in range(len(terminationRule.termination.stypes)):
+	# 			theoryString += "stype%i = %s " % (i, terminationRule.termination.stypes[i])
 
-			theoryString += "limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
+	# 		theoryString += "limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
 
 	# embed()
 
 	# fourth phase: the level mapping
 	theoryString += "\tLevelMapping\n"
-	
+	# embed()
 	for k in inverseMapping.keys():
-		color = colorDict[str(rle._game.sprite_constr[k][1]['color'])]
-		c = [j for j in theory.classes.keys() if theory.classes[j][0].color==color][0]
-		theoryString += "\t\t%s >%s\n"%(inverseMapping[k], c)
+		if k is not "oldGoal":
+			color = colorDict[str(rle._game.sprite_constr[k][1]['color'])]
+			c = [j for j in theory.classes.keys() if theory.classes[j][0].color==color][0]
+			theoryString += "\t\t%s >%s\n"%(inverseMapping[k], c)
 
 	# for k,v in inverseMapping.items():
 	# 	theoryString += "\t\t%s > %s\n"%(v, k)
