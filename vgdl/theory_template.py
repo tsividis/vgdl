@@ -1550,5 +1550,173 @@ class Game(object):
 		# print "Done cleanHypothesisSpace...\n"
 		return
 
+def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
+	"""
+	-need to be able to take an optional argument that tells you the location of the goal, and put that into the level string
+	-assume that the goal sprite is getting killed
+	-change the actual goal to be something else 
+	2 ways of swapping in knowledge:
+	-cleanest way: 
+	"""
+	_obstypes = rle._obstypes
+	prevGoalExists = "goal" in _obstypes
+	prevGoalLoc = None
+	state = np.reshape(rle._getSensors(), rle.outdim)
+	newGoalType = None
+	OLD_GOAL = "oldGoal"
+	colorToSprite = {colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]: spriteType \
+					for spriteType in rle._game.sprite_constr if spriteType != "avatar"}
+
+	
+
+	if goalLoc:
+		newGoalCode = state[goalLoc[0]][goalLoc[1]]
+		newGoalIndex = int(round(math.log(newGoalCode,2)))-1
+		newGoalType = sorted(_obstypes.keys())[::-1][newGoalIndex]
+
+	if prevGoalExists and goalLoc:
+		prevGoalCode = 2**(sorted(_obstypes.keys())[::-1].index("goal")+1)
+		prevGoalLoc = np.where(state == prevGoalCode)
+		prevGoalLoc = (prevGoalLoc[0][0], prevGoalLoc[1][0])
+
+
+	inverseMapping = dict()
+	numbers = '0123456789'
+	alnum = numbers + 'abcdefghijklmnopqrstuvwxyz'
+	idx = 0
+	for s in _obstypes.keys():
+		if s != "avatar":
+			if not (s == "goal" and goalLoc):
+				inverseMapping[s] = alnum[idx]
+				idx+=1
+			else:
+				inverseMapping[OLD_GOAL] = "O" # old goal
+		else:
+			inverseMapping[s] = "A"
+
+	if goalLoc:
+		inverseMapping["goal"] = "G"
+
+
+	########### generating theory string
+	theoryString = 'game = """\n'
+	theoryString += "BasicGame\n"
+	# first phase: the sprite rules
+	theoryString += "\tSpriteSet\n"
+	for c, sprites in theory.classes.items():
+		theoryString += "\t\t%s >\n"%c
+		for s in sprites:
+			unfilteredType = str(s.vgdlType)
+			stype = unfilteredType[unfilteredType.find(".")+1: unfilteredType.find(">")-1]
+			# theoryString += "\t\t\t%s > %s color=%s\n"%(colorToSprite[s.color], stype, s.color)
+			if goalLoc:
+				if "avatar".lower() in stype.lower():
+					theoryString += "\t\t\t%s > %s color=%s\n"%("avatar", stype, s.color)
+				else:
+					sname = colorToSprite[s.color]
+					if sname == newGoalType and sname != "goal":
+						theoryString += "\t\t\t%s > %s color=%s\n"%(sname, stype, s.color)
+						theoryString += "\t\t\t%s > %s color=%s\n"%("goal", stype, s.color)
+
+					elif sname == "goal" and stype != newGoalType:
+						theoryString += "\t\t\t%s > %s color=%s\n"%(OLD_GOAL, stype, s.color)
+
+					# elif stype == "avatar":
+					# 	theoryString += "\t\t\t%s > %s color=%s\n"%("avatar", stype, s.color)
+
+					else:
+						theoryString += "\t\t\t%s > %s color=%s\n"%(sname, stype, s.color)
+
+			else:
+				if "avatar".lower() in stype.lower():
+					theoryString += "\t\t\t%s > %s color=%s\n"%("avatar", stype, s.color)
+
+				else:
+					sname = colorToSprite[s.color]
+					theoryString += "\t\t\t%s > %s color=%s\n"%(sname, stype, s.color)
+
+
+
+
+
+	# second phase: the interaction rules
+	theoryString += "\tInteractionSet\n"
+	for interactionRule in theory.interactionSet:
+		theoryString += "\t\t%s %s > %s\n"%(interactionRule.slot1, interactionRule.slot2, interactionRule.interaction)
+	# third phase: the termination rules
+	theoryString += "\tTerminationSet\n"
+	for terminationRule in theory.terminationSet:
+		if terminationRule.ruleType == "Timeout":
+			theoryString += "\t\tTimeout limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
+
+		elif terminationRule.ruleType == "SpriteCounter":
+			theoryString += "\t\tSpriteCounter stype=%s limit=%s win=%s\n" % \
+						(terminationRule.termination.stype, \
+						str(terminationRule.termination.limit), str(terminationRule.termination.win))
+			
+		else:
+			# multi sprite counter rule
+			theoryString += "\t\tMultiSpriteCounter "
+			for i in range(len(terminationRule.termination.stypes)):
+				theoryString += "stype%i = %s " % (i, terminationRule.termination.stypes[i])
+
+			theoryString += "limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
+
+	# fourth phase: the level mapping
+	theoryString += "\tLevelMapping\n"
+	for k,v in inverseMapping.items():
+		theoryString += "\t\t%s > %s\n"%(v, k)
+
+	theoryString += '"""\n'
+	
+	# if prevGoalExists:
+	# 	prevGoalIndex = sorted(_obstypes.keys())[::-1].index("goal")
+	# 	prevGoalCode = 2**(1+prevGoalIndex)
+	# 	_obstypes[prevGoalIndex] = "oldGoal"
+
+	mappedState = []
+	for i in range(rle.outdim[0]):
+		newEntry = []
+		for j in range(rle.outdim[1]):
+			newEntry.append(" ")
+
+		mappedState.append(newEntry)
+
+	# mappedState = [[" "]*rle.outdim[1]]*rle.outdim[0]
+	for r in range(rle.outdim[0]):
+		for c in range(rle.outdim[1]):
+			if state[r][c] > 0:
+				if state[r][c] == 1:
+					mappedState[r][c] = "A"
+
+				elif goalLoc and prevGoalExists and (r,c) == prevGoalLoc:
+					mappedState[r][c] = "O"
+
+				elif (r,c) == goalLoc:
+					mappedState[r][c] = "G"
+
+				else:
+					spriteIndex = int(round(math.log(state[r][c],2)))-1
+					spriteType = sorted(_obstypes.keys())[::-1][spriteIndex]
+					# color = colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]
+					# mappedState[r][c] = inverseMapping[color]
+					mappedState[r][c] = inverseMapping[spriteType]
+
+		
+
+	levelString = 'level="""\n'
+	for mappedRow in mappedState:
+		levelString += reduce(lambda a,b: a+b, mappedRow) + "\n"
+
+	levelString += '"""\n'
+
+	parserString = 'if __name__ == "__main__":\n\tfrom vgdl.core import VGDLParser\n\tVGDLParser.playGame(game, level)\n'
+
+	gameString = levelString + theoryString + parserString
+
+	embed()
+	with open(txtFile, 'w') as f:
+		f.write(gameString)
+
 
 
