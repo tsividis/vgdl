@@ -33,22 +33,8 @@ if __name__ == "__main__":
 	spriteInduction(rle, step=0)					## Initialize sprite induction
 
 
-	## 1/15/17:
-
-	## Theory swap: just have a method that updates a Theory object to reflect what you just saw.
-
-	## But if you do that, what's the point of theory induction? You're not learning much; you're just memorizing.
-	## This is actually a problem; you need to think about this.
-
-	##Then: you have goal selection and plans to achieve those goals finished. What you need is:
-	## Selected goal + theory writes to VGDL file, which you then use to initialize the Vrle.
-	## any movement of objects you use to do spriteSet induction
-	## any events you've observed you use to do interactionSet induction (should be easy)
-
-	##Start a loop.
-	# while len(unknown_objects)>0 and not terminal:
-
 	## When you restart episodes, reset the rle.agentStatePrev. Maybe some other things, too.
+	
 	print ""
 	print ""
 	print np.reshape(rle._getSensors(), rle.outdim)
@@ -67,13 +53,13 @@ if __name__ == "__main__":
 		rleVirtualFunc = theories[i] 		
 		Vrle = rleVirtualFunc(OBSERVATION_GLOBAL)	##World in agent's head.
 		
-		# embed()
 		## Plan to achieve that goal
 		rle, hypotheses = getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList)
-
+		print "in agent loop"
+		embed()
 		## Select hypothesis according to whichever method, make new VRLE
 		## theory_to_world(hypotheses[0]) ## should write new .py file
 		print ""
 
-	embed()
+	# embed()
 

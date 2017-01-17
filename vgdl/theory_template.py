@@ -187,18 +187,17 @@ class SpriteCounterRule(TerminationRule):
 
 
 class MultiSpriteCounterRule(TerminationRule):
-	""" Game ends when the sum of all sprites of types 'stypes' hits 'limit'. """
-	def __init__(self, limit=0, win=True, stypes = []):
-		self.termination = MultiSpriteCounter(limit=limit,win=win,stypes=stypes)
-		self.ruleType = "MultiSpriteCounterRule"
+    """ Game ends when the sum of all sprites of types 'stypes' hits 'limit'. """
+    def __init__(self, limit=0, win=True, stypes = []):
+        self.termination = MultiSpriteCounter(limit=limit,win=win,stypes=stypes)
+        self.ruleType = "MultiSpriteCounterRule"
 
-	def display(self):
-		print self.termination.stypes, self.termination.limit, self.termination.win
-		return 
+    def display(self):
+        print self.termination.stypes, self.termination.limit, self.termination.win
+        return
 
-	def asTuple(self):
-		return (self.ruleType, self.termination.stypes, self.termination.limit, self.termination.win)
-
+    def asTuple(self):
+        return (self.ruleType, self.termination.stypes, self.termination.limit, self.termination.win)
 
 class ruleCluster(object):
 	def __init__(self, interactionAndPreconditionList, pairList):
@@ -1428,8 +1427,9 @@ class Game(object):
 			rule = InteractionRule('bounceForward', obj.className, avatar.className, None, 0, generic=True)
 			T.interactionSet.append(rule)
 
-		##select arbitrary goal by color?
+		## Aritro to-do.
 		## Add relevant terminationRule to terminationSet.
+		## just do count(avatar)=0.
 
 		return T
 
