@@ -279,6 +279,14 @@ def defSimpleGame_missile():
     from examples.gridphysics.simpleGame_missile import push_game, box_level
     return (push_game, box_level)
 
+def defspriteInduction4():
+    from examples.gridphysics.spriteInduction4 import chase_game, chase_level
+    return (chase_game, chase_level)
+
+def deftextTheory():
+    from examples.gridphysics.textTheory import game, level
+    return (game, level)
+
 def defFrogs():
     from examples.gridphysics.frogs import frog_game, frog_level
     return (frog_game, frog_level)
@@ -383,6 +391,12 @@ def createRLSimpleGame5( obsType=OBSERVATION_LOCAL ):
 
 def createRLSimpleGame_missile( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defSimpleGame_missile(), observationType=obsType )
+
+def createRLspriteInduction4(obsType = OBSERVATION_LOCAL):
+    return RLEnvironmentNonStatic( *defspriteInduction4(), observationType=obsType)
+
+def createRLtextTheory(obsType = OBSERVATION_LOCAL):
+    return RLEnvironmentNonStatic( *deftextTheory(), observationType=obsType)
 
 def createRLFrogs( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defFrogs(), observationType=obsType )
