@@ -61,11 +61,11 @@ if __name__ == "__main__":
 		# rle2= createRLtextTheory(obsType=OBSERVATION_GLOBAL)
 		
 
-		sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
-		g = Game(spriteInductionResult=sample)
-		t = g.buildGenericTheory(sample)
+		# sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
+		# g = Game(spriteInductionResult=sample)
+		# t = g.buildGenericTheory(sample)
 		# embed()
-		writeTheoryToTxt(rle,t, "./examples/gridphysics/textTheorytest.py")
+		writeTheoryToTxt(rle,hypotheses[0], "./examples/gridphysics/textTheorytest.py")
 		embed()
 		## Select hypothesis according to whichever method, make new VRLE
 		## theory_to_world(hypotheses[0]) ## should write new .py file
