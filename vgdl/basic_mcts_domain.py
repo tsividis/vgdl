@@ -554,7 +554,7 @@ def translateEvents(events, all_objects):
 		print outlist
 	return outlist
 
-def getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList, verbose=True, max_actions_per_plan=10, planning_steps=50, defaultPolicyMaxSteps=50):
+def getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList, sample, verbose=True, max_actions_per_plan=10, planning_steps=50, defaultPolicyMaxSteps=50):
 	## Takes a real world, a theory (instantiated as a virtual world)
 	## Moves the agent through the world, updating the theory as needed
 	## Ends when subgoal is reached.
@@ -574,6 +574,7 @@ def getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList, verbose=True, 
 		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, Vrle, test=False)
 		actions = mcts.getBestActionsForPlayout()
 
+		print actions
 		for i in range(len(actions)):
 			if not terminal and not goal_achieved:
 				spriteInduction(rle, step=1)
@@ -614,7 +615,8 @@ def getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList, verbose=True, 
 					## Sampling from the spriteDisribution makes sense, as it's
 					## independent of what we've learned about the interactionSet.
 					## Every timeStep, we should update our beliefs given what we've seen.
-					sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
+					if not sample:
+						sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
 					g = Game(spriteInductionResult=sample)
 					terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
 					trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
@@ -632,7 +634,7 @@ def getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList, verbose=True, 
 				spriteInduction(rle, step=2)
 		if terminal:
 			print "Agent died."
-	return rle, hypotheses
+	return rle, hypotheses, finalEventList
 
 def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, playback=False):
 	obsType = OBSERVATION_GLOBAL

@@ -387,7 +387,7 @@ def _verify( obs, targetObs ):
 ## Star in these args unzips the tuple.
 # simple maze test, moved to goal and win
 
-def createRLTheoryTest( obsType=OBSERVATION_LOCAL):
+def createRLTheoryTest( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defTheoryTest(), observationType=obsType )
 
 def createRLVirtualGame( obsType=OBSERVATION_LOCAL ):
