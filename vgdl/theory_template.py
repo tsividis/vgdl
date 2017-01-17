@@ -98,13 +98,13 @@ class InteractionRule(object):
 	# TODO: Should enforce proper syntax for interaction rules
 
 	"""
-	def __init__(self, interaction, c1, c2, resource, value, preconditions=set()):
+	def __init__(self, interaction, c1, c2, resource, value, preconditions=set(), generic=False):
 		self.interaction = interaction
 		self.slot1 = c1
 		self.slot2 = c2
 		self.valueChanges = {} # Change in value for resources
 		self.preconditions = preconditions
-
+		self.generic = generic ## if generic, this interaction rule belongs to the generic prior that is meant to be overriden.
 		if resource:
 			self.valueChanges[resource]=value
 
@@ -275,7 +275,7 @@ class Theory(object):
 		return negBin(k,5,.5)
 
 
-	def explainTimeStep(self, timestep, fullTimestep, currTheories=False):
+	def explainTimeStep(self, timestep, fullTimestep, currTheories=False, override=False):
 		"""
 		Returns a set of theories that explain all the events that took place at timestep.
 		Hypotheticals can be passed as args to enable the explanation of multiple events in a single timestep.
@@ -288,12 +288,12 @@ class Theory(object):
 			theories = []
 			
 			if not currTheories:
-				theories.extend(self.explainEvent(timestep.events[0], fullTimestep))
+				theories.extend(self.explainEvent(timestep.events[0], fullTimestep, override=override))
 			
 			# Generate theories based on hypothetical theories
 			else: 
 				for theory in currTheories:
-					newTheory = theory.explainEvent(timestep.events[0], fullTimestep)
+					newTheory = theory.explainEvent(timestep.events[0], fullTimestep, override=override)
 					theories.extend(newTheory)
 			
 			for t in theories:
@@ -306,12 +306,12 @@ class Theory(object):
 			theories = []
 
 			if not currTheories:
-				theories.extend(self.explainEvent(timestep.events[0], fullTimestep))
+				theories.extend(self.explainEvent(timestep.events[0], fullTimestep, override=override))
 			
 			# Generate theories based on hypothetical theories
 			else: 
 				for theory in currTheories:
-					newTheory = theory.explainEvent(timestep.events[0], fullTimestep)
+					newTheory = theory.explainEvent(timestep.events[0], fullTimestep, override=override)
 					theories.extend(newTheory)
 
 			#theories = self.explainEvent(timestep.events[0], fullTimestep)
@@ -319,9 +319,9 @@ class Theory(object):
 
 
 			updatedTimeStep = TimeStep(timestep.agentAction, timestep.agentState, timestep.events[1:], timestep.gameState)
-			return self.explainTimeStep(updatedTimeStep, fullTimestep, theories)
+			return self.explainTimeStep(updatedTimeStep, fullTimestep, currTheories=theories, override=override)
 
-	def explainEvent(self, event, timestep):
+	def explainEvent(self, event, timestep, override=False):
 		"""
 		Returns theories that explain the event, which is a tuple like:
 		(bounceForward, BLUE, ORANGE)
@@ -340,13 +340,18 @@ class Theory(object):
 			failCase = self.getFailCases(event, timestep)
 			# print "\tFail case: ", failCase
 
-			# Add preconditions
-			if failCase in [1,2,3]:
-				theories.extend(self.addPreconditions(event, timestep))
-			
-			# Add new rule
-			elif failCase == 4: 
-				theories.extend(self.addRules(event))
+			if override:
+				# TODO: actually check what other failCases you could end up in when you want to override.
+				# As of now, you won't recognize preconditions even if they're necessary in an override scenario.
+				theories.extend(self.addRules(event, override=True))
+			else:
+				# Add preconditions
+				if failCase in [1,2,3]:
+					theories.extend(self.addPreconditions(event, timestep))
+				
+				# Add new rule
+				elif failCase == 4: 
+					theories.extend(self.addRules(event))
 
 		return theories
 
@@ -561,7 +566,7 @@ class Theory(object):
 		return ()
 
 
-	def addRules(self, event):
+	def addRules(self, event, override=False):
 		"""
 		Search over possible assignments for classes; posit new classes if necessary
 		Return theories that have either 
@@ -589,7 +594,7 @@ class Theory(object):
 				interaction = InteractionRule(event[0], assignment[0], assignment[1], resource, value) #This isn't strictly necessary, but follows createChild requirements.
 				# print "interaction ", interaction.display()
 				classAssignments = [(assignment[0], obj1), (assignment[1], obj2)]
-				newTheory = self.createChild([interaction, classAssignments])
+				newTheory = self.createChild([interaction, classAssignments], override)
 				# newTheory.display()
 				# Checks and only adds to newTheories if the created theory was actually different.
 				if newTheory:
@@ -731,7 +736,7 @@ class Theory(object):
 		return preconditions
 
 
-	def createChild(self, proposal):
+	def createChild(self, proposal, override=False):
 		"""
 		Spawns a new child theory with the new proposal incorporated
 		"""
@@ -744,6 +749,11 @@ class Theory(object):
 
 		generatedNewTheory = newTheory.addProposal(proposal)
 
+		# TODO: Fix this override; right now you're ignoring new assignments (though presumably if it gets called properly it won't be a problem)
+		if override:
+			rules_to_remove = [r for r in self.interactionSet if r.slot1==proposal[0].slot1 and r.slot2==proposal[0].slot2]
+			for rule in rules_to_remove:
+				newTheory.interactionSet.remove(rule)
 		if generatedNewTheory:
 			self.children.append(newTheory)
 			return newTheory
@@ -1317,7 +1327,6 @@ class Game(object):
 		# and predicate list varies in size (becasue sometimes two things happen and
 		#sometimes only one thing happens)
 
-		embed()
 		predicates = [p[0] for p in predictions[0][0]]
 		weights = [prediction[1] for prediction in predictions]
 		z = sum(weights)
@@ -1330,7 +1339,7 @@ class Game(object):
 		return zip(predicates, sums)
 
 
-	def DFSinduction(self, theory, timesteps, maxNumTheories, verbose=False):
+	def DFSinduction(self, theory, timesteps, maxNumTheories, override=False, verbose=False):
 		"""
 		DFS implementation of induction function to deal with very long induction time.
 		"""
@@ -1349,10 +1358,12 @@ class Game(object):
 				print "Explaining event", timesteps[ts_index].events
 			
 			# Explain current timestep
-			newTheories = theory.explainTimeStep(timesteps[ts_index], timesteps[ts_index])
+			newTheories = theory.explainTimeStep(timesteps[ts_index], timesteps[ts_index], override=override)
 			self.nodes_generated += len(newTheories)
 			if verbose:
 				print "Possible new theories: ", len(newTheories)
+				for theory in newTheories:
+					theory.display()
 
 			# If at the end of the timesteps list, add new theories to finalHypotheses
 			if ts_index+1 == len(timesteps): # Need to add one, because you will create a theory of depth one greater than the length of the timesteps
@@ -1399,9 +1410,59 @@ class Game(object):
 				
 				# print [self.DFSinduction(t, timesteps, maxNumTheories, verbose) for t in newTheories]
 
+	def buildGenericTheory(self, spriteSample):
+		T = Theory(self)
+		T.initializeSpriteSet(vgdlSpriteParse=False, spriteInductionResult=spriteSample)
+		
+		# Assign class names
+		avatar = [o for o in T.spriteSet if o.vgdlType==MovingAvatar][0]
+		nonAvatars = [o for o in T.spriteSet if o.vgdlType!=MovingAvatar]
+
+		avatar.className = 'c1'
+		T.classes[avatar.className] = [avatar]
+		for i in range(len(nonAvatars)):
+			nonAvatars[i].className = 'c'+str(i+2)
+			T.classes[nonAvatars[i].className] = [nonAvatars[i]]
+
+		for obj in nonAvatars:
+			rule = InteractionRule('bounceForward', obj.className, avatar.className, None, 0, generic=True)
+			T.interactionSet.append(rule)
+
+		##select arbitrary goal by color?
+		## Add relevant terminationRule to terminationSet.
+
+		return T
+
+	def runInduction(self, spriteSample, trace, maxNumTheories, verbose=False):
+		# spriteSample: a particular assignment of sprite types. You can decide how you get this when you generate the sample, in getToSubgoal
+
+		timesteps, result = trace
+
+		# Start with fake theory (generic prior)
+		T = self.buildGenericTheory(spriteSample)	
+
+		init_hypotheses = [T]
+		self.hypothesisSpace = [] # Refresh the hypothesis space before DFS induction
+
+		# This does DFS induction x times; not sure how to make it more like the behavior we want.
+		for theory in init_hypotheses: 	# each of these theories has depth 1
+			if verbose:
+				theory.display()
+			self.DFSinduction(theory, timesteps, maxNumTheories, override=True, verbose=True) ##override anything that was in the original set.
 		
 
-	def runDFSInduction(self, trace, maxNumTheories, verbose=False):
+		# Termination set induction
+		if result:
+			hypothesisSpaceWithTermConditions = []
+			for theory in self.hypothesisSpace:
+				theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+				hypothesisSpaceWithTermConditions.append(theory)
+
+			self.hypothesisSpace = hypothesisSpaceWithTermConditions
+
+		return self.hypothesisSpace
+
+	def runDFSInduction(self, trace, maxNumTheories, override=False, verbose=False):
 		"""
 		"""
 
@@ -1423,7 +1484,7 @@ class Game(object):
 		for theory in init_hypotheses: 	# each of these theories has depth 1
 			if verbose:
 				theory.display()
-			self.DFSinduction(theory, timesteps, maxNumTheories, verbose=verbose)
+			self.DFSinduction(theory, timesteps, maxNumTheories, override, verbose=verbose)
 		
 
 		# Termination set induction

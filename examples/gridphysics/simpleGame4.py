@@ -61,7 +61,7 @@ BasicGame frame_rate=30
         poison avatar > killSprite
         avatar poison > killSprite
         goal avatar > killSprite
-        box avatar  > bounceForward
+        box avatar  > killSprite
         goal box > bounceForward
         goal wall > undoAll
         goal poison > undoAll

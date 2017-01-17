@@ -48,7 +48,7 @@ BasicGame frame_rate=30
         3 > goal_substitute
         m > missile
     InteractionSet
-        box1 avatar > bounceForward
+        box1 avatar > killSprite
         box2 avatar > bounceForward
         walll avatar > bounceForward
         poison avatar > bounceForward

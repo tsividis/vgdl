@@ -554,16 +554,18 @@ def translateEvents(events, all_objects):
 		print outlist
 	return outlist
 
-def getToSubgoal(rle, Vrle, subgoal, finalEventList, verbose=True, max_actions_per_plan=10, planning_steps=50, defaultPolicyMaxSteps=50):
+def getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList, verbose=True, max_actions_per_plan=10, planning_steps=50, defaultPolicyMaxSteps=50):
 	## Takes a real world, a theory (instantiated as a virtual world)
 	## Moves the agent through the world, updating the theory as needed
 	## Ends when subgoal is reached.
 	## Returns real world in its new state, as well as theory in its new state.
 	## TODO: also return a trace of events and of game states for recreation
+	print len(finalEventList), "events so far."
+	hypotheses = []
 	terminal = rle._isDone()[0]
 	goal_achieved = False
 	## TODO: this will be problematic when new objects appear, if you don't update it.
-	all_objects = rle._game.getObjects()
+	# all_objects = rle._game.getObjects()
 
 	print "object goal is", colorDict[str(subgoal.color)], rle._rect2pos(subgoal.rect)
 
@@ -617,11 +619,14 @@ def getToSubgoal(rle, Vrle, subgoal, finalEventList, verbose=True, max_actions_p
 					terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
 					trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
 
+					# embed()
+
+					hypotheses = list(g.runInduction(sample, trace, 20))
 					## TODO: You're re-running all of theory induction for every timestep
 					## every time. Fix this.
 					## if you fix it, note that you'd be passing a different g each time,
 					## since you sampled (above).
-					hypotheses = list(g.runDFSInduction(trace, 20))
+					# hypotheses = list(g.runDFSInduction(trace, 20))
 
 				spriteInduction(rle, step=2)
 		if terminal:
@@ -687,7 +692,7 @@ if __name__ == "__main__":
 	# outTime = mcts.startTrainingPhase(100, 100, test=False)
 	# print outTime
 	# distance = mcts.debug(mcts.rle)[2]
-	embed()
+	# embed()
 
 
 	# print distance

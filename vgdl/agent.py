@@ -28,6 +28,8 @@ if __name__ == "__main__":
 	rle._game.unknown_objects = rle._game.sprite_groups.keys()
 	rle._game.unknown_objects.remove('avatar') 		## For now we're asumming agent knows self.
 	rle.agentStatePrev = {}
+	all_objects = rle._game.getObjects()
+
 	spriteInduction(rle, step=0)					## Initialize sprite induction
 
 
@@ -65,8 +67,9 @@ if __name__ == "__main__":
 		rleVirtualFunc = theories[i] 		
 		Vrle = rleVirtualFunc(OBSERVATION_GLOBAL)	##World in agent's head.
 		
+		# embed()
 		## Plan to achieve that goal
-		rle, hypotheses = getToSubgoal(rle, Vrle, subgoal, finalEventList)
+		rle, hypotheses = getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList)
 
 		## Select hypothesis according to whichever method, make new VRLE
 		## theory_to_world(hypotheses[0]) ## should write new .py file
