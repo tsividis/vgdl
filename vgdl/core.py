@@ -679,7 +679,9 @@ class BasicGame(object):
         agentStatePrev = {}
         agentState = dict(self.getAvatars()[0].resources)
         keyPressPrev = None
-        f_sprite = open(sprite_output,"w")
+        
+        ##uncomment to write output
+        # f_sprite = open(sprite_output,"w")
 
         # Prep for Sprite Induction
         sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
@@ -906,11 +908,11 @@ class BasicGame(object):
         # logging.info((finalEventList, terminationCondition))
 
         # Recording results into files
-        with open(game_output, 'w') as f:
-            f.write(str((finalEventList, terminationCondition)))
-        f_sprite.write(str(self.all_objects) + "\n")
-        f_sprite.write(str(self.spriteDistribution))
-        f_sprite.close()
+        # with open(game_output, 'w') as f:
+        #     f.write(str((finalEventList, terminationCondition)))
+        # f_sprite.write(str(self.all_objects) + "\n")
+        # f_sprite.write(str(self.spriteDistribution))
+        # f_sprite.close()
 
         print "Expecting {} events".format(len(finalEventList))
 
