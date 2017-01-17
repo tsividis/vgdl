@@ -7,7 +7,7 @@ from taxonomy import *
 from IPython import embed
 from ontology import *
 import operator
-import time
+import time, math
 """
 Theory induction on VGDL Games
 """
@@ -1417,7 +1417,7 @@ class Game(object):
 		avatar = [o for o in T.spriteSet if o.vgdlType==MovingAvatar][0]
 		nonAvatars = [o for o in T.spriteSet if o.vgdlType!=MovingAvatar]
 
-		avatar.className = 'c1'
+		avatar.className = 'avatar'
 		T.classes[avatar.className] = [avatar]
 		for i in range(len(nonAvatars)):
 			nonAvatars[i].className = 'c'+str(i+2)
@@ -1630,6 +1630,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	state = np.reshape(rle._getSensors(), rle.outdim)
 	newGoalType = None
 	OLD_GOAL = "oldGoal"
+	print rle._game.sprite_constr
 	colorToSprite = {colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]: spriteType \
 					for spriteType in rle._game.sprite_constr if spriteType != "avatar"}
 
@@ -1662,7 +1663,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 
 	if goalLoc:
 		inverseMapping["goal"] = "G"
-
+	inverseMapping['avatar'] = "A"
 
 	########### generating theory string
 	theoryString = 'game = """\n'
@@ -1670,36 +1671,48 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	# first phase: the sprite rules
 	theoryString += "\tSpriteSet\n"
 	for c, sprites in theory.classes.items():
-		theoryString += "\t\t%s >\n"%c
+		theoryString += "\t\t%s > "%c
+		# theoryString += "\t\t%s >\n"%c
 		for s in sprites:
 			unfilteredType = str(s.vgdlType)
-			stype = unfilteredType[unfilteredType.find(".")+1: unfilteredType.find(">")-1]
+			stype = unfilteredType[unfilteredType.find("vgdl.ontology.")+len("vgdl.ontology."): unfilteredType.find(">")-1]
+			if "core" in stype:
+				stype = stype[stype.find("core.")+len("core."):]
 			# theoryString += "\t\t\t%s > %s color=%s\n"%(colorToSprite[s.color], stype, s.color)
+			# embed()
 			if goalLoc:
 				if "avatar".lower() in stype.lower():
-					theoryString += "\t\t\t%s > %s color=%s\n"%("avatar", stype, s.color)
+					# theoryString += "\t\t\t%s > %s color=%s\n"%("avatar", stype, s.color)
+					theoryString += "%s color=%s\n"%(stype, s.color)
+
 				else:
 					sname = colorToSprite[s.color]
 					if sname == newGoalType and sname != "goal":
-						theoryString += "\t\t\t%s > %s color=%s\n"%(sname, stype, s.color)
-						theoryString += "\t\t\t%s > %s color=%s\n"%("goal", stype, s.color)
-
+						theoryString += "%s color=%s\n"%(stype, s.color)
+						theoryString += "%s color=%s\n"%(stype, s.color)
+						# theoryString += "\t\t\t%s > %s color=%s\n"%(sname, stype, s.color)
+						# theoryString += "\t\t\t%s > %s color=%s\n"%("goal", stype, s.color)
 					elif sname == "goal" and stype != newGoalType:
-						theoryString += "\t\t\t%s > %s color=%s\n"%(OLD_GOAL, stype, s.color)
+						theoryString += "%s color=%s\n"%(stype, s.color)
+						# theoryString += "\t\t\t%s > %s color=%s\n"%(OLD_GOAL, stype, s.color)
 
 					# elif stype == "avatar":
 					# 	theoryString += "\t\t\t%s > %s color=%s\n"%("avatar", stype, s.color)
 
 					else:
-						theoryString += "\t\t\t%s > %s color=%s\n"%(sname, stype, s.color)
+						theoryString += "%s color=%s\n"%(stype, s.color)
+						# theoryString += "\t\t\t%s > %s color=%s\n"%(sname, stype, s.color)
 
 			else:
 				if "avatar".lower() in stype.lower():
-					theoryString += "\t\t\t%s > %s color=%s\n"%("avatar", stype, s.color)
+					theoryString += "%s color=%s\n"%(stype, s.color)
+					# theoryString += "\t\t\t%s > %s color=%s\n"%("avatar", stype, s.color)
 
 				else:
+					print s.color
 					sname = colorToSprite[s.color]
-					theoryString += "\t\t\t%s > %s color=%s\n"%(sname, stype, s.color)
+					theoryString += "%s color=%s\n"%(stype, s.color)
+					# theoryString += "\t\t\t%s > %s color=%s\n"%(sname, stype, s.color)
 
 
 
@@ -1728,13 +1741,22 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 
 			theoryString += "limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
 
+	# embed()
+
 	# fourth phase: the level mapping
 	theoryString += "\tLevelMapping\n"
-	for k,v in inverseMapping.items():
-		theoryString += "\t\t%s > %s\n"%(v, k)
+	
+	for k in inverseMapping.keys():
+		color = colorDict[str(rle._game.sprite_constr[k][1]['color'])]
+		c = [j for j in theory.classes.keys() if theory.classes[j][0].color==color][0]
+		theoryString += "\t\t%s >%s\n"%(inverseMapping[k], c)
+
+	# for k,v in inverseMapping.items():
+	# 	theoryString += "\t\t%s > %s\n"%(v, k)
 
 	theoryString += '"""\n'
 	
+	# embed()
 	# if prevGoalExists:
 	# 	prevGoalIndex = sorted(_obstypes.keys())[::-1].index("goal")
 	# 	prevGoalCode = 2**(1+prevGoalIndex)
@@ -1780,9 +1802,10 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 
 	gameString = levelString + theoryString + parserString
 
-	embed()
+	# embed()
 	with open(txtFile, 'w') as f:
 		f.write(gameString)
+	f.close()
 
 
 

@@ -56,6 +56,16 @@ if __name__ == "__main__":
 		## Plan to achieve that goal
 		rle, hypotheses = getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList)
 		print "in agent loop"
+		from rlenvironmentnonstatic import *
+		from theory_template import writeTheoryToTxt
+		# rle2= createRLtextTheory(obsType=OBSERVATION_GLOBAL)
+		
+
+		sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
+		g = Game(spriteInductionResult=sample)
+		t = g.buildGenericTheory(sample)
+		# embed()
+		writeTheoryToTxt(rle,t, "./examples/gridphysics/textTheorytest.py")
 		embed()
 		## Select hypothesis according to whichever method, make new VRLE
 		## theory_to_world(hypotheses[0]) ## should write new .py file

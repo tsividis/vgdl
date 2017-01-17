@@ -620,7 +620,7 @@ def getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList, verbose=True, 
 					trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
 
 					print "in getToSubgoal"
-					embed()
+					# embed()
 
 					hypotheses = list(g.runInduction(sample, trace, 20))
 					## TODO: You're re-running all of theory induction for every timestep
