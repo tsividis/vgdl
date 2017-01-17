@@ -1,4 +1,5 @@
 '''
+<<<<<<< HEAD
 Simple interactions: get/lose points, can't pass through walls, object gets pushed.
 '''
 
@@ -81,4 +82,4 @@ BasicGame frame_rate=30
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(push_game, box_level)    
+

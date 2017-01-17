@@ -186,6 +186,9 @@ class StateObsHandler(object):
         
     def _rect2pos(self, r):
         return (r.left / self._game.block_size, r.top / self._game.block_size)
+
+    def _pos2rect(self, pos):
+        return (pos[0]*self._game.block_size, pos[1]*self._game.block_size)
     
     def _setRectPos(self, s, pos):
         s.rect = pygame.Rect((pos[0] * self._game.block_size,

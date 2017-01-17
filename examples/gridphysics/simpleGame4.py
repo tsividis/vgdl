@@ -12,11 +12,20 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 box_level = """
 wwwwwwwww
 w       w
-w     1 w
+w       w
 wAp  wgww
 w    w ww
 wwwwwwwww
 """
+
+# box_level = """
+# wwwwwwwww
+# w     A w
+# w       w
+# w    wgww
+# w    w ww
+# wwwwwwwww
+# """
 
 push_game = """
 BasicGame frame_rate=30
