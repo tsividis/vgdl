@@ -1,6 +1,7 @@
 import sys, ast, time
 from theory_template import Game, TimeStep
 from IPython import embed
+from rlenvironmentnonstatic import *
 
 
 def runInduction(vgdlString, gameOutput):
@@ -53,6 +54,7 @@ def runInduction_DFS(vgdlString, gameOutput, maxTheories):
     # start = time.time()
 
     hypotheses=list(g.runDFSInduction(trace, maxTheories, verbose))
+    rle = createRLspriteInduction4(obsType=OBSERVATION_GLOBAL)
     embed()
 
     # end = time.time()
