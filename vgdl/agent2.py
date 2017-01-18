@@ -58,9 +58,6 @@ if __name__ == "__main__":
 
 		game, level = writeTheoryToTxt(rle,hypotheses[0], "./examples/gridphysics/theorytest.py", rle._rect2pos(subgoal.rect))
 		
-
-		# rleVirtualFunc = createRLVirtualGame#	
-		# rleVirtualFunc = createRLTheoryTest
 		Vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)	##World in agent's head.
 		
 		## Plan to achieve that goal
