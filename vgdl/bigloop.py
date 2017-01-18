@@ -132,20 +132,23 @@ def playEpisode(rleCreateFunc=createRLSimpleGame4, hypotheses=[], unknown_object
 
 if __name__ == "__main__":
 
+
 	finalEventList = []
 	obsType = OBSERVATION_GLOBAL
+	
+	game_to_play = createRLSimpleGame4
 	thinking_steps = 50
 	thinking_default_steps=50
 	
-	numEpisodes = 5
+	numEpisodes = 10
 
 	hypotheses, tally = [], []
 	unknown_objects = False
 	goalColor = None
 	# goalColor='GOLD'
 	for episode in range(numEpisodes):
-		hypotheses, won, unknown_objects, goalColor, finalEventList, actions_taken = playEpisode(rleCreateFunc=createRLSimpleGame4, hypotheses=hypotheses, \
-			unknown_objects=unknown_objects, goalColor=goalColor, finalEventList=finalEventList, playback=True)
+		hypotheses, won, unknown_objects, goalColor, finalEventList, actions_taken = playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, \
+			unknown_objects=unknown_objects, goalColor=goalColor, finalEventList=finalEventList, playback=False)
 		print "ending with"
 		hypotheses[0].display()
 		tally.append(won)

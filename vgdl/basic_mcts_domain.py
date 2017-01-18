@@ -576,7 +576,7 @@ def observe(rle, obsSteps):
 	for i in range(obsSteps):
 		spriteInduction(rle, step=1)
 		rle.step((0,0))
-		print np.reshape(rle._getSensors(), rle.outdim)
+		# print np.reshape(rle._getSensors(), rle.outdim)
 		spriteInduction(rle, step=2)
 	return
 
@@ -685,7 +685,8 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 					game, level = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", goalLoc=rle._rect2pos(subgoal.rect))
 					
 					vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)
-
+					# print "planned", max_actions_per_plan, "actions but got a new theory after action", i
+					# break
 					## TODO: You're re-running all of theory induction for every timestep
 					## every time. Fix this.
 					## if you fix it, note that you'd be passing a different g each time,
