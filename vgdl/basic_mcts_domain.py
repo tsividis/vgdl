@@ -641,9 +641,9 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, sample, verbos
 					game, level = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", (0,0))
 					
 
-					rleVirtualFunc = createRLTheoryTest
+					# rleVirtualFunc = createMindEnv
 					# rleVirtualFunc = createRLVirtualGame
-					vrle = rleVirtualFunc(game, level, OBSERVATION_GLOBAL)
+					vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)
 
 					## TODO: You're re-running all of theory induction for every timestep
 					## every time. Fix this.

@@ -376,9 +376,8 @@ def _verify( obs, targetObs ):
 ## Star in these args unzips the tuple.
 # simple maze test, moved to goal and win
 
-# level[level.find('"""')+3:-4]
-# game[game.find('"""')+3:-4]
-def createRLTheoryTest(game, level, obsType=OBSERVATION_LOCAL ):
+
+def createMindEnv(game, level, obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( game, level, observationType=obsType )
 
 def createRLVirtualGame( obsType=OBSERVATION_LOCAL ):

@@ -60,8 +60,8 @@ if __name__ == "__main__":
 		
 
 		# rleVirtualFunc = createRLVirtualGame#	
-		rleVirtualFunc = createRLTheoryTest
-		Vrle = rleVirtualFunc(game, level, OBSERVATION_GLOBAL)	##World in agent's head.
+		# rleVirtualFunc = createRLTheoryTest
+		Vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)	##World in agent's head.
 		
 		## Plan to achieve that goal
 		rle, hypotheses, finalEventList = getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList, sample)
