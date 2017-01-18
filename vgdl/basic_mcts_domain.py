@@ -214,7 +214,7 @@ class Basic_MCTS:
 			if not vl.terminal:
 				reward, dPiters = self.defaultPolicy(vl, Vrle, step_horizon, domain_knowledge=False)
 				loc = np.where(np.reshape(vl.state, self.outdim)==self.avatar_code)
-				loc = loc[0][0], loc[1][0]
+				loc = loc[0][0], loc[1][0] ## TODO: This will sometimes fail. Fix it.
 				reward = reward + self.rewardDict[loc]
 				# if reward==0:
 				# 	deltaX, deltaY = self.getManhattanDistanceComponents(vl.state)
@@ -594,6 +594,7 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, sample, verbos
 				effects = translateEvents(res['effectList'], all_objects) ##TODO: this gets object colors, not IDs.
 				
 				print actions[i]
+				# rle.show()
 				print np.reshape(new_state, rle.outdim)
 				
 				# Save the event and agent state
@@ -633,8 +634,9 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, sample, verbos
 
 					hypotheses = list(g.runInduction(sample, trace, 20))
 					print "in getToSubgoal"
+					embed()
 
-					game, level = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", (0,0))
+					game, level = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py")
 					
 					vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)
 

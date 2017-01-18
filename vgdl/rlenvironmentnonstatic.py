@@ -191,7 +191,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             self._avatar.update(self._game)
         else:
             for s in self._game:
-                print s, s.name
                 s.update(self._game)
 
         
