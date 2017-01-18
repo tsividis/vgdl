@@ -123,6 +123,8 @@ class Basic_MCTS:
 	def scanDomainForMovementOptions(self):
 		##TODO: Take a state, so that you can re-perform this scan as needed and take changes into account.
 		##TODO: query VGDL description for penetrable/nonpenetrable objects, add to list.
+		# print "in scanDomainForMovementOptions"
+		# embed()
 		immovable_codes = []
 		# immovables = ['wall']
 		immovables = []
@@ -133,7 +135,7 @@ class Basic_MCTS:
 
 		actionDict = defaultdict(list)
 		neighborDict = defaultdict(list)
-		action_superset = [(-1,0), (1,0), (0,-1), (0,1)] ##TODO: add (0,0) at some point, but probably not in the subsequent loop.
+		action_superset = [(0,0),(-1,0), (1,0), (0,-1), (0,1)] ##TODO: add (0,0) at some point, but probably not in the subsequent loop.
 		
 		##Take np.reshaped(state)
 		board = np.reshape(self.rle._getSensors(), self.outdim)
@@ -190,8 +192,10 @@ class Basic_MCTS:
 		if len(avatar_loc[0])>0 and len(goal_loc[0])>0:
 			dist = avatar_loc[0][0]-goal_loc[0][0], avatar_loc[1][0]-goal_loc[1][0]
 			return dist
+		elif len(avatar_loc[0])==0:
+			return 1000,1000 ##TODO: hacked on 1/18. Fix
 		else:
-			return 0, 0
+			return 0,0
 
 
 
@@ -566,7 +570,17 @@ def translateEvents(events, all_objects):
 ## make plan
 ## 
 
-def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, max_actions_per_plan=1, planning_steps=50, defaultPolicyMaxSteps=50):
+
+def observe(rle, obsSteps):
+	print "observing"
+	for i in range(obsSteps):
+		spriteInduction(rle, step=1)
+		rle.step((0,0))
+		print np.reshape(rle._getSensors(), rle.outdim)
+		spriteInduction(rle, step=2)
+	return
+
+def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, max_actions_per_plan=1, planning_steps=100, defaultPolicyMaxSteps=50):
 	## Takes a real world, a theory (instantiated as a virtual world)
 	## Moves the agent through the world, updating the theory as needed
 	## Ends when subgoal is reached.
@@ -581,7 +595,7 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 	goal_achieved = False
 
 	def noise(action):
-		prob=0
+		prob=0.
 		if random.random()<prob:
 			return random.choice(BASEDIRS)
 		else:
@@ -590,22 +604,24 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 	## TODO: this will be problematic when new objects appear, if you don't update it.
 	# all_objects = rle._game.getObjects()
 
+	print ""
 	print "object goal is", colorDict[str(subgoal.color)], rle._rect2pos(subgoal.rect)
-
+	actions_executed = []
 	# embed()
 	while not terminal and not goal_achieved:
 		mcts = Basic_MCTS(existing_rle=vrle)
+		# print "in gettosubgoal"
 		# embed()
 		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, vrle, test=False)
 		actions = mcts.getBestActionsForPlayout()
-
-		print actions
+		# print actions
 		for i in range(len(actions)):
 			if not terminal and not goal_achieved:
 				spriteInduction(rle, step=1)
 
 				## Take actual step. RLE Updates all positions.
 				res = rle.step(noise(actions[i])) ##added noise for testing, but prob(noise)=0 now.
+				actions_executed.append(actions[i])
 				new_state = res['observation']
 				terminal = rle._isDone()[0]
 				effects = translateEvents(res['effectList'], all_objects) ##TODO: this gets object colors, not IDs.
@@ -633,7 +649,7 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 							rle._game.collision_objects.add(effect[2])
 
 					if colorDict[str(subgoal.color)] in [item for sublist in effects for item in sublist]:
-						print "achieved goal"
+						print "reached subgoal"
 						goal_achieved = True
 						rle._game.unknown_objects.remove(subgoal.name)
 
@@ -649,9 +665,22 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 
 
 					hypotheses = list(g.runInduction(sample, trace, 20))
+
 					
 					# print "in getToSubgoal"
 					# embed()
+					candidate_new_objs = []
+					for interaction in hypotheses[0].interactionSet:
+						if not interaction.generic:
+							if interaction.slot1 != 'avatar':
+								candidate_new_objs.append(interaction.slot1)
+							if interaction.slot2 != 'avatar':
+								candidate_new_objs.append(interaction.slot2)
+					candidate_new_objs = list(set(candidate_new_objs))
+					candidate_new_colors = []
+					for o in candidate_new_objs:
+						cols = [c.color for c in hypotheses[0].classes[o]]
+						candidate_new_colors.extend(cols)
 
 					game, level = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py")
 					
@@ -665,8 +694,11 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 
 				spriteInduction(rle, step=2)
 		if terminal:
-			print "Agent died."
-	return rle, hypotheses, finalEventList
+			if rle._isDone()[1]:
+				print "game won"
+			else:
+				print "Agent died."
+	return rle, hypotheses, finalEventList, candidate_new_colors, actions_executed
 
 def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, playback=False):
 	obsType = OBSERVATION_GLOBAL
@@ -723,10 +755,10 @@ if __name__ == "__main__":
 	## Make the game, then follow the layout in 'rlenvironmentnonstatic'
 	
 	obsType = OBSERVATION_GLOBAL
-	# rleCreateFunc = createRLSimpleGame4
-	# rle = rleCreateFunc(obsType)
-	# mcts = Basic_MCTS(rleCreateFunc=rleCreateFunc)
-	# embed()
+	rleCreateFunc = createRLSimpleGame4
+	rle = rleCreateFunc(obsType)
+	mcts = Basic_MCTS(rleCreateFunc=rleCreateFunc)
+	embed()
 	# outTime = mcts.startTrainingPhase(100, 100, test=False)
 	# print outTime
 	# distance = mcts.debug(mcts.rle)[2]

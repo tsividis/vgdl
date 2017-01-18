@@ -1,8 +1,8 @@
 level="""
 000000000
-0  A    0
-0    G  0
-0 2  0O00
+0  1    0
+0    3  0
+0    0G00
 0    0 00
 000000000
 """
@@ -12,25 +12,24 @@ BasicGame
 		avatar > MovingAvatar color=DARKBLUE
 		poison > Resource color=BROWN
 		box1 > Immovable color=ORANGE
-		oldGoal > ResourcePack color=GOLD
-		box2 > Resource color=RED
-		goal > Resource color=RED
-		wall > ResourcePack color=BLACK
+		box2 > Passive color=RED
+		goal > Resource color=GOLD
+		wall > Immovable color=BLACK
 	InteractionSet
-		poison avatar > bounceForward
+		box1 avatar > bounceForward
 		wall avatar > bounceForward
-		box2 avatar > bounceForward
 		goal avatar > bounceForward
-		box1 avatar > killSprite
+		box2 avatar > bounceForward
+		poison avatar > killSprite
+		avatar poison > killSprite
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False
 		SpriteCounter stype=goal limit=0 win=True
 	LevelMapping
-		G > goal
 		0 > wall
-		2 > poison
-		O > oldGoal
 		1 > box1
+		G > goal
+		2 > poison
 		3 > box2
 """
 if __name__ == "__main__":

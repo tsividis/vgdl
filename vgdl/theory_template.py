@@ -244,6 +244,8 @@ class Theory(object):
 
 		self.posterior = False
 
+		self.goalColor = False ## TODO. Hack added 1/18/17 in lieu of termination set.
+
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
 		if not (vgdlSpriteParse or spriteInductionResult):
 			print "You must provide either a vgdlSpriteParse or the result of having performed sprite induction."
@@ -1440,7 +1442,17 @@ class Game(object):
 		# spriteSample: a particular assignment of sprite types. You can decide how you get this when you generate the sample, in getToSubgoal
 
 		timesteps, result = trace
+		
 
+		# print "in runinduction"
+		# embed()
+
+		## fiter for unique events so that you don't waste time checking likelihoods, etc.
+		unique_timesteps = [timesteps[0]]
+		for t in timesteps:
+			if t.events not in [timestep.events for timestep in unique_timesteps]:
+				unique_timesteps.append(t)
+		timesteps=unique_timesteps
 		# Start with fake theory (generic prior)
 		T = self.buildGenericTheory(spriteSample)	
 
@@ -1624,8 +1636,6 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	2 ways of swapping in knowledge:
 	-cleanest way: 
 	"""
-	# print "inwritetheory"
-	# embed()
 	_obstypes = rle._obstypes
 	prevGoalExists = "goal" in _obstypes
 	prevGoalLoc = None
@@ -1661,9 +1671,11 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	idx = 0
 	for s in _obstypes.keys():
 		if s != "avatar":
-			if not (s == "goal" and goalLoc):
+			if not s == "goal":
 				inverseMapping[s] = alnum[idx]
 				idx+=1
+			elif s=="goal" and not goalLoc:
+				inverseMapping["goal"] = "G"
 			else:
 				inverseMapping[OLD_GOAL] = "O" # old goal
 		else:
@@ -1672,7 +1684,8 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	if goalLoc:
 		inverseMapping["goal"] = "G"
 
-
+	# print "in writtheory"
+	# embed()
 	########### generating theory string
 	theoryString = 'game = """\n'
 	theoryString += "BasicGame\n"
@@ -1696,7 +1709,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 						theoryString += "\t\t%s > %s color=%s\n"%(sname, stype, s.color)
 						theoryString += "\t\t%s > %s color=%s\n"%("goal", stype, s.color)
 
-					elif sname == "goal" and stype != newGoalType:
+					elif sname == "goal" and stype != newGoalType and goalLoc!=prevGoalLoc:
 						theoryString += "\t\t%s > %s color=%s\n"%(OLD_GOAL, stype, s.color)
 
 					# elif stype == "avatar":
@@ -1785,7 +1798,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 				if state[r][c] == 1:
 					mappedState[r][c] = "A"
 
-				elif goalLoc and prevGoalExists and (r,c) == prevGoalLoc:
+				elif goalLoc and prevGoalExists and (r,c) == prevGoalLoc and (r,c) != goalLoc:
 					mappedState[r][c] = "O"
 
 				elif (r,c) == goalLoc:

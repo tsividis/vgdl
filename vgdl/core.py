@@ -779,11 +779,11 @@ class BasicGame(object):
                     lastKeyPressTime = self.time
 
             if self.playback_actions:
-                
-                self.keystate = list(self.keystate)
-                self.keystate[actionToKeyPress[self.playback_actions[self.playback_index]]] = True
-                self.keystate = tuple(self.keystate)
-                self.playback_index += 1
+                if self.playback_index<len(self.playback_actions):
+                    self.keystate = list(self.keystate)
+                    self.keystate[actionToKeyPress[self.playback_actions[self.playback_index]]] = True
+                    self.keystate = tuple(self.keystate)
+                    self.playback_index += 1
 
 
             # # load/save handling
@@ -934,7 +934,7 @@ class BasicGame(object):
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(50)
-        embed()
+        # embed()
         return win, self.score
 
 

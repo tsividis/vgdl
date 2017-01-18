@@ -526,7 +526,9 @@ class AStarChaser(RandomNPC): ##
                 else:
                     #logToFile('LEFT')
                     movement = LEFT
-
+        else:
+            movement=None ## TODO: Added 1/18/17 to prevent bug (sometimes path was not >1 so it called the next line
+                            ##without knowing what 'movement' was.). Make sure A* agent still works.
         self.physics.activeMovement(self, movement)
 
 
