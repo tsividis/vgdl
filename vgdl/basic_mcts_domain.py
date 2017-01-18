@@ -54,11 +54,6 @@ class Basic_MCTS:
 		## or just of the squares surrounding your avatar: some_other_keyword.
 		if existing_rle:
 			rle = existing_rle
-			# print "got an existing RLE. State:"
-			# res = rle.step((0,0)) #get first observation
-			# print np.reshape(res['observation'], rle.outdim)
-			# print "________________________________________"
-			# print ""
 		else:
 			rle = rleCreateFunc(OBSERVATION_GLOBAL)
 		self.rleCreateFunc = rleCreateFunc
@@ -208,9 +203,6 @@ class Basic_MCTS:
 		tree_policy_iters, default_policy_iters = 0, 0
 		for i in range(numTrainingCycles):
 			Vrle = copy.deepcopy(VRLE)
-			# res = Vrle.step((0,0))
-			# terminal = rle._isDone()[0]
-
 			if test:
 				embed()
 
@@ -456,9 +448,13 @@ class Basic_MCTS:
 		##TODO: can delete this if you're not calculating distances at the end of this func
 
 		avatar_initial_loc = np.where(reshaped_state==self.avatar_code)
-		avatar_loc = (avatar_initial_loc[0][0], avatar_initial_loc[1][0])
-		res = rle.step((0,0))
-		terminal = not res['pcontinue']
+		if len(avatar_initial_loc[0])>0:
+			avatar_loc = (avatar_initial_loc[0][0], avatar_initial_loc[1][0])
+		else:
+			terminal = True
+		
+		terminal = rle._isDone()[0]
+
 		while not terminal and iters < step_horizon:
 
 			reshaped_state = np.reshape(state, self.outdim)
@@ -678,9 +674,9 @@ def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, pla
 		if len(actions)<max_actions_per_plan:
 			print "We only computed", len(actions), "actions."
 
-		res = rle.step((0,0))
-		new_state = res["observation"]
-		terminal = not res['pcontinue']
+		new_state = rle._getSensors()
+		terminal = rle._isDone()[0]
+
 		for j in range(min(len(actions), max_actions_per_plan)):
 			if actions[j] is not None and not terminal:
 				dist = mcts.getManhattanDistanceComponents(new_state)
