@@ -1655,7 +1655,6 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 		if spriteType != "avatar":
 			colorToSprite[colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]] = spriteType
 
-
 	if prevGoalExists and goalLoc:
 		prevGoalCode = 2**(sorted(_obstypes.keys())[::-1].index("goal")+1)
 		prevGoalLoc = np.where(state == prevGoalCode)
@@ -1738,8 +1737,8 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 
 
 
-
-
+	immovable_predicates = ['stepBack', 'undoAll']
+	immovables = []
 	# second phase: the interaction rules
 	theoryString += "\tInteractionSet\n"
 	for interactionRule in theory.interactionSet:
@@ -1749,13 +1748,18 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 			for s2 in theory.classes[c2]:
 				if 'avatar' in str(s1.vgdlType).lower():
 					theoryString += "\t\t%s %s > %s\n"%('avatar', colorToSprite[s2.color], interactionRule.interaction)
+					if interactionRule.interaction in immovable_predicates:
+						immovables.append(colorToSprite[s2.color])
 				elif 'avatar' in str(s2.vgdlType).lower():
 					theoryString += "\t\t%s %s > %s\n"%(colorToSprite[s1.color], 'avatar', interactionRule.interaction)
+					if interactionRule.interaction in immovable_predicates:
+						immovables.append(colorToSprite[s1.color])
 				else:
 					try:
 						theoryString += "\t\t%s %s > %s\n"%(colorToSprite[s1.color], colorToSprite[s2.color], interactionRule.interaction)
 					except KeyError:
 						embed()
+	immovables = list(set(immovables))
 
 	# third phase: the termination rules
 	# theoryString += "\tTerminationSet\n"
@@ -1840,6 +1844,6 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 
 	levelString = levelString[levelString.find('"""')+3:-4]
 	theoryString = theoryString[theoryString.find('"""')+3:-4]
-	return theoryString, levelString
+	return theoryString, levelString, immovables
 
 

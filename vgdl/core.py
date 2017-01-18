@@ -833,7 +833,7 @@ class BasicGame(object):
             for t in self.terminations:
                 self.ended, win = t.isDone(self)
                 if self.ended:
-                    time.sleep(10)
+                    time.sleep(1)
                     pygame.quit()
                     sys.exit()
                     break

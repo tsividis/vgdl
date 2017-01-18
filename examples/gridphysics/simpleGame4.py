@@ -58,8 +58,8 @@ BasicGame frame_rate=30
     InteractionSet
         avatar wall > stepBack  
         missile wall > reverseDirection
-        poison avatar > killSprite
-        avatar poison > killSprite
+        poison avatar > stepBack
+        avatar poison > stepBack
         goal avatar > killSprite
         box avatar  > killSprite
         goal box > bounceForward

@@ -94,8 +94,11 @@ def playEpisode(rleCreateFunc=createRLSimpleGame4, hypotheses=[], unknown_object
 
 			# print rle._game.spriteDistribution
 
-		game, level = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", rle._rect2pos(subgoal.rect))
+		# print "about to make rle"
+		# embed()
+		game, level, immovables = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", rle._rect2pos(subgoal.rect))
 		Vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)	##World in agent's head.
+		Vrle.immovables = immovables
 		## Plan to achieve that goal
 		rle, hypotheses, finalEventList, candidate_new_colors, actions_executed = getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList)
 		if len(unknown_objects)>0:
@@ -125,7 +128,7 @@ def playEpisode(rleCreateFunc=createRLSimpleGame4, hypotheses=[], unknown_object
 		playbackGame = push_game
 		playbackLevel = box_level
 		# rle = rleCreateFunc(OBSERVATION_GLOBAL)
-		embed()
+		# embed()
 		VGDLParser.playGame(playbackGame, playbackLevel, actions_taken)
 
 	return hypotheses, won, unknown_objects, goalColor, finalEventList, actions_taken
@@ -145,7 +148,7 @@ if __name__ == "__main__":
 	hypotheses, tally = [], []
 	unknown_objects = False
 	goalColor = None
-	# goalColor='GOLD'
+	# goalColor='BROWN'
 	for episode in range(numEpisodes):
 		hypotheses, won, unknown_objects, goalColor, finalEventList, actions_taken = playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, \
 			unknown_objects=unknown_objects, goalColor=goalColor, finalEventList=finalEventList, playback=False)

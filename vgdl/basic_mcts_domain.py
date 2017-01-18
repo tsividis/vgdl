@@ -124,15 +124,18 @@ class Basic_MCTS:
 		##TODO: Take a state, so that you can re-perform this scan as needed and take changes into account.
 		##TODO: query VGDL description for penetrable/nonpenetrable objects, add to list.
 		# print "in scanDomainForMovementOptions"
-		# embed()
 		immovable_codes = []
 		# immovables = ['wall']
-		immovables = []
+		immovables = self.rle.immovables
+		print "immovables", immovables
 		for i in immovables:
 			if i in self._obstypes.keys():
 				immovable_codes.append(2**(1+sorted(self._obstypes.keys())[::-1].index(i)))
 		# immovable_codes = [2**(1+sorted(self._obstypes.keys())[::-1].index(i)) for i in immovables]
 
+		# if immovables:
+		# 	print "inscandomain"
+		# 	embed()
 		actionDict = defaultdict(list)
 		neighborDict = defaultdict(list)
 		action_superset = [(0,0),(-1,0), (1,0), (0,-1), (0,1)] ##TODO: add (0,0) at some point, but probably not in the subsequent loop.
@@ -203,6 +206,8 @@ class Basic_MCTS:
 
 		oldTime = time.time()
 
+		print "intrainingphase"
+		embed()
 		#track total iterations spent in treePolicy
 		tree_policy_iters, default_policy_iters = 0, 0
 		for i in range(numTrainingCycles):
@@ -608,13 +613,19 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 	print "object goal is", colorDict[str(subgoal.color)], rle._rect2pos(subgoal.rect)
 	actions_executed = []
 	# embed()
+	j=0
 	while not terminal and not goal_achieved:
+		print "top of loop"
 		mcts = Basic_MCTS(existing_rle=vrle)
-		# print "in gettosubgoal"
 		# embed()
+		# if len(vrle.immovables)>0:
+		# 	print "in gettosubgoal"
+		# 	embed()
 		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, vrle, test=False)
 		actions = mcts.getBestActionsForPlayout()
 		# print actions
+		# embed()
+		print j
 		for i in range(len(actions)):
 			if not terminal and not goal_achieved:
 				spriteInduction(rle, step=1)
@@ -651,7 +662,8 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 					if colorDict[str(subgoal.color)] in [item for sublist in effects for item in sublist]:
 						print "reached subgoal"
 						goal_achieved = True
-						rle._game.unknown_objects.remove(subgoal.name)
+						if subgoal.name in rle._game.unknown_objects:
+							rle._game.unknown_objects.remove(subgoal.name)
 
 					## Sampling from the spriteDisribution makes sense, as it's
 					## independent of what we've learned about the interactionSet.
@@ -682,11 +694,18 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 						cols = [c.color for c in hypotheses[0].classes[o]]
 						candidate_new_colors.extend(cols)
 
-					game, level = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", goalLoc=rle._rect2pos(subgoal.rect))
-					
+					game, level, immovables = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", goalLoc=rle._rect2pos(subgoal.rect))
+					# all_immovables.extend(immovables)
+					# print all_immovables
 					vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)
-					# print "planned", max_actions_per_plan, "actions but got a new theory after action", i
-					# break
+					vrle.immovables = immovables
+					if immovables:
+						print "just created vrle"
+						print immovables
+					# 	embed()
+					j+=1
+
+
 					## TODO: You're re-running all of theory induction for every timestep
 					## every time. Fix this.
 					## if you fix it, note that you'd be passing a different g each time,
@@ -763,7 +782,6 @@ if __name__ == "__main__":
 	# outTime = mcts.startTrainingPhase(100, 100, test=False)
 	# print outTime
 	# distance = mcts.debug(mcts.rle)[2]
-	# embed()
 
 
 	# print distance
