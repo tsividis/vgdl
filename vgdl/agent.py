@@ -63,7 +63,7 @@ if __name__ == "__main__":
 		Vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)	##World in agent's head.
 		
 		## Plan to achieve that goal
-		rle, hypotheses, finalEventList = getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList, sample)
+		rle, hypotheses, finalEventList = getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList)
 
 		print ""
 

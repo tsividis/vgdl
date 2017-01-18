@@ -566,7 +566,7 @@ def translateEvents(events, all_objects):
 ## make plan
 ## 
 
-def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, sample, verbose=True, max_actions_per_plan=1, planning_steps=50, defaultPolicyMaxSteps=50):
+def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, max_actions_per_plan=1, planning_steps=50, defaultPolicyMaxSteps=50):
 	## Takes a real world, a theory (instantiated as a virtual world)
 	## Moves the agent through the world, updating the theory as needed
 	## Ends when subgoal is reached.
@@ -592,6 +592,7 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, sample, verbos
 
 	print "object goal is", colorDict[str(subgoal.color)], rle._rect2pos(subgoal.rect)
 
+	# embed()
 	while not terminal and not goal_achieved:
 		mcts = Basic_MCTS(existing_rle=vrle)
 		# embed()

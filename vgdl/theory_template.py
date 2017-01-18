@@ -1643,15 +1643,16 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 			colorToSprite[colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]] = spriteType
 
 
+	if prevGoalExists and goalLoc:
+		prevGoalCode = 2**(sorted(_obstypes.keys())[::-1].index("goal")+1)
+		prevGoalLoc = np.where(state == prevGoalCode)
+		prevGoalLoc = (prevGoalLoc[0][0], prevGoalLoc[1][0])
 	if goalLoc:
 		goalLoc = goalLoc[1], goalLoc[0]
 		newGoalCode = state[goalLoc[0]][goalLoc[1]] ##have to flip indices
 		newGoalIndex = int(round(math.log(newGoalCode,2)))-1
 		newGoalType = sorted(_obstypes.keys())[::-1][newGoalIndex]
-	if prevGoalExists and goalLoc:
-		prevGoalCode = 2**(sorted(_obstypes.keys())[::-1].index("goal")+1)
-		prevGoalLoc = np.where(state == prevGoalCode)
-		prevGoalLoc = (prevGoalLoc[0][0], prevGoalLoc[1][0])
+
 
 
 	inverseMapping = dict()
