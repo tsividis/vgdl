@@ -19,6 +19,7 @@ import logging
 import sys
 import re
 from IPython import embed
+import time
 
 disableContinuousKeyPress = True
 actionToKeyPress = {(-1,0): pygame.K_LEFT, (1,0): pygame.K_RIGHT,
@@ -832,6 +833,9 @@ class BasicGame(object):
             for t in self.terminations:
                 self.ended, win = t.isDone(self)
                 if self.ended:
+                    time.sleep(10)
+                    pygame.quit()
+                    sys.exit()
                     break
 
             # Conditional Criteria
