@@ -634,7 +634,7 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, sample, verbos
 
 					hypotheses = list(g.runInduction(sample, trace, 20))
 					print "in getToSubgoal"
-					embed()
+					# embed()
 
 					game, level = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py")
 					
