@@ -10,15 +10,16 @@ game = """
 BasicGame
 	SpriteSet
 		avatar > MovingAvatar color=DARKBLUE
-		poison > RandomNPC color=BROWN
-		box1 > Passive color=ORANGE
-		box2 > Chaser color=RED
-		goal > Missile color=GOLD
-		wall > Resource color=BLACK
+		poison > ResourcePack color=BROWN
+		box1 > Resource color=ORANGE
+		box2 > ResourcePack color=RED
+		goal > Passive color=GOLD
+		wall > Immovable color=BLACK
 	InteractionSet
 		poison avatar > bounceForward
 		wall avatar > bounceForward
 		goal avatar > bounceForward
+		avatar wall > stepBack
 		box1 avatar > killSprite
 		box2 avatar > killSprite
 	TerminationSet

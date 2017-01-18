@@ -214,8 +214,14 @@ class Basic_MCTS:
 			if not vl.terminal:
 				reward, dPiters = self.defaultPolicy(vl, Vrle, step_horizon, domain_knowledge=False)
 				loc = np.where(np.reshape(vl.state, self.outdim)==self.avatar_code)
-				loc = loc[0][0], loc[1][0] ## TODO: This will sometimes fail. Fix it.
-				reward = reward + self.rewardDict[loc]
+				
+				## TODO: you hacked this if-statement together to avoid a crash, but is it doing what you want?
+				## e.g., do you want to just assume this means the avatar is gone and you want to give a reward of 0?
+				if len(loc[0])>0:
+					loc = loc[0][0], loc[1][0] 
+					reward = reward + self.rewardDict[loc]
+				else:
+					reward = reward
 				# if reward==0:
 				# 	deltaX, deltaY = self.getManhattanDistanceComponents(vl.state)
 				# 	if abs(deltaX)+abs(deltaY) == 0:
@@ -560,16 +566,26 @@ def translateEvents(events, all_objects):
 ## make plan
 ## 
 
-def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, sample, verbose=True, max_actions_per_plan=10, planning_steps=50, defaultPolicyMaxSteps=50):
+def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, sample, verbose=True, max_actions_per_plan=1, planning_steps=50, defaultPolicyMaxSteps=50):
 	## Takes a real world, a theory (instantiated as a virtual world)
 	## Moves the agent through the world, updating the theory as needed
 	## Ends when subgoal is reached.
+	## Right now will only properly work with max_actions_per_plan=1, as you want to re-plan when the theory changes.
+	## Otherwise it will only replan every max_actions_per_plan steps.
 	## Returns real world in its new state, as well as theory in its new state.
-	## TODO: also return a trace of events and of game states for recreation
+	## TODO: also return a trace of events and of game states for re-creation
+	
 	print len(finalEventList), "events so far."
 	hypotheses = []
 	terminal = rle._isDone()[0]
 	goal_achieved = False
+
+	def noise(action):
+		prob=0
+		if random.random()<prob:
+			return random.choice(BASEDIRS)
+		else:
+			return action
 
 	## TODO: this will be problematic when new objects appear, if you don't update it.
 	# all_objects = rle._game.getObjects()
@@ -588,13 +604,12 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, sample, verbos
 				spriteInduction(rle, step=1)
 
 				## Take actual step. RLE Updates all positions.
-				res = rle.step(actions[i])
+				res = rle.step(noise(actions[i])) ##added noise for testing, but prob(noise)=0 now.
 				new_state = res['observation']
 				terminal = rle._isDone()[0]
 				effects = translateEvents(res['effectList'], all_objects) ##TODO: this gets object colors, not IDs.
 				
 				print actions[i]
-				# rle.show()
 				print np.reshape(new_state, rle.outdim)
 				
 				# Save the event and agent state
@@ -624,8 +639,8 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, sample, verbos
 					## Sampling from the spriteDisribution makes sense, as it's
 					## independent of what we've learned about the interactionSet.
 					## Every timeStep, we should update our beliefs given what we've seen.
-					if not sample:
-						sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
+					# if not sample:
+					sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
 					
 					g = Game(spriteInductionResult=sample)
 					terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
@@ -633,7 +648,8 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, sample, verbos
 
 
 					hypotheses = list(g.runInduction(sample, trace, 20))
-					print "in getToSubgoal"
+					
+					# print "in getToSubgoal"
 					# embed()
 
 					game, level = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py")
