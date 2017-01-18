@@ -208,7 +208,9 @@ class Basic_MCTS:
 		tree_policy_iters, default_policy_iters = 0, 0
 		for i in range(numTrainingCycles):
 			Vrle = copy.deepcopy(VRLE)
-			res = Vrle.step((0,0))
+			# res = Vrle.step((0,0))
+			# terminal = rle._isDone()[0]
+
 			if test:
 				embed()
 
@@ -632,14 +634,16 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, sample, verbos
 					terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
 					trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
 
-					print "in getToSubgoal"
-					embed()
 
 					hypotheses = list(g.runInduction(sample, trace, 20))
-					writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py")
+					print "in getToSubgoal"
+
+					game, level = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", (0,0))
+					
+
 					rleVirtualFunc = createRLTheoryTest
 					# rleVirtualFunc = createRLVirtualGame
-					vrle = rleVirtualFunc(OBSERVATION_GLOBAL)
+					vrle = rleVirtualFunc(game, level, OBSERVATION_GLOBAL)
 
 					## TODO: You're re-running all of theory induction for every timestep
 					## every time. Fix this.
@@ -659,9 +663,11 @@ def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, pla
 
 	outdim = rle.outdim
 
-	res = rle.step((0,0)) #get first observation
-	print np.reshape(res['observation'], outdim)
-	terminal = not res['pcontinue']
+	print np.reshape(rle._getSensors(), outdim)
+	
+	terminal = rle._isDone()[0]
+
+	# terminal = not res['pcontinue']
 	
 	i=0
 	finalActions = []

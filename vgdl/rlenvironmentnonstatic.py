@@ -67,6 +67,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     def observationSpec(self):
         return{ 'scheme':'Doubles', 'size':self.outdim }
 
+    def show(self):
+        return np.reshape(self._getSensors(), self.outdim)
     # Get definition of the actions that are accepted
     def actionSpec(self):
         return{ 'scheme':'Integer', 'N':4 }       
@@ -189,6 +191,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             self._avatar.update(self._game)
         else:
             for s in self._game:
+                print s, s.name
                 s.update(self._game)
 
         
@@ -224,7 +227,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             events = self._performAction(action) 
         else:
             events = None
-        observation = self._getSensors(None) #state)
+        observation = self._getSensors()
         (ended, won) = self._isDone()
         if ended:
             pcontinue = 0
@@ -240,6 +243,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 ## the game in the agent's 'head'
 def defTheoryTest():
     from examples.gridphysics.theorytest import game, level
+    print level[0]
+    # print type(level)
+    print game[0]
     return (game, level)
 
 def defVirtualGame():
@@ -370,8 +376,10 @@ def _verify( obs, targetObs ):
 ## Star in these args unzips the tuple.
 # simple maze test, moved to goal and win
 
-def createRLTheoryTest( obsType=OBSERVATION_LOCAL ):
-    return RLEnvironmentNonStatic( *defTheoryTest(), observationType=obsType )
+# level[level.find('"""')+3:-4]
+# game[game.find('"""')+3:-4]
+def createRLTheoryTest(game, level, obsType=OBSERVATION_LOCAL ):
+    return RLEnvironmentNonStatic( game, level, observationType=obsType )
 
 def createRLVirtualGame( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defVirtualGame(), observationType=obsType )

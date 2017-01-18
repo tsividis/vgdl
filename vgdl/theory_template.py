@@ -1624,14 +1624,23 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	2 ways of swapping in knowledge:
 	-cleanest way: 
 	"""
+	# print "inwritetheory"
+	# embed()
 	_obstypes = rle._obstypes
 	prevGoalExists = "goal" in _obstypes
 	prevGoalLoc = None
 	state = np.reshape(rle._getSensors(), rle.outdim)
 	newGoalType = None
 	OLD_GOAL = "oldGoal"
-	colorToSprite = {colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]: spriteType \
-					for spriteType in rle._game.sprite_constr if spriteType != "avatar"}
+
+	# colorToSprite = {colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]: spriteType \
+	# 				for spriteType in rle._game.sprite_constr if spriteType != "avatar"}
+
+	colorToSprite = {}
+	for spriteType in rle._game.sprite_constr:
+		# print colorDict[str(rle._game.sprite_constr)]
+		if spriteType != "avatar":
+			colorToSprite[colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]] = spriteType
 
 
 	if goalLoc:
@@ -1742,6 +1751,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	# 			theoryString += "stype%i = %s " % (i, terminationRule.termination.stypes[i])
 
 	# 		theoryString += "limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
+	
 	theoryString += "\tTerminationSet\n"
 	theoryString += "\t\tSpriteCounter stype=avatar limit=0 win=False\n"
 	if prevGoalExists or goalLoc:
@@ -1804,5 +1814,8 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 		f.write(gameString)
 	f.close()
 
+	levelString = levelString[levelString.find('"""')+3:-4]
+	theoryString = theoryString[theoryString.find('"""')+3:-4]
+	return theoryString, levelString
 
 
