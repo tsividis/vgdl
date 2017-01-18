@@ -16,7 +16,7 @@ import time
 import copy
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectSubgoal
-from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game
+from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt
 
 #A hack to display things to the terminal conveniently.
 np.core.arrayprint._line_width=250
@@ -129,7 +129,8 @@ class Basic_MCTS:
 		##TODO: Take a state, so that you can re-perform this scan as needed and take changes into account.
 		##TODO: query VGDL description for penetrable/nonpenetrable objects, add to list.
 		immovable_codes = []
-		immovables = ['wall']
+		# immovables = ['wall']
+		immovables = []
 		for i in immovables:
 			if i in self._obstypes.keys():
 				immovable_codes.append(2**(1+sorted(self._obstypes.keys())[::-1].index(i)))
@@ -189,10 +190,14 @@ class Basic_MCTS:
 		goal = 2**(1+sorted(self._obstypes.keys())[::-1].index("goal"))
 		avatar_loc = np.where(reshaped_state==self.avatar_code)
 		goal_loc = np.where(reshaped_state==goal)
-		# if goal in reshaped_state and 
-		dist = avatar_loc[0][0]-goal_loc[0][0], avatar_loc[1][0]-goal_loc[1][0]
+		# if goal in reshaped_state and
+		# print avatar_loc[0], goal_loc[0]
+		if len(avatar_loc[0])>0 and len(goal_loc[0])>0:
+			dist = avatar_loc[0][0]-goal_loc[0][0], avatar_loc[1][0]-goal_loc[1][0]
+			return dist
+		else:
+			return 0, 0
 
-		return dist
 
 
 	def startTrainingPhase(self, numTrainingCycles, step_horizon, VRLE,  test=False):
@@ -554,7 +559,10 @@ def translateEvents(events, all_objects):
 		print outlist
 	return outlist
 
-def getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList, sample, verbose=True, max_actions_per_plan=10, planning_steps=50, defaultPolicyMaxSteps=50):
+## make plan
+## 
+
+def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, sample, verbose=True, max_actions_per_plan=10, planning_steps=50, defaultPolicyMaxSteps=50):
 	## Takes a real world, a theory (instantiated as a virtual world)
 	## Moves the agent through the world, updating the theory as needed
 	## Ends when subgoal is reached.
@@ -564,14 +572,16 @@ def getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList, sample, verbos
 	hypotheses = []
 	terminal = rle._isDone()[0]
 	goal_achieved = False
+
 	## TODO: this will be problematic when new objects appear, if you don't update it.
 	# all_objects = rle._game.getObjects()
 
 	print "object goal is", colorDict[str(subgoal.color)], rle._rect2pos(subgoal.rect)
 
 	while not terminal and not goal_achieved:
-		mcts = Basic_MCTS(existing_rle=Vrle)
-		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, Vrle, test=False)
+		mcts = Basic_MCTS(existing_rle=vrle)
+		# embed()
+		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, vrle, test=False)
 		actions = mcts.getBestActionsForPlayout()
 
 		print actions
@@ -617,14 +627,20 @@ def getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList, sample, verbos
 					## Every timeStep, we should update our beliefs given what we've seen.
 					if not sample:
 						sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
+					
 					g = Game(spriteInductionResult=sample)
 					terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
 					trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
 
 					print "in getToSubgoal"
-					# embed()
+					embed()
 
 					hypotheses = list(g.runInduction(sample, trace, 20))
+					writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py")
+					rleVirtualFunc = createRLTheoryTest
+					# rleVirtualFunc = createRLVirtualGame
+					vrle = rleVirtualFunc(OBSERVATION_GLOBAL)
+
 					## TODO: You're re-running all of theory induction for every timestep
 					## every time. Fix this.
 					## if you fix it, note that you'd be passing a different g each time,
@@ -689,9 +705,10 @@ if __name__ == "__main__":
 	## Make the game, then follow the layout in 'rlenvironmentnonstatic'
 	
 	obsType = OBSERVATION_GLOBAL
-	rleCreateFunc = createRLSimpleGame4
-	mcts = Basic_MCTS(rleCreateFunc=rleCreateFunc)
-
+	# rleCreateFunc = createRLSimpleGame4
+	# rle = rleCreateFunc(obsType)
+	# mcts = Basic_MCTS(rleCreateFunc=rleCreateFunc)
+	# embed()
 	# outTime = mcts.startTrainingPhase(100, 100, test=False)
 	# print outTime
 	# distance = mcts.debug(mcts.rle)[2]

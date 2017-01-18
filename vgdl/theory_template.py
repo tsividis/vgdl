@@ -1451,7 +1451,7 @@ class Game(object):
 		for theory in init_hypotheses: 	# each of these theories has depth 1
 			if verbose:
 				theory.display()
-			self.DFSinduction(theory, timesteps, maxNumTheories, override=True, verbose=True) ##override anything that was in the original set.
+			self.DFSinduction(theory, timesteps, maxNumTheories, override=True, verbose=False) ##override anything that was in the original set.
 		
 
 		# Termination set induction
@@ -1633,9 +1633,9 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	colorToSprite = {colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]: spriteType \
 					for spriteType in rle._game.sprite_constr if spriteType != "avatar"}
 
-	
-	goalLoc = goalLoc[1], goalLoc[0]
+
 	if goalLoc:
+		goalLoc = goalLoc[1], goalLoc[0]
 		newGoalCode = state[goalLoc[0]][goalLoc[1]] ##have to flip indices
 		newGoalIndex = int(round(math.log(newGoalCode,2)))-1
 		newGoalType = sorted(_obstypes.keys())[::-1][newGoalIndex]
@@ -1672,7 +1672,10 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 		# theoryString += "\t\t%s >\n"%c
 		for s in sprites:
 			unfilteredType = str(s.vgdlType)
-			stype = unfilteredType[unfilteredType.find(".")+1: unfilteredType.find(">")-1]
+			# stype = unfilteredType[unfilteredType.find(".")+1: unfilteredType.find(">")-1]
+			stype = unfilteredType[unfilteredType.find("vgdl.ontology.")+len("vgdl.ontology."): unfilteredType.find(">")-1]
+			if "core" in stype:
+				stype = stype[stype.find("core.")+len("core."):]
 			# theoryString += "\t\t\t%s > %s color=%s\n"%(colorToSprite[s.color], stype, s.color)
 			if goalLoc:
 				if "avatar".lower() in stype.lower():
@@ -1799,6 +1802,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	# embed()
 	with open(txtFile, 'w') as f:
 		f.write(gameString)
+	f.close()
 
 
 

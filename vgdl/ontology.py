@@ -4,7 +4,7 @@ Video game description language -- ontology of concepts.
 @author: Tom Schaul
 '''
 import random
-# from random import choice#, random
+from random import choice#, random
 from math import sqrt
 import pygame
 from tools import triPoints, unitVector, vectNorm, oncePerStep
@@ -275,7 +275,7 @@ class RandomNPC(VGDLSprite):
 
     def update(self, game):
         VGDLSprite.update(self, game)
-        self.direction = choice(BASEDIRS) #TODO: Make work with random direction
+        self.direction = random.choice(BASEDIRS) #TODO: Make work with random direction
         self.physics.activeMovement(self, self.direction)
 
 
@@ -341,7 +341,7 @@ class Walker(Missile):
             elif self.orientation[0] < 0:
                 d = -1
             else:
-                d = choice([-1, 1])
+                d = random.choice([-1, 1])
             self.physics.activeMovement(self, (d, 0))
         Missile.update(self, game)
 
@@ -359,21 +359,21 @@ class RandomInertial(OrientedSprite, RandomNPC):
 
 class RandomMissile(Missile):
     def __init__(self, **kwargs):
-        Missile.__init__(self, orientation=choice(BASEDIRS),
-                         speed=choice([0.1, 0.2, 0.4]), **kwargs)
+        Missile.__init__(self, orientation=random.choice(BASEDIRS),
+                         speed=random.choice([0.1, 0.2, 0.4]), **kwargs)
 
 class ErraticMissile(Missile):
     """ A missile that randomly changes direction from time to time.
     (with probability 'prob' per timestep). """
     def __init__(self, prob=0.1, **kwargs):
-        Missile.__init__(self, orientation=choice(BASEDIRS), **kwargs)
+        Missile.__init__(self, orientation=random.choice(BASEDIRS), **kwargs)
         self.prob = prob
         self.is_stochastic = (prob > 0 and prob < 1)
 
     def update(self, game):
         Missile.update(self, game)
         if random.random() < self.prob: 
-            self.orientation = choice(BASEDIRS)
+            self.orientation = random.choice(BASEDIRS)
 
 class Bomber(SpawnPoint, Missile):
     color = ORANGE
@@ -426,7 +426,7 @@ class Chaser(RandomNPC): ##
         if len(options) == 0:
             options = BASEDIRS
 
-        self.physics.activeMovement(self, choice(options))
+        self.physics.activeMovement(self, random.choice(options))
 
 
 class Fleeing(Chaser):
@@ -500,6 +500,7 @@ class AStarChaser(RandomNPC): ##
 
         path = world.getMoveFor(self)
         
+
         # Uncomment below to draw debug paths.
         # self._setDebugVariables(world,path)
         
@@ -525,7 +526,7 @@ class AStarChaser(RandomNPC): ##
                 else:
                     #logToFile('LEFT')
                     movement = LEFT
-                    
+
         self.physics.activeMovement(self, movement)
 
 
@@ -684,7 +685,7 @@ class RotatingFlippingAvatar(RotatingAvatar):
         if len(actions) > 0 and self.noiseLevel > 0:
             # pick a random one instead
             if random.random() < self.noiseLevel*4:
-                actions = [choice([UP, LEFT, DOWN, RIGHT])]
+                actions = [random.choice([UP, LEFT, DOWN, RIGHT])]
         if UP in actions:
             self.speed = 1
         elif DOWN in actions:
@@ -1073,7 +1074,7 @@ def conveySprite(sprite, partner, game):
 def windGust(sprite, partner, game):
     """ Moves the partner in target direction by some step size, but stochastically
     (step, step-1 and step+1 are equally likely) """
-    s = choice([partner.strength, partner.strength + 1, partner.strength - 1])
+    s = random.choice([partner.strength, partner.strength + 1, partner.strength - 1])
     if s != 0:
         tmp = sprite.lastrect.copy()
         v = unitVector(partner.orientation)
@@ -1147,7 +1148,7 @@ def detrigger(sprite, partner, game, strigger=None):
 
 
 def flipDirection(sprite, partner, game): # FLAG
-    sprite.orientation = choice(BASEDIRS)
+    sprite.orientation = random.choice(BASEDIRS)
 
     return ('flipDirection' , sprite.ID, partner.ID)
 
@@ -1315,7 +1316,7 @@ def killSpriteOnLanding(sprite, partner, game):
     return ('killSpriteOnLanding', sprite.ID, partner.ID)
 
 def teleportToExit(sprite, partner, game):
-    e = choice(game.sprite_groups[partner.stype])
+    e = random.choice(game.sprite_groups[partner.stype])
     sprite.rect = e.rect
     sprite.lastmove = 0
     return ('teleportToExit', sprite.ID, partner.ID)

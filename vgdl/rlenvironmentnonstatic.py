@@ -202,24 +202,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                                         for sprite in ss]
         
         return events
-        # # Termination #1
-        # for t in self._game.terminations:
-        #     self.ended, win = t.isDone(self._game)
-        #     if self.ended:
-        #         break
-
-        # # update sprites
-        # # if len(effectList) > 0:
-        # #     print "before updating"
-        # #     embed()
-
-        # for s in self._game:
-        #     s.update(self._game)
-            # if s.lastrect != s.rect:
-            #     embed()
-
-
-        ## END OF CHANGES
 
         if self.visualize:
             self._game._clearAll(self.visualize)
@@ -238,6 +220,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
     def step(self, action):
         if action != None:
+            # print action
             events = self._performAction(action) 
         else:
             events = None
