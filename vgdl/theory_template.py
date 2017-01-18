@@ -1636,6 +1636,9 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	2 ways of swapping in knowledge:
 	-cleanest way: 
 	"""
+
+	# print "inwritetheory"
+	# embed()
 	_obstypes = rle._obstypes
 	prevGoalExists = "goal" in _obstypes
 	prevGoalLoc = None
@@ -1656,7 +1659,14 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	if prevGoalExists and goalLoc:
 		prevGoalCode = 2**(sorted(_obstypes.keys())[::-1].index("goal")+1)
 		prevGoalLoc = np.where(state == prevGoalCode)
-		prevGoalLoc = (prevGoalLoc[0][0], prevGoalLoc[1][0])
+		if len(prevGoalLoc[0])>0:
+			prevGoalLoc = (prevGoalLoc[0][0], prevGoalLoc[1][0])
+		else:
+			avatarLoc = np.where(state==1)
+			avatarLoc = (avatarLoc[1][0], avatarLoc[0][0])
+			if avatarLoc in _obstypes['goal']:
+				prevGoalLoc = avatarLoc
+
 	if goalLoc:
 		goalLoc = goalLoc[1], goalLoc[0]
 		newGoalCode = state[goalLoc[0]][goalLoc[1]] ##have to flip indices

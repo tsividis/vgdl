@@ -126,7 +126,7 @@ def playEpisode(rleCreateFunc=createRLSimpleGame4, hypotheses=[], unknown_object
 		playbackLevel = box_level
 		# rle = rleCreateFunc(OBSERVATION_GLOBAL)
 		embed()
-		# VGDLParser.playGame(playbackGame, playbackLevel, actions_taken)
+		VGDLParser.playGame(playbackGame, playbackLevel, actions_taken)
 
 	return hypotheses, won, unknown_objects, goalColor, finalEventList, actions_taken
 

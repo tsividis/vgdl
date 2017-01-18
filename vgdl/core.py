@@ -933,7 +933,7 @@ class BasicGame(object):
         # ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.
-        pygame.time.wait(50)
+        pygame.time.wait(10)
         # embed()
         return win, self.score
 

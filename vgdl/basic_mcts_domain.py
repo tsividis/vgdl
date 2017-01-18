@@ -682,7 +682,7 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 						cols = [c.color for c in hypotheses[0].classes[o]]
 						candidate_new_colors.extend(cols)
 
-					game, level = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py")
+					game, level = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", goalLoc=rle._rect2pos(subgoal.rect))
 					
 					vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)
 
@@ -758,7 +758,7 @@ if __name__ == "__main__":
 	rleCreateFunc = createRLSimpleGame4
 	rle = rleCreateFunc(obsType)
 	mcts = Basic_MCTS(rleCreateFunc=rleCreateFunc)
-	embed()
+	# embed()
 	# outTime = mcts.startTrainingPhase(100, 100, test=False)
 	# print outTime
 	# distance = mcts.debug(mcts.rle)[2]
