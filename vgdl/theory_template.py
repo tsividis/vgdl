@@ -1632,6 +1632,8 @@ class Game(object):
 		# print "Done cleanHypothesisSpace...\n"
 		return
 
+
+
 def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	"""
 	-need to be able to take an optional argument that tells you the location of the goal, and put that into the level string
@@ -1720,9 +1722,13 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 			
 			## Catch-all 'OTHER' s.vgdlType is causing a problem. replace for now with generic.
 			if not stype:
+				# embed()
 				print "false stype"
-				stype = 'ResourcePack'
-				embed()
+				if unfilteredType == "OTHER":
+					stype = 'ResourcePack'
+				else:
+					embed()
+				# embed()
 			print stype, type(stype)
 			if "core" in stype:
 				stype = stype[stype.find("core.")+len("core."):]
@@ -1732,12 +1738,17 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 					theoryString += "\t\t%s > %s color=%s\n"%("avatar", stype, s.color)
 				else:
 					sname = colorToSprite[s.color]
-					if sname == newGoalType and sname != "goal":
+					if sname == newGoalType:
 						theoryString += "\t\t%s > %s color=%s\n"%(sname, stype, s.color)
 						theoryString += "\t\t%s > %s color=%s\n"%("goal", stype, s.color)
+						# embed()
 
 					elif sname == "goal" and stype != newGoalType and goalLoc!=prevGoalLoc:
 						theoryString += "\t\t%s > %s color=%s\n"%(OLD_GOAL, stype, s.color)
+						# embed()
+
+					elif sname == OLD_GOAL and goalLoc == prevGoalLoc:
+						theoryString += "\t\t%s > %s color=%s\n"%("goal", stype, s.color)
 
 					# elif stype == "avatar":
 					# 	theoryString += "\t\t\t%s > %s color=%s\n"%("avatar", stype, s.color)
@@ -1754,7 +1765,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 					theoryString += "\t\t%s > %s color=%s\n"%(sname, stype, s.color)
 
 
-
+	goalInSpriteSet = 'goal' in theoryString
 	immovable_predicates = ['stepBack', 'undoAll']
 	immovables = []
 	# second phase: the interaction rules
@@ -1873,11 +1884,12 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 		levelString += reduce(lambda a,b: a+b, mappedRow) + "\n"
 
 	levelString += '"""\n'
+	if 'G' in levelString and not goalInSpriteSet:
+		embed()
 
 	parserString = 'if __name__ == "__main__":\n\tfrom vgdl.core import VGDLParser\n\tVGDLParser.playGame(game, level)\n'
 
 	gameString = levelString + theoryString + parserString
-
 	# embed()
 	with open(txtFile, 'w') as f:
 		f.write(gameString)
