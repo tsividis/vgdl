@@ -1652,23 +1652,13 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	newGoalType = None
 	OLD_GOAL = "oldGl"
 
-	# colorToSprite = {colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]: spriteType \
-	# 				for spriteType in rle._game.sprite_constr if spriteType != "avatar"}
-
-
-	# if goalLoc==(6,3):
-	# 	print "inwritetheory"
-	# 	embed()
 
 	if prevGoalExists:
-		# print "in theorytxt"
 		prevGoalColor = colorDict[str(rle._game.sprite_groups['goal'][0].color)]
 		prevGoalClass = [k for k in theory.classes.keys() if theory.classes[k][0].color=='GOLD'][0]
-		print "prev goal location", rle._rect2pos(rle._game.sprite_groups['goal'][0].rect)
 	colorToSprite = {}
 
 	for spriteType in rle._game.sprite_constr:
-		# print colorDict[str(rle._game.sprite_constr)]
 		if spriteType != "avatar":
 			colorToSprite[colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]] = spriteType
 	
