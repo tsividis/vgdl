@@ -1648,7 +1648,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	prevGoalLoc = None
 	state = np.reshape(rle._getSensors(), rle.outdim)
 	newGoalType = None
-	OLD_GOAL = "oldGoal"
+	OLD_GOAL = "oldGl"
 
 	# colorToSprite = {colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]: spriteType \
 	# 				for spriteType in rle._game.sprite_constr if spriteType != "avatar"}

@@ -26,9 +26,8 @@ BasicGame frame_rate=30
         avatar > MovingAvatar color=DARKBLUE #cooldown=4 
         goal > ResourcePack color=GOLD
         poison > ResourcePack limit=3 color=BROWN
-        box  > ResourcePack 
-            box1 > color=GREEN
-            box2 > color=LIGHTBLUE
+        box1  > ResourcePack color=GREEN
+        box2 > ResourcePack color=LIGHTBLUE
         wall > Immovable color=BLACK      
         score > Resource color=PINK limit=10  
     LevelMapping
@@ -47,7 +46,8 @@ BasicGame frame_rate=30
         goal box > bounceForward
         goal wall > undoAll
         goal poison > undoAll
-        box wall    > undoAll    
+        box1 wall    > undoAll
+        box2 wall > undoAll    
     TerminationSet
         SpriteCounter stype=goal    limit=0 win=True
         SpriteCounter stype=avatar  limit=0 win=False          
