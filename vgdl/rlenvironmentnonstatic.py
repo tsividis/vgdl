@@ -377,6 +377,8 @@ def _verify( obs, targetObs ):
 
 
 def createMindEnv(game, level, obsType=OBSERVATION_LOCAL ):
+    print game
+    print level
     return RLEnvironmentNonStatic( game, level, observationType=obsType )
 
 def createRLVirtualGame( obsType=OBSERVATION_LOCAL ):

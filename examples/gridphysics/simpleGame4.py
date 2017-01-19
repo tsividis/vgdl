@@ -10,15 +10,31 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 # """
 
 box_level = """
-wwwwwwwwwwwwwwwwww
-w  1    p        w
-w    2    p      w
-wAp       2  wg ww
-w    w1      w  ww
-wwwwwwwwwwwwwwwwww
+wwwwwwwww
+w  1    w
+w    2  w
+wAp  wgww
+w    w ww
+wwwwwwwww
 """
 
+# box_level = """
+# wwwwwwwww
+# w       w
+# w       w
+# wAp  wgww
+# w    w ww
+# wwwwwwwww
+# """
 
+# box_level = """
+# wwwwwwwww
+# w     m w
+# w       w
+# wAp  wgww
+# w    w ww
+# wwwwwwwww
+# """
 
 push_game = """
 BasicGame frame_rate=30
@@ -26,8 +42,9 @@ BasicGame frame_rate=30
         avatar > MovingAvatar color=DARKBLUE #cooldown=4 
         goal > ResourcePack color=GOLD
         poison > ResourcePack limit=3 color=BROWN
-        box1  > ResourcePack color=GREEN
-        box2 > ResourcePack color=LIGHTBLUE
+        box  > ResourcePack 
+            box1 > color=GREEN
+            box2 > color=LIGHTBLUE
         wall > Immovable color=BLACK      
         score > Resource color=PINK limit=10  
     LevelMapping
@@ -38,6 +55,7 @@ BasicGame frame_rate=30
         g > goal 
     InteractionSet
         avatar wall > stepBack  
+        missile wall > reverseDirection
         poison avatar > killSprite
         avatar poison > killSprite
         goal avatar > killSprite
@@ -46,8 +64,8 @@ BasicGame frame_rate=30
         goal box > bounceForward
         goal wall > undoAll
         goal poison > undoAll
-        box1 wall    > undoAll
-        box2 wall > undoAll    
+        box wall    > undoAll    
+        box poison > undoAll
     TerminationSet
         SpriteCounter stype=goal    limit=0 win=True
         SpriteCounter stype=avatar  limit=0 win=False          

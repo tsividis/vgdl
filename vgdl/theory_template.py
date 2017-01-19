@@ -1653,11 +1653,20 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	# colorToSprite = {colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]: spriteType \
 	# 				for spriteType in rle._game.sprite_constr if spriteType != "avatar"}
 
+
+
+	if prevGoalExists:
+		print "in theorytxt"
+		prevGoalColor = colorDict[str(rle._game.sprite_groups['goal'][0].color)]
+		prevGoalClass = [k for k in theory.classes.keys() if theory.classes[k][0].color=='GOLD'][0]
 	colorToSprite = {}
+
 	for spriteType in rle._game.sprite_constr:
 		# print colorDict[str(rle._game.sprite_constr)]
 		if spriteType != "avatar":
 			colorToSprite[colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]] = spriteType
+	
+
 
 	if prevGoalExists and goalLoc:
 		prevGoalCode = 2**(sorted(_obstypes.keys())[::-1].index("goal")+1)
@@ -1675,8 +1684,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 		newGoalCode = state[goalLoc[0]][goalLoc[1]] ##have to flip indices
 		newGoalIndex = int(round(math.log(newGoalCode,2)))-1
 		newGoalType = sorted(_obstypes.keys())[::-1][newGoalIndex]
-
-
+		colorToSprite[prevGoalColor] = 'oldGl'
 
 	inverseMapping = dict()
 	numbers = '0123456789'
@@ -1697,8 +1705,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	if goalLoc:
 		inverseMapping["goal"] = "G"
 
-	# print "in writtheory"
-	# embed()
+
 	########### generating theory string
 	theoryString = 'game = """\n'
 	theoryString += "BasicGame\n"
@@ -1710,6 +1717,13 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 			unfilteredType = str(s.vgdlType)
 			# stype = unfilteredType[unfilteredType.find(".")+1: unfilteredType.find(">")-1]
 			stype = unfilteredType[unfilteredType.find("vgdl.ontology.")+len("vgdl.ontology."): unfilteredType.find(">")-1]
+			
+			## Catch-all 'OTHER' s.vgdlType is causing a problem. replace for now with generic.
+			if not stype:
+				print "false stype"
+				stype = 'ResourcePack'
+				embed()
+			print stype, type(stype)
 			if "core" in stype:
 				stype = stype[stype.find("core.")+len("core."):]
 			# theoryString += "\t\t\t%s > %s color=%s\n"%(colorToSprite[s.color], stype, s.color)
@@ -1750,14 +1764,32 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 		c2 = interactionRule.slot2
 		for s1 in theory.classes[c1]:
 			for s2 in theory.classes[c2]:
-				if 'avatar' in str(s1.vgdlType).lower() and 'goal' not in str(s2.vgdlType).lower():
-					theoryString += "\t\t%s %s > %s\n"%('avatar', colorToSprite[s2.color], interactionRule.interaction)
-					if interactionRule.interaction in immovable_predicates:
-						immovables.append(colorToSprite[s2.color])
-				elif 'avatar' in str(s2.vgdlType).lower() and 'goal' not in str(s1.vgdlType).lower():
-					theoryString += "\t\t%s %s > %s\n"%(colorToSprite[s1.color], 'avatar', interactionRule.interaction)
-					if interactionRule.interaction in immovable_predicates:
-						immovables.append(colorToSprite[s1.color])
+				if 'avatar' in str(s1.vgdlType).lower():
+					if 'goal' not in str(s2.vgdlType).lower():
+						theoryString += "\t\t%s %s > %s\n"%('avatar', colorToSprite[s2.color], interactionRule.interaction)
+						if colorToSprite[s2.color] == newGoalType:
+							theoryString += "\t\t%s %s > %s\n"%('avatar', 'goal', interactionRule.interaction)
+
+						if interactionRule.interaction in immovable_predicates:
+							immovables.append(colorToSprite[s2.color])
+					elif newGoalType=='goal':
+						theoryString += "\t\t%s %s > %s\n"%('avatar', 'goal', interactionRule.interaction)
+
+					# else:
+					# 	theoryString += "\t\t%s %s > %s\n"%('avatar', 'oldGl', interactionRule.interaction)
+
+				elif 'avatar' in str(s2.vgdlType).lower():
+					if 'goal' not in str(s1.vgdlType).lower():
+						theoryString += "\t\t%s %s > %s\n"%(colorToSprite[s1.color], 'avatar', interactionRule.interaction)
+						if colorToSprite[s1.color] == newGoalType:
+							theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', interactionRule.interaction)
+						if interactionRule.interaction in immovable_predicates:
+							immovables.append(colorToSprite[s1.color])
+					elif newGoalType=='goal':
+						theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', interactionRule.interaction)
+					# else:
+					# 	theoryString += "\t\t%s %s > %s\n"%('oldGl', 'avatar', interactionRule.interaction)
+	
 				else:
 					try:
 						# if colorToSprite[s1.color] == 'goal' or colorToSprite[s2.color]== 'goal':
