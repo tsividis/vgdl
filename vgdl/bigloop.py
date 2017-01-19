@@ -44,6 +44,9 @@ def playEpisode(rleCreateFunc=createRLSimpleGame4, hypotheses=[], unknown_object
 	else:
 		print "already know some objects. Unknown:"
 		print [colorDict[str(o[0].color)] for o in unknown_objects]
+
+
+
 	##working hypothesis is hypotheses[0] for now.
 	# unknown_objects= []
 	# print [r.generic for r in hypotheses[0].interactionSet]
@@ -94,13 +97,13 @@ def playEpisode(rleCreateFunc=createRLSimpleGame4, hypotheses=[], unknown_object
 
 			# print rle._game.spriteDistribution
 
-		# print "about to make rle"
-		# embed()
 		game, level, immovables = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", rle._rect2pos(subgoal.rect))
 		Vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)	##World in agent's head.
 		Vrle.immovables = immovables
 		## Plan to achieve that goal
 		rle, hypotheses, finalEventList, candidate_new_colors, actions_executed = getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList)
+		
+
 		if len(unknown_objects)>0:
 			for col in candidate_new_colors:
 				obj = [o for o in unknown_objects if colorDict[str(o[0].color)]==col]
@@ -128,8 +131,9 @@ def playEpisode(rleCreateFunc=createRLSimpleGame4, hypotheses=[], unknown_object
 		playbackGame = push_game
 		playbackLevel = box_level
 		# rle = rleCreateFunc(OBSERVATION_GLOBAL)
-		# embed()
-		VGDLParser.playGame(playbackGame, playbackLevel, actions_taken)
+		print actions_taken
+		embed()
+		# VGDLParser.playGame(playbackGame, playbackLevel, actions_taken)
 
 	return hypotheses, won, unknown_objects, goalColor, finalEventList, actions_taken
 
@@ -151,9 +155,7 @@ if __name__ == "__main__":
 	# goalColor='BROWN'
 	for episode in range(numEpisodes):
 		hypotheses, won, unknown_objects, goalColor, finalEventList, actions_taken = playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, \
-			unknown_objects=unknown_objects, goalColor=goalColor, finalEventList=finalEventList, playback=False)
-		print "ending with"
-		hypotheses[0].display()
+			unknown_objects=unknown_objects, goalColor=goalColor, finalEventList=finalEventList, playback=True)
 		tally.append(won)
 		print "episode ended. Win:", won
 		print "__________________________________________________"

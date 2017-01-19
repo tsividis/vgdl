@@ -335,7 +335,11 @@ class Theory(object):
 		likelihood = self.likelihood(timestep)
 		# print '\tlikelihood', likelihood
 
-		if likelihood == 1:
+		# if likelihood == 1 and not override:
+		# 	theories.append(self)
+		# elif likelihood == 1 and override:
+		# 	theories.extend(self.addRules(event, override=True))
+		if likelihood==1:
 			theories.append(self)
 		else:
 			failCase = self.getFailCases(event, timestep)
@@ -1426,7 +1430,7 @@ class Game(object):
 			T.classes[nonAvatars[i].className] = [nonAvatars[i]]
 
 		for obj in nonAvatars:
-			rule = InteractionRule('bounceForward', obj.className, avatar.className, None, 0, generic=True)
+			rule = InteractionRule('killSprite', obj.className, avatar.className, None, 0, generic=True)
 			T.interactionSet.append(rule)
 
 
@@ -1746,19 +1750,24 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 		c2 = interactionRule.slot2
 		for s1 in theory.classes[c1]:
 			for s2 in theory.classes[c2]:
-				if 'avatar' in str(s1.vgdlType).lower():
+				if 'avatar' in str(s1.vgdlType).lower() and 'goal' not in str(s2.vgdlType).lower():
 					theoryString += "\t\t%s %s > %s\n"%('avatar', colorToSprite[s2.color], interactionRule.interaction)
 					if interactionRule.interaction in immovable_predicates:
 						immovables.append(colorToSprite[s2.color])
-				elif 'avatar' in str(s2.vgdlType).lower():
+				elif 'avatar' in str(s2.vgdlType).lower() and 'goal' not in str(s1.vgdlType).lower():
 					theoryString += "\t\t%s %s > %s\n"%(colorToSprite[s1.color], 'avatar', interactionRule.interaction)
 					if interactionRule.interaction in immovable_predicates:
 						immovables.append(colorToSprite[s1.color])
 				else:
 					try:
+						# if colorToSprite[s1.color] == 'goal' or colorToSprite[s2.color]== 'goal':
+							# print "in theorytxt"
+							# embed()
 						theoryString += "\t\t%s %s > %s\n"%(colorToSprite[s1.color], colorToSprite[s2.color], interactionRule.interaction)
 					except KeyError:
 						embed()
+	# theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', 'killSprite') ##should always be in the
+
 	immovables = list(set(immovables))
 
 	# third phase: the termination rules

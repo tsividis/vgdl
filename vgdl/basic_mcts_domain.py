@@ -127,7 +127,7 @@ class Basic_MCTS:
 		immovable_codes = []
 		# immovables = ['wall']
 		immovables = self.rle.immovables
-		print "immovables", immovables
+		# print "immovables", immovables
 		for i in immovables:
 			if i in self._obstypes.keys():
 				immovable_codes.append(2**(1+sorted(self._obstypes.keys())[::-1].index(i)))
@@ -195,8 +195,10 @@ class Basic_MCTS:
 		if len(avatar_loc[0])>0 and len(goal_loc[0])>0:
 			dist = avatar_loc[0][0]-goal_loc[0][0], avatar_loc[1][0]-goal_loc[1][0]
 			return dist
-		elif len(avatar_loc[0])==0:
-			return 1000,1000 ##TODO: hacked on 1/18. Fix
+		elif len(avatar_loc[0])==0 and len(goal_loc[0])>0:
+			return 0,0 ##TODO: hacked on 1/18. Fix
+		elif len(avatar_loc[0])>0 and len(goal_loc[0])==0:
+			return 100,100
 		else:
 			return 0,0
 
@@ -206,8 +208,6 @@ class Basic_MCTS:
 
 		oldTime = time.time()
 
-		print "intrainingphase"
-		embed()
 		#track total iterations spent in treePolicy
 		tree_policy_iters, default_policy_iters = 0, 0
 		for i in range(numTrainingCycles):
@@ -221,14 +221,19 @@ class Basic_MCTS:
 			reward, vl, iters = self.treePolicy(self.root, Vrle, step_horizon)
 			tree_policy_iters += iters
 			if not vl.terminal:
-				reward, dPiters = self.defaultPolicy(vl, Vrle, step_horizon, domain_knowledge=False)
+				reward, dPiters = self.defaultPolicy(vl, Vrle, step_horizon, domain_knowledge=True)
+
 				loc = np.where(np.reshape(vl.state, self.outdim)==self.avatar_code)
 				
+
 				## TODO: you hacked this if-statement together to avoid a crash, but is it doing what you want?
 				## e.g., do you want to just assume this means the avatar is gone and you want to give a reward of 0?
 				if len(loc[0])>0:
 					loc = loc[0][0], loc[1][0] 
-					reward = reward + self.rewardDict[loc]
+					if loc in self.rewardDict.keys():
+						reward = reward + self.rewardDict[loc]
+					else:
+						reward =reward
 				else:
 					reward = reward
 				# if reward==0:
@@ -243,7 +248,7 @@ class Basic_MCTS:
 				default_policy_iters += dPiters
 			self.backup(vl, reward)
 		outTime = time.time()-oldTime
-		return outTime
+		return self
 
 	def getBestActionsForPlayout(self):
 		v = self.root
@@ -479,7 +484,11 @@ class Basic_MCTS:
 			iters += 1
 			
 			if domain_knowledge:
-				sample = random.choice(self.actionDict[avatar_loc])
+				if avatar_loc in self.actionDict.keys():
+					sample = random.choice(self.actionDict[avatar_loc])
+				else:
+					sample = random.choice([(-1,0), (1,0), (0,-1), (0,1)])
+
 			else:
 				sample = random.choice([(-1,0), (1,0), (0,-1), (0,1)])
 			
@@ -594,7 +603,6 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 	## Returns real world in its new state, as well as theory in its new state.
 	## TODO: also return a trace of events and of game states for re-creation
 	
-	print len(finalEventList), "events so far."
 	hypotheses = []
 	terminal = rle._isDone()[0]
 	goal_achieved = False
@@ -613,19 +621,18 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 	print "object goal is", colorDict[str(subgoal.color)], rle._rect2pos(subgoal.rect)
 	actions_executed = []
 	# embed()
-	j=0
 	while not terminal and not goal_achieved:
-		print "top of loop"
+		# print "top of loop"
 		mcts = Basic_MCTS(existing_rle=vrle)
 		# embed()
 		# if len(vrle.immovables)>0:
 		# 	print "in gettosubgoal"
 		# 	embed()
-		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, vrle, test=False)
+		planner = mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, vrle, test=False)
+		# embed()
 		actions = mcts.getBestActionsForPlayout()
 		# print actions
 		# embed()
-		print j
 		for i in range(len(actions)):
 			if not terminal and not goal_achieved:
 				spriteInduction(rle, step=1)
@@ -664,6 +671,9 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 						goal_achieved = True
 						if subgoal.name in rle._game.unknown_objects:
 							rle._game.unknown_objects.remove(subgoal.name)
+						goalLoc=None
+					else:
+						goalLoc = rle._rect2pos(subgoal.rect)
 
 					## Sampling from the spriteDisribution makes sense, as it's
 					## independent of what we've learned about the interactionSet.
@@ -694,16 +704,18 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 						cols = [c.color for c in hypotheses[0].classes[o]]
 						candidate_new_colors.extend(cols)
 
-					game, level, immovables = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", goalLoc=rle._rect2pos(subgoal.rect))
+					## among the many things to fix:
+					for e in finalEventList[-1]['effectList']:
+						if e[1] == 'DARKBLUE':
+							candidate_new_colors.append(e[2])
+						if e[2] == 'DARKBLUE':
+							candidate_new_colors.append(e[1])
+
+					game, level, immovables = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", goalLoc=goalLoc)
 					# all_immovables.extend(immovables)
 					# print all_immovables
 					vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)
 					vrle.immovables = immovables
-					if immovables:
-						print "just created vrle"
-						print immovables
-					# 	embed()
-					j+=1
 
 
 					## TODO: You're re-running all of theory induction for every timestep
@@ -776,8 +788,11 @@ if __name__ == "__main__":
 	
 	obsType = OBSERVATION_GLOBAL
 	rleCreateFunc = createRLSimpleGame4
+	# rleCreateFunc = 
 	rle = rleCreateFunc(obsType)
 	mcts = Basic_MCTS(rleCreateFunc=rleCreateFunc)
+
+
 	# embed()
 	# outTime = mcts.startTrainingPhase(100, 100, test=False)
 	# print outTime
