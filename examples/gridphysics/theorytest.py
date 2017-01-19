@@ -1,9 +1,9 @@
 level="""
 000000000000000000
-0    1  2        0
+0     1 2        0
 0         2      0
-0 2  A    3  0G 00
-0    0 1     0  00
+0 2     A 3  0G 00
+0    0  1    0  00
 000000000000000000
 """
 game = """
@@ -11,10 +11,10 @@ BasicGame
 	SpriteSet
 		avatar > MovingAvatar color=DARKBLUE
 		box1 > ResourcePack color=GREEN
-		poison > Immovable color=BROWN
-		box2 > Resource color=LIGHTBLUE
-		goal > Passive color=GOLD
-		wall > Immovable color=BLACK
+		poison > ResourcePack color=BROWN
+		box2 > ResourcePack color=LIGHTBLUE
+		goal > ResourcePack color=GOLD
+		wall > Passive color=BLACK
 	InteractionSet
 		poison avatar > killSprite
 		wall avatar > killSprite
