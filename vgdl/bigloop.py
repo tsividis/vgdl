@@ -143,7 +143,7 @@ if __name__ == "__main__":
 	finalEventList = []
 	obsType = OBSERVATION_GLOBAL
 	
-	game_to_play = createRLSimpleGame4
+	game_to_play = createRLSimpleGame4 #createRLSimpleGame4_random
 	thinking_steps = 50
 	thinking_default_steps=50
 	
@@ -155,7 +155,7 @@ if __name__ == "__main__":
 	# goalColor='BROWN'
 	for episode in range(numEpisodes):
 		hypotheses, won, unknown_objects, goalColor, finalEventList, actions_taken = playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, \
-			unknown_objects=unknown_objects, goalColor=goalColor, finalEventList=finalEventList, playback=True)
+			unknown_objects=unknown_objects, goalColor=goalColor, finalEventList=finalEventList, playback=False)
 		tally.append(won)
 		print "episode ended. Win:", won
 		print "__________________________________________________"

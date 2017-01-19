@@ -833,6 +833,16 @@ class BasicGame(object):
             for t in self.terminations:
                 self.ended, win = t.isDone(self)
                 if self.ended:
+                    if win:
+                        # winning a game always gives a positive score.
+                        if self.score <= 0:
+                            self.score = 1
+
+                        self.win = True
+                        print "Game won, with score %s" % self.score
+                    else:
+                        self.win = False
+                        print "Game lost. Score=%s" % self.score
                     time.sleep(1)
                     pygame.quit()
                     sys.exit()

@@ -14,6 +14,7 @@ from core import VGDLSprite
 from stateobsnonstatic import StateObsHandlerNonStatic 
 import argparse
 from IPython import embed
+import random
 
 OBSERVATION_LOCAL = 'local'
 OBSERVATION_GLOBAL = 'global'
@@ -267,8 +268,12 @@ def defSimpleGame3():
     from examples.gridphysics.simpleGame3 import push_game, box_level
     return (push_game, box_level)
 
-def defSimpleGame4():
-    from examples.gridphysics.simpleGame4 import push_game, box_level
+def defSimpleGame4(r=False):
+    if r:
+        from examples.gridphysics.simpleGame4 import push_game, box_level, box_level2, box_level3
+        box_level = random.choice([box_level, box_level2, box_level3])
+    else:
+        from examples.gridphysics.simpleGame4 import push_game, box_level 
     return (push_game, box_level)
 
 def defSimpleGame5():
@@ -397,7 +402,10 @@ def createRLSimpleGame3( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defSimpleGame3(), observationType=obsType )
 
 def createRLSimpleGame4( obsType=OBSERVATION_LOCAL ):
-    return RLEnvironmentNonStatic( *defSimpleGame4(), observationType=obsType )
+    return RLEnvironmentNonStatic( *defSimpleGame4(r=False), observationType=obsType )
+
+def createRLSimpleGame4_random( obsType=OBSERVATION_LOCAL ):
+    return RLEnvironmentNonStatic( *defSimpleGame4(r=True), observationType=obsType )
 
 def createRLSimpleGame5( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defSimpleGame5(), observationType=obsType )

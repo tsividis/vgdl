@@ -49,6 +49,7 @@ BasicGame frame_rate=30
         treasure avatar > killSprite
         trap avatar > changeResource resource=score value=-5
         trap avatar > killSprite
+        box trap > killSprite
         cloud avatar > killSprite
         avatar medicine > changeResource resource=medicine value=1
         medicine avatar > killSprite
@@ -68,9 +69,6 @@ BasicGame frame_rate=30
         SpriteCounter stype=avatar  limit=0 win=False          
 """
 
-#        treasure avatar > collectResource scoreChange=5
-#        trap avatar > collectResource scoreChange=-5
-#        box box     > undoAll
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

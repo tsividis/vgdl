@@ -1654,11 +1654,15 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	# 				for spriteType in rle._game.sprite_constr if spriteType != "avatar"}
 
 
+	# if goalLoc==(6,3):
+	# 	print "inwritetheory"
+	# 	embed()
 
 	if prevGoalExists:
-		print "in theorytxt"
+		# print "in theorytxt"
 		prevGoalColor = colorDict[str(rle._game.sprite_groups['goal'][0].color)]
 		prevGoalClass = [k for k in theory.classes.keys() if theory.classes[k][0].color=='GOLD'][0]
+		print "prev goal location", rle._rect2pos(rle._game.sprite_groups['goal'][0].rect)
 	colorToSprite = {}
 
 	for spriteType in rle._game.sprite_constr:
@@ -1684,7 +1688,11 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 		newGoalCode = state[goalLoc[0]][goalLoc[1]] ##have to flip indices
 		newGoalIndex = int(round(math.log(newGoalCode,2)))-1
 		newGoalType = sorted(_obstypes.keys())[::-1][newGoalIndex]
+
 		colorToSprite[prevGoalColor] = 'oldGl'
+		if prevGoalExists:
+			if prevGoalLoc==goalLoc:
+				colorToSprite[prevGoalColor] = 'goal'
 
 	inverseMapping = dict()
 	numbers = '0123456789'
@@ -1720,10 +1728,8 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 			
 			## Catch-all 'OTHER' s.vgdlType is causing a problem. replace for now with generic.
 			if not stype:
-				print "false stype"
 				stype = 'ResourcePack'
-				embed()
-			print stype, type(stype)
+
 			if "core" in stype:
 				stype = stype[stype.find("core.")+len("core."):]
 			# theoryString += "\t\t\t%s > %s color=%s\n"%(colorToSprite[s.color], stype, s.color)
@@ -1732,6 +1738,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 					theoryString += "\t\t%s > %s color=%s\n"%("avatar", stype, s.color)
 				else:
 					sname = colorToSprite[s.color]
+					print sname
 					if sname == newGoalType and sname != "goal":
 						theoryString += "\t\t%s > %s color=%s\n"%(sname, stype, s.color)
 						theoryString += "\t\t%s > %s color=%s\n"%("goal", stype, s.color)

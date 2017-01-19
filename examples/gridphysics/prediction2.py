@@ -16,7 +16,7 @@ w wwwwww               w            w
 w      w         2     w            w
 w   A  w               w      1     w
 w      w               w            w
-w      g               w            w
+w      w               w            g
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
         

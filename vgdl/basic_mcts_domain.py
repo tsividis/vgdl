@@ -96,7 +96,7 @@ class Basic_MCTS:
 			self.avatar_code = np.reshape(self.rle._getSensors(), self.outdim)[avatar_loc[0]][avatar_loc[1]]
 		else:
 			self.avatar_code = 1
-		self.maxPseudoReward = 1000
+		self.maxPseudoReward = 100
 		self.rewardDict = {goal_loc:self.maxPseudoReward}
 		self.processed = [goal_loc]
 
