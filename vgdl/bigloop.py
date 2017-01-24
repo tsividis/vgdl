@@ -144,7 +144,7 @@ if __name__ == "__main__":
 	obsType = OBSERVATION_GLOBAL
 	
 	game_to_play = createRLSimpleGame4 #createRLSimpleGame4_random
-	thinking_steps = 50
+	thinking_steps = 100
 	thinking_default_steps=50
 	
 	numEpisodes = 10

@@ -196,10 +196,13 @@ class Basic_MCTS:
 			dist = avatar_loc[0][0]-goal_loc[0][0], avatar_loc[1][0]-goal_loc[1][0]
 			return dist
 		elif len(avatar_loc[0])==0 and len(goal_loc[0])>0:
-			return 0,0 ##TODO: hacked on 1/18. Fix
+			embed()
+			return 100,100 ##TODO: hacked on 1/18. Fix
 		elif len(avatar_loc[0])>0 and len(goal_loc[0])==0:
-			return 100,100
+			return 0,0
 		else:
+			print "manhattanDistanceComponents. Weird 'else' case."
+			embed()
 			return 0,0
 
 
@@ -637,11 +640,17 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 			if not terminal and not goal_achieved:
 				spriteInduction(rle, step=1)
 
+
 				## Take actual step. RLE Updates all positions.
 				res = rle.step(noise(actions[i])) ##added noise for testing, but prob(noise)=0 now.
 				actions_executed.append(actions[i])
 				new_state = res['observation']
 				terminal = rle._isDone()[0]
+				
+				# vrle_res = vrle.step(noise(actions[i]))
+				# vrle_new_state = vrle_res['observation']
+				# embed()
+
 				effects = translateEvents(res['effectList'], all_objects) ##TODO: this gets object colors, not IDs.
 				
 				print actions[i]

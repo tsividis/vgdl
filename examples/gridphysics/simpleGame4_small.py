@@ -2,12 +2,7 @@
 Simple interactions: get/lose points, can't pass through walls, object gets pushed.
 '''
 
-# box_level = """
-# wwww
-# wp w
-# wAgw
-# wwww
-# """
+
 
 box_level = """
 wwwwwwwww
@@ -18,23 +13,23 @@ w    w ww
 wwwwwwwww
 """
 
-# box_level = """
-# wwwwwwwww
-# w       w
-# w       w
-# wAp  wgww
-# w    w ww
-# wwwwwwwww
-# """
+box_level2 = """
+wwwwwwwww
+w  1    w
+w    2  w
+wAp  wgww
+w    w ww
+wwwwwwwww
+"""
+box_level3 = """
+wwwwwwwww
+w  2   1w
+w       w
+wA   wgww
+w  p w ww
+wwwwwwwww
+"""
 
-# box_level = """
-# wwwwwwwww
-# w     m w
-# w       w
-# wAp  wgww
-# w    w ww
-# wwwwwwwww
-# """
 
 push_game = """
 BasicGame frame_rate=30
