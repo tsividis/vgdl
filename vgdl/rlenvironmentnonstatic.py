@@ -66,13 +66,13 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self._postInitReset()
         self._game.reset()
         self._game.all_objects = self._game.getObjects() # Save all objects, some which may be killed in game
-              
+        self.makeSymbolDict()
 
     # Get definition of the observation data expected
     def observationSpec(self):
         return{ 'scheme':'Doubles', 'size':self.outdim }
 
-    def getSymbolDict(self):
+    def makeSymbolDict(self):
         inverseMapping = dict()
         numbers = '0123456789'
         alnum = numbers + 'abcdefghijklmnopqrstuvwxyz'
@@ -91,9 +91,10 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # if "goal" in self._obstypes:
         #     inverseMapping["goal"] = "G"
 
-        return inverseMapping
+        self.symbolDict = inverseMapping
+        return
 
-    def show(self, symbolDict):
+    def show(self):
         """
         symbolDict = a dict mapping each sprite name to its symbol.
         """
@@ -104,14 +105,15 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 if state[i][j] == 0:
                     gameString += " "
                 elif state[i][j] == 1:
-                    gameString += symbolDict['avatar']
+                    gameString += self.symbolDict['avatar']
                 else:
                     spriteIndex = int(round(math.log(state[i][j],2)))-1
                     spriteType = sorted(self._obstypes.keys())[::-1][spriteIndex]
-                    gameString += symbolDict[spriteType]    
+                    gameString += self.symbolDict[spriteType]    
             gameString += "\n"
         # return np.reshape(self._getSensors(), self.outdim)
-        return gameString
+        print gameString
+        return
     # Get definition of the actions that are accepted
     def actionSpec(self):
         return{ 'scheme':'Integer', 'N':4 }       
