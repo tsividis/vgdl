@@ -816,7 +816,7 @@ if __name__ == "__main__":
 	
 
 	obsType = OBSERVATION_GLOBAL
-	filename = "examples.gridphysics.simpleGame4_big"
+	filename = "examples.gridphysics.simpleGame4_huge"
 	game_to_play = lambda obsType: createRLInputGame(filename, obsType=obsType)
 
 	embed()
