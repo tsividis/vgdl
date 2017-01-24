@@ -128,8 +128,8 @@ class Basic_MCTS:
 		try:
 			immovables = self.rle.immovables
 		except:
-			immovables = ['wall']
-			print "Using default 'wall' as immovable"
+			immovables = ['wall', 'poison']
+			print "Using defaults as immovables", immovables
 
 		# print "immovables", immovables
 		for i in immovables:
@@ -787,8 +787,8 @@ def planActLoop(rleCreateFunc, max_actions_per_plan, planning_steps, defaultPoli
 		# break
 		actions = mcts.getBestActionsForPlayout()
 
-		if len(actions)<max_actions_per_plan:
-			print "We only computed", len(actions), "actions."
+		# if len(actions)<max_actions_per_plan:
+		# 	print "We only computed", len(actions), "actions."
 
 		new_state = rle._getSensors()
 		terminal = rle._isDone()[0]
@@ -822,7 +822,7 @@ if __name__ == "__main__":
 	
 
 	obsType = OBSERVATION_GLOBAL
-	filename = "examples.gridphysics.simpleGame4"
+	filename = "examples.gridphysics.simpleGame4_big"
 	game_to_play = lambda obsType: createRLInputGame(filename, obsType=obsType)
 
 	embed()
