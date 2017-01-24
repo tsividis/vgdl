@@ -72,6 +72,27 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     def observationSpec(self):
         return{ 'scheme':'Doubles', 'size':self.outdim }
 
+    def getSymbolDict(self):
+        inverseMapping = dict()
+        numbers = '0123456789'
+        alnum = numbers + 'abcdefghijklmnopqrstuvwxyz'
+        idx = 0
+        OLD_GOAL = "oldGl"
+        for s in self._obstypes.keys():
+            if not s == "goal":
+                inverseMapping[s] = alnum[idx]
+                idx+=1
+            elif s=="goal":
+                inverseMapping["goal"] = "G"
+            else:
+                inverseMapping[OLD_GOAL] = "O" # old goal
+
+        inverseMapping['avatar'] = 'A'
+        # if "goal" in self._obstypes:
+        #     inverseMapping["goal"] = "G"
+
+        return inverseMapping
+
     def show(self, symbolDict):
         """
         symbolDict = a dict mapping each sprite name to its symbol.
