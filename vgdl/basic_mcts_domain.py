@@ -38,7 +38,7 @@ mcts.rle._game.sprite_groups
 """
 ACTIONS = {(0,0):'none',(0,-1):'up', (0,1):'down', (1,0):'right', (-1,0):'left'}
 class Basic_MCTS:
-	def __init__(self, existing_rle=False, rleCreateFunc=False, obsType = OBSERVATION_GLOBAL, decay_factor=1, num_workers=1):
+	def __init__(self, existing_rle=False, rleCreateFunc=False, obsType = OBSERVATION_GLOBAL, decay_factor=.8, num_workers=1):
 		if not existing_rle and not rleCreateFunc:
 			print "You must pass either an existing rle or an rleCreateFunc"
 			return
@@ -97,21 +97,16 @@ class Basic_MCTS:
 			self.avatar_code = np.reshape(self.rle._getSensors(), self.outdim)[avatar_loc[0]][avatar_loc[1]]
 		else:
 			self.avatar_code = 1
-		self.maxPseudoReward = 5000
+
+		self.maxPseudoReward = 1000
 		self.rewardDict = {goal_loc:self.maxPseudoReward}
 		self.processed = [goal_loc]
 
+		self.scanDomainForMovementOptions()
+		self.propagateRewards(goal_loc)
+
 		# print "in basic_mcts init"
 		# embed()
-		self.scanDomainForMovementOptions()
-
-		self.rewardQueue.append(goal_loc)
-		for n in self.neighborDict[goal_loc]:
-			if n not in self.rewardQueue:
-				self.rewardQueue.append(n)
-		
-		self.propagateRewards()
-
 		# self.actionDict = {}
 		# ##Populate dictionary for use in action-sampling in defaultPolicy. Not sampling (0,0).
 		# for i in range(len(rle._actionset)):
@@ -167,7 +162,12 @@ class Basic_MCTS:
 		return
 
 
-	def propagateRewards(self):
+	def propagateRewards(self, goal_loc):
+		self.rewardQueue.append(goal_loc)
+		for n in self.neighborDict[goal_loc]:
+			if n not in self.rewardQueue:
+				self.rewardQueue.append(n)
+
 		i=0
 		while len(self.rewardQueue)>0:
 			loc = self.rewardQueue.popleft()
@@ -205,6 +205,7 @@ class Basic_MCTS:
 			dist = avatar_loc[0][0]-goal_loc[0][0], avatar_loc[1][0]-goal_loc[1][0]
 			return dist
 		elif len(avatar_loc[0])==0 and len(goal_loc[0])>0:
+			print "found a goal but no avatar"
 			embed()
 			return 100,100 ##TODO: hacked on 1/18. Fix
 		elif len(avatar_loc[0])>0 and len(goal_loc[0])==0:
@@ -225,6 +226,7 @@ class Basic_MCTS:
 		for i in range(numTrainingCycles):
 			Vrle = copy.deepcopy(VRLE)
 			if test:
+				print "in starttrainingphase"
 				embed()
 
 			# if i%10==0:
@@ -266,7 +268,8 @@ class Basic_MCTS:
 		v = self.root
 		actions = []
 		while v and not v.terminal:
-			a, v = self.bestChild(v,0)
+			# a, v = self.bestChild(v,0)
+			a,v = self.maxChild(v)
 			actions.append(a)
 		return actions
 
@@ -275,7 +278,8 @@ class Basic_MCTS:
 		v = self.root
 		if output:
 			print "current state"
-			print np.reshape(v.state, self.outdim)
+			# rle.show()
+			print np.reshape(v.state, rle.outdim)
 		actions, nodes = [], []
 		while v and not v.terminal and cntr<numActions:
 			# print v.children.iteritems()
@@ -290,7 +294,8 @@ class Basic_MCTS:
 					print "selected"
 					print ACTIONS[a]
 					print "resulted in"
-					print np.reshape(v.state, self.outdim)
+					# Can't use rle.show() here, as it's doing a replay, rather than using the actual RLE.
+					print np.reshape(v.state, rle.outdim)
 					print ""
 			cntr+=1
 		if v.terminal:
@@ -327,6 +332,8 @@ class Basic_MCTS:
 					reward = res['reward']
 					if reward==1:
 						reward = self.maxPseudoReward #
+						# print "reached goal in simulation. Reward", reward
+						# embed()
 					# print "treePolicy", time.time()-t1
 					return reward, v, iters
 
@@ -354,10 +361,11 @@ class Basic_MCTS:
 				##Buggy code on VGDL side forces us to also check the rle.
 				terminal = (not res['pcontinue']) or (rle._avatar is None)
 				
-
 				if terminal:
 					reward = res['reward']
 					if reward==1:
+						# print "expanded to goal state"
+						# print reward
 						reward = self.maxPseudoReward
 
 				# print "in expand. terminal?", terminal
@@ -370,6 +378,23 @@ class Basic_MCTS:
 				break
 
 		return reward, child
+
+	def maxChild(self, v):
+		choices = []
+		qVals = [v.children[a].qVal for a in v.children.keys()]
+		if len(qVals)>0:
+			maxVal = max(qVals)
+			for a,c in v.children.items():
+				if c.qVal==maxVal:
+					choices.append((a,c))
+			return random.choice(choices)
+		else:
+			if len(v.children.items())==0:
+				return (None, None)
+			else:
+				# print "in max child"
+				# embed()
+				return random.choice(v.children.items())
 
 	def bestChild(self, v, Cp):
 		def transform(x):
@@ -593,16 +618,12 @@ def translateEvents(events, all_objects):
 		print outlist
 	return outlist
 
-## make plan
-## 
-
 
 def observe(rle, obsSteps):
 	print "observing"
 	for i in range(obsSteps):
 		spriteInduction(rle, step=1)
 		rle.step((0,0))
-		# print np.reshape(rle._getSensors(), rle.outdim)
 		spriteInduction(rle, step=2)
 	return
 
@@ -633,19 +654,11 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True,
 	print ""
 	print "object goal is", colorDict[str(subgoal.color)], rle._rect2pos(subgoal.rect)
 	actions_executed = []
-	# embed()
 	while not terminal and not goal_achieved:
-		# print "top of loop"
 		mcts = Basic_MCTS(existing_rle=vrle)
-		# embed()
-		# if len(vrle.immovables)>0:
-		# 	print "in gettosubgoal"
-		# 	embed()
 		planner = mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, vrle, test=False)
-		# embed()
 		actions = mcts.getBestActionsForPlayout()
-		# print actions
-		# embed()
+
 		for i in range(len(actions)):
 			if not terminal and not goal_achieved:
 				spriteInduction(rle, step=1)
@@ -702,7 +715,7 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True,
 					## Every timeStep, we should update our beliefs given what we've seen.
 					# if not sample:
 					sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
-					
+						
 					g = Game(spriteInductionResult=sample)
 					terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
 					trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
@@ -760,7 +773,8 @@ def planActLoop(rleCreateFunc, max_actions_per_plan, planning_steps, defaultPoli
 
 	outdim = rle.outdim
 
-	print np.reshape(rle._getSensors(), outdim)
+	rle.show()
+	# print np.reshape(rle._getSensors(), outdim)
 	
 	terminal = rle._isDone()[0]
 	
@@ -769,7 +783,7 @@ def planActLoop(rleCreateFunc, max_actions_per_plan, planning_steps, defaultPoli
 	while not terminal:
 		mcts = Basic_MCTS(existing_rle=rle)
 		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, rle, test=False)
-		mcts.debug(mcts.rle, output=True, numActions=3)
+		# mcts.debug(mcts.rle, output=True, numActions=3)
 		# break
 		actions = mcts.getBestActionsForPlayout()
 
@@ -786,7 +800,8 @@ def planActLoop(rleCreateFunc, max_actions_per_plan, planning_steps, defaultPoli
 				res = rle.step(actions[j])
 				new_state = res["observation"]
 				terminal = not res['pcontinue']
-				print np.reshape(new_state, mcts.outdim)
+				rle.show()
+				# print np.reshape(new_state, mcts.outdim)
 				finalActions.append(actions[j])
 
 		i+=1
@@ -812,7 +827,7 @@ if __name__ == "__main__":
 
 	embed()
 
-	planActLoop(game_to_play, 10, 50, 50)
+	# planActLoop(game_to_play, 10, 50, 50)
 
 	# distance = mcts.debug(mcts.rle)[2]
 
