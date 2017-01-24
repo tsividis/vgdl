@@ -5,6 +5,7 @@ from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chas
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectSubgoal
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt
 import importlib
+from rlenvironmentnonstatic import createRLInputGame
 '''
 ## helpful functions or access methods:
 rle._getSensors()
@@ -145,9 +146,11 @@ if __name__ == "__main__":
 	# game_file = importlib.import_module("examples.gridphysics.simpleGame4")
 	# game_to_play = lambda obsType: RLEnvironmentNonStatic(game_file.push_game, game_file.box_level, \
 	#                observationType = obsType)
+	filename = "examples.gridphysics.simpleGame4"
+	game_to_play = lambda obsType: createRLInputGame(filename, obsType=obsType)
 
 	# game_to_play = createRLSimpleGame4 #createRLSimpleGame4_random
-	game_to_play = createRLSimpleGame4_random
+	# game_to_play = createRLSimpleGame4_random
 	# game_to_play = createRLFrogs
 	thinking_steps = 50
 	thinking_default_steps=50
