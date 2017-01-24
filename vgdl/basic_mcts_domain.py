@@ -797,7 +797,6 @@ if __name__ == "__main__":
 	
 	obsType = OBSERVATION_GLOBAL
 	rleCreateFunc = createRLSimpleGame4
-	# rleCreateFunc = 
 	rle = rleCreateFunc(obsType)
 	mcts = Basic_MCTS(rleCreateFunc=rleCreateFunc)
 
