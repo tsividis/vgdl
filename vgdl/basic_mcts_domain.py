@@ -36,7 +36,7 @@ Calling rle.step(a). Returns a dictionary with:
 Getting sprites:
 mcts.rle._game.sprite_groups
 """
-ACTIONS = {(0,0):'none',(0,-1):'up', (0,1):'down', (1,0):'right', (-1,0):'left'}
+ACTIONS = {(0,0):'none',(0,-1):'up', (0,1):'down', (1,0):'right', (-1,0):'left', None:'none'}
 class Basic_MCTS:
 	def __init__(self, existing_rle=False, rleCreateFunc=False, obsType = OBSERVATION_GLOBAL, decay_factor=.8, num_workers=1):
 		if not existing_rle and not rleCreateFunc:
@@ -127,8 +127,10 @@ class Basic_MCTS:
 		# immovables = ['wall']
 		try:
 			immovables = self.rle.immovables
+			# immovables = ['wall']
+			print "immovables", immovables
 		except:
-			immovables = ['wall', 'poison']
+			immovables = ['wall']
 			print "Using defaults as immovables", immovables
 
 		# print "immovables", immovables
@@ -616,9 +618,10 @@ def translateEvents(events, all_objects):
 def observe(rle, obsSteps):
 	print "observing"
 	for i in range(obsSteps):
-		spriteInduction(rle, step=1)
+		spriteInduction(rle._game, step=1)
+		spriteInduction(rle._game, step=2)
 		rle.step((0,0))
-		spriteInduction(rle, step=2)
+		spriteInduction(rle._game, step=3)
 	return
 
 def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
@@ -655,8 +658,8 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True,
 
 		for i in range(len(actions)):
 			if not terminal and not goal_achieved:
-				spriteInduction(rle, step=1)
-
+				spriteInduction(rle._game, step=1)
+				spriteInduction(rle._game, step=2)
 
 				## Take actual step. RLE Updates all positions.
 				res = rle.step(noise(actions[i])) ##added noise for testing, but prob(noise)=0 now.
@@ -671,10 +674,12 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True,
 				effects = translateEvents(res['effectList'], all_objects) ##TODO: this gets object colors, not IDs.
 				
 				print ACTIONS[actions[i]]
-				if symbolDict:
-					print rle.show(symbolDict)
-				else:
-					print np.reshape(new_state, rle.outdim)
+				rle.show()
+
+				# if symbolDict:
+				# 	print rle.show()
+				# else:
+				# 	print np.reshape(new_state, rle.outdim)
 				
 				# Save the event and agent state
 				try:
@@ -753,7 +758,7 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True,
 					## since you sampled (above).
 					# hypotheses = list(g.runDFSInduction(trace, 20))
 
-				spriteInduction(rle, step=2)
+				spriteInduction(rle._game, step=3)
 		if terminal:
 			if rle._isDone()[1]:
 				print "game won"
@@ -816,7 +821,7 @@ if __name__ == "__main__":
 	
 
 	obsType = OBSERVATION_GLOBAL
-	filename = "examples.gridphysics.simpleGame4_huge"
+	filename = "examples.gridphysics.simpleGame7"
 	game_to_play = lambda obsType: createRLInputGame(filename, obsType=obsType)
 
 	embed()
