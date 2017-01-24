@@ -380,21 +380,15 @@ class Basic_MCTS:
 		return reward, child
 
 	def maxChild(self, v):
-		choices = []
+		tmp = np.where(np.reshape(v.state, self.rle.outdim)==1)
+		avatar_loc = tmp[0][0], tmp[1][0]
 		qVals = [v.children[a].qVal for a in v.children.keys()]
-		if len(qVals)>0:
-			maxVal = max(qVals)
-			for a,c in v.children.items():
-				if c.qVal==maxVal:
-					choices.append((a,c))
-			return random.choice(choices)
+		if len(qVals)>0 and avatar_loc in self.neighborDict.keys() and len(qVals)>=len(self.neighborDict[avatar_loc])-1: #  -1, since (0,0) is not an action.
+				maxVal = max(qVals)
+				choices = [(a,c) for (a,c) in v.children.items() if c.qVal==maxVal]
+				return random.choice(choices)
 		else:
-			if len(v.children.items())==0:
-				return (None, None)
-			else:
-				# print "in max child"
-				# embed()
-				return random.choice(v.children.items())
+			return (None, None)
 
 	def bestChild(self, v, Cp):
 		def transform(x):
