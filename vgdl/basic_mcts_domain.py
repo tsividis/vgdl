@@ -96,7 +96,7 @@ class Basic_MCTS:
 			self.avatar_code = np.reshape(self.rle._getSensors(), self.outdim)[avatar_loc[0]][avatar_loc[1]]
 		else:
 			self.avatar_code = 1
-		self.maxPseudoReward = 100
+		self.maxPseudoReward = 5000
 		self.rewardDict = {goal_loc:self.maxPseudoReward}
 		self.processed = [goal_loc]
 
@@ -597,7 +597,8 @@ def observe(rle, obsSteps):
 		spriteInduction(rle, step=2)
 	return
 
-def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, max_actions_per_plan=1, planning_steps=100, defaultPolicyMaxSteps=50):
+def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
+	max_actions_per_plan=1, planning_steps=100, defaultPolicyMaxSteps=50, symbolDict=None):
 	## Takes a real world, a theory (instantiated as a virtual world)
 	## Moves the agent through the world, updating the theory as needed
 	## Ends when subgoal is reached.
@@ -654,7 +655,10 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 				effects = translateEvents(res['effectList'], all_objects) ##TODO: this gets object colors, not IDs.
 				
 				print actions[i]
-				print np.reshape(new_state, rle.outdim)
+				if symbolDict:
+					print rle.show(symbolDict)
+				else:
+					print np.reshape(new_state, rle.outdim)
 				
 				# Save the event and agent state
 				try:
@@ -720,7 +724,7 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 						if e[2] == 'DARKBLUE':
 							candidate_new_colors.append(e[1])
 
-					game, level, immovables = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", goalLoc=goalLoc)
+					game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", goalLoc=goalLoc)
 					# all_immovables.extend(immovables)
 					# print all_immovables
 					vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)
@@ -801,7 +805,7 @@ if __name__ == "__main__":
 	mcts = Basic_MCTS(rleCreateFunc=rleCreateFunc)
 
 
-	# embed()
+	embed()
 	# outTime = mcts.startTrainingPhase(100, 100, test=False)
 	# print outTime
 	# distance = mcts.debug(mcts.rle)[2]

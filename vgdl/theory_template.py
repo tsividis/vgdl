@@ -476,6 +476,7 @@ class Theory(object):
 		"""
 		Check if all events in the timestep are covered by the interaction rule set.
 		"""
+		print timestep.events
 		interpretations = [self.interpret(event) for event in timestep.events]
 		return all([self.checkEvents(i, timestep) for i in interpretations])
 
@@ -686,7 +687,7 @@ class Theory(object):
 			value = 0
 			resource = None
 
-		# embed()
+
 		obj1 = self.spriteObjects[event[1]]
 		obj2 = self.spriteObjects[event[2]]
 
@@ -1655,12 +1656,18 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 
 	if prevGoalExists:
 		prevGoalColor = colorDict[str(rle._game.sprite_groups['goal'][0].color)]
-		prevGoalClass = [k for k in theory.classes.keys() if theory.classes[k][0].color=='GOLD'][0]
+		try:
+			prevGoalClass = [k for k in theory.classes.keys() if theory.classes[k][0].color=='GOLD'][0]
+		except IndexError:
+			embed()
 	colorToSprite = {}
 
 	for spriteType in rle._game.sprite_constr:
 		if spriteType != "avatar":
-			colorToSprite[colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]] = spriteType
+			try:
+				colorToSprite[colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]] = spriteType
+			except KeyError:
+				embed()
 	
 
 
@@ -1691,19 +1698,19 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	alnum = numbers + 'abcdefghijklmnopqrstuvwxyz'
 	idx = 0
 	for s in _obstypes.keys():
-		if s != "avatar":
-			if not s == "goal":
-				inverseMapping[s] = alnum[idx]
-				idx+=1
-			elif s=="goal" and not goalLoc:
-				inverseMapping["goal"] = "G"
-			else:
-				inverseMapping[OLD_GOAL] = "O" # old goal
+		if not s == "goal":
+			inverseMapping[s] = alnum[idx]
+			idx+=1
+		elif s=="goal" and not goalLoc:
+			inverseMapping["goal"] = "G"
 		else:
-			inverseMapping[s] = "A"
+			inverseMapping[OLD_GOAL] = "O" # old goal
 
+	inverseMapping['avatar'] = 'A'
 	if goalLoc:
 		inverseMapping["goal"] = "G"
+
+
 
 
 	########### generating theory string
@@ -1740,7 +1747,8 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 					if sname == newGoalType and sname != "goal":
 					# if sname == newGoalType:
 						theoryString += "\t\t%s > %s color=%s\n"%(sname, stype, s.color)
-						theoryString += "\t\t%s > %s color=%s\n"%("goal", stype, s.color)
+						if sname != "goal":
+							theoryString += "\t\t%s > %s color=%s\n"%("goal", stype, s.color)
 						# embed()
 
 					elif sname == "goal" and stype != newGoalType and goalLoc!=prevGoalLoc:
@@ -1748,6 +1756,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 						# embed()
 
 					elif sname == OLD_GOAL and goalLoc == prevGoalLoc:
+						embed()
 						theoryString += "\t\t%s > %s color=%s\n"%("goal", stype, s.color)
 
 					# elif stype == "avatar":
@@ -1897,6 +1906,6 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 
 	levelString = levelString[levelString.find('"""')+3:-4]
 	theoryString = theoryString[theoryString.find('"""')+3:-4]
-	return theoryString, levelString, immovables
+	return theoryString, levelString, inverseMapping, immovables
 
 
