@@ -3,25 +3,25 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 '''
 
 
+# box_level = """
+# wwwwwwwww
+# w  1    w
+# w    2  w
+# wAp  wgww
+# w    w ww
+# wwwwwwwww
+# """
+
+# box_level2 = """
+# wwwwwwwww
+# wA 1    w
+# w    2  w
+# w p  w ww
+# w   gw ww
+# wwwwwwwww
+# """
+
 box_level = """
-wwwwwwwww
-w  1    w
-w    2  w
-wAp  wgww
-w    w ww
-wwwwwwwww
-"""
-
-box_level2 = """
-wwwwwwwww
-wA 1    w
-w    2  w
-w p  w ww
-w   gw ww
-wwwwwwwww
-"""
-
-box_level3 = """
 wwwwwwwww
 w  1    w
 w    p  w

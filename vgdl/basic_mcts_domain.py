@@ -17,6 +17,7 @@ import copy
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectSubgoal
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt
+from rlenvironmentnonstatic import createRLInputGame
 
 #A hack to display things to the terminal conveniently.
 np.core.arrayprint._line_width=250
@@ -35,7 +36,7 @@ Calling rle.step(a). Returns a dictionary with:
 Getting sprites:
 mcts.rle._game.sprite_groups
 """
-
+ACTIONS = {(0,0):'none',(0,-1):'up', (0,1):'down', (1,0):'right', (-1,0):'left'}
 class Basic_MCTS:
 	def __init__(self, existing_rle=False, rleCreateFunc=False, obsType = OBSERVATION_GLOBAL, decay_factor=1, num_workers=1):
 		if not existing_rle and not rleCreateFunc:
@@ -100,11 +101,14 @@ class Basic_MCTS:
 		self.rewardDict = {goal_loc:self.maxPseudoReward}
 		self.processed = [goal_loc]
 
+		# print "in basic_mcts init"
+		# embed()
 		self.scanDomainForMovementOptions()
 
 		self.rewardQueue.append(goal_loc)
 		for n in self.neighborDict[goal_loc]:
-			self.rewardQueue.append(n)
+			if n not in self.rewardQueue:
+				self.rewardQueue.append(n)
 		
 		self.propagateRewards()
 
@@ -126,7 +130,12 @@ class Basic_MCTS:
 		# print "in scanDomainForMovementOptions"
 		immovable_codes = []
 		# immovables = ['wall']
-		immovables = self.rle.immovables
+		try:
+			immovables = self.rle.immovables
+		except:
+			immovables = ['wall']
+			print "Using default 'wall' as immovable"
+
 		# print "immovables", immovables
 		for i in immovables:
 			if i in self._obstypes.keys():
@@ -272,14 +281,14 @@ class Basic_MCTS:
 			# print v.children.iteritems()
 			if output:
 				print "options"
-				print [(k,c.qVal) for k,c in v.children.iteritems()]
+				print [(ACTIONS[k],c.qVal) for k,c in v.children.iteritems()]
 			a, v = self.bestChild(v,0)
 			actions.append(a)
 			nodes.append(v)
 			if output:
 				if v:
 					print "selected"
-					print a
+					print ACTIONS[a]
 					print "resulted in"
 					print np.reshape(v.state, self.outdim)
 					print ""
@@ -654,7 +663,7 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True,
 
 				effects = translateEvents(res['effectList'], all_objects) ##TODO: this gets object colors, not IDs.
 				
-				print actions[i]
+				print ACTIONS[actions[i]]
 				if symbolDict:
 					print rle.show(symbolDict)
 				else:
@@ -745,9 +754,8 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True,
 				print "Agent died."
 	return rle, hypotheses, finalEventList, candidate_new_colors, actions_executed
 
-def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, playback=False):
-	obsType = OBSERVATION_GLOBAL
-	rleCreateFunc = createRLSimpleGame4
+def planActLoop(rleCreateFunc, max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, playback=False):
+	
 	rle = rleCreateFunc(OBSERVATION_GLOBAL)
 
 	outdim = rle.outdim
@@ -755,15 +763,13 @@ def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, pla
 	print np.reshape(rle._getSensors(), outdim)
 	
 	terminal = rle._isDone()[0]
-
-	# terminal = not res['pcontinue']
 	
 	i=0
 	finalActions = []
 	while not terminal:
 		mcts = Basic_MCTS(existing_rle=rle)
 		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, rle, test=False)
-		# mcts.debug(mcts.rle, output=True, numActions=3)
+		mcts.debug(mcts.rle, output=True, numActions=3)
 		# break
 		actions = mcts.getBestActionsForPlayout()
 
@@ -776,7 +782,7 @@ def planActLoop(max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, pla
 		for j in range(min(len(actions), max_actions_per_plan)):
 			if actions[j] is not None and not terminal:
 				dist = mcts.getManhattanDistanceComponents(new_state)
-				print 'action', actions[j]
+				print ACTIONS[actions[j]]
 				res = rle.step(actions[j])
 				new_state = res["observation"]
 				terminal = not res['pcontinue']
@@ -799,58 +805,14 @@ if __name__ == "__main__":
 	## You have to make a function that creates the environment.
 	## Make the game, then follow the layout in 'rlenvironmentnonstatic'
 	
-	obsType = OBSERVATION_GLOBAL
-	rleCreateFunc = createRLSimpleGame4
-	rle = rleCreateFunc(obsType)
-	mcts = Basic_MCTS(rleCreateFunc=rleCreateFunc)
 
+	obsType = OBSERVATION_GLOBAL
+	filename = "examples.gridphysics.simpleGame4"
+	game_to_play = lambda obsType: createRLInputGame(filename, obsType=obsType)
 
 	embed()
-	# outTime = mcts.startTrainingPhase(100, 100, test=False)
-	# print outTime
+
+	planActLoop(game_to_play, 10, 50, 50)
+
 	# distance = mcts.debug(mcts.rle)[2]
-
-
-	# print distance
-
-
-
-	#cycle through different parameter settings; run everything at once.
-	# params = []
-	# # cycles = [200]
-	# # steps = [50, 100]
-	# cycles = [200, 300]#, 400]
-	# steps = [100, 200]#, 90, 120, 200]
-	# for i in range(len(cycles)):
-	# 	for j in range(len(steps)):
-	# 		params.append((cycles[i], steps[j]))
-	# # params = zip(cycles, steps)
-
-	# for param in params:
-	# 	distances, times = [], []
-	# 	for i in range(3):
-	# 		rleCreateFunc = createRLSimpleGame5
-	# 		mcts = Basic_MCTS(1, rleCreateFunc, obsType, 1)
-	# 		outTime = mcts.startTrainingPhase(param[0], param[1])
-	# 		distance = mcts.debug(mcts.rle)[2] 
-	# 		distances.append(distance)
-	# 		times.append(outTime)
-	# 	print ""
-	# 	print "cycles:", param[0], "steps:", param[1], "avg. distance:", np.mean(distances), "avg. time", np.mean(times)
-
-
-	##Uncomment for playback
-	# from vgdl.core import VGDLParser
-	# from examples.gridphysics.simpleGame5 import box_level, push_game
-	# game = push_game
-	# level = box_level
-	# embed()
-
-	# VGDLParser.playGame(game, level)
-
-	# embed()
-	# VGDLParser.playGame(game, level, mcts.getBestActionsForPlayout())
-	# VGDLPlaybackParser.playGame(game, level, mcts.getBestActionsForPlayout())  
-
-	# rewardSum = mcts.startTestingPhase(50)
 
