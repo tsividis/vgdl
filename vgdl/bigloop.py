@@ -4,7 +4,7 @@ from core import colorDict
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectSubgoal
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt
-
+import importlib
 '''
 ## helpful functions or access methods:
 rle._getSensors()
@@ -97,11 +97,11 @@ def playEpisode(rleCreateFunc=createRLSimpleGame4, hypotheses=[], unknown_object
 
 			# print rle._game.spriteDistribution
 
-		game, level, immovables = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", rle._rect2pos(subgoal.rect))
+		game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", rle._rect2pos(subgoal.rect))
 		Vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)	##World in agent's head.
 		Vrle.immovables = immovables
 		## Plan to achieve that goal
-		rle, hypotheses, finalEventList, candidate_new_colors, actions_executed = getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList)
+		rle, hypotheses, finalEventList, candidate_new_colors, actions_executed = getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList, symbolDict=symbolDict)
 		
 
 		if len(unknown_objects)>0:
@@ -142,8 +142,13 @@ if __name__ == "__main__":
 
 	finalEventList = []
 	obsType = OBSERVATION_GLOBAL
-	
-	game_to_play = createRLSimpleGame4 #createRLSimpleGame4_random
+	# game_file = importlib.import_module("examples.gridphysics.simpleGame4")
+	# game_to_play = lambda obsType: RLEnvironmentNonStatic(game_file.push_game, game_file.box_level, \
+	#                observationType = obsType)
+
+	# game_to_play = createRLSimpleGame4 #createRLSimpleGame4_random
+	game_to_play = createRLSimpleGame4_random
+	# game_to_play = createRLFrogs
 	thinking_steps = 50
 	thinking_default_steps=50
 	

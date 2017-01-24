@@ -15,6 +15,8 @@ from stateobsnonstatic import StateObsHandlerNonStatic
 import argparse
 from IPython import embed
 import random
+import math
+import importlib
 
 OBSERVATION_LOCAL = 'local'
 OBSERVATION_GLOBAL = 'global'
@@ -62,14 +64,33 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 for x in range(0, game.width):
                     self.nsAllCells.append( (x, y) )
         self._postInitReset()
-        self._game.reset()                
+        self._game.reset()
+        self._game.all_objects = self._game.getObjects() # Save all objects, some which may be killed in game
+              
 
     # Get definition of the observation data expected
     def observationSpec(self):
         return{ 'scheme':'Doubles', 'size':self.outdim }
 
-    def show(self):
-        return np.reshape(self._getSensors(), self.outdim)
+    def show(self, symbolDict):
+        """
+        symbolDict = a dict mapping each sprite name to its symbol.
+        """
+        gameString = ""
+        state = np.reshape(self._getSensors(), self.outdim)
+        for i in range(self.outdim[0]):
+            for j in range(self.outdim[1]):
+                if state[i][j] == 0:
+                    gameString += " "
+                elif state[i][j] == 1:
+                    gameString += symbolDict['avatar']
+                else:
+                    spriteIndex = int(round(math.log(state[i][j],2)))-1
+                    spriteType = sorted(self._obstypes.keys())[::-1][spriteIndex]
+                    gameString += symbolDict[spriteType]    
+            gameString += "\n"
+        # return np.reshape(self._getSensors(), self.outdim)
+        return gameString
     # Get definition of the actions that are accepted
     def actionSpec(self):
         return{ 'scheme':'Integer', 'N':4 }       
@@ -424,6 +445,11 @@ def createRLFrogs( obsType=OBSERVATION_LOCAL ):
 
 def createRLAliens( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defAliens(), observationType=obsType )
+
+def createRLInputGame(filename, obsType=OBSERVATION_LOCAL):
+    game_file = importlib.import_module(filename)
+    return RLEnvironmentNonStatic(game_file.push_game, game_file.box_level, \
+            observationType = obsType)
 
 def testMaze(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
     rle = createRLMaze( obsType )
