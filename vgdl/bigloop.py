@@ -65,7 +65,8 @@ def playEpisode(rleCreateFunc=createRLSimpleGame4, hypotheses=[], unknown_object
 
 	ended, won = rle._isDone()
 	
-	actions_taken = []
+	# actions_taken = []
+	total_states_encountered = [rle._game.getFullState()]
 	while not ended:																	## Select known goal if it's known, otherwise unkown object.
 		if goalColor:
 			key = [k for k in rle._game.sprite_groups.keys() if \
@@ -96,7 +97,7 @@ def playEpisode(rleCreateFunc=createRLSimpleGame4, hypotheses=[], unknown_object
 		Vrle.immovables = immovables
 		
 																						## Plan to get to subgoal
-		rle, hypotheses, finalEventList, candidate_new_colors, actions_executed = \
+		rle, hypotheses, finalEventList, candidate_new_colors, states_encountered = \
 		getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList, symbolDict=symbolDict)
 		
 
@@ -108,7 +109,8 @@ def playEpisode(rleCreateFunc=createRLSimpleGame4, hypotheses=[], unknown_object
 					unknown_objects.remove(obj)
 			
 		ended, won = rle._isDone()
-		actions_taken.extend(actions_executed)
+		# actions_taken.extend(actions_executed)
+		total_states_encountered.extend(states_encountered)
 																						## Hack to remember actual winning goal, until terminationSet is fixed.
 		if won and not hypotheses[0].goalColor:
 			# embed()
@@ -120,18 +122,19 @@ def playEpisode(rleCreateFunc=createRLSimpleGame4, hypotheses=[], unknown_object
 
 
 	if playback:
-		actions_taken = [a for a in actions_taken if a is not None]
+		# actions_taken = [a for a in actions_taken if a is not None]
 		print "in playback"
 		from vgdl.core import VGDLParser
 		from examples.gridphysics.simpleGame4 import box_level, push_game
 		playbackGame = push_game
 		playbackLevel = box_level
 		# rle = rleCreateFunc(OBSERVATION_GLOBAL)
-		print actions_taken
+		# print actions_taken
 		embed()
 		# VGDLParser.playGame(playbackGame, playbackLevel, actions_taken)
+		VGDLParser.playGame(playbackGame, playbackLevel, total_states_encountered)
 
-	return hypotheses, won, unknown_objects, goalColor, finalEventList, actions_taken
+	return hypotheses, won, unknown_objects, goalColor, finalEventList, total_states_encountered
 
 if __name__ == "__main__":
 
@@ -157,10 +160,10 @@ if __name__ == "__main__":
 	goalColor = None
 	# goalColor='BROWN'
 	for episode in range(numEpisodes):
-		hypotheses, won, unknown_objects, goalColor, finalEventList, actions_taken = \
+		hypotheses, won, unknown_objects, goalColor, finalEventList, total_states_encountered = \
 		playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, \
 			unknown_objects=unknown_objects, goalColor=goalColor, finalEventList=finalEventList, \
-			playback=False)
+			playback=True)
 		tally.append(won)
 		print "episode ended. Win:", won
 		print "__________________________________________________"

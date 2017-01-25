@@ -275,6 +275,17 @@ class Basic_MCTS:
 			actions.append(a)
 		return actions
 
+	def getBestStatesForPlayout(self, rleCreateFunc):
+		rle = rleCreateFunc(OBSERVATION_GLOBAL)
+		v = self.root
+		states = [rle._game.getFullState()]
+		while v and not v.terminal:
+			a,v = self.maxChild(v)
+			rle.step(a)
+			states.append(rle._game.getFullState())
+
+		return states
+
 	def debug(self, rle, output=False, numActions=1):
 		cntr=0
 		v = self.root
@@ -650,7 +661,8 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True,
 
 	print ""
 	print "object goal is", colorDict[str(subgoal.color)], rle._rect2pos(subgoal.rect)
-	actions_executed = []
+	# actions_executed = []
+	states_encountered = []
 	while not terminal and not goal_achieved:
 		mcts = Basic_MCTS(existing_rle=vrle)
 		planner = mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, vrle, test=False)
@@ -663,7 +675,9 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True,
 
 				## Take actual step. RLE Updates all positions.
 				res = rle.step(noise(actions[i])) ##added noise for testing, but prob(noise)=0 now.
-				actions_executed.append(actions[i])
+				# actions_executed.append(actions[i])
+				states_encountered.append(rle._game.getFullState())
+
 				new_state = res['observation']
 				terminal = rle._isDone()[0]
 				
@@ -764,7 +778,7 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True,
 				print "game won"
 			else:
 				print "Agent died."
-	return rle, hypotheses, finalEventList, candidate_new_colors, actions_executed
+	return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered
 
 def planActLoop(rleCreateFunc, max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, playback=False):
 	
@@ -773,12 +787,11 @@ def planActLoop(rleCreateFunc, max_actions_per_plan, planning_steps, defaultPoli
 	outdim = rle.outdim
 
 	rle.show()
-	# print np.reshape(rle._getSensors(), outdim)
 	
 	terminal = rle._isDone()[0]
 	
 	i=0
-	finalActions = []
+	finalStates = [rle._game.getFullState()]
 	while not terminal:
 		mcts = Basic_MCTS(existing_rle=rle)
 		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, rle, test=False)
@@ -795,23 +808,23 @@ def planActLoop(rleCreateFunc, max_actions_per_plan, planning_steps, defaultPoli
 		for j in range(min(len(actions), max_actions_per_plan)):
 			if actions[j] is not None and not terminal:
 				dist = mcts.getManhattanDistanceComponents(new_state)
-				print ACTIONS[actions[j]]
+				# print ACTIONS[actions[j]]
 				res = rle.step(actions[j])
 				new_state = res["observation"]
 				terminal = not res['pcontinue']
 				rle.show()
-				# print np.reshape(new_state, mcts.outdim)
-				finalActions.append(actions[j])
+				finalStates.append(rle._game.getFullState())
 
 		i+=1
+
 	if playback:
 		from vgdl.core import VGDLParser
 		from examples.gridphysics.simpleGame4 import box_level, push_game
 		game = push_game
 		level = box_level
-		VGDLParser.playGame(game, level, finalActions)
+		VGDLParser.playGame(game, level, finalStates)
 
-	return finalActions
+	# return finalStates
 
 if __name__ == "__main__":
 	## passing a function. That function contains things set in
@@ -821,7 +834,7 @@ if __name__ == "__main__":
 	
 
 	obsType = OBSERVATION_GLOBAL
-	filename = "examples.gridphysics.simpleGame7"
+	filename = "examples.gridphysics.simpleGame4"
 	game_to_play = lambda obsType: createRLInputGame(filename, obsType=obsType)
 
 	embed()
