@@ -96,7 +96,6 @@ def playEpisode(rleCreateFunc=createRLSimpleGame4, hypotheses=[], unknown_object
 		Vrle.immovables = immovables
 		
 																						## Plan to get to subgoal
-
 		rle, hypotheses, finalEventList, candidate_new_colors, actions_executed = \
 		getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList, symbolDict=symbolDict)
 		
