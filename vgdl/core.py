@@ -295,6 +295,7 @@ class BasicGame(object):
                     pos = (col*self.block_size, row*self.block_size)
                     self._createSprite(self.default_mapping[c], pos)
         self.kill_list=[]
+
         for _, _, effect, _ in self.collision_eff:
             if effect in stochastic_effects:
                 self.is_stochastic = True
@@ -302,6 +303,7 @@ class BasicGame(object):
         # guarantee that avatar is always visible
         self.sprite_order.remove('avatar')
         self.sprite_order.append('avatar')
+
 
     def emptyBlocks(self):
         alls = [s for s in self]
@@ -547,6 +549,7 @@ class BasicGame(object):
         ss = self.lastcollisions # List of possible interactions in the game
         self.effectList = []
         iterationEffectList = [] # hack to get past first while loop condition - actually empty
+        spritesActedOn = set() # a set containing all the sprites that have been acted on.
         while True:
             # continue iterating until iterationEffectList is empty
             iterationEffectList = []
@@ -571,6 +574,7 @@ class BasicGame(object):
                     for s1 in ss1:
                         if not pygame.Rect((0,0), self.screensize).contains(s1.rect):
                             e = effect(s1, None, self, **kwargs)
+                            spritesActedOn.add(s1)
                             if e != None:
                                 iterationEffectList.append(e)
 
@@ -579,6 +583,11 @@ class BasicGame(object):
                 # iterate over the shorter one
                 ss1, l1 = ss[g1] #Ex. ([medicine at (305,61), medicine at (305,305)], 2)
                 ss2, l2 = ss[g2]
+
+                # if l1 < l2:
+                #     shortss, longss, switch = ss1, ss2, False
+                # else:
+                #     shortss, longss, switch = ss2, ss1, True
 
                 if l1 < l2:
                     shortss, longss, switch = ss1, ss2, False
@@ -618,6 +627,7 @@ class BasicGame(object):
                             kwargs_use.pop('applyto')
                             for sC in self.getSprites(stype):
                                 e = effect(sC, s1, self, **kwargs_use)
+                                spritesActedOn.add(sC)
                             iterationEffectList.append(e)
                             continue
 
@@ -628,13 +638,21 @@ class BasicGame(object):
                                 if s1 not in self.kill_list:
                                     if switch:
                                         e = effect(sC, s1, self, **kwargs)
+                                        spritesActedOn.add(sC)
                                     else:
                                         e = effect(s1, sC, self, **kwargs)
+                                        spritesActedOn.add(s1)
                                     iterationEffectList.append(e)
                                     continue
 
+
+
                         if switch:
                             s1, s2 = s2, s1
+
+                        if shortss == longss: # both sprites are the same type of sprites
+                            if s1 in spritesActedOn: # if s1 has experienced the effect of an event
+                                s1, s2 = s2, s1
 
                         # CHECKME: this is not a bullet-proof way, but seems to work
 
@@ -644,9 +662,11 @@ class BasicGame(object):
                                 (sclass, args, stypes) = self.sprite_constr[resource]
                                 resource_color = args['color']
                                 e = effect(s1, s2, resource_color, self, **kwargs)
+                                spritesActedOn.add(s1)
                             
                             else:
                                 e = effect(s1, s2, self, **kwargs)
+                                spritesActedOn.add(s1)
                                 
                             if e != None:
                                 iterationEffectList.append(e)
@@ -657,9 +677,8 @@ class BasicGame(object):
 
             self.effectList.extend(iterationEffectList)
 
-        if len(self.effectList) > 0:
-            print self.effectList
-            # embed()
+        # if len(self.effectList) > 0:
+        #     print self.effectList
 
         return self.effectList
 
