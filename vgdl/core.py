@@ -1031,10 +1031,6 @@ class BasicGame(object):
             #         self._lastsaved = self.getFullState()
 
 
-            # handle collision effects
-            self._eventHandling()
-
-
             # Save the event and agent state
             try:
                 agentState = dict(self.getAvatars()[0].resources)
@@ -1116,6 +1112,9 @@ class BasicGame(object):
             ## Update actual sprite positions.
             for s in self:
                 s.update(self)
+
+            # handle collision effects
+            self._eventHandling()
 
             ## Sprite Induction Part 2: Update sprite distribution based on observations
             spriteInduction(self, step=3)
