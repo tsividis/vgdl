@@ -546,105 +546,120 @@ class BasicGame(object):
         self.lastcollisions = {}
         ss = self.lastcollisions # List of possible interactions in the game
         self.effectList = []
-        for g1, g2, effect, kwargs in self.collision_eff:
-            # build the current sprite lists (if not yet available)
-            for g in [g1, g2]:
-                if g not in ss:
-                    if g in self.sprite_groups:
-                        tmp = self.sprite_groups[g]
-                    else:
-                        tmp = []
-                        for key in self.sprite_groups:
-                            v = self.sprite_groups[key]
-                            if v and g in v[0].stypes:
-                                tmp.extend(v)
-                    ss[g] = (tmp, len(tmp))
-
-            # special case for end-of-screen
-            if g2 == "EOS":
-                ss1, l1 = ss[g1]
-                for s1 in ss1:
-                    if not pygame.Rect((0,0), self.screensize).contains(s1.rect):
-                        e = effect(s1, None, self, **kwargs)
-                        if e != None:
-                            self.effectList.append(e)
-
-                continue
-
-            # iterate over the shorter one
-            ss1, l1 = ss[g1] #Ex. ([medicine at (305,61), medicine at (305,305)], 2)
-            ss2, l2 = ss[g2]
-
-            if l1 < l2:
-                shortss, longss, switch = ss1, ss2, False
-            else:
-                shortss, longss, switch = ss2, ss1, True
-
-            # score argument is not passed along to the effect function
-            score = 0
-            if 'scoreChange' in kwargs:
-                kwargs = kwargs.copy()
-                score = kwargs['scoreChange']
-                del kwargs['scoreChange']
-
-            dim = None
-            if 'dim' in kwargs:
-                kwargs = kwargs.copy()
-                dim = kwargs['dim']
-                del kwargs['dim']
-
-            for s1 in shortss:
-                for ci in s1.rect.collidelistall(longss):
-                    s2 = longss[ci]
-                    if s1 == s2:
-                        continue
-                    # deal with the collision effects
-                    if score:
-                        self.score += score
-                        #print 'score', self.score  ## ORIGINALLY UNCOMMENTED
-
-                    if 'applyto' in kwargs:
-
-                        stype = kwargs['applyto']
-
-                        kwargs_use = deepcopy(kwargs)
-                        kwargs_use.pop('applyto')
-                        for sC in self.getSprites(stype):
-                            e = effect(sC, s1, self, **kwargs_use)
-                        self.effectList.append(e)
-                        continue
-
-                    if dim:
-                        sprites = self.getSprites(g1)
-                        spritesFiltered = filter(lambda sprite: sprite.__dict__[dim] == s2.__dict__[dim], sprites)
-                        for sC in spritesFiltered:
-                            if s1 not in self.kill_list:
-                                if switch:
-                                    e = effect(sC, s1, self, **kwargs)
-                                else:
-                                    e = effect(s1, sC, self, **kwargs)
-                        self.effectList.append(e)
-                        continue
-
-                    if switch:
-                        s1, s2 = s2, s1
-
-                    # CHECKME: this is not a bullet-proof way, but seems to work
-                    if s1 not in self.kill_list:
-                        if effect.__name__ == "changeResource":  # TODO: A little hack-y, but works for now.
-                            resource = kwargs['resource']
-                            (sclass, args, stypes) = self.sprite_constr[resource]
-                            resource_color = args['color']
-                            e = effect(s1, s2, resource_color, self, **kwargs)
-                        
+        iterationEffectList = [] # hack to get past first while loop condition - actually empty
+        while True:
+            # continue iterating until iterationEffectList is empty
+            iterationEffectList = []
+            # embed()
+            for g1, g2, effect, kwargs in self.collision_eff:
+                # build the current sprite lists (if not yet available)
+                for g in [g1, g2]:
+                    if g not in ss:
+                        if g in self.sprite_groups:
+                            tmp = self.sprite_groups[g]
                         else:
-                            e = effect(s1, s2, self, **kwargs)
-                            
-                        if e != None:
-                            self.effectList.append(e)
+                            tmp = []
+                            for key in self.sprite_groups:
+                                v = self.sprite_groups[key]
+                                if v and g in v[0].stypes:
+                                    tmp.extend(v)
+                        ss[g] = (tmp, len(tmp))
 
-        # if len(self.effectList) > 0:
-        # print self.effectList
+                # special case for end-of-screen
+                if g2 == "EOS":
+                    ss1, l1 = ss[g1]
+                    for s1 in ss1:
+                        if not pygame.Rect((0,0), self.screensize).contains(s1.rect):
+                            e = effect(s1, None, self, **kwargs)
+                            if e != None:
+                                iterationEffectList.append(e)
+
+                    continue
+
+                # iterate over the shorter one
+                ss1, l1 = ss[g1] #Ex. ([medicine at (305,61), medicine at (305,305)], 2)
+                ss2, l2 = ss[g2]
+
+                if l1 < l2:
+                    shortss, longss, switch = ss1, ss2, False
+                else:
+                    shortss, longss, switch = ss2, ss1, True
+
+                # score argument is not passed along to the effect function
+                score = 0
+                if 'scoreChange' in kwargs:
+                    kwargs = kwargs.copy()
+                    score = kwargs['scoreChange']
+                    del kwargs['scoreChange']
+
+                dim = None
+                if 'dim' in kwargs:
+                    kwargs = kwargs.copy()
+                    dim = kwargs['dim']
+                    del kwargs['dim']
+
+                for s1 in shortss:
+                    for ci in s1.rect.collidelistall(longss):
+                        s2 = longss[ci]
+                        # embed()
+                        if s1 == s2:
+                            continue
+
+                        # deal with the collision effects
+                        if score:
+                            self.score += score
+                            #print 'score', self.score  ## ORIGINALLY UNCOMMENTED
+
+                        if 'applyto' in kwargs:
+
+                            stype = kwargs['applyto']
+
+                            kwargs_use = deepcopy(kwargs)
+                            kwargs_use.pop('applyto')
+                            for sC in self.getSprites(stype):
+                                e = effect(sC, s1, self, **kwargs_use)
+                            iterationEffectList.append(e)
+                            continue
+
+                        if dim:
+                            sprites = self.getSprites(g1)
+                            spritesFiltered = filter(lambda sprite: sprite.__dict__[dim] == s2.__dict__[dim], sprites)
+                            for sC in spritesFiltered:
+                                if s1 not in self.kill_list:
+                                    if switch:
+                                        e = effect(sC, s1, self, **kwargs)
+                                    else:
+                                        e = effect(s1, sC, self, **kwargs)
+                                    iterationEffectList.append(e)
+                                    continue
+
+                        if switch:
+                            s1, s2 = s2, s1
+
+                        # CHECKME: this is not a bullet-proof way, but seems to work
+
+                        if s1 not in self.kill_list:
+                            if effect.__name__ == "changeResource":  # TODO: A little hack-y, but works for now.
+                                resource = kwargs['resource']
+                                (sclass, args, stypes) = self.sprite_constr[resource]
+                                resource_color = args['color']
+                                e = effect(s1, s2, resource_color, self, **kwargs)
+                            
+                            else:
+                                e = effect(s1, s2, self, **kwargs)
+                                
+                            if e != None:
+                                iterationEffectList.append(e)
+
+            if not iterationEffectList:
+                # only break from the loop if iterationEffectList is empty
+                break
+
+            self.effectList.extend(iterationEffectList)
+
+        if len(self.effectList) > 0:
+            print self.effectList
+            # embed()
 
         return self.effectList
 
@@ -1115,7 +1130,6 @@ class BasicGame(object):
                 i+=1
             VGDLSprite.dirtyrects = []
             allStates.append(self.getFullState())
-            embed()
 
         if(persist_movie):
             print "Creating Movie"
@@ -1154,7 +1168,6 @@ class BasicGame(object):
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(10)
-        embed()
         return win, self.score
 
 
