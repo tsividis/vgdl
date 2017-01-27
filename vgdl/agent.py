@@ -46,6 +46,7 @@ if __name__ == "__main__":
 
 	print "outside loop in agent.py"
 	embed()
+
 	## Temporary hack -- change as soon as we can write theory files.
 	# theories = [createRLVirtualGame, createRLVirtualGame2]
 	goals = ['box1', 'box2']

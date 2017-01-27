@@ -692,13 +692,11 @@ if __name__ == "__main__":
 	## You have to make a function that creates the environment.
 	## Make the game, then follow the layout in 'rlenvironmentnonstatic'
 	
-
-	obsType = OBSERVATION_GLOBAL
 	filename = "examples.gridphysics.simpleGame4_huge"
-	game_to_play = lambda obsType: createRLInputGame(filename, obsType=obsType)
+	game_to_play = lambda obsType: createRLInputGame(filename)
 	planActLoop(game_to_play, 10, 100, 50)
 	embed()
 
-	# planActLoop(game_to_play, 10, 50, 50)
+	# planActLoop(game_to_play, 10, 100, 50)
 
 

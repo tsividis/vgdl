@@ -139,18 +139,11 @@ def playEpisode(rleCreateFunc=createRLSimpleGame4, hypotheses=[], unknown_object
 
 if __name__ == "__main__":
 
-
 	finalEventList = []
-	obsType = OBSERVATION_GLOBAL
-
-	# game_file = importlib.import_module("examples.gridphysics.simpleGame4")
-	# game_to_play = lambda obsType: RLEnvironmentNonStatic(game_file.push_game, game_file.box_level, \
-	#                observationType = obsType)
 
 	filename = "examples.gridphysics.simpleGame4"
-	game_to_play = lambda obsType: createRLInputGame(filename, obsType=obsType)
+	game_to_play = lambda obsType: createRLInputGame(filename)
 
-	# game_to_play = createRLSimpleGame4 #createRLSimpleGame4_random
 	thinking_steps = 50
 	thinking_default_steps=50
 	

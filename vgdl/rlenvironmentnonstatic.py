@@ -427,42 +427,42 @@ def _verify( obs, targetObs ):
 # simple maze test, moved to goal and win
 
 
-def createMindEnv(game, level, obsType=OBSERVATION_LOCAL ):
+def createMindEnv(game, level, obsType=OBSERVATION_GLOBAL ):
     print game
     print level
     return RLEnvironmentNonStatic( game, level, observationType=obsType )
 
-def createRLVirtualGame( obsType=OBSERVATION_LOCAL ):
+def createRLVirtualGame( obsType=OBSERVATION_GLOBAL ):
     return RLEnvironmentNonStatic( *defVirtualGame(), observationType=obsType )
 
-def createRLVirtualGame2( obsType=OBSERVATION_LOCAL ):
+def createRLVirtualGame2( obsType=OBSERVATION_GLOBAL ):
     return RLEnvironmentNonStatic( *defVirtualGame2(), observationType=obsType )
 
 def createRLMaze( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defMaze(), observationType=obsType )
 
-def createRLSimpleGame1( obsType=OBSERVATION_LOCAL ):
+def createRLSimpleGame1( obsType=OBSERVATION_GLOBAL ):
     return RLEnvironmentNonStatic( *defSimpleGame1(), observationType=obsType )
 
-def createRLSimpleGame3( obsType=OBSERVATION_LOCAL ):
+def createRLSimpleGame3( obsType=OBSERVATION_GLOBAL ):
     return RLEnvironmentNonStatic( *defSimpleGame3(), observationType=obsType )
 
-def createRLSimpleGame4( obsType=OBSERVATION_LOCAL ):
+def createRLSimpleGame4( obsType=OBSERVATION_GLOBAL ):
     return RLEnvironmentNonStatic( *defSimpleGame4(r=False), observationType=obsType )
 
-def createRLSimpleGame4_random( obsType=OBSERVATION_LOCAL ):
+def createRLSimpleGame4_random( obsType=OBSERVATION_GLOBAL ):
     return RLEnvironmentNonStatic( *defSimpleGame4(r=True), observationType=obsType )
 
-def createRLSimpleGame5( obsType=OBSERVATION_LOCAL ):
+def createRLSimpleGame5( obsType=OBSERVATION_GLOBAL ):
     return RLEnvironmentNonStatic( *defSimpleGame5(), observationType=obsType )
 
-def createRLSimpleGame_missile( obsType=OBSERVATION_LOCAL ):
+def createRLSimpleGame_missile( obsType=OBSERVATION_GLOBAL ):
     return RLEnvironmentNonStatic( *defSimpleGame_missile(), observationType=obsType )
 
-def createRLspriteInduction4(obsType = OBSERVATION_LOCAL):
+def createRLspriteInduction4(obsType = OBSERVATION_GLOBAL):
     return RLEnvironmentNonStatic( *defspriteInduction4(), observationType=obsType)
 
-def createRLtextTheory(obsType = OBSERVATION_LOCAL):
+def createRLtextTheory(obsType = OBSERVATION_GLOBAL):
     return RLEnvironmentNonStatic( *deftextTheory(), observationType=obsType)
 
 def createRLFrogs( obsType=OBSERVATION_LOCAL ):
@@ -471,7 +471,7 @@ def createRLFrogs( obsType=OBSERVATION_LOCAL ):
 def createRLAliens( obsType=OBSERVATION_LOCAL ):
     return RLEnvironmentNonStatic( *defAliens(), observationType=obsType )
 
-def createRLInputGame(filename, obsType=OBSERVATION_LOCAL):
+def createRLInputGame(filename, obsType=OBSERVATION_GLOBAL):
     game_file = importlib.import_module(filename)
     return RLEnvironmentNonStatic(game_file.game, game_file.level, \
             observationType = obsType)
