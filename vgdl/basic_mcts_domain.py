@@ -812,14 +812,14 @@ def planActLoop(rleCreateFunc, max_actions_per_plan, planning_steps, defaultPoli
 				res = rle.step(actions[j])
 				new_state = res["observation"]
 				terminal = not res['pcontinue']
-				rle.show()
+				print rle.show()
 				finalStates.append(rle._game.getFullState())
 
 		i+=1
 
 	if playback:
 		from vgdl.core import VGDLParser
-		from examples.gridphysics.simpleGame4 import box_level, push_game
+		from examples.gridphysics.simpleGame_randomNPC import box_level, push_game
 		game = push_game
 		level = box_level
 		VGDLParser.playGame(game, level, finalStates)
@@ -834,7 +834,7 @@ if __name__ == "__main__":
 	
 
 	obsType = OBSERVATION_GLOBAL
-	filename = "examples.gridphysics.simpleGame4"
+	filename = "examples.gridphysics.simpleGame_randomNPC"
 	game_to_play = lambda obsType: createRLInputGame(filename, obsType=obsType)
 
 	embed()
