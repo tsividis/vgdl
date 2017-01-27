@@ -68,6 +68,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self._game.all_objects = self._game.getObjects() # Save all objects, some which may be killed in game
         self.makeSymbolDict()
 
+        # embed()
+
+
     # Get definition of the observation data expected
     def observationSpec(self):
         return{ 'scheme':'Doubles', 'size':self.outdim }
@@ -112,8 +115,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                     gameString += self.symbolDict[spriteType]    
             gameString += "\n"
         # return np.reshape(self._getSensors(), self.outdim)
-        print gameString
-        return
+        # print gameString
+        return gameString
     # Get definition of the actions that are accepted
     def actionSpec(self):
         return{ 'scheme':'Integer', 'N':4 }       
@@ -228,10 +231,17 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
         self._avatar._readMultiActions = lambda *x: [action]
         # self._avatar._readMultiActions = lambda *x: [self._actionset[action]] # old      
+<<<<<<< HEAD
         if self.visualize:
             self._game._clearAll(self.visualize)
 
         
+=======
+        # if self.visualize:
+        #     self._game._clearAll(self.visualize)
+        self._game._clearAll(self.visualize)
+        # events = self._game._eventHandling()
+>>>>>>> c709b0903672c2e3cc7587b002181a55d5985ef9
         # update sprites 
         if onlyavatar:
             self._avatar.update(self._game)
@@ -239,9 +249,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             for s in self._game:
                 s.update(self._game)
 
-        
-        ## get events (e.g., (stepBack obj1ID, obj2ID))
         events = self._game._eventHandling()
+        ## get events (e.g., (stepBack obj1ID, obj2ID))
+        
 
         # ### BEGINNING OF CHANGES
         for skey in self._other_types:
@@ -268,7 +278,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
     def step(self, action):
         if action != None:
-            # print action
             events = self._performAction(action) 
         else:
             events = None
@@ -289,7 +298,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 def defTheoryTest():
     from examples.gridphysics.theorytest import game, level
     print level[0]
-    # print type(level)
     print game[0]
     return (game, level)
 
