@@ -1,4 +1,4 @@
-from basic_mcts_domain import *
+from mcts import *
 from util import *
 from core import colorDict
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
