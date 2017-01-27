@@ -1,9 +1,9 @@
 level="""
 000000000
-0  G  A 0
+0  1    0
 0    2  0
-0 3  0 00
-0 O  0 00
+0 3  0A00
+0 G  0 00
 000000000
 """
 game = """
@@ -11,19 +11,19 @@ BasicGame
 	SpriteSet
 		avatar > MovingAvatar color=DARKBLUE
 		poison > Immovable color=BROWN
-		box1 > Passive color=ORANGE
-		goal > Passive color=ORANGE
+		box1 > Immovable color=ORANGE
 		box2 > Immovable color=BLUE
-		oldGl > Passive color=GOLD
+		goal > Resource color=GOLD
 		wall > Resource color=BLACK
 	InteractionSet
-		box1 avatar > killSprite
-		goal avatar > killSprite
 		poison avatar > killSprite
 		wall avatar > killSprite
-		oldGl avatar > killSprite
+		goal avatar > killSprite
+		goal avatar > killSprite
 		box2 avatar > killSprite
 		avatar wall > stepBack
+		box1 avatar > bounceForward
+		avatar poison > killSprite
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False
 		SpriteCounter stype=goal limit=0 win=True

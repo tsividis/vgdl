@@ -94,7 +94,9 @@ def playEpisode(rleCreateFunc=createRLSimpleGame4, hypotheses=[], unknown_object
 		 "./examples/gridphysics/theorytest.py", rle._rect2pos(subgoal.rect))
 		Vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)							## World in agent's head.
 		Vrle.immovables = immovables
-		
+
+		print "just wrote theory"
+		embed()
 																						## Plan to get to subgoal
 		rle, hypotheses, finalEventList, candidate_new_colors, actions_executed = \
 		getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList, symbolDict=symbolDict)

@@ -1711,8 +1711,6 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 		inverseMapping["goal"] = "G"
 
 
-
-
 	########### generating theory string
 	theoryString = 'game = """\n'
 	theoryString += "BasicGame\n"

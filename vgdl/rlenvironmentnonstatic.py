@@ -230,6 +230,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # self._avatar._readMultiActions = lambda *x: [self._actionset[action]] # old      
         if self.visualize:
             self._game._clearAll(self.visualize)
+
         
         # update sprites 
         if onlyavatar:
@@ -471,7 +472,7 @@ def createRLAliens( obsType=OBSERVATION_LOCAL ):
 
 def createRLInputGame(filename, obsType=OBSERVATION_LOCAL):
     game_file = importlib.import_module(filename)
-    return RLEnvironmentNonStatic(game_file.push_game, game_file.box_level, \
+    return RLEnvironmentNonStatic(game_file.game, game_file.level, \
             observationType = obsType)
 
 def testMaze(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):

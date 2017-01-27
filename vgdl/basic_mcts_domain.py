@@ -83,7 +83,7 @@ class Basic_MCTS:
 		self.num_workers = num_workers
 		self.neighborDict = {}
 		self.rewardQueue = deque()
-		self.pseudoRewardDecay = .96
+		self.pseudoRewardDecay = .6
 
 		## find location of goal, add to rewardDict.
 		## also add neighbors of goal rewardQueue.
@@ -98,7 +98,7 @@ class Basic_MCTS:
 		else:
 			self.avatar_code = 1
 
-		self.maxPseudoReward = 1000
+		self.maxPseudoReward = 100
 		self.rewardDict = {goal_loc:self.maxPseudoReward}
 		self.processed = [goal_loc]
 
@@ -271,6 +271,8 @@ class Basic_MCTS:
 		actions = []
 		while v and not v.terminal:
 			# a, v = self.bestChild(v,0)
+			# print "in getbestactions"
+			# embed()
 			a,v = self.maxChild(v)
 			actions.append(a)
 		return actions
@@ -328,7 +330,8 @@ class Basic_MCTS:
 			else:
 				Cp = 0.70710 # suggested exploration weight
 				a, v = self.bestChild(v,Cp) 
-				res = rle.step(a)
+				res = rle.step(a) ## todo: you're getting the bestChild and taking bestAction, but in a stochastic game you will end up in
+									## a different state despite having taken the same action. Is this what you want?
 				terminal = (not res['pcontinue']) or (rle._avatar is None)
 				if terminal:
 					reward = res['reward']
@@ -354,9 +357,8 @@ class Basic_MCTS:
 			action_choices = self.actions
 
 		for a in action_choices:
-			if a not in v.children:
+			if a not in v.children.keys():
 				expand_action = a
-				# print "expanded", a
 				res = rle.step(a)
 				new_state = res["observation"]
 
@@ -366,8 +368,6 @@ class Basic_MCTS:
 				if terminal:
 					reward = res['reward']
 					if reward==1:
-						# print "expanded to goal state"
-						# print reward
 						reward = self.maxPseudoReward
 
 				# print "in expand. terminal?", terminal
@@ -388,6 +388,11 @@ class Basic_MCTS:
 		if len(qVals)>0 and avatar_loc in self.neighborDict.keys() and len(qVals)>=len(self.neighborDict[avatar_loc])-1: #  -1, since (0,0) is not an action.
 				maxVal = max(qVals)
 				choices = [(a,c) for (a,c) in v.children.items() if c.qVal==maxVal]
+				# for (a,c) in choices:
+				# 	print a, c.qVal
+				# 	print np.reshape(c.state, self.rle.outdim)
+				# printchoices = [(a,c.qVal) for (a,c) in v.children.items() if c.qVal==maxVal]
+				# print printchoices
 				return random.choice(choices)
 		else:
 			return (None, None)
@@ -409,29 +414,27 @@ class Basic_MCTS:
 				funcVal = float('inf')
 			else:
 				if c.terminal:
-					deltaY, deltaX = self.getManhattanDistanceComponents(v.state)
-					manhattanDistance = abs(deltaX + a[0]) + abs(deltaY + a[1])
-					if manhattanDistance:
-						manhattanDistanceTransform = transform(manhattanDistance)
-						funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) + Cp*float(manhattanDistanceTransform)/c.visitCount
-
-					else:
-						funcVal = float('inf')
+					# deltaY, deltaX = self.getManhattanDistanceComponents(v.state)
+					# manhattanDistance = abs(deltaX + a[0]) + abs(deltaY + a[1])
+					# if manhattanDistance:
+						# manhattanDistanceTransform = transform(manhattanDistance)
+						# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount)# + Cp*float(manhattanDistanceTransform)/c.visitCount
+					
+					## if you uncomment the above, remove the below line.
+					funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount)# + Cp*float(manhattanDistanceTransform)/c.visitCount
+					# else:
+						# funcVal = float('inf')
 				else:
-					manhattanDistanceTransform = transform(self.getManhattanDistance(c.state))
-					funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) + Cp*float(manhattanDistanceTransform)/c.visitCount
+					# manhattanDistanceTransform = transform(self.getManhattanDistance(c.state))
+					funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount)# + Cp*float(manhattanDistanceTransform)/c.visitCount
 
 			if funcVal > maxFuncVal:
 				maxFuncVal = funcVal
 				bestAction = a
 				bestChild = c
-		
-		# if bestChild == None:# and maxFuncVal > -float('inf'): ## you need a tiebreaker
-		# 	bestAction = random.choice(v.children.keys())
-		# 	bestChild = v.children[bestAction]
-		# 	print "maxfuncval", maxFuncVal
-		# 	print "tiebreaker. Selected", bestAction
-		# 	print bestChild.state
+		if bestChild == None:	## Tiebreaker
+			bestAction = random.choice(v.children.keys())
+			bestChild = v.children[bestAction]
 
 		return bestAction, bestChild
 
@@ -495,7 +498,7 @@ class Basic_MCTS:
 		terminal = False
 		iters = 0
 		state = s.state
-		g = .5
+		g = 1#.5
 		reshaped_state = np.reshape(state, self.outdim)
 
 		##TODO: can delete this if you're not calculating distances at the end of this func
@@ -516,12 +519,8 @@ class Basic_MCTS:
 
 			iters += 1
 			
-			if domain_knowledge:
-				if avatar_loc in self.actionDict.keys():
-					sample = random.choice(self.actionDict[avatar_loc])
-				else:
-					sample = random.choice([(-1,0), (1,0), (0,-1), (0,1)])
-
+			if domain_knowledge and avatar_loc in self.actionDict.keys():
+				sample = random.choice(self.actionDict[avatar_loc])
 			else:
 				sample = random.choice([(-1,0), (1,0), (0,-1), (0,1)])
 			
@@ -531,7 +530,10 @@ class Basic_MCTS:
 			new_state = res["observation"]
 			state = new_state
 			terminal = not res['pcontinue']
-			reward += g*res['reward']
+			if terminal and res['reward']==1:
+				reward += g*self.maxPseudoReward
+			else:
+				reward += g*res['reward']
 			g *= self.decay_factor
 
 			self.defaultTime += 1 
@@ -794,7 +796,7 @@ def planActLoop(rleCreateFunc, max_actions_per_plan, planning_steps, defaultPoli
 
 		for j in range(min(len(actions), max_actions_per_plan)):
 			if actions[j] is not None and not terminal:
-				dist = mcts.getManhattanDistanceComponents(new_state)
+				# dist = mcts.getManhattanDistanceComponents(new_state)
 				print ACTIONS[actions[j]]
 				res = rle.step(actions[j])
 				new_state = res["observation"]
@@ -821,9 +823,9 @@ if __name__ == "__main__":
 	
 
 	obsType = OBSERVATION_GLOBAL
-	filename = "examples.gridphysics.simpleGame7"
+	filename = "examples.gridphysics.theorytest2"
 	game_to_play = lambda obsType: createRLInputGame(filename, obsType=obsType)
-
+	planActLoop(game_to_play, 10, 100, 50)
 	embed()
 
 	# planActLoop(game_to_play, 10, 50, 50)
