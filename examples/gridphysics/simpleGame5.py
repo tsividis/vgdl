@@ -3,7 +3,7 @@ VGDL example: Urgent
 
 @author: Jake
 '''
-box_level = """
+level = """
 wwwwwwwwwwwww
 w     w     w
 w     w     w
@@ -13,7 +13,7 @@ w     w     w
 wwwwwwwwwwwww
 """
 
-push_game = """
+game = """
 BasicGame
   SpriteSet         
     goal > Immovable color=GREEN
@@ -41,4 +41,4 @@ BasicGame
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(push_game, box_level)  
+    VGDLParser.playGame(game, level)  

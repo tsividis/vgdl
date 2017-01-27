@@ -83,7 +83,6 @@ class Basic_MCTS:
 		self.num_workers = num_workers
 		self.neighborDict = {}
 		self.rewardQueue = deque()
-		self.pseudoRewardDecay = .6
 
 		## find location of goal, add to rewardDict.
 		## also add neighbors of goal rewardQueue.
@@ -91,6 +90,7 @@ class Basic_MCTS:
 		goal_code = 2**(1+sorted(self._obstypes.keys())[::-1].index("goal"))
 		goal_loc = np.where(np.reshape(self.rle._getSensors(), self.outdim)==goal_code)
 		goal_loc = goal_loc[0][0], goal_loc[1][0]
+
 		if 'avatar' in self._obstypes.keys():
 			inverted_avatar_loc=self._obstypes['avatar'][0]
 			avatar_loc = (inverted_avatar_loc[1], inverted_avatar_loc[0])
@@ -99,6 +99,7 @@ class Basic_MCTS:
 			self.avatar_code = 1
 
 		self.maxPseudoReward = 100
+		self.pseudoRewardDecay = .6
 		self.rewardDict = {goal_loc:self.maxPseudoReward}
 		self.processed = [goal_loc]
 
@@ -133,20 +134,14 @@ class Basic_MCTS:
 			immovables = ['wall']
 			print "Using defaults as immovables", immovables
 
-		# print "immovables", immovables
 		for i in immovables:
 			if i in self._obstypes.keys():
 				immovable_codes.append(2**(1+sorted(self._obstypes.keys())[::-1].index(i)))
-		# immovable_codes = [2**(1+sorted(self._obstypes.keys())[::-1].index(i)) for i in immovables]
 
-		# if immovables:
-		# 	print "inscandomain"
-		# 	embed()
 		actionDict = defaultdict(list)
 		neighborDict = defaultdict(list)
-		action_superset = [(0,0),(-1,0), (1,0), (0,-1), (0,1)] ##TODO: add (0,0) at some point, but probably not in the subsequent loop.
+		action_superset = [(0,0),(-1,0), (1,0), (0,-1), (0,1)]
 		
-		##Take np.reshaped(state)
 		board = np.reshape(self.rle._getSensors(), self.outdim)
 		x,y=np.shape(board)
 		for i in range(x):
@@ -170,100 +165,42 @@ class Basic_MCTS:
 			if n not in self.rewardQueue:
 				self.rewardQueue.append(n)
 
-		i=0
 		while len(self.rewardQueue)>0:
 			loc = self.rewardQueue.popleft()
-
-			if loc not in self.processed:# self.rewardDict.keys():
-
+			if loc not in self.processed:
 				valid_neighbors = [n for n in self.neighborDict[loc] if n in self.rewardDict.keys()]
 				self.rewardDict[loc] = max([self.rewardDict[n] for n in valid_neighbors]) * self.pseudoRewardDecay
 				self.processed.append(loc)
-			
 				for n in self.neighborDict[loc]:
 					if n not in self.processed:
 						self.rewardQueue.append(n)
 		return 
 
-	def getManhattanDistance(self, state): ##used to be passed self, state
-		"""
-		expect avatar to be called 'avatar' in class section of theory
-		expect goal to be called 'goal' in class section of theory
-		currently expects the state observation to follow a grid string format (orignal default format)
-		"""
-		deltaY, deltaX = self.getManhattanDistanceComponents(state)
-		return abs(deltaX) + abs(deltaY)
-
-	def getManhattanDistanceComponents(self, state):
-		
-		reshaped_state = np.reshape(state, self.outdim)
-		avatar = 1
-		goal = 2**(1+sorted(self._obstypes.keys())[::-1].index("goal"))
-		avatar_loc = np.where(reshaped_state==self.avatar_code)
-		goal_loc = np.where(reshaped_state==goal)
-		# if goal in reshaped_state and
-		# print avatar_loc[0], goal_loc[0]
-		if len(avatar_loc[0])>0 and len(goal_loc[0])>0:
-			dist = avatar_loc[0][0]-goal_loc[0][0], avatar_loc[1][0]-goal_loc[1][0]
-			return dist
-		elif len(avatar_loc[0])==0 and len(goal_loc[0])>0:
-			print "found a goal but no avatar"
-			embed()
-			return 100,100 ##TODO: hacked on 1/18. Fix
-		elif len(avatar_loc[0])>0 and len(goal_loc[0])==0:
-			return 0,0
-		else:
-			print "manhattanDistanceComponents. Weird 'else' case."
-			embed()
-			return 0,0
-
-
-
-	def startTrainingPhase(self, numTrainingCycles, step_horizon, VRLE,  test=False):
-
-		oldTime = time.time()
+	def startTrainingPhase(self, numTrainingCycles, step_horizon, VRLE):
 
 		#track total iterations spent in treePolicy
 		tree_policy_iters, default_policy_iters = 0, 0
 		for i in range(numTrainingCycles):
 			Vrle = copy.deepcopy(VRLE)
-			if test:
-				print "in starttrainingphase"
-				embed()
 
 			# if i%10==0:
 			# 	print "Training cycle: %i"%i
 
-			reward, vl, iters = self.treePolicy(self.root, Vrle, step_horizon)
+			reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon)
 			tree_policy_iters += iters
-			if not vl.terminal:
-				reward, dPiters = self.defaultPolicy(vl, Vrle, step_horizon, domain_knowledge=True)
+			if not v.terminal:
+				reward, dPiters = self.defaultPolicy(v, Vrle, step_horizon, domain_knowledge=True)
 
-				loc = np.where(np.reshape(vl.state, self.outdim)==self.avatar_code)
+				loc = np.where(np.reshape(v.state, self.outdim)==self.avatar_code)
 				
-
-				## TODO: you hacked this if-statement together to avoid a crash, but is it doing what you want?
-				## e.g., do you want to just assume this means the avatar is gone and you want to give a reward of 0?
 				if len(loc[0])>0:
 					loc = loc[0][0], loc[1][0] 
 					if loc in self.rewardDict.keys():
 						reward = reward + self.rewardDict[loc]
-					else:
-						reward =reward
-				else:
-					reward = reward
-				# if reward==0:
-				# 	deltaX, deltaY = self.getManhattanDistanceComponents(vl.state)
-				# 	if abs(deltaX)+abs(deltaY) == 0:
-				# 		heuristicValue = float('inf')
-				# 	else:
-				# 		loc = np.where(np.reshape(vl.state, self.outdim)==1)
-				# 		loc = loc[0][0], loc[1][0]
-				# 		heuristicValue = self.rewardDict[loc]# heuristicValue = 1./(abs(deltaX)+abs(deltaY))
-				# 	reward = heuristicValue
+				
 				default_policy_iters += dPiters
-			self.backup(vl, reward)
-		outTime = time.time()-oldTime
+			
+			self.backup(v, reward)
 		return self
 
 	def getBestActionsForPlayout(self):
@@ -313,37 +250,32 @@ class Basic_MCTS:
 					print np.reshape(v.state, rle.outdim)
 					print ""
 			cntr+=1
-		if v.terminal:
-			distance = 0
+		# if v.terminal:
+		# 	distance = 0
 		else:
 			state = nodes[-1].state
-			deltaX, deltaY = self.getManhattanDistanceComponents(state)
-			distance = abs(deltaX)+abs(deltaY)
-		return actions, nodes, distance
+			# deltaX, deltaY = self.getManhattanDistanceComponents(state)
+			# distance = abs(deltaX)+abs(deltaY)
+		return actions, nodes#, distance
 
 
 	def treePolicy(self, v, rle, step_horizon):
-		"""
-		i = iteration number
-		"""
-		t1 = time.time()
 		count = 0
 		iters = 0
 		while not v.terminal and iters < step_horizon:
 			iters += 1
-			self.treeTime += 1
 			count += 1
 			if not v.expanded:
 				reward, c = self.expand(v, rle, domain_knowledge=False)
-				# print "treePolicy", time.time()-t1
 				return reward, c, iters
 
 			else:
 				Cp = 0.70710 # suggested exploration weight
 				a, v = self.bestChild(v,Cp) 
-				res = rle.step(a) ## todo: you're getting the bestChild and taking bestAction, but in a stochastic game you will end up in
+				res = rle.step(a) ## TODO: you're getting the bestChild and taking bestAction, but in a stochastic game you will end up in
 									## a different state despite having taken the same action. Is this what you want?
-				terminal = (not res['pcontinue']) or (rle._avatar is None)
+				terminal = rle._isDone()[0]
+				# terminal = (not res['pcontinue']) or (rle._avatar is None)
 				if terminal:
 					reward = res['reward']
 					if reward==1:
@@ -354,7 +286,7 @@ class Basic_MCTS:
 					return reward, v, iters
 
 
-	def expand(self,v, rle, domain_knowledge=False):
+	def expand(self, v, rle, domain_knowledge=False):
 		expan_action = None
 		child = None
 		reward = 0
@@ -374,14 +306,13 @@ class Basic_MCTS:
 				new_state = res["observation"]
 
 				##Buggy code on VGDL side forces us to also check the rle.
-				terminal = (not res['pcontinue']) or (rle._avatar is None)
-				
+				# terminal = (not res['pcontinue']) or (rle._avatar is None)
+				terminal = rle._isDone()[0]
 				if terminal:
 					reward = res['reward']
 					if reward==1:
 						reward = self.maxPseudoReward
 
-				# print "in expand. terminal?", terminal
 				child = MCTS_node(self, new_state, terminal, self.actions, parent = v)
 
 				if domain_knowledge:
@@ -449,76 +380,13 @@ class Basic_MCTS:
 
 		return bestAction, bestChild
 
-	def makeActionSet(self, n_samples):
+	def defaultPolicy(self, v, rle, step_horizon, domain_knowledge=False):
 
-		outList = []
-		numActions = 4
-		actionKeys = range(4)
-		## Returns shuffled list of n_samples drawn from 'actions'.
-		partition = np.random.dirichlet([1]*numActions,1)[0]
-		outList = [self.actionDict[np.random.choice(actionKeys, p=partition)] for _ in range(n_samples)]
-		return outList
-
-	def defaultPolicyB(self, s, rle, step_horizon):
-		"""
-		Version that samples a chunk of actions.
-		"""
-		t1 = time.time()
 		reward = 0
-		stepSize = 1 # try 13 later
-
-		temperature = 3
 		terminal = False
 		iters = 0
-		state = s.state
-		g = .5
-		# reshaped_state = np.reshape(state, self.outdim)
-		# avatar_initial_loc = np.where(reshaped_state==1)
-
-		samples = self.makeActionSet(step_horizon)
-
-		for i in range(len(samples)):
-			iters += 1
-			if not terminal:
-				a = samples[i]
-				t2 = time.time()
-				res = rle.step(a)
-				new_state = res["observation"]
-				state = new_state
-				terminal = not res['pcontinue']
-				reward += g*res['reward']
-				g *= self.decay_factor
-
-				self.defaultTime += 1 # useless right now.
-			else:
-				break
-
-		return reward, iters
-
-
-	def defaultPolicy(self, s, rle, step_horizon, domain_knowledge=False):
-		"""
-		i = iteration number
-		"""
-		t1 = time.time()
-		reward = 0
-		stepSize = 1 # try 13 later
-		rotatedVecMap = {(0,1):(1,0), (1,0):(0,-1), (0,-1):(-1,0), (-1,0):(0,1)}
-		vecDist = dict()
-		temperature = 3
-		terminal = False
-		iters = 0
-		state = s.state
-		g = 1#.5
-		reshaped_state = np.reshape(state, self.outdim)
-
-		##TODO: can delete this if you're not calculating distances at the end of this func
-
-		avatar_initial_loc = np.where(reshaped_state==self.avatar_code)
-		if len(avatar_initial_loc[0])>0:
-			avatar_loc = (avatar_initial_loc[0][0], avatar_initial_loc[1][0])
-		else:
-			terminal = True
+		state = v.state
+		g = 1
 		
 		terminal = rle._isDone()[0]
 
@@ -540,23 +408,17 @@ class Basic_MCTS:
 			res = rle.step(a)
 			new_state = res["observation"]
 			state = new_state
-			terminal = not res['pcontinue']
+			terminal = rle._isDone()[0]
 			if terminal and res['reward']==1:
 				reward += g*self.maxPseudoReward
 			else:
 				reward += g*res['reward']
+			
 			g *= self.decay_factor
 
-			self.defaultTime += 1 
-
-		reshaped_state = np.reshape(state, self.outdim)
-		avatar_end_loc = np.where(reshaped_state==1)
-
 		return reward, iters
-		# return reward+vecDist[sample], iters
 
-	def backup(self, v,reward):
-		"""reward = 1 if win, -1 if loss"""
+	def backup(self, v, reward):
 		while v:
 			v.backProp(reward)
 			reward *= self.decay_factor
@@ -584,12 +446,8 @@ class MCTS_node:
 	def equals(self,v):
 		return np.array_equal(self.state,v.state)
 
-	def backProp(self,win):
-		"""
-		win = 1 if you won 
-		or win = -1 if loss
-		"""
-		self.qVal+= win 
+	def backProp(self, reward):
+		self.qVal+= reward 
 		self.visitCount += 1
 
 	def createChild(self,action,child, avatar_loc=False, domain_knowledge=False):
@@ -667,7 +525,7 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True,
 	states_encountered = []
 	while not terminal and not goal_achieved:
 		mcts = Basic_MCTS(existing_rle=vrle)
-		planner = mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, vrle, test=False)
+		planner = mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, vrle)
 		actions = mcts.getBestActionsForPlayout()
 
 		for i in range(len(actions)):
@@ -796,7 +654,7 @@ def planActLoop(rleCreateFunc, max_actions_per_plan, planning_steps, defaultPoli
 	finalStates = [rle._game.getFullState()]
 	while not terminal:
 		mcts = Basic_MCTS(existing_rle=rle)
-		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, rle, test=False)
+		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, rle)
 		# mcts.debug(mcts.rle, output=True, numActions=3)
 		# break
 		actions = mcts.getBestActionsForPlayout()
@@ -836,12 +694,11 @@ if __name__ == "__main__":
 	
 
 	obsType = OBSERVATION_GLOBAL
-	filename = "examples.gridphysics.theorytest2"
+	filename = "examples.gridphysics.simpleGame4_huge"
 	game_to_play = lambda obsType: createRLInputGame(filename, obsType=obsType)
 	planActLoop(game_to_play, 10, 100, 50)
 	embed()
 
 	# planActLoop(game_to_play, 10, 50, 50)
 
-	# distance = mcts.debug(mcts.rle)[2]
 

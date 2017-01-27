@@ -44,7 +44,6 @@ def playEpisode(rleCreateFunc=createRLSimpleGame4, hypotheses=[], unknown_object
 		print [colorDict[str(o[0].color)] for o in unknown_objects]
 
 
-
 	##working hypothesis is hypotheses[0] for now.
 	# unknown_objects= []
 	# print [r.generic for r in hypotheses[0].interactionSet]

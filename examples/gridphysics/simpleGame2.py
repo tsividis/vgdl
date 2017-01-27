@@ -2,7 +2,7 @@
 Simple interactions: get/lose points, can't pass through walls, object gets pushed.
 '''
 
-box_level = """
+level = """
 wwwwwwwwwwwwwwwwwwwwwwwww
 w m                  w  w
 w2  1  3                w
@@ -15,7 +15,7 @@ wwwwwwwwwwwwwwwwwwwwwwwww
 """
 
         
-push_game = """
+game = """
 BasicGame frame_rate=30
     SpriteSet        
         breakbox   > ResourcePack 
@@ -63,4 +63,4 @@ BasicGame frame_rate=30
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(push_game, box_level)    
+    VGDLParser.playGame(game, level)    

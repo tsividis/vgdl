@@ -231,17 +231,10 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
         self._avatar._readMultiActions = lambda *x: [action]
         # self._avatar._readMultiActions = lambda *x: [self._actionset[action]] # old      
-<<<<<<< HEAD
+
         if self.visualize:
             self._game._clearAll(self.visualize)
 
-        
-=======
-        # if self.visualize:
-        #     self._game._clearAll(self.visualize)
-        self._game._clearAll(self.visualize)
-        # events = self._game._eventHandling()
->>>>>>> c709b0903672c2e3cc7587b002181a55d5985ef9
         # update sprites 
         if onlyavatar:
             self._avatar.update(self._game)
@@ -302,20 +295,20 @@ def defTheoryTest():
     return (game, level)
 
 def defVirtualGame():
-    from examples.gridphysics.virtualGame import push_game, box_level
-    return (push_game, box_level)
+    from examples.gridphysics.virtualGame import game, level
+    return (game, level)
 
 def defVirtualGame2():
-    from examples.gridphysics.virtualGame2 import push_game, box_level
-    return (push_game, box_level)
+    from examples.gridphysics.virtualGame2 import game, level
+    return (game, level)
 
 def defMaze():
     from examples.gridphysics.mazes import maze_game, maze_level_1
     return( maze_game, maze_level_1 )
 
 def defSimpleGame1():
-    from examples.gridphysics.simpleGame1 import push_game, box_level
-    return (push_game, box_level)
+    from examples.gridphysics.simpleGame1 import game, level
+    return (game, level)
 
 def defSimpleGame3():
     from examples.gridphysics.simpleGame3 import push_game, box_level
@@ -323,23 +316,23 @@ def defSimpleGame3():
 
 def defSimpleGame4(r=False):
     if r:
-        from examples.gridphysics.simpleGame4 import push_game, box_level, box_level2, box_level3
-        box_level = random.choice([box_level, box_level2, box_level3])
+        from examples.gridphysics.simpleGame4 import game, level1, level2, level3
+        level = random.choice([level1, level2, level3])
     else:
-        from examples.gridphysics.simpleGame4 import push_game, box_level 
-    return (push_game, box_level)
+        from examples.gridphysics.simpleGame4 import game, level
+    return (game, level)
 
 def defSimpleGame5():
-    from examples.gridphysics.simpleGame5 import push_game, box_level
-    return (push_game, box_level)
+    from examples.gridphysics.simpleGame5 import game, level
+    return (game, level)
 
 def defSimpleGame_missile():
-    from examples.gridphysics.simpleGame_missile import push_game, box_level
-    return (push_game, box_level)
+    from examples.gridphysics.simpleGame_missile import game, level
+    return (game, level)
 
 def defspriteInduction4():
-    from examples.gridphysics.spriteInduction4 import chase_game, chase_level
-    return (chase_game, chase_level)
+    from examples.gridphysics.spriteInduction4 import game, level
+    return (game, level)
 
 def deftextTheory():
     from examples.gridphysics.textTheory import game, level

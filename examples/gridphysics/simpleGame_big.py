@@ -2,7 +2,7 @@
 Simple interactions: get/lose points, can't pass through walls, object gets pushed.
 '''
 
-# box_level = """
+# level = """
 # wwww
 # wp w
 # wAgw
@@ -14,7 +14,7 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 # TODOL add more boxes (larger state space)
 # TODO: add medicine -> ceheck if planner can figure out that this helps with poison.
 
-# box_level = """
+# level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                        ww
 # w     p                 1 w
@@ -35,7 +35,7 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 # wwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-# box_level = """
+# level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                    1   ww
 # w     p1                w w
@@ -56,7 +56,7 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 # wwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-box_level = """
+level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwww
 w                    1   ww
 w     p1                1 w
@@ -78,7 +78,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 
-# box_level = """
+# level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                    1   ww
 # w     p1                w w
@@ -99,7 +99,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-push_game = """
+game = """
 BasicGame frame_rate=30
     SpriteSet        
         avatar > MovingAvatar color=DARKBLUE #cooldown=4 
@@ -139,4 +139,4 @@ BasicGame frame_rate=30
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(push_game, box_level)    
+    VGDLParser.playGame(game, level)    
