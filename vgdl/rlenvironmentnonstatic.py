@@ -221,15 +221,16 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         return res
 
     def _performAction(self, action, onlyavatar=False):
-        """ Action is an index for the actionset.  """
-        if action is None:
-            return   
-        
+        """ Action is an index for the actionset.  """ 
         # take action and compute consequences
         # replace the method that reads multiple action keys with a fn that just
         # returns the currently desired action
+        # if action == (0,0) or action == None:
+        #     return
 
-        self._avatar._readMultiActions = lambda *x: [action]
+        if action != (0,0):
+            self._avatar._readMultiActions = lambda *x: [action]
+
         # self._avatar._readMultiActions = lambda *x: [self._actionset[action]] # old      
 
         if self.visualize:
@@ -237,9 +238,13 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
         # update sprites 
         if onlyavatar:
-            self._avatar.update(self._game)
+            if action != (0,0):
+                self._avatar.update(self._game)
+
         else:
             for s in self._game:
+                if s == self._avatar and action == (0,0):
+                    continue
                 s.update(self._game)
 
         events = self._game._eventHandling()
@@ -270,10 +275,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             self._allEvents.append((self._previous_state, action, self._last_state))
 
     def step(self, action):
-        if action != None:
-            events = self._performAction(action) 
-        else:
-            events = None
+        events = self._performAction(action) 
         observation = self._getSensors()
         (ended, won) = self._isDone()
         if ended:
