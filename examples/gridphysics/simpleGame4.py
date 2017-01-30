@@ -3,7 +3,7 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 '''
 
 
-# box_level = """
+# level = """
 # wwwwwwwww
 # w  1    w
 # w    2  w
@@ -12,7 +12,7 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 # wwwwwwwww
 # """
 
-# box_level2 = """
+# level2 = """
 # wwwwwwwww
 # wA 1    w
 # w    2  w
@@ -21,7 +21,7 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 # wwwwwwwww
 # """
 
-box_level = """
+level = """
 wwwwwwwww
 w  1    w
 w    p  w
@@ -31,7 +31,7 @@ wwwwwwwww
 """
 
 
-push_game = """
+game = """
 BasicGame frame_rate=30
     SpriteSet        
         avatar > MovingAvatar color=DARKBLUE #cooldown=4 
@@ -69,4 +69,4 @@ BasicGame frame_rate=30
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(push_game, box_level)    
+    VGDLParser.playGame(game, level)    

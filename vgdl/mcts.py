@@ -495,6 +495,41 @@ def observe(rle, obsSteps):
 		spriteInduction(rle._game, step=3)
 	return
 
+def selectSubgoalType(unknown_categories, goalColor=None):
+	if goalColor:
+		key = [k for k in rle._game.sprite_groups.keys() if \
+		colorDict[str(rle._game.sprite_groups[k][0].color)]=='GOLD'][0]
+		actual_goal = rle._game.sprite_groups[key][0]
+		object_goal = actual_goal
+		return goalColor, object_goal[0]
+	else:
+
+
+def selectSubgoalToken(vrle, goal_type, unknown_categories, color=None):
+	## selects a reachable subgoal (if color is provided, selects subgoal of that color) according to the theory that the vrle instantiates.
+	## TODO: make sure there's an actual path to the goal.
+
+	if 'avatar' in vrle._obstypes.keys():
+		inverted_avatar_loc=vrle._obstypes['avatar'][0]
+		avatar_loc = (inverted_avatar_loc[1], inverted_avatar_loc[0])
+	else:
+		avatar_loc = np.where(np.reshape(vrle._getSensors(), vrle.outdim)==1)
+		avatar_loc = avatar_loc[1][0], avatar_loc[0][0]
+
+	## rank objects by distance from agent
+	options = [cat for cat in unknown_categories if cat[0].name==goal_type][0]
+	options = [(o, abs((vrle._rect2pos(o.rect)[0]-avatar_loc[0])) + abs((vrle._rect2pos(o.rect)[1]-avatar_loc[1]))) for o in options]
+	options = sorted(options, key=lambda o: o[1])
+
+	## iterate down the list. as long as the object is 'reachable', return it.
+	mcts = Basic_MCTS(existing_rle=vrle)
+	for o in options:
+		if vrle._rect2pos(o[0].rect) in mcts.neighborDict.keys() and len(mcts.neighborDict[vrle._rect2pos(o[0].rect)])>1:
+			return colorDict[str(o[0].color)], o[0]
+
+
+
+
 def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
 	max_actions_per_plan=1, planning_steps=100, defaultPolicyMaxSteps=50, symbolDict=None):
 	## Takes a real world, a theory (instantiated as a virtual world)
@@ -599,6 +634,8 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True,
 					
 					# print "in getToSubgoal"
 					# embed()
+
+					## make sure this is only adding things the avatar touched
 					candidate_new_objs = []
 					for interaction in hypotheses[0].interactionSet:
 						if not interaction.generic:
