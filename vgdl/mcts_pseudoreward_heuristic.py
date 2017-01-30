@@ -113,8 +113,6 @@ class Basic_MCTS:
 		self.scanDomainForMovementOptions()
 		self.propagateRewards(goal_loc)
 
-		# print "in basic_mcts init"
-		# embed()
 		# self.actionDict = {}
 		# ##Populate dictionary for use in action-sampling in defaultPolicy. Not sampling (0,0).
 		# for i in range(len(rle._actionset)):
@@ -194,6 +192,7 @@ class Basic_MCTS:
 				reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon)
 			except TypeError:
 				embed()
+
 			tree_policy_iters += iters
 			if not v.terminal:
 				reward, dPiters = self.defaultPolicy(v, Vrle, step_horizon, domain_knowledge=True)
@@ -216,7 +215,6 @@ class Basic_MCTS:
 		while v and not v.terminal:
 			# a, v = self.bestChild(v,0)
 			# print "in getbestactions"
-			# embed()
 			a,v = self.maxChild(v)
 			actions.append(a)
 		return actions
@@ -287,10 +285,8 @@ class Basic_MCTS:
 				if terminal:
 					reward = res['reward']
 					if reward==1:
-						reward = self.maxPseudoReward #
-						# print "reached goal in simulation. Reward", reward
-						# embed()
-					# print "treePolicy", time.time()-t1
+						reward = self.maxPseudoReward
+
 					return reward, v, iters
 
 
@@ -349,11 +345,10 @@ class Basic_MCTS:
 
 	def bestChild(self, v, Cp):
 		def transform(loc):
-			coefficient = 1.
 			slowdown_factor = 1 # 1./3
 			distanceFunc = self.rewardDict[loc]
 
-			return coefficient/(1+math.exp(-slowdown_factor * distanceFunc)) # sigmoid
+			return 1/(1+math.exp(-slowdown_factor * distanceFunc)) # sigmoid
 
 		maxFuncVal = -float('inf')
 		bestChild = None
@@ -373,10 +368,10 @@ class Basic_MCTS:
 					cLoc = (vLoc[0] + a[0], vLoc[1] + vLoc[1])
 					if cLoc in self.rewardDict:
 						funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
-						          + Cp*float(transform(cLoc))/c.visitCount
+						          + Cp*float(self.rewardDict[cLoc])/c.visitCount
 
 					else:
-						funcVal = float('inf')
+						funcVal = -float('inf')
 
 					# deltaY, deltaX = self.getManhattanDistanceComponents(v.state)
 					# manhattanDistance = abs(deltaX + a[0]) + abs(deltaY + a[1])
@@ -395,7 +390,7 @@ class Basic_MCTS:
 							loc = loc[0][0], loc[1][0] 
 						
 					funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
-					          + Cp* float(transform(loc))/c.visitCount
+					          + Cp* float(self.rewardDict[loc])/c.visitCount
 
 			if funcVal > maxFuncVal:
 				maxFuncVal = funcVal
@@ -571,7 +566,6 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True,
 				
 				# vrle_res = vrle.step(noise(actions[i]))
 				# vrle_new_state = vrle_res['observation']
-				# embed()
 
 				effects = translateEvents(res['effectList'], all_objects) ##TODO: this gets object colors, not IDs.
 				
@@ -625,8 +619,6 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True,
 					hypotheses = list(g.runInduction(sample, trace, 20))
 
 					
-					# print "in getToSubgoal"
-					# embed()
 					candidate_new_objs = []
 					for interaction in hypotheses[0].interactionSet:
 						if not interaction.generic:
@@ -717,7 +709,7 @@ if __name__ == "__main__":
 	## You have to make a function that creates the environment.
 	## Make the game, then follow the layout in 'rlenvironmentnonstatic'
 	
-	filename = "examples.gridphysics.simpleGame4"
+	filename = "examples.gridphysics.simpleGame4_big"
 	game_to_play = lambda obsType: createRLInputGame(filename)
 	planActLoop(game_to_play, filename, 10, 50, 50, playback=True)
 
