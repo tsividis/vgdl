@@ -346,6 +346,10 @@ def defAliens():
     from examples.gridphysics.aliens import aliens_game, aliens_level
     return (aliens_game, aliens_level)
 
+def defInputGame(filename):
+    game_file = importlib.import_module(filename)
+    return (game_file.game, game_file.level)
+
 def _createVGDLGame( gameSpec, levelSpec ):
     import uuid
     from vgdl.core import VGDLParser
