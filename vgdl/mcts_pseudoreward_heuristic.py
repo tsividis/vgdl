@@ -36,7 +36,7 @@ Calling rle.step(a). Returns a dictionary with:
 Getting sprites:
 mcts.rle._game.sprite_groups
 """
-ACTIONS = {(0,0):'none',(0,-1):'up', (0,1):'down', (1,0):'right', (-1,0):'left', None:'none'}
+ACTIONS = {(0,0):'stay',(0,-1):'up', (0,1):'down', (1,0):'right', (-1,0):'left', None:'none'}
 class Basic_MCTS:
 	def __init__(self, existing_rle=False, game = None, level = None, rleCreateFunc=False, obsType = OBSERVATION_GLOBAL, decay_factor=.8, num_workers=1):
 		if not existing_rle and not rleCreateFunc:
@@ -99,17 +99,21 @@ class Basic_MCTS:
 			self.avatar_code = 1
 
 		if game and level:
-			self.pseudoRewardDecay = 0.8
-			self.maxPseudoReward = 1000
-			# self.pseudoRewardDecay = .95
+			# self.pseudoRewardDecay = 0.8
+			self.maxPseudoReward = 5 #1k
+			self.pseudoRewardDecay = .95
 			# self.maxPseudoReward = 1/((1-self.pseudoRewardDecay)*(self.pseudoRewardDecay**len(level)))
 		else:
-			self.maxPseudoReward = 10000
+			self.maxPseudoReward = 100 #10k
 			self.pseudoRewardDecay = .6
 
+		self.partitionWeights = [0,0,10] ## Partition for bestChild: weights for (qValue, exploration, heuristic)
+		self.partitionWeights = [el/float(sum(self.partitionWeights)) for el in self.partitionWeights]
+		self.rewardScaling = 100
 		self.rewardDict = {goal_loc:self.maxPseudoReward}
 		self.processed = [goal_loc]
 
+		print "maxPseudoreward", self.maxPseudoReward, "rewardScaling", self.rewardScaling, "partitionWeights", self.partitionWeights
 		self.scanDomainForMovementOptions()
 		self.propagateRewards(goal_loc)
 
@@ -117,11 +121,6 @@ class Basic_MCTS:
 		# ##Populate dictionary for use in action-sampling in defaultPolicy. Not sampling (0,0).
 		# for i in range(len(rle._actionset)):
 		# 	self.actionDict[i] = rle._actionset[i]
-
-
-	# def scaleRewards(self):
-	# 	## Maximum possible distance is having to navigate the entire grid. Scale with worst-case assumption
-	# 	longest_path = self.rle._getSensors()[0]
 
 	def scanDomainForMovementOptions(self):
 		##TODO: Take a state, so that you can re-perform this scan as needed and take changes into account.
@@ -212,11 +211,13 @@ class Basic_MCTS:
 	def getBestActionsForPlayout(self):
 		v = self.root
 		actions = []
-		while v and not v.terminal:
+		while v and not v.terminal and len(v.children.keys())>0:
+			a, v = self.bestChild(v,(0,0,1), debug=False)
 			# a, v = self.bestChild(v,0)
 			# print "in getbestactions"
-			a,v = self.maxChild(v)
+			# a,v = self.maxChild(v)
 			actions.append(a)
+			print actions
 		return actions
 
 	def getBestStatesForPlayout(self, rleCreateFunc):
@@ -243,7 +244,9 @@ class Basic_MCTS:
 			if output:
 				print "options"
 				print [(ACTIONS[k],c.qVal) for k,c in v.children.iteritems()]
-			a, v = self.bestChild(v,0)
+			# a, v = self.bestChild(v,0)
+			a, v = self.bestChild(v,(1,0,0))
+
 			actions.append(a)
 			nodes.append(v)
 			if output:
@@ -275,9 +278,9 @@ class Basic_MCTS:
 				return reward, c, iters
 
 			else:
-				Cp = 1.
+				# Cp = 1.
 				# Cp = 0.70710 # suggested exploration weight
-				a, v = self.bestChild(v,Cp) 
+				a, v = self.bestChild(v,self.partitionWeights) 
 				res = rle.step(a) ## TODO: you're getting the bestChild and taking bestAction, but in a stochastic game you will end up in
 									## a different state despite having taken the same action. Is this what you want?
 				terminal = rle._isDone()[0]
@@ -285,7 +288,7 @@ class Basic_MCTS:
 				if terminal:
 					reward = res['reward']
 					if reward==1:
-						reward = self.maxPseudoReward
+						reward = self.rewardScaling
 
 					return reward, v, iters
 
@@ -315,7 +318,7 @@ class Basic_MCTS:
 				if terminal:
 					reward = res['reward']
 					if reward==1:
-						reward = self.maxPseudoReward
+						reward = self.rewardScaling
 
 				child = MCTS_node(self, new_state, terminal, self.actions, parent = v)
 
@@ -324,7 +327,6 @@ class Basic_MCTS:
 				else:
 					v.createChild(a, child)
 				break
-
 		return reward, child
 
 	def maxChild(self, v):
@@ -334,6 +336,9 @@ class Basic_MCTS:
 		if len(qVals)>0 and avatar_loc in self.neighborDict.keys() and len(qVals)>=len(self.neighborDict[avatar_loc])-1: #  -1, since (0,0) is not an action.
 				maxVal = max(qVals)
 				choices = [(a,c) for (a,c) in v.children.items() if c.qVal==maxVal]
+				for (a,c) in v.children.items():
+					print a, c.qVal
+				print ""
 				# for (a,c) in choices:
 				# 	print a, c.qVal
 				# 	print np.reshape(c.state, self.rle.outdim)
@@ -343,11 +348,13 @@ class Basic_MCTS:
 		else:
 			return (None, None)
 
-	def bestChild(self, v, Cp):
+	def bestChild(self, v, partitionWeights, debug=False):
+		
 		def transform(loc):
 			slowdown_factor = 1 # 1./3
 			distanceFunc = self.rewardDict[loc]
-
+			print loc, d, 1./(1+math.exp(-slowdown_factor * distanceFunc))
+			# return distanceFunc
 			return 1/(1+math.exp(-slowdown_factor * distanceFunc)) # sigmoid
 
 		maxFuncVal = -float('inf')
@@ -365,10 +372,20 @@ class Basic_MCTS:
 					if len(vLoc[0])>0:
 							vLoc = vLoc[0][0], vLoc[1][0] 
 
-					cLoc = (vLoc[0] + a[0], vLoc[1] + vLoc[1])
+					# cLoc = (vLoc[0] + a[0], vLoc[1] + vLoc[1])
+					cLoc = (vLoc[0] + a[0], vLoc[1] + a[1])
+
 					if cLoc in self.rewardDict:
-						funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
-						          + Cp*float(self.rewardDict[cLoc])/c.visitCount
+						if debug:
+							print a
+							print partitionWeights[0]*float(c.qVal)/c.visitCount, \
+							partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount),\
+							partitionWeights[2]* transform(cLoc)/c.visitCount
+
+						funcVal = partitionWeights[0]*float(c.qVal)/c.visitCount + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
+								+ partitionWeights[2]* transform(cLoc)/c.visitCount
+						# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
+						# 		+ Cp * transform(cLoc)/c.visitCount
 
 					else:
 						funcVal = -float('inf')
@@ -388,9 +405,18 @@ class Basic_MCTS:
 					loc = np.where(np.reshape(c.state, self.outdim)==self.avatar_code)
 					if len(loc[0])>0:
 							loc = loc[0][0], loc[1][0] 
-						
-					funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
-					          + Cp* float(self.rewardDict[loc])/c.visitCount
+					if debug:
+						print a
+						print partitionWeights[0]*float(c.qVal)/c.visitCount,\
+						partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount),\
+						partitionWeights[2]*transform(loc)/c.visitCount, transform(loc)/c.visitCount
+						print ""
+					funcVal = partitionWeights[0]*float(c.qVal)/c.visitCount + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
+					        + partitionWeights[2]*transform(loc)/c.visitCount						
+					# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
+					#         + Cp * transform(loc)/c.visitCount
+
+					          # + Cp* float(self.rewardDict[loc])/c.visitCount
 
 			if funcVal > maxFuncVal:
 				maxFuncVal = funcVal
@@ -432,7 +458,7 @@ class Basic_MCTS:
 			state = new_state
 			terminal = rle._isDone()[0]
 			if terminal and res['reward']==1:
-				reward += g*self.maxPseudoReward
+				reward += g*self.rewardScaling
 			else:
 				reward += g*res['reward']
 			# reward += g*res['reward']
@@ -482,14 +508,6 @@ class MCTS_node:
 		    else:
 		    	self.expanded = len(self.children) == len(self.actions)
 
-
-
-	def getReward(self):
-		if self.visitCount > 0:
-			return float(self.qVal)/self.visitCount
-
-		else:
-			return -1
 def translateEvents(events, all_objects):
 	if events is None:
 		return None
@@ -711,5 +729,5 @@ if __name__ == "__main__":
 	
 	filename = "examples.gridphysics.simpleGame4_big"
 	game_to_play = lambda obsType: createRLInputGame(filename)
-	planActLoop(game_to_play, filename, 10, 50, 50, playback=True)
+	planActLoop(game_to_play, filename, 5, 100, 50, playback=False)
 
