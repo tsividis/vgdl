@@ -360,6 +360,49 @@ class Basic_MCTS:
 		maxFuncVal = -float('inf')
 		bestChild = None
 		bestAction = None
+		maxFuncQVal = -float('inf')
+		maxFuncVisitCount = -float('inf')
+		maxFuncPseudoReward = -float('inf')
+		for a,c in v.children.items():
+			if v.equals(c):
+				continue
+			elif c.visitCount == 0:
+				continue
+			else:
+				if c.terminal:
+					vLoc = np.where(np.reshape(v.state, self.outdim)==self.avatar_code)
+					if len(vLoc[0])>0:
+							vLoc = vLoc[0][0], vLoc[1][0] 
+
+					# cLoc = (vLoc[0] + a[0], vLoc[1] + vLoc[1])
+					cLoc = (vLoc[0] + a[0], vLoc[1] + a[1])
+
+					if cLoc in self.rewardDict:
+						if maxFuncQVal < abs(float(c.qVal)/c.visitCount):
+							maxFuncQVal = abs(float(c.qVal)/c.visitCount)
+
+						if maxFuncVisitCount < abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount)):
+							maxFuncVisitCount = abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
+
+						if maxFuncPseudoReward < abs(transform(cLoc)/c.visitCount):
+							maxFuncPseudoReward = abs(transform(cLoc)/c.visitCount)
+
+					else:
+						continue
+
+				else:
+					loc = np.where(np.reshape(c.state, self.outdim)==self.avatar_code)
+					if len(loc[0])>0:
+						loc = loc[0][0], loc[1][0] 
+
+					if maxFuncQVal < abs(float(c.qVal)/c.visitCount):
+						maxFuncQVal = abs(float(c.qVal)/c.visitCount)
+
+					if maxFuncVisitCount < abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount)):
+						maxFuncVisitCount = abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
+
+					if maxFuncPseudoReward < abs(transform(loc)/c.visitCount):
+						maxFuncPseudoReward = abs(transform(loc)/c.visitCount)
 
 		for a,c in v.children.items():
 			if v.equals(c):
@@ -378,12 +421,13 @@ class Basic_MCTS:
 					if cLoc in self.rewardDict:
 						if debug:
 							print a
-							print partitionWeights[0]*float(c.qVal)/c.visitCount, \
-							partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount),\
-							partitionWeights[2]* transform(cLoc)/c.visitCount
+							print partitionWeights[0]*(float(c.qVal)/c.visitCount)/maxFuncQVal, \
+							partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount,\
+							partitionWeights[2]* (transform(cLoc)/c.visitCount)/maxFuncPseudoReward
 
-						funcVal = partitionWeights[0]*float(c.qVal)/c.visitCount + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
-								+ partitionWeights[2]* transform(cLoc)/c.visitCount
+						funcVal = partitionWeights[0]*float(c.qVal)/c.visitCount/maxFuncQVal \
+						        + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount \
+								+ partitionWeights[2]* (transform(cLoc)/c.visitCount) / maxFuncPseudoReward
 						# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
 						# 		+ Cp * transform(cLoc)/c.visitCount
 
@@ -407,12 +451,13 @@ class Basic_MCTS:
 							loc = loc[0][0], loc[1][0] 
 					if debug:
 						print a
-						print partitionWeights[0]*float(c.qVal)/c.visitCount,\
-						partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount),\
-						partitionWeights[2]*transform(loc)/c.visitCount, transform(loc)/c.visitCount
+						print (partitionWeights[0]*float(c.qVal)/c.visitCount)/maxFuncQVal,\
+						partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount,\
+						partitionWeights[2]*(transform(loc)/c.visitCount)/maxFuncPseudoReward, (transform(loc)/c.visitCount)/maxFuncPseudoReward
 						print ""
-					funcVal = partitionWeights[0]*float(c.qVal)/c.visitCount + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
-					        + partitionWeights[2]*transform(loc)/c.visitCount						
+					funcVal = partitionWeights[0]*(float(c.qVal)/c.visitCount)/maxFuncQVal \
+					        + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount \
+					        + partitionWeights[2]*(transform(loc)/c.visitCount)/maxFuncPseudoReward					
 					# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
 					#         + Cp * transform(loc)/c.visitCount
 
