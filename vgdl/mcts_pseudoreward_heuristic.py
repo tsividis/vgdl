@@ -114,7 +114,9 @@ class Basic_MCTS:
 		self.rewardDict = {goal_loc:self.maxPseudoReward}
 		self.processed = [goal_loc]
 
-		print "maxPseudoreward", self.maxPseudoReward, "rewardScaling", self.rewardScaling, "partitionWeights", self.partitionWeights
+		print "maxPseudoreward", self.maxPseudoReward
+		print "rewardScaling", self.rewardScaling
+		print "partitionWeights", self.partitionWeights
 		self.scanDomainForMovementOptions()
 		self.propagateRewards(goal_loc)
 
@@ -181,6 +183,10 @@ class Basic_MCTS:
 
 	def startTrainingPhase(self, numTrainingCycles, step_horizon, VRLE, mark_solution=False, solution_limit=20):
 
+		print "defaultPolicy steps", step_horizon
+		if mark_solution:
+			print "will stop once we find", solution_limit, "solutions"
+		print ""
 		#track total iterations spent in treePolicy
 		tree_policy_iters, default_policy_iters = 0, 0
 		rewards = []
@@ -193,6 +199,7 @@ class Basic_MCTS:
 			try:
 				reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon)
 			except TypeError:
+				print "typeError in startTrainingphase"
 				embed()
 
 			tree_policy_iters += iters
@@ -211,11 +218,11 @@ class Basic_MCTS:
 				self.num_solutions_found += 1
 				# print "found solution"
 				if self.num_solutions_found > solution_limit:
+					print ""
+					print VRLE.show()
 					print "found solution", solution_limit, "times in ", i, "rounds."
 					actions = self.getBestActionsForPlayout((1,0,0))
 					print "greedy path:", actions
-					actions = self.getBestActionsForPlayout((5,1,5))
-					print "BestChild path:", actions
 					return self
 			rewards.append(reward)
 			self.backup(v, reward)
@@ -227,9 +234,6 @@ class Basic_MCTS:
 		actions = []
 		while v and not v.terminal and len(v.children.keys())>0:
 			a, v = self.bestChild(v,partitionWeights, debug=False)
-			# a, v = self.bestChild(v,0)
-			# print "in getbestactions"
-			# a,v = self.maxChild(v)
 			actions.append(a)
 		return actions
 
@@ -297,6 +301,10 @@ class Basic_MCTS:
 				res = rle.step(a) ## TODO: you're getting the bestChild and taking bestAction, but in a stochastic game you will end up in
 									## a different state despite having taken the same action. Is this what you want?
 				terminal = rle._isDone()[0]
+				if v.terminal!=terminal or not np.array_equal(v.state,rle._getSensors()):
+					print "in treePolicy"
+					embed()
+
 				# terminal = (not res['pcontinue']) or (rle._avatar is None)
 				if terminal:
 					reward = res['reward']
@@ -636,7 +644,7 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True,
 	while not terminal and not goal_achieved:
 		mcts = Basic_MCTS(existing_rle=vrle)
 		planner = mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, vrle)
-		actions = mcts.getBestActionsForPlayout()
+		actions = mcts.getBestActionsForPlayout((1,0,0))
 
 		for i in range(len(actions)):
 			if not terminal and not goal_achieved:
@@ -764,7 +772,7 @@ def planActLoop(rleCreateFunc, filename, max_actions_per_plan, planning_steps, d
 		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, rle)
 		# mcts.debug(mcts.rle, output=True, numActions=3)
 		# break
-		actions = mcts.getBestActionsForPlayout()
+		actions = mcts.getBestActionsForPlayout((1,0,0))
 
 		# if len(actions)<max_actions_per_plan:
 		# 	print "We only computed", len(actions), "actions."
@@ -802,9 +810,9 @@ def planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, playback=Fal
 	finalStates = [rle._game.getFullState()]
 	
 
-	mcts = Basic_MCTS(existing_rle=rle, game=game, level=level, partitionWeights=[5,1,5])
+	mcts = Basic_MCTS(existing_rle=rle, game=game, level=level, partitionWeights=[1,0,10])
 
-	mcts.startTrainingPhase(1200, defaultPolicyMaxSteps, rle, mark_solution=True, solution_limit=50)
+	mcts.startTrainingPhase(10000, defaultPolicyMaxSteps, rle, mark_solution=True, solution_limit=50)
 	print "ended trainingphase"
 	return mcts
 

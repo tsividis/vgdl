@@ -10,10 +10,10 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 # """
 level = """
 wwwwwwwwwwwwwwwwww
-w  1    2        w
+wA 1    2        w
 w    2    2      w
-w p       2  wg ww
-w    w 1  A  w  ww
+w 2       2  wg ww
+w    w 1     w  ww
 wwwwwwwwwwwwwwwwww
 """
 # level = """
