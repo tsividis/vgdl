@@ -38,7 +38,7 @@ mcts.rle._game.sprite_groups
 """
 ACTIONS = {(0,0):'stay',(0,-1):'up', (0,1):'down', (1,0):'right', (-1,0):'left', None:'none'}
 class Basic_MCTS:
-	def __init__(self, existing_rle=False, game = None, level = None, rleCreateFunc=False, obsType = OBSERVATION_GLOBAL, decay_factor=.8, num_workers=1):
+	def __init__(self, existing_rle=False, game = None, level = None, partitionWeights=[1,0,1], rleCreateFunc=False, obsType = OBSERVATION_GLOBAL, decay_factor=.95, num_workers=1):
 		if not existing_rle and not rleCreateFunc:
 			print "You must pass either an existing rle or an rleCreateFunc"
 			return
@@ -83,6 +83,7 @@ class Basic_MCTS:
 		self.num_workers = num_workers
 		self.neighborDict = {}
 		self.rewardQueue = deque()
+		self.num_solutions_found = 0
 
 		## find location of goal, add to rewardDict.
 		## also add neighbors of goal rewardQueue.
@@ -101,15 +102,15 @@ class Basic_MCTS:
 		if game and level:
 			# self.pseudoRewardDecay = 0.8
 			self.maxPseudoReward = 5 #1k
-			self.pseudoRewardDecay = .95
+			self.pseudoRewardDecay = .8
 			# self.maxPseudoReward = 1/((1-self.pseudoRewardDecay)*(self.pseudoRewardDecay**len(level)))
 		else:
 			self.maxPseudoReward = 100 #10k
 			self.pseudoRewardDecay = .6
 
-		self.partitionWeights = [0,0,10] ## Partition for bestChild: weights for (qValue, exploration, heuristic)
+		self.partitionWeights = partitionWeights ## Partition for bestChild: weights for (qValue, exploration, heuristic)
 		self.partitionWeights = [el/float(sum(self.partitionWeights)) for el in self.partitionWeights]
-		self.rewardScaling = 100
+		self.rewardScaling = 1000
 		self.rewardDict = {goal_loc:self.maxPseudoReward}
 		self.processed = [goal_loc]
 
@@ -178,15 +179,17 @@ class Basic_MCTS:
 						self.rewardQueue.append(n)
 		return 
 
-	def startTrainingPhase(self, numTrainingCycles, step_horizon, VRLE, mark_solution=False):
+	def startTrainingPhase(self, numTrainingCycles, step_horizon, VRLE, mark_solution=False, solution_limit=20):
 
 		#track total iterations spent in treePolicy
 		tree_policy_iters, default_policy_iters = 0, 0
+		rewards = []
 		for i in range(numTrainingCycles):
 			Vrle = copy.deepcopy(VRLE)
 
-			# if i%10==0:
-			# 	print "Training cycle: %i"%i
+			if i%10==0 and len(rewards)>0:
+				print "Training cycle: %i"%i
+				print "avg. rewards for last group of 10", np.mean(rewards[-10:])
 			try:
 				reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon)
 			except TypeError:
@@ -204,23 +207,30 @@ class Basic_MCTS:
 				# 		reward = reward + self.rewardDict[loc]
 				
 				default_policy_iters += dPiters
-			self.backup(v, reward)
 			elif v.terminal and mark_solution and reward==self.rewardScaling:
-				self.solution_found = True
-				print "solution found"
-				embed()
+				self.num_solutions_found += 1
+				# print "found solution"
+				if self.num_solutions_found > solution_limit:
+					print "found solution", solution_limit, "times in ", i, "rounds."
+					actions = self.getBestActionsForPlayout((1,0,0))
+					print "greedy path:", actions
+					actions = self.getBestActionsForPlayout((5,1,5))
+					print "BestChild path:", actions
+					return self
+			rewards.append(reward)
+			self.backup(v, reward)
+
 		return self
 
-	def getBestActionsForPlayout(self):
+	def getBestActionsForPlayout(self, partitionWeights):
 		v = self.root
 		actions = []
 		while v and not v.terminal and len(v.children.keys())>0:
-			a, v = self.bestChild(v,(0,0,1), debug=False)
+			a, v = self.bestChild(v,partitionWeights, debug=False)
 			# a, v = self.bestChild(v,0)
 			# print "in getbestactions"
 			# a,v = self.maxChild(v)
 			actions.append(a)
-			print actions
 		return actions
 
 	def getBestStatesForPlayout(self, rleCreateFunc):
@@ -356,8 +366,6 @@ class Basic_MCTS:
 		def transform(loc):
 			slowdown_factor = 1 # 1./3
 			distanceFunc = self.rewardDict[loc]
-			# print loc, d, 1./(1+math.exp(-slowdown_factor * distanceFunc))
-			# return distanceFunc
 			return 1/(1+math.exp(-slowdown_factor * distanceFunc)) # sigmoid
 
 		maxFuncVal = -float('inf')
@@ -428,7 +436,13 @@ class Basic_MCTS:
 							partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount,\
 							partitionWeights[2]* (transform(cLoc)/c.visitCount)/maxFuncPseudoReward
 
-						funcVal = partitionWeights[0]*float(c.qVal)/c.visitCount/maxFuncQVal \
+						qValFunction = 0
+						if maxFuncQVal == 0:
+							qValFunction = 0
+						else:
+							qValFunction = float(c.qVal)/c.visitCount/maxFuncQVal
+
+						funcVal = partitionWeights[0]*qValFunction \
 						        + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount \
 								+ partitionWeights[2]* (transform(cLoc)/c.visitCount) / maxFuncPseudoReward
 						# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
@@ -458,8 +472,14 @@ class Basic_MCTS:
 						partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount,\
 						partitionWeights[2]*(transform(loc)/c.visitCount)/maxFuncPseudoReward, (transform(loc)/c.visitCount)/maxFuncPseudoReward
 						print ""
-					print maxFuncQVal, maxFuncVisitCount, maxFuncPseudoReward
-					funcVal = partitionWeights[0]*(float(c.qVal)/c.visitCount)/maxFuncQVal \
+
+					qValFunction = 0
+					if maxFuncQVal == 0:
+						qValFunction = 0
+					else:
+						qValFunction = (float(c.qVal)/c.visitCount)/maxFuncQVal
+
+					funcVal = partitionWeights[0]* qValFunction \
 					        + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount \
 					        + partitionWeights[2]*(transform(loc)/c.visitCount)/maxFuncPseudoReward					
 					# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
@@ -769,7 +789,7 @@ def planActLoop(rleCreateFunc, filename, max_actions_per_plan, planning_steps, d
 		embed()
 
 
-def planUntilSolved(rleCreateFunc, filename, extra_planning_steps, defaultPolicyMaxSteps, playback=False):
+def planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, playback=False):
 	
 	rle = rleCreateFunc(OBSERVATION_GLOBAL)
 	game, level = defInputGame(filename)
@@ -782,11 +802,11 @@ def planUntilSolved(rleCreateFunc, filename, extra_planning_steps, defaultPolicy
 	finalStates = [rle._game.getFullState()]
 	
 
-	mcts = Basic_MCTS(existing_rle=rle, game=game, level=level)
+	mcts = Basic_MCTS(existing_rle=rle, game=game, level=level, partitionWeights=[5,1,5])
 
-	mcts.startTrainingPhase(float('inf'), defaultPolicyMaxSteps, rle, mark_solution=True)
-
-	return
+	mcts.startTrainingPhase(1200, defaultPolicyMaxSteps, rle, mark_solution=True, solution_limit=50)
+	print "ended trainingphase"
+	return mcts
 
 	# while not terminal:
 	# 	mcts = Basic_MCTS(existing_rle=rle, game=game, level=level)
@@ -826,5 +846,8 @@ if __name__ == "__main__":
 	
 	filename = "examples.gridphysics.simpleGame4_big"
 	game_to_play = lambda obsType: createRLInputGame(filename)
+	
+	embed()
 	# planActLoop(game_to_play, filename, 5, 100, 50, playback=False)
+
 

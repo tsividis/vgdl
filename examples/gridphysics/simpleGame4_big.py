@@ -13,7 +13,7 @@ wwwwwwwwwwwwwwwwww
 w  1    2        w
 w    2    2      w
 w p       2  wg ww
-w    w 1 A   w  ww
+w    w 1  A  w  ww
 wwwwwwwwwwwwwwwwww
 """
 # level = """
