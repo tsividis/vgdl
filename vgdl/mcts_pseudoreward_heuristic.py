@@ -353,7 +353,7 @@ class Basic_MCTS:
 		def transform(loc):
 			slowdown_factor = 1 # 1./3
 			distanceFunc = self.rewardDict[loc]
-			print loc, d, 1./(1+math.exp(-slowdown_factor * distanceFunc))
+			print loc, distanceFunc, 1./(1+math.exp(-slowdown_factor * distanceFunc))
 			# return distanceFunc
 			return 1/(1+math.exp(-slowdown_factor * distanceFunc)) # sigmoid
 
@@ -425,7 +425,13 @@ class Basic_MCTS:
 							partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount,\
 							partitionWeights[2]* (transform(cLoc)/c.visitCount)/maxFuncPseudoReward
 
-						funcVal = partitionWeights[0]*float(c.qVal)/c.visitCount/maxFuncQVal \
+						qValFunction = 0
+						if maxFuncQVal == 0:
+							qValFunction = 0
+						else:
+							qValFunction = float(c.qVal)/c.visitCount/maxFuncQVal
+
+						funcVal = partitionWeights[0]*qValFunction \
 						        + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount \
 								+ partitionWeights[2]* (transform(cLoc)/c.visitCount) / maxFuncPseudoReward
 						# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
@@ -455,7 +461,14 @@ class Basic_MCTS:
 						partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount,\
 						partitionWeights[2]*(transform(loc)/c.visitCount)/maxFuncPseudoReward, (transform(loc)/c.visitCount)/maxFuncPseudoReward
 						print ""
-					funcVal = partitionWeights[0]*(float(c.qVal)/c.visitCount)/maxFuncQVal \
+
+					qValFunction = 0
+					if maxFuncQVal == 0:
+						qValFunction = 0
+					else:
+						qValFunction = (float(c.qVal)/c.visitCount)/maxFuncQVal
+
+					funcVal = partitionWeights[0]* qValFunction \
 					        + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount \
 					        + partitionWeights[2]*(transform(loc)/c.visitCount)/maxFuncPseudoReward					
 					# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
@@ -774,5 +787,5 @@ if __name__ == "__main__":
 	
 	filename = "examples.gridphysics.simpleGame4_big"
 	game_to_play = lambda obsType: createRLInputGame(filename)
-	planActLoop(game_to_play, filename, 5, 100, 50, playback=False)
+	planActLoop(game_to_play, filename, 10, 200, 50, playback=False)
 
