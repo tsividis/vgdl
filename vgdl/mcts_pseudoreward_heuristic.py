@@ -287,11 +287,13 @@ class Basic_MCTS:
 	def treePolicy(self, v, rle, step_horizon):
 		count = 0
 		iters = 0
+		print rle.show()
 		while not v.terminal and iters < step_horizon:
 			iters += 1
 			count += 1
 			if not v.expanded:
 				reward, c = self.expand(v, rle, domain_knowledge=False)
+				print rle.show()
 				return reward, c, iters
 
 			else:
@@ -300,6 +302,7 @@ class Basic_MCTS:
 				a, v = self.bestChild(v,self.partitionWeights) 
 				res = rle.step(a) ## TODO: you're getting the bestChild and taking bestAction, but in a stochastic game you will end up in
 									## a different state despite having taken the same action. Is this what you want?
+				print rle.show()
 				terminal = rle._isDone()[0]
 				if v.terminal!=terminal or not np.array_equal(v.state,rle._getSensors()):
 					print "in treePolicy"
@@ -379,9 +382,9 @@ class Basic_MCTS:
 		maxFuncVal = -float('inf')
 		bestChild = None
 		bestAction = None
-		maxFuncQVal = -float('inf')
-		maxFuncVisitCount = -float('inf')
-		maxFuncPseudoReward = -float('inf')
+		sumQVal = 0
+		sumVisitCount = 0
+		sumPseudoReward = 0
 		for a,c in v.children.items():
 			if v.equals(c):
 				continue
@@ -397,14 +400,9 @@ class Basic_MCTS:
 					cLoc = (vLoc[0] + a[0], vLoc[1] + a[1])
 
 					if cLoc in self.rewardDict:
-						if maxFuncQVal < abs(float(c.qVal)/c.visitCount):
-							maxFuncQVal = abs(float(c.qVal)/c.visitCount)
-
-						if maxFuncVisitCount < abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount)):
-							maxFuncVisitCount = abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
-
-						if maxFuncPseudoReward < abs(transform(cLoc)/c.visitCount):
-							maxFuncPseudoReward = abs(transform(cLoc)/c.visitCount)
+						sumQVal += abs(float(c.qVal)/c.visitCount)
+						sumVisitCount += abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
+						sumPseudoReward += abs(transform(cLoc)/c.visitCount)
 
 					else:
 						continue
@@ -414,14 +412,9 @@ class Basic_MCTS:
 					if len(loc[0])>0:
 						loc = loc[0][0], loc[1][0] 
 
-					if maxFuncQVal < abs(float(c.qVal)/c.visitCount):
-						maxFuncQVal = abs(float(c.qVal)/c.visitCount)
-
-					if maxFuncVisitCount < abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount)):
-						maxFuncVisitCount = abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
-
-					if maxFuncPseudoReward < abs(transform(loc)/c.visitCount):
-						maxFuncPseudoReward = abs(transform(loc)/c.visitCount)
+					sumQVal += abs(float(c.qVal)/c.visitCount)
+					sumVisitCount += abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
+					sumPseudoReward = abs(transform(loc)/c.visitCount)
 
 		for a,c in v.children.items():
 			if v.equals(c):
@@ -440,19 +433,19 @@ class Basic_MCTS:
 					if cLoc in self.rewardDict:
 						if debug:
 							print a
-							print partitionWeights[0]*(float(c.qVal)/c.visitCount)/maxFuncQVal, \
-							partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount,\
-							partitionWeights[2]* (transform(cLoc)/c.visitCount)/maxFuncPseudoReward
+							print partitionWeights[0]*(float(c.qVal)/c.visitCount)/sumQVal, \
+							partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount,\
+							partitionWeights[2]* (transform(cLoc)/c.visitCount)/sumPseudoReward
 
 						qValFunction = 0
-						if maxFuncQVal == 0:
+						if sumQVal == 0:
 							qValFunction = 0
 						else:
-							qValFunction = float(c.qVal)/c.visitCount/maxFuncQVal
+							qValFunction = float(c.qVal)/c.visitCount/sumQVal
 
 						funcVal = partitionWeights[0]*qValFunction \
-						        + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount \
-								+ partitionWeights[2]* (transform(cLoc)/c.visitCount) / maxFuncPseudoReward
+						        + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount \
+								+ partitionWeights[2]* (transform(cLoc)/c.visitCount) / sumPseudoReward
 						# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
 						# 		+ Cp * transform(cLoc)/c.visitCount
 
@@ -476,20 +469,21 @@ class Basic_MCTS:
 							loc = loc[0][0], loc[1][0] 
 					if debug:
 						print a
-						print (partitionWeights[0]*float(c.qVal)/c.visitCount)/maxFuncQVal,\
-						partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount,\
-						partitionWeights[2]*(transform(loc)/c.visitCount)/maxFuncPseudoReward, (transform(loc)/c.visitCount)/maxFuncPseudoReward
+						print (partitionWeights[0]*float(c.qVal)/c.visitCount)/sumQVal,\
+						partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount,\
+						partitionWeights[2]*(transform(loc)/c.visitCount)/sumPseudoReward, (transform(loc)/c.visitCount)/sumPseudoReward
 						print ""
 
 					qValFunction = 0
-					if maxFuncQVal == 0:
+					if sumQVal == 0:
 						qValFunction = 0
 					else:
-						qValFunction = (float(c.qVal)/c.visitCount)/maxFuncQVal
+						qValFunction = (float(c.qVal)/c.visitCount)/sumQVal
 
 					funcVal = partitionWeights[0]* qValFunction \
-					        + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount \
-					        + partitionWeights[2]*(transform(loc)/c.visitCount)/maxFuncPseudoReward					
+					        + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount \
+					        + partitionWeights[2]*(transform(loc)/c.visitCount)/sumPseudoReward	
+
 					# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
 					#         + Cp * transform(loc)/c.visitCount
 
@@ -531,6 +525,7 @@ class Basic_MCTS:
 			a = sample
 
 			res = rle.step(a)
+			print rle.show()
 			new_state = res["observation"]
 			state = new_state
 			terminal = rle._isDone()[0]
