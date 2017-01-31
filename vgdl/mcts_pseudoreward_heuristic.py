@@ -178,7 +178,7 @@ class Basic_MCTS:
 						self.rewardQueue.append(n)
 		return 
 
-	def startTrainingPhase(self, numTrainingCycles, step_horizon, VRLE):
+	def startTrainingPhase(self, numTrainingCycles, step_horizon, VRLE, mark_solution=False):
 
 		#track total iterations spent in treePolicy
 		tree_policy_iters, default_policy_iters = 0, 0
@@ -204,8 +204,11 @@ class Basic_MCTS:
 				# 		reward = reward + self.rewardDict[loc]
 				
 				default_policy_iters += dPiters
-			
 			self.backup(v, reward)
+			elif v.terminal and mark_solution and reward==self.rewardScaling:
+				self.solution_found = True
+				print "solution found"
+				embed()
 		return self
 
 	def getBestActionsForPlayout(self):
@@ -353,7 +356,7 @@ class Basic_MCTS:
 		def transform(loc):
 			slowdown_factor = 1 # 1./3
 			distanceFunc = self.rewardDict[loc]
-			print loc, d, 1./(1+math.exp(-slowdown_factor * distanceFunc))
+			# print loc, d, 1./(1+math.exp(-slowdown_factor * distanceFunc))
 			# return distanceFunc
 			return 1/(1+math.exp(-slowdown_factor * distanceFunc)) # sigmoid
 
@@ -455,6 +458,7 @@ class Basic_MCTS:
 						partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount,\
 						partitionWeights[2]*(transform(loc)/c.visitCount)/maxFuncPseudoReward, (transform(loc)/c.visitCount)/maxFuncPseudoReward
 						print ""
+					print maxFuncQVal, maxFuncVisitCount, maxFuncPseudoReward
 					funcVal = partitionWeights[0]*(float(c.qVal)/c.visitCount)/maxFuncQVal \
 					        + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/maxFuncVisitCount \
 					        + partitionWeights[2]*(transform(loc)/c.visitCount)/maxFuncPseudoReward					
@@ -723,6 +727,7 @@ def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True,
 				print "Agent died."
 	return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered
 
+
 def planActLoop(rleCreateFunc, filename, max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, playback=False):
 	
 	rle = rleCreateFunc(OBSERVATION_GLOBAL)
@@ -764,6 +769,53 @@ def planActLoop(rleCreateFunc, filename, max_actions_per_plan, planning_steps, d
 		embed()
 
 
+def planUntilSolved(rleCreateFunc, filename, extra_planning_steps, defaultPolicyMaxSteps, playback=False):
+	
+	rle = rleCreateFunc(OBSERVATION_GLOBAL)
+	game, level = defInputGame(filename)
+	outdim = rle.outdim
+	print rle.show()
+	
+	terminal = rle._isDone()[0]
+	
+	i=0
+	finalStates = [rle._game.getFullState()]
+	
+
+	mcts = Basic_MCTS(existing_rle=rle, game=game, level=level)
+
+	mcts.startTrainingPhase(float('inf'), defaultPolicyMaxSteps, rle, mark_solution=True)
+
+	return
+
+	# while not terminal:
+	# 	mcts = Basic_MCTS(existing_rle=rle, game=game, level=level)
+	# 	mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, rle)
+	# 	# mcts.debug(mcts.rle, output=True, numActions=3)
+	# 	# break
+	# 	actions = mcts.getBestActionsForPlayout()
+
+	# 	# if len(actions)<max_actions_per_plan:
+	# 	# 	print "We only computed", len(actions), "actions."
+
+	# 	new_state = rle._getSensors()
+	# 	terminal = rle._isDone()[0]
+
+	# 	for j in range(min(len(actions), max_actions_per_plan)):
+	# 		if actions[j] is not None and not terminal:
+	# 			print ACTIONS[actions[j]]
+	# 			res = rle.step(actions[j])
+	# 			new_state = res["observation"]
+	# 			terminal = not res['pcontinue']
+	# 			print rle.show()
+	# 			finalStates.append(rle._game.getFullState())
+
+	# 	i+=1
+
+	# if playback:
+	# 	from vgdl.core import VGDLParser
+	# 	VGDLParser.playGame(game, level, finalStates)
+	# 	embed()
 	# return finalStates
 
 if __name__ == "__main__":
@@ -774,5 +826,5 @@ if __name__ == "__main__":
 	
 	filename = "examples.gridphysics.simpleGame4_big"
 	game_to_play = lambda obsType: createRLInputGame(filename)
-	planActLoop(game_to_play, filename, 5, 100, 50, playback=False)
+	# planActLoop(game_to_play, filename, 5, 100, 50, playback=False)
 
