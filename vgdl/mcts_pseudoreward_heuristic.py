@@ -184,6 +184,8 @@ class Basic_MCTS:
 		#track total iterations spent in treePolicy
 		tree_policy_iters, default_policy_iters = 0, 0
 		rewards = []
+		defaultPolicySolveStep = None
+		# defaultPolicySolveStep stores the first iteration in which default policy solved the game
 		for i in range(numTrainingCycles):
 			Vrle = copy.deepcopy(VRLE)
 
@@ -191,13 +193,20 @@ class Basic_MCTS:
 				print "Training cycle: %i"%i
 				print "avg. rewards for last group of 10", np.mean(rewards[-10:])
 			try:
-				reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon)
+				if defaultPolicySolveStep:
+					reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon, \
+						                               solveSteps = i-defaultPolicySolveStep)
+				else:
+					reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon)
+
 			except TypeError:
 				embed()
 
 			tree_policy_iters += iters
 			if not v.terminal:
 				reward, dPiters = self.defaultPolicy(v, Vrle, step_horizon, domain_knowledge=True)
+				if reward == self.rewardScaling and not defaultPolicySolveStep:
+					defaultPolicySolveStep = i
 
 				loc = np.where(np.reshape(v.state, self.outdim)==self.avatar_code)
 				
@@ -280,7 +289,7 @@ class Basic_MCTS:
 		return actions, nodes#, distance
 
 
-	def treePolicy(self, v, rle, step_horizon):
+	def treePolicy(self, v, rle, step_horizon, solveSteps = None):
 		count = 0
 		iters = 0
 		print rle.show()
@@ -295,7 +304,11 @@ class Basic_MCTS:
 			else:
 				# Cp = 1.
 				# Cp = 0.70710 # suggested exploration weight
-				a, v = self.bestChild(v,self.partitionWeights) 
+				if solveSteps:
+					a, v = self.bestChild(v,self.partitionWeights, solveSteps = solveSteps)
+				else:
+					a, v = self.bestChild(v,self.partitionWeights)
+
 				res = rle.step(a) ## TODO: you're getting the bestChild and taking bestAction, but in a stochastic game you will end up in
 									## a different state despite having taken the same action. Is this what you want?
 				print rle.show()
@@ -364,7 +377,10 @@ class Basic_MCTS:
 		else:
 			return (None, None)
 
-	def bestChild(self, v, partitionWeights, debug=False):
+	def bestChild(self, v, partitionWeights, solveSteps = None, debug=False):
+		"""
+		solveSteps = the number of steps that have passed since default policy solved the game
+		"""
 		
 		def transform(loc):
 			slowdown_factor = 1 # 1./3
@@ -377,6 +393,11 @@ class Basic_MCTS:
 		sumQVal = 0
 		sumVisitCount = 0
 		sumPseudoReward = 0
+		heuristic_coefficient = partitionWeights[2]
+		heuristic_decay_factor = 0.8
+		if solveSteps:
+			heuristic_coefficient *= (heuristic_decay_factor**solveSteps)
+
 		for a,c in v.children.items():
 			if v.equals(c):
 				continue
@@ -406,7 +427,7 @@ class Basic_MCTS:
 
 					sumQVal += abs(float(c.qVal)/c.visitCount)
 					sumVisitCount += abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
-					sumPseudoReward = abs(transform(loc)/c.visitCount)
+					sumPseudoReward += abs(transform(loc)/c.visitCount)
 
 		for a,c in v.children.items():
 			if v.equals(c):
@@ -427,7 +448,7 @@ class Basic_MCTS:
 							print a
 							print partitionWeights[0]*(float(c.qVal)/c.visitCount)/sumQVal, \
 							partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount,\
-							partitionWeights[2]* (transform(cLoc)/c.visitCount)/sumPseudoReward
+							heuristic_coefficient * (transform(cLoc)/c.visitCount)/sumPseudoReward
 
 						qValFunction = 0
 						if sumQVal == 0:
@@ -437,7 +458,7 @@ class Basic_MCTS:
 
 						funcVal = partitionWeights[0]*qValFunction \
 						        + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount \
-								+ partitionWeights[2]* (transform(cLoc)/c.visitCount) / sumPseudoReward
+								+ heuristic_coefficient * (transform(cLoc)/c.visitCount) / sumPseudoReward
 						# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
 						# 		+ Cp * transform(cLoc)/c.visitCount
 
@@ -459,12 +480,6 @@ class Basic_MCTS:
 					loc = np.where(np.reshape(c.state, self.outdim)==self.avatar_code)
 					if len(loc[0])>0:
 							loc = loc[0][0], loc[1][0] 
-					if debug:
-						print a
-						print (partitionWeights[0]*float(c.qVal)/c.visitCount)/sumQVal,\
-						partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount,\
-						partitionWeights[2]*(transform(loc)/c.visitCount)/sumPseudoReward, (transform(loc)/c.visitCount)/sumPseudoReward
-						print ""
 
 					qValFunction = 0
 					if sumQVal == 0:
@@ -472,9 +487,17 @@ class Basic_MCTS:
 					else:
 						qValFunction = (float(c.qVal)/c.visitCount)/sumQVal
 
+
+					if debug:
+						print a
+						print partitionWeights[0]*qValFunction,\
+						partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount,\
+						heuristic_coefficient*(transform(loc)/c.visitCount)/sumPseudoReward, (transform(loc)/c.visitCount)/sumPseudoReward
+						print ""
+
 					funcVal = partitionWeights[0]* qValFunction \
 					        + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount \
-					        + partitionWeights[2]*(transform(loc)/c.visitCount)/sumPseudoReward	
+					        + heuristic_coefficient*(transform(loc)/c.visitCount)/sumPseudoReward	
 
 					# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
 					#         + Cp * transform(loc)/c.visitCount
