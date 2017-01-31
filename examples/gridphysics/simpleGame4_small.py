@@ -4,11 +4,11 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 
 
 
-level1 = """
+level = """
 wwwwwwwww
 w  1    w
-w    2  w
-wAp  wgww
+w A  p  w
+w 2  wgww
 w    w ww
 wwwwwwwww
 """
