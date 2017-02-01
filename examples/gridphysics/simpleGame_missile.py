@@ -13,15 +13,16 @@ w     w     w
 wwwwwwwwwwwww
 """
 
-# box_level = """
-# ......w......
-# .     w     .
-# .     w     .
-# A     w     G
-# .     w     .
-# .     w     .
-# ......w......
-# """
+box_level = """
+wwwwwwwwwwwww
+wA    w     w
+w  b  w     w
+wwwpwww     G
+w     w     w
+w           w
+wwwwwwwwwwwww
+"""
+
 
 push_game = """
 BasicGame

@@ -2,20 +2,16 @@
 Simple interactions: get/lose points, can't pass through walls, object gets pushed.
 '''
 
-# box_level = """
-# wwww
-# wp w
-# wAgw
-# wwww
-# """
+
 level = """
 wwwwwwwwwwwwwwwwww
-wA 1    2        w
-w    2    2      w
-w 2       2  wg ww
+wA 1    p        w
+w    2    p      w
+w p    g  w  w  ww
 w    w 1     w  ww
 wwwwwwwwwwwwwwwwww
 """
+
 # level = """
 # wwwwwwwwwwwwwwwwww
 # w  1    p        w

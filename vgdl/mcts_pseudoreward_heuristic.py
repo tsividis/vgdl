@@ -101,7 +101,7 @@ class Basic_MCTS:
 
 		if game and level:
 			# self.pseudoRewardDecay = 0.8
-			self.maxPseudoReward = 5 #1k
+			self.maxPseudoReward = 10 #1k
 			self.pseudoRewardDecay = .8
 			# self.maxPseudoReward = 1/((1-self.pseudoRewardDecay)*(self.pseudoRewardDecay**len(level)))
 		else:
@@ -110,6 +110,8 @@ class Basic_MCTS:
 
 		self.partitionWeights = partitionWeights ## Partition for bestChild: weights for (qValue, exploration, heuristic)
 		self.partitionWeights = [el/float(sum(self.partitionWeights)) for el in self.partitionWeights]
+		self.printheuristicweight = self.partitionWeights[2]
+		self.printexplorationweight = self.partitionWeights[1]
 		self.rewardScaling = 1000
 		self.rewardDict = {goal_loc:self.maxPseudoReward}
 		self.processed = [goal_loc]
@@ -190,14 +192,22 @@ class Basic_MCTS:
 		#track total iterations spent in treePolicy
 		tree_policy_iters, default_policy_iters = 0, 0
 		rewards = []
+		defaultPolicySolveStep = None
+		# defaultPolicySolveStep stores the first iteration in which default policy solved the game
 		for i in range(numTrainingCycles):
 			Vrle = copy.deepcopy(VRLE)
 
 			if i%10==0 and len(rewards)>0:
 				print "Training cycle: %i"%i
 				print "avg. rewards for last group of 10", np.mean(rewards[-10:])
+				print "Partition weights", [self.partitionWeights[0], self.printexplorationweight, self.printheuristicweight]
 			try:
-				reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon)
+				if defaultPolicySolveStep:
+					reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon, \
+						                               solveSteps = i-defaultPolicySolveStep)
+				else:
+					reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon)
+
 			except TypeError:
 				print "typeError in startTrainingphase"
 				embed()
@@ -205,6 +215,10 @@ class Basic_MCTS:
 			tree_policy_iters += iters
 			if not v.terminal:
 				reward, dPiters = self.defaultPolicy(v, Vrle, step_horizon, domain_knowledge=True)
+				if reward >0 and not defaultPolicySolveStep:
+					defaultPolicySolveStep = i
+					print "found reward at step", defaultPolicySolveStep
+
 
 				loc = np.where(np.reshape(v.state, self.outdim)==self.avatar_code)
 				
@@ -284,7 +298,7 @@ class Basic_MCTS:
 		return actions, nodes#, distance
 
 
-	def treePolicy(self, v, rle, step_horizon):
+	def treePolicy(self, v, rle, step_horizon, solveSteps = None):
 		count = 0
 		iters = 0
 		c = None # child for expansion - debug
@@ -301,7 +315,11 @@ class Basic_MCTS:
 			else:
 				# Cp = 1.
 				# Cp = 0.70710 # suggested exploration weight
-				a, v = self.bestChild(v,self.partitionWeights) 
+				if solveSteps:
+					a, v = self.bestChild(v,self.partitionWeights, solveSteps = solveSteps)
+				else:
+					a, v = self.bestChild(v,self.partitionWeights)
+
 				res = rle.step(a) ## TODO: you're getting the bestChild and taking bestAction, but in a stochastic game you will end up in
 									## a different state despite having taken the same action. Is this what you want?
 				# print rle.show()
@@ -377,7 +395,10 @@ class Basic_MCTS:
 		else:
 			return (None, None)
 
-	def bestChild(self, v, partitionWeights, debug=False):
+	def bestChild(self, v, partitionWeights, solveSteps = None, debug=False):
+		"""
+		solveSteps = the number of steps that have passed since default policy solved the game
+		"""
 		
 		def transform(loc):
 			slowdown_factor = 1 # 1./3
@@ -390,6 +411,18 @@ class Basic_MCTS:
 		sumQVal = 0
 		sumVisitCount = 0
 		sumPseudoReward = 0
+		heuristic_coefficient = partitionWeights[2]
+		exploration_coefficient = partitionWeights[1]
+		heuristic_decay_factor = 0.999
+		exploration_decay_factor = 0.999
+		if solveSteps:
+			# print solveSteps
+			heuristic_coefficient *= (heuristic_decay_factor**solveSteps)
+			exploration_coefficient *= (exploration_decay_factor**solveSteps)
+			self.printheuristicweight = heuristic_coefficient
+			self.printexplorationweight = exploration_coefficient
+			# print "heuristic coefficient is now", heuristic_coefficient
+
 		for a,c in v.children.items():
 			if v.equals(c):
 				continue
@@ -426,7 +459,6 @@ class Basic_MCTS:
 
 		# print ""
 		# print np.reshape(v.state, self.outdim)
-
 		for a,c in v.children.items():
 			if v.equals(c):
 				funcVal = -float('inf')
@@ -442,7 +474,6 @@ class Basic_MCTS:
 					cLoc = (vLoc[0] + a[0], vLoc[1] + a[1])
 
 					if cLoc in self.rewardDict:
-
 						qValFunction = 0
 						if sumQVal == 0:
 							qValFunction = 0
@@ -450,8 +481,8 @@ class Basic_MCTS:
 							qValFunction = float(c.qVal)/c.visitCount/sumQVal
 
 						funcVal = partitionWeights[0]*qValFunction \
-						        + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount \
-								+ partitionWeights[2]* transform(cLoc)/ sumPseudoReward
+						        + exploration_coefficient*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount \
+								+ heuristic_coefficient* transform(cLoc)/ sumPseudoReward
 
 								# + partitionWeights[2]* (transform(cLoc)/c.visitCount) / sumPseudoReward
 						# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
@@ -484,15 +515,12 @@ class Basic_MCTS:
 					else:
 						qValFunction = (float(c.qVal)/c.visitCount)/sumQVal
 
-					# if np.where(v.state==1)[0][0]==20:
 					# print a, transform(loc), (transform(loc)/c.visitCount)/sumPseudoReward
-
+					# print a, transform(loc)/sumPseudoReward	
 					funcVal = partitionWeights[0]* qValFunction \
-					        + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount \
-					        + partitionWeights[2]*transform(loc)/sumPseudoReward	
+					        + exploration_coefficient*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount \
+					        + heuristic_coefficient*transform(loc)/sumPseudoReward	
 					        # + partitionWeights[2]*(transform(loc)/c.visitCount)/sumPseudoReward	
-
-
 					# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
 					#         + Cp * transform(loc)/c.visitCount
 
@@ -774,8 +802,11 @@ def planActLoop(rleCreateFunc, filename, max_actions_per_plan, planning_steps, d
 	while not terminal:
 		mcts = Basic_MCTS(existing_rle=rle, game=game, level=level)
 		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, rle)
+		
 		# mcts.debug(mcts.rle, output=True, numActions=3)
 		# break
+		
+
 		actions = mcts.getBestActionsForPlayout((1,0,0))
 
 		# if len(actions)<max_actions_per_plan:
@@ -814,9 +845,8 @@ def planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, playback=Fal
 	finalStates = [rle._game.getFullState()]
 	
 
-	mcts = Basic_MCTS(existing_rle=rle, game=game, level=level, partitionWeights=[5,1,5])
-
-	mcts.startTrainingPhase(10000, defaultPolicyMaxSteps, rle, mark_solution=True, solution_limit=50)
+	mcts = Basic_MCTS(existing_rle=rle, game=game, level=level, partitionWeights=[1,2,5])
+	mcts.startTrainingPhase(10000, defaultPolicyMaxSteps, rle, mark_solution=True, solution_limit=500)
 	print "ended trainingphase"
 	return mcts
 
@@ -856,7 +886,7 @@ if __name__ == "__main__":
 	## You have to make a function that creates the environment.
 	## Make the game, then follow the layout in 'rlenvironmentnonstatic'
 	
-	filename = "examples.gridphysics.simpleGame4_small"
+	filename = "examples.gridphysics.simpleGame4_big"
 	game_to_play = lambda obsType: createRLInputGame(filename)
 	
 	embed()
