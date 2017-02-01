@@ -100,8 +100,10 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     def show(self):
         """
         symbolDict = a dict mapping each sprite name to its symbol.
+        If there's no sprite overlap, then returns a string. Else returns numpy array.
         """
         gameString = ""
+        spriteOverlap = False # represents whether 2 sprites are on same location
         state = np.reshape(self._getSensors(), self.outdim)
         for i in range(self.outdim[0]):
             for j in range(self.outdim[1]):
@@ -111,12 +113,22 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                     gameString += self.symbolDict['avatar']
                 else:
                     spriteIndex = int(round(math.log(state[i][j],2)))-1
+                    if state[i][j] != 2**(spriteIndex+1):
+                        spriteOverlap = True
+                        break
+
                     spriteType = sorted(self._obstypes.keys())[::-1][spriteIndex]
-                    gameString += self.symbolDict[spriteType]    
+                    gameString += self.symbolDict[spriteType]
             gameString += "\n"
-        # return np.reshape(self._getSensors(), self.outdim)
-        # print gameString
-        return gameString
+            if spriteOverlap:
+                break
+
+        if spriteOverlap:
+            print "There were overlapping sprites while doing rle.show! Returning an array representation instead."
+            return np.reshape(self._getSensors(), self.outdim)
+        else:
+            return gameString
+
     # Get definition of the actions that are accepted
     def actionSpec(self):
         return{ 'scheme':'Integer', 'N':4 }       

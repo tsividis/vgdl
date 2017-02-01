@@ -9,7 +9,6 @@ import argparse
 import random
 from IPython import embed
 import math
-from Queue import Queue
 from threading import Thread
 from collections import defaultdict, deque
 import time
@@ -38,7 +37,8 @@ mcts.rle._game.sprite_groups
 """
 ACTIONS = {(0,0):'stay',(0,-1):'up', (0,1):'down', (1,0):'right', (-1,0):'left', None:'none'}
 class Basic_MCTS:
-	def __init__(self, existing_rle=False, game = None, level = None, partitionWeights=[1,0,1], rleCreateFunc=False, obsType = OBSERVATION_GLOBAL, decay_factor=.95, num_workers=1):
+	def __init__(self, existing_rle=False, game = None, level = None, partitionWeights=[1,0,1], subgoal_path_threshold = None,
+		         rleCreateFunc=False, obsType = OBSERVATION_GLOBAL, decay_factor=.95, num_workers=1):
 		if not existing_rle and not rleCreateFunc:
 			print "You must pass either an existing rle or an rleCreateFunc"
 			return
@@ -49,6 +49,8 @@ class Basic_MCTS:
 		treePolicy = the policy used to select the descendant node to expand 
 		             in the selection step
 		defaultPolicy = the policy used in the simulation step.
+		subgoal_path_threshold = the max size possible for a path to a subgoal. If
+					this has value None, then don't use subgoals.
 		"""
 		## A few different ways to get observations of the game-state.
 		## Observations of everything that's happening on the screen: OBSERVATION_GLOBAL
@@ -85,6 +87,9 @@ class Basic_MCTS:
 		self.rewardQueue = deque()
 		self.num_solutions_found = 0
 
+		avatar_code = 1
+		avatar_loc = np.where(np.reshape(self.rle._getSensors(), self.outdim)==avatar_code)
+		avatar_loc = avatar_loc[0][0], avatar_loc[1][0]
 		## find location of goal, add to rewardDict.
 		## also add neighbors of goal rewardQueue.
 		##TODO: update this if goal moves!!
@@ -117,6 +122,24 @@ class Basic_MCTS:
 		print "maxPseudoreward", self.maxPseudoReward, "rewardScaling", self.rewardScaling, "partitionWeights", self.partitionWeights
 		self.scanDomainForMovementOptions()
 		self.propagateRewards(goal_loc)
+		self.subgoals = []
+		if subgoal_path_threshold:
+			path = self.getPathToGoal(avatar_loc, goal_loc)
+			if subgoal_path_threshold > len(path):
+				# don't use any subgoals in this case.
+				pass
+			else:
+				subgoal_index = -1
+				num_subgoals = int(math.ceil(float(len(path))/subgoal_path_threshold))
+				for i in range(num_subgoals):
+					if i < len(path) % num_subgoals:
+						subgoal_index += (len(path)/num_subgoals + 1)
+					else:
+						subgoal_index += len(path)/num_subgoals
+
+					self.subgoals.append(path[subgoal_index])
+
+		embed()
 
 		# self.actionDict = {}
 		# ##Populate dictionary for use in action-sampling in defaultPolicy. Not sampling (0,0).
@@ -134,7 +157,7 @@ class Basic_MCTS:
 			# immovables = ['wall']
 			print "immovables", immovables
 		except:
-			immovables = ['wall']
+			immovables = ['wall', 'poison']
 			print "Using defaults as immovables", immovables
 
 		for i in immovables:
@@ -177,7 +200,32 @@ class Basic_MCTS:
 				for n in self.neighborDict[loc]:
 					if n not in self.processed:
 						self.rewardQueue.append(n)
-		return 
+		return
+
+	def getPathToGoal(self, avatar_loc, goal_loc):
+		q = deque()
+		# q stores tuples in which the first element is a node and the next
+		# is the shortest path to that node
+		q.append((avatar_loc, []))
+		node = avatar_loc
+		path = []
+		seen = {avatar_loc}
+		while q:
+			node, path = q.popleft()
+			seen.add(node)
+			if node == goal_loc:
+				break
+
+			for neighbor in self.neighborDict[node]:
+				if not neighbor in seen:
+					q.append((neighbor, path + [neighbor]))
+
+		if node != goal_loc:
+			raise Exception("Didn't find a path to the goal location.")
+
+		return path
+
+
 
 	def startTrainingPhase(self, numTrainingCycles, step_horizon, VRLE, mark_solution=False, solution_limit=20):
 
@@ -205,7 +253,7 @@ class Basic_MCTS:
 			tree_policy_iters += iters
 			if not v.terminal:
 				reward, dPiters = self.defaultPolicy(v, Vrle, step_horizon, domain_knowledge=True)
-				if reward == self.rewardScaling and not defaultPolicySolveStep:
+				if reward > 0 and not defaultPolicySolveStep:
 					defaultPolicySolveStep = i
 
 				loc = np.where(np.reshape(v.state, self.outdim)==self.avatar_code)
@@ -313,6 +361,9 @@ class Basic_MCTS:
 									## a different state despite having taken the same action. Is this what you want?
 				print rle.show()
 				terminal = rle._isDone()[0]
+				if terminal != v.terminal or not np.array_equal(v.state, rle._getSensors()):
+					print "inconsistency in node and rle"
+					embed()
 				# terminal = (not res['pcontinue']) or (rle._avatar is None)
 				if terminal:
 					reward = res['reward']
@@ -440,7 +491,6 @@ class Basic_MCTS:
 					if len(vLoc[0])>0:
 							vLoc = vLoc[0][0], vLoc[1][0] 
 
-					# cLoc = (vLoc[0] + a[0], vLoc[1] + vLoc[1])
 					cLoc = (vLoc[0] + a[0], vLoc[1] + a[1])
 
 					if cLoc in self.rewardDict:
@@ -465,18 +515,7 @@ class Basic_MCTS:
 					else:
 						funcVal = -float('inf')
 
-					# deltaY, deltaX = self.getManhattanDistanceComponents(v.state)
-					# manhattanDistance = abs(deltaX + a[0]) + abs(deltaY + a[1])
-					# if manhattanDistance:
-						# manhattanDistanceTransform = transform(manhattanDistance)
-						# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount)# + Cp*float(manhattanDistanceTransform)/c.visitCount
-					
-					## if you uncomment the above, remove the below line.
-					
-					# else:
-						# funcVal = float('inf')
 				else:
-					# manhattanDistanceTransform = transform(self.getManhattanDistance(c.state))
 					loc = np.where(np.reshape(c.state, self.outdim)==self.avatar_code)
 					if len(loc[0])>0:
 							loc = loc[0][0], loc[1][0] 
@@ -495,7 +534,7 @@ class Basic_MCTS:
 						heuristic_coefficient*(transform(loc)/c.visitCount)/sumPseudoReward, (transform(loc)/c.visitCount)/sumPseudoReward
 						print ""
 
-					funcVal = partitionWeights[0]* qValFunction \
+					funcVal = partitionWeights[0]*qValFunction \
 					        + partitionWeights[1]*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount \
 					        + heuristic_coefficient*(transform(loc)/c.visitCount)/sumPseudoReward	
 
@@ -807,6 +846,50 @@ def planActLoop(rleCreateFunc, filename, max_actions_per_plan, planning_steps, d
 		embed()
 
 
+
+def planActLoop(rleCreateFunc, filename, max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, playback=False):
+	
+	rle = rleCreateFunc(OBSERVATION_GLOBAL)
+	game, level = defInputGame(filename)
+	outdim = rle.outdim
+	print rle.show()
+	
+	terminal = rle._isDone()[0]
+	
+	i=0
+	finalStates = [rle._game.getFullState()]
+	while not terminal:
+		mcts = Basic_MCTS(existing_rle=rle, game=game, level=level)
+		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, rle)
+		# mcts.debug(mcts.rle, output=True, numActions=3)
+		# break
+		actions = mcts.getBestActionsForPlayout()
+
+		# if len(actions)<max_actions_per_plan:
+		# 	print "We only computed", len(actions), "actions."
+
+		new_state = rle._getSensors()
+		terminal = rle._isDone()[0]
+
+		for j in range(min(len(actions), max_actions_per_plan)):
+			if actions[j] is not None and not terminal:
+				print ACTIONS[actions[j]]
+				res = rle.step(actions[j])
+				new_state = res["observation"]
+				terminal = not res['pcontinue']
+				print rle.show()
+				finalStates.append(rle._game.getFullState())
+
+		i+=1
+
+	if playback:
+		from vgdl.core import VGDLParser
+		VGDLParser.playGame(game, level, finalStates)
+		embed()
+
+
+
+
 def planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, playback=False):
 	
 	rle = rleCreateFunc(OBSERVATION_GLOBAL)
@@ -820,7 +903,7 @@ def planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, playback=Fal
 	finalStates = [rle._game.getFullState()]
 	
 
-	mcts = Basic_MCTS(existing_rle=rle, game=game, level=level, partitionWeights=[5,1,5])
+	mcts = Basic_MCTS(existing_rle=rle, game=game, level=level, partitionWeights=[5,1,5], subgoal_path_threshold=4)
 
 	mcts.startTrainingPhase(1200, defaultPolicyMaxSteps, rle, mark_solution=True, solution_limit=50)
 	print "ended trainingphase"
