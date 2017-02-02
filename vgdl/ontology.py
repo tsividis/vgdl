@@ -34,6 +34,7 @@ LIGHTGRAY = (150, 150, 150)
 DARKGRAY = (30, 30, 30)
 DARKBLUE = (20, 20, 100)
 PURPLE = (140, 20, 140)
+NONEGOAL = (175, 175, 175)
 
 UP = (0, -1)
 DOWN = (0, 1)
@@ -61,6 +62,7 @@ colorDict = {str((0, 200, 0)): 'GREEN',\
             str((30, 30, 30)): 'DARKGRAY',\
             str((20, 20, 100)): 'DARKBLUE',\
             str((140, 20, 140)): 'PURPLE',\
+            str((175, 175, 175)): 'NONEGOAL',\
             }
 
 

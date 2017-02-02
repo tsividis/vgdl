@@ -1633,7 +1633,25 @@ class Game(object):
 		# print "Done cleanHypothesisSpace...\n"
 		return
 
+def generateTheoryFromGame(rle):
+	"""
+	Given an rle, returns a very barebones theory object.
+	This object has only 2 fields set: the interaction set, and the classes.
+	"""
+	theory = Theory(rle._game)
+	inverseClasses = dict()
+	for i,s in enumerate(rle._game.sprite_constr):
+		(vgdlType, settings, _) = rle._game.sprite_constr[s]
+		color = colorDict[str(settings['color'])]
+		sprite = Sprite(vgdlType, color, className=i)
+		theory.classes[i] = [sprite]
+		inverseClasses[s] = i
 
+	for g1, g2, effect, kwargs in rle._game.collision_eff:
+		interaction = InteractionRule(effect.__name__, inverseClasses[g1], inverseClasses[g2], None, None)
+		theory.interactionSet.append(interaction)
+
+	return theory
 
 def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	"""
@@ -1685,8 +1703,11 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	if goalLoc:
 		goalLoc = goalLoc[1], goalLoc[0]
 		newGoalCode = state[goalLoc[0]][goalLoc[1]] ##have to flip indices
-		newGoalIndex = int(round(math.log(newGoalCode,2)))-1
-		newGoalType = sorted(_obstypes.keys())[::-1][newGoalIndex]
+		if newGoalCode == 0:
+			newGoalType = None
+		else:
+			newGoalIndex = int(round(math.log(newGoalCode,2)))-1
+			newGoalType = sorted(_obstypes.keys())[::-1][newGoalIndex]
 
 		colorToSprite[prevGoalColor] = 'oldGl'
 		if prevGoalExists:
@@ -1732,7 +1753,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 				else:
 					embed()
 				# embed()
-			print stype, type(stype)
+			# print stype, type(stype)
 			if "core" in stype:
 				stype = stype[stype.find("core.")+len("core."):]
 			# theoryString += "\t\t\t%s > %s color=%s\n"%(colorToSprite[s.color], stype, s.color)
@@ -1741,7 +1762,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 					theoryString += "\t\t%s > %s color=%s\n"%("avatar", stype, s.color)
 				else:
 					sname = colorToSprite[s.color]
-					print sname
+					# print sname
 					if sname == newGoalType and sname != "goal":
 					# if sname == newGoalType:
 						theoryString += "\t\t%s > %s color=%s\n"%(sname, stype, s.color)
@@ -1771,6 +1792,9 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 					sname = colorToSprite[s.color]
 					theoryString += "\t\t%s > %s color=%s\n"%(sname, stype, s.color)
 
+	if newGoalType == None:
+		# we've selected an empty square to be the goal.
+		theoryString += "\t\tgoal > Passive color=LIGHTRED\n"
 
 	goalInSpriteSet = 'goal' in theoryString
 	immovable_predicates = ['stepBack', 'undoAll']
@@ -1816,6 +1840,9 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 						theoryString += "\t\t%s %s > %s\n"%(colorToSprite[s1.color], colorToSprite[s2.color], interactionRule.interaction)
 					except KeyError:
 						embed()
+
+	if newGoalType == None:
+		theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', "killSprite")
 	# theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', 'killSprite') ##should always be in the
 
 	immovables = list(set(immovables))
@@ -1884,6 +1911,10 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 					# mappedState[r][c] = inverseMapping[color]
 					mappedState[r][c] = inverseMapping[spriteType]
 
+			if mappedState[r][c] == " " and goalLoc == (r,c):
+				# an empty square has been selected as the goal
+				mappedState[r][c] = "G"
+
 		
 
 	levelString = 'level="""\n'
@@ -1891,8 +1922,6 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 		levelString += reduce(lambda a,b: a+b, mappedRow) + "\n"
 
 	levelString += '"""\n'
-	if 'G' in levelString and not goalInSpriteSet:
-		embed()
 
 	parserString = 'if __name__ == "__main__":\n\tfrom vgdl.core import VGDLParser\n\tVGDLParser.playGame(game, level)\n'
 

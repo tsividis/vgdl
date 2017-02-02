@@ -674,6 +674,18 @@ class BasicGame(object):
             if not iterationEffectList:
                 # only break from the loop if iterationEffectList is empty
                 break
+            else:
+                duplicate = True 
+                for e in iterationEffectList:
+                    if not e in self.effectList:
+                        duplicate = False
+
+                if duplicate:
+                    # all of the events processed in this iteration 
+                    # were already in the event list
+                    break
+
+                # print iterationEffectList
 
             self.effectList.extend(iterationEffectList)
 

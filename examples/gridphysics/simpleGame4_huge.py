@@ -36,9 +36,8 @@ BasicGame frame_rate=30
         avatar > MovingAvatar color=DARKBLUE #cooldown=4 
         goal > ResourcePack color=GOLD
         poison > ResourcePack limit=3 color=BROWN
-        box  > ResourcePack 
-            box1 > color=GREEN
-            box2 > color=LIGHTBLUE
+        box1 > ResourcePack color=GREEN
+        box2 > ResourcePack color=LIGHTBLUE
         wall > Immovable color=BLACK      
         score > Resource color=PINK limit=10  
         missile > Missile color=RED speed=.2      
@@ -55,14 +54,16 @@ BasicGame frame_rate=30
         poison avatar > killSprite
         avatar poison > killSprite
         goal avatar > killSprite
-        box1 avatar  > bounceForward
-        box2 avatar > killSprite
-        goal box > bounceForward
+        box1 avatar > bounceForward
+        box2 avatar  > killSprite
+        goal box1 > bounceForward
+        goal box2 > bounceForward
         goal wall > undoAll
         goal poison > undoAll
-        box wall    > undoAll    
-        box treasure > undoAll
-        box poison > undoAll
+        box1 wall    > undoAll    
+        box2 wall    > undoAll    
+        box1 poison > undoAll
+        box2 poison > undoAll
     TerminationSet
         SpriteCounter stype=goal    limit=0 win=True
         SpriteCounter stype=avatar  limit=0 win=False          
