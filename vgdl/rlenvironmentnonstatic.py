@@ -240,7 +240,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # if action == (0,0) or action == None:
         #     return
 
-        if action != (0,0):
+        if action != (0,0) and self._avatar:
             self._avatar._readMultiActions = lambda *x: [action]
 
         # self._avatar._readMultiActions = lambda *x: [self._actionset[action]] # old      
