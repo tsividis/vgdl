@@ -1643,7 +1643,7 @@ def generateTheoryFromGame(rle):
 	for i,s in enumerate(rle._game.sprite_constr):
 		(vgdlType, settings, _) = rle._game.sprite_constr[s]
 		color = colorDict[str(settings['color'])]
-		sprite = Sprite(vgdlType, color, className=i)
+		sprite = Sprite(vgdlType, color, className=i, args=settings)
 		theory.classes[i] = [sprite]
 		inverseClasses[s] = i
 
@@ -1661,6 +1661,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	2 ways of swapping in knowledge:
 	-cleanest way: 
 	"""
+	DIRECTION_MAP = {(0,-1):'UP', (0,1):'DOWN', (1,0):'RIGHT', (-1,0):'LEFT'}
 
 
 	_obstypes = rle._obstypes
@@ -1669,7 +1670,6 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	state = np.reshape(rle._getSensors(), rle.outdim)
 	newGoalType = None
 	OLD_GOAL = "oldGl"
-
 
 	if prevGoalExists:
 		prevGoalColor = colorDict[str(rle._game.sprite_groups['goal'][0].color)]
@@ -1762,37 +1762,47 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 			# theoryString += "\t\t\t%s > %s color=%s\n"%(colorToSprite[s.color], stype, s.color)
 			if goalLoc:
 				if "avatar".lower() in stype.lower():
-					theoryString += "\t\t%s > %s color=%s\n"%("avatar", stype, s.color)
+					theoryString += "\t\t%s > %s color=%s"%("avatar", stype, s.color)
 				else:
 					sname = colorToSprite[s.color]
 					# print sname
 					if sname == newGoalType and sname != "goal":
 					# if sname == newGoalType:
-						theoryString += "\t\t%s > %s color=%s\n"%(sname, stype, s.color)
+						theoryString += "\t\t%s > %s color=%s"%(sname, stype, s.color)
 						if sname != "goal":
-							theoryString += "\t\t%s > %s color=%s\n"%("goal", stype, s.color)
-						# embed()
+							theoryString += "\t\t%s > %s color=%s"%("goal", stype, s.color)
 
 					elif sname == "goal" and stype != newGoalType and goalLoc!=prevGoalLoc:
-						theoryString += "\t\t%s > %s color=%s\n"%(OLD_GOAL, stype, s.color)
+						theoryString += "\t\t%s > %s color=%s"%(OLD_GOAL, stype, s.color)
 						# embed()
 
 					elif sname == OLD_GOAL and goalLoc == prevGoalLoc:
-						theoryString += "\t\t%s > %s color=%s\n"%("goal", stype, s.color)
+
+						theoryString += "\t\t%s > %s color=%s"%("goal", stype, s.color)
 
 					# elif stype == "avatar":
 					# 	theoryString += "\t\t\t%s > %s color=%s\n"%("avatar", stype, s.color)
 
 					else:
-						theoryString += "\t\t%s > %s color=%s\n"%(sname, stype, s.color)
+						theoryString += "\t\t%s > %s color=%s"%(sname, stype, s.color)
 
 			else:
 				if "avatar".lower() in stype.lower():
-					theoryString += "\t\t%s > %s color=%s\n"%("avatar", stype, s.color)
+					theoryString += "\t\t%s > %s color=%s"%("avatar", stype, s.color)
 
 				else:
 					sname = colorToSprite[s.color]
-					theoryString += "\t\t%s > %s color=%s\n"%(sname, stype, s.color)
+					theoryString += "\t\t%s > %s color=%s"%(sname, stype, s.color)
+
+			for k,v in s.args.items():
+				if k == "color":
+					continue
+				elif k == "orientation":
+					theoryString += " %s=%s"%(k, DIRECTION_MAP[v])
+				else:
+					theoryString += " %s=%s"%(k, str(v))
+
+			theoryString += "\n"
 
 	if newGoalType == 'blank_space':
 		# we've selected an empty square to be the goal.
