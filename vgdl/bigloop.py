@@ -1,11 +1,24 @@
-from mcts import *
+from mcts_pseudoreward_heuristic import *
 from util import *
 from core import colorDict
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
-from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectSubgoal
+from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt
 import importlib
 from rlenvironmentnonstatic import createRLInputGame
+
+
+# from vgdl.mcts_pseudoreward_heuristic import *
+# from vgdl.util import *
+# from vgdl.core import colorDict
+# from vgdl.ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
+# from vgdl.ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
+# from vgdl.theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt
+# import importlib
+# from vgdl.rlenvironmentnonstatic import createRLInputGame
+
+
+
 
 '''
 ## helpful functions or access methods:
@@ -19,8 +32,7 @@ for the equivalents in thought world, just do mcts.rle.whatever
 
 def playEpisode(rleCreateFunc, hypotheses=[], unknown_objects=False, goalColor=None, finalEventList=[], playback=False):
 
-																						## Initialize rle the agent behaves in.
-	rle = rleCreateFunc()
+	rle = rleCreateFunc()																## Initialize rle the agent behaves in.
 	rle._game.unknown_objects = rle._game.sprite_groups.keys()
 	rle._game.unknown_objects.remove('avatar') 											## For now we're asumming agent knows self.
 	rle.agentStatePrev = {}
@@ -28,77 +40,45 @@ def playEpisode(rleCreateFunc, hypotheses=[], unknown_objects=False, goalColor=N
 
 	spriteInduction(rle._game, step=0)													## Initialize sprite induction
 
-
 	noHypotheses = len(hypotheses)==0
 
-		# sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)		## Initialize mental theory
-		# g = Game(spriteInductionResult=sample)
-		# t = g.buildGenericTheory(sample)
-		# hypotheses = [t]
-
-
-
 	## Fix this mess. Store the unknown categories. Select among those for a goal, and then provide that to selectToken.
-	if unknown_categories==False:
+	if unknown_objects==False:
 		print "initializing unknown objects:"
-		unknown_categories = [k for k in rle._game.sprite_groups.keys() if k!='avatar']
-		print [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in unknown_categories]
+		unknown_objects = [k for k in rle._game.sprite_groups.keys() if k!='avatar']
+		print [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in unknown_objects]
 	else:
 		print "already know some objects. Unknown:"
-		print [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in unknown_categories]
+		print [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in unknown_objects]
 
-
-	# if unknown_objects==False: ##uninitialized
-	# 	print "initializing unknown objects:"
-	# 	unknown_objects=[rle._game.sprite_groups[k] for k in rle._game.sprite_groups.keys() if k!='avatar'] 	## Store instances of unknown objects
-	# 	print [colorDict[str(o[0].color)] for o in unknown_objects]
-	# else:
-	# 	print "already know some objects. Unknown:"
-	# 	print [colorDict[str(o[0].color)] for o in unknown_objects]
-	
-
-	##working hypothesis is hypotheses[0] for now.
-	# unknown_objects= []
-	# print [r.generic for r in hypotheses[0].interactionSet]
-	# for rule in hypotheses[0].interactionSet:
-	# 	##right now this only tries to learn about avatar touching things
-	# 	##not things touching things
-	# 	##Also sometimes you're going to randomly choose an unreachable object!
-	# 	if rule.generic:
-	# 		## make sure this is right if you have multiple objects in the class.
-	# 		## e.g., review induction assumptions.
-
-	# 		## you're assuming that generic rules always have avatar in slot2
-	# 		col = hypotheses[0].classes[rule.slot1][0].color
-	# 		key = [k for k in rle._game.sprite_groups.keys() if \
-	# 		colorDict[str(rle._game.sprite_groups[k][0].color)]==col][0]
-	# 		unknown_objects.append(rle._game.sprite_groups[key])
-	
 
 	ended, won = rle._isDone()
 	
-	total_states_encountered = [rle._game.getFullState()]
+	total_states_encountered = [rle._game.getFullState()]							## Start storing encountered states.
 
 	Vrle=None
 
 
-	while not ended:																	## Select known goal if it's known, otherwise unkown object.
+	while not ended:																	
 		if noHypotheses:																	## Observe a few frames, then initialize sprite hypotheses
 			observe(rle, 5)
 			sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
 			g = Game(spriteInductionResult=sample)
 			t = g.buildGenericTheory(sample)
 			hypotheses = [t]
+			noHypotheses = False
 
-																							## Initialize world in agent's head.
-		if not Vrle:
+		if not Vrle:	## Initialize world in agent's head.
+			print ""
+			print "Initializing mental theory."
 			game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0],\
-			 "./examples/gridphysics/theorytest.py")#, rle._rect2pos(subgoal.rect))
+			 "./examples/gridphysics/theorytest.py")
+			# embed()																					
 
-			Vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)
+			Vrle = createMindEnv(game, level, output=True)
 			Vrle.immovables = immovables
 
-		if goalColor:
+		if goalColor:																## Select known goal if it's known, otherwise unkown object.
 			key = [k for k in rle._game.sprite_groups.keys() if \
 			colorDict[str(rle._game.sprite_groups[k][0].color)]==goalColor][0]
 			actual_goal = rle._game.sprite_groups[key][0]
@@ -106,34 +86,37 @@ def playEpisode(rleCreateFunc, hypotheses=[], unknown_objects=False, goalColor=N
 			print "goal is known:", goalColor
 		else:
 			try:
-				object_goal = random.choice(unknown_objects)
-				embed()
-				subgoalLocation = selectSubgoalToken(Vrle, 'wall', unknown_objects)
+				object_goal = selectObjectGoal(Vrle, unknown_objects, method="random_then_nearest")
+				object_goal_location = Vrle._rect2pos(object_goal.rect)
 			except:
 				print "no unknown objects and no goal? Embedding so you can debug."
 				embed()
 
-
-		# embed() 
-		# subgoal = random.choice(rle._game.sprite_groups[object_goal.name])
-		
-
-		
-
 		game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0],\
-		 "./examples/gridphysics/theorytest.py", subgoalLocation)
-		Vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)							## World in agent's head.
-		Vrle.immovables = immovables
-		embed()
+		 "./examples/gridphysics/theorytest.py", object_goal_location)
 
-																						## Plan to get to subgoal
+		print "Initializing mental theory *with* object subgoal"
+		print "immovables", immovables
+		Vrle = createMindEnv(game, level, output=True)							## World in agent's head, including object goal
+		Vrle.immovables = immovables
+
+		# print "embedding so you can work on theories"
+		# # delete the below 2 lines
+		# mcts = Basic_MCTS(existing_rle=Vrle, game=game, level=level, partitionWeights=[5,1,5])
+		# subgoals = mcts.getSubgoals(subgoal_path_threshold=4)
+		# subgoal = subgoals[0]
+		# subgoal = (subgoal[1], subgoal[0])
+		# theory = generateTheoryFromGame(Vrle)
+																						## Plan to get to object goal
 		rle, hypotheses, finalEventList, candidate_new_colors, states_encountered = \
-		getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList, symbolDict=symbolDict)
+		getToObjectGoal(rle, Vrle, hypotheses[0], game, level, object_goal, all_objects, finalEventList, symbolDict=symbolDict)
 		
+		print "ended getToObjectGoal"
+		embed() 
 
 		if len(unknown_objects)>0:
 			for col in candidate_new_colors:
-				obj = [o for o in unknown_objects if colorDict[str(o[0].color)]==col]
+				obj = [o for o in unknown_objects if colorDict[str(rle._game.sprite_groups[o][0].color)]==col]
 				if len(obj)>0:
 					obj=obj[0]
 					unknown_objects.remove(obj)
@@ -173,13 +156,17 @@ if __name__ == "__main__":
 	hypotheses, tally = [], []
 	unknown_objects = False
 	goalColor = None
+	hypotheses, won, unknown_objects, goalColor, finalEventList, total_states_encountered = \
+	playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, \
+		unknown_objects=unknown_objects, goalColor=goalColor, finalEventList=finalEventList, \
+		playback=True)
 	# goalColor='BROWN'
-	for episode in range(numEpisodes):
-		hypotheses, won, unknown_objects, goalColor, finalEventList, total_states_encountered = \
-		playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, \
-			unknown_objects=unknown_objects, goalColor=goalColor, finalEventList=finalEventList, \
-			playback=True)
-		tally.append(won)
-		print "episode ended. Win:", won
-		print "__________________________________________________"
-	print "Won", sum(tally), "out of ", len(tally), "episodes."
+	# for episode in range(numEpisodes):
+	# 	hypotheses, won, unknown_objects, goalColor, finalEventList, total_states_encountered = \
+	# 	playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, \
+	# 		unknown_objects=unknown_objects, goalColor=goalColor, finalEventList=finalEventList, \
+	# 		playback=True)
+	# 	tally.append(won)
+	# 	print "episode ended. Win:", won
+	# 	print "__________________________________________________"
+	# print "Won", sum(tally), "out of ", len(tally), "episodes."

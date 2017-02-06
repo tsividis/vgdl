@@ -445,7 +445,7 @@ def _verify( obs, targetObs ):
 # simple maze test, moved to goal and win
 
 
-def createMindEnv(game, level, output=True, obsType=OBSERVATION_GLOBAL ):
+def createMindEnv(game, level, output=False, obsType=OBSERVATION_GLOBAL ):
     if output:
         print game
         print level

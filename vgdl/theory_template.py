@@ -1662,8 +1662,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 	-cleanest way: 
 	"""
 
-	# print "inwritetheory"
-	# embed()
+
 	_obstypes = rle._obstypes
 	prevGoalExists = "goal" in _obstypes
 	prevGoalLoc = None
@@ -1677,6 +1676,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 		try:
 			prevGoalClass = [k for k in theory.classes.keys() if theory.classes[k][0].color=='GOLD'][0]
 		except IndexError:
+			print "in writeTheoryToTxt, indexerror"
 			embed()
 	colorToSprite = {}
 
@@ -1685,6 +1685,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 			try:
 				colorToSprite[colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]] = spriteType
 			except KeyError:
+				print "in writeTheoryToTxt, keyError"
 				embed()
 	
 
@@ -1699,12 +1700,13 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 			avatarLoc = (avatarLoc[1][0], avatarLoc[0][0])
 			if avatarLoc in _obstypes['goal']:
 				prevGoalLoc = avatarLoc
-
+	# print "in writetheory"
+	# embed()
 	if goalLoc:
 		goalLoc = goalLoc[1], goalLoc[0]
 		newGoalCode = state[goalLoc[0]][goalLoc[1]] ##have to flip indices
 		if newGoalCode == 0:
-			newGoalType = None
+			newGoalType = 'blank_space'
 		else:
 			newGoalIndex = int(round(math.log(newGoalCode,2)))-1
 			newGoalType = sorted(_obstypes.keys())[::-1][newGoalIndex]
@@ -1716,7 +1718,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 
 	inverseMapping = dict()
 	numbers = '0123456789'
-	alnum = numbers + 'abcdefghijklmnopqrstuvwxyz'
+	alnum = numbers + 'bcdefhijklmnpqrstuvwxyz'
 	idx = 0
 	for s in _obstypes.keys():
 		if not s == "goal":
@@ -1751,6 +1753,7 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 				if unfilteredType == "OTHER":
 					stype = 'ResourcePack'
 				else:
+					print "writetheorytotxt. stype problem"
 					embed()
 				# embed()
 			# print stype, type(stype)
@@ -1775,7 +1778,6 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 						# embed()
 
 					elif sname == OLD_GOAL and goalLoc == prevGoalLoc:
-						embed()
 						theoryString += "\t\t%s > %s color=%s\n"%("goal", stype, s.color)
 
 					# elif stype == "avatar":
@@ -1792,11 +1794,11 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 					sname = colorToSprite[s.color]
 					theoryString += "\t\t%s > %s color=%s\n"%(sname, stype, s.color)
 
-	if newGoalType == None:
+	if newGoalType == 'blank_space':
 		# we've selected an empty square to be the goal.
 		theoryString += "\t\tgoal > Passive color=LIGHTRED\n"
 
-	goalInSpriteSet = 'goal' in theoryString
+	# goalInSpriteSet = 'goal' in theoryString
 	immovable_predicates = ['stepBack', 'undoAll']
 	immovables = []
 	# second phase: the interaction rules
@@ -1811,7 +1813,6 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 						theoryString += "\t\t%s %s > %s\n"%('avatar', colorToSprite[s2.color], interactionRule.interaction)
 						if colorToSprite[s2.color] == newGoalType:
 							theoryString += "\t\t%s %s > %s\n"%('avatar', 'goal', interactionRule.interaction)
-
 						if interactionRule.interaction in immovable_predicates:
 							immovables.append(colorToSprite[s2.color])
 					elif newGoalType=='goal':
@@ -1828,7 +1829,10 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 						if interactionRule.interaction in immovable_predicates:
 							immovables.append(colorToSprite[s1.color])
 					elif newGoalType=='goal':
+						print "adding goal line"
 						theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', interactionRule.interaction)
+					
+
 					# else:
 					# 	theoryString += "\t\t%s %s > %s\n"%('oldGl', 'avatar', interactionRule.interaction)
 	
@@ -1837,11 +1841,14 @@ def writeTheoryToTxt(rle, theory, txtFile, goalLoc = None):
 						# if colorToSprite[s1.color] == 'goal' or colorToSprite[s2.color]== 'goal':
 							# print "in theorytxt"
 							# embed()
+						print colorToSprite[s1.color], colorToSprite[s2.color], interactionRule.interaction
 						theoryString += "\t\t%s %s > %s\n"%(colorToSprite[s1.color], colorToSprite[s2.color], interactionRule.interaction)
 					except KeyError:
+						print "end of writetheorytotxt. theorystring keyerror"
 						embed()
 
-	if newGoalType == None:
+	# if goal is an empty square
+	if newGoalType == 'blank_space':
 		theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', "killSprite")
 	# theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', 'killSprite') ##should always be in the
 
