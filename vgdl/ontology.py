@@ -1623,28 +1623,27 @@ def spriteInduction(game, step):
                     outcome = objects[sprite]["position"]
                     game.spriteDistribution = updateDistribution(sprite, game.spriteDistribution, game.movement_options, outcome)
 
-def selectObjectGoal(rle, unknown_objects, method):
+def selectObjectGoal(rle, unknown_colors, method):
     def dist(a,b):
         return abs(a[0]-b[0])+abs(a[1]-b[1])
-
     if method=='random_then_nearest':
-        object_goal = random.choice(unknown_objects)
-        choices = rle._game.sprite_groups[object_goal]
+        object_color = random.choice(unknown_colors)
+        choices = [item for sublist in rle._game.sprite_groups.values() for item in sublist if colorDict[str(item.color)]==object_color]
         avatar_loc = rle._rect2pos(rle._game.sprite_groups['avatar'][0].rect)
         choices = [(dist(rle._rect2pos(c.rect), avatar_loc), c) for c in choices]
         choices = sorted(choices, key=lambda c:c[0])
         nearest_dist = min([c[0] for c in choices])
         nearest = [c for c in choices if c[0]==nearest_dist]
         return random.choice(nearest)[1]
-    elif method=='random':
-        object_goal =random.choice(unknown_objects)
-        instantiated_goal = random.choice(rle._game.sprite_groups[object_goal]) # TODO: instead, find nearest instance of that object. Not necessarily trivial becase you could mistakenly pick something that's impossible to get to.
-        return instantiated_goal
-    ## TODO: delete
-    elif method=='preselected':
-        object_goal = random.choice(['box1','box2'])
-        instantiated_goal = random.choice(rle._game.sprite_groups[object_goal]) # TODO: instead, find nearest instance of that object. Not necessarily trivial becase you could mistakenly pick something that's impossible to get to.
-        return instantiated_goal
+    # elif method=='random':
+    #     object_goal =random.choice(unknown_objects)
+    #     instantiated_goal = random.choice(rle._game.sprite_groups[object_goal]) # TODO: instead, find nearest instance of that object. Not necessarily trivial becase you could mistakenly pick something that's impossible to get to.
+    #     return instantiated_goal
+    # ## TODO: delete
+    # elif method=='preselected':
+    #     object_goal = random.choice(['box1','box2'])
+    #     instantiated_goal = random.choice(rle._game.sprite_groups[object_goal]) # TODO: instead, find nearest instance of that object. Not necessarily trivial becase you could mistakenly pick something that's impossible to get to.
+    #     return instantiated_goal
 
 
 

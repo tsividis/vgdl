@@ -3,7 +3,8 @@ from util import *
 from core import colorDict
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
-from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt
+from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, \
+MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict
 import importlib
 from rlenvironmentnonstatic import createRLInputGame
 
@@ -46,19 +47,17 @@ def playEpisode(rleCreateFunc, hypotheses=[], unknown_objects=False, goalColor=N
 	if unknown_objects==False:
 		print "initializing unknown objects:"
 		unknown_objects = [k for k in rle._game.sprite_groups.keys() if k!='avatar']
-		print [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in unknown_objects]
+		unknown_colors = [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in unknown_objects]
 	else:
 		print "already know some objects. Unknown:"
-		print [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in unknown_objects]
-
+		print unknown_colors
 
 	ended, won = rle._isDone()
 	
 	total_states_encountered = [rle._game.getFullState()]							## Start storing encountered states.
 
 	Vrle=None
-
-
+ 
 	while not ended:																	
 		if noHypotheses:																	## Observe a few frames, then initialize sprite hypotheses
 			observe(rle, 5)
@@ -68,12 +67,15 @@ def playEpisode(rleCreateFunc, hypotheses=[], unknown_objects=False, goalColor=N
 			hypotheses = [t]
 			noHypotheses = False
 
+
 		if not Vrle:	## Initialize world in agent's head.
+			symbolDict = generateSymbolDict(rle)
+			for k,v in symbolDict.items():
+				print k, v
 			print ""
 			print "Initializing mental theory."
-			game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0],\
+			game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], symbolDict,\
 			 "./examples/gridphysics/theorytest.py")
-			# embed()																					
 
 			Vrle = createMindEnv(game, level, output=True)
 			Vrle.immovables = immovables
@@ -86,13 +88,14 @@ def playEpisode(rleCreateFunc, hypotheses=[], unknown_objects=False, goalColor=N
 			print "goal is known:", goalColor
 		else:
 			try:
-				object_goal = selectObjectGoal(Vrle, unknown_objects, method="random_then_nearest")
+				object_goal = selectObjectGoal(Vrle, unknown_colors, method="random_then_nearest")
 				object_goal_location = Vrle._rect2pos(object_goal.rect)
 			except:
 				print "no unknown objects and no goal? Embedding so you can debug."
 				embed()
 
-		game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0],\
+		print object_goal_location
+		game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], symbolDict,\
 		 "./examples/gridphysics/theorytest.py", object_goal_location)
 
 		print "Initializing mental theory *with* object subgoal"
@@ -100,19 +103,10 @@ def playEpisode(rleCreateFunc, hypotheses=[], unknown_objects=False, goalColor=N
 		Vrle = createMindEnv(game, level, output=True)							## World in agent's head, including object goal
 		Vrle.immovables = immovables
 
-		# print "embedding so you can work on theories"
-		# # delete the below 2 lines
-		# mcts = Basic_MCTS(existing_rle=Vrle, game=game, level=level, partitionWeights=[5,1,5])
-		# subgoals = mcts.getSubgoals(subgoal_path_threshold=4)
-		# subgoal = subgoals[0]
-		# subgoal = (subgoal[1], subgoal[0])
-		# theory = generateTheoryFromGame(Vrle)
 																						## Plan to get to object goal
 		rle, hypotheses, finalEventList, candidate_new_colors, states_encountered = \
 		getToObjectGoal(rle, Vrle, hypotheses[0], game, level, object_goal, all_objects, finalEventList, symbolDict=symbolDict)
 		
-		print "ended getToObjectGoal"
-		embed() 
 
 		if len(unknown_objects)>0:
 			for col in candidate_new_colors:

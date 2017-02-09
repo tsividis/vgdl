@@ -848,13 +848,11 @@ def observe(rle, obsSteps):
 # 				print "Agent died."
 # 	return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered
 
-def getToObjectGoal(rle, vrle, hypothesis, game, level, object_goal, all_objects, finalEventList, verbose=True, 
-	max_actions_per_plan=1, planning_steps=100, defaultPolicyMaxSteps=50, symbolDict=None):
+def getToObjectGoal(rle, vrle, hypothesis, game, level, object_goal, all_objects, finalEventList, verbose=True,\
+	defaultPolicyMaxSteps=50, symbolDict=None):
 	## Takes a real world, a theory (instantiated as a virtual world)
 	## Moves the agent through the world, updating the theory as needed
 	## Ends when object_goal is reached.
-	## Right now will only properly work with max_actions_per_plan=1, as you want to re-plan when the theory changes.
-	## Otherwise it will only replan every max_actions_per_plan steps.
 	## Returns real world in its new state, as well as theory in its new state.
 	## TODO: also return a trace of events and of game states for re-creation
 	
@@ -884,7 +882,8 @@ def getToObjectGoal(rle, vrle, hypothesis, game, level, object_goal, all_objects
 		print "calculated subgoals", subgoals
 		total_steps = 0
 		for subgoal in subgoals:
-			ignore, actions, steps = getToWaypoint(vrle, subgoal, defaultPolicyMaxSteps, partitionWeights=[5,1,3], act=False)
+			# Get actions to reach each subgoal
+			ignore, actions, steps = getToWaypoint(vrle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights=[5,1,3], act=False)
 			print "got plan to waypoint. Actions", actions
 			theory_change_flag = False
 
@@ -892,7 +891,6 @@ def getToObjectGoal(rle, vrle, hypothesis, game, level, object_goal, all_objects
 				if not theory_change_flag:
 					print "new action", action
 					res = rle.step(noise(action))
-
 					terminal = rle._isDone()[0]
 					if terminal:
 						if rle._isDone()[1]:
@@ -901,7 +899,7 @@ def getToObjectGoal(rle, vrle, hypothesis, game, level, object_goal, all_objects
 							print "Agent died."					
 					effects = translateEvents(res['effectList'], all_objects)
 					if symbolDict: 
-							print rle.show()
+						print rle.show()
 					else:
 						print np.reshape(new_state, rle.outdim)
 					# Save the event and agent state
@@ -911,26 +909,28 @@ def getToObjectGoal(rle, vrle, hypothesis, game, level, object_goal, all_objects
 					# If agent is killed before we get agentState
 					except Exception as e:	# TODO: how to process changes in resources that led to termination state?
 						agentState = rle.agentStatePrev
-			# 		## If there were collisions, update history and perform interactionSet induction
+			 		## If there were collisions, update history and perform interactionSet induction if the collisions were novel.
 					if effects:
 						state = rle._game.getFullState()
 						event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, 'gameState': rle._game.getFullStateColorized()}
 						finalEventList.append(event)
 
-						for effect in effects:
-							if len(effect)==2:
-								rle._game.collision_objects.add(effect[1]) ##sometimes event is just (predicate, obj1)
-							elif len(effect)==3: ## usually event is (predicate, obj1, obj2)
-								rle._game.collision_objects.add(effect[2])
+						## are you using collision_objects for anything?
+						# for effect in effects:
+						# 	if len(effect)==2:
+						# 		rle._game.collision_objects.add(effect[1]) ##sometimes event is just (predicate, obj1)
+						# 	elif len(effect)==3: ## usually event is (predicate, obj1, obj2)
+						# 		rle._game.collision_objects.add(effect[2])
 
+						## Check if you reached object goal
 						if colorDict[str(object_goal.color)] in [item for sublist in effects for item in sublist]:
 							print "reached object_goal"
 							goal_achieved = True
 							if subgoal.name in rle._game.unknown_objects:
 								rle._game.unknown_objects.remove(object_goal.name)
-							goalLoc=None
-						else:
-							goalLoc = rle._rect2pos(object_goal.rect)
+							# goalLoc=None
+						# else:
+							# goalLoc = rle._rect2pos(object_goal.rect)
 
 						## Sampling from the spriteDisribution makes sense, as it's
 						## independent of what we've learned about the interactionSet.
@@ -943,17 +943,14 @@ def getToObjectGoal(rle, vrle, hypothesis, game, level, object_goal, all_objects
 						trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
 
 						## Get list of all effects we've seen. Only update theory if we're seeing something new.
-						all_effects = [item for sublist in [e['effectList'] for e in finalEventList] for item in sublist]
-		
-						## make sure you write this so that it works with simultaneous effects.
-						if effects not in all_effects:
+						all_effects = [item for sublist in [e['effectList'] for e in finalEventList] for item in sublist]		
+						if effects not in all_effects:## TODO: make sure you write this so that it works with simultaneous effects.
 							theory_change_flag = True
 							hypotheses = list(g.runInduction(sample, trace, 20))
 						else:
-							## you need to figure out how to incorporate the result of sprite induction.
-							## right now you're only doing sprite induction when you run observe() in bigloop.
+							## you need to figure out how to incorporate the result of sprite induction in cases where you don't do
+							## interactionSet induction (i.e., here.)
 							hypotheses = [hypothesis]
-
 						
 						## new colors that we have maybe learned about
 						candidate_new_objs = []
@@ -977,8 +974,11 @@ def getToObjectGoal(rle, vrle, hypothesis, game, level, object_goal, all_objects
 								candidate_new_colors.append(e[1])
 
 						candidate_new_colors = list(set(candidate_new_colors))
+						print "candidate new colors", candidate_new_colors
 
-						game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", goalLoc=goalLoc)
+						## update to incorporate what we've learned, keep the same subgoal for now; this will update at the top of the next loop.
+						game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], symbolDict, \
+							"./examples/gridphysics/theorytest.py", goalLoc=subgoal)
 
 						print "updating internal theory"
 						vrle = createMindEnv(game, level, output=True)
@@ -1084,11 +1084,12 @@ def planActLoop(rleCreateFunc, filename, max_actions_per_plan, planning_steps, d
 		embed()
 
 
-def getToWaypoint(rle, subgoal, defaultPolicyMaxSteps, partitionWeights, act=True):
+def getToWaypoint(rle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights, act=True):
 	subgoal = (subgoal[1], subgoal[0])
 	theory = generateTheoryFromGame(rle)
+
 	theoryString, levelString, inverseMapping, immovables =\
-	writeTheoryToTxt(rle, theory, "./examples/gridphysics/waypointtheory.py", subgoal)
+	writeTheoryToTxt(rle, theory, symbolDict, "./examples/gridphysics/waypointtheory.py", subgoal)
 	Vrle = createMindEnv(theoryString, levelString, output=False)
 	Vrle.immovables = immovables
 	print "mental location subgoal"
@@ -1121,7 +1122,7 @@ def planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, theory=False
 	total_steps = 0
 
 	for subgoal in subgoals:
-		rle, actions, steps = getToWaypoint(rle, subgoal, defaultPolicyMaxSteps, partitionWeights=[5,1,3])
+		rle, actions, steps = getToWaypoint(rle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights=[5,1,3])
 		print steps, "steps"
 		total_steps += steps
 

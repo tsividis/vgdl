@@ -1,38 +1,41 @@
 level="""
 000000000
 0  1    0
-0    2  0
-0 3  0A00
-0 G  0 00
-000000000
+0    3  0
+0 4  0A00
+0 2  0 00
+00G000000
 """
 game = """
 BasicGame
 	SpriteSet
 		avatar > MovingAvatar color=DARKBLUE
-		poison > Immovable color=BROWN
-		box1 > ResourcePack color=ORANGE
-		box2 > Passive color=BLUE
-		goal > ResourcePack color=GOLD
-		wall > ResourcePack color=BLACK
+		c3 > Immovable color=BROWN
+		c2 > ResourcePack color=BLUE
+		c6 > ResourcePack color=ORANGE
+		c5 > Resource color=GOLD
+		c4 > ResourcePack color=BLACK
+		goal > ResourcePack color=BLACK
 	InteractionSet
-		box1 avatar > killSprite
-		poison avatar > killSprite
-		wall avatar > killSprite
+		c2 avatar > killSprite
+		c3 avatar > killSprite
+		c4 avatar > killSprite
 		goal avatar > killSprite
-		goal avatar > killSprite
-		box2 avatar > killSprite
+		c5 avatar > killSprite
+		c6 avatar > killSprite
+		avatar c4 > stepBack
+		avatar goal > stepBack
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False
 		SpriteCounter stype=goal limit=0 win=True
 	LevelMapping
-		G > goal
-		0 > wall
-		2 > poison
+		4 > c2
+		3 > c3
+		2 > c5
 		A > avatar
-		O > oldGl
-		1 > box1
-		3 > box2
+		0 > c4
+		1 > c6
+		G > goal
 """
 if __name__ == "__main__":
 	from vgdl.core import VGDLParser
