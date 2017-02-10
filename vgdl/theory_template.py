@@ -2180,7 +2180,8 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					try:
 						mappedState[r][c] = symbolDict[spriteColor]
 					except:
-						print "Goal is empty square"
+						pass
+						# print "Goal is empty square"
 
 			try:
 				if mappedState[r][c] == " " and goalLoc == (r,c):

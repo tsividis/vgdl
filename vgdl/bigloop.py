@@ -31,15 +31,13 @@ rle._game.sprite_groups ## dict of unique object types and their positions
 for the equivalents in thought world, just do mcts.rle.whatever
 '''
 
-def playEpisode(rleCreateFunc, hypotheses=[], unknown_colors=False, goalColor=None, finalEventList=[], playback=False):
+def playEpisode(rleCreateFunc, hypotheses=[], game_object=None, unknown_colors=False, goalColor=None, finalEventList=[], playback=False):
 
 	rle = rleCreateFunc()																## Initialize rle the agent behaves in.
-	# rle._game.unknown_objects = rle._game.sprite_groups.keys()
-	# rle._game.unknown_objects.remove('avatar') 											## For now we're asumming agent knows self.
 	rle.agentStatePrev = {}
 	all_objects = rle._game.getObjects()
 
-	spriteInduction(rle._game, step=0)													## Initialize sprite induction
+	# spriteInduction(rle._game, step=0)													## Initialize sprite induction
 
 	noHypotheses = len(hypotheses)==0
 
@@ -57,6 +55,7 @@ def playEpisode(rleCreateFunc, hypotheses=[], unknown_colors=False, goalColor=No
 	total_states_encountered = [rle._game.getFullState()]							## Start storing encountered states.
 
 	Vrle=None
+	g = game_object
  
 	while not ended:																	
 		if noHypotheses:																	## Observe a few frames, then initialize sprite hypotheses
@@ -79,17 +78,20 @@ def playEpisode(rleCreateFunc, hypotheses=[], unknown_colors=False, goalColor=No
 
 			Vrle = createMindEnv(game, level, output=True)
 			Vrle.immovables = immovables
-
 		if goalColor:																## Select known goal if it's known, otherwise unkown object.
 			key = [k for k in rle._game.sprite_groups.keys() if \
 			colorDict[str(rle._game.sprite_groups[k][0].color)]==goalColor][0]
 			actual_goal = rle._game.sprite_groups[key][0]
 			object_goal = actual_goal
+			object_goal_location = Vrle._rect2pos(object_goal.rect)
+			object_goal_location = object_goal_location[1], object_goal_location[0]
 			print "goal is known:", goalColor
 		else:
 			try:
 				object_goal = selectObjectGoal(Vrle, unknown_colors, method="random_then_nearest")
 				object_goal_location = Vrle._rect2pos(object_goal.rect)
+				object_goal_location = object_goal_location[1], object_goal_location[0]
+				print "object goal, location", object_goal, object_goal_location
 			except:
 				print "no unknown objects and no goal? Embedding so you can debug."
 				embed()
@@ -104,8 +106,8 @@ def playEpisode(rleCreateFunc, hypotheses=[], unknown_colors=False, goalColor=No
 		Vrle.immovables = immovables
 
 																						## Plan to get to object goal
-		rle, hypotheses, finalEventList, candidate_new_colors, states_encountered = \
-		getToObjectGoal(rle, Vrle, hypotheses[0], game, level, object_goal, all_objects, finalEventList, symbolDict=symbolDict)
+		rle, hypotheses, finalEventList, candidate_new_colors, states_encountered, g = \
+		getToObjectGoal(rle, Vrle, g, hypotheses[0], game, level, object_goal, all_objects, finalEventList, symbolDict=symbolDict)
 		
 
 		if len(unknown_colors)>0:
@@ -131,11 +133,9 @@ def playEpisode(rleCreateFunc, hypotheses=[], unknown_colors=False, goalColor=No
 		embed()
 		VGDLParser.playGame(playbackGame, playbackLevel, total_states_encountered)
 
-	return hypotheses, won, unknown_colors, goalColor, finalEventList, total_states_encountered
+	return hypotheses, g, won, unknown_colors, goalColor, finalEventList, total_states_encountered
 
 if __name__ == "__main__":
-
-	finalEventList = []
 
 	filename = "examples.gridphysics.simpleGame4"
 	game_to_play = lambda: createRLInputGame(filename)
@@ -145,9 +145,10 @@ if __name__ == "__main__":
 	
 	numEpisodes = 10
 
-	hypotheses, tally = [], []
+	hypotheses, tally, finalEventList = [], [], []
 	unknown_colors = False
 	goalColor = None
+	game_object = None
 	# hypotheses, won, unknown_objects, goalColor, finalEventList, total_states_encountered = \
 	# playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, \
 	# 	unknown_objects=unknown_objects, goalColor=goalColor, finalEventList=finalEventList, \
@@ -156,8 +157,8 @@ if __name__ == "__main__":
 	# embed()
 	# goalColor='BROWN'
 	for episode in range(numEpisodes):
-		hypotheses, won, unknown_colors, goalColor, finalEventList, total_states_encountered = \
-		playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, \
+		hypotheses, game_object, won, unknown_colors, goalColor, finalEventList, total_states_encountered = \
+		playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, game_object=game_object,\
 			unknown_colors=unknown_colors, goalColor=goalColor, finalEventList=finalEventList, \
 			playback=False)
 		tally.append(won)

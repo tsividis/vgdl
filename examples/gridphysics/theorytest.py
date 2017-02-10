@@ -1,34 +1,37 @@
 level="""
 000000000
 0  1    0
-0  G 3  0
+0    3  0
 0 4  0A00
-0 2  0 00
+0 G  0 00
 000000000
 """
 game = """
 BasicGame
 	SpriteSet
 		avatar > MovingAvatar color=DARKBLUE
-		c3 > Resource color=BROWN
-		c2 > Resource color=ORANGE
-		c6 > Passive color=BLUE
-		c5 > Passive color=GOLD
-		c4 > Resource color=BLACK
-		goal > Passive color=LIGHTRED
+		c3 > Passive color=BLUE
+		c2 > Immovable color=ORANGE
+		c6 > Resource color=BROWN
+		c5 > Resource color=GOLD
+		goal > Resource color=GOLD
+		c4 > Immovable color=BLACK
 	InteractionSet
-		c2 avatar > killSprite
 		c3 avatar > killSprite
 		c4 avatar > killSprite
-		c5 avatar > killSprite
+		goal avatar > killSprite
 		c6 avatar > killSprite
+		avatar c4 > stepBack
+		avatar c6 > killSprite
+		c2 avatar > bounceForward
+		c2 c4 > undoAll
 		goal avatar > killSprite
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False
 		SpriteCounter stype=goal limit=0 win=True
 	LevelMapping
-		4 > c6
-		3 > c3
+		4 > c3
+		3 > c6
 		2 > c5
 		A > avatar
 		0 > c4

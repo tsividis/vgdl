@@ -345,7 +345,8 @@ class Basic_MCTS:
 			count += 1
 			if not v.expanded:
 				reward, c = self.expand(v, rle, domain_knowledge=False)
-				print rle.show()
+				# print "after expanding"
+				# print rle.show()
 				return reward, c, iters
 
 			else:
@@ -356,9 +357,11 @@ class Basic_MCTS:
 				else:
 					a, v = self.bestChild(v,self.partitionWeights)
 
+				# print "before bestChild action:"
+				# print rle.show()
+
 				res = rle.step(a) ## TODO: you're getting the bestChild and taking bestAction, but in a stochastic game you will end up in
 									## a different state despite having taken the same action. Is this what you want?
-				print rle.show()
 				terminal = rle._isDone()[0]
 
 				if terminal != v.terminal or not np.array_equal(v.state, rle._getSensors()):
@@ -468,34 +471,39 @@ class Basic_MCTS:
 			elif c.visitCount == 0:
 				continue
 			else:
-				if c.terminal:
-					vLoc = np.where(np.reshape(v.state, self.outdim)%2==self.avatar_code)
-					if len(vLoc[0])>0:
-							vLoc = vLoc[0][0], vLoc[1][0] 
+				if self.avatar_code not in [l%2 for l in c.state]: ##we're in a terminal losing state
+																	## Don't give pseudoreward
 
-					cLoc = (vLoc[0] + a[1], vLoc[1] + a[0])
+					# vLoc = np.where(np.reshape(v.state, self.outdim)%2==self.avatar_code)
+					# if len(vLoc[0])>0:
+					# 		vLoc = vLoc[0][0], vLoc[1][0] 
 
-					if cLoc in self.rewardDict:
-						sumQVal += abs(float(c.qVal)/c.visitCount)
-						sumVisitCount += abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
-						sumPseudoReward += abs(transform(cLoc))/c.visitCount
-					else:
-						continue
+					# cLoc = (vLoc[0] + a[1], vLoc[1] + a[0])
 
-					# sumQVal += abs(float(c.qVal)/c.visitCount)
-					# sumVisitCount += abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
-					# sumPseudoReward += abs(transform(cLoc))/c.visitCount
+					# if cLoc in self.rewardDict:
+					# 	sumQVal += abs(float(c.qVal)/c.visitCount)
+					# 	sumVisitCount += abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
+					# 	sumPseudoReward += abs(transform(cLoc))/c.visitCount
+					# else:
+					# 	continue
+
+					sumQVal += abs(float(c.qVal)/c.visitCount)
+					sumVisitCount += abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
+					sumPseudoReward += 0. #abs(transform(cLoc))/c.visitCount
 
 
 				else:
 					loc = np.where(np.reshape(c.state, self.outdim)%2==self.avatar_code)
-					# print loc, len(loc)
 					if len(loc[0])>0:
 						loc = loc[0][0], loc[1][0] 
+					try:
+						sumQVal += abs(float(c.qVal)/c.visitCount)
+						sumVisitCount += abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
+						sumPseudoReward += abs(transform(loc))/c.visitCount
+					except TypeError:
+						print "loc is weird type"
+						embed()
 
-					sumQVal += abs(float(c.qVal)/c.visitCount)
-					sumVisitCount += abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
-					sumPseudoReward += abs(transform(loc))/c.visitCount
 
 
 		# print ""
@@ -507,26 +515,27 @@ class Basic_MCTS:
 			elif c.visitCount == 0:
 				funcVal = float('inf')
 			else:
-				if c.terminal:
-					vLoc = np.where(np.reshape(v.state, self.outdim)%2==self.avatar_code)
-					if len(vLoc[0])>0:
-							vLoc = vLoc[0][0], vLoc[1][0] 
+				if self.avatar_code not in [l%2 for l in c.state]: ##we're in a terminal losing state
+																	## Don't give pseudoreward
+					# vLoc = np.where(np.reshape(v.state, self.outdim)%2==self.avatar_code)
+					# if len(vLoc[0])>0:
+							# vLoc = vLoc[0][0], vLoc[1][0] 
 
-					cLoc = (vLoc[0] + a[1], vLoc[1] + a[0])
-					if cLoc in self.rewardDict:
+					# cLoc = (vLoc[0] + a[1], vLoc[1] + a[0])
+					# if cLoc in self.rewardDict:
+					qValFunction = 0
+					if sumQVal == 0:
 						qValFunction = 0
-						if sumQVal == 0:
-							qValFunction = 0
-						else:
-							qValFunction = float(c.qVal)/c.visitCount/sumQVal
-
-						funcVal = partitionWeights[0]*qValFunction \
-						        + exploration_coefficient*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount \
-								+ heuristic_coefficient*(transform(cLoc)/c.visitCount)/ sumPseudoReward
-
-
 					else:
-						funcVal = -float('inf')
+						qValFunction = float(c.qVal)/c.visitCount/sumQVal
+
+					funcVal = partitionWeights[0]*qValFunction \
+					        + exploration_coefficient*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount \
+							+ 0.
+
+
+					# else:
+					# 	funcVal = -float('inf')
 
 					# qValFunction = 0
 					# if sumQVal == 0:
@@ -820,7 +829,7 @@ def observe(rle, obsSteps):
 # 				print "Agent died."
 # 	return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered
 
-def getToObjectGoal(rle, vrle, hypothesis, game, level, object_goal, all_objects, finalEventList, verbose=True,\
+def getToObjectGoal(rle, vrle, game_object, hypothesis, game, level, object_goal, all_objects, finalEventList, verbose=True,\
 	defaultPolicyMaxSteps=50, symbolDict=None):
 	## Takes a real world, a theory (instantiated as a virtual world)
 	## Moves the agent through the world, updating the theory as needed
@@ -846,130 +855,123 @@ def getToObjectGoal(rle, vrle, hypothesis, game, level, object_goal, all_objects
 	print ""
 	print "object goal is", colorDict[str(object_goal.color)], (rle._rect2pos(object_goal.rect)[1], rle._rect2pos(object_goal.rect)[0])
 	# actions_executed = []
-	states_encountered = []
+	states_encountered, candidate_new_colors = [], []
 	while not terminal and not goal_achieved:
 
-		mcts = Basic_MCTS(existing_rle=vrle, game=game, level=level, partitionWeights=[5,1,5])
-		subgoals = mcts.getSubgoals(subgoal_path_threshold=4)
-		print "calculated subgoals", subgoals
-		total_steps = 0
-		for subgoal in subgoals:
-			# Get actions to reach each subgoal
-			ignore, actions, steps = getToWaypoint(vrle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights=[5,1,3], act=False)
-			print "got plan to waypoint. Actions", actions
-			theory_change_flag = False
+		theory_change_flag = False
 
-			for action in actions:
+		if not theory_change_flag: 
+			mcts = Basic_MCTS(existing_rle=vrle, game=game, level=level, partitionWeights=[5,1,5])
+			subgoals = mcts.getSubgoals(subgoal_path_threshold=4)
+			print "calculated subgoals", subgoals
+			total_steps = 0
+			for subgoal in subgoals:
 				if not theory_change_flag:
-					print "new action", action
-					res = rle.step(noise(action))
-					terminal = rle._isDone()[0]
-					if terminal:
-						if rle._isDone()[1]:
-							print "game won"
-						else:
-							print "Agent died."					
-					effects = translateEvents(res['effectList'], all_objects)
-					if symbolDict: 
-						print rle.show()
-					else:
-						print np.reshape(new_state, rle.outdim)
-					# Save the event and agent state
-					try:
-						agentState = dict(rle._game.getAvatars()[0].resources)
-						rle.agentStatePrev = agentState
-					# If agent is killed before we get agentState
-					except Exception as e:	# TODO: how to process changes in resources that led to termination state?
-						agentState = rle.agentStatePrev
-			 		## If there were collisions, update history and perform interactionSet induction if the collisions were novel.
-					if effects:
-						state = rle._game.getFullState()
-						event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, 'gameState': rle._game.getFullStateColorized()}
-						finalEventList.append(event)
+					# Get actions to reach each subgoal
+					ignore, actions, steps = getToWaypoint(vrle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights=[5,1,3], act=False)
+					print "got plan to waypoint. Actions", actions
+					for action in actions:
+						if not theory_change_flag:
+							print action
+							res = rle.step(noise(action))
+							terminal = rle._isDone()[0]
+							if terminal:
+								if rle._isDone()[1]:
+									print "game won"
+								else:
+									print "Agent died."					
+							effects = translateEvents(res['effectList'], all_objects)
+							if symbolDict: 
+								print rle.show()
+							else:
+								print np.reshape(new_state, rle.outdim)
+							# Save the event and agent state
+							try:
+								agentState = dict(rle._game.getAvatars()[0].resources)
+								rle.agentStatePrev = agentState
+							# If agent is killed before we get agentState
+							except Exception as e:	# TODO: how to process changes in resources that led to termination state?
+								agentState = rle.agentStatePrev
+					 		## If there were collisions, update history and perform interactionSet induction if the collisions were novel.
+							if effects:
+								state = rle._game.getFullState()
+								event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, 'gameState': rle._game.getFullStateColorized()}
 
-						## are you using collision_objects for anything?
-						# for effect in effects:
-						# 	if len(effect)==2:
-						# 		rle._game.collision_objects.add(effect[1]) ##sometimes event is just (predicate, obj1)
-						# 	elif len(effect)==3: ## usually event is (predicate, obj1, obj2)
-						# 		rle._game.collision_objects.add(effect[2])
+								## Check if you reached object goal
+								if colorDict[str(object_goal.color)] in [item for sublist in effects for item in sublist]:
+									print "reached object_goal"
+									goal_achieved = True
 
-						## Check if you reached object goal
-						if colorDict[str(object_goal.color)] in [item for sublist in effects for item in sublist]:
-							print "reached object_goal"
-							goal_achieved = True
-							# if subgoal.name in rle._game.unknown_objects:
-							# 	rle._game.unknown_objects.remove(object_goal.name)
-							# goalLoc=None
-						# else:
-							# goalLoc = rle._rect2pos(object_goal.rect)
+								## Sampling from the spriteDisribution makes sense, as it's
+								## independent of what we've learned about the interactionSet.
+								## Every timeStep, we should update our beliefs given what we've seen.
+								
+								## TODO: This crashed. Get it working again, then incorporate the sprite induction result.
+								# spriteInduction(rle._game, step=3)
+								# if not sample:
+								# sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
+								# game_object = Game(spriteInductionResult=sample)
 
-						## Sampling from the spriteDisribution makes sense, as it's
-						## independent of what we've learned about the interactionSet.
-						## Every timeStep, we should update our beliefs given what we've seen.
-						# if not sample:
-						sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
+								## Get list of all effects we've seen. Only update theory if we're seeing something new.
+								all_effects = [item for sublist in [e['effectList'] for e in finalEventList] for item in sublist]
+								if not all([e in all_effects for e in effects]):## TODO: make sure you write this so that it works with simultaneous effects.
+									if ('stepBack', 'DARKBLUE', 'BLACK') in effects:
+										print "saw stepback1"
+										embed()
+									finalEventList.append(event)
+									terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
+									trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
+									theory_change_flag = True
+									hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20)) ##if you resample or run sprite induction, this 
+																								## should be g.runInduction
+
+									## new colors that we have maybe learned about
+									candidate_new_objs = []
+									for interaction in hypotheses[0].interactionSet:
+										if not interaction.generic:
+											if interaction.slot1 != 'avatar':
+												candidate_new_objs.append(interaction.slot1)
+											if interaction.slot2 != 'avatar':
+												candidate_new_objs.append(interaction.slot2)
+									candidate_new_objs = list(set(candidate_new_objs))
+									for o in candidate_new_objs:
+										cols = [c.color for c in hypotheses[0].classes[o]]
+										candidate_new_colors.extend(cols)
+
+									## among the many things to fix:
+									for e in finalEventList[-1]['effectList']:
+										if e[1] == 'DARKBLUE':
+											candidate_new_colors.append(e[2])
+										if e[2] == 'DARKBLUE':
+											candidate_new_colors.append(e[1])
+
+									candidate_new_colors = list(set(candidate_new_colors))
+									print "candidate new colors", candidate_new_colors
+
+									## update to incorporate what we've learned, keep the same subgoal for now; this will update at the top of the next loop.
+									game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], symbolDict, \
+										"./examples/gridphysics/theorytest.py", goalLoc=subgoal)
+
+									print "updating internal theory"
+									vrle = createMindEnv(game, level, output=True)
+									vrle.immovables = immovables															
+								else:
+									finalEventList.append(event)
+									terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
+									trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
+									## you need to figure out how to incorporate the result of sprite induction in cases where you don't do
+									## interactionSet induction (i.e., here.)
+									hypotheses = [hypothesis]
+
 							
-						g = Game(spriteInductionResult=sample)
-						terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
-						trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
-
-						## Get list of all effects we've seen. Only update theory if we're seeing something new.
-						all_effects = [item for sublist in [e['effectList'] for e in finalEventList] for item in sublist]		
-						if effects not in all_effects:## TODO: make sure you write this so that it works with simultaneous effects.
-							theory_change_flag = True
-							hypotheses = list(g.runInduction(sample, trace, 20))
-						else:
-							## you need to figure out how to incorporate the result of sprite induction in cases where you don't do
-							## interactionSet induction (i.e., here.)
-							hypotheses = [hypothesis]
-						
-						## new colors that we have maybe learned about
-						candidate_new_objs = []
-						for interaction in hypotheses[0].interactionSet:
-							if not interaction.generic:
-								if interaction.slot1 != 'avatar':
-									candidate_new_objs.append(interaction.slot1)
-								if interaction.slot2 != 'avatar':
-									candidate_new_objs.append(interaction.slot2)
-						candidate_new_objs = list(set(candidate_new_objs))
-						candidate_new_colors = []
-						for o in candidate_new_objs:
-							cols = [c.color for c in hypotheses[0].classes[o]]
-							candidate_new_colors.extend(cols)
-
-						## among the many things to fix:
-						for e in finalEventList[-1]['effectList']:
-							if e[1] == 'DARKBLUE':
-								candidate_new_colors.append(e[2])
-							if e[2] == 'DARKBLUE':
-								candidate_new_colors.append(e[1])
-
-						candidate_new_colors = list(set(candidate_new_colors))
-						print "candidate new colors", candidate_new_colors
-
-						## update to incorporate what we've learned, keep the same subgoal for now; this will update at the top of the next loop.
-						game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], symbolDict, \
-							"./examples/gridphysics/theorytest.py", goalLoc=subgoal)
-
-						print "updating internal theory"
-						vrle = createMindEnv(game, level, output=True)
-						vrle.immovables = immovables
-
-
-					## TODO: This crashed. Get it working again, then incorporate the sprite induction result.
-					# spriteInduction(rle._game, step=3)
-					
-					if terminal:
-						return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered
-
-
+							if terminal:
+								return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered, game_object
 
 			# embed()
 			print steps, "steps"
 			total_steps += steps
 
-	return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered
+	return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered, game_object
 
 
 def planActLoop(rleCreateFunc, filename, max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, playback=False):
@@ -1016,13 +1018,13 @@ def planActLoop(rleCreateFunc, filename, max_actions_per_plan, planning_steps, d
 def getToWaypoint(rle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights, act=True):
 
 	theory = generateTheoryFromGame(rle)
-	# theory.display()
 
 	theoryString, levelString, inverseMapping, immovables =\
 	writeTheoryToTxt(rle, theory, symbolDict, "./examples/gridphysics/waypointtheory.py", subgoal)
 	Vrle = createMindEnv(theoryString, levelString, output=False)
 	Vrle.immovables = immovables
 
+	"mental map with subgoal:"
 	print Vrle.show()
 	mcts = Basic_MCTS(existing_rle=Vrle, game=theoryString, level=levelString, partitionWeights=partitionWeights)
 

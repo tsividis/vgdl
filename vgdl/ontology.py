@@ -1573,7 +1573,6 @@ def spriteInduction(game, step):
 
     if step==0:
     ## Prep for sprite induction
-
         for sprite in game.getObjects():
             game.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
             game.movement_options[sprite] = {"OTHER":{}}
@@ -1581,9 +1580,8 @@ def spriteInduction(game, step):
                 game.movement_options[sprite][sprite_type] = {}
 
     elif step==1:
-
         ## Sprite Induction Part 1:
-        ## every time you act, make sure there aren't new object
+        ## every time you act, make sure there aren't new objects
         ## if there are, update spriteDistribution etc.
         objects = game.getObjects()
         for sprite in objects:
