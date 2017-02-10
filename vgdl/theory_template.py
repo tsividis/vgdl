@@ -1640,14 +1640,21 @@ def generateTheoryFromGame(rle):
 	"""
 	theory = Theory(rle._game)
 	inverseClasses = dict()
-	# for k, v in rle._game.sprite_constr.items():
 	for i,s in enumerate(rle._game.sprite_constr):
 		(vgdlType, settings, _) = rle._game.sprite_constr[s]
 		color = colorDict[str(settings['color'])]
+		if s=='goal':
+			s = s[::-1] #reverse string. goal is to change names so as to not confuse anything with actual goal once you set it.
+						# 'goal' is the only name that means something to all RLEs, so we're making sure to change this one.
 		sprite = Sprite(vgdlType, color, className=s, args=settings) #classname was i
 		theory.classes[s] = [sprite]
 		inverseClasses[s] = i
+
 	for g1, g2, effect, kwargs in rle._game.collision_eff:
+		if g1=='goal':
+			g1 = g1[::-1]
+		if g2=='goal':
+			g2 = g2[::-1]
 		interaction = InteractionRule(effect.__name__, g1, g2, None, None)
 
 		# interaction = InteractionRule(effect.__name__, inverseClasses[g1], inverseClasses[g2], None, None)
@@ -2000,26 +2007,10 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	"""
 	DIRECTION_MAP = {(0,-1):'UP', (0,1):'DOWN', (1,0):'RIGHT', (-1,0):'LEFT'}
 
-
-	# if 'wall' in rle._game.sprite_constr.keys():
-	# 	print "found wall in rle._game.sprite_constr"
-	# 	embed()
 	_obstypes = rle._obstypes
-	# prevGoalExists = "goal" in _obstypes
-	# prevGoalLoc = None
 	state = np.reshape(rle._getSensors(), rle.outdim)
 	newGoalType, newGoalColor= None, None
 
-
-	# OLD_GOAL = "oldGl"
-
-	# if prevGoalExists:
-	# 	prevGoalColor = colorDict[str(rle._game.sprite_groups['goal'][0].color)]
-	# 	try:
-	# 		prevGoalClass = [k for k in theory.classes.keys() if theory.classes[k][0].color=='GOLD'][0]
-	# 	except IndexError:
-	# 		print "in writeTheoryToTxt, indexerror"
-	# 		embed()
 	colorToSprite = {}
 
 	for spriteType in rle._game.sprite_constr:
@@ -2030,50 +2021,14 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				print "in writeTheoryToTxt, keyError"
 				embed()
 	
-
-	# if prevGoalExists and goalLoc:
-	# 	prevGoalCode = 2**(sorted(_obstypes.keys())[::-1].index("goal")+1)
-	# 	prevGoalLoc = np.where(state == prevGoalCode)
-	# 	if len(prevGoalLoc[0])>0:
-	# 		prevGoalLoc = (prevGoalLoc[0][0], prevGoalLoc[1][0])
-	# 	else:
-	# 		avatarLoc = np.where(state==1)
-	# 		avatarLoc = (avatarLoc[1][0], avatarLoc[0][0])
-	# 		if avatarLoc in _obstypes['goal']:
-	# 			prevGoalLoc = avatarLoc
-
-	# print "in writetheory"
-	# embed()
 	if goalLoc:
-		goalLoc = goalLoc[1], goalLoc[0]
-		newGoalCode = state[goalLoc[0]][goalLoc[1]] ##have to flip indices
+		newGoalCode = state[goalLoc[0]][goalLoc[1]]
 		if newGoalCode == 0:
 			newGoalType = 'blank_space'
 		else:
 			newGoalIndex = int(round(math.log(newGoalCode,2)))-1
 			newGoalType = sorted(_obstypes.keys())[::-1][newGoalIndex]
 			newGoalColor = colorDict[str(rle._game.sprite_constr[newGoalType][1]['color'])]
-		# colorToSprite[prevGoalColor] = 'oldGl'
-		# if prevGoalExists:
-		# 	if prevGoalLoc==goalLoc:
-		# 		colorToSprite[prevGoalColor] = 'goal'
-
-	# inverseMapping = dict()
-	# numbers = '0123456789'
-	# alnum = numbers + 'bcdefhijklmnpqrstuvwxyz'
-	# idx = 0
-	# for s in _obstypes.keys():
-	# 	if not s == "goal":
-	# 		inverseMapping[s] = alnum[idx]
-	# 		idx+=1
-	# 	elif s=="goal" and not goalLoc:
-	# 		inverseMapping["goal"] = "G"
-	# 	else:
-	# 		inverseMapping[OLD_GOAL] = "O" # old goal
-
-	# inverseMapping['avatar'] = 'A'
-	# if goalLoc:
-	# 	inverseMapping["goal"] = "G"
 
 	########### generating theory string
 	theoryString = 'game = """\n'
@@ -2128,60 +2083,35 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	immovables = []
 	# second phase: the interaction rules
 	theoryString += "\tInteractionSet\n"
+	added_rules = []
 	for interactionRule in theory.interactionSet:
-		c1 = interactionRule.slot1
-		c2 = interactionRule.slot2
-		for s1 in theory.classes[c1]:
-			for s2 in theory.classes[c2]:
-				theoryString += "\t\t%s %s > %s\n"%(c1, c2, interactionRule.interaction)
-				if goalLoc:						
+		if all([not interactionRule.__eq__(r) for r in added_rules]): ## don't duplicate rules.
+
+			c1 = interactionRule.slot1
+			c2 = interactionRule.slot2
+			for s1 in theory.classes[c1]:
+				for s2 in theory.classes[c2]:
 					if s1.color==newGoalColor:
 						theoryString += "\t\t%s %s > %s\n"%('goal', c2, interactionRule.interaction)
-					if s2.color==newGoalColor:
-						theoryString += "\t\t%s %s > %s\n"%(c1, 'goal', interactionRule.interaction)			
-				if 'avatar' in str(s1.vgdlType).lower():
-					if interactionRule.interaction in immovable_predicates:
-						immovables.append(colorToSprite[s2.color])
-				elif 'avatar' in str(s2.vgdlType).lower():
-					if interactionRule.interaction in immovable_predicates:
-						immovables.append(colorToSprite[s1.color])
-
-				# if 'avatar' in str(s1.vgdlType).lower():
-				# 	if 'goal' not in str(s2.vgdlType).lower():
-				# 		theoryString += "\t\t%s %s > %s\n"%('avatar', colorToSprite[s2.color], interactionRule.interaction)
-				# 		if colorToSprite[s2.color] == newGoalType:
-				# 			theoryString += "\t\t%s %s > %s\n"%('avatar', 'goal', interactionRule.interaction)
-				# 		if interactionRule.interaction in immovable_predicates:
-				# 			immovables.append(colorToSprite[s2.color])
-				# 	elif newGoalType=='goal':
-				# 		theoryString += "\t\t%s %s > %s\n"%('avatar', 'goal', interactionRule.interaction)
-
-
-				# elif 'avatar' in str(s2.vgdlType).lower():
-				# 	if 'goal' not in str(s1.vgdlType).lower():
-				# 		theoryString += "\t\t%s %s > %s\n"%(colorToSprite[s1.color], 'avatar', interactionRule.interaction)
-				# 		if colorToSprite[s1.color] == newGoalType:
-				# 			theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', interactionRule.interaction)
-				# 		if interactionRule.interaction in immovable_predicates:
-				# 			immovables.append(colorToSprite[s1.color])
-				# 	elif newGoalType=='goal':
-				# 		print "adding goal line"
-				# 		theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', interactionRule.interaction)
-					
-
-	
-				# else:
-				# 	try:
-
-				# 		print colorToSprite[s1.color], colorToSprite[s2.color], interactionRule.interaction
-				# 		theoryString += "\t\t%s %s > %s\n"%(colorToSprite[s1.color], colorToSprite[s2.color], interactionRule.interaction)
-				# 	except KeyError:
-				# 		print "end of writetheorytotxt. theorystring keyerror"
-				# 		embed()
+					elif s2.color==newGoalColor:
+						theoryString += "\t\t%s %s > %s\n"%(c1, 'goal', interactionRule.interaction)		
+					else:
+						theoryString += "\t\t%s %s > %s\n"%(c1, c2, interactionRule.interaction)
+					if 'avatar' in str(s1.vgdlType).lower():
+						if interactionRule.interaction in immovable_predicates:
+							# print "must add immovable"
+							# embed()
+							immovables.append(s2.className)
+					elif 'avatar' in str(s2.vgdlType).lower():
+						if interactionRule.interaction in immovable_predicates:
+							# print "must add immovable"
+							# embed()
+							immovables.append(s1.className)
+			added_rules.append(interactionRule)
 
 	# if goal is an empty square
-	if newGoalType == 'blank_space':
-		theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', "killSprite")
+	# if newGoalType == 'blank_space':
+	theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', "killSprite")
 	# theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', 'killSprite') ##should always be in the
 
 	immovables = list(set(immovables))
@@ -2215,14 +2145,19 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 	for color, symbol in symbolDict.items():
 		choices = [k for k in theory.classes.keys() if color in [s.color for s in theory.classes[k]]]
-		if len(choices)>1:
-			print "more than one class"
-			print choices
-		c = [c for c in choices if len(c)==min([len(ch) for ch in choices])][0]
-		theoryString += "\t\t%s > %s\n"%(symbol, c)
+		# if len(choices)>1:
+		# 	print "more than one class"
+		# 	print choices
+		try:
+			c = [c for c in choices if len(c)==min([len(ch) for ch in choices])][0]
+			theoryString += "\t\t%s > %s\n"%(symbol, c)
+		except:
+			continue
+			# print "problem with choices in writetheory.txt"
+			# embed()
 	theoryString += "\t\tG > goal\n"
 	theoryString += '"""\n'
-	
+
 	mappedState = []
 	for i in range(rle.outdim[0]):
 		newEntry = []
@@ -2245,8 +2180,8 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					try:
 						mappedState[r][c] = symbolDict[spriteColor]
 					except:
-						print "mappedState problem1"
-						embed()
+						print "Goal is empty square"
+
 			try:
 				if mappedState[r][c] == " " and goalLoc == (r,c):
 					# an empty square has been selected as the goal

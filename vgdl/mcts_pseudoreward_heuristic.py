@@ -15,7 +15,8 @@ import time
 import copy
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
-from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryFromGame
+from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, \
+generateSymbolDict, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryFromGame
 from rlenvironmentnonstatic import createRLInputGame
 
 #A hack to display things to the terminal conveniently.
@@ -68,7 +69,7 @@ class Basic_MCTS:
 
 		# always compute using a separate rle. This is only meant to be used for manhattan distance.
 		self._obstypes = rle._obstypes
-		self.outdim = rle.outdim
+		self.outdim = rle.outdim ## ensures all self.outdim and np.reshape() calls using it are (x,y)
 		## returns a representation of the current state.
 		## numpy array. Each location in the array is a different grid cell.
 		## Each sprite is a unique number. Empty:0, boxes can be 1, agent: 4
@@ -89,13 +90,13 @@ class Basic_MCTS:
 
 		avatar_code = 1
 		avatar_loc = np.where(np.reshape(self.rle._getSensors(), self.outdim)==avatar_code)
-		avatar_loc = avatar_loc[0][0], avatar_loc[1][0]
+		avatar_loc = avatar_loc[0][0], avatar_loc[1][0] ## (y,x)
 		## find location of goal, add to rewardDict.
 		## also add neighbors of goal rewardQueue.
 		##TODO: update this if goal moves!!
 		goal_code = 2**(1+sorted(self._obstypes.keys())[::-1].index("goal"))
 		goal_loc = np.where(np.reshape(self.rle._getSensors(), self.outdim)==goal_code)
-		goal_loc = goal_loc[0][0], goal_loc[1][0]
+		goal_loc = goal_loc[0][0], goal_loc[1][0] #(y,x)
 
 		if 'avatar' in self._obstypes.keys():
 			inverted_avatar_loc=self._obstypes['avatar'][0]
@@ -120,28 +121,12 @@ class Basic_MCTS:
 		self.rewardScaling = 1000
 		self.rewardDict = {goal_loc:self.maxPseudoReward}
 		self.processed = [goal_loc]
+		self.actionDict = None ## gets initialized in scanDomainForMovementOptions
+		self.neighborDict = None ## gets initialized in scanDomainForMovementOptions
 
-		# print "maxPseudoreward", self.maxPseudoReward
-		# print "rewardScaling", self.rewardScaling
-		# print "partitionWeights", self.partitionWeights
 		self.scanDomainForMovementOptions()
 		self.propagateRewards(goal_loc)
-		# self.subgoals = []
-		# if subgoal_path_threshold:
-		# 	path = self.getPathToGoal(avatar_loc, goal_loc)
-		# 	if subgoal_path_threshold > len(path):
-		# 		# don't use any subgoals in this case.
-		# 		pass
-		# 	else:
-		# 		subgoal_index = -1
-		# 		num_subgoals = int(math.ceil(float(len(path))/subgoal_path_threshold))
-		# 		for i in range(num_subgoals):
-		# 			if i < len(path) % num_subgoals:
-		# 				subgoal_index += (len(path)/num_subgoals + 1)
-		# 			else:
-		# 				subgoal_index += len(path)/num_subgoals
 
-		# 			self.subgoals.append(path[subgoal_index])
 
 	def getSubgoals(self, subgoal_path_threshold):
 
@@ -170,22 +155,15 @@ class Basic_MCTS:
 
 				self.subgoals.append(path[subgoal_index])
 		return self.subgoals
-		# embed()
-
-		# self.actionDict = {}
-		# ##Populate dictionary for use in action-sampling in defaultPolicy. Not sampling (0,0).
-		# for i in range(len(rle._actionset)):
-		# 	self.actionDict[i] = rle._actionset[i]
 
 	def scanDomainForMovementOptions(self):
 		##TODO: Take a state, so that you can re-perform this scan as needed and take changes into account.
 		##TODO: query VGDL description for penetrable/nonpenetrable objects, add to list.
-		# print "in scanDomainForMovementOptions"
 		immovable_codes = []
 		# immovables = ['wall']
 		try:
 			immovables = self.rle.immovables
-			# immovables = ['wall']
+			# immovables = ['wall', 'poison']
 			print "immovables", immovables
 		except:
 			immovables = ['wall', 'poison']
@@ -200,14 +178,14 @@ class Basic_MCTS:
 		action_superset = [(0,0),(-1,0), (1,0), (0,-1), (0,1)]
 		
 		board = np.reshape(self.rle._getSensors(), self.outdim)
-		x,y=np.shape(board)
-		for i in range(x):
-			for j in range(y):
+		y,x=np.shape(board)
+		for i in range(y):
+			for j in range(x):
 				if board[i,j] not in immovable_codes:
 					for action in action_superset:
-						nextPos = (i+action[0], j+action[1])
+						nextPos = (i+action[1], j+action[0])
 						## Don't look at positions off the board.
-						if 0<=nextPos[0]<x and 0<=nextPos[1]<y:
+						if 0<=nextPos[0]<y and 0<=nextPos[1]<x:
 							if board[nextPos] not in immovable_codes:
 								actionDict[(i,j)].append(action)
 								neighborDict[(i,j)].append(nextPos)
@@ -260,10 +238,6 @@ class Basic_MCTS:
 
 	def startTrainingPhase(self, numTrainingCycles, step_horizon, VRLE, mark_solution=False, solution_limit=20):
 
-		# print "defaultPolicy steps", step_horizon
-		# if mark_solution:
-		# 	print "will stop once we find", solution_limit, "solutions"
-		# print ""
 		#track total iterations spent in treePolicy
 		tree_policy_iters, default_policy_iters = 0, 0
 		rewards = []
@@ -275,7 +249,6 @@ class Basic_MCTS:
 			if i%10==0 and len(rewards)>0:
 				print "Training cycle: %i"%i
 				print "avg. rewards for last group of 10", np.mean(rewards[-10:])
-			# 	print "Partition weights", [self.partitionWeights[0], self.printexplorationweight, self.printheuristicweight]
 			try:
 				if defaultPolicySolveStep:
 					reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon, \
@@ -292,8 +265,6 @@ class Basic_MCTS:
 				reward, dPiters = self.defaultPolicy(v, Vrle, step_horizon, domain_knowledge=True)
 				if reward > 0 and not defaultPolicySolveStep:
 					defaultPolicySolveStep = i
-					# print "found reward at step", defaultPolicySolveStep
-
 
 				loc = np.where(np.reshape(v.state, self.outdim)==self.avatar_code)
 				
@@ -305,24 +276,18 @@ class Basic_MCTS:
 				default_policy_iters += dPiters
 			elif v.terminal and mark_solution and reward==self.rewardScaling:
 				self.num_solutions_found += 1
-				# print "found solution"
 				if self.num_solutions_found > solution_limit:
-					# print ""
-					# print VRLE.show()
-					# print "found solution", solution_limit, "times in ", i, "rounds."
-					# actions = self.getBestActionsForPlayout((1,0,0))
-					# print "greedy path:", actions
 					return self, i
 			rewards.append(reward)
 			self.backup(v, reward)
 
 		return self, i
 
-	def getBestActionsForPlayout(self, partitionWeights):
+	def getBestActionsForPlayout(self, partitionWeights, debug=False):
 		v = self.root
 		actions = []
 		while v and not v.terminal and len(v.children.keys())>0:
-			a, v = self.bestChild(v,partitionWeights, debug=False)
+			a, v = self.bestChild(v,partitionWeights, debug=debug)
 			actions.append(a)
 		return actions
 
@@ -342,15 +307,12 @@ class Basic_MCTS:
 		v = self.root
 		if output:
 			print "current state"
-			# rle.show()
 			print np.reshape(v.state, rle.outdim)
 		actions, nodes = [], []
 		while v and not v.terminal and cntr<numActions:
-			# print v.children.iteritems()
 			if output:
 				print "options"
 				print [(ACTIONS[k],c.qVal) for k,c in v.children.iteritems()]
-			# a, v = self.bestChild(v,0)
 			a, v = self.bestChild(v,(1,0,0))
 
 			actions.append(a)
@@ -360,7 +322,6 @@ class Basic_MCTS:
 					print "selected"
 					print ACTIONS[a]
 					print "resulted in"
-					# Can't use rle.show() here, as it's doing a replay, rather than using the actual RLE.
 					print np.reshape(v.state, rle.outdim)
 					print ""
 			cntr+=1
@@ -384,7 +345,7 @@ class Basic_MCTS:
 			count += 1
 			if not v.expanded:
 				reward, c = self.expand(v, rle, domain_knowledge=False)
-				# print rle.show()
+				print rle.show()
 				return reward, c, iters
 
 			else:
@@ -397,7 +358,7 @@ class Basic_MCTS:
 
 				res = rle.step(a) ## TODO: you're getting the bestChild and taking bestAction, but in a stochastic game you will end up in
 									## a different state despite having taken the same action. Is this what you want?
-				# print rle.show()
+				print rle.show()
 				terminal = rle._isDone()[0]
 
 				if terminal != v.terminal or not np.array_equal(v.state, rle._getSensors()):
@@ -452,7 +413,7 @@ class Basic_MCTS:
 		return reward, child
 
 	def maxChild(self, v):
-		tmp = np.where(np.reshape(v.state, self.rle.outdim)==1)
+		tmp = np.where(np.reshape(v.state, self.outdim)==1)
 		avatar_loc = tmp[0][0], tmp[1][0]
 		qVals = [v.children[a].qVal for a in v.children.keys()]
 		if len(qVals)>0 and avatar_loc in self.neighborDict.keys() and len(qVals)>=len(self.neighborDict[avatar_loc])-1: #  -1, since (0,0) is not an action.
@@ -461,11 +422,6 @@ class Basic_MCTS:
 				for (a,c) in v.children.items():
 					print a, c.qVal
 				print ""
-				# for (a,c) in choices:
-				# 	print a, c.qVal
-				# 	print np.reshape(c.state, self.rle.outdim)
-				# printchoices = [(a,c.qVal) for (a,c) in v.children.items() if c.qVal==maxVal]
-				# print printchoices
 				return random.choice(choices)
 		else:
 			return (None, None)
@@ -477,8 +433,16 @@ class Basic_MCTS:
 		
 		def transform(loc):
 			slowdown_factor = 1 # 1./3
-			distanceFunc = self.rewardDict[loc]
-			return 1/(1+math.exp(-slowdown_factor * distanceFunc)) # sigmoid
+			if loc in self.rewardDict:
+				distanceFunc = self.rewardDict[loc]
+				return 1/(1+math.exp(-slowdown_factor * distanceFunc)) # sigmoid
+			else:
+				return 0.
+			# try:
+			# 	distanceFunc = self.rewardDict[loc]
+			# except:
+			# 	print loc, "not in self.rewardDict"
+			# 	embed()
 
 		maxFuncVal = -float('inf')
 		bestChild = None
@@ -505,35 +469,38 @@ class Basic_MCTS:
 				continue
 			else:
 				if c.terminal:
-					vLoc = np.where(np.reshape(v.state, self.outdim)==self.avatar_code)
+					vLoc = np.where(np.reshape(v.state, self.outdim)%2==self.avatar_code)
 					if len(vLoc[0])>0:
 							vLoc = vLoc[0][0], vLoc[1][0] 
 
-					# cLoc = (vLoc[0] + a[0], vLoc[1] + vLoc[1])
-					cLoc = (vLoc[0] + a[0], vLoc[1] + a[1])
+					cLoc = (vLoc[0] + a[1], vLoc[1] + a[0])
 
 					if cLoc in self.rewardDict:
 						sumQVal += abs(float(c.qVal)/c.visitCount)
 						sumVisitCount += abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
-						sumPseudoReward += abs(transform(cLoc))
-						# sumPseudoReward += abs(transform(cLoc)/c.visitCount)
-
+						sumPseudoReward += abs(transform(cLoc))/c.visitCount
 					else:
 						continue
 
+					# sumQVal += abs(float(c.qVal)/c.visitCount)
+					# sumVisitCount += abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
+					# sumPseudoReward += abs(transform(cLoc))/c.visitCount
+
+
 				else:
-					loc = np.where(np.reshape(c.state, self.outdim)==self.avatar_code)
+					loc = np.where(np.reshape(c.state, self.outdim)%2==self.avatar_code)
+					# print loc, len(loc)
 					if len(loc[0])>0:
 						loc = loc[0][0], loc[1][0] 
 
 					sumQVal += abs(float(c.qVal)/c.visitCount)
 					sumVisitCount += abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
-					sumPseudoReward += abs(transform(loc))
+					sumPseudoReward += abs(transform(loc))/c.visitCount
 
-					# sumPseudoReward += abs(transform(loc)/c.visitCount)
 
 		# print ""
-		# print np.reshape(v.state, self.outdim)
+		if debug:
+			print np.reshape(v.state, self.outdim)
 		for a,c in v.children.items():
 			if v.equals(c):
 				funcVal = -float('inf')
@@ -541,12 +508,11 @@ class Basic_MCTS:
 				funcVal = float('inf')
 			else:
 				if c.terminal:
-					vLoc = np.where(np.reshape(v.state, self.outdim)==self.avatar_code)
+					vLoc = np.where(np.reshape(v.state, self.outdim)%2==self.avatar_code)
 					if len(vLoc[0])>0:
 							vLoc = vLoc[0][0], vLoc[1][0] 
 
-					cLoc = (vLoc[0] + a[0], vLoc[1] + a[1])
-
+					cLoc = (vLoc[0] + a[1], vLoc[1] + a[0])
 					if cLoc in self.rewardDict:
 						qValFunction = 0
 						if sumQVal == 0:
@@ -556,17 +522,25 @@ class Basic_MCTS:
 
 						funcVal = partitionWeights[0]*qValFunction \
 						        + exploration_coefficient*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount \
-								+ heuristic_coefficient* transform(cLoc)/ sumPseudoReward
+								+ heuristic_coefficient*(transform(cLoc)/c.visitCount)/ sumPseudoReward
 
-								# + partitionWeights[2]* (transform(cLoc)/c.visitCount) / sumPseudoReward
-						# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
-						# 		+ Cp * transform(cLoc)/c.visitCount
 
 					else:
 						funcVal = -float('inf')
 
+					# qValFunction = 0
+					# if sumQVal == 0:
+					# 	qValFunction = 0
+					# else:
+					# 	qValFunction = float(c.qVal)/c.visitCount/sumQVal
+
+					# funcVal = partitionWeights[0]*qValFunction \
+					#         + exploration_coefficient*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount \
+					# 		+ heuristic_coefficient* (transform(cLoc)/c.visitCount)/ sumPseudoReward
+
+
 				else:
-					loc = np.where(np.reshape(c.state, self.outdim)==self.avatar_code)
+					loc = np.where(np.reshape(c.state, self.outdim)%2==self.avatar_code)
 					if len(loc[0])>0:
 							loc = loc[0][0], loc[1][0] 
 
@@ -579,13 +553,9 @@ class Basic_MCTS:
 
 					funcVal = partitionWeights[0]* qValFunction \
 					        + exploration_coefficient*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount \
-					        + heuristic_coefficient*transform(loc)/sumPseudoReward	
-					        # + partitionWeights[2]*(transform(loc)/c.visitCount)/sumPseudoReward	
-
-					# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount) \
-					#         + Cp * transform(loc)/c.visitCount
-
-					          # + Cp* float(self.rewardDict[loc])/c.visitCount
+					        + heuristic_coefficient*(transform(loc)/c.visitCount)/sumPseudoReward	
+				if debug:
+					print a, funcVal
 
 			if funcVal > maxFuncVal:
 				maxFuncVal = funcVal
@@ -595,6 +565,8 @@ class Basic_MCTS:
 			bestAction = random.choice(v.children.keys())
 			bestChild = v.children[bestAction]
 
+		if debug:
+			print ""
 		return bestAction, bestChild
 
 	def defaultPolicy(self, v, rle, step_horizon, domain_knowledge=False):
@@ -872,7 +844,7 @@ def getToObjectGoal(rle, vrle, hypothesis, game, level, object_goal, all_objects
 	# all_objects = rle._game.getObjects()
 
 	print ""
-	print "object goal is", colorDict[str(object_goal.color)], rle._rect2pos(object_goal.rect)
+	print "object goal is", colorDict[str(object_goal.color)], (rle._rect2pos(object_goal.rect)[1], rle._rect2pos(object_goal.rect)[0])
 	# actions_executed = []
 	states_encountered = []
 	while not terminal and not goal_achieved:
@@ -926,8 +898,8 @@ def getToObjectGoal(rle, vrle, hypothesis, game, level, object_goal, all_objects
 						if colorDict[str(object_goal.color)] in [item for sublist in effects for item in sublist]:
 							print "reached object_goal"
 							goal_achieved = True
-							if subgoal.name in rle._game.unknown_objects:
-								rle._game.unknown_objects.remove(object_goal.name)
+							# if subgoal.name in rle._game.unknown_objects:
+							# 	rle._game.unknown_objects.remove(object_goal.name)
 							# goalLoc=None
 						# else:
 							# goalLoc = rle._rect2pos(object_goal.rect)
@@ -985,7 +957,8 @@ def getToObjectGoal(rle, vrle, hypothesis, game, level, object_goal, all_objects
 						vrle.immovables = immovables
 
 
-					spriteInduction(rle._game, step=3)
+					## TODO: This crashed. Get it working again, then incorporate the sprite induction result.
+					# spriteInduction(rle._game, step=3)
 					
 					if terminal:
 						return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered
@@ -997,50 +970,6 @@ def getToObjectGoal(rle, vrle, hypothesis, game, level, object_goal, all_objects
 			total_steps += steps
 
 	return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered
-
-# def planActLoop(rleCreateFunc, filename, max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, playback=False):
-	
-# 	rle = rleCreateFunc(OBSERVATION_GLOBAL)
-# 	game, level = defInputGame(filename)
-# 	outdim = rle.outdim
-# 	print rle.show()
-	
-# 	terminal = rle._isDone()[0]
-	
-# 	i=0
-# 	finalStates = [rle._game.getFullState()]
-# 	while not terminal:
-# 		mcts = Basic_MCTS(existing_rle=rle, game=game, level=level)
-# 		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, rle)
-		
-# 		# mcts.debug(mcts.rle, output=True, numActions=3)
-# 		# break
-		
-
-# 		actions = mcts.getBestActionsForPlayout((1,0,0))
-
-# 		# if len(actions)<max_actions_per_plan:
-# 		# 	print "We only computed", len(actions), "actions."
-
-# 		new_state = rle._getSensors()
-# 		terminal = rle._isDone()[0]
-
-# 		for j in range(min(len(actions), max_actions_per_plan)):
-# 			if actions[j] is not None and not terminal:
-# 				print ACTIONS[actions[j]]
-# 				res = rle.step(actions[j])
-# 				new_state = res["observation"]
-# 				terminal = not res['pcontinue']
-# 				print rle.show()
-# 				finalStates.append(rle._game.getFullState())
-
-# 		i+=1
-
-# 	if playback:
-# 		from vgdl.core import VGDLParser
-# 		VGDLParser.playGame(game, level, finalStates)
-# 		embed()
-
 
 
 def planActLoop(rleCreateFunc, filename, max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, playback=False):
@@ -1085,18 +1014,22 @@ def planActLoop(rleCreateFunc, filename, max_actions_per_plan, planning_steps, d
 
 
 def getToWaypoint(rle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights, act=True):
-	subgoal = (subgoal[1], subgoal[0])
+
 	theory = generateTheoryFromGame(rle)
+	# theory.display()
 
 	theoryString, levelString, inverseMapping, immovables =\
 	writeTheoryToTxt(rle, theory, symbolDict, "./examples/gridphysics/waypointtheory.py", subgoal)
 	Vrle = createMindEnv(theoryString, levelString, output=False)
 	Vrle.immovables = immovables
-	print "mental location subgoal"
+
 	print Vrle.show()
 	mcts = Basic_MCTS(existing_rle=Vrle, game=theoryString, level=levelString, partitionWeights=partitionWeights)
-	m, steps = mcts.startTrainingPhase(1200, defaultPolicyMaxSteps, Vrle, mark_solution=True, solution_limit=10)
-	actions = mcts.getBestActionsForPlayout((1,0,0))
+
+	# print "made mcts for subgoal,", subgoal
+	# embed()
+	m, steps = mcts.startTrainingPhase(1200, defaultPolicyMaxSteps, Vrle, mark_solution=True, solution_limit=20)
+	actions = mcts.getBestActionsForPlayout((1,0,0), debug=False)
 	print "actions", actions
 	if act:
 		for a in actions:
@@ -1110,19 +1043,34 @@ def planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, theory=False
 	rle = rleCreateFunc(OBSERVATION_GLOBAL)
 	game, level = defInputGame(filename)
 	outdim = rle.outdim
+	symbolDict = generateSymbolDict(rle)
 	print rle.show()
-	
+
+	goal_loc = np.where(np.reshape(rle._getSensors(), rle.outdim)==8)
+	goal_loc = goal_loc[0][0], goal_loc[1][0]
 	terminal = rle._isDone()[0]
 	
 	i=0
 	finalStates = [rle._game.getFullState()]
-	mcts = Basic_MCTS(existing_rle=rle, game=game, level=level, partitionWeights=[5,1,5])
-	subgoals = mcts.getSubgoals(subgoal_path_threshold=4)
+
+	## Have to make this as a theory and then write it, so that you can find what the immovables are
+	## then these can get incorporated when you look for subgoals.
+	theory = generateTheoryFromGame(rle)
+	# theory.display()
+	theoryString, levelString, inverseMapping, immovables =\
+	writeTheoryToTxt(rle, theory, symbolDict, "./examples/gridphysics/whatever.py", goal_loc)
+
+	rle = createMindEnv(theoryString, levelString, output=False)
+	rle.immovables = immovables
+
+	mcts = Basic_MCTS(existing_rle=rle, game=game, level=level, partitionWeights=[5,2,3])
+	subgoals = mcts.getSubgoals(subgoal_path_threshold=3)
+	print "subgoals", subgoals
 	
 	total_steps = 0
 
 	for subgoal in subgoals:
-		rle, actions, steps = getToWaypoint(rle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights=[5,1,3])
+		rle, actions, steps = getToWaypoint(rle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights=[10,2,4])
 		print steps, "steps"
 		total_steps += steps
 
@@ -1166,7 +1114,7 @@ if __name__ == "__main__":
 	## You have to make a function that creates the environment.
 	## Make the game, then follow the layout in 'rlenvironmentnonstatic'
 	
-	filename = "examples.gridphysics.theorytest"
+	filename = "examples.gridphysics.simpleGame4_big"
 	game_to_play = lambda obsType: createRLInputGame(filename)
 	planUntilSolved(game_to_play, filename, 50)
 	embed()

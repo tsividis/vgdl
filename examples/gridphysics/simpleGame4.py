@@ -30,6 +30,16 @@ w g  w ww
 wwwwwwwww
 """
 
+# level = """
+# wwwwwwwww
+# w       w
+# w   A   w
+# w      ww
+# w g  w ww
+# wwwwwwwww
+# """
+
+
 
 game = """
 BasicGame frame_rate=30

@@ -31,11 +31,11 @@ rle._game.sprite_groups ## dict of unique object types and their positions
 for the equivalents in thought world, just do mcts.rle.whatever
 '''
 
-def playEpisode(rleCreateFunc, hypotheses=[], unknown_objects=False, goalColor=None, finalEventList=[], playback=False):
+def playEpisode(rleCreateFunc, hypotheses=[], unknown_colors=False, goalColor=None, finalEventList=[], playback=False):
 
 	rle = rleCreateFunc()																## Initialize rle the agent behaves in.
-	rle._game.unknown_objects = rle._game.sprite_groups.keys()
-	rle._game.unknown_objects.remove('avatar') 											## For now we're asumming agent knows self.
+	# rle._game.unknown_objects = rle._game.sprite_groups.keys()
+	# rle._game.unknown_objects.remove('avatar') 											## For now we're asumming agent knows self.
 	rle.agentStatePrev = {}
 	all_objects = rle._game.getObjects()
 
@@ -44,7 +44,7 @@ def playEpisode(rleCreateFunc, hypotheses=[], unknown_objects=False, goalColor=N
 	noHypotheses = len(hypotheses)==0
 
 	## Fix this mess. Store the unknown categories. Select among those for a goal, and then provide that to selectToken.
-	if unknown_objects==False:
+	if unknown_colors==False:
 		print "initializing unknown objects:"
 		unknown_objects = [k for k in rle._game.sprite_groups.keys() if k!='avatar']
 		unknown_colors = [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in unknown_objects]
@@ -108,12 +108,10 @@ def playEpisode(rleCreateFunc, hypotheses=[], unknown_objects=False, goalColor=N
 		getToObjectGoal(rle, Vrle, hypotheses[0], game, level, object_goal, all_objects, finalEventList, symbolDict=symbolDict)
 		
 
-		if len(unknown_objects)>0:
+		if len(unknown_colors)>0:
 			for col in candidate_new_colors:
-				obj = [o for o in unknown_objects if colorDict[str(rle._game.sprite_groups[o][0].color)]==col]
-				if len(obj)>0:
-					obj=obj[0]
-					unknown_objects.remove(obj)
+				if col in unknown_colors:
+					unknown_colors.remove(col)
 			
 		ended, won = rle._isDone()
 		# actions_taken.extend(actions_executed)
@@ -128,12 +126,12 @@ def playEpisode(rleCreateFunc, hypotheses=[], unknown_objects=False, goalColor=N
 		print "in playback"
 		from vgdl.core import VGDLParser
 		from examples.gridphysics.simpleGame4 import level, game
-		playbackGame = push_game
-		playbackLevel = box_level
+		playbackGame = game
+		playbackLevel = level
 		embed()
 		VGDLParser.playGame(playbackGame, playbackLevel, total_states_encountered)
 
-	return hypotheses, won, unknown_objects, goalColor, finalEventList, total_states_encountered
+	return hypotheses, won, unknown_colors, goalColor, finalEventList, total_states_encountered
 
 if __name__ == "__main__":
 
@@ -148,19 +146,21 @@ if __name__ == "__main__":
 	numEpisodes = 10
 
 	hypotheses, tally = [], []
-	unknown_objects = False
+	unknown_colors = False
 	goalColor = None
-	hypotheses, won, unknown_objects, goalColor, finalEventList, total_states_encountered = \
-	playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, \
-		unknown_objects=unknown_objects, goalColor=goalColor, finalEventList=finalEventList, \
-		playback=True)
+	# hypotheses, won, unknown_objects, goalColor, finalEventList, total_states_encountered = \
+	# playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, \
+	# 	unknown_objects=unknown_objects, goalColor=goalColor, finalEventList=finalEventList, \
+	# 	playback=False)
+	# print "ended episode"
+	# embed()
 	# goalColor='BROWN'
-	# for episode in range(numEpisodes):
-	# 	hypotheses, won, unknown_objects, goalColor, finalEventList, total_states_encountered = \
-	# 	playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, \
-	# 		unknown_objects=unknown_objects, goalColor=goalColor, finalEventList=finalEventList, \
-	# 		playback=True)
-	# 	tally.append(won)
-	# 	print "episode ended. Win:", won
-	# 	print "__________________________________________________"
-	# print "Won", sum(tally), "out of ", len(tally), "episodes."
+	for episode in range(numEpisodes):
+		hypotheses, won, unknown_colors, goalColor, finalEventList, total_states_encountered = \
+		playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, \
+			unknown_colors=unknown_colors, goalColor=goalColor, finalEventList=finalEventList, \
+			playback=False)
+		tally.append(won)
+		print "episode ended. Win:", won
+		print "__________________________________________________"
+	print "Won", sum(tally), "out of ", len(tally), "episodes."
