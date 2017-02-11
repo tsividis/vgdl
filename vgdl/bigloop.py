@@ -41,11 +41,11 @@ def playEpisode(rleCreateFunc, hypotheses=[], game_object=None, unknown_colors=F
 
 	noHypotheses = len(hypotheses)==0
 
-	## Fix this mess. Store the unknown categories. Select among those for a goal, and then provide that to selectToken.
+	print ""
 	if unknown_colors==False:
-		print "initializing unknown objects:"
 		unknown_objects = [k for k in rle._game.sprite_groups.keys() if k!='avatar']
 		unknown_colors = [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in unknown_objects]
+		print "unknown objects:", unknown_colors
 	else:
 		print "already know some objects. Unknown:"
 		print unknown_colors
@@ -69,14 +69,14 @@ def playEpisode(rleCreateFunc, hypotheses=[], game_object=None, unknown_colors=F
 
 		if not Vrle:	## Initialize world in agent's head.
 			symbolDict = generateSymbolDict(rle)
-			for k,v in symbolDict.items():
-				print k, v
-			print ""
-			print "Initializing mental theory."
+			# for k,v in symbolDict.items():
+			# 	print k, v
+			# print ""
+			# print "Initializing mental theory."
 			game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], symbolDict,\
 			 "./examples/gridphysics/theorytest.py")
 
-			Vrle = createMindEnv(game, level, output=True)
+			Vrle = createMindEnv(game, level, output=False)
 			Vrle.immovables = immovables
 		if goalColor:																## Select known goal if it's known, otherwise unkown object.
 			key = [k for k in rle._game.sprite_groups.keys() if \
@@ -86,25 +86,25 @@ def playEpisode(rleCreateFunc, hypotheses=[], game_object=None, unknown_colors=F
 			object_goal_location = Vrle._rect2pos(object_goal.rect)
 			object_goal_location = object_goal_location[1], object_goal_location[0]
 			print "goal is known:", goalColor
+			print ""
 		else:
 			try:
 				object_goal = selectObjectGoal(Vrle, unknown_colors, method="random_then_nearest")
 				object_goal_location = Vrle._rect2pos(object_goal.rect)
 				object_goal_location = object_goal_location[1], object_goal_location[0]
-				print "object goal, location", object_goal, object_goal_location
+				print "object goal is", colorDict[str(object_goal.color)], "at location", (rle._rect2pos(object_goal.rect)[1], rle._rect2pos(object_goal.rect)[0])
+				print ""
 			except:
 				print "no unknown objects and no goal? Embedding so you can debug."
 				embed()
 
-		print object_goal_location
 		game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], symbolDict,\
 		 "./examples/gridphysics/theorytest.py", object_goal_location)
 
-		print "Initializing mental theory *with* object subgoal"
-		print "immovables", immovables
+		print "Initializing mental theory *with* object goal"
+		# print "immovables", immovables
 		Vrle = createMindEnv(game, level, output=True)							## World in agent's head, including object goal
 		Vrle.immovables = immovables
-
 																						## Plan to get to object goal
 		rle, hypotheses, finalEventList, candidate_new_colors, states_encountered, g = \
 		getToObjectGoal(rle, Vrle, g, hypotheses[0], game, level, object_goal, all_objects, finalEventList, symbolDict=symbolDict)
@@ -143,7 +143,7 @@ if __name__ == "__main__":
 	thinking_steps = 50
 	thinking_default_steps=50
 	
-	numEpisodes = 10
+	numEpisodes = 3
 
 	hypotheses, tally, finalEventList = [], [], []
 	unknown_colors = False
@@ -165,3 +165,4 @@ if __name__ == "__main__":
 		print "episode ended. Win:", won
 		print "__________________________________________________"
 	print "Won", sum(tally), "out of ", len(tally), "episodes."
+	embed()
