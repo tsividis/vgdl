@@ -1434,7 +1434,6 @@ class Game(object):
 			rule = InteractionRule('killSprite', obj.className, avatar.className, None, 0, generic=True)
 			T.interactionSet.append(rule)
 
-
 		## Aritro to-do.
 		## Add relevant terminationRule to terminationSet.
 		## just do count(avatar)=0.
@@ -1771,6 +1770,9 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 			c1 = interactionRule.slot1
 			c2 = interactionRule.slot2
+
+			if c2=='EOS' or c1=='EOS': ## 'EOS stepBack' is always being written at the end. Don't handle it here.
+				continue
 			for s1 in theory.classes[c1]:
 				for s2 in theory.classes[c2]:
 					if s1.color==newGoalColor:
@@ -1794,6 +1796,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	# if goal is an empty square
 	# if newGoalType == 'blank_space':
 	theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', "killSprite")
+	theoryString += "\t\t%s %s > %s\n"%('avatar', 'EOS', "stepBack")
 	# theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', 'killSprite') ##should always be in the
 
 	immovables = list(set(immovables))
