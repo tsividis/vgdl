@@ -13,6 +13,10 @@ from threading import Thread
 from collections import defaultdict, deque
 import time
 import copy
+from threading import Lock
+from Queue import Queue
+import multiprocessing
+
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, \
@@ -1043,7 +1047,7 @@ def getToWaypoint(rle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeig
 	return rle, actions, steps
 
 
-def planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, theory=False, playback=False):
+def planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, partitionWeights, playback=False, maxEpisodes=2000):
 	
 	rle = rleCreateFunc(OBSERVATION_GLOBAL)
 	game, level = defInputGame(filename)
@@ -1057,7 +1061,6 @@ def planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, theory=False
 	
 	i=0
 	finalStates = [rle._game.getFullState()]
-
 	## Have to make this as a theory and then write it, so that you can find what the immovables are
 	## then these can get incorporated when you look for subgoals.
 	theory = generateTheoryFromGame(rle)
@@ -1071,47 +1074,70 @@ def planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, theory=False
 	mcts = Basic_MCTS(existing_rle=rle, game=game, level=level, partitionWeights=[5,2,3])
 	subgoals = mcts.getSubgoals(subgoal_path_threshold=3)
 	print "subgoals", subgoals
+
 	
 	total_steps = 0
-
+	solved = True
 	for subgoal in subgoals:
 		rle, actions, steps = getToWaypoint(rle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights=[10,2,4])
+
 		print steps, "steps"
 		total_steps += steps
+		if total_steps > maxEpisodes:
+			solved = False
+			break
+
+	if solved:
+		print "Found and executed plan using", total_steps, "epiosodes of MCTS."
+	else:
+		print "didn't solve game even using %i episodes of MCTS"%total_steps
+
+	return mcts, total_steps, solved
+
+def parallelizedPlanUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, partitionWeightsList, numWorkers=4):
+	"""
+	partitionWeightsList = a list of partitionWeight tuples.
+	numWorkers = the number of threads which are running planUntilSolved in parallel
+	"""
+	# m = multiprocessing.Manager()
+	weightsQueue = multiprocessing.Queue()
+	# contract: the weightsQueue will contain all the partition weights in the beginning
+	# and a numWorkers number of DONE_MESSAGEs at the very end
+	# to enssure each of the workers stops running.
+	resultsQueue = multiprocessing.Queue()
+	weightInfo = dict()
+	DONE_MESSAGE = "DONE"
+	def worker(weightsQue, resultsQue, DONE_MESSAGE):
+		i = 0
+		while not weightsQue.empty():
+			message = weightsQue.get()
+			if message == DONE_MESSAGE:
+				break
+
+			partitionWeights = message
+			mcts, total_steps, solved = planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, partitionWeights)
+			resultsQueue.put((partitionWeights, {'total_steps': total_steps, 'solved': solved}))
 
 
-	print "Found and executed plan using", total_steps, "episodes of MCTS."
-	return mcts
+	jobs = []
+	for partitionWeights in partitionWeightsList:
+		weightsQueue.put(partitionWeights)
 
-	# while not terminal:
-	# 	mcts = Basic_MCTS(existing_rle=rle, game=game, level=level)
-	# 	mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, rle)
-	# 	# mcts.debug(mcts.rle, output=True, numActions=3)
-	# 	# break
-	# 	actions = mcts.getBestActionsForPlayout()
 
-	# 	# if len(actions)<max_actions_per_plan:
-	# 	# 	print "We only computed", len(actions), "actions."
+	for i in range(numWorkers):
+		weightsQueue.put(DONE_MESSAGE)
+		p = multiprocessing.Process(target=worker, args=(weightsQueue, resultsQueue, DONE_MESSAGE))
+		jobs.append(p)
+		p.start()
 
-	# 	new_state = rle._getSensors()
-	# 	terminal = rle._isDone()[0]
+	for j in jobs:
+		j.join()
 
-	# 	for j in range(min(len(actions), max_actions_per_plan)):
-	# 		if actions[j] is not None and not terminal:
-	# 			print ACTIONS[actions[j]]
-	# 			res = rle.step(actions[j])
-	# 			new_state = res["observation"]
-	# 			terminal = not res['pcontinue']
-	# 			print rle.show()
-	# 			finalStates.append(rle._game.getFullState())fffffff
+	while not resultsQueue.empty():
+		(partitionWeights, result) = resultsQueue.get()
+		weightInfo[partitionWeights] = result
 
-	# 	i+=1
-
-	# if playback:
-	# 	from vgdl.core import VGDLParser
-	# 	VGDLParser.playGame(game, level, finalStates)
-	# 	embed()
-	# return finalStates
+	return weightInfo
 
 if __name__ == "__main__":
 	## passing a function. That function contains things set in
@@ -1121,8 +1147,19 @@ if __name__ == "__main__":
 	
 	filename = "examples.gridphysics.simpleGame4_big"
 	game_to_play = lambda obsType: createRLInputGame(filename)
-	planUntilSolved(game_to_play, filename, 50)
+	# planUntilSolved(game_to_play, filename, 50, [5,1,5])
+	# partitionWeightsList = [(5,1,5), (5,3,3)]
+	# partitionWeightsList = [(5,1,5)]
+	partitionWeightsList = [(5,1,5),(5,3,3), (5,3,1), (5,1,3), (3,1,5), (3,5,1), (1,3,5), (5,5,1), (1,5,3)]
+	weightInfoList = []
+	totalWeightInfo = {k: {'solved': True, 'total_steps': 0} for k in partitionWeightsList}
+	numIters = 10
+	for i in range(numIters):
+		weightInfo = parallelizedPlanUntilSolved(game_to_play, filename, 50, partitionWeightsList, numWorkers=4)
+		weightInfoList.append(weightInfo)
+		for k in totalWeightInfo:
+			totalWeightInfo[k]['solved'] = totalWeightInfo[k]['solved'] and weightInfo[k]['solved']
+			totalWeightInfo[k]['total_steps'] += weightInfo[k]['total_steps']
+
 	embed()
 	# planActLoop(game_to_play, filename, 5, 100, 50, playback=False)
-
-
