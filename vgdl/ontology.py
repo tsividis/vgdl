@@ -1048,7 +1048,9 @@ def triggerOnLanding(sprite, partner, game, strigger=None):
 def stepBack(sprite, partner, game): 
     """ Revert last move. """
     sprite.rect = sprite.lastrect
-    return ("stepBack", sprite.ID, partner.ID)
+    if partner:
+        return ("stepBack", sprite.ID, partner.ID)
+        
 
 def undoAll(sprite, partner, game):
     """ Revert last moves of all sprites. """
