@@ -39,7 +39,7 @@ mcts.rle._game.sprite_groups
 ACTIONS = {(0,0):'stay',(0,-1):'up', (0,1):'down', (1,0):'right', (-1,0):'left', None:'none'}
 class Basic_MCTS:
 	def __init__(self, existing_rle=False, game = None, level = None, partitionWeights=[1,0,1],\
-		         rleCreateFunc=False, obsType = OBSERVATION_GLOBAL, decay_factor=.95, num_workers=1):
+		         rleCreateFunc=False, obsType = OBSERVATION_GLOBAL, decay_factor=.9, num_workers=1):
 		if not existing_rle and not rleCreateFunc:
 			print "You must pass either an existing rle or an rleCreateFunc"
 			return
@@ -164,7 +164,7 @@ class Basic_MCTS:
 		try:
 			immovables = self.rle.immovables
 			# immovables = ['wall', 'poison']
-			print "immovables", immovables
+			# print "immovables", immovables
 		except:
 			immovables = ['wall', 'poison']
 			print "Using defaults as immovables", immovables
@@ -246,9 +246,9 @@ class Basic_MCTS:
 		for i in range(numTrainingCycles):
 			Vrle = copy.deepcopy(VRLE)
 
-			if i%10==0 and len(rewards)>0:
+			if i%100==0 and len(rewards)>0:
 				print "Training cycle: %i"%i
-				print "avg. rewards for last group of 10", np.mean(rewards[-10:])
+				print "avg. rewards for last group of 100", np.mean(rewards[-100:])
 			try:
 				if defaultPolicySolveStep:
 					reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon, \
@@ -261,6 +261,7 @@ class Basic_MCTS:
 				embed()
 
 			tree_policy_iters += iters
+
 			if not v.terminal:
 				reward, dPiters = self.defaultPolicy(v, Vrle, step_horizon, domain_knowledge=True)
 				if reward > 0 and not defaultPolicySolveStep:
@@ -852,10 +853,11 @@ def getToObjectGoal(rle, vrle, game_object, hypothesis, game, level, object_goal
 	## TODO: this will be problematic when new objects appear, if you don't update it.
 	# all_objects = rle._game.getObjects()
 
-	print ""
-	print "object goal is", colorDict[str(object_goal.color)], (rle._rect2pos(object_goal.rect)[1], rle._rect2pos(object_goal.rect)[0])
+	# print ""
+	# print "object goal is", colorDict[str(object_goal.color)], (rle._rect2pos(object_goal.rect)[1], rle._rect2pos(object_goal.rect)[0])
 	# actions_executed = []
 	states_encountered, candidate_new_colors = [], []
+	hypotheses = [hypothesis]
 	while not terminal and not goal_achieved:
 
 		theory_change_flag = False
@@ -863,23 +865,27 @@ def getToObjectGoal(rle, vrle, game_object, hypothesis, game, level, object_goal
 		if not theory_change_flag: 
 			mcts = Basic_MCTS(existing_rle=vrle, game=game, level=level, partitionWeights=[5,1,5])
 			subgoals = mcts.getSubgoals(subgoal_path_threshold=4)
-			print "calculated subgoals", subgoals
 			total_steps = 0
 			for subgoal in subgoals:
 				if not theory_change_flag:
-					# Get actions to reach each subgoal
+
+					## write subgoal to theory; initialize VRLE.
+
+					game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], symbolDict, \
+						"./examples/gridphysics/theorytest.py", subgoal)
+					vrle = createMindEnv(game, level, output=False)
+					vrle.immovables = immovables
+					if "G" not in vrle.show():
+						print "no goal in vrle."
+						embed()
+
+					## Get actions that take you to goal.
 					ignore, actions, steps = getToWaypoint(vrle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights=[5,1,3], act=False)
-					print "got plan to waypoint. Actions", actions
+
 					for action in actions:
 						if not theory_change_flag:
-							print action
 							res = rle.step(noise(action))
-							terminal = rle._isDone()[0]
-							if terminal:
-								if rle._isDone()[1]:
-									print "game won"
-								else:
-									print "Agent died."					
+							terminal = rle._isDone()[0]				
 							effects = translateEvents(res['effectList'], all_objects)
 							if symbolDict: 
 								print rle.show()
@@ -899,7 +905,7 @@ def getToObjectGoal(rle, vrle, game_object, hypothesis, game, level, object_goal
 
 								## Check if you reached object goal
 								if colorDict[str(object_goal.color)] in [item for sublist in effects for item in sublist]:
-									print "reached object_goal"
+									# print "reached object_goal"
 									goal_achieved = True
 
 								## Sampling from the spriteDisribution makes sense, as it's
@@ -915,9 +921,6 @@ def getToObjectGoal(rle, vrle, game_object, hypothesis, game, level, object_goal
 								## Get list of all effects we've seen. Only update theory if we're seeing something new.
 								all_effects = [item for sublist in [e['effectList'] for e in finalEventList] for item in sublist]
 								if not all([e in all_effects for e in effects]):## TODO: make sure you write this so that it works with simultaneous effects.
-									if ('stepBack', 'DARKBLUE', 'BLACK') in effects:
-										print "saw stepback1"
-										embed()
 									finalEventList.append(event)
 									terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
 									trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
@@ -946,14 +949,14 @@ def getToObjectGoal(rle, vrle, game_object, hypothesis, game, level, object_goal
 											candidate_new_colors.append(e[1])
 
 									candidate_new_colors = list(set(candidate_new_colors))
-									print "candidate new colors", candidate_new_colors
+									# print "candidate new colors", candidate_new_colors
 
 									## update to incorporate what we've learned, keep the same subgoal for now; this will update at the top of the next loop.
 									game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], symbolDict, \
-										"./examples/gridphysics/theorytest.py", goalLoc=subgoal)
+										"./examples/gridphysics/theorytest.py", goalLoc=(rle._rect2pos(object_goal.rect)[1], rle._rect2pos(object_goal.rect)[0]))
 
 									print "updating internal theory"
-									vrle = createMindEnv(game, level, output=True)
+									vrle = createMindEnv(game, level, output=False)
 									vrle.immovables = immovables															
 								else:
 									finalEventList.append(event)
@@ -963,12 +966,12 @@ def getToObjectGoal(rle, vrle, game_object, hypothesis, game, level, object_goal
 									## interactionSet induction (i.e., here.)
 									hypotheses = [hypothesis]
 
+
 							
 							if terminal:
 								return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered, game_object
 
-			# embed()
-			print steps, "steps"
+					print "executed all actions."
 			total_steps += steps
 
 	return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered, game_object
@@ -1024,7 +1027,7 @@ def getToWaypoint(rle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeig
 	Vrle = createMindEnv(theoryString, levelString, output=False)
 	Vrle.immovables = immovables
 
-	"mental map with subgoal:"
+	print "mental map with subgoal:"
 	print Vrle.show()
 	mcts = Basic_MCTS(existing_rle=Vrle, game=theoryString, level=levelString, partitionWeights=partitionWeights)
 
@@ -1032,7 +1035,7 @@ def getToWaypoint(rle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeig
 	# embed()
 	m, steps = mcts.startTrainingPhase(1200, defaultPolicyMaxSteps, Vrle, mark_solution=True, solution_limit=20)
 	actions = mcts.getBestActionsForPlayout((1,0,0), debug=False)
-	print "actions", actions
+	print "Found plan to subgoal. Actions", actions
 	if act:
 		for a in actions:
 			rle.step(a)
