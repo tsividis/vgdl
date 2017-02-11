@@ -1720,7 +1720,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 		for s in sprites:
 			unfilteredType = str(s.vgdlType)
 			stype = unfilteredType[unfilteredType.find("vgdl.ontology.")+len("vgdl.ontology."): unfilteredType.find(">")-1]
-			
+			argsString = ""
 			## Catch-all 'OTHER' s.vgdlType is causing a problem. replace for now with generic.
 			if not stype:
 				print "false stype"
@@ -1730,27 +1730,27 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					print "writetheorytotxt. stype problem"
 					embed()
 
+			if s.args:
+				for k,v in s.args.items():
+					if k == "color":
+						continue
+					elif k == "orientation":
+						argsString += " %s=%s"%(k, DIRECTION_MAP[v])
+					else:
+						argsString += " %s=%s"%(k, str(v))
+
 			if "core" in stype:
 				stype = stype[stype.find("core.")+len("core."):]
 
 			if "avatar".lower() in stype.lower():
-				theoryString += "\t\t%s > %s color=%s\n"%("avatar", stype, s.color)
+				theoryString += "\t\t%s > %s color=%s%s\n"%("avatar", stype, s.color, argsString)
 			else:				
 				sname = c#colorToSprite[s.color]
-				theoryString += "\t\t%s > %s color=%s\n"%(sname, stype, s.color)
+				theoryString += "\t\t%s > %s color=%s%s\n"%(sname, stype, s.color, argsString)
 				if goalLoc and newGoalType != 'blank_space' and s.color==newGoalColor:
 					sname = colorToSprite[s.color]
-					theoryString += "\t\t%s > %s color=%s\n"%("goal", stype, s.color)
+					theoryString += "\t\t%s > %s color=%s%s\n"%("goal", stype, s.color, argsString)
 
-			# for k,v in s.args.items():
-			# 	if k == "color":
-			# 		continue
-			# 	elif k == "orientation":
-			# 		theoryString += " %s=%s"%(k, DIRECTION_MAP[v])
-			# 	else:
-			# 		theoryString += " %s=%s"%(k, str(v))
-
-			# theoryString += "\n"
 
 	if goalLoc:
 		if newGoalType == 'blank_space':
@@ -1775,12 +1775,21 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				continue
 			for s1 in theory.classes[c1]:
 				for s2 in theory.classes[c2]:
+					argsString = ""
+					if interactionRule.valueChanges:
+						for k,v in interactionRule.valueChanges.items():
+							argsString += " %s:%s"%(k, str(v))
+
+					if interactionRule.interaction == "changeResource":
+						print "reached changeResource in writeTheoryToTxt"
+						embed()
+
 					if s1.color==newGoalColor:
-						theoryString += "\t\t%s %s > %s\n"%('goal', c2, interactionRule.interaction)
+						theoryString += "\t\t%s %s > %s%s\n"%('goal', c2, interactionRule.interaction, argsString)
 					elif s2.color==newGoalColor:
-						theoryString += "\t\t%s %s > %s\n"%(c1, 'goal', interactionRule.interaction)		
+						theoryString += "\t\t%s %s > %s%s\n"%(c1, 'goal', interactionRule.interaction, argsString)		
 					else:
-						theoryString += "\t\t%s %s > %s\n"%(c1, c2, interactionRule.interaction)
+						theoryString += "\t\t%s %s > %s%s\n"%(c1, c2, interactionRule.interaction, argsString)
 					if 'avatar' in str(s1.vgdlType).lower():
 						if interactionRule.interaction in immovable_predicates:
 							# print "must add immovable"
