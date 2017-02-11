@@ -1723,7 +1723,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 			
 			## Catch-all 'OTHER' s.vgdlType is causing a problem. replace for now with generic.
 			if not stype:
-				print "false stype"
 				if unfilteredType == "OTHER":
 					stype = 'ResourcePack'
 				else:
@@ -1736,7 +1735,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 			if "avatar".lower() in stype.lower():
 				theoryString += "\t\t%s > %s color=%s\n"%("avatar", stype, s.color)
 			else:				
-				sname = c#colorToSprite[s.color]
+				sname = c
 				theoryString += "\t\t%s > %s color=%s\n"%(sname, stype, s.color)
 				if goalLoc and newGoalType != 'blank_space' and s.color==newGoalColor:
 					sname = colorToSprite[s.color]
@@ -1759,7 +1758,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 
 
-	# goalInSpriteSet = 'goal' in theoryString
 	immovable_predicates = ['stepBack', 'undoAll']
 	immovables = []
 	# second phase: the interaction rules
