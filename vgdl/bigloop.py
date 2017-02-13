@@ -55,7 +55,6 @@ def playEpisode(rleCreateFunc, hypotheses=[], game_object=None, unknown_colors=F
 
 	Vrle=None
 	g = game_object
- 
 	while not ended:																	
 		if noHypotheses:																	## Observe a few frames, then initialize sprite hypotheses
 			observe(rle, 5)
@@ -117,7 +116,8 @@ def playEpisode(rleCreateFunc, hypotheses=[], game_object=None, unknown_colors=F
 		ended, won = rle._isDone()
 		# actions_taken.extend(actions_executed)
 		total_states_encountered.extend(states_encountered)
-																						## Hack to remember actual winning goal, until terminationSet is fixed.
+		
+		## Hack to remember actual winning goal, until terminationSet is fixed.
 		if won and not hypotheses[0].goalColor:
 			# embed()
 			goalColor = finalEventList[-1]['effectList'][0][1]		#fix. don't assume the second obj is the goal.
@@ -126,7 +126,7 @@ def playEpisode(rleCreateFunc, hypotheses=[], game_object=None, unknown_colors=F
 	if playback:			## TODO: Aritro cleans this up.
 		print "in playback"
 		from vgdl.core import VGDLParser
-		from examples.gridphysics.simpleGame4_big import level, game
+		from examples.gridphysics.simpleGame4 import level, game
 		playbackGame = game
 		playbackLevel = level
 		embed()
@@ -142,7 +142,7 @@ if __name__ == "__main__":
 	thinking_steps = 50
 	thinking_default_steps=50
 	
-	numEpisodes = 3
+	numEpisodes = 1
 
 	hypotheses, tally, finalEventList = [], [], []
 	unknown_colors = False
@@ -159,7 +159,7 @@ if __name__ == "__main__":
 		hypotheses, game_object, won, unknown_colors, goalColor, finalEventList, total_states_encountered = \
 		playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, game_object=game_object,\
 			unknown_colors=unknown_colors, goalColor=goalColor, finalEventList=finalEventList, \
-			playback=False)
+			playback=True)
 		tally.append(won)
 		print "episode ended. Win:", won
 		print "__________________________________________________"
