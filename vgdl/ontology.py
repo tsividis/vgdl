@@ -1050,7 +1050,7 @@ def stepBack(sprite, partner, game):
     sprite.rect = sprite.lastrect
     if partner:
         return ("stepBack", sprite.ID, partner.ID)
-        
+
 
 def undoAll(sprite, partner, game):
     """ Revert last moves of all sprites. """
@@ -1555,6 +1555,9 @@ def sampleFromDistribution(curr_distribution, all_objects):
         ## always alphabetize the keys
         ## sample multinomially from the spriteDistribution[key] dictionary, to get the spriteType
         ## add that to the color info for that object.
+        if k not in curr_distribution.keys():
+            print k, "not in curr_distribution"
+            embed()
         sprite_possibilities = curr_distribution[k]
         lst = sprite_possibilities.keys()
         lst.sort()
@@ -1613,6 +1616,8 @@ def spriteInduction(game, step):
         game.collision_objects = set()
     elif step==3: # TODO: remember to change all instances of 2s in function calls to 3s!
         ## Sprite Induction Part 2: Update sprite distribution based on observations
+        # print "in sprite induction"
+        # embed()
         objects = game.getObjects()
         for sprite in game.spriteDistribution.keys():        # Keys are the IDs of the game objects
             if sprite in objects.keys():                # Sprite may have been killed
@@ -1621,7 +1626,13 @@ def spriteInduction(game, step):
                 if sprite not in game.collision_objects and sprite_obj.name != 'avatar':
 
                     outcome = objects[sprite]["position"]
-                    game.spriteDistribution = updateDistribution(sprite, game.spriteDistribution, game.movement_options, outcome)
+
+                    game.spriteDistribution2 = updateDistribution(sprite, game.spriteDistribution, game.movement_options, outcome)
+                    # if len(game.spriteDistribution2) == len(game.spriteDistribution):
+                    #     game.spriteDistribution = game.spriteDistribution2
+                    # else:
+                    #     print "different lengths"
+                    #     embed()
 
 def selectObjectGoal(rle, unknown_colors, method):
     def dist(a,b):
