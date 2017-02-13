@@ -747,6 +747,9 @@ class BasicGame(object):
         allStates = [self.getFullState()]
         spriteInduction(self, step=0)
 
+        # if self.playback_states:
+        #     print "got playback states"
+        #     embed()
         while self.playback_index < len(self.playback_states):
             clock.tick(self.frame_rate)
             self.time += 1
@@ -1178,7 +1181,7 @@ class BasicGame(object):
         # f_sprite.write(str(self.spriteDistribution))
         # f_sprite.close()
 
-        print "Expecting {} events".format(len(finalEventList))
+        # print "Expecting {} events".format(len(finalEventList))
 
         if win:
             # winning a game always gives a positive score.
