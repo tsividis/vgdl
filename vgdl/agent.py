@@ -1,73 +1,57 @@
-from mcts import *
+
+from mcts_pseudoreward_heuristic import *
 from util import *
 from core import colorDict
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
-from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectSubgoal
-from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt
-
-'''
-## helpful functions or access methods:
-rle._getSensors()
-rle.step((0,0)) ## will actually move the gamestate if things are moving, though.
-rle._game.sprite_groups ## dict of unique object types and their positions
-
-for the equivalents in thought world, just do mcts.rle.whatever
-'''
+from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
+from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, \
+MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict
+import importlib
+from rlenvironmentnonstatic import createRLInputGame
 
 
-if __name__ == "__main__":
+## Specify a game or a set of games
+## number of episodes per game
 
-	finalEventList = []
-	obsType = OBSERVATION_GLOBAL
-	thinking_steps = 50
-	thinking_default_steps=50
+
+## hypotheses to plans
+## hypothesis to plan
+
+
+## simplest explore/exploit strategy:
+	## keep track of unknown objects and goal. touch everytning you don't know until you know the goal. get to goal.
+##
+
+
+class Agent:
+	def __init__(self, gameFilename):
+		self.hypotheses = None
+		self.unknownColors = None
+		self.goalColor = None
+		self.finalEventList = []
+
+		self.initializeEnvironment()
 	
-	## Initialize rle the agent behaves in.
-	rleCreateFunc = createRLSimpleGame4
-	rle = rleCreateFunc(OBSERVATION_GLOBAL)
-	rle._game.unknown_objects = rle._game.sprite_groups.keys()
-	rle._game.unknown_objects.remove('avatar') 		## For now we're asumming agent knows self.
-	rle.agentStatePrev = {}
-	all_objects = rle._game.getObjects()
+	def initializeEnvironment(self, gameFilename):
+		self.gameString, self.levelString = defInputGame(gameFilename)
+		self.rleCreateFunc = lambda: createRLInputGame(gameFilename)
+		return
 
-	spriteInduction(rle, step=0)					## Initialize sprite induction
-
-	## Initialize mental theory
-	sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
-	g = Game(spriteInductionResult=sample)
-	t = g.buildGenericTheory(sample)
-	hypotheses = [t]	
-
-	## When you restart episodes, reset the rle.agentStatePrev. Maybe some other things, too.
-	
-	print ""
-	print ""
-	print np.reshape(rle._getSensors(), rle.outdim)
-
-	print "outside loop in agent.py"
-	embed()
-
-	## Temporary hack -- change as soon as we can write theory files.
-	# theories = [createRLVirtualGame, createRLVirtualGame2]
-	goals = ['box1', 'box2']
-	for i in range(2):
+	def playMultipleEpisodes(self, numEpisodes):
 		
-		# subgoal = selectSubgoal(rle, method='preselected')
-		print i
+		tally = []
 
-		subgoal = random.choice(rle._game.sprite_groups[goals[i]])
-		pos = rle._rect2pos(subgoal.rect)
-		print pos
+		for i in range(numEpisodes):
+			score, trace = self.playEpisode()
+			tally.append(score)
+			print "Episode ended. Score:", score
+		print "Won", sum(tally), "out of ", len(tally), "episodes."
 
-		game, level = writeTheoryToTxt(rle,hypotheses[0], "./examples/gridphysics/theorytest.py", rle._rect2pos(subgoal.rect))
+		return
+
+	def playEpisode(self):
+		rle = self.rleCreateFunc() ## Initialize external environment
 		
-		Vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)	##World in agent's head.
-		
-		## Plan to achieve that goal
-		rle, hypotheses, finalEventList = getToSubgoal(rle, Vrle, subgoal, all_objects, finalEventList)
+		return score, trace
 
-		print ""
-
-	print "ended loop"
-	embed()
 
