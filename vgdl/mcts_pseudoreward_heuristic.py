@@ -715,14 +715,15 @@ def getToObjectGoal(rle, vrle, game_object, hypothesis, game, level, object_goal
 	## TODO: this will be problematic when new objects appear, if you don't update it.
 	# all_objects = rle._game.getObjects()
 
-	states_encountered, candidate_new_colors = [], []
+	states_encountered = [rle._game.getFullState()]
+	candidate_new_colors = []
 	hypotheses = [hypothesis]
 	while not terminal and not goal_achieved:
 
 		theory_change_flag = False
 
 		if not theory_change_flag: 
-			mcts = Basic_MCTS(existing_rle=vrle, game=game, level=level, partitionWeights=[5,1,5])
+			mcts = Basic_MCTS(existing_rle=vrle, game=game, level=level, partitionWeights=[5,3,3])
 			subgoals = mcts.getSubgoals(subgoal_path_threshold=4)
 			total_steps = 0
 			for subgoal in subgoals:
@@ -736,13 +737,14 @@ def getToObjectGoal(rle, vrle, game_object, hypothesis, game, level, object_goal
 					vrle.immovables = immovables
 
 					## Get actions that take you to goal.
-					ignore, actions, steps = getToWaypoint(vrle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights=[5,1,3], act=False)
+					ignore, actions, steps = getToWaypoint(vrle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights=[5,3,3], act=False)
 
 					for action in actions:
 						if not theory_change_flag:
 							spriteInduction(rle._game, step=1)
 							spriteInduction(rle._game, step=2)
 							res = rle.step(noise(action))
+							states_encountered.append(rle._game.getFullState())
 							terminal = rle._isDone()[0]				
 							effects = translateEvents(res['effectList'], all_objects)
 							if symbolDict: 
@@ -777,7 +779,7 @@ def getToObjectGoal(rle, vrle, game_object, hypothesis, game, level, object_goal
 								if len(rle._game.spriteDistribution)==0:
 									print "after step3"
 									embed()
-								embed()
+
 								# if not sample:
 								sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
 								game_object = Game(spriteInductionResult=sample)
