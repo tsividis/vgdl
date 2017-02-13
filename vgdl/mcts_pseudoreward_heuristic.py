@@ -734,9 +734,6 @@ def getToObjectGoal(rle, vrle, game_object, hypothesis, game, level, object_goal
 						"./examples/gridphysics/theorytest.py", subgoal)
 					vrle = createMindEnv(game, level, output=False)
 					vrle.immovables = immovables
-					if "G" not in vrle.show():
-						print "no goal in vrle."
-						embed()
 
 					## Get actions that take you to goal.
 					ignore, actions, steps = getToWaypoint(vrle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights=[5,1,3], act=False)
@@ -780,6 +777,7 @@ def getToObjectGoal(rle, vrle, game_object, hypothesis, game, level, object_goal
 								if len(rle._game.spriteDistribution)==0:
 									print "after step3"
 									embed()
+								embed()
 								# if not sample:
 								sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
 								game_object = Game(spriteInductionResult=sample)
@@ -1030,4 +1028,5 @@ if __name__ == "__main__":
 		totalWeightInfo[k]['numActions'] /= float(totalWeightInfo['solved'])
 
 	embed()
+
 	# planActLoop(game_to_play, filename, 5, 100, 50, playback=False)
