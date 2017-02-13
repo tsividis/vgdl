@@ -34,7 +34,6 @@ for the equivalents in thought world, just do mcts.rle.whatever
 def playEpisode(rleCreateFunc, hypotheses=[], game_object=None, unknown_colors=False, goalColor=None, finalEventList=[], playback=False):
 
 	rle = rleCreateFunc()																## Initialize rle the agent behaves in.
-	rle.agentStatePrev = {}
 	all_objects = rle._game.getObjects()
 
 	# spriteInduction(rle._game, step=0)													## Initialize sprite induction
@@ -137,7 +136,7 @@ def playEpisode(rleCreateFunc, hypotheses=[], game_object=None, unknown_colors=F
 
 if __name__ == "__main__":
 
-	filename = "examples.gridphysics.simpleGame4_big"
+	filename = "examples.gridphysics.simpleGame4"
 	game_to_play = lambda: createRLInputGame(filename)
 
 	thinking_steps = 50
