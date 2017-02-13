@@ -884,6 +884,7 @@ def getToObjectGoal(rle, vrle, game_object, hypothesis, game, level, object_goal
 					for action in actions:
 						if not theory_change_flag:
 							res = rle.step(noise(action))
+							states_encountered.append(rle._game.getFullState())
 							terminal = rle._isDone()[0]				
 							effects = translateEvents(res['effectList'], all_objects)
 							if symbolDict: 
@@ -1149,7 +1150,7 @@ if __name__ == "__main__":
 	partitionWeightsList = [(5,1,5),(5,3,3), (5,3,1), (5,1,3), (3,1,5), (3,5,1), (1,3,5), (5,5,1), (1,5,3)]
 	weightInfoList = []
 	totalWeightInfo = {k: {'solved': 0, 'total_steps': 0, 'numActions': 0} for k in partitionWeightsList}
-	numIters = 5
+	numIters = 8
 	for i in range(numIters):
 		weightInfo = parallelizedPlanUntilSolved(game_to_play, filename, 50, partitionWeightsList, numWorkers=4)
 		weightInfoList.append(weightInfo)
@@ -1160,7 +1161,7 @@ if __name__ == "__main__":
 				totalWeightInfo[k]['numActions'] += weightInfo[k]['numActions']
 
 	for k in totalWeightInfo:
-		totalWeightInfo[k]['numActions'] /= float(totalWeightInfo['solved'])
+		totalWeightInfo[k]['numActions'] /= float(totalWeightInfo[k]['solved'])
 
 	embed()
 	# planActLoop(game_to_play, filename, 5, 100, 50, playback=False)

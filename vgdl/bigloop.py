@@ -127,7 +127,7 @@ def playEpisode(rleCreateFunc, hypotheses=[], game_object=None, unknown_colors=F
 	if playback:			## TODO: Aritro cleans this up.
 		print "in playback"
 		from vgdl.core import VGDLParser
-		from examples.gridphysics.simpleGame4_big import level, game
+		from examples.gridphysics.simpleGame4 import level, game
 		playbackGame = game
 		playbackLevel = level
 		embed()
@@ -137,13 +137,13 @@ def playEpisode(rleCreateFunc, hypotheses=[], game_object=None, unknown_colors=F
 
 if __name__ == "__main__":
 
-	filename = "examples.gridphysics.simpleGame4_big"
+	filename = "examples.gridphysics.simpleGame4"
 	game_to_play = lambda: createRLInputGame(filename)
 
 	thinking_steps = 50
 	thinking_default_steps=50
 	
-	numEpisodes = 3
+	numEpisodes = 1
 
 	hypotheses, tally, finalEventList = [], [], []
 	unknown_colors = False
@@ -160,7 +160,7 @@ if __name__ == "__main__":
 		hypotheses, game_object, won, unknown_colors, goalColor, finalEventList, total_states_encountered = \
 		playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, game_object=game_object,\
 			unknown_colors=unknown_colors, goalColor=goalColor, finalEventList=finalEventList, \
-			playback=False)
+			playback=True)
 		tally.append(won)
 		print "episode ended. Win:", won
 		print "__________________________________________________"
