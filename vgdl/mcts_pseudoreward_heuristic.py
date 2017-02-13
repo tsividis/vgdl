@@ -253,16 +253,13 @@ class Basic_MCTS:
 			if i%100==0 and len(rewards)>0:
 				print "Training cycle: %i"%i
 				print "avg. rewards for last group of 100", np.mean(rewards[-100:])
-			try:
-				if defaultPolicySolveStep:
-					reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon, \
-						                               solveSteps = i-defaultPolicySolveStep)
-				else:
-					reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon)
 
-			except TypeError:
-				print "typeError in startTrainingphase"
-				embed()
+			if defaultPolicySolveStep:
+				reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon, \
+					                               solveSteps = i-defaultPolicySolveStep)
+			else:
+				reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon)
+
 
 			tree_policy_iters += iters
 
@@ -381,8 +378,6 @@ class Basic_MCTS:
 					return reward, v, iters
 
 		return reward, v, iters
-		print "end of treepolicy"
-		embed()
 
 	def expand(self, v, rle, domain_knowledge=False):
 		expand_action = None
@@ -914,7 +909,7 @@ def getToWaypoint(rle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeig
 	return rle, actions, steps
 
 
-def planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, partitionWeights, playback=False, maxEpisodes=2000):
+def planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, partitionWeights, playback=False, maxEpisodes=700):
 	
 	rle = rleCreateFunc(OBSERVATION_GLOBAL)
 	game, level = defInputGame(filename)
@@ -945,9 +940,10 @@ def planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, partitionWei
 	
 	total_steps = 0
 	solved = True
+	numActions = 0
 	for subgoal in subgoals:
 		rle, actions, steps = getToWaypoint(rle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights=[10,2,4])
-
+		numActions += len(actions)
 		print steps, "steps"
 		total_steps += steps
 		if total_steps > maxEpisodes:
@@ -959,7 +955,7 @@ def planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, partitionWei
 	else:
 		print "didn't solve game even using %i episodes of MCTS"%total_steps
 
-	return mcts, total_steps, solved
+	return mcts, total_steps, solved, numActions
 
 def parallelizedPlanUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, partitionWeightsList, numWorkers=4):
 	"""
@@ -982,8 +978,8 @@ def parallelizedPlanUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, 
 				break
 
 			partitionWeights = message
-			mcts, total_steps, solved = planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, partitionWeights)
-			resultsQueue.put((partitionWeights, {'total_steps': total_steps, 'solved': solved}))
+			mcts, total_steps, solved, numActions = planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, partitionWeights)
+			resultsQueue.put((partitionWeights, {'total_steps': total_steps, 'solved': solved, 'numActions': numActions}))
 
 
 	jobs = []
@@ -1012,21 +1008,26 @@ if __name__ == "__main__":
 	## You have to make a function that creates the environment.
 	## Make the game, then follow the layout in 'rlenvironmentnonstatic'
 	
-	filename = "examples.gridphysics.simpleGame4_big"
+	filename = "examples.gridphysics.simpleGame4"
 	game_to_play = lambda obsType: createRLInputGame(filename)
 	# planUntilSolved(game_to_play, filename, 50, [5,1,5])
 	# partitionWeightsList = [(5,1,5), (5,3,3)]
 	# partitionWeightsList = [(5,1,5)]
 	partitionWeightsList = [(5,1,5),(5,3,3), (5,3,1), (5,1,3), (3,1,5), (3,5,1), (1,3,5), (5,5,1), (1,5,3)]
 	weightInfoList = []
-	totalWeightInfo = {k: {'solved': True, 'total_steps': 0} for k in partitionWeightsList}
-	numIters = 10
+	totalWeightInfo = {k: {'solved': 0, 'total_steps': 0, 'numActions': 0} for k in partitionWeightsList}
+	numIters = 5
 	for i in range(numIters):
 		weightInfo = parallelizedPlanUntilSolved(game_to_play, filename, 50, partitionWeightsList, numWorkers=4)
 		weightInfoList.append(weightInfo)
 		for k in totalWeightInfo:
-			totalWeightInfo[k]['solved'] = totalWeightInfo[k]['solved'] and weightInfo[k]['solved']
-			totalWeightInfo[k]['total_steps'] += weightInfo[k]['total_steps']
+			totalWeightInfo[k]['solved'] = totalWeightInfo[k]['solved'] + (weightInfo[k]['solved']/float(numIters))
+			totalWeightInfo[k]['total_steps'] += weightInfo[k]['total_steps']/float(numIters)
+			if weightInfo[k]['solved']:
+				totalWeightInfo[k]['numActions'] += weightInfo[k]['numActions']
+
+	for k in totalWeightInfo:
+		totalWeightInfo[k]['numActions'] /= float(totalWeightInfo['solved'])
 
 	embed()
 	# planActLoop(game_to_play, filename, 5, 100, 50, playback=False)

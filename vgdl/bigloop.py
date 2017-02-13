@@ -127,7 +127,7 @@ def playEpisode(rleCreateFunc, hypotheses=[], game_object=None, unknown_colors=F
 	if playback:			## TODO: Aritro cleans this up.
 		print "in playback"
 		from vgdl.core import VGDLParser
-		from examples.gridphysics.simpleGame4 import level, game
+		from examples.gridphysics.simpleGame4_big import level, game
 		playbackGame = game
 		playbackLevel = level
 		embed()
@@ -137,7 +137,7 @@ def playEpisode(rleCreateFunc, hypotheses=[], game_object=None, unknown_colors=F
 
 if __name__ == "__main__":
 
-	filename = "examples.gridphysics.simpleGame4"
+	filename = "examples.gridphysics.simpleGame4_big"
 	game_to_play = lambda: createRLInputGame(filename)
 
 	thinking_steps = 50
