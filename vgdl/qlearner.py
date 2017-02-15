@@ -23,6 +23,9 @@ from theory_template import TimeStep, Precondition, InteractionRule, Termination
 generateSymbolDict, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryFromGame
 from rlenvironmentnonstatic import createRLInputGame
 
+#A hack to display things to the terminal conveniently.
+np.core.arrayprint._line_width=250
+
 ACTIONS = {(0,0):'stay',(0,-1):'up', (0,1):'down', (1,0):'right', (-1,0):'left', None:'none'}
 
 class QLearner:
@@ -66,7 +69,8 @@ class QLearner:
 
 		actionDict = defaultdict(list)
 		neighborDict = defaultdict(list)
-		action_superset = [(0,0),(-1,0), (1,0), (0,-1), (0,1)]
+		# action_superset = [(0,0),(-1,0), (1,0), (0,-1), (0,1)]
+		action_superset = [(-1,0), (1,0), (0,-1), (0,1)]
 		
 		board = np.reshape(self.rle._getSensors(), self.rle.outdim)
 		y,x=np.shape(board)
@@ -183,7 +187,7 @@ class QLearner:
 		
 		return self.subgoals
 
-	def selectAction(self, s, policy, partitionWeights = None, domainKnowledge=True):
+	def selectAction(self, s, policy, partitionWeights = None, domainKnowledge=True, printout=False):
 		if policy == 'epsilonGreedy':
 			if random.random() < self.epsilon:
 				return random.choice(self.actions)
@@ -192,6 +196,8 @@ class QLearner:
 				return bestA
 		elif policy == 'greedy':
 			bestQVal, bestA, QValsAreAllEqual = self.bestSA(s, partitionWeights = [1,0], domainKnowledge = True)
+			if printout:
+				print bestQVal
 			if QValsAreAllEqual:
 				return None
 			else:
@@ -201,7 +207,10 @@ class QLearner:
 		## returns pseudoreward of taking action a from location currentLoc.
 		## gives pseudoReward[currentLoc] if a doesn't move states.
 		currentLoc = self.findAvatarInState(s)
-		nextLoc = currentLoc[0]+a[0], currentLoc[1]+a[1]
+		if currentLoc:
+			nextLoc = currentLoc[0]+a[1], currentLoc[1]+a[0] #again, locations are (y,x) and actions are (x,y)
+		else:
+			return 0.
 		if nextLoc in self.rewardDict.keys():
 			return self.rewardDict[nextLoc]
 		elif currentLoc in self.rewardDict.keys():
@@ -209,10 +218,15 @@ class QLearner:
 		else:
 			return 0.
 
-	def bestSA(self, s, partitionWeights, domainKnowledge=True):
+	def bestSA(self, s, partitionWeights, domainKnowledge=True, debug=False):
 		avatarLoc = self.findAvatarInState(s)
 		if domainKnowledge:
-			actions = self.actionDict[avatarLoc]
+			if len(self.actionDict[avatarLoc])>0:
+				actions = self.actionDict[avatarLoc]
+			else:
+				# set actions to full action set in case the actionDict was initialized with incorrect assumptions
+				# ... and thus thinks there's nothing you can do from the current state.
+				actions = self.actions
 		else:
 			actions = self.actions
 		
@@ -223,22 +237,29 @@ class QLearner:
 		heuristicCoefficient = partitionWeights[1]
 		bestAction = None
 		QValsAreAllEqual = False
+		if debug:
+			print "debugging bestSA"
+			embed()
 		for a in actions:
 			if (s,a) not in self.QVals.keys():
 				self.QVals[(s,a)] = 0.
-			sumQVal += self.QVals[(s,a)]
+			sumQVal += abs(self.QVals[(s,a)])
 			sumPseudoReward += self.getPseudoReward(s, a)
 
 		for a in actions:
+
 			if sumQVal == 0.:
 				QValFunction = 0.
 			else:
-				QValFunction = self.QVals[(s,a)]
+				QValFunction = self.QVals[(s,a)]/sumQVal
+
 			if sumPseudoReward == 0:
-				print "pseudoreward was 0"
-				embed()
+				pseudoRewardFunction =0.
+			else:
+				pseudoRewardFunction = self.getPseudoReward(s,a)/sumPseudoReward
+
 			funcVal = rewardCoefficient*QValFunction + \
-						heuristicCoefficient*self.getPseudoReward(s,a)/sumPseudoReward
+						heuristicCoefficient*pseudoRewardFunction
 
 			if funcVal > maxFuncVal:
 				maxFuncVal = funcVal
@@ -246,9 +267,14 @@ class QLearner:
 				bestQVal = self.QVals[(s,a)]
 		
 		if not bestAction:
-			bestAction = random.choice(actions)
-			bestQVal = self.QVals[(s,a)]
-			QValsAreAllEqual = True
+			try:
+				bestAction = random.choice(actions)
+				bestQVal = self.QVals[(s,a)]
+				QValsAreAllEqual = True
+			except:
+				print "actions array is empty. in bestSA"
+				print np.reshape(np.fromstring(s,dtype=float),self.rle.outdim)
+				embed()
 
 		# QVals = [self.QVals[(s,a)] for a in actions]
 		# if len(QVals)>0:
@@ -284,7 +310,6 @@ class QLearner:
 			s = sPrime
 			terminal = rle._isDone()[0]
 			i += 1
-		print "reached stepLimit or terminal state"
 		self.QVals[s] = 0.
 
 	def learn(self, episodes, satisfice=False):
@@ -293,11 +318,13 @@ class QLearner:
 			if i%10==0:
 				print i
 				if satisfice: ## see if values have propagated to start state; if so, return.
-					rle = copy.deepcopy(self.rle)
-					s = rle._getSensors().tostring()
-					a = self.selectAction(s, policy='greedy')
-					if a:
-						print "satisfice found an action"
+					actions = self.getBestActionsForPlayout()
+					if len(actions)>0:
+					# rle = copy.deepcopy(self.rle)
+					# s = rle._getSensors().tostring()
+					# a = self.selectAction(s, policy='greedy')
+					# if a:
+						print "satisfice found actions in", i, "steps."
 						return i
 		return i
 
@@ -308,9 +335,10 @@ class QLearner:
 		actions = []
 		# print rle.show()
 		while not terminal:
-			a = self.selectAction(s, policy='greedy')
-			if a is None:
-				break
+			a = self.selectAction(s, policy='greedy', partitionWeights = None, domainKnowledge = None, printout = False)
+			if a is None or self.QVals[(s,a)]<=0:
+				# print "Negative q-values or no action. Breaking."
+				return actions
 			actions.append(a)
 			res = rle.step(a)
 			# print rle.show()
@@ -336,5 +364,5 @@ if __name__ == "__main__":
 	rle.immovables = ['c4']
 	print "Initializing learner"
 	ql = QLearner(rle, gameString, levelString, alpha=1, epsilon=.1, gamma=.9, episodes=1000)
-	ql.learn(20, satisfice=False)
+	ql.learn(500, satisfice=True)
 	embed()
