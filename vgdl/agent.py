@@ -1,7 +1,7 @@
 
 from mcts_pseudoreward_heuristic import *
 from util import *
-from core import colorDict
+from core import colorDict, VGDLParser
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, \
@@ -26,12 +26,14 @@ from rlenvironmentnonstatic import createRLInputGame
 ## For now, only implementing version of agent that can deal with single goals.
 
 class Agent:
-	def __init__(self, gameFilename):
+	def __init__(self, gameFilename, plannerType):
+		self.gameName = gameFilename[gameFilename.rfind('.')+1:] ## store just the game name
 		self.hypotheses = []
 		self.symbolDict = None
 		self.knownColors = []
 		self.goalColor = None
 		self.finalEventList = []
+		self.plannerType = plannerType
 		self.initializeEnvironment(gameFilename)
 	
 	def initializeEnvironment(self, gameFilename):
@@ -119,17 +121,13 @@ class Agent:
 		gameObject = None
 		for i in range(numEpisodes):
 			gameObject, won, statesEncountered = self.playEpisode(gameObject, finalEventList)
+			VGDLParser.playGame(self.gameString, self.levelString, statesEncountered, persist_movie=True, movie_dir="videos/"+self.gameName)
 			totalStatesEncountered.append(statesEncountered)
 			tally.append(won)
 			print "Episode ended. Won:", won
 		print "Won", sum(tally), "out of ", len(tally), "episodes."
 		
-		from vgdl.core import VGDLParser
-		from examples.gridphysics.simpleGame4 import level, game
-		playbackGame = game
-		playbackLevel = level
-		embed()
-		VGDLParser.playGame(playbackGame, playbackLevel, totalStatesEncountered[0])
+
 
 		return
 
@@ -146,7 +144,7 @@ class Agent:
 		print "Known colors:", self.knownColors
 
 		ended, won = rle._isDone()
-		# totalStatesEncountered = [rle._game.getFullState()]
+		totalStatesEncountered = [rle._game.getFullState()]
 
 		## Start storing encountered states.
 
@@ -169,9 +167,9 @@ class Agent:
 				## carries out plan.
 
 			rle, self.hypotheses, finalEventList, candidateNewColors, statesEncountered, gameObject = \
-				getToObjectGoal(rle, VRLEs[0], gameObject, self.hypotheses[0], self.gameString, self.levelString, \
+				getToObjectGoal(rle, VRLEs[0], self.plannerType, gameObject, self.hypotheses[0], self.gameString, self.levelString, \
 					objectGoal, allObjects, finalEventList, symbolDict=self.symbolDict)
-		
+			totalStatesEncountered.extend(statesEncountered)
 			ended, won = rle._isDone()
 
 
@@ -183,12 +181,13 @@ class Agent:
 				if col not in self.knownColors:
 					self.knownColors.append(col)
 
-		return gameObject, won, statesEncountered
+		return gameObject, won, totalStatesEncountered
 
 if __name__ == "__main__":
 	
-	filename = "examples.gridphysics.simpleGame4"
-	agent = Agent(filename)
-	agent.playMultipleEpisodes(1)
+	filename = "examples.gridphysics.simpleGame4_huge"
+	plannerType = "QLearning"
+	agent = Agent(filename, plannerType)
+	agent.playMultipleEpisodes(10)
 
 
