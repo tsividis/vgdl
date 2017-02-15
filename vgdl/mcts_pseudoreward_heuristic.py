@@ -16,7 +16,7 @@ import copy
 from threading import Lock
 from Queue import Queue
 import multiprocessing
-
+from qlearner import *
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, \
@@ -43,7 +43,7 @@ mcts.rle._game.sprite_groups
 ACTIONS = {(0,0):'stay',(0,-1):'up', (0,1):'down', (1,0):'right', (-1,0):'left', None:'none'}
 class Basic_MCTS:
 	def __init__(self, existing_rle=False, game = None, level = None, partitionWeights=[1,0,1],\
-		         rleCreateFunc=False, obsType = OBSERVATION_GLOBAL, decay_factor=.9, num_workers=1):
+		         rleCreateFunc=False, obsType = OBSERVATION_GLOBAL, decay_factor=.8, num_workers=1):
 		if not existing_rle and not rleCreateFunc:
 			print "You must pass either an existing rle or an rleCreateFunc"
 			return
@@ -692,7 +692,7 @@ def observe(rle, obsSteps):
 
 
 
-def getToObjectGoal(rle, vrle, game_object, hypothesis, game, level, object_goal, all_objects, finalEventList, verbose=True,\
+def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level, object_goal, all_objects, finalEventList, verbose=True,\
 	defaultPolicyMaxSteps=50, symbolDict=None):
 	## Takes a real world, a theory (instantiated as a virtual world)
 	## Moves the agent through the world, updating the theory as needed
@@ -723,11 +723,16 @@ def getToObjectGoal(rle, vrle, game_object, hypothesis, game, level, object_goal
 		theory_change_flag = False
 
 		if not theory_change_flag: 
-			mcts = Basic_MCTS(existing_rle=vrle, game=game, level=level, partitionWeights=[5,3,3])
-			subgoals = mcts.getSubgoals(subgoal_path_threshold=4)
+			if plannerType=='mcts':
+				planner = Basic_MCTS(existing_rle=vrle, game=game, level=level, partitionWeights=[5,3,3])
+				subgoals = planner.getSubgoals(subgoal_path_threshold=3)
+			elif plannerType=='QLearning':
+				planner = QLearner(vrle, gameString=game, levelString=level)
+				subgoals = planner.getSubgoals(subgoal_path_threshold=3)
+			print "subgoals", subgoals
 			total_steps = 0
 			for subgoal in subgoals:
-				if not theory_change_flag:
+				if not theory_change_flag and not goal_achieved:
 
 					## write subgoal to theory; initialize VRLE.
 
@@ -737,10 +742,10 @@ def getToObjectGoal(rle, vrle, game_object, hypothesis, game, level, object_goal
 					vrle.immovables = immovables
 
 					## Get actions that take you to goal.
-					ignore, actions, steps = getToWaypoint(vrle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights=[5,3,3], act=False)
+					ignore, actions, steps = getToWaypoint(vrle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, partitionWeights=[5,3,3], act=False)
 
 					for action in actions:
-						if not theory_change_flag:
+						if not theory_change_flag and not goal_achieved:
 							spriteInduction(rle._game, step=1)
 							spriteInduction(rle._game, step=2)
 							res = rle.step(noise(action))
@@ -839,7 +844,6 @@ def getToObjectGoal(rle, vrle, game_object, hypothesis, game, level, object_goal
 
 					print "executed all actions."
 			total_steps += steps
-
 	return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered, game_object
 
 
@@ -884,7 +888,7 @@ def planActLoop(rleCreateFunc, filename, max_actions_per_plan, planning_steps, d
 		embed()
 
 
-def getToWaypoint(rle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights, act=True):
+def getToWaypoint(rle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, partitionWeights, act=True):
 
 	theory = generateTheoryFromGame(rle)
 
@@ -893,14 +897,19 @@ def getToWaypoint(rle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeig
 	Vrle = createMindEnv(theoryString, levelString, output=False)
 	Vrle.immovables = immovables
 
-	print "mental map with subgoal:"
+	print "mental map with subgoal:", subgoal
 	print Vrle.show()
-	mcts = Basic_MCTS(existing_rle=Vrle, game=theoryString, level=levelString, partitionWeights=partitionWeights)
-
-	# print "made mcts for subgoal,", subgoal
-	# embed()
-	m, steps = mcts.startTrainingPhase(1200, defaultPolicyMaxSteps, Vrle, mark_solution=True, solution_limit=20)
-	actions = mcts.getBestActionsForPlayout((1,0,0), debug=False)
+	print "planner type", plannerType
+	if plannerType=='mcts':
+		mcts = Basic_MCTS(existing_rle=Vrle, game=theoryString, level=levelString, partitionWeights=partitionWeights)
+		# print "made mcts for subgoal,", subgoal
+		# embed()
+		m, steps = mcts.startTrainingPhase(1200, defaultPolicyMaxSteps, Vrle, mark_solution=True, solution_limit=20)
+		actions = mcts.getBestActionsForPlayout((1,0,0), debug=False)
+	elif plannerType=='QLearning':
+		planner = QLearner(Vrle, gameString=theoryString, levelString=levelString)
+		steps = planner.learn(20, satisfice=False)
+		actions = planner.getBestActionsForPlayout()
 	print "Found plan to subgoal. Actions", actions
 	if act:
 		for a in actions:
