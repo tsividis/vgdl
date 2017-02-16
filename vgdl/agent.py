@@ -48,17 +48,21 @@ class Agent:
 		self.knownColors.append(avatarColor)
 		return
 
-	def pickNewLevel(self):
-		self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=True)
+	def pickNewLevel(self, index=False):
+		self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False, index=index)
 		self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
 		rle = self.rleCreateFunc()
 
-	def initializeHypotheses(self, rle, allObjects):
+	def initializeHypotheses(self, rle, allObjects, learnSprites=True):
+		if learnSprites:
+			observe(rle, 5)
+			spriteTypeHypothesis = sampleFromDistribution(rle._game.spriteDistribution, allObjects)
+			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
+			initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
+		else:
+			gameObject = Game(self.gameString)
+			initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
 
-		observe(rle, 5)
-		spriteTypeHypothesis = sampleFromDistribution(rle._game.spriteDistribution, allObjects)
-		gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
-		initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
 		self.hypotheses = [initialTheory]
 
 		## Old: Used to check for Vrle and initialize accordingly.
@@ -129,7 +133,7 @@ class Agent:
 
 		gameObject = None
 		for i in range(numEpisodes):
-			self.pickNewLevel()
+			self.pickNewLevel(index=i)
 			gameObject, won, statesEncountered = self.playEpisode(gameObject, finalEventList)
 			VGDLParser.playGame(self.gameString, self.levelString, statesEncountered, persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameName, padding=10)
 			totalStatesEncountered.append(statesEncountered)
@@ -165,7 +169,7 @@ class Agent:
 
 			## initialize theory if necessary.
 			if len(self.hypotheses) == 0:
-				gameObject = self.initializeHypotheses(rle, allObjects)
+				gameObject = self.initializeHypotheses(rle, allObjects, learnSprites=True)
 
 			## select explore / exploit goal
 			objectGoal, objectGoalLocation = self.objectSelectionPhase(unknownColors, rle)
@@ -208,5 +212,6 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pushtest"
 	plannerType = "QLearning"
 	agent = Agent(filename, plannerType)
+	# embed()
 	agent.playMultipleEpisodes(10)
 

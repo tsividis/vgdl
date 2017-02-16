@@ -44,6 +44,7 @@ class QLearner:
 		self.maxPseudoReward = 1
 		self.pseudoRewardDecay = .8
 		self.partitionWeights = [20,1]
+		self.heuristicDecay = .99
 		goalLoc = self.findObjectInRLE(rle, 'goal')
 		self.rewardDict = {goalLoc:self.maxPseudoReward}
 		self.scanDomainForMovementOptions()
@@ -230,11 +231,13 @@ class QLearner:
 		else:
 			actions = self.actions
 		
+		random.shuffle(actions)
 		maxFuncVal = -float('inf')
 		sumQVal = 0.
 		sumPseudoReward = 0.
 		rewardCoefficient = partitionWeights[0]
 		heuristicCoefficient = partitionWeights[1]
+		# print heuristicCoefficient
 		bestAction = None
 		QValsAreAllEqual = False
 		if debug:
@@ -302,21 +305,33 @@ class QLearner:
 		terminal = rle._isDone()[0]
 		s = rle._getSensors().tostring()
 		i=0
+		total_reward = 0.
 		while not terminal and i<stepLimit:
 			a = self.selectAction(s, policy='epsilonGreedy', partitionWeights = self.partitionWeights)
 			res = rle.step(a)
 			sPrime, r = res['observation'].tostring(), res['reward']
+			# print rle.show()
+			# print self.findAvatarInState(s), a, self.findAvatarInRLE(rle)
+			if r==1:
+				self.partitionWeights[1] = self.partitionWeights[1]*self.heuristicDecay
+				self.epsilon = self.epsilon*self.heuristicDecay
+				# print self.partitionWeights
+				# print 'reward'
 			self.update(s,a,sPrime,r)
 			s = sPrime
 			terminal = rle._isDone()[0]
 			i += 1
+			total_reward += r
+		# print total_reward/i
 		self.QVals[s] = 0.
 
 	def learn(self, episodes, satisfice=False):
 		for i in range(episodes):
-			self.runEpisode(stepLimit=40)
+			self.runEpisode(stepLimit=60)
 			if i%10==0:
-				print i
+				# s = self.rle._getSensors().tostring()
+				# a = self.selectAction(s, policy='epsilonGreedy', partitionWeights = self.partitionWeights)
+				print i#, self.QVals[(s,a)]
 				if satisfice: ## see if values have propagated to start state; if so, return.
 					actions = self.getBestActionsForPlayout()
 					if len(actions)>0:
@@ -336,6 +351,7 @@ class QLearner:
 		# print rle.show()
 		while not terminal:
 			a = self.selectAction(s, policy='greedy', partitionWeights = None, domainKnowledge = None, printout = False)
+			# print self.QVals[(s,a)]
 			if a is None or self.QVals[(s,a)]<=0:
 				# print "Negative q-values or no action. Breaking."
 				return actions
@@ -358,12 +374,20 @@ class QLearner:
 
 if __name__ == "__main__":
 	
-	gameFilename = "examples.gridphysics.simpleGame_many_poisons"
+	gameFilename = "examples.gridphysics.simpleGame_missile2"
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
+	# rle.immovables = ['wall', 'poison1', 'poison2']
 	print "Initializing learner"
-	ql = QLearner(rle, gameString, levelString, alpha=1, epsilon=.3, gamma=.9, episodes=1000)
+	ql = QLearner(rle, gameString, levelString, alpha=1, epsilon=.1, gamma=.9, episodes=1000)
+	# for x in range(10):
+	# 	print '{0}\r'.format(x),
+	# print
 	# embed()
+
+
 	ql.learn(1000, satisfice=True)
+	# ql.learn(100, satisfice=False)
+
 	embed()

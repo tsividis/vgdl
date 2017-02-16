@@ -358,11 +358,17 @@ def defAliens():
     from examples.gridphysics.aliens import aliens_game, aliens_level
     return (aliens_game, aliens_level)
 
-def defInputGame(filename, randomize=False):
+def defInputGame(filename, randomize=False, index=None):
     game_file = importlib.import_module(filename)
+    levels = [k for k in game_file.__dict__.keys() if 'level' in k]
     if randomize:
-        levels = [k for k in game_file.__dict__.keys() if 'level' in k]
         level = random.choice(levels)
+        return (game_file.game, game_file.__dict__[level])
+    elif index>=0:
+        if index<len(levels):
+            level = levels[index]
+        else:
+            level = random.choice(levels)
         return (game_file.game, game_file.__dict__[level])
     else:
         return (game_file.game, game_file.level)

@@ -1416,9 +1416,12 @@ class Game(object):
 				
 				[self.DFSinduction(t, timesteps, maxNumTheories, override=override, verbose=verbose) for t in newTheories]
 
-	def buildGenericTheory(self, spriteSample):
+	def buildGenericTheory(self, spriteSample=True, vgdlSpriteParse=False):
 		T = Theory(self)
-		T.initializeSpriteSet(vgdlSpriteParse=False, spriteInductionResult=spriteSample)
+		if spriteSample:
+			T.initializeSpriteSet(vgdlSpriteParse=False, spriteInductionResult=spriteSample)
+		else:
+			T.initializeSpriteSet(vgdlSpriteParse = vgdlSpriteParse, spriteInductionResult=False)
 		
 		# Assign class names
 		avatar = [o for o in T.spriteSet if o.vgdlType==MovingAvatar][0]

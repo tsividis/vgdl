@@ -129,8 +129,7 @@ def playEpisode(rleCreateFunc, hypotheses=[], game_object=None, unknown_colors=F
 		from examples.gridphysics.simpleGame4 import level, game
 		playbackGame = game
 		playbackLevel = level
-		embed()
-		VGDLParser.playGame(playbackGame, playbackLevel, total_states_encountered)
+		VGDLParser.playGame(playbackGame, playbackLevel, total_states_encountered)#, persist_movie=True)
 
 	return hypotheses, g, won, unknown_colors, goalColor, finalEventList, total_states_encountered
 
@@ -148,6 +147,8 @@ if __name__ == "__main__":
 	unknown_colors = False
 	goalColor = None
 	game_object = None
+
+	embed()
 	# hypotheses, won, unknown_objects, goalColor, finalEventList, total_states_encountered = \
 	# playEpisode(rleCreateFunc=game_to_play, hypotheses=hypotheses, \
 	# 	unknown_objects=unknown_objects, goalColor=goalColor, finalEventList=finalEventList, \
@@ -164,4 +165,4 @@ if __name__ == "__main__":
 		print "episode ended. Win:", won
 		print "__________________________________________________"
 	print "Won", sum(tally), "out of ", len(tally), "episodes."
-	embed()
+	# embed()

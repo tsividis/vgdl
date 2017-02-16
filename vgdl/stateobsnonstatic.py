@@ -183,8 +183,6 @@ class StateObsHandlerNonStatic(object):
             alive_ostates = [s[1] for s in o_type_and_states if not s in grid_kill_list]
             sprite_sensor.append((state in alive_ostates))
 
-        # embed()
-
         return sprite_sensor
 
         # return [(state in ostates) for _, ostates in sorted(self._obstypes.items())[::-1]]
