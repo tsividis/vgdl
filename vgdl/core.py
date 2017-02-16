@@ -8,7 +8,7 @@ from random import choice
 from tools import Node, indentTreeParser
 from collections import defaultdict
 from tools import roundedPoints
-import os
+import os, shutil
 import datetime
 import uuid
 import subprocess
@@ -20,6 +20,7 @@ import sys
 import re
 from IPython import embed
 import time
+import os
 
 
 disableContinuousKeyPress = True
@@ -54,7 +55,7 @@ class VGDLParser(object):
     verbose = False
 
     @staticmethod
-    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, movie_dir = "./tmpl"):
+    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", padding=0):
         """ Parses the game and level map strings, and starts the game. """
         g = VGDLParser().parseGame(game_str)
         
@@ -63,11 +64,11 @@ class VGDLParser(object):
         if playback_states:
             g.playback_states = playback_states
         if(headless):
-            g.startGameExternalPlayer(headless, persist_movie, movie_dir )
+            g.startGameExternalPlayer(headless, persist_movie, movie_dir)
             #g.startGame(headless,persist_movie)
         else:
             if playback_states:
-                g.startPlaybackGame(headless, persist_movie)
+                g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding)
             else:
                 g.startGame(headless, persist_movie)
 
@@ -694,16 +695,20 @@ class BasicGame(object):
 
         return self.effectList
 
-    def startPlaybackGame(self, headless, persist_movie):
+    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0):
         """
         Main method to run game. 
         """
         # ----------- Initialization ----------
+
+
         self._initScreen(self.screensize,headless)
         pygame.display.flip()
         self.reset()
         clock = pygame.time.Clock()
         self.frame_rate = 5
+
+
 
         win = False
         i = 0
@@ -805,8 +810,11 @@ class BasicGame(object):
             #         pygame.display.flip()
             #     if self.keystate[K_1]:
             #         self._lastsaved = self.getFullState()
-            self.setFullState(self.playback_states[self.playback_index])
-
+            try:
+                self.setFullState(self.playback_states[self.playback_index])
+            except:
+                print "playback is failing"
+                embed()
 
             # Save the event and agent state
             try:
@@ -848,22 +856,42 @@ class BasicGame(object):
             allStates.append(self.getFullState())
 
             #if(headless):
-            if(persist_movie):
-                tmp_dir = "./temp/"
-                tmpl = '{tmp_dir}%09d-{name}-{g_id}.png'.format(i,tmp_dir = tmp_dir, name="VGDL-GAME", g_id=self.uiud)
-                pygame.image.save(self.screen, tmpl%i)
+            if(make_images):
+                tmp_dir = "images/tmp/"
+                # tmpl = '{tmp_dir}%09d-{name}-{g_id}.png'.format(i, tmp_dir = tmp_dir, name="VGDL-GAME", g_id=self.uiud)
+                img_index = len([d for d in os.listdir(tmp_dir) if d != '.DS_Store'])
+                tmpl = '{tmp_dir}%09d.png'.format(img_index, tmp_dir = tmp_dir)
+                if padding and (i==0 or i==len(self.playback_states)-1): ## add padding to first and last frame.
+                    for j in range(padding):
+                        pygame.image.save(self.screen, tmpl%(img_index+j))
+                else:
+                    pygame.image.save(self.screen, tmpl%img_index)
 
                 i+=1
+
             VGDLSprite.dirtyrects = []
             allStates.append(self.getFullState())
             # embed()
             self.playback_index += 1
 
-        if(persist_movie):
+        if(make_movie):
             print "Creating Movie"
-            self.video_file = "./videos/" +  str(self.uiud) + ".mp4"
-            subprocess.call(["ffmpeg","-y",  "-r", "30", "-b", "800", "-i", tmpl, self.video_file ])
-            [os.remove(f) for f in glob.glob(tmp_dir + "*" + str(self.uiud) + "*")]
+            # self.video_file = "videos/" +  str(self.uiud) + ".mp4"
+            if not os.path.exists(movie_dir):
+                print movie_dir, "didn't exist. making new dir"
+                os.makedirs(movie_dir)
+            round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store'])
+            video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
+            images_dir = "images/tmp/%09d.png"
+            com = "ffmpeg -i " +images_dir+ " -pix_fmt yuv420p -filter:v 'setpts=4.0*PTS' "+ video_dirname
+            command = "{}".format(com)
+            subprocess.call(command, shell=True)
+            # empty image directory
+            shutil.rmtree("images/tmp")
+            os.makedirs("images/tmp")
+            
+            # subprocess.call(["ffmpeg","-y",  "-r", "30", "-b", "800", "-i", tmpl, self.video_file ])
+            # [os.remove(f) for f in glob.glob(tmp_dir + "*" + str(self.uiud) + "*")]
 
         # Print entire history of effects
         terminationCondition = {'ended': True, 'win':win, 'time':self.time}
@@ -896,7 +924,7 @@ class BasicGame(object):
         return win, self.score
 
 
-    def startGame(self, headless, persist_movie):
+    def startGame(self, headless, persist_movie, make_images=False, make_movie=False):
         """
         Main method to run game. 
         """
@@ -1088,7 +1116,7 @@ class BasicGame(object):
                         self.win = False
                         print "Game lost. Score=%s" % self.score
                     allStates.append(self.getFullState())
-                    embed()
+                    # embed()
                     time.sleep(1)
                     pygame.quit()
                     sys.exit()
@@ -1159,7 +1187,6 @@ class BasicGame(object):
                 tmp_dir = "./temp/"
                 tmpl = '{tmp_dir}%09d-{name}-{g_id}.png'.format(i,tmp_dir = tmp_dir, name="VGDL-GAME", g_id=self.uiud)
                 pygame.image.save(self.screen, tmpl%i)
-
                 i+=1
             VGDLSprite.dirtyrects = []
             allStates.append(self.getFullState())
@@ -1208,6 +1235,8 @@ class BasicGame(object):
         return self.getAvatars()[0].declare_possible_actions()
 
     def startGameExternalPlayer(self, headless, persist_movie, movie_dir):
+        print "in startgameexternalplayer"
+        embed()
         self._initScreen(self.screensize,headless)
         pygame.display.flip()
         self.reset()
@@ -1427,4 +1456,19 @@ class Conditional(object):
         """ returns true if condition is met. default returns false"""
         return False
 
-
+def makeVideo(movie_dir):
+    import os
+    print "Creating Movie"
+    # self.video_file = "videos/" +  str(self.uiud) + ".mp4"
+    if not os.path.exists(movie_dir):
+        print movie_dir, "didn't exist. making new dir"
+        os.makedirs(movie_dir)
+    round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store'])
+    video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
+    images_dir = "images/tmp/%09d.png"
+    com = "ffmpeg -i " +images_dir+ " -pix_fmt yuv420p -filter:v 'setpts=4.0*PTS' "+ video_dirname
+    command = "{}".format(com)
+    subprocess.call(command, shell=True)
+    # empty image directory
+    shutil.rmtree("images/tmp")
+    os.makedirs("images/tmp")
