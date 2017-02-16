@@ -37,7 +37,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     # Recording events (in slightly redundant format state-action-nextstate)
     recordingEnabled = False
         
-    def __init__(self, gameDef, levelDef, observationType=OBSERVATION_LOCAL, visualize=False, actionset=BASEDIRS, **kwargs):
+    def __init__(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, actionset=BASEDIRS, **kwargs):
         game = _createVGDLGame( gameDef, levelDef )
         StateObsHandlerNonStatic.__init__(self, game, **kwargs)
         self._actionset = actionset
@@ -67,8 +67,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self._game.reset()
         self._game.all_objects = self._game.getObjects() # Save all objects, some which may be killed in game
         self.makeSymbolDict()
-
-        # embed()
 
 
     # Get definition of the observation data expected
@@ -360,9 +358,14 @@ def defAliens():
     from examples.gridphysics.aliens import aliens_game, aliens_level
     return (aliens_game, aliens_level)
 
-def defInputGame(filename):
+def defInputGame(filename, randomize=False):
     game_file = importlib.import_module(filename)
-    return (game_file.game, game_file.level)
+    if randomize:
+        levels = [k for k in game_file.__dict__.keys() if 'level' in k]
+        level = random.choice(levels)
+        return (game_file.game, game_file.__dict__[level])
+    else:
+        return (game_file.game, game_file.level)
 
 def _createVGDLGame( gameSpec, levelSpec ):
     import uuid
@@ -495,6 +498,12 @@ def createRLInputGame(filename, obsType=OBSERVATION_GLOBAL):
     return RLEnvironmentNonStatic(game_file.game, game_file.level, \
             observationType = obsType)
 
+
+def createRLInputGameFromStrings(game, level):
+    return RLEnvironmentNonStatic(game, level, \
+            observationType = OBSERVATION_GLOBAL)
+
+
 def testMaze(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
     rle = createRLMaze( obsType )
 
@@ -510,9 +519,6 @@ def testMaze(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
         else:
             # Re-create the game.
             rle = createRLMaze( obsType )
-
-        # print "in testMa"
-        embed()
         
         res = rle.step(0) #up
         if verify:
