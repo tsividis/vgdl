@@ -1,7 +1,7 @@
 
 from mcts_pseudoreward_heuristic import *
 from util import *
-from core import colorDict, VGDLParser
+from core import colorDict, VGDLParser, makeVideo
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, \
@@ -28,6 +28,7 @@ from rlenvironmentnonstatic import createRLInputGame
 class Agent:
 	def __init__(self, gameFilename, plannerType):
 		self.gameName = gameFilename[gameFilename.rfind('.')+1:] ## store just the game name
+		self.gameFilename = gameFilename
 		self.hypotheses = []
 		self.symbolDict = None
 		self.knownColors = []
@@ -37,12 +38,20 @@ class Agent:
 		self.initializeEnvironment(gameFilename)
 	
 	def initializeEnvironment(self, gameFilename):
-		self.gameString, self.levelString = defInputGame(gameFilename)
-		self.rleCreateFunc = lambda: createRLInputGame(gameFilename)
+		self.gameString, self.levelString = defInputGame(gameFilename, randomize=True)
+		# self.rleCreateFunc = lambda: createRLInputGame(gameFilename)
+		# rle = self.rleCreateFunc()
+		self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
 		rle = self.rleCreateFunc()
+		# rle = RLEnvironmentNonStatic(self.gameString, self.levelString)
 		avatarColor = colorDict[str(rle._game.sprite_groups['avatar'][0].color)]
 		self.knownColors.append(avatarColor)
 		return
+
+	def pickNewLevel(self):
+		self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=True)
+		self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
+		rle = self.rleCreateFunc()
 
 	def initializeHypotheses(self, rle, allObjects):
 
@@ -120,15 +129,18 @@ class Agent:
 
 		gameObject = None
 		for i in range(numEpisodes):
+			self.pickNewLevel()
 			gameObject, won, statesEncountered = self.playEpisode(gameObject, finalEventList)
-			VGDLParser.playGame(self.gameString, self.levelString, statesEncountered, persist_movie=True, movie_dir="videos/"+self.gameName)
+			VGDLParser.playGame(self.gameString, self.levelString, statesEncountered, persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameName, padding=10)
 			totalStatesEncountered.append(statesEncountered)
 			tally.append(won)
 			print "Episode ended. Won:", won
-		print "Won", sum(tally), "out of ", len(tally), "episodes."
 		
-
-
+		print "Won", sum(tally), "out of ", len(tally), "episodes."
+		makeVideo(movie_dir="videos/"+self.gameName)
+		# empty image directory
+		# shutil.rmtree("images/tmp")
+		# os.makedirs("images/tmp")
 		return
 
 
@@ -141,6 +153,7 @@ class Agent:
 		unknownColors = [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in rle._game.sprite_groups.keys()]
 		unknownColors = [c for c in unknownColors if c not in self.knownColors]
 
+		print "unknown colors:", unknownColors
 		print "Known colors:", self.knownColors
 
 		ended, won = rle._isDone()
@@ -172,6 +185,8 @@ class Agent:
 			totalStatesEncountered.extend(statesEncountered)
 			ended, won = rle._isDone()
 
+			print "known colors", self.knownColors
+			print "candidate new colors:", candidateNewColors
 
 			if won:
 				self.goalColor = finalEventList[-1]['effectList'][0][1]
@@ -180,14 +195,18 @@ class Agent:
 			for col in candidateNewColors:
 				if col not in self.knownColors:
 					self.knownColors.append(col)
-
+					print "added", col, "to knownColors"
+			print "updated known colors", self.knownColors
+			unknownColors = [c for c in unknownColors if c not in self.knownColors]
+			print "updated unknownCollors", unknownColors
 		return gameObject, won, totalStatesEncountered
 
 if __name__ == "__main__":
+	filename = "examples.gridphysics.simpleGame_many_poisons"
 	
-	filename = "examples.gridphysics.simpleGame4_huge"
+	# filename = "examples.gridphysics.simpleGame_many_poisons"
+	# filename = "examples.gridphysics.pushtest"
 	plannerType = "QLearning"
 	agent = Agent(filename, plannerType)
 	agent.playMultipleEpisodes(10)
-
 
