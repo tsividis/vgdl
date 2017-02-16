@@ -728,7 +728,7 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 				subgoals = planner.getSubgoals(subgoal_path_threshold=3)
 			elif plannerType=='QLearning':
 				planner = QLearner(vrle, gameString=game, levelString=level)
-				subgoals = planner.getSubgoals(subgoal_path_threshold=3)
+				subgoals = planner.getSubgoals(subgoal_path_threshold=10)
 			print "subgoals", subgoals
 			total_steps = 0
 			for subgoal in subgoals:
@@ -769,8 +769,16 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 								event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, 'gameState': rle._game.getFullStateColorized()}
 
 								## Check if you reached object goal
-								if colorDict[str(object_goal.color)] in [item for sublist in effects for item in sublist]:
-									goal_achieved = True
+								# if colorDict[str(object_goal.color)] in [item for sublist in effects for item in sublist]:
+								# 	print "goal achieved?"
+								# 	embed()
+								# 	print "goal achieved"
+								# 	goal_achieved = True
+								for e in effects:
+									if 'DARKBLUE' in e and colorDict[str(object_goal.color)] in e:
+										print "goal achieved"
+										# embed()
+										goal_achieved = True
 
 								## Sampling from the spriteDisribution makes sense, as it's
 								## independent of what we've learned about the interactionSet.
@@ -813,11 +821,14 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 										candidate_new_colors.extend(cols)
 
 									## among the many things to fix:
+
 									for e in finalEventList[-1]['effectList']:
 										if e[1] == 'DARKBLUE':
 											candidate_new_colors.append(e[2])
+											print "appending", e[2], "to candidate_new_colors"
 										if e[2] == 'DARKBLUE':
 											candidate_new_colors.append(e[1])
+											print "appending", e[1], "to candidate_new_colors"
 
 									candidate_new_colors = list(set(candidate_new_colors))
 									# print "candidate new colors", candidate_new_colors
@@ -908,7 +919,7 @@ def getToWaypoint(rle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, 
 		actions = mcts.getBestActionsForPlayout((1,0,0), debug=False)
 	elif plannerType=='QLearning':
 		planner = QLearner(Vrle, gameString=theoryString, levelString=levelString)
-		steps = planner.learn(20, satisfice=False)
+		steps = planner.learn(500, satisfice=True)
 		actions = planner.getBestActionsForPlayout()
 	print "Found plan to subgoal. Actions", actions
 	if act:
