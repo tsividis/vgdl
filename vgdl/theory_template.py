@@ -1760,6 +1760,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 
 	immovable_predicates = ['stepBack', 'undoAll']
+	kill_predicates = ['killSprite']
 	immovables = []
 	# second phase: the interaction rules
 	theoryString += "\tInteractionSet\n"
@@ -1784,16 +1785,21 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 						embed()
 
 					if s1.color==newGoalColor:
-						theoryString += "\t\t%s %s > %s%s\n"%('goal', c2, interactionRule.interaction, argsString)
+						if not 'avatar' in str(s2.className): #only add actual goal object rule if it's not interacting with the avatar.
+							theoryString += "\t\t%s %s > %s%s\n"%('goal', c2, interactionRule.interaction, argsString)
 					elif s2.color==newGoalColor:
-						theoryString += "\t\t%s %s > %s%s\n"%(c1, 'goal', interactionRule.interaction, argsString)		
+						if not 'avatar' in str(s1.className):#only add actual goal object rule if it's not interacting with the avatar.
+							theoryString += "\t\t%s %s > %s%s\n"%(c1, 'goal', interactionRule.interaction, argsString)		
 					else:
 						theoryString += "\t\t%s %s > %s%s\n"%(c1, c2, interactionRule.interaction, argsString)
+					
 					if 'avatar' in str(s1.vgdlType).lower():
 						if interactionRule.interaction in immovable_predicates:
 							# print "must add immovable"
 							# embed()
 							immovables.append(s2.className)
+						if interactionRule.interaction in kill_predicates:
+							immovables.append(s2.className) ##killSprite is not symmetrical; you to append things that are (avatar obj killSprite)
 					elif 'avatar' in str(s2.vgdlType).lower():
 						if interactionRule.interaction in immovable_predicates:
 							# print "must add immovable"
