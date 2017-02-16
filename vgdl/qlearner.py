@@ -43,11 +43,11 @@ class QLearner:
 		self.memory = memory ## provide dicts of Q-values from previous runs. Use some function to smoothe
 		self.maxPseudoReward = 1
 		self.pseudoRewardDecay = .8
-		self.partitionWeights = [10,1]
+		self.partitionWeights = [20,1]
 		goalLoc = self.findObjectInRLE(rle, 'goal')
 		self.rewardDict = {goalLoc:self.maxPseudoReward}
 		self.scanDomainForMovementOptions()
-		self.getSubgoals(3)
+		# self.getSubgoals(3)
 		self.propagateRewards(goalLoc)
 
 	def scanDomainForMovementOptions(self):
@@ -328,7 +328,7 @@ class QLearner:
 						return i
 		return i
 
-	def getBestActionsForPlayout(self):
+	def getBestActionsForPlayout(self, showActions = False):
 		rle = copy.deepcopy(self.rle)
 		terminal = rle._isDone()[0]
 		s = rle._getSensors().tostring()
@@ -341,7 +341,8 @@ class QLearner:
 				return actions
 			actions.append(a)
 			res = rle.step(a)
-			# print rle.show()
+			if showActions:
+				print rle.show()
 			terminal = rle._isDone()[0]
 			s = res['observation'].tostring()
 		return actions
@@ -357,12 +358,12 @@ class QLearner:
 
 if __name__ == "__main__":
 	
-	gameFilename = "examples.gridphysics.waypointtheory"
-	gameString, levelString = defInputGame(gameFilename)
+	gameFilename = "examples.gridphysics.simpleGame_many_poisons"
+	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
-	rle.immovables = ['c4']
 	print "Initializing learner"
-	ql = QLearner(rle, gameString, levelString, alpha=1, epsilon=.1, gamma=.9, episodes=1000)
-	ql.learn(500, satisfice=True)
+	ql = QLearner(rle, gameString, levelString, alpha=1, epsilon=.3, gamma=.9, episodes=1000)
+	# embed()
+	ql.learn(1000, satisfice=True)
 	embed()
