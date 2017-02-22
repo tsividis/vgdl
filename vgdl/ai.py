@@ -1,6 +1,7 @@
 
 import math
 import core
+from IPython import embed
 #from tools import logToFile
 class AStarNode(object):
 
@@ -148,6 +149,10 @@ class AStarWorld(object):
 			pacman = self.game.getSprites('pacman')[0]
 		elif 'avatar' in self.game.sprite_groups:
 			pacman = self.game.getSprites('avatar')[0]
+		elif 'hungry' in self.game.sprite_groups:
+			pacman = self.game.getSprites('hungry')[0]
+		elif 'powered' in self.game.sprite_groups:
+			pacman = self.game.getSprites('powered')[0]
 		
 		goalX, goalY = self.get_sprite_tile_position(pacman)
 		goalIndex = self.get_index(goalX, goalY)

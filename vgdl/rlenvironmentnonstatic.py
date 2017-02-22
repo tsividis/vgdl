@@ -95,7 +95,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self.symbolDict = inverseMapping
         return
 
-    def show(self):
+    def show(self, showArrays=False):
         """
         symbolDict = a dict mapping each sprite name to its symbol.
         If there's no sprite overlap, then returns a string. Else returns numpy array.
@@ -121,7 +121,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             if spriteOverlap:
                 break
 
-        if spriteOverlap:
+        if showArrays and spriteOverlap:
             print "There were overlapping sprites while doing rle.show! Returning an array representation instead."
             return np.reshape(self._getSensors(), self.outdim)
         else:

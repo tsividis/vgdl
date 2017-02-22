@@ -331,7 +331,6 @@ class Basic_MCTS:
 		# 	distance = 0
 		else:
 			state = nodes[-1].state
-			# deltaX, deltaY = self.getManhattanDistanceComponents(state)
 			# distance = abs(deltaX)+abs(deltaY)
 		return actions, nodes#, distance
 

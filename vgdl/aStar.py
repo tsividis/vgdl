@@ -339,8 +339,8 @@ class AStar:
 if __name__ == "__main__":
 	
 	# gameFilename = "examples.gridphysics.simpleGame4_small"
-	# gameFilename = "examples.gridphysics.simpleGame_many_poisons"
-	gameFilename = "examples.gridphysics.simpleGame_many_poisons_huge"
+	gameFilename = "examples.gridphysics.simpleGame_many_poisons"
+	# gameFilename = "examples.gridphysics.simpleGame_many_poisons_huge"
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)

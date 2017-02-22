@@ -1,11 +1,10 @@
-
-from mcts_pseudoreward_heuristic import *
 from util import *
-from core import colorDict, VGDLParser, makeVideo
+from core import colorDict, VGDLParser, makeVideo, sys
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, \
 MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict
+from metaplanner import *
 import importlib
 from rlenvironmentnonstatic import createRLInputGame
 
@@ -93,20 +92,20 @@ class Agent:
 		if self.goalColor:
 			key = [k for k in rle._game.sprite_groups.keys() if self.getSpriteNameColor(k, rle) == self.goalColor][0]
 			objectGoal = rle._game.sprite_groups[key][0]
-			actualGoal = objectGoal
-			objectGoalLocation = rle._rect2posFlipCoords(actualGoal.rect)
+			# actualGoal = objectGoal
+			# objectGoalLocation = rle._rect2posFlipCoords(objectGoal.rect)
 			print "goal is known:", self.goalColor
 			print ""
 		else:
 			try:
 				objectGoal = selectObjectGoal(rle, unknownColors, method="random_then_nearest")
-				objectGoalLocation = rle._rect2posFlipCoords(objectGoal.rect)
-				print "object goal is", self.getSpriteColor(objectGoal), "at location", objectGoalLocation
+				# objectGoalLocation = rle._rect2posFlipCoords(objectGoal.rect)
 				print ""
 			except:
 				print "no unknown objects and no goal? Embedding so you can debug."
 				embed()
-
+		objectGoalLocation = rle._rect2posFlipCoords(objectGoal.rect)
+		print "object goal is", self.getSpriteColor(objectGoal), "at location", objectGoalLocation
 		return objectGoal, objectGoalLocation
 
 	def initializeVrle(self, hypothesis, objectGoalLocation, rle):
@@ -213,5 +212,5 @@ if __name__ == "__main__":
 	plannerType = "QLearning"
 	agent = Agent(filename, plannerType)
 	# embed()
-	agent.playMultipleEpisodes(10)
+	agent.playMultipleEpisodes(2)
 

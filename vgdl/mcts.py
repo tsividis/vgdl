@@ -9,14 +9,18 @@ import argparse
 import random
 from IPython import embed
 import math
-from Queue import Queue
 from threading import Thread
 from collections import defaultdict, deque
 import time
 import copy
+from threading import Lock
+from Queue import Queue
+import multiprocessing
+from qlearner import *
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
-from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectSubgoal
-from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt
+from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
+from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, \
+generateSymbolDict, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryFromGame
 from rlenvironmentnonstatic import createRLInputGame
 
 #A hack to display things to the terminal conveniently.
@@ -36,9 +40,10 @@ Calling rle.step(a). Returns a dictionary with:
 Getting sprites:
 mcts.rle._game.sprite_groups
 """
-ACTIONS = {(0,0):'none',(0,-1):'up', (0,1):'down', (1,0):'right', (-1,0):'left', None:'none'}
+ACTIONS = {(0,0):'stay',(0,-1):'up', (0,1):'down', (1,0):'right', (-1,0):'left', None:'none'}
 class Basic_MCTS:
-	def __init__(self, existing_rle=False, rleCreateFunc=False, obsType = OBSERVATION_GLOBAL, decay_factor=.8, num_workers=1):
+	def __init__(self, existing_rle=False, game = None, level = None, partitionWeights=[1,0,1],\
+		         rleCreateFunc=False, obsType = OBSERVATION_GLOBAL, decay_factor=.8, num_workers=1):
 		if not existing_rle and not rleCreateFunc:
 			print "You must pass either an existing rle or an rleCreateFunc"
 			return
@@ -49,6 +54,8 @@ class Basic_MCTS:
 		treePolicy = the policy used to select the descendant node to expand 
 		             in the selection step
 		defaultPolicy = the policy used in the simulation step.
+		subgoal_path_threshold = the max size possible for a path to a subgoal. If
+					this has value None, then don't use subgoals.
 		"""
 		## A few different ways to get observations of the game-state.
 		## Observations of everything that's happening on the screen: OBSERVATION_GLOBAL
@@ -66,7 +73,7 @@ class Basic_MCTS:
 
 		# always compute using a separate rle. This is only meant to be used for manhattan distance.
 		self._obstypes = rle._obstypes
-		self.outdim = rle.outdim
+		self.outdim = rle.outdim ## ensures all self.outdim and np.reshape() calls using it are (x,y)
 		## returns a representation of the current state.
 		## numpy array. Each location in the array is a different grid cell.
 		## Each sprite is a unique number. Empty:0, boxes can be 1, agent: 4
@@ -83,13 +90,17 @@ class Basic_MCTS:
 		self.num_workers = num_workers
 		self.neighborDict = {}
 		self.rewardQueue = deque()
+		self.num_solutions_found = 0
 
+		avatar_code = 1
+		avatar_loc = np.where(np.reshape(self.rle._getSensors(), self.outdim)==avatar_code)
+		avatar_loc = avatar_loc[0][0], avatar_loc[1][0] ## (y,x)
 		## find location of goal, add to rewardDict.
 		## also add neighbors of goal rewardQueue.
 		##TODO: update this if goal moves!!
 		goal_code = 2**(1+sorted(self._obstypes.keys())[::-1].index("goal"))
 		goal_loc = np.where(np.reshape(self.rle._getSensors(), self.outdim)==goal_code)
-		goal_loc = goal_loc[0][0], goal_loc[1][0]
+		goal_loc = goal_loc[0][0], goal_loc[1][0] #(y,x)
 
 		if 'avatar' in self._obstypes.keys():
 			inverted_avatar_loc=self._obstypes['avatar'][0]
@@ -98,40 +109,68 @@ class Basic_MCTS:
 		else:
 			self.avatar_code = 1
 
-		self.maxPseudoReward = 100
-		self.pseudoRewardDecay = .6
+		if game and level:
+			# self.pseudoRewardDecay = 0.8
+			self.maxPseudoReward = 10 #1k
+			self.pseudoRewardDecay = .8
+			# self.maxPseudoReward = 1/((1-self.pseudoRewardDecay)*(self.pseudoRewardDecay**len(level)))
+		else:
+			self.maxPseudoReward = 100 #10k
+			self.pseudoRewardDecay = .6
+
+		self.partitionWeights = partitionWeights ## Partition for bestChild: weights for (qValue, exploration, heuristic)
+		self.partitionWeights = [el/float(sum(self.partitionWeights)) for el in self.partitionWeights]
+		self.printheuristicweight = self.partitionWeights[2]
+		self.printexplorationweight = self.partitionWeights[1]
+		self.rewardScaling = 1000
 		self.rewardDict = {goal_loc:self.maxPseudoReward}
 		self.processed = [goal_loc]
+		self.actionDict = None ## gets initialized in scanDomainForMovementOptions
+		self.neighborDict = None ## gets initialized in scanDomainForMovementOptions
 
 		self.scanDomainForMovementOptions()
 		self.propagateRewards(goal_loc)
 
-		# print "in basic_mcts init"
-		# embed()
-		# self.actionDict = {}
-		# ##Populate dictionary for use in action-sampling in defaultPolicy. Not sampling (0,0).
-		# for i in range(len(rle._actionset)):
-		# 	self.actionDict[i] = rle._actionset[i]
 
+	def getSubgoals(self, subgoal_path_threshold):
 
+		avatar_code = 1
+		avatar_loc = np.where(np.reshape(self.rle._getSensors(), self.outdim)==avatar_code)
+		avatar_loc = avatar_loc[0][0], avatar_loc[1][0]
+		## find location of goal, add to rewardDict.
+		## also add neighbors of goal rewardQueue.
+		##TODO: update this if goal moves!!
+		goal_code = 2**(1+sorted(self._obstypes.keys())[::-1].index("goal"))
+		goal_loc = np.where(np.reshape(self.rle._getSensors(), self.outdim)==goal_code)
+		goal_loc = goal_loc[0][0], goal_loc[1][0]
+		self.subgoals = []
+		path = self.getPathToGoal(avatar_loc, goal_loc)
+		if subgoal_path_threshold > len(path):
+			# don't use any subgoals in this case.
+			return [goal_loc]
+		else:
+			subgoal_index = -1
+			num_subgoals = int(math.ceil(float(len(path))/subgoal_path_threshold))
+			for i in range(num_subgoals):
+				if i < len(path) % num_subgoals:
+					subgoal_index += (len(path)/num_subgoals + 1)
+				else:
+					subgoal_index += len(path)/num_subgoals
 
-
-	# def scaleRewards(self):
-	# 	## Maximum possible distance is having to navigate the entire grid. Scale with worst-case assumption
-	# 	longest_path = self.rle._getSensors()[0]
+				self.subgoals.append(path[subgoal_index])
+		return self.subgoals
 
 	def scanDomainForMovementOptions(self):
 		##TODO: Take a state, so that you can re-perform this scan as needed and take changes into account.
 		##TODO: query VGDL description for penetrable/nonpenetrable objects, add to list.
-		# print "in scanDomainForMovementOptions"
 		immovable_codes = []
 		# immovables = ['wall']
 		try:
 			immovables = self.rle.immovables
-			# immovables = ['wall']
-			print "immovables", immovables
+			# immovables = ['wall', 'poison']
+			# print "immovables", immovables
 		except:
-			immovables = ['wall']
+			immovables = ['wall', 'poison']
 			print "Using defaults as immovables", immovables
 
 		for i in immovables:
@@ -143,14 +182,14 @@ class Basic_MCTS:
 		action_superset = [(0,0),(-1,0), (1,0), (0,-1), (0,1)]
 		
 		board = np.reshape(self.rle._getSensors(), self.outdim)
-		x,y=np.shape(board)
-		for i in range(x):
-			for j in range(y):
+		y,x=np.shape(board)
+		for i in range(y):
+			for j in range(x):
 				if board[i,j] not in immovable_codes:
 					for action in action_superset:
-						nextPos = (i+action[0], j+action[1])
+						nextPos = (i+action[1], j+action[0])
 						## Don't look at positions off the board.
-						if 0<=nextPos[0]<x and 0<=nextPos[1]<y:
+						if 0<=nextPos[0]<y and 0<=nextPos[1]<x:
 							if board[nextPos] not in immovable_codes:
 								actionDict[(i,j)].append(action)
 								neighborDict[(i,j)].append(nextPos)
@@ -174,43 +213,83 @@ class Basic_MCTS:
 				for n in self.neighborDict[loc]:
 					if n not in self.processed:
 						self.rewardQueue.append(n)
-		return 
+		return
 
-	def startTrainingPhase(self, numTrainingCycles, step_horizon, VRLE):
+	def getPathToGoal(self, avatar_loc, goal_loc):
+		q = deque()
+		# q stores tuples in which the first element is a node and the next
+		# is the shortest path to that node
+		q.append((avatar_loc, []))
+		node = avatar_loc
+		path = []
+		seen = {avatar_loc}
+		while q:
+			node, path = q.popleft()
+			seen.add(node)
+			if node == goal_loc:
+				break
+
+			for neighbor in self.neighborDict[node]:
+				if not neighbor in seen:
+					q.append((neighbor, path + [neighbor]))
+
+		if node != goal_loc:
+			raise Exception("Didn't find a path to the goal location.")
+
+		return path
+
+
+
+	def startTrainingPhase(self, numTrainingCycles, step_horizon, VRLE, mark_solution=False, solution_limit=20):
 
 		#track total iterations spent in treePolicy
 		tree_policy_iters, default_policy_iters = 0, 0
+		rewards = []
+		defaultPolicySolveStep = None
+		# defaultPolicySolveStep stores the first iteration in which default policy solved the game
 		for i in range(numTrainingCycles):
 			Vrle = copy.deepcopy(VRLE)
 
-			# if i%10==0:
-			# 	print "Training cycle: %i"%i
+			if i%100==0 and len(rewards)>0:
+				print "Training cycle: %i"%i
+				print "avg. rewards for last group of 100", np.mean(rewards[-100:])
 
-			reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon)
+			if defaultPolicySolveStep:
+				reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon, \
+					                               solveSteps = i-defaultPolicySolveStep)
+			else:
+				reward, v, iters = self.treePolicy(self.root, Vrle, step_horizon)
+
+
 			tree_policy_iters += iters
+
 			if not v.terminal:
 				reward, dPiters = self.defaultPolicy(v, Vrle, step_horizon, domain_knowledge=True)
+				if reward > 0 and not defaultPolicySolveStep:
+					defaultPolicySolveStep = i
 
 				loc = np.where(np.reshape(v.state, self.outdim)==self.avatar_code)
 				
-				if len(loc[0])>0:
-					loc = loc[0][0], loc[1][0] 
-					if loc in self.rewardDict.keys():
-						reward = reward + self.rewardDict[loc]
+				# if len(loc[0])>0:
+				# 	loc = loc[0][0], loc[1][0] 
+				# 	if loc in self.rewardDict.keys():
+				# 		reward = reward + self.rewardDict[loc]
 				
 				default_policy_iters += dPiters
-			
+			elif v.terminal and mark_solution and reward==self.rewardScaling:
+				self.num_solutions_found += 1
+				if self.num_solutions_found > solution_limit:
+					return self, i
+			rewards.append(reward)
 			self.backup(v, reward)
-		return self
 
-	def getBestActionsForPlayout(self):
+		return self, i
+
+	def getBestActionsForPlayout(self, partitionWeights, debug=False):
 		v = self.root
 		actions = []
-		while v and not v.terminal:
-			# a, v = self.bestChild(v,0)
-			# print "in getbestactions"
-			# embed()
-			a,v = self.maxChild(v)
+		while v and not v.terminal and len(v.children.keys())>0:
+			a, v = self.bestChild(v,partitionWeights, debug=debug)
 			actions.append(a)
 		return actions
 
@@ -230,15 +309,14 @@ class Basic_MCTS:
 		v = self.root
 		if output:
 			print "current state"
-			# rle.show()
 			print np.reshape(v.state, rle.outdim)
 		actions, nodes = [], []
 		while v and not v.terminal and cntr<numActions:
-			# print v.children.iteritems()
 			if output:
 				print "options"
 				print [(ACTIONS[k],c.qVal) for k,c in v.children.iteritems()]
-			a, v = self.bestChild(v,0)
+			a, v = self.bestChild(v,(1,0,0))
+
 			actions.append(a)
 			nodes.append(v)
 			if output:
@@ -246,7 +324,6 @@ class Basic_MCTS:
 					print "selected"
 					print ACTIONS[a]
 					print "resulted in"
-					# Can't use rle.show() here, as it's doing a replay, rather than using the actual RLE.
 					print np.reshape(v.state, rle.outdim)
 					print ""
 			cntr+=1
@@ -254,40 +331,55 @@ class Basic_MCTS:
 		# 	distance = 0
 		else:
 			state = nodes[-1].state
-			# deltaX, deltaY = self.getManhattanDistanceComponents(state)
 			# distance = abs(deltaX)+abs(deltaY)
 		return actions, nodes#, distance
 
 
-	def treePolicy(self, v, rle, step_horizon):
+	def treePolicy(self, v, rle, step_horizon, solveSteps = None):
 		count = 0
 		iters = 0
+		c = None # child for expansion - debug
+		# print rle.show()
+		reward = 0
 		while not v.terminal and iters < step_horizon:
 			iters += 1
 			count += 1
 			if not v.expanded:
 				reward, c = self.expand(v, rle, domain_knowledge=False)
+				# print "after expanding"
+				# print rle.show()
 				return reward, c, iters
 
 			else:
-				Cp = 0.70710 # suggested exploration weight
-				a, v = self.bestChild(v,Cp) 
+				# Cp = 1.
+				# Cp = 0.70710 # suggested exploration weight
+				if solveSteps:
+					a, v = self.bestChild(v,self.partitionWeights, solveSteps = solveSteps)
+				else:
+					a, v = self.bestChild(v,self.partitionWeights)
+
+				# print "before bestChild action:"
+				# print rle.show()
+
 				res = rle.step(a) ## TODO: you're getting the bestChild and taking bestAction, but in a stochastic game you will end up in
 									## a different state despite having taken the same action. Is this what you want?
 				terminal = rle._isDone()[0]
+
+				if terminal != v.terminal or not np.array_equal(v.state, rle._getSensors()):
+					print "inconsistency in node and rle"
+					embed()
 				# terminal = (not res['pcontinue']) or (rle._avatar is None)
 				if terminal:
 					reward = res['reward']
 					if reward==1:
-						reward = self.maxPseudoReward #
-						# print "reached goal in simulation. Reward", reward
-						# embed()
-					# print "treePolicy", time.time()-t1
+						reward = self.rewardScaling
+
 					return reward, v, iters
 
+		return reward, v, iters
 
 	def expand(self, v, rle, domain_knowledge=False):
-		expan_action = None
+		expand_action = None
 		child = None
 		reward = 0
 
@@ -311,7 +403,7 @@ class Basic_MCTS:
 				if terminal:
 					reward = res['reward']
 					if reward==1:
-						reward = self.maxPseudoReward
+						reward = self.rewardScaling
 
 				child = MCTS_node(self, new_state, terminal, self.actions, parent = v)
 
@@ -320,55 +412,161 @@ class Basic_MCTS:
 				else:
 					v.createChild(a, child)
 				break
-
 		return reward, child
 
 	def maxChild(self, v):
-		tmp = np.where(np.reshape(v.state, self.rle.outdim)==1)
+		tmp = np.where(np.reshape(v.state, self.outdim)==1)
 		avatar_loc = tmp[0][0], tmp[1][0]
 		qVals = [v.children[a].qVal for a in v.children.keys()]
 		if len(qVals)>0 and avatar_loc in self.neighborDict.keys() and len(qVals)>=len(self.neighborDict[avatar_loc])-1: #  -1, since (0,0) is not an action.
 				maxVal = max(qVals)
 				choices = [(a,c) for (a,c) in v.children.items() if c.qVal==maxVal]
-				# for (a,c) in choices:
-				# 	print a, c.qVal
-				# 	print np.reshape(c.state, self.rle.outdim)
-				# printchoices = [(a,c.qVal) for (a,c) in v.children.items() if c.qVal==maxVal]
-				# print printchoices
+				for (a,c) in v.children.items():
+					print a, c.qVal
+				print ""
 				return random.choice(choices)
 		else:
 			return (None, None)
 
-	def bestChild(self, v, Cp):
-		def transform(x):
-			coefficient = 0.
-			slowdown_factor = 1./3
-			return coefficient/(1+math.exp(-slowdown_factor * x)) # sigmoid
+	def bestChild(self, v, partitionWeights, solveSteps = None, debug=False):
+		"""
+		solveSteps = the number of steps that have passed since default policy solved the game
+		"""
+		
+		def transform(loc):
+			slowdown_factor = 1 # 1./3
+			if loc in self.rewardDict:
+				distanceFunc = self.rewardDict[loc]
+				return 1/(1+math.exp(-slowdown_factor * distanceFunc)) # sigmoid
+			else:
+				return 0.
+			# try:
+			# 	distanceFunc = self.rewardDict[loc]
+			# except:
+			# 	print loc, "not in self.rewardDict"
+			# 	embed()
 
 		maxFuncVal = -float('inf')
 		bestChild = None
 		bestAction = None
+		sumQVal = 0
+		sumVisitCount = 0
+		sumPseudoReward = 0
+		heuristic_coefficient = partitionWeights[2]
+		exploration_coefficient = partitionWeights[1]
+		heuristic_decay_factor = 0.999
+		exploration_decay_factor = 0.999
+		if solveSteps:
+			# print solveSteps
+			heuristic_coefficient *= (heuristic_decay_factor**solveSteps)
+			exploration_coefficient *= (exploration_decay_factor**solveSteps)
+			self.printheuristicweight = heuristic_coefficient
+			self.printexplorationweight = exploration_coefficient
+			# print "heuristic coefficient is now", heuristic_coefficient
 
+		for a,c in v.children.items():
+			if v.equals(c):
+				continue
+			elif c.visitCount == 0:
+				continue
+			else:
+				if self.avatar_code not in [l%2 for l in c.state]: ##we're in a terminal losing state
+																	## Don't give pseudoreward
+					if not c.terminal:
+						print "terminal state but avatar not in c.state"
+						embed()
+
+					# vLoc = np.where(np.reshape(v.state, self.outdim)%2==self.avatar_code)
+					# if len(vLoc[0])>0:
+					# 		vLoc = vLoc[0][0], vLoc[1][0] 
+
+					# cLoc = (vLoc[0] + a[1], vLoc[1] + a[0])
+
+					# if cLoc in self.rewardDict:
+					# 	sumQVal += abs(float(c.qVal)/c.visitCount)
+					# 	sumVisitCount += abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
+					# 	sumPseudoReward += abs(transform(cLoc))/c.visitCount
+					# else:
+					# 	continue
+
+					sumQVal += abs(float(c.qVal)/c.visitCount)
+					sumVisitCount += abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
+					sumPseudoReward += 0. #abs(transform(cLoc))/c.visitCount
+
+
+				else:
+					loc = np.where(np.reshape(c.state, self.outdim)%2==self.avatar_code)
+					if len(loc[0])>0:
+						loc = loc[0][0], loc[1][0] 
+					try:
+						sumQVal += abs(float(c.qVal)/c.visitCount)
+						sumVisitCount += abs(math.sqrt(2*math.log(v.visitCount)/c.visitCount))
+						sumPseudoReward += abs(transform(loc))/c.visitCount
+					except TypeError:
+						print "loc is weird type"
+						embed()
+
+
+
+		# print ""
+		if debug:
+			print np.reshape(v.state, self.outdim)
 		for a,c in v.children.items():
 			if v.equals(c):
 				funcVal = -float('inf')
 			elif c.visitCount == 0:
 				funcVal = float('inf')
 			else:
-				if c.terminal:
-					# deltaY, deltaX = self.getManhattanDistanceComponents(v.state)
-					# manhattanDistance = abs(deltaX + a[0]) + abs(deltaY + a[1])
-					# if manhattanDistance:
-						# manhattanDistanceTransform = transform(manhattanDistance)
-						# funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount)# + Cp*float(manhattanDistanceTransform)/c.visitCount
-					
-					## if you uncomment the above, remove the below line.
-					funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount)# + Cp*float(manhattanDistanceTransform)/c.visitCount
+				if self.avatar_code not in [l%2 for l in c.state]: ##we're in a terminal losing state
+																	## Don't give pseudoreward
+					# vLoc = np.where(np.reshape(v.state, self.outdim)%2==self.avatar_code)
+					# if len(vLoc[0])>0:
+							# vLoc = vLoc[0][0], vLoc[1][0] 
+
+					# cLoc = (vLoc[0] + a[1], vLoc[1] + a[0])
+					# if cLoc in self.rewardDict:
+					qValFunction = 0
+					if sumQVal == 0:
+						qValFunction = 0
+					else:
+						qValFunction = float(c.qVal)/c.visitCount/sumQVal
+
+					funcVal = partitionWeights[0]*qValFunction \
+					        + exploration_coefficient*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount \
+							+ 0.
+
+
 					# else:
-						# funcVal = float('inf')
+					# 	funcVal = -float('inf')
+
+					# qValFunction = 0
+					# if sumQVal == 0:
+					# 	qValFunction = 0
+					# else:
+					# 	qValFunction = float(c.qVal)/c.visitCount/sumQVal
+
+					# funcVal = partitionWeights[0]*qValFunction \
+					#         + exploration_coefficient*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount \
+					# 		+ heuristic_coefficient* (transform(cLoc)/c.visitCount)/ sumPseudoReward
+
+
 				else:
-					# manhattanDistanceTransform = transform(self.getManhattanDistance(c.state))
-					funcVal = float(c.qVal)/c.visitCount + Cp * math.sqrt(2*math.log(v.visitCount)/c.visitCount)# + Cp*float(manhattanDistanceTransform)/c.visitCount
+					loc = np.where(np.reshape(c.state, self.outdim)%2==self.avatar_code)
+					if len(loc[0])>0:
+							loc = loc[0][0], loc[1][0] 
+
+					qValFunction = 0
+					if sumQVal == 0:
+						qValFunction = 0
+					else:
+						qValFunction = (float(c.qVal)/c.visitCount)/sumQVal
+
+
+					funcVal = partitionWeights[0]* qValFunction \
+					        + exploration_coefficient*math.sqrt(2*math.log(v.visitCount)/c.visitCount)/sumVisitCount \
+					        + heuristic_coefficient*(transform(loc)/c.visitCount)/sumPseudoReward	
+				if debug:
+					print a, funcVal
 
 			if funcVal > maxFuncVal:
 				maxFuncVal = funcVal
@@ -378,6 +576,8 @@ class Basic_MCTS:
 			bestAction = random.choice(v.children.keys())
 			bestChild = v.children[bestAction]
 
+		if debug:
+			print ""
 		return bestAction, bestChild
 
 	def defaultPolicy(self, v, rle, step_horizon, domain_knowledge=False):
@@ -406,13 +606,15 @@ class Basic_MCTS:
 			a = sample
 
 			res = rle.step(a)
+			# print rle.show()
 			new_state = res["observation"]
 			state = new_state
 			terminal = rle._isDone()[0]
 			if terminal and res['reward']==1:
-				reward += g*self.maxPseudoReward
+				reward += g*self.rewardScaling
 			else:
 				reward += g*res['reward']
+			# reward += g*res['reward']
 			
 			g *= self.decay_factor
 
@@ -460,280 +662,4 @@ class MCTS_node:
 		    	self.expanded = len(self.children) == len(self.actions)
 
 
-
-	def getReward(self):
-		if self.visitCount > 0:
-			return float(self.qVal)/self.visitCount
-
-		else:
-			return -1
-def translateEvents(events, all_objects):
-	if events is None:
-		return None
-	# all_objects = rle._game.getObjects()
-
-	def getObjectColor(objectID):
-		return all_objects[objectID]['type']['color']
-
-	outlist = []
-	for event in events:
-		if len(event)==3:
-			outlist.append((event[0], getObjectColor(event[1]), getObjectColor(event[2])))
-		elif len(event)==2:
-			outlist.append((event[0], getObjectColor(event[1])))
-	if len(outlist)>0:
-		print outlist
-	return outlist
-
-
-def observe(rle, obsSteps):
-	print "observing"
-	for i in range(obsSteps):
-		spriteInduction(rle._game, step=1)
-		spriteInduction(rle._game, step=2)
-		rle.step((0,0))
-		spriteInduction(rle._game, step=3)
-	return
-
-def selectSubgoalType(unknown_categories, goalColor=None):
-	if goalColor:
-		key = [k for k in rle._game.sprite_groups.keys() if \
-		colorDict[str(rle._game.sprite_groups[k][0].color)]=='GOLD'][0]
-		actual_goal = rle._game.sprite_groups[key][0]
-		object_goal = actual_goal
-		return goalColor, object_goal[0]
-	else:
-
-
-def selectSubgoalToken(vrle, goal_type, unknown_categories, color=None):
-	## selects a reachable subgoal (if color is provided, selects subgoal of that color) according to the theory that the vrle instantiates.
-	## TODO: make sure there's an actual path to the goal.
-
-	if 'avatar' in vrle._obstypes.keys():
-		inverted_avatar_loc=vrle._obstypes['avatar'][0]
-		avatar_loc = (inverted_avatar_loc[1], inverted_avatar_loc[0])
-	else:
-		avatar_loc = np.where(np.reshape(vrle._getSensors(), vrle.outdim)==1)
-		avatar_loc = avatar_loc[1][0], avatar_loc[0][0]
-
-	## rank objects by distance from agent
-	options = [cat for cat in unknown_categories if cat[0].name==goal_type][0]
-	options = [(o, abs((vrle._rect2pos(o.rect)[0]-avatar_loc[0])) + abs((vrle._rect2pos(o.rect)[1]-avatar_loc[1]))) for o in options]
-	options = sorted(options, key=lambda o: o[1])
-
-	## iterate down the list. as long as the object is 'reachable', return it.
-	mcts = Basic_MCTS(existing_rle=vrle)
-	for o in options:
-		if vrle._rect2pos(o[0].rect) in mcts.neighborDict.keys() and len(mcts.neighborDict[vrle._rect2pos(o[0].rect)])>1:
-			return colorDict[str(o[0].color)], o[0]
-
-
-
-
-def getToSubgoal(rle, vrle, subgoal, all_objects, finalEventList, verbose=True, 
-	max_actions_per_plan=1, planning_steps=100, defaultPolicyMaxSteps=50, symbolDict=None):
-	## Takes a real world, a theory (instantiated as a virtual world)
-	## Moves the agent through the world, updating the theory as needed
-	## Ends when subgoal is reached.
-	## Right now will only properly work with max_actions_per_plan=1, as you want to re-plan when the theory changes.
-	## Otherwise it will only replan every max_actions_per_plan steps.
-	## Returns real world in its new state, as well as theory in its new state.
-	## TODO: also return a trace of events and of game states for re-creation
-	
-	hypotheses = []
-	terminal = rle._isDone()[0]
-	goal_achieved = False
-
-	def noise(action):
-		prob=0.
-		if random.random()<prob:
-			return random.choice(BASEDIRS)
-		else:
-			return action
-
-	## TODO: this will be problematic when new objects appear, if you don't update it.
-	# all_objects = rle._game.getObjects()
-
-	print ""
-	print "object goal is", colorDict[str(subgoal.color)], rle._rect2pos(subgoal.rect)
-	# actions_executed = []
-	states_encountered = []
-	while not terminal and not goal_achieved:
-		mcts = Basic_MCTS(existing_rle=vrle)
-		planner = mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, vrle)
-		actions = mcts.getBestActionsForPlayout()
-
-		for i in range(len(actions)):
-			if not terminal and not goal_achieved:
-				spriteInduction(rle._game, step=1)
-				spriteInduction(rle._game, step=2)
-
-				## Take actual step. RLE Updates all positions.
-				res = rle.step(noise(actions[i])) ##added noise for testing, but prob(noise)=0 now.
-				# actions_executed.append(actions[i])
-				states_encountered.append(rle._game.getFullState())
-
-				new_state = res['observation']
-				terminal = rle._isDone()[0]
-				
-				# vrle_res = vrle.step(noise(actions[i]))
-				# vrle_new_state = vrle_res['observation']
-				# embed()
-
-				effects = translateEvents(res['effectList'], all_objects) ##TODO: this gets object colors, not IDs.
-				
-				print ACTIONS[actions[i]]
-				rle.show()
-
-				# if symbolDict:
-				# 	print rle.show()
-				# else:
-				# 	print np.reshape(new_state, rle.outdim)
-				
-				# Save the event and agent state
-				try:
-					agentState = dict(rle._game.getAvatars()[0].resources)
-					rle.agentStatePrev = agentState
-				# If agent is killed before we get agentState
-				except Exception as e:	# TODO: how to process changes in resources that led to termination state?
-					agentState = rle.agentStatePrev
-
-				## If there were collisions, update history and perform interactionSet induction
-				if effects:
-					state = rle._game.getFullState()
-					event = {'agentState': agentState, 'agentAction': actions[i], 'effectList': effects, 'gameState': rle._game.getFullStateColorized()}
-					finalEventList.append(event)
-
-					for effect in effects:
-						rle._game.collision_objects.add(effect[1]) ##sometimes event is just (predicate, obj1)
-						if len(effect)==3: ## usually event is (predicate, obj1, obj2)
-							rle._game.collision_objects.add(effect[2])
-
-					if colorDict[str(subgoal.color)] in [item for sublist in effects for item in sublist]:
-						print "reached subgoal"
-						goal_achieved = True
-						if subgoal.name in rle._game.unknown_objects:
-							rle._game.unknown_objects.remove(subgoal.name)
-						goalLoc=None
-					else:
-						goalLoc = rle._rect2pos(subgoal.rect)
-
-					## Sampling from the spriteDisribution makes sense, as it's
-					## independent of what we've learned about the interactionSet.
-					## Every timeStep, we should update our beliefs given what we've seen.
-					# if not sample:
-					sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
-						
-					g = Game(spriteInductionResult=sample)
-					terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
-					trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
-
-
-					hypotheses = list(g.runInduction(sample, trace, 20))
-
-					
-					# print "in getToSubgoal"
-					# embed()
-
-					## make sure this is only adding things the avatar touched
-					candidate_new_objs = []
-					for interaction in hypotheses[0].interactionSet:
-						if not interaction.generic:
-							if interaction.slot1 != 'avatar':
-								candidate_new_objs.append(interaction.slot1)
-							if interaction.slot2 != 'avatar':
-								candidate_new_objs.append(interaction.slot2)
-					candidate_new_objs = list(set(candidate_new_objs))
-					candidate_new_colors = []
-					for o in candidate_new_objs:
-						cols = [c.color for c in hypotheses[0].classes[o]]
-						candidate_new_colors.extend(cols)
-
-					## among the many things to fix:
-					for e in finalEventList[-1]['effectList']:
-						if e[1] == 'DARKBLUE':
-							candidate_new_colors.append(e[2])
-						if e[2] == 'DARKBLUE':
-							candidate_new_colors.append(e[1])
-
-					game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], "./examples/gridphysics/theorytest.py", goalLoc=goalLoc)
-					# all_immovables.extend(immovables)
-					# print all_immovables
-					vrle = createMindEnv(game, level, OBSERVATION_GLOBAL)
-					vrle.immovables = immovables
-
-
-					## TODO: You're re-running all of theory induction for every timestep
-					## every time. Fix this.
-					## if you fix it, note that you'd be passing a different g each time,
-					## since you sampled (above).
-					# hypotheses = list(g.runDFSInduction(trace, 20))
-
-				spriteInduction(rle._game, step=3)
-		if terminal:
-			if rle._isDone()[1]:
-				print "game won"
-			else:
-				print "Agent died."
-	return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered
-
-def planActLoop(rleCreateFunc, max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, playback=False):
-	
-	rle = rleCreateFunc(OBSERVATION_GLOBAL)
-
-	outdim = rle.outdim
-
-	rle.show()
-	
-	terminal = rle._isDone()[0]
-	
-	i=0
-	finalStates = [rle._game.getFullState()]
-	while not terminal:
-		mcts = Basic_MCTS(existing_rle=rle)
-		mcts.startTrainingPhase(planning_steps, defaultPolicyMaxSteps, rle)
-		# mcts.debug(mcts.rle, output=True, numActions=3)
-		# break
-		actions = mcts.getBestActionsForPlayout()
-
-		# if len(actions)<max_actions_per_plan:
-		# 	print "We only computed", len(actions), "actions."
-
-		new_state = rle._getSensors()
-		terminal = rle._isDone()[0]
-
-		for j in range(min(len(actions), max_actions_per_plan)):
-			if actions[j] is not None and not terminal:
-				# dist = mcts.getManhattanDistanceComponents(new_state)
-				print ACTIONS[actions[j]]
-				res = rle.step(actions[j])
-				new_state = res["observation"]
-				terminal = not res['pcontinue']
-				print rle.show()
-				finalStates.append(rle._game.getFullState())
-
-		i+=1
-
-	if playback:
-		from vgdl.core import VGDLParser
-		from examples.gridphysics.simpleGame_randomNPC import box_level, push_game
-		game = push_game
-		level = box_level
-		VGDLParser.playGame(game, level, finalStates)
-
-	# return finalStates
-
-if __name__ == "__main__":
-	## passing a function. That function contains things set in
-	## 'rlenvironmentnonstatic' file
-	## You have to make a function that creates the environment.
-	## Make the game, then follow the layout in 'rlenvironmentnonstatic'
-	
-	filename = "examples.gridphysics.simpleGame4_huge"
-	game_to_play = lambda obsType: createRLInputGame(filename)
-	planActLoop(game_to_play, 10, 100, 50)
-	embed()
-
-	# planActLoop(game_to_play, 10, 100, 50)
-
-
+	# planActLoop(game_to_play, filename, 5, 100, 50, playback=False)

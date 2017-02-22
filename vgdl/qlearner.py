@@ -2,7 +2,7 @@ import numpy as np
 from numpy import zeros
 import pygame    
 from ontology import BASEDIRS
-from core import VGDLSprite, colorDict
+from core import VGDLSprite, colorDict, sys
 from stateobsnonstatic import StateObsHandlerNonStatic 
 from rlenvironmentnonstatic import *
 import argparse
@@ -16,12 +16,12 @@ import copy
 from threading import Lock
 from Queue import Queue
 import multiprocessing
-
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, \
 generateSymbolDict, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryFromGame
 from rlenvironmentnonstatic import createRLInputGame
+import curses
 
 #A hack to display things to the terminal conveniently.
 np.core.arrayprint._line_width=250
@@ -139,6 +139,7 @@ class QLearner:
 		return avatar_loc
 	
 	def getPathToGoal(self, avatar_loc, goal_loc):
+		print "in getPathToGoal"
 		q = deque()
 		# q stores tuples in which the first element is a node and the next
 		# is the shortest path to that node
@@ -159,10 +160,10 @@ class QLearner:
 		if node != goal_loc:
 			raise Exception("Didn't find a path to the goal location.")
 
+		print "ended."
 		return path
 
 	def getSubgoals(self, subgoal_path_threshold):
-
 		avatar_loc = self.findAvatarInRLE(self.rle)
 		## find location of goal, add to rewardDict.
 		## also add neighbors of goal rewardQueue.
@@ -306,12 +307,14 @@ class QLearner:
 		s = rle._getSensors().tostring()
 		i=0
 		total_reward = 0.
+
 		while not terminal and i<stepLimit:
 			a = self.selectAction(s, policy='epsilonGreedy', partitionWeights = self.partitionWeights)
 			res = rle.step(a)
 			sPrime, r = res['observation'].tostring(), res['reward']
-			# print rle.show()
-			# print self.findAvatarInState(s), a, self.findAvatarInRLE(rle)
+
+			print rle.show()
+
 			if r==1:
 				self.partitionWeights[1] = self.partitionWeights[1]*self.heuristicDecay
 				self.epsilon = self.epsilon*self.heuristicDecay
@@ -322,16 +325,18 @@ class QLearner:
 			terminal = rle._isDone()[0]
 			i += 1
 			total_reward += r
-		# print total_reward/i
 		self.QVals[s] = 0.
 
 	def learn(self, episodes, satisfice=False):
+		t1 = time.time()
 		for i in range(episodes):
-			self.runEpisode(stepLimit=60)
+			# sys.stdout.write("Episodes: {}\r".format(i) )
+			# sys.stdout.flush()
+			self.runEpisode(stepLimit=100)
 			if i%10==0:
 				# s = self.rle._getSensors().tostring()
 				# a = self.selectAction(s, policy='epsilonGreedy', partitionWeights = self.partitionWeights)
-				print i#, self.QVals[(s,a)]
+				# print i#, self.QVals[(s,a)]
 				if satisfice: ## see if values have propagated to start state; if so, return.
 					actions = self.getBestActionsForPlayout()
 					if len(actions)>0:
@@ -340,7 +345,9 @@ class QLearner:
 					# a = self.selectAction(s, policy='greedy')
 					# if a:
 						print "satisfice found actions in", i, "steps."
+						print time.time()-t1
 						return i
+
 		return i
 
 	def getBestActionsForPlayout(self, showActions = False):
@@ -374,7 +381,8 @@ class QLearner:
 
 if __name__ == "__main__":
 	
-	gameFilename = "examples.gridphysics.simpleGame_missile2"
+	# gameFilename = "examples.gridphysics.simpleGame_many_poisons"
+	gameFilename = "examples.gridphysics.simpleGame_many_poisons"
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
