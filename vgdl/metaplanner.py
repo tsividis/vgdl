@@ -224,6 +224,46 @@ def getToWaypoint(rle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, 
 			print rle.show()
 	return rle, actions, steps
 
+def objectGoalReached(effects, object_goal):
+	## Check if you reached object goal
+	goal_achieved = False
+	for e in effects:
+		if 'DARKBLUE' in e and colorDict[str(object_goal.color)] in e:
+			print "goal achieved"
+			# embed()
+			goal_achieved = True
+	return goal_achieved
+
+def updateCandidateColors(hypotheses, finalEventList):
+
+	## new colors that we have maybe learned about
+	candidate_new_objs, candidate_new_colors = [], []
+
+	for interaction in hypotheses[0].interactionSet:
+		if not interaction.generic:
+			if interaction.slot1 != 'avatar':
+				candidate_new_objs.append(interaction.slot1)
+			if interaction.slot2 != 'avatar':
+				candidate_new_objs.append(interaction.slot2)
+	candidate_new_objs = list(set(candidate_new_objs))
+	for o in candidate_new_objs:
+		cols = [c.color for c in hypotheses[0].classes[o]]
+		candidate_new_colors.extend(cols)
+
+	## among the many things to fix:
+
+	for e in finalEventList[-1]['effectList']:
+		if e[1] == 'DARKBLUE':
+			candidate_new_colors.append(e[2])
+			print "appending", e[2], "to candidate_new_colors"
+		if e[2] == 'DARKBLUE':
+			candidate_new_colors.append(e[1])
+			print "appending", e[1], "to candidate_new_colors"
+
+	candidate_new_colors = list(set(candidate_new_colors))
+
+	return candidate_new_colors
+
 def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level, object_goal, all_objects, finalEventList, verbose=True,\
 	defaultPolicyMaxSteps=50, symbolDict=None):
 	## Takes a real world, a theory (instantiated as a virtual world)
@@ -236,7 +276,7 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 	terminal = rle._isDone()[0]
 	goal_achieved = False
 	outdim = rle.outdim
-
+	candidate_new_colors = []
 	def noise(action):
 		prob=0.
 		if random.random()<prob:
@@ -244,11 +284,14 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 		else:
 			return action
 
-	## TODO: this will be problematic when new objects appear, if you don't update it.
-	# all_objects = rle._game.getObjects()
+	## Add newly-seen objects.
+	## TODO: This still doesn't let you add objects in the middle of an episode.
+	current_objects = rle._game.getObjects()
+	for k in current_objects.keys():
+		if k not in all_objects.keys():
+			all_objects[k] = current_objects[k]
 
 	states_encountered = [rle._game.getFullState()]
-	candidate_new_colors = []
 	hypotheses = [hypothesis]
 	while not terminal and not goal_achieved:
 
@@ -261,13 +304,15 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 			elif plannerType=='QLearning':
 				planner = QLearner(vrle, gameString=game, levelString=level)
 				subgoals = planner.getSubgoals(subgoal_path_threshold=10)
+			
 			print "subgoals", subgoals
+			
 			total_steps = 0
+			
 			for subgoal in subgoals:
 				if not theory_change_flag and not goal_achieved:
 
 					## write subgoal to theory; initialize VRLE.
-
 					game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], symbolDict, \
 						"./examples/gridphysics/theorytest.py", subgoal)
 					vrle = createMindEnv(game, level, output=False)
@@ -294,40 +339,25 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 								rle.agentStatePrev = agentState
 							# If agent is killed before we get agentState
 							except Exception as e:	# TODO: how to process changes in resources that led to termination state?
-								agentState = rle.agentStatePrev
+								agentState = {}
+								# agentState = rle.agentStatePrev
+					 		
+
 					 		## If there were collisions, update history and perform interactionSet induction if the collisions were novel.
 							if effects:
 								state = rle._game.getFullState()
 								event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, 'gameState': rle._game.getFullStateColorized()}
 
-								## Check if you reached object goal
-								# if colorDict[str(object_goal.color)] in [item for sublist in effects for item in sublist]:
-								# 	print "goal achieved?"
-								# 	embed()
-								# 	print "goal achieved"
-								# 	goal_achieved = True
-								for e in effects:
-									if 'DARKBLUE' in e and colorDict[str(object_goal.color)] in e:
-										print "goal achieved"
-										# embed()
-										goal_achieved = True
+								goal_achieved = objectGoalReached(effects, object_goal)
 
 								## Sampling from the spriteDisribution makes sense, as it's
 								## independent of what we've learned about the interactionSet.
 								## Every timeStep, we should update our beliefs given what we've seen.
-								
-								## TODO: This crashed. Get it working again, then incorporate the sprite induction result.
-								if len(rle._game.spriteDistribution)==0:
-									print "before step3"
-									embed()
-								spriteInduction(rle._game, step=3)
-								if len(rle._game.spriteDistribution)==0:
-									print "after step3"
-									embed()
 
-								# if not sample:
+								spriteInduction(rle._game, step=3)
 								sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
 								game_object = Game(spriteInductionResult=sample)
+
 
 								## Get list of all effects we've seen. Only update theory if we're seeing something new.
 								all_effects = [item for sublist in [e['effectList'] for e in finalEventList] for item in sublist]
@@ -337,33 +367,8 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 									trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
 									theory_change_flag = True
 									hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20)) ##if you resample or run sprite induction, this 
-																								## should be g.runInduction
 
-									## new colors that we have maybe learned about
-									candidate_new_objs = []
-									for interaction in hypotheses[0].interactionSet:
-										if not interaction.generic:
-											if interaction.slot1 != 'avatar':
-												candidate_new_objs.append(interaction.slot1)
-											if interaction.slot2 != 'avatar':
-												candidate_new_objs.append(interaction.slot2)
-									candidate_new_objs = list(set(candidate_new_objs))
-									for o in candidate_new_objs:
-										cols = [c.color for c in hypotheses[0].classes[o]]
-										candidate_new_colors.extend(cols)
-
-									## among the many things to fix:
-
-									for e in finalEventList[-1]['effectList']:
-										if e[1] == 'DARKBLUE':
-											candidate_new_colors.append(e[2])
-											print "appending", e[2], "to candidate_new_colors"
-										if e[2] == 'DARKBLUE':
-											candidate_new_colors.append(e[1])
-											print "appending", e[1], "to candidate_new_colors"
-
-									candidate_new_colors = list(set(candidate_new_colors))
-									# print "candidate new colors", candidate_new_colors
+									candidate_new_colors = updateCandidateColors(hypotheses, finalEventList)
 
 									## update to incorporate what we've learned, keep the same subgoal for now; this will update at the top of the next loop.
 									game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], symbolDict, \
@@ -371,17 +376,17 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 
 									print "updating internal theory"
 									vrle = createMindEnv(game, level, output=False)
-									vrle.immovables = immovables															
+									vrle.immovables = immovables	
+									print "displaying actual newest theory."
+									hypotheses[0].display()														
 								else:
 									finalEventList.append(event)
 									terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
 									trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
-									## you need to figure out how to incorporate the result of sprite induction in cases where you don't do
+									## TODO: you need to figure out how to incorporate the result of sprite induction in cases where you don't do
 									## interactionSet induction (i.e., here.)
 									hypotheses = [hypothesis]
 
-
-							
 							if terminal:
 								return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered, game_object
 

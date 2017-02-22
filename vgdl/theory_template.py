@@ -258,6 +258,7 @@ class Theory(object):
 		for s in self.spriteSet:
 			self.spriteObjects[s.color] = s
 
+
 	"""Main functions"""
 
 	def prior(self):
@@ -476,7 +477,7 @@ class Theory(object):
 		"""
 		Check if all events in the timestep are covered by the interaction rule set.
 		"""
-		# print timestep.events
+		# print "events:", timestep.events
 		interpretations = [self.interpret(event) for event in timestep.events]
 		return all([self.checkEvents(i, timestep) for i in interpretations])
 
@@ -687,6 +688,9 @@ class Theory(object):
 			value = 0
 			resource = None
 
+		# if not (event[1] in self.spriteObjects.keys() and event[2] in self.spriteObjects.keys()):
+		# 	print "didn't find lightblue"
+		# 	embed()
 
 		obj1 = self.spriteObjects[event[1]]
 		obj2 = self.spriteObjects[event[2]]
@@ -1449,10 +1453,6 @@ class Game(object):
 		# spriteSample: a particular assignment of sprite types. You can decide how you get this when you generate the sample, in getToSubgoal
 
 		timesteps, result = trace
-		
-
-		# print "in runinduction"
-		# embed()
 
 		## fiter for unique events so that you don't waste time checking likelihoods, etc.
 		unique_timesteps = [timesteps[0]]
@@ -1460,8 +1460,9 @@ class Game(object):
 			if t.events not in [timestep.events for timestep in unique_timesteps]:
 				unique_timesteps.append(t)
 		timesteps=unique_timesteps
+
 		# Start with fake theory (generic prior)
-		T = self.buildGenericTheory(spriteSample)	
+		T = self.buildGenericTheory(spriteSample)
 
 		init_hypotheses = [T]
 		self.hypothesisSpace = [] # Refresh the hypothesis space before DFS induction
@@ -1538,9 +1539,10 @@ class Game(object):
 		##change this!
 		if self.spriteInductionResult:
 			T.initializeSpriteSet(vgdlSpriteParse=False, spriteInductionResult=self.spriteInductionResult)
+			print "initialized from sprite induction result"
 		elif self.vgdlSpriteParse:
 			T.initializeSpriteSet(vgdlSpriteParse=self.vgdlSpriteParse, spriteInductionResult=False)
-
+			print "initialized from sprite parse"
 
 		self.hypothesisSpace = [T]
 		newTheories = []

@@ -313,7 +313,7 @@ class QLearner:
 			res = rle.step(a)
 			sPrime, r = res['observation'].tostring(), res['reward']
 
-			print rle.show()
+			# print rle.show()
 
 			if r==1:
 				self.partitionWeights[1] = self.partitionWeights[1]*self.heuristicDecay

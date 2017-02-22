@@ -1567,7 +1567,7 @@ def spriteInduction(game, step):
     game = a BasicGame object
     """
     ## TODO: Make sure you put these other types back when you fix sprite induction!!
-    sprite_types = [Immovable, Passive, Resource, ResourcePack]# RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
+    sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
 
     if step==0:
     ## Prep for sprite induction

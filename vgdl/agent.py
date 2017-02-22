@@ -9,19 +9,6 @@ import importlib
 from rlenvironmentnonstatic import createRLInputGame
 
 
-## Specify a game or a set of games
-## number of episodes per game
-
-
-## hypotheses to plans
-## hypothesis to plan
-
-
-## simplest explore/exploit strategy:
-	## keep track of unknown objects and goal. touch everytning you don't know until you know the goal. get to goal.
-##
-
-
 ## For now, only implementing version of agent that can deal with single goals.
 
 class Agent:
@@ -188,9 +175,6 @@ class Agent:
 			totalStatesEncountered.extend(statesEncountered)
 			ended, won = rle._isDone()
 
-			print "known colors", self.knownColors
-			print "candidate new colors:", candidateNewColors
-
 			if won:
 				self.goalColor = finalEventList[-1]['effectList'][0][1]
 
@@ -201,11 +185,11 @@ class Agent:
 					print "added", col, "to knownColors"
 			print "updated known colors", self.knownColors
 			unknownColors = [c for c in unknownColors if c not in self.knownColors]
-			print "updated unknownCollors", unknownColors
+			print "updated unknownColors", unknownColors
 		return gameObject, won, totalStatesEncountered
 
 if __name__ == "__main__":
-	filename = "examples.gridphysics.simpleGame_many_poisons"
+	filename = "examples.gridphysics.simpleGame_missile2"
 	
 	# filename = "examples.gridphysics.simpleGame_many_poisons"
 	# filename = "examples.gridphysics.pushtest"
