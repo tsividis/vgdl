@@ -877,7 +877,7 @@ class FrostBiteAvatar(HorizontalAvatar, InertialAvatar):
         HorizontalAvatar.update(self, game)
         VGDLSprite.update(self, game)
 
-class Flow(Missile, Switch):
+class Floe(Missile, Switch):
     speed = 0.05
     def update(self, game):
         Missile.update(self, game)
@@ -1029,21 +1029,20 @@ def transformTo(sprite, partner, game, stype='wall'):
         if isinstance(sprite, OrientedSprite) and isinstance(newones[0], OrientedSprite):
             newones[0].orientation = sprite.orientation
         killSprite(sprite, partner, game)
-    return ("transformTo",sprite.ID,partner.ID)
+    return ("transformTo", sprite.ID, partner.ID, stype)
 
 def transformToOnLanding(sprite, partner, game, stype='wall'):
     """sprite will be transformed to stype when partner (avatar) lands on it from above"""
     if partner.speed*partner.orientation[1] == 0 and partner.lastrect.y != partner.rect.y:
         transformTo(sprite, partner, game, stype)
         ##Decide whether it's "fair" to know this was transformToOnLanding
-        return ("transformToOnLanding", getColor(sprite), getColor(partner))
+        return ("transformToOnLanding", sprite.ID, partner.ID, stype)
 
 def triggerOnLanding(sprite, partner, game, strigger=None):
     '''triggers a triggerable sprite. triggerable is interesting. should change this?'''
     if partner.speed*partner.orientation[1] == 0 and partner.lastrect.y != partner.rect.y:
         trigger(sprite, partner, game, strigger)
-        ##TODO: This needs more info.
-        return ("trigger", getColor(sprite), getColor(partner))
+        return ("trigger", sprite.ID, partner.ID, strigger)
 
 def stepBack(sprite, partner, game): 
     """ Revert last move. """
@@ -1129,12 +1128,14 @@ def reverseDirection(sprite, partner, game): # FLAG
     return ('reverseDirection', sprite.ID, partner.ID)
 
 ##TODO: add event labels for the below effects
-def reverseFlowIfActivated(sprite, partner, game, strigger=None):
-    '''sprite is Flow, partner is FrostbiteAvatar'''
+def reverseFloeIfActivated(sprite, partner, game, strigger=None):
+    '''sprite is Floe, partner is FrostbiteAvatar'''
     if sprite.activated:
         detrigger(sprite, partner, game, strigger)
         reverseDirection(sprite, partner, game)
         sprite.activated = False
+    ## returning the below is likely too much. Only adding this now for consistency of return statements.
+    return ('reverseFloeIfActivated', sprite.ID, partner.ID, strigger)
 
 def trigger(sprite, partner, game, strigger=None):
     if strigger == None:
@@ -1144,6 +1145,7 @@ def trigger(sprite, partner, game, strigger=None):
 
     for sprite in triggers:
         sprite.triggered = True
+    return ('trigger', sprite.ID, partner.ID, strigger)
 
 def detrigger(sprite, partner, game, strigger=None):
     if strigger == None:
@@ -1153,6 +1155,7 @@ def detrigger(sprite, partner, game, strigger=None):
 
     for sprite in triggers:
         sprite.detriggered = True
+    return ('detrigger', sprite.ID, partner.ID, strigger)
 
 
 def flipDirection(sprite, partner, game): # FLAG
@@ -1184,7 +1187,7 @@ def wallBounce(sprite, partner, game, friction=0): # FLAG
         sprite.orientation = (sprite.orientation[0], -sprite.orientation[1])
     # return ('wallBounce', colorDict[str(partner.color)], colorDict[str(sprite.color)])
     ## TODO: Not printing for now   
-    #return ('wallBounce' , sprite.ID, partner.ID)
+    return ('wallBounce' , sprite.ID, partner.ID)
 
 def wallStop(sprite, partner, game, friction=0): # FLAG
     """ Stop just in front of the wall, removing that velocity component,
@@ -1211,7 +1214,7 @@ def killIfSlow(sprite, partner, game, limitspeed=1):
         relspeed = vectNorm((sprite._velocity()[0] - partner._velocity()[0],
                              sprite._velocity()[1] - partner._velocity()[1]))
     if relspeed < limitspeed:
-        killSprite(sprite, partner, game)
+        return killSprite(sprite, partner, game)
         # return ('killIfSlow' , sprite.ID, partner.ID)
 
 
@@ -1219,14 +1222,14 @@ def killIfFromAbove(sprite, partner, game):
     """ Kills the sprite, only if the other one is higher and moving down. """
     if (sprite.lastrect.top > partner.lastrect.top
         and partner.rect.top > partner.lastrect.top):
-        killSprite(sprite, partner, game)
-        return ('killIfFromAbove' , partner.ID, sprite.ID)
+        return killSprite(sprite, partner, game)
+        # return ('killIfFromAbove' , partner.ID, sprite.ID)
 
 def killIfAlive(sprite, partner, game):
     """ Perform the killing action, only if no previous collision effect has removed the partner. """
     if partner not in game.kill_list:
-        killSprite(sprite, partner, game)
-        return ('killIfAlive' , sprite.ID, partner.ID)
+        return killSprite(sprite, partner, game)
+        # return ('killIfAlive' , sprite.ID, partner.ID)
 
 def collectResource(sprite, partner, game): # FLAG
     """ Adds/increments the resource type of sprite in partner """
@@ -1242,39 +1245,41 @@ def changeResource(sprite, partner, resourceColor, game, resource, value=1):
     sprite.resources[resource] = max(-1, min(sprite.resources[resource]+value, game.resources_limits[resource]))
     #print resource, sprite.resources[resource]
     #print 'Changed ', colorDict[str(partner.color)]
-
+    # print "in changeresource"
+    # embed()
     # NOTE: partner is the color of the resource (see _eventHandling() in core.py)
-    # return ('changeResource', colorDict[str(sprite.color)], colorDict[str(partner.color)], resource, value)
-    return ('changeResource' , sprite.ID, partner.ID)
+    # embed()
+    return ('changeResource', sprite.ID, partner.ID, resource, value)
 
 def spawnIfHasMore(sprite, partner, game, resource, stype, limit=1):
     """ If 'sprite' has more than a limit of the resource type given, it spawns a sprite of 'stype'. """
     if sprite.resources[resource] >= limit:
         game._createSprite([stype], (sprite.rect.left, sprite.rect.top))
-        return ('spawnIfHasMore', sprite.ID, partner.ID) ### NOTE - there is no default 'spawn' function we could return instead, but we should then make one
+        # Note: returning the resource doesn't seem like something the agent should have access to, so we're not returning it.
+        return ('spawnIfHasMore', sprite.ID, partner.ID, stype) ### NOTE - there is no default 'spawn' function we could return instead, but we should then make one
 
 def killIfHasMore(sprite, partner, game, resource, limit=1):
     """ If 'sprite' has more than a limit of the resource type given, it dies. """
     if sprite.resources[resource] >= limit:
-        killSprite(sprite, partner, game)
+        return killSprite(sprite, partner, game)
         # return ('killIfHasMore' , sprite.ID, partner.ID)
 
 def killIfOtherHasMore(sprite, partner, game, resource, limit=1):
     """ If 'partner' has more than a limit of the resource type given, sprite dies. """
     if partner.resources[resource] >= limit:
-        killSprite(sprite, partner, game)
+        return killSprite(sprite, partner, game)
         # return ('killIfOtherHasMore' , sprite.ID, partner.ID)
 
 def killIfHasLess(sprite, partner, game, resource, limit=1):
     """ If 'sprite' has less than a limit of the resource type given, it dies. """
     if sprite.resources[resource] <= limit:
-        killSprite(sprite, partner, game)
+        return killSprite(sprite, partner, game)
         # return ('killIfHasLess' , sprite.ID, partner.ID)
 
 def killIfOtherHasLess(sprite, partner, game, resource, limit=1):
     """ If 'partner' has less than a limit of the resource type given, sprite dies. """
     if partner.resources[resource] <= limit:
-        killSprite(sprite, partner, game)
+        return killSprite(sprite, partner, game)
         # return ('killIfOtherHasLess' , sprite.ID, partner.ID)
 
 def wrapAround(sprite, partner, game, offset=0):
@@ -1289,7 +1294,7 @@ def wrapAround(sprite, partner, game, offset=0):
     elif sprite.orientation[1] < 0:
         sprite.rect.top = game.screensize[1] - sprite.rect.size[1] * (1 + offset)
     sprite.lastmove = 0
-    # return ('wrapAround' , sprite.ID, partner.ID)
+    return ('wrapAround' , sprite.ID, partner.ID, offset)
 
 def pullWithIt(sprite, partner, game):
     """ The partner sprite adds its movement to the sprite's. """
@@ -1567,8 +1572,7 @@ def spriteInduction(game, step):
     game = a BasicGame object
     """
     ## TODO: Make sure you put these other types back when you fix sprite induction!!
-    sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
-
+    sprite_types = [Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile] #removed Immovable, Passive, 
     if step==0:
     ## Prep for sprite induction
         for sprite in game.getObjects():
