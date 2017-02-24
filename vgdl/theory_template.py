@@ -65,7 +65,7 @@ class Precondition(object):
 		self.item = item
 		self.negated = False
 
-	def check(self, backpack):	# TODO: Is 'arg' most likely 'backpack'?
+	def check(self, backpack):
 		# TODO: Incorporate something about if the item isn't even found in the backpack? Always return True in that case?
 		try:
 			answer = self.fn(backpack)
@@ -284,20 +284,20 @@ class Theory(object):
 		"""
 		# print "in explainTimeStep..."
 		
+		theories = []
+		
+		if not currTheories:
+			theories.extend(self.explainEvent(timestep.events[0], fullTimestep, override=override))
+		# Generate theories based on hypothetical theories
+		else: 
+			for theory in currTheories:
+				newTheory = theory.explainEvent(timestep.events[0], fullTimestep, override=override)
+				theories.extend(newTheory)
+		
+
 		# Base Case
 		if len(timestep.events) == 1:
-			# print "in base case of explainTimeStep"
-			theories = []
-			
-			if not currTheories:
-				theories.extend(self.explainEvent(timestep.events[0], fullTimestep, override=override))
-			
-			# Generate theories based on hypothetical theories
-			else: 
-				for theory in currTheories:
-					newTheory = theory.explainEvent(timestep.events[0], fullTimestep, override=override)
-					theories.extend(newTheory)
-			
+			# print "in base case of explainTimeStep"			
 			for t in theories:
 				t.depth = self.depth+1
 			return theories
@@ -305,21 +305,6 @@ class Theory(object):
 		# Recursive Case
 		else:
 			# print "in recursive case"
-			theories = []
-
-			if not currTheories:
-				theories.extend(self.explainEvent(timestep.events[0], fullTimestep, override=override))
-			
-			# Generate theories based on hypothetical theories
-			else: 
-				for theory in currTheories:
-					newTheory = theory.explainEvent(timestep.events[0], fullTimestep, override=override)
-					theories.extend(newTheory)
-
-			#theories = self.explainEvent(timestep.events[0], fullTimestep)
-
-
-
 			updatedTimeStep = TimeStep(timestep.agentAction, timestep.agentState, timestep.events[1:], timestep.gameState)
 			return self.explainTimeStep(updatedTimeStep, fullTimestep, currTheories=theories, override=override)
 
@@ -330,6 +315,7 @@ class Theory(object):
 		"""
 		# print "in explainEvent..."
 		# print "event: ", event
+		# embed()
 		theories = []
 
 		#print " --> will check likelihood to get failCase (or just add the theory if the event is explained)"
@@ -584,7 +570,9 @@ class Theory(object):
 		# print 'in addRules...'
 		newTheories = []
 		possibleAssignments = self.searchForAssignments(event)
-		try: 
+		try:
+			## Interactions in ontology.py that have arguments return at most two additional arguments. By convention, 'value' is always the
+			## last of these.
 			resource = event[3]
 			value = event[4]
 
@@ -610,7 +598,7 @@ class Theory(object):
 		# print "adding {} theories with new assignments".format(len(newTheories))
 		return newTheories
 
-
+ 
 	def addPreconditions(self, event, timestep):
 		"""
 		Creates preconditions based on the agentState that might help to explain the event.
@@ -761,7 +749,7 @@ class Theory(object):
 
 		# TODO: Fix this override; right now you're ignoring new assignments (though presumably if it gets called properly it won't be a problem)
 		if override:
-			rules_to_remove = [r for r in self.interactionSet if r.slot1==proposal[0].slot1 and r.slot2==proposal[0].slot2]
+			rules_to_remove = [r for r in self.interactionSet if r.generic and r.slot1==proposal[0].slot1 and r.slot2==proposal[0].slot2]
 			for rule in rules_to_remove:
 				newTheory.interactionSet.remove(rule)
 		if generatedNewTheory:
@@ -1482,7 +1470,9 @@ class Game(object):
 				hypothesisSpaceWithTermConditions.append(theory)
 
 			self.hypothesisSpace = hypothesisSpaceWithTermConditions
-
+		if len(self.hypothesisSpace)==0:
+			print "no hypotheses"
+			embed()
 		return self.hypothesisSpace
 
 	def runDFSInduction(self, trace, maxNumTheories, override=False, verbose=False):
@@ -1659,7 +1649,15 @@ def generateTheoryFromGame(rle):
 			g1 = g1[::-1]
 		if g2=='goal':
 			g2 = g2[::-1]
-		interaction = InteractionRule(effect.__name__, g1, g2, None, None)
+		if not kwargs:
+			interaction = InteractionRule(effect.__name__, g1, g2, None, None)
+		elif len(kwargs)==2:
+			interaction = InteractionRule(effect.__name__, g1, g2, kwargs.values()[0], kwargs.values()[1])
+		else:
+			print "Trying to generate theory from RLE. Got more args for collision than we can handle as of yet."
+			print "Embedding in generateTheoryFromGame()"
+			embed()
+
 
 		# interaction = InteractionRule(effect.__name__, inverseClasses[g1], inverseClasses[g2], None, None)
 		theory.interactionSet.append(interaction)
@@ -1682,6 +1680,30 @@ def generateSymbolDict(rle):
 
 	return inverseMapping
 
+def getKeywordsFromOntology(interactionName):
+	ontologyKeywordDict = \
+	{'changeResource': ['resource', 'value'],\
+	'transformTo': ['stype'],\
+	'transformToOnLanding': ['stype'],\
+	'triggerOnLanding': ['strigger'],\
+	'slipForward': ['prob'],\
+	'attractGaze': ['prob'],\
+	'reverseFloeIfActivated': ['strigger'],\
+	'trigger': ['strigger'],\
+	'detrigger': ['strigger'],\
+	'bounceDirection': ['friction'],\
+	'wallBounce': ['friction'],\
+	'wallStop': ['friction'],\
+	'killIfSlow': ['limitspeed'],\
+	'spawnIfHasMore': ['resource', 'stype', 'limit'],\
+	'killIfHasMore': ['resource', 'limit'],\
+	'killOtherHasMore': ['resource', 'limit'],\
+	'killIfHasLess': ['resource', 'limit'],\
+	'killOtherHasLess': ['resource', 'limit'],\
+	'wrapAround': ['offset']}
+	return ontologyKeywordDict[interactionName]
+
+
 
 def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	"""
@@ -1691,6 +1713,27 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	2 ways of swapping in knowledge:
 	-cleanest way: 
 	"""
+	def getClassNameFromSpriteString(spriteName):
+		if len(rle._game.sprite_groups[spriteName])>0:
+			col = colorDict[str(rle._game.sprite_groups[spriteName][0].color)]
+			className = [k for k in theory.classes.keys() if col in [c.color for c in theory.classes[k]]][0]
+			return className
+		elif spriteName in theory.classes.keys():
+			return spriteName
+		else:
+			print "failed to get spriteName color. In getClassNameFromSpriteString"
+			embed()
+
+	def buildArgsString(interactionRule):
+		relevantArgNames = getKeywordsFromOntology(interactionRule.interaction)
+		if interactionRule.interaction=='changeResource':
+			k, v = interactionRule.valueChanges.items()[0]
+			argsString = " %s=%s %s=%s"%(relevantArgNames[0], getClassNameFromSpriteString(k), relevantArgNames[1], str(v))
+		else:
+			print "Have not yet implemented argsString construction for", interactionRule.interaction, ". In buildArgString"
+			embed()
+		return argsString
+
 	DIRECTION_MAP = {(0,-1):'UP', (0,1):'DOWN', (1,0):'RIGHT', (-1,0):'LEFT'}
 
 	_obstypes = rle._obstypes
@@ -1782,13 +1825,15 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				for s2 in theory.classes[c2]:
 					argsString = ""
 					if interactionRule.valueChanges:
-						for k,v in interactionRule.valueChanges.items():
-							argsString += " %s:%s"%(k, str(v))
+						argsString += buildArgsString(interactionRule)
 
-					if interactionRule.interaction == "changeResource":
-						print "reached changeResource in writeTheoryToTxt"
-						embed()
+						# for k,v in interactionRule.valueChanges.items():
+						# 	argsString += " %s:%s"%(getClassNameFromSpriteString(k), str(v))
 
+
+					# if interactionRule.interaction == "changeResource":
+					# 	print "reached changeResource in writeTheoryToTxt"
+					# 	embed()
 					if s1.color==newGoalColor:
 						if not 'avatar' in str(s2.className): #only add actual goal object rule if it's not interacting with the avatar.
 							theoryString += "\t\t%s %s > %s%s\n"%('goal', c2, interactionRule.interaction, argsString)
@@ -1798,6 +1843,9 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					else:
 						theoryString += "\t\t%s %s > %s%s\n"%(c1, c2, interactionRule.interaction, argsString)
 					
+					# if interactionRule.valueChanges:
+						# print "found valueChanges"
+						# embed()
 					if 'avatar' in str(s1.vgdlType).lower():
 						if interactionRule.interaction in immovable_predicates:
 							# print "must add immovable"
@@ -1817,7 +1865,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', "killSprite")
 	theoryString += "\t\t%s %s > %s\n"%('avatar', 'EOS', "stepBack")
 	# theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', 'killSprite') ##should always be in the
-
+	# embed()
 	immovables = list(set(immovables))
 
 	# third phase: the termination rules
