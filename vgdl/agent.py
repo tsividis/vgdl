@@ -139,7 +139,6 @@ class Agent:
 		## Initialize external environment
 		rle = self.rleCreateFunc()
 		allObjects= rle._game.getObjects()
-
 		unknownColors = [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in rle._game.sprite_groups.keys()]
 		unknownColors = [c for c in unknownColors if c not in self.knownColors]
 
@@ -189,12 +188,11 @@ class Agent:
 		return gameObject, won, totalStatesEncountered
 
 if __name__ == "__main__":
-	filename = "examples.gridphysics.simpleGame_missile2"
+	filename = "examples.gridphysics.simpleGame_preconditions"
 	
 	# filename = "examples.gridphysics.simpleGame_many_poisons"
 	# filename = "examples.gridphysics.pushtest"
 	plannerType = "QLearning"
 	agent = Agent(filename, plannerType)
-	# embed()
-	agent.playMultipleEpisodes(2)
+	agent.playMultipleEpisodes(5)
 
