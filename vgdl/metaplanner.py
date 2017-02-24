@@ -13,10 +13,15 @@ def translateEvents(events, all_objects):
 
 	outlist = []
 	for event in events:
+		if len(event) > 3:
+			tmp = [event[0], getObjectColor(event[1]), getObjectColor(event[2])]
+			tmp.extend(event[3:])
+			outlist.append(tuple(tmp))
 		if len(event)==3:
 			outlist.append((event[0], getObjectColor(event[1]), getObjectColor(event[2])))
 		elif len(event)==2:
 			outlist.append((event[0], getObjectColor(event[1])))
+	
 	if len(outlist)>0:
 		print outlist
 	return outlist
@@ -199,6 +204,7 @@ def getToWaypoint(rle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, 
 
 	theory = generateTheoryFromGame(rle)
 
+
 	theoryString, levelString, inverseMapping, immovables =\
 	writeTheoryToTxt(rle, theory, symbolDict, "./examples/gridphysics/waypointtheory.py", subgoal)
 	Vrle = createMindEnv(theoryString, levelString, output=False)
@@ -302,6 +308,7 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 				planner = Basic_MCTS(existing_rle=vrle, game=game, level=level, partitionWeights=[5,3,3])
 				subgoals = planner.getSubgoals(subgoal_path_threshold=3)
 			elif plannerType=='QLearning':
+				print "getting subgoals"
 				planner = QLearner(vrle, gameString=game, levelString=level)
 				subgoals = planner.getSubgoals(subgoal_path_threshold=10)
 			
@@ -341,7 +348,9 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 							except Exception as e:	# TODO: how to process changes in resources that led to termination state?
 								agentState = {}
 								# agentState = rle.agentStatePrev
-					 		
+					 		# if effects:
+					 		# 	print "checking agentState"
+					 		# 	embed()
 
 					 		## If there were collisions, update history and perform interactionSet induction if the collisions were novel.
 							if effects:
@@ -366,7 +375,7 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 									terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
 									trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
 									theory_change_flag = True
-									hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20)) ##if you resample or run sprite induction, this 
+									hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, verbose=True)) ##if you resample or run sprite induction, this 
 
 									candidate_new_colors = updateCandidateColors(hypotheses, finalEventList)
 
