@@ -3,6 +3,7 @@ from mcts import *
 from qlearner import *
 from aStar import *
 
+
 def translateEvents(events, all_objects):
 	if events is None:
 		return None
@@ -328,26 +329,38 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 					## Get actions that take you to goal.
 					ignore, actions, steps = getToWaypoint(vrle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, partitionWeights=[5,3,3], act=False)
 
+					## Sometimes you can have a theory under which you can't get to a goal!
+					## i.e., if you think that the objects around you will kill you (even though they won't in real life)
+					## In this, take a random action.
+					if len(actions)==0:
+						actions = [random.choice([(1,0), (-1,0), (0,1), (0,-1)])]
+
 					for action in actions:
 						if not theory_change_flag and not goal_achieved:
 							spriteInduction(rle._game, step=1)
 							spriteInduction(rle._game, step=2)
-							res = rle.step(noise(action))
-							states_encountered.append(rle._game.getFullState())
-							terminal = rle._isDone()[0]				
-							effects = translateEvents(res['effectList'], all_objects)
-							if symbolDict: 
-								print rle.show()
-							else:
-								print np.reshape(new_state, rle.outdim)
-							# Save the event and agent state
+							
 							try:
 								agentState = dict(rle._game.getAvatars()[0].resources)
 								rle.agentStatePrev = agentState
 							# If agent is killed before we get agentState
 							except Exception as e:	# TODO: how to process changes in resources that led to termination state?
-								agentState = {}
+								# print "didn't find agentState resources"
+								# embed()
+								agentState = {'medicine':0}
 								# agentState = rle.agentStatePrev
+								
+							res = rle.step(noise(action))
+							states_encountered.append(rle._game.getFullState())
+							terminal = rle._isDone()[0]				
+							effects = translateEvents(res['effectList'], all_objects)
+
+							if symbolDict: 
+								print rle.show()
+							else:
+								print np.reshape(new_state, rle.outdim)
+							# Save the event and agent state
+
 					 		# if effects:
 					 		# 	print "checking agentState"
 					 		# 	embed()
@@ -375,7 +388,7 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 									terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
 									trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
 									theory_change_flag = True
-									hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, verbose=True)) ##if you resample or run sprite induction, this 
+									hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, verbose=False)) ##if you resample or run sprite induction, this 
 
 									candidate_new_colors = updateCandidateColors(hypotheses, finalEventList)
 
