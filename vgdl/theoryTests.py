@@ -15,6 +15,7 @@ if __name__ == "__main__":
 	gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 	initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
 
+	####### worked #########
 	event1 = {'agentState': {'medicine':0}, 'agentAction': (1,0), \
 	'effectList': [('changeResource', 'DARKBLUE', 'WHITE', 'medicine', 1), ('killSprite', 'WHITE', 'DARKBLUE')],\
 	 'gameState': None}
@@ -33,6 +34,9 @@ if __name__ == "__main__":
 	# eventList = [event1, event2, event3, event4]
 	eventList = [event4, event2, event3, event1]
 
+
+
+
 	terminationCondition = {'ended': False, 'win':False, 'time':5}
 	trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in eventList], terminationCondition)
 	
@@ -40,4 +44,17 @@ if __name__ == "__main__":
 	hypotheses = list(gameObject.runInduction(gameObject.spriteInductionResult, trace, 20, verbose=False)) ##if you resample or run sprite induction, this 
 
 	print "found", len(hypotheses), "hypotheses"
+
 	embed()
+
+symbolDict = generateSymbolDict(rle)
+
+game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], symbolDict, \
+"./examples/gridphysics/theorytest.py", goalLoc=(3,3))
+
+vrle = createMindEnv(game, level, output=False)
+vrle.immovables = immovables
+
+
+
+
