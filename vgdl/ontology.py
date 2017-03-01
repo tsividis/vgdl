@@ -1243,10 +1243,6 @@ def collectResource(sprite, partner, game): # FLAG
 def changeResource(sprite, partner, resourceColor, game, resource, value=1):
     """ Increments a specific resource type in sprite """
     sprite.resources[resource] = max(-1, min(sprite.resources[resource]+value, game.resources_limits[resource]))
-    #print resource, sprite.resources[resource]
-    #print 'Changed ', colorDict[str(partner.color)]
-    # print "in changeresource"
-    # embed()
     # NOTE: partner is the color of the resource (see _eventHandling() in core.py)
     # embed()
     return ('changeResource', sprite.ID, partner.ID, resource, value)
@@ -1272,6 +1268,7 @@ def killIfOtherHasMore(sprite, partner, game, resource, limit=1):
 
 def killIfHasLess(sprite, partner, game, resource, limit=1):
     """ If 'sprite' has less than a limit of the resource type given, it dies. """
+    # print sprite.resources[resource], limit
     if sprite.resources[resource] <= limit:
         return killSprite(sprite, partner, game)
         # return ('killIfHasLess' , sprite.ID, partner.ID)
@@ -1485,8 +1482,16 @@ def initializeDistribution(sprite_types):
     catch_all_prior = .000001
     initial_distribution = {"OTHER":catch_all_prior}
 
+    stationary_sprites = [Resource, ResourcePack] #removed Immovable, Passive
+    moving_sprites = [RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile] 
+
+    moving_sprite_prob = .1
     for sprite_type in sprite_types:
-        initial_distribution[sprite_type] = (1.0-catch_all_prior)/(len(sprite_types)) # uniform distribution
+        if sprite_type in stationary_sprites:
+            initial_distribution[sprite_type] = (1.0-catch_all_prior-moving_sprite_prob)/(len(stationary_sprites))
+        elif sprite_type in moving_sprites:
+            initial_distribution[sprite_type] = (moving_sprite_prob)/(len(moving_sprites))
+
     return initial_distribution
 
 
@@ -1504,12 +1509,17 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
         curr_distribution - renormalized updated distribution over sprite types for a given object
     """
     if sprite in curr_distribution.keys():
+
+        # print "in updateDistribution"
+        # print curr_distribution[sprite]
+
         for sprite_type in curr_distribution[sprite].keys():
             if sprite_type == "OTHER":
                 movement_options[sprite][sprite_type] = {outcome: 1.0/5} #up down left right stay
 
+
             if curr_distribution[sprite][sprite_type] > 0:
-                
+       
                 # If the outcome is an option for the sprite type, update probability
                 if outcome in movement_options[sprite][sprite_type].keys():
                     curr_distribution[sprite][sprite_type] *=  movement_options[sprite][sprite_type][outcome]
@@ -1521,6 +1531,9 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
         for sprite_type in curr_distribution[sprite].keys():
             curr_distribution[sprite][sprite_type] /= z
 
+        # print curr_distribution[sprite]
+        # embed()
+        # print ""
     return curr_distribution
 
 def sampleFromDistribution(curr_distribution, all_objects):
@@ -1611,7 +1624,7 @@ def spriteInduction(game, step):
                         # print movement_options[sprite][sprite_type]
 
         game.collision_objects = set()
-    elif step==3: # TODO: remember to change all instances of 2s in function calls to 3s!
+    elif step==3:
         ## Sprite Induction Part 2: Update sprite distribution based on observations
         objects = game.getObjects()
         for sprite in game.spriteDistribution.keys():        # Keys are the IDs of the game objects
@@ -1624,13 +1637,18 @@ def spriteInduction(game, step):
 
                     game.spriteDistribution = updateDistribution(sprite, game.spriteDistribution, game.movement_options, outcome)
 
-def selectObjectGoal(rle, unknown_colors, method):
+def selectObjectGoal(rle, unknown_colors, all_colors, method):
     def dist(a,b):
         return abs(a[0]-b[0])+abs(a[1]-b[1])
+
+    epsilon = .2
     if method=='random_then_nearest':
-        # print "in selectObjectGoal"
-        # embed()
-        object_color = random.choice(unknown_colors)
+        if len(unknown_colors)>0 and random.random()>epsilon:
+            object_color = random.choice(unknown_colors)
+        else:
+            # in case we've interacted with everything once but want to randomly try things again
+            object_color = random.choice(all_colors)
+
         choices = [item for sublist in rle._game.sprite_groups.values() for item in sublist if colorDict[str(item.color)]==object_color]
         avatar_loc = rle._rect2pos(rle._game.sprite_groups['avatar'][0].rect)
         choices = [(dist(rle._rect2pos(c.rect), avatar_loc), c) for c in choices]
@@ -1638,6 +1656,7 @@ def selectObjectGoal(rle, unknown_colors, method):
         nearest_dist = min([c[0] for c in choices])
         nearest = [c for c in choices if c[0]==nearest_dist]
         return random.choice(nearest)[1]
+
     # elif method=='random':
     #     object_goal =random.choice(unknown_objects)
     #     instantiated_goal = random.choice(rle._game.sprite_groups[object_goal]) # TODO: instead, find nearest instance of that object. Not necessarily trivial becase you could mistakenly pick something that's impossible to get to.
