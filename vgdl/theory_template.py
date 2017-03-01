@@ -100,6 +100,12 @@ class Precondition(object):
 		self.operator_name = operator_name
 		self.num = num
 		self.negated = False
+	
+	# if operator_name=='>':
+	# 	self.argsString = "limit="+str(num-1)
+	# elif operator_name=='<':
+	# 	self.argsString = "limit="str(num+1) #check
+
 
 	def check(self, dictionary):
 		if self.item not in dictionary.keys():
@@ -374,9 +380,9 @@ class Theory(object):
 			theories.append(self)
 		else:
 			failCase = self.getFailCases(event, timestep)
-			print event
-			print "\tFail case: ", failCase
-			print ""
+			# print event
+			# print "\tFail case: ", failCase
+			# print ""
 
 			# This particular event is explained. Don't change anything.
 			if failCase == 0:
@@ -567,7 +573,7 @@ class Theory(object):
 		if (eventInRules, predictionsHappened) not in failCases.keys():
 			print "weird fail case"
 			embed()
-		print failCases[(eventInRules, predictionsHappened)][1]
+		# print failCases[(eventInRules, predictionsHappened)][1]
 
 		return failCases[(eventInRules, predictionsHappened)][0]
 
@@ -654,7 +660,7 @@ class Theory(object):
 				if newTheory:
 					newTheories.append(newTheory)
 
-		print "adding {} theories with new assignments".format(len(newTheories))
+		# print "adding {} theories with new assignments".format(len(newTheories))
 		return newTheories
 
  
@@ -1233,14 +1239,14 @@ class Theory(object):
 			text = item+"<"+str(1)
 			operator = '<'
 			concepts.append((text,item,operator,1))
-		if num>=0:
-			text = item+">="+str(0)
-			operator = '>='
-			concepts.append((text,item,operator,0))	
-		if num>=1:
-			text = item+">="+str(1)
-			operator = '>='
-			concepts.append((text,item,operator,1))
+		if num>-1: #num>=0:
+			text = item+">"+str(-1)
+			operator = '>' # 			operator = '>='
+			concepts.append((text,item,operator,-1))	
+		if num>0: #num>=1:
+			text = item+">"+str(0)
+			operator = '>'
+			concepts.append((text,item,operator,0))
 		return concepts 					# TODO: Should this return functions and text? (text, function) tuples?
 
 	def getClassFromColor(self, color):
@@ -1858,18 +1864,23 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 	def buildArgsString(interactionRule):
 		relevantArgNames = getKeywordsFromOntology(interactionRule.interaction)
+		newInteractionName = False
 		if interactionRule.interaction=='changeResource':
 			k, v = interactionRule.valueChanges.items()[0]
 			argsString = " %s=%s %s=%s"%(relevantArgNames[0], getClassNameFromSpriteString(k), relevantArgNames[1], str(v))
+		elif interactionRule.interaction=='killSprite':
+			precondition = list(set(interactionRule.preconditions))[0]
+			if precondition:
+				argsString = " %s=%s %s=%s"%('resource', precondition.item, 'limit', str(precondition.num))
+			else:
+				print "buildArgsString got called but no precondition"
+				embed()
 		else:
 			print "Have not yet implemented argsString construction for", interactionRule.interaction, ". In buildArgString"
 			embed()
-		return argsString
+		return argsString, newInteractionName
 
-	for rule in theory.interactionSet:
-		if rule.preconditions:
-			print "found preconditions"
-			embed()
+
 	DIRECTION_MAP = {(0,-1):'UP', (0,1):'DOWN', (1,0):'RIGHT', (-1,0):'LEFT'}
 
 	_obstypes = rle._obstypes
@@ -1960,16 +1971,21 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 			for s1 in theory.classes[c1]:
 				for s2 in theory.classes[c2]:
 					argsString = ""
-					if interactionRule.valueChanges:
-						argsString += buildArgsString(interactionRule)
 
-						# for k,v in interactionRule.valueChanges.items():
-						# 	argsString += " %s:%s"%(getClassNameFromSpriteString(k), str(v))
+					if interactionRule.preconditions:
+						print "found preconditions"
+						if interactionRule.interaction=='killSprite':
+							args, interactionRule.interaction = buildArgsString(interactionRule)
+							argsString += args
+							embed()
+						else:
+							print "don't know how to handle preconditions for this rule. in writeTheoryToTxt"
+							embed()
 
+					if interactionRule.valueChanges: # where we're storing args for lines in VGDL theories
+						args, discard = buildArgsString(interactionRule)
+						argsString += args
 
-					# if interactionRule.interaction == "changeResource":
-					# 	print "reached changeResource in writeTheoryToTxt"
-					# 	embed()
 					if s1.color==newGoalColor:
 						if not 'avatar' in str(s2.className): #only add actual goal object rule if it's not interacting with the avatar.
 							theoryString += "\t\t%s %s > %s%s\n"%('goal', c2, interactionRule.interaction, argsString)
@@ -1979,9 +1995,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					else:
 						theoryString += "\t\t%s %s > %s%s\n"%(c1, c2, interactionRule.interaction, argsString)
 					
-					# if interactionRule.valueChanges:
-						# print "found valueChanges"
-						# embed()
 					if 'avatar' in str(s1.vgdlType).lower():
 						if interactionRule.interaction in immovable_predicates:
 							# print "must add immovable"
