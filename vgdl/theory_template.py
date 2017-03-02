@@ -118,6 +118,9 @@ class InteractionRule(object):
 	def asTuple(self):
 		return (self.interaction, self.slot1, self.slot2, self.valueChanges) #TODO: Check that adding the value here doesn't mess up equality checks elsewhere
 
+	def preconditionsTrue(self, agentState):
+		return all([p.check(agentState) for p in self.preconditions])
+
 	def addPrecondition(self, precondition):
 		"""
 		TODO: Now that we've reimplemented preconditions as lambda functions,
@@ -330,7 +333,7 @@ class Theory(object):
 			theories.append(self)
 		else:
 			failCase = self.getFailCases(event, timestep)
-			# print "\tFail case: ", failCase
+			print "\tFail case: ", failCase
 
 			if override:
 				# TODO: actually check what other failCases you could end up in when you want to override.
@@ -343,6 +346,7 @@ class Theory(object):
 				
 				# Add new rule
 				elif failCase == 4: 
+					print event
 					theories.extend(self.addRules(event))
 
 		return theories
@@ -365,46 +369,7 @@ class Theory(object):
 		return classGameState
 
 
-	def explainTermination(self, timestep, prevTimeSteps,result):
-		"""
-		adds all hypotheses about the termination conditions to the terminationSet
-		params:
-		timestep: the very last time step (at which termination occurs)
-		prevTimeSteps: all time steps previous to the termination time step
-		result: a dictionary for which the key 'win' is a boolean describing whether the game was won
-		"""
-		win = result['win']
-		classesWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
-		prevClassGameStates = [self.makeGameStateWithClasses(t.gameState['objects']) for t in prevTimeSteps]
-		classGameState = self.makeGameStateWithClasses(timestep.gameState['objects'])
-		for c in classGameState:
-			timestep_amt = classGameState[c]
-			timestep_amt_unique = not timestep_amt in [g[c] for g in prevClassGameStates]
-			if timestep_amt_unique:
-				classesWithDiffAmounts[c] = timestep_amt
 
-		# print "IN TERMINATION CONDITIONS"
-		# print timestep
-		# # print timestep.events
-		# print classesWithDiffAmounts
-		# print {k:[c.asTuple() for c in v] for k,v in self.classes.items()}
-
-		for event in timestep.events:
-			for i in [1,2]:
-				terminationClassColor = event[i] #self.getClass(event[i])
-				terminationClassSymbol = self.colorToClassMapper(terminationClassColor)
-				if terminationClassSymbol in classesWithDiffAmounts:
-					timestep_amt = classesWithDiffAmounts[terminationClassSymbol]
-					spriteCounterRule= SpriteCounterRule(terminationClassSymbol,timestep_amt,win)
-					if not spriteCounterRule in self.terminationSet:
-						self.terminationSet.append(spriteCounterRule)
-
-		# print [t.asTuple() for t in self.terminationSet]
-		# embed()
-		time = result["time"]
-		timeoutRule = TimeoutRule(limit=time, win=win)
-		if not timeoutRule in self.terminationSet:
-			self.terminationSet.append(timeoutRule)
 
 
 	def likelihood(self, timestep, sparse=False):
@@ -420,6 +385,10 @@ class Theory(object):
 			likelihood = 1.
 		else:
 			likelihood = 0.
+
+		print "checkEventsInTimeStep: " + str(self.checkEventsInTimeStep(timestep))
+		print "checkPredictionsInTimeStep: " + str(self.checkPredictionsInTimeStep(timestep, sparse))
+		print "likelihood: " + str(likelihood)
 		return likelihood
 
 
@@ -465,6 +434,10 @@ class Theory(object):
 		"""
 		# print "events:", timestep.events
 		interpretations = [self.interpret(event) for event in timestep.events]
+		print "interpretations"
+		print [i.asTuple() for i in interpretations]
+		print "self.interactionSet"
+		print [r.asTuple() for r in self.interactionSet]
 		return all([self.checkEvents(i, timestep) for i in interpretations])
 
 
@@ -475,16 +448,20 @@ class Theory(object):
 		#Note: This fn cannot be exactly like checkPredictions(), becase here we don't care whether 'drying paint' is 
 		#T or F. We need to actually check all the predictions.
 		interpretations = [self.interpret(event).asTuple() for event in timestep.events if self.interpret(event) is not False]
-
+		print "interpretations"
+		print interpretations
 		relevantRules = []
 		for event in timestep.events:
 			relevantRules.extend(self.findRelevantRules(event, timestep.agentState, checkDryingPaint=False, sparse=sparse))
 
+		print "relevantRules"
 		if False in relevantRules: 
+			print "false in relevantRules"
 			return False
 		else:
+			print [rule.asTuple() for rule in relevantRules]
 			for rule in relevantRules:
-				if rule.asTuple() not in interpretations:
+				if rule.asTuple() not in interpretations and rule.checkPreconditions(timestep.agentState):
 					return False
 			return True
 
@@ -552,6 +529,7 @@ class Theory(object):
 			relevantRules = self.findRelevantRules(event, timestep.agentState, checkDryingPaint=True)
 			if False in relevantRules:
 				return () 
+				# return False
 			if relevantRules:
 				return all([rule.asTuple() in interpretations for rule in relevantRules])
 		
@@ -604,6 +582,8 @@ class Theory(object):
 		Creates preconditions based on the agentState that might help to explain the event.
 		Returns a list of theories.
 		"""
+		print "in addPreconditions"
+		# embed()
 		newTheories = []
 
 		obj1 = self.spriteObjects[event[1]]
@@ -1262,6 +1242,58 @@ class Game(object):
 		temp_hypotheses = sorted(temp_hypotheses, key=operator.itemgetter(1,2))
 		return [h[0] for h in temp_hypotheses]
 
+	def explainTermination(self, theory, timestep, prevTimeSteps,result):
+		"""
+		adds all hypotheses about the termination conditions to the terminationSet
+		params:
+		theory: the theory that we are basing our new theories off of. Assume it's a member of hypothesis space.
+		timestep: the very last time step (at which termination occurs)
+		prevTimeSteps: all time steps previous to the termination time step
+		result: a dictionary for which the key 'win' is a boolean describing whether the game was won
+		"""
+
+		win = result['win']
+		classesWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
+		prevClassGameStates = [theory.makeGameStateWithClasses(t.gameState['objects']) for t in prevTimeSteps]
+		classGameState = theory.makeGameStateWithClasses(timestep.gameState['objects'])
+		rulesToAdd = []
+		for c in classGameState:
+			timestep_amt = classGameState[c]
+			timestep_amt_unique = not timestep_amt in [g[c] for g in prevClassGameStates]
+			if timestep_amt_unique:
+				classesWithDiffAmounts[c] = timestep_amt
+
+		for event in timestep.events:
+			# add sprite counter rules to the termination set, if applicable.
+			# Infer potential sprite counter rules by looking at sprite counts for this timestep.
+			for i in [1,2]:
+				terminationClassColor = event[i] #self.getClass(event[i])
+				terminationClassSymbol = theory.colorToClassMapper(terminationClassColor)
+				if terminationClassSymbol in classesWithDiffAmounts:
+					timestep_amt = classesWithDiffAmounts[terminationClassSymbol]
+					spriteCounterRule= SpriteCounterRule(terminationClassSymbol,timestep_amt,win)
+					if not spriteCounterRule in theory.terminationSet:
+						rulesToAdd.append(spriteCounterRule)
+
+
+		time = result["time"]
+		timeoutRule = TimeoutRule(limit=time, win=win)
+		# add a timeout rule to the termination set, if applicable. Use time at the end of this round.
+		if not timeoutRule in theory.terminationSet:
+			rulesToAdd.append(timeoutRule)
+
+		theoryIsSufficient = len(rulesToAdd) > 0
+
+		if not theoryIsSufficient:
+			# parent theory's termination set was insufficient for explaining the termination
+			# conditions of this time step. Need to add children theories to the hypothesis space.
+			self.hypothesisSpace.remove(theory)
+			for r in rulesToAdd:
+				t = deepcopy(theory)
+				t.terminationSet.add(r)
+				self.hypothesisSpace.add(t)
+
+
 	def completeTheory(self, theory, numSamples):
 
 		def sampleCompletedTheory(game, theory):
@@ -1366,6 +1398,7 @@ class Game(object):
 			# If at the end of the timesteps list, add new theories to finalHypotheses
 			if ts_index+1 == len(timesteps): # Need to add one, because you will create a theory of depth one greater than the length of the timesteps
 				newTheoriesCount = 0
+				print "num of new theories: %i" %len(newTheories)
 				for newTheory in newTheories:
 					if all(newTheory.likelihood(ts)==1.0 for ts in timesteps):
 						self.nodes_accepted +=1
@@ -1459,14 +1492,15 @@ class Game(object):
 		for theory in init_hypotheses: 	# each of these theories has depth 1
 			if verbose:
 				theory.display()
-			self.DFSinduction(theory, timesteps, maxNumTheories, override=True, verbose=False) ##override anything that was in the original set.
+			self.DFSinduction(theory, timesteps, maxNumTheories, override=False, verbose=False) ##override anything that was in the original set.
 		
 
 		# Termination set induction
 		if result:
 			hypothesisSpaceWithTermConditions = []
 			for theory in self.hypothesisSpace:
-				theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+				# theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+				self.explainTermination(theory, timesteps[-1], timesteps[:-1], result)
 				hypothesisSpaceWithTermConditions.append(theory)
 
 			self.hypothesisSpace = hypothesisSpaceWithTermConditions
@@ -1504,7 +1538,8 @@ class Game(object):
 		if result:
 			hypothesisSpaceWithTermConditions = []
 			for theory in self.hypothesisSpace:
-				theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+				# theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+				self.explainTermination(theory, timesteps[-1], timesteps[:-1], result)
 				hypothesisSpaceWithTermConditions.append(theory)
 
 			self.hypothesisSpace = hypothesisSpaceWithTermConditions
@@ -1592,7 +1627,8 @@ class Game(object):
 		if result:
 			hypothesisSpaceWithTermConditions = []
 			for theory in self.hypothesisSpace:
-				theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+				# theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+				self.explainTermination(theory, timesteps[-1], timesteps[:-1], result)
 				hypothesisSpaceWithTermConditions.append(theory)
 
 			self.hypothesisSpace = hypothesisSpaceWithTermConditions
