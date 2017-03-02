@@ -1862,7 +1862,10 @@ def getKeywordsFromOntology(interactionName):
 	'killIfHasLess': ['resource', 'limit'],\
 	'killOtherHasLess': ['resource', 'limit'],\
 	'wrapAround': ['offset']}
-	return ontologyKeywordDict[interactionName]
+	if interactionName in ontologyKeywordDict.keys():
+		return ontologyKeywordDict[interactionName]
+	else:
+		return []
 
 
 
