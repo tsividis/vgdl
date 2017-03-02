@@ -2,13 +2,33 @@
 Simple interactions: get/lose points, can't pass through walls, object gets pushed.
 '''
 
+# level = """
+# wwwwwwwwwwwww
+# w pmAmp  w  w
+# w  pmp      w
+# w  pppp  pp w
+# w       p  gw
+# wwwwwwwwwwwww
+# """
+
+# level2 = """
+# wwwwwwwwwwwww
+# w           w
+# w  pmp      w
+# w  pppppppp w
+# w A     p  gw
+# wwwwwwwwwwwww
+# """
+
 level = """
 wwwwwwwwwwwww
-w  pAmp  w  w
-w  pppp     w
-w       p  gw
+w m         w
+w           w
+w      pppppw
+w A     p  gw
 wwwwwwwwwwwww
 """
+
 
         
 game = """
@@ -17,7 +37,7 @@ BasicGame frame_rate=30
         avatar > MovingAvatar color=DARKBLUE #cooldown=4              
         goal > Passive color=GOLD
         cloud > Passive color=BLUE
-        medicine > Resource limit=3 color=WHITE
+        medicine > Resource limit=2 color=WHITE
         poison > Resource limit=3 color=BROWN
         wall > Immovable color=BLACK      
     LevelMapping
@@ -29,22 +49,13 @@ BasicGame frame_rate=30
         g > goal 
     InteractionSet
         avatar wall > stepBack  
-        hole avatar > killSprite
-        treasure avatar > changeResource resource=score value=5
-        treasure avatar > killSprite
-        trap avatar > changeResource resource=score value=-5
-        trap avatar > killSprite
-        box trap > killSprite
-        cloud avatar > killSprite
-        avatar medicine > changeResource resource=medicine value=1
+        avatar medicine > changeResource resource=medicine value=2
         medicine avatar > killSprite
         avatar poison > changeResource resource=medicine value=-1
         poison avatar > killSprite
         avatar poison > killIfHasLess resource=medicine limit=-1
         box avatar  > bounceForward
         box wall    > undoAll        
-        box hole    > killSprite
-        box treasure > undoAll
         box poison > undoAll
         box medicine > undoAll
         goal avatar > killSprite
