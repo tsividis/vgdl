@@ -1960,6 +1960,10 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					else:
 						argsString += " %s=%s"%(k, str(v))
 
+			if s.color == "RED":
+				print "encountered missile in writetheory"
+				embed()
+
 			if "core" in stype:
 				stype = stype[stype.find("core.")+len("core."):]
 

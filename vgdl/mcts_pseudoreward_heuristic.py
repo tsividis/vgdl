@@ -1035,7 +1035,7 @@ if __name__ == "__main__":
 	partitionWeightsList = [(5,1,5),(5,3,3), (5,3,1), (5,1,3), (3,1,5), (3,5,1), (1,3,5), (5,5,1), (1,5,3)]
 	weightInfoList = []
 	totalWeightInfo = {k: {'solved': 0, 'total_steps': 0, 'numActions': 0} for k in partitionWeightsList}
-	numIters = 5
+	numIters = 8
 	for i in range(numIters):
 		weightInfo = parallelizedPlanUntilSolved(game_to_play, filename, 50, partitionWeightsList, numWorkers=4)
 		weightInfoList.append(weightInfo)
@@ -1046,7 +1046,7 @@ if __name__ == "__main__":
 				totalWeightInfo[k]['numActions'] += weightInfo[k]['numActions']
 
 	for k in totalWeightInfo:
-		totalWeightInfo[k]['numActions'] /= float(totalWeightInfo['solved'])
+		totalWeightInfo[k]['numActions'] /= float(totalWeightInfo[k]['solved'])
 
 	embed()
 
