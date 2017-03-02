@@ -1864,14 +1864,15 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 	def buildArgsString(interactionRule):
 		relevantArgNames = getKeywordsFromOntology(interactionRule.interaction)
-		newInteractionName = False
 		if interactionRule.interaction=='changeResource':
 			k, v = interactionRule.valueChanges.items()[0]
 			argsString = " %s=%s %s=%s"%(relevantArgNames[0], getClassNameFromSpriteString(k), relevantArgNames[1], str(v))
+			newInteractionName = interactionRule.interaction
 		elif interactionRule.interaction=='killSprite':
 			precondition = list(set(interactionRule.preconditions))[0]
 			if precondition:
 				argsString = " %s=%s %s=%s"%('resource', precondition.item, 'limit', str(precondition.num))
+				newInteractionName = 'killIfHasLess' #example
 			else:
 				print "buildArgsString got called but no precondition"
 				embed()
@@ -1972,7 +1973,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				for s2 in theory.classes[c2]:
 					argsString = ""
 
-					if interactionRule.preconditions:
+					if interactionRule.preconditions or interactionRule.valueChanges:
 						print "found preconditions"
 						if interactionRule.interaction=='killSprite':
 							args, interactionRule.interaction = buildArgsString(interactionRule)
@@ -1981,10 +1982,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 						else:
 							print "don't know how to handle preconditions for this rule. in writeTheoryToTxt"
 							embed()
-
-					if interactionRule.valueChanges: # where we're storing args for lines in VGDL theories
-						args, discard = buildArgsString(interactionRule)
-						argsString += args
 
 					if s1.color==newGoalColor:
 						if not 'avatar' in str(s2.className): #only add actual goal object rule if it's not interacting with the avatar.
