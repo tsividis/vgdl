@@ -347,10 +347,11 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 								rle.agentStatePrev = agentState
 							# If agent is killed before we get agentState
 							except Exception as e:	# TODO: how to process changes in resources that led to termination state?
-								# print "didn't find agentState resources"
-								# embed()
-								agentState = {'medicine':0}
-								# agentState = rle.agentStatePrev
+								# agentState = defaultdict(lambda: 0)
+								agentState = rle.agentStatePrev
+								print "didn't find agentState resources"
+								embed()
+
 
 							print "agentState", agentState
 							res = rle.step(noise(action))
@@ -359,11 +360,9 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 							effects = translateEvents(res['effectList'], all_objects)
 							
 							k = random.choice(rle._game.spriteDistribution.keys())
-							# print k
-							# print rle._game.spriteDistribution[k]
+
 							spriteInduction(rle._game, step=3)
-							# print rle._game.spriteDistribution[k]
-							# embed()
+
 
 							if symbolDict: 
 								print rle.show()
@@ -380,20 +379,18 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 								## Sampling from the spriteDisribution makes sense, as it's
 								## independent of what we've learned about the interactionSet.
 								## Every timeStep, we should update our beliefs given what we've seen.
-
-								# spriteInduction(rle._game, step=3)
 								sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
 
-								# for s in sample:
-								# 	if 'Star' or 'Chaser' in str(s):
-								# 		print "found AStar in metaplanner"
-								# 		for k in rle._game.spriteDistribution.keys():
-								# 			for j in rle._game.spriteDistribution[k].keys():
-								# 				if 'Star' in str(j) or 'Chaser' in str(j):
-								# 					if rle._game.spriteDistribution[k][j] >0.1:
-								# 						print k, j
-								# 						print rle._game.spriteDistribution[k]
-								# embed()
+								for s in sample:
+									if 'Star' in str(s.vgdlType) or 'Chaser' in str(s.vgdlType):
+										print "found AStar in metaplanner", s.vgdlType
+										for k in rle._game.spriteDistribution.keys():
+											for j in rle._game.spriteDistribution[k].keys():
+												if 'Star' in str(j) or 'Chaser' in str(j):
+													if rle._game.spriteDistribution[k][j] >0.1:
+														print k, j
+														print rle._game.spriteDistribution[k]
+										embed()
 								game_object = Game(spriteInductionResult=sample)
 
 
@@ -405,8 +402,7 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 									trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
 									theory_change_flag = True
 									hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, verbose=False)) ##if you resample or run sprite induction, this 
-									# print "revised hypotheses"
-									# embed()
+
 									if len(hypotheses)>1:
 										print "more than one hypothesis"
 										embed()
@@ -419,10 +415,17 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 									game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], symbolDict, \
 										"./examples/gridphysics/theorytest.py", goalLoc=(rle._rect2pos(object_goal.rect)[1], rle._rect2pos(object_goal.rect)[0]))
 
-									vrle = createMindEnv(game, level, output=False)
+									vrle = createMindEnv(game, level, output=True)
 									vrle.immovables = immovables
-									hypotheses[0].display()	
-									print ""													
+									
+									# If setting the new VRLE's resources fails, it's becuase there is no avatar, so don't worry about that here.
+									try:
+										vrle._game.getAvatars()[0].resources = rle._game.getAvatars()[0].resources
+									except:
+										pass
+
+									# hypotheses[0].display()	
+									# print ""													
 								else:
 									finalEventList.append(event)
 									terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
