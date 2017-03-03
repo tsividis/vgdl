@@ -2048,6 +2048,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 				if true_operator in {"<", "<="}:
 					newInteractionName = 'killIfHasLess' #example
+					embed()
 					if true_operator == "<":
 						limit = precondition.num - 1
 					else:
@@ -2103,6 +2104,12 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 			newGoalType = sorted(_obstypes.keys())[::-1][newGoalIndex]
 			newGoalColor = colorDict[str(rle._game.sprite_constr[newGoalType][1]['color'])]
 
+
+	resourcesToAdd = set()
+	for i in theory.interactionSet:
+		if "resource" in i.args:
+			resourcesToAdd.add(i.args["resource"])
+
 	########### generating theory string
 	theoryString = 'game = """\n'
 	theoryString += "BasicGame\n"
@@ -2143,6 +2150,8 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					sname = colorToSprite[s.color]
 					theoryString += "\t\t%s > %s color=%s%s\n"%("goal", stype, s.color, argsString)
 
+	for resource in resourcesToAdd:
+		theoryString += "\t\t%s > Resource color=RESOURCETOADD\n"%resource
 
 	if goalLoc:
 		if newGoalType == 'blank_space':
