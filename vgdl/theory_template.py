@@ -8,6 +8,7 @@ from IPython import embed
 from ontology import *
 import operator
 import time, math
+from rlenvironmentnonstatic import createMindEnv
 """
 Theory induction on VGDL Games
 """
@@ -139,6 +140,62 @@ class Precondition(object):
 		return not self.__eq__(other)
 
 
+# class InteractionRule(object):
+# 	"""
+# 	Rule defining how 2 classes of objects interact with each other.
+# 	# TODO: Should enforce proper syntax for interaction rules
+
+# 	"""
+# 	def __init__(self, interaction, c1, c2, resource, value, preconditions=set(), generic=False):
+# 		self.interaction = interaction
+# 		self.slot1 = c1
+# 		self.slot2 = c2
+# 		self.valueChanges = {} # Change in value for resources
+# 		self.preconditions = preconditions
+# 		self.generic = generic ## if generic, this interaction rule belongs to the generic prior that is meant to be overriden.
+# 		if resource:
+# 			self.valueChanges[resource]=value
+
+# 	def display(self):
+# 		if not self.preconditions:
+# 			print self.interaction, self.slot1, self.slot2, self.valueChanges
+# 		else:
+# 			print self.interaction, self.slot1, self.slot2, self.valueChanges, [p.text for p in self.preconditions]
+# 		return
+
+# 	def asTuple(self):
+# 		return (self.interaction, self.slot1, self.slot2, self.valueChanges) #TODO: Check that adding the value here doesn't mess up equality checks elsewhere
+
+# 	def preconditionsTrue(self, agentState):
+# 		return all([p.check(agentState) for p in self.preconditions])
+
+# 	def addPrecondition(self, precondition):
+# 		"""
+# 		TODO: Now that we've reimplemented preconditions as lambda functions,
+# 		it can't properly check for equality of preconditions. You *may*
+# 		be able to get around this by checking for the equality of precondition.text
+# 		and making sure that precondition.text always reflects the functioning of the
+# 		lambda function.
+# 		"""
+# 		curr_preconditions = [p.text for p in self.preconditions]	
+# 		if precondition.text not in curr_preconditions: #TODO: change equality for preconditions?
+# 			self.preconditions = set([precondition]) #TODO: Need to change this, if we accept more than one precondition for an interaction rule
+
+# 	def checkPreconditions(self, agentState):
+# 		return all([p.check(agentState) for p in self.preconditions])
+
+# 	def __eq__(self, other):
+# 		if isinstance(other, self.__class__):
+# 			return all([
+# 				self.asTuple()==other.asTuple(),
+# 				self.preconditions==other.preconditions
+# 				])
+# 		else:
+# 			return False
+
+# 	def __ne__(self, other):
+# 		return not self.__eq__(other)
+
 class InteractionRule(object):
 	"""
 	Rule defining how 2 classes of objects interact with each other.
@@ -149,21 +206,22 @@ class InteractionRule(object):
 		self.interaction = interaction
 		self.slot1 = c1
 		self.slot2 = c2
-		self.valueChanges = {} # Change in value for resources
+		self.args = {}
 		self.preconditions = preconditions
 		self.generic = generic ## if generic, this interaction rule belongs to the generic prior that is meant to be overriden.
 		if resource:
-			self.valueChanges[resource]=value
+			self.args["value"] = value
+			self.args["resource"] = resource
 
 	def display(self):
 		if not self.preconditions:
-			print self.interaction, self.slot1, self.slot2, self.valueChanges
+			print self.interaction, self.slot1, self.slot2, self.args
 		else:
-			print self.interaction, self.slot1, self.slot2, self.valueChanges, [p.text for p in self.preconditions]
+			print self.interaction, self.slot1, self.slot2, self.args, [p.text for p in self.preconditions]
 		return
 
 	def asTuple(self):
-		return (self.interaction, self.slot1, self.slot2, self.valueChanges) #TODO: Check that adding the value here doesn't mess up equality checks elsewhere
+		return (self.interaction, self.slot1, self.slot2, self.args) #TODO: Check that adding the value here doesn't mess up equality checks elsewhere
 
 	def preconditionsTrue(self, agentState):
 		return all([p.check(agentState) for p in self.preconditions])
@@ -194,8 +252,6 @@ class InteractionRule(object):
 
 	def __ne__(self, other):
 		return not self.__eq__(other)
-
-
 
 class TerminationRule:
 	"""
@@ -1355,7 +1411,11 @@ class Game(object):
 
 		win = result['win']
 		classesWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
-		prevClassGameStates = [theory.makeGameStateWithClasses(t.gameState['objects']) for t in prevTimeSteps]
+		try:
+			prevClassGameStates = [theory.makeGameStateWithClasses(t.gameState['objects']) for t in prevTimeSteps]
+		except TypeError:
+			print "TypeError in explainTermination"
+			embed()
 		classGameState = theory.makeGameStateWithClasses(timestep.gameState['objects'])
 		rulesToAdd = []
 		for c in classGameState:
@@ -1890,21 +1950,45 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 	def buildArgsString(interactionRule):
 		relevantArgNames = getKeywordsFromOntology(interactionRule.interaction)
-		if interactionRule.interaction=='changeResource':
-			k, v = interactionRule.valueChanges.items()[0]
-			argsString = " %s=%s %s=%s"%(relevantArgNames[0], getClassNameFromSpriteString(k), relevantArgNames[1], str(v))
-			newInteractionName = interactionRule.interaction
-		elif interactionRule.interaction=='killSprite':
+		newInteractionName = interactionRule.interaction
+		if interactionRule.interaction =='killSprite':
+			oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
 			precondition = list(set(interactionRule.preconditions))[0]
 			if precondition:
-				argsString = " %s=%s %s=%s"%('resource', precondition.item, 'limit', str(precondition.num))
-				newInteractionName = 'killIfHasLess' #example
+				if precondition.negated:
+					true_operator = oppositeOperatorMap[precondition.operator_name]
+				else:
+					true_operator = precondition.operator_name
+
+				if true_operator in {"<", "<="}:
+					newInteractionName = 'killIfHasLess' #example
+					if true_operator == "<":
+						limit = precondition.num - 1
+					else:
+						limit = precondition.num
+
+				elif true_operator in {">", ">="}:
+					newInteractionName = 'killIfHasMore'
+					if true_operator == ">":
+						limit = precondition.num + 1
+					else:
+						limit = precondition.num
+
+				else:
+					print "true_operator is unrecognized"
+					embed()
+
+				argsString = " resource=%s limit=%s"%(precondition.item, str(limit))
+		else:
+			if interactionRule.args:
+				argsString = ""
+				for k,v in interactionRule.args.items():
+					argsString += " %s=%s"%(k, v)
+
 			else:
 				print "buildArgsString got called but no precondition"
 				embed()
-		else:
-			print "Have not yet implemented argsString construction for", interactionRule.interaction, ". In buildArgString"
-			embed()
+
 		return argsString, newInteractionName
 
 
@@ -2003,15 +2087,11 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				for s2 in theory.classes[c2]:
 					argsString = ""
 
-					if interactionRule.preconditions or interactionRule.valueChanges:
+					if interactionRule.preconditions or interactionRule.args:
 						print "found preconditions"
-						if interactionRule.interaction=='killSprite':
-							args, interactionRule.interaction = buildArgsString(interactionRule)
-							argsString += args
-							embed()
-						else:
-							print "don't know how to handle preconditions for this rule. in writeTheoryToTxt"
-							embed()
+						args, interactionRule.interaction = buildArgsString(interactionRule)
+						argsString += args
+						# embed()
 
 					if s1.color==newGoalColor:
 						if not 'avatar' in str(s2.className): #only add actual goal object rule if it's not interacting with the avatar.
