@@ -713,7 +713,7 @@ class Theory(object):
 				class1, class2 = assignment[0], assignment[1]
 
 				## Remove any relevant rules that are currently in the interaction set that are generic rules.
-				rulesToRemove = [rule for rule in self.interactionSet if rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 and rule.generic]
+				rulesToRemove = [rule for rule in self.interactionSet if class1 in rule.asTuple() and class2 in rule.asTuple() and rule.generic]
 				# print "interactionSet:", [r.asTuple() for r in self.interactionSet]
 				# print "removing", [r.asTuple() for r in rulesToRemove]
 				self.interactionSet = [rule for rule in self.interactionSet if rule not in rulesToRemove]
@@ -1055,17 +1055,18 @@ class Theory(object):
 			if not sparse:
 				#Default behavior
 				if not checkDryingPaint:
-					relevantRules.extend([rule for rule in rules if rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 \
+					relevantRules.extend([rule for rule in rules if class1 in rule.asTuple() and class2 in rule.asTuple() \
 						and all([p.check(agentState) for p in rule.preconditions]) and not rule.generic])
 				else:
 					# Here we only return rules that are not in the drying paint. 
-					relevantRules.extend([rule for rule in rules if not self.findRule(rule, self.dryingPaint) and rule.asTuple()[1]==class1 \
-						and rule.asTuple()[2]==class2 and all([p.check(agentState) for p in rule.preconditions]) and not rule.generic])
+					relevantRules.extend([rule for rule in rules if not self.findRule(rule, self.dryingPaint) \
+						and class1 in rule.asTuple() and class2 in rule.asTuple() \
+						and all([p.check(agentState) for p in rule.preconditions]) and not rule.generic])
 			else:
 				#'sparse' is passed when we check likelihood of lots of previous timesteps. The logic here is to
 				#only check predictions for previous timesteps when the predictions may have changed. Meaning, only return rules that
 				#are both relevant to the event *and* are new.
-				relevantRules.extend([rule for rule in list(self.dryingPaint) if rule.asTuple()[1]==class1 and rule.asTuple()[2]==class2 \
+				relevantRules.extend([rule for rule in list(self.dryingPaint) if class1 in rule.asTuple() and class2 in rule.asTuple() \
 					and all([p.check(agentState) for p in rule.preconditions]) and not rule.generic])
 
 		# If both classes don't exist
