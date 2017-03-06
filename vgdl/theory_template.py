@@ -730,46 +730,6 @@ class Theory(object):
 
 		# print "adding {} theories with new assignments".format(len(newTheories))
 		return newTheories
-
-	# def addRules(self, event, override=False):
-	# 	"""
-	# 	Search over possible assignments for classes; posit new classes if necessary
-	# 	Return theories that have either 
-	# 	Try to make it fit according to the current rules by searching
-	# 	over possible class assignments for the objects.
-	# 	Returns a list of theories.
-	# 	"""
-	# 	# print 'in addRules...'
-	# 	newTheories = []
-	# 	possibleAssignments = self.searchForAssignments(event)
-	# 	try:
-	# 		## Interactions in ontology.py that have arguments return at most two additional arguments. By convention, 'value' is always the
-	# 		## last of these.
-	# 		resource = event[3]
-	# 		value = event[4]
-
-	# 	except:
-	# 		resource = None
-	# 		value = 0
-
-	# 	obj1 = self.spriteObjects[event[1]]
-	# 	obj2 = self.spriteObjects[event[2]]
-
-
-	# 	if possibleAssignments:
-	# 		for assignment in possibleAssignments:
-	# 			interaction = InteractionRule(event[0], assignment[0], assignment[1], resource, value) #This isn't strictly necessary, but follows createChild requirements.
-	# 			# print "interaction ", interaction.display()
-	# 			classAssignments = [(assignment[0], obj1), (assignment[1], obj2)]
-	# 			newTheory = self.createChild([interaction, classAssignments], override)
-	# 			# newTheory.display()
-	# 			# Checks and only adds to newTheories if the created theory was actually different.
-	# 			if newTheory:
-	# 				newTheories.append(newTheory)
-
-	# 	# print "adding {} theories with new assignments".format(len(newTheories))
-	# 	return newTheories
-
  
 	def addPreconditions(self, event, timestep):
 		"""
@@ -830,28 +790,11 @@ class Theory(object):
 					print "relevantEvents and relevantInteractionSetRules are disjoint but of same length"
 					embed()
 				
-
-				# unfulfilledPredictions = list(set(relevantInteractionSetRules) - set(relevantEvents)) # Will be negated
-				# newTheory = self.createChild([interpretation, False]) #TODO: make sure this is properly negating all other similar events
-				# newTheory.inModification[classPair] = p
-				# newTheory.negatePreconditions(unfulfilledPredictions) # Must be after classPair is added to inModification
-
-
-				# TODO: See if you need to use these lines, or if newTheory = self.createChild(...) completes the task
-				#Negate all interactionRules that didn't happen in this timestep.
-				#Note: this only has to happen for the base case when you're recursing; after that these have already been negated and should not be touched.
-				# for uP in unfulfilledPredictions:
-				# 	uP.addPrecondition(precondition.negate())
-				
-
 		return newTheories
 
-	
 
 
 	"""Helper functions"""
-
-	#TODO: Could be named "suggestRules"
 	def interpret(self, event):
 		"""
 		Looks up objects by their corresponding class under the theory,
@@ -1777,8 +1720,8 @@ class Game(object):
 		if len(self.hypothesisSpace)==0:
 			print "no hypotheses"
 			embed()
-		print "ran induction"
-		embed()
+		# print "ran induction"
+		# embed()
 		return self.hypothesisSpace
 
 	def runDFSInduction(self, trace, maxNumTheories, override=False, verbose=False):
