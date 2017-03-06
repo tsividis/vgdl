@@ -1243,6 +1243,7 @@ def collectResource(sprite, partner, game): # FLAG
 def changeResource(sprite, partner, resourceColor, game, resource, value=1):
     """ Increments a specific resource type in sprite """
     sprite.resources[resource] = max(-1, min(sprite.resources[resource]+value, game.resources_limits[resource]))
+    print sprite, partner, resource, sprite.resources[resource]
     # NOTE: partner is the color of the resource (see _eventHandling() in core.py)
     # embed()
     return ('changeResource', sprite.ID, partner.ID, resource, value)

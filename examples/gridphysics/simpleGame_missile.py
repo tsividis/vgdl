@@ -52,4 +52,4 @@ BasicGame
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(game, box_level)  
+    VGDLParser.playGame(push_game, box_level)  

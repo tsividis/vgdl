@@ -24,7 +24,7 @@ level = """
 wwwwwwwwwwwww
 w m         w
 w           w
-w      pppppw
+w     cpppppw
 w A     p  gw
 wwwwwwwwwwwww
 """
@@ -36,13 +36,14 @@ BasicGame frame_rate=30
     SpriteSet        
         avatar > MovingAvatar color=DARKBLUE #cooldown=4              
         goal > Passive color=GOLD
-        cloud > Passive color=BLUE
-        medicine > Resource limit=2 color=WHITE
+        cloud > Passive 
+            blue > color=BLUE
+        medicine > Resource limit=10 color=WHITE
         poison > Resource limit=3 color=BROWN
         wall > Immovable color=BLACK      
     LevelMapping
         0 > hole
-        c > cloud 
+        c > blue 
         m > medicine
         p > poison
         w > wall   
@@ -54,11 +55,7 @@ BasicGame frame_rate=30
         avatar poison > changeResource resource=medicine value=-1
         poison avatar > killSprite
         avatar poison > killIfHasLess resource=medicine limit=-1
-        box avatar  > bounceForward
-        box wall    > undoAll        
-        box poison > undoAll
-        box medicine > undoAll
-        goal avatar > killSprite
+        cloud avatar  > bounceForward
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False   
         SpriteCounter stype=goal limit=0 win=True       
