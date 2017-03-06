@@ -35,6 +35,7 @@ DARKGRAY = (30, 30, 30)
 DARKBLUE = (20, 20, 100)
 PURPLE = (140, 20, 140)
 RESOURCETOADD = (175, 175, 175)
+ENDOFSCREEN = (1, 1, 1)
 
 UP = (0, -1)
 DOWN = (0, 1)
@@ -63,6 +64,8 @@ colorDict = {str((0, 200, 0)): 'GREEN',\
             str((20, 20, 100)): 'DARKBLUE',\
             str((140, 20, 140)): 'PURPLE',\
             str((175, 175, 175)): 'RESOURCETOADD',\
+            str((1, 1, 1)): 'ENDOFSCREEN',\
+
             }
 
 
@@ -307,7 +310,7 @@ class Conveyor(OrientedSprite):
 
 class Missile(OrientedSprite): ##
     """ A sprite that constantly moves in the same direction. """
-    speed = 1
+    speed = .2
     color = PURPLE
 
 class Switch(VGDLSprite):
@@ -1053,8 +1056,6 @@ def stepBack(sprite, partner, game):
 
 def undoAll(sprite, partner, game):
     """ Revert last moves of all sprites. """
-    #print 'undo', colorDict[str(sprite.color)], colorDict[str(partner.color)]
-    # print 
     for s in game:
         s.rect = s.lastrect
 
@@ -1161,7 +1162,7 @@ def detrigger(sprite, partner, game, strigger=None):
 def flipDirection(sprite, partner, game): # FLAG
     sprite.orientation = random.choice(BASEDIRS)
 
-    return ('flipDirection' , sprite.ID, partner.ID)
+    return ('flipDirection', sprite.ID, partner.ID)
 
 def bounceDirection(sprite, partner, game, friction=0): # FLAG
     """ The centers of the objects determine the direction"""
@@ -1172,7 +1173,7 @@ def bounceDirection(sprite, partner, game, friction=0): # FLAG
     dp = snorm[0] * inc[0] + snorm[1] * inc[1]
     sprite.orientation = (-2 * dp * snorm[0] + inc[0], -2 * dp * snorm[1] + inc[1])
     sprite.speed *= (1. - friction)
-    return ('bounceDirection' , sprite.ID, partner.ID)
+    return ('bounceDirection', sprite.ID, partner.ID)
 
 
 def wallBounce(sprite, partner, game, friction=0): # FLAG
@@ -1187,7 +1188,7 @@ def wallBounce(sprite, partner, game, friction=0): # FLAG
         sprite.orientation = (sprite.orientation[0], -sprite.orientation[1])
     # return ('wallBounce', colorDict[str(partner.color)], colorDict[str(sprite.color)])
     ## TODO: Not printing for now   
-    return ('wallBounce' , sprite.ID, partner.ID)
+    return ('wallBounce', sprite.ID, partner.ID)
 
 def wallStop(sprite, partner, game, friction=0): # FLAG
     """ Stop just in front of the wall, removing that velocity component,
@@ -1291,7 +1292,7 @@ def wrapAround(sprite, partner, game, offset=0):
     elif sprite.orientation[1] < 0:
         sprite.rect.top = game.screensize[1] - sprite.rect.size[1] * (1 + offset)
     sprite.lastmove = 0
-    return ('wrapAround' , sprite.ID, partner.ID, offset)
+    return ('wrapAround', sprite, partner, offset)
 
 def pullWithIt(sprite, partner, game):
     """ The partner sprite adds its movement to the sprite's. """
@@ -1387,7 +1388,7 @@ def updateOptions(game, sprite_type, current_sprite):
 
     # Immovable, Passive, ResourcePack
     if (sprite_type == Immovable) or (sprite_type == Passive) or (sprite_type == ResourcePack) or (sprite_type == Resource):
-        return {(current_sprite.rect.left, current_sprite.rect.top):1.} ##object stays in position
+        return {(current_sprite.rect.left, current_sprite.rect.top): 1.} ##object stays in position
     
     # Chaser
     elif sprite_type == Chaser:
@@ -1477,7 +1478,7 @@ def updateOptions(game, sprite_type, current_sprite):
 
 def initializeDistribution(sprite_types):
     """
-    Creates a uniform distribution over all the sprite types.
+    Creates a prior distribution over all the sprite types.
     """
     catch_all_prior = .000001
     initial_distribution = {"OTHER":catch_all_prior}
@@ -1537,7 +1538,6 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
     return curr_distribution
 
 def sampleFromDistribution(curr_distribution, all_objects):
-    ## TODO: Rewrite this when you've slept.
 
     import random
     import numpy as np
@@ -1556,7 +1556,7 @@ def sampleFromDistribution(curr_distribution, all_objects):
             sample.append(Sprite(vgdlType=MovingAvatar, color=all_objects[k]['type']['color']))
 
     ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
-    types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys])) #  if all_objects[k][['sprite'].name is not 'avatar']]))
+    types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]))
 
     for obj_type in types:
         options = [k for k in all_objects.keys() if all_objects[k]['type']['color'] == obj_type]
