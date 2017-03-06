@@ -10,19 +10,30 @@ def translateEvents(events, all_objects):
 	# all_objects = rle._game.getObjects()
 
 	def getObjectColor(objectID):
-		return all_objects[objectID]['type']['color']
+		if objectID is None:
+			return None
+		elif objectID in all_objects.keys():
+			return all_objects[objectID]['type']['color']
+		else:
+			# for some reason we haven't been passed an ID but rather a sprite object
+			objectName = objectID.name
+			color = [all_objects[k]['type']['color'] for k in all_objects.keys() if all_objects[k]['sprite'].name==objectName][0]
+			return color
 
 	outlist = []
 	for event in events:
-		if len(event) > 3:
-			tmp = [event[0], getObjectColor(event[1]), getObjectColor(event[2])]
-			tmp.extend(event[3:])
-			outlist.append(tuple(tmp))
-		if len(event)==3:
-			outlist.append((event[0], getObjectColor(event[1]), getObjectColor(event[2])))
-		elif len(event)==2:
-			outlist.append((event[0], getObjectColor(event[1])))
-	
+		try:
+			if len(event) > 3:
+				tmp = [event[0], getObjectColor(event[1]), getObjectColor(event[2])]
+				tmp.extend(event[3:])
+				outlist.append(tuple(tmp))
+			if len(event)==3:
+				outlist.append((event[0], getObjectColor(event[1]), getObjectColor(event[2])))
+			elif len(event)==2:
+				outlist.append((event[0], getObjectColor(event[1])))
+		except:
+			print "translateEvents failed"
+			embed()
 	if len(outlist)>0:
 		print outlist
 	return list(set(outlist)) # make sure effects in timeStep are unique.
