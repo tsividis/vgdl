@@ -1975,10 +1975,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					else:
 						limit = precondition.num
 
-				else:
-					print "true_operator is unrecognized"
-					embed()
-
 				argsString = " resource=%s limit=%s"%(precondition.item, str(limit))
 		else:
 			if interactionRule.args:
@@ -2084,7 +2080,35 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	# second phase: the interaction rules
 	theoryString += "\tInteractionSet\n"
 	added_rules = []
+	sortedInteractionDict = {} 
+	# create a dict mapping interacting class pairs to their list of interactions
 	for interactionRule in theory.interactionSet:
+		c1 = interactionRule.slot1
+		c2 = interactionRule.slot2
+		if c1 > c2:
+			c1, c2 = c2, c1 # flip order
+
+		if not (c1,c2) in sortedInteractionDict:
+			sortedInteractionDict[(c1, c2)] = [interactionRule]
+		else:
+			sortedInteractionDict[(c1, c2)].append(interactionRule)
+
+	sortedInteractions = []
+	for pair in sortedInteractionDict:
+		killInteractions = []
+		nonKillInteractions = []
+		for interactionRule in sortedInteractionDict[pair]:
+			if "kill" in interactionRule.interaction:
+				# check whether this is a killing interaction
+				killInteractions.append(interactionRule)
+			else:
+				nonKillInteractions.append(interactionRule)
+
+		sortedInteractions += killInteractions + nonKillInteractions
+		# make sure that killing interactions get processed before interactions
+		# that don't kill.
+
+	for interactionRule in sortedInteractions:
 		if all([not interactionRule.__eq__(r) for r in added_rules]): ## don't duplicate rules.
 
 			c1 = interactionRule.slot1
