@@ -2179,7 +2179,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					argsString = ""
 
 					if interactionRule.preconditions or interactionRule.args:
-						print "found preconditions"
 						args, interactionRule.interaction = buildArgsString(interactionRule)
 						argsString += args
 						# embed()
