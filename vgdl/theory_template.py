@@ -357,10 +357,15 @@ class Theory(object):
 			self.spriteSet = vgdlSpriteParse
 		if spriteInductionResult:
 			self.spriteSet = spriteInductionResult
+
+		# End of screen is a special object. Initialize it here.
+		eos = Sprite(core.VGDLSprite, 'ENDOFSCREEN', None, None)
+		self.spriteSet.append(eos)
+
 		# Get mapping from sprite color to Sprite object
 		for s in self.spriteSet:
 			self.spriteObjects[s.color] = s
-
+		# embed()
 	"""Main functions"""
 
 	def prior(self):
@@ -832,7 +837,6 @@ class Theory(object):
 
 	def findRelatedRules(self, classPair, interactionList):
 		#needs to take a list of interpretations or a list of interaction rules
-		#Note: PT changed this on 8/19; weird that we hadn't caught the bug before -- was checking interaction.asTuple()[1:].
 		return [interaction for interaction in interactionList if classPair == interaction.asTuple()[1:3]]
 	
 	def negatePreconditions(self, unfulfilledPredictions):
@@ -845,7 +849,6 @@ class Theory(object):
 			# Iterate through relevant rules, negate them if they're not in the drying paint
 			for r in unfulfilledPredictions:
 				if r.asTuple() not in [new_r.asTuple() for new_r in self.dryingPaint]:
-					# precondition = self.inModification[r.asTuple()[1:]] # Single precondition object
 					precondition = r.preconditions # Single precondition object
 
 					preconditionToNegate = copy.deepcopy(precondition)
@@ -874,9 +877,7 @@ class Theory(object):
 			item = c[1]
 			operator_name = c[2]
 			num = c[3]
-			
-			# f = lambda x: eval(str(x[item])+operator+str(num))
-			
+						
 			preconditions.append(Precondition(text, item, operator_name, num))
 		return preconditions
 
