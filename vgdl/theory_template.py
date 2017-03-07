@@ -56,41 +56,6 @@ class TimeStep:
 		return (self.agentAction, self.agentState, self.events, self.gameState)
 
 
-# class Precondition(object):
-# 	"""
-# 	Appended to InteractionRules if conflicting effects occur from the same interaction, due to changed resources.
-# 	"""
-# 	def __init__(self, text, fn, item):
-# 		self.text = text
-# 		self.fn = fn
-# 		self.item = item
-# 		self.negated = False
-
-# 	def check(self, backpack):
-# 		try:
-# 			answer = self.fn(backpack)
-# 			if self.negated:
-# 				return not answer
-# 			else:
-# 				return answer
-# 		except Exception as e:
-# 			#print e
-# 			backpack[self.item] = 0
-# 			return self.fn(backpack)
-
-# 	def negate(self):
-# 		self.negated = not self.negated
-# 		self.text = 'not '+ self.text
-
-# 	def display(self):
-# 		print self.text
-
-# 	def __eq__(self, other):
-# 		return self.text == other.text
-
-# 	def __ne__(self, other):
-# 		return not self.__eq__(other)
-
 class Precondition(object):
 	"""
 	Appended to InteractionRules if conflicting effects occur from the same interaction, due to changed resources.
@@ -138,63 +103,6 @@ class Precondition(object):
 
 	def __ne__(self, other):
 		return not self.__eq__(other)
-
-
-# class InteractionRule(object):
-# 	"""
-# 	Rule defining how 2 classes of objects interact with each other.
-# 	# TODO: Should enforce proper syntax for interaction rules
-
-# 	"""
-# 	def __init__(self, interaction, c1, c2, resource, value, preconditions=set(), generic=False):
-# 		self.interaction = interaction
-# 		self.slot1 = c1
-# 		self.slot2 = c2
-# 		self.valueChanges = {} # Change in value for resources
-# 		self.preconditions = preconditions
-# 		self.generic = generic ## if generic, this interaction rule belongs to the generic prior that is meant to be overriden.
-# 		if resource:
-# 			self.valueChanges[resource]=value
-
-# 	def display(self):
-# 		if not self.preconditions:
-# 			print self.interaction, self.slot1, self.slot2, self.valueChanges
-# 		else:
-# 			print self.interaction, self.slot1, self.slot2, self.valueChanges, [p.text for p in self.preconditions]
-# 		return
-
-# 	def asTuple(self):
-# 		return (self.interaction, self.slot1, self.slot2, self.valueChanges) #TODO: Check that adding the value here doesn't mess up equality checks elsewhere
-
-# 	def preconditionsTrue(self, agentState):
-# 		return all([p.check(agentState) for p in self.preconditions])
-
-# 	def addPrecondition(self, precondition):
-# 		"""
-# 		TODO: Now that we've reimplemented preconditions as lambda functions,
-# 		it can't properly check for equality of preconditions. You *may*
-# 		be able to get around this by checking for the equality of precondition.text
-# 		and making sure that precondition.text always reflects the functioning of the
-# 		lambda function.
-# 		"""
-# 		curr_preconditions = [p.text for p in self.preconditions]	
-# 		if precondition.text not in curr_preconditions: #TODO: change equality for preconditions?
-# 			self.preconditions = set([precondition]) #TODO: Need to change this, if we accept more than one precondition for an interaction rule
-
-# 	def checkPreconditions(self, agentState):
-# 		return all([p.check(agentState) for p in self.preconditions])
-
-# 	def __eq__(self, other):
-# 		if isinstance(other, self.__class__):
-# 			return all([
-# 				self.asTuple()==other.asTuple(),
-# 				self.preconditions==other.preconditions
-# 				])
-# 		else:
-# 			return False
-
-# 	def __ne__(self, other):
-# 		return not self.__eq__(other)
 
 class InteractionRule(object):
 	"""
@@ -797,8 +705,6 @@ class Theory(object):
 				
 		return newTheories
 
-
-
 	"""Helper functions"""
 	def interpret(self, event):
 		"""
@@ -819,10 +725,6 @@ class Theory(object):
 		except:
 			value = 0
 			resource = None
-
-		# if not (event[1] in self.spriteObjects.keys() and event[2] in self.spriteObjects.keys()):
-		# 	print "didn't find lightblue"
-		# 	embed()
 
 		obj1 = self.spriteObjects[event[1]]
 		obj2 = self.spriteObjects[event[2]]
@@ -2050,6 +1952,8 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 		if "resource" in i.args:
 			resourcesToAdd.add(i.args["resource"])
 
+	# print " in writetheory"
+	# embed()
 	########### generating theory string
 	theoryString = 'game = """\n'
 	theoryString += "BasicGame\n"
