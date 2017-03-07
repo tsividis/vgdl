@@ -110,16 +110,14 @@ class InteractionRule(object):
 	# TODO: Should enforce proper syntax for interaction rules
 
 	"""
-	def __init__(self, interaction, c1, c2, resource, value, preconditions=set(), generic=False):
+	def __init__(self, interaction, c1, c2, args, preconditions=set(), generic=False):
 		self.interaction = interaction
 		self.slot1 = c1
 		self.slot2 = c2
-		self.args = {}
+		self.args = args
 		self.preconditions = preconditions
 		self.generic = generic ## if generic, this interaction rule belongs to the generic prior that is meant to be overriden.
-		if resource:
-			self.args["value"] = value
-			self.args["resource"] = resource
+
 
 	def display(self):
 		if not self.preconditions:
@@ -609,14 +607,14 @@ class Theory(object):
 		newTheories = []
 		possibleAssignments = self.searchForAssignments(event)
 		try:
+			## Events now have an optional last element of the tuple that is 'args': a dictionary of names-->values for things like
+			## resources, stypes, values, etc.
+			## These are relevant for interactions like teleportToExit, changeResource, etc.
 			## Interactions in ontology.py that have arguments return at most two additional arguments. By convention, 'value' is always the
 			## last of these.
-			resource = event[3]
-			value = event[4]
-
+			args = event[3]
 		except:
-			resource = None
-			value = 0
+			args = {}
 
 		obj1 = self.spriteObjects[event[1]]
 		obj2 = self.spriteObjects[event[2]]
@@ -632,7 +630,8 @@ class Theory(object):
 				self.interactionSet = [rule for rule in self.interactionSet if rule not in rulesToRemove]
 				# print "interactionSet after removing:", [r.asTuple() for r in self.interactionSet]
 				# embed()
-				interaction = InteractionRule(event[0], assignment[0], assignment[1], resource, value) #This isn't strictly necessary, but follows createChild requirements.
+				interaction = InteractionRule(event[0], assignment[0], assignment[1], args) #This isn't strictly necessary, but follows createChild requirements.
+
 				# print "interaction ", interaction.display()
 				classAssignments = [(assignment[0], obj1), (assignment[1], obj2)]
 				newTheory = self.createChild([interaction, classAssignments], override)
@@ -719,12 +718,10 @@ class Theory(object):
 		"""
 		# Check if there is an extra value argument in event
 		try: 
-			value = event[3]
-			resource = event[4]
+			args = event[3]
 
 		except:
-			value = 0
-			resource = None
+			args = {}
 
 		obj1 = self.spriteObjects[event[1]]
 		obj2 = self.spriteObjects[event[2]]
@@ -733,7 +730,7 @@ class Theory(object):
 		#print 'classes:', c1, c2
 		if c1 and c2:
 			#print 'new interaction rule!'
-			return InteractionRule(event[0], c1, c2, value, resource)
+			return InteractionRule(event[0], c1, c2, args)
 		else:
 			return False
 
@@ -1576,7 +1573,7 @@ class Game(object):
 
 		## Add generic rule that the avatar kills everything
 		for obj in nonAvatars:
-			rule = InteractionRule('killSprite', obj.className, avatar.className, None, 0, generic=True)
+			rule = InteractionRule('killSprite', obj.className, avatar.className, {}, set(), generic=True)
 			T.interactionSet.append(rule)
 
 		rule =  SpriteCounterRule("avatar", 0, False)
@@ -1802,14 +1799,16 @@ def generateTheoryFromGame(rle):
 			g1 = g1[::-1]
 		if g2=='goal':
 			g2 = g2[::-1]
-		if not kwargs:
-			interaction = InteractionRule(effect.__name__, g1, g2, None, None)
-		elif len(kwargs)==2:
-			interaction = InteractionRule(effect.__name__, g1, g2, kwargs.values()[0], kwargs.values()[1])
-		else:
-			print "Trying to generate theory from RLE. Got more args for collision than we can handle as of yet."
-			print "Embedding in generateTheoryFromGame()"
-			embed()
+		interaction = InteractionRule(effect.__name__, g1, g2, kwargs)
+		# if not kwargs:
+			# interaction = InteractionRule(effect.__name__, g1, g2, None, None)
+		# 	interaction = InteractionRule(effect.__name__, g1, g2, None, None)
+		# elif len(kwargs)==2:
+		# 	interaction = InteractionRule(effect.__name__, g1, g2, kwargs.values()[0], kwargs.values()[1])
+		# else:
+		# 	print "Trying to generate theory from RLE. Got more args for collision than we can handle as of yet."
+		# 	print "Embedding in generateTheoryFromGame()"
+		# 	embed()
 
 
 		# interaction = InteractionRule(effect.__name__, inverseClasses[g1], inverseClasses[g2], None, None)
@@ -1894,7 +1893,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 				if true_operator in {"<", "<="}:
 					newInteractionName = 'killIfHasLess' #example
-					embed()
 					if true_operator == "<":
 						limit = precondition.num - 1
 					else:
@@ -1908,11 +1906,16 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 						limit = precondition.num
 
 				argsString = " resource=%s limit=%s"%(precondition.item, str(limit))
+		elif interactionRule.interaction=='teleportToExit':
+			argsString = ""
 		else:
 			if interactionRule.args:
 				argsString = ""
 				for k,v in interactionRule.args.items():
-					argsString += " %s=%s"%(k, v)
+					if k in ['stype', 'strigger']:
+						argsString += " %s=%s"%(k, getClassNameFromSpriteString(v))
+					else:
+						argsString += " %s=%s"%(k, v)
 
 			else:
 				print "buildArgsString got called but no precondition"
@@ -1946,14 +1949,38 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 			newGoalType = sorted(_obstypes.keys())[::-1][newGoalIndex]
 			newGoalColor = colorDict[str(rle._game.sprite_constr[newGoalType][1]['color'])]
 
+	## teleport sprites have to be handled separately, as the spriteType is relational -- it depends on
+	## what is in the interactionRules.
+	if theory.interactionSet[0].args is not None:
+		if any([len(i.args.keys()) for i in theory.interactionSet]):
+			# print "found args in interactionRule"
+			# embed()
+			for interactionRule in theory.interactionSet:
+				if interactionRule.interaction == 'teleportToExit':
+					## second element in teleport tuple is the entrance; stype is the exit
+					portalEntry = interactionRule.slot2
+					portalExit = getClassNameFromSpriteString(interactionRule.args['stype'])
 
+					theory.classes[portalEntry][0].vgdlType = Portal
+					if theory.classes[portalEntry][0].args is None:
+						theory.classes[portalEntry][0].args = {'stype':portalExit}
+					else:
+						theory.classes[portalEntry][0].args['stype'] = portalExit
+					
+					theory.classes[portalExit][0].vgdlType = Portal
+
+
+	## TODO: Change.
 	resourcesToAdd = set()
 	for i in theory.interactionSet:
-		if "resource" in i.args:
-			resourcesToAdd.add(i.args["resource"])
+		if i.args is not None:
+			for k,v in i.args.items():
+				if k=='resource':
+					resourcesToAdd.add(v)
+			# if "resource" in i.args.keys():
+			# 	resourcesToAdd.add(i.args["resource"])
 
-	# print " in writetheory"
-	# embed()
+
 	########### generating theory string
 	theoryString = 'game = """\n'
 	theoryString += "BasicGame\n"
@@ -2053,7 +2080,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					if interactionRule.preconditions or interactionRule.args:
 						args, interactionRule.interaction = buildArgsString(interactionRule)
 						argsString += args
-						# embed()
 
 					if s1.color==newGoalColor:
 						if not 'avatar' in str(s2.className): #only add actual goal object rule if it's not interacting with the avatar.
@@ -2085,6 +2111,12 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	# theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', 'killSprite') ##should always be in the
 	# embed()
 	immovables = list(set(immovables))
+
+
+	# if theory.interactionSet[0].args is not None:
+	# 	if any([len(i.args.keys()) for i in theory.interactionSet]):
+	# 		print "inwritetheory"
+	# 		embed()
 
 	# third phase: the termination rules
 	# theoryString += "\tTerminationSet\n"
