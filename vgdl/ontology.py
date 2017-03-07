@@ -310,7 +310,7 @@ class Conveyor(OrientedSprite):
 
 class Missile(OrientedSprite): ##
     """ A sprite that constantly moves in the same direction. """
-    speed = .2
+    speed = .1
     color = PURPLE
 
 class Switch(VGDLSprite):
@@ -1330,7 +1330,7 @@ def teleportToExit(sprite, partner, game):
     e = random.choice(game.sprite_groups[partner.stype])
     sprite.rect = e.rect
     sprite.lastmove = 0
-    return ('teleportToExit', sprite.ID, partner.ID)
+    return ('teleportToExit', sprite.ID, partner.ID, partner.stype)
 
 # this allows us to determine whether the game has stochastic elements or not
 stochastic_effects = [teleportToExit, windGust, slipForward, attractGaze, flipDirection]
