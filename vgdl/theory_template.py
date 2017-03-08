@@ -545,7 +545,6 @@ class Theory(object):
 		if (eventInRules, predictionsHappened) not in failCases.keys():
 			print "weird fail case"
 			embed()
-		# print failCases[(eventInRules, predictionsHappened)][1]
 
 		return failCases[(eventInRules, predictionsHappened)][0]
 
@@ -898,18 +897,18 @@ class Theory(object):
 			if not sparse:
 				#Default behavior
 				if not checkDryingPaint:
-					relevantRules.extend([rule for rule in rules if class1 in rule.asTuple() and class2 in rule.asTuple() \
+					relevantRules.extend([rule for rule in rules if ((class1, class2) == (rule.asTuple()[1], rule.asTuple()[2]) or (class2, class1) == (rule.asTuple()[1], rule.asTuple()[2])) \
 						and all([p.check(agentState) for p in rule.preconditions]) and not rule.generic])
 				else:
 					# Here we only return rules that are not in the drying paint. 
 					relevantRules.extend([rule for rule in rules if not self.findRule(rule, self.dryingPaint) \
-						and class1 in rule.asTuple() and class2 in rule.asTuple() \
+						and ((class1, class2) == (rule.asTuple()[1], rule.asTuple()[2]) or (class2, class1) == (rule.asTuple()[1], rule.asTuple()[2]))  \
 						and all([p.check(agentState) for p in rule.preconditions]) and not rule.generic])
 			else:
 				#'sparse' is passed when we check likelihood of lots of previous timesteps. The logic here is to
 				#only check predictions for previous timesteps when the predictions may have changed. Meaning, only return rules that
 				#are both relevant to the event *and* are new.
-				relevantRules.extend([rule for rule in list(self.dryingPaint) if class1 in rule.asTuple() and class2 in rule.asTuple() \
+				relevantRules.extend([rule for rule in list(self.dryingPaint) if ((class1, class2) == (rule.asTuple()[1], rule.asTuple()[2]) or (class2, class1) == (rule.asTuple()[1], rule.asTuple()[2])) \
 					and all([p.check(agentState) for p in rule.preconditions]) and not rule.generic])
 
 		# If both classes don't exist
@@ -1512,7 +1511,7 @@ class Game(object):
 						# 	print t.events
 						# 	print ""
 
-						# embed()
+						embed()
 						self.nodes_eliminated +=1
 				
 				if verbose: 
