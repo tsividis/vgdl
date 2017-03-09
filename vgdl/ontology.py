@@ -1601,22 +1601,69 @@ def updateOptions(game, sprite_type, current_sprite, params={}):
         return {}
 
 
+# def initializeDistribution(sprite_types):
+#     """
+#     Creates a prior distribution over all the sprite types.
+#     """
+#     catch_all_prior = .000001
+#     initial_distribution = {"OTHER":catch_all_prior}
+
+#     stationary_sprites = [Resource, ResourcePack] #removed Immovable, Passive
+#     moving_sprites = [RandomNPC, Chaser, OrientedSprite, Missile] #AStarChaser
+
+#     moving_sprite_prob = .1
+#     for sprite_type in sprite_types:
+#         if sprite_type in stationary_sprites:
+#             initial_distribution[sprite_type] = (1.0-catch_all_prior-moving_sprite_prob)/(len(stationary_sprites))
+#         elif sprite_type in moving_sprites:
+#             initial_distribution[sprite_type] = (moving_sprite_prob)/(len(moving_sprites))
+
+#     return initial_distribution
+
 def initializeDistribution(sprite_types):
     """
-    Creates a prior distribution over all the sprite types.
+    Creates a uniform distribution over all the sprite types.
     """
+    def initializeProperty(args, attribute, values):
+        args[attribute] = {v: 1./len(values) for v in values}
+
+    def initializeSpeed(args):
+        speedValues = [0.2*i for i in range(1,11)]
+        initializeProperty(args, 'speed', speedValues)
+
+    def initializeOrientation(args):
+        orientationValues = {LEFT, RIGHT, UP, DOWN}
+        initializeProperty(args, 'orientation', orientationValues)
+
+    def initializeFleeing(args):
+        fleeingValues = {True, False}
+        initializeProperty(args, 'fleeing', fleeingValues)
+
     catch_all_prior = .000001
     initial_distribution = {"OTHER":catch_all_prior}
 
     stationary_sprites = [Resource, ResourcePack] #removed Immovable, Passive
-    moving_sprites = [RandomNPC, Chaser, OrientedSprite, Missile] #AStarChaser
+    moving_sprites = [RandomNPC, Chaser, OrientedSprite, Missile] # removed AStarChaser
 
     moving_sprite_prob = .1
     for sprite_type in sprite_types:
+        args = {}
         if sprite_type in stationary_sprites:
-            initial_distribution[sprite_type] = (1.0-catch_all_prior-moving_sprite_prob)/(len(stationary_sprites))
+            args = {}
+            initial_distribution[sprite_type] = {'prob': (1.0-catch_all_prior-moving_sprite_prob)/(len(stationary_sprites)), \
+                                                'args': {}}
         elif sprite_type in moving_sprites:
-            initial_distribution[sprite_type] = (moving_sprite_prob)/(len(moving_sprites))
+            spriteParams = spriteToParams[sprite_type.__name__]
+            for s in spriteParams:
+                if s == "speed":
+                    initializeSpeed(args)
+                elif s == "fleeing":
+                    initializeFleeing(args)
+                elif s == "orientation":
+                    initializeOrientation(args)
+
+            initial_distribution[sprite_type] = {'prob': (moving_sprite_prob)/(len(moving_sprites)), 'args': args}
+
 
     return initial_distribution
 

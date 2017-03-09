@@ -194,7 +194,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.simpleGame_preconditions" ## won't work until eventHandling() is corrected.
 	# filename = "examples.gridphysics.simpleGame_inductionTest"
 	# filename = "examples.gridphysics.simpleGame_missile2"	
-	filename = "examples.gridphysics.movers5"	
+	filename = "examples.gridphysics.sprite_induction_test"	
 	# filename = "examples.gridphysics.simpleGame_many_poisons"
 	# filename = "examples.gridphysics.pushtest"
 	# filename = "examples.gridphysics.simpleGame_teleport"	
