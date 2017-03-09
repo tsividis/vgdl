@@ -4,7 +4,7 @@ Video game description language -- ontology of concepts.
 @author: Tom Schaul
 '''
 import random
-from random import choice#, random
+from random import choice
 from math import sqrt
 import pygame
 from tools import triPoints, unitVector, vectNorm, oncePerStep
@@ -68,12 +68,6 @@ colorDict = {str((0, 200, 0)): 'GREEN',\
 
             }
 
-spriteToParams = {'RandomNPC': ['speed'], \
-                'Chaser': ['fleeing', 'speed'], \
-                'AStarChaser': ['fleeing', 'speed'], \
-                'OrientedSprite': ['orientation'], \
-                'Missile': ['speed', 'orientation']}
-# spriteToArgs maps sprite types to arguments that need to be set for those sprite types.
 
 # ---------------------------------------------------------------------
 #     Types of physics
@@ -284,7 +278,7 @@ class SpawnPoint(SpriteProducer):
 
 class RandomNPC(VGDLSprite):
     """ Chooses randomly from all available actions each step. """
-    speed = 1
+    speed = .4
     is_stochastic = True
 
     def update(self, game):
@@ -316,7 +310,7 @@ class Conveyor(OrientedSprite):
 
 class Missile(OrientedSprite): ##
     """ A sprite that constantly moves in the same direction. """
-    speed = .1
+    speed = .4
     color = PURPLE
 
 class Switch(VGDLSprite):
@@ -450,6 +444,7 @@ class Fleeing(Chaser):
 class AStarChaser(RandomNPC): ##
     """ Move towards the character using A* search. """
     stype = None
+    speed = .1
     fleeing = False
     drawpath = None
     walkableTiles = None
@@ -510,22 +505,44 @@ class AStarChaser(RandomNPC): ##
         # Will not update AStarChaser if there is nothing to chase
         killed = [s.name for s in game.kill_list]
         if 'avatar' in killed:
+            print "avatar is dead"
             return
 
         path = world.getMoveFor(self)
-        
-
+        # print 'in astar', [world.get_sprite_tile_position(p.sprite) for p in path]
         # Uncomment below to draw debug paths.
         # self._setDebugVariables(world,path)
         
         if len(path)>1:
-            move = path[1]
+            n = min(5, len(path)-1)
+            move = path[n]
             
             nextX, nextY = world.get_sprite_tile_position(move.sprite)
             nowX, nowY = world.get_sprite_tile_position(self)
             
+            # print 'next', nextX, nextY
+            # print 'now', nowX, nowY
+
             movement = None
-            
+
+            # embed()
+            # actions = []
+            # dx, dy = nextX-nowX, nextY-nowY
+            # if dx > 0:
+            #     actions.append(RIGHT)
+            # elif dx < 0:
+            #     actions.append(LEFT)
+            # if dy > 0:
+            #     actions.append(DOWN)
+            # elif dy < 0:
+            #     actions.append(UP)
+
+            # print actions
+            # movement = choice(actions)
+            # print movement
+            # print ""
+            # print "You need to finish debugging Schaul's AStar."
+            # embed()
             if nowX == nextX:
                 if nextY > nowY:
                     #logToFile('DOWN')
@@ -541,8 +558,11 @@ class AStarChaser(RandomNPC): ##
                     #logToFile('LEFT')
                     movement = LEFT
         else:
-            movement=None ## TODO: Added 1/18/17 to prevent bug (sometimes path was not >1 so it called the next line
+            print "in movement=None"
+            # movement=None ## TODO: Added 1/18/17 to prevent bug (sometimes path was not >1 so it called the next line
                             ##without knowing what 'movement' was.). Make sure A* agent still works.
+            movement=choice([DOWN, UP, RIGHT, LEFT])
+
         self.physics.activeMovement(self, movement)
 
 
@@ -1038,27 +1058,33 @@ def transformTo(sprite, partner, game, stype='wall'):
         if isinstance(sprite, OrientedSprite) and isinstance(newones[0], OrientedSprite):
             newones[0].orientation = sprite.orientation
         killSprite(sprite, partner, game)
-    return ("transformTo", sprite.ID, partner.ID, stype)
+    args = {'stype':stype}
+    return ("transformTo", sprite.ID, partner.ID, args)
 
 def transformToOnLanding(sprite, partner, game, stype='wall'):
     """sprite will be transformed to stype when partner (avatar) lands on it from above"""
     if partner.speed*partner.orientation[1] == 0 and partner.lastrect.y != partner.rect.y:
         transformTo(sprite, partner, game, stype)
-        ##Decide whether it's "fair" to know this was transformToOnLanding
-        return ("transformToOnLanding", sprite.ID, partner.ID, stype)
+        args = {'stype':stype}
+        ##Decide whether it's "fair" to know this was transformToOnLanding as opposed to transform
+        return ("transformToOnLanding", sprite.ID, partner.ID, args)
 
 def triggerOnLanding(sprite, partner, game, strigger=None):
     '''triggers a triggerable sprite. triggerable is interesting. should change this?'''
     if partner.speed*partner.orientation[1] == 0 and partner.lastrect.y != partner.rect.y:
         trigger(sprite, partner, game, strigger)
-        return ("trigger", sprite.ID, partner.ID, strigger)
+        args = {'strigger':strigger}
+        return ("trigger", sprite.ID, partner.ID, args)
 
 def stepBack(sprite, partner, game): 
     """ Revert last move. """
     sprite.rect = sprite.lastrect
     if partner:
-        return ("stepBack", sprite.ID, partner.ID)
-
+        try:
+            return ("stepBack", sprite.ID, partner.ID)
+        except:
+            ## happens most likely with EOS events.
+            return ("stepBack", sprite.ID, partner)
 
 def undoAll(sprite, partner, game):
     """ Revert last moves of all sprites. """
@@ -1128,6 +1154,18 @@ def turnAround(sprite, partner, game):
         return ('turnAround', sprite.ID)
     return ('turnAround', sprite.ID, partner.ID)
 
+def turn(sprite, partner, game):
+    sprite.rect = sprite.lastrect
+    sprite.lastmove = sprite.cooldown
+    # sprite.physics.activeMovement(sprite, DOWN)
+    # sprite.lastmove = sprite.cooldown
+    # sprite.physics.activeMovement(sprite, DOWN)
+    reverseDirection(sprite, partner, game)
+    game._updateCollisionDict(sprite)
+    if partner == None:
+        return ('turn', sprite.ID)
+    return ('turn', sprite.ID, partner.ID)
+
 def reverseDirection(sprite, partner, game): # FLAG
     sprite.orientation = (-sprite.orientation[0], -sprite.orientation[1])
     if partner == None:
@@ -1142,7 +1180,8 @@ def reverseFloeIfActivated(sprite, partner, game, strigger=None):
         reverseDirection(sprite, partner, game)
         sprite.activated = False
     ## returning the below is likely too much. Only adding this now for consistency of return statements.
-    return ('reverseFloeIfActivated', sprite.ID, partner.ID, strigger)
+    args = {'strigger':strigger}
+    return ('reverseFloeIfActivated', sprite.ID, partner.ID, args)
 
 def trigger(sprite, partner, game, strigger=None):
     if strigger == None:
@@ -1162,7 +1201,8 @@ def detrigger(sprite, partner, game, strigger=None):
 
     for sprite in triggers:
         sprite.detriggered = True
-    return ('detrigger', sprite.ID, partner.ID, strigger)
+    args = {'strigger':strigger}
+    return ('detrigger', sprite.ID, partner.ID, args)
 
 
 def flipDirection(sprite, partner, game): # FLAG
@@ -1252,14 +1292,16 @@ def changeResource(sprite, partner, resourceColor, game, resource, value=1):
     sprite.resources[resource] = max(-1, min(sprite.resources[resource]+value, game.resources_limits[resource]))
     # NOTE: partner is the color of the resource (see _eventHandling() in core.py)
     # embed()
-    return ('changeResource', sprite.ID, partner.ID, resource, value)
+    args = {'resource':resource, 'value':value}
+    return ('changeResource', sprite.ID, partner.ID, args)
 
 def spawnIfHasMore(sprite, partner, game, resource, stype, limit=1):
     """ If 'sprite' has more than a limit of the resource type given, it spawns a sprite of 'stype'. """
     if sprite.resources[resource] >= limit:
         game._createSprite([stype], (sprite.rect.left, sprite.rect.top))
         # Note: returning the resource doesn't seem like something the agent should have access to, so we're not returning it.
-        return ('spawnIfHasMore', sprite.ID, partner.ID, stype) ### NOTE - there is no default 'spawn' function we could return instead, but we should then make one
+        args = {'stype':stype}
+        return ('spawnIfHasMore', sprite.ID, partner.ID, args) ### NOTE - there is no default 'spawn' function we could return instead, but we should then make one
 
 def killIfHasMore(sprite, partner, game, resource, limit=1):
     """ If 'sprite' has more than a limit of the resource type given, it dies. """
@@ -1298,7 +1340,8 @@ def wrapAround(sprite, partner, game, offset=0):
     elif sprite.orientation[1] < 0:
         sprite.rect.top = game.screensize[1] - sprite.rect.size[1] * (1 + offset)
     sprite.lastmove = 0
-    return ('wrapAround', sprite, partner, offset)
+    args = {'offset':offset}
+    return ('wrapAround', sprite, partner, args)
 
 def pullWithIt(sprite, partner, game):
     """ The partner sprite adds its movement to the sprite's. """
@@ -1333,10 +1376,16 @@ def killSpriteOnLanding(sprite, partner, game):
     return ('killSpriteOnLanding', sprite.ID, partner.ID)
 
 def teleportToExit(sprite, partner, game):
-    e = random.choice(game.sprite_groups[partner.stype])
+    try:
+        e = random.choice(game.sprite_groups[partner.stype])
+    except:
+        ## if the above fails, it's because the theory has specified the partner.stype as the goal
+        ## and so there is no game.sprite_groups[partner.stype]. send avatar to the goal.
+        e = random.choice(game.sprite_groups['goal'])
     sprite.rect = e.rect
     sprite.lastmove = 0
-    return ('teleportToExit', sprite.ID, partner.ID, partner.stype)
+    args = {'stype':partner.stype}
+    return ('teleportToExit', sprite.ID, partner.ID, args)
 
 # this allows us to determine whether the game has stochastic elements or not
 stochastic_effects = [teleportToExit, windGust, slipForward, attractGaze, flipDirection]
@@ -1353,6 +1402,7 @@ def canActivateSwitch(sprite, partner, game):
 def cannotActivateSwitch(sprite, partner, game):
     sprite.can_switch = False
     return ('cannotActivateSwitch', sprite.ID, partner.ID)
+
 # ---------------------------------------------------------------------
 #     Sprite Induction
 # ---------------------------------------------------------------------
@@ -1486,46 +1536,18 @@ def initializeDistribution(sprite_types):
     """
     Creates a prior distribution over all the sprite types.
     """
-    def initializeProperty(args, attribute, values):
-        args[attribute] = {v: 1./len(values) for v in values}
-
-    def initializeSpeed(args):
-        speedValues = [0.2*i for i in range(1,11)]
-        initializeProperty(args, 'speed', speedValues)
-
-    def initializeOrientation(args):
-        orientationValues = {LEFT, RIGHT, UP, DOWN}
-        initializeProperty(args, 'orientation', orientationValues)
-
-    def initializeFleeing(args):
-        fleeingValues = {True, False}
-        initializeProperty(args, 'fleeing', fleeingValues)
-
     catch_all_prior = .000001
     initial_distribution = {"OTHER":catch_all_prior}
 
     stationary_sprites = [Resource, ResourcePack] #removed Immovable, Passive
-    moving_sprites = [RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile] 
+    moving_sprites = [RandomNPC, Chaser, OrientedSprite, Missile] #AStarChaser
 
     moving_sprite_prob = .1
     for sprite_type in sprite_types:
-        args = {}
         if sprite_type in stationary_sprites:
-            args = {}
-            initial_distribution[sprite_type] = {'prob': (1.0-catch_all_prior-moving_sprite_prob)/(len(stationary_sprites)), \
-                                                'args': {}}
+            initial_distribution[sprite_type] = (1.0-catch_all_prior-moving_sprite_prob)/(len(stationary_sprites))
         elif sprite_type in moving_sprites:
-            spriteParams = spriteToParams[sprite_type.__name__]
-            for s in spriteParams:
-                if s == "speed":
-                    initializeSpeed(args)
-                elif s == "fleeing":
-                    initializeFleeing(args)
-                elif s == "orientation":
-                    initializeOrientation(args)
-
-            initial_distribution[sprite_type] = {'prob': (moving_sprite_prob)/(len(moving_sprites)), 'args': args}
-
+            initial_distribution[sprite_type] = (moving_sprite_prob)/(len(moving_sprites))
 
     return initial_distribution
 
@@ -1619,7 +1641,7 @@ def spriteInduction(game, step):
     game = a BasicGame object
     """
     ## TODO: Make sure you put these other types back when you fix sprite induction!!
-    sprite_types = [Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile] #removed Immovable, Passive, 
+    sprite_types = [Resource, ResourcePack, RandomNPC, Chaser, Missile] #removed Immovable, Passive, AStarChaser,
     if step==0:
     ## Prep for sprite induction
         for sprite in game.getObjects():
