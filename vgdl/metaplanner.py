@@ -14,6 +14,9 @@ def translateEvents(events, all_objects):
 			return None
 		elif objectID in all_objects.keys():
 			return all_objects[objectID]['type']['color']
+		elif objectID in [colorDict[k] for k in colorDict.keys()]:
+			# If we were passed a color to begin with (i.e., in the case of EOS)
+			return objectID
 		else:
 			# for some reason we haven't been passed an ID but rather a sprite object
 			objectName = objectID.name
@@ -23,6 +26,7 @@ def translateEvents(events, all_objects):
 	outlist = []
 	for event in events:
 		try:
+			print event
 			if len(event) > 3:
 				tmp = [event[0], getObjectColor(event[1]), getObjectColor(event[2])]
 				tmp.extend(event[3:])
@@ -34,10 +38,15 @@ def translateEvents(events, all_objects):
 		except:
 			print "translateEvents failed"
 			embed()
-	if len(outlist)>0:
-		print outlist
-	return list(set(outlist)) # make sure effects in timeStep are unique.
 
+	#Make sure events in timestep are unique (don't want to double-count things)
+	uniqueEventList = []
+	for o in outlist:
+		if o not in uniqueEventList:
+			uniqueEventList.append(o)
+	if len(uniqueEventList)>0:
+		print uniqueEventList
+	return uniqueEventList
 
 def observe(rle, obsSteps):
 	print "observing"
@@ -123,10 +132,10 @@ def planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, partitionWei
 	solved = True
 	numActions = 0
 	for subgoal in subgoals:
-		rle, actions, steps = getToWaypoint(rle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights=[10,2,4])
+		rle, actions = getToWaypoint(rle, subgoal, symbolDict, defaultPolicyMaxSteps, partitionWeights=[10,2,4])
 		numActions += len(actions)
 		print steps, "steps"
-		total_steps += steps
+		# total_steps += steps
 		if total_steps > maxEpisodes:
 			solved = False
 			break
@@ -233,14 +242,17 @@ def getToWaypoint(rle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, 
 		actions = mcts.getBestActionsForPlayout((1,0,0), debug=False)
 	elif plannerType=='QLearning':
 		planner = QLearner(Vrle, gameString=theoryString, levelString=levelString)
-		steps = planner.learn(300, satisfice=True)
+		steps = planner.learn(300, satisfice=50)
 		actions = planner.getBestActionsForPlayout()
+	elif plannerType=='AStar':
+		planner = AStar(Vrle, gameString=theoryString, levelString=levelString)
+		path, actions = planner.search()
 	print "Found plan to subgoal. Actions", actions
 	if act:
 		for a in actions:
 			rle.step(a)
 			print rle.show()
-	return rle, actions, steps
+	return rle, actions
 
 def objectGoalReached(effects, object_goal):
 	## Check if you reached object goal
@@ -323,7 +335,9 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 			elif plannerType=='QLearning':
 				planner = QLearner(vrle, gameString=game, levelString=level)
 				subgoals = planner.getSubgoals(subgoal_path_threshold=10)
-			
+			elif plannerType=='AStar':
+				planner = QLearner(vrle, gameString=game, levelString=level)
+				subgoals = planner.getSubgoals(subgoal_path_threshold=5)
 			print "subgoals", subgoals
 			## if you can't find subgoals that get you to the goal, exit
 			if len(subgoals)==0:
@@ -340,11 +354,11 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 					vrle.immovables = immovables
 
 					## Get actions that take you to goal.
-					ignore, actions, steps = getToWaypoint(vrle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, partitionWeights=[5,3,3], act=False)
+					ignore, actions = getToWaypoint(vrle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, partitionWeights=[5,3,3], act=False)
 
 					## Sometimes you can have a theory under which you can't get to a goal!
 					## i.e., if you think that the objects around you will kill you (even though they won't in real life)
-					## In this, take a random action.
+					## In this case, take a random action.
 					if len(actions)==0:
 						actions = [random.choice([(1,0), (-1,0), (0,1), (0,-1)])]
 
@@ -392,22 +406,16 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 								## Every timeStep, we should update our beliefs given what we've seen.
 								sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
 
-								for s in sample:
-									if 'Star' in str(s.vgdlType) or 'Chaser' in str(s.vgdlType):
-										print "found AStar in metaplanner", s.vgdlType
-										for k in rle._game.spriteDistribution.keys():
-											for j in rle._game.spriteDistribution[k].keys():
-												if 'Star' in str(j) or 'Chaser' in str(j):
-													if rle._game.spriteDistribution[k][j] >0.1:
-														print k, j
-														print rle._game.spriteDistribution[k]
-										embed()
+
 								game_object = Game(spriteInductionResult=sample)
 
 
 								## Get list of all effects we've seen. Only update theory if we're seeing something new.
 								all_effects = [item for sublist in [e['effectList'] for e in finalEventList] for item in sublist]
 								if not all([e in all_effects for e in effects]):## TODO: make sure you write this so that it works with simultaneous effects.
+									
+									print "new effects", effects
+
 									finalEventList.append(event)
 									terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
 									trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
@@ -438,6 +446,7 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 									# hypotheses[0].display()	
 									# print ""													
 								else:
+									print "no new effects", effects
 									finalEventList.append(event)
 									terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
 									trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
@@ -455,5 +464,5 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 						"./examples/gridphysics/theorytest.py", goalLoc=(rle._rect2pos(object_goal.rect)[1], rle._rect2pos(object_goal.rect)[0]))
 					vrle = createMindEnv(game, level, output=False)
 					vrle.immovables = immovables
-			total_steps += steps
+			# total_steps += steps
 	return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered, game_object
