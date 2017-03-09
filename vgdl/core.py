@@ -870,6 +870,8 @@ class BasicGame(object):
             if not os.path.exists(movie_dir):
                 print movie_dir, "didn't exist. making new dir"
                 os.makedirs(movie_dir)
+            print "in make movie"
+            embed()
             round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store'])
             video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
             images_dir = "images/tmp/%09d.png"
@@ -974,36 +976,6 @@ class BasicGame(object):
         while not self.ended:
             clock.tick(self.frame_rate)
             self.time += 1
-
-
-
-            ## The below will pause at t=100 and run a theory-induction loop, using everything the agent has seen so far.
-            ## Should work as long as we're using a gridphysics game with a movingAvatar
-            ## Note: this won't work right now; complaining about importing from theory template.
-            # if self.time==100:
-            #     def getObjectType(objectID):
-            #         return self.all_objects[objectID]['type']['color']
-            #     from theory_template import *
-            #     sample = sampleFromDistribution(self.spriteDistribution, self.all_objects)
-            #     g = Game(spriteInductionResult=sample)
-            #     terminationCondition = {'ended': False, 'win':False, 'time':self.time}
-            #     trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
-
-            #     ##clean up trace; convert object IDs to object types (for now this is just object color).
-                
-                
-            #     for i in range(len(trace[0])):
-            #         timestep = trace[0][i]
-            #         for j in range(len(timestep.events)):
-            #             event = timestep.events[j]
-            #             if len(event)==3:
-            #                 timestep.events[j] = (event[0], getObjectType(timestep, event[1], all_objects), getObjectType(timestep, event[2], all_objects))
-            #             elif len(event)==2:
-            #                 timestep.events[j] = (event[0], getObjectType(timestep, event[1], all_objects))
-
-
-            #     hypotheses = list(g.runDFSInduction(trace, 20, True))
-            #     embed()
 
             self._clearAll()
 
@@ -1138,7 +1110,7 @@ class BasicGame(object):
             #if(headless):
             if(persist_movie):
                 tmp_dir = "./temp/"
-                tmpl = '{tmp_dir}%09d-{name}-{g_id}.png'.format(i,tmp_dir = tmp_dir, name="VGDL-GAME", g_id=self.uiud)
+                tmpl = '{tmp_dir}%09d-{name}-{g_id}.png'.format(i, tmp_dir = tmp_dir, name="VGDL-GAME", g_id=self.uiud)
                 pygame.image.save(self.screen, tmpl%i)
                 i+=1
             VGDLSprite.dirtyrects = []
@@ -1151,7 +1123,7 @@ class BasicGame(object):
             [os.remove(f) for f in glob.glob(tmp_dir + "*" + str(self.uiud) + "*")]
 
         # Print entire history of effects
-        terminationCondition = {'ended': True, 'win':win, 'time':self.time}
+        terminationCondition = {'ended':True, 'win':win, 'time':self.time}
         # logging.info((finalEventList, terminationCondition))
 
         # Recording results into files
@@ -1173,11 +1145,6 @@ class BasicGame(object):
         else:
             self.win = False
             print "Game lost. Score=%s" % self.score
-
-        # if "killSprite" in [e[0] for e in self.effectList]:
-        #         embed()
-        
-        # ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(10)
@@ -1412,7 +1379,7 @@ class Conditional(object):
 def makeVideo(movie_dir):
     import os
     print "Creating Movie"
-    # self.video_file = "videos/" +  str(self.uiud) + ".mp4"
+    # embed()
     if not os.path.exists(movie_dir):
         print movie_dir, "didn't exist. making new dir"
         os.makedirs(movie_dir)
