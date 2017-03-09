@@ -1510,8 +1510,7 @@ class Game(object):
 						# 	print t.agentState
 						# 	print t.events
 						# 	print ""
-
-						embed()
+						# embed()
 						self.nodes_eliminated +=1
 				
 				if verbose: 
@@ -1561,18 +1560,35 @@ class Game(object):
 		
 		# Assign class names
 		avatar = [o for o in T.spriteSet if o.vgdlType==MovingAvatar][0]
-		nonAvatars = [o for o in T.spriteSet if o.vgdlType!=MovingAvatar]
+		nonAvatars = [o for o in T.spriteSet if o.vgdlType!=MovingAvatar and o.color!='ENDOFSCREEN']
+		eos = [o for o in T.spriteSet if o.color=='ENDOFSCREEN'][0]
 
+		# print "buildgenerictheory"
+		# embed()
 		avatar.className = 'avatar'
 		T.classes[avatar.className] = [avatar]
 
 		for i in range(len(nonAvatars)):
 			nonAvatars[i].className = 'c'+str(i+2)
 			T.classes[nonAvatars[i].className] = [nonAvatars[i]]
+		T.classes['EOS'] = [eos] ##initialize EOS with special name, since it gets such special treatment in VGDL text files.
 
 		## Add generic rule that the avatar kills everything
 		for obj in nonAvatars:
 			rule = InteractionRule('killSprite', obj.className, avatar.className, {}, set(), generic=True)
+			T.interactionSet.append(rule)
+
+		## Add generic rule that all other interactions are stepBack
+		# print "in buildGenericTheory"
+		# embed()
+		# for s1 in nonAvatars:
+		# 	for s2 in nonAvatars:
+		# 		rule = InteractionRule('killSprite', s1.className, s2.className, {}, set(), generic=True)
+		# 		T.interactionSet.append(rule)
+		
+		for s1 in nonAvatars:
+			## append EOS rule
+			rule = InteractionRule('stepBack', s1.className, 'EOS', {}, set(), generic=True)
 			T.interactionSet.append(rule)
 
 		rule =  SpriteCounterRule("avatar", 0, False)
@@ -1793,6 +1809,10 @@ def generateTheoryFromGame(rle):
 		theory.classes[s] = [sprite]
 		inverseClasses[s] = i
 
+	## Add EOS as a class, too.
+	eos = Sprite(core.VGDLSprite, 'ENDOFSCREEN', None, None)
+	theory.classes['EOS'] = [eos]
+
 	for g1, g2, effect, kwargs in rle._game.collision_eff:
 		if g1=='goal':
 			g1 = g1[::-1]
@@ -1985,40 +2005,47 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	theoryString += "BasicGame\n"
 	# first phase: the sprite rules
 	theoryString += "\tSpriteSet\n"
+
+	# print "inwritetheory"
+	# embed()
+
 	for c, sprites in theory.classes.items():
-		for s in sprites:
-			unfilteredType = str(s.vgdlType)
-			stype = unfilteredType[unfilteredType.find("vgdl.ontology.")+len("vgdl.ontology."): unfilteredType.find(">")-1]
-			argsString = ""
-			## Catch-all 'OTHER' s.vgdlType is causing a problem. replace for now with generic.
-			if not stype:
-				if unfilteredType == "OTHER":
-					stype = 'ResourcePack'
-				else:
-					print "writetheorytotxt. stype problem"
-					embed()
-
-			if s.args:
-				for k,v in s.args.items():
-					if k == "color":
-						continue
-					elif k == "orientation":
-						argsString += " %s=%s"%(k, DIRECTION_MAP[v])
+		if c == 'EOS':
+			pass
+		else:
+			for s in sprites:
+				unfilteredType = str(s.vgdlType)
+				stype = unfilteredType[unfilteredType.find("vgdl.ontology.")+len("vgdl.ontology."): unfilteredType.find(">")-1]
+				argsString = ""
+				## Catch-all 'OTHER' s.vgdlType is causing a problem. replace for now with generic.
+				if not stype:
+					if unfilteredType == "OTHER":
+						stype = 'ResourcePack'
 					else:
-						argsString += " %s=%s"%(k, str(v))
+						print "writetheorytotxt. stype problem"
+						embed()
 
-			if "core" in stype:
-				stype = stype[stype.find("core.")+len("core."):]
+				if s.args:
+					for k,v in s.args.items():
+						if k == "color":
+							continue
+						elif k == "orientation":
+							argsString += " %s=%s"%(k, DIRECTION_MAP[v])
+						else:
+							argsString += " %s=%s"%(k, str(v))
 
-			if "avatar".lower() in stype.lower():
-				theoryString += "\t\t%s > %s color=%s%s\n"%("avatar", stype, s.color, argsString)
-			else:				
+				if "core" in stype:
+					stype = stype[stype.find("core.")+len("core."):]
 
-				sname = c
-				theoryString += "\t\t%s > %s color=%s%s\n"%(sname, stype, s.color, argsString)
-				if goalLoc and newGoalType != 'blank_space' and s.color==newGoalColor:
-					sname = colorToSprite[s.color]
-					theoryString += "\t\t%s > %s color=%s%s\n"%("goal", stype, s.color, argsString)
+				if "avatar".lower() in stype.lower():
+					theoryString += "\t\t%s > %s color=%s%s\n"%("avatar", stype, s.color, argsString)
+				else:				
+
+					sname = c
+					theoryString += "\t\t%s > %s color=%s%s\n"%(sname, stype, s.color, argsString)
+					if goalLoc and newGoalType != 'blank_space' and s.color==newGoalColor:
+						sname = colorToSprite[s.color]
+						theoryString += "\t\t%s > %s color=%s%s\n"%("goal", stype, s.color, argsString)
 
 	for resource in resourcesToAdd:
 		theoryString += "\t\t%s > Resource color=RESOURCETOADD\n"%resource
@@ -2070,8 +2097,9 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 			c1 = interactionRule.slot1
 			c2 = interactionRule.slot2
 
-			if c2=='EOS' or c1=='EOS': ## 'EOS stepBack' is always being written at the end. Don't handle it here.
-				continue
+			# if c2=='EOS' or c1=='EOS': ## 'EOS stepBack' is always being written at the end. Don't handle it here.
+			# 	continue
+
 			for s1 in theory.classes[c1]:
 				for s2 in theory.classes[c2]:
 					argsString = ""
@@ -2107,7 +2135,16 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	# if newGoalType == 'blank_space':
 	theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', "killSprite")
 	theoryString += "\t\t%s %s > %s\n"%('avatar', 'EOS', "stepBack")
-	# theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', 'killSprite') ##should always be in the
+
+	# print "inwritetheory"
+	# embed()
+	## add EOS stepBack for all other sprites
+	# for c in theory.classes.keys():
+	# 	if c is not 'avatar':
+	# 		theoryString += "\t\t%s %s > %s\n"%(c, 'EOS', "stepBack")
+
+
+	# print "in writeTheory"
 	# embed()
 	immovables = list(set(immovables))
 
