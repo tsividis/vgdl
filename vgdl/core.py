@@ -48,6 +48,8 @@ colorDict = {str((0, 200, 0)): 'GREEN',\
             str((30, 30, 30)): 'DARKGRAY',\
             str((20, 20, 100)): 'DARKBLUE',\
             str((140, 20, 140)): 'PURPLE',\
+            str((175, 175, 175)): 'RESOURCETOADD',\
+            str((1, 1, 1)): 'ENDOFSCREEN',\
             }
 
 class VGDLParser(object):
@@ -68,9 +70,10 @@ class VGDLParser(object):
             #g.startGame(headless,persist_movie)
         else:
             if playback_states:
-                g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding)
+                g.startPlaybackGame(headless, persist_movie, induction=True, make_images=make_images, \
+                    make_movie=make_movie, movie_dir=movie_dir, padding=padding)
             else:
-                g.startGame(headless, persist_movie)
+                g.startGame(headless, persist_movie, induction=False)
 
         return g
 
@@ -551,6 +554,7 @@ class BasicGame(object):
         self.effectList = []
         iterationEffectList = [] # hack to get past first while loop condition - actually empty
         spritesActedOn = set() # a set containing all the sprites that have been acted on.
+
         while True:
             # continue iterating until iterationEffectList is empty
             iterationEffectList = []
@@ -574,7 +578,8 @@ class BasicGame(object):
                     ss1, l1 = ss[g1]
                     for s1 in ss1:
                         if not pygame.Rect((0,0), self.screensize).contains(s1.rect):
-                            e = effect(s1, None, self, **kwargs)
+                            # embed()
+                            e = effect(s1, 'ENDOFSCREEN', self, **kwargs)
                             spritesActedOn.add(s1)
                             if e != None:
                                 iterationEffectList.append(e)
@@ -690,12 +695,13 @@ class BasicGame(object):
 
             self.effectList.extend(iterationEffectList)
 
+        ## print events to terminal        
         # if len(self.effectList) > 0:
         #     print self.effectList
 
         return self.effectList
 
-    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0):
+    def startPlaybackGame(self, headless, persist_movie, induction=False, make_images=False, make_movie=False, movie_dir=False, padding=0):
         """
         Main method to run game. 
         """
@@ -830,25 +836,9 @@ class BasicGame(object):
             collision_objects = set()
             
 
-            ## Sprite Induction Part 1: See the update options for each sprite type the sprite could be
+            ## Sprite Induction Part 2: See the update options for each sprite type the sprite could be
             spriteInduction(self, step=2)
-            # objects = self.getObjects()
-            # game = self                                               # Save game state
-            # for sprite in self.spriteDistribution.keys():                  # Keys are the IDs of the game objects
-            #     for sprite_type in self.spriteDistribution[sprite].keys(): # Check each potential sprite type                    
-            #         if self.spriteDistribution[sprite][sprite_type] > 0 and sprite in objects.keys():    # Make sure sprite_type is an option for sprite, and sprite is not killed
-            #             sprite_obj = objects[sprite]["sprite"]
-
-            #             # Get potential next positions for sprite if it were that sprite type
-            #             # TODO: Implement Avatar updateOptions function (if desired)
-            #             if sprite_obj.name != 'avatar':
-            #                 self.movement_options[sprite][sprite_type] = updateOptions(game, sprite_type, sprite_obj) 
-            #                 # print sprite_obj.name, sprite_type # For debugging
-            #                 # print movement_options[sprite][sprite_type]
-
-
-
-            ## Sprite Induction Part 2: Update sprite distribution based on observations
+            ## Sprite Induction Part 3: Update sprite distribution based on observations
             spriteInduction(self, step=3)
                    
             self._drawAll()
@@ -880,6 +870,8 @@ class BasicGame(object):
             if not os.path.exists(movie_dir):
                 print movie_dir, "didn't exist. making new dir"
                 os.makedirs(movie_dir)
+            print "in make movie"
+            embed()
             round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store'])
             video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
             images_dir = "images/tmp/%09d.png"
@@ -889,9 +881,6 @@ class BasicGame(object):
             # empty image directory
             shutil.rmtree("images/tmp")
             os.makedirs("images/tmp")
-            
-            # subprocess.call(["ffmpeg","-y",  "-r", "30", "-b", "800", "-i", tmpl, self.video_file ])
-            # [os.remove(f) for f in glob.glob(tmp_dir + "*" + str(self.uiud) + "*")]
 
         # Print entire history of effects
         terminationCondition = {'ended': True, 'win':win, 'time':self.time}
@@ -924,7 +913,7 @@ class BasicGame(object):
         return win, self.score
 
 
-    def startGame(self, headless, persist_movie, make_images=False, make_movie=False):
+    def startGame(self, headless, persist_movie, induction=False, make_images=False, make_movie=False):
         """
         Main method to run game. 
         """
@@ -967,73 +956,33 @@ class BasicGame(object):
 
         # Prep for Sprite Induction
         sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
+    
         self.all_objects = self.getObjects() # Save all objects, some which may be killed in game
-        
-        ##figure out keypress type:
-        disableContinuousKeyPress = all([self.all_objects[k]['sprite'].physicstype.__name__=='GridPhysics' for k in self.all_objects.keys()])
-        
+
         objects = self.getObjects()
         self.spriteDistribution = {}
         self.movement_options = {}
         allStates = [self.getFullState()]
-        spriteInduction(self, step=0)
-        # for sprite in objects:
-        #     self.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
-        #     self.movement_options[sprite] = {"OTHER":{}}
-        #     for sprite_type in sprite_types:
-        #         self.movement_options[sprite][sprite_type] = {}
+
+        if induction:
+            spriteInduction(self, step=0)
+        
+
+        ##figure out keypress type:
+        disableContinuousKeyPress = all([self.all_objects[k]['sprite'].physicstype.__name__=='GridPhysics' for k in self.all_objects.keys()])
+        
+
 
         while not self.ended:
             clock.tick(self.frame_rate)
             self.time += 1
 
-
-
-            ## The below will pause at t=100 and run a theory-induction loop, using everything the agent has seen so far.
-            ## Should work as long as we're using a gridphysics game with a movingAvatar
-            ## Note: this won't work right now; complaining about importing from theory template.
-            # if self.time==100:
-            #     def getObjectType(objectID):
-            #         return self.all_objects[objectID]['type']['color']
-            #     from theory_template import *
-            #     sample = sampleFromDistribution(self.spriteDistribution, self.all_objects)
-            #     g = Game(spriteInductionResult=sample)
-            #     terminationCondition = {'ended': False, 'win':False, 'time':self.time}
-            #     trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
-
-            #     ##clean up trace; convert object IDs to object types (for now this is just object color).
-                
-                
-            #     for i in range(len(trace[0])):
-            #         timestep = trace[0][i]
-            #         for j in range(len(timestep.events)):
-            #             event = timestep.events[j]
-            #             if len(event)==3:
-            #                 timestep.events[j] = (event[0], getObjectType(timestep, event[1], all_objects), getObjectType(timestep, event[2], all_objects))
-            #             elif len(event)==2:
-            #                 timestep.events[j] = (event[0], getObjectType(timestep, event[1], all_objects))
-
-
-            #     hypotheses = list(g.runDFSInduction(trace, 20, True))
-            #     embed()
-
-            # if self.time>100:
-            #     break
-
-
-            # print "t=", self.time
             self._clearAll()
 
-            # For new objects that appear; sprite induction
-            spriteInduction(self, step=1)
-            # objects = self.getObjects()
-            # for sprite in objects:
-            #     if sprite not in self.spriteDistribution:
-            #         self.all_objects[sprite] = objects[sprite]
-            #         self.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
-            #         self.movement_options[sprite] = {"OTHER":{}}
-            #         for sprite_type in sprite_types:
-            #             self.movement_options[sprite][sprite_type] = {}
+            if induction:
+                # For new objects that appear; sprite induction
+                spriteInduction(self, step=1)
+            
 
             # gather events
             pygame.event.pump()
@@ -1135,22 +1084,9 @@ class BasicGame(object):
 
                         effect(sC, sC, self, **kwargs_use)
 
-            ## Sprite Induction Part 1: See the update options for each sprite type the sprite could be
-            spriteInduction(self, step=2)
-            # objects = self.getObjects()
-            # game = self                                               # Save game state
-            # for sprite in self.spriteDistribution.keys():                  # Keys are the IDs of the game objects
-            #     for sprite_type in self.spriteDistribution[sprite].keys(): # Check each potential sprite type                    
-            #         if self.spriteDistribution[sprite][sprite_type] > 0 and sprite in objects.keys():    # Make sure sprite_type is an option for sprite, and sprite is not killed
-            #             sprite_obj = objects[sprite]["sprite"]
-
-            #             # Get potential next positions for sprite if it were that sprite type
-            #             # TODO: Implement Avatar updateOptions function (if desired)
-            #             if sprite_obj.name != 'avatar':
-            #                 self.movement_options[sprite][sprite_type] = updateOptions(game, sprite_type, sprite_obj) 
-            #                 # print sprite_obj.name, sprite_type # For debugging
-            #                 # print movement_options[sprite][sprite_type]
-
+            if induction:
+                ## Sprite Induction Part 2: See the update options for each sprite type the sprite could be
+                spriteInduction(self, step=2)
 
             ## Update actual sprite positions.
             for s in self:
@@ -1159,21 +1095,10 @@ class BasicGame(object):
             # handle collision effects
             self._eventHandling()
 
-            ## Sprite Induction Part 2: Update sprite distribution based on observations
-            spriteInduction(self, step=3)
-            # objects = self.getObjects()
-            # for sprite in self.spriteDistribution.keys():        # Keys are the IDs of the game objects
-            #     if sprite in objects.keys():                # Sprite may have been killed
-            #         sprite_obj = objects[sprite]["sprite"] 
-                    
-            #         if sprite not in collision_objects and sprite_obj.name != 'avatar':
-
-            #             outcome = objects[sprite]["position"]
-            #             self.spriteDistribution = updateDistribution(sprite, self.spriteDistribution, self.movement_options, outcome)
-
-            #             # print sprite_obj # For debugging
-            #             # print 'outcome', outcome                        
-
+            if induction:
+                ## Sprite Induction Part 3: Update sprite distribution based on observations
+                spriteInduction(self, step=3)
+                     
             # Termination #2 : Avatars have been killed
             if len(self.getAvatars()) == 0:
                 break
@@ -1185,7 +1110,7 @@ class BasicGame(object):
             #if(headless):
             if(persist_movie):
                 tmp_dir = "./temp/"
-                tmpl = '{tmp_dir}%09d-{name}-{g_id}.png'.format(i,tmp_dir = tmp_dir, name="VGDL-GAME", g_id=self.uiud)
+                tmpl = '{tmp_dir}%09d-{name}-{g_id}.png'.format(i, tmp_dir = tmp_dir, name="VGDL-GAME", g_id=self.uiud)
                 pygame.image.save(self.screen, tmpl%i)
                 i+=1
             VGDLSprite.dirtyrects = []
@@ -1198,7 +1123,7 @@ class BasicGame(object):
             [os.remove(f) for f in glob.glob(tmp_dir + "*" + str(self.uiud) + "*")]
 
         # Print entire history of effects
-        terminationCondition = {'ended': True, 'win':win, 'time':self.time}
+        terminationCondition = {'ended':True, 'win':win, 'time':self.time}
         # logging.info((finalEventList, terminationCondition))
 
         # Recording results into files
@@ -1220,11 +1145,6 @@ class BasicGame(object):
         else:
             self.win = False
             print "Game lost. Score=%s" % self.score
-
-        # if "killSprite" in [e[0] for e in self.effectList]:
-        #         embed()
-        
-        # ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(10)
@@ -1459,7 +1379,7 @@ class Conditional(object):
 def makeVideo(movie_dir):
     import os
     print "Creating Movie"
-    # self.video_file = "videos/" +  str(self.uiud) + ".mp4"
+    # embed()
     if not os.path.exists(movie_dir):
         print movie_dir, "didn't exist. making new dir"
         os.makedirs(movie_dir)

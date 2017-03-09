@@ -37,14 +37,15 @@ class QLearner:
 		self.epsilon = epsilon
 		self.gamma = gamma
 		self.episodes = episodes
-		# self.actions = [(0,0), (1,0), (-1,0), (0,1), (0,-1)]
-		self.actions = [(1,0), (-1,0), (0,1), (0,-1)]
+		self.actions = [(0,0), (1,0), (-1,0), (0,1), (0,-1)]
+		# self.actions = [(1,0), (-1,0), (0,1), (0,-1)]
 		self.QVals = defaultdict(lambda:0)
 		self.memory = memory ## provide dicts of Q-values from previous runs. Use some function to smoothe
-		self.maxPseudoReward = 1
+		self.maxPseudoReward = 10
 		self.pseudoRewardDecay = .8
 		self.partitionWeights = [20,1]
 		self.heuristicDecay = .99
+		self.immovables = []
 		goalLoc = self.findObjectInRLE(rle, 'goal')
 		self.rewardDict = {goalLoc:self.maxPseudoReward}
 		self.scanDomainForMovementOptions()
@@ -58,10 +59,11 @@ class QLearner:
 		# immovables = ['wall']
 		try:
 			immovables = self.rle.immovables
-			# immovables = ['wall', 'poison']
+			self.immovables = immovables
 			print "immovables", immovables
 		except:
 			immovables = ['wall', 'poison']
+			self.immovables = immovables
 			print "Using defaults as immovables", immovables
 
 		for i in immovables:
@@ -137,9 +139,24 @@ class QLearner:
 		else:
 			avatar_loc = None
 		return avatar_loc
-	
+
+	def findObjectInState(self, s, objName):
+		##TODO: Finish last part of this function -- sometimes it can't access objloc[0][0], objloc[1][0]
+		state = np.reshape(np.fromstring(s,dtype=float), self.rle.outdim)
+		if objName not in rle._obstypes.keys():
+			print objName, "not in rle."
+			return None
+		objCode = 2**(1+sorted(self.rle._obstypes.keys())[::-1].index(objName))
+		objLoc = np.where(state==objCode)
+		try:
+			objLoc = objLoc[0][0], objLoc[1][0] #(y,x)
+		except:
+			print "can't find objloc"
+			embed()
+		return objLoc
+
 	def getPathToGoal(self, avatar_loc, goal_loc):
-		print "in getPathToGoal"
+
 		q = deque()
 		# q stores tuples in which the first element is a node and the next
 		# is the shortest path to that node
@@ -158,9 +175,10 @@ class QLearner:
 					q.append((neighbor, path + [neighbor]))
 
 		if node != goal_loc:
-			raise Exception("Didn't find a path to the goal location.")
-
-		print "ended."
+			print "didn't find path to goal in getSubgoals (in getPathToGoal)"
+			return False
+			# embed()
+			# raise Exception("Didn't find a path to the goal location.")
 		return path
 
 	def getSubgoals(self, subgoal_path_threshold):
@@ -168,11 +186,20 @@ class QLearner:
 		## find location of goal, add to rewardDict.
 		## also add neighbors of goal rewardQueue.
 		##TODO: update this if goal moves!!
+		if "goal" not in self.rle._obstypes.keys():
+			print "no goal to get subgoals to"
+			return []
 		goal_code = 2**(1+sorted(self.rle._obstypes.keys())[::-1].index("goal"))
 		goal_loc = np.where(np.reshape(self.rle._getSensors(), self.rle.outdim)==goal_code)
 		goal_loc = goal_loc[0][0], goal_loc[1][0]
 		self.subgoals = []
+		# print "showing RLE we're getting path for."
+		# print self.rle.show()
 		path = self.getPathToGoal(avatar_loc, goal_loc)
+		
+		if not path:
+			return [] ## so that you can try pursuing a different goal
+
 		if subgoal_path_threshold > len(path):
 			# don't use any subgoals in this case.
 			return [goal_loc]
@@ -208,6 +235,7 @@ class QLearner:
 	def getPseudoReward(self, s, a):
 		## returns pseudoreward of taking action a from location currentLoc.
 		## gives pseudoReward[currentLoc] if a doesn't move states.
+
 		currentLoc = self.findAvatarInState(s)
 		if currentLoc:
 			nextLoc = currentLoc[0]+a[1], currentLoc[1]+a[0] #again, locations are (y,x) and actions are (x,y)
@@ -313,7 +341,8 @@ class QLearner:
 			res = rle.step(a)
 			sPrime, r = res['observation'].tostring(), res['reward']
 
-			print rle.show()
+			## UNCOMMENT HERE IF YOU WANT TO WATCH Q-learner learning.
+			# print rle.show()
 
 			if r==1:
 				self.partitionWeights[1] = self.partitionWeights[1]*self.heuristicDecay
@@ -327,30 +356,30 @@ class QLearner:
 			total_reward += r
 		self.QVals[s] = 0.
 
-	def learn(self, episodes, satisfice=False):
+	def learn(self, episodes, satisfice=0):
 		t1 = time.time()
+		satisfice_episodes = 0
 		for i in range(episodes):
 			# sys.stdout.write("Episodes: {}\r".format(i) )
 			# sys.stdout.flush()
 			self.runEpisode(stepLimit=100)
+			satisfice_episodes +=1
 			if i%10==0:
-				# s = self.rle._getSensors().tostring()
-				# a = self.selectAction(s, policy='epsilonGreedy', partitionWeights = self.partitionWeights)
-				# print i#, self.QVals[(s,a)]
+				s = self.rle._getSensors().tostring()
+				a = self.selectAction(s, policy='epsilonGreedy', partitionWeights = self.partitionWeights)
+				print i, self.QVals[(s,a)]
 				if satisfice: ## see if values have propagated to start state; if so, return.
 					actions = self.getBestActionsForPlayout()
 					if len(actions)>0:
-					# rle = copy.deepcopy(self.rle)
-					# s = rle._getSensors().tostring()
-					# a = self.selectAction(s, policy='greedy')
-					# if a:
-						print "satisfice found actions in", i, "steps."
-						print time.time()-t1
-						return i
+						if satisfice_episodes>satisfice:
+							return i
+						
+						# print "satisfice found actions in", time.time()-t1, "seconds."
+						# return i
 
 		return i
 
-	def getBestActionsForPlayout(self, showActions = False):
+	def getBestActionsForPlayout(self, aggressive=False, showActions = False):
 		rle = copy.deepcopy(self.rle)
 		terminal = rle._isDone()[0]
 		s = rle._getSensors().tostring()
@@ -359,9 +388,13 @@ class QLearner:
 		while not terminal:
 			a = self.selectAction(s, policy='greedy', partitionWeights = None, domainKnowledge = None, printout = False)
 			# print self.QVals[(s,a)]
-			if a is None or self.QVals[(s,a)]<=0:
-				# print "Negative q-values or no action. Breaking."
-				return actions
+			if aggressive:
+				if a is None:
+					return actions
+			else:
+				if a is None or self.QVals[(s,a)]<=0:
+					# print "Negative q-values or no action. Breaking."
+					return actions
 			actions.append(a)
 			res = rle.step(a)
 			if showActions:
@@ -382,20 +415,25 @@ class QLearner:
 if __name__ == "__main__":
 	
 	# gameFilename = "examples.gridphysics.simpleGame_many_poisons"
-	gameFilename = "examples.gridphysics.simpleGame_many_poisons"
+	gameFilename = "examples.gridphysics.waypointtheory" 
+	# gameFilename = "examples.gridphysics.simpleGame_teleport"
+
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
+	print rle.show()
 	# rle.immovables = ['wall', 'poison1', 'poison2']
-	print "Initializing learner"
-	ql = QLearner(rle, gameString, levelString, alpha=1, epsilon=.1, gamma=.9, episodes=1000)
+	print ""
+	print "Initializing learner. Playing", gameFilename
+	ql = QLearner(rle, gameString, levelString, alpha=1, epsilon=.5, gamma=.9, episodes=1000)
 	# for x in range(10):
 	# 	print '{0}\r'.format(x),
 	# print
 	# embed()
-
-
-	ql.learn(1000, satisfice=True)
+	t1 = time.time()
+	ql.learn(1000, satisfice=100)
+	t2 = time.time()
+	print "done in {} seconds".format(t2)
 	# ql.learn(100, satisfice=False)
 
 	embed()

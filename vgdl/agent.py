@@ -72,11 +72,12 @@ class Agent:
 	def getSpriteNameColor(self, spriteName, rle):
 		return self.getSpriteColor(rle._game.sprite_groups[spriteName][0])
 
-	def objectSelectionPhase(self, unknownColors, rle):
+	def objectSelectionPhase(self, unknownColors, allColors, rle):
 		## TODO: this is contingent on only one goal existing.
 		
-		## Select known goal if it's known, otherwise unkown object.
-		if self.goalColor:
+		epsilon = .1
+		## With probability 1-epsilon, select known goal if it's known, otherwise unkown object.
+		if self.goalColor and random.random()>epsilon:
 			key = [k for k in rle._game.sprite_groups.keys() if self.getSpriteNameColor(k, rle) == self.goalColor][0]
 			objectGoal = rle._game.sprite_groups[key][0]
 			# actualGoal = objectGoal
@@ -85,8 +86,7 @@ class Agent:
 			print ""
 		else:
 			try:
-				objectGoal = selectObjectGoal(rle, unknownColors, method="random_then_nearest")
-				# objectGoalLocation = rle._rect2posFlipCoords(objectGoal.rect)
+				objectGoal = selectObjectGoal(rle, unknownColors, allColors, method="random_then_nearest")
 				print ""
 			except:
 				print "no unknown objects and no goal? Embedding so you can debug."
@@ -139,8 +139,9 @@ class Agent:
 		## Initialize external environment
 		rle = self.rleCreateFunc()
 		allObjects= rle._game.getObjects()
-		unknownColors = [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in rle._game.sprite_groups.keys()]
-		unknownColors = [c for c in unknownColors if c not in self.knownColors]
+		allColors = [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in rle._game.sprite_groups.keys()]# if k!='DARKBLUE']
+		allColors = [c for c in allColors if c!='DARKBLUE']
+		unknownColors = [c for c in allColors if c not in self.knownColors]
 
 		print "unknown colors:", unknownColors
 		print "Known colors:", self.knownColors
@@ -157,7 +158,7 @@ class Agent:
 				gameObject = self.initializeHypotheses(rle, allObjects, learnSprites=True)
 
 			## select explore / exploit goal
-			objectGoal, objectGoalLocation = self.objectSelectionPhase(unknownColors, rle)
+			objectGoal, objectGoalLocation = self.objectSelectionPhase(unknownColors, allColors, rle)
 
 			## initialize one or many VRLEs according to hypothesis-selection method
 			VRLEs = self.VrleInitPhase(objectGoalLocation, rle)
@@ -188,11 +189,21 @@ class Agent:
 		return gameObject, won, totalStatesEncountered
 
 if __name__ == "__main__":
-	filename = "examples.gridphysics.simpleGame_preconditions"
-	
+	# filename = "examples.gridphysics.simpleGame_resourceTest"
+
+	# filename = "examples.gridphysics.simpleGame_preconditions" ## won't work until eventHandling() is corrected.
+	# filename = "examples.gridphysics.simpleGame_inductionTest"
+	# filename = "examples.gridphysics.simpleGame_missile2"	
+	filename = "examples.gridphysics.movers5"	
 	# filename = "examples.gridphysics.simpleGame_many_poisons"
 	# filename = "examples.gridphysics.pushtest"
+	# filename = "examples.gridphysics.simpleGame_teleport"	
 	plannerType = "QLearning"
+	# plannerType = "AStar"
+	print ""
+	print "Playing {} with {}".format(filename, plannerType)
 	agent = Agent(filename, plannerType)
-	agent.playMultipleEpisodes(5)
-
+	t1 = time.time()
+	numEpisodes = 5
+	agent.playMultipleEpisodes(numEpisodes)
+	print "Ended {} episodes of {} with planner {} in {} seconds".format(numEpisodes, filename, plannerType, time.time()-t1)

@@ -43,8 +43,6 @@ if __name__ == "__main__":
 	eventList = [event4, event2, event3, event1]
 
 
-
-
 	terminationCondition = {'ended': False, 'win':False, 'time':5}
 	trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in eventList], terminationCondition)
 	
