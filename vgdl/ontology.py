@@ -99,8 +99,23 @@ class GridPhysics():
                 pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
                 return pos.left, pos.top
         else:   # If object has speed = 0 or no 'orientation' attribute
-            return None   
+            return None
                   
+    def calculatePassiveMovementGivenParams(self, sprite, speed, orientation):
+        """
+        Calculate where the sprite would end up in a timestep, without actually updating its position.
+        """
+        ## This is where you could make hypotheses about speed, etc. for the object.
+        if speed is None:
+            speed = 1
+
+        if speed != 0 and hasattr(sprite, 'orientation'):
+            speed = speed * self.gridsize[0]
+            if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
+                pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
+                return pos.left, pos.top
+        else:   # If object has speed = 0 or no 'orientation' attribute
+            return None
 
     def activeMovement(self, sprite, action, speed=None):
         if speed is None:
@@ -1407,6 +1422,36 @@ def cannotActivateSwitch(sprite, partner, game):
 #     Sprite Induction
 # ---------------------------------------------------------------------
 
+def getSpeed(params):
+    """
+    params = a dict mapping sprite attributes to values
+    sprite = the VGDL sprite.
+    """
+    if 'speed' in params:
+        return params['speed']
+    else:
+        return 1
+        # default speed value
+
+def getFleeing(params):
+    """
+    params = a dict mapping sprite attributes to values
+    sprite = the VGDL sprite.
+    """
+    if 'fleeing' in params:
+        return params['fleeing']
+    else:
+        return False
+
+def getOrientation(params):
+     """
+    params = a dict mapping sprite attributes to values
+    sprite = the VGDL sprite.
+    Question - what is default value of orientation?
+    """
+    if 'orientation' in params:
+        return params['orientation']
+
 def chaserClosestTargets(sprite, game):
     bestd = 1e100
     res = []
@@ -1419,7 +1464,7 @@ def chaserClosestTargets(sprite, game):
             res.append(target)
     return res
 
-def chaserMovesToward(sprite, game, target):
+def chaserMovesToward(sprite, game, target, fleeing):
     """ Find the canonical direction(s) which move toward
     the target. """
     res = []
@@ -1428,37 +1473,40 @@ def chaserMovesToward(sprite, game, target):
         r = sprite.rect.copy()
         r = r.move(a)
         newdist = sprite.physics.distance(r, target.rect)
-        if sprite.fleeing and basedist < newdist:
+        if fleeing and basedist < newdist:
             res.append(a)
-        if not sprite.fleeing and basedist > newdist:
+        if not fleeing and basedist > newdist:
             res.append(a)
     return res
 
 
-def updateOptions(game, sprite_type, current_sprite):
+def updateOptions(game, sprite_type, current_sprite, params={}):
     """
     game - current game object
     sprite_type - the sprite type class
     current_sprite - the current sprite object
+    params - inferred params of the sprite. A dict mapping parameters (as strings) to their values
     """
-
     # Immovable, Passive, ResourcePack
     if (sprite_type == Immovable) or (sprite_type == Passive) or (sprite_type == ResourcePack) or (sprite_type == Resource):
         return {(current_sprite.rect.left, current_sprite.rect.top): 1.} ##object stays in position
     
     # Chaser
     elif sprite_type == Chaser:
+        speed = getSpeed(params)
+        fleeing = getFleeing(params)
         options = []
         position_options = {}
 
+
         try:
             for target in chaserClosestTargets(current_sprite, game):
-                options.extend(chaserMovesToward(current_sprite, game, target))
+                options.extend(chaserMovesToward(current_sprite, game, target, fleeing))
             if len(options) == 0:
                 options = BASEDIRS
 
             for option in options:
-                left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option)
+                left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed)
                 if (left, top) in position_options.keys():
                     position_options[(left, top)] += 1.0/len(options) 
                 else:
@@ -1470,6 +1518,7 @@ def updateOptions(game, sprite_type, current_sprite):
 
     # AStarChaser
     elif sprite_type == AStarChaser:
+        speed = getSpeed(params)
         world = AStarWorld(game) ##how the AStarChaser makes its own calculations (see ai.py)
         
         # If nothing to chase, then will stay in place
@@ -1503,14 +1552,16 @@ def updateOptions(game, sprite_type, current_sprite):
         else: # Not foolproof, but will catch walls that are surrounded by other walls
             movement = DOWN 
         
-        left, top = current_sprite.physics.calculateActiveMovement(current_sprite, movement)
+        left, top = current_sprite.physics.calculateActiveMovement(current_sprite, movement, speed=speed)
         return {(left, top): 1.} 
 
     # Random NPC
     elif sprite_type == RandomNPC:
+        speed = getSpeed(params)
+
         position_options = {}
         for option in BASEDIRS:
-            left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option)
+            left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed)
             if (left, top) in position_options.keys(): 
                 position_options[(left, top)] += 1.0/len(BASEDIRS) 
             else:
@@ -1520,7 +1571,12 @@ def updateOptions(game, sprite_type, current_sprite):
     # Missile or OrientedSprite
     elif sprite_type == Missile or sprite_type==OrientedSprite:
         if not current_sprite.is_static and not current_sprite.only_active:
-            coords = current_sprite.physics.calculatePassiveMovement(current_sprite)
+            # NOTE: we might want to consider having is_static and only_active be
+            # parameters that we have to infer, rather than things we get for free.
+            # (i.e. make these fields in the params variable)
+            speed = getSpeed(params)
+            orientation = getOrientation(params)
+            coords = current_sprite.physics.calculatePassiveMovementGivenSpeed(current_sprite, speed, orientation)
             
             # If object has speed = 0 or no 'orientation' attribute
             if coords == None:
