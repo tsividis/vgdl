@@ -1443,14 +1443,14 @@ def getFleeing(params):
     else:
         return False
 
-def getOrientation(params):
-     """
-    params = a dict mapping sprite attributes to values
-    sprite = the VGDL sprite.
-    Question - what is default value of orientation?
-    """
-    if 'orientation' in params:
-        return params['orientation']
+# def getOrientation(params):
+#      """
+#     params = a dict mapping sprite attributes to values
+#     sprite = the VGDL sprite.
+#     Question - what is default value of orientation?
+#     """
+#     if 'orientation' in params:
+#         return params['orientation']
 
 def chaserClosestTargets(sprite, game):
     bestd = 1e100
