@@ -550,12 +550,13 @@ class BasicGame(object):
 
     def _eventHandling(self):
         # from ontology import *  
-
+        self.lastcollisions = {}
         self.effectList = []
-        collision_list = []
+        collision_set = set()
         spritesActedOn = set() # a set containing all the sprites that have been acted on.
         iterations = 0
         new_collisions = True
+        print 'kill_list', self.kill_list
         while new_collisions:
             for class1 in self.collision_map:
                 for class2 in self.collision_map[class1]:
@@ -564,21 +565,16 @@ class BasicGame(object):
                     for sprite_class in [class1, class2]:
 
                         if sprite_class not in self.lastcollisions:
-                            print 'last_collisions', self.lastcollisions
-                            print
-                            sprite_group = self.sprite_groups[sprite_class]
-                            print 'before', sprite_class, sprite_group
-                            print
-                            for key in self.sprite_groups:
-                                sprite = self.sprite_groups[key]
-                                if sprite and sprite_class in sprite[0].stypes:
-                                    print 'checking', sprite, sprite_class, sprite[0].stypes
-                                    print
-                                    sprite_group.extend(sprite)
-                            print 'updated', sprite_class, sprite_group
-                            print
+                            if sprite_class in self.sprite_groups:
+                                sprite_group = self.sprite_groups[sprite_class]
+                            else:
+                                sprite_group = []
+                                for key in self.sprite_groups:
+                                    sprites = self.sprite_groups[key]
+                                    if sprites and sprite_class in sprites[0].stypes:
+                                        sprite_group.extend(sprites)
+
                             self.lastcollisions[sprite_class] = (sprite_group, len(sprite_group))
-                        
 
                 
                     # special case for end-of-screen
@@ -591,7 +587,7 @@ class BasicGame(object):
                                     spritesActedOn.add(sprite)
                                     if e != None:
                                         iterationEffectList.append(e)
-                                    collision_list.append((sprite, 'EOS'))
+                                    collision_set.add((sprite, 'EOS'))
 
                             continue
 
@@ -613,6 +609,7 @@ class BasicGame(object):
                                 continue
 
                             collision_set.add((sprite1, sprite2))
+                            print collision_set
                             new_collisions = True
                             for effect, kwargs in self.collision_map[class1][class2]:
                                 # deal with the collision effects
@@ -642,7 +639,7 @@ class BasicGame(object):
                                     kwargs_use.pop('applyto')
                                     for sC in self.getSprites(stype):
                                         e = effect(sC, sprite1, self, **kwargs_use)
-                                    self.effectList.append(e)
+                                    if e: self.effectList.append(e)
                                     continue
 
                                 # Author: Jake: Applies effect to all sprites with the same dimension
@@ -655,7 +652,7 @@ class BasicGame(object):
                                                 e = effect(sC, sprite1, self, **kwargs)
                                             else:
                                                 e = effect(sprite1, sC, self, **kwargs)
-                                            self.effectList.append(e)
+                                            if e: self.effectList.append(e)
                                             continue
 
 
@@ -670,7 +667,7 @@ class BasicGame(object):
                                 # CHECKME: this is not a bullet-proof way, but seems to work
 
                                 #why are we keepig a kill list instead of removing the sprites entirely?
-                                if sprite1 not in self.kill_list:
+                                if sprite1 not in self.kill_list and sprite2 not in self.kill_list:
                                     if effect.__name__ == "changeResource":  # TODO: A little hack-y, but works for now.
                                         resource = kwargs['resource']
                                         (sclass, args, stypes) = self.sprite_constr[resource]
@@ -679,7 +676,7 @@ class BasicGame(object):
                                     
                                     else:
                                         e = effect(sprite1, sprite2, self, **kwargs)
-                                    self.effectList.append(e)
+                                    if e: self.effectList.append(e)
 
 
         if len(self.effectList) > 0:

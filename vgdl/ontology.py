@@ -1013,7 +1013,6 @@ def getColor(sprite):
 # ---------------------------------------------------------------------
 def killSprite(sprite, partner, game): ## FLAG
     """ Kill command """
-    print 'Kill command called'
     game.kill_list.append(sprite)
     if not None in {sprite, partner}:
         # sprite_info = colorDict[str(sprite.color)]
