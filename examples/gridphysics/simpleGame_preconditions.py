@@ -56,6 +56,7 @@ BasicGame frame_rate=30
         avatar poison > killIfHasLess resource=medicine limit=-1
         poison avatar > killSprite
         cloud avatar  > bounceForward
+        goal avatar > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False   
         SpriteCounter stype=goal limit=0 win=True       

@@ -46,6 +46,7 @@ BasicGame frame_rate=30
         goal avatar > killSprite
         box1 avatar > bounceForward
         box2 avatar  > killSprite
+        box1 box1 > undoAll
         goal box1 > bounceForward
         goal box2 > bounceForward
         goal wall > undoAll

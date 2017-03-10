@@ -126,7 +126,6 @@ class VGDLParser(object):
                 eclass, args = self._parseArgs(edef)
                 class1, class2 = [x.strip() for x in pair.split(" ") if len(x)>0]
                 self.game.collision_eff.append(tuple([class1, class2, eclass, args]))
-                self.game.collision_map[class1][class2].append((eclass, args))
                 if self.verbose:
                     print "Collision", pair, "has effect:", edef
         #print self.game.collision_eff
@@ -235,7 +234,6 @@ class BasicGame(object):
         self.singletons = []
         # collision effects (ordered by execution order)
         self.collision_eff = []
-        self.collision_map = defaultdict(lambda: defaultdict(list))
 
         self.playback_states = []
         self.playback_index = 0
@@ -336,6 +334,7 @@ class BasicGame(object):
                 print "Sprite limit reached."
                 return
             sclass, args, stypes = self.sprite_constr[key]
+            print stypes
             # verify the singleton condition
             anyother = False
             for pk in stypes[::-1]:
@@ -549,138 +548,135 @@ class BasicGame(object):
                 del self.lastcollisions[key]
 
     def _eventHandling(self):
-        # from ontology import *  
-        self.lastcollisions = {}
+        self.lastcollisions = {} # This is a weird name for this variable
         self.effectList = []
         collision_set = set()
         spritesActedOn = set() # a set containing all the sprites that have been acted on.
-        iterations = 0
         new_collisions = True
-        print 'kill_list', self.kill_list
+        iterations = 0
         while new_collisions:
-            for class1 in self.collision_map:
-                for class2 in self.collision_map[class1]:
-                    # check for new sprites and (maybe?)
-                    # build the current sprite lists (if not yet available)
-                    for sprite_class in [class1, class2]:
+            iterations += 1
+            new_collisions = set()
+            for class1, class2, effect, kwargs in self.collision_eff:
+                # build the current sprite lists (if not yet available)
+                # should this be done here? 
+                # I feel like this should only be done if new sprites are added.
+                for sprite_class in [class1, class2]:
+                    if sprite_class not in self.lastcollisions:
+                        if sprite_class in self.sprite_groups:
+                            sprites = self.sprite_groups[sprite_class]
+                        else:
+                            sprites = []
+                            for key in self.sprite_groups:
+                                sprite = self.sprite_groups[key]
+                                if sprite and sprite_class in sprite[0].stypes:
+                                    sprites.extend(sprite)
+                        self.lastcollisions[sprite_class] = (sprites, len(sprites))
 
-                        if sprite_class not in self.lastcollisions:
-                            if sprite_class in self.sprite_groups:
-                                sprite_group = self.sprite_groups[sprite_class]
-                            else:
-                                sprite_group = []
-                                for key in self.sprite_groups:
-                                    sprites = self.sprite_groups[key]
-                                    if sprites and sprite_class in sprites[0].stypes:
-                                        sprite_group.extend(sprites)
+                # special case for end-of-screen
+                if class2 == "EOS":
+                    sprites1, l1 = self.lastcollisions[class1]
+                    for sprite1 in sprites1:
+                        if not pygame.Rect((0,0), self.screensize).contains(sprite1.rect):
+                            new_collisions.add((sprite1, 'EOS'))
+                            e = effect(sprite1, None, self, **kwargs)
+                            if e: self.effectList.append(e)
+                            spritesActedOn.add(sprite1)
+                    continue
 
-                            self.lastcollisions[sprite_class] = (sprite_group, len(sprite_group))
+                # iterate over the shorter one
+                # ss1, l1 = self.lastcollisions[class1] #Ex. ([medicine at (305,61), medicine at (305,305)], 2)
+                # ss2, l2 = self.lastcollisions[class2]
 
-                
-                    # special case for end-of-screen
-                    if class2 == "EOS":
-                        for effect, kwargs in self.collision_map[class1][class2]:
-                            sprite_list, l1 = self.lastcollisions[class1]
-                            for sprite in sprite_list:
-                                if not pygame.Rect((0,0), self.screensize).contains(sprite.rect):
-                                    e = effect(sprite, None, self, **kwargs)
-                                    spritesActedOn.add(sprite)
-                                    if e != None:
-                                        iterationEffectList.append(e)
-                                    collision_set.add((sprite, 'EOS'))
+                # if l1 < l2:
+                #     shortss, longss, switch = ss1, ss2, False
+                # else:
+                #     shortss, longss, switch = ss2, ss1, True
 
+
+                # shortss, longss = ss1, ss2
+
+                # score argument is not passed along to the effect function
+                score = 0
+                if 'scoreChange' in kwargs:
+                    kwargs = kwargs.copy()
+                    score = kwargs['scoreChange']
+                    del kwargs['scoreChange']
+
+                dim = None
+                if 'dim' in kwargs:
+                    kwargs = kwargs.copy()
+                    dim = kwargs['dim']
+                    del kwargs['dim']
+
+                (sprites1, l1), (sprites2, l2) = self.lastcollisions[class1], self.lastcollisions[class2]
+                for sprite1 in sprites1:
+                    for collision_index in sprite1.rect.collidelistall(sprites2):
+
+                        sprite2 = sprites2[collision_index]
+                        
+                        if (sprite1 == sprite2
+                            or (sprite1, sprite2) in collision_set 
+                            or sprite1 in self.kill_list 
+                            or sprite2 in self.kill_list): 
+                            continue
+                        # embed()
+                        print iterations, (sprite1, sprite2)
+                        new_collisions.add((sprite1, sprite2))
+                        # deal with the collision effects
+                        if score:
+                            self.score += score
+                            #print 'score', self.score  ## ORIGINALLY UNCOMMENTED
+
+                        if 'applyto' in kwargs:
+
+                            stype = kwargs['applyto']
+
+                            kwargs_use = deepcopy(kwargs)
+                            kwargs_use.pop('applyto')
+                            for sC in self.getSprites(stype):
+                                e = effect(sC, sprite1, self, **kwargs_use)
+                                spritesActedOn.add(sC)
+                            if e: self.effectList.append(e)
                             continue
 
-                    # iterate over the shorter one
-                    sprite_list1, l1 = self.lastcollisions[class1] #Ex. ([medicine at (305,61), medicine at (305,305)], 2)
-                    sprite_list2, l2 = self.lastcollisions[class2]
-
-                    if l1 < l2:
-                        shortss, longss, switch = sprite_list1, sprite_list2, False
-                    else:
-                        shortss, longss, switch = sprite_list2, sprite_list1, True
-
-                    new_collisions = False
-                    for sprite1 in shortss:
-                        for collision_index in sprite1.rect.collidelistall(longss):
-                            sprite2 = longss[collision_index]
-
-                            if sprite1 == sprite2 or (sprite1, sprite2) in collision_set:
+                        if dim:
+                            sprites = self.getSprites(classprite1)
+                            spritesFiltered = filter(lambda sprite: sprite.__dict__[dim] == sprite2.__dict__[dim], sprites)
+                            for sC in spritesFiltered:
+                                e = effect(sprite1, sC, self, **kwargs)
+                                spritesActedOn.add(sprite1)
+                                if e: self.effectList.append(e)
                                 continue
 
-                            collision_set.add((sprite1, sprite2))
-                            print collision_set
-                            new_collisions = True
-                            for effect, kwargs in self.collision_map[class1][class2]:
-                                # deal with the collision effects
-                                
-                                # score argument is not passed along to the effect function
-                                score = 0
-                                if 'scoreChange' in kwargs:
-                                    kwargs = kwargs.copy()
-                                    score = kwargs['scoreChange']
-                                    del kwargs['scoreChange']
 
-                                dim = None
-                                if 'dim' in kwargs:
-                                    kwargs = kwargs.copy()
-                                    dim = kwargs['dim']
-                                    del kwargs['dim']
+                        # if shortss == longss: # both sprites are the same type of sprites
+                        #     if sprite1 in spritesActedOn: # if sprite1 has experienced the effect of an event
+                        #         sprite1, sprite2 = sprite2, sprite1
 
-                                if score:
-                                    self.score += score
-                                    #print 'score', self.score  ## ORIGINALLY UNCOMMENTED
+                        # CHECKME: this is not a bullet-proof way, but seems to work
 
-                                if 'applyto' in kwargs:
+                        if effect.__name__ == "changeResource":  # TODO: A little hack-y, but works for now.
+                            resource = kwargs['resource']
+                            (sclass, args, stypes) = self.sprite_constr[resource]
+                            resource_color = args['color']
+                            e = effect(sprite1, sprite2, resource_color, self, **kwargs)
+                            spritesActedOn.add(sprite1)
+                        
+                        else:
+                            e = effect(sprite1, sprite2, self, **kwargs)
+                            spritesActedOn.add(sprite1)
+                            
+                        if e: self.effectList.append(e)
 
-                                    stype = kwargs['applyto']
+                        if not sprite1.rect.colliderect(sprite2.rect):
+                            print new_collisions
+                            new_collisions.remove((sprite1, sprite2))
 
-                                    kwargs_use = deepcopy(kwargs)
-                                    kwargs_use.pop('applyto')
-                                    for sC in self.getSprites(stype):
-                                        e = effect(sC, sprite1, self, **kwargs_use)
-                                    if e: self.effectList.append(e)
-                                    continue
-
-                                # Author: Jake: Applies effect to all sprites with the same dimension
-                                if dim:
-                                    sprites = self.getSprites(class1)
-                                    spritesFiltered = filter(lambda sprite: sprite.__dict__[dim] == sprite2.__dict__[dim], sprites)
-                                    for sC in spritesFiltered:
-                                        if sprite1 not in self.kill_list:
-                                            if switch:
-                                                e = effect(sC, sprite1, self, **kwargs)
-                                            else:
-                                                e = effect(sprite1, sC, self, **kwargs)
-                                            if e: self.effectList.append(e)
-                                            continue
-
-
-                                #Switches order of sprites
-                                if switch:
-                                    sprite1, sprite2 = sprite2, sprite1
-
-                                # if shortss == longss: # both sprites are the same type of sprites
-                                #     if sprite1 in spritesActedOn: # if sprite1 has experienced the effect of an event
-                                #         sprite1, sprite2 = sprite2, sprite1
-
-                                # CHECKME: this is not a bullet-proof way, but seems to work
-
-                                #why are we keepig a kill list instead of removing the sprites entirely?
-                                if sprite1 not in self.kill_list and sprite2 not in self.kill_list:
-                                    if effect.__name__ == "changeResource":  # TODO: A little hack-y, but works for now.
-                                        resource = kwargs['resource']
-                                        (sclass, args, stypes) = self.sprite_constr[resource]
-                                        resource_color = args['color']
-                                        e = effect(sprite1, sprite2, resource_color, self, **kwargs)
-                                    
-                                    else:
-                                        e = effect(sprite1, sprite2, self, **kwargs)
-                                    if e: self.effectList.append(e)
-
+            collision_set = collision_set.union(new_collisions)
 
         if len(self.effectList) > 0:
-            print self.effectList
+            print 'effect list', self.effectList
         return self.effectList
 
     def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0):

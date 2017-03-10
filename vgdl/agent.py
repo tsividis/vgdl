@@ -189,7 +189,7 @@ class Agent:
 		return gameObject, won, totalStatesEncountered
 
 if __name__ == "__main__":
-	filename = "examples.gridphysics.simpleGame_preconditions"
+	filename = "examples.gridphysics.simpleGame_undo_all"
 	print filename
 	# filename = "examples.gridphysics.simpleGame_many_poisons"
 	# filename = "examples.gridphysics.pushtest"

@@ -35,6 +35,7 @@ BasicGame
   LevelMapping
     w > wall       
     G > goal
+    b > bullet
 
   InteractionSet
     wall bullet > killSprite 
