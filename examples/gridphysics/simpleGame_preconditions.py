@@ -53,8 +53,8 @@ BasicGame frame_rate=30
         avatar medicine > changeResource resource=medicine value=2
         medicine avatar > killSprite
         avatar poison > changeResource resource=medicine value=-1
-        poison avatar > killSprite
         avatar poison > killIfHasLess resource=medicine limit=-1
+        poison avatar > killSprite
         cloud avatar  > bounceForward
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False   
