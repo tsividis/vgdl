@@ -334,7 +334,6 @@ class BasicGame(object):
                 print "Sprite limit reached."
                 return
             sclass, args, stypes = self.sprite_constr[key]
-            print stypes
             # verify the singleton condition
             anyother = False
             for pk in stypes[::-1]:
@@ -553,9 +552,7 @@ class BasicGame(object):
         collision_set = set()
         spritesActedOn = set() # a set containing all the sprites that have been acted on.
         new_collisions = True
-        iterations = 0
         while new_collisions:
-            iterations += 1
             new_collisions = set()
             for class1, class2, effect, kwargs in self.collision_eff:
                 # build the current sprite lists (if not yet available)
@@ -584,18 +581,6 @@ class BasicGame(object):
                             spritesActedOn.add(sprite1)
                     continue
 
-                # iterate over the shorter one
-                # ss1, l1 = self.lastcollisions[class1] #Ex. ([medicine at (305,61), medicine at (305,305)], 2)
-                # ss2, l2 = self.lastcollisions[class2]
-
-                # if l1 < l2:
-                #     shortss, longss, switch = ss1, ss2, False
-                # else:
-                #     shortss, longss, switch = ss2, ss1, True
-
-
-                # shortss, longss = ss1, ss2
-
                 # score argument is not passed along to the effect function
                 score = 0
                 if 'scoreChange' in kwargs:
@@ -621,7 +606,6 @@ class BasicGame(object):
                             or sprite2 in self.kill_list): 
                             continue
                         # embed()
-                        print iterations, (sprite1, sprite2)
                         new_collisions.add((sprite1, sprite2))
                         # deal with the collision effects
                         if score:
@@ -668,11 +652,6 @@ class BasicGame(object):
                             spritesActedOn.add(sprite1)
                             
                         if e: self.effectList.append(e)
-
-                        if not sprite1.rect.colliderect(sprite2.rect):
-                            print new_collisions
-                            new_collisions.remove((sprite1, sprite2))
-
             collision_set = collision_set.union(new_collisions)
 
         if len(self.effectList) > 0:
