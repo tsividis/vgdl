@@ -334,9 +334,9 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 				subgoals = planner.getSubgoals(subgoal_path_threshold=3)
 			elif plannerType=='QLearning':
 				planner = QLearner(vrle, gameString=game, levelString=level)
-				subgoals = planner.getSubgoals(subgoal_path_threshold=10)
+				subgoals = planner.getSubgoals(subgoal_path_threshold=5)
 			elif plannerType=='AStar':
-				planner = QLearner(vrle, gameString=game, levelString=level)
+				planner = AStar(vrle, gameString=game, levelString=level)
 				subgoals = planner.getSubgoals(subgoal_path_threshold=5)
 			print "subgoals", subgoals
 			## if you can't find subgoals that get you to the goal, exit
