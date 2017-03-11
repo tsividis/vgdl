@@ -53,8 +53,11 @@ def observe(rle, obsSteps):
 	for i in range(obsSteps):
 		spriteInduction(rle._game, step=1)
 		spriteInduction(rle._game, step=2)
+		objects = rle._game.getObjects()
+		sprite = rle._game.sprite_groups['missile1'][0].ID
+		old_outcome = objects[sprite]["position"]
 		rle.step((0,0))
-		spriteInduction(rle._game, step=3)
+		spriteInduction(rle._game, step=3, old_outcome = old_outcome)
 	return
 
 
@@ -241,7 +244,7 @@ def getToWaypoint(rle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, 
 		m, steps = mcts.startTrainingPhase(1200, defaultPolicyMaxSteps, Vrle, mark_solution=True, solution_limit=20)
 		actions = mcts.getBestActionsForPlayout((1,0,0), debug=False)
 	elif plannerType=='QLearning':
-		planner = QLearner(Vrle, gameString=theoryString, levelString=levelString)
+		planner = QLearner(Vrle, gameString=theoryString, levelString=levelString, alpha=1, epsilon=.5)
 		steps = planner.learn(300, satisfice=50)
 		actions = planner.getBestActionsForPlayout()
 	elif plannerType=='AStar':
@@ -333,8 +336,8 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 				planner = Basic_MCTS(existing_rle=vrle, game=game, level=level, partitionWeights=[5,3,3])
 				subgoals = planner.getSubgoals(subgoal_path_threshold=3)
 			elif plannerType=='QLearning':
-				planner = QLearner(vrle, gameString=game, levelString=level)
-				subgoals = planner.getSubgoals(subgoal_path_threshold=10)
+				planner = QLearner(vrle, gameString=game, levelString=level, alpha=1, epsilon=.5)
+				subgoals = planner.getSubgoals(subgoal_path_threshold=20)
 			elif plannerType=='AStar':
 				planner = QLearner(vrle, gameString=game, levelString=level)
 				subgoals = planner.getSubgoals(subgoal_path_threshold=5)

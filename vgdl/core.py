@@ -235,6 +235,7 @@ class BasicGame(object):
         self.singletons = []
         # collision effects (ordered by execution order)
         self.collision_eff = []
+        self.collision_objects = set()
 
         self.playback_states = []
         self.playback_index = 0
@@ -558,7 +559,6 @@ class BasicGame(object):
         while True:
             # continue iterating until iterationEffectList is empty
             iterationEffectList = []
-            # embed()
             for g1, g2, effect, kwargs in self.collision_eff:
                 # build the current sprite lists (if not yet available)
                 for g in [g1, g2]:
@@ -578,7 +578,6 @@ class BasicGame(object):
                     ss1, l1 = ss[g1]
                     for s1 in ss1:
                         if not pygame.Rect((0,0), self.screensize).contains(s1.rect):
-                            # embed()
                             e = effect(s1, 'ENDOFSCREEN', self, **kwargs)
                             spritesActedOn.add(s1)
                             if e != None:
@@ -616,7 +615,6 @@ class BasicGame(object):
                 for s1 in shortss:
                     for ci in s1.rect.collidelistall(longss):
                         s2 = longss[ci]
-                        # embed()
                         if s1 == s2:
                             continue
 
@@ -698,6 +696,12 @@ class BasicGame(object):
         ## print events to terminal        
         # if len(self.effectList) > 0:
         #     print self.effectList
+        for effect in self.effectList:
+            if len(effect) == 3:
+                self.collision_objects.add(effect[1])
+                self.collision_objects.add(effect[2])
+            elif len(effect) == 2:
+                self.collision_objects.add(effect[1])
 
         return self.effectList
 
@@ -757,10 +761,6 @@ class BasicGame(object):
         self.movement_options = {}
         allStates = [self.getFullState()]
         spriteInduction(self, step=0)
-
-        # if self.playback_states:
-        #     print "got playback states"
-        #     embed()
         while self.playback_index < len(self.playback_states):
             clock.tick(self.frame_rate)
             self.time += 1
@@ -861,7 +861,6 @@ class BasicGame(object):
 
             VGDLSprite.dirtyrects = []
             allStates.append(self.getFullState())
-            # embed()
             self.playback_index += 1
 
         if(make_movie):
@@ -1034,7 +1033,7 @@ class BasicGame(object):
                 agentState = agentStatePrev
                 keyPressType = keyPressPrev
 
-            collision_objects = set()
+            self.collision_objects = set()
 
             if self.effectList:
                 state = self.getFullState()
@@ -1044,10 +1043,10 @@ class BasicGame(object):
                 # Get objects involved in the effectList
                 for effect in event['effectList']:
                     if len(effect) == 3:
-                        collision_objects.add(effect[1])
-                        collision_objects.add(effect[2])
+                        self.collision_objects.add(effect[1])
+                        self.collision_objects.add(effect[2])
                     elif len(effect) == 2:
-                        collision_objects.add(effect[1])
+                        self.collision_objects.add(effect[1])
             
 
             # Termination #1
@@ -1065,7 +1064,6 @@ class BasicGame(object):
                         self.win = False
                         print "Game lost. Score=%s" % self.score
                     allStates.append(self.getFullState())
-                    # embed()
                     time.sleep(1)
                     pygame.quit()
                     sys.exit()
@@ -1229,6 +1227,7 @@ class VGDLSprite(object):
     mass     = 1
     physicstype=None
     shrinkfactor=0
+    orientation=(0,0)
 
     def __init__(self, pos, size=(10,10), color=None, speed=None, cooldown=None, physicstype=None, **kwargs):
         from ontology import GridPhysics
@@ -1243,6 +1242,7 @@ class VGDLSprite(object):
         self.cooldown = cooldown or self.cooldown
         self.ID = id(self) # TODO: Make sure that these are unique, maintained during the lifetime of the object
         self.direction = None
+        self.orientation = (0,0)
         #TODO: change the choice to be from colors that are not taken?
         self.color = color or self.color or (140, 20, 140)
         # print 'color', self.color
@@ -1379,7 +1379,6 @@ class Conditional(object):
 def makeVideo(movie_dir):
     import os
     print "Creating Movie"
-    # embed()
     if not os.path.exists(movie_dir):
         print movie_dir, "didn't exist. making new dir"
         os.makedirs(movie_dir)

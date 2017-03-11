@@ -1562,6 +1562,7 @@ class Game(object):
 		avatar = [o for o in T.spriteSet if o.vgdlType==MovingAvatar][0]
 		nonAvatars = [o for o in T.spriteSet if o.vgdlType!=MovingAvatar and o.color!='ENDOFSCREEN']
 		eos = [o for o in T.spriteSet if o.color=='ENDOFSCREEN'][0]
+		wall = [o for o in T.spriteSet if o.color == "BLACK"][0]
 
 		# print "buildgenerictheory"
 		# embed()
@@ -1590,6 +1591,10 @@ class Game(object):
 			## append EOS rule
 			rule = InteractionRule('stepBack', s1.className, 'EOS', {}, set(), generic=True)
 			T.interactionSet.append(rule)
+			if s1.color != "BLACK":
+				rule = InteractionRule('stepBack', s1.className, wall.className, {}, set(), generic=True)
+				T.interactionSet.append(rule)
+
 
 		rule =  SpriteCounterRule("avatar", 0, False)
 		T.terminationSet.append(rule)
@@ -2006,13 +2011,12 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	# first phase: the sprite rules
 	theoryString += "\tSpriteSet\n"
 
-	# print "inwritetheory"
-	# embed()
 
 	for c, sprites in theory.classes.items():
 		if c == 'EOS':
 			pass
 		else:
+			# embed()
 			for s in sprites:
 				unfilteredType = str(s.vgdlType)
 				stype = unfilteredType[unfilteredType.find("vgdl.ontology.")+len("vgdl.ontology."): unfilteredType.find(">")-1]
@@ -2031,8 +2035,25 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 							continue
 						elif k == "orientation":
 							argsString += " %s=%s"%(k, DIRECTION_MAP[v])
+						elif k == "speed":
+							argsString += " %s=%s"%(k, v)
 						else:
 							argsString += " %s=%s"%(k, str(v))
+
+				try:
+					argsString += " %s=%s"%("speed", str(s.speed))
+				except AttributeError:
+					pass
+
+				try:
+					argsString += " %s=%s"%("orientation", DIRECTION_MAP[s.orientation])
+				except AttributeError:
+					pass
+
+				try:
+					argsString += " %s=%s"%("fleeing", s.fleeing)
+				except AttributeError:
+					pass
 
 				if "core" in stype:
 					stype = stype[stype.find("core.")+len("core."):]
