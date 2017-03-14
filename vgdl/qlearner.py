@@ -62,7 +62,7 @@ class QLearner:
 			self.immovables = immovables
 			print "immovables", immovables
 		except:
-			immovables = ['wall', 'poison']
+			immovables = ['wall']#, 'poison']
 			self.immovables = immovables
 			print "Using defaults as immovables", immovables
 
@@ -190,13 +190,18 @@ class QLearner:
 			print "no goal to get subgoals to"
 			return []
 		goal_code = 2**(1+sorted(self.rle._obstypes.keys())[::-1].index("goal"))
-		goal_loc = np.where(np.reshape(self.rle._getSensors(), self.rle.outdim)==goal_code)
+		killerObjectCodes = []
+		for o in self.rle.killerObjects:
+			if o in self.rle._obstypes.keys():
+				killerObjectCodes.append(2**(1+sorted(self.rle._obstypes.keys())[::-1].index(o)))
+		board = np.reshape(self.rle._getSensors(), self.rle.outdim)
+		goal_loc = np.where(board==goal_code)
 		goal_loc = goal_loc[0][0], goal_loc[1][0]
 		self.subgoals = []
 		# print "showing RLE we're getting path for."
 		# print self.rle.show()
 		path = self.getPathToGoal(avatar_loc, goal_loc)
-		
+
 		if not path:
 			return [] ## so that you can try pursuing a different goal
 
@@ -212,7 +217,26 @@ class QLearner:
 				else:
 					subgoal_index += len(path)/num_subgoals
 
-				self.subgoals.append(path[subgoal_index])
+
+				## Doesn't add subgoals that correspond to objects we know to be dangerous.
+				if board[path[subgoal_index][0]][path[subgoal_index][1]] not in killerObjectCodes:
+					self.subgoals.append(path[subgoal_index])
+				else:
+					for i in range(1, subgoal_path_threshold):
+						# print "path fell on a killer object. changing path slightly."
+						try:
+							if path[subgoal_index-i] not in killerObjectCodes:
+								self.subgoals.append(path[subgoal_index-i])
+								# print "found altered path", path[subgoal_index-i]
+								break
+							elif path[subgoal_index+i] not in killerObjectCodes:
+								self.subgoals.append(path[subgoal_index+i])
+								# print "found altered path", path[subgoal_index+i]
+								break
+						except:
+							print "indices didn't work out in looking for different path"
+				# self.subgoals.append(path[subgoal_index])
+
 		
 		return self.subgoals
 
@@ -414,13 +438,15 @@ class QLearner:
 
 if __name__ == "__main__":
 	
-	# gameFilename = "examples.gridphysics.simpleGame_many_poisons"
+	# gameFilename = "examples.gridphysics.simpleGame_push_boulders_multigoal"
 	gameFilename = "examples.gridphysics.waypointtheory" 
 	# gameFilename = "examples.gridphysics.simpleGame_teleport"
+	# gameFilename = "examples.gridphysics.movers3c"
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
+	# embed()
 	print rle.show()
 	# rle.immovables = ['wall', 'poison1', 'poison2']
 	print ""
@@ -432,7 +458,7 @@ if __name__ == "__main__":
 	# embed()
 	t1 = time.time()
 	ql.learn(1000, satisfice=100)
-	t2 = time.time()
+	t2 = time.time() - t1
 	print "done in {} seconds".format(t2)
 	# ql.learn(100, satisfice=False)
 
