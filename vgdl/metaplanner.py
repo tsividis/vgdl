@@ -117,11 +117,11 @@ def planUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, partitionWei
 	## then these can get incorporated when you look for subgoals.
 	theory = generateTheoryFromGame(rle)
 	# theory.display()
-	theoryString, levelString, inverseMapping, immovables =\
+	theoryString, levelString, inverseMapping, immovables, killerObjects =\
 	writeTheoryToTxt(rle, theory, symbolDict, "./examples/gridphysics/whatever.py", goal_loc)
 
 	rle = createMindEnv(theoryString, levelString, output=False)
-	rle.immovables = immovables
+	rle.immovables, rle.killerObjects = immovables, killerObjects
 
 	mcts = Basic_MCTS(existing_rle=rle, game=game, level=level, partitionWeights=[5,2,3])
 	subgoals = mcts.getSubgoals(subgoal_path_threshold=3)
@@ -225,11 +225,11 @@ def getToWaypoint(rle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, 
 
 	theory = generateTheoryFromGame(rle)
 
-
-	theoryString, levelString, inverseMapping, immovables =\
+	# print "making RLE in getToWaypoint, after generateTheoryFromGame()"
+	theoryString, levelString, inverseMapping, immovables, killerObjects =\
 	writeTheoryToTxt(rle, theory, symbolDict, "./examples/gridphysics/waypointtheory.py", subgoal)
 	Vrle = createMindEnv(theoryString, levelString, output=False)
-	Vrle.immovables = immovables
+	Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
 
 	print "mental map with subgoal", subgoal
 	print Vrle.show()
@@ -241,8 +241,8 @@ def getToWaypoint(rle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, 
 		m, steps = mcts.startTrainingPhase(1200, defaultPolicyMaxSteps, Vrle, mark_solution=True, solution_limit=20)
 		actions = mcts.getBestActionsForPlayout((1,0,0), debug=False)
 	elif plannerType=='QLearning':
-		planner = QLearner(Vrle, gameString=theoryString, levelString=levelString)
-		steps = planner.learn(300, satisfice=50)
+		planner = QLearner(Vrle, gameString=theoryString, levelString=levelString, alpha=1, epsilon=.5)
+		steps = planner.learn(1000, satisfice=50)
 		actions = planner.getBestActionsForPlayout()
 	elif plannerType=='AStar':
 		planner = AStar(Vrle, gameString=theoryString, levelString=levelString)
@@ -327,31 +327,35 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 	while not terminal and not goal_achieved:
 
 		theory_change_flag = False
-
+		resetSubgoals = False
 		if not theory_change_flag: 
 			if plannerType=='mcts':
 				planner = Basic_MCTS(existing_rle=vrle, game=game, level=level, partitionWeights=[5,3,3])
 				subgoals = planner.getSubgoals(subgoal_path_threshold=3)
 			elif plannerType=='QLearning':
-				planner = QLearner(vrle, gameString=game, levelString=level)
-				subgoals = planner.getSubgoals(subgoal_path_threshold=5)
+				planner = QLearner(vrle, gameString=game, levelString=level, alpha=1, epsilon=.5)
+				subgoals = planner.getSubgoals(subgoal_path_threshold=4)
 			elif plannerType=='AStar':
 				planner = AStar(vrle, gameString=game, levelString=level)
 				subgoals = planner.getSubgoals(subgoal_path_threshold=5)
 			print "subgoals", subgoals
+
 			## if you can't find subgoals that get you to the goal, exit
 			if len(subgoals)==0:
 				return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered, game_object
+			
 			total_steps = 0
 			
 			for subgoal in subgoals:
-				if not theory_change_flag and not goal_achieved:
+				if not theory_change_flag and not goal_achieved and not resetSubgoals:
 
 					## write subgoal to theory; initialize VRLE.
-					game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], symbolDict, \
+					# print "at top of metaplanner loop -- making theory"
+					game, level, symbolDict, immovables, killerObjects = writeTheoryToTxt(rle, hypotheses[0], symbolDict, \
 						"./examples/gridphysics/theorytest.py", subgoal)
 					vrle = createMindEnv(game, level, output=False)
-					vrle.immovables = immovables
+					vrle.immovables, vrle.killerObjects = immovables, killerObjects
+
 
 					## Get actions that take you to goal.
 					ignore, actions = getToWaypoint(vrle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, partitionWeights=[5,3,3], act=False)
@@ -361,11 +365,13 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 					## In this case, take a random action.
 					if len(actions)==0:
 						actions = [random.choice([(1,0), (-1,0), (0,1), (0,-1)])]
+						resetSubgoals = True ## if you fail to find a plan, re-calculate subgoals, rather than moving on to the next subgoal after a single action.
 
 					for action in actions:
 						if not theory_change_flag and not goal_achieved:
 							spriteInduction(rle._game, step=1)
 							spriteInduction(rle._game, step=2)
+
 							
 							try:
 								agentState = dict(rle._game.getAvatars()[0].resources)
@@ -396,6 +402,7 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 
 					 		## If there were collisions, update history and perform interactionSet induction if the collisions were novel.
 							if effects:
+
 								state = rle._game.getFullState()
 								event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, 'gameState': rle._game.getFullStateColorized()}
 
@@ -414,7 +421,7 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 								all_effects = [item for sublist in [e['effectList'] for e in finalEventList] for item in sublist]
 								if not all([e in all_effects for e in effects]):## TODO: make sure you write this so that it works with simultaneous effects.
 									
-									print "new effects", effects
+									print "new effects", [e for e in effects if not e in all_effects]
 
 									finalEventList.append(event)
 									terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
@@ -431,11 +438,11 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 									print "updating internal theory"
 									# print "avatarLoc", planner.findAvatarInRLE(rle)
 									## update to incorporate what we've learned, keep the same subgoal for now; this will update at the top of the next loop.
-									game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], symbolDict, \
+									game, level, symbolDict, immovables, killerObjects = writeTheoryToTxt(rle, hypotheses[0], symbolDict, \
 										"./examples/gridphysics/theorytest.py", goalLoc=(rle._rect2pos(object_goal.rect)[1], rle._rect2pos(object_goal.rect)[0]))
 
 									vrle = createMindEnv(game, level, output=True)
-									vrle.immovables = immovables
+									vrle.immovables, vrle.killerObjects = immovables, killerObjects
 									
 									# If setting the new VRLE's resources fails, it's becuase there is no avatar, so don't worry about that here.
 									try:
@@ -452,17 +459,17 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 									trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
 									## TODO: you need to figure out how to incorporate the result of sprite induction in cases where you don't do
 									## interactionSet induction (i.e., here.)
-									hypotheses = [hypothesis]
+									# hypotheses = [hypothesis]
 
 							if terminal:
 								return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered, game_object
 
 					print "executed all actions."
-					## If you finish all actinos, vrle needs to reflect most recent state.
+					## If you finish all actions, vrle needs to reflect most recent state.
 					## goalLoc will be overwritten once you find new subgoals at the top.
-					game, level, symbolDict, immovables = writeTheoryToTxt(rle, hypotheses[0], symbolDict, \
+					game, level, symbolDict, immovables, killerObjects = writeTheoryToTxt(rle, hypotheses[0], symbolDict, \
 						"./examples/gridphysics/theorytest.py", goalLoc=(rle._rect2pos(object_goal.rect)[1], rle._rect2pos(object_goal.rect)[0]))
 					vrle = createMindEnv(game, level, output=False)
-					vrle.immovables = immovables
+					vrle.immovables, vrle.killerObjects = immovables, killerObjects
 			# total_steps += steps
 	return rle, hypotheses, finalEventList, candidate_new_colors, states_encountered, game_object
