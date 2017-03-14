@@ -157,7 +157,25 @@ class Basic_MCTS:
 				else:
 					subgoal_index += len(path)/num_subgoals
 
-				self.subgoals.append(path[subgoal_index])
+				## Doesn't add subgoals that correspond to objects we know to be dangerous.
+				if board[path[subgoal_index][0]][path[subgoal_index][1]] not in killerObjectCodes:
+					self.subgoals.append(path[subgoal_index])
+				else:
+					for i in range(1, subgoal_path_threshold):
+						# print "path fell on a killer object. changing path slightly."
+						try:
+							if path[subgoal_index-i] not in killerObjectCodes:
+								self.subgoals.append(path[subgoal_index-i])
+								# print "found altered path", path[subgoal_index-i]
+								break
+							elif path[subgoal_index+i] not in killerObjectCodes:
+								self.subgoals.append(path[subgoal_index+i])
+								# print "found altered path", path[subgoal_index+i]
+								break
+						except:
+							print "indices didn't work out in looking for different path"
+
+				# self.subgoals.append(path[subgoal_index])
 		return self.subgoals
 
 	def scanDomainForMovementOptions(self):
