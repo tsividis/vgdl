@@ -2059,7 +2059,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 	immovable_predicates = ['stepBack', 'undoAll']
 	kill_predicates = ['killSprite']
-	immovables = []
+	immovables, killerObjects = [], []
 	# second phase: the interaction rules
 	theoryString += "\tInteractionSet\n"
 	added_rules = []
@@ -2123,7 +2123,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 							# embed()
 							immovables.append(s2.className)
 						if interactionRule.interaction in kill_predicates:
-							immovables.append(s2.className) ##killSprite is not symmetrical; you to append things that are (avatar obj killSprite)
+							killerObjects.append(s2.className) ##killSprite is not symmetrical; you to append things that are (avatar obj killSprite)
 					elif 'avatar' in str(s2.vgdlType).lower():
 						if interactionRule.interaction in immovable_predicates:
 							# print "must add immovable"
@@ -2147,6 +2147,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	# print "in writeTheory"
 	# embed()
 	immovables = list(set(immovables))
+	killerObjects = list(set(killerObjects))
 
 
 	# if theory.interactionSet[0].args is not None:
@@ -2213,7 +2214,18 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					mappedState[r][c] = "G"
 				else:
 					spriteIndex = int(round(math.log(state[r][c],2)))-1
-					spriteType = sorted(_obstypes.keys())[::-1][spriteIndex]
+					if spriteIndex > len(_obstypes.keys())-1: ## there are > 1 sprite in this location.
+						indexPairs = []
+						for i in range(1, spriteIndex/2+1):
+							indexPairs.append((i, spriteIndex-i))
+						spriteIndex = random.choice(random.choice(indexPairs)) ## Select one of the hypotheses of overlapping objects. From that, pick one of the objects to display.
+
+					try:
+						spriteType = sorted(_obstypes.keys())[::-1][spriteIndex]
+					except:
+
+						print "didn't find spriteIndex in _obstype.keys() in writeTheory"
+						embed()
 					spriteColor = colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]
 					try:
 						mappedState[r][c] = symbolDict[spriteColor]
@@ -2247,4 +2259,4 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 	levelString = levelString[levelString.find('"""')+3:-4]
 	theoryString = theoryString[theoryString.find('"""')+3:-4]
-	return theoryString, levelString, symbolDict, immovables
+	return theoryString, levelString, symbolDict, immovables, killerObjects
