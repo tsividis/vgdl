@@ -307,6 +307,7 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 	## Returns real world in its new state, as well as theory in its new state.
 	## TODO: also return a trace of events and of game states for re-creation
 	
+
 	hypotheses = []
 	terminal = rle._isDone()[0]
 	goal_achieved = False
@@ -329,6 +330,10 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 
 	states_encountered = [rle._game.getFullState()]
 	hypotheses = [hypothesis]
+
+	# print "at start of getToObjectGoal"
+	# hypothesis.display()
+
 	while not terminal and not goal_achieved:
 
 		theory_change_flag = False
@@ -407,7 +412,8 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 
 					 		## If there were collisions, update history and perform interactionSet induction if the collisions were novel.
 							if effects:
-
+								# print "in getToObjectGoal"
+								# embed()
 								state = rle._game.getFullState()
 								event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, 'gameState': rle._game.getFullStateColorized()}
 
@@ -433,8 +439,10 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 									terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
 									trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
 									theory_change_flag = True
-									hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, verbose=False)) ##if you resample or run sprite induction, this 
+									hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, verbose=False, existingTheories=hypotheses)) ##if you resample or run sprite induction, this 
 
+									# print "altered theory"
+									# hypotheses[0].display()
 									if len(hypotheses)>1:
 										print "more than one hypothesis"
 										embed()
