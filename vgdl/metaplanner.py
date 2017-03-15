@@ -12,6 +12,8 @@ def translateEvents(events, all_objects):
 	def getObjectColor(objectID):
 		if objectID is None:
 			return None
+		elif objectID == 'EOS':
+			return 'ENDOFSCREEN'
 		elif objectID in all_objects.keys():
 			return all_objects[objectID]['type']['color']
 		elif objectID in [colorDict[k] for k in colorDict.keys()]:
@@ -25,8 +27,11 @@ def translateEvents(events, all_objects):
 
 	outlist = []
 	for event in events:
+		# if 'EOS' in event:
+		# 	print "in translateEvents"
+		# 	embed()
 		try:
-			print event
+			print 'in translateEvents', event
 			if len(event) > 3:
 				tmp = [event[0], getObjectColor(event[1]), getObjectColor(event[2])]
 				tmp.extend(event[3:])
@@ -333,8 +338,8 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 				planner = Basic_MCTS(existing_rle=vrle, game=game, level=level, partitionWeights=[5,3,3])
 				subgoals = planner.getSubgoals(subgoal_path_threshold=3)
 			elif plannerType=='QLearning':
-				planner = QLearner(vrle, gameString=game, levelString=level, alpha=1, epsilon=.5)
-				subgoals = planner.getSubgoals(subgoal_path_threshold=4)
+				planner = QLearner(vrle, gameString=game, levelString=level, alpha=1, epsilon=.4)
+				subgoals = planner.getSubgoals(subgoal_path_threshold=5)
 			elif plannerType=='AStar':
 				planner = AStar(vrle, gameString=game, levelString=level)
 				subgoals = planner.getSubgoals(subgoal_path_threshold=5)
@@ -412,7 +417,8 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 								## independent of what we've learned about the interactionSet.
 								## Every timeStep, we should update our beliefs given what we've seen.
 								sample = sampleFromDistribution(rle._game.spriteDistribution, all_objects)
-
+								# print "just sampled"
+								# embed()
 
 								game_object = Game(spriteInductionResult=sample)
 
