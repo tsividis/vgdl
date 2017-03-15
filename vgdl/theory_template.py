@@ -722,8 +722,12 @@ class Theory(object):
 		except:
 			args = {}
 
-		obj1 = self.spriteObjects[event[1]]
-		obj2 = self.spriteObjects[event[2]]
+		try:
+			obj1 = self.spriteObjects[event[1]]
+			obj2 = self.spriteObjects[event[2]]
+		except:
+			print "couldn't find event[2] in interpret()"
+			embed()
 
 		c1, c2 = self.getClass(obj1), self.getClass(obj2)
 		#print 'classes:', c1, c2
@@ -1256,11 +1260,6 @@ class Theory(object):
 		return not self.__eq__(other)
 
 
-def softmax(w, t = 1.0):
-    e = np.exp(np.array(w) / t)
-    dist = e / np.sum(e)
-    return dist	
-
 def normalize(array):
 	z = float(sum(array))
 	if z == 0:
@@ -1497,7 +1496,8 @@ class Game(object):
 			if ts_index+1 == len(timesteps): # Need to add one, because you will create a theory of depth one greater than the length of the timesteps
 				newTheoriesCount = 0
 				for newTheory in newTheories:
-					if all(newTheory.likelihood(ts)==1.0 for ts in timesteps):
+					# if all(newTheory.likelihood(ts)==1.0 for ts in timesteps):
+					if sum([newTheory.likelihood(ts) for ts in timesteps])/len(timesteps)>.5:
 						self.nodes_accepted +=1
 						newTheoriesCount += 1
 						self.hypothesisSpace.append(newTheory)
@@ -1526,16 +1526,18 @@ class Game(object):
 				acceptedTheories = []
 				for t in newTheories:
 					all_passed = True
-					
+
 					for ts in timesteps[:t.depth-1]: 			# Check that the theory can explain all timesteps
 						if not t.likelihood(ts, sparse=True):
 							self.nodes_eliminated +=1
 							all_passed = False
 							break
 					
-					if all_passed:
-						self.nodes_accepted += 1
-						acceptedTheories.append(t)
+					# if all_passed:
+						# self.nodes_accepted += 1
+						# acceptedTheories.append(t)
+					acceptedTheories.append(t) ##TODO: Now you're just adding every theory!
+
 				newTheories = self.orderHypotheses(acceptedTheories)
 				
 				if verbose:
@@ -1562,6 +1564,7 @@ class Game(object):
 		avatar = [o for o in T.spriteSet if o.vgdlType==MovingAvatar][0]
 		nonAvatars = [o for o in T.spriteSet if o.vgdlType!=MovingAvatar and o.color!='ENDOFSCREEN']
 		eos = [o for o in T.spriteSet if o.color=='ENDOFSCREEN'][0]
+		wall = [o for o in T.spriteSet if o.color == "BLACK"][0]
 
 		# print "buildgenerictheory"
 		# embed()
@@ -1590,13 +1593,48 @@ class Game(object):
 			## append EOS rule
 			rule = InteractionRule('stepBack', s1.className, 'EOS', {}, set(), generic=True)
 			T.interactionSet.append(rule)
+			if s1.color != "BLACK":
+				rule = InteractionRule('stepBack', s1.className, wall.className, {}, set(), generic=True)
+				T.interactionSet.append(rule)
+
 
 		rule =  SpriteCounterRule("avatar", 0, False)
 		T.terminationSet.append(rule)
 
 		return T
 
-	def runInduction(self, spriteSample, trace, maxNumTheories, verbose=False):
+	def addNewObjectsToTheory(self, theory, spriteSample):
+		
+
+		# Get the important objects in the theory names
+		avatar = [o for o in theory.spriteSet if o.vgdlType==MovingAvatar][0]
+		nonAvatars = [o for o in theory.spriteSet if o.vgdlType!=MovingAvatar and o.color!='ENDOFSCREEN']
+		eos = [o for o in theory.spriteSet if o.color=='ENDOFSCREEN'][0]
+		wall = [o for o in theory.spriteSet if o.color == "BLACK"][0]
+
+		# print "in addNewObjects"
+		# embed()
+		i = len(theory.classes)
+		knownColors = [item.color for sublist in theory.classes.values() for item in sublist]
+		for s in spriteSample:
+			## If it's a sprite that's not in our theory, add it to the theory's classes
+			## And intiialize all the generic rules.
+			if s.color not in knownColors:
+				s.className = 'c'+str(i)
+				theory.classes[s.className] = [s]
+				theory.spriteObjects[s.color] = s
+				rule = InteractionRule('killSprite', s.className, avatar.className, {}, set(), generic=True)
+				theory.interactionSet.append(rule)
+				rule = InteractionRule('stepBack', s.className, 'EOS', {}, set(), generic=True)
+				theory.interactionSet.append(rule)
+				rule = InteractionRule('stepBack', s.className, wall.className, {}, set(), generic=True)
+				theory.interactionSet.append(rule)
+				i+=1
+
+		return theory
+
+
+	def runInduction(self, spriteSample, trace, maxNumTheories, verbose=False, existingTheories=False):
 		# spriteSample: a particular assignment of sprite types. You can decide how you get this when you generate the sample, in getToSubgoal
 		## Builds a generic theory and then overwrites it as it sees events in 'trace'.
 
@@ -1610,11 +1648,16 @@ class Game(object):
 
 		timesteps=unique_timesteps
 
-		# Start with fake theory (generic prior)
-		T = self.buildGenericTheory(spriteSample)
-
-		init_hypotheses = [T]
-		self.hypothesisSpace = [] # Refresh the hypothesis space before DFS induction
+		if not existingTheories:
+			# Start with fake theory (generic prior)
+			T = self.buildGenericTheory(spriteSample)
+			init_hypotheses = [T]
+			self.hypothesisSpace = [] # Refresh the hypothesis space before DFS induction
+		else:
+			print "continuing induction from existing theories."
+			init_hypotheses = existingTheories
+			# embed()
+			self.hypothesisSpace = []
 
 		# This does DFS induction x times; not sure how to make it more like the behavior we want.
 		for theory in init_hypotheses: 	# each of these theories has depth 1
@@ -1942,6 +1985,8 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 		return argsString, newInteractionName
 
+	# print "in initialize rle"
+	# embed()
 
 	DIRECTION_MAP = {(0,-1):'UP', (0,1):'DOWN', (1,0):'RIGHT', (-1,0):'LEFT'}
 
@@ -2006,13 +2051,12 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	# first phase: the sprite rules
 	theoryString += "\tSpriteSet\n"
 
-	# print "inwritetheory"
-	# embed()
 
 	for c, sprites in theory.classes.items():
 		if c == 'EOS':
 			pass
 		else:
+			# embed()
 			for s in sprites:
 				unfilteredType = str(s.vgdlType)
 				stype = unfilteredType[unfilteredType.find("vgdl.ontology.")+len("vgdl.ontology."): unfilteredType.find(">")-1]
@@ -2031,8 +2075,27 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 							continue
 						elif k == "orientation":
 							argsString += " %s=%s"%(k, DIRECTION_MAP[v])
+						elif k == "speed":
+							argsString += " %s=%s"%(k, v)
 						else:
 							argsString += " %s=%s"%(k, str(v))
+
+				try:
+					argsString += " %s=%s"%("speed", str(s.speed))
+				except AttributeError:
+					# print "couldn't find speed"
+					# embed()
+					pass
+
+				try:
+					argsString += " %s=%s"%("orientation", DIRECTION_MAP[s.orientation])
+				except AttributeError:
+					pass
+
+				try:
+					argsString += " %s=%s"%("fleeing", s.fleeing)
+				except AttributeError:
+					pass
 
 				if "core" in stype:
 					stype = stype[stype.find("core.")+len("core."):]
@@ -2214,18 +2277,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					mappedState[r][c] = "G"
 				else:
 					spriteIndex = int(round(math.log(state[r][c],2)))-1
-					if spriteIndex > len(_obstypes.keys())-1: ## there are > 1 sprite in this location.
-						indexPairs = []
-						for i in range(1, spriteIndex/2+1):
-							indexPairs.append((i, spriteIndex-i))
-						spriteIndex = random.choice(random.choice(indexPairs)) ## Select one of the hypotheses of overlapping objects. From that, pick one of the objects to display.
-
-					try:
-						spriteType = sorted(_obstypes.keys())[::-1][spriteIndex]
-					except:
-
-						print "didn't find spriteIndex in _obstype.keys() in writeTheory"
-						embed()
+					spriteType = sorted(_obstypes.keys())[::-1][spriteIndex]
 					spriteColor = colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]
 					try:
 						mappedState[r][c] = symbolDict[spriteColor]
