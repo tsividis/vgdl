@@ -139,7 +139,7 @@ class AStar:
 			# embed()
 			# raise Exception("Didn't find a path to the goal location.")
 		return path
-		
+
 	def getSubgoals(self, subgoal_path_threshold):
 		avatar_loc = self.findAvatarInRLE(self.rle)
 		## find location of goal, add to rewardDict.
@@ -149,7 +149,12 @@ class AStar:
 			print "no goal to get subgoals to"
 			return []
 		goal_code = 2**(1+sorted(self.rle._obstypes.keys())[::-1].index("goal"))
-		goal_loc = np.where(np.reshape(self.rle._getSensors(), self.rle.outdim)==goal_code)
+		killerObjectCodes = []
+		for o in self.rle.killerObjects:
+			if o in self.rle._obstypes.keys():
+				killerObjectCodes.append(2**(1+sorted(self.rle._obstypes.keys())[::-1].index(o)))
+		board = np.reshape(self.rle._getSensors(), self.rle.outdim)
+		goal_loc = np.where(board==goal_code)
 		goal_loc = goal_loc[0][0], goal_loc[1][0]
 		self.subgoals = []
 		# print "showing RLE we're getting path for."
