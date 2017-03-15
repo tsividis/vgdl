@@ -9,6 +9,7 @@ from copy import deepcopy
 import itertools
 from math import sqrt
 import pygame
+import numpy as np
 from tools import triPoints, unitVector, vectNorm, oncePerStep
 from ai import AStarWorld
 from IPython import embed
@@ -1799,7 +1800,9 @@ def sampleFromDistribution(curr_distribution, all_objects):
         lst = sprite_possibilities.keys()
         lst.sort()
         probs = [sprite_possibilities[l]['prob'] for l in lst]
-        index = np.random.choice(range(len(probs)), p=probs)
+        # print obj_type, [(l, sprite_possibilities[l]['prob']) for l in lst]
+        s_probs = softmax(probs, .01)
+        index = np.random.choice(range(len(probs)), p=s_probs)
         sprite_type = lst[index] ##you might also want to return sprite_possibilities[lst[index]], which is the associated probability.
         color = all_objects[k]['type']['color']
         s = Sprite(vgdlType=sprite_type, color=color)
@@ -1812,7 +1815,9 @@ def sampleFromDistribution(curr_distribution, all_objects):
             param_list = param_possibilities.keys()
             param_list.sort()
             param_probs = [param_possibilities[p] for p in param_list]
-            index = np.random.choice(range(len(param_list)), p=param_probs)
+            s_param_probs = softmax(param_probs, .01)
+
+            index = np.random.choice(range(len(param_list)), p=s_param_probs)
             param[arg] = param_list[index]
 
         # print "in sample"
@@ -1913,21 +1918,26 @@ def spriteInduction(game, step, old_outcome=None):
                     #     embed()
 
 
+def softmax(w, t = 1.0):
+    e = np.exp(np.array(w) / t)
+    dist = e / np.sum(e)
+    return dist 
 
-def selectObjectGoal(rle, unknown_colors, all_colors, method):
+def selectObjectGoal(rle, unknown_colors, all_colors, exclude_colors, method):
     def dist(a,b):
         return abs(a[0]-b[0])+abs(a[1]-b[1])
 
     epsilon = .2
+    unknown_colors = [c for c in unknown_colors if c not in exclude_colors]
+    safe_colors = [c for c in all_colors if c not in exclude_colors]
     if method=='random_then_nearest':
         if len(unknown_colors)>0 and random.random()>epsilon:
             print "selecting an unknown color"
             object_color = random.choice(unknown_colors)
         else:
             # in case we've interacted with everything once but want to randomly try things again
-            print "sometimes with probability", epsilon, "we select randomly from all colors. This just happened."
-            object_color = random.choice(all_colors)
-
+            print "sometimes with probability", epsilon, "we select randomly from all safe colors. This just happened."
+            object_color = random.choice(safe_colors)
         choices = [item for sublist in rle._game.sprite_groups.values() for item in sublist if colorDict[str(item.color)]==object_color]
         avatar_loc = rle._rect2pos(rle._game.sprite_groups['avatar'][0].rect)
         choices = [(dist(rle._rect2pos(c.rect), avatar_loc), c) for c in choices]
