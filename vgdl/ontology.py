@@ -5,6 +5,8 @@ Video game description language -- ontology of concepts.
 '''
 import random
 from random import choice
+from copy import deepcopy
+import itertools
 from math import sqrt
 import pygame
 from tools import triPoints, unitVector, vectNorm, oncePerStep
@@ -68,6 +70,13 @@ colorDict = {str((0, 200, 0)): 'GREEN',\
 
             }
 
+spriteToParams = {'Resource': [], \
+                'ResourcePack': [], \
+                'RandomNPC': ['speed'], \
+                'Chaser': ['fleeing', 'speed'], \
+                'AStarChaser': ['fleeing', 'speed'], \
+                'OrientedSprite': ['orientation'], \
+                'Missile': ['speed', 'orientation']}
 
 # ---------------------------------------------------------------------
 #     Types of physics
@@ -99,8 +108,23 @@ class GridPhysics():
                 pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
                 return pos.left, pos.top
         else:   # If object has speed = 0 or no 'orientation' attribute
-            return None   
+            return None
                   
+    def calculatePassiveMovementGivenParams(self, sprite, speed, orientation):
+        """
+        Calculate where the sprite would end up in a timestep, without actually updating its position.
+        """
+        ## This is where you could make hypotheses about speed, etc. for the object.
+        if speed is None:
+            speed = 1
+
+        if speed != 0 and hasattr(sprite, 'orientation'):
+            speed = speed * self.gridsize[0]
+            if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
+                pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
+                return pos.left, pos.top
+        else:   # If object has speed = 0 or no 'orientation' attribute
+            return None
 
     def activeMovement(self, sprite, action, speed=None):
         if speed is None:
@@ -283,8 +307,8 @@ class RandomNPC(VGDLSprite):
 
     def update(self, game):
         VGDLSprite.update(self, game)
-        self.direction = random.choice(BASEDIRS) #TODO: Make work with random direction
-        self.physics.activeMovement(self, self.direction)
+        self.orientation = random.choice(BASEDIRS) #TODO: Make work with random direction
+        self.physics.activeMovement(self, self.orientation)
 
 
 class OrientedSprite(VGDLSprite): ##
@@ -1341,7 +1365,7 @@ def wrapAround(sprite, partner, game, offset=0):
         sprite.rect.top = game.screensize[1] - sprite.rect.size[1] * (1 + offset)
     sprite.lastmove = 0
     args = {'offset':offset}
-    return ('wrapAround', sprite, partner, args)
+    return ('wrapAround', sprite.ID, 'EOS', args)
 
 def pullWithIt(sprite, partner, game):
     """ The partner sprite adds its movement to the sprite's. """
@@ -1407,6 +1431,36 @@ def cannotActivateSwitch(sprite, partner, game):
 #     Sprite Induction
 # ---------------------------------------------------------------------
 
+def getSpeed(params):
+    """
+    params = a dict mapping sprite attributes to values
+    sprite = the VGDL sprite.
+    """
+    if 'speed' in params:
+        return params['speed']
+    else:
+        return 1
+        # default speed value
+
+def getFleeing(params):
+    """
+    params = a dict mapping sprite attributes to values
+    sprite = the VGDL sprite.
+    """
+    if 'fleeing' in params:
+        return params['fleeing']
+    else:
+        return False
+
+def getOrientation(params):
+    """
+    params = a dict mapping sprite attributes to values
+    sprite = the VGDL sprite.
+    Question - what is default value of orientation?
+    """
+    if 'orientation' in params:
+        return params['orientation']
+
 def chaserClosestTargets(sprite, game):
     bestd = 1e100
     res = []
@@ -1419,7 +1473,7 @@ def chaserClosestTargets(sprite, game):
             res.append(target)
     return res
 
-def chaserMovesToward(sprite, game, target):
+def chaserMovesToward(sprite, game, target, fleeing):
     """ Find the canonical direction(s) which move toward
     the target. """
     res = []
@@ -1428,37 +1482,53 @@ def chaserMovesToward(sprite, game, target):
         r = sprite.rect.copy()
         r = r.move(a)
         newdist = sprite.physics.distance(r, target.rect)
-        if sprite.fleeing and basedist < newdist:
+        if fleeing and basedist < newdist:
             res.append(a)
-        if not sprite.fleeing and basedist > newdist:
+        if not fleeing and basedist > newdist:
             res.append(a)
     return res
 
+def setSpriteParams(param, sprite):
+    """
+    param = a dict mapping parameters to values
+    sprite = the vgdl sprite
+    """
+    for p in param:
+        if p == "speed":
+            sprite.speed = param[p]
+        elif p == "fleeing":
+            sprite.fleeing = param[p]
+        elif p == "orientation":
+            sprite.orientation = param[p]
 
-def updateOptions(game, sprite_type, current_sprite):
+
+def updateOptions(game, sprite_type, current_sprite, params={}):
     """
     game - current game object
     sprite_type - the sprite type class
     current_sprite - the current sprite object
+    params - inferred params of the sprite. A dict mapping parameters (as strings) to their values
     """
-
     # Immovable, Passive, ResourcePack
     if (sprite_type == Immovable) or (sprite_type == Passive) or (sprite_type == ResourcePack) or (sprite_type == Resource):
         return {(current_sprite.rect.left, current_sprite.rect.top): 1.} ##object stays in position
     
     # Chaser
     elif sprite_type == Chaser:
+        speed = getSpeed(params)
+        fleeing = getFleeing(params)
         options = []
         position_options = {}
 
+
         try:
             for target in chaserClosestTargets(current_sprite, game):
-                options.extend(chaserMovesToward(current_sprite, game, target))
+                options.extend(chaserMovesToward(current_sprite, game, target, fleeing))
             if len(options) == 0:
                 options = BASEDIRS
 
             for option in options:
-                left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option)
+                left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed)
                 if (left, top) in position_options.keys():
                     position_options[(left, top)] += 1.0/len(options) 
                 else:
@@ -1470,6 +1540,7 @@ def updateOptions(game, sprite_type, current_sprite):
 
     # AStarChaser
     elif sprite_type == AStarChaser:
+        speed = getSpeed(params)
         world = AStarWorld(game) ##how the AStarChaser makes its own calculations (see ai.py)
         
         # If nothing to chase, then will stay in place
@@ -1503,14 +1574,16 @@ def updateOptions(game, sprite_type, current_sprite):
         else: # Not foolproof, but will catch walls that are surrounded by other walls
             movement = DOWN 
         
-        left, top = current_sprite.physics.calculateActiveMovement(current_sprite, movement)
+        left, top = current_sprite.physics.calculateActiveMovement(current_sprite, movement, speed=speed)
         return {(left, top): 1.} 
 
     # Random NPC
     elif sprite_type == RandomNPC:
+        speed = getSpeed(params)
+
         position_options = {}
         for option in BASEDIRS:
-            left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option)
+            left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed)
             if (left, top) in position_options.keys(): 
                 position_options[(left, top)] += 1.0/len(BASEDIRS) 
             else:
@@ -1520,7 +1593,15 @@ def updateOptions(game, sprite_type, current_sprite):
     # Missile or OrientedSprite
     elif sprite_type == Missile or sprite_type==OrientedSprite:
         if not current_sprite.is_static and not current_sprite.only_active:
-            coords = current_sprite.physics.calculatePassiveMovement(current_sprite)
+            # NOTE: we might want to consider having is_static and only_active be
+            # parameters that we have to infer, rather than things we get for free.
+            # (i.e. make these fields in the params variable)
+            # if current_sprite.name=='missile2':
+            #     print "in updateOptions for missile"
+            #     embed()
+            speed = getSpeed(params)
+            orientation = getOrientation(params)
+            coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
             
             # If object has speed = 0 or no 'orientation' attribute
             if coords == None:
@@ -1531,25 +1612,95 @@ def updateOptions(game, sprite_type, current_sprite):
         # Catches objects that can't be Oriented Sprite and Missile types b/c fails the if-statement
         return {}
 
+def getAttributeTupleCombinations(game, sprite, sprite_type):
+    """
+    game = game object
+    sprite = a vgdl sprite
+    sprite_type = a proposed VGDL sprite type for this sprite
+
+    Returns all possible combinations of parameters for a given sprite type and sprite.
+    """
+    attributeValueList = []
+    for arg in game.spriteDistribution[sprite][sprite_type]['args']:
+        attributeValueList.append([])
+        for value in game.spriteDistribution[sprite][sprite_type]['args'][arg]:
+            attributeValueList[-1].append((arg, value))
+
+    attributeTupleCombinations = list(itertools.product(*attributeValueList))
+    return attributeTupleCombinations
+
 
 def initializeDistribution(sprite_types):
     """
-    Creates a prior distribution over all the sprite types.
+    Creates a uniform distribution over all the sprite types.
     """
     catch_all_prior = .000001
-    initial_distribution = {"OTHER":catch_all_prior}
+    initial_distribution = {"OTHER": {'prob': catch_all_prior, 'args': {}}}
 
     stationary_sprites = [Resource, ResourcePack] #removed Immovable, Passive
-    moving_sprites = [RandomNPC, Chaser, OrientedSprite, Missile] #AStarChaser
+    moving_sprites = [RandomNPC, Chaser, OrientedSprite, Missile] # removed AStarChaser
 
     moving_sprite_prob = .1
     for sprite_type in sprite_types:
         if sprite_type in stationary_sprites:
-            initial_distribution[sprite_type] = (1.0-catch_all_prior-moving_sprite_prob)/(len(stationary_sprites))
+            args = initializeDistributionArgs(sprite_type)
+            initial_distribution[sprite_type] = {'prob': (1.0-catch_all_prior-moving_sprite_prob)/(len(stationary_sprites)), \
+                                                'args': {}}
         elif sprite_type in moving_sprites:
-            initial_distribution[sprite_type] = (moving_sprite_prob)/(len(moving_sprites))
+            args = initializeDistributionArgs(sprite_type)
+
+            initial_distribution[sprite_type] = {'prob': (moving_sprite_prob)/(len(moving_sprites)), 'args': args}
+
 
     return initial_distribution
+
+def initializeDistributionArgs(sprite_type):
+    """
+    NOTE - this initializes args for speed, orientation and fleeing. It does not handle cooldown yet.
+    """
+    def initializeProperty(args, attribute, values):
+        args[attribute] = {v: 1./len(values) for v in values}
+
+    def initializeSpeed(args):
+        """
+        Possible values for speed are 0.5 or 1.
+        """
+        speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+        initializeProperty(args, 'speed', speedValues)
+
+    def initializeOrientation(args):
+        orientationValues = {LEFT, RIGHT, UP, DOWN}
+        initializeProperty(args, 'orientation', orientationValues)
+
+    def initializeFleeing(args):
+        fleeingValues = {True, False}
+        initializeProperty(args, 'fleeing', fleeingValues)
+
+    args = {}
+    spriteParams = spriteToParams[sprite_type.__name__]
+    for s in spriteParams:
+        if s == "speed":
+            initializeSpeed(args)
+        elif s == "fleeing":
+            initializeFleeing(args)
+        elif s == "orientation":
+            initializeOrientation(args)
+
+    return args
+
+
+
+def distributionInitSetup(game, sprite, sprite_types):
+    """
+    Does setup for initializing distribution
+    """
+    game.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
+    game.movement_options[sprite] = {"OTHER":{}}
+    for sprite_type in sprite_types:
+        game.movement_options[sprite][sprite_type] = {}
+        attributeTupleCombinations = getAttributeTupleCombinations(game, sprite, sprite_type)
+        for attributeTuple in attributeTupleCombinations:
+            game.movement_options[sprite][sprite_type][attributeTuple] = {}
 
 
 def updateDistribution(sprite, curr_distribution, movement_options, outcome):
@@ -1566,31 +1717,48 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
         curr_distribution - renormalized updated distribution over sprite types for a given object
     """
     if sprite in curr_distribution.keys():
-
-        # print "in updateDistribution"
-        # print curr_distribution[sprite]
-
         for sprite_type in curr_distribution[sprite].keys():
             if sprite_type == "OTHER":
-                movement_options[sprite][sprite_type] = {outcome: 1.0/5} #up down left right stay
+                movement_options[sprite][sprite_type][()] = {outcome: 1.0/5} #up down left right stay
 
 
-            if curr_distribution[sprite][sprite_type] > 0:
-       
+            if curr_distribution[sprite][sprite_type]['prob'] > 0:
+                spriteTypeLikelihood = 0.
+                newParameterLikelihood = {}
+                for p in curr_distribution[sprite][sprite_type]['args']:
+                    newParameterLikelihood[p] = \
+                    {val: 0 for val in curr_distribution[sprite][sprite_type]['args'][p]}
+
+                for param in movement_options[sprite][sprite_type]:
                 # If the outcome is an option for the sprite type, update probability
-                if outcome in movement_options[sprite][sprite_type].keys():
-                    curr_distribution[sprite][sprite_type] *=  movement_options[sprite][sprite_type][outcome]
-                else:
-                    curr_distribution[sprite][sprite_type] = 0.0
+                    if outcome in movement_options[sprite][sprite_type][param].keys():
+                        attributeProduct = 1.
+                        for p, val in param:
+                            attributeProduct *= curr_distribution[sprite][sprite_type]['args'][p][val]
+
+                        spriteTypeLikelihood += movement_options[sprite][sprite_type][param][outcome] * attributeProduct
+
+                        for p, val in param:
+                            newParameterLikelihood[p][val] += movement_options[sprite][sprite_type][param][outcome]*attributeProduct
+
+                curr_distribution[sprite][sprite_type]['prob'] *= spriteTypeLikelihood
+                curr_distribution[sprite][sprite_type]['args'] = newParameterLikelihood
 
         # Re-normalize the distribution
-        z = sum(curr_distribution[sprite].values())
+        z = sum(curr_distribution[sprite][sprite_type]['prob'] for sprite_type in curr_distribution[sprite])
         for sprite_type in curr_distribution[sprite].keys():
-            curr_distribution[sprite][sprite_type] /= z
+            curr_distribution[sprite][sprite_type]['prob'] /= z
+        # z = sum(curr_distribution[sprite].values())
+        # for sprite_type in curr_distribution[sprite].keys():
+        #     curr_distribution[sprite][sprite_type] /= z
+        for sprite_type in curr_distribution[sprite]:
+            for p in curr_distribution[sprite][sprite_type]['args']:
+                z = sum(curr_distribution[sprite][sprite_type]['args'][p].values())
+                if z > 0:
+                    for val in curr_distribution[sprite][sprite_type]['args'][p]:
+                        curr_distribution[sprite][sprite_type]['args'][p][val] /= z
 
-        # print curr_distribution[sprite]
-        # embed()
-        # print ""
+
     return curr_distribution
 
 def sampleFromDistribution(curr_distribution, all_objects):
@@ -1614,9 +1782,12 @@ def sampleFromDistribution(curr_distribution, all_objects):
     ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
     types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]))
 
+    # print "in sample()"
+    # embed()
     for obj_type in types:
         options = [k for k in all_objects.keys() if all_objects[k]['type']['color'] == obj_type]
         k = random.choice(options)
+
 
         ## always alphabetize the keys
         ## sample multinomially from the spriteDistribution[key] dictionary, to get the spriteType
@@ -1627,16 +1798,31 @@ def sampleFromDistribution(curr_distribution, all_objects):
         sprite_possibilities = curr_distribution[k]
         lst = sprite_possibilities.keys()
         lst.sort()
-        probs = [sprite_possibilities[l] for l in lst]
+        probs = [sprite_possibilities[l]['prob'] for l in lst]
         index = np.random.choice(range(len(probs)), p=probs)
         sprite_type = lst[index] ##you might also want to return sprite_possibilities[lst[index]], which is the associated probability.
         color = all_objects[k]['type']['color']
         s = Sprite(vgdlType=sprite_type, color=color)
+        param = {}
+        # if 'Missile' in sprite_type:
+        #     print "in sample()"
+        #     embed()
+        for arg in sprite_possibilities[sprite_type]['args'].keys():
+            param_possibilities = sprite_possibilities[sprite_type]['args'][arg]
+            param_list = param_possibilities.keys()
+            param_list.sort()
+            param_probs = [param_possibilities[p] for p in param_list]
+            index = np.random.choice(range(len(param_list)), p=param_probs)
+            param[arg] = param_list[index]
+
+        # print "in sample"
+        # embed()
+        setSpriteParams(param, s)
         sample.append(s)
 
     return sample
 
-def spriteInduction(game, step):
+def spriteInduction(game, step, old_outcome=None):
     """
     game = a BasicGame object
     """
@@ -1645,10 +1831,16 @@ def spriteInduction(game, step):
     if step==0:
     ## Prep for sprite induction
         for sprite in game.getObjects():
-            game.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
-            game.movement_options[sprite] = {"OTHER":{}}
-            for sprite_type in sprite_types:
-                game.movement_options[sprite][sprite_type] = {}
+            distributionInitSetup(game, sprite, sprite_types)
+            # game.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
+            # game.movement_options[sprite] = {"OTHER":{}}
+            # for sprite_type in sprite_types:
+            #     game.movement_options[sprite][sprite_type] = {}
+            #     attributeTupleCombinations = getAttributeTupleCombinations(game, sprite, sprite_type)
+            #     for attributeTuple in attributeTupleCombinations:
+            #         game.movement_options[sprite][sprite_type][attributeTuple] = {}
+            
+                    
 
     elif step==1:
         ## Sprite Induction Part 1:
@@ -1658,28 +1850,35 @@ def spriteInduction(game, step):
         for sprite in objects:
             if sprite not in game.spriteDistribution:
                 game.all_objects[sprite] = objects[sprite]
-                game.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
-                game.movement_options[sprite] = {"OTHER":{}}
-                for sprite_type in sprite_types:
-                    game.movement_options[sprite][sprite_type] = {}
+                distributionInitSetup(game, sprite, sprite_types)
+                # game.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
+                # game.movement_options[sprite] = {"OTHER":{}}
+                # for sprite_type in sprite_types:
+                #     game.movement_options[sprite][sprite_type] = {}
+                #     attributeTupleCombinations = getAttributeTupleCombinations(game, sprite, sprite_type)
+                #     for attributeTuple in attributeTupleCombinations:
+                #         game.movement_options[sprite][sprite_type][attributeTuple] = {}
+                        
 
     elif step == 2:
         ## See the update options for each sprite type the sprite could be
         objects = game.getObjects()
         game = game                                               # Save game state
         for sprite in game.spriteDistribution.keys():                  # Keys are the IDs of the game objects
-            for sprite_type in game.spriteDistribution[sprite].keys(): # Check each potential sprite type                    
-                if game.spriteDistribution[sprite][sprite_type] > 0 and sprite in objects.keys():    # Make sure sprite_type is an option for sprite, and sprite is not killed
+            for sprite_type in game.spriteDistribution[sprite].keys(): # Check each potential sprite type
+                if game.spriteDistribution[sprite][sprite_type]['prob'] > 0 and sprite in objects.keys():    # Make sure sprite_type is an option for sprite, and sprite is not killed
                     sprite_obj = objects[sprite]["sprite"]
+                    attributeTupleCombinations = getAttributeTupleCombinations(game, sprite, sprite_type)
+                    for attributeTuple in attributeTupleCombinations:
+                        attributeDict = {k: v for k,v in attributeTuple}
+                        # Get potential next positions for sprite if it were that sprite type
+                        # TODO: Implement Avatar updateOptions function (if desired)
+                        if sprite_obj.name != 'avatar':
+                            game.movement_options[sprite][sprite_type][attributeTuple] = \
+                            updateOptions(game, sprite_type, sprite_obj, params=attributeDict) 
+        # print "updated options"
+        # embed()
 
-                    # Get potential next positions for sprite if it were that sprite type
-                    # TODO: Implement Avatar updateOptions function (if desired)
-                    if sprite_obj.name != 'avatar':
-                        game.movement_options[sprite][sprite_type] = updateOptions(game, sprite_type, sprite_obj) 
-                        # print sprite_obj.name, sprite_type # For debugging
-                        # print movement_options[sprite][sprite_type]
-
-        game.collision_objects = set()
     elif step==3:
         ## Sprite Induction Part 2: Update sprite distribution based on observations
         objects = game.getObjects()
@@ -1687,11 +1886,33 @@ def spriteInduction(game, step):
             if sprite in objects.keys():                # Sprite may have been killed
                 sprite_obj = objects[sprite]["sprite"] 
 
-                if sprite not in game.collision_objects and sprite_obj.name != 'avatar':
+                # if sprite_obj.name!='avatar':
+                    # if sprite not in game.collision_objects and sprite_obj.name != 'avatar':
+                if all([sprite not in e for e in game.effectList]) and sprite_obj.name != 'avatar':
 
                     outcome = objects[sprite]["position"]
+                    # print "about to update distribution"
+                    # embed()
+                    initialDistribution = deepcopy(game.spriteDistribution)
+                    game.spriteDistribution = updateDistribution(sprite, game.spriteDistribution, \
+                                              game.movement_options, outcome)
+                    # missile1_id = game.sprite_groups['missile1'][0].ID
+                    # missile2_id = game.sprite_groups['missile2'][0].ID
+                    # if initialDistribution[missile1_id] != game.spriteDistribution[missile1_id]:
+                    # # # initialDistribution[missile2_id] != game.spriteDistribution[missile2_id]:
+                    #     print "not collided"
+                    #     embed()
+                # else:
+                # elif sprite in game.collision_objects and sprite_obj.name != 'avatar':
+                elif any([sprite in e for e in game.effectList]) and sprite_obj.name !='avatar':
+                    for sprite_type in sprite_types:
+                        game.spriteDistribution[sprite][sprite_type]['args'] = initializeDistributionArgs(sprite_type)
 
-                    game.spriteDistribution = updateDistribution(sprite, game.spriteDistribution, game.movement_options, outcome)
+                    # if sprite == game.sprite_groups['missile1'][0].ID:
+                    #     print "collided"
+                    #     embed()
+
+
 
 def selectObjectGoal(rle, unknown_colors, all_colors, method):
     def dist(a,b):
@@ -1700,9 +1921,11 @@ def selectObjectGoal(rle, unknown_colors, all_colors, method):
     epsilon = .2
     if method=='random_then_nearest':
         if len(unknown_colors)>0 and random.random()>epsilon:
+            print "selecting an unknown color"
             object_color = random.choice(unknown_colors)
         else:
             # in case we've interacted with everything once but want to randomly try things again
+            print "sometimes with probability", epsilon, "we select randomly from all colors. This just happened."
             object_color = random.choice(all_colors)
 
         choices = [item for sublist in rle._game.sprite_groups.values() for item in sublist if colorDict[str(item.color)]==object_color]
