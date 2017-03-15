@@ -141,7 +141,12 @@ class Basic_MCTS:
 		## also add neighbors of goal rewardQueue.
 		##TODO: update this if goal moves!!
 		goal_code = 2**(1+sorted(self._obstypes.keys())[::-1].index("goal"))
-		goal_loc = np.where(np.reshape(self.rle._getSensors(), self.outdim)==goal_code)
+		killerObjectCodes = []
+		for o in self.rle.killerObjects:
+			if o in self.rle._obstypes.keys():
+				killerObjectCodes.append(2**(1+sorted(self.rle._obstypes.keys())[::-1].index(o)))
+		board = np.reshape(self.rle._getSensors(), self.rle.outdim)
+		goal_loc = np.where(board==goal_code)
 		goal_loc = goal_loc[0][0], goal_loc[1][0]
 		self.subgoals = []
 		path = self.getPathToGoal(avatar_loc, goal_loc)
