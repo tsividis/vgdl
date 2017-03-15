@@ -358,14 +358,35 @@ def defAliens():
     from examples.gridphysics.aliens import aliens_game, aliens_level
     return (aliens_game, aliens_level)
 
+def try_int(s):
+    "Convert to integer if possible."
+    try: return int(s)
+    except: return s
+
+def natsort_key(s):
+    "Used internally to get a tuple by which s is sorted."
+    import re
+    return map(try_int, re.findall(r'(\d+|\D+)', s))
+
+def natcmp(a, b):
+    "Natural string comparison, case sensitive."
+    return cmp(natsort_key(a), natsort_key(b))
+
+def natcasecmp(a, b):
+    "Natural string comparison, ignores case."
+    return natcmp(a.lower(), b.lower())
+
 def defInputGame(filename, randomize=False, index=None):
     game_file = importlib.import_module(filename)
     levels = [k for k in game_file.__dict__.keys() if 'level' in k]
+    levels.sort(natcasecmp)
+    # print levels
     if randomize:
         level = random.choice(levels)
         return (game_file.game, game_file.__dict__[level])
     elif index>=0:
         if index<len(levels):
+            print index
             level = levels[index]
         else:
             level = random.choice(levels)
