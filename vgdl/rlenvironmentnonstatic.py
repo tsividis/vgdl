@@ -285,19 +285,25 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             self._allEvents.append((self._previous_state, action, self._last_state))
 
     def step(self, action):
+        pre_step_score = self._game.score
         events = self._performAction(action) 
         observation = self._getSensors()
         (ended, won) = self._isDone()
+
+        dScore = self._game.score - pre_step_score
         if ended:
             pcontinue = 0
+            # reward = self._game.score
             if won:
                 reward = 1
             else:
                 reward = -1
         else:
             pcontinue = 1
-            reward = 0
-        return{ 'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
+            ## this is where you need to give the reward for doing non-terminal actions, and then your agent can process this.
+            # reward = 0
+            reward = dScore
+        return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
 
 ## the game in the agent's 'head'
 def defTheoryTest():
