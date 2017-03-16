@@ -48,6 +48,8 @@ colorDict = {str((0, 200, 0)): 'GREEN',\
             str((30, 30, 30)): 'DARKGRAY',\
             str((20, 20, 100)): 'DARKBLUE',\
             str((140, 20, 140)): 'PURPLE',\
+            str((1, 1, 1)): 'ENDOFSCREEN',\
+            str((1, 0, 1)): 'SCORECOLOR', \
             }
 
 class VGDLParser(object):
@@ -639,7 +641,6 @@ class BasicGame(object):
                         #         sprite1, sprite2 = sprite2, sprite1
 
                         # CHECKME: this is not a bullet-proof way, but seems to work
-
                         if effect.__name__ == "changeResource":  # TODO: A little hack-y, but works for now.
                             resource = kwargs['resource']
                             (sclass, args, stypes) = self.sprite_constr[resource]
@@ -872,13 +873,15 @@ class BasicGame(object):
         # print "Expecting {} events".format(len(finalEventList))
 
         if win:
+            self.score += 1
             # winning a game always gives a positive score.
-            if self.score <= 0:
-                self.score = 1
+            # if self.score <= 0:
+                # self.score = 1
 
             self.win = True
             print "Game won, with score %s" % self.score
         else:
+            self.score -= 1
             self.win = False
             print "Playback is incomplete, or game is lost. Score=%s" % self.score
         
@@ -952,53 +955,7 @@ class BasicGame(object):
             clock.tick(self.frame_rate)
             self.time += 1
 
-
-
-            ## The below will pause at t=100 and run a theory-induction loop, using everything the agent has seen so far.
-            ## Should work as long as we're using a gridphysics game with a movingAvatar
-            ## Note: this won't work right now; complaining about importing from theory template.
-            # if self.time==100:
-            #     def getObjectType(objectID):
-            #         return self.all_objects[objectID]['type']['color']
-            #     from theory_template import *
-            #     sample = sampleFromDistribution(self.spriteDistribution, self.all_objects)
-            #     g = Game(spriteInductionResult=sample)
-            #     terminationCondition = {'ended': False, 'win':False, 'time':self.time}
-            #     trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
-
-            #     ##clean up trace; convert object IDs to object types (for now this is just object color).
-                
-                
-            #     for i in range(len(trace[0])):
-            #         timestep = trace[0][i]
-            #         for j in range(len(timestep.events)):
-            #             event = timestep.events[j]
-            #             if len(event)==3:
-            #                 timestep.events[j] = (event[0], getObjectType(timestep, event[1], all_objects), getObjectType(timestep, event[2], all_objects))
-            #             elif len(event)==2:
-            #                 timestep.events[j] = (event[0], getObjectType(timestep, event[1], all_objects))
-
-
-            #     hypotheses = list(g.runDFSInduction(trace, 20, True))
-            #     embed()
-
-            # if self.time>100:
-            #     break
-
-
-            # print "t=", self.time
             self._clearAll()
-
-            # For new objects that appear; sprite induction
-            # spriteInduction(self, step=1)
-            # objects = self.getObjects()
-            # for sprite in objects:
-            #     if sprite not in self.spriteDistribution:
-            #         self.all_objects[sprite] = objects[sprite]
-            #         self.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
-            #         self.movement_options[sprite] = {"OTHER":{}}
-            #         for sprite_type in sprite_types:
-            #             self.movement_options[sprite][sprite_type] = {}
 
             # gather events
             pygame.event.pump()
@@ -1071,14 +1028,16 @@ class BasicGame(object):
                 self.ended, win = t.isDone(self)
                 if self.ended:
                     if win:
+                        self.score += 1
                         # winning a game always gives a positive score.
-                        if self.score <= 0:
-                            self.score = 1
+                        # if self.score <= 0:
+                        #     self.score = 1
 
                         self.win = True
                         print "Game won, with score %s" % self.score
                     else:
                         self.win = False
+                        self.score -=1 ## Added 3/16/17
                         print "Game lost. Score=%s" % self.score
                     allStates.append(self.getFullState())
                     # embed()
@@ -1100,44 +1059,12 @@ class BasicGame(object):
 
                         effect(sC, sC, self, **kwargs_use)
 
-            ## Sprite Induction Part 1: See the update options for each sprite type the sprite could be
-            # spriteInduction(self, step=2)
-            # objects = self.getObjects()
-            # game = self                                               # Save game state
-            # for sprite in self.spriteDistribution.keys():                  # Keys are the IDs of the game objects
-            #     for sprite_type in self.spriteDistribution[sprite].keys(): # Check each potential sprite type                    
-            #         if self.spriteDistribution[sprite][sprite_type] > 0 and sprite in objects.keys():    # Make sure sprite_type is an option for sprite, and sprite is not killed
-            #             sprite_obj = objects[sprite]["sprite"]
-
-            #             # Get potential next positions for sprite if it were that sprite type
-            #             # TODO: Implement Avatar updateOptions function (if desired)
-            #             if sprite_obj.name != 'avatar':
-            #                 self.movement_options[sprite][sprite_type] = updateOptions(game, sprite_type, sprite_obj) 
-            #                 # print sprite_obj.name, sprite_type # For debugging
-            #                 # print movement_options[sprite][sprite_type]
-
-
             ## Update actual sprite positions.
             for s in self:
                 s.update(self)
 
             # handle collision effects
-            self._eventHandling()
-
-            ## Sprite Induction Part 2: Update sprite distribution based on observations
-            # spriteInduction(self, step=3)
-            # objects = self.getObjects()
-            # for sprite in self.spriteDistribution.keys():        # Keys are the IDs of the game objects
-            #     if sprite in objects.keys():                # Sprite may have been killed
-            #         sprite_obj = objects[sprite]["sprite"] 
-                    
-            #         if sprite not in collision_objects and sprite_obj.name != 'avatar':
-
-            #             outcome = objects[sprite]["position"]
-            #             self.spriteDistribution = updateDistribution(sprite, self.spriteDistribution, self.movement_options, outcome)
-
-            #             # print sprite_obj # For debugging
-            #             # print 'outcome', outcome                        
+            self._eventHandling()                  
 
             # Termination #2 : Avatars have been killed
             if len(self.getAvatars()) == 0:
@@ -1177,13 +1104,14 @@ class BasicGame(object):
 
         if win:
             # winning a game always gives a positive score.
-            if self.score <= 0:
-                self.score = 1
-
+            # if self.score <= 0:
+                # self.score = 1
+            self.score +=1 # Added 3/16/17
             self.win = True
             print "Game won, with score %s" % self.score
         else:
             self.win = False
+            self.score -=1 # Added 3/16/17
             print "Game lost. Score=%s" % self.score
 
         # if "killSprite" in [e[0] for e in self.effectList]:
