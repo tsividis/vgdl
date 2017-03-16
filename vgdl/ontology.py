@@ -39,6 +39,7 @@ DARKBLUE = (20, 20, 100)
 PURPLE = (140, 20, 140)
 RESOURCETOADD = (175, 175, 175)
 ENDOFSCREEN = (1, 1, 1)
+SCORECOLOR = (1, 0, 1)
 
 UP = (0, -1)
 DOWN = (0, 1)
@@ -68,6 +69,7 @@ colorDict = {str((0, 200, 0)): 'GREEN',\
             str((140, 20, 140)): 'PURPLE',\
             str((175, 175, 175)): 'RESOURCETOADD',\
             str((1, 1, 1)): 'ENDOFSCREEN',\
+            str((1, 0, 1)): 'SCORECOLOR',\
 
             }
 
@@ -1320,6 +1322,11 @@ def changeResource(sprite, partner, resourceColor, game, resource, value=1):
     args = {'resource':resource, 'value':value}
     return ('changeResource', sprite.ID, partner.ID, args)
 
+def changeScore(sprite, partner, game, value):
+    game.score += value
+    args = {'value':value}
+    return ('changeScore', sprite.ID, partner.ID, args)
+
 def spawnIfHasMore(sprite, partner, game, resource, stype, limit=1):
     """ If 'sprite' has more than a limit of the resource type given, it spawns a sprite of 'stype'. """
     if sprite.resources[resource] >= limit:
@@ -1663,9 +1670,6 @@ def initializeDistributionArgs(sprite_type):
         args[attribute] = {v: 1./len(values) for v in values}
 
     def initializeSpeed(args):
-        """
-        Possible values for speed are 0.5 or 1.
-        """
         speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
         initializeProperty(args, 'speed', speedValues)
 
