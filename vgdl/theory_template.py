@@ -1654,9 +1654,8 @@ class Game(object):
 			init_hypotheses = [T]
 			self.hypothesisSpace = [] # Refresh the hypothesis space before DFS induction
 		else:
-			print "continuing induction from existing theories."
+			# Otherwise continue from the existing theories; work on the new events only.
 			init_hypotheses = existingTheories
-			# embed()
 			self.hypothesisSpace = []
 
 		# This does DFS induction x times; not sure how to make it more like the behavior we want.
@@ -1897,6 +1896,7 @@ def generateSymbolDict(rle):
 def getKeywordsFromOntology(interactionName):
 	ontologyKeywordDict = \
 	{'changeResource': ['resource', 'value'],\
+	'changeScore': ['value'],\
 	'transformTo': ['stype'],\
 	'transformToOnLanding': ['stype'],\
 	'triggerOnLanding': ['strigger'],\
@@ -2141,16 +2141,17 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 	sortedInteractions = []
 	for pair in sortedInteractionDict:
-		killInteractions = []
-		nonKillInteractions = []
+		killInteractions, scoreChangeInteractions, nonKillInteractions = [], [], []
 		for interactionRule in sortedInteractionDict[pair]:
 			if "kill" in interactionRule.interaction:
 				# check whether this is a killing interaction
 				killInteractions.append(interactionRule)
+			elif "changeScore" in interactionRule.interaction:
+				scoreChangeInteractions.append(interactionRule)
 			else:
 				nonKillInteractions.append(interactionRule)
 
-		sortedInteractions += killInteractions + nonKillInteractions
+		sortedInteractions += scoreChangeInteractions + killInteractions + nonKillInteractions
 		# make sure that killing interactions get processed before interactions
 		# that don't kill.
 
