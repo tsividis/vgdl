@@ -42,7 +42,7 @@ class QLearner:
 		self.QVals = defaultdict(lambda:0)
 		self.memory = memory ## provide dicts of Q-values from previous runs. Use some function to smoothe
 		self.maxPseudoReward = 10
-		self.pseudoRewardDecay = .8
+		self.pseudoRewardDecay = .99
 		self.partitionWeights = [20,1]
 		self.heuristicDecay = .99
 		self.immovables = []
@@ -366,8 +366,8 @@ class QLearner:
 			sPrime, r = res['observation'].tostring(), res['reward']
 
 			## UNCOMMENT HERE IF YOU WANT TO WATCH Q-learner learning.
+			# print r
 			# print rle.show()
-
 			if r==1:
 				self.partitionWeights[1] = self.partitionWeights[1]*self.heuristicDecay
 				self.epsilon = self.epsilon*self.heuristicDecay
@@ -378,6 +378,9 @@ class QLearner:
 			terminal = rle._isDone()[0]
 			i += 1
 			total_reward += r
+		# print total_reward
+		# print "reset"
+		# print ""
 		self.QVals[s] = 0.
 
 	def learn(self, episodes, satisfice=0):
@@ -439,14 +442,14 @@ class QLearner:
 if __name__ == "__main__":
 	
 	# gameFilename = "examples.gridphysics.simpleGame_push_boulders_multigoal"
-	gameFilename = "examples.gridphysics.waypointtheory" 
+	# gameFilename = "examples.gridphysics.waypointtheory" 
 	# gameFilename = "examples.gridphysics.simpleGame_teleport"
 	# gameFilename = "examples.gridphysics.movers3c"
+	gameFilename = "examples.gridphysics.scoretest" 
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
-	# embed()
 	print rle.show()
 	# rle.immovables = ['wall', 'poison1', 'poison2']
 	print ""
@@ -457,7 +460,7 @@ if __name__ == "__main__":
 	# print
 	# embed()
 	t1 = time.time()
-	ql.learn(1000, satisfice=100)
+	ql.learn(500, satisfice=200)
 	t2 = time.time() - t1
 	print "done in {} seconds".format(t2)
 	# ql.learn(100, satisfice=False)
