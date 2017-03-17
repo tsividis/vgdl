@@ -247,7 +247,7 @@ def getToWaypoint(rle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, 
 		actions = mcts.getBestActionsForPlayout((1,0,0), debug=False)
 	elif plannerType=='QLearning':
 		planner = QLearner(Vrle, gameString=theoryString, levelString=levelString, alpha=1, epsilon=.5)
-		steps = planner.learn(1000, satisfice=50)
+		steps = planner.learn(1000, satisfice=200)
 		actions = planner.getBestActionsForPlayout()
 	elif plannerType=='AStar':
 		planner = AStar(Vrle, gameString=theoryString, levelString=levelString)
@@ -344,7 +344,7 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 				subgoals = planner.getSubgoals(subgoal_path_threshold=3)
 			elif plannerType=='QLearning':
 				planner = QLearner(vrle, gameString=game, levelString=level, alpha=1, epsilon=.4)
-				subgoals = planner.getSubgoals(subgoal_path_threshold=5)
+				subgoals = planner.getSubgoals(subgoal_path_threshold=4)
 			elif plannerType=='AStar':
 				planner = AStar(vrle, gameString=game, levelString=level)
 				subgoals = planner.getSubgoals(subgoal_path_threshold=5)
@@ -443,12 +443,14 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 
 									# print "altered theory"
 									# hypotheses[0].display()
+									# embed()
 									if len(hypotheses)>1:
 										print "more than one hypothesis"
 										embed()
 
 									candidate_new_colors = updateCandidateColors(hypotheses, finalEventList)
 									
+
 									print "updating internal theory"
 									# print "avatarLoc", planner.findAvatarInRLE(rle)
 									## update to incorporate what we've learned, keep the same subgoal for now; this will update at the top of the next loop.
