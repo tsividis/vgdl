@@ -2220,30 +2220,34 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	# 		embed()
 
 	# third phase: the termination rules
-	# theoryString += "\tTerminationSet\n"
-	# for terminationRule in theory.terminationSet:
-	# 	if terminationRule.ruleType == "TimeoutRule":
-	# 		theoryString += "\t\tTimeout limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
-
-	# 	elif terminationRule.ruleType == "SpriteCounterRule":
-	# 		theoryString += "\t\tSpriteCounter stype=%s limit=%s win=%s\n" % \
-	# 					(terminationRule.termination.stype, \
-	# 					str(terminationRule.termination.limit), str(terminationRule.termination.win))
-			
-	# 	else:
-	# 		# multi sprite counter rule
-	# 		theoryString += "\t\tMultiSpriteCounter "
-	# 		for i in range(len(terminationRule.termination.stypes)):
-	# 			theoryString += "stype%i = %s " % (i, terminationRule.termination.stypes[i])
-
-	# 		theoryString += "limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
-	
 	theoryString += "\tTerminationSet\n"
-	theoryString += "\t\tSpriteCounter stype=avatar limit=0 win=False\n"
-	if goalLoc:
-		theoryString += "\t\tSpriteCounter stype=goal limit=0 win=True\n"
+	goalConditionNotFound = True
+	for terminationRule in theory.terminationSet:
+		if terminationRule.ruleType == "TimeoutRule":
+			theoryString += "\t\tTimeout limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
 
-	# fourth phase: the level mapping
+		elif terminationRule.ruleType == "SpriteCounterRule":
+			theoryString += "\t\tSpriteCounter stype=%s limit=%s win=%s\n" % \
+						(terminationRule.termination.stype, \
+						str(terminationRule.termination.limit), str(terminationRule.termination.win))
+			if terminationRule.termination.stype == "goal":
+				goalConditionNotFound = False
+			
+		else:
+			# multi sprite counter rule
+			theoryString += "\t\tMultiSpriteCounter "
+			for i in range(len(terminationRule.termination.stypes)):
+				theoryString += "stype%i = %s " % (i, terminationRule.termination.stypes[i])
+
+			theoryString += "limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
+	
+	# theoryString += "\tTerminationSet\n"
+	# theoryString += "\t\tSpriteCounter stype=avatar limit=0 win=False\n"
+	# if goalLoc and goalConditionNotFound:
+	# 	embed()
+	# 	theoryString += "\t\tSpriteCounter stype=goal limit=0 win=True\n"
+
+	# # fourth phase: the level mapping
 	theoryString += "\tLevelMapping\n"
 
 	for color, symbol in symbolDict.items():
