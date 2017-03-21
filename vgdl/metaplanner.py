@@ -1,10 +1,10 @@
-
+from ontology import distributionInitSetup
 from mcts import *
 from qlearner import *
 from aStar import *
 
 
-def translateEvents(events, all_objects):
+def translateEvents(events, all_objects, rle):
 	if events is None:
 		return None
 	# all_objects = rle._game.getObjects()
@@ -16,9 +16,13 @@ def translateEvents(events, all_objects):
 			return 'ENDOFSCREEN'
 		elif objectID in all_objects.keys():
 			return all_objects[objectID]['type']['color']
+		elif objectID in rle._game.getObjects().keys():
+			return rle._game.getObjects()[objectID]['type']['color']
 		elif objectID in [colorDict[k] for k in colorDict.keys()]:
 			# If we were passed a color to begin with (i.e., in the case of EOS)
 			return objectID
+		elif objectID in rle._game.sprite_groups.keys():
+			return colorDict[str(rle._game.sprite_groups[objectID][0].color)]
 		else:
 			# for some reason we haven't been passed an ID but rather a sprite object
 			objectName = objectID.name
@@ -31,9 +35,12 @@ def translateEvents(events, all_objects):
 		# 	print "in translateEvents"
 		# 	embed()
 		try:
-			print 'in translateEvents', event
+			# print 'in translateEvents', event
 			if len(event) > 3:
 				tmp = [event[0], getObjectColor(event[1]), getObjectColor(event[2])]
+				for k in event[3].keys():
+					if k=='stype':
+						event[3][k] = getObjectColor(event[3][k])
 				tmp.extend(event[3:])
 				outlist.append(tuple(tmp))
 			if len(event)==3:
@@ -347,7 +354,7 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 				subgoals = planner.getSubgoals(subgoal_path_threshold=4)
 			elif plannerType=='AStar':
 				planner = AStar(vrle, gameString=game, levelString=level)
-				subgoals = planner.getSubgoals(subgoal_path_threshold=5)
+				subgoals = planner.getSubgoals(subgoal_path_threshold=100) ##This finds subgoals by searching the entire space, so do this only once and then use the path.
 			print "subgoals", subgoals
 
 			## if you can't find subgoals that get you to the goal, exit
@@ -396,14 +403,35 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 
 							print "agentState", agentState
 							res = rle.step(noise(action))
+
+
+							## Add newly-seen objects.
+							current_objects = rle._game.getObjects()
+							for k in current_objects.keys():
+								if k not in all_objects.keys():
+									all_objects[k] = current_objects[k]
+									distributionInitSetup(rle._game, k)
+									rle._game.ignoreList.append(k) ## this is a hack -- the point is to prevent spriteInduction from 
+																	## trying to infer anything about newly-appeared sprites in this timestep.
+
+
 							states_encountered.append(rle._game.getFullState())
-							terminal = rle._isDone()[0]				
-							effects = translateEvents(res['effectList'], all_objects)
+							terminal = rle._isDone()[0]
+
+							## The problem is you added the sprite itself to the effectList, and now translateEvents()
+							## is trying to interpret that. You either want to make up a proper event
+							## or don't add the sprite to the effectList at that point.
+							## You also need to work out where/how to add the new sprite type to the theory.
+							## POtentially, when you find the new sprite, change the stype argument in the effectList
+							## and then if you see something whose color you don't know there, change the theory.
+							# if len(res['effectList'])>0:
+							# 	print "before translateEvents"
+							# 	embed()	
+							effects = translateEvents(res['effectList'], all_objects, rle)
 							
 							k = random.choice(rle._game.spriteDistribution.keys())
 
 							spriteInduction(rle._game, step=3)
-
 
 							if symbolDict: 
 								print rle.show()
@@ -412,9 +440,10 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 
 					 		## If there were collisions, update history and perform interactionSet induction if the collisions were novel.
 							if effects:
-								# print "in getToObjectGoal"
-								# embed()
+
 								state = rle._game.getFullState()
+								# print "about to do getFullStateColorized()"
+								# embed()
 								event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, 'gameState': rle._game.getFullStateColorized()}
 
 								goal_achieved = objectGoalReached(effects, object_goal)
@@ -439,6 +468,9 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 									terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
 									trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
 									theory_change_flag = True
+
+									# print "about to run induction"
+									# embed()
 									hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, verbose=False, existingTheories=hypotheses)) ##if you resample or run sprite induction, this 
 
 									# print "altered theory"
