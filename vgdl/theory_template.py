@@ -611,7 +611,15 @@ class Theory(object):
 			## These are relevant for interactions like teleportToExit, changeResource, etc.
 			## Interactions in ontology.py that have arguments return at most two additional arguments. By convention, 'value' is always the
 			## last of these.
-			args = event[3]
+
+			if 'stype' in event[3].keys():
+				obj3 = self.spriteObjects[event[3]['stype']]
+				# event[3]['stype'] = self.getClass(obj3)
+				tmpEvent = copy.deepcopy(event)
+				tmpEvent[3]['stype'] = self.getClass(obj3)
+				args = tmpEvent[3]
+			else:
+				args = event[3]
 		except:
 			args = {}
 
@@ -718,12 +726,6 @@ class Theory(object):
 		If we know that ORANGE=c1 and DARKBLUE=c2, returns the InteractionRule
 		that corresponds to (bounceForward, c1, c2)
 		"""
-		# Check if there is an extra value argument in event
-		try: 
-			args = event[3]
-
-		except:
-			args = {}
 
 		try:
 			obj1 = self.spriteObjects[event[1]]
@@ -733,6 +735,22 @@ class Theory(object):
 			embed()
 
 		c1, c2 = self.getClass(obj1), self.getClass(obj2)
+		
+		# Check if there is an extra value argument in event. Also if there's an stype arg, get its class.
+		try: 
+			if 'stype' in event[3].keys():
+				obj3 = self.spriteObjects[event[3]['stype']]
+				# event[3]['stype'] = self.getClass(obj3)
+				tmpEvent = copy.deepcopy(event)
+				tmpEvent[3]['stype'] = self.getClass(obj3)
+				args = tmpEvent[3]
+			else:
+				args = event[3]
+			# print "args", args
+		except:
+			args = {}
+
+
 		#print 'classes:', c1, c2
 		if c1 and c2:
 			#print 'new interaction rule!'
@@ -960,6 +978,7 @@ class Theory(object):
 	def searchForAssignments(self, event):
 		obj1 = self.spriteObjects[event[1]]
 		obj2 = self.spriteObjects[event[2]]
+
 
 		x1, gotNewClass = self.searchForPossibleClasses(obj1, newClasses=1)
 		if gotNewClass:
@@ -1658,6 +1677,10 @@ class Game(object):
 			self.hypothesisSpace = [] # Refresh the hypothesis space before DFS induction
 		else:
 			# Otherwise continue from the existing theories; work on the new events only.
+			print "had existing theory"
+			## But first make sure we haven't seen a new object in the time step. if we have, it will be reflected in the spriteSample.
+			for theory in existingTheories:
+				theory = self.addNewObjectsToTheory(theory, spriteSample)
 			init_hypotheses = existingTheories
 			self.hypothesisSpace = []
 
