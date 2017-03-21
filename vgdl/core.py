@@ -507,8 +507,8 @@ class BasicGame(object):
         fs_colorized = deepcopy(fs)
         fs_colorized['objects'] = {}
         for sprite_name in fs['objects']:
-            sclass, args, stypes = self.sprite_constr[sprite_name]
             try:
+                sclass, args, stypes = self.sprite_constr[sprite_name]
                 fs_colorized['objects'][colorDict[str(args['color'])]] = fs['objects'][sprite_name]
             except: # Object color isn't immediately available
                 sprite_type = []
@@ -674,7 +674,7 @@ class BasicGame(object):
         # if len(self.effectList) > 0:
         #     print 'effectList', self.effectList
         return self.effectList
-        
+
     # def _eventHandling(self):
     #     self.lastcollisions = {} # This is a weird name for this variable
     #     self.effectList = []
