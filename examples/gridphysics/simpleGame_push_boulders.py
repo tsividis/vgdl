@@ -21,10 +21,12 @@ BasicGame frame_rate=30
     SpriteSet        
         avatar > MovingAvatar color=DARKBLUE #cooldown=4 
         goal > ResourcePack color=GOLD
-        poison1 > ResourcePack color=BROWN
-        poison2 > ResourcePack color=PINK
-        box1 > ResourcePack color=GREEN
-        box2 > ResourcePack color=LIGHTBLUE
+        poison >
+            poison1 > ResourcePack color=BROWN
+            poison2 > ResourcePack color=PINK
+        box >
+            box1 > ResourcePack color=GREEN
+            box2 > ResourcePack color=LIGHTBLUE
         wall > Immovable color=BLACK      
         score > Resource color=PINK limit=10  
         missile > Missile color=RED speed=.2      
@@ -37,27 +39,28 @@ BasicGame frame_rate=30
         g > goal 
         m > missile
     InteractionSet
-        avatar wall > stepBack  
+        avatar wall > stepBack
         missile wall > reverseDirection
-        poison1 avatar > killSprite
-        poison2 avatar > killSprite
-        avatar poison1 > killSprite
-        avatar poison2 > killSprite
+        poison avatar > killSprite
+        avatar poison > killSprite
+        
         goal avatar > killSprite
-        box1 avatar > bounceForward
-        box2 avatar  > killSprite
-        box1 box1 > undoAll
-        goal box1 > bounceForward
-        goal box2 > bounceForward
-        goal wall > undoAll
-        goal poison1 > undoAll
-        goal poison2 > undoAll
-        box1 wall    > undoAll    
-        box2 wall    > undoAll    
-        poison1 box1 > killSprite
-        poison2 box1 > killSprite
-        poison1 box2 > undoAll
-        poison2 box2 >undoAll
+
+        
+        box box > bounceForward
+        box wall > stepBack
+
+        box avatar > bounceForward
+        
+
+        goal box > stepBack
+        goal box > bounceForward
+
+        goal poison > stepBack
+        goal wall > stepBack
+
+        poison box1 > killSprite
+        box2 poison > killSprite
     TerminationSet
         SpriteCounter stype=goal    limit=0 win=True
         SpriteCounter stype=avatar  limit=0 win=False          

@@ -1242,6 +1242,7 @@ def collectResource(sprite, partner, game): # FLAG
 
 def changeResource(sprite, partner, resourceColor, game, resource, value=1):
     """ Increments a specific resource type in sprite """
+
     sprite.resources[resource] = max(-1, min(sprite.resources[resource]+value, game.resources_limits[resource]))
     print sprite, partner, resource, sprite.resources[resource]
     # NOTE: partner is the color of the resource (see _eventHandling() in core.py)
@@ -1498,7 +1499,7 @@ def initializeDistribution(sprite_types):
 
 def updateDistribution(sprite, curr_distribution, movement_options, outcome):
     """
-    Updates the sprite distribution for a given object in the game.
+    updateDistribution the sprite distribution for a given object in the game.
 
     Input:
         sprite - the current sprite ID
@@ -1529,9 +1530,12 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
 
         # Re-normalize the distribution
         z = sum(curr_distribution[sprite].values())
+        # should run IF z > 0 - Jake Burga (This is the bug I'm running into)
         for sprite_type in curr_distribution[sprite].keys():
-            curr_distribution[sprite][sprite_type] /= z
-
+            if z > 0:
+                curr_distribution[sprite][sprite_type] /= z
+            else:
+                curr_distribution[sprite][sprite_type] = float('inf')
         # print curr_distribution[sprite]
         # embed()
         # print ""

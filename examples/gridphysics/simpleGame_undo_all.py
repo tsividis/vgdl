@@ -44,7 +44,6 @@ BasicGame
     goal avatar > killSprite
 
     box1 avatar > bounceForward
-    box2 avatar > bounceForward
     box1 wall > undoAll
     bullet wall > reverseDirection
     bullet box1 > reverseDirection
