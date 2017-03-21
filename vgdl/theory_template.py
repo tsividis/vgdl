@@ -615,6 +615,9 @@ class Theory(object):
 		except:
 			args = {}
 
+		# if len(args.keys())>0:
+		# 	print "found args in addRules for event", event
+		# 	embed()
 		obj1 = self.spriteObjects[event[1]]
 		obj2 = self.spriteObjects[event[2]]
 
@@ -1564,7 +1567,7 @@ class Game(object):
 		avatar = [o for o in T.spriteSet if o.vgdlType==MovingAvatar][0]
 		nonAvatars = [o for o in T.spriteSet if o.vgdlType!=MovingAvatar and o.color!='ENDOFSCREEN']
 		eos = [o for o in T.spriteSet if o.color=='ENDOFSCREEN'][0]
-		wall = [o for o in T.spriteSet if o.color == "BLACK"][0]
+		wall = [o for o in T.spriteSet if o.color == "BLACK" or o.color=="GRAY"][0]
 
 		# print "buildgenerictheory"
 		# embed()
@@ -1593,7 +1596,7 @@ class Game(object):
 			## append EOS rule
 			rule = InteractionRule('stepBack', s1.className, 'EOS', {}, set(), generic=True)
 			T.interactionSet.append(rule)
-			if s1.color != "BLACK":
+			if s1.color != "BLACK" and s1.color !="GRAY":
 				rule = InteractionRule('stepBack', s1.className, wall.className, {}, set(), generic=True)
 				T.interactionSet.append(rule)
 
@@ -1610,7 +1613,7 @@ class Game(object):
 		avatar = [o for o in theory.spriteSet if o.vgdlType==MovingAvatar][0]
 		nonAvatars = [o for o in theory.spriteSet if o.vgdlType!=MovingAvatar and o.color!='ENDOFSCREEN']
 		eos = [o for o in theory.spriteSet if o.color=='ENDOFSCREEN'][0]
-		wall = [o for o in theory.spriteSet if o.color == "BLACK"][0]
+		wall = [o for o in theory.spriteSet if o.color == "BLACK" or o.color=="GRAY"][0]
 
 		# print "in addNewObjects"
 		# embed()
@@ -1889,7 +1892,10 @@ def generateSymbolDict(rle):
 		col = colorDict[str(rle._game.sprite_constr[s][1]['color'])]
 		inverseMapping[col] = alnum[idx]
 		idx+=1
-	inverseMapping[colorDict[str(rle._game.sprite_constr['avatar'][1]['color'])]] = 'A'
+	try:
+		inverseMapping[colorDict[str(rle._game.sprite_constr['avatar'][1]['color'])]] = 'A'
+	except:
+		inverseMapping[colorDict[str(rle._game.sprite_constr['avatar'][0].color)]] = 'A'
 
 	return inverseMapping
 
@@ -1933,7 +1939,11 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	def getClassNameFromSpriteString(spriteName):
 		if len(rle._game.sprite_groups[spriteName])>0:
 			col = colorDict[str(rle._game.sprite_groups[spriteName][0].color)]
-			className = [k for k in theory.classes.keys() if col in [c.color for c in theory.classes[k]]][0]
+			try:
+				className = [k for k in theory.classes.keys() if col in [c.color for c in theory.classes[k]]][0]
+			except:
+				print "couldn't find className"
+				embed()
 			return className
 		elif spriteName in theory.classes.keys():
 			return spriteName
