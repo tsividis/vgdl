@@ -147,6 +147,7 @@ class Agent:
 
 		## Initialize external environment
 		rle = self.rleCreateFunc()
+		embed()
 		allObjects= rle._game.getObjects()
 		# allColors = [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in rle._game.sprite_groups.keys()]
 		##select only non-moving objects as goals. Avoids chasing, which takes forever at the moment.
@@ -207,17 +208,7 @@ class Agent:
 		return gameObject, won, finalEventList, totalStatesEncountered
 
 if __name__ == "__main__":
-	# filename = "examples.gridphysics.simpleGame_resourceTest"
-
-	# filename = "examples.gridphysics.simpleGame_preconditions" ## won't work until eventHandling() is corrected.
-	# filename = "examples.gridphysics.simpleGame_inductionTest"
-	# filename = "examples.gridphysics.simpleGame_missile2"	
-	# filename = "examples.gridphysics.movers2d"	
-	# filename = "examples.gridphysics.movers3c"	
-	# filename = "examples.gridphysics.movers4"	
-
-	# filename = "examples.gridphysics.simpleGame_many_poisons_big"
-	# filename = "examples.gridphysics.simpleGame_push_boulders2"
+	
 	# filename = "examples.gridphysics.pushtest"
 	# filename = "examples.gridphysics.simpleGame_small"
 	# filename = "examples.gridphysics.simpleGame_teleport"	

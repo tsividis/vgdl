@@ -22,6 +22,7 @@ BasicGame
         carcass scared > killSprite
         scared avatar  > transformTo stype=carcass
         scared carcass > transformTo stype=angry
+        goat goat > stepBack
 
     LevelMapping
         0 > scared

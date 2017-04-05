@@ -1316,7 +1316,9 @@ def collectResource(sprite, partner, game): # FLAG
 
 def changeResource(sprite, partner, resourceColor, game, resource, value=1):
     """ Increments a specific resource type in sprite """
+
     sprite.resources[resource] = max(-1, min(sprite.resources[resource]+value, game.resources_limits[resource]))
+    print sprite, partner, resource, sprite.resources[resource]
     # NOTE: partner is the color of the resource (see _eventHandling() in core.py)
     # embed()
     args = {'resource':resource, 'value':value}
@@ -1372,8 +1374,10 @@ def wrapAround(sprite, partner, game, offset=0):
     elif sprite.orientation[1] < 0:
         sprite.rect.top = game.screensize[1] - sprite.rect.size[1] * (1 + offset)
     sprite.lastmove = 0
+
     args = {'offset':offset}
-    return ('wrapAround', sprite.ID, 'EOS', args)
+    # return ('wrapAround' , sprite.ID, partner.ID, offset)
+
 
 def pullWithIt(sprite, partner, game):
     """ The partner sprite adds its movement to the sprite's. """
@@ -1717,7 +1721,7 @@ def distributionInitSetup(game, sprite, sprite_types):
 
 def updateDistribution(sprite, curr_distribution, movement_options, outcome):
     """
-    Updates the sprite distribution for a given object in the game.
+    updateDistribution the sprite distribution for a given object in the game.
 
     Input:
         sprite - the current sprite ID
@@ -1792,7 +1796,6 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
                     curr_distribution[sprite][sprite_type]['args'][p][pval] += epsilon_prob
 
         
-        # Re-normalize the distribution
         z = sum(curr_distribution[sprite][sprite_type]['prob'] for sprite_type in curr_distribution[sprite])
         for sprite_type in curr_distribution[sprite].keys():
             curr_distribution[sprite][sprite_type]['prob'] /= z

@@ -11,3 +11,14 @@ Interfaces
 Other:
 - nicer graphics, possibly based on palettes
 - visualize continuous trajectories
+
+get Games online
+
+FrostBite
+- make objects ignore collisions from specific directions
+
+Physics
+-	Jumping and moving at same time causes massive acceleration
+
+.5 hr
+2.5 hr

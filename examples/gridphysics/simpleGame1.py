@@ -6,8 +6,8 @@ box_level = """
 wwwwwwwwwwwww
 w  2 m   w  w
 w   1       w
-w t A 1 p  gw
-www    hwwwww
+w t Am1 p  gw
+www  m hwwwww
 w c  m  w   w
 w 1  t     3w
 w  2 c  p  ww
@@ -57,11 +57,12 @@ BasicGame frame_rate=30
         poison avatar > killSprite
         avatar poison > killIfHasLess resource=medicine limit=-1
         box avatar  > bounceForward
-        box wall    > undoAll        
+        box box > stepBack
+        box wall    > stepBack      
         box hole    > killSprite
-        box treasure > undoAll
-        box poison > undoAll
-        box medicine > undoAll
+        box treasure > stepBack
+        box poison > stepBack
+        box medicine > stepBack
         goal avatar > killSprite
     TerminationSet
         SpriteCounter stype=box     limit=0 win=True
