@@ -1293,7 +1293,7 @@ def wrapAround(sprite, partner, game, offset=0):
     elif sprite.orientation[1] < 0:
         sprite.rect.top = game.screensize[1] - sprite.rect.size[1] * (1 + offset)
     sprite.lastmove = 0
-    return ('wrapAround' , sprite.ID, partner.ID, offset)
+    # return ('wrapAround' , sprite.ID, partner.ID, offset)
 
 def pullWithIt(sprite, partner, game):
     """ The partner sprite adds its movement to the sprite's. """

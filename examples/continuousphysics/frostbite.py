@@ -16,7 +16,7 @@ BasicGame
 
         wall > Immovable color=LIGHTBLUE
         ground    > Immovable color=GRAY speed=0
-        moving > Flow trigger=igloo can_switch=False
+        moving > Floe trigger=igloo can_switch=False
             ice > 
                 blue > color=BLUE
                 white > color=WHITE
@@ -52,7 +52,7 @@ BasicGame
         white avatar > triggerOnLanding strigger=igloo
         white avatar > transformToOnLanding stype=blue dim=y
 
-        moving avatar > reverseFlowIfActivated dim=y strigger=igloo
+        moving avatar > reverseFloeIfActivated dim=y strigger=igloo
         avatar killWater > killSpriteOnLanding
 
 

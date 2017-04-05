@@ -729,7 +729,7 @@ class BasicGame(object):
         self.spriteDistribution = {}
         self.movement_options = {}
         allStates = [self.getFullState()]
-        spriteInduction(self, step=0)
+        # spriteInduction(self, step=0)
 
         # if self.playback_states:
         #     print "got playback states"
@@ -776,7 +776,7 @@ class BasicGame(object):
             self._clearAll()
 
             # For new objects that appear; sprite induction
-            spriteInduction(self, step=1)
+            # spriteInduction(self, step=1)
 
 
 
@@ -810,7 +810,7 @@ class BasicGame(object):
             
 
             ## Sprite Induction Part 1: See the update options for each sprite type the sprite could be
-            spriteInduction(self, step=2)
+            # spriteInduction(self, step=2)
             # objects = self.getObjects()
             # game = self                                               # Save game state
             # for sprite in self.spriteDistribution.keys():                  # Keys are the IDs of the game objects
@@ -828,7 +828,7 @@ class BasicGame(object):
 
 
             ## Sprite Induction Part 2: Update sprite distribution based on observations
-            spriteInduction(self, step=3)
+            # spriteInduction(self, step=3)
                    
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
@@ -955,7 +955,7 @@ class BasicGame(object):
         self.spriteDistribution = {}
         self.movement_options = {}
         allStates = [self.getFullState()]
-        spriteInduction(self, step=0)
+        # spriteInduction(self, step=0)
         # for sprite in objects:
         #     self.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
         #     self.movement_options[sprite] = {"OTHER":{}}
@@ -1288,7 +1288,7 @@ class VGDLSprite(object):
     mass     = 1
     physicstype=None
     shrinkfactor=0
-
+    orientation = [0, 0]
     def __init__(self, pos, size=(10,10), color=None, speed=None, cooldown=None, physicstype=None, **kwargs):
         from ontology import GridPhysics
         self.rect = pygame.Rect(pos, size)
@@ -1360,7 +1360,7 @@ class VGDLSprite(object):
         if self.is_avatar:
             rounded = roundedPoints(shrunk)
             pygame.draw.polygon(screen, self.color, rounded)
-            pygame.draw.lines(screen, LIGHTGREEN, True, rounded, 2)
+            # pygame.draw.lines(screen, LIGHTGREEN, True, rounded, 2)
             r = self.rect.copy()
         elif not self.is_static:
             rounded = roundedPoints(shrunk)
