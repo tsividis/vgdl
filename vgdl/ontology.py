@@ -1324,6 +1324,7 @@ def changeResource(sprite, partner, resourceColor, game, resource, value=1):
 
 def changeScore(sprite, partner, game, value):
     game.score += value
+    print "score", game.score
     args = {'value':value}
     return ('changeScore', sprite.ID, partner.ID, args)
 
@@ -1438,7 +1439,8 @@ def cannotActivateSwitch(sprite, partner, game):
 # ---------------------------------------------------------------------
 #     Sprite Induction
 # ---------------------------------------------------------------------
-
+## TODO: Make sure you put these other types back when you fix sprite induction!!
+sprite_types = [Resource, ResourcePack, RandomNPC, Chaser, Missile] #removed Immovable, Passive, AStarChaser,
 def getSpeed(params):
     """
     params = a dict mapping sprite attributes to values
@@ -1695,7 +1697,7 @@ def initializeDistributionArgs(sprite_type):
 
 
 
-def distributionInitSetup(game, sprite, sprite_types):
+def distributionInitSetup(game, sprite):
     """
     Does setup for initializing distribution
     """
@@ -1835,12 +1837,13 @@ def spriteInduction(game, step, old_outcome=None):
     """
     game = a BasicGame object
     """
-    ## TODO: Make sure you put these other types back when you fix sprite induction!!
-    sprite_types = [Resource, ResourcePack, RandomNPC, Chaser, Missile] #removed Immovable, Passive, AStarChaser,
     if step==0:
     ## Prep for sprite induction
         for sprite in game.getObjects():
-            distributionInitSetup(game, sprite, sprite_types)
+            distributionInitSetup(game, sprite)
+            # distributionInitSetup(game, sprite, sprite_types)
+
+
             # game.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
             # game.movement_options[sprite] = {"OTHER":{}}
             # for sprite_type in sprite_types:
@@ -1859,7 +1862,8 @@ def spriteInduction(game, step, old_outcome=None):
         for sprite in objects:
             if sprite not in game.spriteDistribution:
                 game.all_objects[sprite] = objects[sprite]
-                distributionInitSetup(game, sprite, sprite_types)
+                distributionInitSetup(game, sprite)
+                # distributionInitSetup(game, sprite, sprite_types)
                 # game.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
                 # game.movement_options[sprite] = {"OTHER":{}}
                 # for sprite_type in sprite_types:
@@ -1897,7 +1901,7 @@ def spriteInduction(game, step, old_outcome=None):
 
                 # if sprite_obj.name!='avatar':
                     # if sprite not in game.collision_objects and sprite_obj.name != 'avatar':
-                if all([sprite not in e for e in game.effectList]) and sprite_obj.name != 'avatar':
+                if all([sprite not in e for e in game.effectList]) and sprite not in game.ignoreList and sprite_obj.name != 'avatar':
 
                     outcome = objects[sprite]["position"]
                     # print "about to update distribution"
@@ -1913,7 +1917,7 @@ def spriteInduction(game, step, old_outcome=None):
                     #     embed()
                 # else:
                 # elif sprite in game.collision_objects and sprite_obj.name != 'avatar':
-                elif any([sprite in e for e in game.effectList]) and sprite_obj.name !='avatar':
+                elif any([sprite in e for e in game.effectList]) and sprite not in game.ignoreList and sprite_obj.name !='avatar':
                     for sprite_type in sprite_types:
                         game.spriteDistribution[sprite][sprite_type]['args'] = initializeDistributionArgs(sprite_type)
 
