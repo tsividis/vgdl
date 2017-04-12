@@ -142,9 +142,10 @@ class Basic_MCTS:
 		##TODO: update this if goal moves!!
 		goal_code = 2**(1+sorted(self._obstypes.keys())[::-1].index("goal"))
 		killerObjectCodes = []
-		for o in self.rle.killerObjects:
-			if o in self.rle._obstypes.keys():
-				killerObjectCodes.append(2**(1+sorted(self.rle._obstypes.keys())[::-1].index(o)))
+		if hasattr(self.rle, 'killerObjects'):
+			for o in self.rle.killerObjects:
+				if o in self.rle._obstypes.keys():
+					killerObjectCodes.append(2**(1+sorted(self.rle._obstypes.keys())[::-1].index(o)))
 		board = np.reshape(self.rle._getSensors(), self.rle.outdim)
 		goal_loc = np.where(board==goal_code)
 		goal_loc = goal_loc[0][0], goal_loc[1][0]

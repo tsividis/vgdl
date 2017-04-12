@@ -373,7 +373,9 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.simpleGame4_small"
 	# gameFilename = "examples.gridphysics.simpleGame_teleport"
 	# gameFilename = "examples.gridphysics.simpleGame_many_poisons_huge"
-	gameFilename = "examples.gridphysics.movers2b"
+	# gameFilename = "examples.gridphysics.movers2b"
+	gameFilename = "examples.gridphysics.rivercross" 
+
 	print ""
 	print "initializing AStar on game", gameFilename
 	gameString, levelString = defInputGame(gameFilename, randomize=True)

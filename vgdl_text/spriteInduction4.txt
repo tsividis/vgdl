@@ -1,0 +1,27 @@
+"""
+BasicGame
+    SpriteSet
+        carcass > Immovable color=BROWN
+        angry  > Missile color=ORANGE speed=0.5
+        hay > Passive color=YELLOW
+	wall > Immovable color=DARKGRAY
+	avatar > MovingAvatar color=WHITE
+
+
+    InteractionSet
+        avatar  wall   > stepBack
+        angry   wall   > stepBack
+        avatar  angry  > killSprite
+        carcass avatar > killSprite
+        hay     avatar  > killSprite
+
+    LevelMapping
+        a > angry
+        c > carcass
+        h > hay
+
+    TerminationSet
+        SpriteCounter stype=hay win=True
+        SpriteCounter stype=avatar win=False
+
+"""

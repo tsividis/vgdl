@@ -105,12 +105,12 @@ BasicGame frame_rate=30
                 rand1 > color=LIGHTORANGE
                 rand2 > color=BLUE
         chaser > AStarChaser color=BROWN stype=avatar
-        wall > ResourcePack color=BLACK  
+        wall > Immovable
         missile > Missile
             missile1 > color=YELLOW orientation=RIGHT speed=.4
             missile2 > color=PINK orientation=RIGHT speed=.6
             missile3 > color=LIGHTBLUE orientation=UP
-        goal > Immovable color=GREEN
+        goal > Resource color=ORANGE
     LevelMapping
         w > wall   
         a > box1
@@ -152,4 +152,7 @@ also vice-versa.
 """
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(game, level)    
+    import random
+    levels = [l for l in locals().keys() if 'level' in l]
+    index = random.choice(range(len(levels)))
+    VGDLParser.playGame(game, locals()[levels[index]]) 

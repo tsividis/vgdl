@@ -22,9 +22,9 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 
 level = """
 wwwwwwwwwwwww
-w m         w
 w           w
-w      pppppw
+w           w
+w    m  ppppw
 w A     p  gw
 wwwwwwwwwwwww
 """
@@ -39,7 +39,7 @@ BasicGame frame_rate=30
         cloud > Passive color=BLUE
         medicine > Resource limit=2 color=WHITE
         poison > Resource limit=3 color=BROWN
-        wall > Immovable color=BLACK      
+        wall > Immovable color=GRAY      
     LevelMapping
         0 > hole
         c > cloud 
@@ -49,8 +49,8 @@ BasicGame frame_rate=30
         g > goal 
     InteractionSet
         avatar wall > stepBack  
-        avatar medicine > changeResource resource=medicine value=2
         medicine avatar > killSprite
+        avatar medicine > changeResource resource=medicine value=1
         avatar poison > changeResource resource=medicine value=-1
         poison avatar > killSprite
         avatar poison > killIfHasLess resource=medicine limit=-1
@@ -67,4 +67,7 @@ BasicGame frame_rate=30
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(game, level)    
+    import random
+    levels = [l for l in locals().keys() if 'level' in l]
+    index = random.choice(range(len(levels)))
+    VGDLParser.playGame(game, locals()[levels[index]])

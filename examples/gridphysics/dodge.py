@@ -21,6 +21,7 @@ wwwwwwwwwwwwwwwwwww
 bullet_game = """
 BasicGame
     SpriteSet
+        avatar > MovingAvatar color=DARKBLUE
         bullet > Missile
             slowbullet > speed=0.1 color=ORANGE
                 upslow    >     orientation=UP    

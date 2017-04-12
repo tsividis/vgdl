@@ -6,10 +6,10 @@ level = """
 wwwwwwwwwwwwwwwwww
 w  1    p        w
 w    2    p      w
-wAp       2  w  ww
+wA        2  w  ww
 w    w1      w  ww
 ww         p     w
-w   p     p    1 w
+w   p          1 w
 w    2       g   w
 w        2       w
 wwwwwwwwwwwwwwwwww

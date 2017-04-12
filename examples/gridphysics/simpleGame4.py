@@ -23,10 +23,10 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 
 level = """
 wwwwwwwww
-w  1    w
-w    p  w
-w 2  wAww
-w g  w ww
+w  1   pw
+w       w
+wg2  wAww
+w    w ww
 wwwwwwwww
 """
 

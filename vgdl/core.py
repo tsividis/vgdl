@@ -543,6 +543,7 @@ class BasicGame(object):
         for s in self:
             s._draw(self)
 
+    
     def _updateCollisionDict(self, changedsprite):
         for key in changedsprite.stypes:
             if key in self.lastcollisions:
@@ -559,7 +560,6 @@ class BasicGame(object):
         self.effectList = []
         # build the current sprite lists (if not yet available)
         # for class1, class2, effect, kwargs in self.collision_eff:
-
 
         while new_collisions:
             new_collisions = set()
@@ -675,117 +675,6 @@ class BasicGame(object):
         #     print 'effectList', self.effectList
         return self.effectList
 
-    # def _eventHandling(self):
-    #     self.lastcollisions = {} # This is a weird name for this variable
-    #     self.effectList = []
-    #     collision_set = set()
-    #     spritesActedOn = set() # a set containing all the sprites that have been acted on.
-    #     new_collisions = True
-    #     while new_collisions:
-    #         new_collisions = set()
-    #         for class1, class2, effect, kwargs in self.collision_eff:
-    #             # build the current sprite lists (if not yet available)
-    #             # should this be done here? 
-    #             # I feel like this should only be done if new sprites are added.
-    #             for sprite_class in [class1, class2]:
-    #                 if sprite_class not in self.lastcollisions:
-    #                     if sprite_class in self.sprite_groups:
-    #                         sprites = self.sprite_groups[sprite_class]
-    #                     else:
-    #                         sprites = []
-    #                         for key in self.sprite_groups:
-    #                             sprite = self.sprite_groups[key]
-    #                             if sprite and sprite_class in sprite[0].stypes:
-    #                                 sprites.extend(sprite)
-    #                     self.lastcollisions[sprite_class] = (sprites, len(sprites))
-
-    #             # special case for end-of-screen
-    #             if class2 == "EOS":
-    #                 sprites1, l1 = self.lastcollisions[class1]
-    #                 for sprite1 in sprites1:
-    #                     if not pygame.Rect((0,0), self.screensize).contains(sprite1.rect):
-    #                         new_collisions.add((sprite1, 'EOS'))
-    #                         e = effect(sprite1, None, self, **kwargs)
-    #                         if e: self.effectList.append(e)
-    #                         spritesActedOn.add(sprite1)
-    #                 continue
-
-    #             # score argument is not passed along to the effect function
-    #             score = 0
-    #             if 'scoreChange' in kwargs:
-    #                 kwargs = kwargs.copy()
-    #                 score = kwargs['scoreChange']
-    #                 del kwargs['scoreChange']
-
-    #             dim = None
-    #             if 'dim' in kwargs:
-    #                 kwargs = kwargs.copy()
-    #                 dim = kwargs['dim']
-    #                 del kwargs['dim']
-
-    #             (sprites1, l1), (sprites2, l2) = self.lastcollisions[class1], self.lastcollisions[class2]
-    #             for sprite1 in sprites1:
-    #                 for collision_index in sprite1.rect.collidelistall(sprites2):
-
-    #                     sprite2 = sprites2[collision_index]
-                        
-    #                     if (sprite1 == sprite2
-    #                         or (sprite1, sprite2) in collision_set 
-    #                         or sprite1 in self.kill_list 
-    #                         or sprite2 in self.kill_list): 
-    #                         continue
-    #                     # embed()
-    #                     new_collisions.add((sprite1, sprite2))
-    #                     # deal with the collision effects
-    #                     if score:
-    #                         self.score += score
-    #                         #print 'score', self.score  ## ORIGINALLY UNCOMMENTED
-
-    #                     if 'applyto' in kwargs:
-
-    #                         stype = kwargs['applyto']
-
-    #                         kwargs_use = deepcopy(kwargs)
-    #                         kwargs_use.pop('applyto')
-    #                         for sC in self.getSprites(stype):
-    #                             e = effect(sC, sprite1, self, **kwargs_use)
-    #                             spritesActedOn.add(sC)
-    #                         if e: self.effectList.append(e)
-    #                         continue
-
-    #                     if dim:
-    #                         sprites = self.getSprites(classprite1)
-    #                         spritesFiltered = filter(lambda sprite: sprite.__dict__[dim] == sprite2.__dict__[dim], sprites)
-    #                         for sC in spritesFiltered:
-    #                             e = effect(sprite1, sC, self, **kwargs)
-    #                             spritesActedOn.add(sprite1)
-    #                             if e: self.effectList.append(e)
-    #                             continue
-
-
-    #                     # if shortss == longss: # both sprites are the same type of sprites
-    #                     #     if sprite1 in spritesActedOn: # if sprite1 has experienced the effect of an event
-    #                     #         sprite1, sprite2 = sprite2, sprite1
-
-    #                     # CHECKME: this is not a bullet-proof way, but seems to work
-    #                     if effect.__name__ == "changeResource":  # TODO: A little hack-y, but works for now.
-    #                         resource = kwargs['resource']
-    #                         (sclass, args, stypes) = self.sprite_constr[resource]
-    #                         resource_color = args['color']
-    #                         e = effect(sprite1, sprite2, resource_color, self, **kwargs)
-    #                         spritesActedOn.add(sprite1)
-                        
-    #                     else:
-    #                         e = effect(sprite1, sprite2, self, **kwargs)
-    #                         spritesActedOn.add(sprite1)
-                            
-    #                     if e: self.effectList.append(e)
-    #         collision_set = collision_set.union(new_collisions)
-
-    #     # if len(self.effectList) > 0:
-    #     #     print 'effect list', self.effectList
-    #     return self.effectList
-
     def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0):
         """
         Main method to run game. 
@@ -836,63 +725,18 @@ class BasicGame(object):
         
         ##figure out keypress type:
         disableContinuousKeyPress = all([self.all_objects[k]['sprite'].physicstype.__name__=='GridPhysics' for k in self.all_objects.keys()])
-        
+        print "disable?", disableContinuousKeyPress
+
         objects = self.getObjects()
         self.spriteDistribution = {}
         self.movement_options = {}
         allStates = [self.getFullState()]
         
-
-        # spriteInduction(self, step=0)
-
-        # if self.playback_states:
-        #     print "got playback states"
-        #     embed()
         while self.playback_index < len(self.playback_states):
             clock.tick(self.frame_rate)
             self.time += 1
 
-
-
-            ## The below will pause at t=100 and run a theory-induction loop, using everything the agent has seen so far.
-            ## Should work as long as we're using a gridphysics game with a movingAvatar
-            ## Note: this won't work right now; complaining about importing from theory template.
-            # if self.time==100:
-            #     def getObjectType(objectID):
-            #         return self.all_objects[objectID]['type']['color']
-            #     from theory_template import *
-            #     sample = sampleFromDistribution(self.spriteDistribution, self.all_objects)
-            #     g = Game(spriteInductionResult=sample)
-            #     terminationCondition = {'ended': False, 'win':False, 'time':self.time}
-            #     trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
-
-            #     ##clean up trace; convert object IDs to object types (for now this is just object color).
-                
-                
-            #     for i in range(len(trace[0])):
-            #         timestep = trace[0][i]
-            #         for j in range(len(timestep.events)):
-            #             event = timestep.events[j]
-            #             if len(event)==3:
-            #                 timestep.events[j] = (event[0], getObjectType(timestep, event[1], all_objects), getObjectType(timestep, event[2], all_objects))
-            #             elif len(event)==2:
-            #                 timestep.events[j] = (event[0], getObjectType(timestep, event[1], all_objects))
-
-
-            #     hypotheses = list(g.runDFSInduction(trace, 20, True))
-            #     embed()
-
-            # if self.time>100:
-            #     break
-
-
-            # print "t=", self.time
             self._clearAll()
-
-            # For new objects that appear; sprite induction
-            # spriteInduction(self, step=1)
-
-
 
             # # load/save handling
             # if self.load_.save_enabled:
@@ -922,27 +766,6 @@ class BasicGame(object):
 
             collision_objects = set()
             
-
-            ## Sprite Induction Part 1: See the update options for each sprite type the sprite could be
-            # spriteInduction(self, step=2)
-            # objects = self.getObjects()
-            # game = self                                               # Save game state
-            # for sprite in self.spriteDistribution.keys():                  # Keys are the IDs of the game objects
-            #     for sprite_type in self.spriteDistribution[sprite].keys(): # Check each potential sprite type                    
-            #         if self.spriteDistribution[sprite][sprite_type] > 0 and sprite in objects.keys():    # Make sure sprite_type is an option for sprite, and sprite is not killed
-            #             sprite_obj = objects[sprite]["sprite"]
-
-            #             # Get potential next positions for sprite if it were that sprite type
-            #             # TODO: Implement Avatar updateOptions function (if desired)
-            #             if sprite_obj.name != 'avatar':
-            #                 self.movement_options[sprite][sprite_type] = updateOptions(game, sprite_type, sprite_obj) 
-            #                 # print sprite_obj.name, sprite_type # For debugging
-            #                 # print movement_options[sprite][sprite_type]
-
-
-
-            ## Sprite Induction Part 2: Update sprite distribution based on observations
-            # spriteInduction(self, step=3)
                    
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
@@ -964,7 +787,6 @@ class BasicGame(object):
 
             VGDLSprite.dirtyrects = []
             allStates.append(self.getFullState())
-            # embed()
             self.playback_index += 1
 
         if(make_movie):
@@ -1018,6 +840,12 @@ class BasicGame(object):
         pygame.time.wait(10)
         return win, self.score
 
+    def drawScore(self):
+        ## Draw score
+        myfont = pygame.font.SysFont("arial", 25)
+        label = myfont.render(str(self.score), 1, (0,0,200))
+        # self.screen.blit(label, (self.screensize[0]/2-self.block_size, 5))
+        return
 
     def startGame(self, headless, persist_movie, make_images=False, make_movie=False):
         """
@@ -1066,7 +894,7 @@ class BasicGame(object):
         
         ##figure out keypress type:
         disableContinuousKeyPress = all([self.all_objects[k]['sprite'].physicstype.__name__=='GridPhysics' for k in self.all_objects.keys()])
-        
+
         objects = self.getObjects()
         self.spriteDistribution = {}
         self.movement_options = {}
@@ -1089,7 +917,9 @@ class BasicGame(object):
 
             # get action pressed
             self.keystate = pygame.key.get_pressed()
-            
+            # if 1 in self.keystate and self.keystate.index(1) in keyPresses.keys():
+            #     keyPressType = keyPresses[self.keystate.index(1)]
+            #     print keyPressType
             # # PT: Disables mistaken contiguous key presses, prints to terminal
             if disableContinuousKeyPress and not self.playback_states:
                 keyPressType = None
@@ -1159,13 +989,14 @@ class BasicGame(object):
                         # winning a game always gives a positive score.
                         # if self.score <= 0:
                         #     self.score = 1
-
                         self.win = True
                         print "Game won, with score %s" % self.score
                     else:
                         self.win = False
                         self.score -=1 ## Added 3/16/17
                         print "Game lost. Score=%s" % self.score
+                    self.drawScore()
+
                     allStates.append(self.getFullState())
                     # embed()
                     time.sleep(1)
@@ -1198,10 +1029,11 @@ class BasicGame(object):
                 break
 
             self._drawAll()
+            self.drawScore()
+
             pygame.display.update(VGDLSprite.dirtyrects)
             allStates.append(self.getFullState())
 
-            #if(headless):
             if(persist_movie):
                 tmp_dir = "./temp/"
                 tmpl = '{tmp_dir}%09d-{name}-{g_id}.png'.format(i,tmp_dir = tmp_dir, name="VGDL-GAME", g_id=self.uiud)
@@ -1234,17 +1066,16 @@ class BasicGame(object):
             # if self.score <= 0:
                 # self.score = 1
             self.score +=1 # Added 3/16/17
+            self.drawScore()
             self.win = True
+
             print "Game won, with score %s" % self.score
         else:
-            self.win = False
             self.score -=1 # Added 3/16/17
-            print "Game lost. Score=%s" % self.score
+            self.drawScore()
+            self.win = False
 
-        # if "killSprite" in [e[0] for e in self.effectList]:
-        #         embed()
-        
-        # ipdb.set_trace()
+            print "Game lost. Score=%s" % self.score
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(10)
@@ -1401,7 +1232,7 @@ class VGDLSprite(object):
         if self.is_avatar:
             rounded = roundedPoints(shrunk)
             pygame.draw.polygon(screen, self.color, rounded)
-            pygame.draw.lines(screen, LIGHTGREEN, True, rounded, 2)
+            # pygame.draw.lines(screen, LIGHTGREEN, True, rounded, 2)
             r = self.rect.copy()
         elif not self.is_static:
             rounded = roundedPoints(shrunk)

@@ -6,9 +6,9 @@ VGDL example: a simplified Sokoban variant: push the boxes into the holes.
 
 box_level = """
 wwwwwwwwwwwww
-w        w  w
+wA       w  w
 w   1       w
-w   A 1 w 0ww
+w     1 w 0ww
 www w1  wwwww
 w       w 0 w
 w 1        ww
@@ -20,8 +20,8 @@ wwwwwwwwwwwww
 push_game = """
 BasicGame frame_rate=30
     SpriteSet        
-        hole   > Immovable color=DARKBLUE
-        avatar > MovingAvatar #cooldown=4
+        hole   > Immovable color=PINK
+        avatar > MovingAvatar color=DARKBLUE
         box    > Passive  color=RED              
     LevelMapping
         0 > hole
@@ -33,7 +33,8 @@ BasicGame frame_rate=30
         box box     > undoAll
         box hole    > killSprite        
     TerminationSet
-        SpriteCounter stype=box    limit=0 win=True          
+        SpriteCounter stype=box    limit=0 win=True 
+        Timeout limit=5000 win=False         
 """
 
 if __name__ == "__main__":

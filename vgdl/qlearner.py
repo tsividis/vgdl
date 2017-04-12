@@ -47,11 +47,18 @@ class QLearner:
 		self.heuristicDecay = .99
 		self.immovables = []
 		goalLoc = self.findObjectInRLE(rle, 'goal')
+		self.rewardQueue = deque()
+		self.processed = [goalLoc]
+		# goalLocs = self.findObjectInRLE(rle, 'probe')
+		# self.rewardDict = defaultdict(lambda:0)
+		# for goalLoc in goalLocs:
+			# self.rewardDict[goalLoc] = self.maxPseudoReward
 		self.rewardDict = {goalLoc:self.maxPseudoReward}
 		self.scanDomainForMovementOptions()
 		# self.getSubgoals(3)
 		self.propagateRewards(goalLoc)
-
+		# print "propagatedRewards"
+		# embed()
 	def scanDomainForMovementOptions(self):
 		##TODO: Take a state, so that you can re-perform this scan as needed and take changes into account.
 		##TODO: query VGDL description for penetrable/nonpenetrable objects, add to list.
@@ -62,7 +69,7 @@ class QLearner:
 			self.immovables = immovables
 			print "immovables", immovables
 		except:
-			immovables = ['wall']#, 'poison']
+			immovables = ['wall','poison']
 			self.immovables = immovables
 			print "Using defaults as immovables", immovables
 
@@ -72,8 +79,8 @@ class QLearner:
 
 		actionDict = defaultdict(list)
 		neighborDict = defaultdict(list)
-		# action_superset = [(0,0),(-1,0), (1,0), (0,-1), (0,1)]
-		action_superset = [(-1,0), (1,0), (0,-1), (0,1)]
+		action_superset = [(0,0),(-1,0), (1,0), (0,-1), (0,1)]
+		# action_superset = [(-1,0), (1,0), (0,-1), (0,1)]
 		
 		board = np.reshape(self.rle._getSensors(), self.rle.outdim)
 		y,x=np.shape(board)
@@ -90,34 +97,61 @@ class QLearner:
 		self.actionDict = actionDict
 		self.neighborDict = neighborDict
 		return
-	
-	def propagateRewards(self, goalLoc):
-		rewardQueue = deque()
-		processed = [goalLoc]
-		rewardQueue.append(goalLoc)
-		for n in self.neighborDict[goalLoc]:
-			if n not in rewardQueue:
-				rewardQueue.append(n)
 
-		while len(rewardQueue)>0:
-			loc = rewardQueue.popleft()
-			if loc not in processed:
+	def propagateRewards(self, goal_loc):
+		self.rewardQueue.append(goal_loc)
+		for n in self.neighborDict[goal_loc]:
+			if n not in self.rewardQueue:
+				self.rewardQueue.append(n)
+
+		while len(self.rewardQueue)>0:
+			loc = self.rewardQueue.popleft()
+			if loc not in self.processed:
 				valid_neighbors = [n for n in self.neighborDict[loc] if n in self.rewardDict.keys()]
 				self.rewardDict[loc] = max([self.rewardDict[n] for n in valid_neighbors]) * self.pseudoRewardDecay
-				processed.append(loc)
+				self.processed.append(loc)
 				for n in self.neighborDict[loc]:
-					if n not in processed:
-						rewardQueue.append(n)
+					if n not in self.processed:
+						self.rewardQueue.append(n)
 		return
+
+	# def propagateRewards(self, goalLocs):
+	# 	for goalLoc in goalLocs:
+	# 		embed()
+	# 		rewardQueue = deque()
+	# 		processed = [goalLoc]
+	# 		rewardQueue.append(goalLoc)
+	# 		for n in self.neighborDict[goalLoc]:
+	# 			if n not in rewardQueue:
+	# 				rewardQueue.append(n)
+
+	# 		while len(rewardQueue)>0:
+	# 			loc = rewardQueue.popleft()
+	# 			if loc not in processed:
+	# 				valid_neighbors = [n for n in self.neighborDict[loc] if n in self.rewardDict.keys()]
+	# 				self.rewardDict[loc] += max([self.rewardDict[n] for n in valid_neighbors]) * self.pseudoRewardDecay
+	# 				processed.append(loc)
+	# 				for n in self.neighborDict[loc]:
+	# 					if n not in processed:
+	# 						rewardQueue.append(n)
+	# 	return
 
 	def findObjectInRLE(self, rle, objName):
 		if objName not in rle._obstypes.keys():
 			print objName, "not in rle."
-			return None
+			# return None
+		objLocs = []
 		objCode = 2**(1+sorted(self.rle._obstypes.keys())[::-1].index(objName))
 		objLoc = np.where(np.reshape(self.rle._getSensors(), self.rle.outdim)==objCode)
 		objLoc = objLoc[0][0], objLoc[1][0] #(y,x)
 		return objLoc
+		# if type(objLoc[0])==np.ndarray:
+		# 	objLocs = [(o[1], o[0]) for o in objLoc]
+		# else:
+		# 	objLoc = objLoc[0][0], objLoc[1][0] #(y,x)
+		# 	objLocs = [objLoc]
+		# print objLocs
+		# return objLocs
 	
 	def findAvatarInRLE(self, rle):
 		avatar_code = 1
@@ -191,9 +225,10 @@ class QLearner:
 			return []
 		goal_code = 2**(1+sorted(self.rle._obstypes.keys())[::-1].index("goal"))
 		killerObjectCodes = []
-		for o in self.rle.killerObjects:
-			if o in self.rle._obstypes.keys():
-				killerObjectCodes.append(2**(1+sorted(self.rle._obstypes.keys())[::-1].index(o)))
+		if hasattr(self.rle, 'killerObjects'):
+			for o in self.rle.killerObjects:
+				if o in self.rle._obstypes.keys():
+					killerObjectCodes.append(2**(1+sorted(self.rle._obstypes.keys())[::-1].index(o)))
 		board = np.reshape(self.rle._getSensors(), self.rle.outdim)
 		goal_loc = np.where(board==goal_code)
 		goal_loc = goal_loc[0][0], goal_loc[1][0]
@@ -367,7 +402,7 @@ class QLearner:
 
 			## UNCOMMENT HERE IF YOU WANT TO WATCH Q-learner learning.
 			# print r
-			# print rle.show()
+			print rle.show()
 			if r==1:
 				self.partitionWeights[1] = self.partitionWeights[1]*self.heuristicDecay
 				self.epsilon = self.epsilon*self.heuristicDecay
@@ -383,13 +418,13 @@ class QLearner:
 		# print ""
 		self.QVals[s] = 0.
 
-	def learn(self, episodes, satisfice=0):
+	def learn(self, episodes, satisfice=200):
 		t1 = time.time()
 		satisfice_episodes = 0
 		for i in range(episodes):
 			# sys.stdout.write("Episodes: {}\r".format(i) )
 			# sys.stdout.flush()
-			self.runEpisode(stepLimit=100)
+			self.runEpisode(stepLimit=200)
 			satisfice_episodes +=1
 			if i%10==0:
 				s = self.rle._getSensors().tostring()
@@ -441,11 +476,12 @@ class QLearner:
 
 if __name__ == "__main__":
 	
-	# gameFilename = "examples.gridphysics.simpleGame_push_boulders_multigoal"
+	gameFilename = "examples.gridphysics.simpleGame_push_boulders"
 	# gameFilename = "examples.gridphysics.waypointtheory" 
 	# gameFilename = "examples.gridphysics.simpleGame_teleport"
-	# gameFilename = "examples.gridphysics.movers3c"
-	gameFilename = "examples.gridphysics.scoretest" 
+	# gameFilename = "examples.gridphysics.demo_dodge"
+	# gameFilename = "examples.gridphysics.scoretest" 
+	# gameFilename = "examples.gridphysics.demo_transform_small" 
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
@@ -455,12 +491,13 @@ if __name__ == "__main__":
 	print ""
 	print "Initializing learner. Playing", gameFilename
 	ql = QLearner(rle, gameString, levelString, alpha=1, epsilon=.5, gamma=.9, episodes=1000)
+	# ql.getBestActionsForPlayout(False, True)
 	# for x in range(10):
 	# 	print '{0}\r'.format(x),
 	# print
 	# embed()
 	t1 = time.time()
-	ql.learn(500, satisfice=200)
+	ql.learn(3000, satisfice=1000)
 	t2 = time.time() - t1
 	print "done in {} seconds".format(t2)
 	# ql.learn(100, satisfice=False)

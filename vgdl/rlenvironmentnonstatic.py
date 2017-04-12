@@ -66,6 +66,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self._postInitReset()
         self._game.reset()
         self._game.all_objects = self._game.getObjects() # Save all objects, some which may be killed in game
+        self._game.ignoreList = [] ## another way to mark objects that shouldn't be processed when doing induction (that is, collision objects)
         self.makeSymbolDict()
 
 

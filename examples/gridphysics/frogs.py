@@ -6,10 +6,11 @@ Logs spawn randomly, but trucks wrap around the screen and come back.
 @author: Tom Schaul
 '''
 
-frog_level = """
+level = """
 
 wwwwwwwwwwwwwwwwwwwwwwwwwwww
-w           wGw            w
+w            G             w
+w                          w
 w00==000000===0000=====000=2
 w0000====0000000000====00012
 w00===000===000====0000===02
@@ -23,7 +24,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 
-frog_game = """
+game = """
 
 BasicGame
     SpriteSet
@@ -37,7 +38,7 @@ BasicGame
             fasttruck  > speed=0.2  color=ORANGE
             slowtruck  > speed=0.1  color=RED
         # defining 'wall' last, makes the walls show on top of all other sprites
-        wall > Immovable color=BLACK           
+        wall > Immovable         
         
     InteractionSet
         goal avatar  > killSprite
@@ -66,4 +67,4 @@ BasicGame
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(frog_game, frog_level)    
+    VGDLParser.playGame(game, level)    

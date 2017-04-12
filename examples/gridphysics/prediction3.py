@@ -2,7 +2,7 @@
 Simple interactions: get/lose points, can't pass through walls, object gets pushed.
 '''
 
-box_level = """
+level = """
 wwwwwwwwwwwwwwwwwwwwwwwwww
 wA                       w
 w    a             a     w
@@ -24,7 +24,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
         
-push_game = """
+game = """
 BasicGame frame_rate=30
     SpriteSet
         probe > Immovable color=BLUE
@@ -77,4 +77,7 @@ BasicGame frame_rate=30
 """
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(push_game, box_level)    
+    import random
+    levels = [l for l in locals().keys() if 'level' in l]
+    index = random.choice(range(len(levels)))
+    VGDLParser.playGame(game, locals()[levels[index]])     

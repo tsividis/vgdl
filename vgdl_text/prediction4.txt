@@ -1,0 +1,38 @@
+"""
+BasicGame
+    SpriteSet
+        structure > Immovable            
+            portalentry > Portal 
+                entry1 > stype=exit1 color=GRAY 
+            portalexit  > color=BROWN
+                exit1  > 
+        box > Immovable
+            box_a > color=BLUE
+            box_b > 
+                box_b1 >color=RED
+                box_b2 >color=PURPLE
+        probe > Immovable color=YELLOW
+        goal > Immovable color=BLACK
+        avatar > MovingAvatar color=WHITE
+    InteractionSet
+        goal   avatar    > killSprite
+        avatar wall      > stepBack
+        box avatar > bounceForward
+        avatar portalentry > teleportToExit
+        box_a portalentry > teleportToExit
+        box_b portalentry > undoAll
+        box_a probe > killSprite
+        probe box_b > bounceForward
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+        SpriteCounter stype=goal limit=0 win=True
+
+    LevelMapping
+        1 > box_a
+        2 > box_b1
+        3 > box_b2
+        i > entry1
+        o > exit1
+        p > probe  
+        g > goal      
+"""

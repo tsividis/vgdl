@@ -2,7 +2,7 @@
 Simple interactions: get/lose points, can't pass through walls, object gets pushed.
 '''
 
-box_level = """
+level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w      w          w                 w
 w      w       b  w         w       w
@@ -20,9 +20,10 @@ w      w               w            g
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
         
-push_game = """
+game = """
 BasicGame frame_rate=30
     SpriteSet
+        avatar > MovingAvatar color=DARKBLUE
         box > Passive
             box1 > color=RED
             box2 > color=LIGHTGREEN
@@ -32,8 +33,8 @@ BasicGame frame_rate=30
                 rand2 > color=BLUE
         wall > ResourcePack color=BLACK  
         missile > Missile
-            missile1 > color=YELLOW speed=0.2 orientation=UP
-            missile2 > color=PINK   speed=0.2 orientation=RIGHT
+            missile1 > color=YELLOW orientation=UP
+            missile2 > color=PINK orientation=RIGHT
         goal > Immovable color=BLACK
     LevelMapping
         w > wall   
@@ -49,7 +50,7 @@ BasicGame frame_rate=30
         avatar wall > stepBack 
         mover wall > stepBack
         box avatar > killSprite  
-        missile wall > reverseDirection
+        missile EOS > wrapAround
         missile avatar > killSprite
         missile missile > reverseDirection
         mover avatar > undoAll
@@ -68,4 +69,4 @@ also vice-versa.
 """
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(push_game, box_level)    
+    VGDLParser.playGame(game, level)    

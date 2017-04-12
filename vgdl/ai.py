@@ -22,8 +22,13 @@ class AStarWorld(object):
 		self.nest = game.getSprites('nest')
 		self.moving = game.getSprites('moving')
 		self.avatar = game.getSprites('avatar')
-		self.empty = [core.VGDLSprite(pos, (self.game.block_size, self.game.block_size)) for pos in self.game.emptyBlocks()]
-
+		self.empty = []
+		for pos in self.game.emptyBlocks():
+			emptySprite = core.VGDLSprite(pos, (self.game.block_size, self.game.block_size))
+			emptySprite.name = 'None'
+			self.empty.append(emptySprite)
+		# self.empty = [core.VGDLSprite(pos, (self.game.block_size, self.game.block_size)) for pos in self.game.emptyBlocks()]
+		# print self.empty
 		##print "food=%s, nest=%s, moving=%s" %(len(food), len(nest), len(moving))
 		##print "empty=%s"  %	(len(empty))
 		##print "total=%s" %(len(food)+len(nest)+len(moving)+len(empty))
@@ -36,6 +41,7 @@ class AStarWorld(object):
 		self.save_walkable_tiles()
 
 	def get_walkable_tiles(self):
+
 		return self.food + self.nest + self.moving + self.empty
 
 	def save_walkable_tiles(self):
@@ -44,6 +50,8 @@ class AStarWorld(object):
 		self.walkable_tile_indices = []
 
 		combined = self.food + self.nest + self.moving + self.empty + self.avatar
+		# print "getting walkable tiles"
+		# embed()
 		#print combined
 		for sprite in combined:
 			#print sprite
@@ -51,8 +59,6 @@ class AStarWorld(object):
 			index = self.get_index(tileX, tileY)
 			self.walkable_tile_indices.append(index)
 			self.walkable_tiles[index] = AStarNode(index, sprite)
-
-	
 
 	def get_index(self, tileX, tileY):
 		#return tileX  * self.game.width + tileY
@@ -100,7 +106,6 @@ class AStarWorld(object):
 
 		return node_best
 
-
 	def reconstruct_path(self, came_from, current):
 		#print self.get_tile_from_index(current.index)
 		if current.index in came_from:
@@ -109,7 +114,6 @@ class AStarWorld(object):
 			return p
 		else:
 			return [current]
-
 
 	def neighbor_nodes(self, node):
 		sprite = node.sprite;
@@ -145,22 +149,35 @@ class AStarWorld(object):
 		index = self.get_index(tileX, tileY)
 		startNode = AStarNode(index, startSprite)
 		
-		if 'pacman' in self.game.sprite_groups:
-			pacman = self.game.getSprites('pacman')[0]
-		elif 'avatar' in self.game.sprite_groups:
-			pacman = self.game.getSprites('avatar')[0]
-		elif 'hungry' in self.game.sprite_groups:
-			pacman = self.game.getSprites('hungry')[0]
-		elif 'powered' in self.game.sprite_groups:
-			pacman = self.game.getSprites('powered')[0]
-		
+		try:
+			if 'pacman' in self.game.sprite_groups:
+				pacman = self.game.getSprites('pacman')[0]
+			elif 'avatar' in self.game.sprite_groups:
+				pacman = self.game.getSprites('avatar')[0]
+			elif 'hungry' in self.game.sprite_groups:
+				pacman = self.game.getSprites('hungry')[0]
+			elif 'powered' in self.game.sprite_groups:
+				pacman = self.game.getSprites('powered')[0]
+		except:
+			print "didn't find avatar in AStar"
+			embed()
 		goalX, goalY = self.get_sprite_tile_position(pacman)
 		goalIndex = self.get_index(goalX, goalY)
 		goalNode = AStarNode(goalIndex, pacman)
 		
+		# print 'avatar', goalX, goalY
+		# print 'ghost', tileX, tileY
 		# logToFile('Goal: (%s,%s) --> (%s, %s)' %(tileX, tileY, goalX, goalY))
 
-		return self.search(startNode, goalNode)
+		path = self.search(startNode, goalNode)
+		# if len(path)>0:
+			# print [self.get_sprite_tile_position(p.sprite) for p in path]
+			# nextX, nextY = self.get_sprite_tile_position(path[1].sprite)
+			# if (nextX, nextY) == (8, 5):
+			# 	print "8, 5"
+			# 	embed()
+		return path
+		# return self.search(startNode, goalNode)
 
 	def search(self, start, goal):
 		# Initialize the variables.

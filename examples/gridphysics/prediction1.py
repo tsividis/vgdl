@@ -47,7 +47,7 @@ BasicGame frame_rate=30
         avatar wall > stepBack  
         box avatar > killSprite  
         missile wall > reverseDirection
-        missile avatar > killSprite 
+        avatar missile > killSprite 
         goal avatar > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False          

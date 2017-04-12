@@ -6,7 +6,7 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 
 level = """
 wwwwwwwww
-w  1    w
+w   1   w
 w Ap    w
 w 2  wgww
 w    w ww
@@ -34,7 +34,7 @@ wwwwwwwww
 game = """
 BasicGame frame_rate=30
     SpriteSet        
-        avatar > MovingAvatar color=DARKBLUE #cooldown=4 
+        avatar > MovingAvatar color=DARKBLUE
         goal > ResourcePack color=GOLD
         poison > ResourcePack limit=3 color=BROWN
         box  > ResourcePack 

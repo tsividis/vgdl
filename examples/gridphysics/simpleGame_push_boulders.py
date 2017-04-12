@@ -1,13 +1,13 @@
-'''
-Simple interactions: get/lose points, can't pass through walls, object gets pushed.
-'''
 
+
+## Planner can solve this. Current' agent can't, becuase if it just explores its own interactions with single objects,
+## it never learns that pushing the box into the poison kills the poison.
 level = """
 wwwwwwwwwwwwwwwwww
-w    w  p        w
-w  1 w    p      w
-wA  q     2  w  ww
-wwwwww1  g   w  ww
+wA   w  p        w
+w 1  w    p      w
+w    q  g 2  w  ww
+wwwwww1      w  ww
 ww         q     w
 w   p    q     1 w
 w    2           w
@@ -15,6 +15,31 @@ w        2       w
 wwwwwwwwwwwwwwwwww
 """
 
+# level = """
+# wwwwwwwwwwwwwwwwwwww
+# w    1pw  p        w
+# ww     w    p      w
+# w   A1 p    2  w  ww
+# wwwwwww1  g    w  ww
+# ww           q     w
+# w   p    q       1 w
+# w    2             w
+# w        2         w
+# wwwwwwwwwwwwwwwwwwww
+# """
+
+# level = """
+# wwwwwwwwwwwwwwwwww
+# w    1    w  w   w
+# w  1 w    w   1 ww
+# wA   w    2    1ww
+# wwwwwwwwwwwwwww ww
+# ww        wq     w
+# w   p    qw      w
+# w    2           w
+# w g      2w      w
+# wwwwwwwwwwwwwwwwww
+# """
 
 game = """
 BasicGame frame_rate=30
@@ -39,8 +64,6 @@ BasicGame frame_rate=30
     InteractionSet
         avatar wall > stepBack  
         missile wall > reverseDirection
-        poison1 avatar > killSprite
-        poison2 avatar > killSprite
         avatar poison1 > killSprite
         avatar poison2 > killSprite
         goal avatar > killSprite
@@ -53,6 +76,7 @@ BasicGame frame_rate=30
         goal poison2 > undoAll
         box1 wall    > undoAll    
         box2 wall    > undoAll    
+        box1 box1 > undoAll
         poison1 box1 > killSprite
         poison2 box1 > killSprite
         poison1 box2 > undoAll

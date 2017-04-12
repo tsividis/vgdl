@@ -4,7 +4,16 @@ VGDL example: a simple dodge-the-bullets game
 @author: Tom Schaul
 '''
 
-bullet_level = """
+# level = """
+# wwwwwwwwwww
+# wA  w  < Gw
+# w   w-    w
+# w         w
+# w   < w ^ w
+# wwwwwwwwwww
+# """
+
+level = """
 wwwwwwwwwwwwwwwwwww
 wA  w  <  -      Gw
 w   w-            w
@@ -18,7 +27,7 @@ www     v       www
 wwwwwwwwwwwwwwwwwww
 """
 
-bullet_game = """
+game = """
 BasicGame
     SpriteSet
         avatar > MovingAvatar color=DARKBLUE
@@ -56,4 +65,4 @@ BasicGame
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(bullet_game, bullet_level)    
+    VGDLParser.playGame(game, level)    

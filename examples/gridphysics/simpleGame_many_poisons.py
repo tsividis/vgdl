@@ -1,6 +1,4 @@
-'''
-Simple interactions: get/lose points, can't pass through walls, object gets pushed.
-'''
+
 
 level = """
 wwwwwwwwwwwwwwwwww
@@ -80,15 +78,84 @@ w    1   2    1  w
 wwwwwwwwwwwwwwwwww
 """
 
+level7 = """
+wwwwwwwwwwwwwwwwww
+w    1    w  w   w
+w  1 w    w   1 ww
+wA   w    2    1ww
+wwwwwwwwwwwwwww ww
+ww        wq     w
+w   p    qw      w
+w    2           w
+w g      2w      w
+wwwwwwwwwwwwwwwwww
+"""
+
+
+# level9 = """
+# wwwwwwwwwwwwwwwwww
+# w    1    w  w   w
+# w  1 w    w   1 ww
+# wA   w    2    1ww
+# wwwwwwwwwwwwwww ww
+# ww        wq     w
+# w   p    qw      w
+# w    2           w
+# w g      2w      w
+# wwwwwwwwwwwwwwwwww
+# """
+
+
+# level10 = """
+# wwwwwwwwwwwwwwwwww
+# w    1    w  w   w
+# w  1 w    w   1 ww
+# wA   w    2    1ww
+# wwwwwwwwwwwwwww ww
+# ww        wq     w
+# w   p 1  qw      w
+# w   wwww         w
+# w g w    2w      w
+# wwwwwwwwwwwwwwwwww
+# """
+
+
+## Too hard as of now
+
+# level = """
+# wwwwwwwwwwwwwwwwww
+# w    1    w  w   w
+# w  1 w    2   1 ww
+# wA   w 1  w    1ww
+# wwwwwww wwwwwww ww
+# ww    w  wwq     w
+# w     w  q    w ww
+# w   w2  w www  w w
+# w g w  1 2       w
+# wwwwwwwwwwwwwwwwww
+# """
+
+# level = """
+# wwwwwwwwwwwwwwwwww
+# w    1    w  w   w
+# w  1 w    2   1 ww
+# wA   w    w    1ww
+# wwwwwwwwwwwwwww ww
+# ww        wq     w
+# w   w    q    w ww
+# w   w2    www  w w
+# w g w    2       w
+# wwwwwwwwwwwwwwwwww
+# """
 
 game = """
 BasicGame frame_rate=30
     SpriteSet        
         avatar > MovingAvatar color=DARKBLUE #cooldown=4 
-        goal > ResourcePack color=GOLD
+        goal > ResourcePack color=GREEN
         poison1 > ResourcePack color=BROWN
         poison2 > ResourcePack color=PINK
-        box1 > ResourcePack color=GREEN
+        box1 > ResourcePack color=GOLD
         box2 > ResourcePack color=LIGHTBLUE
         wall > Immovable color=BLACK      
         score > Resource color=PINK limit=10  
@@ -104,10 +171,10 @@ BasicGame frame_rate=30
     InteractionSet
         avatar wall > stepBack  
         missile wall > reverseDirection
-        poison1 avatar > killSprite
-        poison2 avatar > killSprite
         avatar poison1 > killSprite
         avatar poison2 > killSprite
+        poison1 avatar > killSprite
+        poison2 avatar > killSprite
         goal avatar > killSprite
         box1 avatar > bounceForward
         box2 avatar  > killSprite
@@ -116,9 +183,10 @@ BasicGame frame_rate=30
         goal wall > undoAll
         goal poison1 > undoAll
         goal poison2 > undoAll
+        box1 box1 > undoAll
         box1 wall    > undoAll    
         box2 wall    > undoAll    
-        box1 poison1 > undoAll
+        poison1 box1 > killSprite
         box2 poison1 > undoAll
         box1 poison2 > undoAll
         box2 poison2 > undoAll

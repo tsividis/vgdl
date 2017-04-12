@@ -129,7 +129,6 @@ BasicGame frame_rate=30
         goal wall > undoAll
         box wall    > undoAll
         box box     > bounceForward
-        box treasure > undoAll
         box poison > undoAll
     TerminationSet
         SpriteCounter stype=goal    limit=0 win=True

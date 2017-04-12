@@ -209,7 +209,7 @@ class Agent:
 if __name__ == "__main__":
 	# filename = "examples.gridphysics.simpleGame_resourceTest"
 
-	filename = "examples.gridphysics.simpleGame_preconditions" ## won't work until eventHandling() is corrected.
+	# filename = "examples.gridphysics.simpleGame_preconditions" ## won't work until eventHandling() is corrected.
 	# filename = "examples.gridphysics.simpleGame_inductionTest"
 	# filename = "examples.gridphysics.simpleGame_missile2"	
 	# filename = "examples.gridphysics.movers2d"	
@@ -217,9 +217,9 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.movers4"	
 
 	# filename = "examples.gridphysics.simpleGame_many_poisons_big"
-	# filename = "examples.gridphysics.simpleGame_push_boulders2"
+	# filename = "examples.gridphysics.simpleGame_push_boulders"
 	# filename = "examples.gridphysics.pushtest"
-	# filename = "examples.gridphysics.simpleGame_small"
+	filename = "examples.gridphysics.simpleGame_small"
 	# filename = "examples.gridphysics.new_object_test"	
 	# filename = "examples.gridphysics.push_boulders_multigoal_incremental"	
 

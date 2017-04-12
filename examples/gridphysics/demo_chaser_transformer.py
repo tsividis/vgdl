@@ -49,6 +49,7 @@ BasicGame frame_rate=30
         mover wall > stepBack
         box1 avatar > bounceForward
         box2 avatar > killSprite
+        box2 box1 > undoAll
         avatar rand > killSprite
         rand wall > stepBack  
         chaser wall > stepBack
