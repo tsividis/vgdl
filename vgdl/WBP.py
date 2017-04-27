@@ -11,6 +11,11 @@ class WBP(Planner):
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
 		self.vecDim = [rle.outdim[0]*rle.outdim[1], 2, self.T]
 		self.trueAtoms = set() ## set of atoms that have been true at some point thus far in the planner.
+		self.objectTypes = rle._game.sprite_groups.keys()
+		self.objectTypes.sort()
+		self.phiSize = sum([len(rle._game.sprite_groups[k]) for k in rle._game.sprite_groups.keys() if k not in ['wall', 'avatar']])
+		self.maxNumObjects = 6
+		self.trackTokens = False
 
 	def calculateAtoms(self, rle):
 		## Converts rle state into a long list of atoms of length Nx2xT
@@ -20,12 +25,56 @@ class WBP(Planner):
 
 		# TODO: Make implementation that considers avatar orientations. See p.3 of Geffner|Geffner paper.
 
-		vec = np.empty(self.vecDim)
+		# vec = np.empty(self.vecDim)
+		vec = []
 		state = rle._getSensors()
 		for i in range(len(state)):
-			vec[i] = self.factorizeBoolean(rle, state[i])
-			objIndicesAtLoc = self.factorizeBoolean(rle, state[i])
-		return vec
+			vec.extend(self.factorizeBoolean(rle, state[i]))
+		
+		if self.trackTokens:
+			present = []
+			for k in [t for t in self.objectTypes if t not in ['wall', 'avatar']]:
+				for o in rle._game.sprite_groups[k]:
+					if o not in rle._game.kill_list:
+						present.append(1)
+					else:
+						present.append(0)
+			ind = sum([present[i]*2**i for i in range(len(present))])
+			nums = list(np.zeros(2**self.phiSize))
+			nums[ind]=1
+			vec = vec+nums
+
+		# nums = present+absent
+		# print len(nums)
+		## Now add new information: # For each type of item, are there 0, 1, 2, ... maxNum on the board?
+		# for k in self.objectTypes:
+		# 	numOnBoard = len([o for o in rle._game.sprite_groups[k] if o not in rle._game.kill_list])
+		# 	lst = [1 if i==numOnBoard else 0 for i in range(self.maxNumObjects)]
+		# 	if numOnBoard>=self.maxNumObjects:
+		# 		lst.append(1)
+		# 	else:
+		# 		lst.append(0)
+		# 	invlst = [1 if l==0 else 0 for l in lst]
+		# 	both = lst+invlst
+		# 	nums.extend(both)
+		
+		# embed()
+		return np.array(vec)
+
+	# def getNumInFactorizedState(self, factorizedState, objType):
+	# 	phiSize = (self.maxNumObjects+1)*len(self.objectTypes)*2
+	# 	len(factorizedState)
+	# 	relevantPartOfState = factorizedState[-phiSize:]
+	# 	ind = self.objectTypes.index(objType)
+	# 	cut = relevantPartOfState[ind*(self.maxNumObjects+1)*2:ind*(self.maxNumObjects+1)*2+(self.maxNumObjects+1)]
+	# 	return len(factorizedState)-phiSize+ind*(self.maxNumObjects+1)*2+np.where(cut==1)[0], cut
+
+	# def getNumInFactorizedState(self, factorizedState, objType):
+
+	# 	relevantPartOfState = factorizedState[-phiSize:]
+	# 	ind = self.objectTypes.index(objType)
+	# 	cut = relevantPartOfState[ind*(self.maxNumObjects+1)*2:ind*(self.maxNumObjects+1)*2+(self.maxNumObjects+1)]
+	# 	return len(factorizedState)-phiSize+ind*(self.maxNumObjects+1)*2+np.where(cut==1)[0], cut
 
 	def factorize(self, rle, n):
 		## Decomposes into a list of numbers that are incides of [avatar, rle._obstypes.keys()]
@@ -59,20 +108,19 @@ class WBP(Planner):
 			else:
 				phi_present.append(0)
 		phi_notPresent = [0 if p==1 else 1 for p in phi_present]
-		return phi_present, phi_notPresent
+		mergedList = phi_present+phi_notPresent
+		# return phi_present, phi_notPresent
+		return mergedList
 
 	def factorizeBoolean(self, rle, n):
 		listLen = len(rle._obstypes.keys())+1
 		return self.indicesToBooleans(self.T, self.factorize(rle, n))
 
 	def findTrueTuples(self, node, k):
-
 		## returns all combinations of k-tuples that are true in node.
-		locs = np.where(node.state==1)
-		locTuples = [tuple([d[i] for d in locs]) for i in range(len(locs[0]))]
+		locTuples = np.where(node.state==1)[0]
 		if k==1:
 			return set(locTuples)
-		# kTuples = [frozenset(c) for c in list(itertools.combinations(locTuples, k))]
 
 		kTuples = [c for c in list(itertools.combinations(locTuples, k))]
 
@@ -80,18 +128,19 @@ class WBP(Planner):
 
 	def delta(self, node1, node2):
 		if node1 is None:
-			# return self.calculateNewAtoms(node2.state)
 			diff = np.where(node2.state==1)
 		else:
 			diff = np.where(node1.state!=node2.state)
-		diffTuples = [[d[i] for d in diff] for i in range(len(diff[0]))]
-		diffTuples = [tuple(d) for d in diffTuples if node2.state[d[0],d[1],d[2]]==1]
+		diffTuples = diff[0]
+		diffTuples = [d for d in diffTuples if node2.state[d]==1]
 		return set(diffTuples)
 
 
-	def novelty(self, node, k):
+	def novelty(self, node, k, update=False):
 		# Returns number of k-tuples of atoms that are newly true in node.
 		newAtoms = self.delta(node.parent, node)
+		# print "in novelty"
+		# embed()
 		if len(self.trueAtoms) > 0:
 			trueAtoms = self.findTrueTuples(node,1)
 			oldTrueAtoms = trueAtoms-newAtoms
@@ -105,93 +154,120 @@ class WBP(Planner):
 		else:
 			candidates = [frozenset(p) for p in list(itertools.combinations(newAtoms, k))]
 
-		# if k==1:
-		# 	newAtoms = self.delta(node.parent, node)
-		# 	candidates = [frozenset(p) for p in newAtoms]
-		# if k==2:
-		# 	newAtoms = self.delta(node.parent, node)
-		# 	if len(self.trueAtoms) > 0:
-		# 		trueAtoms = self.findTrueTuples(node,1)
-		# 		oldTrueAtoms = trueAtoms-newAtoms
-		# 		candidates = [frozenset(p) for p in list(itertools.product(newAtoms, oldTrueAtoms))]
-		# 	else:
-		# 		candidates = [frozenset(p) for p in list(itertools.combinations(newAtoms, 2))]
-		# elif k>2:
-		# 	newAtoms = self.delta(node.parent, node)
-		# 	if len(self.trueAtoms) > 0:
-		# 		trueAtoms = self.findTrueTuples(node,1)
-		# 		oldTrueAtoms = trueAtoms-newAtoms
-		# 		candidates = []
-		# 		for i in range(1,k+1):
-		# 			newPart = list(itertools.combinations(newAtoms, i))
-		# 			oldPart = list(itertools.combinations(oldTrueAtoms, k-i))
-
-		# 			unflattened = list(itertools.product(newPart, oldPart))
-		# 			flattened = [frozenset(u[0]+u[1]) for u in unflattened]	
-		# 			candidates.extend(flattened)
-		# 	else:
-		# 		candidates = [frozenset(p) for p in list(itertools.combinations(newAtoms, k))]
-			
-		# 	print "not implemented for k>2"
-		# 	embed()
+		node.candidates = candidates
+		print len(candidates)
 		newTuples = set()
 		for aT in candidates:
 			if aT not in self.trueAtoms:
-				self.trueAtoms.add(aT)
+				if update:
+					self.trueAtoms.add(aT)
 				newTuples.add(aT)
 		return len(newTuples)
 
 
-	def calculateNewAtoms(self, factoredState):
-		newStates = set()
-		for loc in range(self.vecDim[0]):
-			for phi in range(self.vecDim[1]):
-				if np.any(factoredState[loc][phi]==1):
-					objs = np.where(factoredState[loc][phi]==1)[0]
-					for o in objs:
-						if (loc, phi, o) not in self.trueAtoms:
-							self.trueAtoms.add((loc, phi, o))
-							print (loc, phi, o)
-							newStates.add((loc, phi, o))
-				else:
-					objs = np.where(factoredState[loc][phi]==0)[0]
-		## number of states that are made true for the first time.
-		return len(newStates)
-
-
 def BFS(rle, WBP, k):
 	Q = Queue()
-	visited = []#set()
-	rejected = []#set()
-	visitedStates = []
+	visited, rejected, visitedStates= [], [], []
 	start = Node(rle, WBP, [], None)
 	start.lastState = rle
 	visited.append(start)
 	visitedStates.append(rle)
 	Q.put(start)
+	minDist = 100
 	while not Q.empty():
 		current = Q.get()
-		win = current.eval()
-		novelty = WBP.novelty(current, k)
-		if novelty > 0:
-			# print "accepting"
+		win = current.eval(updateNoveltyDict=True)
+		# embed()
+		# novelty = WBP.novelty(current, k, update=True)
+		if current.novelty > 0:
 		# if current.state.tostring() not in visited:
 			visited.append(current.state.tostring())
 			visitedStates.append(current)
-			# print win
 			if win:
 				return current, visited, rejected, visitedStates
 			for a in ACTIONS:
 				child = Node(rle, WBP, current.actionSeq+[a], current)
 				Q.put(child)
 		else:
-			# print "pruning"
 			rejected.append(current)
-		# print ""
-		# print ""
-		# print "finished one round"
-		# embed()
+
 	return Q, visited, rejected, visitedStates
+
+def noveltyHeuristic(lst, rle, WBP, k, surrogateCall=False):
+	#returns the node in lst that has highest novelty measure
+	## you need to not change the noveltyDict when you evaluate the novelty. Only change the dict if you select the state!
+	maxNovelty = max([n.novelty for n in lst])
+	if maxNovelty==0:
+		return None
+	else:
+		bestNodes = [n for n in lst if n.novelty==maxNovelty]
+		if len(bestNodes)==1:
+			return bestNodes[0]
+		elif len(bestNodes)>1:
+		 	if not surrogateCall:
+		 		return rewardHeuristic(bestNodes, WBP, k, surrogateCall=True)
+		 	else:
+		 		return random.choice(bestNodes)
+		else:
+			print "found 0 nodes in noveltyHeuristic"
+			embed()
+
+def rewardHeuristic(lst, WBP, k, surrogateCall=False):
+	maxReward = max([n.reward for n in lst])
+	bestNodes = [n for n in lst if n.reward==maxReward]
+	if len(bestNodes)==1:
+		return bestNodes[0]
+	elif len(bestNodes)>1:
+	 	if not surrogateCall:
+	 		return noveltyHeuristic(bestNodes, WBP, k, surrogateCall=True)
+	 	else:
+	 		return random.choice(bestNodes)
+	else:
+		print "found 0 nodes in rewardHeuristic"
+		embed()
+
+#when you expand a node, evaluate its children on both heuristics, then place in the queue.
+## when you select a node from the queue, update the noveltyDict
+def BFS2(rle, WBP, k):
+	Q = []
+	visited, rejected, visitedStates = [], [], []
+	start = Node(rle, WBP, [], None)
+	start.lastState = rle
+	visited.append(start)
+	visitedStates.append(rle)
+	start.eval()
+	Q.append(start)
+	i=0
+	while len(Q)>0:
+		if i%2==0:
+			#What do you do if you only have states with novelty 0?
+			## you would pick from the rewardHeuristic, and would pick randomly if they all had value 0.
+			current = noveltyHeuristic(Q, rle, WBP, k)
+		else:
+			## Similarly, if thre are tied rewards and you get states with novelty 0, you will still return one of these.
+			## in the case where rewards were 0 and novelties were 0 we should stop.
+			current = rewardHeuristic(Q, rle, WBP, k)
+		
+		## This is not nec. right.
+		## TODO: make heuristics return None if they're forced to tie-break but rewards and novelties are 0.
+		if current is None:
+			return Q, visited, rejected, visitedStates
+		else:
+			# embed()
+			Q.remove(current)
+			visited.append(current.state.tostring())
+			visitedStates.append(current)
+			if current.win:
+				return current, visited, rejected, visitedStates
+			else:
+				for a in ACTIONS:
+					child = Node(rle, WBP, current.actionSeq+[a], current)
+					child.eval()
+					Q.append(child)		
+			i+=1
+	return Q, visited, rejected, visitedStates
+
+
 
 class Node():
 	def __init__(self, rle, WBP, actionSeq, parent):
@@ -199,40 +275,53 @@ class Node():
 		self.WBP = WBP
 		self.actionSeq = actionSeq
 		self.parent = parent
+		self.novelty = None
+		self.reward = None
 		self.children = None
 		self.lastState = None
+		self.reconstructed=False
 
 	# try to copy parent lastState. Then take action and store as current lastState.
 	## if that fails, replay from beginning and store as current lastState
-	def eval(self):
+	def eval(self, updateNoveltyDict=False):
 		# try:
 		if self.parent and self.parent.lastState is not None:
 			try:
 				vrle = copy.deepcopy(self.parent.lastState)
 				if len(self.actionSeq)>0:
 					vrle.step(self.actionSeq[-1])
-					terminal = vrle._isDone()[0]
+					terminal, win = vrle._isDone()
+					# terminal = vrle._isDone()[0]
 			except:
 				print "conditions met but copy failed"
 				embed()
 		else:
 		# except:
+			self.reconstructed=True
 			print "copy failed; replaying from top"
 			# embed()
 			vrle = copy.deepcopy(rle)
-			terminal = vrle._isDone()[0]
+			terminal, win = vrle._isDone()
+			# terminal = vrle._isDone()[0]
 			i=0
 			while not terminal and len(self.actionSeq)>i:
 				vrle.step(self.actionSeq[i])
-				terminal = vrle._isDone()[0]
+				terminal, win = vrle._isDone()
+				# terminal = vrle._isDone()[0]
 				i += 1
 		if len(self.actionSeq)>0:
 			print self.actionSeq[-1]
 		print vrle.show()
+		# if len(vrle._game.sprite_groups['probe'])==0:
+			# self.WBP.findAvatarInRLE(vrle) == (2,4):
+			# embed()
 		# print "depth", len(self.actionSeq)
 		self.state = self.WBP.calculateAtoms(vrle)
 		self.lastState = vrle
-		return vrle._isDone()[1]
+		self.win = win
+		self.novelty = self.WBP.novelty(self, 2, update=updateNoveltyDict)
+		self.reward = vrle._game.score
+		return win
 
 	def isTerminal(self):
 		return self.rle._isDone()[0]
@@ -266,7 +355,9 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.movers3c" ##solved!!
 	# gameFilename = "examples.gridphysics.rivercross" ## solved!!
 	# gameFilename = "examples.gridphysics.demo_dodge"  ##solved!!
-	# gameFilename = "examples.gridphysics.demo_chaser"  ##solved!
+	gameFilename = "examples.gridphysics.multigoal_and"  ##solved!!
+
+	# gameFilename = "examples.gridphysics.demo_chaser"  ##easy version solved!
 	# gameFilename = "examples.gridphysics.simpleGame4_small"
 	# gameFilename = "examples.gridphysics.movers5" ##solved!!
 
@@ -274,43 +365,39 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.demo_preconditions" ## k=2 works!
 	# gameFilename = "examples.gridphysics.waterfall" ##solved!! 
 	# gameFilename = "examples.gridphysics.frogs" ## worked with k=2.
+	# gameFilename = "examples.gridphysics.pick_apples" ## worked with expanded phi!
+	# gameFilename = "examples.gridphysics.scoretest" ##2BFS solves it!
 
-	# gameFilename = "examples.gridphysics.scoretest" 
-	gameFilename = "examples.gridphysics.pick_apples" 
 	# gameFilename = "examples.gridphysics.portals" ## stochasticity breaks it
 
-	# gameFilename = "examples.gridphysics.demo_transform" ## won't work until RLE can handle transformations.
+	# gameFilename = "examples.gridphysics.demo_helper"  ##easy version solved!
 
+
+	# gameFilename = "examples.gridphysics.demo_sokoban"
+	## boulderdash: game freezes.
+	# gameFilename = "examples.gridphysics.butterflies" no
+	# gameFilename = "examples.gridphysics.chase" no
+	# gameFilename = "examples.gridphysics.survivezombies" # no
+
+	# gameFilename = "examples.gridphysics.demo_transform" ## won't work until RLE can handle transformations.
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
 
 	p = IW(rle, gameString, levelString, gameFilename, True, 1)
-	# embed()
-
-
-	# node1 = Node(rle, p, [], None)
-	# node1.eval()
-	# embed()
-	# p.novelty(node1,2)
-
-	# rle.step((-1,0))
-	# node2 = Node(rle, p, [(-1,0)], node1)
-	# node2.eval()
-	# p.novelty(node2,2)
-	# rle.step((1,0))
-	# node3 = Node(rle, p, [(1,0)], node2)
-	# node3.eval()
-	# p.novelty(node3,2)
-	# embed()
-
-	## To evaluate novelty properly, you want to take everything that is newly true, form tuples with all other true things in that state, and compare *those*
-	##  with what was already true.
-
+	# p.trackTokens = True
 	t1 = time.time()
 	last, visited, rejected, visitedStates = BFS(rle, p, 2)
-	print len(visited), len(rejected)
+	# last, visited, rejected, visitedStates = BFS2(rle, p, 2)
 	print time.time()-t1
+	print len(visited), len(rejected)
+	if not hasattr(last, 'actionSeq'):
+		print "Failed without tracking tokens. re-trying"
+		p.trackTokens = True
+		t1 = time.time()
+		last, visited, rejected, visitedStates = BFS(rle, p, 2)
+		print time.time()-t1
+		print len(visited), len(rejected)
 	embed()
 
