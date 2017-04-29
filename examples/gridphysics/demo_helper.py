@@ -1,4 +1,42 @@
 
+
+# level = """
+# wwwwwwwwwwwwww
+# w    b       w
+# w a  b   x   w
+# w    b       w
+# w    bA      w
+# wwwwwwwwwwwwww
+# """
+
+
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwww
+# w                 b    w
+# w              b  b  a w
+# w   a             bbbbbw
+# w       w   a      x   w
+# w   A                  w
+# wwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwww
+# w                 b    w
+# w              b  b A  w
+# w   a             wwwwww
+# w       w   a      x   w
+# w                      w
+# w                 bbbb w
+# w              www  wwww
+# wbbbbbbb     b         w
+# w      b               w
+# w  a   b        x      w
+# w      b               w
+# w      b   a           w
+# wwwwwwwwwwwwwwwwwwwwwwww
+# """
+
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                 b    b            w
@@ -28,7 +66,7 @@ BasicGame frame_rate=30
             rand > RandomNPC cooldown=5
                 rand1 > color=LIGHTORANGE
                 rand2 > color=BROWN
-        chaser > Chaser color=BLUE stype=box1 cooldown=5
+        chaser > Chaser color=BLUE stype=box1 cooldown=0
         wall > Immovable
         missile > Missile
             missile1 > color=YELLOW orientation=RIGHT
@@ -47,13 +85,13 @@ BasicGame frame_rate=30
     InteractionSet
         avatar wall > stepBack 
         mover wall > stepBack
-        box1 avatar > bounceForward
+        #box1 avatar > bounceForward
         box2 avatar > killSprite
         avatar rand > killSprite
         rand wall > stepBack  
         chaser wall > stepBack
         box1 chaser > killSprite
-        box2 chaser > undoAll
+        chaser box2 > stepBack
         missile EOS > wrapAround
         missile avatar > killSprite
         missile missile > reverseDirection

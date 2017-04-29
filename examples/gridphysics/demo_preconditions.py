@@ -22,11 +22,16 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 
 # level = """
 # wwwwwwwwwwwww
-# w           w
-# w           w
-# w    m  ppppw
-# w A     p  gw
+# wm          w
+# w      A    w
+# w       ppppw
+# w       p  gw
 # wwwwwwwwwwwww
+# """
+# level = """
+# wwwww
+# wmA g
+# wwwww
 # """
 
 level = """

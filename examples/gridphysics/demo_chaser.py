@@ -1,21 +1,97 @@
 
+
+# level = """
+# wwwwwwwwwwwwwwww
+# w  A           w
+# w   w       x  w
+# w   w          w
+# w   w          w
+# w   w x        w
+# w   w          w
+# w   w          w
+# w        g     w
+# wwwwwwwwwwwwwwww
+
+# """
+
+# level = """
+# wwwwwwwwwwwwwww
+# w    A        w
+# w          x  w
+# w             w
+# w             w
+# w    x        w
+# w             w
+# w             w
+# w    g        w
+# wwwwwwwwwwwwwww
+# """
+
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                 w                 w
+# w              a  w         w       w
+# w   a        x    w         w       w
+# w                           w   x   w
+# w       A                   w       w
+# w                           w       w
+# w               a           w     g w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+     
+# level = """
+# wwwwwwwwwwwwwwwwwww
+# w                 w
+# w         w       w
+# w         w       w
+# w         w       w
+# w         w       w
+# w         w       w
+# w         w       w
+# w         wwwwwwwww
+# w      A          w
+# w                 w
+# w    w     x      w
+# w    w            w
+# w    w            g
+# wwwwwwwwwwwwwwwwwww
+# """
+
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                 w                 w
-w              a  w         w       w
-w   a             w         w       w
-w                     A     w   x   w
-w                           w       w
-w                           w       w
-w               a           w       w
-w                           wwwwwwwww
-w wwwwww                            w
-w      w         2       x       a  w
-w      w               w            w
-w      w               w            w
-w      w               w            g
+w                 w         w       w
+w                 w         w       w
+w                 w         w       w
+w                 w         w       w
+w                 w         w       w
+w                 w         w       w
+w                 w         wwwwwwwww
+w wwwwww          w      A          w
+w      w          w                 w
+w      w          w    w     x      w
+w      w          w    w            w
+w      w          w    w            g
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
+
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                 w                 w
+# w              a  w         w       w
+# w   a             w         w       w
+# w                     A     w   x   w
+# w                           w       w
+# w                           w       w
+# w               a           w       w
+# w                           wwwwwwwww
+# w wwwwww                            w
+# w      w         2       x       a  w
+# w      w               w            w
+# w      w               w            w
+# w      w               w            g
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
         
 game = """
 BasicGame frame_rate=30
@@ -63,11 +139,7 @@ BasicGame frame_rate=30
         SpriteCounter stype=avatar  limit=0 win=False          
         SpriteCounter stype=goal limit=0 win=True
 """
-"""
-show agent killing a moving item.
-same prediction should be highest for other moving items of same speed, then for non-moving items.
-also vice-versa.
-"""
+
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     import random

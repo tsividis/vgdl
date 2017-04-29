@@ -3,6 +3,12 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 '''
 
 
+# level = """
+# wwwwwww
+# wA   gw
+# wwwwwww
+# """
+
 
 level = """
 wwwwwwwww
@@ -69,4 +75,4 @@ BasicGame frame_rate=30
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(game, level1)    
+    VGDLParser.playGame(game, level )    

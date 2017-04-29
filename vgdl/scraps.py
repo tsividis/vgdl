@@ -1,3 +1,64 @@
+
+	## from WBP.py
+	def calculateAtoms(self, rle):
+		## Converts rle state into a long list of atoms of length Nx2xT
+		## (N: num of grid cells. 2: there / not there. T: Number of object types in the game).
+		## For a 3x5 grid, we first flatten into a single column of len=15. (rle._getSensors() already has this representation)
+		## atomList(m,n): whether object n is at location m.
+
+		# TODO: Make implementation that considers avatar orientations. See p.3 of Geffner|Geffner paper.
+
+		# vec = np.empty(self.vecDim)
+		vec = []
+		state = rle._getSensors()
+		for i in range(len(state)):
+			vec.extend(self.factorizeBoolean(rle, state[i]))
+		
+		if self.trackTokens:
+			present = []
+			for k in [t for t in self.objectTypes if t not in ['wall', 'avatar']]:
+				for o in rle._game.sprite_groups[k]:
+					if o not in rle._game.kill_list:
+						present.append(1)
+					else:
+						present.append(0)
+			ind = sum([present[i]*2**i for i in range(len(present))])
+			nums = list(np.zeros(2**self.phiSize))
+			nums[ind]=1
+			vec = vec+nums
+
+		# nums = present+absent
+		# print len(nums)
+		## Now add new information: # For each type of item, are there 0, 1, 2, ... maxNum on the board?
+		# for k in self.objectTypes:
+		# 	numOnBoard = len([o for o in rle._game.sprite_groups[k] if o not in rle._game.kill_list])
+		# 	lst = [1 if i==numOnBoard else 0 for i in range(self.maxNumObjects)]
+		# 	if numOnBoard>=self.maxNumObjects:
+		# 		lst.append(1)
+		# 	else:
+		# 		lst.append(0)
+		# 	invlst = [1 if l==0 else 0 for l in lst]
+		# 	both = lst+invlst
+		# 	nums.extend(both)
+		
+		# embed()
+		return np.array(vec)
+
+	# def getNumInFactorizedState(self, factorizedState, objType):
+	# 	phiSize = (self.maxNumObjects+1)*len(self.objectTypes)*2
+	# 	len(factorizedState)
+	# 	relevantPartOfState = factorizedState[-phiSize:]
+	# 	ind = self.objectTypes.index(objType)
+	# 	cut = relevantPartOfState[ind*(self.maxNumObjects+1)*2:ind*(self.maxNumObjects+1)*2+(self.maxNumObjects+1)]
+	# 	return len(factorizedState)-phiSize+ind*(self.maxNumObjects+1)*2+np.where(cut==1)[0], cut
+
+	# def getNumInFactorizedState(self, factorizedState, objType):
+
+	# 	relevantPartOfState = factorizedState[-phiSize:]
+	# 	ind = self.objectTypes.index(objType)
+	# 	cut = relevantPartOfState[ind*(self.maxNumObjects+1)*2:ind*(self.maxNumObjects+1)*2+(self.maxNumObjects+1)]
+	# 	return len(factorizedState)-phiSize+ind*(self.maxNumObjects+1)*2+np.where(cut==1)[0], cut
+
 	def getManhattanDistance(self, state): ##used to be passed self, state
 		"""
 		expect avatar to be called 'avatar' in class section of theory

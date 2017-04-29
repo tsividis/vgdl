@@ -1,15 +1,45 @@
+
+# level = """
+# wwwwwwwwww
+# wx  A   xw
+# wwwwwwwwww
+# """
+
+
+# level = """
+# wwwwwwwwwwwwww
+# w    x       w
+# w   xAx      w
+# w            w
+# wwwwwwwwwwwwww
+# """
+
 level = """
-wwwwwwwwwwwwwwwwwwwwwwwwww
-w                        w
-w    a    x              w
-w     a          a       w
-w            z           w
-w                  z     w
-w   x   Az           z   w
-w              a  x      w
-w                        w
-wwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwww
+w A            w
+w           x  w
+w              w
+w  x   w       w
+w              w
+w              w
+w       x      w
+wwwwwwwwwwwwwwww
 """
+
+
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# wA                       w
+# w    a    x              w
+# w     a          a       w
+# w            z           w
+# w                  z     w
+# w   x    z           z   w
+# w              a  x      w
+# w                        w
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
         
 game = """
 BasicGame frame_rate=30
@@ -26,8 +56,7 @@ BasicGame frame_rate=30
             box_b >        
                 box4 > color=LIGHTBLUE
                 box5 > color=PINK
-                box6 > color=YELLOW       
-        goal > Immovable color=BLACK  
+        goal2 > Immovable color=ORANGE  
         avatar > MovingAvatar color=WHITE
         wall > Immovable
     LevelMapping
@@ -37,26 +66,28 @@ BasicGame frame_rate=30
         c > box3
         d > box4
         e > box5
-        f > box6
         x > probe
         z > converter1
         y > converter2
-        g > goal
+        g > goal2
     InteractionSet
         avatar wall > stepBack
-        avatar box6 > undoAll 
         box avatar > bounceForward
         box probe > undoAll
         box box > undoAll
         box wall > undoAll
+        probe wall > undoAll
+        converter wall > undoAll
+        probe converter > undoAll
+        probe probe > undoAll
         converter box > bounceForward
+        #avatar probe > changeScore value=.5
         probe avatar > killSprite
-        converter avatar > transformTo stype=box6
         avatar converter > undoAll
-        goal avatar > killSprite
+        goal2 avatar > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False          
-        SpriteCounter stype=converter1 limit=0 win=True
+        SpriteCounter stype=probe limit=0 win=True
 """
 """
 

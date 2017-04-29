@@ -6,7 +6,7 @@ Logs spawn randomly, but trucks wrap around the screen and come back.
 @author: Tom Schaul
 '''
 
-frog_level = """
+level = """
 
 wwwwwwwwwwwwwwwwwwwwwwwwwwww
 w           wGw            w
@@ -23,7 +23,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 
-frog_game = """
+game = """
 
 BasicGame
     SpriteSet
@@ -66,4 +66,4 @@ BasicGame
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(frog_game, frog_level)    
+    VGDLParser.playGame(game, level)    

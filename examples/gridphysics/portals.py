@@ -4,7 +4,61 @@ VGDL example: a simple teleport-and-avoid-fire game.
 @author: Tom Schaul
 '''
 
-portal_level = """
+
+# level = """
+# wwwwwwww
+# wAiwwwww
+# wwwwwwww
+# w o wwww
+# wwwwwwww
+# w   o Gw
+# wwwwwwww
+# """
+
+# level = """
+# wwwwwwwwww
+# w        w
+# w        w
+# w    i   w
+# w    A   w
+# w        w
+# w        w
+# w    o   w
+# wo      Gw
+# wwwwwwwwww
+# """
+
+# level = """
+# wwwwwwwwwwwwwwwwwww
+# wA  w  v  <  wO  Gw
+# w   w        wx   w
+# www w        wwww w
+# w     w        w  w
+# w <   wwwwwww     w
+# w      x     <    w
+# wwwww     www     w
+# w         o       w
+# wwwIw   v    x  www
+# wwwwwwwwwwwwwwwwwww
+# """
+
+#Simplified; fewer portals.
+# level = """
+# wwwwwwwwwwwwwwwwwww
+# wA  w  v  <  wO  Gw
+# w  iw        wx   w
+# wwwww        wwwwww
+# w     w r      w  w
+# w <   wwwwwww    ww
+# w  r   x     <    w
+# wwwww     www     w
+# w         o       w
+# wwwIw   v    x  www
+# wwwwwwwwwwwwwwwwwww
+# """
+
+# Original.
+level = """
 wwwwwwwwwwwwwwwwwww
 wA  w  v  <  wO  Gw
 wo iw        wx   w
@@ -18,7 +72,7 @@ wwwIw   v    x  www
 wwwwwwwwwwwwwwwwwww
 """
 
-portal_game = """
+game = """
 BasicGame
     SpriteSet
         bullet > color=RED
@@ -63,4 +117,4 @@ BasicGame
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(portal_game, portal_level)    
+    VGDLParser.playGame(game, level)    

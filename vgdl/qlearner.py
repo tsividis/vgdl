@@ -1,6 +1,5 @@
 from planner import *
 
-
 class QLearner(Planner):
 	def __init__(self, rle, gameString, levelString, gameFilename, display, episodes=100, memory=None, \
 		alpha=1, epsilon=.1, gamma=.9, partitionWeights = [20,1, 1], stepLimit=100, anneal=False):
@@ -13,7 +12,7 @@ class QLearner(Planner):
 		self.QVals = defaultdict(lambda:0)
 		self.memory = memory ## provide dicts of Q-values from previous runs. Use some function to smoothe
 		self.maxPseudoReward = 1
-		self.pseudoRewardDecay = .99
+		self.pseudoRewardDecay = .9
 		self.partitionWeights = partitionWeights
 		self.stepLimit=stepLimit
 		self.heuristicDecay = .99
@@ -39,13 +38,18 @@ class QLearner(Planner):
 	def getAvoidanceScores(self, s, a):
 		decay=.9
 		avatarLoc = self.findAvatarInState(s)
-		if avatarLoc:
+		if avatarLoc and len(self.killerObjects)>0:
 			enemyLocs = []
 			for enemy in self.killerObjects:
-				enemyLocs.extend(self.findObjectsInState(s, enemy))
+				pos = self.findObjectsInState(s, enemy)
+				if pos is not None:
+					enemyLocs.extend(pos)
 			nextLoc = avatarLoc[0]+a[1], avatarLoc[1]+a[0]
 			penalties = [decay**manhattanDist(nextLoc, e) for e in enemyLocs]
-			return -np.mean(penalties)
+			if len(penalties)>0:
+				return -np.mean(penalties)
+			else:
+				return 0.
 		else:
 			return 0.
 
@@ -102,9 +106,7 @@ class QLearner(Planner):
 				avoidanceFunction = self.getAvoidanceScores(s,a)/sumAvoidanceScores
 
 			# print a
-			# print QValFunction, pseudoRewardFunction, avoidanceFunction
 			# print rewardCoefficient*QValFunction, heuristicCoefficient*pseudoRewardFunction, avoidanceCoefficient*avoidanceFunction
-			
 			funcVal = rewardCoefficient*QValFunction + \
 						heuristicCoefficient*pseudoRewardFunction + \
 						avoidanceCoefficient*avoidanceFunction
@@ -244,7 +246,7 @@ class QLearner(Planner):
 		return
 if __name__ == "__main__":
 	
-	# gameFilename = "examples.gridphysics.simpleGame_push_boulders_multigoal"
+	# gameFilename = "examples.gridphysics.simpleGame_teleport"
 	# gameFilename = "examples.gridphysics.waypointtheory" 
 	# gameFilename = "examples.gridphysics.demo_teleport"
 	# gameFilename = "examples.gridphysics.movers3c"
@@ -255,7 +257,10 @@ if __name__ == "__main__":
 
 	# gameFilename = "examples.gridphysics.demo_dodge" 
 	# gameFilename = "examples.gridphysics.rivercross" 
-	gameFilename = "examples.gridphysics.demo_chaser" 
+	# gameFilename = "examples.gridphysics.demo_chaser" 
+
+	gameFilename = "examples.gridphysics.simpleGame4_small"
+
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
@@ -267,10 +272,12 @@ if __name__ == "__main__":
 	# print ""
 	# print "Initializing learner. Playing", gameFilename
 	ql = QLearner(rle, gameString, levelString, gameFilename, display=True, alpha=1, epsilon=.5, gamma=.9, \
-		episodes=1000, partitionWeights=[20,1, .01], stepLimit=100, anneal=True)
-	ql.killerObjects = ['chaser']
-	# # ql.immovables = ['wall', 'poison']
+		episodes=500, partitionWeights=[20,1,0], stepLimit=200, anneal=True)
+	ql.killerObjects = ['chaser', 'random', 'missile1', 'missile2']
 
+	embed()
+
+	# # ql.immovables = ['wall', 'poison']
 	# t1 = time.time()
 	ql.learn(satisfice=0)
 	embed()

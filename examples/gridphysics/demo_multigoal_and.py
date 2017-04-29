@@ -26,14 +26,26 @@
 level = """
 wwwwwwwwwwwwwwwwwwww
 w  A             h w
-w          b       w
-w                b w
+w                  w
+w                  w
 w            h     w
 w        p     wwwww
 w   p       p      w
 w       h      w  hw
 wwwwwwwwwwwwwwwwwwww
 """
+
+# level = """
+# wwwwwwwwwwwwwwwwwwww
+# w  A             h w
+# w          b       w
+# w                b w
+# w            h     w
+# w        p     wwwww
+# w   p       p      w
+# w       h      w  hw
+# wwwwwwwwwwwwwwwwwwww
+# """
 
 # level2 = """
 # wwwwwwwwwwwwwwwwwwww

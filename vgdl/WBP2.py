@@ -13,6 +13,7 @@ class WBP(Planner):
 		self.trueAtoms = set() ## set of atoms that have been true at some point thus far in the planner.
 		self.objectTypes = rle._game.sprite_groups.keys()
 		self.objectTypes.sort()
+		self.phiSize = sum([len(rle._game.sprite_groups[k]) for k in rle._game.sprite_groups.keys()])
 		self.maxNumObjects = 6
 
 	def calculateAtoms(self, rle):
@@ -29,28 +30,70 @@ class WBP(Planner):
 		for i in range(len(state)):
 			vec.extend(self.factorizeBoolean(rle, state[i]))
 			# vec[i] = self.factorizeBoolean(rle, state[i])
+		
+		present, absent = [], []
+
+		# if len(rle._game.kill_list)==0:
+		# 	nums = [1,0,0,0,0,0,0,0]
+		# elif len(rle._game.kill_list)==1:
+		# 	if rle._game.sprite_groups['probe'][0] in rle._game.kill_list:
+		# 		nums = [0,1,0,0,0,0,0,0]
+		# 	elif rle._game.sprite_groups['probe'][1] in rle._game.kill_list:
+		# 		nums = [0,0,1,0,0,0,0,0]
+		# 	elif rle._game.sprite_groups['probe'][2] in rle._game.kill_list:
+		# 		nums = [0,0,0,1,0,0,0,0]
+		# elif len(rle._game.kill_list)==2:
+		# 	if rle._game.sprite_groups['probe'][0] not in rle._game.kill_list:
+		# 		nums = [0,0,0,0,1,0,0,0]
+		# 	if rle._game.sprite_groups['probe'][1] not in rle._game.kill_list:
+		# 		nums = [0,0,0,0,0,1,0,0]
+		# 	if rle._game.sprite_groups['probe'][2] not in rle._game.kill_list:
+		# 		nums = [0,0,0,0,0,0,1,0]
+		# elif len(rle._game.kill_list)==3:
+		# 	nums = [0,0,0,0,0,0,0,1]
+
+		# embed()
+		# for k in self.objectTypes:
+		# 	for o in rle._game.sprite_groups[k]:
+		# 		if o not in rle._game.kill_list:
+		# 			present.append(1)
+		# 			absent.append(0)
+		# 		else:
+		# 			present.append(0)
+		# 			absent.append(1)
+		# nums = present+absent
+		# print len(nums)
 		## Now add new information: # For each type of item, are there 0, 1, 2, ... maxNum on the board?
-		nums = []
-		for k in self.objectTypes:
-			numOnBoard = len([o for o in rle._game.sprite_groups[k] if o not in rle._game.kill_list])
-			lst = [1 if i==numOnBoard else 0 for i in range(self.maxNumObjects)]
-			if numOnBoard>=self.maxNumObjects:
-				lst.append(1)
-			else:
-				lst.append(0)
-			nums.extend(lst)
-		vec = vec+nums
+		# for k in self.objectTypes:
+		# 	numOnBoard = len([o for o in rle._game.sprite_groups[k] if o not in rle._game.kill_list])
+		# 	lst = [1 if i==numOnBoard else 0 for i in range(self.maxNumObjects)]
+		# 	if numOnBoard>=self.maxNumObjects:
+		# 		lst.append(1)
+		# 	else:
+		# 		lst.append(0)
+		# 	invlst = [1 if l==0 else 0 for l in lst]
+		# 	both = lst+invlst
+		# 	nums.extend(both)
+		
+
+		# vec = vec+nums
 		# embed()
 		return np.array(vec)
 
-	def getNumInFactorizedState(self, factorizedState, objType):
-		phiSize = (self.maxNumObjects+1)*len(self.objectTypes)
-		relevantPartOfState = factorizedState[-phiSize:]
-		ind = self.objectTypes.index(objType)
-		cut = relevantPartOfState[ind*(self.maxNumObjects+1):ind*(self.maxNumObjects+1)+self.maxNumObjects+1]
-		print ind
-		return len(factorizedState)-phiSize+np.where(cut==1)[0]
-		# return relevantPartOfState[ind*(self.maxNumObjects+1):ind*(self.maxNumObjects+1)+self.maxNumObjects+1]
+	# def getNumInFactorizedState(self, factorizedState, objType):
+	# 	phiSize = (self.maxNumObjects+1)*len(self.objectTypes)*2
+	# 	len(factorizedState)
+	# 	relevantPartOfState = factorizedState[-phiSize:]
+	# 	ind = self.objectTypes.index(objType)
+	# 	cut = relevantPartOfState[ind*(self.maxNumObjects+1)*2:ind*(self.maxNumObjects+1)*2+(self.maxNumObjects+1)]
+	# 	return len(factorizedState)-phiSize+ind*(self.maxNumObjects+1)*2+np.where(cut==1)[0], cut
+
+	# def getNumInFactorizedState(self, factorizedState, objType):
+
+	# 	relevantPartOfState = factorizedState[-phiSize:]
+	# 	ind = self.objectTypes.index(objType)
+	# 	cut = relevantPartOfState[ind*(self.maxNumObjects+1)*2:ind*(self.maxNumObjects+1)*2+(self.maxNumObjects+1)]
+	# 	return len(factorizedState)-phiSize+ind*(self.maxNumObjects+1)*2+np.where(cut==1)[0], cut
 
 	def factorize(self, rle, n):
 		## Decomposes into a list of numbers that are incides of [avatar, rle._obstypes.keys()]
@@ -106,7 +149,6 @@ class WBP(Planner):
 
 	def delta(self, node1, node2):
 		if node1 is None:
-			# return self.calculateNewAtoms(node2.state)
 			diff = np.where(node2.state==1)
 		else:
 			diff = np.where(node1.state!=node2.state)
@@ -138,6 +180,14 @@ class WBP(Planner):
 			candidates = [frozenset(p) for p in list(itertools.combinations(newAtoms, k))]
 
 		node.candidates = candidates
+
+		# if 879 in newAtoms:
+		# 	print "added 865 for the first time"
+		# 	embed()
+		# if frozenset((456,879)) in node.candidates:
+		# 	print "adding 456,865"
+		# 	embed()
+
 		newTuples = set()
 		for aT in candidates:
 			if aT not in self.trueAtoms:
@@ -173,13 +223,17 @@ def BFS(rle, WBP, k):
 	visited.append(start)
 	visitedStates.append(rle)
 	Q.put(start)
+	minDist = 100
 	while not Q.empty():
 		current = Q.get()
 		win = current.eval()
-		# if current.actionSeq ==[(-1, 0), (1, 0), (1, 0), (-1, 0)]:#, (0, -1)]:
-		# 	print "found good state"
-		# 	embed()
+
 		novelty = WBP.novelty(current, k)
+		# if manhattanDist(WBP.findAvatarInRLE(current.lastState), WBP.findObjectInRLE(current.lastState, 'probe'))<minDist and \
+		# len(current.lastState._game.kill_list)==2:
+		# 	minDist = manhattanDist(WBP.findAvatarInRLE(current.lastState), WBP.findObjectInRLE(current.lastState, 'probe'))
+		# 	print "found new min distance"
+		# 	embed()
 		if novelty > 0:
 		# if current.state.tostring() not in visited:
 			visited.append(current.state.tostring())
@@ -191,12 +245,16 @@ def BFS(rle, WBP, k):
 				child = Node(rle, WBP, current.actionSeq+[a], current)
 				Q.put(child)
 		else:
-			if len([o for o in current.lastState._game.sprite_groups['probe'] if o not in current.lastState._game.kill_list]) == (1 or 0):
-				embed()
+			# if len([o for o in current.lastState._game.sprite_groups['probe'] if o not in current.lastState._game.kill_list]) == (1 or 0):
+			# 	print "kill_list== 2 or 3"
+			# 	embed()
 			rejected.append(current)
 
 	return Q, visited, rejected, visitedStates
 
+# relevantVisited = [v for v in visitedStates if hasattr(v, 'lastState') and len(v.lastState._game.kill_list)==2]
+# close = [v for v in relevantVisited if manhattanDist(p.findAvatarInRLE(v.lastState), p.findObjectInRLE(v.lastState, 'probe')) < 4]
+# 
 class Node():
 	def __init__(self, rle, WBP, actionSeq, parent):
 		self.rle = rle
@@ -205,6 +263,7 @@ class Node():
 		self.parent = parent
 		self.children = None
 		self.lastState = None
+		self.reconstructed=False
 
 	# try to copy parent lastState. Then take action and store as current lastState.
 	## if that fails, replay from beginning and store as current lastState
@@ -221,6 +280,7 @@ class Node():
 				embed()
 		else:
 		# except:
+			self.reconstructed=True
 			print "copy failed; replaying from top"
 			# embed()
 			vrle = copy.deepcopy(rle)

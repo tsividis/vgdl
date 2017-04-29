@@ -61,11 +61,11 @@
 level = """
 wwwwwwwwwwiwwwwwww
 wp      w    A  2w
-w    2  w  n wwwww
+w    2  w  nwwwwww
 w         2      w
-o     1         ww
+o g   1         ww
 ww   www   m     w
-w   q      g   p w
+w   q          p w
 w    2           w
 w        2    1  w
 wwwwwwwwwwwwwwwwww
@@ -114,7 +114,7 @@ wwwwwwwwwwwwwwwwww
 game = """
 BasicGame frame_rate=30
     SpriteSet        
-        avatar > MovingAvatar color=DARKBLUE #cooldown=4 
+        avatar > MovingAvatar color=DARKBLUE #cooldown=5
         goal > ResourcePack color=GOLD
         poison1 > ResourcePack color=WHITE
         poison2 > ResourcePack color=PINK
@@ -126,7 +126,7 @@ BasicGame frame_rate=30
         score > Resource color=PINK limit=10  
         missile > Missile
             missile1 > color=GREEN  speed=.5 
-            missile2 > color=ORANGE speed=1
+            missile2 > color=ORANGE speed=2
     LevelMapping
         p > poison1
         q > poison2

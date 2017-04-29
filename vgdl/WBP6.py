@@ -216,38 +216,28 @@ class Node():
 	# try to copy parent lastState. Then take action and store as current lastState.
 	## if that fails, replay from beginning and store as current lastState
 	def eval(self, updateNoveltyDict=False):
-		# try:
 		if self.parent and self.parent.lastState is not None:
 			try:
 				vrle = copy.deepcopy(self.parent.lastState)
 				if len(self.actionSeq)>0:
 					vrle.step(self.actionSeq[-1])
 					terminal, win = vrle._isDone()
-					# terminal = vrle._isDone()[0]
 			except:
 				print "conditions met but copy failed"
 				embed()
 		else:
-		# except:
 			self.reconstructed=True
 			print "copy failed; replaying from top"
-			# embed()
 			vrle = copy.deepcopy(rle)
 			terminal, win = vrle._isDone()
-			# terminal = vrle._isDone()[0]
 			i=0
 			while not terminal and len(self.actionSeq)>i:
 				vrle.step(self.actionSeq[i])
 				terminal, win = vrle._isDone()
-				# terminal = vrle._isDone()[0]
 				i += 1
 		# if len(self.actionSeq)>0:
 			# print self.actionSeq[-1]
 		print vrle.show()
-		# if len(vrle._game.sprite_groups['probe'])==0:
-			# self.WBP.findAvatarInRLE(vrle) == (2,4):
-			# embed()
-		# print "depth", len(self.actionSeq)
 		self.state = self.WBP.calculateAtoms(vrle)
 		self.lastState = vrle
 		self.win = win
@@ -268,8 +258,12 @@ class Node():
 		print vrle.show()
 		while not terminal:
 			a = self.actionSeq[i]
+			print a
 			vrle.step(a)
 			print vrle.show()
+			vrle.step((0,0))
+			print vrle.show()
+			# embed()
 			terminal = vrle._isDone()[0]
 			i+=1
 
@@ -301,13 +295,13 @@ if __name__ == "__main__":
 
 	# gameFilename = "examples.gridphysics.demo_chaser"  ##easy version solved!
 	# gameFilename = "examples.gridphysics.portals" ## stochasticity breaks it
-	# gameFilename = "examples.gridphysics.demo_helper"  ##easy version solved!
+	gameFilename = "examples.gridphysics.demo_helper"  ##easy version solved!
 
 	# gameFilename = "examples.gridphysics.demo_multigoal_and"  ##takes forever.
 
 	# gameFilename = "examples.gridphysics.demo_multigoal_and_score"  ##easy version solved!
 	# gameFilename = "examples.gridphysics.demo_sokoban"
-	gameFilename = "examples.gridphysics.demo_sokoban_score"
+	# gameFilename = "examples.gridphysics.demo_sokoban_score"
 
 
 	## boulderdash: game freezes.

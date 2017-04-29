@@ -53,6 +53,7 @@ BasicGame frame_rate=30
         box avatar  > bounceForward
         box wall    > undoAll        
         box box     > undoAll
+        box hole > changeScore value=1
         box hole    > killSprite        
     TerminationSet
         SpriteCounter stype=box    limit=0 win=True 

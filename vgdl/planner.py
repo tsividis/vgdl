@@ -46,6 +46,7 @@ class Planner:
 		self.scanDomainForMovementOptions()
 		self.propagateRewards(goalLoc)
 
+
 	def scanDomainForMovementOptions(self):
 		##TODO: Take a state, so that you can re-perform this scan as needed and take changes into account.
 		##TODO: query VGDL description for penetrable/nonpenetrable objects, add to list.
@@ -54,15 +55,32 @@ class Planner:
 		try:
 			self.immovables = self.rle.immovables
 			self.killerObjects = self.rle.killerObjects
+			self.teleports = self.rle.teleports
 			print "immovables", self.rle.immovables
 		except:
 			self.immovables = ['wall', 'poison']
 			self.killerObjects = ['chaser']
+			self.teleports = ['exit1', 'entry1']
 			print "Using defaults as immovables", self.immovables
 
 		for i in self.immovables:
 			if i in self.rle._obstypes.keys():
 				immovable_codes.append(2**(1+sorted(self.rle._obstypes.keys())[::-1].index(i)))
+
+		# embed()
+		#'exit':'entry' pairs.
+		# teleport_partner_dict, teleport_partner_code_dict = {}, {}
+		# teleport_partner_code_dict = {}
+		# for i in self.teleports:
+		# 	if i in self.rle._obstypes.keys():
+		# 		if hasattr(self.rle._game.sprite_groups[i][0], 'stype'):
+		# 			# we've found an entry
+		# 			exitName = self.rle._game.sprite_groups[i][0].stype
+		# 			# teleport_partner_dict[exitName] = i
+		# 			exitcode = 2**(1+sorted(self.rle._obstypes.keys())[::-1].index(exitName))
+		# 			entrycode = 2**(1+sorted(self.rle._obstypes.keys())[::-1].index(i))
+		# 			teleport_partner_code_dict[exitcode] = entrycode
+
 
 		actionDict = defaultdict(list)
 		neighborDict = defaultdict(list)
@@ -73,6 +91,7 @@ class Planner:
 		y,x=np.shape(board)
 		for i in range(y):
 			for j in range(x):
+				##here
 				if board[i,j] not in immovable_codes:
 					for action in action_superset:
 						nextPos = (i+action[1], j+action[0])
@@ -81,11 +100,61 @@ class Planner:
 							if board[nextPos] not in immovable_codes:
 								actionDict[(i,j)].append(action)
 								neighborDict[(i,j)].append(nextPos)
+				# if board[i,j] in teleport_partner_code_dict.keys():
+				# 	#single entry for each exit (but not other way around)
+				# 	entry_loc = np.where(board==teleport_partner_code_dict[board[i,j]])
+				# 	entry_loc = entry_loc[0][0], entry_loc[1][0]
+				# 	neighborDict[i,j].append(entry_loc)
+
+
 		self.actionDict = actionDict
 		self.neighborDict = neighborDict
 		return
-	
+
+	# def scanDomainForMovementOptions(self):
+	# 	##TODO: Take a state, so that you can re-perform this scan as needed and take changes into account.
+	# 	##TODO: query VGDL description for penetrable/nonpenetrable objects, add to list.
+	# 	immovable_codes = []
+	# 	# immovables = ['wall']
+	# 	try:
+	# 		self.immovables = self.rle.immovables
+	# 		self.killerObjects = self.rle.killerObjects
+	# 		print "immovables", self.rle.immovables
+	# 	except:
+	# 		self.immovables = ['wall', 'poison']
+	# 		self.killerObjects = ['chaser']
+	# 		print "Using defaults as immovables", self.immovables
+
+	# 	for i in self.immovables:
+	# 		if i in self.rle._obstypes.keys():
+	# 			immovable_codes.append(2**(1+sorted(self.rle._obstypes.keys())[::-1].index(i)))
+
+
+	# 	actionDict = defaultdict(list)
+	# 	neighborDict = defaultdict(list)
+	# 	# action_superset = [(0,0),(-1,0), (1,0), (0,-1), (0,1)]
+	# 	action_superset = [(-1,0), (1,0), (0,-1), (0,1)]
+		
+	# 	board = np.reshape(self.rle._getSensors(), self.rle.outdim)
+	# 	y,x=np.shape(board)
+	# 	for i in range(y):
+	# 		for j in range(x):
+	# 			##here
+	# 			if board[i,j] not in immovable_codes:
+	# 				for action in action_superset:
+	# 					nextPos = (i+action[1], j+action[0])
+	# 					## Don't look at positions off the board.
+	# 					if 0<=nextPos[0]<y and 0<=nextPos[1]<x:
+	# 						if board[nextPos] not in immovable_codes:
+	# 							actionDict[(i,j)].append(action)
+	# 							neighborDict[(i,j)].append(nextPos)
+
+	# 	self.actionDict = actionDict
+	# 	self.neighborDict = neighborDict
+	# 	return
+
 	def propagateRewards(self, goalLoc):
+		# This version works for teleports, too.
 		rewardQueue = deque()
 		processed = [goalLoc]
 		rewardQueue.append(goalLoc)
@@ -97,12 +166,34 @@ class Planner:
 			loc = rewardQueue.popleft()
 			if loc not in processed:
 				valid_neighbors = [n for n in self.neighborDict[loc] if n in self.rewardDict.keys()]
-				self.rewardDict[loc] = max([self.rewardDict[n] for n in valid_neighbors]) * self.pseudoRewardDecay
+				try:
+					self.rewardDict[loc] = max([self.rewardDict[n] for n in valid_neighbors]) * self.pseudoRewardDecay
+				except:
+					print "problem with rewardDict"
+					embed()
 				processed.append(loc)
 				for n in self.neighborDict[loc]:
 					if n not in processed:
 						rewardQueue.append(n)
-		return
+		return	
+	# def propagateRewards(self, goalLoc):
+	# 	rewardQueue = deque()
+	# 	processed = [goalLoc]
+	# 	rewardQueue.append(goalLoc)
+	# 	for n in self.neighborDict[goalLoc]:
+	# 		if n not in rewardQueue:
+	# 			rewardQueue.append(n)
+
+	# 	while len(rewardQueue)>0:
+	# 		loc = rewardQueue.popleft()
+	# 		if loc not in processed:
+	# 			valid_neighbors = [n for n in self.neighborDict[loc] if n in self.rewardDict.keys()]
+	# 			self.rewardDict[loc] = max([self.rewardDict[n] for n in valid_neighbors]) * self.pseudoRewardDecay
+	# 			processed.append(loc)
+	# 			for n in self.neighborDict[loc]:
+	# 				if n not in processed:
+	# 					rewardQueue.append(n)
+	# 	return
 
 	def getPseudoReward(self, s, a):
 		## returns pseudoreward of taking action a from location currentLoc.
@@ -125,7 +216,7 @@ class Planner:
 			print objName, "not in rle."
 			return None
 		objCode = 2**(1+sorted(self.rle._obstypes.keys())[::-1].index(objName))
-		objLoc = np.where(np.reshape(self.rle._getSensors(), self.rle.outdim)==objCode)
+		objLoc = np.where(np.reshape(rle._getSensors(), self.rle.outdim)==objCode)
 		objLoc = objLoc[0][0], objLoc[1][0] #(y,x)
 		return objLoc
 	
@@ -152,17 +243,28 @@ class Planner:
 
 	def findObjectsInState(self, s, objName):
 		##TODO: Finish last part of this function -- sometimes it can't access objloc[0][0], objloc[1][0]
-		state = np.reshape(np.fromstring(s,dtype=float), self.rle.outdim)
-		if objName not in self.rle._obstypes.keys():
-			print objName, "not in rle."
+		
+		if objName in self.rle._game.sprite_groups.keys():
+			return [self.rle._rect2pos(o.rect) for o in self.rle._game.sprite_groups[objName] if o not in self.rle._game.kill_list]
+		else:
 			return None
-		objCode = 2**(1+sorted(self.rle._obstypes.keys())[::-1].index(objName))
-		objLocs = np.where(state==objCode)
-		objLocations = []
-		try:
-			for o in objLocs:
-				objLocations.append((o[1], o[0]))
-		except:
-			objLocations = [(objLocs[0][0], objLocs[1][0])] #(y,x)
-		return objLocations
+
+
+		# state = np.reshape(np.fromstring(s,dtype=float), self.rle.outdim)
+		# if objName not in self.rle._obstypes.keys():
+		# 	# print objName, "not in rle."
+		# 	return None
+		# objCode = 2**(1+sorted(self.rle._obstypes.keys())[::-1].index(objName))
+		# objLocs = np.where(state==objCode)
+		# objLocations = []
+		# try:
+		# 	for o in objLocs:
+		# 		objLocations.append((o[1], o[0]))
+		# except:
+		# 	try:
+		# 		objLocations = [(objLocs[0][0], objLocs[1][0])] #(y,x)
+		# 	except:
+		# 		print "findObjectsInState is failing."
+		# 		embed()
+		# return objLocations
 

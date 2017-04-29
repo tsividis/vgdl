@@ -4,7 +4,7 @@ VGDL example: survive the onslaught of zombies for a while -- the bees are your 
 @author: Tom Schaul
 '''
 
-zombie_level = """
+level = """
 wwwwwwwwwwwwwwwwwww
 wA  .        ..  1w
 w. .         ..  0w
@@ -18,7 +18,7 @@ w        ... 0  www
 wwwwwwwwwwwwwwwwwww
 """
 
-zombie_game = """
+game = """
 BasicGame
     SpriteSet    
         flower > SpawnPoint stype=bee    prob=0.02 color=PINK
@@ -53,4 +53,4 @@ BasicGame
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(zombie_game, zombie_level)    
+    VGDLParser.playGame(game, level)    

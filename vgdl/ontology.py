@@ -860,6 +860,7 @@ class MarioAvatar(InertialAvatar):
             action = (action[0] * sqrt(self.strength), 0)
         else:
             action = (0, 0)
+        print action
         self.physics.activeMovement(self, action)
         VGDLSprite.update(self, game)
 

@@ -1,15 +1,33 @@
+
+
 level = """
-wwwwwwwwwwwwwwwwwwwwwwwwww
-w                        w
-w    a    x              w
-w     a          a       w
-w            z           w
-w                  z     w
-w   x   Az           z   w
-w              a  x      w
-w                        w
-wwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwww
+wA  z   w
+w       w
+wwwwwwwgw
 """
+
+# box_level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# wA                       w
+# w    a             a     w
+# w     a              a   w
+# w                        w
+# w     x            z     w
+# w   x   x        z   z   w
+# w                        w
+# w                        w
+# w                        w
+# w      xa        az      w
+# w                        w
+# w                        w
+# w                        w
+# w          a y           w
+# w                        w
+# w                        g
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
         
 game = """
 BasicGame frame_rate=30
@@ -20,16 +38,16 @@ BasicGame frame_rate=30
             converter2 > color=PURPLE
         box > Immovable
             box_a >
-                box1 > color=ORANGE
+                box1 > color=PINK
                 box2 > color=ORANGE
                 box3 > color=LIGHTGREEN
             box_b >        
                 box4 > color=LIGHTBLUE
                 box5 > color=PINK
                 box6 > color=YELLOW       
-        goal > Immovable color=BLACK  
-        avatar > MovingAvatar color=WHITE
-        wall > Immovable
+        goal > Immovable color=ORANGE  
+        avatar > MovingAvatar color=DARKBLUE
+        wall > Immovable color=GRAY
     LevelMapping
         w > wall   
         a > box1
@@ -56,15 +74,12 @@ BasicGame frame_rate=30
         goal avatar > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False          
-        SpriteCounter stype=converter1 limit=0 win=True
-"""
+        SpriteCounter stype=goal limit=0 win=True
 """
 
-
-"""
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     import random
     levels = [l for l in locals().keys() if 'level' in l]
     index = random.choice(range(len(levels)))
-    VGDLParser.playGame(game, locals()[levels[index]])     
+    VGDLParser.playGame(game, locals()[levels[index]])  
