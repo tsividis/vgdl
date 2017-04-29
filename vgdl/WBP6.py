@@ -123,7 +123,7 @@ def noveltyHeuristic(lst, WBP, k, surrogateCall=False):
 	maxNovelty = max([n.novelty for n in lst])
 	# print 'in novelty'
 	# embed()
-	if maxNovelty==0:# and not surrogateCall:
+	if maxNovelty==0 and not surrogateCall:
 		return None
 	else:
 		bestNodes = [n for n in lst if n.novelty==maxNovelty]
@@ -301,13 +301,13 @@ if __name__ == "__main__":
 
 	# gameFilename = "examples.gridphysics.demo_chaser"  ##easy version solved!
 	# gameFilename = "examples.gridphysics.portals" ## stochasticity breaks it
-	gameFilename = "examples.gridphysics.demo_helper"  ##easy version solved!
+	# gameFilename = "examples.gridphysics.demo_helper"  ##easy version solved!
 
 	# gameFilename = "examples.gridphysics.demo_multigoal_and"  ##takes forever.
 
 	# gameFilename = "examples.gridphysics.demo_multigoal_and_score"  ##easy version solved!
 	# gameFilename = "examples.gridphysics.demo_sokoban"
-	# gameFilename = "examples.gridphysics.demo_sokoban_score"
+	gameFilename = "examples.gridphysics.demo_sokoban_score"
 
 
 	## boulderdash: game freezes.
@@ -325,8 +325,8 @@ if __name__ == "__main__":
 	p = IW(rle, gameString, levelString, gameFilename, k=2, display=1)
 	# p.trackTokens = True
 	t1 = time.time()
-	last, visited, rejected, visitedStates = BFS(rle, p)
-	# last, visited, rejected, visitedStates = BFS2(rle, p)
+	# last, visited, rejected, visitedStates = BFS(rle, p)
+	last, visited, rejected, visitedStates = BFS2(rle, p)
 	print time.time()-t1
 	print len(visited), len(rejected)
 	embed()
