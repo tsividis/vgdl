@@ -1,0 +1,341 @@
+from IPython import embed
+from planner import *
+import itertools
+
+ACTIONS = [(1,0), (-1,0), (0,1), (0,-1)]
+
+## Base class for width-based planners (IW(k) and 2BFS)
+class WBP(Planner):
+	def __init__(self, rle, gameString, levelString, gameFilename, display):
+		Planner.__init__(self, rle, gameString, levelString, gameFilename, display)
+		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
+		self.vecDim = [rle.outdim[0]*rle.outdim[1], 2, self.T]
+		# self.noveltyDict = []
+		self.trueAtoms = set() ## set of atoms that have been true at some point thus far in the planner.
+		self.objectTypes = rle._game.sprite_groups.keys()
+		self.objectTypes.sort()
+		self.phiSize = sum([len(rle._game.sprite_groups[k]) for k in rle._game.sprite_groups.keys() if k not in ['wall', 'avatar']])
+		self.objIDs = {}
+		self.maxNumObjects = 6
+		self.trackTokens = False
+		self.vecSize = None
+		print "If we track tokens we have an additional", 2**self.phiSize, "array elements."
+		i=1
+		for k in rle._game.all_objects.keys():
+			self.objIDs[k] = i * (rle.outdim[0]*rle.outdim[1]+5) ##5 is arbitrary; just to make sure we don't get overlap when we add positions
+			i+=1
+
+	def calculateAtoms(self, rle):
+		lst = []
+		for k in rle._game.sprite_groups.keys():
+			for o in rle._game.sprite_groups[k]:
+				if o not in rle._game.kill_list:
+					## turn location into vector posd2[ition (rows appended one after the other.)
+					pos = rle._rect2pos(o.rect) #x,y
+					vecValue = pos[1] + pos[0]*rle.outdim[0] + 1
+				else:
+					vecValue = 0
+				objPosCombination = self.objIDs[o.ID] + vecValue
+				lst.append(objPosCombination)
+					# lst[o.ID] = vecValue
+				# else:
+				# 	lst[o.ID] = 'gone'
+		present = []
+		for k in [t for t in self.objectTypes if t not in ['wall', 'avatar']]:
+			for o in rle._game.sprite_groups[k]:
+				if o not in rle._game.kill_list:
+					present.append(1)
+				else:
+					present.append(0)
+		ind = sum([present[i]*2**i for i in range(len(present))])
+		lst.append(ind)
+		# lst['globalcount'] = ind
+		return set(lst)
+	
+	def compareDicts(self, d1,d2):
+		## only tells us what is in d2 that isn't in d1, as well as differences in values between shared keys
+		return [k for k in d2.keys() if (k not in d1.keys() or d1[k]!=d2[k])]
+
+	def delta(self, node1, node2):
+		if node1 is None:
+			diff = node2.state
+		else:
+			diff = node2.state-node1.state
+		return diff
+
+	def novelty(self, node, k, update=False):
+		# Returns number of k-tuples of atoms that are newly true in node.
+		newAtoms = self.delta(node.parent, node)
+		# print "in novelty fn"
+		# embed()
+		if len(self.trueAtoms) > 0:
+			trueAtoms = node.state
+			oldTrueAtoms = set(trueAtoms)-set(newAtoms)
+			candidates = []
+			for i in range(1,k+1):
+				newPart = list(itertools.combinations(newAtoms, i))
+				oldPart = list(itertools.combinations(oldTrueAtoms, k-i))
+				unflattened = list(itertools.product(newPart, oldPart))
+				flattened = [frozenset((u[0]+u[1])) for u in unflattened]	
+				candidates.extend(flattened)
+		else:
+			candidates = [frozenset(p) for p in list(itertools.combinations(newAtoms, k))]
+			# candidates = list(itertools.combinations(newAtoms, k))
+		node.candidates = candidates
+		newTuples = set()
+		for aT in candidates:
+			if aT not in self.trueAtoms:
+				if update:
+					self.trueAtoms.add(aT)
+				newTuples.add(aT)
+		# print 'in novelty'
+		# print len(newTuples)
+		# embed()
+		return len(newTuples)
+
+def BFS(rle, WBP):
+	Q = Queue()
+	visited, rejected, visitedStates= [], [], []
+	start = Node(rle, WBP, [], None)
+	start.lastState = rle
+	visitedStates.append(rle)
+	Q.put(start)
+	while not Q.empty():
+		current = Q.get()
+		win = current.eval(updateNoveltyDict=True)
+		if current.novelty > 0:			
+			visitedStates.append(current)
+			if win:
+				return current, visited, rejected, visitedStates
+			for a in ACTIONS:
+				child = Node(rle, WBP, current.actionSeq+[a], current)
+				Q.put(child)
+		else:
+			rejected.append(current)
+	print "no more states in queue"
+	embed()
+	return Q, visited, rejected, visitedStates
+
+
+def noveltyHeuristic(lst, WBP, k, surrogateCall=False):
+	#returns the node in lst that has highest novelty measure
+	## you need to not change the noveltyDict when you evaluate the novelty. Only change the dict if you select the state!
+	maxNovelty = max([n.novelty for n in lst])
+	# print 'in novelty'
+	# embed()
+	if maxNovelty==0:# and not surrogateCall:
+		return None
+	else:
+		bestNodes = [n for n in lst if n.novelty==maxNovelty]
+		if len(bestNodes)==1:
+			return bestNodes[0]
+		elif len(bestNodes)>1:
+		 	if not surrogateCall:
+		 		return rewardHeuristic(bestNodes, WBP, k, surrogateCall=True)
+		 	else:
+		 		return random.choice(bestNodes)
+		else:
+			print "found 0 nodes in noveltyHeuristic"
+			embed()
+
+def rewardHeuristic(lst, WBP, k, surrogateCall=False):
+	maxReward = max([n.reward for n in lst])
+	bestNodes = [n for n in lst if n.reward==maxReward]
+	# print 'in reward'
+	# embed()
+	if len(bestNodes)==1:
+		return bestNodes[0]
+	elif len(bestNodes)>1:
+	 	if not surrogateCall:
+	 		return noveltyHeuristic(bestNodes, WBP, k, surrogateCall=True)
+	 	else:
+	 		return random.choice(bestNodes)
+	else:
+		print "found 0 nodes in rewardHeuristic"
+		embed()
+
+#when you expand a node, evaluate its children on both heuristics, then place in the queue.
+## when you select a node from the queue, update the noveltyDict
+def BFS2(rle, WBP):
+	Q = []
+	visited, rejected, visitedStates = [], [], []
+	start = Node(rle, WBP, [], None)
+	start.lastState = rle
+	visited.append(start)
+	visitedStates.append(rle)
+	start.eval()
+	Q.append(start)
+	i=0
+	while len(Q)>0:
+		if i%2==0:
+			#What do you do if you only have states with novelty 0?
+			## you would pick from the rewardHeuristic, and would pick randomly if they all had value 0.
+			current = noveltyHeuristic(Q, WBP, WBP.k, surrogateCall=False)
+		else:
+			## Similarly, if thre are tied rewards and you get states with novelty 0, you will still return one of these.
+			## in the case where rewards were 0 and novelties were 0 we should stop.
+			current = rewardHeuristic(Q, WBP, WBP.k, surrogateCall=False)
+
+		## This is not nec. right.
+		## TODO: make heuristics return None if they're forced to tie-break but rewards and novelties are 0.
+		if current is None:
+			print "got no node"
+			embed()
+			return Q, visited, rejected, visitedStates
+		else:
+			# embed()
+			Q.remove(current)
+			current.eval(updateNoveltyDict=True)
+			# visited.append(current.state.tostring())
+			visitedStates.append(current)
+			if current.win:
+				return current, visited, rejected, visitedStates
+			else:
+				for a in ACTIONS:
+					child = Node(rle, WBP, current.actionSeq+[a], current)
+					child.eval()
+					Q.append(child)		
+			i+=1
+	return Q, visited, rejected, visitedStates
+
+
+
+class Node():
+	def __init__(self, rle, WBP, actionSeq, parent):
+		self.rle = rle
+		self.WBP = WBP
+		self.actionSeq = actionSeq
+		self.parent = parent
+		self.state = {}
+		self.novelty = None
+		self.reward = None
+		self.children = None
+		self.lastState = None
+		self.reconstructed=False
+
+	# try to copy parent lastState. Then take action and store as current lastState.
+	## if that fails, replay from beginning and store as current lastState
+	def eval(self, updateNoveltyDict=False):
+		# try:
+		if self.parent and self.parent.lastState is not None:
+			try:
+				vrle = copy.deepcopy(self.parent.lastState)
+				if len(self.actionSeq)>0:
+					vrle.step(self.actionSeq[-1])
+					terminal, win = vrle._isDone()
+					# terminal = vrle._isDone()[0]
+			except:
+				print "conditions met but copy failed"
+				embed()
+		else:
+		# except:
+			self.reconstructed=True
+			print "copy failed; replaying from top"
+			# embed()
+			vrle = copy.deepcopy(rle)
+			terminal, win = vrle._isDone()
+			# terminal = vrle._isDone()[0]
+			i=0
+			while not terminal and len(self.actionSeq)>i:
+				vrle.step(self.actionSeq[i])
+				terminal, win = vrle._isDone()
+				# terminal = vrle._isDone()[0]
+				i += 1
+		# if len(self.actionSeq)>0:
+			# print self.actionSeq[-1]
+		print vrle.show()
+		# if len(vrle._game.sprite_groups['probe'])==0:
+			# self.WBP.findAvatarInRLE(vrle) == (2,4):
+			# embed()
+		# print "depth", len(self.actionSeq)
+		self.state = self.WBP.calculateAtoms(vrle)
+		self.lastState = vrle
+		self.win = win
+		self.novelty = self.WBP.novelty(self, self.WBP.k, update=updateNoveltyDict)
+		self.reward = vrle._game.score
+		return win
+
+	def isTerminal(self):
+		return self.rle._isDone()[0]
+
+	def isWin(self):
+		return self.rle._isDone()[1]
+
+	def playBack(self):
+		vrle = copy.deepcopy(self.rle)
+		terminal = vrle._isDone()[0]
+		i=0
+		print vrle.show()
+		while not terminal:
+			a = self.actionSeq[i]
+			vrle.step(a)
+			print vrle.show()
+			terminal = vrle._isDone()[0]
+			i+=1
+
+
+
+class IW(WBP):
+	def __init__(self, rle, gameString, levelString, gameFilename, k, display):
+		WBP.__init__(self, rle, gameString, levelString, gameFilename, display)
+		self.k = k
+
+if __name__ == "__main__":
+	
+	# gameFilename = "examples.gridphysics.simpleGame_teleport" ##solved!
+	# gameFilename = "examples.gridphysics.demo_teleport" ##solved!!
+	# gameFilename = "examples.gridphysics.movers3c" ##solved!!
+	# gameFilename = "examples.gridphysics.rivercross" ## solved!!
+	# gameFilename = "examples.gridphysics.demo_dodge"  ##solved!!
+	# gameFilename = "examples.gridphysics.simpleGame4_small"
+	# gameFilename = "examples.gridphysics.movers5" ##solved!!
+
+	# gameFilename = "examples.gridphysics.simpleGame_push_boulders_multigoal" ## k=2 works!
+	# gameFilename = "examples.gridphysics.demo_preconditions" ## k=2 works!
+	# gameFilename = "examples.gridphysics.waterfall" ##solved!! 
+	# gameFilename = "examples.gridphysics.frogs" ## worked with k=2.
+	# gameFilename = "examples.gridphysics.pick_apples" ## worked with expanded phi!
+	# gameFilename = "examples.gridphysics.scoretest" ##2BFS solves it!
+
+
+
+	# gameFilename = "examples.gridphysics.demo_chaser"  ##easy version solved!
+	# gameFilename = "examples.gridphysics.portals" ## stochasticity breaks it
+	gameFilename = "examples.gridphysics.demo_helper"  ##easy version solved!
+
+	# gameFilename = "examples.gridphysics.demo_multigoal_and"  ##takes forever.
+
+	# gameFilename = "examples.gridphysics.demo_multigoal_and_score"  ##easy version solved!
+	# gameFilename = "examples.gridphysics.demo_sokoban"
+	# gameFilename = "examples.gridphysics.demo_sokoban_score"
+
+
+	## boulderdash: game freezes.
+	# gameFilename = "examples.gridphysics.butterflies" #no
+	# gameFilename = "examples.gridphysics.chase" no
+	# gameFilename = "examples.gridphysics.survivezombies" # no
+
+	# gameFilename = "examples.gridphysics.demo_transform" ## won't work until RLE can handle transformations.
+
+	gameString, levelString = defInputGame(gameFilename, randomize=True)
+	rleCreateFunc = lambda: createRLInputGame(gameFilename)
+	rle = rleCreateFunc()
+
+
+	p = IW(rle, gameString, levelString, gameFilename, k=2, display=1)
+	# p.trackTokens = True
+	t1 = time.time()
+	last, visited, rejected, visitedStates = BFS(rle, p)
+	# last, visited, rejected, visitedStates = BFS2(rle, p)
+	print time.time()-t1
+	print len(visited), len(rejected)
+	embed()
+	# if not hasattr(last, 'actionSeq'):
+	# 	print "Failed without tracking tokens. re-trying"
+	# 	p.trackTokens = True
+	# 	t1 = time.time()
+	# 	last, visited, rejected, visitedStates = BFS(rle, p)
+	# 	print time.time()-t1
+	# 	print len(visited), len(rejected)
+	# embed()
+
