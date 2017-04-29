@@ -8,6 +8,7 @@ from random import choice
 from tools import Node, indentTreeParser
 from collections import defaultdict
 from tools import roundedPoints
+import numpy as np
 import os, shutil
 import datetime
 import uuid
@@ -615,7 +616,9 @@ class BasicGame(object):
                         if (sprite1 == sprite2
                             or sprite1 in dead
                             or sprite2 in dead
-                            or (sprite1, sprite2) in collision_set):
+                            or (sprite1, sprite2) in collision_set 
+                            or sprite1.ignore_collision(sprite2)
+                            or sprite2.ignore_collision(sprite1)):
                             continue
                         new_collisions.add((sprite1, sprite2))
 
@@ -1277,6 +1280,9 @@ class VGDLSprite(object):
     """ Base class for all sprite types. """
     name = None
     COLOR_DISC = [20,80,140,200]
+    ignore_directions = [] # list of directions to ignore
+    ignore_collisions = set()
+    # these directions should be relative to the orientation of the sprite
     dirtyrects = []
     is_static= False
     only_active =False
@@ -1310,6 +1316,7 @@ class VGDLSprite(object):
         for name, value in kwargs.iteritems():
             try:
                 self.__dict__[name] = value
+                # print name, value
             except:
                 print "WARNING: undefined parameter '%s' for sprite '%s'! "%(name, self.__class__.__name__)
         # how many timesteps ago was the last move?
@@ -1347,6 +1354,59 @@ class VGDLSprite(object):
     @property
     def lastdirection(self):
         return (self.rect[0]-self.lastrect[0], self.rect[1]-self.lastrect[1])
+
+    def ignore_collision(self, sprite):
+        # from ontology import UP, DOWN, LEFT, RIGHT
+        x, y = sprite.lastdirection
+        angle_v = np.angle(x+y*1j, deg=True)%360 # Generates angle 0-360
+
+        def between(v, a, b):
+            if a > b:
+                # true if v is between a and b
+                return v >= b and v <= a
+            else:
+                return (v >= 0 and v <= a 
+                        or v <= 360 and v >= b)
+
+        # If this sprite collided with the other sprite through that side
+        def approach(sprite, side):
+            return True
+            if side[0] > 0:
+                return sprite.lastrect.left >= self.rect.right
+            elif side[0] < 0:
+                print 'checking'
+                return sprite.lastrect.right <= self.rect.left
+            elif side[1] > 0:
+                return sprite.lastrect.top >= self.rect.bottom
+            elif side[1] < 0:
+                return sprit.lastrect.bottom <= self.rect.top
+
+
+
+
+        # RIGHT UP LEFT DOWN
+        # directions = [[1, 0], [0, 1], [-1, 0], [0, -1]] 
+        # TODO: transform directions based on orientation
+        # unless this doesn't matter
+        intersects = []
+        for direction in self.ignore_directions:
+
+            x_d, y_d = [-1*d for d in direction] # reverse direction
+            # perp-vector
+            angle_d = np.angle(x_d+y_d*1j, deg=True)
+            # bounding angles
+            angle_a = (angle_d+45)%360
+            angle_b = (angle_d-45)%360
+
+            intersects.append(between(angle_v, angle_a, angle_b))
+
+        for index, intersect in enumerate(intersects):
+            if intersect:
+                side = self.ignore_directions[index]
+                if approach(sprite, side):
+                    return True
+
+        return False
 
     def _draw(self, game):
         from ontology import LIGHTGREEN
