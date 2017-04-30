@@ -295,7 +295,7 @@ if __name__ == "__main__":
 
 	# gameFilename = "examples.gridphysics.demo_chaser"  ##easy version solved!
 	# gameFilename = "examples.gridphysics.portals" ## stochasticity breaks it
-	gameFilename = "examples.gridphysics.demo_helper"  ##easy version solved!
+	# gameFilename = "examples.gridphysics.demo_helper"  ##easy version solved!
 
 	# gameFilename = "examples.gridphysics.demo_multigoal_and"  ##takes forever.
 
@@ -311,9 +311,14 @@ if __name__ == "__main__":
 
 	# gameFilename = "examples.gridphysics.demo_transform" ## won't work until RLE can handle transformations.
 
+	gameFilename = "examples.gridphysics.simpleGame_missile"
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
+	rle._game.keystate = defaultdict(lambda : False)
+	from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
+	actions = {'UP': K_UP, 'DOWN': K_DOWN, 'LEFT': K_LEFT, 'RIGHT': K_RIGHT}
+	embed()
 
 
 	p = IW(rle, gameString, levelString, gameFilename, k=2, display=1)

@@ -330,6 +330,7 @@ class BasicGame(object):
             self._createSprite(['avatar'], choice(self.emptyBlocks()))
 
     def _createSprite(self, keys, pos):
+        print '---------------- creating new sprite --------------------'
         res = []
         for key in keys:
             if self.num_sprites > self.MAX_SPRITES:
