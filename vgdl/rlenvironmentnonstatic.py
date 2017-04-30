@@ -231,6 +231,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         return res
 
     def _performAction(self, action, onlyavatar=False):
+        
         """ Action is an index for the actionset.  """ 
         # take action and compute consequences
         # replace the method that reads multiple action keys with a fn that just
@@ -238,24 +239,30 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # if action == (0,0) or action == None:
         #     return
 
-        if action != (0,0) and self._avatar:
-            self._avatar._readMultiActions = lambda *x: [action]
+        # if action != (0,0) and self._avatar:
+        #     self._avatar._readMultiActions = lambda *x: [action]
 
-        # self._avatar._readMultiActions = lambda *x: [self._actionset[action]] # old      
+        # self._avatar._readMultiActions = lambda *x: [self._actionset[action]] # old 
+        from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
+        possible_actions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]    
+
+        if action in possible_actions:
+            self._game.keystate[action] = True
+
 
         if self.visualize:
             self._game._clearAll(self.visualize)
 
         # update sprites 
-        if onlyavatar:
-            if action != (0,0):
-                self._avatar.update(self._game)
+        # if onlyavatar:
+        #     if action != (0,0):
+        #         self._avatar.update(self._game)
 
-        else:
-            for s in self._game:
-                if s == self._avatar and action == (0,0):
-                    continue
-                s.update(self._game)
+        # else:
+        for s in self._game:
+            # if s == self._avatar and action == (0,0):
+            #     continue
+            s.update(self._game)
 
         events = self._game._eventHandling()
         ## get events (e.g., (stepBack obj1ID, obj2ID))
