@@ -860,6 +860,7 @@ class MarioAvatar(InertialAvatar):
             action = (action[0] * sqrt(self.strength), 0)
         else:
             action = (0, 0)
+        print action
         self.physics.activeMovement(self, action)
         VGDLSprite.update(self, game)
 
@@ -1324,6 +1325,7 @@ def changeResource(sprite, partner, resourceColor, game, resource, value=1):
 
 def changeScore(sprite, partner, game, value):
     game.score += value
+    print "score", game.score
     args = {'value':value}
     return ('changeScore', sprite.ID, partner.ID, args)
 
@@ -1438,7 +1440,8 @@ def cannotActivateSwitch(sprite, partner, game):
 # ---------------------------------------------------------------------
 #     Sprite Induction
 # ---------------------------------------------------------------------
-
+## TODO: Make sure you put these other types back when you fix sprite induction!!
+sprite_types = [Resource, ResourcePack, RandomNPC, Chaser, Missile] #removed Immovable, Passive, AStarChaser,
 def getSpeed(params):
     """
     params = a dict mapping sprite attributes to values
@@ -1702,7 +1705,7 @@ def initializeDistributionArgs(sprite_type):
 
 
 
-def distributionInitSetup(game, sprite, sprite_types):
+def distributionInitSetup(game, sprite):
     """
     Does setup for initializing distribution
     """
@@ -1885,13 +1888,22 @@ def spriteInduction(game, step, old_outcome=None):
     game.movement_options tells you the probability of a sprite being in a particular position, given a certain
     setting of its attributes (e.g. specific values for speed, orientation, etc.) and also given sprite type.
     """
-    ## TODO: Make sure you put these other types back when you fix sprite induction!!
-    sprite_types = [Resource, ResourcePack, RandomNPC, Chaser, Missile] #removed Immovable, Passive, AStarChaser,
     if step==0:
     ## Prep for sprite induction
         for sprite in game.getObjects():
-            distributionInitSetup(game, sprite, sprite_types)
+            distributionInitSetup(game, sprite)
             # initializes game.spriteDistribution for each sprite and sprite type.    
+
+            # distributionInitSetup(game, sprite, sprite_types)
+
+
+            # game.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
+            # game.movement_options[sprite] = {"OTHER":{}}
+            # for sprite_type in sprite_types:
+            #     game.movement_options[sprite][sprite_type] = {}
+            #     attributeTupleCombinations = getAttributeTupleCombinations(game, sprite, sprite_type)
+            #     for attributeTuple in attributeTupleCombinations:
+            #         game.movement_options[sprite][sprite_type][attributeTuple] = {}
 
     elif step==1:
         ## Sprite Induction Part 1:
@@ -1901,8 +1913,18 @@ def spriteInduction(game, step, old_outcome=None):
         for sprite in objects:
             if sprite not in game.spriteDistribution:
                 game.all_objects[sprite] = objects[sprite]
-                distributionInitSetup(game, sprite, sprite_types)
+                distributionInitSetup(game, sprite)
                 # initializes game.spriteDistribution for each sprite and sprite type. 
+
+                # distributionInitSetup(game, sprite, sprite_types)
+                # game.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
+                # game.movement_options[sprite] = {"OTHER":{}}
+                # for sprite_type in sprite_types:
+                #     game.movement_options[sprite][sprite_type] = {}
+                #     attributeTupleCombinations = getAttributeTupleCombinations(game, sprite, sprite_type)
+                #     for attributeTuple in attributeTupleCombinations:
+                #         game.movement_options[sprite][sprite_type][attributeTuple] = {}
+
                         
 
     elif step == 2:
@@ -1934,7 +1956,9 @@ def spriteInduction(game, step, old_outcome=None):
         for sprite in game.spriteDistribution.keys():        # Keys are the IDs of the game objects
             if sprite in objects.keys():                # Sprite may have been killed
                 sprite_obj = objects[sprite]["sprite"] 
-                if all([sprite not in e for e in game.effectList]) and sprite_obj.name != 'avatar':
+                # if sprite_obj.name!='avatar':
+                    # if sprite not in game.collision_objects and sprite_obj.name != 'avatar':
+                if all([sprite not in e for e in game.effectList]) and sprite not in game.ignoreList and sprite_obj.name != 'avatar':
                     # only update the distribution in this fashion if there are no events for this
                     # time step involving this sprite.
                     outcome = objects[sprite]["position"]
@@ -1949,7 +1973,7 @@ def spriteInduction(game, step, old_outcome=None):
                     #     embed()
                 # else:
                 # elif sprite in game.collision_objects and sprite_obj.name != 'avatar':
-                elif any([sprite in e for e in game.effectList]) and sprite_obj.name !='avatar':
+                elif any([sprite in e for e in game.effectList]) and sprite not in game.ignoreList and sprite_obj.name !='avatar':
                     # if there are events for this time step, just re-initialize the distribution for
                     # this particular sprite.
                     for sprite_type in sprite_types:

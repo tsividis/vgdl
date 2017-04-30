@@ -8,7 +8,7 @@ If they all are freed, you lose.
 '''
 
 
-chase_game = """
+game = """
 BasicGame
     SpriteSet    
         cocoon > Immovable color=BLUE 
@@ -31,7 +31,7 @@ BasicGame
         0 > cocoon
 """
 
-chase_level = """
+level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwww
 w  1     1  w   0 0 0 0w000w
 w 1                    w000w
@@ -47,4 +47,4 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwww
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(chase_game, chase_level)    
+    VGDLParser.playGame(game, level)    

@@ -112,11 +112,12 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 else:
                     spriteIndex = int(round(math.log(state[i][j],2)))-1
                     if state[i][j] != 2**(spriteIndex+1):
-                        spriteOverlap = True
-                        break
-
-                    spriteType = sorted(self._obstypes.keys())[::-1][spriteIndex]
-                    gameString += self.symbolDict[spriteType]
+                        gameString += "$"
+                    else:
+                        # spriteOverlap = True
+                        # break
+                        spriteType = sorted(self._obstypes.keys())[::-1][spriteIndex]
+                        gameString += self.symbolDict[spriteType]
             gameString += "\n"
             if spriteOverlap:
                 break

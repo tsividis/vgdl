@@ -4,7 +4,7 @@ VGDL example: Boulder Dash.
 @author: Julian Togelius and Tom Schaul
 '''
 
-boulderdash_level = """
+level = """
 wwwwwwwwwwwwwwwwwwwwwwwwww
 w...o.xx.o......o..xoxx..w
 w...oooooo........o..o...w
@@ -20,7 +20,7 @@ w   ..E..........b     ..w
 wwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-boulderdash_game = """
+game = """
 BasicGame
 	SpriteSet
 		sword > Flicker color=LIGHTGRAY limit=1 singleton=True
@@ -68,4 +68,4 @@ BasicGame
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(boulderdash_game, boulderdash_level)
+    VGDLParser.playGame(game, level)

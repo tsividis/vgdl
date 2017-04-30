@@ -150,7 +150,7 @@ class Agent:
 		allObjects= rle._game.getObjects()
 		# allColors = [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in rle._game.sprite_groups.keys()]
 		##select only non-moving objects as goals. Avoids chasing, which takes forever at the moment.
-		allColors = [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in rle._game.sprite_groups.keys() if rle._game.sprite_groups[k][0].is_static]
+		allColors = [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in rle._game.sprite_groups.keys() if rle._game.sprite_groups[k][0].speed is None]
 		allColors = [c for c in allColors if c!='DARKBLUE']
 		unknownColors = [c for c in allColors if c not in self.knownColors]
 
@@ -209,7 +209,7 @@ class Agent:
 if __name__ == "__main__":
 	# filename = "examples.gridphysics.simpleGame_resourceTest"
 
-	# filename = "examples.gridphysics.simpleGame_preconditions" ## won't work until eventHandling() is corrected.
+	filename = "examples.gridphysics.simpleGame_preconditions" ## won't work until eventHandling() is corrected.
 	# filename = "examples.gridphysics.simpleGame_inductionTest"
 	# filename = "examples.gridphysics.simpleGame_missile2"	
 	# filename = "examples.gridphysics.movers2d"	
@@ -220,9 +220,16 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.simpleGame_push_boulders2"
 	# filename = "examples.gridphysics.pushtest"
 	# filename = "examples.gridphysics.simpleGame_small"
-	# filename = "examples.gridphysics.simpleGame_teleport"	
 	# filename = "examples.gridphysics.new_object_test"	
-	filename = "examples.gridphysics.push_boulders_multigoal_incremental"	
+	# filename = "examples.gridphysics.push_boulders_multigoal_incremental"	
+
+	# filename = "examples.gridphysics.scoretest"	
+	# filename = "examples.gridphysics.multigoal_and"	
+
+	# filename = "examples.gridphysics.rivercross"	
+
+	# filename = "examples.gridphysics.waterfall"	
+	# filename = "examples.gridphysics.simpleGame_teleport"	
 
 
 	# filename = "examples.gridphysics.movers5"	
@@ -234,6 +241,6 @@ if __name__ == "__main__":
 	print "Playing {} with {}".format(filename, plannerType)
 	agent = Agent(filename, plannerType)
 	t1 = time.time()
-	numEpisodes = 10
+	numEpisodes = 5
 	agent.playMultipleEpisodes(numEpisodes)
 	print "Ended {} episodes of {} with planner {} in {} seconds".format(numEpisodes, filename, plannerType, time.time()-t1)

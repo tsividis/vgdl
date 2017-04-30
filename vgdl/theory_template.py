@@ -611,10 +611,21 @@ class Theory(object):
 			## These are relevant for interactions like teleportToExit, changeResource, etc.
 			## Interactions in ontology.py that have arguments return at most two additional arguments. By convention, 'value' is always the
 			## last of these.
-			args = event[3]
+
+			if 'stype' in event[3].keys():
+				obj3 = self.spriteObjects[event[3]['stype']]
+				# event[3]['stype'] = self.getClass(obj3)
+				tmpEvent = copy.deepcopy(event)
+				tmpEvent[3]['stype'] = self.getClass(obj3)
+				args = tmpEvent[3]
+			else:
+				args = event[3]
 		except:
 			args = {}
 
+		# if len(args.keys())>0:
+		# 	print "found args in addRules for event", event
+		# 	embed()
 		obj1 = self.spriteObjects[event[1]]
 		obj2 = self.spriteObjects[event[2]]
 
@@ -715,12 +726,6 @@ class Theory(object):
 		If we know that ORANGE=c1 and DARKBLUE=c2, returns the InteractionRule
 		that corresponds to (bounceForward, c1, c2)
 		"""
-		# Check if there is an extra value argument in event
-		try: 
-			args = event[3]
-
-		except:
-			args = {}
 
 		try:
 			obj1 = self.spriteObjects[event[1]]
@@ -730,6 +735,22 @@ class Theory(object):
 			embed()
 
 		c1, c2 = self.getClass(obj1), self.getClass(obj2)
+		
+		# Check if there is an extra value argument in event. Also if there's an stype arg, get its class.
+		try: 
+			if 'stype' in event[3].keys():
+				obj3 = self.spriteObjects[event[3]['stype']]
+				# event[3]['stype'] = self.getClass(obj3)
+				tmpEvent = copy.deepcopy(event)
+				tmpEvent[3]['stype'] = self.getClass(obj3)
+				args = tmpEvent[3]
+			else:
+				args = event[3]
+			# print "args", args
+		except:
+			args = {}
+
+
 		#print 'classes:', c1, c2
 		if c1 and c2:
 			#print 'new interaction rule!'
@@ -957,6 +978,7 @@ class Theory(object):
 	def searchForAssignments(self, event):
 		obj1 = self.spriteObjects[event[1]]
 		obj2 = self.spriteObjects[event[2]]
+
 
 		x1, gotNewClass = self.searchForPossibleClasses(obj1, newClasses=1)
 		if gotNewClass:
@@ -1564,7 +1586,7 @@ class Game(object):
 		avatar = [o for o in T.spriteSet if o.vgdlType==MovingAvatar][0]
 		nonAvatars = [o for o in T.spriteSet if o.vgdlType!=MovingAvatar and o.color!='ENDOFSCREEN']
 		eos = [o for o in T.spriteSet if o.color=='ENDOFSCREEN'][0]
-		wall = [o for o in T.spriteSet if o.color == "BLACK"][0]
+		wall = [o for o in T.spriteSet if o.color == "BLACK" or o.color=="GRAY"][0]
 
 		# print "buildgenerictheory"
 		# embed()
@@ -1593,7 +1615,7 @@ class Game(object):
 			## append EOS rule
 			rule = InteractionRule('stepBack', s1.className, 'EOS', {}, set(), generic=True)
 			T.interactionSet.append(rule)
-			if s1.color != "BLACK":
+			if s1.color != "BLACK" and s1.color !="GRAY":
 				rule = InteractionRule('stepBack', s1.className, wall.className, {}, set(), generic=True)
 				T.interactionSet.append(rule)
 
@@ -1610,7 +1632,7 @@ class Game(object):
 		avatar = [o for o in theory.spriteSet if o.vgdlType==MovingAvatar][0]
 		nonAvatars = [o for o in theory.spriteSet if o.vgdlType!=MovingAvatar and o.color!='ENDOFSCREEN']
 		eos = [o for o in theory.spriteSet if o.color=='ENDOFSCREEN'][0]
-		wall = [o for o in theory.spriteSet if o.color == "BLACK"][0]
+		wall = [o for o in theory.spriteSet if o.color == "BLACK" or o.color=="GRAY"][0]
 
 		# print "in addNewObjects"
 		# embed()
@@ -1655,6 +1677,10 @@ class Game(object):
 			self.hypothesisSpace = [] # Refresh the hypothesis space before DFS induction
 		else:
 			# Otherwise continue from the existing theories; work on the new events only.
+			print "had existing theory"
+			## But first make sure we haven't seen a new object in the time step. if we have, it will be reflected in the spriteSample.
+			for theory in existingTheories:
+				theory = self.addNewObjectsToTheory(theory, spriteSample)
 			init_hypotheses = existingTheories
 			self.hypothesisSpace = []
 
@@ -1889,7 +1915,10 @@ def generateSymbolDict(rle):
 		col = colorDict[str(rle._game.sprite_constr[s][1]['color'])]
 		inverseMapping[col] = alnum[idx]
 		idx+=1
-	inverseMapping[colorDict[str(rle._game.sprite_constr['avatar'][1]['color'])]] = 'A'
+	try:
+		inverseMapping[colorDict[str(rle._game.sprite_constr['avatar'][1]['color'])]] = 'A'
+	except:
+		inverseMapping[colorDict[str(rle._game.sprite_constr['avatar'][0].color)]] = 'A'
 
 	return inverseMapping
 
@@ -1933,7 +1962,11 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	def getClassNameFromSpriteString(spriteName):
 		if len(rle._game.sprite_groups[spriteName])>0:
 			col = colorDict[str(rle._game.sprite_groups[spriteName][0].color)]
-			className = [k for k in theory.classes.keys() if col in [c.color for c in theory.classes[k]]][0]
+			try:
+				className = [k for k in theory.classes.keys() if col in [c.color for c in theory.classes[k]]][0]
+			except:
+				print "couldn't find className"
+				embed()
 			return className
 		elif spriteName in theory.classes.keys():
 			return spriteName

@@ -4,7 +4,7 @@ VGDL example: Mario, jump around!
 @author: Tom Schaul
 '''
 
-mario_game = """
+game = """
 BasicGame
     SpriteSet 
         elevator > Missile orientation=UP speed=0.1 color=BLUE
@@ -39,7 +39,7 @@ BasicGame
         = > elevator
 """
 
-mario_level = """
+level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                          w
 w                        G1w
@@ -58,4 +58,4 @@ wwwwwwwwww      wwww       w
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(mario_game, mario_level)
+    VGDLParser.playGame(game, level)

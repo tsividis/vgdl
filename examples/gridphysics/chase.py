@@ -7,7 +7,7 @@ Careful: goats get angry when you see a dead goat...
 '''
 
 
-chase_game = """
+game = """
 BasicGame
     SpriteSet
         carcass > Immovable color=BROWN
@@ -32,7 +32,7 @@ BasicGame
 
 """
 
-chase_level = """
+level = """
 wwwwwwwwwwwwwwwwwwwwwwww
 wwww    w0  ww      0www
 w     w w       ww    ww
@@ -48,4 +48,4 @@ wwwwwwwwwwwwwwwwwwwwwwww
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(chase_game, chase_level)
+    VGDLParser.playGame(game, level)
