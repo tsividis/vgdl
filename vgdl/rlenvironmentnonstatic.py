@@ -231,7 +231,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                         res[i] = int(res[i]) | (2<<s)
         return res
 
-    def _performAction(self, action, onlyavatar=False):
+    def _performAction(self, action=[], onlyavatar=False):
         
         """ Action is an index for the actionset.  """ 
         # take action and compute consequences
@@ -255,15 +255,15 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             self._game._clearAll(self.visualize)
 
         # update sprites 
-        # if onlyavatar:
-        #     if action != (0,0):
-        #         self._avatar.update(self._game)
+        if onlyavatar:
+            if action != 0:
+                self._avatar.update(self._game)
 
-        # else:
-        for s in self._game:
-            # if s == self._avatar and action == (0,0):
-            #     continue
-            s.update(self._game)
+        else:
+            for s in self._game:
+                if s == self._avatar and action == 0:
+                    continue
+                s.update(self._game)
 
         events = self._game._eventHandling()
         ## get events (e.g., (stepBack obj1ID, obj2ID))
