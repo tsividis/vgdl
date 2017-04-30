@@ -295,14 +295,14 @@ if __name__ == "__main__":
 
 	# gameFilename = "examples.gridphysics.demo_chaser"  ##easy version solved!
 	# gameFilename = "examples.gridphysics.portals" ## stochasticity breaks it
-	gameFilename = "examples.gridphysics.demo_helper"  ##easy version solved!
+	# gameFilename = "examples.gridphysics.demo_helper"  ##easy version solved!
 
 	# gameFilename = "examples.gridphysics.demo_multigoal_and"  ##takes forever.
 
 	# gameFilename = "examples.gridphysics.demo_multigoal_and_score"  ##easy version solved!
 	# gameFilename = "examples.gridphysics.demo_sokoban"
 	# gameFilename = "examples.gridphysics.demo_sokoban_score"
-
+	gameFilename = "examples.gridphysics.simpleGame_missile"
 
 	## boulderdash: game freezes.
 	# gameFilename = "examples.gridphysics.butterflies" #no
@@ -314,7 +314,8 @@ if __name__ == "__main__":
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
-
+	rle._game.keystate = defaultdict(lambda:False)
+	embed()
 
 	p = IW(rle, gameString, levelString, gameFilename, k=2, display=1)
 	# p.trackTokens = True

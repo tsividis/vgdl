@@ -276,8 +276,8 @@ class BasicGame(object):
         self.height = len(lines)
         assert self.width > 1 and self.height > 1, "Level too small."
         # rescale pixels per block to adapt to the level
-        # self.block_size = max(2,int(800./max(self.width, self.height)))
-        self.block_size = max(2,int(400./max(self.width, self.height)))
+        self.block_size = max(2,int(800./max(self.width, self.height)))
+        # self.block_size = max(2,int(400./max(self.width, self.height)))
         self.screensize = (self.width*self.block_size, self.height*self.block_size)
 
         # set up resources
@@ -1257,7 +1257,7 @@ class BasicGame(object):
     def startGameExternalPlayer(self, headless, persist_movie, movie_dir):
         print "in startgameexternalplayer"
         embed()
-        self._initScreen(self.screensize,headless)
+        self._initScreen(self.screensize, headless)
         pygame.display.flip()
         self.reset()
         self.clock = pygame.time.Clock()

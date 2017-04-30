@@ -286,6 +286,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             self._allEvents.append((self._previous_state, action, self._last_state))
 
     def step(self, action):
+        if action == ('space'):
+            self._game.keystate[32] = True
+            action = (0,0)
         pre_step_score = self._game.score
         events = self._performAction(action) 
         observation = self._getSensors()
