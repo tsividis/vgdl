@@ -3,13 +3,23 @@ VGDL example: Urgent
 
 @author: Jake
 '''
+# level = """
+# wwwwwwwww
+# w   1   w
+# w   1   w
+# A   1   G
+# w   1   w
+# w   1   w
+# wwwwwwwww
+# """
+
 level = """
 wwwwwwwwwwwww
-w     w     w
-w     w     w
-A     w     G
-w     w     w
-w     w     w
+w     1     w
+w     1     w
+A     1     G
+w     1     w
+w     1     w
 wwwwwwwwwwwww
 """
 
@@ -29,15 +39,18 @@ BasicGame
   SpriteSet         
     goal > Immovable color=GREEN
     wall > Immovable color=BLACK
-    bullet > Missile speed=1 singleton=True color=RED
+    glass > Immovable color=BLUE
+    bullet > Missile speed=.2 singleton=True color=RED
     avatar  > ShootAvatar stype=bullet
 
   LevelMapping
     w > wall       
     G > goal
+    b > bullet
+    1 > glass
 
   InteractionSet
-    wall bullet > killSprite 
+    glass bullet > killSprite 
     bullet wall > killSprite    
     goal avatar > killSprite
 
@@ -45,7 +58,7 @@ BasicGame
 
     avatar EOS > stepBack
     avatar wall > stepBack
-
+    avatar glass > stepBack
   TerminationSet
     SpriteCounter stype=goal win=True
 """

@@ -12,11 +12,13 @@ import pygame
 from ontology import BASEDIRS
 from core import VGDLSprite
 from stateobsnonstatic import StateObsHandlerNonStatic 
+from collections import defaultdict
 import argparse
 from IPython import embed
 import random
 import math
 import importlib
+from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
 OBSERVATION_LOCAL = 'local'
 OBSERVATION_GLOBAL = 'global'
@@ -67,6 +69,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self._game.reset()
         self._game.all_objects = self._game.getObjects() # Save all objects, some which may be killed in game
         self.makeSymbolDict()
+        self._game.keystate = defaultdict(lambda:False)
 
 
     # Get definition of the observation data expected
@@ -244,7 +247,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         #     self._avatar._readMultiActions = lambda *x: [action]
 
         # self._avatar._readMultiActions = lambda *x: [self._actionset[action]] # old 
-        from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
         possible_actions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]    
 
         if action in possible_actions:
@@ -268,12 +270,22 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         events = self._game._eventHandling()
         ## get events (e.g., (stepBack obj1ID, obj2ID))
         
+        # print "in _performAction"
+        # embed()
+
+        # self._gravepoints[(skey, self._rect2pos(s.rect))] = True
 
         # ### BEGINNING OF CHANGES
         for skey in self._other_types:
             ss = self._game.sprite_groups[skey]
             self._obstypes[skey] = [self._sprite2state(sprite, oriented=False) 
                                         for sprite in ss]
+
+        ## Added 4/31
+        for k in self._game.sprite_groups:
+            for sprite in self._game.sprite_groups[k]:
+                if (k, self._rect2pos(sprite.rect)) not in self._gravepoints.keys():
+                    self._gravepoints[(k, self._rect2pos(sprite.rect))] = True
         
         return events
 
@@ -293,6 +305,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             self._allEvents.append((self._previous_state, action, self._last_state))
 
     def step(self, action):
+        if action == ('space'):
+            self._game.keystate[32] = True
+            action = (0,0)
         pre_step_score = self._game.score
         events = self._performAction(action) 
         observation = self._getSensors()
@@ -311,6 +326,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             ## this is where you need to give the reward for doing non-terminal actions, and then your agent can process this.
             # reward = 0
             reward = dScore
+        for k in self._game.keystate:
+            self._game.keystate[k] = False
         return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
 
 ## the game in the agent's 'head'
