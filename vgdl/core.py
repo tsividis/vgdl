@@ -29,28 +29,52 @@ actionToKeyPress = {(-1,0): pygame.K_LEFT, (1,0): pygame.K_RIGHT,
 
 keyPresses = {273: 'up', 274: 'down', 276: 'left', 275: 'right', 32: 'spacebar'}
 emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
-colorDict = {str((0, 200, 0)): 'GREEN',\
-            str((0, 0, 200)): 'BLUE',\
-            str((200, 0, 0)): 'RED',\
-            str((90, 90, 90)): 'GRAY',\
+
+colorDict = {str((129, 199, 132)): 'GREEN',\
+            str((25, 118, 210)): 'BLUE',\
+            str((211, 47, 47)): 'RED',\
+            str((69, 90, 100)): 'GRAY',\
             str((250, 250, 250)): 'WHITE',\
-            str((140, 120, 100)): 'BROWN',\
-            str((0, 0, 0)): 'BLACK',\
-            str((250, 160, 0)): 'ORANGE',\
-            str((250, 250, 0)): 'YELLOW',\
-            str((250, 200, 200)): 'PINK',\
-            str((250, 212, 0)): 'GOLD',\
-            str((250, 50, 50)): 'LIGHTRED',\
-            str((250, 200, 100)): 'LIGHTORANGE',\
-            str((50, 100, 250)): 'LIGHTBLUE',\
-            str((50, 250, 50)): 'LIGHTGREEN',\
-            str((150, 150, 150)): 'LIGHTGRAY',\
-            str((30, 30, 30)): 'DARKGRAY',\
-            str((20, 20, 100)): 'DARKBLUE',\
-            str((140, 20, 140)): 'PURPLE',\
+            str((109, 76, 65)): 'BROWN',\
+            str((55, 71, 79)): 'BLACK',\
+            str((230, 81, 0)): 'ORANGE',\
+            str((255, 245, 157)): 'YELLOW',\
+            str((255, 138, 128)): 'PINK',\
+            str((255, 196, 0)): 'GOLD',\
+            str((255, 82, 82)): 'LIGHTRED',\
+            str((255, 112, 67)): 'LIGHTORANGE',\
+            str((144, 202, 249)): 'LIGHTBLUE',\
+            str((185, 246, 202)): 'LIGHTGREEN',\
+            str((207, 216, 220)): 'LIGHTGRAY',\
+            str((69, 90, 100)): 'DARKGRAY',\
+            str((1, 87, 155)): 'DARKBLUE',\
+            str((92, 107, 192)): 'PURPLE',\
             str((1, 1, 1)): 'ENDOFSCREEN',\
             str((1, 0, 1)): 'SCORECOLOR', \
             }
+
+# colorDict = {str((0, 200, 0)): 'GREEN',\
+#             str((0, 0, 200)): 'BLUE',\
+#             str((200, 0, 0)): 'RED',\
+#             str((90, 90, 90)): 'GRAY',\
+#             str((250, 250, 250)): 'WHITE',\
+#             str((140, 120, 100)): 'BROWN',\
+#             str((0, 0, 0)): 'BLACK',\
+#             str((250, 160, 0)): 'ORANGE',\
+#             str((250, 250, 0)): 'YELLOW',\
+#             str((250, 200, 200)): 'PINK',\
+#             str((250, 212, 0)): 'GOLD',\
+#             str((250, 50, 50)): 'LIGHTRED',\
+#             str((250, 200, 100)): 'LIGHTORANGE',\
+#             str((50, 100, 250)): 'LIGHTBLUE',\
+#             str((50, 250, 50)): 'LIGHTGREEN',\
+#             str((150, 150, 150)): 'LIGHTGRAY',\
+#             str((30, 30, 30)): 'DARKGRAY',\
+#             str((20, 20, 100)): 'DARKBLUE',\
+#             str((140, 20, 140)): 'PURPLE',\
+#             str((1, 1, 1)): 'ENDOFSCREEN',\
+#             str((1, 0, 1)): 'SCORECOLOR', \
+#             }
 
 class VGDLParser(object):
     """ Parses a string into a Game object. """

@@ -18,25 +18,25 @@ import core
 # ---------------------------------------------------------------------
 #     Constants
 # ---------------------------------------------------------------------
-GREEN = (0, 200, 0)
-BLUE = (0, 0, 200)
-RED = (200, 0, 0)
-GRAY = (90, 90, 90)
+GREEN = (129, 199, 132)#(0, 200, 0)
+BLUE = (25, 118, 210)#(0, 0, 200)
+RED = (211, 47, 47)#(200, 0, 0)
+GRAY = (69, 90, 100)#(90, 90, 90)
 WHITE = (250, 250, 250)
-BROWN = (140, 120, 100)
-BLACK = (0, 0, 0)
-ORANGE = (250, 160, 0)
-YELLOW = (250, 250, 0)
-PINK = (250, 200, 200)
-GOLD = (250, 212, 0)
-LIGHTRED = (250, 50, 50)
-LIGHTORANGE = (250, 200, 100)
-LIGHTBLUE = (50, 100, 250)
-LIGHTGREEN = (50, 250, 50)
-LIGHTGRAY = (150, 150, 150)
-DARKGRAY = (30, 30, 30)
-DARKBLUE = (20, 20, 100)
-PURPLE = (140, 20, 140)
+BROWN = (109, 76, 65)#(140, 120, 100)
+BLACK = (55, 71, 79)#(0, 0, 0)
+ORANGE = (230, 81, 0)#(250, 160, 0)
+YELLOW = (255, 245, 157)#(250, 250, 0)
+PINK = (255, 138, 128)#(250, 200, 200)
+GOLD = (255, 196, 0)#(250, 212, 0)
+LIGHTRED = (255, 82, 82)#(250, 50, 50)
+LIGHTORANGE = (255, 112, 67)#(250, 200, 100)
+LIGHTBLUE = (144, 202, 249)#(50, 100, 250)
+LIGHTGREEN = (185, 246, 202)#(50, 250, 50)
+LIGHTGRAY = (207, 216, 220)#(150, 150, 150)
+DARKGRAY = (69, 90, 100)#(30, 30, 30)
+DARKBLUE = (1, 87, 155)#(20, 20, 100)
+PURPLE = (92, 107, 192)#(140, 20, 140)
 RESOURCETOADD = (175, 175, 175)
 ENDOFSCREEN = (1, 1, 1)
 SCORECOLOR = (1, 0, 1)
@@ -47,31 +47,53 @@ LEFT = (-1, 0)
 RIGHT = (1, 0)
 
 BASEDIRS = [UP, LEFT, DOWN, RIGHT]
-
-colorDict = {str((0, 200, 0)): 'GREEN',\
-            str((0, 0, 200)): 'BLUE',\
-            str((200, 0, 0)): 'RED',\
-            str((90, 90, 90)): 'GRAY',\
+colorDict = {str((129, 199, 132)): 'GREEN',\
+            str((25, 118, 210)): 'BLUE',\
+            str((211, 47, 47)): 'RED',\
+            str((69, 90, 100)): 'GRAY',\
             str((250, 250, 250)): 'WHITE',\
-            str((140, 120, 100)): 'BROWN',\
-            str((0, 0, 0)): 'BLACK',\
-            str((250, 160, 0)): 'ORANGE',\
-            str((250, 250, 0)): 'YELLOW',\
-            str((250, 200, 200)): 'PINK',\
-            str((250, 212, 0)): 'GOLD',\
-            str((250, 50, 50)): 'LIGHTRED',\
-            str((250, 200, 100)): 'LIGHTORANGE',\
-            str((50, 100, 250)): 'LIGHTBLUE',\
-            str((50, 250, 50)): 'LIGHTGREEN',\
-            str((150, 150, 150)): 'LIGHTGRAY',\
-            str((30, 30, 30)): 'DARKGRAY',\
-            str((20, 20, 100)): 'DARKBLUE',\
-            str((140, 20, 140)): 'PURPLE',\
-            str((175, 175, 175)): 'RESOURCETOADD',\
+            str((109, 76, 65)): 'BROWN',\
+            str((55, 71, 79)): 'BLACK',\
+            str((230, 81, 0)): 'ORANGE',\
+            str((255, 245, 157)): 'YELLOW',\
+            str((255, 138, 128)): 'PINK',\
+            str((255, 196, 0)): 'GOLD',\
+            str((255, 82, 82)): 'LIGHTRED',\
+            str((255, 112, 67)): 'LIGHTORANGE',\
+            str((144, 202, 249)): 'LIGHTBLUE',\
+            str((185, 246, 202)): 'LIGHTGREEN',\
+            str((207, 216, 220)): 'LIGHTGRAY',\
+            str((69, 90, 100)): 'DARKGRAY',\
+            str((1, 87, 155)): 'DARKBLUE',\
+            str((92, 107, 192)): 'PURPLE',\
             str((1, 1, 1)): 'ENDOFSCREEN',\
-            str((1, 0, 1)): 'SCORECOLOR',\
-
+            str((1, 0, 1)): 'SCORECOLOR', \
             }
+
+# colorDict = {str((0, 200, 0)): 'GREEN',\
+#             str((0, 0, 200)): 'BLUE',\
+#             str((200, 0, 0)): 'RED',\
+#             str((90, 90, 90)): 'GRAY',\
+#             str((250, 250, 250)): 'WHITE',\
+#             str((140, 120, 100)): 'BROWN',\
+#             str((0, 0, 0)): 'BLACK',\
+#             str((250, 160, 0)): 'ORANGE',\
+#             str((250, 250, 0)): 'YELLOW',\
+#             str((250, 200, 200)): 'PINK',\
+#             str((250, 212, 0)): 'GOLD',\
+#             str((250, 50, 50)): 'LIGHTRED',\
+#             str((250, 200, 100)): 'LIGHTORANGE',\
+#             str((50, 100, 250)): 'LIGHTBLUE',\
+#             str((50, 250, 50)): 'LIGHTGREEN',\
+#             str((150, 150, 150)): 'LIGHTGRAY',\
+#             str((30, 30, 30)): 'DARKGRAY',\
+#             str((20, 20, 100)): 'DARKBLUE',\
+#             str((140, 20, 140)): 'PURPLE',\
+#             str((175, 175, 175)): 'RESOURCETOADD',\
+#             str((1, 1, 1)): 'ENDOFSCREEN',\
+#             str((1, 0, 1)): 'SCORECOLOR',\
+
+#             }
 
 spriteToParams = {'Resource': [], \
                 'ResourcePack': [], \
