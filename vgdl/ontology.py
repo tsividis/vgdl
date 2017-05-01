@@ -868,7 +868,7 @@ class InertialAvatar(OrientedAvatar):
     def update(self, game):
         MovingAvatar.update(self, game)
 
-class PlatformerAvatar(InertialAvatar):
+class MarioAvatar(InertialAvatar):
     physicstype = GravityPhysics
     draw_arrow = False
     strength = 10
@@ -926,10 +926,10 @@ class PlatformerAvatar(InertialAvatar):
         self.last_vy = self.lastrect.y-self.rect.y
         VGDLSprite.update(self, game)
 
-class ClimbingAvatar(PlatformerAvatar, MovingAvatar): 
+class ClimbingAvatar(MarioAvatar, MovingAvatar): 
     climbing = False
     saved_gravity = GravityPhysics.gravity
-    saved_steering = PlatformerAvatar.airsteering
+    saved_steering = MarioAvatar.airsteering
     jumping = False
     def update(self, game):
         action = self._readAction(game)

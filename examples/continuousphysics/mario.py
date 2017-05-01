@@ -9,7 +9,7 @@ BasicGame
     SpriteSet 
         elevator > Missile orientation=UP speed=0.1 color=BLUE
         moving > physicstype=GravityPhysics color=WHITE
-            avatar > PlatformerAvatar strength=15
+            avatar > MarioAvatar strength=15
             evil   >  orientation=LEFT
                 goomba     > Walker     color=BROWN 
                 paratroopa > WalkJumper color=RED prob=.9
