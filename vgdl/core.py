@@ -590,7 +590,7 @@ class BasicGame(object):
         push_effect = 'bounceForward'
         back_effect = 'stepBack'
         force_collisions = []
-        dead = self.kill_list[:] # copy kill list
+        self.dead = self.kill_list[:] # copy kill list
         collision_set = set()
         new_collisions = True
         self.effectList = []
@@ -651,8 +651,8 @@ class BasicGame(object):
                     for collision_index in sprite1.rect.collidelistall(sprite_list2):
                         sprite2 = sprite_list2[collision_index]
                         if (sprite1 == sprite2
-                            or sprite1 in dead
-                            or sprite2 in dead
+                            or sprite1 in self.dead
+                            or sprite2 in self.dead
                             or (sprite1, sprite2) in collision_set):
                             continue
                         new_collisions.add((sprite1, sprite2))

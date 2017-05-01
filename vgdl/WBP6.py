@@ -283,7 +283,7 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.movers3c" ##solved!!
 	# gameFilename = "examples.gridphysics.rivercross" ## solved!!
 	# gameFilename = "examples.gridphysics.demo_dodge"  ##solved!!
-	gameFilename = "examples.gridphysics.simpleGame4_small"
+	# gameFilename = "examples.gridphysics.simpleGame4_small"
 	# gameFilename = "examples.gridphysics.movers5" ##solved!!
 
 	# gameFilename = "examples.gridphysics.simpleGame_push_boulders_multigoal" ## k=2 works!
@@ -311,11 +311,12 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.chase" no
 	# gameFilename = "examples.gridphysics.survivezombies" # no
 
-	# gameFilename = "examples.gridphysics.demo_transform_small" ## won't work until RLE can handle transformations.
+	gameFilename = "examples.gridphysics.demo_transform_small" ## won't work until RLE can handle transformations.
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
+	embed()
 
 
 	p = IW(rle, gameString, levelString, gameFilename, k=2, display=1)
@@ -326,7 +327,6 @@ if __name__ == "__main__":
 	# last, visited, rejected = BFS2(rle, p)
 	print time.time()-t1
 	print len(visited), len(rejected)
-	embed()
 	# if not hasattr(last, 'actionSeq'):
 	# 	print "Failed without tracking tokens. re-trying"
 	# 	p.trackTokens = True
