@@ -4,6 +4,7 @@ import itertools
 
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
+actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right'}
 # ACTIONS = [(1,0), (-1,0), (0,1), (0,-1)]
 
 ## Base class for width-based planners (IW(k) and 2BFS)
@@ -95,31 +96,6 @@ class WBP(Planner):
 		# print len(newTuples)
 		# embed()
 		return len(newTuples)
-
-def BFS(rle, WBP):
-	Q = Queue()
-	visited, rejected, visitedStates= [], [], []
-	start = Node(rle, WBP, [], None)
-	start.lastState = rle
-	visitedStates.append(rle)
-	Q.put(start)
-	while not Q.empty():
-		current = Q.get()
-		win = current.eval(updateNoveltyDict=True)
-		if current.novelty > 0:			
-			visitedStates.append(current)
-			if win:
-				return current, visited, rejected, visitedStates
-			for a in ACTIONS:
-				child = Node(rle, WBP, current.actionSeq+[a], current)
-				Q.put(child)
-		else:
-			rejected.append(current)
-	print "no more states in queue"
-	embed()
-	return Q, visited, rejected, visitedStates
-
-
 def noveltyHeuristic(lst, WBP, k, surrogateCall=False):
 	#returns the node in lst that has highest novelty measure
 	## you need to not change the noveltyDict when you evaluate the novelty. Only change the dict if you select the state!
@@ -157,49 +133,61 @@ def rewardHeuristic(lst, WBP, k, surrogateCall=False):
 		print "found 0 nodes in rewardHeuristic"
 		embed()
 
-#when you expand a node, evaluate its children on both heuristics, then place in the queue.
-## when you select a node from the queue, update the noveltyDict
-def BFS2(rle, WBP):
-	Q = []
-	visited, rejected, visitedStates = [], [], []
+def BFS(rle, WBP):
+	Q = Queue()
+	visited, rejected= [], []
 	start = Node(rle, WBP, [], None)
 	start.lastState = rle
-	visited.append(start)
-	visitedStates.append(rle)
+	visited.append(rle)
+	Q.put(start)
+	while not Q.empty():
+		current = Q.get()
+		win = current.eval(updateNoveltyDict=True)
+		if current.novelty > 0:			
+			visited.append(current)
+			if win:
+				return current, visited, rejected
+			for a in ACTIONS:
+				child = Node(rle, WBP, current.actionSeq+[a], current)
+				Q.put(child)
+		else:
+			rejected.append(current)
+	print "no more states in queue"
+	embed()
+	return Q, visited, rejected
+
+def BFS2(rle, WBP):
+	Q = []
+	visited, rejected = [], []
+	start = Node(rle, WBP, [], None)
+	start.lastState = rle
+	visited.append(rle)
 	start.eval()
 	Q.append(start)
 	i=0
 	while len(Q)>0:
 		if i%2==0:
-			#What do you do if you only have states with novelty 0?
-			## you would pick from the rewardHeuristic, and would pick randomly if they all had value 0.
 			current = noveltyHeuristic(Q, WBP, WBP.k, surrogateCall=False)
 		else:
-			## Similarly, if thre are tied rewards and you get states with novelty 0, you will still return one of these.
-			## in the case where rewards were 0 and novelties were 0 we should stop.
 			current = rewardHeuristic(Q, WBP, WBP.k, surrogateCall=False)
-
 		## This is not nec. right.
-		## TODO: make heuristics return None if they're forced to tie-break but rewards and novelties are 0.
 		if current is None:
 			print "got no node"
 			embed()
-			return Q, visited, rejected, visitedStates
+			return Q, visited, rejected
 		else:
-			# embed()
 			Q.remove(current)
 			current.eval(updateNoveltyDict=True)
-			# visited.append(current.state.tostring())
-			visitedStates.append(current)
+			visited.append(current)
 			if current.win:
-				return current, visited, rejected, visitedStates
+				return current, visited, rejected
 			else:
 				for a in ACTIONS:
 					child = Node(rle, WBP, current.actionSeq+[a], current)
 					child.eval()
 					Q.append(child)		
 			i+=1
-	return Q, visited, rejected, visitedStates
+	return Q, visited, rejected
 
 
 
@@ -238,8 +226,8 @@ class Node():
 				vrle.step(self.actionSeq[i])
 				terminal, win = vrle._isDone()
 				i += 1
-		# if len(self.actionSeq)>0:
-			# print self.actionSeq[-1]
+		if len(self.actionSeq)>0:
+			print actionDict[self.actionSeq[-1]]
 		self.updateObjIDs(vrle)
 		print vrle.show()
 		self.state = self.WBP.calculateAtoms(vrle)
@@ -272,7 +260,7 @@ class Node():
 		print vrle.show()
 		while not terminal:
 			a = self.actionSeq[i]
-			# print a
+			print actionDict[a]
 			vrle.step(a)
 			print vrle.show()
 			# vrle.step((0,0))
@@ -295,7 +283,7 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.movers3c" ##solved!!
 	# gameFilename = "examples.gridphysics.rivercross" ## solved!!
 	# gameFilename = "examples.gridphysics.demo_dodge"  ##solved!!
-	# gameFilename = "examples.gridphysics.simpleGame4_small"
+	gameFilename = "examples.gridphysics.simpleGame4_small"
 	# gameFilename = "examples.gridphysics.movers5" ##solved!!
 
 	# gameFilename = "examples.gridphysics.simpleGame_push_boulders_multigoal" ## k=2 works!
@@ -323,7 +311,7 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.chase" no
 	# gameFilename = "examples.gridphysics.survivezombies" # no
 
-	gameFilename = "examples.gridphysics.demo_transform_small" ## won't work until RLE can handle transformations.
+	# gameFilename = "examples.gridphysics.demo_transform_small" ## won't work until RLE can handle transformations.
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
@@ -334,8 +322,8 @@ if __name__ == "__main__":
 
 	# p.trackTokens = True
 	t1 = time.time()
-	last, visited, rejected, visitedStates = BFS(rle, p)
-	# last, visited, rejected, visitedStates = BFS2(rle, p)
+	last, visited, rejected = BFS(rle, p)
+	# last, visited, rejected = BFS2(rle, p)
 	print time.time()-t1
 	print len(visited), len(rejected)
 	embed()
