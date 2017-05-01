@@ -19,6 +19,7 @@ def vectNorm(v):
 
 def unitVector(v):
     l = vectNorm(v)
+    
     if l > 0:
         return (v[0]/l, v[1]/l)
     else:
@@ -150,5 +151,6 @@ def makeGifVideo(env, actions, initstate=None, prefix='seq_', duration=0.1,
         
     env.rollOut(actions, callback=cb)
     writeGif(outdir + prefix + '%s.gif' % astring, res_images, duration=duration, dither=0)
+
  
     

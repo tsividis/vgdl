@@ -9,10 +9,10 @@ BasicGame
     SpriteSet 
         elevator > Missile orientation=UP speed=0.1 color=BLUE
         moving > physicstype=GravityPhysics color=WHITE
-            avatar > MarioAvatar airsteering=True
+            avatar > PlatformerAvatar strength=15
             evil   >  orientation=LEFT
                 goomba     > Walker     color=BROWN 
-                paratroopa > WalkJumper color=RED
+                paratroopa > WalkJumper color=RED prob=.9
         goal > Immovable color=GREEN
         wall > ResourcePack color=BLACK
             
@@ -54,6 +54,22 @@ w        www      wwwwww   w
 w A      1   ===           w
 wwww   wwww        2       w
 wwwwwwwwww      wwww       w
+"""
+
+test_level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                        G w
+w                          w
+w                          w
+w                          w
+w                          w
+w                          w
+w                          w
+w                          w
+w                          w
+w                          w
+w   A                      w
+wwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 if __name__ == "__main__":

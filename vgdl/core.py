@@ -410,6 +410,10 @@ class BasicGame(object):
             self.background.fill(LIGHTGRAY)
             self.screen.blit(self.background, (0,0))
 
+    def set_caption(self, text):
+        pygame.display.set_caption(str(text))
+
+
     def __iter__(self):
         """ Iterator over all sprites (ordered) """
         for key in self.sprite_order:

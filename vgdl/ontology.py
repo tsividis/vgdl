@@ -868,31 +868,68 @@ class InertialAvatar(OrientedAvatar):
     def update(self, game):
         MovingAvatar.update(self, game)
 
-class MarioAvatar(InertialAvatar):
-    """ Mario can have two states: in contact with the ground, or in parabolic flight. """
+class PlatformerAvatar(InertialAvatar):
     physicstype = GravityPhysics
     draw_arrow = False
     strength = 10
-    airsteering = False
+    movestrength = sqrt(strength)
+    vx_max = 5
+    airsteering = True
+    last_vy = 0
+    jumping = False
+    wait_step = 0
+    airstrength = 1
+    decay = .5
     def update(self, game):
-        action = self._readAction(game)
-        if action is None:
-            action = (0, 0)
         from pygame.locals import K_SPACE
-        if game.keystate[K_SPACE] and self.orientation[1] == 0:
-            action = (action[0] * sqrt(self.strength), -self.strength)
-        elif self.orientation[1] == 0 or self.airsteering:
-            action = (action[0] * sqrt(self.strength), 0)
+
+        action = self._readAction(game)
+
+        if action == None:
+            action = [0, 0]
+        action = list(action)
+
+        # presumibly, this means the sprite is 'landed'
+        self.airstrength *= (1-self.decay)
+        if self.last_vy == self.lastrect.y - self.rect.y:
+            self.wait_step += 1
+            if not self.jumping:
+                action[0] = action[0] * self.movestrength
+
+                if game.keystate[K_SPACE] and not self.jumping:
+                    action[1] = -self.strength
+                    self.jumping = True
+                    self.wait_step = 0
+                    self.airstrength = 1
+            else:
+                action[0] = action[0] * self.movestrength * self.airstrength
+
         else:
-            action = (0, 0)
+            self.wait_step = 0
+
+        # this is pretty hacky. What if sprite doesn't move very fast?
+        if self.wait_step > 2:
+            self.jumping = False
+
         self.physics.activeMovement(self, action)
+
+        vx = self.orientation[0]*self.speed
+        if abs(vx) > self.vx_max:
+            # vx always greater than zero at this point
+            sign = abs(vx)/vx
+            vx = sign*self.vx_max
+            vy = self.orientation[1]*self.speed
+            self.orientation = unitVector((vx, vy))
+            self.speed = vectNorm((vx, vy))/ vectNorm(self.orientation)
+
+        # a less precise vy, but this is useful
+        self.last_vy = self.lastrect.y-self.rect.y
         VGDLSprite.update(self, game)
 
-
-class ClimbingAvatar(MarioAvatar, MovingAvatar): 
+class ClimbingAvatar(PlatformerAvatar, MovingAvatar): 
     climbing = False
     saved_gravity = GravityPhysics.gravity
-    saved_steering = MarioAvatar.airsteering
+    saved_steering = PlatformerAvatar.airsteering
     jumping = False
     def update(self, game):
         action = self._readAction(game)
