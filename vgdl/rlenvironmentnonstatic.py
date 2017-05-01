@@ -32,7 +32,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
     # If the visualization is enabled, all actions will be reflected on the screen.
     visualize = False
-    
+    # visualize = True
     # In that case, optionally wait a few milliseconds between actions?
     actionDelay = 0
     
