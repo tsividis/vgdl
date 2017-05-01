@@ -3,9 +3,9 @@ from planner import *
 import itertools
 
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
-ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
-actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right'}
-# ACTIONS = [(1,0), (-1,0), (0,1), (0,-1)]
+NONE = 0
+# ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
+actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', NONE: 'wait'}
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP(Planner):
@@ -13,7 +13,6 @@ class WBP(Planner):
 		Planner.__init__(self, rle, gameString, levelString, gameFilename, display)
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
 		self.vecDim = [rle.outdim[0]*rle.outdim[1], 2, self.T]
-		# self.noveltyDict = []
 		self.trueAtoms = set() ## set of atoms that have been true at some point thus far in the planner.
 		self.objectTypes = rle._game.sprite_groups.keys()
 		self.objectTypes.sort()
@@ -22,12 +21,32 @@ class WBP(Planner):
 		self.maxNumObjects = 6
 		self.trackTokens = False
 		self.vecSize = None
+		self.addWaitAction = False
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
 		print "If we track tokens we have an additional", 2**self.phiSize, "array elements."
 		i=1
 		for k in rle._game.all_objects.keys():
 			self.objIDs[k] = i * (rle.outdim[0]*rle.outdim[1]+self.padding)
 			i+=1
+		self.addSpaceBarToActions()
+
+	def addSpaceBarToActions(self):
+		## Note: if an object that isn't instantiated in the beginning is of a class that 
+		## spacebar applies to, we won't pick up on it here.
+		shootingClasses = ['MarioAvatar', 'ClimbingAvatar', 'ShootAvatar', 'Switch', 'FlakAvatar']
+		classes = [str(o[0].__class__) for o in self.rle._game.sprite_groups.values() if len(o)>0]
+		spacebarAvailable = False
+		for sc in shootingClasses:
+			if any([sc in c for c in classes]):
+				spacebarAvailable = True
+				break
+		if spacebarAvailable:
+			self.actions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
+		else:
+			self.actions = [K_UP, K_DOWN, K_LEFT, K_RIGHT]
+		if self.addWaitAction:
+			self.actions.append(NONE)
+		return
 
 	def calculateAtoms(self, rle):
 		lst = []
@@ -41,9 +60,6 @@ class WBP(Planner):
 					vecValue = 0
 				objPosCombination = self.objIDs[o.ID] + vecValue
 				lst.append(objPosCombination)
-					# lst[o.ID] = vecValue
-				# else:
-				# 	lst[o.ID] = 'gone'
 		present = []
 		for k in [t for t in self.objectTypes if t not in ['wall', 'avatar']]:
 			for o in rle._game.sprite_groups[k]:
@@ -53,7 +69,6 @@ class WBP(Planner):
 					present.append(0)
 		ind = sum([present[i]*2**i for i in range(len(present))])
 		lst.append(ind)
-		# lst['globalcount'] = ind
 		return set(lst)
 	
 	def compareDicts(self, d1,d2):
@@ -147,7 +162,7 @@ def BFS(rle, WBP):
 			visited.append(current)
 			if win:
 				return current, visited, rejected
-			for a in ACTIONS:
+			for a in WBP.actions:
 				child = Node(rle, WBP, current.actionSeq+[a], current)
 				Q.put(child)
 		else:
@@ -182,7 +197,7 @@ def BFS2(rle, WBP):
 			if current.win:
 				return current, visited, rejected
 			else:
-				for a in ACTIONS:
+				for a in WBP.actions:
 					child = Node(rle, WBP, current.actionSeq+[a], current)
 					child.eval()
 					Q.append(child)		
