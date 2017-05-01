@@ -772,6 +772,7 @@ class NoisyRotatingFlippingAvatar(RotatingFlippingAvatar):
     noiseLevel = 0.1
 
 class ShootAvatar(OrientedAvatar, SpriteProducer):
+    # print ' -------------- Created Shoot Avatar ----------------'
     """ Produces a sprite in front of it (e.g., Link using his sword). """
     ammo=None
 
@@ -780,6 +781,7 @@ class ShootAvatar(OrientedAvatar, SpriteProducer):
         OrientedSprite.__init__(self, **kwargs)
 
     def update(self, game):
+        # print '--------------- Updating Shoot Avatar ----------------'
         OrientedAvatar.update(self, game)
         if self._hasAmmo():
             self._shoot(game)
@@ -796,8 +798,10 @@ class ShootAvatar(OrientedAvatar, SpriteProducer):
             self.resources[self.ammo] -= 1
 
     def _shoot(self, game):
+
         from pygame.locals import K_SPACE
         if self.stype and game.keystate[K_SPACE]:
+            # print '--------------------- shooting ------------------------'
             u = unitVector(self.orientation)
             newones = game._createSprite([self.stype], (self.lastrect.left + u[0] * self.lastrect.size[0],
                                                        self.lastrect.top + u[1] * self.lastrect.size[1]))

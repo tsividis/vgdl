@@ -2,7 +2,9 @@ from IPython import embed
 from planner import *
 import itertools
 
-ACTIONS = [(1,0), (-1,0), (0,1), (0,-1)]
+from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
+ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
+# ACTIONS = [(1,0), (-1,0), (0,1), (0,-1)]
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP(Planner):
@@ -19,10 +21,11 @@ class WBP(Planner):
 		self.maxNumObjects = 6
 		self.trackTokens = False
 		self.vecSize = None
+		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
 		print "If we track tokens we have an additional", 2**self.phiSize, "array elements."
 		i=1
 		for k in rle._game.all_objects.keys():
-			self.objIDs[k] = i * (rle.outdim[0]*rle.outdim[1]+5) ##5 is arbitrary; just to make sure we don't get overlap when we add positions
+			self.objIDs[k] = i * (rle.outdim[0]*rle.outdim[1]+self.padding)
 			i+=1
 
 	def calculateAtoms(self, rle):
@@ -237,6 +240,7 @@ class Node():
 				i += 1
 		# if len(self.actionSeq)>0:
 			# print self.actionSeq[-1]
+		self.updateObjIDs(vrle)
 		print vrle.show()
 		self.state = self.WBP.calculateAtoms(vrle)
 		self.lastState = vrle
@@ -244,6 +248,16 @@ class Node():
 		self.novelty = self.WBP.novelty(self, self.WBP.k, update=updateNoveltyDict)
 		self.reward = vrle._game.score
 		return win
+
+	def updateObjIDs(self, vrle):
+		i = 0
+		for objType in vrle._game.sprite_groups:
+			for s in vrle._game.sprite_groups[objType]:
+				if s.ID not in self.WBP.objIDs.keys():
+					self.WBP.objIDs[s.ID] = (len(self.WBP.objIDs.keys())+1) * (self.rle.outdim[0]*self.rle.outdim[1]+self.WBP.padding)
+					i+=1
+		# print "updated {} objects".format(i)
+		return
 
 	def isTerminal(self):
 		return self.rle._isDone()[0]
@@ -258,11 +272,11 @@ class Node():
 		print vrle.show()
 		while not terminal:
 			a = self.actionSeq[i]
-			print a
+			# print a
 			vrle.step(a)
 			print vrle.show()
-			vrle.step((0,0))
-			print vrle.show()
+			# vrle.step((0,0))
+			# print vrle.show()
 			# embed()
 			terminal = vrle._isDone()[0]
 			i+=1
@@ -302,26 +316,26 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.demo_multigoal_and_score"  ##easy version solved!
 	# gameFilename = "examples.gridphysics.demo_sokoban"
 	# gameFilename = "examples.gridphysics.demo_sokoban_score"
-	gameFilename = "examples.gridphysics.simpleGame_missile"
+	# gameFilename = "examples.gridphysics.simpleGame_missile"
 
 	## boulderdash: game freezes.
 	# gameFilename = "examples.gridphysics.butterflies" #no
 	# gameFilename = "examples.gridphysics.chase" no
 	# gameFilename = "examples.gridphysics.survivezombies" # no
 
-	# gameFilename = "examples.gridphysics.demo_transform" ## won't work until RLE can handle transformations.
+	gameFilename = "examples.gridphysics.demo_transform_small" ## won't work until RLE can handle transformations.
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
-	rle._game.keystate = defaultdict(lambda:False)
-	embed()
+
 
 	p = IW(rle, gameString, levelString, gameFilename, k=2, display=1)
+
 	# p.trackTokens = True
 	t1 = time.time()
-	# last, visited, rejected, visitedStates = BFS(rle, p)
-	last, visited, rejected, visitedStates = BFS2(rle, p)
+	last, visited, rejected, visitedStates = BFS(rle, p)
+	# last, visited, rejected, visitedStates = BFS2(rle, p)
 	print time.time()-t1
 	print len(visited), len(rejected)
 	embed()

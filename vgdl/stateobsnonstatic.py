@@ -46,6 +46,8 @@ class StateObsHandlerNonStatic(object):
         self._abs_avatar_types = []
         self._other_types = []
         self._mortal_types = []
+        # print "beginning of stateObsHandler"
+        # embed()
         for skey in sorted(game.sprite_constr): 
             sclass, _, stypes = game.sprite_constr[skey]
             if issubclass(sclass, Avatar):
@@ -57,6 +59,7 @@ class StateObsHandlerNonStatic(object):
                 continue 
             ss = game.sprite_groups[skey]
             if len(ss) == 0:
+                self._other_types += [skey] ## Added 4/31/17
                 continue
             if isinstance(ss[0], Avatar):
                 assert issubclass(ss[0].physicstype, GridPhysics), \
@@ -67,7 +70,8 @@ class StateObsHandlerNonStatic(object):
                 if not ss[0].is_static:
                     self.staticOther = False
         # assert self.staticOther, "not yet supported: all non-avatar sprites must be static. "
-        
+        # print "after initial loop"
+        # embed()
         self._avatar_types = sorted(set(self._avatar_types).difference(self._abs_avatar_types))
         self.uniqueAvatar = (len(self._avatar_types) == 1)
         #assert self.uniqueAvatar, 'not yet supported: can only have one avatar class'
@@ -81,15 +85,26 @@ class StateObsHandlerNonStatic(object):
                     self.mortalOther = True
                     self._mortal_types += [skey]
         
+        # print "in stateObsHandler"
+        # embed()
                  
         # retain observable features, and their colors
         self._obstypes = {}
         self._obscols = {}
+
+        ## Added 4/31/17
         for skey in self._other_types:
             ss = game.sprite_groups[skey]
-            self._obstypes[skey] = [self._sprite2state(sprite, oriented=False) for sprite in ss]
-            self._obscols[skey] = ss[0].color            
-        
+            if len(ss)>0:
+                self._obstypes[skey] = [self._sprite2state(sprite, oriented=False) for sprite in ss]
+                self._obscols[skey] = ss[0].color 
+            else:
+                self._obstypes[skey] = []
+        # for skey in self._other_types:
+        #     ss = game.sprite_groups[skey]
+        #     self._obstypes[skey] = [self._sprite2state(sprite, oriented=False) for sprite in ss]
+        #     self._obscols[skey] = ss[0].color            
+
         if self.mortalOther:
             self._gravepoints = {}
             for skey in self._mortal_types:

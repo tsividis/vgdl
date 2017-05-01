@@ -41,10 +41,10 @@ class Planner:
 		self.heuristicDecay = .99
 		self.immovables = []
 		self.killerObjects = []
-		goalLoc = self.findObjectInRLE(rle, 'goal')
-		self.rewardDict = {goalLoc:self.maxPseudoReward}
-		self.scanDomainForMovementOptions()
-		self.propagateRewards(goalLoc)
+		# goalLoc = self.findObjectInRLE(rle, 'goal')
+		# self.rewardDict = {goalLoc:self.maxPseudoReward}
+		# self.scanDomainForMovementOptions()
+		# self.propagateRewards(goalLoc)
 
 
 	def scanDomainForMovementOptions(self):
