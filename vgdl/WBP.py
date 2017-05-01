@@ -297,8 +297,8 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.demo_teleport" ##solved!!
 	# gameFilename = "examples.gridphysics.movers3c" ##solved!!
 	# gameFilename = "examples.gridphysics.rivercross" ## solved!!
-	# gameFilename = "examples.gridphysics.demo_dodge"  ##solved!!
-	gameFilename = "examples.gridphysics.simpleGame4_small"
+	gameFilename = "examples.gridphysics.demo_dodge"  ##solved!!
+	# gameFilename = "examples.gridphysics.simpleGame4_small"
 	# gameFilename = "examples.gridphysics.movers5" ##solved!!
 
 	# gameFilename = "examples.gridphysics.simpleGame_push_boulders_multigoal" ## k=2 works!
