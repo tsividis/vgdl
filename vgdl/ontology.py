@@ -15,9 +15,13 @@ from ai import AStarWorld
 from IPython import embed
 import core
 
-# ---------------------------------------------------------------------
-#     Constants
-# ---------------------------------------------------------------------
+
+
+UP = (0, -1)
+DOWN = (0, 1)
+LEFT = (-1, 0)
+RIGHT = (1, 0)
+
 GREEN = (129, 199, 132)#(0, 200, 0)
 BLUE = (25, 118, 210)#(0, 0, 200)
 RED = (211, 47, 47)#(200, 0, 0)
@@ -40,11 +44,6 @@ PURPLE = (92, 107, 192)#(140, 20, 140)
 RESOURCETOADD = (175, 175, 175)
 ENDOFSCREEN = (1, 1, 1)
 SCORECOLOR = (1, 0, 1)
-
-UP = (0, -1)
-DOWN = (0, 1)
-LEFT = (-1, 0)
-RIGHT = (1, 0)
 
 BASEDIRS = [UP, LEFT, DOWN, RIGHT]
 colorDict = {str((129, 199, 132)): 'GREEN',\
