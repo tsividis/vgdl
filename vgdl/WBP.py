@@ -30,6 +30,8 @@ class WBP(Planner):
 			i+=1
 		self.addSpaceBarToActions()
 
+	def getSubgoals(self, subgoal_path_threshold):
+		return [self.findObjectInRLE(self.rle, 'goal')]
 	def addSpaceBarToActions(self):
 		## Note: if an object that isn't instantiated in the beginning is of a class that 
 		## spacebar applies to, we won't pick up on it here.
@@ -270,17 +272,17 @@ class Node():
 		else:
 			self.reconstructed=True
 			print "copy failed; replaying from top"
-			vrle = copy.deepcopy(rle)
+			vrle = copy.deepcopy(self.rle)
 			terminal, win = vrle._isDone()
 			i=0
 			while not terminal and len(self.actionSeq)>i:
 				vrle.step(self.actionSeq[i])
 				terminal, win = vrle._isDone()
 				i += 1
-		if len(self.actionSeq)>0:
-			print actionDict[self.actionSeq[-1]]
+		# if len(self.actionSeq)>0:
+			# print actionDict[self.actionSeq[-1]]
 		self.updateObjIDs(vrle)
-		print vrle.show()
+		# print vrle.show()
 		# if len([o for o in vrle._game.sprite_groups['bullet'] if o not in vrle._game.kill_list]) > 1:
 			# print "multiple bullets"
 			# embed()

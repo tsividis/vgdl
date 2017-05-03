@@ -248,9 +248,9 @@ def getToWaypoint(rle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, 
 	print Vrle.show()
 	print "planner type", plannerType
 	if plannerType=='IW':
-		planner = IW(existing_rle=Vrle, game=theoryString, level=levelString, k=2)
-		p.BFS2(Vrle)
-		solution = p.solution.actionSeq
+		planner = IW(rle=Vrle, gameString=theoryString, levelString=levelString, gameFilename=Vrle.game_name, k=2)
+		planner.BFS2(Vrle)
+		solution = planner.solution.actionSeq
 	elif plannerType=='mcts':
 		mcts = Basic_MCTS(existing_rle=Vrle, game=theoryString, level=levelString, partitionWeights=partitionWeights)
 		# print "made mcts for subgoal,", subgoal
@@ -351,7 +351,10 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 		theory_change_flag = False
 		resetSubgoals = False
 		if not theory_change_flag: 
-			if plannerType=='mcts':
+			if plannerType == 'IW':
+				planner = IW(rle=vrle, gameString=game, levelString=level, gameFilename=vrle.game_name, k=2)
+				subgoals = planner.getSubgoals(subgoal_path_threshold=None)
+			elif plannerType=='mcts':
 				planner = Basic_MCTS(existing_rle=vrle, game=game, level=level, partitionWeights=[5,3,3])
 				subgoals = planner.getSubgoals(subgoal_path_threshold=3)
 			elif plannerType=='QLearning':

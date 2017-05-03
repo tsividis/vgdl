@@ -2,8 +2,8 @@ level="""
 1111111111111
 1 0         1
 1           1
-1      333331
-1    A  G  21
+1      444441
+1 A     4  G1
 1111111111111
 """
 game = """
@@ -12,31 +12,30 @@ BasicGame
 		avatar > MovingAvatar color=DARKBLUE
 		c3 > ResourcePack color=WHITE
 		c2 > Resource color=BROWN
-		goal > Resource color=BROWN
-		c5 > ResourcePack color=GOLD
-		c4 > ResourcePack color=BLACK
+		c5 > Resource color=GOLD
+		goal > Resource color=GOLD
+		c4 > Resource color=BLACK
 	InteractionSet
+		c2 avatar > killSprite
 		c4 EOS > stepBack
-		goal c4 > stepBack
-		c5 EOS > stepBack
-		c5 avatar > killSprite
+		c2 c4 > stepBack
+		goal EOS > stepBack
 		c4 avatar > killSprite
 		c3 c4 > stepBack
-		goal EOS > stepBack
-		c5 c4 > stepBack
+		c2 EOS > stepBack
+		goal c4 > stepBack
 		c3 EOS > stepBack
 		c3 avatar > killSprite
 		goal avatar > killSprite
 		avatar EOS > stepBack
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False
-		SpriteCounter stype=goal limit=0 win=True
 	LevelMapping
-		A > avatar
-		3 > c2
-		0 > c3
-		1 > c4
+		4 > c2
 		2 > c5
+		A > avatar
+		1 > c4
+		0 > c3
 		G > goal
 """
 if __name__ == "__main__":

@@ -30,6 +30,7 @@ class Agent:
 		# rle = self.rleCreateFunc()
 		self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
 		rle = self.rleCreateFunc()
+		rle.game_name = gameFilename
 		# rle = RLEnvironmentNonStatic(self.gameString, self.levelString)
 		avatarColor = colorDict[str(rle._game.sprite_groups['avatar'][0].color)]
 		self.knownColors.append(avatarColor)
@@ -237,8 +238,8 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.movers5"	
 	# filename = "examples.gridphysics.simpleGame_push_boulders_multigoal"	
 
-	# plannerType = "IW"
-	plannerType = "QLearning"
+	plannerType = "IW"
+	# plannerType = "QLearning"
 	# plannerType = "AStar"
 	print ""
 	print "Playing {} with {}".format(filename, plannerType)
