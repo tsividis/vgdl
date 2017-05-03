@@ -29,7 +29,7 @@ np.core.arrayprint._line_width=250
 ACTIONS = {(0,0):'stay',(0,-1):'up', (0,1):'down', (1,0):'right', (-1,0):'left', None:'none'}
 
 class Planner:
-	def __init__(self, rle, gameString, levelString, gameFilename, display):
+	def __init__(self, rle, gameString, levelString, gameFilename, display=1):
 		self.rle = rle
 		self.gameString = gameString
 		self.levelString = levelString
