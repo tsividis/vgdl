@@ -148,9 +148,11 @@ class Agent:
 		## Initialize external environment
 		rle = self.rleCreateFunc()
 		allObjects= rle._game.getObjects()
+		# from core import colorDict
+		# embed()
 		# allColors = [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in rle._game.sprite_groups.keys()]
 		##select only non-moving objects as goals. Avoids chasing, which takes forever at the moment.
-		allColors = [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in rle._game.sprite_groups.keys() if rle._game.sprite_groups[k][0].speed is None]
+		allColors = [colorDict[str(rle._game.sprite_groups[k][0].color)] for k in rle._game.sprite_groups.keys() if len(rle._game.getSprites(k))>0 and rle._game.sprite_groups[k][0].speed is None ]
 		allColors = [c for c in allColors if c!='DARKBLUE']
 		unknownColors = [c for c in allColors if c not in self.knownColors]
 
@@ -235,6 +237,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.movers5"	
 	# filename = "examples.gridphysics.simpleGame_push_boulders_multigoal"	
 
+	# plannerType = "IW"
 	plannerType = "QLearning"
 	# plannerType = "AStar"
 	print ""
