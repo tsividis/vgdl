@@ -69,8 +69,10 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self._game.reset()
         self._game.all_objects = self._game.getObjects() # Save all objects, some which may be killed in game
         self.makeSymbolDict()
+        self._game.ignoreList = [] ## another way to mark objects that shouldn't be processed when doing induction (that is, collision objects)
         self._game.keystate = defaultdict(lambda:False)
         self._game.metabolic_score = 0
+        self.game_name = None
 
     # Get definition of the observation data expected
     def observationSpec(self):
