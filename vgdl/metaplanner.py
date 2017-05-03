@@ -1,4 +1,5 @@
 from ontology import distributionInitSetup
+from WBP import *
 from mcts import *
 from qlearner import *
 from aStar import *
@@ -246,7 +247,11 @@ def getToWaypoint(rle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, 
 	print "mental map with subgoal", subgoal
 	print Vrle.show()
 	print "planner type", plannerType
-	if plannerType=='mcts':
+	if plannerType=='IW':
+		planner = IW(existing_rle=Vrle, game=theoryString, level=levelString, k=2)
+		p.BFS2(Vrle)
+		solution = p.solution.actionSeq
+	elif plannerType=='mcts':
 		mcts = Basic_MCTS(existing_rle=Vrle, game=theoryString, level=levelString, partitionWeights=partitionWeights)
 		# print "made mcts for subgoal,", subgoal
 		# embed()
