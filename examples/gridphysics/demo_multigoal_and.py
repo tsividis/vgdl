@@ -7,12 +7,13 @@
 # wwwwwwhww
 # """
 
-# level2 = """
-# wwwwwwwww
-# w  A    w
-# p       g
-# w b h   w
-# wwwwwwhww
+# level = """
+# wwwwwwwwwww
+# w     b   w
+# w b Ab  bhw
+# w b b b   w
+# w  h    h w
+# wwwwwwwwwww
 # """
 
 # level3 = """
@@ -23,29 +24,30 @@
 # wwwwgwhww
 # """
 
-level = """
-wwwwwwwwwwwwwwwwwwww
-w  A             h w
-w                  w
-w                  w
-w            h     w
-w        p     wwwww
-w   p       p      w
-w       h      w  hw
-wwwwwwwwwwwwwwwwwwww
-"""
-
 # level = """
 # wwwwwwwwwwwwwwwwwwww
 # w  A             h w
-# w          b       w
-# w                b w
+# w                  w
+# w                  w
 # w            h     w
 # w        p     wwwww
 # w   p       p      w
 # w       h      w  hw
 # wwwwwwwwwwwwwwwwwwww
 # """
+
+
+level = """
+wwwwwwwwwwwwwwwwwwww
+w         b      h w
+w         Ab       w
+w       bb b     b w
+w         b        w
+w        p     wwwww
+w   p       p      w
+w       h      w  hw
+wwwwwwwwwwwwwwwwwwww
+"""
 
 # level2 = """
 # wwwwwwwwwwwwwwwwwwww
@@ -107,6 +109,9 @@ BasicGame frame_rate=30
         mover wall > stepBack
         avatar poison > killSprite
         box avatar > bounceForward
+        box goal > stepBack
+        box box > stepBack
+        box wall > stepBack
         avatar rand > killSprite
         rand wall > stepBack  
         missile wall > turn

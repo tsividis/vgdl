@@ -56,21 +56,7 @@ wwww   wwww        2       w
 wwwwwwwwww      wwww       w
 """
 
-test_level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                        G w
-w                          w
-w                          w
-w                          w
-w                          w
-w                          w
-w                          w
-w                          w
-w                          w
-w                          w
-w   A                      w
-wwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

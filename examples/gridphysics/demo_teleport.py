@@ -63,11 +63,11 @@ wwwwwwwwwwiwwwwwww
 wp      w    A  2w
 w    2  w  nwwwwww
 w         2      w
-o g   1         ww
+o     1         ww
 ww   www   m     w
 w   q          p w
 w    2           w
-w        2    1  w
+w        2  g 1  w
 wwwwwwwwwwwwwwwwww
 """
 
@@ -120,7 +120,7 @@ BasicGame frame_rate=30
         poison2 > ResourcePack color=PINK
         box1 > ResourcePack color=RED
         box2 > ResourcePack color=LIGHTBLUE
-        entry > Portal color=BLACK stype=exit1 
+        entry > Portal color=LIGHTGREEN stype=exit1 
         exit1 > Portal color=PURPLE
         wall > Immovable
         score > Resource color=PINK limit=10  

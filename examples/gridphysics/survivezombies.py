@@ -41,7 +41,7 @@ BasicGame
         avatar hell     > killSprite
         
     TerminationSet
-        Timeout limit=1000 win=True
+        Timeout limit=5 win=True
         SpriteCounter stype=avatar limit=0 win=False
     
     LevelMapping
