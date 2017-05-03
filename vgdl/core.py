@@ -22,6 +22,32 @@ from IPython import embed
 import time
 import os
 
+# ---------------------------------------------------------------------
+#     Constants
+# ---------------------------------------------------------------------
+GREEN = (129, 199, 132)#(0, 200, 0)
+BLUE = (25, 118, 210)#(0, 0, 200)
+RED = (211, 47, 47)#(200, 0, 0)
+GRAY = (69, 90, 100)#(90, 90, 90)
+WHITE = (250, 250, 250)
+BROWN = (109, 76, 65)#(140, 120, 100)
+BLACK = (55, 71, 79)#(0, 0, 0)
+ORANGE = (230, 81, 0)#(250, 160, 0)
+YELLOW = (255, 245, 157)#(250, 250, 0)
+PINK = (255, 138, 128)#(250, 200, 200)
+GOLD = (255, 196, 0)#(250, 212, 0)
+LIGHTRED = (255, 82, 82)#(250, 50, 50)
+LIGHTORANGE = (255, 112, 67)#(250, 200, 100)
+LIGHTBLUE = (144, 202, 249)#(50, 100, 250)
+LIGHTGREEN = (185, 246, 202)#(50, 250, 50)
+LIGHTGRAY = (207, 216, 220)#(150, 150, 150)
+DARKGRAY = (69, 90, 100)#(30, 30, 30)
+DARKBLUE = (1, 87, 155)#(20, 20, 100)
+PURPLE = (92, 107, 192)#(140, 20, 140)
+RESOURCETOADD = (175, 175, 175)
+ENDOFSCREEN = (1, 1, 1)
+SCORECOLOR = (1, 0, 1)
+
 
 disableContinuousKeyPress = True
 actionToKeyPress = {(-1,0): pygame.K_LEFT, (1,0): pygame.K_RIGHT,
@@ -1269,7 +1295,7 @@ class VGDLSprite(object):
         self.ID = id(self) # TODO: Make sure that these are unique, maintained during the lifetime of the object
         self.direction = None
         #TODO: change the choice to be from colors that are not taken?
-        self.color = color or self.color or (140, 20, 140)
+        self.color = color or self.color or PURPLE#(140, 20, 140)
         # print 'color', self.color
                 
         #self.color = color or self.color or (choice(self.COLOR_DISC), choice(self.COLOR_DISC), choice(self.COLOR_DISC))
