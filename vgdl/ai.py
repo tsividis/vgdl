@@ -4,6 +4,11 @@ import core
 from IPython import embed
 import pygame
 #from tools import logToFile
+
+# Fix AStar 'get_walkable_tiles' to allow for a buffer around walls.
+# Also, allow for a buffer around it's goal so that it can actually get to it.
+# Make tiles less discritized (maybe based on speed, if we have access to that, which I think we do)
+# See why it keeps returning empty paths???
 class AStarNode(object):
 
 	def __init__(self, index, vgdlSprite, parent = None):
@@ -83,6 +88,7 @@ class AStarWorld(object):
 
 
 	def get_sprite_tile_position(self, sprite):
+		# print sprite.speed
 		tileX = sprite.rect.left/self.game.block_size
 		tileY = sprite.rect.top/self.game.block_size
 
@@ -108,8 +114,6 @@ class AStarWorld(object):
 		# print current.sprite
 		# raw_input('press enter to continue...')
 		if current.parent:
-			pygame.draw.rect(self.game.screen, (0, 255, 0), current.sprite.rect)
-			pygame.display.flip()
 			p = self.reconstruct_path(current.parent)
 			p.append(current)
 			return p
@@ -194,7 +198,11 @@ class AStarWorld(object):
 				# path_sprites = [node.sprite for node in path]
 				# pathh = map(self.get_sprite_tile_position, path_sprites)
 				# print pathh
-				return path
+
+				for node in path[::3]:
+					pygame.draw.rect(self.game.screen, (0, 255, 0), node.sprite.rect)
+					pygame.display.flip()
+				return path[::3]
 
 			openset.remove(current)
 			closedset.append(current)

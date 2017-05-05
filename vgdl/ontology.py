@@ -555,7 +555,7 @@ class AStarChaser(VGDLSprite): ##
     def update(self, game):
         VGDLSprite.update(self, game)
         world = AStarWorld(game)
-        error = 3
+        error = 10
 
         # Will not update AStarChaser if there is nothing to chase
         killed = [s.name for s in game.kill_list]

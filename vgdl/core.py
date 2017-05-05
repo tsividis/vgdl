@@ -51,6 +51,7 @@ colorDict = {str((129, 199, 132)): 'GREEN',\
             str((92, 107, 192)): 'PURPLE',\
             str((1, 1, 1)): 'ENDOFSCREEN',\
             str((1, 0, 1)): 'SCORECOLOR', \
+            str((140, 20, 140)): 'LIGHTPURPLE'
             }
 
 # colorDict = {str((0, 200, 0)): 'GREEN',\
@@ -1001,6 +1002,7 @@ class BasicGame(object):
         #     self.movement_options[sprite] = {"OTHER":{}}
         #     for sprite_type in sprite_types:
         #         self.movement_options[sprite][sprite_type] = {}
+        self.collision_eff.sort(key = lambda x: x[2].__name__ == 'killSprite') # Should make this more modular. alwell.
 
         while not self.ended:
             clock.tick(self.frame_rate)
