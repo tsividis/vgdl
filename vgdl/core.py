@@ -1110,6 +1110,7 @@ class BasicGame(object):
 
                         effect(sC, sC, self, **kwargs_use)
 
+
             ## Update actual sprite positions.
             for s in self:
                 s.update(self)
@@ -1192,7 +1193,7 @@ class BasicGame(object):
     def tick(self,action,headless=True, persist_movie=False):
 
         win = False
-
+        self.screen.fill(LIGHTGRAY)
         #self.clock.tick(self.frame_rate)
         self.time += 1
         if not headless:
@@ -1228,6 +1229,8 @@ class BasicGame(object):
 
         # handle collision effects
         self._eventHandling()
+
+        self._drawAll()
         if not headless:
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
@@ -1360,7 +1363,7 @@ class VGDLSprite(object):
             VGDLSprite.dirtyrects.append(r)
 
     def __repr__(self):
-        return self.name+" at (%s,%s)"%(self.rect.left, self.rect.top)
+        return str(self.name)+" at (%s,%s)"%(self.rect.left, self.rect.top)
 
 
 class Avatar(object):

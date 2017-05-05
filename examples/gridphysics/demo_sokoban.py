@@ -26,18 +26,25 @@ VGDL example: a simplified Sokoban variant: push the boxes into the holes.
 # wwwwwwwwwwwww
 # """
 
-level = """
-wwwwwwwwwwwww
-wA       w  w
-w   1       w
-w     1 w 0ww
-www w1  wwwww
-w       w 0 w
-w 1        ww
-w          ww
-wwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwww
+# wA       w  w
+# w   1       w
+# w     1 w 0ww
+# www w1  wwwww
+# w       w 0 w
+# w 1        ww
+# w          ww
+# wwwwwwwwwwwww
+# """
 
+level = """
+wwwwwww
+wwww ww
+w01 1 w
+www A w
+wwwwwww
+"""
         
 game = """
 BasicGame frame_rate=30

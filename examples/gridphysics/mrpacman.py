@@ -24,7 +24,7 @@ BasicGame
             ghost > Chaser stype=hungry cooldown=3
                 pink   > color=PINK        singleton=True
                 orange > color=LIGHTORANGE singleton=True
-            pacman > OrientedAvatar 
+            avatar > OrientedAvatar 
                 hungry  > color=YELLOW
                 powered > color=ORANGE            
             
@@ -34,7 +34,7 @@ BasicGame
         power hungry  > killSprite
         ghost powered > killSprite
         hungry ghost  > killSprite
-        food pacman > killSprite
+        food avatar > killSprite
         moving wall > stepBack        
         moving EOS  > wrapAround        
         
@@ -49,7 +49,7 @@ BasicGame
         
     TerminationSet
         SpriteCounter stype=food   win=True     
-        SpriteCounter stype=pacman win=False     
+        SpriteCounter stype=avatar win=False     
     
 """
 

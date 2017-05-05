@@ -57,21 +57,18 @@ wwwwwwwwww      wwww       w
 """
 
 test_level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                        G w
-w                          w
-w                          w
-w                          w
-w                          w
-w                          w
-w                          w
-w                          w
-w                          w
-w                          w
-w   A                      w
-wwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwww
+w        G   w
+w            w
+w            w
+w            w
+w   A        w
+w            w
+w            w
+w            w
+wwwwwwwwwwwwww
 """
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(game, level)
+    VGDLParser.playGame(game, test_level)

@@ -212,12 +212,13 @@ class ContinuousPhysics(GridPhysics):
 
 
     def activeMovement(self, sprite, action, speed=None):
+        print self.gridsize
         """ Here the assumption is that the controls determine the direction of
         acceleration of the sprite. """
         if speed is None:
             speed = sprite.speed
         v1 = action[0] / float(sprite.mass) + sprite.orientation[0] * speed
-        v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed
+        v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed 
         sprite.orientation = unitVector((v1, v2))
         sprite.speed = vectNorm((v1, v2)) / vectNorm(sprite.orientation)
 
@@ -226,8 +227,8 @@ class ContinuousPhysics(GridPhysics):
         acceleration of the sprite. """
         if speed is None:
             speed = sprite.speed
-        v1 = action[0] / float(sprite.mass) + sprite.orientation[0] * speed
-        v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed
+        v1 = action[0] / float(sprite.mass) + sprite.orientation[0] * speed * self.gridsize[0]
+        v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed * self.gridsize[1]
         sprite.orientation = unitVector((v1, v2))
         sprite.speed = vectNorm((v1, v2)) / vectNorm(sprite.orientation)
         
@@ -490,7 +491,7 @@ class Fleeing(Chaser):
     """ Just reversing directions"""
     fleeing = True
 
-class AStarChaser(RandomNPC): ##
+class AStarChaser(VGDLSprite): ##
     """ Move towards the character using A* search. """
     stype = None
     speed = .1
@@ -498,58 +499,63 @@ class AStarChaser(RandomNPC): ##
     drawpath = None
     walkableTiles = None
     neighborNodes = None
+    path = []
+    next_move = None
+    last_move = None
     
-    def _movesToward(self, game, target):
-        """ Find the canonical direction(s) which move toward
-            the target. """
-        res = []
-        basedist = self.physics.distance(self.rect, target.rect)
-        for a in BASEDIRS:
-            r = self.rect.copy()
-            r = r.move(a)
-            newdist = self.physics.distance(r, target.rect)
-            if self.fleeing and basedist < newdist:
-                res.append(a)
-            if not self.fleeing and basedist > newdist:
-                res.append(a)
-        return res
+    # def _movesToward(self, game, target):
+    #     print target
+    #     """ Find the canonical direction(s) which move toward
+    #         the target. """
+    #     res = []
+    #     basedist = self.physics.distance(self.rect, target.rect)
+    #     for a in BASEDIRS:
+    #         r = self.rect.copy()
+    #         r = r.move(a)
+    #         newdist = self.physics.distance(r, target.rect)
+    #         if self.fleeing and basedist < newdist:
+    #             res.append(a)
+    #         if not self.fleeing and basedist > newdist:
+    #             res.append(a)
+    #     return res
 
-    def _draw(self, game):
-        """ With a triangle that shows the orientation. """
-        RandomNPC._draw(self, game)
+    # def _draw(self, game):
+    #     """ With a triangle that shows the orientation. """
+    #     RandomNPC._draw(self, game)
         
-        if self.walkableTiles:
-            col = pygame.Color(0, 0, 255, 100)
-            for sprite in self.walkableTiles:
-                pygame.draw.rect(game.screen, col, sprite.rect)
+    #     if self.walkableTiles:
+    #         col = pygame.Color(0, 0, 255, 100)
+    #         for sprite in self.walkableTiles:
+    #             pygame.draw.rect(game.screen, col, sprite.rect)
         
-        if self.neighborNodes:
-            #logToFile("len(neighborNodes)=%s" %len(self.neighborNodes))
-            col = pygame.Color(0, 255, 255, 80)
-            for node in self.neighborNodes:
-                pygame.draw.rect(game.screen, col, node.sprite.rect)
+    #     if self.neighborNodes:
+    #         #logToFile("len(neighborNodes)=%s" %len(self.neighborNodes))
+    #         col = pygame.Color(0, 255, 255, 80)
+    #         for node in self.neighborNodes:
+    #             pygame.draw.rect(game.screen, col, node.sprite.rect)
     
-        if self.drawpath:
-            col = pygame.Color(0, 255, 0, 120)
-            for sprite in self.drawpath[1:-1]:
-                pygame.draw.rect(game.screen, col, sprite.rect)
+    #     if self.drawpath:
+    #         col = pygame.Color(0, 255, 0, 120)
+    #         for sprite in self.drawpath[1:-1]:
+    #             pygame.draw.rect(game.screen, col, sprite.rect)
 
-    def _setDebugVariables(self, world, path):
-        '''
-            Sets the variables required for debug drawing of the paths
-            resulting from the A-Star search.
-            '''
+    # def _setDebugVariables(self, world, path):
+    #     '''
+    #         Sets the variables required for debug drawing of the paths
+    #         resulting from the A-Star search.
+    #         '''
         
-        path_sprites = [node.sprite for node in path]
+    #     path_sprites = [node.sprite for node in path]
         
-        self.walkableTiles = world.get_walkable_tiles()
-        self.neighborNodes = world.neighbor_nodes_of_sprite(self)
-        self.drawpath = path_sprites
+    #     self.walkableTiles = world.get_walkable_tiles()
+    #     self.neighborNodes = world.neighbor_nodes_of_sprite(self)
+    #     self.drawpath = path_sprites
+
     
     def update(self, game):
         VGDLSprite.update(self, game)
-        
         world = AStarWorld(game)
+        error = 3
 
         # Will not update AStarChaser if there is nothing to chase
         killed = [s.name for s in game.kill_list]
@@ -557,62 +563,46 @@ class AStarChaser(RandomNPC): ##
             print "avatar is dead"
             return
 
-        path = world.getMoveFor(self)
+        if game.time % 5 == 0:
+            self.path = world.getMoveFor(self, self.target)
+        # print path
         # print 'in astar', [world.get_sprite_tile_position(p.sprite) for p in path]
         # Uncomment below to draw debug paths.
         # self._setDebugVariables(world,path)
-        
-        if len(path)>1:
-            n = min(5, len(path)-1)
-            move = path[n]
-            
-            nextX, nextY = world.get_sprite_tile_position(move.sprite)
-            nowX, nowY = world.get_sprite_tile_position(self)
-            
-            # print 'next', nextX, nextY
-            # print 'now', nowX, nowY
+        print 'updating'
+        print len(self.path)
+        if self.path:
+            # n = min(5, len(self.path)-1)
 
-            movement = None
 
-            # embed()
-            # actions = []
-            # dx, dy = nextX-nowX, nextY-nowY
-            # if dx > 0:
-            #     actions.append(RIGHT)
-            # elif dx < 0:
-            #     actions.append(LEFT)
-            # if dy > 0:
-            #     actions.append(DOWN)
-            # elif dy < 0:
-            #     actions.append(UP)
+            if self.next_move == None:
+                print 'popping off next path node'
+                # self.path.pop(0)
+                self.next_move = self.path.pop(0)
+                print self.next_move.sprite.rect, self.rect
 
-            # print actions
-            # movement = choice(actions)
-            # print movement
-            # print ""
-            # print "You need to finish debugging Schaul's AStar."
-            # embed()
-            if nowX == nextX:
-                if nextY > nowY:
-                    #logToFile('DOWN')
-                    movement = DOWN
-                else:
-                    #logToFile('UP')
-                    movement = UP
+            next_x, next_y = self.next_move.sprite.rect.x, self.next_move.sprite.rect.y
+            self_x, self_y = self.rect.x, self.rect.y
+
+
+            print next_x, next_y
+            print self_x, self_y
+
+            dx = abs(next_x - self_x)
+            dy = abs(next_y - self_y)
+
+            if dx >= dy:
+                movement = [LEFT, RIGHT][next_x > self_x]
             else:
-                if nextX > nowX:
-                    #logToFile('RIGHT')
-                    movement = RIGHT
-                else:
-                    #logToFile('LEFT')
-                    movement = LEFT
-        else:
-            print "in movement=None"
-            # movement=None ## TODO: Added 1/18/17 to prevent bug (sometimes path was not >1 so it called the next line
-                            ##without knowing what 'movement' was.). Make sure A* agent still works.
-            movement=choice([DOWN, UP, RIGHT, LEFT])
+                movement = [UP, DOWN][next_y > self_y]
 
-        self.physics.activeMovement(self, movement)
+            if dx < error and dy < error:
+                self.last_move = self.next_move
+                self.next_move = None
+            print dx, dy, movement
+
+            self.physics.activeMovement(self, movement)
+
 
 
 # ---------------------------------------------------------------------
@@ -871,7 +861,7 @@ class InertialAvatar(OrientedAvatar):
 class MarioAvatar(InertialAvatar):
     physicstype = GravityPhysics
     draw_arrow = False
-    strength = 10
+    strength = 1
     movestrength = sqrt(strength)
     vx_max = 5
     airsteering = True
