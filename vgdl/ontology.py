@@ -1135,7 +1135,6 @@ def transformTo(sprite, partner, game, stype='wall'):
     if len(newones) > 0:
         if isinstance(sprite, OrientedSprite) and isinstance(newones[0], OrientedSprite):
             newones[0].orientation = sprite.orientation 
-        game.dead.append(sprite)
         game.kill_list.append(sprite)
     args = {'stype':stype}
     return ("transformTo", sprite.ID, partner.ID, args)
