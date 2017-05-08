@@ -72,6 +72,7 @@ class WBP(Planner):
 		newAtoms = self.delta(node.parent, node)
 		# print "in novelty fn"
 		# embed()
+		print 'old true atoms', len(node.state-set(newAtoms))
 		if len(self.trueAtoms) > 0:
 			trueAtoms = node.state
 			oldTrueAtoms = set(trueAtoms)-set(newAtoms)
@@ -143,6 +144,7 @@ def BFS(rle, WBP):
 	Q.put(start)
 	while not Q.empty():
 		current = Q.get()
+		
 		win = current.eval(updateNoveltyDict=True)
 		if win:
 			return current, visited, rejected
@@ -154,7 +156,7 @@ def BFS(rle, WBP):
 		else:
 			rejected.append(current)
 	print "no more states in queue"
-	embed()
+	# embed()
 	return Q, visited, rejected
 
 def BFS2(rle, WBP):
@@ -227,8 +229,9 @@ class Node():
 				vrle.step(self.actionSeq[i])
 				terminal, win = vrle._isDone()
 				i += 1
+		print '-------------------------------------'
 		if len(self.actionSeq)>0:
-			print actionDict[self.actionSeq[-1]]
+			print [actionDict[a] for a in self.actionSeq]
 		self.updateObjIDs(vrle)
 		print vrle.show()
 		self.state = self.WBP.calculateAtoms(vrle)
@@ -236,6 +239,8 @@ class Node():
 		self.win = win
 		self.novelty = self.WBP.novelty(self, self.WBP.k, update=updateNoveltyDict)
 		self.reward = vrle._game.score
+		print 'novelty', self.novelty
+		# raw_input("Press Enter to continue...")
 		return win
 
 	def updateObjIDs(self, vrle):
@@ -304,7 +309,7 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.demo_multigoal_and"  ##takes forever.
 
 	# gameFilename = "examples.gridphysics.demo_multigoal_and_score"  ##easy version solved!
-	# gameFilename = "examples.gridphysics.demo_sokoban"
+	gameFilename = "examples.gridphysics.demo_sokoban"
 	# gameFilename = "examples.gridphysics.demo_sokoban_score"
 	# gameFilename = "examples.gridphysics.simpleGame_missile"
 
@@ -318,6 +323,7 @@ if __name__ == "__main__":
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
+	# embed()
 
 
 	p = IW(rle, gameString, levelString, gameFilename, k=2, display=1)
@@ -326,9 +332,10 @@ if __name__ == "__main__":
 	t1 = time.time()
 	last, visited, rejected = BFS(rle, p)
 	# last, visited, rejected = BFS2(rle, p)
-	print time.time()-t1
-	print len(visited), len(rejected)
-	embed()
+	print
+	print 'time', time.time()-t1
+	print 'visited', len(visited)
+	print 'rejected', len(rejected)
 	# if not hasattr(last, 'actionSeq'):
 	# 	print "Failed without tracking tokens. re-trying"
 	# 	p.trackTokens = True

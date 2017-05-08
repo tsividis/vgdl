@@ -78,6 +78,7 @@ colorDict = {str((129, 199, 132)): 'GREEN',\
             str((175, 175, 175)): 'RESOURCETOADD',\
             str((1, 1, 1)): 'ENDOFSCREEN',\
             str((1, 0, 1)): 'SCORECOLOR', \
+            str((140, 20, 140)): 'LIGHTPURPLE'
             }
 
 # colorDict = {str((0, 200, 0)): 'GREEN',\
@@ -680,8 +681,8 @@ class BasicGame(object):
                     for collision_index in sprite1.rect.collidelistall(sprite_list2):
                         sprite2 = sprite_list2[collision_index]
                         if (sprite1 == sprite2
-                            or sprite1 in self.dead#self.kill_list #dead
-                            or sprite2 in self.dead#self.kill_list #dead
+                            or sprite1 in self.dead
+                            or sprite2 in self.dead
                             or (sprite1, sprite2) in collision_set):
                             continue
                         new_collisions.add((sprite1, sprite2))
@@ -1031,6 +1032,7 @@ class BasicGame(object):
         #     self.movement_options[sprite] = {"OTHER":{}}
         #     for sprite_type in sprite_types:
         #         self.movement_options[sprite][sprite_type] = {}
+        self.collision_eff.sort(key = lambda x: x[2].__name__ == 'killSprite') # Should make this more modular. alwell.
 
         while not self.ended:
             clock.tick(self.frame_rate)
@@ -1140,6 +1142,7 @@ class BasicGame(object):
 
                         effect(sC, sC, self, **kwargs_use)
 
+
             ## Update actual sprite positions.
             for s in self:
                 s.update(self)
@@ -1222,7 +1225,7 @@ class BasicGame(object):
     def tick(self,action,headless=True, persist_movie=False):
 
         win = False
-
+        self.screen.fill(LIGHTGRAY)
         #self.clock.tick(self.frame_rate)
         self.time += 1
         if not headless:
@@ -1258,6 +1261,8 @@ class BasicGame(object):
 
         # handle collision effects
         self._eventHandling()
+
+        self._drawAll()
         if not headless:
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
@@ -1390,7 +1395,7 @@ class VGDLSprite(object):
             VGDLSprite.dirtyrects.append(r)
 
     def __repr__(self):
-        return self.name+" at (%s,%s)"%(self.rect.left, self.rect.top)
+        return str(self.name)+" at (%s,%s)"%(self.rect.left, self.rect.top)
 
 
 class Avatar(object):

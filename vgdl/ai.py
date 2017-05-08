@@ -2,13 +2,20 @@
 import math
 import core
 from IPython import embed
+import pygame
 #from tools import logToFile
+
+# Fix AStar 'get_walkable_tiles' to allow for a buffer around walls.
+# Also, allow for a buffer around it's goal so that it can actually get to it.
+# Make tiles less discritized (maybe based on speed, if we have access to that, which I think we do)
+# See why it keeps returning empty paths???
 class AStarNode(object):
 
-	def __init__(self, index, vgdlSprite):
+	def __init__(self, index, vgdlSprite, parent = None):
 		self.vgdlSprite = vgdlSprite
 		self.sprite = vgdlSprite
 		self.index = index
+		self.parent = parent
 
 
 class AStarWorld(object):
@@ -81,6 +88,7 @@ class AStarWorld(object):
 
 
 	def get_sprite_tile_position(self, sprite):
+		# print sprite.speed
 		tileX = sprite.rect.left/self.game.block_size
 		tileY = sprite.rect.top/self.game.block_size
 
@@ -101,10 +109,12 @@ class AStarWorld(object):
 		return node_best
 
 
-	def reconstruct_path(self, came_from, current):
+	def reconstruct_path(self, current):
 		#print self.get_tile_from_index(current.index)
-		if current.index in came_from:
-			p = self.reconstruct_path(came_from, came_from[current.index])
+		# print current.sprite
+		# raw_input('press enter to continue...')
+		if current.parent:
+			p = self.reconstruct_path(current.parent)
 			p.append(current)
 			return p
 		else:
@@ -140,30 +150,30 @@ class AStarWorld(object):
 
 		return abs(x2-x1) + abs(y2-y1)
 
-	def getMoveFor(self, startSprite):
+	def getMoveFor(self, startSprite, target):
 		tileX, tileY = self.get_sprite_tile_position(startSprite)
 		index = self.get_index(tileX, tileY)
 		startNode = AStarNode(index, startSprite)
+		target = self.game.getSprites(target)[0]
 		
-		if 'pacman' in self.game.sprite_groups:
-			pacman = self.game.getSprites('pacman')[0]
-		elif 'avatar' in self.game.sprite_groups:
-			pacman = self.game.getSprites('avatar')[0]
-		elif 'hungry' in self.game.sprite_groups:
-			pacman = self.game.getSprites('hungry')[0]
-		elif 'powered' in self.game.sprite_groups:
-			pacman = self.game.getSprites('powered')[0]
-		
-		goalX, goalY = self.get_sprite_tile_position(pacman)
+		# if 'pacman' in self.game.sprite_groups:
+		# 	target = self.game.getSprites('pacman')[0]
+		# if 'avatar' in self.game.sprite_groups:
+		# 	target = self.game.getSprites('avatar')[0]
+		# elif 'hungry' in self.game.sprite_groups:
+		# 	target = self.game.getSprites('hungry')[0]
+		# elif 'powered' in self.game.sprite_groups:
+		# 	target = self.game.getSprites('powered')[0]
+		goalX, goalY = self.get_sprite_tile_position(target)
 		goalIndex = self.get_index(goalX, goalY)
-		goalNode = AStarNode(goalIndex, pacman)
+		goalNode = AStarNode(goalIndex, target)
 		
 		# logToFile('Goal: (%s,%s) --> (%s, %s)' %(tileX, tileY, goalX, goalY))
-
 		return self.search(startNode, goalNode)
 
 	def search(self, start, goal):
 		# Initialize the variables.
+		error = 1
 		closedset = []
 		openset = []
 		came_from = {}
@@ -171,19 +181,28 @@ class AStarWorld(object):
 		f_score = {}
 
 		openset = [start]
+		
 		g_score[start.index] = 0
 		f_score[start.index] = g_score[start.index] + self.h(start, goal) 	# Score of start index is the distance between start to goal
-		while (len(openset) > 0):
+		while openset:
+			# print 'searching for path'
 			current = self.get_lowest_f(openset, f_score) 					# Get node with lowest distance to goal
-
 			# Reached the goal
-			if current.index == goal.index:
+
+			if current.index >= goal.index - error and current.index <= goal.index + error:
+
 				# print came_from
-				path = self.reconstruct_path(came_from, goal)
+				self.game.screen.fill((0, 0, 0))
+				path = self.reconstruct_path(current)
+
 				# path_sprites = [node.sprite for node in path]
 				# pathh = map(self.get_sprite_tile_position, path_sprites)
 				# print pathh
-				return path
+
+				for node in path[::3]:
+					pygame.draw.rect(self.game.screen, (0, 255, 0), node.sprite.rect)
+					pygame.display.flip()
+				return path[::3]
 
 			openset.remove(current)
 			closedset.append(current)
@@ -194,13 +213,13 @@ class AStarWorld(object):
 					continue
 				# New node 
 				if not self.nodeInSet(neighbor, openset) or temp_g < g_score[neighbor.index]:
-					came_from[neighbor.index] = current
+					neighbor.parent = current
 					# print 'came_from[%s]=%s' % (self.get_tile_from_index(neighbor.index), self.get_tile_from_index(current.index))
 					g_score[neighbor.index] = temp_g
 					f_score[neighbor.index] = g_score[neighbor.index] + self.h(neighbor, goal)
 					if neighbor not in openset:
 						openset.append(neighbor)
-
+		# print 'no path found'
 		return []
 
 	def nodeInSet(self, node, nodeSet):

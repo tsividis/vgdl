@@ -56,6 +56,15 @@ wwwwwwwwwwwwww
 # wwwwwwwwwwwwww
 # """
 
+
+
+level = """
+wwwwwww
+wwww ww
+w01 1 w
+www A w
+wwwwwww
+"""
         
 game = """
 BasicGame frame_rate=30
