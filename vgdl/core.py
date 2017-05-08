@@ -591,15 +591,16 @@ class BasicGame(object):
         push_effect = 'bounceForward'
         back_effect = 'stepBack'
         force_collisions = []
-        self.dead = self.kill_list[:] # copy kill list
         collision_set = set()
         new_collisions = True
         self.effectList = []
+        self.dead = self.kill_list[:] # copy kill list
         # build the current sprite lists (if not yet available)
         # for class1, class2, effect, kwargs in self.collision_eff:
 
 
         while new_collisions:
+            
             new_collisions = set()
             new_effects = []
 
@@ -684,6 +685,7 @@ class BasicGame(object):
                             (sclass, args, stypes) = self.sprite_constr[resource]
                             resource_color = args['color']
                             new_effects.append(effect(sprite1, sprite2, resource_color, self, **kwargs))
+                            
                         # Deal with push effects
                         elif effect.__name__ == push_effect:
                             for collision in force_collisions:
