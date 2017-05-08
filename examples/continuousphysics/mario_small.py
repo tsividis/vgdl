@@ -3,13 +3,45 @@ VGDL example: Mario, jump around!
 
 @author: Tom Schaul
 '''
+level = """
+wwwwwwwwwwww
+w          w
+w          w
+w          w
+w        G1w
+w       wwww
+w          w
+w          w
+w A ===    w
+wwww   wwwww
+wwwwwwwwwwww
+"""
+
+
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                          w
+# w                        G1w
+# w             ===       wwww
+# w                     1    w
+# w                w  2 ww   w
+# w                wwwwwww   w
+# w                          w
+# w                          w
+# w          2        2      w
+# w        www      wwwwww   w
+# w A      1   ===           w
+# wwww   wwww        2       w
+# wwwwwwwwww      wwww       w
+# """
+
 
 game = """
 BasicGame
     SpriteSet 
-        elevator > Missile orientation=UP speed=0.1 color=BLUE
+        elevator > Missile orientation=UP speed=0.05 color=BLUE
         moving > physicstype=GravityPhysics color=WHITE
-            avatar > MarioAvatar strength=15
+            avatar > MarioAvatar strength=20
             evil   >  orientation=LEFT
                 goomba     > Walker     color=BROWN 
                 paratroopa > WalkJumper color=RED prob=.9
@@ -39,37 +71,8 @@ BasicGame
         = > elevator
 """
 
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                          w
-w                        G1w
-w             ===       wwww
-w                     1    w
-w                w  2 ww   w
-w                wwwwwww   w
-w                          w
-w                          w
-w          2        2      w
-w        www      wwwwww   w
-w A      1   ===           w
-wwww   wwww        2       w
-wwwwwwwwww      wwww       w
-"""
 
-
-# test_level = """
-# wwwwwwwwwwwwww
-# w        G   w
-# w            w
-# w            w
-# w            w
-# w   A        w
-# w            w
-# w            w
-# w            w
-# wwwwwwwwwwwwww
-# """
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(game, test_level)
+    VGDLParser.playGame(game, level)

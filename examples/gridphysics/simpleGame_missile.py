@@ -40,7 +40,7 @@ BasicGame
     goal > Immovable color=GREEN
     wall > Immovable color=BLACK
     glass > Immovable color=BLUE
-    bullet > Missile speed=.2 singleton=True color=RED
+    bullet > Missile speed=1 singleton=True color=RED
     avatar  > ShootAvatar stype=bullet
 
   LevelMapping

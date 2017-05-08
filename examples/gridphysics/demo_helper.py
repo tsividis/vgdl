@@ -1,14 +1,31 @@
 
+# level = """
+# wwwwwwww
+# w b    w
+# wab   xw
+# w bbbA w
+# wwwwwwww
+# """
+
+level = """
+wwwwwwwwwwwwww
+w    bbb     w
+w a  b       w
+w    b   x   w
+w    bbbA    w
+wwwwwwwwwwwwww
+"""
 
 # level = """
 # wwwwwwwwwwwwww
-# w    b       w
-# w a  b   x   w
-# w    b       w
-# w    bA      w
+# w    bbb     w
+# w a  bbb     w
+# w    bbb     w
+# w    bbb     w
+# w    bbb   x w
+# w    bbb   A w
 # wwwwwwwwwwwwww
 # """
-
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwww
@@ -37,23 +54,23 @@
 # wwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                 b    b            w
-w              b  b A  b  a    a    w
-w   a             wwwwww            w
-w           a                   x   w
-w                           b       w
-w                 bbbb      b       w
-w     x                     b       w
-w                      a    www  wwww
-wbbbbbbb     b                      w
-w      b                        a   w
-w  a   b              a             w
-w      b                            w
-w      b   a              b         w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                 b    b            w
+# w              b  b A  b  a    a    w
+# w   a             wwwwww            w
+# w           a                   x   w
+# w                           b       w
+# w                 bbbb      b       w
+# w     x                     b       w
+# w                      a    www  wwww
+# wbbbbbbb     b                      w
+# w      b                        a   w
+# w  a   b              a             w
+# w      b                            w
+# w      b   a              b         w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
         
 game = """
 BasicGame frame_rate=30
@@ -63,7 +80,7 @@ BasicGame frame_rate=30
             box1 > color=RED
             box2 > color=ORANGE
         mover > VGDLSprite
-            rand > RandomNPC cooldown=5
+            rand > RandomNPC cooldown=0
                 rand1 > color=LIGHTORANGE
                 rand2 > color=BROWN
         chaser > Chaser color=BLUE stype=box1 cooldown=0
@@ -86,6 +103,7 @@ BasicGame frame_rate=30
         avatar wall > stepBack 
         mover wall > stepBack
         #box1 avatar > bounceForward
+        box2 avatar > changeScore value=-1
         box2 avatar > killSprite
         avatar rand > killSprite
         rand wall > stepBack  

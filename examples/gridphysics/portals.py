@@ -90,14 +90,13 @@ BasicGame
                 exit1  > 
                 exit2  > 
     InteractionSet
-        goal   avatar    > killSprite
-        avatar bullet    > killSprite
         avatar wall      > stepBack
         random structure > stepBack
         random wall      > stepBack
         straight wall    > reverseDirection
         avatar portalentry > teleportToExit
-        
+        goal   avatar    > killSprite
+        avatar bullet    > killSprite
     TerminationSet
         SpriteCounter stype=goal   limit=0 win=True
         SpriteCounter stype=avatar limit=0 win=False

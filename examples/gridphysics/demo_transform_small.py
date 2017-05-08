@@ -1,29 +1,22 @@
 
-# level = """
-# wwwwwwwwww
-# wx  A   xw
-# wwwwwwwwww
-# """
-
 
 # level = """
 # wwwwwwwwwwwwww
-# w    x       w
-# w   xAx      w
-# w            w
+# wA           w
+# w    x    x  w
+# w     a      w
 # wwwwwwwwwwwwww
 # """
 
 level = """
 wwwwwwwwwwwwwwww
 w              w
-w A            w
-w           x  w
+w        Ax    w
 w              w
-w  x   w       w
+w      w       w
 w              w
-w              w
-w       x      w
+w   x    z     w
+w    a  x      w
 wwwwwwwwwwwwwwww
 """
 
@@ -57,6 +50,7 @@ BasicGame frame_rate=30
             box_b >        
                 box4 > color=LIGHTBLUE
                 box5 > color=PINK
+        fire > Immovable color=YELLOW       
         goal2 > Immovable color=ORANGE  
         avatar > MovingAvatar color=WHITE
         wall > Immovable
@@ -67,23 +61,27 @@ BasicGame frame_rate=30
         c > box3
         d > box4
         e > box5
+        f > fire
         x > probe
         z > converter1
         y > converter2
         g > goal2
     InteractionSet
         avatar wall > stepBack
+        avatar fire > undoAll 
         box avatar > bounceForward
         box probe > undoAll
         box box > undoAll
         box wall > undoAll
+        box fire > undoAll
         probe wall > undoAll
         converter wall > undoAll
         probe converter > undoAll
         probe probe > undoAll
         converter box > bounceForward
-        #avatar probe > changeScore value=.5
-        probe avatar > killSprite
+        probe avatar > transformTo stype=fire
+        # probe fire > killSprite
+        # fire probe > killSprite
         avatar converter > undoAll
         goal2 avatar > killSprite
     TerminationSet

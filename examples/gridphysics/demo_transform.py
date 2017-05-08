@@ -29,7 +29,7 @@ BasicGame frame_rate=30
                 box6 > color=YELLOW       
         goal > Immovable color=BLACK  
         avatar > MovingAvatar color=WHITE
-        wall > Immovable
+        wall > Immovable color=BLACK
     LevelMapping
         w > wall   
         a > box1

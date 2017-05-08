@@ -69,8 +69,10 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self._game.reset()
         self._game.all_objects = self._game.getObjects() # Save all objects, some which may be killed in game
         self.makeSymbolDict()
+        self._game.ignoreList = [] ## another way to mark objects that shouldn't be processed when doing induction (that is, collision objects)
         self._game.keystate = defaultdict(lambda:False)
-
+        self._game.metabolic_score = 0
+        self.game_name = None
 
     # Get definition of the observation data expected
     def observationSpec(self):
@@ -275,6 +277,11 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
         # self._gravepoints[(skey, self._rect2pos(s.rect))] = True
 
+
+        ## Added 5/2, to correct for the fact that some gmaes don't have _gravepoints by default
+        if not hasattr(self, '_gravepoints'):
+            self._gravepoints = {}
+
         # ### BEGINNING OF CHANGES
         for skey in self._other_types:
             ss = self._game.sprite_groups[skey]
@@ -282,11 +289,14 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                                         for sprite in ss]
 
         ## Added 4/31
+        ## Logic (I think) was to make sure everything that could exist was in gravepoints because
+        ## getState (defined in stateobsnonstatic) uses it to populate getState, getSensors, etc.
         for k in self._game.sprite_groups:
             for sprite in self._game.sprite_groups[k]:
                 if (k, self._rect2pos(sprite.rect)) not in self._gravepoints.keys():
                     self._gravepoints[(k, self._rect2pos(sprite.rect))] = True
-        
+        # print "after adding gravepoints"
+        # embed()
         return events
 
         if self.visualize:
@@ -312,11 +322,25 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         events = self._performAction(action) 
         observation = self._getSensors()
         (ended, won) = self._isDone()
-
-        dScore = self._game.score - pre_step_score
+        self._game.time+=1 ## Added 5/2
+        metabolic_penalty = .2
+        # try:
+        #     ## Added 5/2: Adding metabolic cost in RLE for avatar interacting w/ objects:
+        # if len(events)>0:
+            # if any([self._game.sprite_groups['avatar'][0].ID in e and e[0]=='bounceForward' for e in events]):
+                # metabolic_penalty = 0.1
+                # elif any([self._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
+                #     metabolic_penalty = 0.1
+            # elif action in [32]:#, 273, 274, 276, 275]:
+                    # metabolic_penalty = 0.2
+                    # print "pushed"
+                    # embed()
+        # except:
+            # print "adding metabolic cost failed"
+            # embed()
+        dScore = self._game.score - pre_step_score - metabolic_penalty
         if ended:
             pcontinue = 0
-            # reward = self._game.score
             if won:
                 reward = 1
             else:
@@ -324,8 +348,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         else:
             pcontinue = 1
             ## this is where you need to give the reward for doing non-terminal actions, and then your agent can process this.
-            # reward = 0
             reward = dScore
+        self._game.metabolic_score += dScore
         for k in self._game.keystate:
             self._game.keystate[k] = False
         return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }

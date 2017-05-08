@@ -20,23 +20,43 @@ VGDL example: a simplified Sokoban variant: push the boxes into the holes.
 
 # level = """
 # wwwwwwwwwwwww
-# w       w   w
-# w    A  1  ww
-# w 0   1   0ww
+# w    A 1   ww
+# w 0 1    w0ww
 # wwwwwwwwwwwww
 # """
 
 # level = """
-# wwwwwwwwwwwww
-# wA       w  w
-# w   1       w
-# w     1 w 0ww
-# www w1  wwwww
-# w       w 0 w
-# w 1        ww
-# w          ww
-# wwwwwwwwwwwww
+# wwwwwwwwww
+# w A   w0ww
+# w01 1   ww
+# wwwwwwwwww
 # """
+
+level = """
+wwwwwwwwwwwwww
+wA       w  ww
+w   1       ww
+w       w 0www
+www w   wwwwww
+w       w 0 ww
+w 1        www
+w          www
+wwwwwwwwwwwwww
+"""
+
+# level = """
+# wwwwwwwwwwwwww
+# wA       w  ww
+# w   1       ww
+# w     1 w 0www
+# www w1  wwwwww
+# w       w 0 ww
+# w 1        www
+# w          www
+# wwwwwwwwwwwwww
+# """
+
+
 
 level = """
 wwwwwww
@@ -51,7 +71,7 @@ BasicGame frame_rate=30
     SpriteSet        
         hole   > Immovable color=PINK
         avatar > MovingAvatar color=DARKBLUE
-        box    > Passive  color=RED              
+        box    > Passive  color=LIGHTBLUE              
     LevelMapping
         0 > hole
         1 > box            

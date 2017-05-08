@@ -7,31 +7,12 @@
 # wwwwwwhww
 # """
 
-# level = """
-# wwwwwwwwwwww
-# w          w
-# w   Ab    hw
-# w          w
-# w  h    h  w
-# wwwwwwwwwwww
-# """
-
-# level = """
-# wwwwwwwwwwww
-# w     b    w
-# w b Ab   bhw
-# w b b b    w
-# w  h    h  w
-# wwwwwwwwwwww
-# """
-
-# level = """
-# wwwwwwwwwwww
-# w     b    w
-# w b Ab   bhw
-# w b b b    w
-# w       h  w
-# wwwwwwwwwwww
+# level2 = """
+# wwwwwwwww
+# w  A    w
+# p       g
+# w b h   w
+# wwwwwwhww
 # """
 
 # level3 = """
@@ -54,28 +35,15 @@
 # wwwwwwwwwwwwwwwwwwww
 # """
 
-
-# level = """
-# wwwwwwwwwwwwwwwwwwww
-# w         b      h w
-# w         Ab       w
-# w       bb b     b w
-# w         b        w
-# w        p     wwwww
-# w   p       p      w
-# w              w   w
-# wwwwwwwwwwwwwwwwwwww
-# """
-
 level = """
 wwwwwwwwwwwwwwwwwwww
-w         b      h w
-w         Ab       w
-w       bb b     b w
-w         b        w
+w  A             h w
+w          b       w
+w                b w
+w            h     w
 w        p     wwwww
 w   p       p      w
-w     h        w h w
+w       h      w  hw
 wwwwwwwwwwwwwwwwwwww
 """
 
@@ -115,13 +83,13 @@ BasicGame frame_rate=30
             rand > RandomNPC cooldown=10
                 rand1 > color=LIGHTORANGE
                 rand2 > color=BLUE
-        wall > Immovable color=BLACK
+        wall > Immovable
         missile > Missile
             missile1 > color=YELLOW orientation=RIGHT
             missile2 > color=LIGHTBLUE orientation=RIGHT
-        goal > Immovable color=PINK
-            # goal1 > color=GREEN
-            # goal2 > color=PINK
+        goal > Immovable 
+            goal1 > color=GREEN
+            goal2 > color=PINK
         poison > Immovable color=WHITE
     LevelMapping
         w > wall   
@@ -131,17 +99,14 @@ BasicGame frame_rate=30
         z > rand2
         1 > missile1
         2 > missile2
-        #g > goal1
-        h > goal
+        g > goal1
+        h > goal2
         p > poison
     InteractionSet
         avatar wall > stepBack 
         mover wall > stepBack
         avatar poison > killSprite
         box avatar > bounceForward
-        box goal > stepBack
-        box box > stepBack
-        box wall > stepBack
         avatar rand > killSprite
         rand wall > stepBack  
         missile wall > turn
@@ -151,7 +116,7 @@ BasicGame frame_rate=30
         mover mover > stepBack
         mover missile > stepBack
         mover box > stepBack
-        goal avatar > changeScore value=100
+        avatar goal > changeScore value=1
         goal avatar > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False          

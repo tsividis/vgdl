@@ -5,17 +5,17 @@ VGDL example: a simple dodge-the-bullets game
 '''
 
 level = """
-wwwwwwwwwwwwwwwwwww
-wA  w  <  -      Gw
-w   w-            w
-w            ww   w
-w   < w ^      w  w
-w ^   w   V    V ww
-w   -        v    w
-ww   <    www     w
-w                 w
-www     v       www
-wwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwww
+wA  w  <  -      Gww
+w   w-            ww
+w            ww   ww
+w   < w ^      w  ww
+w ^   w   V    V www
+w   -        v    ww
+ww   <    www     ww
+w                 ww
+www     v       wwww
+wwwwwwwwwwwwwwwwwwww
 """
 
 game = """

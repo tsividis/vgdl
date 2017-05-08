@@ -15,9 +15,13 @@ from ai import AStarWorld
 from IPython import embed
 import core
 
-# ---------------------------------------------------------------------
-#     Constants
-# ---------------------------------------------------------------------
+
+
+UP = (0, -1)
+DOWN = (0, 1)
+LEFT = (-1, 0)
+RIGHT = (1, 0)
+
 GREEN = (129, 199, 132)#(0, 200, 0)
 BLUE = (25, 118, 210)#(0, 0, 200)
 RED = (211, 47, 47)#(200, 0, 0)
@@ -41,11 +45,6 @@ RESOURCETOADD = (175, 175, 175)
 ENDOFSCREEN = (1, 1, 1)
 SCORECOLOR = (1, 0, 1)
 
-UP = (0, -1)
-DOWN = (0, 1)
-LEFT = (-1, 0)
-RIGHT = (1, 0)
-
 BASEDIRS = [UP, LEFT, DOWN, RIGHT]
 colorDict = {str((129, 199, 132)): 'GREEN',\
             str((25, 118, 210)): 'BLUE',\
@@ -66,6 +65,7 @@ colorDict = {str((129, 199, 132)): 'GREEN',\
             str((69, 90, 100)): 'DARKGRAY',\
             str((1, 87, 155)): 'DARKBLUE',\
             str((92, 107, 192)): 'PURPLE',\
+            str((175, 175, 175)): 'RESOURCETOADD',\
             str((1, 1, 1)): 'ENDOFSCREEN',\
             str((1, 0, 1)): 'SCORECOLOR', \
             }
@@ -444,7 +444,7 @@ class Chaser(RandomNPC): ##
     """ Pick an action that will move toward the closest sprite of the provided target type. """
     stype = None
     fleeing = False
-
+    # is_stochastic=False
     def _closestTargets(self, game):
         bestd = 1e100
         res = []

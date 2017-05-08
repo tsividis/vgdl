@@ -14,18 +14,18 @@
 
 # """
 
-# level = """
-# wwwwwwwwwwwwwww
-# w    A        w
-# w          x  w
-# w             w
-# w             w
-# w    x        w
-# w             w
-# w             w
-# w    g        w
-# wwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwww
+w    A       w
+w          x w
+w            w
+w            w
+w    x       w
+w            w
+w            w
+w    g       w
+wwwwwwwwwwwwww
+"""
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -57,23 +57,23 @@
 # wwwwwwwwwwwwwwwwwww
 # """
 
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                 w                 w
-w                 w         w       w
-w                 w         w       w
-w                 w         w       w
-w                 w         w       w
-w                 w         w       w
-w                 w         w       w
-w                 w         wwwwwwwww
-w wwwwww          w      A          w
-w      w          w                 w
-w      w          w    w     x      w
-w      w          w    w            w
-w      w          w    w            g
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                 w                 w
+# w                 w         w       w
+# w                 w         w       w
+# w                 w         w       w
+# w                 w         w       w
+# w                 w         w       w
+# w                 w         w       w
+# w                 w         wwwwwwwww
+# w wwwwww          w      A          w
+# w      w          w                 w
+# w      w          w    w     x      w
+# w      w          w    w            w
+# w      w          w    w            g
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -105,7 +105,7 @@ BasicGame frame_rate=30
                 rand1 > color=LIGHTORANGE
                 rand2 > color=BROWN
         chaser > Chaser color=BLUE stype=avatar cooldown=5
-        wall > Immovable
+        wall > Immovable color=BLACK
         missile > Missile
             missile1 > color=YELLOW orientation=RIGHT
             missile2 > color=PINK orientation=RIGHT

@@ -30,8 +30,6 @@ class WBP(Planner):
 			i+=1
 		self.addSpaceBarToActions()
 
-	def getSubgoals(self, subgoal_path_threshold):
-		return [self.findObjectInRLE(self.rle, 'goal')]
 	def addSpaceBarToActions(self):
 		## Note: if an object that isn't instantiated in the beginning is of a class that 
 		## spacebar applies to, we won't pick up on it here.
@@ -186,24 +184,20 @@ class WBP(Planner):
 					# embed()
 			# except:
 				# pass
-			if win:
-				self.solution = current
-				return current, visited, rejected
-			elif current.novelty > 0:		
+			if current.novelty > 0:		
 			# if current.state not in visitedStates:
 				visited.append(current)
 				# visitedStates.append(current.state)
-
+				if win:
+					return current, visited, rejected
 				for a in self.actions:
 					child = Node(rle, self, current.actionSeq+[a], current)
 					Q.put(child)
 			else:
 				rejected.append(current)
-		# print "no more states in queue"
-		# embed()
-		self.solution = Node(rle, self, [], None)
-		return self.solution, visited, rejected
-		# return Q, visited, rejected
+		print "no more states in queue"
+		embed()
+		return Q, visited, rejected
 
 	def BFS2(self, rle):
 		Q = []
@@ -227,11 +221,9 @@ class WBP(Planner):
 			# embed()
 			## This is not nec. right.
 			if current is None:
-				self.solution = Node(rle, self, [], None)
-				return self.solution, visited, rejected
-				# print "got no node"
-				# embed()
-				# return Q, visited, rejected
+				print "got no node"
+				embed()
+				return Q, visited, rejected
 			else:
 				Q.remove(current)
 				current.eval(updateNoveltyDict=True)
@@ -245,9 +237,7 @@ class WBP(Planner):
 						child.eval()
 						Q.append(child)		
 				i+=1
-		self.solution = Node(rle, self, [], None)
-		return self.solution, visited, rejected
-		# return Q, visited, rejected
+		return Q, visited, rejected
 
 
 
@@ -279,18 +269,18 @@ class Node():
 				embed()
 		else:
 			self.reconstructed=True
-			# print "copy failed; replaying from top"
-			vrle = copy.deepcopy(self.rle)
+			print "copy failed; replaying from top"
+			vrle = copy.deepcopy(rle)
 			terminal, win = vrle._isDone()
 			i=0
 			while not terminal and len(self.actionSeq)>i:
 				vrle.step(self.actionSeq[i])
 				terminal, win = vrle._isDone()
 				i += 1
-		# if len(self.actionSeq)>0:
-			# print actionDict[self.actionSeq[-1]]
+		if len(self.actionSeq)>0:
+			print actionDict[self.actionSeq[-1]]
 		self.updateObjIDs(vrle)
-		# print vrle.show()
+		print vrle.show()
 		# if len([o for o in vrle._game.sprite_groups['bullet'] if o not in vrle._game.kill_list]) > 1:
 			# print "multiple bullets"
 			# embed()
