@@ -37,8 +37,8 @@ BasicGame
             fasttruck  > speed=0.2  color=ORANGE
             slowtruck  > speed=0.1  color=RED
         # defining 'wall' last, makes the walls show on top of all other sprites
-        wall > Immovable color=BLACK           
-        
+        wall > Immovable color=BLACK   
+        avatar > MovingAvatar color=DARKBLUE        
     InteractionSet
         goal avatar  > killSprite
         avatar log   > changeResource resource=safety value=2

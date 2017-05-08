@@ -65,6 +65,7 @@ colorDict = {str((129, 199, 132)): 'GREEN',\
             str((69, 90, 100)): 'DARKGRAY',\
             str((1, 87, 155)): 'DARKBLUE',\
             str((92, 107, 192)): 'PURPLE',\
+            str((175, 175, 175)): 'RESOURCETOADD',\
             str((1, 1, 1)): 'ENDOFSCREEN',\
             str((1, 0, 1)): 'SCORECOLOR', \
             }
@@ -442,7 +443,7 @@ class Chaser(RandomNPC): ##
     """ Pick an action that will move toward the closest sprite of the provided target type. """
     stype = None
     fleeing = False
-
+    # is_stochastic=False
     def _closestTargets(self, game):
         bestd = 1e100
         res = []

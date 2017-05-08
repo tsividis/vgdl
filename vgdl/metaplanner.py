@@ -205,39 +205,13 @@ def parallelizedPlanUntilSolved(rleCreateFunc, filename, defaultPolicyMaxSteps, 
 
 	return weightInfo
 
-# if __name__ == "__main__":
-# 	## passing a function. That function contains things set in
-# 	## 'rlenvironmentnonstatic' file
-# 	## You have to make a function that creates the environment.
-# 	## Make the game, then follow the layout in 'rlenvironmentnonstatic'
-	
-# 	filename = "examples.gridphysics.simpleGame4"
-# 	game_to_play = lambda obsType: createRLInputGame(filename)
-# 	# planUntilSolved(game_to_play, filename, 50, [5,1,5])
-# 	# partitionWeightsList = [(5,1,5), (5,3,3)]
-# 	# partitionWeightsList = [(5,1,5)]
-# 	partitionWeightsList = [(5,1,5),(5,3,3), (5,3,1), (5,1,3), (3,1,5), (3,5,1), (1,3,5), (5,5,1), (1,5,3)]
-# 	weightInfoList = []
-# 	totalWeightInfo = {k: {'solved': 0, 'total_steps': 0, 'numActions': 0} for k in partitionWeightsList}
-# 	numIters = 5
-# 	for i in range(numIters):
-# 		weightInfo = parallelizedPlanUntilSolved(game_to_play, filename, 50, partitionWeightsList, numWorkers=4)
-# 		weightInfoList.append(weightInfo)
-# 		for k in totalWeightInfo:
-# 			totalWeightInfo[k]['solved'] = totalWeightInfo[k]['solved'] + (weightInfo[k]['solved']/float(numIters))
-# 			totalWeightInfo[k]['total_steps'] += weightInfo[k]['total_steps']/float(numIters)
-# 			if weightInfo[k]['solved']:
-# 				totalWeightInfo[k]['numActions'] += weightInfo[k]['numActions']
-
-# 	for k in totalWeightInfo:
-# 		totalWeightInfo[k]['numActions'] /= float(totalWeightInfo['solved'])
-
-# 	embed()
 
 def getToWaypoint(rle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, partitionWeights, act=True):
 
 	theory = generateTheoryFromGame(rle)
 
+	print "in getToWayPoint"
+	# embed()
 	# print "making RLE in getToWaypoint, after generateTheoryFromGame()"
 	theoryString, levelString, inverseMapping, immovables, killerObjects =\
 	writeTheoryToTxt(rle, theory, symbolDict, "./examples/gridphysics/waypointtheory.py", subgoal)
@@ -249,8 +223,8 @@ def getToWaypoint(rle, subgoal, plannerType, symbolDict, defaultPolicyMaxSteps, 
 	print "planner type", plannerType
 	if plannerType=='IW':
 		planner = IW(rle=Vrle, gameString=theoryString, levelString=levelString, gameFilename=Vrle.game_name, k=2)
-		planner.BFS2(Vrle)
-		solution = planner.solution.actionSeq
+		planner.BFS(Vrle)
+		actions = planner.solution.actionSeq
 	elif plannerType=='mcts':
 		mcts = Basic_MCTS(existing_rle=Vrle, game=theoryString, level=levelString, partitionWeights=partitionWeights)
 		# print "made mcts for subgoal,", subgoal
@@ -375,7 +349,7 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 				if not theory_change_flag and not goal_achieved and not resetSubgoals:
 
 					## write subgoal to theory; initialize VRLE.
-					# print "at top of metaplanner loop -- making theory"
+					print "at top of metaplanner loop -- making theory"
 					game, level, symbolDict, immovables, killerObjects = writeTheoryToTxt(rle, hypotheses[0], symbolDict, \
 						"./examples/gridphysics/theorytest.py", subgoal)
 					vrle = createMindEnv(game, level, output=False)

@@ -134,19 +134,20 @@ def noveltyHeuristic(lst, WBP, k, surrogateCall=False, threshold=False):
 		# embed()
 		if maxNovelty==0 and not surrogateCall:
 			return None
-		else:
+		elif not surrogateCall:
 			bestNodes = [n for n in lst if n.novelty==maxNovelty]
 			# bestNodes = [n for n in lst if n.novelty>0]
 			if len(bestNodes)==1:
 				return bestNodes[0]
 			elif len(bestNodes)>1:
-			 	if not surrogateCall:
-			 		return rewardHeuristic(bestNodes, WBP, k, surrogateCall=True)
-			 	else:
-			 		return random.choice(bestNodes)
-			else:
-				print "found 0 nodes in noveltyHeuristic"
-				embed()
+			 	return rewardHeuristic(bestNodes, WBP, k, surrogateCall=True)
+		elif surrogateCall:
+			minNovelty = min([n.novelty for n in lst if n.novelty>0])
+			bestNodes = [n for n in lst if n.novelty==minNovelty]
+	 		return random.choice(bestNodes)
+		else:
+			print "found 0 nodes in noveltyHeuristic"
+			embed()
 
 def rewardHeuristic(lst, WBP, k, surrogateCall=False):
 	maxReward = max([n.metabolic_reward for n in lst]) ## n.metabolic_reward includes the game reward
@@ -166,9 +167,9 @@ def rewardHeuristic(lst, WBP, k, surrogateCall=False):
 		print "found 0 nodes in rewardHeuristic"
 		embed()
 
-def BFS(rle, WBP):
+def BFS_noNovelty(rle, WBP):
 	Q = Queue()
-	visited, rejected, visitedStates= [], [], []
+	visited, rejected = [], []
 	start = Node(rle, WBP, [], None)
 	start.lastState = rle
 	# visited.append(start)
@@ -176,17 +177,8 @@ def BFS(rle, WBP):
 	while not Q.empty():
 		current = Q.get()
 		win = current.eval(updateNoveltyDict=True)
-		# print current.novelty
-		# embed()
-		# try:
-			# if current.lastState._rect2pos(current.lastState._game.sprite_groups['bullet'][0].rect)[0] > 4: 
-				# embed()
-		# except:
-			# pass
-		if current.novelty > 0:		
-		# if current.state not in visitedStates:
-			visited.append(current)
-			# visitedStates.append(current.state)
+		if current.state not in visited:
+			visited.append(current.state)
 			if win:
 				return current, visited, rejected
 			for a in WBP.actions:
@@ -197,6 +189,133 @@ def BFS(rle, WBP):
 	print "no more states in queue"
 	embed()
 	return Q, visited, rejected
+
+def BFS(rle, WBP):
+	Q = Queue()
+	visited, rejected = [], []
+	start = Node(rle, WBP, [], None)
+	start.lastState = rle
+	# visited.append(start)
+	Q.put(start)
+	while not Q.empty():
+		current = Q.get()
+		win = current.eval(updateNoveltyDict=True)
+		if current.novelty > 0:		
+		# if current.state not in visited:
+			visited.append(current)
+			if win:
+				return current, visited, rejected
+			for a in WBP.actions:
+				child = Node(rle, WBP, current.actionSeq+[a], current)
+				Q.put(child)
+		else:
+			rejected.append(current)
+	print "no more states in queue"
+	embed()
+	return Q, visited, rejected
+
+
+def BFS3(rle, WBP):
+	QNovelty, QReward = [], []
+	visited, rejected = [], []
+	start = Node(rle, WBP, [], None)
+	start.lastState = rle
+	visited.append(start)
+	start.eval()
+	QNovelty.append(start)
+	QReward.append(start)
+	i=0
+
+	def noveltySelection():
+		bestNodes = sorted(filter(lambda n: n.novelty>0, QNovelty), key=lambda n: (n.novelty, -n.metabolic_reward))
+		# print [n.novelty for n in bestNodes]
+		# embed()
+		if len(bestNodes)>0:
+			return bestNodes[0]
+		else:
+			return None
+
+		# if len(QNovelty)==0:
+			# return None
+		# else:
+			# acceptableNodes = [n for n in QNovelty if n.novelty>0]
+		# print 'in noveltySelection'
+		# embed()
+		# return bestNodes[0]
+		# maxNovelty = max([n.novelty for n in QNovelty])
+		# acceptableNodes = [node for node in QNovelty if node.novelty>0]
+
+		# if len(acceptableNodes) == 0:
+		# 	return None
+		# # if maxNovelty==0:
+		# 	# return None
+		# minNovelty = min([n.novelty for n in acceptableNodes])
+		# bestNodes = [n for n in acceptableNodes if n.novelty==minNovelty]
+		# # bestNodes = [n for n in QNovelty if n.novelty==maxNovelty]
+		# if len(bestNodes)==1:
+		# 	return bestNodes[0]
+		# else:
+		# 	maxReward = max([n.metabolic_reward for n in bestNodes])
+		# 	return [n for n in bestNodes if n.metabolic_reward==maxReward][0]
+			# return random.choice([n for n in bestNodes if n.metabolic_reward==maxReward])
+
+	def rewardSelection():
+		bestNodes = sorted(filter(lambda n:n.novelty>0, QReward), key=lambda n: (-n.metabolic_reward, n.novelty))
+		# print "in rewardselection"
+		# print [n.reward for n in bestNodes]
+		# embed()
+		if len(bestNodes)>0:
+			return bestNodes[0]
+		else:
+			return None
+		# maxReward = max([n.metabolic_reward for n in QReward])
+		# bestNodes = [n for n in QReward if n.metabolic_reward==maxReward]
+		# if len(bestNodes)==1:
+		# 	return bestNodes[0]
+		# else:
+		# 	# acceptableNodes = [n for n in bestNodes if n.novelty>0]
+		# 	minNovelty = min([n.novelty for n in bestNodes])
+		# 	acceptableNodes = [n for n in bestNodes if n.novelty==minNovelty]
+		# 	if len(acceptableNodes)>0:
+		# 		return acceptableNodes[0]
+		# 		# return random.choice(acceptableNodes)
+		# 	else:
+		# 		return None
+
+	while len(QNovelty)>0 or len(QReward)>0:
+		if i%2==0:
+			current = noveltySelection()
+		else:
+			current = rewardSelection()
+
+		## fix breakpoints.
+		if current==None:
+			pass
+		else:
+			if i%2==0:
+				QNovelty.remove(current)		
+			else:
+				QReward.remove(current)
+			print current.novelty
+			print current.lastState.show()
+			# QNovelty.remove(current)
+			# QReward.remove(current)
+			current.eval(updateNoveltyDict=True)
+			visited.append(current)
+			if current.win:
+				return current, visited, rejected ##revisit
+			else:
+				for a in WBP.actions:
+					child = Node(rle, WBP, current.actionSeq+[a], current)
+					child.eval()
+					# print child.novelty
+					# print child.lastState.show()
+					if child.novelty>0:
+						QNovelty.append(child)		
+					if child.metabolic_reward>0:
+						QReward.append(child)
+		i+=1
+	return None, visited, rejected			
 
 def BFS2(rle, WBP):
 	Q = []
@@ -224,6 +343,7 @@ def BFS2(rle, WBP):
 			embed()
 			return Q, visited, rejected
 		else:
+			print current.lastState.show()
 			Q.remove(current)
 			current.eval(updateNoveltyDict=True)
 			visited.append(current)
@@ -275,10 +395,10 @@ class Node():
 				vrle.step(self.actionSeq[i])
 				terminal, win = vrle._isDone()
 				i += 1
-		if len(self.actionSeq)>0:
-			print actionDict[self.actionSeq[-1]]
+		# if len(self.actionSeq)>0:
+			# print actionDict[self.actionSeq[-1]]
 		self.updateObjIDs(vrle)
-		print vrle.show()
+		# print vrle.show()
 		# if len([o for o in vrle._game.sprite_groups['bullet'] if o not in vrle._game.kill_list]) > 1:
 			# print "multiple bullets"
 			# embed()
@@ -352,8 +472,8 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.pick_apples" ## worked with expanded phi!
 	# gameFilename = "examples.gridphysics.scoretest" ##2BFS solves it!
 	# gameFilename = "examples.gridphysics.demo_chaser"  ##easy version solved!
-	gameFilename = "examples.gridphysics.demo_helper"  ##easy version solved!
-	# gameFilename = "examples.gridphysics.demo_multigoal_and"  ##takes forever if you have many boxes and don't use 2BFS (with metabolic penalty)
+	# gameFilename = "examples.gridphysics.demo_helper"  ##easy version solved!
+	gameFilename = "examples.gridphysics.demo_multigoal_and"  ##takes forever if you have many boxes and don't use 2BFS (with metabolic penalty)
 	# gameFilename = "examples.gridphysics.simpleGame_push_boulders" 
 	# gameFilename = "examples.gridphysics.chase" #yes!!!
 	# gameFilename = "examples.gridphysics.survivezombies" # solvable, just not very fast if long timeout.
@@ -362,7 +482,9 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.demo_helper"  ##
 	# gameFilename = "examples.gridphysics.demo_transform" ##
 	# gameFilename = "examples.gridphysics.simpleGame_missile" #later.
+	# gameFilename = "examples.gridphysics.simpleGame_push_boulders2"
 
+	# gameFilename = "examples.gridphysics.waypointtheory"  ##easy version solved!
 
 	# gameFilename = "examples.gridphysics.demo_multigoal_and_score"  ##easy version solved!
 	# gameFilename = "examples.gridphysics.demo_sokoban" #later
@@ -384,8 +506,11 @@ if __name__ == "__main__":
 	# embed()
 	# p.trackTokens = True
 	t1 = time.time()
-	last, visited, rejected = BFS(rle, p)
+	# last, visited, rejected = BFS_noNovelty(rle, p)
+	# last, visited, rejected = BFS(rle, p)
 	# last, visited, rejected = BFS2(rle, p)
+	last, visited, rejected = BFS3(rle, p)
+
 	print time.time()-t1
 	print len(visited), len(rejected)
 	embed()

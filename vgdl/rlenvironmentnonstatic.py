@@ -323,21 +323,21 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         observation = self._getSensors()
         (ended, won) = self._isDone()
         self._game.time+=1 ## Added 5/2
-        metabolic_penalty = 0.
+        metabolic_penalty = .2
         # try:
         #     ## Added 5/2: Adding metabolic cost in RLE for avatar interacting w/ objects:
-        #     if len(events)>0:
-        #         if any([self._game.sprite_groups['avatar'][0].ID in e and e[0]=='bounceForward' for e in events]):
-        #             metabolic_penalty = 0.1
-        #         elif any([self._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
-        #             metabolic_penalty = 0.5
-        #     # elif action in [32]:#, 273, 274, 276, 275]:
-        #             # metabolic_penalty = 0.2
-        #             # print "pushed"
-        #             # embed()
+        # if len(events)>0:
+            # if any([self._game.sprite_groups['avatar'][0].ID in e and e[0]=='bounceForward' for e in events]):
+                # metabolic_penalty = 0.1
+                # elif any([self._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
+                #     metabolic_penalty = 0.1
+            # elif action in [32]:#, 273, 274, 276, 275]:
+                    # metabolic_penalty = 0.2
+                    # print "pushed"
+                    # embed()
         # except:
-        #     print "adding metabolic cost failed"
-        #     embed()
+            # print "adding metabolic cost failed"
+            # embed()
         dScore = self._game.score - pre_step_score - metabolic_penalty
         if ended:
             pcontinue = 0

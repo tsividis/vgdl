@@ -74,7 +74,11 @@ class Agent:
 		return colorDict[str(sprite.color)]
 
 	def getSpriteNameColor(self, spriteName, rle):
-		return self.getSpriteColor(rle._game.sprite_groups[spriteName][0])
+		try:
+			return self.getSpriteColor(rle._game.sprite_groups[spriteName][0])
+		except:
+			print "getSpriteNameColor failed"
+			embed()
 
 	def objectSelectionPhase(self, unknownColors, allColors, rle):
 		## TODO: this is contingent on only one goal existing.
@@ -82,9 +86,9 @@ class Agent:
 		epsilon = .1
 		## With probability 1-epsilon, select known goal if it's known, otherwise unkown object.
 		if len(self.goalColor)>0 and \
-		len([k for k in rle._game.sprite_groups.keys() if self.getSpriteNameColor(k, rle) in self.goalColor])>0 and \
+		len([k for k in rle._game.sprite_groups.keys() if len(rle._game.sprite_groups[k])>0 and self.getSpriteNameColor(k, rle) in self.goalColor])>0 and \
 		random.random()>epsilon:
-			key = random.choice([k for k in rle._game.sprite_groups.keys() if self.getSpriteNameColor(k, rle) in self.goalColor])
+			key = random.choice([k for k in rle._game.sprite_groups.keys() if len(rle._game.sprite_groups[k])>0 and self.getSpriteNameColor(k, rle) in self.goalColor])
 			objectGoal = rle._game.sprite_groups[key][0]
 			# actualGoal = objectGoal
 			# objectGoalLocation = rle._rect2posFlipCoords(objectGoal.rect)
@@ -168,8 +172,10 @@ class Agent:
 		## initialize theory if necessary.
 		if len(self.hypotheses) == 0:
 			gameObject = self.initializeHypotheses(rle, allObjects, learnSprites=True)
+			print "initializing hypohteses"
 		else:
 			gameObject = self.completeHypotheses(rle, allObjects)
+			print "had hypotheses -- completing them."
 
 		while not ended:
 
@@ -184,7 +190,7 @@ class Agent:
 				## VRLEs, hypothesis-selection-method .....
 				## figures out plan determined as above
 				## carries out plan.
-
+			print "calling getToObjecGoal"
 			rle, self.hypotheses, finalEventList, candidateNewColors, statesEncountered, gameObject = \
 				getToObjectGoal(rle, VRLEs[0], self.plannerType, gameObject, self.hypotheses[0], self.gameString, self.levelString, \
 					objectGoal, allObjects, finalEventList, symbolDict=self.symbolDict)
@@ -212,7 +218,7 @@ class Agent:
 if __name__ == "__main__":
 	# filename = "examples.gridphysics.simpleGame_resourceTest"
 
-	filename = "examples.gridphysics.simpleGame_preconditions" ## won't work until eventHandling() is corrected.
+	# filename = "examples.gridphysics.simpleGame_preconditions" ## won't work until eventHandling() is corrected.
 	# filename = "examples.gridphysics.simpleGame_inductionTest"
 	# filename = "examples.gridphysics.simpleGame_missile2"	
 	# filename = "examples.gridphysics.movers2d"	
@@ -224,6 +230,8 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pushtest"
 	# filename = "examples.gridphysics.simpleGame_small"
 	# filename = "examples.gridphysics.new_object_test"	
+	filename = "examples.gridphysics.demo_chaser"
+
 	# filename = "examples.gridphysics.push_boulders_multigoal_incremental"	
 
 	# filename = "examples.gridphysics.scoretest"	

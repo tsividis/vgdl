@@ -80,7 +80,7 @@ BasicGame frame_rate=30
             box1 > color=RED
             box2 > color=ORANGE
         mover > VGDLSprite
-            rand > RandomNPC cooldown=5
+            rand > RandomNPC cooldown=0
                 rand1 > color=LIGHTORANGE
                 rand2 > color=BROWN
         chaser > Chaser color=BLUE stype=box1 cooldown=0

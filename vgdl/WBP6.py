@@ -133,6 +133,7 @@ def rewardHeuristic(lst, WBP, k, surrogateCall=False):
 		print "found 0 nodes in rewardHeuristic"
 		embed()
 
+
 def BFS(rle, WBP):
 	Q = Queue()
 	visited, rejected= [], []
@@ -143,10 +144,10 @@ def BFS(rle, WBP):
 	while not Q.empty():
 		current = Q.get()
 		win = current.eval(updateNoveltyDict=True)
+		if win:
+			return current, visited, rejected
 		if current.novelty > 0:			
 			visited.append(current)
-			if win:
-				return current, visited, rejected
 			for a in ACTIONS:
 				child = Node(rle, WBP, current.actionSeq+[a], current)
 				Q.put(child)
@@ -283,16 +284,17 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.movers3c" ##solved!!
 	# gameFilename = "examples.gridphysics.rivercross" ## solved!!
 	# gameFilename = "examples.gridphysics.demo_dodge"  ##solved!!
-	gameFilename = "examples.gridphysics.simpleGame4_small"
+	# gameFilename = "examples.gridphysics.simpleGame4_small"
 	# gameFilename = "examples.gridphysics.movers5" ##solved!!
 
-	# gameFilename = "examples.gridphysics.simpleGame_push_boulders_multigoal" ## k=2 works!
+	gameFilename = "examples.gridphysics.simpleGame_push_boulders_multigoal" ## k=2 works!
 	# gameFilename = "examples.gridphysics.demo_preconditions" ## k=2 works!
 	# gameFilename = "examples.gridphysics.waterfall" ##solved!! 
 	# gameFilename = "examples.gridphysics.frogs" ## worked with k=2.
 	# gameFilename = "examples.gridphysics.pick_apples" ## worked with expanded phi!
 	# gameFilename = "examples.gridphysics.scoretest" ##2BFS solves it!
 
+	# gameFilename = "examples.gridphysics.simpleGame_push_boulders" ## k=2 works!
 
 
 	# gameFilename = "examples.gridphysics.demo_chaser"  ##easy version solved!

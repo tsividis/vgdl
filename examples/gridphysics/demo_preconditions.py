@@ -20,32 +20,32 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 # wwwwwwwwwwwww
 # """
 
-# level = """
-# wwwwwwwwwwwww
-# wm          w
-# w      A    w
-# w       ppppw
-# w       p  gw
-# wwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwww
+wm          w
+w      A    w
+w       ppppw
+w       p  gw
+wwwwwwwwwwwww
+"""
 # level = """
 # wwwww
 # wmA g
 # wwwww
 # """
 
-level = """
-wwwwwwwwwwwwwwwwww
-w b c   w    A   w
-w   c   w    wwwww
-wccccm     p     w
-w     c p       ww
-ww   www   m     w
-wpppp          c w
-w   pc      m    w
-w g p    c    c  w
-wwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwww
+# w b c   w    A   w
+# w   c   w    wwwww
+# wccccm     p     w
+# w     c p       ww
+# ww   www   m     w
+# wpppp          c w
+# w   pc      m    w
+# w g p    c    c  w
+# wwwwwwwwwwwwwwwwww
+# """
 
 
         

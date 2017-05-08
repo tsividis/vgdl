@@ -211,23 +211,27 @@ class Planner:
 		else:
 			return 0.
 
-	def findObjectInRLE(self, rle, objName):
+	def findObjectsInRLE(self, rle, objName):
 		if objName not in rle._obstypes.keys():
 			print objName, "not in rle."
 			return None
-		objCode = 2**(1+sorted(self.rle._obstypes.keys())[::-1].index(objName))
-		objLoc = np.where(np.reshape(rle._getSensors(), self.rle.outdim)==objCode)
-		objLoc = objLoc[0][0], objLoc[1][0] #(y,x)
-		return objLoc
+		objLocs = [rle._rect2pos(element.rect) for element in rle._game.sprite_groups[objName] if element not in rle._game.kill_list]
+
+		# objCode = 2**(1+sorted(self.rle._obstypes.keys())[::-1].index(objName))
+		# objLoc = np.where(np.reshape(rle._getSensors(), self.rle.outdim)==objCode)
+		# objLoc = objLoc[0][0], objLoc[1][0] #(y,x)
+		return objLocs
 	
 	def findAvatarInRLE(self, rle):
-		avatar_code = 1
-		state = np.reshape(rle._getSensors(), self.rle.outdim)
-		if avatar_code in state:
-			avatar_loc = np.where(state==avatar_code)
-			avatar_loc = avatar_loc[0][0], avatar_loc[1][0]
-		else:
-			avatar_loc = None
+		# avatar_code = 1
+		# embed()
+		avatar_loc = rle._rect2pos(rle._game.sprite_groups['avatar'][0].rect)
+		# state = np.reshape(rle._getSensors(), self.rle.outdim)
+		# if avatar_code in state:
+		# 	avatar_loc = np.where(state==avatar_code)
+		# 	avatar_loc = avatar_loc[0][0], avatar_loc[1][0]
+		# else:
+		# 	avatar_loc = None
 		return avatar_loc
 
 	def findAvatarInState(self, s):

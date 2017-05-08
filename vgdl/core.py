@@ -75,6 +75,7 @@ colorDict = {str((129, 199, 132)): 'GREEN',\
             str((69, 90, 100)): 'DARKGRAY',\
             str((1, 87, 155)): 'DARKBLUE',\
             str((92, 107, 192)): 'PURPLE',\
+            str((175, 175, 175)): 'RESOURCETOADD',\
             str((1, 1, 1)): 'ENDOFSCREEN',\
             str((1, 0, 1)): 'SCORECOLOR', \
             }
@@ -326,6 +327,8 @@ class BasicGame(object):
         self.width = lengths[0]
         self.height = len(lines)
         assert self.width > 1 and self.height > 1, "Level too small."
+        # assert self.width%2 == 0, "Level has odd-numbered width."
+        # assert self.height%2==0, "Level has odd-numbered height."
         # rescale pixels per block to adapt to the level
         self.block_size = max(2,int(800./max(self.width, self.height)))
         # self.block_size = max(2,int(400./max(self.width, self.height)))

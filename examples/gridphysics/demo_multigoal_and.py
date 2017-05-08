@@ -8,12 +8,30 @@
 # """
 
 # level = """
-# wwwwwwwwwww
-# w     b   w
-# w b Ab  bhw
-# w b b b   w
-# w  h    h w
-# wwwwwwwwwww
+# wwwwwwwwwwww
+# w          w
+# w   Ab    hw
+# w          w
+# w  h    h  w
+# wwwwwwwwwwww
+# """
+
+# level = """
+# wwwwwwwwwwww
+# w     b    w
+# w b Ab   bhw
+# w b b b    w
+# w  h    h  w
+# wwwwwwwwwwww
+# """
+
+# level = """
+# wwwwwwwwwwww
+# w     b    w
+# w b Ab   bhw
+# w b b b    w
+# w       h  w
+# wwwwwwwwwwww
 # """
 
 # level3 = """
@@ -37,6 +55,18 @@
 # """
 
 
+# level = """
+# wwwwwwwwwwwwwwwwwwww
+# w         b      h w
+# w         Ab       w
+# w       bb b     b w
+# w         b        w
+# w        p     wwwww
+# w   p       p      w
+# w              w   w
+# wwwwwwwwwwwwwwwwwwww
+# """
+
 level = """
 wwwwwwwwwwwwwwwwwwww
 w         b      h w
@@ -45,7 +75,7 @@ w       bb b     b w
 w         b        w
 w        p     wwwww
 w   p       p      w
-w       h      w  hw
+w     h        w h w
 wwwwwwwwwwwwwwwwwwww
 """
 
@@ -85,13 +115,13 @@ BasicGame frame_rate=30
             rand > RandomNPC cooldown=10
                 rand1 > color=LIGHTORANGE
                 rand2 > color=BLUE
-        wall > Immovable
+        wall > Immovable color=BLACK
         missile > Missile
             missile1 > color=YELLOW orientation=RIGHT
             missile2 > color=LIGHTBLUE orientation=RIGHT
-        goal > Immovable 
-            goal1 > color=GREEN
-            goal2 > color=PINK
+        goal > Immovable color=PINK
+            # goal1 > color=GREEN
+            # goal2 > color=PINK
         poison > Immovable color=WHITE
     LevelMapping
         w > wall   
@@ -101,8 +131,8 @@ BasicGame frame_rate=30
         z > rand2
         1 > missile1
         2 > missile2
-        g > goal1
-        h > goal2
+        #g > goal1
+        h > goal
         p > poison
     InteractionSet
         avatar wall > stepBack 
@@ -121,6 +151,7 @@ BasicGame frame_rate=30
         mover mover > stepBack
         mover missile > stepBack
         mover box > stepBack
+        goal avatar > changeScore value=100
         goal avatar > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False          

@@ -1598,10 +1598,14 @@ class Game(object):
 			T.classes[nonAvatars[i].className] = [nonAvatars[i]]
 		T.classes['EOS'] = [eos] ##initialize EOS with special name, since it gets such special treatment in VGDL text files.
 
+		## Removed this 5/3/17: Assuming that everything can be destroyed really slows down IW(k) planners,
+		## because each destruction results in new states.
+		## Instead, don't say anything, which does the default interaction, which is it just passes through them.
+		
 		## Add generic rule that the avatar kills everything
-		for obj in nonAvatars:
-			rule = InteractionRule('killSprite', obj.className, avatar.className, {}, set(), generic=True)
-			T.interactionSet.append(rule)
+		# for obj in nonAvatars:
+			# rule = InteractionRule('killSprite', obj.className, avatar.className, {}, set(), generic=True)
+			# T.interactionSet.append(rule)
 
 		## Add generic rule that all other interactions are stepBack
 		# print "in buildGenericTheory"
@@ -1621,6 +1625,8 @@ class Game(object):
 
 
 		rule =  SpriteCounterRule("avatar", 0, False)
+		T.terminationSet.append(rule)
+		rule =  SpriteCounterRule("goal", 0, True)
 		T.terminationSet.append(rule)
 
 		return T
@@ -2194,8 +2200,12 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 			c1 = interactionRule.slot1
 			c2 = interactionRule.slot2
 
+
 			# if c2=='EOS' or c1=='EOS': ## 'EOS stepBack' is always being written at the end. Don't handle it here.
 			# 	continue
+			if (c1=='laog' and len(theory.classes[c1])==0) or (c2=='laog' and len(theory.classes[c2])==0):
+				print "found laog"
+				embed()
 
 			for s1 in theory.classes[c1]:
 				for s2 in theory.classes[c2]:
@@ -2274,11 +2284,14 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 			theoryString += "limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
 	
+	# print "in writeTheory"
+	# embed()
+
 	# theoryString += "\tTerminationSet\n"
-	# theoryString += "\t\tSpriteCounter stype=avatar limit=0 win=False\n"
-	# if goalLoc and goalConditionNotFound:
-	# 	embed()
-	# 	theoryString += "\t\tSpriteCounter stype=goal limit=0 win=True\n"
+	theoryString += "\t\tSpriteCounter stype=avatar limit=0 win=False\n"
+	if goalLoc and goalConditionNotFound:
+		# embed()
+		theoryString += "\t\tSpriteCounter stype=goal limit=0 win=True\n"
 
 	# # fourth phase: the level mapping
 	theoryString += "\tLevelMapping\n"

@@ -16,6 +16,7 @@
 
 level = """
 wwwwwwwwwwwwwwww
+w              w
 w A            w
 w           x  w
 w              w
