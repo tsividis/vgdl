@@ -181,12 +181,19 @@ class GridPhysics():
                 pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
                 return pos.left, pos.top
         return(sprite.rect.left, sprite.rect.top)
-        
 
+    # using euclidian distance is also used here because it just works better
+    # who uses hamming distance for anything where actual distance is needed?
+    # No, seriously... I don't want to break anything
     def distance(self, r1, r2):
-        """ Grid physics use Hamming distances. """
-        return (abs(r1.top - r2.top)
-                + abs(r1.left - r2.left))
+        """Euclidean distances. """
+        return sqrt((r1.top - r2.top) ** 2
+                    + (r1.left - r2.left) ** 2)     
+
+    # def distance(self, r1, r2):
+    #     """ Grid physics use Hamming distances. """
+    #     return (abs(r1.top - r2.top)
+    #             + abs(r1.left - r2.left))
 
 
 class ContinuousPhysics(GridPhysics):

@@ -620,20 +620,17 @@ class BasicGame(object):
         push_effect = 'bounceForward'
         back_effect = 'stepBack'
         force_collisions = []
-        self.dead = self.kill_list[:] # copy kill list
         collision_set = set()
         new_collisions = True
         self.effectList = []
+        dead = self.kill_list[:] # copy kill list
+        created = []
         # build the current sprite lists (if not yet available)
         # for class1, class2, effect, kwargs in self.collision_eff:
-
-
         while new_collisions:
             new_collisions = set()
             new_effects = []
-
             for class1, class2, effect, kwargs in self.collision_eff:
-                
                 for sprite_class in [class1, class2]:
                     if sprite_class not in self.lastcollisions:
                         if sprite_class in self.sprite_groups:
@@ -644,7 +641,7 @@ class BasicGame(object):
                                 sprite = self.sprite_groups[key]
                                 if sprite and sprite_class in sprite[0].stypes:
                                     sprite_group.extend(sprite)
-                        self.lastcollisions[sprite_class] = (sprite_group, len(sprite_group))
+                        self.lastcollisions[sprite_class] = (sprite_group[:], len(sprite_group))
 
                 # special case for end-of-screen
                 if class2 == "EOS":
@@ -656,8 +653,8 @@ class BasicGame(object):
 
                 # print self.lastcollisions['box']
                 # iterate over the shorter one
-                sprite_list1, l1 = self.lastcollisions[class1]
-                sprite_list2, l2 = self.lastcollisions[class2]
+                sprite_list1 = self.lastcollisions[class1][0]
+                sprite_list2 = self.lastcollisions[class2][0]
                 # if l1 < l2:
                 #     shortss, longss, switch = ss1, ss2, False
                 # else:
@@ -681,8 +678,8 @@ class BasicGame(object):
                     for collision_index in sprite1.rect.collidelistall(sprite_list2):
                         sprite2 = sprite_list2[collision_index]
                         if (sprite1 == sprite2
-                            or sprite1 in self.dead
-                            or sprite2 in self.dead
+                            or sprite1 in dead
+                            or sprite2 in dead
                             or (sprite1, sprite2) in collision_set):
                             continue
                         new_collisions.add((sprite1, sprite2))
@@ -713,6 +710,15 @@ class BasicGame(object):
                             (sclass, args, stypes) = self.sprite_constr[resource]
                             resource_color = args['color']
                             new_effects.append(effect(sprite1, sprite2, resource_color, self, **kwargs))
+                        
+                        elif effect.__name__ == 'transformTo':
+
+                            new_effects.append(effect(sprite1, sprite2, self, **kwargs))
+                            new_sprite = self.getSprites(kwargs['stype'])[-1]
+                            new_collisions.add((sprite1, new_sprite))
+                            dead.append(sprite1)
+
+
                         # Deal with push effects
                         elif effect.__name__ == push_effect:
                             for collision in force_collisions:
@@ -736,7 +742,7 @@ class BasicGame(object):
             self.effectList += [new_effect for new_effect in new_effects if new_effect]
             collision_set = collision_set.union(new_collisions)
 
-        # self.kill_list = self.dead[:]
+        # self.kill_list = dead[:]
         # if len(self.effectList) > 0:
         #     print 'effectList', self.effectList
         return self.effectList
