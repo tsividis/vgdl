@@ -30,7 +30,7 @@ class WBP(Planner):
 		self.addSpaceBarToActions()
 
 	def addSpaceBarToActions(self):
-		## Note: if an object that isn't instantiated in the beginning is of a class that 
+		## Note: if an object that isn't instantiated in the beginning is of a class that
 		## spacebar applies to, we won't pick up on it here.
 		shootingClasses = ['MarioAvatar', 'ClimbingAvatar', 'ShootAvatar', 'Switch', 'FlakAvatar']
 		classes = [str(o[0].__class__) for o in self.rle._game.sprite_groups.values() if len(o)>0]
@@ -73,7 +73,7 @@ class WBP(Planner):
 			self.vecSize = len(lst)
 			print "Vector is length {}".format(self.vecSize)
 		return set(lst)
-	
+
 	def compareDicts(self, d1,d2):
 		## only tells us what is in d2 that isn't in d1, as well as differences in values between shared keys
 		return [k for k in d2.keys() if (k not in d1.keys() or d1[k]!=d2[k])]
@@ -119,10 +119,12 @@ def BFS3(rle, WBP):
 	i=0
 
 	while len(QNovelty)>0 or len(QReward)>0:
+		"""
 		if i%2==0:
 			current = noveltySelection(QNovelty, QReward)
 		else:
-			current = rewardSelection(QReward, QNovelty)
+		"""
+		current = rewardSelection(QReward, QNovelty)
 
 		print current.novelty, current.intrinsic_reward, current.heuristicVal
 		# print len(QNovelty), len(QReward)
@@ -142,10 +144,10 @@ def BFS3(rle, WBP):
 			if child.win:
 				return child, visited, rejected ##revisit
 			else:
-				QNovelty.append(child)		
+				QNovelty.append(child)
 				QReward.append(child)
 		i+=1
-	return None, visited, rejected			
+	return None, visited, rejected
 
 class Node():
 	def __init__(self, rle, WBP, actionSeq, parent):
@@ -165,7 +167,7 @@ class Node():
 		self.reconstructed=False
 		self.expanded = False
 		self.rolloutDepth = 30
-	
+
 	def metabolics(self, rle, events, action):
 		metabolic_cost = .2
 		if action==32:
@@ -197,36 +199,45 @@ class Node():
 			return vrle._game.score
 
 	def heuristics(self):
-		try:
-			heuristicVal = min([manhattanDist(self.WBP.findAvatarInRLE(self.lastState), o) for o in self.WBP.findObjectsInRLE(self.lastState, 'goal')])
+		# Parameters
+		sprite_alpha = 100  # distance_to_goal multiplier for SpriteCounterRule
+		time_alpha = 10  # distance_to_goal multiplier for TimeoutRule
 
-			## zelda
-			# try:
-			# 	heuristicVal = min([manhattanDist(self.WBP.findObjectsInRLE(self.lastState, 'withkey')[0],o) \
-			# 		for o in self.WBP.findObjectsInRLE(self.lastState, 'goal')])
-			# except:
-			# 	heuristicVal = 10*min([manhattanDist(self.WBP.findObjectsInRLE(self.lastState, 'nokey')[0],o) \
-			# 		for o in self.WBP.findObjectsInRLE(self.lastState, 'key')])
-			
-			# heuristicVal = 0
-			# embed()
-			# len([b for b in self.lastState._game.sprite_groups['base'] if b not in self.lastState._game.kill_list])
-			# len(self.lastState._game.sprite_groups['base']) - len(self.lastState._game.kill_list)
+		theory = generateTheoryFromGame(self.rle)
+		heuristicVal = 0
 
-			# negativeHeuristicVal = min([manhattanDist(self.WBP.findAvatarInRLE(self.lastState), o) for o in self.WBP.findObjectsInRLE(self.lastState, 'missile2')])
+		for term in theory.terminationSet:
 
-			# heuristicVal = min([min([manhattanDist(box, goal) for goal in self.WBP.findObjectsInRLE(self.lastState, 'hole')]) \
-			# 	for box in self.WBP.findObjectsInRLE(self.lastState, 'box')])
-			
-			# allVal = [min([manhattanDist(box, goal) for goal in self.WBP.findObjectsInRLE(self.lastState, 'goal')]) \
-				# for box in self.WBP.findObjectsInRLE(self.lastState, 'chaser')]
-			# heuristicVal = sum([a**2 for a in allVal])
+			if isinstance(term, SpriteCounterRule):
+				# Get attributes from terminationSet
+				stype = term.termination.stype
+				limit = term.termination.limit
+				win = term.termination.win
 
-		except:
-			heuristicVal = 100000
-			# print "didn't find goal"
-			# embed()
-		return -heuristicVal
+				n_sprites = len([0 for sprite in self.WBP.findObjectsInRLE(self.lastState, stype)])
+				distance_to_goal = abs(n_sprites - limit)
+
+				if win:
+					heuristicVal -= sprite_alpha * distance_to_goal
+
+				else:
+					heuristicVal += sprite_alpha * distance_to_goal
+
+
+			elif isinstance(term, TimeoutRule):
+				limit = term.termination.limit
+				win = term.termination.win
+
+				time_elapsed = self.rle._game.time
+				distance_to_goal = abs(time_elapsed - limit)
+
+				if win:
+					heuristicVal -= time_alpha * distance_to_goal
+
+				else:
+					heuristicVal += time_alpha * distance_to_goal
+
+		return heuristicVal
 
 	def getToCurrentState(self):
 		if self.parent and self.parent.lastState is not None:
@@ -286,14 +297,14 @@ class Node():
 
 		self.updateObjIDs(vrle)
 		self.state = self.WBP.calculateAtoms(vrle)
-		
+
 		for i in range(1,3):
 			for c in itertools.combinations(self.state, i):
 				if self.WBP.trueAtoms[c] == 0:
 					self.candidates.append(c)
 		self.lastState = vrle
 		self.updateNovelty()
-		
+
 		self.win = win
 		self.heuristicVal = self.heuristics()
 
@@ -301,11 +312,8 @@ class Node():
 		# if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
 			# self.rollout_reward = self.rollout(vrle)
 
-		if self.parent is None:
-			self.intrinsic_reward = self.lastState._game.score + self.heuristicVal + self.rollout_reward + self.metabolic_cost
-		else:
-			self.intrinsic_reward = self.parent.intrinsic_reward + self.lastState._game.score -self.parent.lastState._game.score + \
-			self.heuristicVal - self.parent.heuristicVal + self.rollout_reward + self.metabolic_cost - self.parent.metabolic_cost
+		self.intrinsic_reward = self.lastState._game.score + self.heuristicVal + self.rollout_reward - self.metabolic_cost
+
 		return win
 
 	def updateNovelty(self):
@@ -367,7 +375,7 @@ class IW(WBP):
 		self.k = k
 
 if __name__ == "__main__":
-	
+
 	# gameFilename = "examples.gridphysics.simpleGame4_small"
 
 	## make better versions
@@ -377,27 +385,27 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.demo_dodge"  ##solved!!
 	# gameFilename = "examples.gridphysics.movers5" ##solved!!
 	# gameFilename = "examples.gridphysics.demo_preconditions" ## k=2 works!
-	# gameFilename = "examples.gridphysics.waterfall" ##solved!! 
+	# gameFilename = "examples.gridphysics.waterfall" ##solved!!
 	# gameFilename = "examples.gridphysics.frogs" ## worked with k=2.
 	# gameFilename = "examples.gridphysics.pick_apples" ## worked with expanded phi!
 	# gameFilename = "examples.gridphysics.scoretest" ##2BFS solves it!
 	# gameFilename = "examples.gridphysics.demo_chaser"  ##easy version solved!
 	# gameFilename = "examples.gridphysics.demo_helper"  ##easy version solved!
-	# gameFilename = "examples.gridphysics.simpleGame_push_boulders" 
+	# gameFilename = "examples.gridphysics.simpleGame_push_boulders"
 	# gameFilename = "examples.gridphysics.chase" #yes!!!
 	# gameFilename = "examples.gridphysics.survivezombies" # solvable, just not very fast if long timeout.
 	# gameFilename = "examples.gridphysics.demo_transform_small" ## works
 
 	# gameFilename = "examples.gridphysics.zelda_orig2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
 	# gameFilename = "examples.gridphysics.missilecommand2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
-	# gameFilename = "examples.gridphysics.chase2" 
+	# gameFilename = "examples.gridphysics.chase2"
 	# gameFilename = "examples.gridphysics.aliens2"  ##doesn't work. needs v. different heuristics
 
 
 	# gameFilename = "examples.gridphysics.demo_helper"  ##
 	# gameFilename = "examples.gridphysics.demo_transform" ##
 	# gameFilename = "examples.gridphysics.simpleGame_missile" #later.
-	gameFilename = "examples.gridphysics.simpleGame_push_boulders2"
+	# gameFilename = "examples.gridphysics.simpleGame_push_boulders2"
 
 	# gameFilename = "examples.gridphysics.waypointtheory"  ##easy version solved!
 
@@ -416,16 +424,19 @@ if __name__ == "__main__":
 
 
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
-	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of 
+	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
 	# gameFilename = "examples.continuousphysics.mario"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
-	# gameFilename = "examples.gridphysics.butterflies" #Game is buggy.
+	gameFilename = "examples.gridphysics.butterflies" #Game is buggy.
 
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
+
+
+
 	p = IW(rle, gameString, levelString, gameFilename, k=2)
 	# embed()
 	t1 = time.time()
@@ -436,4 +447,4 @@ if __name__ == "__main__":
 	embed()
 
 
-# 
+#

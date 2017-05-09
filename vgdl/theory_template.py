@@ -1875,7 +1875,13 @@ def generateTheoryFromGame(rle):
 	inverseClasses = dict()
 	for i,s in enumerate(rle._game.sprite_constr):
 		(vgdlType, settings, _) = rle._game.sprite_constr[s]
-		color = colorDict[str(settings['color'])]
+		# Handle objects for which color is not declared
+		# Should probably be done in a cleaner way when testing agent.py
+		# since we suppose a 1:1 mapping from colors to objects
+		try:
+			color = colorDict[str(settings['color'])]
+		except KeyError:
+			color = 'noColor'
 		if s=='goal':
 			s = s[::-1] #reverse string. goal is to change names so as to not confuse anything with actual goal once you set it.
 						# 'goal' is the only name that means something to all RLEs, so we're making sure to change this one.
@@ -1910,13 +1916,15 @@ def generateTheoryFromGame(rle):
 	# Add termnation set
 	for termination in rle._game.terminations:
 		# No support for MultiSpriteCounterRule yet
-		if isinstance(termination, SpriteCounter):
+		# Checking type with 'hasattr': ugly but isinstance breaks due to
+		# relative imports
+		if hasattr(termination, 'stype'):
 			spritecounter = SpriteCounterRule(limit=termination.limit,
 											  stype=termination.stype,
 											  win=termination.win)
 			theory.terminationSet.append(spritecounter)
 
-		elif isinstance(termination, Timeout):
+		elif hasattr(termination, 'limit'):
 			timeout = TimeoutRule(limit=termination.limit,
 								  win=termination.win)
 			theory.terminationSet.append(timeout)
