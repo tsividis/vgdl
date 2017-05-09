@@ -627,14 +627,10 @@ class BasicGame(object):
         created = []
         # build the current sprite lists (if not yet available)
         # for class1, class2, effect, kwargs in self.collision_eff:
-
         while new_collisions:
-            
             new_collisions = set()
             new_effects = []
-
             for class1, class2, effect, kwargs in self.collision_eff:
-                
                 for sprite_class in [class1, class2]:
                     if sprite_class not in self.lastcollisions:
                         if sprite_class in self.sprite_groups:
@@ -645,7 +641,7 @@ class BasicGame(object):
                                 sprite = self.sprite_groups[key]
                                 if sprite and sprite_class in sprite[0].stypes:
                                     sprite_group.extend(sprite)
-                        self.lastcollisions[sprite_class] = (sprite_group, len(sprite_group))
+                        self.lastcollisions[sprite_class] = (sprite_group[:], len(sprite_group))
 
                 # special case for end-of-screen
                 if class2 == "EOS":
@@ -657,8 +653,8 @@ class BasicGame(object):
 
                 # print self.lastcollisions['box']
                 # iterate over the shorter one
-                sprite_list1, l1 = self.lastcollisions[class1]
-                sprite_list2, l2 = self.lastcollisions[class2]
+                sprite_list1 = self.lastcollisions[class1][0]
+                sprite_list2 = self.lastcollisions[class2][0]
                 # if l1 < l2:
                 #     shortss, longss, switch = ss1, ss2, False
                 # else:
