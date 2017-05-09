@@ -7,25 +7,25 @@
 # wwwwwwww
 # """
 
-level = """
-wwwwwwwwwwwwww
-w    bbb     w
-w a  b       w
-w    b   x   w
-w    bbbA    w
-wwwwwwwwwwwwww
-"""
-
 # level = """
 # wwwwwwwwwwwwww
 # w    bbb     w
-# w a  bbb     w
-# w    bbb     w
-# w    bbb     w
-# w    bbb   x w
-# w    bbb   A w
+# w a  b       w
+# w    b   x   w
+# w    bbbA    w
 # wwwwwwwwwwwwww
 # """
+
+level = """
+wwwwwwwwwwwwww
+w    bbb     w
+w g  bbb     w
+w    bbb     w
+w    bbb     w
+w    bbb   x w
+w    bbb   A w
+wwwwwwwwwwwwww
+"""
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwww
@@ -83,7 +83,7 @@ BasicGame frame_rate=30
             rand > RandomNPC cooldown=0
                 rand1 > color=LIGHTORANGE
                 rand2 > color=BROWN
-        chaser > Chaser color=BLUE stype=box1 cooldown=0
+        chaser > Chaser color=BLUE stype=goal cooldown=0
         wall > Immovable
         missile > Missile
             missile1 > color=YELLOW orientation=RIGHT
@@ -103,12 +103,12 @@ BasicGame frame_rate=30
         avatar wall > stepBack 
         mover wall > stepBack
         #box1 avatar > bounceForward
-        box2 avatar > changeScore value=-1
+        box2 avatar > changeScore value=-2
         box2 avatar > killSprite
         avatar rand > killSprite
         rand wall > stepBack  
         chaser wall > stepBack
-        box1 chaser > killSprite
+        goal chaser > killSprite
         chaser box2 > stepBack
         missile EOS > wrapAround
         missile avatar > killSprite
@@ -116,10 +116,9 @@ BasicGame frame_rate=30
         mover mover > stepBack
         mover missile > stepBack
         mover box > stepBack
-        goal avatar > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False          
-        SpriteCounter stype=box1 limit=0 win=True
+        SpriteCounter stype=goal limit=0 win=True
 """
 """
 show agent killing a moving item.

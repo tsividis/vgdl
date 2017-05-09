@@ -4,7 +4,7 @@ VGDL example: a simplified Zelda variant: Link has a sword, needs to get a key a
 @author: Tom Schaul
 '''
 
-zelda_level = """
+level = """
 wwwwwwwwwwwww
 wA       w  w
 w  w        w
@@ -17,17 +17,17 @@ wwwwwwwwwwwww
 """
 
         
-zelda_game = """
+game = """
 BasicGame
   SpriteSet         
     goal  > Immovable color=GREEN
     key   > Immovable color=ORANGE
     sword > Flicker limit=5 singleton=True
     movable > 
-      avatar  > ShootAvatar   stype=sword 
-        nokey   >
-        withkey > color=ORANGE
-      monster > RandomNPC cooldown=4 
+      avatar  > ShootAvatar  stype=sword 
+        nokey   > color=PINK
+        withkey > color=RED
+      monster > RandomNPC color=PURPLE cooldown=4 
   LevelMapping
     G > goal
     + > key        
@@ -36,17 +36,21 @@ BasicGame
   InteractionSet
     movable wall  > stepBack
     nokey goal    > stepBack
-    goal withkey  > killSprite        
+    goal withkey  > killSprite 
+    monster sword > changeScore value=1       
     monster sword > killSprite        
-    avatar monster> killSprite
-    key  avatar   > killSprite
+    nokey monster> killSprite
+    withkey monster> killSprite
+    key  nokey   > killSprite
     nokey key     > transformTo stype=withkey                
   TerminationSet
     SpriteCounter stype=goal   win=True
-    SpriteCounter stype=avatar win=False
+    # SpriteCounter stype=avatar win=False
+    MultiSpriteCounter stype1=nokey stype2=withkey limit=0 win=False
+
 """
 
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(zelda_game, zelda_level)    
+    VGDLParser.playGame(game, level)    

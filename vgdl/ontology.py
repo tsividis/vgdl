@@ -483,6 +483,7 @@ class Chaser(RandomNPC): ##
             options.extend(self._movesToward(game, target))
         if len(options) == 0:
             options = BASEDIRS
+        # self.physics.activeMovement(self, options[0])
 
         self.physics.activeMovement(self, random.choice(options))
 
@@ -1125,9 +1126,17 @@ def killSprite(sprite, partner, game): ## FLAG
         # sprite_info = colorDict[str(sprite.color)]
         return ("killSprite",sprite.ID ,partner.ID) # partner = agent, sprite = what's being killed
 
-
 def cloneSprite(sprite, partner, game):
-    game._createSprite([sprite.name], (sprite.rect.left, sprite.rect.top))
+    newones = game._createSprite([sprite.name], (sprite.rect.left, sprite.rect.top))
+    # try:
+    #     if len(newones) > 0:
+    #         if isinstance(sprite, OrientedSprite) and isinstance(newones[0], OrientedSprite):
+    #             newones[0].orientation = sprite.orientation
+    #         game.kill_list.append(sprite)
+    #         game.dead.append(sprite)
+    # except:
+    #     pass
+    return ("cloneSprite", sprite.ID, partner.ID)
 
 def transformTo(sprite, partner, game, stype='wall'):
     newones = game._createSprite([stype], (sprite.rect.left, sprite.rect.top))
@@ -1135,7 +1144,7 @@ def transformTo(sprite, partner, game, stype='wall'):
     if len(newones) > 0:
         if isinstance(sprite, OrientedSprite) and isinstance(newones[0], OrientedSprite):
             newones[0].orientation = sprite.orientation
-        # game.kill_list.append(sprite)
+        game.kill_list.append(sprite)
         game.dead.append(sprite)
     args = {'stype':stype}
     return ("transformTo", sprite.ID, partner.ID, args)
@@ -1376,7 +1385,7 @@ def changeResource(sprite, partner, resourceColor, game, resource, value=1):
 
 def changeScore(sprite, partner, game, value):
     game.score += value
-    print "score", game.score
+    # print "score", game.score
     args = {'value':value}
     return ('changeScore', sprite.ID, partner.ID, args)
 

@@ -323,10 +323,14 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         observation = self._getSensors()
         (ended, won) = self._isDone()
         self._game.time+=1 ## Added 5/2
-        metabolic_penalty = .2
+        # metabolic_penalty = .2
+        # if action==32:
+        #     metabolic_penalty = 1
         # try:
         #     ## Added 5/2: Adding metabolic cost in RLE for avatar interacting w/ objects:
         # if len(events)>0:
+            # if any([self._game.sprite_groups['avatar'][0].ID in e and e[0]=='bounceForward' for e in events]):
+                # metabolic_penalty = 0.1
             # if any([self._game.sprite_groups['avatar'][0].ID in e and e[0]=='bounceForward' for e in events]):
                 # metabolic_penalty = 0.1
                 # elif any([self._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
@@ -338,7 +342,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # except:
             # print "adding metabolic cost failed"
             # embed()
-        dScore = self._game.score - pre_step_score - metabolic_penalty
+        dScore = self._game.score - pre_step_score# - metabolic_penalty
         if ended:
             pcontinue = 0
             if won:
@@ -349,7 +353,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             pcontinue = 1
             ## this is where you need to give the reward for doing non-terminal actions, and then your agent can process this.
             reward = dScore
-        self._game.metabolic_score += dScore
+        # self._game.metabolic_score += dScore
         for k in self._game.keystate:
             self._game.keystate[k] = False
         return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }

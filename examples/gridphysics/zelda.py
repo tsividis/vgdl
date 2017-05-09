@@ -25,7 +25,7 @@ BasicGame
     sword > Flicker limit=5 singleton=True
     movable > 
       avatar  > ShootAvatar   stype=sword
-    monster > Immovable 
+    monster > Immovable color=PURPLE
   LevelMapping
     G > goal
     + > key        

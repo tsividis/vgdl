@@ -3,7 +3,7 @@ VGDL example: Missile Command.
 
 @author: Tom Schaul and Julian Togelius
 '''
-missilecommand_level = """
+level = """
 w    m     m    m   m  w
 w                      w
 w                      w
@@ -18,7 +18,7 @@ w     c     c      c   w
 wwwwwwwwwwwwwwwwwwwwwwww
 """
 
-missilecommand_game = """
+game = """
 BasicGame
   SpriteSet         
     city  > Immovable color=GREEN
@@ -40,4 +40,4 @@ BasicGame
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(missilecommand_game, missilecommand_level)  
+    VGDLParser.playGame(game, level)  

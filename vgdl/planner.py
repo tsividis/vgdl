@@ -212,11 +212,15 @@ class Planner:
 			return 0.
 
 	def findObjectsInRLE(self, rle, objName):
-		if objName not in rle._obstypes.keys():
-			print objName, "not in rle."
+		# if objName not in rle._obstypes.keys():
+			# print objName, "not in rle."
+		# embed()
+			# return None
+		try:
+			objLocs = [rle._rect2pos(element.rect) for element in rle._game.sprite_groups[objName] if element not in rle._game.kill_list]
+		except:
+			# print objName, "not in rle."
 			return None
-		objLocs = [rle._rect2pos(element.rect) for element in rle._game.sprite_groups[objName] if element not in rle._game.kill_list]
-
 		# objCode = 2**(1+sorted(self.rle._obstypes.keys())[::-1].index(objName))
 		# objLoc = np.where(np.reshape(rle._getSensors(), self.rle.outdim)==objCode)
 		# objLoc = objLoc[0][0], objLoc[1][0] #(y,x)

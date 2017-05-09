@@ -85,70 +85,8 @@ class WBP(Planner):
 			diff = node2.state-node1.state
 		return diff
 
-	# def initNovelty(self, node, k):
-	# 	# Returns number of k-tuples of atoms that are newly true in node.
-	# 	newAtoms = self.delta(node.parent, node)
-	# 	# print "in novelty fn"
-	# 	# embed()
-	# 	if len(self.trueAtoms) > 0:
-	# 		trueAtoms = node.state
-	# 		oldTrueAtoms = set(trueAtoms)-set(newAtoms)
-	# 		candidates = []
-	# 		for i in range(1,k+1):
-	# 			newPart = list(itertools.combinations(newAtoms, i))
-	# 			oldPart = list(itertools.combinations(oldTrueAtoms, k-i))
-	# 			unflattened = list(itertools.product(newPart, oldPart))
-	# 			flattened = [frozenset((u[0]+u[1])) for u in unflattened]	
-	# 			candidates.extend(flattened)
-	# 	else:
-	# 		candidates = [frozenset(p) for p in list(itertools.combinations(newAtoms, k))]
-	# 	node.candidates = candidates
-	# 	newTuples = set()
-	# 	for aT in candidates:
-	# 		if aT not in self.trueAtoms:
-	# 			# if update:
-	# 			# 	self.trueAtoms.add(aT)
-	# 			newTuples.add(aT)
-	# 	return len(newTuples)
-
-# def BFS(rle, WBP):
-# 	Q = Queue()
-# 	visited, rejected = [], []
-# 	start = Node(rle, WBP, [], None)
-# 	start.lastState = rle
-# 	win = start.eval()
-# 	if win: return start, visited, rejected
-# 	# visited.append(start)
-# 	Q.put(start)
-# 	while not Q.empty():
-# 		current = Q.get()
-# 		# win = current.eval()
-# 		# nov = current.novelty
-# 		print current.novelty
-# 		print current.lastState.show()
-# 		visited.append(current)
-# 		# embed()
-# 		current.updateNoveltyDict()
-# 		# if nov > 0:		
-# 		# if current.state not in visited:
-# 			# visited.append(current)
-# 			# if win:
-# 				# return current, visited, rejected
-# 		for a in WBP.actions:
-# 			child = Node(rle, WBP, current.actionSeq+[a], current)
-# 			win = child.eval()
-# 			if win: 
-# 				return child, visited, rejected
-# 			elif child.novelty>0:
-# 				Q.put(child)
-# 			else:
-# 				rejected.append(child)
-# 	print "no more states in queue"
-# 	embed()
-# 	return Q, visited, rejected
-
 def noveltySelection(QNovelty, QReward):
-	bestNodes = sorted(QNovelty, key=lambda n: (n.novelty, -n.metabolic_reward))
+	bestNodes = sorted(QNovelty, key=lambda n: (n.novelty, -n.intrinsic_reward))
 	current = bestNodes.pop(0)
 	QNovelty.remove(current)
 	try:
@@ -159,7 +97,7 @@ def noveltySelection(QNovelty, QReward):
 
 def rewardSelection(QReward, QNovelty):
 	acceptableNodes = filter(lambda n:n.novelty<3, QReward)
-	bestNodes = sorted(acceptableNodes, key=lambda n: (-n.metabolic_reward, n.novelty))
+	bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
 	current = bestNodes.pop(0)
 	QReward.remove(current)
 	try:
@@ -169,26 +107,6 @@ def rewardSelection(QReward, QNovelty):
 	return current
 
 
-# def updateNoveltyDict(node, WBP, QNovelty, QReward):
-# 	for c in node.candidates:
-# 		if 
-# 		self.WBP.trueAtoms[c] = 1
-# 	# for i in range(1,3):
-# 	# 	for k in itertools.combinations(self.state, i):
-# 	# 		self.WBP.trueAtoms[k] = 1
-# 	return
-
-"""
-First: don't store anything for walls.
-
-For a given state, you want to know what is the smallest tuple it makes true for the first time.
-So you should look at the atoms in the state, and check if any are new.
-if none are, then check if any tuples are true.
-if none are, check if any 3-tuples are.
-etc.
-
-
-"""
 def BFS3(rle, WBP):
 	QNovelty, QReward = [], []
 	visited, rejected = [], []
@@ -206,36 +124,28 @@ def BFS3(rle, WBP):
 		else:
 			current = rewardSelection(QReward, QNovelty)
 
-		print current.novelty, current.metabolic_reward, current.heuristicVal
-		print len(QNovelty), len(QReward)
+		print current.novelty, current.intrinsic_reward, current.heuristicVal
+		# print len(QNovelty), len(QReward)
 		# if current==None:
 		# 	pass
 		# else:
-		print current.novelty
+		# print current.novelty
 		print current.lastState.show()
 
 		current.updateNoveltyDict(QNovelty, QReward)
 		# embed()
 		visited.append(current)
 
-		# if current.win:
-			# return current, visited, rejected ##revisit
-		# else:
 		for a in WBP.actions:
 			child = Node(rle, WBP, current.actionSeq+[a], current)
 			child.eval()
 			if child.win:
 				return child, visited, rejected ##revisit
 			else:
-				# print child.novelty
-				# print child.lastState.show()
-				# if child.novelty>0:
 				QNovelty.append(child)		
-				# if child.metabolic_reward>0:
 				QReward.append(child)
 		i+=1
 	return None, visited, rejected			
-
 
 class Node():
 	def __init__(self, rle, WBP, actionSeq, parent):
@@ -247,19 +157,87 @@ class Node():
 		self.candidates = []
 		self.novelty = None
 		self.reward = None
+		self.intrinsic_reward = 0
+		self.metabolic_cost = 0
+		self.rollout_reward = 0
 		self.children = None
 		self.lastState = None
 		self.reconstructed=False
 		self.expanded = False
+		self.rolloutDepth = 30
+	
+	def metabolics(self, rle, events, action):
+		metabolic_cost = .2
+		if action==32:
+			metabolic_cost += 1
+		if len(events)>0:
+			if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='bounceForward' for e in events]):
+				metabolic_cost += 0.1
+			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
+				# metabolic_cost += 0.1
+		return metabolic_cost
 
-	# try to copy parent lastState. Then take action and store as current lastState.
-	## if that fails, replay from beginning and store as current lastState
-	def eval(self):
+	def rollout(self, vrle):
+		vrle = copy.deepcopy(vrle)
+		i=0
+		terminal, win = vrle._isDone()
+		while i<self.rolloutDepth and not terminal:
+			a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
+			vrle.step(a)
+			# print "in rollout"
+			# print vrle.show()
+			terminal, win = vrle._isDone()
+			i+=1
+		if terminal and not win:
+			print "recursive call to rollout."
+			return 0
+			# return self.rollout(vrle2)
+		else:
+			print "rollout result", vrle._game.score
+			return vrle._game.score
+
+	def heuristics(self):
+		try:
+			heuristicVal = min([manhattanDist(self.WBP.findAvatarInRLE(self.lastState), o) for o in self.WBP.findObjectsInRLE(self.lastState, 'goal')])
+
+			## zelda
+			# try:
+			# 	heuristicVal = min([manhattanDist(self.WBP.findObjectsInRLE(self.lastState, 'withkey')[0],o) \
+			# 		for o in self.WBP.findObjectsInRLE(self.lastState, 'goal')])
+			# except:
+			# 	heuristicVal = 10*min([manhattanDist(self.WBP.findObjectsInRLE(self.lastState, 'nokey')[0],o) \
+			# 		for o in self.WBP.findObjectsInRLE(self.lastState, 'key')])
+			
+			# heuristicVal = 0
+			# embed()
+			# len([b for b in self.lastState._game.sprite_groups['base'] if b not in self.lastState._game.kill_list])
+			# len(self.lastState._game.sprite_groups['base']) - len(self.lastState._game.kill_list)
+
+			# negativeHeuristicVal = min([manhattanDist(self.WBP.findAvatarInRLE(self.lastState), o) for o in self.WBP.findObjectsInRLE(self.lastState, 'missile2')])
+
+			# heuristicVal = min([min([manhattanDist(box, goal) for goal in self.WBP.findObjectsInRLE(self.lastState, 'hole')]) \
+			# 	for box in self.WBP.findObjectsInRLE(self.lastState, 'box')])
+			
+			# allVal = [min([manhattanDist(box, goal) for goal in self.WBP.findObjectsInRLE(self.lastState, 'goal')]) \
+				# for box in self.WBP.findObjectsInRLE(self.lastState, 'chaser')]
+			# heuristicVal = sum([a**2 for a in allVal])
+
+		except:
+			heuristicVal = 100000
+			# print "didn't find goal"
+			# embed()
+		return -heuristicVal
+
+	def getToCurrentState(self):
 		if self.parent and self.parent.lastState is not None:
+			## try to copy parent lastState. Then take action and store as current lastState.
+			## if that fails, replay from beginning and store as current lastState
 			try:
 				vrle = copy.deepcopy(self.parent.lastState)
 				if len(self.actionSeq)>0:
-					vrle.step(self.actionSeq[-1])
+					a = self.actionSeq[-1]
+					res = vrle.step(a)
+					self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
 					terminal, win = vrle._isDone()
 			except:
 				print "conditions met but copy failed"
@@ -271,62 +249,71 @@ class Node():
 			terminal, win = vrle._isDone()
 			i=0
 			while not terminal and len(self.actionSeq)>i:
-				vrle.step(self.actionSeq[i])
+				a = self.actionSeq[i]
+				res = vrle.step(a)
+				self.metabolic_cost += self.metabolics(vrle, res['effectList'], a)
+				terminal, win = vrle._isDone()
+				i += 1
+		return
+
+	def eval(self):
+		## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
+		if self.parent and self.parent.lastState is not None:
+			## try to copy parent lastState. Then take action and store as current lastState.
+			## if that fails, replay from beginning and store as current lastState
+			try:
+				vrle = copy.deepcopy(self.parent.lastState)
+				if len(self.actionSeq)>0:
+					a = self.actionSeq[-1]
+					res = vrle.step(a)
+					self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
+					terminal, win = vrle._isDone()
+			except:
+				print "conditions met but copy failed"
+				embed()
+		else:
+			self.reconstructed=True
+			print "copy failed; replaying from top"
+			vrle = copy.deepcopy(rle)
+			terminal, win = vrle._isDone()
+			i=0
+			while not terminal and len(self.actionSeq)>i:
+				a = self.actionSeq[i]
+				res = vrle.step(a)
+				self.metabolic_cost += self.metabolics(vrle, res['effectList'], a)
 				terminal, win = vrle._isDone()
 				i += 1
 
-
 		self.updateObjIDs(vrle)
 		self.state = self.WBP.calculateAtoms(vrle)
+		
 		for i in range(1,3):
 			for c in itertools.combinations(self.state, i):
 				if self.WBP.trueAtoms[c] == 0:
 					self.candidates.append(c)
-			# self.candidates.extend(list(itertools.combinations(self.state, i)))
-		self.updateNovelty()
 		self.lastState = vrle
+		self.updateNovelty()
+		
 		self.win = win
-		# self.novelty = self.WBP.initNovelty(self, self.WBP.k)
-		self.reward = vrle._game.score
-		try:
-			heuristicVal = min([manhattanDist(self.WBP.findAvatarInRLE(self.lastState), o) for o in self.WBP.findObjectsInRLE(self.lastState, 'goal')])
-			# heuristicVal = min([min([manhattanDist(box, goal) for goal in self.WBP.findObjectsInRLE(self.lastState, 'hole')]) \
-			# 	for box in self.WBP.findObjectsInRLE(self.lastState, 'box')])
-			# allVal = [min([manhattanDist(box, goal) for goal in self.WBP.findObjectsInRLE(self.lastState, 'hole')]) \
-				# for box in self.WBP.findObjectsInRLE(self.lastState, 'box')]
-			heuristicVal = sum([a**2 for a in allVal])
-			# min([manhattanDist(b,o) for b,o in zip(self.findObjectsInRLE(self.lastState, 'box'), self.findObjectsInRLE, 'goal')])
-		except:
-			heuristicVal = 100000
-			# print "didn't find goal"
-			# embed()
-		self.heuristicVal = heuristicVal
-		self.metabolic_reward = vrle._game.metabolic_score - heuristicVal
-		# embed()
+		self.heuristicVal = self.heuristics()
+
+		## Try rollouts for aliens?
+		# if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
+			# self.rollout_reward = self.rollout(vrle)
+
+		if self.parent is None:
+			self.intrinsic_reward = self.lastState._game.score + self.heuristicVal + self.rollout_reward + self.metabolic_cost
+		else:
+			self.intrinsic_reward = self.parent.intrinsic_reward + self.lastState._game.score -self.parent.lastState._game.score + \
+			self.heuristicVal - self.parent.heuristicVal + self.rollout_reward + self.metabolic_cost - self.parent.metabolic_cost
 		return win
-	
-	# def distanceHeuristic(self):
-		# return manhattanDistance(self.WBP.findAvatarInRLE(self.lastState), self.WBP.findObjectInRLE(self.lastState, 'goal'))
+
 	def updateNovelty(self):
 		if len(self.candidates)==0:
 			self.novelty = 3
 		else:
 			self.novelty = min([len(c) for c in self.candidates])
 		return self.novelty
-		# for c in self.candidates:
-		# 	# if self.WBP.trueAtoms[c]==0:
-		# 		self.candidates.remove(c)
-		# 		self.novelty = len(c)
-		# 		return self.novelty
-		# return 3
-		# for i in range(1,3):
-		# 	for k in itertools.combinations(self.state, i):
-		# 		if self.WBP.trueAtoms[k]==0:
-		# 			self.novelty = i
-		# 			return i		
-		# 	self.novelty = 3
-		# 	return 3
-
 
 	def updateNoveltyDict(self, QNovelty, QReward):
 		jointSet = list(set(QNovelty+QReward))
@@ -338,9 +325,6 @@ class Node():
 						n.candidates.remove(c)
 		for n in jointSet:
 			n.novelty = n.updateNovelty()
-		# for i in range(1,3):
-		# 	for k in itertools.combinations(self.state, i):
-		# 		self.WBP.trueAtoms[k] = 1
 		return
 
 	def updateObjIDs(self, vrle):
@@ -373,7 +357,6 @@ class Node():
 			vrle.step(a)
 			# vrle.step(0)
 			print vrle.show()
-			# print vrle.show()
 			# embed()
 			terminal = vrle._isDone()[0]
 			i+=1
@@ -405,10 +388,16 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.survivezombies" # solvable, just not very fast if long timeout.
 	# gameFilename = "examples.gridphysics.demo_transform_small" ## works
 
+	# gameFilename = "examples.gridphysics.zelda_orig2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
+	# gameFilename = "examples.gridphysics.missilecommand2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
+	# gameFilename = "examples.gridphysics.chase2" 
+	# gameFilename = "examples.gridphysics.aliens2"  ##doesn't work. needs v. different heuristics
+
+
 	# gameFilename = "examples.gridphysics.demo_helper"  ##
 	# gameFilename = "examples.gridphysics.demo_transform" ##
 	# gameFilename = "examples.gridphysics.simpleGame_missile" #later.
-	# gameFilename = "examples.gridphysics.simpleGame_push_boulders2"
+	gameFilename = "examples.gridphysics.simpleGame_push_boulders2"
 
 	# gameFilename = "examples.gridphysics.waypointtheory"  ##easy version solved!
 
@@ -422,13 +411,14 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.demo_sokoban_score" #later
 	# gameFilename = "examples.gridphysics.portals" ## stochasticity breaks it
 
+
 	# gameFilename = "examples.gridphysics.demo_multigoal_and"  ##takes forever if you have many boxes and don't use 2BFS (with metabolic penalty)
 
 
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of 
 	## objects.
-	gameFilename = "examples.continuousphysics.mario"
+	# gameFilename = "examples.continuousphysics.mario"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
 	# gameFilename = "examples.gridphysics.butterflies" #Game is buggy.
 
@@ -438,11 +428,7 @@ if __name__ == "__main__":
 	rle = rleCreateFunc()
 	p = IW(rle, gameString, levelString, gameFilename, k=2)
 	# embed()
-	# p.trackTokens = True
 	t1 = time.time()
-	# last, visited, rejected = BFS_noNovelty(rle, p)
-	# last, visited, rejected = BFS(rle, p)
-	# last, visited, rejected = BFS2(rle, p)
 	last, visited, rejected = BFS3(rle, p)
 
 	print time.time()-t1

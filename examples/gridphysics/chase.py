@@ -12,8 +12,8 @@ BasicGame
     SpriteSet
         carcass > Immovable color=BROWN
         goat > stype=avatar cooldown=3
-            angry  > Chaser  color=ORANGE
-            scared > Fleeing color=BLUE
+            angry  > Chaser  speed=1 color=ORANGE
+            scared > Fleeing speed=1 color=BLUE
 
     InteractionSet
         goat   wall    > stepBack

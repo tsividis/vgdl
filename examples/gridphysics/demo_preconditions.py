@@ -23,9 +23,9 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 level = """
 wwwwwwwwwwwww
 wm          w
-w      A    w
+w           w
 w       ppppw
-w       p  gw
+w     A p  gw
 wwwwwwwwwwwww
 """
 # level = """
