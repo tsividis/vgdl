@@ -198,15 +198,24 @@ class Node():
 			print "rollout result", vrle._game.score
 			return vrle._game.score
 
-	def heuristics(self):
+	def heuristics(self, second_order=False):
 		# Parameters
 		sprite_alpha = 100  # distance_to_goal multiplier for SpriteCounterRule
 		time_alpha = 10  # distance_to_goal multiplier for TimeoutRule
+		second_alpha = 1  # distance to second order goal multiplier
 
 		theory = generateTheoryFromGame(self.rle)
 		heuristicVal = 0
 
 		for term in theory.terminationSet:
+
+			# Set a multiplier based on whether the termination conditions
+			# defines a win or a loss
+			if term.termination.win:
+				mult = -1
+
+			else:
+				mult = 1
 
 			if isinstance(term, SpriteCounterRule):
 				# Get attributes from terminationSet
@@ -217,11 +226,30 @@ class Node():
 				n_sprites = len([0 for sprite in self.WBP.findObjectsInRLE(self.lastState, stype)])
 				distance_to_goal = abs(n_sprites - limit)
 
-				if win:
-					heuristicVal -= sprite_alpha * distance_to_goal
+				heuristicVal += mult * sprite_alpha * distance_to_goal
 
-				else:
-					heuristicVal += sprite_alpha * distance_to_goal
+				if second_order:
+					# Get all types that kill or transform stype
+					kill_types = [
+						inter.slot2 for inter in theory.interactionSet
+						if ((inter.interaction == 'killSprite' or
+							 inter.interaction == 'transformTo')
+							and inter.slot1 == stype)]
+
+					# Get all positions of objects whose type is in kill_types
+					kill_positions = np.concatenate([
+						self.WBP.findObjectsInRLE(self.lastState, ktype)
+						for ktype in kill_types])
+					stype_positions = self.WBP.findObjectsInRLE(
+						self.lastState, stype)
+					try:
+						distance = min([manhattanDist(obj, pos)
+							 for pos in kill_positions
+							 for obj in stype_positions])
+					except ValueError:
+						distance = 10000
+
+					heuristicVal += mult * second_alpha * distance
 
 
 			elif isinstance(term, TimeoutRule):
@@ -306,7 +334,7 @@ class Node():
 		self.updateNovelty()
 
 		self.win = win
-		self.heuristicVal = self.heuristics()
+		self.heuristicVal = self.heuristics(second_order=True)
 
 		## Try rollouts for aliens?
 		# if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
@@ -434,7 +462,6 @@ if __name__ == "__main__":
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
-
 
 
 	p = IW(rle, gameString, levelString, gameFilename, k=2)
