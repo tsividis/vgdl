@@ -203,113 +203,99 @@ class Node():
 
 	##TODO: have an initHeuristics() function do most of this work and return a simple function
 	## that evaluates the heuristic value of a particular state.
-	def heuristics(self, second_order=False):
-		# Parameters
-		sprite_alpha = 100  # distance_to_goal multiplier for SpriteCounterRule
-		time_alpha = 10  # distance_to_goal multiplier for TimeoutRule
-		second_alpha = 1  # distance to second order goal multiplier
-		omit_second_order = False
+
+	def spritecounter_val(self, theory, term, stype, first_alpha=100,
+						  second_alpha=1):
+		val = 0
+		compute_second_order = True
+
+		# Check if condition is win or loss and multiply accordingly
+		if term.termination.win:
+			mult = -1
+
+		else:
+			compute_second_order = False
+			mult = 1
+
+		# Get attributes from terminationSet
+		limit = term.termination.limit
+
+		n_sprites = len([0 for sprite in self.WBP.findObjectsInRLE(self.lastState, stype)])
+		distance_to_goal = abs(n_sprites - limit)
+
+		val += mult * first_alpha * distance_to_goal
+
+		if compute_second_order:
+			# Get all types that kill or transform stype
+			kill_types = [
+				inter.slot2 for inter in theory.interactionSet
+				if ((inter.interaction == 'killSprite' or
+					 inter.interaction == 'transformTo')
+					and inter.slot1 == stype)]
+
+			# Get all positions of objects whose type is in kill_types
+			# import ipdb; ipdb.set_trace()
+			kill_positions = np.concatenate([
+				self.WBP.findObjectsInRLE(self.lastState, ktype)
+				for ktype in kill_types])
+			stype_positions = self.WBP.findObjectsInRLE(
+				self.lastState, stype)
+			try:
+				distance = min([manhattanDist(obj, pos)
+					 for pos in kill_positions
+					 for obj in stype_positions])
+			except ValueError:
+				distance = 10000
+
+			val += mult * second_alpha * distance
+
+		return val
+
+	def multispritecounter_val(self, theory, term, first_alpha=100,
+							   second_alpha=1):
+		val = 0
+		for stype in term.termination.stypes:
+			val += self.spritecounter_val(theory, term, stype,
+				first_alpha=first_alpha, second_alpha=second_alpha)
+
+		return val
+
+	def timeout_val(self, theory, term):
+		val = 0
+		limit = term.termination.limit
+
+		# Check if condition is win or loss and multiply accordingly
+		if term.termination.win:
+			mult = -1
+
+		else:
+			mult = 1
+
+		time_elapsed = self.rle._game.time
+		distance_to_goal = abs(time_elapsed - limit)
+
+		val -= mult * distance_to_goal
+
+		return val
+
+	def heuristics(self, first_alpha=100, second_alpha=1, time_alpha=10):
 		theory = self.WBP.theory
 		heuristicVal = 0
+
 		for term in theory.terminationSet:
-			# Set a multiplier based on whether the termination conditions
-			# defines a win or a loss
-			if term.termination.win:
-				mult = -1
-
-			else:
-				omit_second_order = True
-				mult = 1
-
-			term.display()
-			# import ipdb; ipdb.set_trace()
 			if isinstance(term, SpriteCounterRule):
-				# Get attributes from terminationSet
-				stype = term.termination.stype
-				limit = term.termination.limit
-				win = term.termination.win
+				heuristicVal += second_alpha * \
+					self.spritecounter_val(theory, term, term.termination.stype,
+					first_alpha=first_alpha, second_alpha=second_alpha)
 
-				n_sprites = len([0 for sprite in self.WBP.findObjectsInRLE(self.lastState, stype)])
-				distance_to_goal = abs(n_sprites - limit)
-
-				heuristicVal += mult * sprite_alpha * distance_to_goal
-
-				if second_order:
-					if omit_second_order:
-						omit_second_order = False
-						continue
-					# Get all types that kill or transform stype
-					kill_types = [
-						inter.slot2 for inter in theory.interactionSet
-						if ((inter.interaction == 'killSprite' or
-							 inter.interaction == 'transformTo')
-							and inter.slot1 == stype)]
-
-					# Get all positions of objects whose type is in kill_types
-					kill_positions = np.concatenate([
-						self.WBP.findObjectsInRLE(self.lastState, ktype)
-						for ktype in kill_types])
-					stype_positions = self.WBP.findObjectsInRLE(
-						self.lastState, stype)
-					try:
-						distance = min([manhattanDist(obj, pos)
-							 for pos in kill_positions
-							 for obj in stype_positions])
-					except ValueError:
-						distance = 10000
-					# embed()
-					heuristicVal += mult * second_alpha * distance
 			elif isinstance(term, MultiSpriteCounterRule):
-				print "in multispritecounter"
-				# embed()
-				# Get attributes from terminationSet
-				for stype in term.termination.stypes:
-					limit = term.termination.limit
-					win = term.termination.win
-
-					n_sprites = len([0 for sprite in self.WBP.findObjectsInRLE(self.lastState, stype)])
-					distance_to_goal = abs(n_sprites - limit)
-
-					heuristicVal += mult * sprite_alpha * distance_to_goal
-
-					if second_order:
-						if omit_second_order:
-							omit_second_order = False
-							continue
-						# Get all types that kill or transform stype
-						kill_types = [
-							inter.slot2 for inter in theory.interactionSet
-							if ((inter.interaction == 'killSprite' or
-								 inter.interaction == 'transformTo')
-								and inter.slot1 == stype)]
-
-						# Get all positions of objects whose type is in kill_types
-						kill_positions = np.concatenate([
-							self.WBP.findObjectsInRLE(self.lastState, ktype)
-							for ktype in kill_types])
-						stype_positions = self.WBP.findObjectsInRLE(
-							self.lastState, stype)
-						try:
-							distance = min([manhattanDist(obj, pos)
-								 for pos in kill_positions
-								 for obj in stype_positions])
-						except ValueError:
-							distance = 10000
-						embed()
-						heuristicVal += mult * second_alpha * distance
+				heuristicVal += second_alpha * \
+					self.multispritecounter_val(theory, term,
+						first_alpha=first_alpha, second_alpha=second_alpha)
 
 			elif isinstance(term, TimeoutRule):
-				limit = term.termination.limit
-				win = term.termination.win
-
-				time_elapsed = self.rle._game.time
-				distance_to_goal = abs(time_elapsed - limit)
-
-				if win:
-					heuristicVal -= time_alpha * distance_to_goal
-
-				else:
-					heuristicVal += time_alpha * distance_to_goal
+				heuristicVal += time_alpha * \
+					self.timeout_val(theory, term)
 
 		return heuristicVal
 
@@ -380,7 +366,7 @@ class Node():
 		self.updateNovelty()
 
 		self.win = win
-		self.heuristicVal = self.heuristics(second_order=True)
+		self.heuristicVal = self.heuristics()
 
 		## Try rollouts for aliens?
 		if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
@@ -473,7 +459,7 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.zelda_orig2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
 	# gameFilename = "examples.gridphysics.missilecommand2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
 	# gameFilename = "examples.gridphysics.chase2"
-	gameFilename = "examples.gridphysics.aliens2"  ##doesn't work. needs v. different heuristics
+	# gameFilename = "examples.gridphysics.aliens"  ##doesn't work. needs v. different heuristics
 
 
 	# gameFilename = "examples.gridphysics.demo_helper"  ##
@@ -502,7 +488,7 @@ if __name__ == "__main__":
 	## objects.
 	# gameFilename = "examples.continuousphysics.mario"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
-	# gameFilename = "examples.gridphysics.butterflies"
+	gameFilename = "examples.gridphysics.butterflies"
 
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
