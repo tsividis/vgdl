@@ -23,6 +23,7 @@ class WBP(Planner):
 		self.vecSize = None
 		self.addWaitAction = False
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
+		self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		i=1
 		for k in rle._game.all_objects.keys():
 			self.objIDs[k] = i * (rle.outdim[0]*rle.outdim[1]+self.padding)
@@ -198,25 +199,30 @@ class Node():
 			print "rollout result", vrle._game.score
 			return vrle._game.score
 
+
+
+	##TODO: have an initHeuristics() function do most of this work and return a simple function
+	## that evaluates the heuristic value of a particular state.
 	def heuristics(self, second_order=False):
 		# Parameters
 		sprite_alpha = 100  # distance_to_goal multiplier for SpriteCounterRule
 		time_alpha = 10  # distance_to_goal multiplier for TimeoutRule
 		second_alpha = 1  # distance to second order goal multiplier
-
-		theory = generateTheoryFromGame(self.rle)
+		omit_second_order = False
+		theory = self.WBP.theory
 		heuristicVal = 0
-
 		for term in theory.terminationSet:
-
 			# Set a multiplier based on whether the termination conditions
 			# defines a win or a loss
 			if term.termination.win:
 				mult = -1
 
 			else:
+				omit_second_order = True
 				mult = 1
 
+			term.display()
+			# import ipdb; ipdb.set_trace()
 			if isinstance(term, SpriteCounterRule):
 				# Get attributes from terminationSet
 				stype = term.termination.stype
@@ -229,6 +235,9 @@ class Node():
 				heuristicVal += mult * sprite_alpha * distance_to_goal
 
 				if second_order:
+					if omit_second_order:
+						omit_second_order = False
+						continue
 					# Get all types that kill or transform stype
 					kill_types = [
 						inter.slot2 for inter in theory.interactionSet
@@ -248,9 +257,46 @@ class Node():
 							 for obj in stype_positions])
 					except ValueError:
 						distance = 10000
-
+					# embed()
 					heuristicVal += mult * second_alpha * distance
+			elif isinstance(term, MultiSpriteCounterRule):
+				print "in multispritecounter"
+				# embed()
+				# Get attributes from terminationSet
+				for stype in term.termination.stypes:
+					limit = term.termination.limit
+					win = term.termination.win
 
+					n_sprites = len([0 for sprite in self.WBP.findObjectsInRLE(self.lastState, stype)])
+					distance_to_goal = abs(n_sprites - limit)
+
+					heuristicVal += mult * sprite_alpha * distance_to_goal
+
+					if second_order:
+						if omit_second_order:
+							omit_second_order = False
+							continue
+						# Get all types that kill or transform stype
+						kill_types = [
+							inter.slot2 for inter in theory.interactionSet
+							if ((inter.interaction == 'killSprite' or
+								 inter.interaction == 'transformTo')
+								and inter.slot1 == stype)]
+
+						# Get all positions of objects whose type is in kill_types
+						kill_positions = np.concatenate([
+							self.WBP.findObjectsInRLE(self.lastState, ktype)
+							for ktype in kill_types])
+						stype_positions = self.WBP.findObjectsInRLE(
+							self.lastState, stype)
+						try:
+							distance = min([manhattanDist(obj, pos)
+								 for pos in kill_positions
+								 for obj in stype_positions])
+						except ValueError:
+							distance = 10000
+						embed()
+						heuristicVal += mult * second_alpha * distance
 
 			elif isinstance(term, TimeoutRule):
 				limit = term.termination.limit
@@ -337,8 +383,8 @@ class Node():
 		self.heuristicVal = self.heuristics(second_order=True)
 
 		## Try rollouts for aliens?
-		# if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
-			# self.rollout_reward = self.rollout(vrle)
+		if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
+			self.rollout_reward = self.rollout(vrle)
 
 		self.intrinsic_reward = self.lastState._game.score + self.heuristicVal + self.rollout_reward - self.metabolic_cost
 
@@ -427,7 +473,7 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.zelda_orig2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
 	# gameFilename = "examples.gridphysics.missilecommand2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
 	# gameFilename = "examples.gridphysics.chase2"
-	# gameFilename = "examples.gridphysics.aliens2"  ##doesn't work. needs v. different heuristics
+	gameFilename = "examples.gridphysics.aliens2"  ##doesn't work. needs v. different heuristics
 
 
 	# gameFilename = "examples.gridphysics.demo_helper"  ##
@@ -456,7 +502,7 @@ if __name__ == "__main__":
 	## objects.
 	# gameFilename = "examples.continuousphysics.mario"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
-	gameFilename = "examples.gridphysics.butterflies" #Game is buggy.
+	# gameFilename = "examples.gridphysics.butterflies"
 
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)

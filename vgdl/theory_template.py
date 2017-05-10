@@ -198,11 +198,12 @@ class SpriteCounterRule(TerminationRule):
 class MultiSpriteCounterRule(TerminationRule):
     """ Game ends when the sum of all sprites of types 'stypes' hits 'limit'. """
     def __init__(self, limit=0, win=True, stypes = []):
-        self.termination = MultiSpriteCounter(limit=limit,win=win,stypes=stypes)
+    	argList = dict((str(i), stype) for i, stype in enumerate(stypes))
+        self.termination = MultiSpriteCounter(limit=limit,win=win, **argList)
         self.ruleType = "MultiSpriteCounterRule"
 
     def display(self):
-        print self.termination.stypes, self.termination.limit, self.termination.win
+        print self.ruleType, self.termination.stypes, self.termination.limit, self.termination.win
         return
 
     def asTuple(self):
@@ -1866,7 +1867,7 @@ class Game(object):
 		# print "Done cleanHypothesisSpace...\n"
 		return
 
-def generateTheoryFromGame(rle):
+def generateTheoryFromGame(rle, alterGoal=True):
 	"""
 	Given an rle, returns a very barebones theory object.
 	This object has only 2 fields set: the interaction set, and the classes.
@@ -1882,7 +1883,8 @@ def generateTheoryFromGame(rle):
 			color = colorDict[str(settings['color'])]
 		except KeyError:
 			color = 'noColor'
-		if s=='goal':
+
+		if alterGoal and s=='goal':
 			s = s[::-1] #reverse string. goal is to change names so as to not confuse anything with actual goal once you set it.
 						# 'goal' is the only name that means something to all RLEs, so we're making sure to change this one.
 		sprite = Sprite(vgdlType, color, className=s, args=settings) #classname was i
@@ -1894,10 +1896,11 @@ def generateTheoryFromGame(rle):
 	theory.classes['EOS'] = [eos]
 
 	for g1, g2, effect, kwargs in rle._game.collision_eff:
-		if g1=='goal':
-			g1 = g1[::-1]
-		if g2=='goal':
-			g2 = g2[::-1]
+		if alterGoal:
+			if g1=='goal':
+				g1 = g1[::-1]
+			if g2=='goal':
+				g2 = g2[::-1]
 		interaction = InteractionRule(effect.__name__, g1, g2, kwargs)
 		# if not kwargs:
 			# interaction = InteractionRule(effect.__name__, g1, g2, None, None)
@@ -1913,17 +1916,27 @@ def generateTheoryFromGame(rle):
 		# interaction = InteractionRule(effect.__name__, inverseClasses[g1], inverseClasses[g2], None, None)
 		theory.interactionSet.append(interaction)
 
+    # def __init__(self, limit=0, win=True, stypes = []):
+
 	# Add termnation set
 	for termination in rle._game.terminations:
 		# No support for MultiSpriteCounterRule yet
 		# Checking type with 'hasattr': ugly but isinstance breaks due to
 		# relative imports
 		if hasattr(termination, 'stype'):
+			if alterGoal and termination.stype=='goal':
+				termination.stype='laog'
 			spritecounter = SpriteCounterRule(limit=termination.limit,
 											  stype=termination.stype,
 											  win=termination.win)
 			theory.terminationSet.append(spritecounter)
-
+		elif hasattr(termination, 'stypes'):
+			if alterGoal:
+				termination.stypes = ['laog' if t=='goal' else t for t in termination.stypes]
+			multiSpriteCounter = MultiSpriteCounterRule(limit=termination.limit,
+											  stypes=termination.stypes,
+											  win=termination.win)
+			theory.terminationSet.append(multiSpriteCounter)
 		elif hasattr(termination, 'limit'):
 			timeout = TimeoutRule(limit=termination.limit,
 								  win=termination.win)
