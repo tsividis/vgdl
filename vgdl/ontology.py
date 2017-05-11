@@ -326,12 +326,15 @@ class SpawnPoint(SpriteProducer):
         self.counter = 0
 
     def update(self, game):
+        if self.total and self.counter > self.total:
+            killSprite(self, None, game)
+            return
+
         if (game.time % self.cooldown == 0 and random.random() < self.prob):
             game._createSprite([self.stype], (self.rect.left, self.rect.top))
             self.counter += 1
 
-        if self.total and self.counter >= self.total:
-            killSprite(self, None, game)
+
 
 class RandomNPC(VGDLSprite):
     """ Chooses randomly from all available actions each step. """

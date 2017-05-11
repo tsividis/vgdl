@@ -742,6 +742,7 @@ class BasicGame(object):
             self.effectList += [new_effect for new_effect in new_effects if new_effect]
             collision_set = collision_set.union(new_collisions)
 
+        self.kill_list = list(set(self.kill_list))
         # self.kill_list = dead[:]
         # if len(self.effectList) > 0:
         #     print 'effectList', self.effectList
@@ -883,28 +884,6 @@ class BasicGame(object):
 
             collision_objects = set()
             
-
-            ## Sprite Induction Part 1: See the update options for each sprite type the sprite could be
-            # spriteInduction(self, step=2)
-            # objects = self.getObjects()
-            # game = self                                               # Save game state
-            # for sprite in self.spriteDistribution.keys():                  # Keys are the IDs of the game objects
-            #     for sprite_type in self.spriteDistribution[sprite].keys(): # Check each potential sprite type                    
-            #         if self.spriteDistribution[sprite][sprite_type] > 0 and sprite in objects.keys():    # Make sure sprite_type is an option for sprite, and sprite is not killed
-            #             sprite_obj = objects[sprite]["sprite"]
-
-            #             # Get potential next positions for sprite if it were that sprite type
-            #             # TODO: Implement Avatar updateOptions function (if desired)
-            #             if sprite_obj.name != 'avatar':
-            #                 self.movement_options[sprite][sprite_type] = updateOptions(game, sprite_type, sprite_obj) 
-            #                 # print sprite_obj.name, sprite_type # For debugging
-            #                 # print movement_options[sprite][sprite_type]
-
-
-
-            ## Sprite Induction Part 2: Update sprite distribution based on observations
-            # spriteInduction(self, step=3)
-                   
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
             allStates.append(self.getFullState())

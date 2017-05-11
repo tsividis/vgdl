@@ -33,7 +33,7 @@ BasicGame
             sam  > orientation=UP    color=BLUE singleton=True
             bomb > orientation=DOWN  color=RED  speed=0.5
         alien   > Bomber       stype=bomb   prob=0  cooldown=3 speed=0.75
-        portal  > SpawnPoint   stype=alien  cooldown=1   total=3
+        portal  > SpawnPoint   stype=alien  cooldown=10   total=3
 
     LevelMapping
         0 > base
@@ -89,4 +89,4 @@ BasicGame
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     # parse, run and play.
-    VGDLParser.playGame(aliens_game, aliens_level)
+    VGDLParser.playGame(game, level)

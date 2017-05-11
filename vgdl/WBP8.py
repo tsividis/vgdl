@@ -182,6 +182,7 @@ class Node():
 
 	def rollout(self, vrle):
 		vrle = copy.deepcopy(vrle)
+
 		i=0
 		terminal, win = vrle._isDone()
 		while i<self.rolloutDepth and not terminal:
@@ -196,15 +197,17 @@ class Node():
 			return 0
 			# return self.rollout(vrle2)
 		else:
-			print "rollout result", vrle._game.score
-			return vrle._game.score
+			print "rollout result", self.heuristics(vrle)
+			if self.heuristics(vrle)==-600:
+				embed()
+			return self.heuristics(vrle)
 
 
 
 	##TODO: have an initHeuristics() function do most of this work and return a simple function
 	## that evaluates the heuristic value of a particular state.
 
-	def spritecounter_val(self, theory, term, stype, first_alpha=100,
+	def spritecounter_val(self, theory, term, stype, rle, first_alpha=100,
 						  second_alpha=1):
 		val = 0
 		compute_second_order = True
@@ -217,50 +220,58 @@ class Node():
 			compute_second_order = False
 			mult = 1
 
+		# Get all types that kill or transform stype
+		kill_types = [
+			inter.slot2 for inter in theory.interactionSet
+			if ((inter.interaction == 'killSprite' or
+				 inter.interaction == 'transformTo')
+				and inter.slot1 == stype)]
+
 		# Get attributes from terminationSet
 		limit = term.termination.limit
-
-		n_sprites = len([0 for sprite in self.WBP.findObjectsInRLE(self.lastState, stype)])
-		distance_to_goal = abs(n_sprites - limit)
+		# embed()
+		if 'SpawnPoint' in str(theory.classes[stype][0].vgdlType) and not kill_types:
+			distance_to_goal = 0
+			##Special case, where you want to track whether that spawnPoint has a limit, etc.
+			for o in rle._game.sprite_groups[stype]:
+				distance_to_goal += abs(o.total-o.counter)
+			val += mult * first_alpha * distance_to_goal
+			return val
+		else:
+			n_sprites = len([0 for sprite in self.WBP.findObjectsInRLE(rle, stype)])
+			distance_to_goal = abs(n_sprites - limit)
 
 		val += mult * first_alpha * distance_to_goal
 
 		if compute_second_order:
-			# Get all types that kill or transform stype
-			kill_types = [
-				inter.slot2 for inter in theory.interactionSet
-				if ((inter.interaction == 'killSprite' or
-					 inter.interaction == 'transformTo')
-					and inter.slot1 == stype)]
-
 			# Get all positions of objects whose type is in kill_types
 			# import ipdb; ipdb.set_trace()
 			kill_positions = np.concatenate([
-				self.WBP.findObjectsInRLE(self.lastState, ktype)
+				self.WBP.findObjectsInRLE(rle, ktype)
 				for ktype in kill_types])
-			stype_positions = self.WBP.findObjectsInRLE(
-				self.lastState, stype)
+			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
 			try:
 				distance = min([manhattanDist(obj, pos)
 					 for pos in kill_positions
 					 for obj in stype_positions])
 			except ValueError:
-				distance = 10000
+				# embed()
+				distance = 0
 
 			val += mult * second_alpha * distance
 
 		return val
 
-	def multispritecounter_val(self, theory, term, first_alpha=100,
+	def multispritecounter_val(self, theory, term, rle, first_alpha=100,
 							   second_alpha=1):
 		val = 0
 		for stype in term.termination.stypes:
-			val += self.spritecounter_val(theory, term, stype,
+			val += self.spritecounter_val(theory, term, stype, rle,
 				first_alpha=first_alpha, second_alpha=second_alpha)
-
+			# print stype, val
 		return val
 
-	def timeout_val(self, theory, term):
+	def timeout_val(self, theory, term, rle):
 		val = 0
 		limit = term.termination.limit
 
@@ -271,31 +282,34 @@ class Node():
 		else:
 			mult = 1
 
-		time_elapsed = self.rle._game.time
+		time_elapsed = rle._game.time
 		distance_to_goal = abs(time_elapsed - limit)
 
 		val -= mult * distance_to_goal
 
 		return val
 
-	def heuristics(self, first_alpha=100, second_alpha=1, time_alpha=10):
+	def heuristics(self, rle=None, first_alpha=100, second_alpha=1, time_alpha=10):
+		if rle==None:
+			rle = self.lastState
+
 		theory = self.WBP.theory
 		heuristicVal = 0
 
 		for term in theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
 				heuristicVal += second_alpha * \
-					self.spritecounter_val(theory, term, term.termination.stype,
+					self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
 
 			elif isinstance(term, MultiSpriteCounterRule):
 				heuristicVal += second_alpha * \
-					self.multispritecounter_val(theory, term,
+					self.multispritecounter_val(theory, term, rle,
 						first_alpha=first_alpha, second_alpha=second_alpha)
 
 			elif isinstance(term, TimeoutRule):
 				heuristicVal += time_alpha * \
-					self.timeout_val(theory, term)
+					self.timeout_val(theory, term, rle)
 
 		return heuristicVal
 
@@ -328,6 +342,7 @@ class Node():
 		return
 
 	def eval(self):
+
 		## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
 		if self.parent and self.parent.lastState is not None:
 			## try to copy parent lastState. Then take action and store as current lastState.
@@ -366,15 +381,20 @@ class Node():
 		self.updateNovelty()
 
 		self.win = win
-		self.heuristicVal = self.heuristics()
-
+		if win:
+			# print "win"
+			# import ipdb; ipdb.set_trace()
+			# vrle._isDone()
+			embed()
 		## Try rollouts for aliens?
 		if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
-			self.rollout_reward = self.rollout(vrle)
+			self.heuristicVal = self.rollout(vrle)
+		else:
+			self.heuristicVal = self.heuristics()
 
-		self.intrinsic_reward = self.lastState._game.score + self.heuristicVal + self.rollout_reward - self.metabolic_cost
+		self.intrinsic_reward = self.lastState._game.score + self.heuristicVal - self.metabolic_cost
 
-		return win
+		return self.win
 
 	def updateNovelty(self):
 		if len(self.candidates)==0:
@@ -459,7 +479,7 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.zelda_orig2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
 	# gameFilename = "examples.gridphysics.missilecommand2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
 	# gameFilename = "examples.gridphysics.chase2"
-	# gameFilename = "examples.gridphysics.aliens"  ##doesn't work. needs v. different heuristics
+	gameFilename = "examples.gridphysics.aliens2"  ##doesn't work. needs v. different heuristics
 
 
 	# gameFilename = "examples.gridphysics.demo_helper"  ##
@@ -488,7 +508,7 @@ if __name__ == "__main__":
 	## objects.
 	# gameFilename = "examples.continuousphysics.mario"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
-	gameFilename = "examples.gridphysics.butterflies"
+	# gameFilename = "examples.gridphysics.butterflies"
 
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
