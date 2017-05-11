@@ -177,15 +177,19 @@ class Node():
 		else:
 			self.rolloutArray = []
 
-	def metabolics(self, rle, events, action, n):
-		
 
-		metabolic_cost = .2
+## when to trigger rollouts, if any
+## rollout length
+## repeating rollouts if death? e.g., are they optimistic?
+## multiple samples??
+	def metabolics(self, rle, events, action, n=3, mult=.5):
+
+		metabolic_cost = 1./n
 		if action==32:
-			metabolic_cost += 0.8
+			metabolic_cost += (1-1./n)*mult
 		if len(events)>0:
 			if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='bounceForward' for e in events]):
-				metabolic_cost += 0.1
+				metabolic_cost += (1-1./n)*mult
 			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
 				# metabolic_cost += 0.1
 		return metabolic_cost
