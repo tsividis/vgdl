@@ -215,13 +215,12 @@ class Node():
 		# Check if condition is win or loss and multiply accordingly
 		if term.termination.win:
 			mult = -1
-
 		else:
 			compute_second_order = False
 			mult = 1
 
 		# Get all types that kill or transform stype
-		kill_types = [
+		killer_types = [
 			inter.slot2 for inter in theory.interactionSet
 			if ((inter.interaction == 'killSprite' or
 				 inter.interaction == 'transformTo')
@@ -230,25 +229,30 @@ class Node():
 		# Get attributes from terminationSet
 		limit = term.termination.limit
 		# embed()
-		if 'SpawnPoint' in str(theory.classes[stype][0].vgdlType) and not kill_types:
+
+		if 'SpawnPoint' in str(theory.classes[stype][0].vgdlType) and not killer_types:
 			distance_to_goal = 0
-			##Special case, where you want to track whether that spawnPoint has a limit, etc.
+			## Special case, where you want to track whether that spawnPoint has a limit, etc.
+			## Distance to goal here is how many sprites the spawnPoint still has to shoot before it expires.
 			for o in rle._game.sprite_groups[stype]:
 				distance_to_goal += abs(o.total-o.counter)
 			val += mult * first_alpha * distance_to_goal
 			return val
 		else:
+			## Normal case
 			n_sprites = len([0 for sprite in self.WBP.findObjectsInRLE(rle, stype)])
 			distance_to_goal = abs(n_sprites - limit)
 
 		val += mult * first_alpha * distance_to_goal
 
 		if compute_second_order:
-			# Get all positions of objects whose type is in kill_types
+			## Get all positions of objects whose type is in killer_types; compute minimum distance
+			## of each to the stypes we have to destroy. Return min over all mins.
+
 			# import ipdb; ipdb.set_trace()
 			kill_positions = np.concatenate([
 				self.WBP.findObjectsInRLE(rle, ktype)
-				for ktype in kill_types])
+				for ktype in killer_types])
 			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
 			try:
 				distance = min([manhattanDist(obj, pos)
@@ -278,14 +282,13 @@ class Node():
 		# Check if condition is win or loss and multiply accordingly
 		if term.termination.win:
 			mult = -1
-
 		else:
 			mult = 1
 
 		time_elapsed = rle._game.time
 		distance_to_goal = abs(time_elapsed - limit)
 
-		val -= mult * distance_to_goal
+		val -= mult * distance_to_goal ## minus?
 
 		return val
 
@@ -339,56 +342,28 @@ class Node():
 				self.metabolic_cost += self.metabolics(vrle, res['effectList'], a)
 				terminal, win = vrle._isDone()
 				i += 1
-		return
+		return vrle, win
 
 	def eval(self):
 
-		## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
-		if self.parent and self.parent.lastState is not None:
-			## try to copy parent lastState. Then take action and store as current lastState.
-			## if that fails, replay from beginning and store as current lastState
-			try:
-				vrle = copy.deepcopy(self.parent.lastState)
-				if len(self.actionSeq)>0:
-					a = self.actionSeq[-1]
-					res = vrle.step(a)
-					self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
-					terminal, win = vrle._isDone()
-			except:
-				print "conditions met but copy failed"
-				embed()
-		else:
-			self.reconstructed=True
-			print "copy failed; replaying from top"
-			vrle = copy.deepcopy(rle)
-			terminal, win = vrle._isDone()
-			i=0
-			while not terminal and len(self.actionSeq)>i:
-				a = self.actionSeq[i]
-				res = vrle.step(a)
-				self.metabolic_cost += self.metabolics(vrle, res['effectList'], a)
-				terminal, win = vrle._isDone()
-				i += 1
-
-		self.updateObjIDs(vrle)
-		self.state = self.WBP.calculateAtoms(vrle)
+		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
+		
+		self.lastState, self.win = self.getToCurrentState()
+		self.updateObjIDs(self.lastState)
+		self.state = self.WBP.calculateAtoms(self.lastState)
 
 		for i in range(1,3):
 			for c in itertools.combinations(self.state, i):
 				if self.WBP.trueAtoms[c] == 0:
 					self.candidates.append(c)
-		self.lastState = vrle
 		self.updateNovelty()
 
-		self.win = win
-		if win:
-			# print "win"
-			# import ipdb; ipdb.set_trace()
-			# vrle._isDone()
+		if self.win:
 			embed()
+		
 		## Try rollouts for aliens?
 		if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
-			self.heuristicVal = self.rollout(vrle)
+			self.heuristicVal = self.rollout(self.lastState)
 		else:
 			self.heuristicVal = self.heuristics()
 
