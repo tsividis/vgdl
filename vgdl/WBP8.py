@@ -357,8 +357,8 @@ class Node():
 					self.candidates.append(c)
 		self.updateNovelty()
 
-		if self.win:
-			embed()
+		# if self.win:
+			# embed()
 		
 		## Try rollouts for aliens?
 		if len(self.actionSeq)>0 and self.actionSeq[-1]==32:

@@ -326,7 +326,7 @@ class SpawnPoint(SpriteProducer):
         self.counter = 0
 
     def update(self, game):
-        if self.total and self.counter > self.total:
+        if self.total and self.counter >= self.total:
             killSprite(self, None, game)
             return
 
