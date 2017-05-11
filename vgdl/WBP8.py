@@ -97,7 +97,12 @@ def noveltySelection(QNovelty, QReward):
 	return current
 
 def rewardSelection(QReward, QNovelty):
+	# acceptableNodes = QReward
 	acceptableNodes = filter(lambda n:n.novelty<3, QReward)
+	# if len(acceptableNodes)==0:
+		# acceptableNodes = QReward
+		# print "Removed filter"
+		# embed()
 	bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
 	current = bestNodes.pop(0)
 	QReward.remove(current)
@@ -126,7 +131,7 @@ def BFS3(rle, WBP):
 		else:
 		"""
 		current = rewardSelection(QReward, QNovelty)
-
+			
 		print current.novelty, current.intrinsic_reward, current.heuristicVal
 		# print len(QNovelty), len(QReward)
 		# if current==None:
@@ -161,18 +166,23 @@ class Node():
 		self.novelty = None
 		self.reward = None
 		self.intrinsic_reward = 0
-		self.metabolic_cost = 0
-		self.rollout_reward = 0
+		self.metabolic_cost = 0 
 		self.children = None
 		self.lastState = None
 		self.reconstructed=False
 		self.expanded = False
-		self.rolloutDepth = 30
+		self.rolloutDepth = max(rle.outdim)
+		if self.parent is not None:
+			self.rolloutArray = parent.rolloutArray[1:]
+		else:
+			self.rolloutArray = []
 
-	def metabolics(self, rle, events, action):
+	def metabolics(self, rle, events, action, n):
+		
+
 		metabolic_cost = .2
 		if action==32:
-			metabolic_cost += 1
+			metabolic_cost += 0.8
 		if len(events)>0:
 			if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='bounceForward' for e in events]):
 				metabolic_cost += 0.1
@@ -182,27 +192,32 @@ class Node():
 
 	def rollout(self, vrle):
 		vrle = copy.deepcopy(vrle)
-
+		prevHeuristicVal = self.heuristics(vrle)
+		rolloutArray = []
 		i=0
 		terminal, win = vrle._isDone()
 		while i<self.rolloutDepth and not terminal:
 			a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
 			vrle.step(a)
+			currHeuristicVal = self.heuristics(vrle)
+			heuristicVal = currHeuristicVal-prevHeuristicVal
+			rolloutArray.append(heuristicVal)
+			prevHeuristicVal = currHeuristicVal
 			# print "in rollout"
 			# print vrle.show()
 			terminal, win = vrle._isDone()
 			i+=1
+		print "______"
 		if terminal and not win:
 			print "recursive call to rollout."
-			return 0
+			return []
 			# return self.rollout(vrle2)
-		else:
-			print "rollout result", self.heuristics(vrle)
-			if self.heuristics(vrle)==-600:
-				embed()
-			return self.heuristics(vrle)
-
-
+		# else:
+			# rolloutVal = self.heuristics(vrle)
+			# if rolloutVal==100:
+			# 	import ipdb; ipdb.set_trace()
+			# print "rollout result", self.heuristics(vrle)
+		return rolloutArray
 
 	##TODO: have an initHeuristics() function do most of this work and return a simple function
 	## that evaluates the heuristic value of a particular state.
@@ -288,7 +303,7 @@ class Node():
 		time_elapsed = rle._game.time
 		distance_to_goal = abs(time_elapsed - limit)
 
-		val -= mult * distance_to_goal ## minus?
+		val += mult * distance_to_goal
 
 		return val
 
@@ -301,13 +316,11 @@ class Node():
 
 		for term in theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
-				heuristicVal += second_alpha * \
-					self.spritecounter_val(theory, term, term.termination.stype, rle,
+				heuristicVal += self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
 
 			elif isinstance(term, MultiSpriteCounterRule):
-				heuristicVal += second_alpha * \
-					self.multispritecounter_val(theory, term, rle,
+				heuristicVal += self.multispritecounter_val(theory, term, rle,
 						first_alpha=first_alpha, second_alpha=second_alpha)
 
 			elif isinstance(term, TimeoutRule):
@@ -362,11 +375,12 @@ class Node():
 		
 		## Try rollouts for aliens?
 		if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
-			self.heuristicVal = self.rollout(self.lastState)
-		else:
-			self.heuristicVal = self.heuristics()
+			self.rolloutArray = self.rollout(self.lastState)
 
-		self.intrinsic_reward = self.lastState._game.score + self.heuristicVal - self.metabolic_cost
+		self.heuristicVal = self.heuristics()
+
+		self.intrinsic_reward = self.lastState._game.score + self.heuristicVal + \
+		sum(self.rolloutArray) - self.metabolic_cost
 
 		return self.win
 
