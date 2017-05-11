@@ -345,7 +345,6 @@ class Node():
 		return vrle, win
 
 	def eval(self):
-
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
 		
 		self.lastState, self.win = self.getToCurrentState()
