@@ -625,6 +625,7 @@ class BasicGame(object):
         self.effectList = []
         dead = self.kill_list[:] # copy kill list
         created = []
+        
         # build the current sprite lists (if not yet available)
         # for class1, class2, effect, kwargs in self.collision_eff:
         while new_collisions:
@@ -677,6 +678,11 @@ class BasicGame(object):
                 for sprite1 in sprite_list1:
                     for collision_index in sprite1.rect.collidelistall(sprite_list2):
                         sprite2 = sprite_list2[collision_index]
+                        # check to make sure they're still colliding.
+                        # this is incredibly concerning, actually. Because
+                        # this still means the lists are getting changed else where...
+                        if not sprite1.rect.colliderect(sprite2.rect):
+                            continue
                         if (sprite1 == sprite2
                             or sprite1 in dead
                             or sprite2 in dead
