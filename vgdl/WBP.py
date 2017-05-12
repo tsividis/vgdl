@@ -470,8 +470,8 @@ if __name__ == "__main__":
 
 	# gameFilename = "examples.gridphysics.zelda_orig2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
 	# gameFilename = "examples.gridphysics.missilecommand2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
-	# gameFilename = "examples.gridphysics.chase2"
-	gameFilename = "examples.gridphysics.aliens2" 
+	gameFilename = "examples.gridphysics.chase2"
+	# gameFilename = "examples.gridphysics.aliens2" 
 
 
 	# gameFilename = "examples.gridphysics.demo_helper"  ##
