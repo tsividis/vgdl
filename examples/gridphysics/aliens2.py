@@ -5,18 +5,18 @@ VGDL example: a simplified variant of the classic space-invaders.
 '''
 
 
-# level = """
-# wwwwwww
-# w     w
-# w1    w
-# w     w
-# w     w
-# w     w
-# w     w
-# w     w
-# w A   w
-# wwwwwww
-# """
+level = """
+wwwwwww
+w     w
+w1    w
+w     w
+w     w
+w     w
+w     w
+w     w
+w A   w
+wwwwwww
+"""
 
 
 # level = """
@@ -33,22 +33,22 @@ VGDL example: a simplified variant of the classic space-invaders.
 # """
 
 
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w1                             w
-w000                           w
-w000                           w
-w                              w
-w                              w
-w                              w
-w                              w
-w    000      000000     000   w
-w   00000    00000000   00000  w
-w   0   0    00    00   00000  w
-w                A             w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w1                             w
+# w000                           w
+# w000                           w
+# w                              w
+# w                              w
+# w                              w
+# w                              w
+# w    000      000000     000   w
+# w   00000    00000000   00000  w
+# w   0   0    00    00   00000  w
+# w                A             w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # The game dynamics are specified as a paragraph of text
 # aliens_game="""

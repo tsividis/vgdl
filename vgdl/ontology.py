@@ -370,7 +370,7 @@ class Conveyor(OrientedSprite):
 
 class Missile(OrientedSprite): ##
     """ A sprite that constantly moves in the same direction. """
-    speed = .4
+    speed = 1
     color = PURPLE
 
 class Switch(VGDLSprite):
@@ -1244,8 +1244,8 @@ def turnAround(sprite, partner, game):
     sprite.rect = sprite.lastrect
     sprite.lastmove = sprite.cooldown
     sprite.physics.activeMovement(sprite, DOWN)
-    sprite.lastmove = sprite.cooldown
-    sprite.physics.activeMovement(sprite, DOWN)
+    # sprite.lastmove = sprite.cooldown
+    # sprite.physics.activeMovement(sprite, DOWN)
     reverseDirection(sprite, partner, game)
     game._updateCollisionDict(sprite)
     if partner == None:
