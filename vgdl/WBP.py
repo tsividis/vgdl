@@ -195,10 +195,10 @@ class Node():
 		return metabolic_cost
 
 	def rollout(self, vrle):
-		vrle = copy.deepcopy(vrle)
-		prevHeuristicVal = self.heuristics(vrle)
 		successfulRollout = False
 		while not successfulRollout:
+			vrle = copy.deepcopy(vrle)
+			prevHeuristicVal = self.heuristics(vrle)
 			rolloutArray = []
 			i=0
 			terminal, win = vrle._isDone()
@@ -216,12 +216,10 @@ class Node():
 			# embed()
 			if terminal and not win:
 				successfulRollout = False
+				print "rolling out again"
 			else:
 				successfulRollout = True
 		return rolloutArray
-
-	##TODO: have an initHeuristics() function do most of this work and return a simple function
-	## that evaluates the heuristic value of a particular state.
 
 	def spritecounter_val(self, theory, term, stype, rle, first_alpha=100,
 						  second_alpha=1):
@@ -264,11 +262,15 @@ class Node():
 		if compute_second_order:
 			## Get all positions of objects whose type is in killer_types; compute minimum distance
 			## of each to the stypes we have to destroy. Return min over all mins.
-
+			# embed()
 			# import ipdb; ipdb.set_trace()
-			kill_positions = np.concatenate([
-				self.WBP.findObjectsInRLE(rle, ktype)
-				for ktype in killer_types])
+			objs = [self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types]
+
+			kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
+			# embed()
+			# if len([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types][0])==0:
+				# embed()
+			# kill_positions = np.concatenate([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types])
 			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
 			try:
 				distance = min([manhattanDist(obj, pos)
@@ -377,6 +379,7 @@ class Node():
 		## Try rollouts for aliens?
 		if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
 			self.rolloutArray = self.rollout(self.lastState)
+			print "in rollout"
 
 		self.heuristicVal = self.heuristics()
 
@@ -449,7 +452,7 @@ if __name__ == "__main__":
 
 	## make better versions
 	# gameFilename = "examples.gridphysics.demo_teleport" ##solved!!
-	# gameFilename = "examples.gridphysics.movers3c" ##solved!!
+	gameFilename = "examples.gridphysics.movers3c" ##solved!!
 	# gameFilename = "examples.gridphysics.rivercross" ## solved!!
 	# gameFilename = "examples.gridphysics.demo_dodge"  ##solved!!
 	# gameFilename = "examples.gridphysics.movers5" ##solved!!
