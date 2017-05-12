@@ -654,8 +654,8 @@ class BasicGame(object):
 
                 # print self.lastcollisions['box']
                 # iterate over the shorter one
-                sprite_list1 = self.lastcollisions[class1][0]
-                sprite_list2 = self.lastcollisions[class2][0]
+                sprite_list1 = self.lastcollisions[class1][0][:]
+                sprite_list2 = self.lastcollisions[class2][0][:]
                 # if l1 < l2:
                 #     shortss, longss, switch = ss1, ss2, False
                 # else:
@@ -678,11 +678,6 @@ class BasicGame(object):
                 for sprite1 in sprite_list1:
                     for collision_index in sprite1.rect.collidelistall(sprite_list2):
                         sprite2 = sprite_list2[collision_index]
-                        # check to make sure they're still colliding.
-                        # this is incredibly concerning, actually. Because
-                        # this still means the lists are getting changed else where...
-                        if not sprite1.rect.colliderect(sprite2.rect):
-                            continue
                         if (sprite1 == sprite2
                             or sprite1 in dead
                             or sprite2 in dead
