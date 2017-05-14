@@ -1,31 +1,37 @@
 level="""
-33333333333333
-3    A     5 3
-3            3
-3            3
-3    5       3
-3            3
-3            3
-3            3
-3    G       3
-33333333333333
+33333333333333333333
+3                A 3
+3              1G  3
+3    7             3
+3          333333333
+3             8    3
+3          6  8    2
+3             8    3
+33333333333333333333
 """
 game = """
 BasicGame
 	SpriteSet
-		c3 > Resource color=GREEN
-		goal > Resource color=GREEN
-		c2 > Chaser color=BLUE speed=0.4 fleeing=False
 		avatar > MovingAvatar color=DARKBLUE
-		c4 > Resource color=BLACK
+		c3 > ResourcePack color=LIGHTGREEN
+		goal > ResourcePack color=LIGHTGREEN
+		c2 > Missile color=PINK speed=1 orientation=RIGHT
+		c7 > Resource color=RED
+		c6 > ResourcePack color=BLACK
+		c5 > ResourcePack color=GREEN
+		c4 > RandomNPC color=LIGHTORANGE speed=0.4
 	InteractionSet
-		avatar c2 > killSprite
+		c2 c6 > stepBack
+		c7 c6 > stepBack
+		c4 c6 > stepBack
+		goal c6 > stepBack
 		c4 EOS > stepBack
-		c2 c4 > stepBack
-		avatar c4 > stepBack
+		c5 EOS > stepBack
+		c6 EOS > stepBack
+		c5 c6 > stepBack
+		c7 EOS > stepBack
 		c2 EOS > stepBack
 		goal EOS > stepBack
-		goal c4 > stepBack
 		goal avatar > killSprite
 		avatar EOS > stepBack
 	TerminationSet
@@ -33,10 +39,13 @@ BasicGame
 		SpriteCounter stype=goal limit=0 win=True
 		SpriteCounter stype=avatar limit=0 win=False
 	LevelMapping
-		5 > c2
+		1 > c2
 		A > avatar
-		3 > c4
-		2 > c3
+		8 > c3
+		6 > c4
+		3 > c6
+		2 > c5
+		7 > c7
 		G > goal
 """
 if __name__ == "__main__":

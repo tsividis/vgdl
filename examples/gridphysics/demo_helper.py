@@ -83,7 +83,7 @@ BasicGame frame_rate=30
             rand > RandomNPC cooldown=0
                 rand1 > color=LIGHTORANGE
                 rand2 > color=BROWN
-        chaser > Chaser color=BLUE stype=box1 cooldown=5
+        chaser > Chaser color=BLUE stype=box1 cooldown=0
         wall > Immovable
         missile > Missile
             missile1 > color=YELLOW orientation=RIGHT
@@ -103,7 +103,7 @@ BasicGame frame_rate=30
         avatar wall > stepBack 
         mover wall > stepBack
         #box1 avatar > bounceForward
-        box2 avatar > changeScore value=-2
+        #box2 avatar > changeScore value=-2
         box2 avatar > killSprite
         avatar rand > killSprite
         rand wall > stepBack  

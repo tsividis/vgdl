@@ -222,7 +222,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.simpleGame_inductionTest"
 	# filename = "examples.gridphysics.simpleGame_missile2"	
 	# filename = "examples.gridphysics.movers2d"	
-	# filename = "examples.gridphysics.movers3c"	
+	filename = "examples.gridphysics.movers3c"	
 	# filename = "examples.gridphysics.movers4"	
 
 	# filename = "examples.gridphysics.simpleGame_many_poisons_big"
@@ -230,7 +230,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pushtest"
 	# filename = "examples.gridphysics.simpleGame_small"
 	# filename = "examples.gridphysics.new_object_test"	
-	filename = "examples.gridphysics.demo_chaser"
+	# filename = "examples.gridphysics.demo_chaser"
 
 	# filename = "examples.gridphysics.push_boulders_multigoal_incremental"	
 

@@ -18,6 +18,7 @@ class WBP(Planner):
 		self.objectTypes.sort()
 		self.phiSize = sum([len(rle._game.sprite_groups[k]) for k in rle._game.sprite_groups.keys() if k not in ['wall', 'avatar']])
 		self.objIDs = {}
+		self.solution = None
 		self.maxNumObjects = 6
 		self.trackTokens = False
 		self.vecSize = None
@@ -29,6 +30,8 @@ class WBP(Planner):
 			self.objIDs[k] = i * (rle.outdim[0]*rle.outdim[1]+self.padding)
 			i+=1
 		self.addSpaceBarToActions()
+	# def getSubgoals(self, subgoal_path_threshold):
+	# 	return self.findObjectsInRLE(self.rle, 'goal')
 
 	def addSpaceBarToActions(self):
 		## Note: if an object that isn't instantiated in the beginning is of a class that
@@ -148,11 +151,13 @@ class WBP(Planner):
 				child = Node(rle, self, current.actionSeq+[a], current)
 				child.eval()
 				if child.win:
+					self.solution = current
 					return child, visited, rejected ##revisit
 				else:
 					QNovelty.append(child)
 					QReward.append(child)
 			i+=1
+		self.solution = Node(rle, self, [], None)
 		return None, visited, rejected
 
 class Node():
@@ -182,16 +187,16 @@ class Node():
 ## rollout length
 ## repeating rollouts if death? e.g., are they optimistic?
 ## multiple samples??
-	def metabolics(self, rle, events, action, n=3, mult=.5):
+	def metabolics(self, rle, events, action, n=10, mult=.3):
 
 		metabolic_cost = 1./n
 		if action==32:
 			metabolic_cost += (1-1./n)*mult
 		if len(events)>0:
 			if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='bounceForward' for e in events]):
-				metabolic_cost += (1-1./n)*mult
-			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
-				# metabolic_cost += 0.1
+				metabolic_cost += .3#(1-1./n)*mult
+			if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
+				metabolic_cost += 0.3
 		return metabolic_cost
 
 	def rollout(self, vrle):
@@ -231,7 +236,7 @@ class Node():
 			mult = -1
 		else:
 			compute_second_order = False
-			mult = 1
+			mult = .1
 
 		# Get all types that kill or transform stype
 		killer_types = [
@@ -258,30 +263,25 @@ class Node():
 			distance_to_goal = abs(n_sprites - limit)
 
 		val += mult * first_alpha * distance_to_goal
-
+		# print val
 		if compute_second_order:
 			## Get all positions of objects whose type is in killer_types; compute minimum distance
 			## of each to the stypes we have to destroy. Return min over all mins.
 			# embed()
-			# import ipdb; ipdb.set_trace()
 			objs = [self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types]
-
 			kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
-			# embed()
-			# if len([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types][0])==0:
-				# embed()
 			# kill_positions = np.concatenate([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types])
 			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
 			try:
 				distance = min([manhattanDist(obj, pos)
 					 for pos in kill_positions
 					 for obj in stype_positions])
+				# print distance
 			except ValueError:
 				# embed()
 				distance = 0
 
 			val += mult * second_alpha * distance
-
 		return val
 
 	def multispritecounter_val(self, theory, term, rle, first_alpha=100,
@@ -383,6 +383,7 @@ class Node():
 
 		self.heuristicVal = self.heuristics()
 
+		# print self.lastState._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost
 		self.intrinsic_reward = self.lastState._game.score + self.heuristicVal + \
 		sum(self.rolloutArray) - self.metabolic_cost
 
@@ -451,26 +452,24 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.simpleGame4_small"
 
 	## make better versions
-	# gameFilename = "examples.gridphysics.demo_teleport" ##solved!!
-	gameFilename = "examples.gridphysics.movers3c" ##solved!!
+	# gameFilename = "examples.gridphysics.demo_teleport"
+	# gameFilename = "examples.gridphysics.movers3c" ##solved!!
 	# gameFilename = "examples.gridphysics.rivercross" ## solved!!
 	# gameFilename = "examples.gridphysics.demo_dodge"  ##solved!!
 	# gameFilename = "examples.gridphysics.movers5" ##solved!!
 	# gameFilename = "examples.gridphysics.demo_preconditions" ## k=2 works!
 	# gameFilename = "examples.gridphysics.waterfall" ##solved!!
-	# gameFilename = "examples.gridphysics.frogs" ## worked with k=2.
 	# gameFilename = "examples.gridphysics.pick_apples" ## worked with expanded phi!
-	# gameFilename = "examples.gridphysics.scoretest" ##2BFS solves it!
 	# gameFilename = "examples.gridphysics.demo_chaser"  ##easy version solved!
 	# gameFilename = "examples.gridphysics.demo_helper"  ##easy version solved!
-	# gameFilename = "examples.gridphysics.simpleGame_push_boulders"
+	gameFilename = "examples.gridphysics.simpleGame_push_boulders"
 	# gameFilename = "examples.gridphysics.chase" #yes!!!
 	# gameFilename = "examples.gridphysics.survivezombies" # solvable, just not very fast if long timeout.
 	# gameFilename = "examples.gridphysics.demo_transform_small" ## works
 
 	# gameFilename = "examples.gridphysics.zelda_orig2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
 	# gameFilename = "examples.gridphysics.missilecommand2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
-	gameFilename = "examples.gridphysics.chase2"
+	# gameFilename = "examples.gridphysics.chase2"
 	# gameFilename = "examples.gridphysics.aliens2" 
 
 
@@ -478,6 +477,9 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.demo_transform" ##
 	# gameFilename = "examples.gridphysics.simpleGame_missile" #later.
 	# gameFilename = "examples.gridphysics.simpleGame_push_boulders2"
+
+	# gameFilename = "examples.gridphysics.frogs" ## worked with k=2.
+
 
 	# gameFilename = "examples.gridphysics.waypointtheory"  ##easy version solved!
 
