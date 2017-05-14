@@ -1,5 +1,6 @@
 from IPython import embed
 from planner import *
+from core import VGDLParser
 import itertools
 
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
@@ -29,6 +30,7 @@ class WBP(Planner):
 			self.objIDs[k] = i * (rle.outdim[0]*rle.outdim[1]+self.padding)
 			i+=1
 		self.addSpaceBarToActions()
+		self.statesEncountered = []
 
 	def addSpaceBarToActions(self):
 		## Note: if an object that isn't instantiated in the beginning is of a class that
@@ -106,6 +108,7 @@ def rewardSelection(QReward, QNovelty):
 	bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
 	current = bestNodes.pop(0)
 	QReward.remove(current)
+
 	try:
 		QNovelty.remove(current)
 	except:
@@ -131,7 +134,9 @@ def BFS3(rle, WBP):
 		else:
 		"""
 		current = rewardSelection(QReward, QNovelty)
-			
+		# Add node state to states encountered
+		WBP.statesEncountered.append(current.lastState._game.getFullState())
+
 		print current.novelty, current.intrinsic_reward, current.heuristicVal
 		# print len(QNovelty), len(QReward)
 		# if current==None:
@@ -166,7 +171,7 @@ class Node():
 		self.novelty = None
 		self.reward = None
 		self.intrinsic_reward = 0
-		self.metabolic_cost = 0 
+		self.metabolic_cost = 0
 		self.children = None
 		self.lastState = None
 		self.reconstructed=False
@@ -182,16 +187,16 @@ class Node():
 ## rollout length
 ## repeating rollouts if death? e.g., are they optimistic?
 ## multiple samples??
-	def metabolics(self, rle, events, action, n=3, mult=.5):
+	def metabolics(self, rle, events, action, n=10, mult=.25):
 
 		metabolic_cost = 1./n
 		if action==32:
 			metabolic_cost += (1-1./n)*mult
 		if len(events)>0:
-			if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='bounceForward' for e in events]):
-				metabolic_cost += (1-1./n)*mult
-			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
-				# metabolic_cost += 0.1
+			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='bounceForward' for e in events]):
+				# metabolic_cost += (1-1./n)*mult
+			if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
+				metabolic_cost += 0.3
 		return metabolic_cost
 
 	def rollout(self, vrle):
@@ -363,7 +368,7 @@ class Node():
 
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
-		
+
 		self.lastState, self.win = self.getToCurrentState()
 		self.updateObjIDs(self.lastState)
 		self.state = self.WBP.calculateAtoms(self.lastState)
@@ -376,7 +381,7 @@ class Node():
 
 		# if self.win:
 			# embed()
-		
+
 		## Try rollouts for aliens?
 		if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
 			self.rolloutArray = self.rollout(self.lastState)
@@ -459,7 +464,7 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.demo_preconditions" ## k=2 works!
 	# gameFilename = "examples.gridphysics.waterfall" ##solved!!
 	# gameFilename = "examples.gridphysics.frogs" ## worked with k=2.
-	# gameFilename = "examples.gridphysics.pick_apples" ## worked with expanded phi!
+	gameFilename = "examples.gridphysics.pick_apples" ## worked with expanded phi!
 	# gameFilename = "examples.gridphysics.scoretest" ##2BFS solves it!
 	# gameFilename = "examples.gridphysics.demo_chaser"  ##easy version solved!
 	# gameFilename = "examples.gridphysics.demo_helper"  ##easy version solved!
@@ -471,7 +476,7 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.zelda_orig2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
 	# gameFilename = "examples.gridphysics.missilecommand2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
 	# gameFilename = "examples.gridphysics.chase2"
-	gameFilename = "examples.gridphysics.aliens2"  ##doesn't work. needs v. different heuristics
+	# gameFilename = "examples.gridphysics.aliens2"  ##doesn't work. needs v. different heuristics
 
 
 	# gameFilename = "examples.gridphysics.demo_helper"  ##
@@ -489,7 +494,7 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.demo_multigoal_and_score"  ##easy version solved!
 	# gameFilename = "examples.gridphysics.demo_sokoban" #later
 	# gameFilename = "examples.gridphysics.demo_sokoban_score" #later
-	# gameFilename = "examples.gridphysics.portals" ## stochasticity breaks it
+	# gameFilename = "examples.gridphysics.butterflies" ## stochasticity breaks it
 
 
 	# gameFilename = "examples.gridphysics.demo_multigoal_and"  ##takes forever if you have many boxes and don't use 2BFS (with metabolic penalty)
@@ -509,6 +514,8 @@ if __name__ == "__main__":
 
 
 	p = IW(rle, gameString, levelString, gameFilename, k=2)
+
+	VGDLParser.playGame(gameString, levelString, p.statesEncountered, persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+gameFilename, padding=10)
 	# embed()
 	t1 = time.time()
 	last, visited, rejected = BFS3(rle, p)
