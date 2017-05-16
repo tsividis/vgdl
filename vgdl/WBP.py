@@ -9,7 +9,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP(Planner):
-	def __init__(self, rle, gameString, levelString, gameFilename):
+	def __init__(self, rle, gameString, levelString, gameFilename, annealing=1):
 		Planner.__init__(self, rle, gameString, levelString, gameFilename, display=1)
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
 		self.vecDim = [rle.outdim[0]*rle.outdim[1], 2, self.T]
@@ -23,6 +23,7 @@ class WBP(Planner):
 		self.trackTokens = False
 		self.vecSize = None
 		self.addWaitAction = False
+		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
 		self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -136,7 +137,7 @@ class WBP(Planner):
 			current = self.noveltySelection(QNovelty, QReward)
 			# current = self.rewardSelection(QReward, QNovelty)
 			self.statesEncountered.append(current.lastState._game.getFullState())
-				
+
 			print current.novelty, current.intrinsic_reward, current.heuristicVal
 			# print len(QNovelty), len(QReward)
 			# if current==None:
@@ -174,7 +175,7 @@ class Node():
 		self.novelty = None
 		self.reward = None
 		self.intrinsic_reward = 0
-		self.metabolic_cost = 0 
+		self.metabolic_cost = 0
 		self.children = None
 		self.lastState = None
 		self.reconstructed=False
@@ -274,22 +275,34 @@ class Node():
 			# embed()
 			objs = [self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types]
 
-			if len(objs)>0:
+			if len(non_avatar_objs)>0:
 				kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
 			else:
 				kill_positions = np.array(objs)
+
 			# kill_positions = np.concatenate([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types])
 			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
 			try:
+				# A consequence of the two-way generic interactions in the
+				# theory is that minimum-distance object pairs whose interactions
+				# were not yet observed will have their distance penalized twice
+				# as much when none of those objects is an avatar. This implies
+				# that avatar novel interactions will be favored over other ones
 				distance = min([manhattanDist(obj, pos)
 					 for pos in kill_positions
 					 for obj in stype_positions])
+				if term.termination.generic:
+					# Add annealing effect
+					distance = self.WBP.annealing * distance
 				# print distance
 			except ValueError:
 				# embed()
 				distance = 0
 
-			val += mult * second_alpha * distance
+			# Normalize by number of sprites, enforcing a prior that encourages
+			# goals that involve killing fewer objects
+			val += (mult * second_alpha * distance)/n_sprites
+
 		return val
 
 	def multispritecounter_val(self, theory, term, rle, first_alpha=100,
@@ -318,7 +331,8 @@ class Node():
 
 		return val
 
-	def heuristics(self, rle=None, first_alpha=100, second_alpha=1, time_alpha=10):
+	def heuristics(self, rle=None, first_alpha=100, second_alpha=1,
+				   time_alpha=10):
 		if rle==None:
 			rle = self.lastState
 
@@ -370,7 +384,7 @@ class Node():
 
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
-		
+
 		self.lastState, self.win = self.getToCurrentState()
 		self.updateObjIDs(self.lastState)
 		self.state = self.WBP.calculateAtoms(self.lastState)
@@ -383,7 +397,7 @@ class Node():
 
 		# if self.win:
 			# embed()
-		
+
 		## Try rollouts for aliens?
 		if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
 			self.rolloutArray = self.rollout(self.lastState)
@@ -481,14 +495,14 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.zelda_orig2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
 	# gameFilename = "examples.gridphysics.missilecommand2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
 	# gameFilename = "examples.gridphysics.chase2"
-	# gameFilename = "examples.gridphysics.aliens2" 
+	# gameFilename = "examples.gridphysics.aliens2"
 
 
 	# gameFilename = "examples.gridphysics.demo_helper"  ##
 	# gameFilename = "examples.gridphysics.demo_transform" ##
 
 	# gameFilename = "examples.gridphysics.simpleGame_missile" #later.
-	
+
 	# gameFilename = "examples.gridphysics.simpleGame_push_boulders2"
 
 	# gameFilename = "examples.gridphysics.frogs" ## worked with k=2.
