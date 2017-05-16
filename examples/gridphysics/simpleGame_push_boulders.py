@@ -7,11 +7,11 @@ wwwwwwwwwwwwwwwwww
 w    w  p        w
 w  1 w    p      w
 wA  q     2  w  ww
-wwwwww1  g   w  ww
+wwwwww1      w  ww
 ww         q     w
 w   p    q     1 w
 w    2           w
-w        2       w
+w        2      gw
 wwwwwwwwwwwwwwwwww
 """
 
@@ -21,7 +21,7 @@ BasicGame frame_rate=30
     SpriteSet        
         avatar > MovingAvatar color=DARKBLUE #cooldown=4 
         goal > ResourcePack color=GOLD
-        poison1 > ResourcePack color=BROWN
+        poison1 > ResourcePack color=RED
         poison2 > ResourcePack color=PINK
         box1 > ResourcePack color=GREEN
         box2 > ResourcePack color=LIGHTBLUE

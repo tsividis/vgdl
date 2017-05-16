@@ -9,6 +9,11 @@ from ontology import *
 import operator
 import time, math
 from rlenvironmentnonstatic import createMindEnv
+
+AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, 
+RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
+AimedFlakAvatar, InertialAvatar, MarioAvatar]
+
 """
 Theory induction on VGDL Games
 """
@@ -44,12 +49,13 @@ class TimeStep:
 	TimeStep.t = 4  --> meaning all of this took place at t_4
 	"""
 
-	def __init__(self, agentAction, agentState, events, gameState):
+	def __init__(self, agentAction, agentState, events, gameState, rle):
 		self.agentAction = agentAction
 		self.agentState = agentState # agent's backpack
 		self.events = events
 		self.t = False # Number timestep
 		self.gameState = gameState
+		self.rle = rle
 
 	def display(self):
 		print (self.agentAction, self.agentState, self.events, self.gameState)
@@ -169,30 +175,32 @@ class TerminationRule:
 
 
 class TimeoutRule(TerminationRule):
-	def __init__(self, limit=0, win=False):
+	def __init__(self, limit=0, win=False, generic=False):
 		self.termination = Timeout(limit=limit, win=win)
 		self.ruleType = "TimeoutRule"
+		self.generic = generic
 
 	def display(self):
 		print (self.ruleType, self.termination.limit, self.termination.win)
 
 	def asTuple(self):
-		return (self.ruleType, self.termination.limit, self.termination.win)
+		return (self.ruleType, self.termination.limit, self.termination.win, self.generic)
 
 
 class SpriteCounterRule(TerminationRule):
 	""" Game ends when the number of sprites of type 'stype' hits 'limit' (or below). """
-	def __init__(self,stype,limit,win):
+	def __init__(self,stype,limit,win, generic):
 		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
 		self.termination = SpriteCounter(limit=limit, stype=stype, win=win)
 		self.ruleType = "SpriteCounterRule"
+		self.generic = generic
 
 	def display(self):
 		print self.ruleType, self.termination.stype, self.termination.limit, self.termination.win
 		return
 
 	def asTuple(self):
-		return (self.ruleType, self.termination.stype, self.termination.limit, self.termination.win)
+		return (self.ruleType, self.termination.stype, self.termination.limit, self.termination.win, self.generic)
 
 
 class MultiSpriteCounterRule(TerminationRule):
@@ -251,6 +259,8 @@ class Theory(object):
 
 		self.dryingPaint = set()
 		self.inModification = {}
+
+		self.falsified = []
 
 		self.posterior = False
 
@@ -323,7 +333,13 @@ class Theory(object):
 			# print "in base case of explainTimeStep"
 			for t in theories:
 				t.depth = self.depth+1
-			# embed()
+			relevantEvents = [t for t in fullTimestep.events if 'killSprite' in t or 'transformTo' in t]
+			rle = fullTimeStep['rle']
+			for event in relevantEvents:
+				if len([o for o in rle._game.sprite_groups[event[1]] if o not in rle._game.kill_list]) == 0 and not rle._isDone()[0]:
+					self.falsified.append(SpriteCounterRule(event[1], 0, True, generic=False))
+					self.falsified.append(SpriteCounterRule(event[1], 0, False, generic=False))
+
 			return theories
 		else:													# Recursive Case
 			# Create new timestep that consist of remaining unexpplained eventsl pass to the same function
@@ -636,17 +652,16 @@ class Theory(object):
 
 				## Remove any relevant rules that are currently in the interaction set that are generic rules.
 				rulesToRemove = [rule for rule in self.interactionSet if class1 in rule.asTuple() and class2 in rule.asTuple() and rule.generic]
-				# print "interactionSet:", [r.asTuple() for r in self.interactionSet]
-				# print "removing", [r.asTuple() for r in rulesToRemove]
-				self.interactionSet = [rule for rule in self.interactionSet if rule not in rulesToRemove]
-				# print "interactionSet after removing:", [r.asTuple() for r in self.interactionSet]
-				# embed()
-				interaction = InteractionRule(event[0], assignment[0], assignment[1], args) #This isn't strictly necessary, but follows createChild requirements.
+				# terminationsToRemove = [rule for rule in self.terminationSet if (class1 in rule.asTuple() or class2 in rule.asTuple()) \
+				# and rule.ruleType=='SpriteCounterRule' and rule.generic]
 
-				# print "interaction ", interaction.display()
+				self.interactionSet = [rule for rule in self.interactionSet if rule not in rulesToRemove]
+				# self.terminationSet = [rule for rule in self.terminationSet if rule not in terminationsToRemove]
+				
+				interaction = InteractionRule(event[0], assignment[0], assignment[1], args) #This isn't strictly necessary, but follows createChild requirements.
+				
 				classAssignments = [(assignment[0], obj1), (assignment[1], obj2)]
 				newTheory = self.createChild([interaction, classAssignments], override)
-				# newTheory.display()
 				# Checks and only adds to newTheories if the created theory was actually different.
 				if newTheory:
 					newTheories.append(newTheory)
@@ -1584,10 +1599,13 @@ class Game(object):
 			T.initializeSpriteSet(vgdlSpriteParse = vgdlSpriteParse, spriteInductionResult=False)
 
 		# Assign class names
-		avatar = [o for o in T.spriteSet if o.vgdlType==MovingAvatar][0]
-		nonAvatars = [o for o in T.spriteSet if o.vgdlType!=MovingAvatar and o.color!='ENDOFSCREEN']
+		# avatar = [o for o in T.spriteSet if o.vgdlType==MovingAvatar][0]
+		avatar = [o for o in T.spriteSet if o.vgdlType in AvatarTypes][0]
+		nonAvatars = [o for o in T.spriteSet if o.vgdlType not in AvatarTypes and o.color!='ENDOFSCREEN']
+		
 		eos = [o for o in T.spriteSet if o.color=='ENDOFSCREEN'][0]
-		wall = [o for o in T.spriteSet if o.color == "BLACK" or o.color=="GRAY"][0]
+		
+		# wall = [o for o in T.spriteSet if o.color == "BLACK" or o.color=="GRAY"][0]
 
 		# print "buildgenerictheory"
 		# embed()
@@ -1599,14 +1617,15 @@ class Game(object):
 			T.classes[nonAvatars[i].className] = [nonAvatars[i]]
 		T.classes['EOS'] = [eos] ##initialize EOS with special name, since it gets such special treatment in VGDL text files.
 
-		## Removed this 5/3/17: Assuming that everything can be destroyed really slows down IW(k) planners,
-		## because each destruction results in new states.
-		## Instead, don't say anything, which does the default interaction, which is it just passes through them.
-
 		## Add generic rule that the avatar kills everything
 		# for obj in nonAvatars:
-			# rule = InteractionRule('killSprite', obj.className, avatar.className, {}, set(), generic=True)
-			# T.interactionSet.append(rule)
+		# 	rule = InteractionRule('killSprite', obj.className, avatar.className, {}, set(), generic=True)
+		# 	T.interactionSet.append(rule)
+
+		for (o1, o2) in itertools.product(T.spriteSet, T.spriteSet):
+			if o1.vgdlType not in avatarTypes:
+				rule = InteractionRule('killSprite', o1.className, o2.className, {}, set(), generic=True)
+				T.interactionSet.append(rule)
 
 		## Add generic rule that all other interactions are stepBack
 		# print "in buildGenericTheory"
@@ -1620,15 +1639,21 @@ class Game(object):
 			## append EOS rule
 			rule = InteractionRule('stepBack', s1.className, 'EOS', {}, set(), generic=True)
 			T.interactionSet.append(rule)
-			if s1.color != "BLACK" and s1.color !="GRAY":
-				rule = InteractionRule('stepBack', s1.className, wall.className, {}, set(), generic=True)
-				T.interactionSet.append(rule)
+			# if s1.color != "BLACK" and s1.color !="GRAY":
+			# 	rule = InteractionRule('stepBack', s1.className, wall.className, {}, set(), generic=True)
+			# 	T.interactionSet.append(rule)
 
 
-		rule =  SpriteCounterRule("avatar", 0, False)
+		## Generic termination rule
+		for o in nonAvatars:
+			rule = SpriteCounterRule(T.className, 0, True, generic=True)
+			T.terminationSet.append(rule)
+
+		rule =  SpriteCounterRule("avatar", 0, False, generic=False)
 		T.terminationSet.append(rule)
-		rule =  SpriteCounterRule("goal", 0, True)
-		T.terminationSet.append(rule)
+		
+		# rule =  SpriteCounterRule("goal", 0, True)
+		# T.terminationSet.append(rule)
 
 		return T
 
@@ -1662,6 +1687,15 @@ class Game(object):
 
 		return theory
 
+	def updateTerminations(self):
+		self.terminationSet = []
+		for rule in self.interactionSet:
+			if 'killSprite' in rule.asTuple():
+				terminationRule = TerminationRule(rule.slot1, 0, True, rule.generic)
+				if all([terminationRule!=t for t in self.terminationSet]) and all([terminationRule!=t for t in self.falsified]):
+					self.terminationSet.append(terminationRule)
+
+		## decide how we're falsifying termination conditions, and tracking ones that weren't falsified.				
 
 	def runInduction(self, spriteSample, trace, maxNumTheories, verbose=False, existingTheories=False):
 		# spriteSample: a particular assignment of sprite types. You can decide how you get this when you generate the sample, in getToSubgoal
@@ -1710,52 +1744,56 @@ class Game(object):
 		if len(self.hypothesisSpace)==0:
 			print "no hypotheses"
 			embed()
+		else:
+			for t in self.hypothesisSpace:
+				t.updateTerminations()
 		# print "ran induction"
 		# embed()
 		return self.hypothesisSpace
 
-	def runDFSInduction(self, trace, maxNumTheories, override=False, verbose=False):
-		"""
-		"""
 
-		start = time.time()
+	# def runDFSInduction(self, trace, maxNumTheories, override=False, verbose=False):
+	# 	"""
+	# 	"""
 
-		timesteps, result = trace
-		temp_new_trace = ([timesteps[0]], None) # Just to run regular induction on first timestep
+	# 	start = time.time()
 
-		# Analyze first timestep (to get some sprites in theory classes so that entropy doesn't face divide by zero error)
-		self.induction(temp_new_trace, verbose=False)
-		self.cleanHypothesisSpace([timesteps[0]], 1)
+	# 	timesteps, result = trace
+	# 	temp_new_trace = ([timesteps[0]], None) # Just to run regular induction on first timestep
 
-		init_hypotheses = self.orderHypotheses(self.hypothesisSpace)
+	# 	# Analyze first timestep (to get some sprites in theory classes so that entropy doesn't face divide by zero error)
+	# 	self.induction(temp_new_trace, verbose=False)
+	# 	self.cleanHypothesisSpace([timesteps[0]], 1)
 
-
-		self.hypothesisSpace = [] # Refresh the hypothesis space before DFS induction
-
-		# This does DFS induction x times; not sure how to make it more like the behavior we want.
-		for theory in init_hypotheses: 	# each of these theories has depth 1
-			if verbose:
-				theory.display()
-			self.DFSinduction(theory, timesteps, maxNumTheories, override, verbose=verbose)
+	# 	init_hypotheses = self.orderHypotheses(self.hypothesisSpace)
 
 
-		# Termination set induction
-		if result:
-			hypothesisSpaceWithTermConditions = []
-			for theory in self.hypothesisSpace:
-				theory.explainTermination(timesteps[-1], timesteps[:-1], result)
-				hypothesisSpaceWithTermConditions.append(theory)
+	# 	self.hypothesisSpace = [] # Refresh the hypothesis space before DFS induction
 
-			self.hypothesisSpace = hypothesisSpaceWithTermConditions
+	# 	# This does DFS induction x times; not sure how to make it more like the behavior we want.
+	# 	for theory in init_hypotheses: 	# each of these theories has depth 1
+	# 		if verbose:
+	# 			theory.display()
+	# 		self.DFSinduction(theory, timesteps, maxNumTheories, override, verbose=verbose)
 
-		if verbose:
-			print "initial hypothesis space: ", len(self.hypothesisSpace)
 
-		end = time.time()
-		if verbose:
-			print "generated {} hypotheses in {} seconds".format(len(self.hypothesisSpace), end-start)
+	# 	# Termination set induction
+	# 	if result:
+	# 		hypothesisSpaceWithTermConditions = []
+	# 		for theory in self.hypothesisSpace:
+	# 			theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+	# 			hypothesisSpaceWithTermConditions.append(theory)
 
-		return self.hypothesisSpace
+	# 		self.hypothesisSpace = hypothesisSpaceWithTermConditions
+
+	# 	if verbose:
+	# 		print "initial hypothesis space: ", len(self.hypothesisSpace)
+
+	# 	end = time.time()
+	# 	if verbose:
+	# 		print "generated {} hypotheses in {} seconds".format(len(self.hypothesisSpace), end-start)
+
+	# 	return self.hypothesisSpace
 
 
 

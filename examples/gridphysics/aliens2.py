@@ -96,10 +96,6 @@ BasicGame
     LevelMapping
         0 > base
         1 > portal
-
-    TerminationSet
-        SpriteCounter      stype=avatar               limit=0 win=False
-        MultiSpriteCounter stype1=portal stype2=alien limit=0 win=True
         
     InteractionSet
         avatar  EOS  > stepBack
@@ -116,7 +112,12 @@ BasicGame
         avatar alien > killSprite
         avatar bomb  > killSprite
         alien sam > changeScore value=10
-        alien  sam   > killSprite         
+        alien  sam   > killSprite    
+
+
+    TerminationSet
+        SpriteCounter      stype=avatar               limit=0 win=False
+        MultiSpriteCounter stype1=portal stype2=alien limit=0 win=True     
 """
 
 if __name__ == "__main__":

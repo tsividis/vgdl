@@ -14,14 +14,24 @@ VGDL example: Urgent
 # """
 
 level = """
-wwwwwwwwwwwww
-w     1     w
-w     1     w
-A     1     G
-w     1     w
-w     1     w
-wwwwwwwwwwwww
+wwwwwwwwwwwwwwww
+w      11      w
+w  1   11  1   w
+A      11      w
+w      11      w
+w  1   11  1   G
+wwwwwwwwwwwwwwww
 """
+
+# level = """
+# wwwwwwwwwwwww
+# w     1     w
+# w     1     w
+# A     1     G
+# w     1     w
+# w     1     w
+# wwwwwwwwwwwww
+# """
 
 # box_level = """
 # wwwwwwwwwwwww

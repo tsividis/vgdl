@@ -308,7 +308,6 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 			return action
 
 	## Add newly-seen objects.
-	## TODO: This still doesn't let you add objects in the middle of an episode.
 	current_objects = rle._game.getObjects()
 	for k in current_objects.keys():
 		if k not in all_objects.keys():
@@ -426,7 +425,7 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 								state = rle._game.getFullState()
 								# print "about to do getFullStateColorized()"
 								# embed()
-								event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, 'gameState': rle._game.getFullStateColorized()}
+								event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, 'gameState': rle._game.getFullStateColorized(), 'rle': rle}
 
 								goal_achieved = objectGoalReached(effects, object_goal)
 
@@ -448,7 +447,7 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 
 									finalEventList.append(event)
 									terminationCondition = {'ended': False, 'win':False, 'time':rle._game.time}
-									trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
+									trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState'], e['rle']) for e in finalEventList], terminationCondition)
 									theory_change_flag = True
 
 									# print "about to run induction"

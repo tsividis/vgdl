@@ -86,9 +86,11 @@ class Agent:
 		epsilon = .1
 		## With probability 1-epsilon, select known goal if it's known, otherwise unkown object.
 		if len(self.goalColor)>0 and \
-		len([k for k in rle._game.sprite_groups.keys() if len(rle._game.sprite_groups[k])>0 and self.getSpriteNameColor(k, rle) in self.goalColor])>0 and \
-		random.random()>epsilon:
-			key = random.choice([k for k in rle._game.sprite_groups.keys() if len(rle._game.sprite_groups[k])>0 and self.getSpriteNameColor(k, rle) in self.goalColor])
+		len([k for k in rle._game.sprite_groups.keys() if len(rle._game.sprite_groups[k])>0 and \
+			self.getSpriteNameColor(k, rle) in self.goalColor])>0 and \
+			random.random()>epsilon:
+			key = random.choice([k for k in rle._game.sprite_groups.keys() if len(rle._game.sprite_groups[k])>0\
+			 and self.getSpriteNameColor(k, rle) in self.goalColor])
 			objectGoal = rle._game.sprite_groups[key][0]
 			# actualGoal = objectGoal
 			# objectGoalLocation = rle._rect2posFlipCoords(objectGoal.rect)
@@ -172,7 +174,7 @@ class Agent:
 		## initialize theory if necessary.
 		if len(self.hypotheses) == 0:
 			gameObject = self.initializeHypotheses(rle, allObjects, learnSprites=True)
-			print "initializing hypohteses"
+			print "initializing hypotheses"
 		else:
 			gameObject = self.completeHypotheses(rle, allObjects)
 			print "had hypotheses -- completing them."

@@ -72,4 +72,4 @@ wwwwwwwwww      wwww       w
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(game, test_level)
+    VGDLParser.playGame(game, level)

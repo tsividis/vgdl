@@ -23,6 +23,7 @@ class WBP(Planner):
 		self.trackTokens = False
 		self.vecSize = None
 		self.addWaitAction = False
+		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
 		self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		i=1
@@ -130,10 +131,11 @@ class WBP(Planner):
 		while len(QNovelty)>0 or len(QReward)>0:
 			"""
 			if i%2==0:
-				current = self.noveltySelection(QNovelty, QReward)
 			else:
 			"""
-			current = self.rewardSelection(QReward, QNovelty)
+			current = self.noveltySelection(QNovelty, QReward)
+			# current = self.rewardSelection(QReward, QNovelty)
+			self.statesEncountered.append(current.lastState._game.getFullState())
 				
 			print current.novelty, current.intrinsic_reward, current.heuristicVal
 			# print len(QNovelty), len(QReward)
@@ -152,6 +154,7 @@ class WBP(Planner):
 				child.eval()
 				if child.win:
 					self.solution = current
+					self.statesEncountered.append(child.lastState._game.getFullState())
 					return child, visited, rejected ##revisit
 				else:
 					QNovelty.append(child)
@@ -193,10 +196,11 @@ class Node():
 		if action==32:
 			metabolic_cost += (1-1./n)*mult
 		if len(events)>0:
+			# metabolic_cost = .3
 			if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='bounceForward' for e in events]):
 				metabolic_cost += .3#(1-1./n)*mult
-			if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
-				metabolic_cost += 0.3
+			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
+			# 	metabolic_cost += 0.3
 		return metabolic_cost
 
 	def rollout(self, vrle):
@@ -236,7 +240,7 @@ class Node():
 			mult = -1
 		else:
 			compute_second_order = False
-			mult = .1
+			mult = 1
 
 		# Get all types that kill or transform stype
 		killer_types = [
@@ -269,7 +273,11 @@ class Node():
 			## of each to the stypes we have to destroy. Return min over all mins.
 			# embed()
 			objs = [self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types]
-			kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
+
+			if len(objs)>0:
+				kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
+			else:
+				kill_positions = np.array(objs)
 			# kill_positions = np.concatenate([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types])
 			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
 			try:
@@ -386,7 +394,7 @@ class Node():
 		# print self.lastState._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost
 		self.intrinsic_reward = self.lastState._game.score + self.heuristicVal + \
 		sum(self.rolloutArray) - self.metabolic_cost
-
+		# self.intrinsic_reward = 0
 		return self.win
 
 	def updateNovelty(self):
@@ -427,20 +435,24 @@ class Node():
 	def isWin(self):
 		return self.rle._isDone()[1]
 
-	def playBack(self):
+	def playBack(self, make_movie=False):
 		vrle = copy.deepcopy(self.rle)
+		self.finalStatesEncountered = []
 		terminal = vrle._isDone()[0]
 		i=0
-		print vrle.show()
-		while not terminal:
-			a = self.actionSeq[i]
-			print actionDict[a]
-			vrle.step(a)
-			# vrle.step(0)
+		if not make_movie:
 			print vrle.show()
-			# embed()
+		while not terminal and i<len(self.actionSeq):
+			a = self.actionSeq[i]
+			vrle.step(a)
+			if not make_movie:
+				print actionDict[a]
+				print vrle.show()
+			else:
+				self.finalStatesEncountered.append(vrle._game.getFullState())
 			terminal = vrle._isDone()[0]
 			i+=1
+
 
 class IW(WBP):
 	def __init__(self, rle, gameString, levelString, gameFilename, k):
@@ -457,15 +469,14 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.rivercross" ## solved!!
 	# gameFilename = "examples.gridphysics.demo_dodge"  ##solved!!
 	# gameFilename = "examples.gridphysics.movers5" ##solved!!
-	# gameFilename = "examples.gridphysics.demo_preconditions" ## k=2 works!
-	# gameFilename = "examples.gridphysics.waterfall" ##solved!!
-	# gameFilename = "examples.gridphysics.pick_apples" ## worked with expanded phi!
-	# gameFilename = "examples.gridphysics.demo_chaser"  ##easy version solved!
-	# gameFilename = "examples.gridphysics.demo_helper"  ##easy version solved!
-	gameFilename = "examples.gridphysics.simpleGame_push_boulders"
+	# gameFilename = "examples.gridphysics.demo_preconditions"
+	# gameFilename = "examples.gridphysics.demo_waterfall"
+	# gameFilename = "examples.gridphysics.pick_apples"
+	# gameFilename = "examples.gridphysics.demo_chaser"
+	# gameFilename = "examples.gridphysics.simpleGame_push_boulders"
 	# gameFilename = "examples.gridphysics.chase" #yes!!!
 	# gameFilename = "examples.gridphysics.survivezombies" # solvable, just not very fast if long timeout.
-	# gameFilename = "examples.gridphysics.demo_transform_small" ## works
+	# gameFilename = "examples.gridphysics.demo_transform_small"
 
 	# gameFilename = "examples.gridphysics.zelda_orig2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
 	# gameFilename = "examples.gridphysics.missilecommand2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
@@ -475,11 +486,12 @@ if __name__ == "__main__":
 
 	# gameFilename = "examples.gridphysics.demo_helper"  ##
 	# gameFilename = "examples.gridphysics.demo_transform" ##
+
 	# gameFilename = "examples.gridphysics.simpleGame_missile" #later.
+	
 	# gameFilename = "examples.gridphysics.simpleGame_push_boulders2"
 
 	# gameFilename = "examples.gridphysics.frogs" ## worked with k=2.
-
 
 	# gameFilename = "examples.gridphysics.waypointtheory"  ##easy version solved!
 
@@ -487,11 +499,13 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.simpleGame4"
 
 	# gameFilename = "examples.gridphysics.simpleGame4_small"
+	# gameFilename = "examples.gridphysics.demo_multigoal_and"
 
 	# gameFilename = "examples.gridphysics.demo_multigoal_and_score"  ##easy version solved!
 	# gameFilename = "examples.gridphysics.demo_sokoban" #later
-	# gameFilename = "examples.gridphysics.demo_sokoban_score" #later
+	gameFilename = "examples.gridphysics.demo_sokoban_score" #later
 	# gameFilename = "examples.gridphysics.portals" ## stochasticity breaks it
+	# gameFilename = "examples.gridphysics.demo_helper"
 
 
 	# gameFilename = "examples.gridphysics.demo_multigoal_and"  ##takes forever if you have many boxes and don't use 2BFS (with metabolic penalty)
@@ -511,13 +525,21 @@ if __name__ == "__main__":
 
 
 	p = IW(rle, gameString, levelString, gameFilename, k=2)
+
+
 	# embed()
 	t1 = time.time()
 	last, visited, rejected = p.BFS3(rle)
+	from core import VGDLParser
+	# embed()
+	last.playBack(make_movie=True)
+	VGDLParser.playGame(gameString, levelString, p.statesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
+	VGDLParser.playGame(gameString, levelString, last.finalStatesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
+
 
 	print time.time()-t1
 	print len(visited), len(rejected)
-	embed()
+	# embed()
 
 
 #

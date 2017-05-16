@@ -45,7 +45,7 @@ wwwwwwwwwwwwwwww
 game = """
 BasicGame frame_rate=30
     SpriteSet
-        probe > Immovable color=BLUE
+        probe > Immovable color=GREEN
         converter > Immovable 
             converter1 > color=RED
             converter2 > color=PURPLE

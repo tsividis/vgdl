@@ -6,14 +6,14 @@ VGDL example: a simple dodge-the-bullets game
 
 level = """
 wwwwwwwwwwwwwwwwwwww
-wA  w  <  -      Gww
+w   w  <  -      Gww
 w   w-            ww
 w            ww   ww
 w   < w ^      w  ww
 w ^   w   V    V www
 w   -        v    ww
 ww   <    www     ww
-w                 ww
+wA                ww
 www     v       wwww
 wwwwwwwwwwwwwwwwwwww
 """

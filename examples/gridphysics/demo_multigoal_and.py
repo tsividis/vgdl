@@ -71,8 +71,8 @@ level = """
 wwwwwwwwwwwwwwwwwwww
 w         b      h w
 w         Ab       w
-w       bb b     b w
-w         b        w
+w          b   b b w
+w         b     b  w
 w        p     wwwww
 w   p       p      w
 w     h        w h w
@@ -110,7 +110,7 @@ BasicGame frame_rate=30
         avatar > MovingAvatar color=DARKBLUE
         box > Passive
             box1 > color=RED
-            box2 > color=ORANGE
+            box2 > color=PINK
         mover > VGDLSprite
             rand > RandomNPC cooldown=10
                 rand1 > color=LIGHTORANGE
@@ -119,7 +119,7 @@ BasicGame frame_rate=30
         missile > Missile
             missile1 > color=YELLOW orientation=RIGHT
             missile2 > color=LIGHTBLUE orientation=RIGHT
-        goal > Immovable color=PINK
+        goal > Immovable color=GREEN
             # goal1 > color=GREEN
             # goal2 > color=PINK
         poison > Immovable color=WHITE

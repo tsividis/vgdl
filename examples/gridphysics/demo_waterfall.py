@@ -2,7 +2,7 @@
 VGDL example: Frogger Transpose
 
 '''
-
+## If you put the goal at the bottom, something fails. Same bug as in frogs??
 level = """
 www      000       www
 w        000     G   w
