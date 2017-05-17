@@ -1,6 +1,28 @@
 from IPython import embed
-from planner import *
 import itertools
+import numpy as np
+from numpy import zeros
+import pygame    
+from ontology import BASEDIRS
+from core import VGDLSprite, colorDict, sys
+from stateobsnonstatic import StateObsHandlerNonStatic 
+from rlenvironmentnonstatic import *
+import argparse
+import random
+import math
+from threading import Thread
+from collections import defaultdict, deque
+import time
+import copy
+from threading import Lock
+from Queue import Queue
+from util import *
+import multiprocessing
+from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
+from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
+from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, \
+generateSymbolDict, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryFromGame
+from rlenvironmentnonstatic import createRLInputGame
 
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 NONE = 0
@@ -8,9 +30,10 @@ ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', NONE: 'wait'}
 
 ## Base class for width-based planners (IW(k) and 2BFS)
-class WBP(Planner):
-	def __init__(self, rle, gameString, levelString, gameFilename, annealing=1):
-		Planner.__init__(self, rle, gameString, levelString, gameFilename, display=1)
+class WBP():
+	def __init__(self, rle, gameFilename, annealing=1):
+		self.rle = rle
+		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
 		self.vecDim = [rle.outdim[0]*rle.outdim[1], 2, self.T]
 		self.trueAtoms = defaultdict(lambda:0) #set() ## set of atoms that have been true at some point thus far in the planner.
@@ -27,13 +50,24 @@ class WBP(Planner):
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
 		self.theory = generateTheoryFromGame(rle, alterGoal=False)
+
 		i=1
 		for k in rle._game.all_objects.keys():
 			self.objIDs[k] = i * (rle.outdim[0]*rle.outdim[1]+self.padding)
 			i+=1
 		self.addSpaceBarToActions()
-	# def getSubgoals(self, subgoal_path_threshold):
-	# 	return self.findObjectsInRLE(self.rle, 'goal')
+
+	def findObjectsInRLE(self, rle, objName):
+		try:
+			objLocs = [rle._rect2pos(element.rect) for element in rle._game.sprite_groups[objName] 
+			if element not in rle._game.kill_list]
+		except:
+			return None
+		return objLocs
+	
+	def findAvatarInRLE(self, rle):
+		avatar_loc = rle._rect2pos(rle._game.sprite_groups['avatar'][0].rect)
+		return avatar_loc
 
 	def addSpaceBarToActions(self):
 		## Note: if an object that isn't instantiated in the beginning is of a class that
@@ -118,11 +152,11 @@ class WBP(Planner):
 		return current
 
 
-	def BFS3(self, rle):
+	def BFS(self):
 		QNovelty, QReward = [], []
 		visited, rejected = [], []
-		start = Node(rle, self, [], None)
-		start.lastState = rle
+		start = Node(self.rle, self, [], None)
+		start.lastState = self.rle
 		visited.append(start)
 		start.eval()
 		QNovelty.append(start)
@@ -138,31 +172,26 @@ class WBP(Planner):
 			# current = self.rewardSelection(QReward, QNovelty)
 			self.statesEncountered.append(current.lastState._game.getFullState())
 
-			print current.novelty, current.intrinsic_reward, current.heuristicVal
-			# print len(QNovelty), len(QReward)
-			# if current==None:
-			# 	pass
-			# else:
-			# print current.novelty
-			print current.lastState.show()
+			# print current.lastState.show()
 
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
 			visited.append(current)
 
 			for a in self.actions:
-				child = Node(rle, self, current.actionSeq+[a], current)
+				child = Node(self.rle, self, current.actionSeq+[a], current)
 				child.eval()
 				if child.win:
-					self.solution = current
+					embed()
+					self.solution = child.actionSeq
 					self.statesEncountered.append(child.lastState._game.getFullState())
-					return child, visited, rejected ##revisit
+					return child
 				else:
 					QNovelty.append(child)
 					QReward.append(child)
 			i+=1
-		self.solution = Node(rle, self, [], None)
-		return None, visited, rejected
+		self.solution = []#Node(self.rle, self, [], None)
+		return None
 
 class Node():
 	def __init__(self, rle, WBP, actionSeq, parent):
@@ -275,13 +304,14 @@ class Node():
 			# embed()
 			objs = [self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types]
 
-			if len(non_avatar_objs)>0:
+			if len(objs)>0:
 				kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
 			else:
 				kill_positions = np.array(objs)
 
 			# kill_positions = np.concatenate([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types])
 			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
+			n_sprites = len(stype_positions)
 			try:
 				# A consequence of the two-way generic interactions in the
 				# theory is that minimum-distance object pairs whose interactions
@@ -291,9 +321,6 @@ class Node():
 				distance = min([manhattanDist(obj, pos)
 					 for pos in kill_positions
 					 for obj in stype_positions])
-				if term.termination.generic:
-					# Add annealing effect
-					distance = self.WBP.annealing * distance
 				# print distance
 			except ValueError:
 				# embed()
@@ -301,7 +328,9 @@ class Node():
 
 			# Normalize by number of sprites, enforcing a prior that encourages
 			# goals that involve killing fewer objects
-			val += (mult * second_alpha * distance)/n_sprites
+			if n_sprites>0:
+				val += (mult * second_alpha * distance)/n_sprites
+
 
 		return val
 
@@ -312,6 +341,61 @@ class Node():
 			val += self.spritecounter_val(theory, term, stype, rle,
 				first_alpha=first_alpha, second_alpha=second_alpha)
 			# print stype, val
+		return val
+
+	def noveltytermination_val(self, theory, term, s1, s2, rle, first_alpha=100,
+						  second_alpha=1):
+		val = 0
+		compute_second_order = True
+
+		# Check if condition is win or loss and multiply accordingly
+		if term.termination.win:
+			mult = -1
+		else:
+			compute_second_order = False
+			mult = 1
+
+		# Get all types that kill or transform stype
+		# killer_types = [
+		# 	inter.slot2 for inter in theory.interactionSet
+		# 	if ((inter.interaction == 'killSprite' or
+		# 		 inter.interaction == 'transformTo')
+		# 		and inter.slot1 == stype)]
+
+		# print val
+		if compute_second_order:
+			## Get all positions of objects whose type is in killer_types; compute minimum distance
+			## of each to the stypes we have to destroy. Return min over all mins.
+			# embed()
+			objs = self.WBP.findObjectsInRLE(rle, s2)
+
+			if len(objs)>0:
+				kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
+			else:
+				kill_positions = np.array(objs)
+
+			# kill_positions = np.concatenate([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types])
+			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
+			n_sprites = len(s1_positions)
+			try:
+				# A consequence of the two-way generic interactions in the
+				# theory is that minimum-distance object pairs whose interactions
+				# were not yet observed will have their distance penalized twice
+				# as much when none of those objects is an avatar. This implies
+				# that avatar novel interactions will be favored over other ones
+				distance = min([manhattanDist(obj, pos)
+					 for pos in kill_positions
+					 for obj in s1_positions])
+				# print distance
+			except ValueError:
+				# embed()
+				distance = 0
+
+			# Normalize by number of sprites, enforcing a prior that encourages
+			# goals that involve killing fewer objects
+			if n_sprites>0:
+				val += (mult * second_alpha * distance)/n_sprites
+
 		return val
 
 	def timeout_val(self, theory, term, rle):
@@ -352,6 +436,10 @@ class Node():
 				heuristicVal += time_alpha * \
 					self.timeout_val(theory, term, rle)
 
+			elif isinstance(term, NoveltyRule):
+				heuristicVal += self.annealing * self.noveltytermination_val(theory, term, term.termination.s1, term.termination.s2, rle,
+					first_alpha=first_alpha, second_alpha=second_alpha)
+
 		return heuristicVal
 
 	def getToCurrentState(self):
@@ -371,7 +459,7 @@ class Node():
 		else:
 			self.reconstructed=True
 			print "copy failed; replaying from top"
-			vrle = copy.deepcopy(rle)
+			vrle = copy.deepcopy(self.rle)
 			terminal, win = vrle._isDone()
 			i=0
 			while not terminal and len(self.actionSeq)>i:
@@ -386,6 +474,7 @@ class Node():
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
 
 		self.lastState, self.win = self.getToCurrentState()
+
 		self.updateObjIDs(self.lastState)
 		self.state = self.WBP.calculateAtoms(self.lastState)
 
@@ -468,11 +557,6 @@ class Node():
 			i+=1
 
 
-class IW(WBP):
-	def __init__(self, rle, gameString, levelString, gameFilename, k):
-		WBP.__init__(self, rle, gameString, levelString, gameFilename)
-		self.k = k
-
 if __name__ == "__main__":
 
 	# gameFilename = "examples.gridphysics.simpleGame4_small"
@@ -486,7 +570,7 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.demo_preconditions"
 	# gameFilename = "examples.gridphysics.demo_waterfall"
 	# gameFilename = "examples.gridphysics.pick_apples"
-	# gameFilename = "examples.gridphysics.demo_chaser"
+	gameFilename = "examples.gridphysics.demo_chaser"
 	# gameFilename = "examples.gridphysics.simpleGame_push_boulders"
 	# gameFilename = "examples.gridphysics.chase" #yes!!!
 	# gameFilename = "examples.gridphysics.survivezombies" # solvable, just not very fast if long timeout.
@@ -517,7 +601,7 @@ if __name__ == "__main__":
 
 	# gameFilename = "examples.gridphysics.demo_multigoal_and_score"  ##easy version solved!
 	# gameFilename = "examples.gridphysics.demo_sokoban" #later
-	gameFilename = "examples.gridphysics.demo_sokoban_score" #later
+	# gameFilename = "examples.gridphysics.demo_sokoban_score" #later
 	# gameFilename = "examples.gridphysics.portals" ## stochasticity breaks it
 	# gameFilename = "examples.gridphysics.demo_helper"
 
@@ -538,21 +622,20 @@ if __name__ == "__main__":
 	rle = rleCreateFunc()
 
 
-	p = IW(rle, gameString, levelString, gameFilename, k=2)
+	p = WBP(rle, gameFilename)
 
 
 	# embed()
 	t1 = time.time()
-	last, visited, rejected = p.BFS3(rle)
+	last = p.BFS()
 	from core import VGDLParser
 	# embed()
 	last.playBack(make_movie=True)
-	VGDLParser.playGame(gameString, levelString, p.statesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
-	VGDLParser.playGame(gameString, levelString, last.finalStatesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
+	# VGDLParser.playGame(gameString, levelString, p.statesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
+	# VGDLParser.playGame(gameString, levelString, last.finalStatesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
 
 
 	print time.time()-t1
-	print len(visited), len(rejected)
 	# embed()
 
 

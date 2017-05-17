@@ -1079,6 +1079,7 @@ class Timeout(Termination):
     def __init__(self, limit=0, win=False):
         self.limit = limit
         self.win = win
+        self.name = 'Timeout'
 
     def isDone(self, game):
         if game.time >= self.limit:
@@ -1092,9 +1093,11 @@ class SpriteCounter(Termination):
         self.limit = limit
         self.stype = stype
         self.win = win
+        self.name = 'SpriteCounter'
 
     def isDone(self, game):
         if game.numSprites(self.stype) <= self.limit:
+            embed()
             return True, self.win
         else:
             return False, None
@@ -1105,12 +1108,41 @@ class MultiSpriteCounter(Termination):
         self.limit = limit
         self.win = win
         self.stypes = kwargs.values()
+        self.name = 'MultiSpriteCounter'
 
     def isDone(self, game):
         if sum([game.numSprites(st) for st in self.stypes]) == self.limit:
             return True, self.win
         else:
             return False, None
+
+class NoveltyTermination(Termination):
+    def __init__(self, s1, s2, win=True):
+        self.s1 = s1
+        self.s2 = s2
+        self.win = win
+        self.name = 'NoveltyTermination'
+
+    def isDone(self, game):
+        for e in game.effectList:
+            if e[0]=='killSprite' or e[0] == 'transformTo' and \
+            (game.all_objects[e[1]]['sprite'].name==self.s1 and game.all_objects[e[2]]['sprite'].name==self.s2) or\
+            (game.all_objects[e[1]]['sprite'].name==self.s2 and game.all_objects[e[2]]['sprite'].name==self.s1) :
+                return True, self.win
+        return False, None
+
+# class NoveltyTermination(Termination):
+#     def __init__(self, stype=None, win=True):
+#         self.stype = stype
+#         self.win = win
+#         self.name = 'NoveltyTermination'
+
+#     def isDone(self, game):
+#         for e in game.effectList:
+#             if e[0]=='killSprite' or e[0] == 'transformTo' and \
+#             game.all_objects[e[1]]['sprite'].name==stype:
+#                 return True, self.win
+#         return False, None
 
 # ---------------------------------------------------------------------
 #     Helper functions

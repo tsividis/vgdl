@@ -273,9 +273,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         events = self._game._eventHandling()
         ## get events (e.g., (stepBack obj1ID, obj2ID))
         
-        # print "in _performAction"
-        # embed()
-
         # self._gravepoints[(skey, self._rect2pos(s.rect))] = True
 
 
@@ -300,20 +297,20 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # embed()
         return events
 
-        if self.visualize:
-            self._game._clearAll(self.visualize)
+        # if self.visualize:
+        #     self._game._clearAll(self.visualize)
         
-        # update screen
-        if self.visualize:
-            self._game._drawAll()                            
-            pygame.display.update(VGDLSprite.dirtyrects)
-            VGDLSprite.dirtyrects = []
-            pygame.time.wait(self.actionDelay)         
+        # # update screen
+        # if self.visualize:
+        #     self._game._drawAll()                            
+        #     pygame.display.update(VGDLSprite.dirtyrects)
+        #     VGDLSprite.dirtyrects = []
+        #     pygame.time.wait(self.actionDelay)         
 
-        if self.recordingEnabled:
-            self._previous_state = self._last_state
-            self._last_state = self.getState()
-            self._allEvents.append((self._previous_state, action, self._last_state))
+        # if self.recordingEnabled:
+        #     self._previous_state = self._last_state
+        #     self._last_state = self.getState()
+        #     self._allEvents.append((self._previous_state, action, self._last_state))
 
     def step(self, action):
         if action == ('space'):
@@ -338,6 +335,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             reward = dScore
         for k in self._game.keystate:
             self._game.keystate[k] = False
+
         return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
 
 ## the game in the agent's 'head'

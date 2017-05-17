@@ -17,10 +17,10 @@
 level = """
 wwwwwwwwwwwwww
 w    A       w
-w          x w
 w            w
 w            w
-w    x       w
+w     y      w
+w            w
 w            w
 w            w
 w    g       w
@@ -124,7 +124,7 @@ BasicGame frame_rate=30
         avatar wall > stepBack 
         mover wall > stepBack
         box avatar > killSprite
-        avatar rand > killSprite
+        rand avatar > killSprite
         rand wall > stepBack  
         chaser wall > stepBack
         avatar chaser > killSprite
@@ -137,7 +137,8 @@ BasicGame frame_rate=30
         goal avatar > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False          
-        SpriteCounter stype=goal limit=0 win=True
+        #SpriteCounter stype=rand1 limit=0 win=True
+        NoveltyTermination stype=rand1 win=True
 """
 
 if __name__ == "__main__":

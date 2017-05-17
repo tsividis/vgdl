@@ -295,7 +295,7 @@ class BasicGame(object):
         # for reading levels
         self.char_mapping = {}
         # termination criteria
-        self.terminations = [Termination()]
+        self.terminations = [] #[Termination()]
         # conditional criteria
         self.conditions = []
         # resource properties
@@ -739,6 +739,7 @@ class BasicGame(object):
                                 new_effects.append(effect(sprite1, sprite2, self, **kwargs))
 
                         else:
+                            # embed()
                             new_effects.append(effect(sprite1, sprite2, self, **kwargs))
             self.effectList += [new_effect for new_effect in new_effects if new_effect]
             collision_set = collision_set.union(new_collisions)
@@ -746,7 +747,7 @@ class BasicGame(object):
         self.kill_list = list(set(self.kill_list))
         # self.kill_list = dead[:]
         # if len(self.effectList) > 0:
-        #     print 'effectList', self.effectList
+            # print 'effectList', self.effectList
         return self.effectList
 
     def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0):
@@ -1407,6 +1408,8 @@ class Resource(VGDLSprite):
 
 class Termination(object):
     """ Base class for all termination criteria. """
+    # def __init__(self):
+    #     self.name = 'Generic'
     def isDone(self, game):
         """ returns whether the game is over, with a win/lose flag """
         from pygame.locals import K_ESCAPE, QUIT

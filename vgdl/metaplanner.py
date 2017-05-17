@@ -370,7 +370,6 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 							spriteInduction(rle._game, step=1)
 							spriteInduction(rle._game, step=2)
 
-							
 							try:
 								agentState = dict(rle._game.getAvatars()[0].resources)
 								rle.agentStatePrev = agentState
@@ -425,7 +424,7 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 								state = rle._game.getFullState()
 								# print "about to do getFullStateColorized()"
 								# embed()
-								event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, 'gameState': rle._game.getFullStateColorized(), 'rle': rle}
+								event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, 'gameState': rle._game.getFullStateColorized(), 'rle': rle._game}
 
 								goal_achieved = objectGoalReached(effects, object_goal)
 

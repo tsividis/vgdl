@@ -175,32 +175,44 @@ class TerminationRule:
 
 
 class TimeoutRule(TerminationRule):
-	def __init__(self, limit=0, win=False, generic=False):
+	def __init__(self, limit=0, win=False):
 		self.termination = Timeout(limit=limit, win=win)
 		self.ruleType = "TimeoutRule"
-		self.generic = generic
 
 	def display(self):
 		print (self.ruleType, self.termination.limit, self.termination.win)
 
 	def asTuple(self):
-		return (self.ruleType, self.termination.limit, self.termination.win, self.generic)
+		return (self.ruleType, self.termination.limit, self.termination.win)
+
+class NoveltyRule(TerminationRule):
+	""" Game ends when the number of sprites of type 'stype' hits 'limit' (or below). """
+	def __init__(self,s1, s2,win):
+		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
+		self.termination = NoveltyTermination(s1=s1, s2=s2, win=win)
+		self.ruleType = "NoveltyRule"
+
+	def display(self):
+		print self.ruleType, self.termination.s1, self.termination.s2, self.termination.win
+		return
+
+	def asTuple(self):
+		return (self.ruleType, self.termination.s1, self.termination.s2, self.termination.win)
 
 
 class SpriteCounterRule(TerminationRule):
 	""" Game ends when the number of sprites of type 'stype' hits 'limit' (or below). """
-	def __init__(self,stype,limit,win, generic):
+	def __init__(self,stype,limit,win):
 		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
 		self.termination = SpriteCounter(limit=limit, stype=stype, win=win)
 		self.ruleType = "SpriteCounterRule"
-		self.generic = generic
 
 	def display(self):
 		print self.ruleType, self.termination.stype, self.termination.limit, self.termination.win
 		return
 
 	def asTuple(self):
-		return (self.ruleType, self.termination.stype, self.termination.limit, self.termination.win, self.generic)
+		return (self.ruleType, self.termination.stype, self.termination.limit, self.termination.win)
 
 
 class MultiSpriteCounterRule(TerminationRule):
@@ -334,11 +346,12 @@ class Theory(object):
 			for t in theories:
 				t.depth = self.depth+1
 			relevantEvents = [t for t in fullTimestep.events if 'killSprite' in t or 'transformTo' in t]
-			rle = fullTimeStep['rle']
+			rle = fullTimestep.rle
 			for event in relevantEvents:
 				if len([o for o in rle._game.sprite_groups[event[1]] if o not in rle._game.kill_list]) == 0 and not rle._isDone()[0]:
-					self.falsified.append(SpriteCounterRule(event[1], 0, True, generic=False))
-					self.falsified.append(SpriteCounterRule(event[1], 0, False, generic=False))
+					self.falsified.append(SpriteCounterRule(event[1], 0, True))
+					self.falsified.append(SpriteCounterRule(event[1], 0, False))
+
 
 			return theories
 		else:													# Recursive Case
@@ -890,7 +903,21 @@ class Theory(object):
 
 		return (addedRule or addedClass)
 
+	def updateTerminations(self):
+		self.terminationSet = []
+		for rule in self.interactionSet:
+			if 'killSprite' in rule.asTuple() or 'transformTo' in rule.asTuple():
+				if rule.generic:
+					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
+				else:
+					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
+				if all([terminationRule!=t for t in self.terminationSet]) and all([terminationRule!=t for t in self.falsified]):
+					self.terminationSet.append(terminationRule)
 
+		terinationRule =  SpriteCounterRule("avatar", 0, False)
+		self.terminationSet.append(terminationRule)
+
+		return
 
 	def findRule(self, rule, lst):
 		"""
@@ -1602,10 +1629,11 @@ class Game(object):
 		# avatar = [o for o in T.spriteSet if o.vgdlType==MovingAvatar][0]
 		avatar = [o for o in T.spriteSet if o.vgdlType in AvatarTypes][0]
 		nonAvatars = [o for o in T.spriteSet if o.vgdlType not in AvatarTypes and o.color!='ENDOFSCREEN']
-		
+		# wall = [o for o in T.spriteSet if o.color == "BLACK" or o.color=="GRAY"][0]
+		# embed()
+		allSprites = [avatar]+nonAvatars
 		eos = [o for o in T.spriteSet if o.color=='ENDOFSCREEN'][0]
 		
-		# wall = [o for o in T.spriteSet if o.color == "BLACK" or o.color=="GRAY"][0]
 
 		# print "buildgenerictheory"
 		# embed()
@@ -1622,8 +1650,8 @@ class Game(object):
 		# 	rule = InteractionRule('killSprite', obj.className, avatar.className, {}, set(), generic=True)
 		# 	T.interactionSet.append(rule)
 
-		for (o1, o2) in itertools.product(T.spriteSet, T.spriteSet):
-			if o1.vgdlType not in avatarTypes:
+		for (o1, o2) in itertools.product(allSprites, allSprites):
+			if o1.vgdlType not in AvatarTypes:
 				rule = InteractionRule('killSprite', o1.className, o2.className, {}, set(), generic=True)
 				T.interactionSet.append(rule)
 
@@ -1644,30 +1672,26 @@ class Game(object):
 			# 	T.interactionSet.append(rule)
 
 
-		## Generic termination rule
-		for o in nonAvatars:
-			rule = SpriteCounterRule(T.className, 0, True, generic=True)
-			T.terminationSet.append(rule)
+		# ## Generic termination rule
+		# for o in nonAvatars:
+		# 	rule = NoveltyRule(o.className, True)
+		# 	T.terminationSet.append(rule)
 
-		rule =  SpriteCounterRule("avatar", 0, False, generic=False)
+		rule =  SpriteCounterRule("avatar", 0, False)
 		T.terminationSet.append(rule)
 		
 		# rule =  SpriteCounterRule("goal", 0, True)
 		# T.terminationSet.append(rule)
 
+		T.updateTerminations()
 		return T
 
 	def addNewObjectsToTheory(self, theory, spriteSample):
-
-
 		# Get the important objects in the theory names
-		avatar = [o for o in theory.spriteSet if o.vgdlType==MovingAvatar][0]
-		nonAvatars = [o for o in theory.spriteSet if o.vgdlType!=MovingAvatar and o.color!='ENDOFSCREEN']
+		avatar = [o for o in theory.spriteSet if o.vgdlType in AvatarTypes][0]
+		nonAvatars = [o for o in theory.spriteSet if o.vgdlType not in AvatarTypes and o.color!='ENDOFSCREEN']
 		eos = [o for o in theory.spriteSet if o.color=='ENDOFSCREEN'][0]
-		wall = [o for o in theory.spriteSet if o.color == "BLACK" or o.color=="GRAY"][0]
 
-		# print "in addNewObjects"
-		# embed()
 		i = len(theory.classes)
 		knownColors = [item.color for sublist in theory.classes.values() for item in sublist]
 		for s in spriteSample:
@@ -1681,19 +1705,13 @@ class Game(object):
 				theory.interactionSet.append(rule)
 				rule = InteractionRule('stepBack', s.className, 'EOS', {}, set(), generic=True)
 				theory.interactionSet.append(rule)
-				rule = InteractionRule('stepBack', s.className, wall.className, {}, set(), generic=True)
-				theory.interactionSet.append(rule)
+				for otherSprite in nonAvatars:
+					rule = InteractionRule('killSprite', s.className, otherSprite.className, {}, set(), generic=True)
+					theory.interactionSet.append(rule)
+					rule = InteractionRule('killSprite', otherSprite.className, s.className, {}, set(), generic=True)
+					theory.interactionSet.append(rule)
 				i+=1
-
 		return theory
-
-	def updateTerminations(self):
-		self.terminationSet = []
-		for rule in self.interactionSet:
-			if 'killSprite' in rule.asTuple():
-				terminationRule = TerminationRule(rule.slot1, 0, True, rule.generic)
-				if all([terminationRule!=t for t in self.terminationSet]) and all([terminationRule!=t for t in self.falsified]):
-					self.terminationSet.append(terminationRule)
 
 		## decide how we're falsifying termination conditions, and tracking ones that weren't falsified.				
 
@@ -1744,11 +1762,10 @@ class Game(object):
 		if len(self.hypothesisSpace)==0:
 			print "no hypotheses"
 			embed()
-		else:
-			for t in self.hypothesisSpace:
-				t.updateTerminations()
-		# print "ran induction"
-		# embed()
+		# else:
+		# 	for t in self.hypothesisSpace:
+		# 		t.updateTerminations()
+
 		return self.hypothesisSpace
 
 
@@ -1911,6 +1928,7 @@ def generateTheoryFromGame(rle, alterGoal=True):
 	This object has only 2 fields set: the interaction set, and the classes.
 	"""
 	theory = Theory(rle._game)
+
 	inverseClasses = dict()
 	for i,s in enumerate(rle._game.sprite_constr):
 		(vgdlType, settings, _) = rle._game.sprite_constr[s]
@@ -1961,24 +1979,27 @@ def generateTheoryFromGame(rle, alterGoal=True):
 		# No support for MultiSpriteCounterRule yet
 		# Checking type with 'hasattr': ugly but isinstance breaks due to
 		# relative imports
-		if hasattr(termination, 'stype'):
+		if termination.name == 'SpriteCounter':
 			if alterGoal and termination.stype=='goal':
 				termination.stype='laog'
 			spritecounter = SpriteCounterRule(limit=termination.limit,
 											  stype=termination.stype,
 											  win=termination.win)
 			theory.terminationSet.append(spritecounter)
-		elif hasattr(termination, 'stypes'):
+		elif termination.name == 'MultiSpriteCounter':
 			if alterGoal:
 				termination.stypes = ['laog' if t=='goal' else t for t in termination.stypes]
 			multiSpriteCounter = MultiSpriteCounterRule(limit=termination.limit,
 											  stypes=termination.stypes,
 											  win=termination.win)
 			theory.terminationSet.append(multiSpriteCounter)
-		elif hasattr(termination, 'limit'):
+		elif termination.name == 'Timeout':
 			timeout = TimeoutRule(limit=termination.limit,
 								  win=termination.win)
 			theory.terminationSet.append(timeout)
+		elif termination.name == 'NoveltyRule':
+			noveltyrule = NoveltyRule(s1=termination.s1, s2=termination.s2, win=termination.win)
+			theory.terminationSet.append(noveltyrule)
 
 	return theory
 
@@ -2281,6 +2302,8 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				embed()
 
 			for s1 in theory.classes[c1]:
+				if c2 not in theory.classes.keys():
+					embed()
 				for s2 in theory.classes[c2]:
 					argsString = ""
 
@@ -2313,8 +2336,8 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 	# if goal is an empty square
 	# if newGoalType == 'blank_space':
-	theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', "killSprite")
-	theoryString += "\t\t%s %s > %s\n"%('avatar', 'EOS', "stepBack")
+	# theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', "killSprite")
+	# theoryString += "\t\t%s %s > %s\n"%('avatar', 'EOS', "stepBack")
 
 	# print "inwritetheory"
 	# embed()
@@ -2348,7 +2371,9 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 						str(terminationRule.termination.limit), str(terminationRule.termination.win))
 			if terminationRule.termination.stype == "goal":
 				goalConditionNotFound = False
-
+		elif terminationRule.ruleType == "NoveltyRule":
+			theoryString += "\t\tNoveltyTermination s1=%s s2=%s win=%s\n" % \
+						(terminationRule.termination.s1, terminationRule.termination.s2, str(terminationRule.termination.win))
 		else:
 			# multi sprite counter rule
 			theoryString += "\t\tMultiSpriteCounter "
@@ -2361,7 +2386,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	# embed()
 
 	# theoryString += "\tTerminationSet\n"
-	theoryString += "\t\tSpriteCounter stype=avatar limit=0 win=False\n"
+	# theoryString += "\t\tSpriteCounter stype=avatar limit=0 win=False\n"
 	if goalLoc and goalConditionNotFound:
 		# embed()
 		theoryString += "\t\tSpriteCounter stype=goal limit=0 win=True\n"
@@ -2435,4 +2460,4 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 	levelString = levelString[levelString.find('"""')+3:-4]
 	theoryString = theoryString[theoryString.find('"""')+3:-4]
-	return theoryString, levelString, symbolDict, immovables, killerObjects
+	return theoryString, levelString, symbolDict#, immovables, killerObjects
