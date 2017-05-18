@@ -2,12 +2,12 @@ level="""
 0000000000000000
 0              0
 0              0
-0           2  0
+0           A  0
 0              0
-0  A   0       0
+0      0       0
 0              0
 0              0
-0       2      0
+0              0
 0000000000000000
 """
 game = """
@@ -26,12 +26,12 @@ BasicGame
 		c3 EOS > stepBack
 		avatar c3 > stepBack
 	TerminationSet
-		NoveltyTermination s1=c2 s2=avatar win=True
 		NoveltyTermination s1=c2 s2=c2 win=True
 		NoveltyTermination s1=c2 s2=c3 win=True
 		NoveltyTermination s1=c3 s2=c2 win=True
 		NoveltyTermination s1=c3 s2=c3 win=True
-		NoveltyTermination s1=c3 s2=c3 win=True
+		SpriteCounter stype=c2 limit=0 win=True
+		SpriteCounter stype=c2 limit=0 win=True
 	LevelMapping
 		2 > c2
 		0 > c3

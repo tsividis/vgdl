@@ -5,7 +5,7 @@ from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chas
 OrientedSprite, Missile, initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, \
 spriteInduction, selectObjectGoal
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
-SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict
+SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, generateTheoryFromGame
 import WBP
 import importlib
 from metaplanner import translateEvents
@@ -40,7 +40,7 @@ class Agent:
 	def VrleInitPhase(self):
 		## Initialize multiple VRLEs, each corresponding to one hypothesis in self.hypotheses
 		VRLEs = []
-		print "in VrleInitPhase.", len(self.hypotheses), "hypotheses"
+		# print "in VrleInitPhase.", len(self.hypotheses), "hypotheses"
 		for hypothesis in self.hypotheses:
 			VRLEs.append(self.initializeVrle(hypothesis))
 		return VRLEs
@@ -92,7 +92,7 @@ class Agent:
 		annealing = 1
 		## Start storing encountered states.
 		self.statesEncountered.append(self.rle._game.getFullState())
-		
+
 		## initialize theory if necessary.
 		if len(self.hypotheses) == 0:
 			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True)
@@ -104,14 +104,18 @@ class Agent:
 		while not ended:
 			## initialize one or many VRLEs according to hypothesis-selection method
 			theoryRLEs = self.VrleInitPhase()
+			print("theory being passed to planner")
+			self.hypotheses[0].display()
 
-			p = WBP.WBP(theoryRLEs[0], self.gameFilename, annealing)
+
+			p = WBP.WBP(theoryRLEs[0], self.gameFilename,
+						theory=self.hypotheses[0], annealing=annealing)
 			p.BFS()
 			solution = p.solution
 			# print "got solution"
 			# embed()
 			## add new objects? (line 310 of metaplanner)
-			
+
 			for action in solution:
 				hypotheses, theory_change_flag = self.executeStep(action, self.hypotheses[0])
 				if theory_change_flag:
@@ -127,10 +131,10 @@ class Agent:
 		hypotheses = [hypothesis]
 		theory_change_flag = False
 
-		## returns rle in next state, updated hypothesis, 
+		## returns rle in next state, updated hypothesis,
 		spriteInduction(self.rle._game, step=1)
 		spriteInduction(self.rle._game, step=2)
-		
+
 		try:
 			agentState = dict(self.rle._game.getAvatars()[0].resources)
 			self.rle.agentStatePrev = agentState
@@ -139,9 +143,9 @@ class Agent:
 			agentState = self.rle.agentStatePrev
 			print "didn't find agentState resources"
 			embed()
-		
+
 		res = self.rle.step(action)
-		print res['effectList']
+		# print res['effectList']
 		## Add newly-seen objects.
 		current_objects = self.rle._game.getObjects()
 		for k in current_objects.keys():
@@ -157,13 +161,13 @@ class Agent:
 		effects = translateEvents(res['effectList'], self.all_objects, self.rle)
 
 		all_effects = [item for sublist in [e['effectList'] for e in self.finalEventList] for item in sublist]
-		
+
 		event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, \
 			'gameState': self.rle._game.getFullStateColorized(), 'rle': self.rle}
 		if event['effectList']:
 			self.finalEventList.append(event)
 
-		print effects
+		# print effects
 		if not all([e in all_effects for e in effects]):
 			theory_change_flag = True
 			sample = sampleFromDistribution(self.rle._game.spriteDistribution, self.all_objects)
@@ -173,15 +177,14 @@ class Agent:
 				for e in self.finalEventList], terminationCondition)
 			# embed()
 			hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
-			verbose=False, existingTheories=hypotheses)) ##if you resample or run sprite induction, this 
+			verbose=False, existingTheories=hypotheses)) ##if you resample or run sprite induction, this
 			if len(hypotheses)>1:
 				print "more than one hypothesis"
 				embed()
 
 
-		[t.updateTerminations() for t in self.hypotheses]
+		[t.updateTerminations() for t in hypotheses]
 		hypotheses[0].display()
-		
 		print self.rle.show()
 
 		return hypotheses, theory_change_flag
@@ -189,11 +192,10 @@ class Agent:
 
 
 if __name__ == "__main__":
-	filename = "examples.gridphysics.pick_apples"	
+	filename = "examples.gridphysics.pick_apples"
 	agent = Agent(filename)
-	
+
 	##then pass this down for multiple episodes
 	gameObject = None
 	agent.playEpisode(gameObject)
 	embed()
-

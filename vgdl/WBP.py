@@ -2,10 +2,10 @@ from IPython import embed
 import itertools
 import numpy as np
 from numpy import zeros
-import pygame    
+import pygame
 from ontology import BASEDIRS
 from core import VGDLSprite, colorDict, sys
-from stateobsnonstatic import StateObsHandlerNonStatic 
+from stateobsnonstatic import StateObsHandlerNonStatic
 from rlenvironmentnonstatic import *
 import argparse
 import random
@@ -21,7 +21,7 @@ import multiprocessing
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, \
-generateSymbolDict, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryFromGame
+NoveltyRule, generateSymbolDict, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryFromGame
 from rlenvironmentnonstatic import createRLInputGame
 
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
@@ -31,7 +31,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, annealing=1):
+	def __init__(self, rle, gameFilename, theory=None, annealing=1):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -49,7 +49,10 @@ class WBP():
 		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
-		self.theory = generateTheoryFromGame(rle, alterGoal=False)
+		if theory == None:
+			self.theory = generateTheoryFromGame(rle, alterGoal=False)
+		else:
+			self.theory=theory
 
 		i=1
 		for k in rle._game.all_objects.keys():
@@ -59,12 +62,12 @@ class WBP():
 
 	def findObjectsInRLE(self, rle, objName):
 		try:
-			objLocs = [rle._rect2pos(element.rect) for element in rle._game.sprite_groups[objName] 
+			objLocs = [rle._rect2pos(element.rect) for element in rle._game.sprite_groups[objName]
 			if element not in rle._game.kill_list]
 		except:
 			return None
 		return objLocs
-	
+
 	def findAvatarInRLE(self, rle):
 		avatar_loc = rle._rect2pos(rle._game.sprite_groups['avatar'][0].rect)
 		return avatar_loc
@@ -156,7 +159,7 @@ class WBP():
 		QNovelty, QReward = [], []
 		visited, rejected = [], []
 		start = Node(self.rle, self, [], None)
-		start.lastState = self.rle
+		start.rle = self.rle
 		visited.append(start)
 		start.eval()
 		QNovelty.append(start)
@@ -170,9 +173,9 @@ class WBP():
 			"""
 			current = self.noveltySelection(QNovelty, QReward)
 			# current = self.rewardSelection(QReward, QNovelty)
-			self.statesEncountered.append(current.lastState._game.getFullState())
+			self.statesEncountered.append(current.rle._game.getFullState())
 
-			# print current.lastState.show()
+			print current.rle.show()
 
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
@@ -182,9 +185,9 @@ class WBP():
 				child = Node(self.rle, self, current.actionSeq+[a], current)
 				child.eval()
 				if child.win:
-					embed()
+					child.rle._isDone()
 					self.solution = child.actionSeq
-					self.statesEncountered.append(child.lastState._game.getFullState())
+					self.statesEncountered.append(child.rle._game.getFullState())
 					return child
 				else:
 					QNovelty.append(child)
@@ -206,7 +209,7 @@ class Node():
 		self.intrinsic_reward = 0
 		self.metabolic_cost = 0
 		self.children = None
-		self.lastState = None
+		# self.lastState = None
 		self.reconstructed=False
 		self.expanded = False
 		self.rolloutDepth = max(rle.outdim)
@@ -367,12 +370,12 @@ class Node():
 			## Get all positions of objects whose type is in killer_types; compute minimum distance
 			## of each to the stypes we have to destroy. Return min over all mins.
 			# embed()
-			objs = self.WBP.findObjectsInRLE(rle, s2)
+			s2_positions = self.WBP.findObjectsInRLE(rle, s2)
 
-			if len(objs)>0:
-				kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
-			else:
-				kill_positions = np.array(objs)
+			# if len(objs)>0:
+			# 	kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
+			# else:
+			# 	kill_positions = np.array(objs)
 
 			# kill_positions = np.concatenate([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types])
 			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
@@ -383,8 +386,9 @@ class Node():
 				# were not yet observed will have their distance penalized twice
 				# as much when none of those objects is an avatar. This implies
 				# that avatar novel interactions will be favored over other ones
+
 				distance = min([manhattanDist(obj, pos)
-					 for pos in kill_positions
+					 for pos in s2_positions
 					 for obj in s1_positions])
 				# print distance
 			except ValueError:
@@ -418,7 +422,7 @@ class Node():
 	def heuristics(self, rle=None, first_alpha=100, second_alpha=1,
 				   time_alpha=10):
 		if rle==None:
-			rle = self.lastState
+			rle = self.rle
 
 		theory = self.WBP.theory
 		heuristicVal = 0
@@ -437,17 +441,17 @@ class Node():
 					self.timeout_val(theory, term, rle)
 
 			elif isinstance(term, NoveltyRule):
-				heuristicVal += self.annealing * self.noveltytermination_val(theory, term, term.termination.s1, term.termination.s2, rle,
+				heuristicVal += self.WBP.annealing * self.noveltytermination_val(theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
 
 		return heuristicVal
 
 	def getToCurrentState(self):
-		if self.parent and self.parent.lastState is not None:
+		if self.parent and self.parent.rle is not None:
 			## try to copy parent lastState. Then take action and store as current lastState.
 			## if that fails, replay from beginning and store as current lastState
 			try:
-				vrle = copy.deepcopy(self.parent.lastState)
+				vrle = copy.deepcopy(self.parent.rle)
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
 					res = vrle.step(a)
@@ -473,10 +477,10 @@ class Node():
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
 
-		self.lastState, self.win = self.getToCurrentState()
+		self.rle, self.win = self.getToCurrentState()
 
-		self.updateObjIDs(self.lastState)
-		self.state = self.WBP.calculateAtoms(self.lastState)
+		self.updateObjIDs(self.rle)
+		self.state = self.WBP.calculateAtoms(self.rle)
 
 		for i in range(1,3):
 			for c in itertools.combinations(self.state, i):
@@ -489,13 +493,13 @@ class Node():
 
 		## Try rollouts for aliens?
 		if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
-			self.rolloutArray = self.rollout(self.lastState)
+			self.rolloutArray = self.rollout(self.rle)
 			print "in rollout"
 
 		self.heuristicVal = self.heuristics()
 
 		# print self.lastState._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost
-		self.intrinsic_reward = self.lastState._game.score + self.heuristicVal + \
+		self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		sum(self.rolloutArray) - self.metabolic_cost
 		# self.intrinsic_reward = 0
 		return self.win
