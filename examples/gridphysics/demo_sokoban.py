@@ -76,27 +76,28 @@ wwwwwwwww
 # www A w
 # wwwwwww
 # """
-        
+
 game = """
 BasicGame frame_rate=30
-    SpriteSet        
+    SpriteSet
         hole   > Immovable color=PINK
         avatar > MovingAvatar color=DARKBLUE
-        box    > Passive  color=LIGHTBLUE              
+        box    > Passive  color=LIGHTBLUE
     LevelMapping
         0 > hole
-        1 > box            
+        1 > box
     InteractionSet
-        avatar wall > stepBack        
+        avatar wall > stepBack
         box avatar  > bounceForward
-        box wall    > undoAll        
+        box wall    > undoAll
         box box     > undoAll
-        box hole    > killSprite        
+        box hole    > killSprite
+        hole avatar > nothing      
     TerminationSet
-        SpriteCounter stype=box    limit=0 win=True 
+        SpriteCounter stype=box    limit=0 win=True
 """
-#Timeout limit=5000 win=False         
+#Timeout limit=5000 win=False
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(game, level)    
+    VGDLParser.playGame(game, level)

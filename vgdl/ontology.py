@@ -1097,7 +1097,7 @@ class SpriteCounter(Termination):
 
     def isDone(self, game):
         if game.numSprites(self.stype) <= self.limit:
-            embed()
+            # embed()
             return True, self.win
         else:
             return False, None
@@ -1161,6 +1161,10 @@ def getColor(sprite):
 # ---------------------------------------------------------------------
 #     Effect types (invoked after an event).
 # ---------------------------------------------------------------------
+def nothing(sprite, partner, game):
+    """ Returns no interaction """
+    return ("nothing", sprite.ID, partner.ID)
+
 def killSprite(sprite, partner, game): ## FLAG
     """ Kill command """
     game.kill_list.append(sprite)
