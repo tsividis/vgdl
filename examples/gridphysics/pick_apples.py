@@ -18,10 +18,10 @@ level = """
 wwwwwwwwwwwwwwww
 w              w
 w A            w
-w           x  w
+w     y     x  w
 w              w
 w  x   w       w
-w              w
+w         y    w
 w              w
 w       x      w
 wwwwwwwwwwwwwwww
@@ -45,18 +45,9 @@ wwwwwwwwwwwwwwww
 game = """
 BasicGame frame_rate=30
     SpriteSet
-        probe > Immovable color=GREEN
-        converter > Immovable 
-            converter1 > color=RED
-            converter2 > color=PURPLE
-        box > Immovable
-            box_a >
-                box1 > color=ORANGE
-                box2 > color=ORANGE
-                box3 > color=LIGHTGREEN
-            box_b >        
-                box4 > color=LIGHTBLUE
-                box5 > color=PINK
+        apple > Immovable color=GREEN
+        orange > Immovable color=ORANGE
+        box > Immovable color=LIGHTGREEN
         goal2 > Immovable color=ORANGE  
         avatar > MovingAvatar color=WHITE
         wall > Immovable color=BLACK
@@ -67,28 +58,27 @@ BasicGame frame_rate=30
         c > box3
         d > box4
         e > box5
-        x > probe
-        z > converter1
-        y > converter2
+        x > apple
+        y > orange
         g > goal2
     InteractionSet
         avatar wall > stepBack
         box avatar > bounceForward
-        box probe > undoAll
+        box apple > undoAll
         box box > undoAll
         box wall > undoAll
-        probe wall > undoAll
-        converter wall > undoAll
-        probe converter > undoAll
-        probe probe > undoAll
-        converter box > bounceForward
-        #avatar probe > changeScore value=.5
-        probe avatar > killSprite
-        avatar converter > undoAll
+        apple wall > undoAll
+        orange wall > undoAll
+        apple orange > undoAll
+        apple apple > undoAll
+        orange box > bounceForward
+        #avatar apple > changeScore value=.5
+        avatar orange > killSprite
+        apple avatar > killSprite
         goal2 avatar > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False          
-        SpriteCounter stype=probe limit=0 win=True
+        SpriteCounter stype=apple limit=0 win=True
 """
 """
 

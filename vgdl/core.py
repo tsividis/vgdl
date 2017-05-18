@@ -1291,6 +1291,7 @@ class VGDLSprite(object):
         self.direction = None
         #TODO: change the choice to be from colors that are not taken?
         self.color = color or self.color or PURPLE#(140, 20, 140)
+        self.colorName = colorDict[str(self.color)]
         # print 'color', self.color
                 
         #self.color = color or self.color or (choice(self.COLOR_DISC), choice(self.COLOR_DISC), choice(self.COLOR_DISC))

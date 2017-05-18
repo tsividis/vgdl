@@ -70,7 +70,6 @@ def observe(rle, obsSteps):
 		spriteInduction(rle._game, step=3)
 	return
 
-
 def planActLoop(rleCreateFunc, filename, max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, playback=False):
 	
 	rle = rleCreateFunc(OBSERVATION_GLOBAL)

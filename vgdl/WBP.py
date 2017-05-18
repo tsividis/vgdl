@@ -115,7 +115,7 @@ class WBP():
 		lst.append(ind)
 		if not self.vecSize:
 			self.vecSize = len(lst)
-			print "Vector is length {}".format(self.vecSize)
+			# print "Vector is length {}".format(self.vecSize)
 		return set(lst)
 
 	def compareDicts(self, d1,d2):
@@ -176,7 +176,7 @@ class WBP():
 			current = self.rewardSelection(QReward, QNovelty)
 			self.statesEncountered.append(current.rle._game.getFullState())
 
-			print current.rle.show(indent=True)
+			# print current.rle.show(indent=True)
 
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
@@ -298,8 +298,8 @@ class Node():
 			return val
 		else:
 			## Normal case
-			n_sprites = len([0 for sprite in self.WBP.findObjectsInRLE(rle, stype)])
-			distance_to_goal = abs(n_sprites - limit)
+			n_stypes = len([0 for sprite in self.WBP.findObjectsInRLE(rle, stype)])
+			distance_to_goal = abs(n_stypes - limit)
 
 		val += mult * first_alpha * distance_to_goal
 		# print val
@@ -316,24 +316,26 @@ class Node():
 
 			# kill_positions = np.concatenate([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types])
 			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
-			n_sprites = len(stype_positions)
 			try:
 				# A consequence of the two-way generic interactions in the
 				# theory is that minimum-distance object pairs whose interactions
 				# were not yet observed will have their distance penalized twice
 				# as much when none of those objects is an avatar. This implies
 				# that avatar novel interactions will be favored over other ones
-				distance = min([manhattanDist(obj, pos)
+				possiblePairList = [manhattanDist(obj, pos)
 					 for pos in kill_positions
-					 for obj in stype_positions])
+					 for obj in stype_positions]
+
+				distance = min(possiblePairList)
 				# print distance
 			except ValueError:
 				# embed()
 				distance = 0
-
-			# Normalize by number of sprites, enforcing a prior that encourages
-			# goals that involve killing fewer objects
-			if n_sprites>0:
+			
+			if possiblePairList:
+				n_sprites = len(possiblePairList)
+				# Normalize by number of sprites, enforcing a prior that encourages
+				# goals that involve killing fewer objects
 				val += float(mult * second_alpha * distance)/n_sprites
 
 
@@ -360,26 +362,11 @@ class Node():
 			compute_second_order = False
 			mult = 1
 
-		# Get all types that kill or transform stype
-		# killer_types = [
-		# 	inter.slot2 for inter in theory.interactionSet
-		# 	if ((inter.interaction == 'killSprite' or
-		# 		 inter.interaction == 'transformTo')
-		# 		and inter.slot1 == stype)]
-
-		# print val
 		if compute_second_order:
 			## Get all positions of objects whose type is in killer_types; compute minimum distance
 			## of each to the stypes we have to destroy. Return min over all mins.
 			# embed()
 			s2_positions = self.WBP.findObjectsInRLE(rle, s2)
-
-			# if len(objs)>0:
-			# 	kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
-			# else:
-			# 	kill_positions = np.array(objs)
-
-			# kill_positions = np.concatenate([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types])
 			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
 			n_sprites = len(s1_positions)
 			try:
@@ -388,10 +375,11 @@ class Node():
 				# were not yet observed will have their distance penalized twice
 				# as much when none of those objects is an avatar. This implies
 				# that avatar novel interactions will be favored over other ones
-				distance = min([manhattanDist(obj, pos)
+				possiblePairList = [manhattanDist(obj, pos)
 					 for pos in s2_positions
 					 for obj in s1_positions
-					 if manhattanDist(obj, pos) != 0])
+					 if manhattanDist(obj, pos) != 0]
+				distance = min(possiblePairList)
 					 # This is a trick to avoid getting distance 0 for objects
 					 # of same type. If the list turns out to be empty, it will
 					 # raise an error and set the distance to 0
@@ -400,11 +388,10 @@ class Node():
 				# embed()
 				distance = 0
 
-			# Normalize by number of sprites, enforcing a prior that encourages
-			# goals that involve killing fewer objects
-			if n_sprites>0:
-				# print distance
-				# print n_sprites
+			if possiblePairList:
+				n_sprites = len(possiblePairList)
+				# Normalize by number of sprites, enforcing a prior that encourages
+				# goals that involve killing fewer objects
 				val += float(mult * second_alpha * distance)/n_sprites
 
 		return val
@@ -479,7 +466,7 @@ class Node():
 				embed()
 		else:
 			self.reconstructed=True
-			print "copy failed; replaying from top"
+			# print "copy failed; replaying from top"
 			vrle = copy.deepcopy(self.rle)
 			terminal, win = vrle._isDone()
 			i=0

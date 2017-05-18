@@ -7,14 +7,14 @@
 # wwwwwwww
 # """
 
-# level = """
-# wwwwwwwwwwwwww
-# w    bbb     w
-# w a  b       w
-# w    b   x   w
-# w    bbbA    w
-# wwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwww
+w    bbb     w
+w a  b    a  w
+w    b       w
+w    bbbA   xw
+wwwwwwwwwwwwww
+"""
 
 # level = """
 # wwwwwwwwwwwwww
@@ -54,23 +54,23 @@
 # wwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                 b    b           w
-w              b  b A  b  a   a    w
-w   a             wwwwww           w
-w           a                  x   w
-w                           b      w
-w                 bbbb      b      w
-w     x                     b      w
-w                      a    ww  wwww
-wbbbbbbb     b                     w
-w      b                       a   w
-w  a   b              a            w
-w      b                           w
-w      b   a              b        w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                 b    b           w
+# w              b  b A  b  a   a    w
+# w   a             wwwwww           w
+# w           a                  x   w
+# w                           b      w
+# w                 bbbb      b      w
+# w     x                     b      w
+# w                      a    ww  wwww
+# wbbbbbbb     b                     w
+# w      b                       a   w
+# w  a   b              a            w
+# w      b                           w
+# w      b   a              b        w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
         
 game = """
 BasicGame frame_rate=30
@@ -82,9 +82,8 @@ BasicGame frame_rate=30
         mover > VGDLSprite
             rand > RandomNPC cooldown=0
                 rand1 > color=LIGHTORANGE
-                rand2 > color=BROWN
-        chaser > Chaser color=BLUE stype=box1 cooldown=10
-        wall > Immovable
+        chaser > Chaser color=BLUE stype=box1 cooldown=4
+        wall > Immovable color=BLACK
         missile > Missile
             missile1 > color=YELLOW orientation=RIGHT
             missile2 > color=PINK orientation=RIGHT
@@ -95,14 +94,16 @@ BasicGame frame_rate=30
         b > box2
         x > chaser
         y > rand1
-        z > rand2
         1 > missile1
         2 > missile2
         g > goal
     InteractionSet
         avatar wall > stepBack 
         mover wall > stepBack
+        box wall > stepBack
         box1 avatar > bounceForward
+        box1 box2 > stepBack
+        avatar chaser > nothing
         #box2 avatar > changeScore value=-2
         box2 avatar > killSprite
         avatar rand > killSprite
@@ -119,7 +120,7 @@ BasicGame frame_rate=30
         mover box > stepBack
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False          
-        SpriteCounter stype=box2 limit=0 win=True
+        SpriteCounter stype=box1 limit=0 win=True
 """
 """
 show agent killing a moving item.

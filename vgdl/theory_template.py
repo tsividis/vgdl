@@ -334,8 +334,6 @@ class Theory(object):
 		# so timestep.events[0] is actually the first as-of-yet unexplained event.
 		# Generate theories based on hypothetical theories (aka, currTheories)
 		else:
-			# print " in recursive case"
-			# embed()
 			for theory in currTheories:
 				newTheory = theory.explainEvent(timestep.events[0], fullTimestep, override=override)
 				theories.extend(newTheory)
@@ -345,12 +343,14 @@ class Theory(object):
 			# print "in base case of explainTimeStep"
 			for t in theories:
 				t.depth = self.depth+1
-			relevantEvents = [t for t in fullTimestep.events if 'killSprite' in t or 'transformTo' in t]
-			rle = fullTimestep.rle
-			for event in relevantEvents:
-				if len([o for o in rle._game.sprite_groups[event[1]] if o not in rle._game.kill_list]) == 0 and not rle._isDone()[0]:
-					self.falsified.append(SpriteCounterRule(event[1], 0, True))
-					self.falsified.append(SpriteCounterRule(event[1], 0, False))
+			# ## Falsify hypotheses
+			# relevantEvents = [t for t in fullTimestep.events if 'killSprite' in t or 'transformTo' in t]
+			# rle = fullTimestep.rle
+			# for event in relevantEvents:
+			# 	candidateSpriteType = [o for o in rle._game.sprite_groups if len(rle._game.sprite_groups[o])>0 and rle._game.sprite_groups[o][0].colorName == event[1]][0]
+			# 	if len([o for o in rle._game.sprite_groups[candidateSpriteType] if o not in rle._game.kill_list]) == 0 and not rle._isDone()[0]:
+			# 		self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, True))
+			# 		self.falsified.append(SpriteCounterRule(self.colorToSpriteMapper(event[1]), 0, False))
 
 
 			return theories
@@ -358,7 +358,6 @@ class Theory(object):
 			# Create new timestep that consist of remaining unexpplained eventsl pass to the same function
 			# print "in recursive case"
 			updatedTimeStep = TimeStep(timestep.agentAction, timestep.agentState, timestep.events[1:], timestep.gameState, timestep.rle)
-			# embed()
 			return self.explainTimeStep(updatedTimeStep, fullTimestep, currTheories=theories, override=override)
 
 	def explainEvent(self, event, timestep, override=False):
@@ -391,8 +390,6 @@ class Theory(object):
 			elif failCase == 4:
 				theories.extend(self.addRules(event))
 
-		# print "extended theories"
-		# embed()
 		return theories
 
 	def colorToClassMapper(self,color):
@@ -447,8 +444,6 @@ class Theory(object):
 					if not spriteCounterRule in self.terminationSet:
 						self.terminationSet.append(spriteCounterRule)
 
-		# print [t.asTuple() for t in self.terminationSet]
-		# embed()
 		time = result["time"]
 		timeoutRule = TimeoutRule(limit=time, win=win)
 		if not timeoutRule in self.terminationSet:
@@ -513,9 +508,6 @@ class Theory(object):
 		"""
 		# print "events:", timestep.events
 		interpretations = [self.interpret(event) for event in timestep.events]
-		# print "checking events"
-		# print [self.checkEvents(i, timestep) for i in interpretations]
-		# embed()
 		return all([self.checkEvents(i, timestep) for i in interpretations])
 
 
@@ -596,14 +588,10 @@ class Theory(object):
 					# Otherwise, make sure predonditions are met.
 					else:
 						preconditions_are_met = all([p.check(timestep.agentState) for p in rule.preconditions])
-						# if not preconditions_are_met:
-							# print "preconditions aren't met"
-							# embed()
+
 						return preconditions_are_met
 
 		# If we've checked everything and found no matching rule or rule+precondition or couldn't even interpret the event, return False.
-		# print "found no matching rule or precondition"
-		# embed()
 		return False
 
 
@@ -666,8 +654,7 @@ class Theory(object):
 				## Remove any relevant rules that are currently in the interaction set that are generic rules.
 				rulesToRemove = [rule for rule in self.interactionSet if
 					((class1==rule.slot1 and class2==rule.slot2) or (class1==rule.slot2 and class2==rule.slot1)) and rule.generic]
-				if rulesToRemove:
-					embed()
+
 				# terminationsToRemove = [rule for rule in self.terminationSet if (class1 in rule.asTuple() or class2 in rule.asTuple()) \
 				# and rule.ruleType=='SpriteCounterRule' and rule.generic]
 
@@ -906,22 +893,39 @@ class Theory(object):
 
 		return (addedRule or addedClass)
 
-	def updateTerminations(self):
+	def updateTerminations(self, event=False):
 		self.terminationSet = []
+
+		if event:
+			relevantEvents = [t for t in event['effectList'] if 'killSprite' in t or 'transformTo' in t]
+			rle = event['rle']
+			for event in relevantEvents:
+				candidateSpriteType = [o for o in rle._game.sprite_groups if len(rle._game.sprite_groups[o])>0 and rle._game.sprite_groups[o][0].colorName == event[1]][0]
+				if len([o for o in rle._game.sprite_groups[candidateSpriteType] if o not in rle._game.kill_list]) == 0 and not rle._isDone()[0]:
+					self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, True))
+					self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, False))
+				elif (rle._isDone()[0] and not rle._isDone()[1]):
+					self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, True))
+
 		for rule in self.interactionSet:
 			if 'killSprite' in rule.asTuple() or 'transformTo' in rule.asTuple():
 				if rule.generic:
 					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
 				else:
+					# embed()
 					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
-				if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2) and
-							 (t.ruleType=="NoveltyRule"))
-						for t in self.terminationSet]) and
-					all([terminationRule!=t for t in self.terminationSet]) and
-					all([terminationRule!=t for t in self.falsified])):
-					self.terminationSet.append(terminationRule)
+				if terminationRule.ruleType=='NoveltyRule':
+					if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
+							for t in self.terminationSet]) and
+						all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
+						all([not terminationRule.__eq__(t) for t in self.falsified])):
+						self.terminationSet.append(terminationRule)
+				elif terminationRule.ruleType=='SpriteCounterRule':
+					if (all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
+						all([not terminationRule.__eq__(t) for t in self.falsified])):
+						self.terminationSet.append(terminationRule)					
 
-		terinationRule =  SpriteCounterRule("avatar", 0, False)
+		terminationRule =  SpriteCounterRule("avatar", 0, False)
 		self.terminationSet.append(terminationRule)
 
 		return
@@ -953,10 +957,6 @@ class Theory(object):
 		If an event involves c1 and c2, returns rules that use c1 and c2 in those slots.
 		"""
 		relevantRules = []
-
-		# if event==('killSprite', 'DARKBLUE', 'BROWN'):
-		# 	print "avatar died"
-		# 	embed()
 
 		# If both classes exist (whether predicate already exists doesn't matter)
 		obj1 = self.spriteObjects[event[1]]
@@ -1553,16 +1553,12 @@ class Game(object):
 			# Explain current timestep
 			newTheories = theory.explainTimeStep(timesteps[ts_index], timesteps[ts_index], override=override)
 
-			# print "explained timeStep"
-			# embed()
 			self.nodes_generated += len(newTheories)
 			if verbose:
 				print "Possible new theories: ", len(newTheories)
 				for theory in newTheories:
 					theory.display()
 
-			# print "in DFS"
-			# embed()
 
 			# If at the end of the timesteps list, add new theories to finalHypotheses
 			if ts_index+1 == len(timesteps): # Need to add one, because you will create a theory of depth one greater than the length of the timesteps
@@ -1577,12 +1573,6 @@ class Game(object):
 						print "newTheory didn't explain all events"
 						print "theory:"
 						newTheory.display()
-						# for t in timesteps:
-						# 	print newTheory.likelihood(t)
-						# 	print t.agentState
-						# 	print t.events
-						# 	print ""
-						# embed()
 						self.nodes_eliminated +=1
 
 				if verbose:
@@ -1769,9 +1759,7 @@ class Game(object):
 		if len(self.hypothesisSpace)==0:
 			print "no hypotheses"
 			embed()
-		# else:
-		# 	for t in self.hypothesisSpace:
-		# 		t.updateTerminations()
+
 
 		return self.hypothesisSpace
 
@@ -2433,13 +2421,14 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					mappedState[r][c] = "G"
 				else:
 					spriteIndex = int(round(math.log(state[r][c],2)))-1
-					spriteType = sorted(_obstypes.keys())[::-1][spriteIndex]
-					spriteColor = colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]
-					try:
+					try:					
+						spriteType = sorted(_obstypes.keys())[::-1][spriteIndex]
+						spriteColor = colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]
 						mappedState[r][c] = symbolDict[spriteColor]
 					except:
-						pass
-						# print "Goal is empty square"
+						print "Goal is empty square"
+						embed()
+						# pass
 
 			try:
 				if mappedState[r][c] == " " and goalLoc == (r,c):

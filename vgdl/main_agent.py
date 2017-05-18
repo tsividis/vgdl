@@ -8,7 +8,7 @@ from theory_template import TimeStep, Precondition, InteractionRule, Termination
 SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, generateTheoryFromGame
 import WBP
 import importlib
-from metaplanner import translateEvents
+from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 
 
@@ -47,7 +47,7 @@ class Agent:
 
 	def initializeHypotheses(self, allObjects, learnSprites=True):
 		if learnSprites:
-			self.observe(10)
+			observe(self.rle, 1)
 			spriteTypeHypothesis = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects)
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 			initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
@@ -74,21 +74,25 @@ class Agent:
 			newHypotheses.append(gameObject.addNewObjectsToTheory(hypothesis, spriteTypeHypothesis))
 		self.hypotheses = newHypotheses
 
-	def observe(self, obsSteps):
-		print "observing"
-		for i in range(obsSteps):
-			spriteInduction(self.rle._game, step=1)
-			spriteInduction(self.rle._game, step=2)
-			self.rle.step((0,0))
-			spriteInduction(self.rle._game, step=3)
-		return
+
+
+	def playMultipleEpisodes(self, num_episodes):
+		i=0
+		gameObject = None
+		wins, scores = [], []
+		while i<num_episodes:
+			gameObject, win, score = self.playEpisode(gameObject)
+			wins.append(win)
+			scores.append(score)
+			i+=1
+		print "Won {} out of {} episodes.".format(sum(wins), i)
 
 	def playEpisode(self, gameObject):
 		## Initialize external environment
 		self.initializeEnvironment()
 
 		self.all_objects= self.rle._game.getObjects()
-		ended, won = self.rle._isDone()
+		ended, win = self.rle._isDone()
 		annealing = 1
 		## Start storing encountered states.
 		self.statesEncountered.append(self.rle._game.getFullState())
@@ -122,16 +126,16 @@ class Agent:
 					del self.hypotheses[0]
 					self.hypotheses.extend(hypotheses)
 					break
-				ended, won = self.rle._isDone()
+				ended, win = self.rle._isDone()
 				if ended:
 					break
-			print("Did a plan loop")
+			# print("Did a plan loop")
 
 			annealing *= self.annealingFactor
-			ended, won = self.rle._isDone()
-
-
-		return
+			ended, win = self.rle._isDone()
+		score = self.rle._game.score
+		
+		return gameObject, win, score
 
 	def executeStep(self, action, hypothesis):
 
@@ -190,8 +194,11 @@ class Agent:
 				embed()
 
 
-		[t.updateTerminations() for t in hypotheses]
-		# hypotheses[0].display()
+		if event['effectList']:
+			[t.updateTerminations(event) for t in hypotheses]
+			if theory_change_flag:
+				hypotheses[0].display()
+
 		print self.rle.show()
 
 		return hypotheses, theory_change_flag
@@ -199,9 +206,9 @@ class Agent:
 
 
 if __name__ == "__main__":
-	filename = "examples.gridphysics.demo_sokoban"
+	filename = "examples.gridphysics.demo_helper"
 	agent = Agent(filename)
 
 	##then pass this down for multiple episodes
 	gameObject = None
-	agent.playEpisode(gameObject)
+	agent.playMultipleEpisodes(5)
