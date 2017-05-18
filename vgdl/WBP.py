@@ -175,7 +175,7 @@ class WBP():
 			# current = self.rewardSelection(QReward, QNovelty)
 			self.statesEncountered.append(current.rle._game.getFullState())
 
-			print current.rle.show()
+			# print current.rle.show()
 
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
@@ -279,7 +279,8 @@ class Node():
 		killer_types = [
 			inter.slot2 for inter in theory.interactionSet
 			if ((inter.interaction == 'killSprite' or
-				 inter.interaction == 'transformTo')
+				 inter.interaction == 'transformTo') and
+				 not inter.generic
 				and inter.slot1 == stype)]
 
 		# Get attributes from terminationSet
@@ -332,7 +333,7 @@ class Node():
 			# Normalize by number of sprites, enforcing a prior that encourages
 			# goals that involve killing fewer objects
 			if n_sprites>0:
-				val += (mult * second_alpha * distance)/n_sprites
+				val += float(mult * second_alpha * distance)/n_sprites
 
 
 		return val
@@ -398,7 +399,7 @@ class Node():
 			# Normalize by number of sprites, enforcing a prior that encourages
 			# goals that involve killing fewer objects
 			if n_sprites>0:
-				val += (mult * second_alpha * distance)/n_sprites
+				val += float(mult * second_alpha * distance)/n_sprites
 
 		return val
 
@@ -429,20 +430,30 @@ class Node():
 
 		for term in theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
-				heuristicVal += self.spritecounter_val(theory, term, term.termination.stype, rle,
+				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
+				# print("spritecounter_val for stype {} is equal to {}".format(
+				# 	term.termination.stype, spritecounter_val))
+				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
-				heuristicVal += self.multispritecounter_val(theory, term, rle,
+				multispritecounter_val = self.multispritecounter_val(theory, term, rle,
 						first_alpha=first_alpha, second_alpha=second_alpha)
+				heuristicVal += multispritecounter_val
 
 			elif isinstance(term, TimeoutRule):
-				heuristicVal += time_alpha * \
+				timeout_val = time_alpha * \
 					self.timeout_val(theory, term, rle)
+				heuristicVal += timeout_val
 
 			elif isinstance(term, NoveltyRule):
-				heuristicVal += self.WBP.annealing * self.noveltytermination_val(theory, term, term.termination.s1, term.termination.s2, rle,
+				noveltytermination_val = self.WBP.annealing * self.noveltytermination_val(
+					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
+				# print("noveltytermination_val for s1 {} and s2 {} is equal to {}".format(
+				# 	term.termination.s1, term.termination.s2, noveltytermination_val))
+				heuristicVal += noveltytermination_val
+
 
 		return heuristicVal
 

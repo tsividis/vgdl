@@ -104,8 +104,8 @@ class Agent:
 		while not ended:
 			## initialize one or many VRLEs according to hypothesis-selection method
 			theoryRLEs = self.VrleInitPhase()
-			print("theory being passed to planner")
-			self.hypotheses[0].display()
+			# print("theory being passed to planner")
+			# self.hypotheses[0].display()
 
 
 			p = WBP.WBP(theoryRLEs[0], self.gameFilename,
@@ -184,8 +184,8 @@ class Agent:
 
 
 		[t.updateTerminations() for t in hypotheses]
-		hypotheses[0].display()
-		print self.rle.show()
+		# hypotheses[0].display()
+		# print self.rle.show()
 
 		return hypotheses, theory_change_flag
 
@@ -198,4 +198,3 @@ if __name__ == "__main__":
 	##then pass this down for multiple episodes
 	gameObject = None
 	agent.playEpisode(gameObject)
-	embed()

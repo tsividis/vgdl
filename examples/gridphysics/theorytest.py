@@ -2,19 +2,19 @@ level="""
 0000000000000000
 0              0
 0              0
-0           A  0
+0           2  0
 0              0
 0      0       0
 0              0
 0              0
-0              0
+0  A    2      0
 0000000000000000
 """
 game = """
 BasicGame
 	SpriteSet
 		c3 > ResourcePack color=BLACK
-		c2 > Resource color=GREEN
+		c2 > ResourcePack color=GREEN
 		avatar > MovingAvatar color=WHITE
 	InteractionSet
 		c2 avatar > killSprite
