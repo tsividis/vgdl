@@ -129,7 +129,7 @@ class Agent:
 				ended, win = self.rle._isDone()
 				if ended:
 					break
-			# print("Did a plan loop")
+			self.hypotheses[0].display()
 
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
@@ -206,7 +206,7 @@ class Agent:
 
 
 if __name__ == "__main__":
-	filename = "examples.gridphysics.chase"
+	filename = "examples.gridphysics.butterflies"
 	agent = Agent(filename)
 
 	##then pass this down for multiple episodes

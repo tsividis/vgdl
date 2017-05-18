@@ -276,7 +276,7 @@ class Node():
 		if term.termination.win:
 			mult = -1
 		else:
-			compute_second_order = False
+			compute_second_order = True
 			mult = 1
 
 		# Get all types that kill or transform stype
@@ -428,8 +428,8 @@ class Node():
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				# print("spritecounter_val for {} is equal to {}".format(
-				# 	term.termination.stype, spritecounter_val))
+				print("spritecounter_val for {} is equal to {}".format(
+					term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
@@ -446,8 +446,8 @@ class Node():
 				noveltytermination_val = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				# print("noveltytermination_val for {} and {} is equal to {}".format(
-				# 	term.termination.s1, term.termination.s2, noveltytermination_val))
+				print("noveltytermination_val for {} and {} is equal to {}".format(
+					term.termination.s1, term.termination.s2, noveltytermination_val))
 				heuristicVal += self.WBP.annealing * noveltytermination_val
 
 
