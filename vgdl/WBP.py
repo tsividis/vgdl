@@ -171,8 +171,8 @@ class WBP():
 			if i%2==0:
 			else:
 			"""
-			current = self.noveltySelection(QNovelty, QReward)
-			# current = self.rewardSelection(QReward, QNovelty)
+			# current = self.noveltySelection(QNovelty, QReward)
+			current = self.rewardSelection(QReward, QNovelty)
 			self.statesEncountered.append(current.rle._game.getFullState())
 
 			# print current.rle.show()

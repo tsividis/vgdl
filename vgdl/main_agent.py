@@ -123,6 +123,8 @@ class Agent:
 					self.hypotheses.extend(hypotheses)
 					break
 			annealing *= self.annealingFactor
+			ended, won = self.rle._isDone()
+
 
 		return
 
@@ -185,7 +187,7 @@ class Agent:
 
 		[t.updateTerminations() for t in hypotheses]
 		# hypotheses[0].display()
-		# print self.rle.show()
+		print self.rle.show()
 
 		return hypotheses, theory_change_flag
 

@@ -187,7 +187,7 @@ class TimeoutRule(TerminationRule):
 
 class NoveltyRule(TerminationRule):
 	""" Game ends when the number of sprites of type 'stype' hits 'limit' (or below). """
-	def __init__(self,s1, s2,win):
+	def __init__(self,s1,s2,win):
 		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
 		self.termination = NoveltyTermination(s1=s1, s2=s2, win=win)
 		self.ruleType = "NoveltyRule"
@@ -357,7 +357,7 @@ class Theory(object):
 		else:													# Recursive Case
 			# Create new timestep that consist of remaining unexpplained eventsl pass to the same function
 			# print "in recursive case"
-			updatedTimeStep = TimeStep(timestep.agentAction, timestep.agentState, timestep.events[1:], timestep.gameState)
+			updatedTimeStep = TimeStep(timestep.agentAction, timestep.agentState, timestep.events[1:], timestep.gameState, timestep.rle)
 			# embed()
 			return self.explainTimeStep(updatedTimeStep, fullTimestep, currTheories=theories, override=override)
 
