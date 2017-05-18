@@ -10,7 +10,7 @@ import operator
 import time, math
 from rlenvironmentnonstatic import createMindEnv
 
-AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, 
+AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
@@ -664,15 +664,18 @@ class Theory(object):
 				class1, class2 = assignment[0], assignment[1]
 
 				## Remove any relevant rules that are currently in the interaction set that are generic rules.
-				rulesToRemove = [rule for rule in self.interactionSet if class1 in rule.asTuple() and class2 in rule.asTuple() and rule.generic]
+				rulesToRemove = [rule for rule in self.interactionSet if
+					((class1==rule.slot1 and class2==rule.slot2) or (class1==rule.slot2 and class2==rule.slot1)) and rule.generic]
+				if rulesToRemove:
+					embed()
 				# terminationsToRemove = [rule for rule in self.terminationSet if (class1 in rule.asTuple() or class2 in rule.asTuple()) \
 				# and rule.ruleType=='SpriteCounterRule' and rule.generic]
 
 				self.interactionSet = [rule for rule in self.interactionSet if rule not in rulesToRemove]
 				# self.terminationSet = [rule for rule in self.terminationSet if rule not in terminationsToRemove]
-				
+
 				interaction = InteractionRule(event[0], assignment[0], assignment[1], args) #This isn't strictly necessary, but follows createChild requirements.
-				
+
 				classAssignments = [(assignment[0], obj1), (assignment[1], obj2)]
 				newTheory = self.createChild([interaction, classAssignments], override)
 				# Checks and only adds to newTheories if the created theory was actually different.
@@ -911,7 +914,11 @@ class Theory(object):
 					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
 				else:
 					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
-				if all([terminationRule!=t for t in self.terminationSet]) and all([terminationRule!=t for t in self.falsified]):
+				if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2) and
+							 (t.ruleType=="NoveltyRule"))
+						for t in self.terminationSet]) and
+					all([terminationRule!=t for t in self.terminationSet]) and
+					all([terminationRule!=t for t in self.falsified])):
 					self.terminationSet.append(terminationRule)
 
 		terinationRule =  SpriteCounterRule("avatar", 0, False)
@@ -1633,7 +1640,7 @@ class Game(object):
 		# embed()
 		allSprites = [avatar]+nonAvatars
 		eos = [o for o in T.spriteSet if o.color=='ENDOFSCREEN'][0]
-		
+
 
 		# print "buildgenerictheory"
 		# embed()
@@ -1679,7 +1686,7 @@ class Game(object):
 
 		rule =  SpriteCounterRule("avatar", 0, False)
 		T.terminationSet.append(rule)
-		
+
 		# rule =  SpriteCounterRule("goal", 0, True)
 		# T.terminationSet.append(rule)
 
@@ -1713,7 +1720,7 @@ class Game(object):
 				i+=1
 		return theory
 
-		## decide how we're falsifying termination conditions, and tracking ones that weren't falsified.				
+		## decide how we're falsifying termination conditions, and tracking ones that weren't falsified.
 
 	def runInduction(self, spriteSample, trace, maxNumTheories, verbose=False, existingTheories=False):
 		# spriteSample: a particular assignment of sprite types. You can decide how you get this when you generate the sample, in getToSubgoal

@@ -33,7 +33,7 @@ class Agent:
 		## World in agent's head given 'hypothesis', including object goal
 		gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
 				 "./examples/gridphysics/theorytest.py")
-		Vrle = createMindEnv(gameString, levelString, output=True)
+		Vrle = createMindEnv(gameString, levelString, output=False)
 		# Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
 		return Vrle
 
@@ -122,6 +122,11 @@ class Agent:
 					del self.hypotheses[0]
 					self.hypotheses.extend(hypotheses)
 					break
+				ended, won = self.rle._isDone()
+				if ended:
+					break
+			print("Did a plan loop")
+
 			annealing *= self.annealingFactor
 			ended, won = self.rle._isDone()
 
@@ -194,7 +199,7 @@ class Agent:
 
 
 if __name__ == "__main__":
-	filename = "examples.gridphysics.pick_apples"
+	filename = "examples.gridphysics.demo_sokoban"
 	agent = Agent(filename)
 
 	##then pass this down for multiple episodes

@@ -100,7 +100,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self.symbolDict = inverseMapping
         return
 
-    def show(self, showArrays=False):
+    def show(self, indent=False, showArrays=False):
         """
         symbolDict = a dict mapping each sprite name to its symbol.
         If there's no sprite overlap, then returns a string. Else returns numpy array.
@@ -109,6 +109,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         spriteOverlap = False # represents whether 2 sprites are on same location
         state = np.reshape(self._getSensors(), self.outdim)
         for i in range(self.outdim[0]):
+            if indent:
+                gameString += "     "
             for j in range(self.outdim[1]):
                 if state[i][j] == 0:
                     gameString += " "

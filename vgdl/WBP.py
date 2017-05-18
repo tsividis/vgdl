@@ -31,7 +31,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, annealing=1):
+	def __init__(self, rle, gameFilename, theory=None, annealing=1, max_nodes=1000):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -49,6 +49,7 @@ class WBP():
 		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
+		self.max_nodes = max_nodes
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
@@ -166,7 +167,7 @@ class WBP():
 		QReward.append(start)
 		i=0
 
-		while len(QNovelty)>0 or len(QReward)>0:
+		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
 			"""
 			if i%2==0:
 			else:
@@ -175,7 +176,7 @@ class WBP():
 			current = self.rewardSelection(QReward, QNovelty)
 			self.statesEncountered.append(current.rle._game.getFullState())
 
-			# print current.rle.show()
+			print current.rle.show(indent=True)
 
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
@@ -387,10 +388,13 @@ class Node():
 				# were not yet observed will have their distance penalized twice
 				# as much when none of those objects is an avatar. This implies
 				# that avatar novel interactions will be favored over other ones
-
 				distance = min([manhattanDist(obj, pos)
 					 for pos in s2_positions
-					 for obj in s1_positions])
+					 for obj in s1_positions
+					 if manhattanDist(obj, pos) != 0])
+					 # This is a trick to avoid getting distance 0 for objects
+					 # of same type. If the list turns out to be empty, it will
+					 # raise an error and set the distance to 0
 				# print distance
 			except ValueError:
 				# embed()
@@ -399,6 +403,8 @@ class Node():
 			# Normalize by number of sprites, enforcing a prior that encourages
 			# goals that involve killing fewer objects
 			if n_sprites>0:
+				# print distance
+				# print n_sprites
 				val += float(mult * second_alpha * distance)/n_sprites
 
 		return val
@@ -432,7 +438,7 @@ class Node():
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				# print("spritecounter_val for stype {} is equal to {}".format(
+				# print("spritecounter_val for {} is equal to {}".format(
 				# 	term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
@@ -447,12 +453,12 @@ class Node():
 				heuristicVal += timeout_val
 
 			elif isinstance(term, NoveltyRule):
-				noveltytermination_val = self.WBP.annealing * self.noveltytermination_val(
+				noveltytermination_val = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				# print("noveltytermination_val for s1 {} and s2 {} is equal to {}".format(
+				# print("noveltytermination_val for {} and {} is equal to {}".format(
 				# 	term.termination.s1, term.termination.s2, noveltytermination_val))
-				heuristicVal += noveltytermination_val
+				heuristicVal += self.WBP.annealing * noveltytermination_val
 
 
 		return heuristicVal
