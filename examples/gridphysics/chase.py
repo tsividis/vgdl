@@ -20,6 +20,7 @@ BasicGame
         avatar wall    > stepBack
         avatar  angry  > killSprite
         carcass scared > killSprite
+        carcass avatar > nothing
         scared avatar  > transformTo stype=carcass
         scared carcass > transformTo stype=angry
 

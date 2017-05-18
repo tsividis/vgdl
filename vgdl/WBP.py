@@ -147,7 +147,10 @@ class WBP():
 			# print "Removed filter"
 			# embed()
 		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
-		current = bestNodes.pop(0)
+		try:
+			current = bestNodes.pop(0)
+		except:
+			import ipdb; ipdb.set_trace()
 		QReward.remove(current)
 		try:
 			QNovelty.remove(current)
@@ -331,7 +334,7 @@ class Node():
 			except ValueError:
 				# embed()
 				distance = 0
-			
+
 			if possiblePairList:
 				n_sprites = len(possiblePairList)
 				# Normalize by number of sprites, enforcing a prior that encourages

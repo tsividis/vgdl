@@ -3,7 +3,7 @@ from util import *
 from core import colorDict, VGDLParser, makeVideo, sys
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, \
 OrientedSprite, Missile, initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, \
-spriteInduction, selectObjectGoal
+spriteInduction, selectObjectGoal, distributionInitSetup
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
 SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, generateTheoryFromGame
 import WBP
@@ -134,7 +134,7 @@ class Agent:
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
 		score = self.rle._game.score
-		
+
 		return gameObject, win, score
 
 	def executeStep(self, action, hypothesis):
@@ -206,7 +206,7 @@ class Agent:
 
 
 if __name__ == "__main__":
-	filename = "examples.gridphysics.demo_helper"
+	filename = "examples.gridphysics.chase"
 	agent = Agent(filename)
 
 	##then pass this down for multiple episodes

@@ -916,14 +916,14 @@ class Theory(object):
 					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
 				if terminationRule.ruleType=='NoveltyRule':
 					if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
-							for t in self.terminationSet]) and
+							for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
 						all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 						all([not terminationRule.__eq__(t) for t in self.falsified])):
 						self.terminationSet.append(terminationRule)
 				elif terminationRule.ruleType=='SpriteCounterRule':
 					if (all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 						all([not terminationRule.__eq__(t) for t in self.falsified])):
-						self.terminationSet.append(terminationRule)					
+						self.terminationSet.append(terminationRule)
 
 		terminationRule =  SpriteCounterRule("avatar", 0, False)
 		self.terminationSet.append(terminationRule)
@@ -2421,7 +2421,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					mappedState[r][c] = "G"
 				else:
 					spriteIndex = int(round(math.log(state[r][c],2)))-1
-					try:					
+					try:
 						spriteType = sorted(_obstypes.keys())[::-1][spriteIndex]
 						spriteColor = colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]
 						mappedState[r][c] = symbolDict[spriteColor]
