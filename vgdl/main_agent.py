@@ -206,7 +206,7 @@ class Agent:
 
 
 if __name__ == "__main__":
-	filename = "examples.gridphysics.demo_helper"
+	filename = "examples.gridphysics.chaser"
 	agent = Agent(filename)
 
 	##then pass this down for multiple episodes

@@ -1131,19 +1131,6 @@ class NoveltyTermination(Termination):
                                     return True, self.win
         return False, None
 
-# class NoveltyTermination(Termination):
-#     def __init__(self, stype=None, win=True):
-#         self.stype = stype
-#         self.win = win
-#         self.name = 'NoveltyTermination'
-
-#     def isDone(self, game):
-#         for e in game.effectList:
-#             if e[0]=='killSprite' or e[0] == 'transformTo' and \
-#             game.all_objects[e[1]]['sprite'].name==stype:
-#                 return True, self.win
-#         return False, None
-
 # ---------------------------------------------------------------------
 #     Helper functions
 # ---------------------------------------------------------------------
