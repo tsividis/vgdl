@@ -1,15 +1,25 @@
 level = """
 wwwwwwwwwwww
-w          w
-w      a   w
+w A        w
 w   x      w
-w a      z w
-w          w
-w          w
-w          w
-w   Axz    w
+w        z w
 wwwwwwwwwwww
 """
+
+
+
+# level = """
+# wwwwwwwwwwww
+# w A        w
+# w      a   w
+# w   x      w
+# w a      z w
+# w  x       w
+# w      z   w
+# w          w
+# w          w
+# wwwwwwwwwwww
+# """
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwww

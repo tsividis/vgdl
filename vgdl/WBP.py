@@ -31,7 +31,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, annealing=1, max_nodes=1000):
+	def __init__(self, rle, gameFilename, theory=None, annealing=1, max_nodes=300):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -51,6 +51,7 @@ class WBP():
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
 		self.max_nodes = max_nodes
 		self.quitting = False
+		self.gameString_array = []
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
@@ -151,7 +152,8 @@ class WBP():
 		try:
 			current = bestNodes.pop(0)
 		except:
-			import ipdb; ipdb.set_trace()
+			return None
+			# import ipdb; ipdb.set_trace()
 		QReward.remove(current)
 		try:
 			QNovelty.remove(current)
@@ -178,9 +180,13 @@ class WBP():
 			"""
 			# current = self.noveltySelection(QNovelty, QReward)
 			current = self.rewardSelection(QReward, QNovelty)
+			
+			if current is None:
+				self.quitting = True
+				return None
 			self.statesEncountered.append(current.rle._game.getFullState())
 
-			# print current.rle.show(indent=True)
+			print current.rle.show(indent=True)
 
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
@@ -210,9 +216,11 @@ class WBP():
 					QNovelty.append(child)
 					QReward.append(child)
 			i+=1
+			# print i
 		self.solution = []#Node(self.rle, self, [], None)
 		if i>=self.max_nodes:
 			self.quitting = True
+			print "Quitting after {} nodes".format(self.max_nodes)
 		return None
 
 class Node():
@@ -282,7 +290,7 @@ class Node():
 				successfulRollout = True
 		return rolloutArray
 
-	def spritecounter_val(self, theory, term, stype, rle, first_alpha=100,
+	def spritecounter_val(self, theory, term, stype, rle, first_alpha=1000,
 						  second_alpha=1):
 		val = 0
 		compute_second_order = True
@@ -347,7 +355,6 @@ class Node():
 				distance = min(possiblePairList)
 				# print distance
 			except ValueError:
-				# embed()
 				distance = 0
 
 			if possiblePairList:
@@ -355,11 +362,15 @@ class Node():
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
 				val += float(mult * second_alpha * distance)/n_sprites
+			else:
+				distance = 100
+				val += float(mult * second_alpha * distance)
+
 
 
 		return val
 
-	def multispritecounter_val(self, theory, term, rle, first_alpha=100,
+	def multispritecounter_val(self, theory, term, rle, first_alpha=1000,
 							   second_alpha=1):
 		val = 0
 		for stype in term.termination.stypes:
@@ -368,7 +379,7 @@ class Node():
 			# print stype, val
 		return val
 
-	def noveltytermination_val(self, theory, term, s1, s2, rle, first_alpha=100,
+	def noveltytermination_val(self, theory, term, s1, s2, rle, first_alpha=1000,
 						  second_alpha=1):
 		val = 0
 		compute_second_order = True
@@ -431,7 +442,7 @@ class Node():
 
 		return val
 
-	def heuristics(self, rle=None, first_alpha=100, second_alpha=1,
+	def heuristics(self, rle=None, first_alpha=1000, second_alpha=1,
 				   time_alpha=10):
 		if rle==None:
 			rle = self.rle
@@ -443,8 +454,8 @@ class Node():
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				# print("spritecounter_val for {} is equal to {}".format(
-					# term.termination.stype, spritecounter_val))
+				print("spritecounter_val for {} is equal to {}".format(
+					term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
@@ -461,8 +472,8 @@ class Node():
 				noveltytermination_val = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				# print("noveltytermination_val for {} and {} is equal to {}".format(
-					# term.termination.s1, term.termination.s2, noveltytermination_val))
+				print("noveltytermination_val for {} and {} is equal to {}".format(
+					term.termination.s1, term.termination.s2, noveltytermination_val))
 				heuristicVal += self.WBP.annealing * noveltytermination_val
 
 

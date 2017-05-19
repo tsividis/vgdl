@@ -1,39 +1,39 @@
 level="""
-55555555555555
-5      6 1   5
-5  286       5
-5    6       5
-5    66      5
-55555555555555
+666666666666
+6 8        6
+6   0      6
+6        9 6
+666666666666
 """
 game = """
 BasicGame
 	SpriteSet
-		avatar > MovingAvatar color=DARKBLUE
-		c3 > Chaser color=BLUE speed=0.4 fleeing=False
-		c2 > Resource color=ORANGE
-		c5 > ResourcePack color=RED
-		c4 > ResourcePack color=BLACK
+		avatar > MovingAvatar color=WHITE
+		c3 > ResourcePack color=BLACK
+		c2 > Resource color=BLUE
+		c5 > ResourcePack color=YELLOW
+		c4 > Resource color=RED
 	InteractionSet
-		c2 avatar > killSprite
+		c2 avatar > bounceForward
 		c2 c5 > killSprite
-		c5 c2 > killSprite
+		c5 c2 > undoAll
 		c4 EOS > stepBack
 		c2 c4 > killSprite
 		c4 c2 > killSprite
-		c5 c4 > stepBack
 		c5 EOS > stepBack
 		c2 c3 > killSprite
 		c3 c2 > killSprite
 		c2 c2 > killSprite
-		c5 avatar > bounceForward
+		c4 avatar > transformTo stype=c5
+		avatar c5 > undoAll
 		c3 c3 > killSprite
-		avatar c3 > nothing
-		c5 c5 > killSprite
+		avatar c3 > stepBack
 		c2 EOS > stepBack
-		avatar c4 > stepBack
+		c5 c4 > killSprite
+		c4 c5 > killSprite
 		c3 EOS > stepBack
 		c5 c3 > killSprite
+		c3 c5 > killSprite
 		c4 c4 > killSprite
 		c3 c4 > killSprite
 		c4 c3 > killSprite
@@ -42,19 +42,19 @@ BasicGame
 		NoveltyTermination s1=c2 s2=c2 win=True
 		NoveltyTermination s1=c2 s2=c3 win=True
 		NoveltyTermination s1=c2 s2=c4 win=True
-		NoveltyTermination s1=c2 s2=c5 win=True
 		NoveltyTermination s1=c3 s2=c3 win=True
 		NoveltyTermination s1=c3 s2=c4 win=True
 		NoveltyTermination s1=c4 s2=c4 win=True
-		NoveltyTermination s1=c5 s2=c5 win=True
-		SpriteCounter stype=c5 limit=0 win=True
+		NoveltyTermination s1=c5 s2=c3 win=True
+		NoveltyTermination s1=c5 s2=c4 win=True
+		SpriteCounter stype=c2 limit=0 win=True
 	LevelMapping
-		1 > c3
-		2 > avatar
-		9 > avatar c3
-		5 > c4
-		6 > c2
-		8 > c5
+		0 > c2
+		b > avatar c5
+		4 > c5
+		6 > c3
+		8 > avatar
+		9 > c4
 		G > goal
 """
 if __name__ == "__main__":

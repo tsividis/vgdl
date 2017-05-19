@@ -89,7 +89,7 @@ class Agent:
 	def playEpisode(self, gameObject):
 		## Initialize external environment
 		self.initializeEnvironment()
-
+		print "initializing RLE"
 		self.all_objects= self.rle._game.getObjects()
 		ended, win = self.rle._isDone()
 		annealing = 1
@@ -142,6 +142,8 @@ class Agent:
 						except:
 							# Mismatch in gamestring lengths
 							break
+			else:
+				return gameObject, False, self.rle._game.score
 
 			# self.hypotheses[0].display()
 			annealing *= self.annealingFactor
@@ -221,10 +223,10 @@ class Agent:
 if __name__ == "__main__":
 	
 	##simpleGame_missile: no support for learning that it can shoot things.
-	filename = "examples.gridphysics.demo_helper"
+	# filename = "examples.gridphysics.demo_helper"
 
 	# filename = "examples.gridphysics.pick_apples_with_missiles"
-	# filename = "examples.gridphysics.demo_transform_relational"
+	filename = "examples.gridphysics.demo_transform_relational"
 	# filename = "examples.gridphysics.simpleGame_push_boulders"
 	# filename = "examples.gridphysics.chase"
 
