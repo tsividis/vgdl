@@ -219,7 +219,12 @@ class Agent:
 
 
 if __name__ == "__main__":
-	filename = "examples.gridphysics.demo_transform_relational"
+	
+	##simpleGame_missile: no support for learning that it can shoot things.
+	filename = "examples.gridphysics.demo_helper"
+
+	# filename = "examples.gridphysics.pick_apples_with_missiles"
+	# filename = "examples.gridphysics.demo_transform_relational"
 	# filename = "examples.gridphysics.simpleGame_push_boulders"
 	# filename = "examples.gridphysics.chase"
 

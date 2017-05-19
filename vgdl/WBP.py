@@ -646,7 +646,7 @@ if __name__ == "__main__":
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
-	embed()
+	# embed()
 
 	p = WBP(rle, gameFilename)
 
