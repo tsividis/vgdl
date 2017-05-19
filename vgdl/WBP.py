@@ -180,7 +180,7 @@ class WBP():
 			current = self.rewardSelection(QReward, QNovelty)
 			self.statesEncountered.append(current.rle._game.getFullState())
 
-			print current.rle.show(indent=True)
+			# print current.rle.show(indent=True)
 
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()

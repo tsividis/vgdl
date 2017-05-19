@@ -141,7 +141,7 @@ class Agent:
 							# Mismatch in gamestring lengths
 							break
 
-			self.hypotheses[0].display()
+			# self.hypotheses[0].display()
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
 		score = self.rle._game.score
@@ -218,8 +218,8 @@ class Agent:
 
 if __name__ == "__main__":
 
-	# filename = "examples.gridphysics.simpleGame_push_boulders"
-	filename = "examples.gridphysics.chase"
+	filename = "examples.gridphysics.simpleGame_push_boulders"
+	# filename = "examples.gridphysics.chase"
 
 	agent = Agent(filename)
 
