@@ -734,7 +734,7 @@ class BasicGame(object):
                             for collision in force_collisions:
                                 if sprite1 in collision: # check if sprite1 got pushed back
                                     for sprite in collision:
-                                        new_effects.append(effect(sprite, sprite2, self, **kwargs)) # apply push back to all sprites in that set
+                                        effect(sprite, sprite2, self, **kwargs) # apply push back to all sprites in that set
                             else: # if there were no sprites in the collision, do normal thing
                                 new_effects.append(effect(sprite1, sprite2, self, **kwargs))
 
