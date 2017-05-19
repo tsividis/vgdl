@@ -1,39 +1,28 @@
-
-
-# level = """
-# wwwwwwwwwwwwww
-# wA           w
-# w    x    x  w
-# w     a      w
-# wwwwwwwwwwwwww
-# """
-
-# level = """
-# wwwwwwwwwwwwwwww
-# w              w
-# w        Ax    w
-# w              w
-# w      w       w
-# w              w
-# w   x    z     w
-# w    a  x      w
-# wwwwwwwwwwwwwwww
-# """
-
-
 level = """
-wwwwwwwwwwwwwwwwwwwwwwwwww
-wA                       w
-w    a    x              w
-w     a          a       w
-w            z           w
-w                  z     w
-w   x    z           z   w
-w              a  x      w
-w                        w
-wwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwww
+w          w
+w          w
+w   x      w
+w        z w
+w          w
+w   x   A  w
+w          w
+w    z     w
+wwwwwwwwwwww
 """
 
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# w                        w
+# w    a                   w
+# w     a          a       w
+# w            z x         w
+# w                  z     w
+# w   x   Az           z   w
+# w              a         w
+# w                        w
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# """
         
 game = """
 BasicGame frame_rate=30
@@ -50,8 +39,8 @@ BasicGame frame_rate=30
             box_b >        
                 box4 > color=LIGHTBLUE
                 box5 > color=PINK
-        fire > Immovable color=YELLOW       
-        goal2 > Immovable color=ORANGE  
+                box6 > color=YELLOW       
+        goal > Immovable color=BLACK  
         avatar > MovingAvatar color=WHITE
         wall > Immovable color=BLACK
     LevelMapping
@@ -61,29 +50,26 @@ BasicGame frame_rate=30
         c > box3
         d > box4
         e > box5
-        f > fire
+        f > box6
         x > probe
         z > converter1
         y > converter2
-        g > goal2
+        g > goal
     InteractionSet
         avatar wall > stepBack
-        avatar fire > undoAll 
+        avatar box6 > undoAll 
         box avatar > bounceForward
         box probe > undoAll
         box box > undoAll
-        box wall > undoAll
-        box fire > undoAll
-        probe wall > undoAll
-        converter wall > undoAll
-        probe converter > undoAll
-        probe probe > undoAll
+        box wall > stepBack
+        probe wall > stepBack
+        probe converter > stepBack
         converter box > bounceForward
-        probe avatar > transformTo stype=fire
-        # probe fire > killSprite
-        # fire probe > killSprite
+        probe avatar > bounceForward
+        probe box6 > killSprite
+        converter avatar > transformTo stype=box6
         avatar converter > undoAll
-        goal2 avatar > killSprite
+        goal avatar > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False          
         SpriteCounter stype=probe limit=0 win=True

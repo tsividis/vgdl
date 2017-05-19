@@ -82,6 +82,8 @@ class Agent:
 			wins.append(win)
 			scores.append(score)
 			i+=1
+		VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
+			persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
 		print "Won {} out of {} episodes.".format(sum(wins), i)
 
 	def playEpisode(self, gameObject):
@@ -225,4 +227,4 @@ if __name__ == "__main__":
 
 	##then pass this down for multiple episodes
 	gameObject = None
-	agent.playMultipleEpisodes(5)
+	agent.playMultipleEpisodes(3)

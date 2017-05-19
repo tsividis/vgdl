@@ -14,11 +14,11 @@ game = """
 BasicGame
 	SpriteSet
 		avatar > MovingAvatar color=DARKBLUE
-		c3 > Resource color=LIGHTBLUE
+		c3 > ResourcePack color=LIGHTBLUE
 		c2 > Resource color=PINK
 		c7 > ResourcePack color=RED
 		c6 > ResourcePack color=BLACK
-		c5 > ResourcePack color=GREEN
+		c5 > Resource color=GREEN
 		c4 > Resource color=GOLD
 	InteractionSet
 		c3 c5 > killSprite
@@ -83,6 +83,7 @@ BasicGame
 		NoveltyTermination s1=c3 s2=c5 win=True
 		NoveltyTermination s1=c3 s2=c6 win=True
 		NoveltyTermination s1=c3 s2=c7 win=True
+		NoveltyTermination s1=c4 s2=avatar win=True
 		NoveltyTermination s1=c4 s2=c4 win=True
 		NoveltyTermination s1=c4 s2=c5 win=True
 		NoveltyTermination s1=c4 s2=c6 win=True
@@ -93,7 +94,6 @@ BasicGame
 		NoveltyTermination s1=c6 s2=c7 win=True
 		NoveltyTermination s1=c7 s2=c7 win=True
 		SpriteCounter stype=c3 limit=0 win=True
-		SpriteCounter stype=c4 limit=0 win=True
 	LevelMapping
 		0 > c2
 		1 > c3
