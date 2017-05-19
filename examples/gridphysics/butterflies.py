@@ -10,22 +10,22 @@ If they all are freed, you lose.
 
 game = """
 BasicGame
-    SpriteSet    
-        cocoon > Immovable color=BLUE 
+    SpriteSet
+        cocoon > Immovable color=BLUE
         animal > physicstype=GridPhysics
-            avatar    > MovingAvatar 
-            butterfly > RandomNPC speed=0.6
-            
+            avatar    > MovingAvatar color=WHITE
+            butterfly > RandomNPC speed=0.6 color=RED
+
     TerminationSet
-        SpriteCounter stype=butterfly win=True     
-        SpriteCounter stype=cocoon    win=False     
-           
+        SpriteCounter stype=butterfly win=True
+        SpriteCounter stype=cocoon    win=False
+
     InteractionSet
-        butterfly avatar > killSprite 
+        butterfly avatar > killSprite
         butterfly cocoon > cloneSprite
         cocoon butterfly > killSprite
-        animal    wall   > stepBack        
-        
+        animal    wall   > stepBack
+
     LevelMapping
         1 > butterfly
         0 > cocoon
@@ -47,4 +47,4 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwww
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(game, level)    
+    VGDLParser.playGame(game, level)

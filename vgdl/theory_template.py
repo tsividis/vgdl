@@ -896,7 +896,10 @@ class Theory(object):
 		return (addedRule or addedClass)
 
 	def updateTerminations(self, event=False):
-		self.terminationSet = []
+		self.terminationSet = [t for t in self.terminationSet
+							   if t.ruleType=='SpriteCounterRule' and
+							   not t.termination.win]
+
 
 		if event:
 			relevantEvents = [t for t in event['effectList'] if 'killSprite' in t or 'transformTo' in t]
@@ -908,6 +911,10 @@ class Theory(object):
 					self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, False))
 				elif (rle._isDone()[0] and not rle._isDone()[1]):
 					self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, True))
+					loss_terminationRule = SpriteCounterRule(self.colorToClassMapper(event[1]), 0, False)
+					if (all([not loss_terminationRule.__eq__(t) for t in self.terminationSet]) and
+						all([not loss_terminationRule.__eq__(t) for t in self.falsified])):
+							self.terminationSet.append(loss_terminationRule)
 
 		for rule in self.interactionSet:
 			if 'killSprite' in rule.asTuple() or 'transformTo' in rule.asTuple():
@@ -927,8 +934,8 @@ class Theory(object):
 						all([not terminationRule.__eq__(t) for t in self.falsified])):
 						self.terminationSet.append(terminationRule)
 
-		terminationRule =  SpriteCounterRule("avatar", 0, False)
-		self.terminationSet.append(terminationRule)
+		# terminationRule =  SpriteCounterRule("avatar", 0, False)
+		# self.terminationSet.append(terminationRule)
 
 		return
 

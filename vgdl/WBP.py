@@ -31,7 +31,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, annealing=1, max_nodes=1000):
+	def __init__(self, rle, gameFilename, theory=None, annealing=1, max_nodes=10000):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -190,10 +190,22 @@ class WBP():
 				child = Node(self.rle, self, current.actionSeq+[a], current)
 				child.eval()
 				if child.win:
+					# import ipdb; ipdb.set_trace()
+					# Get the gameString representation of the RLE at each
+					# timestep in the chosen solution, so as to be able to
+					# compare it to the agent's RLE at execution time and
+					# correct for stochasticity effects
+					node = child
+					gameString_array = []
+					while node is not None:
+						gameString_array.append(node.rle.show())
+						node = node.parent
+					self.gameString_array = gameString_array[::-1]
+
 					child.rle._isDone()
 					self.solution = child.actionSeq
 					self.statesEncountered.append(child.rle._game.getFullState())
-					return child
+					return child, gameString_array
 				else:
 					QNovelty.append(child)
 					QReward.append(child)
@@ -641,7 +653,7 @@ if __name__ == "__main__":
 
 	# embed()
 	t1 = time.time()
-	last = p.BFS()
+	last, gameString_array = p.BFS()
 	from core import VGDLParser
 	# embed()
 	last.playBack(make_movie=True)
