@@ -219,8 +219,8 @@ class Agent:
 
 
 if __name__ == "__main__":
-
-	filename = "examples.gridphysics.simpleGame_push_boulders"
+	filename = "examples.gridphysics.demo_transform_relational"
+	# filename = "examples.gridphysics.simpleGame_push_boulders"
 	# filename = "examples.gridphysics.chase"
 
 	agent = Agent(filename)

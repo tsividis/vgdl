@@ -1,13 +1,13 @@
 level = """
 wwwwwwwwwwww
 w          w
-w          w
+w      a   w
 w   x      w
-w        z w
+w a      z w
 w          w
-w   x   A  w
 w          w
-w    z     w
+w          w
+w   Axz    w
 wwwwwwwwwwww
 """
 
@@ -62,6 +62,7 @@ BasicGame frame_rate=30
         box probe > undoAll
         box box > undoAll
         box wall > stepBack
+        probe probe > stepBack
         probe wall > stepBack
         probe converter > stepBack
         converter box > bounceForward

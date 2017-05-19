@@ -31,7 +31,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, annealing=1, max_nodes=10000):
+	def __init__(self, rle, gameFilename, theory=None, annealing=1, max_nodes=1000):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -640,13 +640,13 @@ if __name__ == "__main__":
 	## objects.
 	# gameFilename = "examples.continuousphysics.mario"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
-	# gameFilename = "examples.gridphysics.butterflies"
+	gameFilename = "examples.gridphysics.demo_transform_relational"
 
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
-
+	embed()
 
 	p = WBP(rle, gameFilename)
 
