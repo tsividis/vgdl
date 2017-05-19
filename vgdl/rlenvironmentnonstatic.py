@@ -18,6 +18,7 @@ from IPython import embed
 import random
 import math
 import importlib
+from util import factorize, objectsToSymbol
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
 OBSERVATION_LOCAL = 'local'
@@ -78,6 +79,12 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     def observationSpec(self):
         return{ 'scheme':'Doubles', 'size':self.outdim }
 
+    def getObjectsFromNumber(self, n):
+        indices = factorize(self, n)
+        allItems = ['avatar']+sorted(self._obstypes.keys())[::-1]
+        return [allItems[i] for i in indices]
+
+
     def makeSymbolDict(self):
         inverseMapping = dict()
         numbers = '0123456789'
@@ -114,6 +121,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             for j in range(self.outdim[1]):
                 if state[i][j] == 0:
                     gameString += " "
+                # else:
+                #     symbol = objectsToSymbol(self, self.getObjectsFromNumber(state[i][j]), self.symbolDict)
+                #     gameString += symbol
                 elif state[i][j] == 1:
                     gameString += self.symbolDict['avatar']
                 else:
@@ -125,6 +135,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                         # break
                         spriteType = sorted(self._obstypes.keys())[::-1][spriteIndex]
                         gameString += self.symbolDict[spriteType]
+
             gameString += "\n"
             if spriteOverlap:
                 break

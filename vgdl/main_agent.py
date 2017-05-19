@@ -3,7 +3,7 @@ from util import *
 from core import colorDict, VGDLParser, makeVideo, sys
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, \
 OrientedSprite, Missile, initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, \
-spriteInduction, selectObjectGoal
+spriteInduction, selectObjectGoal, distributionInitSetup
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
 SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, generateTheoryFromGame
 import WBP
@@ -47,7 +47,7 @@ class Agent:
 
 	def initializeHypotheses(self, allObjects, learnSprites=True):
 		if learnSprites:
-			observe(self.rle, 1)
+			observe(self.rle, 10)
 			spriteTypeHypothesis = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects)
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 			initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
@@ -56,10 +56,6 @@ class Agent:
 			initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
 
 		self.hypotheses = [initialTheory]
-
-		## Old: Used to check for Vrle and initialize accordingly.
-		## New: assumption is Vrle needs to be initialized only if there are no hypotheses, so doing it all in
-		## one chunk.
 
 		self.symbolDict = generateSymbolDict(self.rle)
 
@@ -116,25 +112,26 @@ class Agent:
 						theory=self.hypotheses[0], annealing=annealing)
 			p.BFS()
 			solution = p.solution
+			quitting = p.quitting
 			# print "got solution"
 			# embed()
 			## add new objects? (line 310 of metaplanner)
-
-			for action in solution:
-				hypotheses, theory_change_flag = self.executeStep(action, self.hypotheses[0])
-				if theory_change_flag:
-					del self.hypotheses[0]
-					self.hypotheses.extend(hypotheses)
-					break
-				ended, win = self.rle._isDone()
-				if ended:
-					break
+			if not quitting:
+				for action in solution:
+					hypotheses, theory_change_flag = self.executeStep(action, self.hypotheses[0])
+					if theory_change_flag:
+						del self.hypotheses[0]
+						self.hypotheses.extend(hypotheses)
+						break
+					ended, win = self.rle._isDone()
+					if ended:
+						break
 			# print("Did a plan loop")
 
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
 		score = self.rle._game.score
-		
+		print "ended episode. Win={}".format(win)
 		return gameObject, win, score
 
 	def executeStep(self, action, hypothesis):
@@ -206,7 +203,10 @@ class Agent:
 
 
 if __name__ == "__main__":
-	filename = "examples.gridphysics.chaser"
+
+	# filename = "examples.gridphysics.simpleGame_push_boulders"
+	filename = "examples.gridphysics.chase"
+
 	agent = Agent(filename)
 
 	##then pass this down for multiple episodes

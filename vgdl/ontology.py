@@ -1126,8 +1126,11 @@ class NoveltyTermination(Termination):
     def isDone(self, game):
         for e in game.effectList:
             if (e[0]=='killSprite' or e[0] == 'transformTo'):
-                        if ((game.all_objects[e[1]]['sprite'].name==self.s1 and game.all_objects[e[2]]['sprite'].name==self.s2) or\
-                        (game.all_objects[e[1]]['sprite'].name==self.s2 and game.all_objects[e[2]]['sprite'].name==self.s1)) :
+                        try:
+                                    if ((game.all_objects[e[1]]['sprite'].name==self.s1 and game.all_objects[e[2]]['sprite'].name==self.s2) or\
+                                    (game.all_objects[e[1]]['sprite'].name==self.s2 and game.all_objects[e[2]]['sprite'].name==self.s1)) :
+                                                return True, self.win
+                        except:
                                     return True, self.win
         return False, None
 

@@ -8,8 +8,10 @@ from IPython import embed
 from ontology import *
 import operator
 import time, math
+from util import factorize, objectsToSymbol
 from rlenvironmentnonstatic import createMindEnv
 
+ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
@@ -916,14 +918,14 @@ class Theory(object):
 					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
 				if terminationRule.ruleType=='NoveltyRule':
 					if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
-							for t in self.terminationSet]) and
+							for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
 						all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 						all([not terminationRule.__eq__(t) for t in self.falsified])):
 						self.terminationSet.append(terminationRule)
 				elif terminationRule.ruleType=='SpriteCounterRule':
 					if (all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 						all([not terminationRule.__eq__(t) for t in self.falsified])):
-						self.terminationSet.append(terminationRule)					
+						self.terminationSet.append(terminationRule)
 
 		terminationRule =  SpriteCounterRule("avatar", 0, False)
 		self.terminationSet.append(terminationRule)
@@ -2003,19 +2005,40 @@ def generateSymbolDict(rle):
 	## if new objects appear that are of an unknown type we have to be able to deal with this; writeTheoryToTxt should be
 	## able to append to this dict if it finds any unknown objects.
 	inverseMapping = dict()
-	numbers = '0123456789'
-	alnum = numbers + 'bcdefhijklmnpqrstuvwxyz'
+	# numbers = '0123456789'
+	# alnum = numbers + 'bcdefhijklmnpqrstuvwxyz'
 	idx = 0
-	for s in rle._obstypes.keys():
-		col = colorDict[str(rle._game.sprite_constr[s][1]['color'])]
-		inverseMapping[col] = alnum[idx]
-		idx+=1
+	# Generate all possible tuples of length 1, 2, and 3 of possible objects being in a space.
+	colors = [colorDict[str(rle._game.sprite_constr[k][1]['color'])] for k in rle._obstypes.keys()]
+	# embed()
 	try:
-		inverseMapping[colorDict[str(rle._game.sprite_constr['avatar'][1]['color'])]] = 'A'
+		colors.append(colorDict[str(rle._game.sprite_constr['avatar'][1]['color'])])
 	except:
-		inverseMapping[colorDict[str(rle._game.sprite_constr['avatar'][0].color)]] = 'A'
+		colors.append(colorDict[str(rle._game.sprite_constr['avatar'][0].color)])
+	possibilities = list(set([c for c in colors]))
+	# for i in [2,3]:
+		# possibilities.extend(itertools.combinations(colors, i))
+	for p in possibilities:
+		inverseMapping[p] = ALNUM[idx]
+		idx+=1
 
+	# try:
+		# inverseMapping[colorDict[str(rle._game.sprite_constr['avatar'][1]['color'])]] = 'A'
+	# except:
+		# inverseMapping[colorDict[str(rle._game.sprite_constr['avatar'][0].color)]] = 'A'
 	return inverseMapping
+
+	# for s in rle._obstypes.keys():
+	# 	col = colorDict[str(rle._game.sprite_constr[s][1]['color'])]
+	# 	inverseMapping[col] = alnum[idx]
+	# 	idx+=1
+	# try:
+	# 	inverseMapping[colorDict[str(rle._game.sprite_constr['avatar'][1]['color'])]] = 'A'
+	# except:
+	# 	inverseMapping[colorDict[str(rle._game.sprite_constr['avatar'][0].color)]] = 'A'
+
+	# return inverseMapping
+
 
 def getKeywordsFromOntology(interactionName):
 	ontologyKeywordDict = \
@@ -2389,18 +2412,32 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	# # fourth phase: the level mapping
 	theoryString += "\tLevelMapping\n"
 
-	for color, symbol in symbolDict.items():
-		choices = [k for k in theory.classes.keys() if color in [s.color for s in theory.classes[k]]]
-		# if len(choices)>1:
-		# 	print "more than one class"
-		# 	print choices
-		try:
-			c = [c for c in choices if len(c)==min([len(ch) for ch in choices])][0]
+	for colors, symbol in symbolDict.items():
+		if type(colors)==tuple:
+			types = [theory.spriteObjects[c].className for c in colors if c in theory.spriteObjects.keys()]
+			if len(types)==2:
+				theoryString += "\t\t%s > %s %s\n"%(symbol, types[0], types[1])
+			elif len(types)==3:
+				theoryString += "\t\t%s > %s %s %s\n"%(symbol, types[0], types[1], types[2])
+		elif type(colors)==str and colors in theory.spriteObjects.keys():
+			c = theory.spriteObjects[colors].className
 			theoryString += "\t\t%s > %s\n"%(symbol, c)
-		except:
-			continue
-			# print "problem with choices in writetheory.txt"
-			# embed()
+
+
+	# for color, symbol in symbolDict.items():
+	# 	choices = [k for k in theory.classes.keys() if color in [s.color for s in theory.classes[k]]]
+	# 	# if len(choices)>1:
+	# 	# 	print "more than one class"
+	# 	# 	print choices
+	# 	try:
+	# 		c = [c for c in choices if len(c)==min([len(ch) for ch in choices])][0]
+	# 		theoryString += "\t\t%s > %s\n"%(symbol, c)
+	# 	except:
+	# 		continue
+	# 		# print "problem with choices in writetheory.txt"
+	# 		# embed()
+
+
 	theoryString += "\t\tG > goal\n"
 	theoryString += '"""\n'
 
@@ -2415,19 +2452,28 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	for r in range(rle.outdim[0]):
 		for c in range(rle.outdim[1]):
 			if state[r][c] > 0:
-				if state[r][c] == 1:
-					mappedState[r][c] = "A"
-				elif (r,c) == goalLoc:
-					mappedState[r][c] = "G"
-				else:
-					spriteIndex = int(round(math.log(state[r][c],2)))-1
-					try:					
-						spriteType = sorted(_obstypes.keys())[::-1][spriteIndex]
-						spriteColor = colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]
-						mappedState[r][c] = symbolDict[spriteColor]
-					except:
-						print "Goal is empty square"
-						embed()
+				try:
+					# print state[r][c]
+					# print rle.getObjectsFromNumber(state[r][c])
+					symbol = objectsToSymbol(rle, rle.getObjectsFromNumber(state[r][c]), symbolDict)
+					mappedState[r][c] = symbol
+				except:
+					print "in map"
+					embed()
+
+				# if state[r][c] == 1:
+				# 	mappedState[r][c] = "A"
+				# elif (r,c) == goalLoc:
+				# 	mappedState[r][c] = "G"
+				# else:
+				# 	spriteIndex = int(round(math.log(state[r][c],2)))-1
+				# 	try:
+				# 		spriteType = sorted(_obstypes.keys())[::-1][spriteIndex]
+				# 		spriteColor = colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]
+				# 		mappedState[r][c] = symbolDict[spriteColor]
+				# 	except:
+				# 		print "Goal is empty square"
+				# 		embed()
 						# pass
 
 			try:

@@ -50,6 +50,7 @@ class WBP():
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
 		self.max_nodes = max_nodes
+		self.quitting = False
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
@@ -147,7 +148,10 @@ class WBP():
 			# print "Removed filter"
 			# embed()
 		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
-		current = bestNodes.pop(0)
+		try:
+			current = bestNodes.pop(0)
+		except:
+			import ipdb; ipdb.set_trace()
 		QReward.remove(current)
 		try:
 			QNovelty.remove(current)
@@ -176,7 +180,7 @@ class WBP():
 			current = self.rewardSelection(QReward, QNovelty)
 			self.statesEncountered.append(current.rle._game.getFullState())
 
-			# print current.rle.show(indent=True)
+			print current.rle.show(indent=True)
 
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
@@ -195,6 +199,8 @@ class WBP():
 					QReward.append(child)
 			i+=1
 		self.solution = []#Node(self.rle, self, [], None)
+		if i>=self.max_nodes:
+			self.quitting = True
 		return None
 
 class Node():
@@ -273,7 +279,7 @@ class Node():
 		if term.termination.win:
 			mult = -1
 		else:
-			compute_second_order = False
+			# compute_second_order = False
 			mult = 1
 
 		# Get all types that kill or transform stype
@@ -331,7 +337,7 @@ class Node():
 			except ValueError:
 				# embed()
 				distance = 0
-			
+
 			if possiblePairList:
 				n_sprites = len(possiblePairList)
 				# Normalize by number of sprites, enforcing a prior that encourages
@@ -426,7 +432,7 @@ class Node():
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
 				# print("spritecounter_val for {} is equal to {}".format(
-				# 	term.termination.stype, spritecounter_val))
+					# term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
@@ -444,7 +450,7 @@ class Node():
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
 				# print("noveltytermination_val for {} and {} is equal to {}".format(
-				# 	term.termination.s1, term.termination.s2, noveltytermination_val))
+					# term.termination.s1, term.termination.s2, noveltytermination_val))
 				heuristicVal += self.WBP.annealing * noveltytermination_val
 
 
