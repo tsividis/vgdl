@@ -3,15 +3,32 @@ VGDL example: Frogger Transpose
 
 '''
 ## If you put the goal at the bottom, something fails. Same bug as in frogs??
+# level = """
+# wwwwwww00000000wwwwwww
+# w      00000000  G   w
+# w      ====0000      w
+# w      00~~~000      w
+# w      00000000      w
+# w      000===00      w
+# w      00000000      w
+# w      0000~~~0      w
+# w      00000000      w
+# w      00000000      w
+# w      00000000      w
+# w      00000===      w
+# w   A  00000000      w
+# wwwwwww00000000wwwwwww
+# """
+
 level = """
 www      000       www
 w        000     G   w
 w      ====0000      w
-w      00~~~000      w
+w      00===000      w
 w      00000000      w
 w      000===00      w
 w      00000000      w
-w      0000~~~0      w
+w      ========      w
 w      00000000      w
 w      00000000      w
 w      00000000      w
@@ -21,6 +38,7 @@ www      0000      www
 """
 
 
+
 game = """
 
 BasicGame
@@ -28,21 +46,21 @@ BasicGame
 
         structure > Immovable
             water > color=BLUE
-            goal  > color=GREEN
+            goal  > color=ORANGE
 
         stationary > Immovable
             rock > color=PINK
-        float    > Missile 
+        float    > Missile
             leaf > orientation=UP color=GREEN
                 leaf1 > speed=0.1
                 leaf2 > speed=0.15
-            log > orientation=UP color=WHITE
-                log1 > speed=0.1
+            log > orientation=UP color=BROWN
+                log1 > speed=0.5
                 log2 > speed=0.15
 
         safety > Resource  limit=2 color=WHITE
         # defining 'wall' last, makes the walls show on top of all other sprites
-        wall > Immovable color=GRAY   
+        wall > Immovable color=GRAY
         avatar > MovingAvatar color=DARKBLUE
     InteractionSet
         goal avatar  > killSprite
@@ -53,11 +71,11 @@ BasicGame
         avatar water > changeResource resource=safety value=-1
         float    EOS   > wrapAround
         avatar EOS > stepBack
-    
+
     TerminationSet
         SpriteCounter stype=goal   limit=0 win=True
         SpriteCounter stype=avatar limit=0 win=False
-    
+
     LevelMapping
         G > goal
         0 > water
@@ -71,4 +89,4 @@ BasicGame
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(game, level)    
+    VGDLParser.playGame(game, level)

@@ -33,6 +33,14 @@ BasicGame
 
 """
 
+# level = """
+# wwwwwwwwwwww
+# wA         w
+# w          w
+# w         0w
+# wwwwwwwwwwww
+# """
+
 level = """
 wwwwwwwwwwwwwwwwwwwwwwww
 wwww    w0  ww      0www

@@ -8,6 +8,7 @@ from theory_template import TimeStep, Precondition, InteractionRule, Termination
 SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, generateTheoryFromGame
 import WBP
 import importlib
+import numpy as np
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 
@@ -47,7 +48,7 @@ class Agent:
 
 	def initializeHypotheses(self, allObjects, learnSprites=True):
 		if learnSprites:
-			observe(self.rle, 1)
+			observe(self.rle, 10)
 			spriteTypeHypothesis = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects)
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 			initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
@@ -116,11 +117,12 @@ class Agent:
 						theory=self.hypotheses[0], annealing=annealing)
 			p.BFS()
 			solution = p.solution
+			gameString_array = p.gameString_array
 			# print "got solution"
 			# embed()
 			## add new objects? (line 310 of metaplanner)
 
-			for action in solution:
+			for i, action in enumerate(solution):
 				hypotheses, theory_change_flag = self.executeStep(action, self.hypotheses[0])
 				if theory_change_flag:
 					del self.hypotheses[0]
@@ -129,6 +131,18 @@ class Agent:
 				ended, win = self.rle._isDone()
 				if ended:
 					break
+
+				# Check for disparities between plan and reality
+				# (e.g. stochastic effects)
+				if self.rle._game.is_stochastic and i>10:
+					try:
+						if any(np.where(list(gameString_array[i+1]))[0] !=
+							   np.where(list(self.rle.show()))[0]):
+							break
+					except:
+						# Mismatch in gamestring lengths
+						break
+
 			self.hypotheses[0].display()
 
 			annealing *= self.annealingFactor
@@ -206,7 +220,7 @@ class Agent:
 
 
 if __name__ == "__main__":
-	filename = "examples.gridphysics.butterflies"
+	filename = "examples.gridphysics.chase"
 	agent = Agent(filename)
 
 	##then pass this down for multiple episodes
