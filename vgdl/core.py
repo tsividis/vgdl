@@ -556,11 +556,11 @@ class BasicGame(object):
         self.ended = fs['ended']
         for key, ss in fs['objects'].iteritems():
             self.sprite_groups[key] = [] ## Added 4/31/17
-            for pos, attrs in ss.iteritems():
-                if as_string:
-                    p = eval(pos)
-                else:
-                    p = pos
+            for ID, attrs in ss.iteritems():
+                try: 
+                    p = attrs['x'], attrs['y']
+                except:
+                    p = attrs[x], attrs[y]
                 s = self._createSprite_cheap(key, p)
                 for a, val in attrs.iteritems():
                     if a == 'resources':
