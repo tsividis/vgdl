@@ -5,7 +5,8 @@ from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chas
 OrientedSprite, Missile, initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, \
 spriteInduction, selectObjectGoal, distributionInitSetup
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
-SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, generateTheoryFromGame
+SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
+generateTheoryFromGame, Precondition
 import WBP
 import importlib
 import numpy as np
@@ -23,6 +24,7 @@ class Agent:
 		self.statesEncountered = []
 		self.all_objects = {}
 		self.initializeEnvironment()
+		self.seen_resources = []
 
 	def initializeEnvironment(self):
 		self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
@@ -208,6 +210,20 @@ class Agent:
 				print "more than one hypothesis"
 				embed()
 
+			#  PRECONDITIONS HANDLING
+			# Current assumptions:
+		 	# - Only one resource can change for each timestep
+			# - The first time a resource changes, it goes from 0 to a positive
+			#   value
+			for change_resource in [e[3] for e in event['effectList'] if 'changeResource' in e]:
+				resource = change_resource['resource']
+				val = change_resource['value']
+				if resource not in self.seen_resources and val>0:
+					# Update InteractionSet for all hypothesis
+					[t.updateInteractionsPreconditions(resource)
+					 for t in hypotheses]
+					# Add resource change to seen_resources list
+					self.seen_resources.append(resource)
 
 		if event['effectList']:
 			[t.updateTerminations(event) for t in hypotheses]
@@ -221,12 +237,12 @@ class Agent:
 
 
 if __name__ == "__main__":
-	
+
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.demo_helper"
 
 	# filename = "examples.gridphysics.pick_apples_with_missiles"
-	filename = "examples.gridphysics.demo_transform_relational"
+	filename = "examples.gridphysics.demo_preconditions"
 	# filename = "examples.gridphysics.simpleGame_push_boulders"
 	# filename = "examples.gridphysics.chase"
 

@@ -735,6 +735,31 @@ class Theory(object):
 
 		return newTheories
 
+	def updateInteractionsPreconditions(self, resource):
+		# Create old and new preconditions for the resource
+		old_precond = Precondition(
+			text='old precondition for '+resource,
+			item=resource, operator_name='<=', num=0)
+		new_precond = Precondition(
+			text='new precondition for '+resource,
+			item=resource, operator_name='>', num=0)
+
+		# Update all interaction rules involving the avatar
+		# with preconditions for resource <= 0
+		for interaction in self.interactionSet:
+			if interaction.slot1=='avatar' or interaction.slot2=='avatar':
+				interaction.addPrecondition(old_precond)
+				interaction.args ={'resource': resource, 'limit':0}
+
+		# Add new generic rules for the avatar with preconditions
+		# for resource > 0
+		nonAvatars = [o for o in self.spriteSet if o.vgdlType not in AvatarTypes and o.color!='ENDOFSCREEN']
+		for o in nonAvatars:
+			rule = InteractionRule('killSprite', o.className, 'avatar', {'resource':resource, 'limit':1}, set([new_precond]), generic=True)
+			self.interactionSet.append(rule)
+
+		return
+
 	"""Helper functions"""
 	def interpret(self, event):
 		"""
@@ -2139,7 +2164,8 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 			else:
 				print "buildArgsString got called but no precondition"
-				embed()
+				argsString=""
+				# embed()
 
 		return argsString, newInteractionName
 
