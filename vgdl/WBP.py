@@ -651,13 +651,13 @@ if __name__ == "__main__":
 	## objects.
 	# gameFilename = "examples.continuousphysics.mario"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
-	gameFilename = "examples.gridphysics.demo_transform_relational"
+	gameFilename = "examples.gridphysics.demo_preconditions"
 
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
-	# embed()
+	embed()
 
 	p = WBP(rle, gameFilename)
 

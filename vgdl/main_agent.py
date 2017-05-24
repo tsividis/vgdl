@@ -219,7 +219,7 @@ class Agent:
 				resource = change_resource['resource']
 				val = change_resource['value']
 				if resource not in self.seen_resources and val>0:
-					# Update InteractionSet for all hypothesis
+					# Update InteractionSet for all hypotheses
 					[t.updateInteractionsPreconditions(resource)
 					 for t in hypotheses]
 					# Add resource change to seen_resources list

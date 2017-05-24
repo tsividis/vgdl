@@ -634,7 +634,6 @@ class Theory(object):
 
 			if 'stype' in event[3].keys():
 				obj3 = self.spriteObjects[event[3]['stype']]
-				# event[3]['stype'] = self.getClass(obj3)
 				tmpEvent = copy.deepcopy(event)
 				tmpEvent[3]['stype'] = self.getClass(obj3)
 				args = tmpEvent[3]
@@ -746,16 +745,16 @@ class Theory(object):
 
 		# Update all interaction rules involving the avatar
 		# with preconditions for resource <= 0
+
 		for interaction in self.interactionSet:
-			if interaction.slot1=='avatar' or interaction.slot2=='avatar':
+			if interaction.slot1=='avatar' and interaction.interaction=='killSprite':
 				interaction.addPrecondition(old_precond)
-				interaction.args ={'resource': resource, 'limit':0}
 
 		# Add new generic rules for the avatar with preconditions
 		# for resource > 0
 		nonAvatars = [o for o in self.spriteSet if o.vgdlType not in AvatarTypes and o.color!='ENDOFSCREEN']
 		for o in nonAvatars:
-			rule = InteractionRule('killSprite', o.className, 'avatar', {'resource':resource, 'limit':1}, set([new_precond]), generic=True)
+			rule = InteractionRule('killSprite', o.className, 'avatar', {}, set([new_precond]), generic=True)
 			self.interactionSet.append(rule)
 
 		return

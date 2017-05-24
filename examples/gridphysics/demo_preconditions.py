@@ -49,8 +49,8 @@ Simple interactions: get/lose points, can't pass through walls, object gets push
 
 level = """
 wwwwwwwwwwwwwwwwww
-w b p   w    m   w
-w   p   w A  wwwww
+w b p   w    m A w
+w   p   w    wwwww
 wpppp      p     w
 w     p p       ww
 ww   www         w
@@ -59,6 +59,19 @@ w   pp           w
 w g p    p    p  w
 wwwwwwwwwwwwwwwwww
 """
+#
+# level = """
+# wwwwwwwwwwwwwwwwww
+# w b p   w    m   w
+# w   p   w A  wwwww
+# wpppp      p     w
+# w     p p       ww
+# ww   www         w
+# wpppp          p w
+# w   pp           w
+# w g p    p    p  w
+# wwwwwwwwwwwwwwwwww
+# """
 # level = """
 # wwwwwwwwwwwwwwwwww
 # w b     w    m   w
@@ -73,6 +86,28 @@ wwwwwwwwwwwwwwwwww
 # """
 
 
+level = """
+wwwwwwwwwwwwwwwwww
+w   p   w  g  A  w
+w   p   w m  wwwww
+w   p            w
+wwwwwwwwwwwwwwwwww
+"""
+
+
+# level = """
+# wwwwwwwwwwwwwwwwww
+# w b p   w        w
+# w   p   w m  wwwww
+# wpppp      p A   w
+# w     p p       ww
+# ww   www         w
+# wpppp          p w
+# w   pp           w
+# w g p    p    p  w
+# wwwwwwwwwwwwwwwwww
+# """
+
 
 game = """
 BasicGame frame_rate=30
@@ -83,7 +118,7 @@ BasicGame frame_rate=30
         box > Passive color=ORANGE
         medicine > Resource limit=2 color=WHITE
         poison > Resource limit=3 color=RED
-        wall > Immovable color=BLACK  
+        wall > Immovable color=BLACK
     LevelMapping
         0 > hole
         c > cloud
@@ -105,9 +140,11 @@ BasicGame frame_rate=30
         box poison > undoAll
         box medicine > undoAll
         goal avatar > killSprite
+        avatar goal > killSprite
     TerminationSet
-        SpriteCounter stype=avatar  limit=0 win=False
-        SpriteCounter stype=goal limit=0 win=True
+        SpriteCounter stype=goal limit=0 win=True       
+        SpriteCounter stype=avatar limit=0 win=False  
+
 """
 
 
