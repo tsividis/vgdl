@@ -31,7 +31,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, annealing=1, max_nodes=300):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=300):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -56,6 +56,9 @@ class WBP():
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
 			self.theory=theory
+		# if fakeInteractionRules:
+		# 	print "got fake interaction rules"
+		# 	embed()
 
 		i=1
 		for k in rle._game.all_objects.keys():
@@ -454,8 +457,8 @@ class Node():
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				print("spritecounter_val for {} is equal to {}".format(
-					term.termination.stype, spritecounter_val))
+				# print("spritecounter_val for {} is equal to {}".format(
+					# term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
@@ -472,8 +475,8 @@ class Node():
 				noveltytermination_val = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				print("noveltytermination_val for {} and {} is equal to {}".format(
-					term.termination.s1, term.termination.s2, noveltytermination_val))
+				# print("noveltytermination_val for {} and {} is equal to {}".format(
+					# term.termination.s1, term.termination.s2, noveltytermination_val))
 				heuristicVal += self.WBP.annealing * noveltytermination_val
 
 

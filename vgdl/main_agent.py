@@ -5,10 +5,12 @@ from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chas
 OrientedSprite, Missile, initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, \
 spriteInduction, selectObjectGoal, distributionInitSetup
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
-SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, generateTheoryFromGame
+SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
+generateTheoryFromGame
 import WBP
 import importlib
 import numpy as np
+import copy
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 
@@ -21,7 +23,9 @@ class Agent:
 		self.symbolDict = None
 		self.finalEventList = []
 		self.statesEncountered = []
+		self.fakeInteractionRules = []
 		self.all_objects = {}
+		self.seen_resources = []
 		self.initializeEnvironment()
 
 	def initializeEnvironment(self):
@@ -43,7 +47,13 @@ class Agent:
 		VRLEs = []
 		# print "in VrleInitPhase.", len(self.hypotheses), "hypotheses"
 		for hypothesis in self.hypotheses:
-			VRLEs.append(self.initializeVrle(hypothesis))
+			tempHypothesis = copy.deepcopy(hypothesis)
+			tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
+			tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
+			tempHypothesis.updateTerminations()
+			if self.fakeInteractionRules:
+				tempHypothesis.display()	
+			VRLEs.append(self.initializeVrle(tempHypothesis))
 		return VRLEs
 
 	def initializeHypotheses(self, allObjects, learnSprites=True):
@@ -70,7 +80,6 @@ class Agent:
 		for hypothesis in self.hypotheses:
 			newHypotheses.append(gameObject.addNewObjectsToTheory(hypothesis, spriteTypeHypothesis))
 		self.hypotheses = newHypotheses
-
 
 
 	def playMultipleEpisodes(self, num_episodes):
@@ -112,7 +121,7 @@ class Agent:
 
 
 			p = WBP.WBP(theoryRLEs[0], self.gameFilename,
-						theory=self.hypotheses[0], annealing=annealing)
+						theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules, annealing=annealing)
 			p.BFS()
 			solution = p.solution
 			quitting = p.quitting
@@ -151,6 +160,35 @@ class Agent:
 		score = self.rle._game.score
 		print "ended episode. Win={}".format(win)
 		return gameObject, win, score
+
+	def matchEventToRuleByIDAndSpriteName(self, event, rule):
+		# Get IDs and names for game objects
+		# id_iterable = [(ID, self.rle._game.all_objects[ID]['sprite'].name)
+		#     for ID in self.rle._game.all_objects.keys()]
+		# id_dict = {key: value for (key, value) in id_iterable}
+		# # Since game.all_objects doesn't contain dead
+		# # objects, add those too
+		# dead_id_iterable = [(o.ID, o.name) for o in self.rle._game.kill_list]
+		# dead_id_dict = {key: value for (key, value) in dead_id_iterable}
+		# # Get avatar objects too
+		# avatar_id_iterable = [(o.ID, o.name) for o in self.rle._game.getAvatars()]
+		# avatar_id_dict = {key: value for (key, value) in avatar_id_iterable}
+		# # Merge the two dictionaries
+		# id_dict.update(dead_id_dict)
+		# id_dict.update(avatar_id_dict)
+
+		# Check if the two objects involved in the
+		# event are the same as those in the novelty
+		# termination rule (invariant by order)
+		# embed()
+		hypSlot1 = self.hypotheses[0].spriteObjects[event[1]].className
+		hypSlot2 = self.hypotheses[0].spriteObjects[event[2]].className
+		if set([hypSlot1, hypSlot2]) == set([rule.slot1, rule.slot2]):
+		# if ((hypSlot1==rule.slot1 and hypSlot2==rule.slot2) or
+		#     (hypSlot1==rule.slot2 and hypSlot2==rule.slot1)):
+			return True
+		else:
+			return False
 
 	def executeStep(self, action, hypothesis):
 
@@ -193,8 +231,14 @@ class Agent:
 		if event['effectList']:
 			self.finalEventList.append(event)
 
-		# print effects
-		if not all([e in all_effects for e in effects]):
+		if event['effectList']:
+			## Delete fake interaction rules for events that were witnessed in this time step.
+			self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
+				not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
+			# print "before changing fakeInteractionRules"
+			# embed()
+
+		# if not all([e in all_effects for e in effects]):
 			theory_change_flag = True
 			sample = sampleFromDistribution(self.rle._game.spriteDistribution, self.all_objects)
 			game_object = Game(spriteInductionResult=sample)
@@ -209,7 +253,24 @@ class Agent:
 				embed()
 
 
+			#  PRECONDITIONS HANDLING
+			# Current assumptions:
+		 	# - Only one resource can change for each timestep
+			# - The first time a resource changes, it goes from 0 to a positive
+			#   value
+			for change_resource in [e[3] for e in event['effectList'] if 'changeResource' in e]:
+				resource = change_resource['resource']
+				val = change_resource['value']
+				if resource not in self.seen_resources and val>0:
+					self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
+					self.fakeInteractionRules = list(set(self.fakeInteractionRules))
+					# Add resource change to seen_resources list
+					print resource
+					self.seen_resources.append(resource)
+
+
 		if event['effectList']:
+
 			[t.updateTerminations(event) for t in hypotheses]
 			if theory_change_flag:
 				hypotheses[0].display()
@@ -219,16 +280,15 @@ class Agent:
 		return hypotheses, theory_change_flag
 
 
-
 if __name__ == "__main__":
 	
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.demo_helper"
 
 	# filename = "examples.gridphysics.pick_apples_with_missiles"
-	filename = "examples.gridphysics.demo_transform_relational"
+	# filename = "examples.gridphysics.demo_transform_relational"
 	# filename = "examples.gridphysics.simpleGame_push_boulders"
-	# filename = "examples.gridphysics.chase"
+	filename = "examples.gridphysics.demo_preconditions"
 
 	agent = Agent(filename)
 

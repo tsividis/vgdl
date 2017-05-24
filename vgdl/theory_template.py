@@ -387,6 +387,8 @@ class Theory(object):
 				theories.append(self)
 			# Add preconditions
 			elif failCase in [1,2,3]:
+				print "failCase in 1,2,3"
+				embed()
 				theories.extend(self.addPreconditions(event, timestep))
 			# Add new rule
 			elif failCase == 4:
@@ -467,6 +469,32 @@ class Theory(object):
 			likelihood = 0.
 		return likelihood
 
+	def updateInteractionsPreconditions(self, resource):
+		# Create old and new preconditions for the resource
+		# old_precond = Precondition(
+			# text='old precondition for '+resource,
+			# item=resource, operator_name='<=', num=0)
+		
+		new_precond = Precondition(
+			text='new precondition for '+resource,
+			item=resource, operator_name='>', num=0)
+
+		# Update all interaction rules involving the avatar
+		# with preconditions for resource <= 0
+
+		# for interaction in self.interactionSet:
+		# 	if interaction.slot1=='avatar' and interaction.interaction=='killSprite':
+		# 		interaction.addPrecondition(old_precond)
+
+		# Add new generic rules for the avatar with preconditions
+		# for resource > 0
+		newInteractionRules = []
+		nonAvatars = [o for o in self.spriteSet if o.vgdlType not in AvatarTypes and o.color!='ENDOFSCREEN']
+		for o in nonAvatars:
+			rule = InteractionRule('killSprite', o.className, 'avatar', {}, set([new_precond]), generic=True)
+			newInteractionRules.append(rule)
+
+		return newInteractionRules
 
 	def checkTerminationCounterInState(self, c, termCondition):
 		"""
@@ -525,6 +553,8 @@ class Theory(object):
 		for event in timestep.events:
 			relevantRules.extend(self.findRelevantRules(event, timestep.agentState, checkDryingPaint=False, sparse=sparse))
 
+		# if set(['DARKBLUE', 'RED'])==set([event[1], event[2]]):
+		# 	embed()
 		if False in relevantRules:
 			return False
 		else:
@@ -560,7 +590,8 @@ class Theory(object):
 
 
 
-		# print (eventInRules, predictionsHappened)
+		print (eventInRules, predictionsHappened)
+		embed()
 		# self.display()
 		# print "event", event
 		# print "interaction set:", [i.asTuple() for i in self.interactionSet]
@@ -679,9 +710,9 @@ class Theory(object):
 		Creates preconditions based on the agentState that might help to explain the event.
 		Returns a list of theories.
 		"""
-		# print "in addPreconditions"
+		print "in addPreconditions"
 		# timestep.agentState = {'medicine':0}
-		# embed()
+		embed()
 		newTheories = []
 
 		obj1 = self.spriteObjects[event[1]]
@@ -917,11 +948,10 @@ class Theory(object):
 							self.terminationSet.append(loss_terminationRule)
 
 		for rule in self.interactionSet:
-			if 'killSprite' in rule.asTuple() or 'transformTo' in rule.asTuple():
+			if 'killSprite' in rule.asTuple() or 'transformTo' in rule.asTuple() or 'killIfHasMore' in rule.asTuple():
 				if rule.generic:
 					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
 				else:
-					# embed()
 					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
 				if terminationRule.ruleType=='NoveltyRule':
 					if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
@@ -934,8 +964,7 @@ class Theory(object):
 						all([not terminationRule.__eq__(t) for t in self.falsified])):
 						self.terminationSet.append(terminationRule)
 
-		# terminationRule =  SpriteCounterRule("avatar", 0, False)
-		# self.terminationSet.append(terminationRule)
+		self.terminationSet = sorted(self.terminationSet, key=lambda t:t.ruleType)
 
 		return
 
@@ -972,6 +1001,9 @@ class Theory(object):
 		obj2 = self.spriteObjects[event[2]]
 		class1 = self.getClass(obj1)
 		class2 = self.getClass(obj2)
+
+		# if set([event[1], event[2]]) == set(['DARKBLUE', 'RED']):
+		# 	embed()
 
 		if class1 and class2:
 
@@ -1347,7 +1379,6 @@ def normalize(array):
 		return [1./len(array)]*len(array) #if all items have the same score of 0, return the same score for all.
 	else:
 		return [a/z for a in array]
-
 
 class Game(object):
 	"""

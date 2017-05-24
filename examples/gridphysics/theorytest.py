@@ -1,60 +1,99 @@
 level="""
-666666666666
-6 8        6
-6   0      6
-6        9 6
-666666666666
+333333333333333333
+3 4 6   3    2   3
+3   6   3    33333
+36666      6     3
+3     6 6       33
+33   333         3
+36666          6 3
+3   66           3
+3 1 6    6    6  3
+333333333333333333
 """
 game = """
 BasicGame
 	SpriteSet
-		avatar > MovingAvatar color=WHITE
-		c3 > ResourcePack color=BLACK
-		c2 > Resource color=BLUE
-		c5 > ResourcePack color=YELLOW
-		c4 > Resource color=RED
+		avatar > MovingAvatar color=DARKBLUE
+		c3 > Resource color=WHITE
+		c2 > Resource color=ORANGE
+		c6 > Resource color=RED
+		c5 > Resource color=GOLD
+		c4 > ResourcePack color=BLACK
+		medicine > Resource color=RESOURCETOADD
 	InteractionSet
-		c2 avatar > bounceForward
-		c2 c5 > killSprite
-		c5 c2 > undoAll
-		c4 EOS > stepBack
+		c2 avatar > killSprite
+		c2 avatar > killIfHasMore resource=medicine limit=1
 		c2 c4 > killSprite
 		c4 c2 > killSprite
 		c5 EOS > stepBack
-		c2 c3 > killSprite
-		c3 c2 > killSprite
-		c2 c2 > killSprite
-		c4 avatar > transformTo stype=c5
-		avatar c5 > undoAll
-		c3 c3 > killSprite
-		avatar c3 > stepBack
-		c2 EOS > stepBack
-		c5 c4 > killSprite
+		avatar c6 > killSprite
+		c6 avatar > killSprite
+		c6 avatar > killIfHasMore resource=medicine limit=1
+		avatar c6 > changeResource resource=medicine value=-1
 		c4 c5 > killSprite
-		c3 EOS > stepBack
-		c5 c3 > killSprite
+		c5 c4 > killSprite
 		c3 c5 > killSprite
-		c4 c4 > killSprite
+		c5 c3 > killSprite
 		c3 c4 > killSprite
 		c4 c3 > killSprite
+		c2 c5 > killSprite
+		c5 c2 > killSprite
+		c4 EOS > stepBack
+		c3 avatar > killSprite
+		c3 avatar > killIfHasMore resource=medicine limit=1
+		avatar c3 > changeResource resource=medicine value=1
+		c2 c6 > killSprite
+		c6 c2 > killSprite
+		c4 c6 > killSprite
+		c6 c4 > killSprite
+		c2 c2 > killSprite
+		c5 c6 > killSprite
+		c6 c5 > killSprite
+		c3 c3 > killSprite
+		c3 EOS > stepBack
+		c3 c6 > killSprite
+		c6 c3 > killSprite
+		c6 c6 > killSprite
+		c2 c3 > killSprite
+		c3 c2 > killSprite
+		c6 EOS > stepBack
+		c5 avatar > killSprite
+		c5 avatar > killIfHasMore resource=medicine limit=1
+		c4 avatar > killIfHasMore resource=medicine limit=1
+		avatar c4 > stepBack
+		c5 c5 > killSprite
+		c2 EOS > stepBack
+		c4 c4 > killSprite
 	TerminationSet
-		SpriteCounter stype=avatar limit=0 win=False
+		NoveltyTermination s1=c2 s2=avatar win=True
 		NoveltyTermination s1=c2 s2=c2 win=True
 		NoveltyTermination s1=c2 s2=c3 win=True
 		NoveltyTermination s1=c2 s2=c4 win=True
+		NoveltyTermination s1=c2 s2=c5 win=True
+		NoveltyTermination s1=c2 s2=c6 win=True
 		NoveltyTermination s1=c3 s2=c3 win=True
 		NoveltyTermination s1=c3 s2=c4 win=True
+		NoveltyTermination s1=c3 s2=c5 win=True
+		NoveltyTermination s1=c3 s2=c6 win=True
 		NoveltyTermination s1=c4 s2=c4 win=True
-		NoveltyTermination s1=c5 s2=c3 win=True
-		NoveltyTermination s1=c5 s2=c4 win=True
-		SpriteCounter stype=c2 limit=0 win=True
+		NoveltyTermination s1=c4 s2=c5 win=True
+		NoveltyTermination s1=c4 s2=c6 win=True
+		NoveltyTermination s1=c5 s2=avatar win=True
+		NoveltyTermination s1=c5 s2=c5 win=True
+		NoveltyTermination s1=c5 s2=c6 win=True
+		NoveltyTermination s1=c6 s2=c6 win=True
+		NoveltyTermination s1=c4 s2=avatar win=True
+		NoveltyTermination s1=c6 s2=avatar win=True
+		NoveltyTermination s1=c3 s2=avatar win=True
+		SpriteCounter stype=avatar limit=0 win=False
+		SpriteCounter stype=c6 limit=0 win=False
 	LevelMapping
-		0 > c2
-		b > avatar c5
-		4 > c5
-		6 > c3
-		8 > avatar
-		9 > c4
+		1 > c5
+		2 > avatar
+		3 > c4
+		4 > c2
+		5 > c3
+		6 > c6
 		G > goal
 """
 if __name__ == "__main__":

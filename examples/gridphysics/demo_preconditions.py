@@ -83,7 +83,7 @@ BasicGame frame_rate=30
         box > Passive color=ORANGE
         medicine > Resource limit=2 color=WHITE
         poison > Resource limit=3 color=RED
-        wall > Immovable    
+        wall > Immovable color=BLACK  
     LevelMapping
         0 > hole
         c > cloud 
