@@ -15,31 +15,18 @@
 # """
 
 
-# level = """
-# wwwwwwwwwwwwwwwwwwwwww
-# w  1    p        h   w
-# w    2    p          w
-# wA  q     2  w      ww
-# w    w1      w  w    w
-# ww         q         w
-# w   p    q     1     w
-# w    2       g       w
-# w        2           w
-# wwwwwwwwwwwwwwwwwwwwww
-# """
-
-# level2  = """ OMIT
-# wwwwwwwwwwwwwwwwwwwwww
-# w  1    w           2w
-# w    2  w     p      w
-# w         2         ww
-# w h   1             ww
-# ww              A    w
-# w        q        p  w
-# w     wwwww   q      w
-# w  g              q  w
-# wwwwwwwwwwwwwwwwwwwwww
-# """
+level1 = """
+wwwwwwwwwwwwwwwwwwwwww
+w  1    p        h   w
+w    2    p          w
+wA  q     2  w      ww
+w    w1      w  w    w
+ww         q         w
+w   p    q     1     w
+w    2       g       w
+w        2           w
+wwwwwwwwwwwwwwwwwwwwww
+"""
 
 level3 = """
 wwwwwwwwwwwwwwwwwwwwww
@@ -54,20 +41,8 @@ w        2    1      w
 wwwwwwwwwwwwwwwwwwwwww
 """
 
-# level = """    OMIT
-# wwwwwwwwwwwwwwwwwwwwww
-# wp     Aw        g  2w
-# w    2  w            w
-# w          1        ww
-# w  1  1  1          ww
-# ww   www   q         w
-# w                  p w
-# w                    w
-# w    1   2    1      w
-# wwwwwwwwwwwwwwwwwwwwww
-# """
 
-level5 = """
+level4 = """
 wwwwwwwwwwwwwwwwwwwwww
 wp         Aw       2w
 w        1 11        w
@@ -80,7 +55,7 @@ w    1   2        1  w
 wwwwwwwwwwwwwwwwwwwwww
 """
 
-level6 = """
+level5 = """
 wwwwwwwwwwwwwwwwwwwwww
 wp          w       2w
 w           1    11  w
@@ -93,7 +68,7 @@ w  h 1   2        1  w
 wwwwwwwwwwwwwwwwwwwwww
 """
 
-level7 = """
+level6 = """
 wwwwwwwwwwwwwwwwwwwwww
 w    1        w  w h w
 w  1 w        w   wwww
@@ -104,6 +79,19 @@ w   p    qw     w    w
 w    2           w   w
 w g      2w          w
 wwwwwwwwwwwwwwwwwwwwww
+"""
+
+level7 = """
+wwwwwwwwwwwwwwwwwwwww
+wA1   w   p       h w
+ww  1 w     p       w
+w     p     2  w   ww
+wwwwwww1       w   ww
+ww           q      w
+w   p    q        1 w
+w    2        g     w
+w        2          w
+wwwwwwwwwwwwwwwwwwwww
 """
 
 level8 = """
