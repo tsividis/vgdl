@@ -75,6 +75,8 @@ class Precondition(object):
 		self.num = num
 		self.negated = False
 
+
+
 	# if operator_name=='>':
 	# 	self.argsString = "limit="+str(num-1)
 	# elif operator_name=='<':
@@ -83,15 +85,15 @@ class Precondition(object):
 
 	def check(self, dictionary):
 		if self.item not in dictionary.keys():
-			dictionary[item] = 0
+			dictionary[self.item] = 0
 
 		if self.operator_name == '>':
 			answer = dictionary[self.item] > self.num
-		if self.operator_name == '>=':
+		elif self.operator_name == '>=':
 			answer = dictionary[self.item] >= self.num
-		if self.operator_name == '<':
+		elif self.operator_name == '<':
 			answer = dictionary[self.item] < self.num
-		if self.operator_name == '<=':
+		elif self.operator_name == '<=':
 			answer = dictionary[self.item] <= self.num
 
 		if self.negated:
@@ -372,12 +374,14 @@ class Theory(object):
 		"""
 		theories = []
 
+
 		likelihood = self.likelihood(timestep)
 
 		if likelihood==1:
 			theories.append(self)
 		else:
 			failCase = self.getFailCases(event, timestep)
+
 			print event
 			print "\tFail case: ", failCase
 			print ""
@@ -388,7 +392,6 @@ class Theory(object):
 			# Add preconditions
 			elif failCase in [1,2,3]:
 				print "failCase in 1,2,3"
-				embed()
 				theories.extend(self.addPreconditions(event, timestep))
 			# Add new rule
 			elif failCase == 4:
@@ -474,7 +477,7 @@ class Theory(object):
 		# old_precond = Precondition(
 			# text='old precondition for '+resource,
 			# item=resource, operator_name='<=', num=0)
-		
+
 		new_precond = Precondition(
 			text='new precondition for '+resource,
 			item=resource, operator_name='>', num=0)
@@ -541,6 +544,23 @@ class Theory(object):
 		return all([self.checkEvents(i, timestep) for i in interpretations])
 
 
+	def checkPredictions(self, event, timestep):
+		"""
+		Check if the relevant predictions to a specific event occurred.
+		"""
+		# TODO: Add comments here
+		interpretations = [self.interpret(e).asTuple() for e in timestep.events if self.interpret(e) is not False]
+		if interpretations:
+			relevantRules = self.findRelevantRules(event, timestep.agentState, checkDryingPaint=True)
+			if False in relevantRules:
+				return ()
+			if relevantRules:
+				return all([rule.asTuple() in interpretations for rule in relevantRules])
+
+		# If no interpretations, or if no relevant rules
+		return ()
+
+
 	def checkPredictionsInTimeStep(self, timestep, sparse=False):
 		"""
 		Check if all predictions for the timestep actually occurred.
@@ -586,12 +606,12 @@ class Theory(object):
 					 (False, ()):    [4, "Event likelihood failed because interactionSet hasn't seen the event."+
 					 "Solution: AddRule()"]}
 
+
 		(eventInRules, predictionsHappened) = self.checkEvents(self.interpret(event), timestep), self.checkPredictions(event, timestep)
 
 
 
 		print (eventInRules, predictionsHappened)
-		embed()
 		# self.display()
 		# print "event", event
 		# print "interaction set:", [i.asTuple() for i in self.interactionSet]
@@ -627,23 +647,6 @@ class Theory(object):
 		# If we've checked everything and found no matching rule or rule+precondition or couldn't even interpret the event, return False.
 		return False
 
-
-
-	def checkPredictions(self, event, timestep):
-		"""
-		Check if the relevant predictions to a specific event occurred.
-		"""
-		# TODO: Add comments here
-		interpretations = [self.interpret(e).asTuple() for e in timestep.events if self.interpret(e) is not False]
-		if interpretations:
-			relevantRules = self.findRelevantRules(event, timestep.agentState, checkDryingPaint=True)
-			if False in relevantRules:
-				return ()
-			if relevantRules:
-				return all([rule.asTuple() in interpretations for rule in relevantRules])
-
-		# If no interpretations, or if no relevant rules
-		return ()
 
 	def addRules(self, event, override=False):
 		"""
@@ -712,7 +715,6 @@ class Theory(object):
 		"""
 		print "in addPreconditions"
 		# timestep.agentState = {'medicine':0}
-		embed()
 		newTheories = []
 
 		obj1 = self.spriteObjects[event[1]]
@@ -2145,9 +2147,9 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				if true_operator in {"<", "<="}:
 					newInteractionName = 'killIfHasLess' #example
 					if true_operator == "<":
-						limit = precondition.num - 1
+						limit = precondition.num - 2
 					else:
-						limit = precondition.num
+						limit = precondition.num - 1
 
 				elif true_operator in {">", ">="}:
 					newInteractionName = 'killIfHasMore'

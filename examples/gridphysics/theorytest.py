@@ -1,13 +1,13 @@
 level="""
 333333333333333333
-3 4 6   3    2   3
+3 4 6   3        3
 3   6   3    33333
 36666      6     3
 3     6 6       33
 33   333         3
 36666          6 3
 3   66           3
-3 1 6    6    6  3
+3 1 2    6    6  3
 333333333333333333
 """
 game = """
@@ -17,30 +17,27 @@ BasicGame
 		c3 > Resource color=WHITE
 		c2 > Resource color=ORANGE
 		c6 > Resource color=RED
-		c5 > Resource color=GOLD
+		c5 > ResourcePack color=GOLD
 		c4 > ResourcePack color=BLACK
 		medicine > Resource color=RESOURCETOADD
 	InteractionSet
+		c3 c5 > killSprite
+		c5 c3 > killSprite
 		c2 avatar > killSprite
-		c2 avatar > killIfHasMore resource=medicine limit=1
-		c2 c4 > killSprite
-		c4 c2 > killSprite
+		c2 avatar > bounceForward
 		c5 EOS > stepBack
-		avatar c6 > killSprite
+		avatar c6 > killIfHasLess resource=medicine limit=-1
 		c6 avatar > killSprite
-		c6 avatar > killIfHasMore resource=medicine limit=1
 		avatar c6 > changeResource resource=medicine value=-1
 		c4 c5 > killSprite
 		c5 c4 > killSprite
-		c3 c5 > killSprite
-		c5 c3 > killSprite
 		c3 c4 > killSprite
 		c4 c3 > killSprite
 		c2 c5 > killSprite
 		c5 c2 > killSprite
 		c4 EOS > stepBack
+		c2 c4 > undoAll
 		c3 avatar > killSprite
-		c3 avatar > killIfHasMore resource=medicine limit=1
 		avatar c3 > changeResource resource=medicine value=1
 		c2 c6 > killSprite
 		c6 c2 > killSprite
@@ -49,7 +46,7 @@ BasicGame
 		c2 c2 > killSprite
 		c5 c6 > killSprite
 		c6 c5 > killSprite
-		c3 c3 > killSprite
+		avatar c4 > stepBack
 		c3 EOS > stepBack
 		c3 c6 > killSprite
 		c6 c3 > killSprite
@@ -59,16 +56,13 @@ BasicGame
 		c6 EOS > stepBack
 		c5 avatar > killSprite
 		c5 avatar > killIfHasMore resource=medicine limit=1
-		c4 avatar > killIfHasMore resource=medicine limit=1
-		avatar c4 > stepBack
+		c3 c3 > killSprite
 		c5 c5 > killSprite
 		c2 EOS > stepBack
 		c4 c4 > killSprite
 	TerminationSet
-		NoveltyTermination s1=c2 s2=avatar win=True
 		NoveltyTermination s1=c2 s2=c2 win=True
 		NoveltyTermination s1=c2 s2=c3 win=True
-		NoveltyTermination s1=c2 s2=c4 win=True
 		NoveltyTermination s1=c2 s2=c5 win=True
 		NoveltyTermination s1=c2 s2=c6 win=True
 		NoveltyTermination s1=c3 s2=c3 win=True
@@ -82,9 +76,6 @@ BasicGame
 		NoveltyTermination s1=c5 s2=c5 win=True
 		NoveltyTermination s1=c5 s2=c6 win=True
 		NoveltyTermination s1=c6 s2=c6 win=True
-		NoveltyTermination s1=c4 s2=avatar win=True
-		NoveltyTermination s1=c6 s2=avatar win=True
-		NoveltyTermination s1=c3 s2=avatar win=True
 		SpriteCounter stype=avatar limit=0 win=False
 		SpriteCounter stype=c6 limit=0 win=False
 	LevelMapping

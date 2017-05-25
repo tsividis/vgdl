@@ -52,7 +52,7 @@ class Agent:
 			tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
 			tempHypothesis.updateTerminations()
 			if self.fakeInteractionRules:
-				tempHypothesis.display()	
+				tempHypothesis.display()
 			VRLEs.append(self.initializeVrle(tempHypothesis))
 		return VRLEs
 
@@ -132,6 +132,7 @@ class Agent:
 
 			if not quitting:
 				for i, action in enumerate(solution):
+					self.hypotheses[0].dryingPaint = set()
 					hypotheses, theory_change_flag = self.executeStep(action, self.hypotheses[0])
 					if theory_change_flag:
 						del self.hypotheses[0]
@@ -281,7 +282,7 @@ class Agent:
 
 
 if __name__ == "__main__":
-	
+
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.demo_helper"
 
@@ -294,4 +295,4 @@ if __name__ == "__main__":
 
 	##then pass this down for multiple episodes
 	gameObject = None
-	agent.playMultipleEpisodes(3)
+	agent.playMultipleEpisodes(5)
