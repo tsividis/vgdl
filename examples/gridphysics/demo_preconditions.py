@@ -59,17 +59,14 @@ w   pp           w
 w g p    p    p  w
 wwwwwwwwwwwwwwwwww
 """
+
 # level = """
-# wwwwwwwwwwwwwwwwww
-# w b     w    m   w
-# w       w A  wwwww
-# w                w
-# w               ww
-# ww   www         w
-# w                w
-# w                w
-# w g              w
-# wwwwwwwwwwwwwwwwww
+# wwwwwwwww
+# w bp    w
+# w  p  m w
+# wppp A  w
+# w gp    w
+# wwwwwwwww
 # """
 
 
@@ -95,8 +92,8 @@ BasicGame frame_rate=30
     InteractionSet
         avatar wall > stepBack  
         medicine avatar > killSprite
+        avatar poison > killIfHasLess resource=medicine limit=0
         avatar poison > changeResource resource=medicine value=-1
-        avatar poison > killIfHasLess resource=medicine limit=-1
         avatar medicine > changeResource resource=medicine value=1
         box avatar > killSprite
         poison avatar > killSprite

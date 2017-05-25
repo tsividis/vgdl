@@ -19,9 +19,9 @@ wwwwwwwwwwwwww
 w    A       w
 w            w
 w            w
-w     y      w
+w     x      w
 w            w
-w            w
+w        x   w
 w            w
 w    g       w
 wwwwwwwwwwwwww
@@ -137,8 +137,7 @@ BasicGame frame_rate=30
         goal avatar > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False          
-        #SpriteCounter stype=rand1 limit=0 win=True
-        NoveltyTermination stype=rand1 win=True
+        SpriteCounter stype=goal limit=0 win=True
 """
 
 if __name__ == "__main__":

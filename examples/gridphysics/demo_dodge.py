@@ -31,7 +31,7 @@ BasicGame
             fastbullet > speed=0.2  color=RED
                 rightfast >     orientation=RIGHT
                 downfast  >     orientation=DOWN  
-        wall      > Immovable
+        wall      > Immovable color=BLACK
         goal      > Immovable  color=GREEN
         
     InteractionSet

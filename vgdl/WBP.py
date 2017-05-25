@@ -13,6 +13,7 @@ import math
 from threading import Thread
 from collections import defaultdict, deque
 import time
+import ipdb
 import copy
 from threading import Lock
 from Queue import Queue
@@ -31,7 +32,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=300):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=500):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -56,10 +57,10 @@ class WBP():
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
 			self.theory=theory
-		# if fakeInteractionRules:
-		# 	print "got fake interaction rules"
-		# 	embed()
 
+		# for rule in self.theory.interactionSet:
+		# 	if 'stepBack'==rule.interaction:
+		# 		ipdb.set_trace()
 		i=1
 		for k in rle._game.all_objects.keys():
 			self.objIDs[k] = i * (rle.outdim[0]*rle.outdim[1]+self.padding)
@@ -654,13 +655,13 @@ if __name__ == "__main__":
 	## objects.
 	# gameFilename = "examples.continuousphysics.mario"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
-	gameFilename = "examples.gridphysics.demo_transform_relational"
+	gameFilename = "examples.gridphysics.demo_preconditions"
 
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
-	# embed()
+	embed()
 
 	p = WBP(rle, gameFilename)
 

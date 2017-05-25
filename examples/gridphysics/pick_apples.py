@@ -1,92 +1,131 @@
-
-# level = """
-# wwwwwwwwww
-# wx  A   xw
-# wwwwwwwwww
-# """
-
-
-# level = """
-# wwwwwwwwwwwwww
-# w    x       w
-# w   xAx      w
-# w            w
-# wwwwwwwwwwwwww
-# """
-
-level = """
-wwwwwwwwwwwwwwww
-w              w
-w A            w
-w     y     x  w
-w              w
-w  x   w       w
-w         y    w
-w              w
-w       x      w
-wwwwwwwwwwwwwwww
+level1 = """
+wwwwwwwwwwwwwwwwwwwwwwwwww
+wA                       w
+w        a               w
+w                        w
+w                        w
+w    o                   w
+w  a               o     w
+w                a       w
+w                        w
+wwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
+level2 = """
+wwwwwwwwwwwwwwwwwwwwwwwwww
+wA                       w
+w        a     o         w
+w              a         w
+w  o     a  a      o     w
+w                o       w
+w  a               o     w
+w       o     a  a       w
+w  o       a             w
+wwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwww
-# wA                       w
-# w    a    x              w
-# w     a          a       w
-# w            z           w
-# w                  z     w
-# w   x    z           z   w
-# w              a  x      w
-# w                        w
-# wwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level3 = """
+wwwwwwwwwwwwwwwwwwwwwwwwww
+w                        w
+w        a     o         w
+w                 o ooooow
+w                 o      w
+w                o    A  w
+w  a              oooooo w
+w       o     a  a       w
+w  o       a             w
+wwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+
+level4 = """
+wwwwwwwwwwwwwwwwwwwwwwwwww
+wA                       w
+w     b  a     o         w
+w              a         w
+w  o     a  a      o     w
+w           b    o       w
+w  a               o     w
+w       o     a  a       w
+w  o       a             w
+wwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+
+level5 = """
+wwwwwwwwwwwwwwwwwwwwwwwwww
+w            s          Aw
+w    a    s        s     w
+w              a         w
+w      o a  a   s     s  w
+w    s      b    o       w
+w  a   s   b       o     w
+w       o   s            w
+w   s         s       s  w
+wwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
         
 game = """
 BasicGame frame_rate=30
     SpriteSet
-        apple > Immovable color=GREEN
-        orange > Immovable color=ORANGE
-        box > Immovable color=LIGHTGREEN
-        goal2 > Immovable color=ORANGE  
-        avatar > MovingAvatar color=WHITE
+        fruit > Immovable
+            apple > color=GREEN
+            orange > color=ORANGE
+        avatar  > MovingAvatar color=WHITE
         wall > Immovable color=BLACK
     LevelMapping
         w > wall   
-        a > box1
-        b > box2
-        c > box3
-        d > box4
-        e > box5
-        x > apple
-        y > orange
-        g > goal2
+        a > apple
+        o > orange
     InteractionSet
         avatar wall > stepBack
-        box avatar > bounceForward
-        box apple > undoAll
-        box box > undoAll
-        box wall > undoAll
-        apple wall > undoAll
-        orange wall > undoAll
-        apple orange > undoAll
-        apple apple > undoAll
-        orange box > bounceForward
-        #avatar apple > changeScore value=.5
+        fruit wall > undoAll
+        fruit fruit > undoAll
         avatar orange > killSprite
         apple avatar > killSprite
-        goal2 avatar > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False          
         SpriteCounter stype=apple limit=0 win=True
-"""
-"""
-
 
 """
+
+game_with_blueberries = """
+BasicGame frame_rate=30
+    SpriteSet
+        fruit > Immovable
+            apple > color=GREEN
+            orange > color=ORANGE
+            blueberry >color=BLUE
+            strawberry > color=RED
+        avatar  > MovingAvatar color=WHITE
+        wall > Immovable color=BLACK
+    LevelMapping
+        w > wall   
+        a > apple
+        b > blueberry
+        o > orange
+        s > strawberry
+    InteractionSet
+        avatar wall > stepBack
+        fruit wall > undoAll
+        fruit fruit > undoAll
+        avatar orange > killSprite
+        apple avatar > killSprite
+        blueberry avatar > killSprite
+        strawberry avatar > killSprite
+    TerminationSet
+        SpriteCounter stype=avatar  limit=0 win=False          
+        SpriteCounter stype=apple limit=0 win=True
+        SpriteCounter stype=blueberry limit=0 win=True
+        SpriteCounter stype=strawberry limit=0 win=True
+
+"""
+
+level_game_pairs = [[game, level1], [game, level2], [game, level3], [game_with_blueberries, level4], [game_with_blueberries, level5]]
+
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     import random
-    levels = [l for l in locals().keys() if 'level' in l]
-    index = random.choice(range(len(levels)))
-    VGDLParser.playGame(game, locals()[levels[index]])     
+    level_game = random.choice(level_game_pairs)
+    VGDLParser.playGame(*level_game)
+    # VGDLParser.playGame(game_with_blueberries, level5)
+

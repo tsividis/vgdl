@@ -10,6 +10,7 @@ generateTheoryFromGame
 import WBP
 import importlib
 import numpy as np
+import ipdb
 import copy
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
@@ -39,6 +40,8 @@ class Agent:
 		gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
 				 "./examples/gridphysics/theorytest.py")
 		Vrle = createMindEnv(gameString, levelString, output=False)
+		Vrle._game.getAvatars()[0].resources = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+		# embed()
 		# Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
 		return Vrle
 
@@ -51,6 +54,8 @@ class Agent:
 			tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
 			tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
 			tempHypothesis.updateTerminations()
+			# ipdb.set_trace()
+			print "fake hypotheses"
 			if self.fakeInteractionRules:
 				tempHypothesis.display()
 			VRLEs.append(self.initializeVrle(tempHypothesis))
@@ -116,9 +121,6 @@ class Agent:
 		while not ended:
 			## initialize one or many VRLEs according to hypothesis-selection method
 			theoryRLEs = self.VrleInitPhase()
-			# print("theory being passed to planner")
-			# self.hypotheses[0].display()
-
 
 			p = WBP.WBP(theoryRLEs[0], self.gameFilename,
 						theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules, annealing=annealing)
@@ -136,7 +138,8 @@ class Agent:
 					hypotheses, theory_change_flag = self.executeStep(action, self.hypotheses[0])
 					if theory_change_flag:
 						del self.hypotheses[0]
-						self.hypotheses.extend(hypotheses)
+						self.hypotheses = hypotheses
+						# self.hypotheses.extend(hypotheses)
 						break
 					ended, win = self.rle._isDone()
 					if ended:
@@ -152,6 +155,7 @@ class Agent:
 						except:
 							# Mismatch in gamestring lengths
 							break
+				# [rule.display() for rule in self.fakeInteractionRules]
 			else:
 				return gameObject, False, self.rle._game.score
 
@@ -185,9 +189,13 @@ class Agent:
 		hypSlot1 = self.hypotheses[0].spriteObjects[event[1]].className
 		hypSlot2 = self.hypotheses[0].spriteObjects[event[2]].className
 		if set([hypSlot1, hypSlot2]) == set([rule.slot1, rule.slot2]):
-		# if ((hypSlot1==rule.slot1 and hypSlot2==rule.slot2) or
-		#     (hypSlot1==rule.slot2 and hypSlot2==rule.slot1)):
-			return True
+			if not rule.preconditions:
+				return True
+			else:
+				if not all([p.check(self.rle.agentStatePrev) for p in list(rule.preconditions)]):
+					return False
+				else:
+					return True
 		else:
 			return False
 
@@ -210,7 +218,7 @@ class Agent:
 			embed()
 
 		res = self.rle.step(action)
-		# print res['effectList']
+
 		## Add newly-seen objects.
 		current_objects = self.rle._game.getObjects()
 		for k in current_objects.keys():
@@ -234,13 +242,17 @@ class Agent:
 
 		if event['effectList']:
 			## Delete fake interaction rules for events that were witnessed in this time step.
+			oldFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
 			self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
 				not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
+			
+			# if len(self.fakeInteractionRules)<len(oldFakeInteractionRules):
+				# import ipdb; ipdb.set_trace()
 			# print "before changing fakeInteractionRules"
 			# embed()
 
-		# if not all([e in all_effects for e in effects]):
-			theory_change_flag = True
+			if not all([e in all_effects for e in effects]):
+				theory_change_flag = True
 			sample = sampleFromDistribution(self.rle._game.spriteDistribution, self.all_objects)
 			game_object = Game(spriteInductionResult=sample)
 			terminationCondition = {'ended': False, 'win':False, 'time':self.rle._game.time}
@@ -249,9 +261,9 @@ class Agent:
 			# embed()
 			hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
 			verbose=False, existingTheories=hypotheses)) ##if you resample or run sprite induction, this
-			if len(hypotheses)>1:
-				print "more than one hypothesis"
-				embed()
+			# if len(hypotheses)>1:
+			# 	print "more than one hypothesis"
+			# 	embed()
 
 
 			#  PRECONDITIONS HANDLING
@@ -262,11 +274,12 @@ class Agent:
 			for change_resource in [e[3] for e in event['effectList'] if 'changeResource' in e]:
 				resource = change_resource['resource']
 				val = change_resource['value']
+				# print "adding fake rules"
+				# import ipdb; ipdb.set_trace()
 				if resource not in self.seen_resources and val>0:
 					self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
 					self.fakeInteractionRules = list(set(self.fakeInteractionRules))
 					# Add resource change to seen_resources list
-					print resource
 					self.seen_resources.append(resource)
 
 
@@ -289,7 +302,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pick_apples_with_missiles"
 	# filename = "examples.gridphysics.demo_transform_relational"
 	# filename = "examples.gridphysics.simpleGame_push_boulders"
-	filename = "examples.gridphysics.demo_preconditions"
+	filename = "examples.gridphysics.pick_apples"
 
 	agent = Agent(filename)
 

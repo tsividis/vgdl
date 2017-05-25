@@ -75,14 +75,6 @@ class Precondition(object):
 		self.num = num
 		self.negated = False
 
-
-
-	# if operator_name=='>':
-	# 	self.argsString = "limit="+str(num-1)
-	# elif operator_name=='<':
-	# 	self.argsString = "limit="str(num+1) #check
-
-
 	def check(self, dictionary):
 		if self.item not in dictionary.keys():
 			dictionary[self.item] = 0
@@ -391,7 +383,6 @@ class Theory(object):
 				theories.append(self)
 			# Add preconditions
 			elif failCase in [1,2,3]:
-				print "failCase in 1,2,3"
 				theories.extend(self.addPreconditions(event, timestep))
 			# Add new rule
 			elif failCase == 4:
@@ -473,24 +464,12 @@ class Theory(object):
 		return likelihood
 
 	def updateInteractionsPreconditions(self, resource):
-		# Create old and new preconditions for the resource
-		# old_precond = Precondition(
-			# text='old precondition for '+resource,
-			# item=resource, operator_name='<=', num=0)
 
 		new_precond = Precondition(
 			text='new precondition for '+resource,
-			item=resource, operator_name='>', num=0)
-
-		# Update all interaction rules involving the avatar
-		# with preconditions for resource <= 0
-
-		# for interaction in self.interactionSet:
-		# 	if interaction.slot1=='avatar' and interaction.interaction=='killSprite':
-		# 		interaction.addPrecondition(old_precond)
+			item=resource, operator_name='>=', num=0)
 
 		# Add new generic rules for the avatar with preconditions
-		# for resource > 0
 		newInteractionRules = []
 		nonAvatars = [o for o in self.spriteSet if o.vgdlType not in AvatarTypes and o.color!='ENDOFSCREEN']
 		for o in nonAvatars:
@@ -713,7 +692,6 @@ class Theory(object):
 		Creates preconditions based on the agentState that might help to explain the event.
 		Returns a list of theories.
 		"""
-		print "in addPreconditions"
 		# timestep.agentState = {'medicine':0}
 		newTheories = []
 
@@ -931,26 +909,36 @@ class Theory(object):
 	def updateTerminations(self, event=False):
 		self.terminationSet = [t for t in self.terminationSet
 							   if t.ruleType=='SpriteCounterRule' and
-							   not t.termination.win]
-
+							   not t.termination.win and all([not f.__eq__(t) for f in self.falsified])]
 
 		if event:
-			relevantEvents = [t for t in event['effectList'] if 'killSprite' in t or 'transformTo' in t]
+			relevantEvents = [t for t in event['effectList'] if t[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo']]
 			rle = event['rle']
 			for event in relevantEvents:
 				candidateSpriteType = [o for o in rle._game.sprite_groups if len(rle._game.sprite_groups[o])>0 and rle._game.sprite_groups[o][0].colorName == event[1]][0]
-				if len([o for o in rle._game.sprite_groups[candidateSpriteType] if o not in rle._game.kill_list]) == 0 and not rle._isDone()[0]:
-					self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, True))
-					self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, False))
-				elif (rle._isDone()[0] and not rle._isDone()[1]):
-					self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, True))
-					loss_terminationRule = SpriteCounterRule(self.colorToClassMapper(event[1]), 0, False)
-					if (all([not loss_terminationRule.__eq__(t) for t in self.terminationSet]) and
-						all([not loss_terminationRule.__eq__(t) for t in self.falsified])):
-							self.terminationSet.append(loss_terminationRule)
+				if len([o for o in rle._game.sprite_groups[candidateSpriteType] if o not in rle._game.kill_list]) == 0:
+					
+					## If the game didn't end, you can't win or lose based on this particular class being 0
+					if not rle._isDone()[0]:
+						self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, True))
+						self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, False))
+					else: 
+						## If you won, you can't lose based on this class being 0
+						if rle._isDone()[1]:
+							self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, False))
+						else:
+						## If you lost, you can't win based on this class being 0
+							self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, True))
+
+						## If you lost, maybe you lost because this class was 0. Check whether we'd already falsified this rule.
+							loss_terminationRule = SpriteCounterRule(self.colorToClassMapper(event[1]), 0, False)
+							if (all([not loss_terminationRule.__eq__(t) for t in self.terminationSet]) and
+								all([not loss_terminationRule.__eq__(t) for t in self.falsified])):
+									self.terminationSet.append(loss_terminationRule)
+
 
 		for rule in self.interactionSet:
-			if 'killSprite' in rule.asTuple() or 'transformTo' in rule.asTuple() or 'killIfHasMore' in rule.asTuple():
+			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo']:
 				if rule.generic:
 					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
 				else:
@@ -2147,9 +2135,9 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				if true_operator in {"<", "<="}:
 					newInteractionName = 'killIfHasLess' #example
 					if true_operator == "<":
-						limit = precondition.num - 2
-					else:
 						limit = precondition.num - 1
+					else:
+						limit = precondition.num
 
 				elif true_operator in {">", ">="}:
 					newInteractionName = 'killIfHasMore'
