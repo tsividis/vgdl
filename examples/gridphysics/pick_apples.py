@@ -42,7 +42,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwww
 level4 = """
 wwwwwwwwwwwwwwwwwwwwwwwwww
 wA                       w
-w     b  a     o         w
+w     b  a     o     s   w
 w              a         w
 w  o     a  a      o     w
 w           b    o       w
@@ -122,12 +122,15 @@ BasicGame frame_rate=30
 
 """
 
-level_game_pairs = [[game, level1], [game, level2], [game, level3], [game_with_blueberries, level4], [game_with_blueberries, level5]]
+level_game_pairs = [[game, level1], [game, level2], [game, level3], 
+    [game_with_blueberries, level4], [game_with_blueberries, level5]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    import random
-    level_game = random.choice(level_game_pairs)
+    import random, sys
+    if len(sys.argv)==2:
+        level_game = level_game_pairs[int(sys.argv[1])]
+    else:
+        level_game = random.choice(level_game_pairs)
     VGDLParser.playGame(*level_game)
-    # VGDLParser.playGame(game_with_blueberries, level5)
 
