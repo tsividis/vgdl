@@ -338,7 +338,7 @@ class SpawnPoint(SpriteProducer):
 
 class RandomNPC(VGDLSprite):
     """ Chooses randomly from all available actions each step. """
-    speed = .4
+    speed = 1
     is_stochastic = True
 
     def update(self, game):

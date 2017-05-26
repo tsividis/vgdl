@@ -1,8 +1,8 @@
 
-leve10 = """
+level0 = """
 wwwwwwwwwwwwwwwwww
 w  1    a        w
-w               3w
+w                w
 wA  b        w  ww
 w    w       w  ww
 ww         b     w
@@ -40,32 +40,6 @@ wwwwwwwwwwwwwwwwww
 
 level3 = """
 wwwwwwwwwwwwwwwwww
-w   2w        b gw
-w b     a 1      w
-w 3   wwwwwwwwwwww
-w            a   w
-wwwwwwwwwwwwwww  w
-w       a        w
-w  wwwwwwwwwwwwwww
-w               Aw
-wwwwwwwwwwwwwwwwww
-"""
-
-level4 = """
-wwwwwwwwwwwwwwwwww
-w       b       gw
-w   1            w
-w 3              w
-w             1  w
-w          2     w
-w           2    w
-w    1          bw
-w aA             w
-wwwwwwwwwwwwwwwwww
-"""
-
-level5 = """
-wwwwwwwwwwwwwwwwww
 w       b        w
 w   1            w
 w 3              w
@@ -77,8 +51,7 @@ w aA             w
 wwwwwwwwwwwwwwwwww
 """
 
-
-level6 = """
+level4 = """
 wwwwwwwwwwwwwwwwww
 w       2        w
 w                w
@@ -90,6 +63,34 @@ wwwwwwwwww1     bw
 w aA             w
 wwwwwwwwwwwwwwwwww
 """
+
+
+
+# level3 = """
+# wwwwwwwwwwwwwwwwww
+# w   2w        b gw
+# w b     a 1      w
+# w 3   wwwwwwwwwwww
+# w            a   w
+# wwwwwwwwwwwwwww  w
+# w       a        w
+# w  wwwwwwwwwwwwwww
+# w               Aw
+# wwwwwwwwwwwwwwwwww
+# """
+
+# level4 = """
+# wwwwwwwwwwwwwwwwww
+# w       b       gw
+# w   1            w
+# w 3              w
+# w             1  w
+# w          2     w
+# w           2    w
+# w    1          bw
+# w aA             w
+# wwwwwwwwwwwwwwwwww
+# """
 
 
         
