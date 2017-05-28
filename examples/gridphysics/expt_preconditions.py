@@ -47,7 +47,7 @@ wpppp      p  pmmw
 w     p p     p ww
 wwpp         ppppw
 wpppp      ppppppw
-wm mpp     ppp   w
+wm mpp     ppppppw
 wmbmppm  p ppp g w
 wwwwwwwwwwwwwwwwww
 """
@@ -109,11 +109,11 @@ wwwwwwwwwwwwwwwwww
 # """
 
 
-        
+
 game = """
 BasicGame frame_rate=30
-    SpriteSet        
-        avatar > MovingAvatar color=DARKBLUE #cooldown=4              
+    SpriteSet
+        avatar > MovingAvatar color=DARKBLUE #cooldown=4
         goal > Passive color=GOLD
         box > Passive color=ORANGE
         medicine > Resource limit=4 color=WHITE
@@ -121,7 +121,7 @@ BasicGame frame_rate=30
         poison > Resource limit=3 color=RED
         fire > Resource limit=3 color=PURPLE
         suit > Resource limit=1 color=GREEN
-        wall > Immovable color=BLACK  
+        wall > Immovable color=BLACK
     LevelMapping
         0 > hole
         b > box
@@ -130,10 +130,10 @@ BasicGame frame_rate=30
         e > water
         f > fire
         s > suit
-        w > wall   
-        g > goal 
+        w > wall
+        g > goal
     InteractionSet
-        avatar wall > stepBack  
+        avatar wall > stepBack
         medicine avatar > killSprite
         avatar fire > killIfHasLess resource=water limit=0
         avatar fire > changeResource resource=water value=-1
@@ -145,13 +145,13 @@ BasicGame frame_rate=30
         poison avatar > killSprite
         fire avatar > killSprite
         water avatar > killSprite
-        box wall    > undoAll        
+        box wall    > undoAll
         box poison > undoAll
         box medicine > undoAll
         goal avatar > killSprite
     TerminationSet
-        SpriteCounter stype=avatar  limit=0 win=False  
-        SpriteCounter stype=goal limit=0 win=True       
+        SpriteCounter stype=avatar  limit=0 win=False
+        SpriteCounter stype=goal limit=0 win=True
 """
 
 
