@@ -62,17 +62,17 @@ game= """
 BasicGame frame_rate=42
     SpriteSet
         fakewall   > Immovable    color=LIGHTGRAY
-        avatar  > FlakAvatar stype=sam
-        missile > Missile
+        avatar  > FlakAvatar stype=sam color=DARKBLUE
+        missile > Missile color=BLACK
             sam  > orientation=UP    color=BLUE speed=0.3 singleton=True
             bomb > orientation=DOWN  color=RED  speed=0.5
-        alien   > Bomber       stype=bomb   prob=0  cooldown=3 speed=0.75
-            alien1   > Bomber       stype=bomb   prob=0  cooldown=3 speed=1
-            alien2   > Bomber       stype=bomb   prob=0  cooldown=3 speed=1.5
-            alien3   > Bomber       stype=bomb   prob=0  cooldown=3 speed=.5
-            alien4   > Bomber       stype=bomb   prob=0  cooldown=3 speed=.75
-            alien5   > Bomber       stype=bomb   prob=0  cooldown=3 speed=.25
-        portal  > SpawnPoint   stype=alien  cooldown=10   total=3
+        # alien   > Bomber       stype=bomb   prob=0  cooldown=3 speed=0.75
+        alien1   > Bomber      stype=bomb   prob=0  cooldown=3 speed=1 color=ORANGE
+        alien2   > Bomber      stype=bomb   prob=0  cooldown=3 speed=1.5 color=LIGHTBLUE
+        alien3   > Bomber      stype=bomb   prob=0  cooldown=3 speed=.5 color=PINK
+        alien4   > Bomber      stype=bomb   prob=0  cooldown=3 speed=.75 color=GREEN
+        alien5   > Bomber      stype=bomb   prob=0  cooldown=3 speed=.25 color=YELLOW
+        portal  > SpawnPoint   stype=alien  cooldown=10   total=3 color=BLACK
 
     LevelMapping
         0 > portal
@@ -85,14 +85,18 @@ BasicGame frame_rate=42
 
     InteractionSet
         avatar  EOS  > stepBack
-        alien   EOS > reverseDirection
+        alien1   EOS > reverseDirection
+        alien2   EOS > reverseDirection
+        alien3   EOS > reverseDirection
+        alien4   EOS > reverseDirection
+        alien5   EOS > reverseDirection
         missile EOS  > killSprite
-        missile base > killSprite
-        base missile > killSprite
-        base   alien > killSprite
-        avatar alien > killSprite
         avatar bomb  > killSprite
-        alien  sam   > killSprite
+        alien1  sam   > killSprite
+        alien2  sam   > killSprite
+        alien3  sam   > killSprite
+        alien4  sam   > killSprite
+        alien5  sam   > killSprite
 
     TerminationSet
         SpriteCounter      stype=avatar               limit=0 win=False

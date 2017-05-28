@@ -5,7 +5,7 @@ ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~
 def softmax(w, t = 1.0):
     e = np.exp(np.array(w) / t)
     dist = e / np.sum(e)
-    return dist	
+    return dist
 
 def normalize(array):
 	z = float(sum(array))
@@ -41,6 +41,9 @@ def objectsToSymbol(rle, objects, symbolDict):
 	objects = [rle._game.sprite_groups[o][0].colorName for o in objects]
 	try:
 		if len(objects)==1:
+			if objects[0] not in symbolDict.keys():
+				idx = len(symbolDict.keys())
+				symbolDict[objects[0]] = ALNUM[idx]
 			return symbolDict[objects[0]]
 		else:
 			for item in itertools.permutations(objects):
@@ -52,5 +55,6 @@ def objectsToSymbol(rle, objects, symbolDict):
 			symbolDict[tuple(objects)] = ALNUM[idx]
 			return ALNUM[idx]
 	except:
+		import ipdb; ipdb.set_trace()
 		print "objectsToSymbol problem."
 		embed()
