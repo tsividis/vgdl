@@ -1,5 +1,5 @@
 
-level = """
+level0 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
@@ -138,7 +138,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w      b   a              b        w
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
-        
+
 game = """
 BasicGame frame_rate=30
     SpriteSet
@@ -155,7 +155,7 @@ BasicGame frame_rate=30
             missile2 > color=PINK orientation=RIGHT
         goal > Immovable color=GREEN
     LevelMapping
-        w > wall   
+        w > wall
         a > box1
         b > box2
         x > chaser
@@ -164,7 +164,7 @@ BasicGame frame_rate=30
         2 > missile2
         g > goal
     InteractionSet
-        avatar wall > stepBack 
+        avatar wall > stepBack
         mover wall > stepBack
         box wall > stepBack
         box1 avatar > bounceForward
@@ -183,9 +183,12 @@ BasicGame frame_rate=30
         missile missile > reverseDirection
         mover mover > stepBack
     TerminationSet
-        SpriteCounter stype=avatar  limit=0 win=False          
+        SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=box1 limit=0 win=True
 """
+
+level_game_pairs = [[game, level0], [game, level1], [game, level2],
+                    [game, level3]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
@@ -195,4 +198,4 @@ if __name__ == "__main__":
         index = int(sys.argv[1])
     else:
         index = random.choice(range(len(levels)))
-    VGDLParser.playGame(game, locals()[levels[index]]) 
+    VGDLParser.playGame(game, locals()[levels[index]])

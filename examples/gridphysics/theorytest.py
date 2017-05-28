@@ -1,14 +1,14 @@
 level="""
-33333333333333333333333333
-3                        3
-3        1     0         3
-3                 0 000003
-3                 0      3
-3                0    2  3
-3  1              000000 3
-3       0     1  1       3
-3  0       1             3
-33333333333333333333333333
+44444444444444444444444444444444
+4                              4
+4                              4
+4                              4
+4  6                           4
+4 0                            4
+4                              4
+4       5                     74
+444                            4
+44444444444444444444444444444444
 """
 game = """
 BasicGame
@@ -39,7 +39,7 @@ BasicGame
 		NoveltyTermination s1=c2 s2=c4 win=True
 		NoveltyTermination s1=c3 s2=c3 win=True
 		NoveltyTermination s1=c3 s2=c4 win=True
-		NoveltyTermination s1=c4 s2=c4 win=True
+     	NoveltyTermination s1=c4 s2=c4 win=True
 		SpriteCounter stype=avatar limit=0 win=False
 		SpriteCounter stype=c3 limit=0 win=True
 	LevelMapping
@@ -51,4 +51,4 @@ BasicGame
 """
 if __name__ == "__main__":
 	from vgdl.core import VGDLParser
-	VGDLParser.playGame(game, level)
+	V	GDLParser.playGame(game, level)

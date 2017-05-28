@@ -50,7 +50,7 @@ w   w2   ww  w   ww ww
 w  g     2www       ww
 wwwwwwwwwwwwwwwwwwwwww
 """
-    
+
 level4 = """
 wwwwwwwwwwwwwwwwwwwwww
 w    1        w  w w w
@@ -188,8 +188,8 @@ wwwwwwwwwwwwwwwwwwwwww
 
 game = """
 BasicGame frame_rate=30
-    SpriteSet        
-        avatar > MovingAvatar color=DARKBLUE #cooldown=4 
+    SpriteSet
+        avatar > MovingAvatar color=DARKBLUE #cooldown=4
         goal > ResourcePack
             goal1 > color=GOLD
             goal2 > color=RED
@@ -199,17 +199,17 @@ BasicGame frame_rate=30
         box1 > ResourcePack color=GREEN
         box2 > ResourcePack color=LIGHTBLUE
         wall > Immovable color=DARKGRAY
-        score > Resource color=PINK limit=10  
+        score > Resource color=PINK limit=10
     LevelMapping
         p > poison1
         q > poison2
         1 > box1
         2 > box2
-        w > wall   
+        w > wall
         g > goal1
-        h > goal2 
+        h > goal2
     InteractionSet
-        avatar wall > stepBack  
+        avatar wall > stepBack
         avatar poison > killSprite
         goal avatar > killSprite
         box1 avatar > bounceForward
@@ -220,8 +220,8 @@ BasicGame frame_rate=30
         goal wall > stepBack
         goal poison1 > stepBack
         goal poison2 > stepBack
-        box1 wall    > stepBack   
-        box2 wall    > stepBack   
+        box1 wall    > stepBack
+        box2 wall    > stepBack
         box1 box1 > stepBack
         poison1 box1 > killSprite
         poison2 box1 > bounceForward
@@ -229,15 +229,17 @@ BasicGame frame_rate=30
         poison2 box2 >stepBack
     TerminationSet
         SpriteCounter stype=goal    limit=0 win=True
-        SpriteCounter stype=avatar  limit=0 win=False          
+        SpriteCounter stype=avatar  limit=0 win=False
 """
 
+level_game_pairs = [[game, level0], [game, level1], [game, level2],
+                    [game, level3], [game, level4]] 
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     import random, sys
     levels = [l for l in locals().keys() if 'level' in l]
-    
+
     if len(sys.argv)==2:
         index = int(sys.argv[1])
     else:
