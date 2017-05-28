@@ -331,7 +331,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.simpleGame_push_boulders"
 
 	# filename = "examples.gridphysics.expt_exploration_exploitation"
-	filename = "examples.gridphysics.expt_relational"
+	filename = "examples.gridphysics.expt_helper"
 	agent = Agent('full', filename)
 
 	##then pass this down for multiple episodes

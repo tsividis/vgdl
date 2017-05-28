@@ -30,19 +30,6 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w        a         a           w
 w              a               w
-w  r                           w
-w          b              a    w
-w                   a          w
-w  A     a     b               w
-www                 r          w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
-
-level3 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w        a         a           w
-w              a               w
 w  x                           w
 w          b              a    w
 w                   a          w
@@ -51,6 +38,31 @@ www                 x          w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
+level3 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w        a         a           w
+w              a               w
+w  r                           w
+w          b              a    w
+w                   a          w
+w  A     a     b               w
+www                 r          w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+
+level4 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                b   b         w
+w        a       b a b         w
+w              a bbbbb         w
+w  x                           w
+w          b              a    w
+w                   a          w
+w  A     a     b               w
+www                 x          w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 # level = """
 # wwwwwwww
