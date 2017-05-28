@@ -331,8 +331,8 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pick_apples"
 	# filename = "examples.gridphysics.expt_antagonist"
 
-	# filename = "examples.gridphysics.expt_exploration_exploitation"
-	filename = "examples.gridphysics.expt_relational"
+	filename = "examples.gridphysics.expt_exploration_exploitation"
+	# filename = "examples.gridphysics.expt_relational"
 	agent = Agent('full', filename)
 
 	##then pass this down for multiple episodes
