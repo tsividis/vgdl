@@ -67,6 +67,8 @@ class WBP():
 			i+=1
 		self.addSpaceBarToActions()
 
+		import ipdb; ipdb.set_trace()
+
 	def findObjectsInRLE(self, rle, objName):
 		try:
 			objLocs = [rle._rect2pos(element.rect) for element in rle._game.sprite_groups[objName]
@@ -478,7 +480,7 @@ class Node():
 					first_alpha=first_alpha, second_alpha=second_alpha)
 				# print("noveltytermination_val for {} and {} is equal to {}".format(
 					# term.termination.s1, term.termination.s2, noveltytermination_val))
-				heuristicVal += self.WBP.annealing * noveltytermination_val
+				heuristicVal += 10000 * self.WBP.annealing * noveltytermination_val
 
 
 		return heuristicVal
