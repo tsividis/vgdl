@@ -17,7 +17,8 @@ from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrin
 
 
 class Agent:
-	def __init__(self, gameFilename):
+	def __init__(self, modelType, gameFilename):
+		self.modelType = modelType
 		self.gameFilename = gameFilename
 		self.gameString = None
 		self.levelString = None
@@ -56,9 +57,9 @@ class Agent:
 			tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
 			tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
 			tempHypothesis.updateTerminations()
-			print "fake hypotheses"
-			if self.fakeInteractionRules:
-				tempHypothesis.display()
+			# print "fake hypotheses"
+			# if self.fakeInteractionRules:
+				# tempHypothesis.display()
 			VRLEs.append(self.initializeVrle(tempHypothesis))
 		return VRLEs
 
@@ -92,15 +93,24 @@ class Agent:
 		""" Plays a game level until it wins, then moves to the next one until
 		completion. """
 		level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
+		episodes = []
 		for n_level, level_game in enumerate(level_game_pairs):
 			print("Playing level {}".format(n_level))
 			(self.gameString, self.levelString) = level_game
 			win = False
 			gameObject = None
 			while not win:
-				gameObject, win, score = self.playEpisode(gameObject)
-			VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
-					persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
+				gameObject, win, score, steps = self.playEpisode(gameObject)
+				episodes.append((n_level, steps, win, score))
+
+			# VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
+					# persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
+		output = {'modelType':self.modelType,
+					'gameName': self.gameFilename[self.gameFilename.find('expt'):],
+					'condition': 'no_score',
+					'episodes' : episodes}
+		write_to_csv('pilotModelRuns.csv', output)
+
 	def playMultipleEpisodes(self, num_episodes):
 		i=0
 		gameObject = None
@@ -118,6 +128,7 @@ class Agent:
 		## Initialize external environment
 		self.initializeEnvironment()
 		print "initializing RLE"
+		steps = 0
 		self.all_objects= self.rle._game.getObjects()
 		ended, win = self.rle._isDone()
 		annealing = 1
@@ -150,6 +161,7 @@ class Agent:
 				for i, action in enumerate(solution):
 					self.hypotheses[0].dryingPaint = set()
 					hypotheses, theory_change_flag = self.executeStep(action, self.hypotheses[0])
+					steps +=1
 					if theory_change_flag:
 						del self.hypotheses[0]
 						self.hypotheses = hypotheses
@@ -171,14 +183,14 @@ class Agent:
 							break
 				# [rule.display() for rule in self.fakeInteractionRules]
 			else:
-				return gameObject, False, self.rle._game.score
+				return gameObject, False, self.rle._game.score, steps
 
 			# self.hypotheses[0].display()
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
 		score = self.rle._game.score
 		print "ended episode. Win={}".format(win)
-		return gameObject, win, score
+		return gameObject, win, score, steps
 
 	def matchEventToRuleByIDAndSpriteName(self, event, rule):
 		# Get IDs and names for game objects
@@ -317,9 +329,11 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.demo_transform_relational"
 	# filename = "examples.gridphysics.simpleGame_push_boulders"
 	# filename = "examples.gridphysics.pick_apples"
-	filename = "examples.gridphysics.expt_antagonist"
+	# filename = "examples.gridphysics.expt_antagonist"
 
-	agent = Agent(filename)
+	# filename = "examples.gridphysics.expt_exploration_exploitation"
+	filename = "examples.gridphysics.expt_relational"
+	agent = Agent('full', filename)
 
 	##then pass this down for multiple episodes
 	gameObject = None

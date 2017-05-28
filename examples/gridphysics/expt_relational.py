@@ -1,41 +1,41 @@
 
 level0 = """
-wwwwwwwwwwwwwwwwwwwww
-w  1    p           w
-w    2    p         w
-wA  q     2  w     ww
-w    w1      w w    w
-ww         q        w
-w   p    q     1    w
-w    2       g      w
-w        2          w
-wwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwww
+w  1    p            w
+w    2    p          w
+wA  q     2   w     ww
+w    w1       w w    w
+ww          q        w
+w   p    q      1    w
+w    2        g      w
+w         2          w
+wwwwwwwwwwwwwwwwwwwwww
 """
 
 level1 = """
-wwwwwwwwwwwwwwwwwwwww
-wp         w       2w
-w          1    11  w
-w   g         1    ww
-w  1  12    1      ww
-ww            q     w
-w                 A w
-w  ww     q         w
-w    1   2       1  w
-wwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwww
+wp         w        2w
+w          1     11  w
+w   g          1    ww
+w  1  12     1      ww
+ww             q     w
+w                  A w
+w  ww      q         w
+w    1    2       1  w
+wwwwwwwwwwwwwwwwwwwwww
 """
 
 level2 = """
-wwwwwwwwwwwwwwwwwwwww
-wA1   w   p       g w
-ww  1 w     p       w
-w     p     2  w   ww
-wwwwwww1       w   ww
-ww           q      w
-w   p    q        1 w
-w    2              w
-w        2          w
-wwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwww
+wA1   w    p       g w
+ww  1 w      p       w
+w     p      2  w   ww
+wwwwwww1        w   ww
+ww            q      w
+w    p    q        1 w
+w     2              w
+w         2          w
+wwwwwwwwwwwwwwwwwwwwww
 """
 
 level3 = """
@@ -184,9 +184,6 @@ wwwwwwwwwwwwwwwwwwwwww
 # w        2    1      w
 # wwwwwwwwwwwwwwwwwwwwww
 # """
-
-
-
 
 
 game = """

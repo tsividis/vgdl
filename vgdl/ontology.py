@@ -454,6 +454,7 @@ class Chaser(RandomNPC): ##
     """ Pick an action that will move toward the closest sprite of the provided target type. """
     stype = None
     fleeing = False
+
     # is_stochastic=False
     def _closestTargets(self, game):
         bestd = 1e100
@@ -465,6 +466,7 @@ class Chaser(RandomNPC): ##
                 res = [target]
             elif d == bestd:
                 res.append(target)
+
         return res
 
     def _movesToward(self, game, target):
