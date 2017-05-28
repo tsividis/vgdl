@@ -15,7 +15,7 @@ w                              w
 w                              w
 w                              w
 w                              w
-wm A b                        aw
+wm A    b                     aw
 www                            w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
@@ -76,11 +76,11 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 game = """
 BasicGame frame_rate=30
     SpriteSet
-        avatar > MovingAvatar color=DARKBLUE cooldown=6
+        avatar > MovingAvatar color=DARKBLUE cooldown=0#6 
         box > Passive
             box1 > color=RED
-            box2 > color=ORANGE
-        chaser > VGDLSprite cooldown=16
+            box2 > color=YELLOW
+        chaser > VGDLSprite cooldown=12#16
             randomChaser > RandomNPC color=LIGHTBLUE
             mediumChaser > Chaser color=BLUE stype=box2
             goodChaser > AStarChaser color=PINK stype=box2
@@ -121,7 +121,7 @@ level_game_pairs = [[game, level0], [game, level1], [game, level2],
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     import random, sys
-    levels = [l for l in locals().keys() if 'level' in l]
+    levels = [l for l in locals().keys() if 'level' in l and len(l)<8]
     if len(sys.argv)==2:
         index = int(sys.argv[1])
     else:

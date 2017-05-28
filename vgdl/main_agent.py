@@ -112,6 +112,7 @@ class Agent:
 		embed()
 		VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered,
 			persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
+
 	def playMultipleEpisodes(self, num_episodes):
 		i=0
 		gameObject = None

@@ -187,15 +187,18 @@ BasicGame frame_rate=30
         SpriteCounter stype=box1 limit=0 win=True
 """
 
+# levels = [level0, level1, level2, level3, level4]
 level_game_pairs = [[game, level0], [game, level1], [game, level2],
                     [game, level3]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     import random, sys
-    levels = [l for l in locals().keys() if 'level' in l]
+    from IPython import embed
+    levels = [l for l in locals().keys() if 'level' in l and len(l)<8]
     if len(sys.argv)==2:
         index = int(sys.argv[1])
     else:
         index = random.choice(range(len(levels)))
+    # embed()
     VGDLParser.playGame(game, locals()[levels[index]])

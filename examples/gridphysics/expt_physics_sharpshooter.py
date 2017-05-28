@@ -66,12 +66,12 @@ BasicGame frame_rate=42
         missile > Missile color=BLACK
             sam  > orientation=UP    color=BLUE speed=0.3 singleton=True
             bomb > orientation=DOWN  color=RED  speed=0.5
-        # alien   > Bomber       stype=bomb   prob=0  cooldown=3 speed=0.75
-        alien1   > Bomber      stype=bomb   prob=0  cooldown=3 speed=1 color=ORANGE
-        alien2   > Bomber      stype=bomb   prob=0  cooldown=3 speed=1.5 color=LIGHTBLUE
-        alien3   > Bomber      stype=bomb   prob=0  cooldown=3 speed=.5 color=PINK
-        alien4   > Bomber      stype=bomb   prob=0  cooldown=3 speed=.75 color=GREEN
-        alien5   > Bomber      stype=bomb   prob=0  cooldown=3 speed=.25 color=YELLOW
+        alien   > Bomber       stype=bomb   prob=0  cooldown=3 speed=0.75
+            alien1   > Bomber      stype=bomb   prob=0  cooldown=3 speed=1 color=ORANGE
+            alien2   > Bomber      stype=bomb   prob=0  cooldown=3 speed=1.5 color=LIGHTBLUE
+            alien3   > Bomber      stype=bomb   prob=0  cooldown=3 speed=.5 color=PINK
+            alien4   > Bomber      stype=bomb   prob=0  cooldown=3 speed=.75 color=GREEN
+            alien5   > Bomber      stype=bomb   prob=0  cooldown=3 speed=.25 color=YELLOW
         portal  > SpawnPoint   stype=alien  cooldown=10   total=3 color=BLACK
 
     LevelMapping
@@ -108,7 +108,9 @@ level_game_pairs = [[game, level1], [game, level2], [game, level3],
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    # parse, run and play.
-    import random
-    level_game = random.choice(level_game_pairs)
+    import random, sys
+    if len(sys.argv)==2:
+        level_game = level_game_pairs[int(sys.argv[1])]
+    else:
+        level_game = random.choice(level_game_pairs)
     VGDLParser.playGame(*level_game)

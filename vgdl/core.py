@@ -170,7 +170,7 @@ class VGDLParser(object):
         """ Whatever is visible in the global namespace (after importing the ontologies)
         can be used in the VGDL, and is evaluated.
         """
-        from ontology import * #@UnusedWildImport
+        from ontology import * # @UnusedWildImport
         return eval(estr)
 
     def parseInteractions(self, inodes):
@@ -969,6 +969,8 @@ class BasicGame(object):
         self._initScreen(self.screensize,headless)
         pygame.display.flip()
         self.reset()
+        t1 = time.time()
+        self.actions = []
         clock = pygame.time.Clock()
         if self.playback_states:
             self.frame_rate = 1
@@ -1077,6 +1079,8 @@ class BasicGame(object):
                 agentState = agentStatePrev
                 keyPressType = keyPressPrev
 
+            if keyPressType is not None:
+                self.actions.append(keyPressType)
             collision_objects = set()
 
             if self.effectList:
@@ -1104,10 +1108,12 @@ class BasicGame(object):
                         #     self.score = 1
 
                         self.win = True
+                        print time.time()-t1, len(self.actions), win, self.score
                         print "Game won, with score %s" % self.score
                     else:
                         self.win = False
                         self.score -=1 ## Added 3/16/17
+                        print time.time()-t1, len(self.actions), win, self.score
                         print "Game lost. Score=%s" % self.score
                     allStates.append(self.getFullState())
                     # embed()
@@ -1192,6 +1198,7 @@ class BasicGame(object):
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(10)
+        print len(self.actions), win, self.score
         return win, self.score
 
 
