@@ -2428,46 +2428,12 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 			theoryString += "limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
 
-	# print "in writeTheory"
-	# embed()
 
-	# theoryString += "\tTerminationSet\n"
-	# theoryString += "\t\tSpriteCounter stype=avatar limit=0 win=False\n"
 	if goalLoc and goalConditionNotFound:
 		# embed()
 		theoryString += "\t\tSpriteCounter stype=goal limit=0 win=True\n"
 
 	# # fourth phase: the level mapping
-	theoryString += "\tLevelMapping\n"
-
-	for colors, symbol in symbolDict.items():
-		if type(colors)==tuple:
-			types = [theory.spriteObjects[c].className for c in colors if c in theory.spriteObjects.keys()]
-			if len(types)==2:
-				theoryString += "\t\t%s > %s %s\n"%(symbol, types[0], types[1])
-			elif len(types)==3:
-				theoryString += "\t\t%s > %s %s %s\n"%(symbol, types[0], types[1], types[2])
-		elif type(colors)==str and colors in theory.spriteObjects.keys():
-			c = theory.spriteObjects[colors].className
-			theoryString += "\t\t%s > %s\n"%(symbol, c)
-
-
-	# for color, symbol in symbolDict.items():
-	# 	choices = [k for k in theory.classes.keys() if color in [s.color for s in theory.classes[k]]]
-	# 	# if len(choices)>1:
-	# 	# 	print "more than one class"
-	# 	# 	print choices
-	# 	try:
-	# 		c = [c for c in choices if len(c)==min([len(ch) for ch in choices])][0]
-	# 		theoryString += "\t\t%s > %s\n"%(symbol, c)
-	# 	except:
-	# 		continue
-	# 		# print "problem with choices in writetheory.txt"
-	# 		# embed()
-
-
-	theoryString += "\t\tG > goal\n"
-	theoryString += '"""\n'
 
 	mappedState = []
 	for i in range(rle.outdim[0]):
@@ -2512,13 +2478,28 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				print "mappedState problem2"
 				embed()
 
-
-
 	levelString = 'level="""\n'
 	for mappedRow in mappedState:
 		levelString += reduce(lambda a,b: a+b, mappedRow) + "\n"
 
 	levelString += '"""\n'
+
+	theoryString += "\tLevelMapping\n"
+
+	for colors, symbol in symbolDict.items():
+		if type(colors)==tuple:
+			types = [theory.spriteObjects[c].className for c in colors if c in theory.spriteObjects.keys()]
+			if len(types)==2:
+				theoryString += "\t\t%s > %s %s\n"%(symbol, types[0], types[1])
+			elif len(types)==3:
+				theoryString += "\t\t%s > %s %s %s\n"%(symbol, types[0], types[1], types[2])
+		elif type(colors)==str and colors in theory.spriteObjects.keys():
+			c = theory.spriteObjects[colors].className
+			theoryString += "\t\t%s > %s\n"%(symbol, c)
+
+
+	theoryString += "\t\tG > goal\n"
+	theoryString += '"""\n'
 
 
 	parserString = 'if __name__ == "__main__":\n\tfrom vgdl.core import VGDLParser\n\tVGDLParser.playGame(game, level)\n'

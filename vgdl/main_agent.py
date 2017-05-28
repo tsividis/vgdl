@@ -103,14 +103,15 @@ class Agent:
 				gameObject, win, score, steps = self.playEpisode(gameObject)
 				episodes.append((n_level, steps, win, score))
 
-			# VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
-					# persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
+
 		output = {'modelType':self.modelType,
 					'gameName': self.gameFilename[self.gameFilename.find('expt'):],
 					'condition': 'no_score',
 					'episodes' : episodes}
 		write_to_csv('pilotModelRuns.csv', output)
-
+		embed()
+		VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered,
+			persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
 	def playMultipleEpisodes(self, num_episodes):
 		i=0
 		gameObject = None
@@ -125,10 +126,12 @@ class Agent:
 		print "Won {} out of {} episodes.".format(sum(wins), i)
 
 	def playEpisode(self, gameObject):
+		
 		## Initialize external environment
 		self.initializeEnvironment()
 		print "initializing RLE"
 		steps = 0
+		embed()
 		self.all_objects= self.rle._game.getObjects()
 		ended, win = self.rle._isDone()
 		annealing = 1
@@ -331,8 +334,8 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pick_apples"
 	# filename = "examples.gridphysics.expt_antagonist"
 
-	# filename = "examples.gridphysics.expt_exploration_exploitation"
-	filename = "examples.gridphysics.expt_helper"
+	filename = "examples.gridphysics.expt_exploration_exploitation"
+	# filename = "examples.gridphysics.expt_helper"
 	agent = Agent('full', filename)
 
 	##then pass this down for multiple episodes

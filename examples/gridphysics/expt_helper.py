@@ -142,13 +142,13 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 game = """
 BasicGame frame_rate=30
     SpriteSet
-        avatar > MovingAvatar color=DARKBLUE
+        avatar > MovingAvatar color=DARKBLUE cooldown=0
         box > Passive
             box1 > color=RED
             box2 > color=ORANGE
         mover > VGDLSprite
-            rand > RandomNPC cooldown=4 color=LIGHTBLUE
-            chaser > Chaser color=BLUE stype=box1 cooldown=12
+            rand > RandomNPC cooldown=6 color=LIGHTBLUE
+            chaser > Chaser color=BLUE stype=box1 cooldown=12 #for humans
         wall > Immovable color=BLACK
         missile > Missile
             missile1 > color=YELLOW orientation=RIGHT
