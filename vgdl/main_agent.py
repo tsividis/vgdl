@@ -19,6 +19,8 @@ from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrin
 class Agent:
 	def __init__(self, gameFilename):
 		self.gameFilename = gameFilename
+		self.gameString = None
+		self.levelString = None
 		self.annealingFactor = 1
 		self.hypotheses = []
 		self.symbolDict = None
@@ -27,10 +29,10 @@ class Agent:
 		self.fakeInteractionRules = []
 		self.all_objects = {}
 		self.seen_resources = []
-		self.initializeEnvironment()
 
 	def initializeEnvironment(self):
-		self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
+		if self.gameString==None or self.levelString==None:
+			self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
 		self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
 		self.rle = self.rleCreateFunc()
 		return
@@ -54,7 +56,6 @@ class Agent:
 			tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
 			tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
 			tempHypothesis.updateTerminations()
-			# ipdb.set_trace()
 			print "fake hypotheses"
 			if self.fakeInteractionRules:
 				tempHypothesis.display()
@@ -87,6 +88,19 @@ class Agent:
 		self.hypotheses = newHypotheses
 
 
+	def playCurriculum(self):
+		""" Plays a game level until it wins, then moves to the next one until
+		completion. """
+		level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
+		for n_level, level_game in enumerate(level_game_pairs):
+			print("Playing level {}".format(n_level))
+			(self.gameString, self.levelString) = level_game
+			win = False
+			gameObject = None
+			while not win:
+				gameObject, win, score = self.playEpisode(gameObject)
+			VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
+					persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
 	def playMultipleEpisodes(self, num_episodes):
 		i=0
 		gameObject = None
@@ -245,7 +259,7 @@ class Agent:
 			oldFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
 			self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
 				not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
-			
+
 			# if len(self.fakeInteractionRules)<len(oldFakeInteractionRules):
 				# import ipdb; ipdb.set_trace()
 			# print "before changing fakeInteractionRules"
@@ -302,10 +316,11 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pick_apples_with_missiles"
 	# filename = "examples.gridphysics.demo_transform_relational"
 	# filename = "examples.gridphysics.simpleGame_push_boulders"
-	filename = "examples.gridphysics.pick_apples"
+	# filename = "examples.gridphysics.pick_apples"
+	filename = "expt_exploration_exploitation"
 
 	agent = Agent(filename)
 
 	##then pass this down for multiple episodes
 	gameObject = None
-	agent.playMultipleEpisodes(5)
+	agent.playCurriculum()

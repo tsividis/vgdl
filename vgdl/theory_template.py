@@ -917,12 +917,12 @@ class Theory(object):
 			for event in relevantEvents:
 				candidateSpriteType = [o for o in rle._game.sprite_groups if len(rle._game.sprite_groups[o])>0 and rle._game.sprite_groups[o][0].colorName == event[1]][0]
 				if len([o for o in rle._game.sprite_groups[candidateSpriteType] if o not in rle._game.kill_list]) == 0:
-					
+
 					## If the game didn't end, you can't win or lose based on this particular class being 0
 					if not rle._isDone()[0]:
 						self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, True))
 						self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, False))
-					else: 
+					else:
 						## If you won, you can't lose based on this class being 0
 						if rle._isDone()[1]:
 							self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, False))
