@@ -76,13 +76,13 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 game = """
 BasicGame frame_rate=30
     SpriteSet
-        avatar > MovingAvatar color=DARKBLUE
+        avatar > MovingAvatar color=DARKBLUE cooldown=6
         box > Passive
             box1 > color=RED
             box2 > color=ORANGE
         chaser > VGDLSprite cooldown=12
             randomChaser > RandomNPC color=LIGHTBLUE
-            mediumChaser > Chaser color=BLUE stype=box2 
+            mediumChaser > Chaser color=BLUE stype=box2
             goodChaser > AStarChaser color=PINK stype=box2
         forcefield > Passive color=PURPLE
         wall > Immovable color=DARKGRAY
@@ -114,6 +114,9 @@ BasicGame frame_rate=30
         SpriteCounter stype=box2  limit=0 win=False
         SpriteCounter stype=box1 limit=0 win=True
 """
+
+level_game_pairs = [[game, level0], [game, level1], [game, level2],
+                    [game, level3], [game, level4]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

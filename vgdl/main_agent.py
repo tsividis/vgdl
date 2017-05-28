@@ -161,7 +161,7 @@ class Agent:
 
 					# Check for disparities between plan and reality
 					# (e.g. stochastic effects)
-					if self.rle._game.is_stochastic and i>10:
+					if self.rle._game.is_stochastic and i>100:
 						try:
 							if any(np.where(list(gameString_array[i+1]))[0] !=
 								   np.where(list(self.rle.show()))[0]):
@@ -317,7 +317,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.demo_transform_relational"
 	# filename = "examples.gridphysics.simpleGame_push_boulders"
 	# filename = "examples.gridphysics.pick_apples"
-	filename = "expt_exploration_exploitation"
+	filename = "examples.gridphysics.expt_antagonist"
 
 	agent = Agent(filename)
 
