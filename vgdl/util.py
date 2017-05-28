@@ -1,5 +1,6 @@
 from IPython import embed
 import itertools
+import csv
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
 
 def softmax(w, t = 1.0):
@@ -58,3 +59,21 @@ def objectsToSymbol(rle, objects, symbolDict):
 		import ipdb; ipdb.set_trace()
 		print "objectsToSymbol problem."
 		embed()
+
+def write_to_csv(filename, game):
+	
+	f = open(filename, 'a+') ##append, but also read.
+	writer = csv.writer(f)
+	if len(f.readlines())==0:
+		writer.writerow(('subject', 'condition', 'gameName', 'levels_won', 'steps', 'score'))
+	episodes = game['episodes']
+	steps, levels_won, score = 0, 0, 0
+	for episode in episodes:
+		steps += episode[1]
+		levels_won += episode[2]
+		if episode[3] is not None:
+			score +=episode[3]
+		else:
+			score = None
+		writer.writerow((game['modelType'], game['condition'], game['gameName'], levels_won, steps, score))
+	f.close()

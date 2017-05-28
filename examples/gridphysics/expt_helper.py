@@ -38,7 +38,7 @@ www                 r          w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-level = """
+level3 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w        a         a           w
