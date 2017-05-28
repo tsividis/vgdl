@@ -221,6 +221,7 @@ BasicGame frame_rate=30
         goal poison1 > stepBack
         goal poison2 > stepBack
         box1 wall    > stepBack
+        box1 box2    > nothing
         box2 wall    > stepBack
         box1 box1 > stepBack
         poison1 box1 > killSprite
@@ -233,7 +234,7 @@ BasicGame frame_rate=30
 """
 
 level_game_pairs = [[game, level0], [game, level1], [game, level2],
-                    [game, level3], [game, level4]] 
+                    [game, level3], [game, level4]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

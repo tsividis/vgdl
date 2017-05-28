@@ -109,7 +109,6 @@ class Agent:
 					'condition': 'no_score',
 					'episodes' : episodes}
 		write_to_csv('pilotModelRuns.csv', output)
-		embed()
 		VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered,
 			persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
 
@@ -127,12 +126,11 @@ class Agent:
 		print "Won {} out of {} episodes.".format(sum(wins), i)
 
 	def playEpisode(self, gameObject):
-		
+
 		## Initialize external environment
 		self.initializeEnvironment()
 		print "initializing RLE"
 		steps = 0
-		embed()
 		self.all_objects= self.rle._game.getObjects()
 		ended, win = self.rle._isDone()
 		annealing = 1
@@ -313,11 +311,13 @@ class Agent:
 					self.seen_resources.append(resource)
 
 
-		if event['effectList']:
-
-			[t.updateTerminations(event) for t in hypotheses]
+		if event['effectList'] and theory_change_flag:
+			[t.updateTerminations(event=event) for t in hypotheses]
 			if theory_change_flag:
 				hypotheses[0].display()
+
+
+		[t.updateTerminations(rle=self.rle) for t in hypotheses]
 
 		print self.rle.show()
 
@@ -335,7 +335,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pick_apples"
 	# filename = "examples.gridphysics.expt_antagonist"
 
-	filename = "examples.gridphysics.expt_exploration_exploitation"
+	filename = "examples.gridphysics.expt_relational"
 
 	agent = Agent('full', filename)
 
