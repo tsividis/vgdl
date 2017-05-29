@@ -16,6 +16,7 @@ import glob
 import ipdb
 from copy import deepcopy
 import logging
+import numpy as np
 import sys
 import re
 from IPython import embed
@@ -113,7 +114,7 @@ class VGDLParser(object):
     def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", padding=0):
         """ Parses the game and level map strings, and starts the game. """
         g = VGDLParser().parseGame(game_str)
-        
+
         g.buildLevel(map_str)
         g.uiud = uuid.uuid4()
         if playback_states:
@@ -197,7 +198,7 @@ class VGDLParser(object):
                 conditional, interaction = [x.strip() for x in cnode.content.split(">")]
                 cclass, cargs = self._parseArgs(conditional)
                 eclass, eargs = self._parseArgs(interaction)
-                self.game.conditions.append([cclass(**cargs), [eclass, eargs]])               
+                self.game.conditions.append([cclass(**cargs), [eclass, eargs]])
 
     def parseSprites(self, snodes, parentclass=None, parentargs={}, parenttypes=[]):
         for sn in snodes:
@@ -358,7 +359,7 @@ class BasicGame(object):
                 elif c in self.default_mapping:
                     pos = (col*self.block_size, row*self.block_size)
                     self._createSprite(self.default_mapping[c], pos)
-    
+
 
         self.kill_list=[]
 
@@ -392,7 +393,7 @@ class BasicGame(object):
 
     def _createSprite(self, keys, pos):
         res = []
-        
+
         for key in keys:
             if self.num_sprites > self.MAX_SPRITES:
                 print "Sprite limit reached."
@@ -414,7 +415,7 @@ class BasicGame(object):
             if s.is_stochastic:
                 self.is_stochastic = True
             res.append(s)
-        
+
         return res
 
     def _createSprite_cheap(self, key, pos):
@@ -557,7 +558,7 @@ class BasicGame(object):
         for key, ss in fs['objects'].iteritems():
             self.sprite_groups[key] = [] ## Added 4/31/17
             for ID, attrs in ss.iteritems():
-                try: 
+                try:
                     p = attrs['x'], attrs['y']
                 except:
                     p = attrs[x], attrs[y]
@@ -585,7 +586,7 @@ class BasicGame(object):
                 if sprite_type:
                     sprite_rep = sprite_type[0]
                     fs_colorized['objects'][colorDict[str(sprite_rep.color)]] = fs['objects'][sprite_name]
-                
+
                 # No more sprites left?
                 else:
                     #print self.sprite_groups[stypes[0]]
@@ -625,7 +626,7 @@ class BasicGame(object):
         self.effectList = []
         dead = self.kill_list[:] # copy kill list
         created = []
-        
+
         # build the current sprite lists (if not yet available)
         # for class1, class2, effect, kwargs in self.collision_eff:
         while new_collisions:
@@ -711,7 +712,7 @@ class BasicGame(object):
                             (sclass, args, stypes) = self.sprite_constr[resource]
                             resource_color = args['color']
                             new_effects.append(effect(sprite1, sprite2, resource_color, self, **kwargs))
-                        
+
                         elif effect.__name__ == 'transformTo':
 
                             new_effects.append(effect(sprite1, sprite2, self, **kwargs))
@@ -730,7 +731,7 @@ class BasicGame(object):
 
                             new_effects.append(effect(sprite1, sprite2, self, **kwargs)) # apply effect
                         elif effect.__name__ == back_effect:
-                            # possibly need to undo all effects 
+                            # possibly need to undo all effects
                             for collision in force_collisions:
                                 if sprite1 in collision: # check if sprite1 got pushed back
                                     for sprite in collision:
@@ -752,7 +753,7 @@ class BasicGame(object):
 
     def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0):
         """
-        Main method to run game. 
+        Main method to run game.
         """
         # ----------- Initialization ----------
 
@@ -767,7 +768,7 @@ class BasicGame(object):
 
         win = False
         i = 0
-        
+
         lastKeyPress=(0,0,1) # PT: initialize to fake keypress index
         lastKeyPressTime=0 #PT
 
@@ -790,22 +791,22 @@ class BasicGame(object):
         agentStatePrev = {}
         agentState = dict(self.getAvatars()[0].resources)
         keyPressPrev = None
-        
+
         ##uncomment to write output
         # f_sprite = open(sprite_output,"w")
 
         # Prep for Sprite Induction
         sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
         self.all_objects = self.getObjects() # Save all objects, some which may be killed in game
-        
+
         ##figure out keypress type:
         disableContinuousKeyPress = all([self.all_objects[k]['sprite'].physicstype.__name__=='GridPhysics' for k in self.all_objects.keys()])
-        
+
         objects = self.getObjects()
         self.spriteDistribution = {}
         self.movement_options = {}
         allStates = [self.getFullState()]
-        
+
 
         # spriteInduction(self, step=0)
 
@@ -831,8 +832,8 @@ class BasicGame(object):
             #     trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
 
             #     ##clean up trace; convert object IDs to object types (for now this is just object color).
-                
-                
+
+
             #     for i in range(len(trace[0])):
             #         timestep = trace[0][i]
             #         for j in range(len(timestep.events)):
@@ -885,7 +886,7 @@ class BasicGame(object):
                 keyPressType = keyPressPrev
 
             collision_objects = set()
-            
+
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
             allStates.append(self.getFullState())
@@ -924,7 +925,7 @@ class BasicGame(object):
             # empty image directory
             shutil.rmtree("images/tmp")
             os.makedirs("images/tmp")
-            
+
             # subprocess.call(["ffmpeg","-y",  "-r", "30", "-b", "800", "-i", tmpl, self.video_file ])
             # [os.remove(f) for f in glob.glob(tmp_dir + "*" + str(self.uiud) + "*")]
 
@@ -953,7 +954,7 @@ class BasicGame(object):
             self.score -= 1
             self.win = False
             print "Playback is incomplete, or game is lost. Score=%s" % self.score
-        
+
         # ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.
@@ -963,7 +964,7 @@ class BasicGame(object):
 
     def startGame(self, headless, persist_movie, make_images=False, make_movie=False):
         """
-        Main method to run game. 
+        Main method to run game.
         """
         # ----------- Initialization ----------
         self._initScreen(self.screensize,headless)
@@ -977,7 +978,7 @@ class BasicGame(object):
 
         win = False
         i = 0
-        
+
         lastKeyPress=(0,0,1) # PT: initialize to fake keypress index
         lastKeyPressTime=0 #PT
 
@@ -1000,17 +1001,17 @@ class BasicGame(object):
         agentStatePrev = {}
         agentState = dict(self.getAvatars()[0].resources)
         keyPressPrev = None
-        
+
         ##uncomment to write output
         # f_sprite = open(sprite_output,"w")
 
         # Prep for Sprite Induction
         sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
         self.all_objects = self.getObjects() # Save all objects, some which may be killed in game
-        
+
         ##figure out keypress type:
         disableContinuousKeyPress = all([self.all_objects[k]['sprite'].physicstype.__name__=='GridPhysics' for k in self.all_objects.keys()])
-        
+
         objects = self.getObjects()
         self.spriteDistribution = {}
         self.movement_options = {}
@@ -1034,7 +1035,7 @@ class BasicGame(object):
 
             # get action pressed
             self.keystate = pygame.key.get_pressed()
-            
+
             # # PT: Disables mistaken contiguous key presses, prints to terminal
             if disableContinuousKeyPress and not self.playback_states:
                 keyPressType = None
@@ -1048,7 +1049,7 @@ class BasicGame(object):
                         #     self.keystate[actionToKeyPress[self.playback_actions[self.playback_index]]] = True
                         #     self.keystate = tuple(self.keystate)
                         #     self.playback_index += 1
-                            
+
                         if lastKeyPress.index(1) in keyPresses.keys():
                             keyPressType = keyPresses[lastKeyPress.index(1)]
                             # print keyPressType
@@ -1095,7 +1096,7 @@ class BasicGame(object):
                         collision_objects.add(effect[2])
                     elif len(effect) == 2:
                         collision_objects.add(effect[1])
-            
+
 
             # Termination #1
             for t in self.terminations:
@@ -1126,7 +1127,7 @@ class BasicGame(object):
             for conditional in self.conditions:
                 condition, eclass = conditional
                 effect, kwargs = eclass
-                
+
                 if condition.condition(self):
                     stype = kwargs['applyto']
                     kwargs_use = deepcopy(kwargs)
@@ -1141,7 +1142,7 @@ class BasicGame(object):
                 s.update(self)
 
             # handle collision effects
-            self._eventHandling()                  
+            self._eventHandling()
 
             # Termination #2 : Avatars have been killed
             if len(self.getAvatars()) == 0:
@@ -1193,12 +1194,13 @@ class BasicGame(object):
 
         # if "killSprite" in [e[0] for e in self.effectList]:
         #         embed()
-        
+
         # ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(10)
         print len(self.actions), win, self.score
+        np.save("temp_data.npy", [time.time()-t1, len(self.actions), win, self.score])
         return win, self.score
 
 
@@ -1300,7 +1302,7 @@ class VGDLSprite(object):
         self.color = color or self.color or PURPLE#(140, 20, 140)
         self.colorName = colorDict[str(self.color)]
         # print 'color', self.color
-                
+
         #self.color = color or self.color or (choice(self.COLOR_DISC), choice(self.COLOR_DISC), choice(self.COLOR_DISC))
         for name, value in kwargs.iteritems():
             try:
@@ -1328,7 +1330,7 @@ class VGDLSprite(object):
             speed = self.speed
 
         if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
-            self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed)) 
+            self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
             self.lastmove = 0
 
 

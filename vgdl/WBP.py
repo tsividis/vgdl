@@ -402,9 +402,11 @@ class Node():
 			s2_positions = self.WBP.findObjectsInRLE(rle, s2)
 			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
 
+			"""
 			# Second order lesion
 			if s1 != 'avatar' and s2 != 'avatar':
 				return 0
+			"""
 
 			n_sprites = len(s1_positions)
 			try:
@@ -483,7 +485,7 @@ class Node():
 					first_alpha=first_alpha, second_alpha=second_alpha)
 				# print("noveltytermination_val for {} and {} is equal to {}".format(
 					# term.termination.s1, term.termination.s2, noveltytermination_val))
-				heuristicVal += self.WBP.annealing * noveltytermination_val
+				heuristicVal += .5 * self.WBP.annealing * noveltytermination_val
 
 
 		return heuristicVal
