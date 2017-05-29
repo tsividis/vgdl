@@ -938,7 +938,7 @@ class Theory(object):
 
 
 		if rle and not rle._isDone()[0]:
-			knownColors = [sprite.color for sprite in self.spriteSet]
+			knownColors = [sprite[0].color for sprite in self.classes.values()]
 			presentColors = [rle._game.sprite_groups[o][0].colorName for o in rle._game.sprite_groups
 							 if len(rle._game.sprite_groups[o])>0 and
 							 rle._game.sprite_groups[o][0].colorName in knownColors]

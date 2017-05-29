@@ -68,6 +68,7 @@ class WBP():
 		self.addSpaceBarToActions()
 
 
+
 	def findObjectsInRLE(self, rle, objName):
 		try:
 			objLocs = [rle._rect2pos(element.rect) for element in rle._game.sprite_groups[objName]
@@ -400,13 +401,18 @@ class Node():
 			# embed()
 			s2_positions = self.WBP.findObjectsInRLE(rle, s2)
 			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
+
+			# Second order lesion
+			if s1 != 'avatar' and s2 != 'avatar':
+				return 0
+
 			n_sprites = len(s1_positions)
 			try:
 				# A consequence of the two-way generic interactions in the
 				# theory is that minimum-distance object pairs whose interactions
 				# were not yet observed will have their distance penalized twice
 				# as much when none of those objects is an avatar. This implies
-				# that avatar novel interactions will be favored over other ones
+				# that non-avatar novel interactions will be favored over others
 				possiblePairList = [manhattanDist(obj, pos)
 					 for pos in s2_positions
 					 for obj in s1_positions

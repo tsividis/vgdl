@@ -22,7 +22,7 @@ class Agent:
 		self.gameFilename = gameFilename
 		self.gameString = None
 		self.levelString = None
-		self.annealingFactor = 1
+		self.annealingFactor = .9
 		self.hypotheses = []
 		self.symbolDict = None
 		self.finalEventList = []
@@ -144,6 +144,9 @@ class Agent:
 		else:
 			gameObject = self.completeHypotheses(self.all_objects)
 			print "had hypotheses -- completing them."
+			# If theory is being carried over, falsify termination hypotheses
+			# given new level state
+			[t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
 		while not ended:
 			## initialize one or many VRLEs according to hypothesis-selection method
@@ -317,7 +320,6 @@ class Agent:
 				hypotheses[0].display()
 
 
-		[t.updateTerminations(rle=self.rle) for t in hypotheses]
 
 		print self.rle.show()
 
@@ -335,7 +337,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pick_apples"
 	# filename = "examples.gridphysics.expt_antagonist"
 
-	filename = "examples.gridphysics.expt_relational"
+	filename = "examples.gridphysics.expt_exploration_exploitation"
 
 	agent = Agent('full', filename)
 
