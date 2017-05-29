@@ -108,7 +108,9 @@ class Agent:
 					'gameName': self.gameFilename[self.gameFilename.find('expt'):],
 					'condition': 'no_score',
 					'episodes' : episodes}
+					
 		write_to_csv('pilotModelRuns.csv', output)
+
 		VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered,
 			persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
 

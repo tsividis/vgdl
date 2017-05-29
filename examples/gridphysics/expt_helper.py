@@ -25,42 +25,42 @@ www                 x          w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
+# level2 = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w        a         a           w
+# w              a               w
+# w  x                           w
+# w          b              a    w
+# w                   a          w
+# w  A     a     b               w
+# www                 x          w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
 level2 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w        a         a           w
-w              a               w
-w  x                           w
-w          b              a    w
-w                   a          w
-w  A     a     b               w
-www                 x          w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
-
-level3 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
-w        a         a           w
-w              a               w
 w  r                           w
-w          b              a    w
+w          b                   w
 w                   a          w
 w  A     a     b               w
 www                 r          w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-level4 = """
+level3 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                b   b         w
 w        a       b a b         w
 w              a bbbbb         w
 w  x                           w
-w          b              a    w
-w                   a          w
-w  A     a     b               w
-www                 x          w
+w                         a    w
+w      bbbbb        a          w
+w  A   b a b   b               w
+www    b   b        x          w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -147,7 +147,7 @@ BasicGame frame_rate=30
             box1 > color=RED
             box2 > color=ORANGE
         mover > VGDLSprite
-            rand > RandomNPC cooldown=6 color=LIGHTBLUE
+            rand > RandomNPC cooldown=12 color=PURPLE
             chaser > Chaser color=BLUE stype=box1 cooldown=12 #for humans
         wall > Immovable color=BLACK
         missile > Missile
