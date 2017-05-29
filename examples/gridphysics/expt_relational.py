@@ -156,25 +156,25 @@ level_game_pairs = [[game0, level0], [game0, level1], [game0, level2],
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
+    from IPython import embed
     import random, sys
     import numpy as np
     import csv
 
-    levels = [l for l in locals().keys() if 'level' in l]
+    # levels = [l for l in locals().keys() if 'level' in l]
 
     if len(sys.argv)==2:
         level_game = level_game_pairs[int(sys.argv[1])]
     else:
-        index = random.choice(range(len(levels)))
-    # VGDLParser.playGame(*level_game)
-    # index = random.choice(range(len(levels)))
-    VGDLParser.playGame(game, locals()[levels[index]])
-    data = np.load("temp_data.npy")
+        level_game = random.choice(level_game_pairs)
 
+    VGDLParser.playGame(*level_game)
+    embed()
+    # VGDLParser.playGame(game, locals()[levels[index]])
+    data = np.load("temp_data.npy")
     levels_won = index if not data[2] else index+int(data[2])
     # Save in format [subect, condition, gamename, levels won, steps taken, score, time elapsed]
     row = ['human', 'no_score', 'expt_relational', levels_won, data[1], data[3], data[0]]
-
     filename = "expt_relational_human_data.csv"
     f = open(filename, 'a+') ##append, but also read.
     writer = csv.writer(f)

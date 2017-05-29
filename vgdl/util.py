@@ -2,7 +2,10 @@ from IPython import embed
 import itertools
 import random
 import csv
+
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
+CHARS = 'bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM'
+CAPCHARS = 'QWERTYUIOPSDFHJKLZXCVBNM'
 
 def softmax(w, t = 1.0):
     e = np.exp(np.array(w) / t)
@@ -61,13 +64,21 @@ def objectsToSymbol(rle, objects, symbolDict):
 		print "objectsToSymbol problem."
 		embed()
 
-def make_random_spritename():
+def extendColorDict(num):
+	for i in range(num):
+		colorName = make_random_name(CAPCHARS)
+		color = (random.choice(range(256)), random.choice(range(256)), random.choice(range(256)))
+		print colorName + '=' + str(color)
+		colorDict[str(color)] = colorName
+	print colorDict
+
+def make_random_name(chars):
 	import random
-	CHARS = 'bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM'
 	name = ''
 	for i in range(6):
-		name+=random.choice(CHARS)
+		name+=random.choice(chars)
 	return name
+
 def write_to_csv(filename, game):
 	
 	f = open(filename, 'a+') ##append, but also read.
