@@ -200,25 +200,9 @@ class Agent:
 		return gameObject, win, score, steps
 
 	def matchEventToRuleByIDAndSpriteName(self, event, rule):
-		# Get IDs and names for game objects
-		# id_iterable = [(ID, self.rle._game.all_objects[ID]['sprite'].name)
-		#     for ID in self.rle._game.all_objects.keys()]
-		# id_dict = {key: value for (key, value) in id_iterable}
-		# # Since game.all_objects doesn't contain dead
-		# # objects, add those too
-		# dead_id_iterable = [(o.ID, o.name) for o in self.rle._game.kill_list]
-		# dead_id_dict = {key: value for (key, value) in dead_id_iterable}
-		# # Get avatar objects too
-		# avatar_id_iterable = [(o.ID, o.name) for o in self.rle._game.getAvatars()]
-		# avatar_id_dict = {key: value for (key, value) in avatar_id_iterable}
-		# # Merge the two dictionaries
-		# id_dict.update(dead_id_dict)
-		# id_dict.update(avatar_id_dict)
-
 		# Check if the two objects involved in the
 		# event are the same as those in the novelty
 		# termination rule (invariant by order)
-		# embed()
 		hypSlot1 = self.hypotheses[0].spriteObjects[event[1]].className
 		hypSlot2 = self.hypotheses[0].spriteObjects[event[2]].className
 		if set([hypSlot1, hypSlot2]) == set([rule.slot1, rule.slot2]):

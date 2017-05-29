@@ -1,5 +1,6 @@
 from IPython import embed
 import itertools
+import random
 import csv
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
 
@@ -60,6 +61,13 @@ def objectsToSymbol(rle, objects, symbolDict):
 		print "objectsToSymbol problem."
 		embed()
 
+def make_random_spritename():
+	import random
+	CHARS = 'bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM'
+	name = ''
+	for i in range(6):
+		name+=random.choice(CHARS)
+	return name
 def write_to_csv(filename, game):
 	
 	f = open(filename, 'a+') ##append, but also read.
