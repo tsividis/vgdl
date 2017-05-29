@@ -160,11 +160,13 @@ level_game_pairs = [[game, level0], [game, level1], [game, level2],
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     import random, sys
+
+
     if len(sys.argv)==2:
-        level_game = level_game_pairs[int(sys.argv[1])]
+        index = int(sys.argv[1])
     else:
-        level_game = random.choice(level_game_pairs)
-    VGDLParser.playGame(*level_game)
+        index = random.choice(range(len(level_game_pairs)))
+    VGDLParser.playGame(*level_game_pairs[index])
     data = np.load("temp_data.npy")
 
     levels_won = index if not data[2] else index+int(data[2])

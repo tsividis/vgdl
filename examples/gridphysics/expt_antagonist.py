@@ -124,12 +124,11 @@ if __name__ == "__main__":
     import numpy as np
     import csv
 
-    levels = [l for l in locals().keys() if 'level' in l and len(l)<8]
     if len(sys.argv)==2:
         index = int(sys.argv[1])
     else:
-        index = random.choice(range(len(levels)))
-    VGDLParser.playGame(game, locals()[levels[index]])
+        index = random.choice(range(len(level_game_pairs)))
+    VGDLParser.playGame(*level_game_pairs[index])
     data = np.load("temp_data.npy")
 
     levels_won = index if not data[2] else index+int(data[2])
