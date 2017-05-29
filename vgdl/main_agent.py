@@ -22,7 +22,7 @@ class Agent:
 		self.gameFilename = gameFilename
 		self.gameString = None
 		self.levelString = None
-		self.annealingFactor = 1
+		self.annealingFactor = .9
 		self.hypotheses = []
 		self.symbolDict = None
 		self.finalEventList = []
@@ -110,7 +110,7 @@ class Agent:
 					'episodes' : episodes}
 					
 		write_to_csv('pilotModelRuns.csv', output)
-		# embed()
+
 		VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered,
 			persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
 
@@ -128,12 +128,11 @@ class Agent:
 		print "Won {} out of {} episodes.".format(sum(wins), i)
 
 	def playEpisode(self, gameObject):
-		
+
 		## Initialize external environment
 		self.initializeEnvironment()
 		print "initializing RLE"
 		steps = 0
-		embed()
 		self.all_objects= self.rle._game.getObjects()
 		ended, win = self.rle._isDone()
 		annealing = 1
@@ -147,6 +146,9 @@ class Agent:
 		else:
 			gameObject = self.completeHypotheses(self.all_objects)
 			print "had hypotheses -- completing them."
+			# If theory is being carried over, falsify termination hypotheses
+			# given new level state
+			[t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
 		while not ended:
 			## initialize one or many VRLEs according to hypothesis-selection method
@@ -314,11 +316,12 @@ class Agent:
 					self.seen_resources.append(resource)
 
 
-		if event['effectList']:
-
-			[t.updateTerminations(event) for t in hypotheses]
+		if event['effectList'] and theory_change_flag:
+			[t.updateTerminations(event=event) for t in hypotheses]
 			if theory_change_flag:
 				hypotheses[0].display()
+
+
 
 		print self.rle.show()
 

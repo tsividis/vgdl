@@ -906,7 +906,7 @@ class Theory(object):
 
 		return (addedRule or addedClass)
 
-	def updateTerminations(self, event=False):
+	def updateTerminations(self, event=False, rle=None):
 		self.terminationSet = [t for t in self.terminationSet
 							   if t.ruleType=='SpriteCounterRule' and
 							   not t.termination.win and all([not f.__eq__(t) for f in self.falsified])]
@@ -935,6 +935,21 @@ class Theory(object):
 							if (all([not loss_terminationRule.__eq__(t) for t in self.terminationSet]) and
 								all([not loss_terminationRule.__eq__(t) for t in self.falsified])):
 									self.terminationSet.append(loss_terminationRule)
+
+
+		if rle and not rle._isDone()[0]:
+			knownColors = [sprite[0].color for sprite in self.classes.values()]
+			presentColors = [rle._game.sprite_groups[o][0].colorName for o in rle._game.sprite_groups
+							 if len(rle._game.sprite_groups[o])>0 and
+							 rle._game.sprite_groups[o][0].colorName in knownColors]
+			absentColors = [color for color in knownColors
+							if color not in presentColors]
+
+			for color in absentColors:
+				## If the class is not at all present in this level,
+				## you can't win or lose based on this particular class being 0
+				self.falsified.append(SpriteCounterRule(self.colorToClassMapper(color), 0, True))
+				self.falsified.append(SpriteCounterRule(self.colorToClassMapper(color), 0, False))
 
 
 		for rule in self.interactionSet:

@@ -33,18 +33,18 @@ www                            w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-level2 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                              w
-w                              w
-w  b                           w
-w                              w
-w                              w
-wr A                          aw
-www                            w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level2 = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                              w
+# w                              w
+# w  b                           w
+# w                              w
+# w                              w
+# wr A                          aw
+# www                            w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 
 level3 = """
@@ -78,12 +78,12 @@ BasicGame frame_rate=30
     SpriteSet
         avatar > MovingAvatar color=DARKBLUE cooldown=0#6 
         box > Passive
-            box1 > color=RED
+            box1 > color=PINK
             box2 > color=YELLOW
         chaser > VGDLSprite cooldown=12#16
             randomChaser > RandomNPC color=LIGHTBLUE
             mediumChaser > Chaser color=BLUE stype=box2
-            goodChaser > AStarChaser color=PINK stype=box2
+            goodChaser > AStarChaser color=RED stype=box2
         forcefield > Passive color=PURPLE
         wall > Immovable color=DARKGRAY
     LevelMapping
@@ -115,7 +115,7 @@ BasicGame frame_rate=30
         SpriteCounter stype=box1 limit=0 win=True
 """
 
-level_game_pairs = [[game, level0], [game, level1], [game, level2],
+level_game_pairs = [[game, level0], [game, level1],
                     [game, level3], [game, level4]]
 
 if __name__ == "__main__":

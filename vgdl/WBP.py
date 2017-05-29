@@ -67,7 +67,7 @@ class WBP():
 			i+=1
 		self.addSpaceBarToActions()
 
-		import ipdb; ipdb.set_trace()
+
 
 	def findObjectsInRLE(self, rle, objName):
 		try:
@@ -159,7 +159,6 @@ class WBP():
 			current = bestNodes.pop(0)
 		except:
 			return None
-			# import ipdb; ipdb.set_trace()
 		QReward.remove(current)
 		try:
 			QNovelty.remove(current)
@@ -202,7 +201,6 @@ class WBP():
 				child = Node(self.rle, self, current.actionSeq+[a], current)
 				child.eval()
 				if child.win:
-					# import ipdb; ipdb.set_trace()
 					# Get the gameString representation of the RLE at each
 					# timestep in the chosen solution, so as to be able to
 					# compare it to the agent's RLE at execution time and
@@ -403,13 +401,18 @@ class Node():
 			# embed()
 			s2_positions = self.WBP.findObjectsInRLE(rle, s2)
 			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
+
+			# Second order lesion
+			if s1 != 'avatar' and s2 != 'avatar':
+				return 0
+
 			n_sprites = len(s1_positions)
 			try:
 				# A consequence of the two-way generic interactions in the
 				# theory is that minimum-distance object pairs whose interactions
 				# were not yet observed will have their distance penalized twice
 				# as much when none of those objects is an avatar. This implies
-				# that avatar novel interactions will be favored over other ones
+				# that non-avatar novel interactions will be favored over others
 				possiblePairList = [manhattanDist(obj, pos)
 					 for pos in s2_positions
 					 for obj in s1_positions
@@ -480,7 +483,7 @@ class Node():
 					first_alpha=first_alpha, second_alpha=second_alpha)
 				# print("noveltytermination_val for {} and {} is equal to {}".format(
 					# term.termination.s1, term.termination.s2, noveltytermination_val))
-				heuristicVal += 10000 * self.WBP.annealing * noveltytermination_val
+				heuristicVal += self.WBP.annealing * noveltytermination_val
 
 
 		return heuristicVal
@@ -494,6 +497,9 @@ class Node():
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
 					res = vrle.step(a)
+					# relevantEvents = [t for t in res['effectList'] if t[0] == 'stepBack']
+					# if relevantEvents:
+					# 	import ipdb;ipdb.set_trace()
 					self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
 					terminal, win = vrle._isDone()
 			except:
@@ -663,7 +669,6 @@ if __name__ == "__main__":
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
-	embed()
 
 	p = WBP(rle, gameFilename)
 
