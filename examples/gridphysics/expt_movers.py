@@ -93,7 +93,7 @@ wwwwwwwwwwwwwwwwww
 # """
 
 
-        
+
 game = """
 BasicGame frame_rate=30
     SpriteSet
@@ -106,14 +106,14 @@ BasicGame frame_rate=30
                 rand1 > color=LIGHTORANGE
                 rand2 > color=BLUE
         chaser > AStarChaser color=BROWN stype=avatar
-        wall > ResourcePack color=BLACK  
+        wall > ResourcePack color=BLACK
         missile > Missile
             missile1 > color=YELLOW orientation=RIGHT speed=.2
             missile2 > color=PINK orientation=RIGHT speed=.3
             missile3 > color=LIGHTBLUE orientation=UP speed=.5
         goal > Passive color=GREEN
     LevelMapping
-        w > wall   
+        w > wall
         a > box1
         b > box2
         x > chaser
@@ -124,14 +124,14 @@ BasicGame frame_rate=30
         3 > missile3
         g > goal
     InteractionSet
-        avatar wall > stepBack 
+        avatar wall > stepBack
         mover wall > stepBack
         box avatar > killSprite
         avatar box2 > killSprite
         avatar rand > killSprite
         missile box > turn
         avatar missile > killSprite
-        rand wall > stepBack  
+        rand wall > stepBack
         chaser wall > stepBack
         avatar chaser > killSprite
         missile EOS > wrapAround offset=0
@@ -142,7 +142,7 @@ BasicGame frame_rate=30
         mover box > stepBack
         goal avatar > killSprite
     TerminationSet
-        SpriteCounter stype=avatar  limit=0 win=False          
+        SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=goal limit=0 win=True
 """
 
@@ -151,16 +151,32 @@ show agent killing a moving item.
 same prediction should be highest for other moving items of same speed, then for non-moving items.
 also vice-versa.
 """
+
+level_game_pairs = [[game, level1], [game, level2], [game, level3],
+                    [game, level4], [game, level4]]
+
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    import random, sys
-    levels = [l for l in locals().keys() if 'level' in l]
-    
+    import random, sys, time
+    import numpy as np
+    import csv
+
     if len(sys.argv)==2:
         index = int(sys.argv[1])
     else:
-        index = random.choice(range(len(levels)))
-    # VGDLParser.playGame(*level_game)
-    # index = random.choice(range(len(levels)))
-    VGDLParser.playGame(game, locals()[levels[index]])
-    # VGDLParser.playGame(game, level)    
+        index = random.choice(range(len(level_game_pairs)))
+    VGDLParser.playGame(*level_game_pairs[index])
+
+    data = np.load("temp_data.npy")
+
+    levels_won = index if not data[2] else index+int(data[2])
+    # Save in format [subect, condition, gamename, levels won, steps taken, score, time elapsed]
+    row = ['human', 'no_score', 'expt_relational', levels_won, data[1], data[3], data[0]]
+
+    filename = "expt_relational_human_data.csv"
+    f = open(filename, 'a+') ##append, but also read.
+    writer = csv.writer(f)
+    if len(f.readlines())==0:
+        writer.writerow(('subject', 'condition', 'gameName', 'levels_won', 'steps', 'score', 'time'))
+    writer.writerow(row)
+    f.close()

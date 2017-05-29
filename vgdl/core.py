@@ -1294,7 +1294,6 @@ class BasicGame(object):
                         self.score -=1 ## Added 3/16/17
                         print time.time()-t1, len(self.actions), win, self.score
                         print "Game lost. Score=%s" % self.score
-
                     np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
                     allStates.append(self.getFullState())
                     # embed()
@@ -1369,10 +1368,14 @@ class BasicGame(object):
             self.score +=1 # Added 3/16/17
             self.win = True
             print "Game won, with score %s" % self.score
+            np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
+
         else:
             self.win = False
             self.score -=1 # Added 3/16/17
             print "Game lost. Score=%s" % self.score
+            np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
+
 
         # if "killSprite" in [e[0] for e in self.effectList]:
         #         embed()

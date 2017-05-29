@@ -8,7 +8,7 @@ w                    w
 w      f             w
 w                 x  w
 w          a         w
-w                    w
+w                    p
 wwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -21,7 +21,7 @@ w                    w
 w              z     w
 w   x    z           w
 w          a         w
-w                    w
+w                    p
 wwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -34,7 +34,7 @@ w                    w
 w              y     w
 w   x    y           w
 w          a         w
-w          A         w
+w          A         p
 wwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -47,7 +47,7 @@ w                    w
 w          y   z     w
 w   x    z           w
 w                    w
-w          A         w
+w          A         p
 wwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -63,6 +63,7 @@ BasicGame frame_rate=30
             box1 > color=ORANGE
         fire > Immovable color=YELLOW
         avatar > MovingAvatar color=WHITE
+        poison > Immovable color=BLACK
         wall > Immovable color=BLACK
     LevelMapping
         w > wall
@@ -72,6 +73,7 @@ BasicGame frame_rate=30
         x > probe
         z > converter1
         y > converter2
+        p > poison
     InteractionSet
         avatar wall > stepBack
         avatar fire > stepBack
@@ -94,6 +96,7 @@ BasicGame frame_rate=30
         probe fire > killSprite
         fire probe > killSprite
         avatar converter > stepBack
+        avatar poison > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=probe limit=0 win=True
@@ -112,6 +115,7 @@ BasicGame frame_rate=30
             box2 > color=GREEN
         fire > Immovable color=YELLOW
         avatar > MovingAvatar color=WHITE
+        poison > Immovable color=BLACK
         wall > Immovable color=BLACK
     LevelMapping
         w > wall
@@ -122,6 +126,7 @@ BasicGame frame_rate=30
         z > converter1
         y > converter2
         z > converter3
+        p > poison
     InteractionSet
         avatar wall > stepBack
         avatar fire > stepBack
@@ -145,6 +150,7 @@ BasicGame frame_rate=30
         probe fire > killSprite
         fire probe > killSprite
         avatar converter > stepBack
+        avatar poison > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=probe limit=0 win=True
@@ -155,29 +161,34 @@ level_game_pairs = [[game0, level0], [game0, level1], [game0, level2],
                     [game3, level3]]
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    import random, sys
+    import random, sys, time
     import numpy as np
     import csv
-
-    levels = [l for l in locals().keys() if 'level' in l]
-
+    from IPython import embed
+    
+    levels = [l for l in locals().keys() if 'level' in l and len(l)<8]
     if len(sys.argv)==2:
         index = int(sys.argv[1])
+        VGDLParser.playGame(*level_game_pairs[index])
     else:
-        index = random.choice(range(len(levels)))
-    # VGDLParser.playGame(*level_game)
-    # index = random.choice(range(len(levels)))
-    VGDLParser.playGame(*level_game_pairs[index])
-    data = np.load("temp_data.npy")
+        # index = random.choice(range(len(level_game_pairs)))
+        for index, level in enumerate(level_game_pairs):
+            win = False
+            while not win:
+                VGDLParser.playGame(*level)
+                time.sleep(1)
+                data = np.load("temp_data.npy")
+                win = data[2]
+                levels_won = index if not data[2] else index+int(data[2])
+                # Save in format [subect, condition, gamename, levels won, steps taken, score, time elapsed]
+                row = ['human', 'no_score', 'expt_relational', levels_won, data[1], data[3], data[0]]
 
-    levels_won = index if not data[2] else index+int(data[2])
-    # Save in format [subect, condition, gamename, levels won, steps taken, score, time elapsed]
-    row = ['human', 'no_score', 'expt_relational_new', levels_won, data[1], data[3], data[0]]
-
-    filename = "expt_relational_new_human_data.csv"
-    f = open(filename, 'a+') ##append, but also read.
-    writer = csv.writer(f)
-    if len(f.readlines())==0:
-        writer.writerow(('subject', 'condition', 'gameName', 'levels_won', 'steps', 'score', 'time'))
-    writer.writerow(row)
-    f.close()
+                filename = "expt_relational_human_data.csv"
+                f = open(filename, 'a+') ##append, but also read.
+                g = open(filename, 'r')
+                writer = csv.writer(f)
+                if len(g.readlines())==0:
+                    writer.writerow(('subject', 'condition', 'gameName', 'levels_won', 'steps', 'score', 'time'))
+                writer.writerow(row)
+                f.close()
+                g.close()
