@@ -76,7 +76,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 game = """
 BasicGame frame_rate=30
     SpriteSet
-        avatar > MovingAvatar color=DARKBLUE cooldown=0#6 
+        avatar > MovingAvatar color=DARKBLUE cooldown=0#6
         box > Passive
             box1 > color=PINK
             box2 > color=YELLOW
@@ -121,9 +121,25 @@ level_game_pairs = [[game, level0], [game, level1],
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     import random, sys
+    import numpy as np
+    import csv
+
     levels = [l for l in locals().keys() if 'level' in l and len(l)<8]
     if len(sys.argv)==2:
         index = int(sys.argv[1])
     else:
         index = random.choice(range(len(levels)))
     VGDLParser.playGame(game, locals()[levels[index]])
+    data = np.load("temp_data.npy")
+
+    levels_won = index if not data[2] else index+int(data[2])
+    # Save in format [subect, condition, gamename, levels won, steps taken, score, time elapsed]
+    row = ['human', 'no_score', 'expt_antagonist', levels_won, data[1], data[3], data[0]]
+
+    filename = "expt_antagonist_human_data.csv"
+    f = open(filename, 'a+') ##append, but also read.
+    writer = csv.writer(f)
+    if len(f.readlines())==0:
+        writer.writerow(('subject', 'condition', 'gameName', 'levels_won', 'steps', 'score', 'time'))
+    writer.writerow(row)
+    f.close()

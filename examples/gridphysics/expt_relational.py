@@ -1,158 +1,240 @@
 
 level0 = """
 wwwwwwwwwwwwwwwwwwwwww
-wA                   w
-w    a    x          w
-w              f     w
-w                    w
-w      f             w
-w                 x  w
-w          a         w
-w                    w
+w  1    p            w
+w    2    p          w
+wA  q     2   w     ww
+w    w1       w w    w
+ww          q        w
+w   p    q      1    w
+w    2        g      w
+w         2          w
 wwwwwwwwwwwwwwwwwwwwww
 """
 
 level1 = """
 wwwwwwwwwwwwwwwwwwwwww
-wA                   w
-w    a    x          w
-w                    w
-w                    w
-w              z     w
-w   x    z           w
-w          a         w
-w                    w
+wp         w        2w
+w          1     11  w
+w   g          1    ww
+w  1  12     1      ww
+ww             q     w
+w                  A w
+w  ww      q         w
+w    1    2       1  w
 wwwwwwwwwwwwwwwwwwwwww
 """
 
 level2 = """
 wwwwwwwwwwwwwwwwwwwwww
-w                    w
-w    a    x          w
-w                    w
-w                    w
-w              y     w
-w   x    y           w
-w          a         w
-w          A         w
+wA1   w    p       g w
+ww  1 w      p       w
+w     p      2  w   ww
+wwwwwww1        w   ww
+ww            q      w
+w    p    q        1 w
+w     2              w
+w         2          w
 wwwwwwwwwwwwwwwwwwwwww
 """
 
 level3 = """
 wwwwwwwwwwwwwwwwwwwwww
-w                    w
-w         x          w
-w            y       w
-w                    w
-w          y   z     w
-w   x    z           w
-w                    w
-w          A         w
+w    1        w  w   w
+w  1 w        w   1  w
+wA   w        2   11 w
+wwwwwwwwwwwwwwwwwww ww
+ww        w ww   w  ww
+wwwww   w   1   ww   w
+w   w2   ww  w   ww ww
+w  g     2www       ww
+wwwwwwwwwwwwwwwwwwwwww
+"""
+
+level4 = """
+wwwwwwwwwwwwwwwwwwwwww
+w    1        w  w w w
+w  1 w        w1  1 ww
+w g  w        1   11 w
+wwwwwwwwwwwwwwwwwww ww
+w   w     w w    w  ww
+wwww q    w 1 w  w   w
+w A  1ww q    w  ww ww
+w  w  w w w   w     ww
 wwwwwwwwwwwwwwwwwwwwww
 """
 
 
-game0 = """
+
+# level1 = """
+# wwwwwwwwwwwwwwwwwwwww
+# wp      w   A      2w
+# w  g 2  w           w
+# w         2   ww   ww
+# w     1             w
+# ww     w   q  w     w
+# w   q  w      w   p w
+# w    2 w      w     w
+# w        2    1     w
+# wwwwwwwwwwwwwwwwwwwww
+# """
+
+# level2 = """
+# wwwwwwwwwwwwwwwwwwwww
+# wp        Aw       2w
+# w       1 11        w
+# w  2       1   www ww
+# w  2  2     1      ww
+# ww   www      q w   w
+# w               w g w
+# w           2   w   w
+# w    1   2       1  w
+# wwwwwwwwwwwwwwwwwwwww
+# """
+
+# level3 = """
+# wwwwwwwwwwwwwwwwwwwww
+# wp         w       2w
+# w          1    11  w
+# w   g         1    ww
+# w  1  12    1      ww
+# ww            q     w
+# w                 A w
+# w  ww     q         w
+# w  h 1   2       1  w
+# wwwwwwwwwwwwwwwwwwwww
+# """
+
+# level4 = """
+# wwwwwwwwwwwwwwwwwwwww
+# w    1       w  w   w
+# w  1 w       w   wwww
+# wA   w       2     ww
+# wwwwwwwwwwwwwwwwww ww
+# ww        wq        w
+# w   p    qw    w    w
+# w    2          w   w
+# w g      2w         w
+# wwwwwwwwwwwwwwwwwwwww
+# """
+
+
+# level6 = """
+# wwwwwwwwwwwwwwwwwwwww
+# wA1p  w   p         w
+# ww  1 w     p       w
+# w     p     2  w   ww
+# wwwwwww1       w   ww
+# ww           q      w
+# w   p    q        1 w
+# w    2        g     w
+# w        2          w
+# wwwwwwwwwwwwwwwwwwwww
+# """
+
+
+# level7 = """
+# wwwwwwwwwwwwwwwwwwwwww
+# w    1        w  w   w
+# w  1 w        w   1  w
+# wA   w        2   11 w
+# wwwwwwwwwwwwwwwwwww ww
+# ww        w ww   w  ww
+# wwwww   w   1   ww   w
+# w   w2   ww  w   ww ww
+# w  g     2www       ww
+# wwwwwwwwwwwwwwwwwwwwww
+# """
+
+
+# level8 = """
+# wwwwwwwwwwwwwwwwwwwwww
+# w    1        w  w w w
+# w  1 w        w1  1 ww
+# w g  w        1   11 w
+# wwwwwwwwwwwwwwwwwww ww
+# w   w     w w    w  ww
+# wwww q    w 1 w  w   w
+# w A  1ww q    w  ww ww
+# w  w  w w w   w     ww
+# wwwwwwwwwwwwwwwwwwwwww
+# """
+
+# level11 = """
+# wwwwwwwwwwwwwwwwwwwwww
+# wp      w    Aw     2w
+# w       w 1  11      w
+# wwwwwwwww     1  ww ww
+# w  2   2       1    ww
+# ww    www      q w   w
+# w      g         w   w
+# w            2   w   w
+# w     1  2        1  w
+# wwwwwwwwwwwwwwwwwwwwww
+# """
+# level10 = """
+# wwwwwwwwwwwwwwwwwwwwww
+# wp      w    A      2w
+# w  g 2  w            w
+# w         2    ww wwww
+# w     1           w  w
+# ww     w   q  w   w  w
+# w   q  w      w   wwww
+# w    2 w      w      w
+# w        2    1      w
+# wwwwwwwwwwwwwwwwwwwwww
+# """
+
+
+game = """
 BasicGame frame_rate=30
     SpriteSet
-        probe > Immovable color=BLUE
-        converter > Immovable
-            converter1 > color=RED
-            converter2 > color=PURPLE
-        box > Immovable
-            box1 > color=ORANGE
-        fire > Immovable color=YELLOW
-        avatar > MovingAvatar color=WHITE
-        wall > Immovable color=BLACK
+        avatar > MovingAvatar color=DARKBLUE #cooldown=4
+        goal > ResourcePack
+            goal1 > color=GOLD
+            goal2 > color=RED
+        poison > ResourcePack
+            poison1 > color=ORANGE
+            poison2 >  color=PINK
+        box1 > ResourcePack color=GREEN
+        box2 > ResourcePack color=LIGHTBLUE
+        wall > Immovable color=DARKGRAY
+        score > Resource color=PINK limit=10
     LevelMapping
+        p > poison1
+        q > poison2
+        1 > box1
+        2 > box2
         w > wall
-        a > box1
-        b > box2
-        f > fire
-        x > probe
-        z > converter1
-        y > converter2
+        g > goal1
+        h > goal2
     InteractionSet
         avatar wall > stepBack
-        avatar fire > stepBack
-        box avatar > bounceForward
-        box probe > stepBack
-        probe box > stepBack
-        box box > stepBack
-        box wall > stepBack
-        probe wall > stepBack
-        converter wall > stepBack
-        probe converter > stepBack
-        converter1 box > bounceForward
-        converter2 box > transformTo stype=fire
-        box fire > stepBack
-        fire box > stepBack
-        box fire > killSprite
-        probe probe > stepBack
-        probe avatar > bounceForward
-        converter1 avatar > transformTo stype=fire
-        probe fire > killSprite
-        fire probe > killSprite
-        avatar converter > stepBack
+        avatar poison > killSprite
+        goal avatar > killSprite
+        box1 avatar > bounceForward
+        box2 avatar  > killSprite
+        poison wall > stepBack
+        goal box1 > stepBack
+        goal box2 > stepBack
+        goal wall > stepBack
+        goal poison1 > stepBack
+        goal poison2 > stepBack
+        box1 wall    > stepBack
+        box1 box2    > nothing
+        box2 wall    > stepBack
+        box1 box1 > stepBack
+        poison1 box1 > killSprite
+        poison2 box1 > bounceForward
+        poison1 box2 > stepBack
+        poison2 box2 >stepBack
     TerminationSet
+        SpriteCounter stype=goal    limit=0 win=True
         SpriteCounter stype=avatar  limit=0 win=False
-        SpriteCounter stype=probe limit=0 win=True
 """
 
-game3 = """
-BasicGame frame_rate=30
-    SpriteSet
-        probe > Immovable color=BLUE
-        converter > Immovable
-            converter1 > color=RED
-            converter2 > color=PURPLE
-            converter3 > color=PINK
-        box > Immovable
-            box1 > color=ORANGE
-            box2 > color=GREEN
-        fire > Immovable color=YELLOW
-        avatar > MovingAvatar color=WHITE
-        wall > Immovable color=BLACK
-    LevelMapping
-        w > wall
-        a > box1
-        b > box2
-        f > fire
-        x > probe
-        z > converter1
-        y > converter2
-        z > converter3
-    InteractionSet
-        avatar wall > stepBack
-        avatar fire > stepBack
-        box avatar > bounceForward
-        box probe > stepBack
-        probe box > stepBack
-        box box > stepBack
-        box wall > stepBack
-        probe wall > stepBack
-        converter wall > stepBack
-        probe converter > stepBack
-        converter1 box1 > bounceForward
-        converter2 box1 > transformTo stype=fire
-        converter3 avatar > transformTo stype=box1
-        box fire > stepBack
-        fire box > stepBack
-        box fire > killSprite
-        probe probe > stepBack
-        probe avatar > bounceForward
-        converter1 avatar > transformTo stype=fire
-        probe fire > killSprite
-        fire probe > killSprite
-        avatar converter > stepBack
-    TerminationSet
-        SpriteCounter stype=avatar  limit=0 win=False
-        SpriteCounter stype=probe limit=0 win=True
-"""
-
-
-level_game_pairs = [[game0, level0], [game0, level1], [game0, level2],
-                    [game3, level3]]
+level_game_pairs = [[game, level0], [game, level1], [game, level2],
+                    [game, level3], [game, level4]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
@@ -163,12 +245,12 @@ if __name__ == "__main__":
     levels = [l for l in locals().keys() if 'level' in l]
 
     if len(sys.argv)==2:
-        level_game = level_game_pairs[int(sys.argv[1])]
+        index = int(sys.argv[1])
     else:
         index = random.choice(range(len(levels)))
     # VGDLParser.playGame(*level_game)
     # index = random.choice(range(len(levels)))
-    VGDLParser.playGame(game, locals()[levels[index]])
+    VGDLParser.playGame(*level_game_pairs[index])
     data = np.load("temp_data.npy")
 
     levels_won = index if not data[2] else index+int(data[2])

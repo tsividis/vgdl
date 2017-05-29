@@ -1116,12 +1116,16 @@ class BasicGame(object):
                         self.score -=1 ## Added 3/16/17
                         print time.time()-t1, len(self.actions), win, self.score
                         print "Game lost. Score=%s" % self.score
+
+                    np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
                     allStates.append(self.getFullState())
                     # embed()
-                    time.sleep(1)
-                    pygame.quit()
-                    sys.exit()
-                    break
+                    pygame.time.wait(10)
+                    print len(self.actions), win, self.score
+                    return win, self.score
+                    # pygame.quit()
+                    # sys.exit()
+                    # break
 
             # Conditional Criteria
             for conditional in self.conditions:
@@ -1200,7 +1204,6 @@ class BasicGame(object):
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(10)
         print len(self.actions), win, self.score
-        np.save("temp_data.npy", [time.time()-t1, len(self.actions), win, self.score])
         return win, self.score
 
 
