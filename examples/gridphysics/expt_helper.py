@@ -202,3 +202,16 @@ if __name__ == "__main__":
         index = random.choice(range(len(levels)))
     # embed()
     VGDLParser.playGame(game, locals()[levels[index]])
+    data = np.load("temp_data.npy")
+
+    levels_won = index if not data[2] else index+int(data[2])
+    # Save in format [subect, condition, gamename, levels won, steps taken, score, time elapsed]
+    row = ['human', 'no_score', 'expt_helper', levels_won, data[1], data[3], data[0]]
+
+    filename = "expt_helper_human_data.csv"
+    f = open(filename, 'a+') ##append, but also read.
+    writer = csv.writer(f)
+    if len(f.readlines())==0:
+        writer.writerow(('subject', 'condition', 'gameName', 'levels_won', 'steps', 'score', 'time'))
+    writer.writerow(row)
+    f.close()

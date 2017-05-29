@@ -114,3 +114,16 @@ if __name__ == "__main__":
     else:
         level_game = random.choice(level_game_pairs)
     VGDLParser.playGame(*level_game)
+    data = np.load("temp_data.npy")
+
+    levels_won = index if not data[2] else index+int(data[2])
+    # Save in format [subect, condition, gamename, levels won, steps taken, score, time elapsed]
+    row = ['human', 'no_score', 'expt_physics_sharpshooter', levels_won, data[1], data[3], data[0]]
+
+    filename = "expt_physics_sharpshooter_human_data.csv"
+    f = open(filename, 'a+') ##append, but also read.
+    writer = csv.writer(f)
+    if len(f.readlines())==0:
+        writer.writerow(('subject', 'condition', 'gameName', 'levels_won', 'steps', 'score', 'time'))
+    writer.writerow(row)
+    f.close()
