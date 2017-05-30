@@ -6,6 +6,7 @@ from class_theory_template import *
 from taxonomy import *
 from IPython import embed
 from ontology import *
+import ipdb
 import operator
 import time, math
 from util import factorize, objectsToSymbol
@@ -913,6 +914,8 @@ class Theory(object):
 
 		if event:
 			relevantEvents = [t for t in event['effectList'] if t[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo']]
+			# if relevantEvents:
+				# ipdb.set_trace()
 			rle = event['rle']
 			for event in relevantEvents:
 				candidateSpriteType = [o for o in rle._game.sprite_groups if len(rle._game.sprite_groups[o])>0 and rle._game.sprite_groups[o][0].colorName == event[1]][0]

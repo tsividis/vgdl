@@ -465,8 +465,8 @@ class Node():
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				# print("spritecounter_val for {} is equal to {}".format(
-					# term.termination.stype, spritecounter_val))
+				print("spritecounter_val for {} is equal to {}".format(
+					term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
@@ -665,13 +665,13 @@ if __name__ == "__main__":
 	## objects.
 	# gameFilename = "examples.continuousphysics.mario"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
-	gameFilename = "examples.gridphysics.expt_exploration_exploitation"
+	gameFilename = "examples.gridphysics.expt_helper"
 
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
-	embed()
+	# embed()
 	p = WBP(rle, gameFilename)
 
 

@@ -1,29 +1,29 @@
 
-level0 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                              w
-w              a               w
-w  x                           w
-w          b              a    w
-w                              w
-w  A           b               w
-www                            w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level0 = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                              w
+# w              a               w
+# w  x                           w
+# w          b              a    w
+# w                              w
+# w  A           b               w
+# www                            w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
-level1 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w        a         a           w
-w              a               w
-w  x                           w
-w          b              a    w
-w                   a          w
-w  A     a     b               w
-www                 x          w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level1 = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w        a         a           w
+# w              a               w
+# w  x                           w
+# w          b              a    w
+# w                   a          w
+# w  A     a     b               w
+# www                 x          w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # level2 = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -38,31 +38,31 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-level2 = """
+level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
-w        a         a           w
+w        a     c   a         c w
 w                              w
-w  r                           w
+w  z                           w
 w          b                   w
-w                   a          w
-w  A     a     b               w
-www                 r          w
+w  a                a          w
+w  A           b               w
+www                     z      w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-level3 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                b   b         w
-w        a       b a b         w
-w              a bbbbb         w
-w  x                           w
-w                         a    w
-w      bbbbb        a          w
-w  A   b a b   b               w
-www    b   b        x          w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level3 = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                b   b         w
+# w        a       b a b         w
+# w              a bbbbb         w
+# w  x                           w
+# w                         a    w
+# w      bbbbb        a          w
+# w  A   b a b   b               w
+# www    b   b        x          w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # level = """
 # wwwwwwww
@@ -142,13 +142,16 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 game = """
 BasicGame frame_rate=30
     SpriteSet
-        avatar > MovingAvatar color=DARKBLUE cooldown=0
+        avatar > MovingAvatar color=DARKBLUE cooldown=1
         box > Passive
             box1 > color=WHITE
             box2 > color=GREEN
+            box3 > color=YELLOW
         mover > VGDLSprite
-            rand > RandomNPC cooldown=12 color=PURPLE
-            chaser > Chaser color=ORANGE stype=box1 cooldown=12 #for humans
+            rand > RandomNPC cooldown=2 color=PURPLE #12 for humans
+            chaser > Chaser
+                chaser1 > stype=box1 color=ORANGE  cooldown=2 #12 #for humans
+                chaser2 > stype=box3 color=LIGHTBLUE cooldown=2 #for humans
         wall > Immovable color=BLACK
         missile > Missile
             missile1 > color=YELLOW orientation=RIGHT
@@ -157,8 +160,11 @@ BasicGame frame_rate=30
         w > wall
         a > box1
         b > box2
+        c > box3
         x > chaser
+        z > chaser2
         r > rand
+        z > chaser2
         1 > missile1
         2 > missile2
     InteractionSet
@@ -172,6 +178,7 @@ BasicGame frame_rate=30
         box2 avatar > killSprite
         box1 chaser > killSprite
         box1 rand > killSprite
+        box3 chaser > nothing
         avatar rand > nothing
         chaser wall > stepBack
         chaser box2 > stepBack
@@ -185,8 +192,7 @@ BasicGame frame_rate=30
 """
 
 # levels = [level0, level1, level2, level3, level4]
-level_game_pairs = [[game, level0], [game, level1], [game, level2],
-                    [game, level3]]
+
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
@@ -194,6 +200,11 @@ if __name__ == "__main__":
     import numpy as np
     import csv
     from IPython import embed
+
+    # level_game_pairs = [[game, level0], [game, level1], [game, level2],
+                    # [game, level3]]
+
+    level_game_pairs = [[game, level]]
     
     levels = [l for l in locals().keys() if 'level' in l and len(l)<8]
     if len(sys.argv)==2:

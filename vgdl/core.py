@@ -978,7 +978,7 @@ class BasicGame(object):
         self.all_objects = self.getObjects() # Save all objects, some which may be killed in game
 
         ##figure out keypress type:
-        disableContinuousKeyPress = all([self.all_objects[k]['sprite'].physicstype.__name__=='GridPhysics' for k in self.all_objects.keys()])
+        disableContinuousKeyPress = False#all([self.all_objects[k]['sprite'].physicstype.__name__=='GridPhysics' for k in self.all_objects.keys()])
 
         objects = self.getObjects()
         self.spriteDistribution = {}
