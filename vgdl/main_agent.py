@@ -108,7 +108,7 @@ class Agent:
 					'gameName': self.gameFilename[self.gameFilename.find('expt'):],
 					'condition': 'no_score',
 					'episodes' : episodes}
-					
+
 		write_to_csv('pilotModelRuns.csv', output)
 
 		VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered,
@@ -322,9 +322,9 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.demo_transform_relational"
 	# filename = "examples.gridphysics.simpleGame_push_boulders"
 	# filename = "examples.gridphysics.pick_apples"
-	filename = "examples.gridphysics.expt_antagonist"
+	# filename = "examples.gridphysics.expt_antagonist"
 
-	# filename = "examples.gridphysics.expt_helper"
+	filename = "examples.gridphysics.expt_helper"
 
 	agent = Agent('full', filename)
 

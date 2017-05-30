@@ -1,29 +1,29 @@
 
-# level0 = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                              w
-# w              a               w
-# w  x                           w
-# w          b              a    w
-# w                              w
-# w  A           b               w
-# www                            w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level0 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                              w
+w              a               w
+w  x                           w
+w                         a    w
+w                              w
+w  A                           w
+www                            w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
-# level1 = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w        a         a           w
-# w              a               w
-# w  x                           w
-# w          b              a    w
-# w                   a          w
-# w  A     a     b               w
-# www                 x          w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level1 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w        a         a           w
+w              a               w
+w  x                           w
+w          b              a    w
+w                   a          w
+w  A     a     b               w
+www                 x          w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 # level2 = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -38,7 +38,20 @@
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-level = """
+level2 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                b   b         w
+w        a       b a b         w
+w              a bbbbb         w
+w  x                           w
+w                         a    w
+w      bbbbb        a          w
+w  A   b a b   b               w
+www    b   b        x          w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+
+level3 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w        a     c   a         c w
@@ -50,19 +63,6 @@ w  A           b               w
 www                     z      w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
-
-# level3 = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                b   b         w
-# w        a       b a b         w
-# w              a bbbbb         w
-# w  x                           w
-# w                         a    w
-# w      bbbbb        a          w
-# w  A   b a b   b               w
-# www    b   b        x          w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
 
 # level = """
 # wwwwwwww
@@ -148,7 +148,7 @@ BasicGame frame_rate=30
             box2 > color=GREEN
             box3 > color=YELLOW
         mover > VGDLSprite
-            rand > RandomNPC cooldown=2 color=PURPLE #12 for humans
+            rand > RandomNPC cooldown=2 color=PURPLE #12 for humans, 2 for Planner
             chaser > Chaser
                 chaser1 > stype=box1 color=ORANGE  cooldown=2 #12 #for humans
                 chaser2 > stype=box3 color=LIGHTBLUE cooldown=2 #for humans
@@ -161,7 +161,7 @@ BasicGame frame_rate=30
         a > box1
         b > box2
         c > box3
-        x > chaser
+        x > chaser1
         z > chaser2
         r > rand
         z > chaser2
@@ -178,6 +178,8 @@ BasicGame frame_rate=30
         box2 avatar > killSprite
         box1 chaser > killSprite
         box1 rand > killSprite
+        box1 box3 > nothing
+        avatar box3 > nothing
         box3 chaser > nothing
         avatar rand > nothing
         chaser wall > stepBack
@@ -191,8 +193,8 @@ BasicGame frame_rate=30
         SpriteCounter stype=box1 limit=0 win=True
 """
 
-# levels = [level0, level1, level2, level3, level4]
-
+level_game_pairs = [[game, level0], [game, level1], [game, level2],
+                    [game, level3]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
@@ -201,11 +203,9 @@ if __name__ == "__main__":
     import csv
     from IPython import embed
 
-    # level_game_pairs = [[game, level0], [game, level1], [game, level2],
-                    # [game, level3]]
 
-    level_game_pairs = [[game, level]]
-    
+    # level_game_pairs = [[game, level]]
+
     levels = [l for l in locals().keys() if 'level' in l and len(l)<8]
     if len(sys.argv)==2:
         index = int(sys.argv[1])

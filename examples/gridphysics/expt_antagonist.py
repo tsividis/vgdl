@@ -82,7 +82,7 @@ BasicGame frame_rate=30
             box2 > color=YELLOW
         chaser > VGDLSprite cooldown=2 #16
             randomChaser > RandomNPC color=WHITE
-            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=6
+            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=12
             goodChaser > AStarChaser color=RED stype=box2
         forcefield > Passive color=PURPLE
         wall > Immovable color=DARKGRAY
@@ -107,6 +107,7 @@ BasicGame frame_rate=30
         avatar chaser > nothing
         box1 avatar > killSprite
         box2 chaser > killSprite
+        chaser box1 > stepBack
         chaser wall > stepBack
         chaser box1 > nothing
     TerminationSet
@@ -124,7 +125,7 @@ if __name__ == "__main__":
     import numpy as np
     import csv
     from IPython import embed
-    
+
     levels = [l for l in locals().keys() if 'level' in l and len(l)<8]
     if len(sys.argv)==2:
         index = int(sys.argv[1])

@@ -68,7 +68,6 @@ class WBP():
 		self.addSpaceBarToActions()
 
 
-
 	def findObjectsInRLE(self, rle, objName):
 		try:
 			objLocs = [rle._rect2pos(element.rect) for element in rle._game.sprite_groups[objName]
@@ -465,8 +464,8 @@ class Node():
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				print("spritecounter_val for {} is equal to {}".format(
-					term.termination.stype, spritecounter_val))
+				# print("spritecounter_val for {} is equal to {}".format(
+				# 	term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
