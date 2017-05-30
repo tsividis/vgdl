@@ -112,7 +112,7 @@ class Agent:
 					'gameName': self.gameFilename[self.gameFilename.find('expt'):],
 					'condition': 'no_score',
 					'episodes' : episodes}
-					
+
 		write_to_csv('pilotModelRuns.csv', output)
 		self.makeMovie()
 
@@ -369,6 +369,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.expt_exploration_exploitation"
 
 	filename = "examples.gridphysics.expt_preconditions"
+
 
 	agent = Agent('full', filename)
 

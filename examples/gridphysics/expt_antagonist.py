@@ -107,6 +107,7 @@ BasicGame frame_rate=30
         avatar chaser > nothing
         box1 avatar > killSprite
         box2 chaser > killSprite
+        chaser box1 > stepBack
         chaser wall > stepBack
         chaser box1 > nothing
     TerminationSet
@@ -124,7 +125,7 @@ if __name__ == "__main__":
     import numpy as np
     import csv
     from IPython import embed
-    
+
     levels = [l for l in locals().keys() if 'level' in l and len(l)<8]
     if len(sys.argv)==2:
         index = int(sys.argv[1])

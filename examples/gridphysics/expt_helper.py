@@ -148,7 +148,11 @@ BasicGame frame_rate=30
             box2 > color=GREEN
             box3 > color=YELLOW
         mover > VGDLSprite
+<<<<<<< HEAD
             rand > RandomNPC cooldown=0 color=PURPLE #12 for humans, 2 for Planner
+=======
+            rand > RandomNPC cooldown=2 color=PURPLE #12 for humans, 2 for Planner
+>>>>>>> c8773e4994a7d363cb48ab5760315c562d2933c9
             chaser > Chaser
                 chaser1 > stype=box1 color=ORANGE  cooldown=0 #12 #for humans
                 chaser2 > stype=box3 color=LIGHTBLUE cooldown=0 #for humans

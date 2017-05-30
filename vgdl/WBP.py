@@ -69,7 +69,6 @@ class WBP():
 		self.addSpaceBarToActions()
 
 
-
 	def findObjectsInRLE(self, rle, objName):
 		try:
 			objLocs = [rle._rect2pos(element.rect) for element in rle._game.sprite_groups[objName]
