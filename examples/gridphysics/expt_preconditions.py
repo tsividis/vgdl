@@ -1,6 +1,18 @@
 
-
 level0 = """
+wwwwwwwwwwwwwwwwww
+w                w
+w     A          w
+w                w
+w                w
+w                w
+w  b             w
+w                w
+w             g  w
+wwwwwwwwwwwwwwwwww
+"""
+
+level1 = """
 wwwwwwwwwwwwwwwwww
 w b p   w    m   w
 w   p   w A  wwwww
@@ -13,7 +25,7 @@ w g p    p    p  w
 wwwwwwwwwwwwwwwwww
 """
 
-level1 = """
+level2 = """
 wwwwwwwwwwwwwwwwww
 w   p   w    p  bw
 w m     w A  wwwww
@@ -21,23 +33,23 @@ wpppp      p     w
 w     p p       ww
 ww            pppw
 wpppp       pppppw
-wmmmpp      pp  gw
-wmmmp    p  pp   w
+wmpp        pp  gw
+wmp      p  pp   w
 wwwwwwwwwwwwwwwwww
 """
 
-level2 = """
-wwwwwwwwwwwwwwwwww
-w b p   w    m   w
-w e p   w A  wwwww
-wpppp      p     w
-w     p p       ww
-ww   www         w
-wpppp        ffffw
-w   pp       f g w
-wmm p    p   f   w
-wwwwwwwwwwwwwwwwww
-"""
+# level2 = """
+# wwwwwwwwwwwwwwwwww
+# w b p   w    m   w
+# w e p   w A  wwwww
+# wpppp      p     w
+# w     p p       ww
+# ww   www         w
+# wpppp        ffffw
+# w   pp       f g w
+# wmm p    p   f   w
+# wwwwwwwwwwwwwwwwww
+# """
 
 level3 = """
 wwwwwwwwwwwwwwwwww
@@ -47,8 +59,8 @@ wpppp      p  pmmw
 w     p p     p ww
 wwpp         ppppw
 wpppp      ppppppw
-wm mpp     ppppppw
-wmbmppm  p ppp g w
+w m pp     ppppppw
+wbmmppm  p ppp g w
 wwwwwwwwwwwwwwwwww
 """
 
@@ -117,9 +129,7 @@ BasicGame frame_rate=30
         goal > Passive color=GOLD
         box > Passive color=ORANGE
         medicine > Resource limit=4 color=WHITE
-        water > Resource limit=4 color=LIGHTBLUE
         poison > Resource limit=3 color=RED
-        fire > Resource limit=3 color=PURPLE
         suit > Resource limit=1 color=GREEN
         wall > Immovable color=BLACK
     LevelMapping
@@ -127,24 +137,17 @@ BasicGame frame_rate=30
         b > box
         m > medicine
         p > poison
-        e > water
-        f > fire
         s > suit
         w > wall
         g > goal
     InteractionSet
         avatar wall > stepBack
         medicine avatar > killSprite
-        avatar fire > killIfHasLess resource=water limit=0
-        avatar fire > changeResource resource=water value=-1
         avatar poison > killIfHasLess resource=medicine limit=0
         avatar poison > changeResource resource=medicine value=-1
         avatar medicine > changeResource resource=medicine value=1
-        avatar water > changeResource resource=water value=1
         box avatar > killSprite
         poison avatar > killSprite
-        fire avatar > killSprite
-        water avatar > killSprite
         box wall    > undoAll
         box poison > undoAll
         box medicine > undoAll
@@ -163,7 +166,7 @@ if __name__ == "__main__":
     import numpy as np
     import csv
     from IPython import embed
-    
+
     levels = [l for l in locals().keys() if 'level' in l and len(l)<8]
     if len(sys.argv)==2:
         index = int(sys.argv[1])
