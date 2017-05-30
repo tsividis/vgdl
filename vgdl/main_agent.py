@@ -360,7 +360,7 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.demo_helper"
 
-	filename = "examples.gridphysics.expt_movers"
+	# filename = "examples.gridphysics.expt_movers"
 
 	# filename = "examples.gridphysics.expt_physics_sharpshooter"
 	# filename = "examples.gridphysics.demo_transform_relational"
@@ -368,7 +368,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pick_apples"
 	# filename = "examples.gridphysics.expt_exploration_exploitation"
 
-	# filename = "examples.gridphysics.expt_relational"
+	filename = "examples.gridphysics.expt_preconditions"
 
 	agent = Agent('full', filename)
 
