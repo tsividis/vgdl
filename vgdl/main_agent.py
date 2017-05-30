@@ -31,6 +31,7 @@ class Agent:
 		self.fakeInteractionRules = []
 		self.all_objects = {}
 		self.seen_resources = []
+		self.new_objects = {}
 
 	def initializeEnvironment(self):
 		if self.gameString==None or self.levelString==None:
@@ -113,7 +114,7 @@ class Agent:
 					'episodes' : episodes}
 					
 		write_to_csv('pilotModelRuns.csv', output)
-		makeMovie()
+		self.makeMovie()
 
 	def makeMovie(self):
 		import os, subprocess, shutil
@@ -189,7 +190,6 @@ class Agent:
 				for i, action in enumerate(solution):
 					self.hypotheses[0].dryingPaint = set()
 					hypotheses, theory_change_flag = self.executeStep(action, self.hypotheses[0], statesEncountered)
-					print len(statesEncountered)
 					steps +=1
 					if theory_change_flag:
 						del self.hypotheses[0]
@@ -210,7 +210,6 @@ class Agent:
 						except:
 							# Mismatch in gamestring lengths
 							break
-				# [rule.display() for rule in self.fakeInteractionRules]
 			else:
 				self.max_nodes *= 2
 				return gameObject, False, self.rle._game.score, steps, statesEncountered
@@ -262,11 +261,34 @@ class Agent:
 		## Add newly-seen objects.
 		current_objects = self.rle._game.getObjects()
 		for k in current_objects.keys():
-			if k not in self.all_objects.keys():
+			spriteName = current_objects[k]['sprite'].name
+			if spriteName not in [self.all_objects[key]['sprite'].name for key in self.all_objects.keys()]:
+				print "new object", spriteName
+				# embed()
 				self.all_objects[k] = current_objects[k]
 				distributionInitSetup(self.rle._game, k)
 				## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep.
 				self.rle._game.ignoreList.append(k)
+				self.new_objects[spriteName] = 0
+
+
+		for k in self.new_objects.keys():
+			self.new_objects[k] += 1
+
+		if any([self.new_objects[k]>5 for k in self.new_objects.keys()]):
+			# if self.new_objects[k] > 5:
+			spriteTypeHypothesis = sampleFromDistribution(self.rle._game.spriteDistribution, self.all_objects)
+			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
+		
+			newHypotheses = []
+			for hypothesis in hypotheses:
+				newHypotheses.append(gameObject.addNewObjectsToTheory(hypothesis, spriteTypeHypothesis))
+			hypotheses = newHypotheses
+			# print "updated new object..."
+			# embed()
+		
+		[self.new_objects.pop(k, None) for k in self.new_objects.keys() if self.new_objects[k]>5] ## don't track items once we've updated the theory
+
 
 		statesEncountered.append(self.rle._game.getFullState())
 		self.statesEncountered.append(self.rle._game.getFullState())
@@ -287,15 +309,11 @@ class Agent:
 			self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
 				not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
 
-			# if len(self.fakeInteractionRules)<len(oldFakeInteractionRules):
-				# import ipdb; ipdb.set_trace()
-			# print "before changing fakeInteractionRules"
-			# embed()
-
 			if not all([e in all_effects for e in effects]):
 				theory_change_flag = True
 			sample = sampleFromDistribution(self.rle._game.spriteDistribution, self.all_objects)
 			game_object = Game(spriteInductionResult=sample)
+
 			terminationCondition = {'ended': False, 'win':False, 'time':self.rle._game.time}
 			trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState'], e['rle']) \
 				for e in self.finalEventList], terminationCondition)
@@ -342,13 +360,15 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.demo_helper"
 
-	# filename = "examples.gridphysics.pick_apples_with_missiles"
+	filename = "examples.gridphysics.expt_movers"
+
+	# filename = "examples.gridphysics.expt_physics_sharpshooter"
 	# filename = "examples.gridphysics.demo_transform_relational"
 	# filename = "examples.gridphysics.simpleGame_push_boulders"
 	# filename = "examples.gridphysics.pick_apples"
 	# filename = "examples.gridphysics.expt_exploration_exploitation"
 
-	filename = "examples.gridphysics.expt_relational"
+	# filename = "examples.gridphysics.expt_relational"
 
 	agent = Agent('full', filename)
 

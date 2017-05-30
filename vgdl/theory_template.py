@@ -1661,6 +1661,7 @@ class Game(object):
 
 				[self.DFSinduction(t, timesteps, maxNumTheories, override=override, verbose=verbose) for t in newTheories]
 
+
 	def buildGenericTheory(self, spriteSample=True, vgdlSpriteParse=False):
 
 		T = Theory(self)
@@ -1746,6 +1747,7 @@ class Game(object):
 				s.className = 'c'+str(i)
 				theory.classes[s.className] = [s]
 				theory.spriteObjects[s.color] = s
+				theory.spriteSet.append(s)
 				rule = InteractionRule('killSprite', s.className, avatar.className, {}, set(), generic=True)
 				theory.interactionSet.append(rule)
 				rule = InteractionRule('stepBack', s.className, 'EOS', {}, set(), generic=True)
@@ -2465,28 +2467,11 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 		for c in range(rle.outdim[1]):
 			if state[r][c] > 0:
 				try:
-					# print state[r][c]
-					# print rle.getObjectsFromNumber(state[r][c])
 					symbol = objectsToSymbol(rle, rle.getObjectsFromNumber(state[r][c]), symbolDict)
 					mappedState[r][c] = symbol
 				except:
 					print "in map"
 					embed()
-
-				# if state[r][c] == 1:
-				# 	mappedState[r][c] = "A"
-				# elif (r,c) == goalLoc:
-				# 	mappedState[r][c] = "G"
-				# else:
-				# 	spriteIndex = int(round(math.log(state[r][c],2)))-1
-				# 	try:
-				# 		spriteType = sorted(_obstypes.keys())[::-1][spriteIndex]
-				# 		spriteColor = colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]
-				# 		mappedState[r][c] = symbolDict[spriteColor]
-				# 	except:
-				# 		print "Goal is empty square"
-				# 		embed()
-						# pass
 
 			try:
 				if mappedState[r][c] == " " and goalLoc == (r,c):
@@ -2515,8 +2500,9 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 			c = theory.spriteObjects[colors].className
 			theoryString += "\t\t%s > %s\n"%(symbol, c)
 
-
-	theoryString += "\t\tG > goal\n"
+	# print "in writeTheory"
+	# embed()
+	# theoryString += "\t\tG > goal\n"
 	theoryString += '"""\n'
 
 

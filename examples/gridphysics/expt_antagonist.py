@@ -80,9 +80,9 @@ BasicGame frame_rate=30
         box > Passive
             box1 > color=PINK
             box2 > color=YELLOW
-        chaser > VGDLSprite cooldown=2 #16
+        chaser > VGDLSprite cooldown=16
             randomChaser > RandomNPC color=WHITE
-            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=6
+            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=16
             goodChaser > AStarChaser color=RED stype=box2
         forcefield > Passive color=PURPLE
         wall > Immovable color=DARKGRAY
