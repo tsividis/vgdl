@@ -32,7 +32,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=10000):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=500):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -57,6 +57,7 @@ class WBP():
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
 			self.theory=theory
+		print 'max nodes', self.max_nodes
 
 		# for rule in self.theory.interactionSet:
 		# 	if 'stepBack'==rule.interaction:
@@ -265,7 +266,7 @@ class Node():
 				metabolic_cost += .3#(1-1./n)*mult
 			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
 			# 	metabolic_cost += 0.3
-		return metabolic_cost
+		return 0.# metabolic_cost
 
 	def rollout(self, vrle):
 		successfulRollout = False
@@ -460,13 +461,13 @@ class Node():
 
 		theory = self.WBP.theory
 		heuristicVal = 0
-
+		avatarNoveltyVals = []
 		for term in theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				print("spritecounter_val for {} is equal to {}".format(
-					term.termination.stype, spritecounter_val))
+				# print("spritecounter_val for {} is equal to {}".format(
+					# term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
@@ -485,9 +486,14 @@ class Node():
 					first_alpha=first_alpha, second_alpha=second_alpha)
 				# print("noveltytermination_val for {} and {} is equal to {}".format(
 					# term.termination.s1, term.termination.s2, noveltytermination_val))
-				heuristicVal += .5 * self.WBP.annealing * noveltytermination_val
+				if 'avatar' == term.termination.s2:
+					avatarNoveltyVals.append(.5*self.WBP.annealing*noveltytermination_val)
+				else:	
+					heuristicVal += .5 * self.WBP.annealing * noveltytermination_val
 
-
+		if avatarNoveltyVals:
+			# print noveltyVals
+			heuristicVal += max(avatarNoveltyVals)
 		return heuristicVal
 
 	def getToCurrentState(self):

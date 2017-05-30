@@ -86,10 +86,9 @@ BasicGame frame_rate=30
         converter wall > stepBack
         probe converter > stepBack
         converter1 box > bounceForward
-        converter2 box > transformTo stype=fire
+        box converter2 > transformTo stype=fire
+        converter2 fire > killSprite
         box fire > stepBack
-        fire box > stepBack
-        box fire > killSprite
         probe probe > stepBack
         probe avatar > bounceForward
         converter1 avatar > transformTo stype=fire
@@ -139,11 +138,11 @@ BasicGame frame_rate=30
         converter wall > stepBack
         probe converter > stepBack
         converter1 box1 > bounceForward
-        converter2 box1 > transformTo stype=fire
+        box1 converter2 > transformTo stype=fire
+        # box1 converter2 > killSprite
         converter3 avatar > transformTo stype=box1
+        converter2 fire > killSprite
         box fire > stepBack
-        fire box > stepBack
-        box fire > killSprite
         probe probe > stepBack
         probe avatar > bounceForward
         converter1 avatar > transformTo stype=fire

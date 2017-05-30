@@ -1,6 +1,6 @@
 from IPython import embed
 from util import *
-from core import colorDict, VGDLParser, makeVideo, sys
+from core import colorDict, VGDLParser, sys
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, \
 OrientedSprite, Missile, initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, \
 spriteInduction, selectObjectGoal, distributionInitSetup
@@ -23,6 +23,7 @@ class Agent:
 		self.gameString = None
 		self.levelString = None
 		self.annealingFactor = .9
+		self.max_nodes = 1000
 		self.hypotheses = []
 		self.symbolDict = None
 		self.finalEventList = []
@@ -100,9 +101,11 @@ class Agent:
 			win = False
 			gameObject = None
 			while not win:
-				gameObject, win, score, steps = self.playEpisode(gameObject)
+				gameObject, win, score, steps, statesEncountered = self.playEpisode(gameObject)
 				episodes.append((n_level, steps, win, score))
 
+			VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
+			persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
 
 		output = {'modelType':self.modelType,
 					'gameName': self.gameFilename[self.gameFilename.find('expt'):],
@@ -110,16 +113,33 @@ class Agent:
 					'episodes' : episodes}
 					
 		write_to_csv('pilotModelRuns.csv', output)
+		makeMovie()
 
-		VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered,
-			persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
+	def makeMovie(self):
+		import os, subprocess, shutil
+		print "Creating Movie"
+		movie_dir = "videos/"+self.gameFilename
+
+		if not os.path.exists(movie_dir):
+			print movie_dir, "didn't exist. making new dir"
+			os.makedirs(movie_dir)
+		round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store'])
+		video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
+		images_dir = "images/tmp/%09d.png"
+		com = "ffmpeg -i " +images_dir+ " -pix_fmt yuv420p -filter:v 'setpts=4.0*PTS' "+ video_dirname
+		command = "{}".format(com)
+		subprocess.call(command, shell=True)
+		# empty image directory
+		shutil.rmtree("images/tmp")
+		os.makedirs("images/tmp")
+		return
 
 	def playMultipleEpisodes(self, num_episodes):
 		i=0
 		gameObject = None
 		wins, scores = [], []
 		while i<num_episodes:
-			gameObject, win, score = self.playEpisode(gameObject)
+			gameObject, win, score, statesEncountered = self.playEpisode(gameObject)
 			wins.append(win)
 			scores.append(score)
 			i+=1
@@ -137,6 +157,7 @@ class Agent:
 		ended, win = self.rle._isDone()
 		annealing = 1
 		## Start storing encountered states.
+		statesEncountered = [self.rle._game.getFullState()]
 		self.statesEncountered.append(self.rle._game.getFullState())
 
 		## initialize theory if necessary.
@@ -155,7 +176,7 @@ class Agent:
 			theoryRLEs = self.VrleInitPhase()
 
 			p = WBP.WBP(theoryRLEs[0], self.gameFilename,
-						theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules, annealing=annealing)
+						theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules, annealing=annealing, max_nodes=self.max_nodes)
 			p.BFS()
 			solution = p.solution
 			quitting = p.quitting
@@ -167,7 +188,8 @@ class Agent:
 			if not quitting:
 				for i, action in enumerate(solution):
 					self.hypotheses[0].dryingPaint = set()
-					hypotheses, theory_change_flag = self.executeStep(action, self.hypotheses[0])
+					hypotheses, theory_change_flag = self.executeStep(action, self.hypotheses[0], statesEncountered)
+					print len(statesEncountered)
 					steps +=1
 					if theory_change_flag:
 						del self.hypotheses[0]
@@ -190,14 +212,15 @@ class Agent:
 							break
 				# [rule.display() for rule in self.fakeInteractionRules]
 			else:
-				return gameObject, False, self.rle._game.score, steps
+				self.max_nodes *= 2
+				return gameObject, False, self.rle._game.score, steps, statesEncountered
 
 			# self.hypotheses[0].display()
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
 		score = self.rle._game.score
 		print "ended episode. Win={}".format(win)
-		return gameObject, win, score, steps
+		return gameObject, win, score, steps, statesEncountered
 
 	def matchEventToRuleByIDAndSpriteName(self, event, rule):
 		# Check if the two objects involved in the
@@ -216,7 +239,7 @@ class Agent:
 		else:
 			return False
 
-	def executeStep(self, action, hypothesis):
+	def executeStep(self, action, hypothesis, statesEncountered):
 
 		hypotheses = [hypothesis]
 		theory_change_flag = False
@@ -245,6 +268,7 @@ class Agent:
 				## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep.
 				self.rle._game.ignoreList.append(k)
 
+		statesEncountered.append(self.rle._game.getFullState())
 		self.statesEncountered.append(self.rle._game.getFullState())
 		terminal = self.rle._isDone()[0]
 		spriteInduction(self.rle._game, step=3)
@@ -322,9 +346,9 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.demo_transform_relational"
 	# filename = "examples.gridphysics.simpleGame_push_boulders"
 	# filename = "examples.gridphysics.pick_apples"
-	filename = "examples.gridphysics.expt_antagonist"
+	# filename = "examples.gridphysics.expt_exploration_exploitation"
 
-	# filename = "examples.gridphysics.expt_helper"
+	filename = "examples.gridphysics.expt_relational"
 
 	agent = Agent('full', filename)
 
