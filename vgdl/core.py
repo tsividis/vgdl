@@ -1503,7 +1503,7 @@ class VGDLSprite(object):
         """ The main place where subclasses differ. """
         self.x = self.rect.x
         self.y = self.rect.y
-        self.lastrect = self.rect
+        self.lastrect = self.rect.copy()
         # no need to redraw if nothing was updated
         self.lastmove += 1
         if not self.is_static and not self.only_active:
@@ -1527,6 +1527,7 @@ class VGDLSprite(object):
 
     @property
     def lastdirection(self):
+
         return (self.rect[0]-self.lastrect[0], self.rect[1]-self.lastrect[1])
 
     def _draw(self, game):
