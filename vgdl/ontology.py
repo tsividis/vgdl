@@ -1961,7 +1961,7 @@ def initializeDistributionArgs(sprite_type):
         args[attribute] = {v: 1./len(values) for v in values}
 
     def initializeSpeed(args):
-        speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+        speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0]
         initializeProperty(args, 'speed', speedValues)
 
     def initializeOrientation(args):
@@ -2105,8 +2105,12 @@ def sampleFromDistribution(curr_distribution, all_objects):
         if all_objects[k]['sprite'].name is not 'avatar':
             non_avatar_keys.append(k)
         else:
-            from ontology import MovingAvatar
-            sample.append(Sprite(vgdlType=MovingAvatar, color=all_objects[k]['type']['color']))
+            from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
+                RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
+                    AimedFlakAvatar, InertialAvatar, MarioAvatar
+            # embed()
+            sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color']))
+            # sample.append(Sprite(vgdlType=MovingAvatar, color=all_objects[k]['type']['color']))
 
     ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
     types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]))
@@ -2259,7 +2263,8 @@ def spriteInduction(game, step, old_outcome=None):
                     # this particular sprite.
                     for sprite_type in sprite_types:
                         game.spriteDistribution[sprite][sprite_type]['args'] = initializeDistributionArgs(sprite_type)
-
+    ## Reset ignoreList so that next time around you do inference.
+    game.ignoreList = []
 
 def softmax(w, t = 1.0):
     e = np.exp(np.array(w) / t)
