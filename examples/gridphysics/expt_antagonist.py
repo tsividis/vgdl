@@ -10,6 +10,7 @@
 level0 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
+w             A                w
 w                              w
 w                              w
 w                              w
@@ -86,6 +87,20 @@ www                  a   f     w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
+
+# level4 = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w  a                           w
+# w     a       b    a      a    w
+# w       a              fffff   w
+# w  b        m   a     af   f   w
+# w              A       f   f   w
+# w     a     a          fffff   w
+# w     a   a       b      a    aw
+# www                  a         w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
 game = """
 BasicGame frame_rate=30
     SpriteSet
@@ -95,7 +110,7 @@ BasicGame frame_rate=30
             box2 > color=YELLOW
         chaser > VGDLSprite cooldown=0#16
             randomChaser > RandomNPC color=WHITE
-            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=0#16
+            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=0
             goodChaser > AStarChaser color=RED stype=box2
         forcefield > Passive color=PURPLE
         wall > Immovable color=DARKGRAY
@@ -122,15 +137,14 @@ BasicGame frame_rate=30
         box2 chaser > killSprite
         chaser box1 > stepBack
         chaser wall > stepBack
-        chaser box1 > nothing
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=box2  limit=0 win=False
         SpriteCounter stype=box1 limit=0 win=True
 """
 
-level_game_pairs = [[game, level0], [game, level1],
-                    [game, level3], [game, level4]]
+level_game_pairs = [[game, level0], [game, level1], [game, level2]]
+                    [game, level3]]
 
 # level_game_pairs = [[game, level0], [game, level1], [game, level4]]
 

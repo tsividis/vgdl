@@ -330,10 +330,11 @@ class Node():
 		else:
 			## Normal case
 			n_stypes = len([0 for sprite in self.WBP.findObjectsInRLE(rle, stype)])
+
 			distance_to_goal = abs(n_stypes - limit)
 
 		val += mult * first_alpha * distance_to_goal
-		# print val
+		# print stype, n_stypes, distance_to_goal, val
 		if compute_second_order:
 			## Get all positions of objects whose type is in killer_types; compute minimum distance
 			## of each to the stypes we have to destroy. Return min over all mins.
@@ -370,8 +371,6 @@ class Node():
 			else:
 				distance = 100
 				val += float(mult * second_alpha * distance)
-
-
 
 		return val
 

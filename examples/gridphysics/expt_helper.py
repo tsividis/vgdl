@@ -126,6 +126,7 @@ BasicGame frame_rate=30
         rand wall > stepBack
         box1 avatar > bounceForward
         box1 box2 > stepBack
+        box1 box1 > bounceForward
         avatar chaser > nothing
         box2 avatar > killSprite
         box1 chaser > killSprite

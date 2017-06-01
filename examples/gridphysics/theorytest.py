@@ -51,7 +51,9 @@ BasicGame
 		c2 EOS > stepBack
 		c2 avatar > killSprite
 		c4 c4 > killSprite
+		c3 avatar > killSprite
 	TerminationSet
+		NoveltyTermination s1=c2 s2=avatar win=True
 		NoveltyTermination s1=c2 s2=c2 win=True
 		NoveltyTermination s1=c2 s2=c3 win=True
 		NoveltyTermination s1=c2 s2=c5 win=True
