@@ -31,11 +31,11 @@ BASEDIRS = [UP, LEFT, DOWN, RIGHT]
 
 spriteToParams = {'Resource': [], \
                 'ResourcePack': [], \
-                'RandomNPC': ['speed'], \
+                'RandomNPC': [], \
                 'Chaser': ['fleeing', 'stype'], \
                 'AStarChaser': ['fleeing', 'speed', 'stype'], \
                 'OrientedSprite': ['orientation'], \
-                'Missile': ['speed', 'orientation']} ##removed speed from chaser
+                'Missile': ['speed', 'orientation']} ##removed speed from chaser and randomNPC
 
 # ---------------------------------------------------------------------
 #     Types of physics
@@ -2015,6 +2015,10 @@ def spriteInduction(game, step, old_outcome=None):
 
     elif step==3:
         # specialID = [k for k in game.all_objects.keys() if game.all_objects[k]['features']['color']=='LIGHTBLUE'][0]
+
+        # ch = [k for k in game.spriteDistribution[specialID].keys() if 'Chaser' in str(k)][0]
+        # rp = [k for k in game.spriteDistribution[specialID].keys() if 'Resource' in str(k)][0]
+        # print game.spriteDistribution[specialID][ch]
         # print game.all_objects[specialID]['sprite']
         # print specialID
         # embed()
@@ -2040,7 +2044,8 @@ def spriteInduction(game, step, old_outcome=None):
                         game.spriteDistribution[sprite][sprite_type]['args'] = initializeDistributionArgs(sprite_type, objectColors)
             # if game.all_objects[sprite]['features']['color']=='ORANGE':
             #     embed()
-
+        # print game.spriteDistribution[specialID][ch]
+        # print ""
     ## Reset ignoreList so that next time around you do inference.
     game.ignoreList = []
 

@@ -219,7 +219,7 @@ class Agent:
 
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
-		# score = self.rle._game.score
+		score = self.rle._game.score
 		print "ended episode. Win={}".format(win)
 		return gameObject, win, score, steps, statesEncountered
 
@@ -367,7 +367,7 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.demo_helper"
 
-	filename = "examples.gridphysics.expt_antagonist"
+	filename = "examples.gridphysics.expt_helper"
 
 	# filename = "examples.gridphysics.expt_physics_sharpshooter"
 	# filename = "examples.gridphysics.demo_transform_relational"

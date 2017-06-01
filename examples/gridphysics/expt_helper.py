@@ -1,29 +1,42 @@
 
-# level0 = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                              w
-# w              a               w
-# w  x                           w
-# w                         a    w
-# w                              w
-# w  A                           w
-# www                            w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level0 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                              w
+w              a               w
+w  x                           w
+w                         a    w
+w                              w
+w  A                           w
+www                            w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
-# level1 = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w        a         a           w
-# w              a               w
-# w  x                           w
-# w   b                     a    w
-# w                   a          w
-# w  A  b  a                     w
-# www                 x          w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level1 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w        a         a           w
+w              a               w
+w  x                           w
+w   b                     a    w
+w                   a          w
+w  A  b  a                     w
+www                 x          w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+
+level2 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w             b    a           w
+w                      fffff   w
+w  b        m          f x f   w
+w              A       f   f   w
+w                      fffff   w
+w         a       b            w
+www                            w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 # level2 = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -38,31 +51,44 @@
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-# level2 = """
+level3 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                b a b         w
+w        a       bbbbb         w
+w              a               w
+w  x                           w
+w                         a    w
+w                   a          w
+w  A   w       b             bbw
+www    w            x        baw
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+
+# level2= """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                b a b         w
-# w        a       bbbbb         w
-# w              a               w
-# w  x                           w
-# w                         a    w
-# w                   a          w
-# w  A   w       b             bbw
-# www    w            x        baw
+# w                              w
+# w        a     c   a         c w
+# w                              w
+# w  z                           w
+# w          b                   w
+# w  a                a          w
+# w  A           b               w
+# www c            c      z   c  w
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-level2= """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w        a     c   a         c w
-w                              w
-w  z                           w
-w          b                   w
-w  a                a          w
-w  A           b               w
-www c            c      z   c  w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level2= """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w               a              w
+# w                              w
+# w                              w
+# w  A           z             c w
+# w                              w
+# w                              w
+# www            b               w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 
 
@@ -75,19 +101,18 @@ BasicGame frame_rate=30
             box2 > color=GREEN
             box3 > color=YELLOW
         mover > VGDLSprite
-            rand > RandomNPC cooldown=0 color=PURPLE #12 for humans, 2 for Planner
+            rand > RandomNPC cooldown=1 color=LIGHTBLUE speed=1 #12 for humans, 2 for Planner
             chaser > Chaser
                 chaser1 > stype=box1 color=ORANGE  cooldown=0 #12 #for humans
                 chaser2 > stype=box3 color=LIGHTBLUE cooldown=0 #for humans
         wall > Immovable color=BLACK
-        missile > Missile
-            missile1 > color=YELLOW orientation=RIGHT
-            missile2 > color=PINK orientation=RIGHT
+        forcefield > Passive color=PURPLE
     LevelMapping
         w > wall
         a > box1
         b > box2
         c > box3
+        f > forcefield
         x > chaser1
         z > chaser2
         r > rand
@@ -108,6 +133,11 @@ BasicGame frame_rate=30
         box1 box3 > nothing
         avatar box3 > nothing
         box3 chaser > killSprite
+        box2 forcefield > nothing
+        rand forcefield > stepBack
+        forcefield rand > stepBack
+        chaser forcefield > stepBack
+        avatar forcefield > nothing
         avatar rand > nothing
         chaser wall > stepBack
         chaser box2 > stepBack
@@ -119,11 +149,11 @@ BasicGame frame_rate=30
         SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=box1 limit=0 win=True
 """
-level_game_pairs = [[game, level2]]
+# level_game_pairs = [[game, level2]]
 
 
-# level_game_pairs = [[game, level0], [game, level1], [game, level2],
-#                     [game, level3]]
+level_game_pairs = [[game, level0], [game, level1], [game, level2],
+                    [game, level3]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
