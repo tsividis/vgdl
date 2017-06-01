@@ -1473,7 +1473,7 @@ def cannotActivateSwitch(sprite, partner, game):
 #     Sprite Induction
 # ---------------------------------------------------------------------
 ## TODO: Make sure you put these other types back when you fix sprite induction!!
-sprite_types = [Resource, ResourcePack, RandomNPC, Chaser, Missile] #removed Immovable, Passive, AStarChaser,
+sprite_types = [Resource, ResourcePack, RandomNPC, Missile, Chaser] #removed Immovable, Passive, AStarChaser,
 def getSpeed(params):
     """
     params = a dict mapping sprite attributes to values
@@ -1859,8 +1859,8 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome, spe
                 curr_distribution[sprite][sprite_type]['prob'] *= spriteTypeLikelihood
                 curr_distribution[sprite][sprite_type]['args'] = newParameterLikelihood
 
-            ch = [k for k in movement_options[sprite].keys() if 'Chaser' in str(k)][0]
-            rp = [k for k in movement_options[sprite].keys() if 'Resource' in str(k)][0]
+            # ch = [k for k in movement_options[sprite].keys() if 'Chaser' in str(k)][0]
+            # rp = [k for k in movement_options[sprite].keys() if 'Resource' in str(k)][0]
 
             # if sprite==specialID and sprite_type==ch:
             #     print specialID
@@ -2042,8 +2042,7 @@ def spriteInduction(game, step, old_outcome=None):
                     objectColors = [game.sprite_groups[k][0].colorName for k in game.sprite_groups.keys() if game.sprite_groups[k]]
                     for sprite_type in sprite_types:
                         game.spriteDistribution[sprite][sprite_type]['args'] = initializeDistributionArgs(sprite_type, objectColors)
-            # if game.all_objects[sprite]['features']['color']=='ORANGE':
-            #     embed()
+
         # print game.spriteDistribution[specialID][ch]
         # print ""
     ## Reset ignoreList so that next time around you do inference.

@@ -82,7 +82,7 @@ class Agent:
 		return gameObject
 
 	def completeHypotheses(self, allObjects):
-		observe(self.rle, 3)
+		observe(self.rle, 0)
 		spriteTypeHypothesis = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects)
 		gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 		newHypotheses = []
@@ -201,7 +201,7 @@ class Agent:
 
 					# Check for disparities between plan and reality
 					# (e.g. stochastic effects)
-					if self.rle._game.is_stochastic and i>20:
+					if self.rle._game.is_stochastic and i>40:
 					# if True:
 						try:
 							if any(np.where(list(gameString_array[i+1]))[0] !=
@@ -367,7 +367,7 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.demo_helper"
 
-	filename = "examples.gridphysics.expt_helper"
+	filename = "examples.gridphysics.expt_antagonist"
 
 	# filename = "examples.gridphysics.expt_physics_sharpshooter"
 	# filename = "examples.gridphysics.demo_transform_relational"
