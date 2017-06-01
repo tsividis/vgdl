@@ -12,9 +12,9 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
 w                              w
-w            A                 w
-wm                             w
 w                              w
+w             A                w
+wm                             w
 w             b                w
 www                           aw
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -22,14 +22,27 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 
 level1 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wm                             w
 w                              w
 w                              w
 w                              w
-w  b                           w
 w                              w
-w                              w
-wm A                          aw
+w    b                         w
+w  A                          aw
 www                            w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+
+level2 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w     m   Aba       a        a w
+w                              w
+w                            a w
+w                              w
+w                              w
+w                              w
+w                            a w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -47,29 +60,29 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
 
+# level3 = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w     a       b    a      a    w
+# w                              w
+# w  b            a     a        w
+# w              A m             w
+# w     a     a                  w
+# w     b                       aw
+# www                  a         w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
 level3 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w     a       b    a      a    w
-w                              w
-w  b            a     a        w
-w              A m             w
-w     a     a                  w
-w     b                       aw
-www                  a         w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
-
-level4 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w  a                           w
-w     a       b    a      a    w
-w       a              fffff   w
-w  b        m   a     af   f   w
-w              A       f   f   w
-w     a     a          fffff   w
-w     a   a       b      a    aw
-www                  a         w
+w     a            a      a    w
+w       a                      w
+w               a              w
+w         m    A   b           w
+w     a     a            ffffffw
+w     a   a              f     w
+www                  a   f     w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -103,7 +116,7 @@ BasicGame frame_rate=30
         box2 forcefield > nothing
         chaser forcefield > stepBack
         avatar forcefield > nothing
-        box2 box1 > stepBack
+        box1 box2 > killSprite
         avatar chaser > nothing
         box1 avatar > killSprite
         box2 chaser > killSprite
@@ -118,6 +131,8 @@ BasicGame frame_rate=30
 
 level_game_pairs = [[game, level0], [game, level1],
                     [game, level3], [game, level4]]
+
+# level_game_pairs = [[game, level0], [game, level1], [game, level4]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

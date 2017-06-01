@@ -305,7 +305,7 @@ class Node():
 			mult = -1
 		else:
 			# compute_second_order = False
-			mult = 1
+			mult = 2
 
 		# Get all types that kill or transform stype
 		killer_types = [
@@ -488,7 +488,7 @@ class Node():
 					# term.termination.s1, term.termination.s2, noveltytermination_val))
 				if 'avatar' == term.termination.s2:
 					avatarNoveltyVals.append(.5*self.WBP.annealing*noveltytermination_val)
-				else:	
+				else:
 					heuristicVal += .5 * self.WBP.annealing * noveltytermination_val
 
 		if avatarNoveltyVals:

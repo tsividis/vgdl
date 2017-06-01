@@ -23,7 +23,7 @@ class Agent:
 		self.gameString = None
 		self.levelString = None
 		self.annealingFactor = .9
-		self.max_nodes = 1000
+		self.max_nodes = 100000
 		self.hypotheses = []
 		self.symbolDict = None
 		self.finalEventList = []
@@ -82,7 +82,7 @@ class Agent:
 		return gameObject
 
 	def completeHypotheses(self, allObjects):
-		observe(self.rle, 3)
+		observe(self.rle, 0)
 		spriteTypeHypothesis = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects)
 		gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 		newHypotheses = []
@@ -201,7 +201,7 @@ class Agent:
 
 					# Check for disparities between plan and reality
 					# (e.g. stochastic effects)
-					if self.rle._game.is_stochastic and i>20:
+					if self.rle._game.is_stochastic and i>0:
 					# if True:
 						try:
 							if any(np.where(list(gameString_array[i+1]))[0] !=
@@ -262,14 +262,14 @@ class Agent:
 			# if self.new_objects[k] > 5:
 			spriteTypeHypothesis = sampleFromDistribution(self.rle._game.spriteDistribution, self.all_objects)
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
-		
+
 			newHypotheses = []
 			for hypothesis in hypotheses:
 				newHypotheses.append(gameObject.addNewObjectsToTheory(hypothesis, spriteTypeHypothesis))
 			hypotheses = newHypotheses
 			# print "updated new object..."
 			# embed()
-		
+
 		[self.new_objects.pop(k, None) for k in self.new_objects.keys() if self.new_objects[k]>5] ## don't track items once we've updated the theory
 		return hypotheses
 
@@ -280,8 +280,8 @@ class Agent:
 
 
 		## returns rle in next state, updated hypothesis,
-		spriteInduction(self.rle._game, step=1)
-		spriteInduction(self.rle._game, step=2)
+		# spriteInduction(self.rle._game, step=1)
+		# spriteInduction(self.rle._game, step=2)
 
 		try:
 			agentState = dict(self.rle._game.getAvatars()[0].resources)
@@ -301,7 +301,7 @@ class Agent:
 		terminal = self.rle._isDone()[0]
 
 
-		spriteInduction(self.rle._game, step=3)
+		# spriteInduction(self.rle._game, step=3)
 		effects = translateEvents(res['effectList'], self.all_objects, self.rle)
 
 		all_effects = [item for sublist in [e['effectList'] for e in self.finalEventList] for item in sublist]
@@ -367,7 +367,7 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.demo_helper"
 
-	filename = "examples.gridphysics.expt_helper"
+	filename = "examples.gridphysics.expt_antagonist"
 
 	# filename = "examples.gridphysics.expt_physics_sharpshooter"
 	# filename = "examples.gridphysics.demo_transform_relational"
