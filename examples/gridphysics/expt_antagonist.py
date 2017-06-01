@@ -12,11 +12,11 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
 w                              w
+w            A                 w
+wm                             w
 w                              w
-w                              w
-w                              w
-wm A    b                     aw
-www                            w
+w             b                w
+www                           aw
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -76,13 +76,13 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 game = """
 BasicGame frame_rate=30
     SpriteSet
-        avatar > MovingAvatar color=DARKBLUE cooldown=1#6
+        avatar > MovingAvatar color=DARKBLUE cooldown=0#6
         box > Passive
             box1 > color=PINK
             box2 > color=YELLOW
-        chaser > VGDLSprite cooldown=16
+        chaser > VGDLSprite cooldown=0#16
             randomChaser > RandomNPC color=WHITE
-            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=16
+            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=0#16
             goodChaser > AStarChaser color=RED stype=box2
         forcefield > Passive color=PURPLE
         wall > Immovable color=DARKGRAY

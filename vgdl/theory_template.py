@@ -1344,7 +1344,7 @@ class Theory(object):
 		print "Class assignments:"
 		for c in self.classes:
 			class_list = [cl.color for cl in self.classes[c]]
-			print "\t{}: {}".format(c, class_list)
+			print "\t{}: {}: {}".format(c, class_list, self.spriteObjects[cl.color].vgdlType)
 		#print self.classes
 		print
 
@@ -1783,7 +1783,7 @@ class Game(object):
 			self.hypothesisSpace = [] # Refresh the hypothesis space before DFS induction
 		else:
 			# Otherwise continue from the existing theories; work on the new events only.
-			print "had existing theory"
+			# print "had existing theory"
 			## But first make sure we haven't seen a new object in the time step. if we have, it will be reflected in the spriteSample.
 			for theory in existingTheories:
 				theory = self.addNewObjectsToTheory(theory, spriteSample)
@@ -2137,8 +2137,12 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 		elif spriteName in theory.classes.keys():
 			return spriteName
 		else:
-			print "failed to get spriteName color. In getClassNameFromSpriteString"
-			embed()
+			try:
+				## maybe we passed a color, so we should get the class.
+				return theory.spriteObjects[spriteName].className
+			except:
+				print "failed to get spriteName color. In getClassNameFromSpriteString"
+				embed()
 
 	def buildArgsString(interactionRule):
 		relevantArgNames = getKeywordsFromOntology(interactionRule.interaction)
@@ -2293,6 +2297,14 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 				try:
 					argsString += " %s=%s"%("fleeing", s.fleeing)
+				except AttributeError:
+					pass
+
+				try:
+					##when we initialized stypes in spriteInduction, we didn't have access to what we would call objects in the theory.
+					colorConvertedToSType = theory.spriteObjects[s.stype].className
+					# embed()
+					argsString += " %s=%s"%("stype", colorConvertedToSType)
 				except AttributeError:
 					pass
 

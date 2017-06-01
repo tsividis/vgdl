@@ -24,266 +24,18 @@ LEFT = (-1, 0)
 RIGHT = (1, 0)
 
 
-# GREEN = (129, 199, 132)#(0, 200, 0)
-# BLUE = (25, 118, 210)#(0, 0, 200)
-# RED = (211, 47, 47)#(200, 0, 0)
-# GRAY = (69, 90, 100)#(90, 90, 90)
-# WHITE = (250, 250, 250)
-# BROWN = (109, 76, 65)#(140, 120, 100)
-# BLACK = (55, 71, 79)#(0, 0, 0)
-# ORANGE = (230, 81, 0)#(250, 160, 0)
-# YELLOW = (255, 245, 157)#(250, 250, 0)
-# PINK = (255, 138, 128)#(250, 200, 200)
-# GOLD = (255, 196, 0)#(250, 212, 0)
-# LIGHTRED = (255, 82, 82)#(250, 50, 50)
-# LIGHTORANGE = (255, 112, 67)#(250, 200, 100)
-# LIGHTBLUE = (144, 202, 249)#(50, 100, 250)
-# LIGHTGREEN = (185, 246, 202)#(50, 250, 50)
-# LIGHTGRAY = (207, 216, 220)#(150, 150, 150)
-# DARKGRAY = (69, 90, 100)#(30, 30, 30)
-# DARKBLUE = (1, 87, 155)#(20, 20, 100)
-# PURPLE = (92, 107, 192)#(140, 20, 140)
-# RESOURCETOADD = (175, 175, 175)
-# ENDOFSCREEN = (1, 1, 1)
-# SCORECOLOR = (1, 0, 1)
-
-
-# RSQPUS=(112, 17, 199)
-# LMZTUO=(193, 225, 69)
-# VYPDQP=(19, 129, 238)
-# VNUJQV=(170, 104, 159)
-# EWZHFR=(139, 125, 184)
-# JLEBVX=(185, 111, 31)
-# TCTHBN=(123, 133, 229)
-# PPOSXQ=(62, 151, 248)
-# PZUPHU=(44, 158, 190)
-# QSWMOZ=(197, 216, 154)
-# XPFNZB=(212, 244, 57)
-# QZVIHJ=(200, 172, 8)
-# IECTMM=(119, 91, 76)
-# DSLBHZ=(194, 14, 117)
-# NNXTPH=(125, 5, 21)
-# VSIWDJ=(222, 187, 169)
-# FSDLDR=(91, 195, 218)
-# ZBUKBZ=(113, 21, 45)
-# WFJBDY=(119, 209, 246)
-# SFZFVC=(47, 9, 0)
-# XUUYXP=(180, 52, 58)
-# IUCUFJ=(24, 201, 147)
-# SELSNW=(15, 117, 11)
-# RQEVUC=(23, 87, 71)
-# VUERDP=(89, 47, 151)
-# BPTHDK=(195, 22, 252)
-# ECPCTK=(211, 180, 230)
-# HQICBN=(204, 141, 8)
-# JYXSCJ=(44, 226, 234)
-# KXHVVM=(86, 18, 240)
-# NCVLNB=(110, 124, 138)
-# DLLJEV=(130, 131, 118)
-# JIOQMO=(121, 64, 194)
-# TVUEMH=(1, 164, 172)
-# PPMELW=(6, 161, 15)
-# MZBUTY=(40, 38, 132)
-# LKLWDD=(178, 162, 96)
-# IUTBND=(98, 212, 97)
-# ZKXVVB=(115, 188, 193)
-# EZLHWK=(112, 138, 51)
-# OYEYOX=(39, 246, 90)
-# FXQLLE=(204, 131, 115)
-# JHXDKF=(62, 63, 254)
-# FVNBXZ=(221, 142, 240)
-# SUHUEL=(27, 28, 196)
-# SQYLIY=(149, 212, 19)
-# CQISPW=(47, 170, 150)
-# CCKQQB=(207, 15, 18)
-# IJBUWM=(12, 93, 219)
-# CCVIDF=(246, 188, 179)
-# BONLZE=(110, 124, 15)
-# PDEQVQ=(13, 19, 167)
-# JPOSPB=(237, 116, 125)
-# ZTSCUL=(249, 7, 212)
-# BVUTFD=(72, 187, 206)
-# JBTDKH=(191, 145, 0)
-# QUHQXK=(3, 152, 239)
-# OQCZME=(58, 56, 214)
-# RNDCCC=(185, 115, 183)
-# IMBEXR=(193, 150, 143)
-# XTOSVV=(254, 201, 22)
-# DZYCEK=(228, 182, 210)
-# BOQTWB=(50, 29, 138)
-# WJIDVE=(151, 96, 117)
-# EONWMR=(224, 8, 66)
-# JCWDMB=(233, 9, 123)
-# JKYQKK=(222, 137, 168)
-# MQEJFT=(168, 242, 140)
-# QMDTIK=(105, 60, 79)
-# BDQVRW=(117, 85, 71)
-# BPEQXN=(249, 144, 241)
-# VPCKIC=(146, 107, 65)
-# QUMRRU=(136, 70, 62)
-# MKUEDB=(217, 31, 186)
-# CCCQPN=(94, 251, 154)
-# HCFCUW=(92, 158, 246)
-# TFDXMS=(14, 217, 216)
-# ZYWQBZ=(188, 46, 235)
-# MHFZEQ=(21, 246, 214)
-# HZZQRH=(148, 34, 142)
-# ZXQYUC=(186, 190, 195)
-# KZHXRM=(74, 161, 249)
-# IJRXPC=(187, 108, 188)
-# YZYPTX=(206, 32, 180)
-# IEOBUR=(107, 75, 234)
-# MRVJZM=(3, 30, 68)
-# MTODRQ=(91, 155, 143)
-# VRPIWW=(228, 142, 226)
-# BZYZDJ=(7, 253, 183)
-# OMBDHZ=(109, 58, 18)
-# QEDYZV=(107, 23, 60)
-# DKHPYF=(238, 219, 167)
-# JCRNMZ=(10, 182, 244)
-# SHOBXO=(0, 121, 253)
-# DWBTUH=(204, 61, 230)
-# MCKLTV=(63, 189, 94)
-# DTMTLN=(161, 253, 174)
-# VFSSFR=(26, 236, 198)
-# XYQVMP=(162, 95, 144)
-# NDINZN=(141, 138, 76)
-# FFKHKD=(230, 251, 60)
-# QMIWED=(55, 117, 100)
-# SFPCWM=(23, 90, 188)
-# PPTTUZ=(131, 173, 222)
-# SXMBCO=(40, 55, 173)
-# OUCNVN=(200, 65, 232)
-# FMXEZI=(188, 183, 135)
-# MYXOHJ=(152, 191, 63)
-# DZLLCX=(199, 15, 20)
-# CLWOJZ=(146, 122, 248)
-# VVDOEV=(193, 93, 10)
-# CWTKFM=(81, 75, 95)
-# XUMCHF=(100, 113, 17)
-# MMQXRZ=(105, 51, 16)
-# ZFZCIB=(113, 146, 175)
-# DTIZDF=(197, 212, 179)
-# KMFSEE=(120, 78, 134)
-# OFRXBV=(209, 198, 12)
-# JTNWQF=(212, 233, 5)
-# PVQDZQ=(137, 151, 106)
-# IOQEEF=(92, 201, 96)
-# LBLFCJ=(68, 195, 155)
-# LRSPUS=(40, 92, 209)
-# TDLEMS=(55, 112, 191)
-# YOYTZM=(188, 92, 231)
-# KSXCRX=(64, 126, 92)
-# KRYQTZ=(192, 119, 96)
-# QTLHNJ=(227, 54, 127)
-# CVHTTO=(79, 80, 40)
-# WLMEZR=(101, 1, 4)
-# CMBDTF=(37, 142, 231)
-# LBOJWZ=(30, 147, 3)
-# CDMHFV=(252, 180, 231)
-# ENKXEZ=(106, 165, 14)
-# NNZXQZ=(245, 13, 160)
-# OFPSUE=(97, 190, 157)
-# VNZEDJ=(104, 99, 20)
-# MWVUHQ=(147, 132, 143)
-# EDXSMT=(91, 97, 56)
-# HTEOCR=(15, 2, 60)
-# QIBKBT=(243, 249, 60)
-# XVTHBZ=(136, 188, 6)
-# DVBXBT=(231, 187, 75)
-# OIWCSZ=(132, 34, 91)
-# WSOTBR=(111, 89, 193)
-# IHYILT=(24, 15, 79)
-# DSRBEO=(41, 30, 145)
-# NUPHKK=(16, 110, 63)
-# SCJPNE=(38, 176, 57)
-# MPUYEI=(95, 153, 31)
-
-# colorDict = {'(248, 50, 54)': 'UUWSWF', '(110, 65, 124)': 'HENPOK', '(81, 75, 95)': 'CWTKFM', '(195, 22, 252)': 'BPTHDK', '(197, 212, 179)': 'DTIZDF', '(13, 19, 167)': 'PDEQVQ', '(224, 8, 66)': 'EONWMR', '(255, 245, 157)': 'YELLOW', '(162, 95, 144)': 'XYQVMP', '(37, 142, 231)': 'CMBDTF', '(121, 64, 194)': 'JIOQMO', '(185, 115, 183)': 'RNDCCC', '(144, 202, 249)': 'LIGHTBLUE', '(193, 93, 10)': 'VVDOEV', '(113, 21, 45)': 'ZBUKBZ', '(14, 217, 216)': 'TFDXMS', '(62, 63, 254)': 'JHXDKF', '(101, 1, 4)': 'WLMEZR', '(255, 138, 128)': 'PINK', '(132, 34, 91)': 'OIWCSZ', '(97, 190, 157)': 'OFPSUE', '(47, 9, 0)': 'SFZFVC', '(193, 150, 143)': 'IMBEXR', '(69, 90, 100)': 'DARKGRAY', '(204, 131, 115)': 'FXQLLE', '(107, 23, 60)': 'QEDYZV', '(95, 153, 31)': 'MPUYEI', '(15, 117, 11)': 'SELSNW', '(250, 250, 250)': 'WHITE', '(209, 198, 12)': 'OFRXBV', '(110, 124, 138)': 'NCVLNB', '(1, 0, 1)': 'SCORECOLOR', '(74, 161, 249)': 'KZHXRM', '(193, 225, 69)': 'LMZTUO', '(211, 47, 47)': 'RED', '(110, 124, 15)': 'BONLZE', '(152, 191, 63)': 'MYXOHJ', '(211, 180, 230)': 'ECPCTK', '(1, 87, 155)': 'DARKBLUE', '(255, 82, 82)': 'LIGHTRED', '(141, 138, 76)': 'NDINZN', '(249, 7, 212)': 'ZTSCUL', '(15, 2, 60)': 'HTEOCR', '(129, 199, 132)': 'GREEN', '(170, 104, 159)': 'VNUJQV', '(243, 249, 60)': 'QIBKBT', '(255, 112, 67)': 'LIGHTORANGE', '(191, 145, 0)': 'JBTDKH', '(6, 161, 15)': 'PPMELW', '(107, 75, 234)': 'IEOBUR', '(105, 51, 16)': 'MMQXRZ', '(245, 13, 160)': 'NNZXQZ', '(206, 32, 180)': 'YZYPTX', '(89, 47, 151)': 'VUERDP', '(68, 23, 213)': 'LPQELQ', '(161, 253, 174)': 'DTMTLN', '(7, 253, 183)': 'BZYZDJ', '(207, 216, 220)': 'LIGHTGRAY', '(200, 172, 8)': 'QZVIHJ', '(62, 151, 248)': 'PPOSXQ', '(187, 108, 188)': 'IJRXPC', '(180, 52, 58)': 'XUUYXP', '(228, 142, 226)': 'VRPIWW', '(44, 226, 234)': 'JYXSCJ', '(119, 91, 76)': 'IECTMM', '(227, 54, 127)': 'QTLHNJ', '(137, 151, 106)': 'PVQDZQ', '(3, 30, 68)': 'MRVJZM', '(94, 251, 154)': 'CCCQPN', '(252, 180, 231)': 'CDMHFV', '(0, 121, 253)': 'SHOBXO', '(21, 246, 214)': 'MHFZEQ', '(212, 244, 57)': 'XPFNZB', '(188, 183, 135)': 'FMXEZI', '(136, 188, 6)': 'XVTHBZ', '(27, 28, 196)': 'SUHUEL', '(222, 137, 168)': 'JKYQKK', '(119, 209, 246)': 'WFJBDY', '(231, 187, 75)': 'DVBXBT', '(91, 97, 56)': 'EDXSMT', '(112, 17, 199)': 'RSQPUS', '(109, 76, 65)': 'BROWN', '(123, 165, 253)': 'SYUWTR', '(249, 144, 241)': 'BPEQXN', '(186, 190, 195)': 'ZXQYUC', '(228, 182, 210)': 'DZYCEK', '(55, 117, 100)': 'QMIWED', '(23, 90, 188)': 'SFPCWM', '(16, 110, 63)': 'NUPHKK', '(55, 71, 79)': 'BLACK', '(139, 125, 184)': 'EWZHFR', '(212, 233, 5)': 'JTNWQF', '(148, 34, 142)': 'HZZQRH', '(64, 126, 92)': 'KSXCRX', '(238, 219, 167)': 'DKHPYF', '(1, 1, 1)': 'ENDOFSCREEN', '(63, 189, 94)': 'MCKLTV', '(104, 99, 20)': 'VNZEDJ', '(200, 65, 232)': 'OUCNVN', '(188, 46, 235)': 'ZYWQBZ', '(100, 113, 17)': 'XUMCHF', '(72, 187, 206)': 'BVUTFD', '(10, 182, 244)': 'JCRNMZ', '(109, 58, 18)': 'OMBDHZ', '(58, 56, 214)': 'OQCZME', '(146, 107, 65)': 'VPCKIC', '(55, 112, 191)': 'TDLEMS', '(111, 89, 193)': 'WSOTBR', '(217, 31, 186)': 'MKUEDB', '(125, 5, 21)': 'NNXTPH', '(86, 18, 240)': 'KXHVVM', '(233, 9, 123)': 'JCWDMB', '(149, 212, 19)': 'SQYLIY', '(23, 87, 71)': 'RQEVUC', '(199, 15, 20)': 'DZLLCX', '(25, 118, 210)': 'BLUE', '(79, 80, 40)': 'CVHTTO', '(106, 165, 14)': 'ENKXEZ', '(91, 155, 143)': 'MTODRQ', '(105, 60, 79)': 'QMDTIK', '(254, 201, 22)': 'XTOSVV', '(204, 141, 8)': 'HQICBN', '(39, 246, 90)': 'OYEYOX', '(178, 162, 96)': 'LKLWDD', '(147, 132, 143)': 'MWVUHQ', '(98, 212, 97)': 'IUTBND', '(131, 173, 222)': 'PPTTUZ', '(123, 133, 229)': 'TCTHBN', '(3, 152, 239)': 'QUHQXK', '(237, 116, 125)': 'JPOSPB', '(255, 196, 0)': 'GOLD', '(40, 92, 209)': 'LRSPUS', '(230, 251, 60)': 'FFKHKD', '(188, 92, 231)': 'YOYTZM', '(197, 216, 154)': 'QSWMOZ', '(12, 93, 219)': 'IJBUWM', '(92, 158, 246)': 'HCFCUW', '(207, 15, 18)': 'CCKQQB', '(68, 195, 155)': 'LBLFCJ', '(246, 188, 179)': 'CCVIDF', '(92, 107, 192)': 'PURPLE', '(120, 78, 134)': 'KMFSEE', '(222, 187, 169)': 'VSIWDJ', '(38, 176, 57)': 'SCJPNE', '(24, 201, 147)': 'IUCUFJ', '(194, 14, 117)': 'DSLBHZ', '(19, 129, 238)': 'VYPDQP', '(30, 147, 3)': 'LBOJWZ', '(26, 236, 198)': 'VFSSFR', '(151, 96, 117)': 'WJIDVE', '(230, 81, 0)': 'ORANGE', '(113, 146, 175)': 'ZFZCIB', '(6, 130, 176)': 'IWQOHZ', '(112, 138, 51)': 'EZLHWK', '(115, 188, 193)': 'ZKXVVB', '(1, 164, 172)': 'TVUEMH', '(175, 175, 175)': 'RESOURCETOADD', '(50, 29, 138)': 'BOQTWB', '(92, 201, 96)': 'IOQEEF', '(47, 170, 150)': 'CQISPW', '(192, 119, 96)': 'KRYQTZ', '(41, 30, 145)': 'DSRBEO', '(130, 131, 118)': 'DLLJEV', '(185, 246, 202)': 'LIGHTGREEN', '(204, 61, 230)': 'DWBTUH', '(168, 242, 140)': 'MQEJFT', '(146, 122, 248)': 'CLWOJZ', '(24, 15, 79)': 'IHYILT', '(221, 142, 240)': 'FVNBXZ', '(136, 70, 62)': 'QUMRRU', '(117, 85, 71)': 'BDQVRW', '(40, 38, 132)': 'MZBUTY', '(185, 111, 31)': 'JLEBVX', '(44, 158, 190)': 'PZUPHU', '(91, 195, 218)': 'FSDLDR', '(40, 55, 173)': 'SXMBCO'}
-
-
-
-# GREEN = (129, 199, 132)#(0, 200, 0)
-# BLUE = (25, 118, 210)#(0, 0, 200)
-# RED = (211, 47, 47)#(200, 0, 0)
-# GRAY = (69, 90, 100)#(90, 90, 90)
-# WHITE = (250, 250, 250)
-# BROWN = (109, 76, 65)#(140, 120, 100)
-# BLACK = (55, 71, 79)#(0, 0, 0)
-# ORANGE = (230, 81, 0)#(250, 160, 0)
-# YELLOW = (255, 245, 157)#(250, 250, 0)
-# PINK = (255, 138, 128)#(250, 200, 200)
-# GOLD = (255, 196, 0)#(250, 212, 0)
-# LIGHTRED = (255, 82, 82)#(250, 50, 50)
-# LIGHTORANGE = (255, 112, 67)#(250, 200, 100)
-# LIGHTBLUE = (144, 202, 249)#(50, 100, 250)
-# LIGHTGREEN = (185, 246, 202)#(50, 250, 50)
-# LIGHTGRAY = (207, 216, 220)#(150, 150, 150)
-# DARKGRAY = (69, 90, 100)#(30, 30, 30)
-# DARKBLUE = (1, 87, 155)#(20, 20, 100)
-# PURPLE = (92, 107, 192)#(140, 20, 140)
-# RESOURCETOADD = (175, 175, 175)
-# ENDOFSCREEN = (1, 1, 1)
-# SCORECOLOR = (1, 0, 1)
 
 BASEDIRS = [UP, LEFT, DOWN, RIGHT]
 
-# colorDict = {str((129, 199, 132)): 'GREEN',\
-#             str((25, 118, 210)): 'BLUE',\
-#             str((211, 47, 47)): 'RED',\
-#             str((69, 90, 100)): 'GRAY',\
-#             str((250, 250, 250)): 'WHITE',\
-#             str((109, 76, 65)): 'BROWN',\
-#             str((55, 71, 79)): 'BLACK',\
-#             str((230, 81, 0)): 'ORANGE',\
-#             str((255, 245, 157)): 'YELLOW',\
-#             str((255, 138, 128)): 'PINK',\
-#             str((255, 196, 0)): 'GOLD',\
-#             str((255, 82, 82)): 'LIGHTRED',\
-#             str((255, 112, 67)): 'LIGHTORANGE',\
-#             str((144, 202, 249)): 'LIGHTBLUE',\
-#             str((185, 246, 202)): 'LIGHTGREEN',\
-#             str((207, 216, 220)): 'LIGHTGRAY',\
-#             str((69, 90, 100)): 'DARKGRAY',\
-#             str((1, 87, 155)): 'DARKBLUE',\
-#             str((92, 107, 192)): 'PURPLE',\
-#             str((175, 175, 175)): 'RESOURCETOADD',\
-#             str((1, 1, 1)): 'ENDOFSCREEN',\
-#             str((1, 0, 1)): 'SCORECOLOR', \
-#             }
 
-# colorDict = {str((0, 200, 0)): 'GREEN',\
-#             str((0, 0, 200)): 'BLUE',\
-#             str((200, 0, 0)): 'RED',\
-#             str((90, 90, 90)): 'GRAY',\
-#             str((250, 250, 250)): 'WHITE',\
-#             str((140, 120, 100)): 'BROWN',\
-#             str((0, 0, 0)): 'BLACK',\
-#             str((250, 160, 0)): 'ORANGE',\
-#             str((250, 250, 0)): 'YELLOW',\
-#             str((250, 200, 200)): 'PINK',\
-#             str((250, 212, 0)): 'GOLD',\
-#             str((250, 50, 50)): 'LIGHTRED',\
-#             str((250, 200, 100)): 'LIGHTORANGE',\
-#             str((50, 100, 250)): 'LIGHTBLUE',\
-#             str((50, 250, 50)): 'LIGHTGREEN',\
-#             str((150, 150, 150)): 'LIGHTGRAY',\
-#             str((30, 30, 30)): 'DARKGRAY',\
-#             str((20, 20, 100)): 'DARKBLUE',\
-#             str((140, 20, 140)): 'PURPLE',\
-#             str((175, 175, 175)): 'RESOURCETOADD',\
-#             str((1, 1, 1)): 'ENDOFSCREEN',\
-#             str((1, 0, 1)): 'SCORECOLOR',\
-
-#             }
 
 spriteToParams = {'Resource': [], \
                 'ResourcePack': [], \
                 'RandomNPC': ['speed'], \
-                'Chaser': ['fleeing', 'speed'], \
-                'AStarChaser': ['fleeing', 'speed'], \
+                'Chaser': ['fleeing', 'stype'], \
+                'AStarChaser': ['fleeing', 'speed', 'stype'], \
                 'OrientedSprite': ['orientation'], \
-                'Missile': ['speed', 'orientation']}
+                'Missile': ['speed', 'orientation']} ##removed speed from chaser
 
 # ---------------------------------------------------------------------
 #     Types of physics
@@ -1751,6 +1503,14 @@ def getOrientation(params):
     if 'orientation' in params:
         return params['orientation']
 
+def getStype(params):
+    """
+    params = a dict mapping sprite attributes to values
+    sprite = the VGDL sprite.
+    """
+    if 'stype' in params:
+        return params['stype']
+
 def chaserClosestTargets(sprite, game):
     bestd = 1e100
     res = []
@@ -1790,6 +1550,8 @@ def setSpriteParams(param, sprite):
             sprite.fleeing = param[p]
         elif p == "orientation":
             sprite.orientation = param[p]
+        elif p == "stype":
+            sprite.stype = param[p]
 
 
 def updateOptions(game, sprite_type, current_sprite, params={}):
@@ -1797,7 +1559,7 @@ def updateOptions(game, sprite_type, current_sprite, params={}):
     This method gets all of the parameter information from the params variable
     instead of directly accessing the parameters in current_sprite.
     game - current game object
-    sprite_type - the sprite type class
+    sprite_type - the sprite type class hypothesis
     current_sprite - the current sprite object
     params - inferred params of the sprite. A dict mapping parameters (as strings) to their values.
     The default value of params is an empty dictionary - if that's the value passed, then the method will
@@ -1811,12 +1573,23 @@ def updateOptions(game, sprite_type, current_sprite, params={}):
     elif sprite_type == Chaser:
         speed = getSpeed(params)
         fleeing = getFleeing(params)
+        targetColor = getStype(params)
+        try:
+            targetName = [k for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName==targetColor][0]
+            targets = game.sprite_groups[targetName]
+        except:
+            print "in updateOptions"
+            embed()
+        # if current_sprite.colorName=='ORANGE' and 'Chaser' in str(sprite_type):
+        #     print "in updateOptions"
+        #     print current_sprite
+        #     embed()
         options = []
         position_options = {}
 
-
         try:
-            for target in chaserClosestTargets(current_sprite, game):
+            for target in targets:#chaserClosestTargets(current_sprite, game):
+                # print target
                 options.extend(chaserMovesToward(current_sprite, game, target, fleeing))
             if len(options) == 0:
                 options = BASEDIRS
@@ -1828,7 +1601,11 @@ def updateOptions(game, sprite_type, current_sprite, params={}):
                 else:
                     position_options[(left, top)] = 1.0/len(options)
         except AttributeError: # deals with following error: 'Immovable' object has no attribute 'stype'
-            position_options = {}
+            # position_options = {}
+            position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
+            if current_sprite.colorName == 'ORANGE':
+                print "problem in movementOtions"
+                embed()
 
         return position_options
 
@@ -1873,6 +1650,10 @@ def updateOptions(game, sprite_type, current_sprite, params={}):
 
     # Random NPC
     elif sprite_type == RandomNPC:
+        # if current_sprite.colorName=='PURPLE' and 'Random' in str(sprite_type):
+        #     print "in updateOptions"
+        #     print current_sprite
+        #     embed()
         speed = getSpeed(params)
 
         position_options = {}
@@ -1920,12 +1701,14 @@ def getAttributeTupleCombinations(game, sprite, sprite_type):
         attributeValueList.append([])
         for value in game.spriteDistribution[sprite][sprite_type]['args'][arg]:
             attributeValueList[-1].append((arg, value))
-
+            # if arg == 'stype' and value not in ['BLACK', 'ORANGE', 'WHITE', 'DARKBLUE']:
+            #     print "in getattributetuple.."
+            #     embed()
     attributeTupleCombinations = list(itertools.product(*attributeValueList))
     return attributeTupleCombinations
 
 
-def initializeDistribution(sprite_types):
+def initializeDistribution(sprite_types, objectColors):
     """
     Creates a uniform distribution over all the sprite types.
     """
@@ -1938,18 +1721,18 @@ def initializeDistribution(sprite_types):
     moving_sprite_prob = .1
     for sprite_type in sprite_types:
         if sprite_type in stationary_sprites:
-            args = initializeDistributionArgs(sprite_type)
+            args = initializeDistributionArgs(sprite_type, objectColors)
             initial_distribution[sprite_type] = {'prob': (1.0-catch_all_prior-moving_sprite_prob)/(len(stationary_sprites)), \
                                                 'args': {}}
         elif sprite_type in moving_sprites:
-            args = initializeDistributionArgs(sprite_type)
+            args = initializeDistributionArgs(sprite_type, objectColors)
 
             initial_distribution[sprite_type] = {'prob': (moving_sprite_prob)/(len(moving_sprites)), 'args': args}
 
 
     return initial_distribution
 
-def initializeDistributionArgs(sprite_type):
+def initializeDistributionArgs(sprite_type, objectColors):
     """
     Given a sprite type, this returns a distribution over the kinds of args (parameters) belonging
     to that sprite type.
@@ -1960,7 +1743,7 @@ def initializeDistributionArgs(sprite_type):
         args[attribute] = {v: 1./len(values) for v in values}
 
     def initializeSpeed(args):
-        speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0]
+        speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1., 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1]
         initializeProperty(args, 'speed', speedValues)
 
     def initializeOrientation(args):
@@ -1971,6 +1754,11 @@ def initializeDistributionArgs(sprite_type):
         fleeingValues = {True, False}
         initializeProperty(args, 'fleeing', fleeingValues)
 
+    # print sprite_types
+    def initializeStype(args):
+        stypeValues = objectColors
+        initializeProperty(args, 'stype', stypeValues)
+
     args = {}
     spriteParams = spriteToParams[sprite_type.__name__]
     for s in spriteParams:
@@ -1980,6 +1768,8 @@ def initializeDistributionArgs(sprite_type):
             initializeFleeing(args)
         elif s == "orientation":
             initializeOrientation(args)
+        elif s=='stype':
+            initializeStype(args)
 
     return args
 
@@ -1989,7 +1779,11 @@ def distributionInitSetup(game, sprite):
     """
     Does setup for initializing distribution
     """
-    game.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
+    objectColors = [game.sprite_groups[k][0].colorName for k in game.sprite_groups.keys() if game.sprite_groups[k] and 
+    game.sprite_groups[k][0].colorName!='BLACK' and game.sprite_groups[k][0].colorName!='DARKGRAY']
+    # embed()
+
+    game.spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
     game.movement_options[sprite] = {"OTHER":{}}
     for sprite_type in sprite_types:
         game.movement_options[sprite][sprite_type] = {}
@@ -1998,7 +1792,7 @@ def distributionInitSetup(game, sprite):
             game.movement_options[sprite][sprite_type][attributeTuple] = {}
 
 
-def updateDistribution(sprite, curr_distribution, movement_options, outcome):
+def updateDistribution(sprite, curr_distribution, movement_options, outcome, specialID=None):
     """
     Updates the sprite distribution for a given object in the game.
 
@@ -2034,6 +1828,7 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
     by using movement_options[sprite][sprite_type][param][outcome] (where param = a choice of p_1,...,p_k,
     o = outcome, s = sprite_type, and sprite is the sprite object we are computing the new distribution for).
     """
+
     if sprite in curr_distribution.keys():
         for sprite_type in curr_distribution[sprite].keys():
             if sprite_type == "OTHER":
@@ -2051,6 +1846,7 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
                 for param in movement_options[sprite][sprite_type]:
                 # If the outcome is an option for the sprite type, update probability
                     if outcome in movement_options[sprite][sprite_type][param].keys():
+
                         attributeProduct = 1.
                         for p, val in param:
                             attributeProduct *= curr_distribution[sprite][sprite_type]['args'][p][val]
@@ -2062,6 +1858,13 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
 
                 curr_distribution[sprite][sprite_type]['prob'] *= spriteTypeLikelihood
                 curr_distribution[sprite][sprite_type]['args'] = newParameterLikelihood
+
+            ch = [k for k in movement_options[sprite].keys() if 'Chaser' in str(k)][0]
+            rp = [k for k in movement_options[sprite].keys() if 'Resource' in str(k)][0]
+
+            # if sprite==specialID and sprite_type==ch:
+            #     print specialID
+            #     embed()
 
         epsilon_prob = 0.005
         # want to make sure we don't entirely rule out certain sprite types and parameters
@@ -2076,7 +1879,7 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome):
 
 
         # Re-normalize the distribution
-        z = sum(curr_distribution[sprite][sprite_type]['prob'] for sprite_type in curr_distribution[sprite])
+        z = sum([curr_distribution[sprite][sprite_type]['prob'] for sprite_type in curr_distribution[sprite]])
         for sprite_type in curr_distribution[sprite].keys():
             curr_distribution[sprite][sprite_type]['prob'] /= z
 
@@ -2107,19 +1910,15 @@ def sampleFromDistribution(curr_distribution, all_objects):
             from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
                 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
                     AimedFlakAvatar, InertialAvatar, MarioAvatar
-            # embed()
-            sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color']))
-            # sample.append(Sprite(vgdlType=MovingAvatar, color=all_objects[k]['type']['color']))
+            # sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
+            sample.append(Sprite(vgdlType=MovingAvatar, color=all_objects[k]['type']['color']))
 
     ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
     types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]))
 
-    # print "in sample()"
-    # embed()
     for obj_type in types:
         options = [k for k in all_objects.keys() if all_objects[k]['type']['color'] == obj_type]
         k = random.choice(options)
-
 
         ## always alphabetize the keys
         ## sample multinomially from the spriteDistribution[key] dictionary, to get the spriteType
@@ -2136,6 +1935,10 @@ def sampleFromDistribution(curr_distribution, all_objects):
         index = np.random.choice(range(len(probs)), p=s_probs)
         sprite_type = lst[index] ##you might also want to return sprite_possibilities[lst[index]], which is the associated probability.
         color = all_objects[k]['type']['color']
+        if sprite_type=='OTHER':
+            from ontology import RandomNPC
+            sprite_type = RandomNPC
+
         s = Sprite(vgdlType=sprite_type, color=color)
         param = {}
 
@@ -2150,8 +1953,7 @@ def sampleFromDistribution(curr_distribution, all_objects):
             index = np.random.choice(range(len(param_list)), p=s_param_probs)
             param[arg] = param_list[index]
 
-        # print "in sample"
-        # embed()
+
         setSpriteParams(param, s) # set the parameters for sprite s
         sample.append(s)
 
@@ -2176,18 +1978,6 @@ def spriteInduction(game, step, old_outcome=None):
     ## Prep for sprite induction
         for sprite in game.getObjects():
             distributionInitSetup(game, sprite)
-            # initializes game.spriteDistribution for each sprite and sprite type.
-
-            # distributionInitSetup(game, sprite, sprite_types)
-
-
-            # game.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
-            # game.movement_options[sprite] = {"OTHER":{}}
-            # for sprite_type in sprite_types:
-            #     game.movement_options[sprite][sprite_type] = {}
-            #     attributeTupleCombinations = getAttributeTupleCombinations(game, sprite, sprite_type)
-            #     for attributeTuple in attributeTupleCombinations:
-            #         game.movement_options[sprite][sprite_type][attributeTuple] = {}
 
     elif step==1:
         ## Sprite Induction Part 1:
@@ -2198,18 +1988,6 @@ def spriteInduction(game, step, old_outcome=None):
             if sprite not in game.spriteDistribution:
                 game.all_objects[sprite] = objects[sprite]
                 distributionInitSetup(game, sprite)
-                # initializes game.spriteDistribution for each sprite and sprite type.
-
-                # distributionInitSetup(game, sprite, sprite_types)
-                # game.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
-                # game.movement_options[sprite] = {"OTHER":{}}
-                # for sprite_type in sprite_types:
-                #     game.movement_options[sprite][sprite_type] = {}
-                #     attributeTupleCombinations = getAttributeTupleCombinations(game, sprite, sprite_type)
-                #     for attributeTuple in attributeTupleCombinations:
-                #         game.movement_options[sprite][sprite_type][attributeTuple] = {}
-
-
 
     elif step == 2:
         ## See the update options for each sprite type the sprite could be
@@ -2231,10 +2009,15 @@ def spriteInduction(game, step, old_outcome=None):
                         if sprite_obj.name != 'avatar':
                             game.movement_options[sprite][sprite_type][attributeTuple] = \
                             updateOptions(game, sprite_type, sprite_obj, params=attributeDict)
+                            ##we are sprite_obj, and we are updating the options for where it could be next contingent on its being 'sprite_type'
                             # given a set of potential attribute values, update the movement options
                             # for this attribute tuple (i.e. candidate set of parameters)
 
     elif step==3:
+        # specialID = [k for k in game.all_objects.keys() if game.all_objects[k]['features']['color']=='LIGHTBLUE'][0]
+        # print game.all_objects[specialID]['sprite']
+        # print specialID
+        # embed()
         ## Sprite Induction Part 2: Update sprite distribution based on observations
         objects = game.getObjects()
         for sprite in game.spriteDistribution.keys():        # Keys are the IDs of the game objects
@@ -2246,22 +2029,18 @@ def spriteInduction(game, step, old_outcome=None):
                     # only update the distribution in this fashion if there are no events for this
                     # time step involving this sprite.
                     outcome = objects[sprite]["position"]
-                    # initialDistribution = deepcopy(game.spriteDistribution)
                     game.spriteDistribution = updateDistribution(sprite, game.spriteDistribution, \
                                               game.movement_options, outcome)
-                    # missile1_id = game.sprite_groups['missile1'][0].ID
-                    # missile2_id = game.sprite_groups['missile2'][0].ID
-                    # if initialDistribution[missile1_id] != game.spriteDistribution[missile1_id]:
-                    # # # initialDistribution[missile2_id] != game.spriteDistribution[missile2_id]:
-                    #     print "not collided"
-                    #     embed()
-                # else:
-                # elif sprite in game.collision_objects and sprite_obj.name != 'avatar':
+
                 elif any([sprite in e for e in game.effectList]) and sprite not in game.ignoreList and sprite_obj.name !='avatar':
-                    # if there are events for this time step, just re-initialize the distribution for
+                    # if there are events for this sprite in this time step, just re-initialize the distribution for
                     # this particular sprite.
+                    objectColors = [game.sprite_groups[k][0].colorName for k in game.sprite_groups.keys() if game.sprite_groups[k]]
                     for sprite_type in sprite_types:
-                        game.spriteDistribution[sprite][sprite_type]['args'] = initializeDistributionArgs(sprite_type)
+                        game.spriteDistribution[sprite][sprite_type]['args'] = initializeDistributionArgs(sprite_type, objectColors)
+            # if game.all_objects[sprite]['features']['color']=='ORANGE':
+            #     embed()
+
     ## Reset ignoreList so that next time around you do inference.
     game.ignoreList = []
 

@@ -185,7 +185,7 @@ class WBP():
 			"""
 			# current = self.noveltySelection(QNovelty, QReward)
 			current = self.rewardSelection(QReward, QNovelty)
-
+			# print embed()
 			if current is None:
 				self.quitting = True
 				return None
@@ -243,7 +243,7 @@ class Node():
 		# self.lastState = None
 		self.reconstructed=False
 		self.expanded = False
-		self.rolloutDepth = max(rle.outdim)
+		self.rolloutDepth = 13#max(rle.outdim)
 		if self.parent is not None:
 			self.rolloutArray = parent.rolloutArray[1:]
 		else:
@@ -278,6 +278,7 @@ class Node():
 			while i<self.rolloutDepth and not terminal:
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
 				vrle.step(a)
+				print vrle.show(indent=True)
 				currHeuristicVal = self.heuristics(vrle)
 				heuristicVal = currHeuristicVal-prevHeuristicVal
 				rolloutArray.append(heuristicVal)

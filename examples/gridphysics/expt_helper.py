@@ -1,57 +1,57 @@
 
-level0 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                              w
-w              a               w
-w  x                           w
-w                         a    w
-w                              w
-w  A                           w
-www                            w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level0 = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                              w
+# w              a               w
+# w  x                           w
+# w                         a    w
+# w                              w
+# w  A                           w
+# www                            w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
-level1 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w        a         a           w
-w              a               w
-w  x                           w
-w          b              a    w
-w                   a          w
-w  A     a     b               w
-www                 x          w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level1 = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w        a         a           w
+# w              a               w
+# w  x                           w
+# w   b                     a    w
+# w                   a          w
+# w  A  b  a                     w
+# www                 x          w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # level2 = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
 # w        a         a           w
 # w              a               w
-# w  x                           w
+# w  r                           w
 # w          b              a    w
 # w                   a          w
 # w  A     a     b               w
-# www                 x          w
+# www                 r          w
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-level2 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                b   b         w
-w        a       b a b         w
-w              a bbbbb         w
-w  x                           w
-w                         a    w
-w      bbbbb        a          w
-w  A   b a b   b               w
-www    b   b        x          w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level2 = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                b a b         w
+# w        a       bbbbb         w
+# w              a               w
+# w  x                           w
+# w                         a    w
+# w                   a          w
+# w  A   w       b             bbw
+# www    w            x        baw
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
-level3 = """
+level2= """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w        a     c   a         c w
@@ -60,84 +60,11 @@ w  z                           w
 w          b                   w
 w  a                a          w
 w  A           b               w
-www                     z      w
+www c            c      z   c  w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-# level = """
-# wwwwwwww
-# w b    w
-# wab   xw
-# w bbbA w
-# wwwwwwww
-# """
 
-# level = """
-# wwwwwwwwwwwwww
-# w    bbb     w
-# w a  b    a  w
-# w    b       w
-# w    bbbA   xw
-# wwwwwwwwwwwwww
-# """
-
-# level = """
-# wwwwwwwwwwwwww
-# w    bbb     w
-# w g  bbb     w
-# w    bbb     w
-# w    bbb     w
-# w    bbb   x w
-# w    bbb   A w
-# wwwwwwwwwwwwww
-# """
-
-
-
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwww
-# w                 b    w
-# w              b  b  a w
-# w   a             bbbbbw
-# w       w   a      x   w
-# w   A                  w
-# wwwwwwwwwwwwwwwwwwwwwwww
-# """
-
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwww
-# w                 b    w
-# w              b  b A  w
-# w   a             wwwwww
-# w       w   a      x   w
-# w                      w
-# w                 bbbb w
-# w              www  wwww
-# wbbbbbbb     b         w
-# w      b               w
-# w  a   b        x      w
-# w      b               w
-# w      b   a           w
-# wwwwwwwwwwwwwwwwwwwwwwww
-# """
-
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                 b    b           w
-# w              b  b A  b  a   a    w
-# w   a             wwwwww           w
-# w           a                  x   w
-# w                           b      w
-# w                 bbbb      b      w
-# w     x                     b      w
-# w                      a    ww  wwww
-# wbbbbbbb     b                     w
-# w      b                       a   w
-# w  a   b              a            w
-# w      b                           w
-# w      b   a              b        w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
 
 game = """
 BasicGame frame_rate=30
@@ -148,11 +75,7 @@ BasicGame frame_rate=30
             box2 > color=GREEN
             box3 > color=YELLOW
         mover > VGDLSprite
-<<<<<<< HEAD
             rand > RandomNPC cooldown=0 color=PURPLE #12 for humans, 2 for Planner
-=======
-            rand > RandomNPC cooldown=2 color=PURPLE #12 for humans, 2 for Planner
->>>>>>> c8773e4994a7d363cb48ab5760315c562d2933c9
             chaser > Chaser
                 chaser1 > stype=box1 color=ORANGE  cooldown=0 #12 #for humans
                 chaser2 > stype=box3 color=LIGHTBLUE cooldown=0 #for humans
@@ -175,16 +98,16 @@ BasicGame frame_rate=30
         avatar wall > stepBack
         mover wall > stepBack
         box wall > stepBack
+        rand wall > stepBack
         box1 avatar > bounceForward
         box1 box2 > stepBack
         avatar chaser > nothing
-        #box2 avatar > changeScore value=-2
         box2 avatar > killSprite
         box1 chaser > killSprite
         box1 rand > killSprite
         box1 box3 > nothing
         avatar box3 > nothing
-        box3 chaser > nothing
+        box3 chaser > killSprite
         avatar rand > nothing
         chaser wall > stepBack
         chaser box2 > stepBack
@@ -196,9 +119,11 @@ BasicGame frame_rate=30
         SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=box1 limit=0 win=True
 """
+level_game_pairs = [[game, level2]]
 
-level_game_pairs = [[game, level0], [game, level1], [game, level2],
-                    [game, level3]]
+
+# level_game_pairs = [[game, level0], [game, level1], [game, level2],
+#                     [game, level3]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
@@ -208,7 +133,6 @@ if __name__ == "__main__":
     from IPython import embed
 
 
-    # level_game_pairs = [[game, level]]
 
     levels = [l for l in locals().keys() if 'level' in l and len(l)<8]
     if len(sys.argv)==2:

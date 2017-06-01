@@ -64,9 +64,13 @@ def translateEvents(events, all_objects, rle):
 def observe(rle, obsSteps):
 	print "observing"
 	for i in range(obsSteps):
+		# print rle.show()
+
 		spriteInduction(rle._game, step=1)
 		spriteInduction(rle._game, step=2)
 		rle.step((0,0))
+		# chaserID = [k for k in rle._game.all_objects.keys() if rle._game.all_objects[k]['features']['color']=='ORANGE'][0]
+		# print rle._game.all_objects[chaserID]['sprite'].rect
 		spriteInduction(rle._game, step=3)
 	return
 

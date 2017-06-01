@@ -67,7 +67,7 @@ class Agent:
 
 	def initializeHypotheses(self, allObjects, learnSprites=True):
 		if learnSprites:
-			observe(self.rle, 10)
+			observe(self.rle, 3)
 			spriteTypeHypothesis = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects)
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 			initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
@@ -82,7 +82,7 @@ class Agent:
 		return gameObject
 
 	def completeHypotheses(self, allObjects):
-		observe(self.rle, 10)
+		observe(self.rle, 3)
 		spriteTypeHypothesis = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects)
 		gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 		newHypotheses = []
@@ -104,9 +104,8 @@ class Agent:
 			while not win:
 				gameObject, win, score, steps, statesEncountered = self.playEpisode(gameObject)
 				episodes.append((n_level, steps, win, score))
-
-			VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
-			persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
+				VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
+				persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
 
 		output = {'modelType':self.modelType,
 					'gameName': self.gameFilename[self.gameFilename.find('expt'):],
@@ -203,6 +202,7 @@ class Agent:
 					# Check for disparities between plan and reality
 					# (e.g. stochastic effects)
 					if self.rle._game.is_stochastic and i>20:
+					# if True:
 						try:
 							if any(np.where(list(gameString_array[i+1]))[0] !=
 								   np.where(list(self.rle.show()))[0]):
@@ -211,13 +211,15 @@ class Agent:
 							# Mismatch in gamestring lengths
 							break
 			else:
+				## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
+				## Search more deeply next time.
 				self.max_nodes *= 2
 				return gameObject, False, self.rle._game.score, steps, statesEncountered
 
-			# self.hypotheses[0].display()
+
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
-		score = self.rle._game.score
+		# score = self.rle._game.score
 		print "ended episode. Win={}".format(win)
 		return gameObject, win, score, steps, statesEncountered
 
@@ -238,26 +240,7 @@ class Agent:
 		else:
 			return False
 
-	def executeStep(self, action, hypothesis, statesEncountered):
-
-		hypotheses = [hypothesis]
-		theory_change_flag = False
-
-		## returns rle in next state, updated hypothesis,
-		spriteInduction(self.rle._game, step=1)
-		spriteInduction(self.rle._game, step=2)
-
-		try:
-			agentState = dict(self.rle._game.getAvatars()[0].resources)
-			self.rle.agentStatePrev = agentState
-		# If agent is killed before we get agentState
-		except Exception as e:
-			agentState = self.rle.agentStatePrev
-			print "didn't find agentState resources"
-			embed()
-
-		res = self.rle.step(action)
-
+	def manageNewObjects(self, hypotheses):
 		## Add newly-seen objects.
 		current_objects = self.rle._game.getObjects()
 		for k in current_objects.keys():
@@ -288,11 +271,36 @@ class Agent:
 			# embed()
 		
 		[self.new_objects.pop(k, None) for k in self.new_objects.keys() if self.new_objects[k]>5] ## don't track items once we've updated the theory
+		return hypotheses
 
+	def executeStep(self, action, hypothesis, statesEncountered):
+
+		hypotheses = [hypothesis]
+		theory_change_flag = False
+
+
+		## returns rle in next state, updated hypothesis,
+		spriteInduction(self.rle._game, step=1)
+		spriteInduction(self.rle._game, step=2)
+
+		try:
+			agentState = dict(self.rle._game.getAvatars()[0].resources)
+			self.rle.agentStatePrev = agentState
+		# If agent is killed before we get agentState
+		except Exception as e:
+			agentState = self.rle.agentStatePrev
+			print "didn't find agentState resources"
+			embed()
+
+		res = self.rle.step(action)
+
+		hypotheses = self.manageNewObjects(hypotheses)
 
 		statesEncountered.append(self.rle._game.getFullState())
 		self.statesEncountered.append(self.rle._game.getFullState())
 		terminal = self.rle._isDone()[0]
+
+
 		spriteInduction(self.rle._game, step=3)
 		effects = translateEvents(res['effectList'], self.all_objects, self.rle)
 
@@ -323,8 +331,6 @@ class Agent:
 			# if len(hypotheses)>1:
 			# 	print "more than one hypothesis"
 			# 	embed()
-			if ('stepBack' in e for e in event['effectList']):
-				hypotheses[0].display()
 
 			#  PRECONDITIONS HANDLING
 			# Current assumptions:
@@ -346,6 +352,7 @@ class Agent:
 		if event['effectList']:
 			[t.updateTerminations(event=event) for t in hypotheses]
 			if theory_change_flag:
+				print "changed theory:"
 				hypotheses[0].display()
 
 
@@ -360,7 +367,7 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.demo_helper"
 
-	# filename = "examples.gridphysics.expt_movers"
+	filename = "examples.gridphysics.expt_antagonist"
 
 	# filename = "examples.gridphysics.expt_physics_sharpshooter"
 	# filename = "examples.gridphysics.demo_transform_relational"
@@ -368,7 +375,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pick_apples"
 	# filename = "examples.gridphysics.expt_exploration_exploitation"
 
-	filename = "examples.gridphysics.expt_preconditions"
+	# filename = "examples.gridphysics.expt_preconditions"
 
 
 	agent = Agent('full', filename)
