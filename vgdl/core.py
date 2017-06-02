@@ -741,7 +741,6 @@ class BasicGame(object):
                     p = attrs['x'], attrs['y']
                 except:
                     p = attrs[x], attrs[y]
-                print (type(p))
                 s = self._createSprite_cheap(key, p)
                 for a, val in attrs.iteritems():
                     if a == 'resources':

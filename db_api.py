@@ -23,10 +23,11 @@ def get_exp(cursor, exp_id, game_number, round_number):
 	
 	return None
 
-def get_game(cursor, game_name, level_number):
-	cur.execute("select game, levels from games where name = '%s'" % game_name)
+def get_game(cursor, game_name, desc_number, level_number):
+	cur.execute("select descs, levels from multigames where name = '%s'" % game_name)
 	rows = cur.fetchall()
-	game = rows[0][0]
+	print rows
+	game = rows[0][0][desc_num]
 	level = rows[0][1][level_num]
 	return game, level
 
@@ -85,11 +86,14 @@ if __name__ == '__main__':
 		exp = get_exp(cur, exp_id, game_number, round_number)
 
 		if exp:
-			game_data = eval(exp[3])
+			game_data = json.loads(exp[3])
+
 			game_name = game_data['name']
 			level_num = game_data['level']
+			desc_num = game_data['desc']
 
-			game, level = get_game(cur, game_name, level_num)
+			game, level = get_game(cur, game_name, desc_num, level_num)
+
 
 			stateSeries = json.loads(exp[4])
 			core.VGDLParser.playGame(game, level, stateSeries, persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+game_name, padding=10)
