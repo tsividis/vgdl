@@ -654,7 +654,7 @@ class FlakAvatar(HorizontalAvatar, SpriteProducer):
         self._shoot(game)
 
     def _shoot(self, game):
-        from pygame.locals import K_SPACE
+        from pygame.locals import K_SPAC
         if self.stype and game.keystate[K_SPACE]:
             spawn = game._createSprite([self.stype], (self.rect.left, self.rect.top))
 
@@ -1156,6 +1156,7 @@ def undoAll(sprite, partner, game):
 def bounceForward(sprite, partner, game): # FLAG
     """ The partner sprite pushed, so if possible move in the opposite direction. """
     # print "in beginning of bounceForward"
+    print partner.lastdirection
     sprite.physics.activeMovement(sprite, unitVector(partner.lastdirection))
     game._updateCollisionDict(sprite)
     return ('bounceForward', sprite.ID, partner.ID)

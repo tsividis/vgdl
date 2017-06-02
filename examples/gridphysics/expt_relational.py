@@ -85,6 +85,7 @@ BasicGame frame_rate=30
         probe wall > stepBack
         converter wall > stepBack
         probe converter > stepBack
+        converter probe > stepBack
         converter1 box > bounceForward
         box converter2 > transformTo stype=fire
         converter2 fire > killSprite
@@ -96,7 +97,7 @@ BasicGame frame_rate=30
         fire probe > killSprite
         avatar converter > stepBack
         avatar poison > killSprite
-    TerminationSet
+    TerminationSet  
         SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=probe limit=0 win=True
 """
@@ -158,6 +159,7 @@ BasicGame frame_rate=30
 
 level_game_pairs = [[game0, level0], [game0, level1], [game0, level2],
                     [game3, level3]]
+                    
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     import random, sys, time
