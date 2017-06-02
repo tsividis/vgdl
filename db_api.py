@@ -26,7 +26,6 @@ def get_exp(cursor, exp_id, game_number, round_number):
 def get_game(cursor, game_name, desc_number, level_number):
 	cur.execute("select descs, levels from multigames where name = '%s'" % game_name)
 	rows = cur.fetchall()
-	print rows
 	game = rows[0][0][desc_num]
 	level = rows[0][1][level_num]
 	return game, level
