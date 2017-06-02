@@ -17,8 +17,8 @@ def get_exp(cursor, exp_id, game_number, round_number):
 	cursor.execute("select * from experiments where id='%s'" % exp_id)
 	rows = cursor.fetchall()
 	for row in rows:
-		game_data = eval(row[2])
-		if game_data[2] == game_number and game_data[3] == round_number:
+		game_data = json.loads(row[3])
+		if game_data['number'] == game_number and game_data['round'] == round_number:
 			return row
 	
 	return None
@@ -85,14 +85,13 @@ if __name__ == '__main__':
 		exp = get_exp(cur, exp_id, game_number, round_number)
 
 		if exp:
-			game_data = eval(exp[2])
-			game_name = game_data[0]
-			level_num = game_data[1]
+			game_data = eval(exp[3])
+			game_name = game_data['name']
+			level_num = game_data['level']
 
 			game, level = get_game(cur, game_name, level_num)
 
-			stateSeries = json.loads(exp[3])
-
+			stateSeries = json.loads(exp[4])
 			core.VGDLParser.playGame(game, level, stateSeries, persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+game_name, padding=10)
 		else:
 			print 'no experiment found'
