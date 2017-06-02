@@ -27,14 +27,14 @@ wwwwwwwwwwwwwwwwww
 
 level2 = """
 wwwwwwwwwwwwwwwwww
-w   p   w    p  bw
+w   w   w    p  bw
 w m     w A  wwwww
-wpppp      p     w
-w     p p       ww
-ww            pppw
-wpppp       pppppw
-wmpp        pp  gw
-wmp      p  pp   w
+wwwww            w
+w               ww
+ww            wwww
+wwwww       wwwwww
+wmww        ww  gw
+wmp         pp   w
 wwwwwwwwwwwwwwwwww
 """
 
@@ -53,14 +53,14 @@ wwwwwwwwwwwwwwwwww
 
 level3 = """
 wwwwwwwwwwwwwwwwww
-w   p   w        w
+w   w   w        w
 w       w A  wwwww
-wpppp      p  pmmw
-w     p p     p ww
-wwpp         ppppw
-wpppp      ppppppw
-w m pp     ppppppw
-wbmmppm  p ppp g w
+wwwww         pmmw
+w             w ww
+wwww         wwpww
+wwwww      wwwwpww
+w m pp     wwwwpww
+wbmmwwm    www g w
 wwwwwwwwwwwwwwwwww
 """
 

@@ -19,19 +19,8 @@ a                 A            a
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-level3 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-a1                             a
-a          2                   a
-a                        3     a
-a                              a
-a                              a
-a                              a
-a                 A            a
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
 
-level4 = """
+level3 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 a1                             a
 a          2                   a
@@ -44,7 +33,7 @@ a                 A            a
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-level5 = """
+level4 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 a1                             a
 a          2                   a
@@ -107,7 +96,7 @@ BasicGame frame_rate=42
 """
 
 level_game_pairs = [[game, level1], [game, level2], [game, level3],
-                    [game, level4], [game, level5]]
+                    [game, level4]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

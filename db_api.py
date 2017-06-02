@@ -2,7 +2,7 @@ import psycopg2
 import json
 import sys
 from vgdl import core
-
+from IPython import embed
 
 # Run with db_api.py [exp_id] [game_number] [round_number]
 
@@ -29,6 +29,7 @@ def get_game(cursor, game_name, level_number):
 	return game, level
 
 if __name__ == '__main__':
+	embed()
 	client = psycopg2.connect("dbname='{dbname}' user='{user}' host='{host}' password='{password}'".format(**config))
 
 	cur = client.cursor()
