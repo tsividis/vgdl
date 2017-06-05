@@ -615,56 +615,6 @@ class Node():
 
 if __name__ == "__main__":
 
-	# gameFilename = "examples.gridphysics.simpleGame4_small"
-
-	## make better versions
-	# gameFilename = "examples.gridphysics.demo_teleport"
-	# gameFilename = "examples.gridphysics.movers3c" ##solved!!
-	# gameFilename = "examples.gridphysics.rivercross" ## solved!!
-	# gameFilename = "examples.gridphysics.demo_dodge"  ##solved!!
-	# gameFilename = "examples.gridphysics.movers5" ##solved!!
-	# gameFilename = "examples.gridphysics.demo_preconditions"
-	# gameFilename = "examples.gridphysics.demo_waterfall"
-	# gameFilename = "examples.gridphysics.pick_apples"
-	gameFilename = "examples.gridphysics.demo_chaser"
-	# gameFilename = "examples.gridphysics.simpleGame_push_boulders"
-	# gameFilename = "examples.gridphysics.chase" #yes!!!
-	# gameFilename = "examples.gridphysics.survivezombies" # solvable, just not very fast if long timeout.
-	# gameFilename = "examples.gridphysics.demo_transform_small"
-
-	# gameFilename = "examples.gridphysics.zelda_orig2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
-	# gameFilename = "examples.gridphysics.missilecommand2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
-	# gameFilename = "examples.gridphysics.chase2"
-	# gameFilename = "examples.gridphysics.aliens2"
-
-
-	# gameFilename = "examples.gridphysics.demo_helper"  ##
-	# gameFilename = "examples.gridphysics.demo_transform" ##
-
-	# gameFilename = "examples.gridphysics.simpleGame_missile" #later.
-
-	# gameFilename = "examples.gridphysics.simpleGame_push_boulders2"
-
-	# gameFilename = "examples.gridphysics.frogs" ## worked with k=2.
-
-	# gameFilename = "examples.gridphysics.waypointtheory"  ##easy version solved!
-
-	# gameFilename = "examples.gridphysics.simpleGame_push_boulders_multigoal" ## k=2 works!
-	# gameFilename = "examples.gridphysics.simpleGame4"
-
-	# gameFilename = "examples.gridphysics.simpleGame4_small"
-	# gameFilename = "examples.gridphysics.demo_multigoal_and"
-
-	# gameFilename = "examples.gridphysics.demo_multigoal_and_score"  ##easy version solved!
-	# gameFilename = "examples.gridphysics.demo_sokoban" #later
-	# gameFilename = "examples.gridphysics.demo_sokoban_score" #later
-	# gameFilename = "examples.gridphysics.portals" ## stochasticity breaks it
-	# gameFilename = "examples.gridphysics.demo_helper"
-
-
-	# gameFilename = "examples.gridphysics.demo_multigoal_and"  ##takes forever if you have many boxes and don't use 2BFS (with metabolic penalty)
-
-
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
