@@ -11,6 +11,7 @@ import WBP
 import importlib
 import numpy as np
 import ipdb
+import os, subprocess, shutil
 import copy
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
@@ -96,6 +97,9 @@ class Agent:
 		completion. """
 		level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
 		episodes = []
+
+		shutil.rmtree("images/tmp")
+		os.makedirs("images/tmp")
 		for n_level, level_game in enumerate(level_game_pairs):
 			print("Playing level {}".format(n_level))
 			(self.gameString, self.levelString) = level_game
@@ -116,7 +120,6 @@ class Agent:
 		self.makeMovie()
 
 	def makeMovie(self):
-		import os, subprocess, shutil
 		print "Creating Movie"
 		movie_dir = "videos/"+self.gameFilename
 

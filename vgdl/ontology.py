@@ -1156,7 +1156,7 @@ def undoAll(sprite, partner, game):
 def bounceForward(sprite, partner, game): # FLAG
     """ The partner sprite pushed, so if possible move in the opposite direction. """
     # print "in beginning of bounceForward"
-    print partner.lastdirection
+    # print partner.lastdirection
     sprite.physics.activeMovement(sprite, unitVector(partner.lastdirection))
     game._updateCollisionDict(sprite)
     return ('bounceForward', sprite.ID, partner.ID)

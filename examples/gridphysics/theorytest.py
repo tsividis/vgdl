@@ -1,13 +1,13 @@
 level="""
 22222222222222222222222222222222
-2  0                           2
-2     0            0      0    2
-2       0                      2
+24                             2
 2                              2
-2                        4     2
-2     0     0            1911112
-2     0   0              13   12
-222                  0   1111112
+2                              2
+2                              2
+2                              2
+2    3                         2
+2  5                          02
+222                            2
 22222222222222222222222222222222
 """
 game = """
@@ -16,60 +16,47 @@ BasicGame
 		avatar > MovingAvatar color=DARKBLUE
 		c3 > ResourcePack color=DARKGRAY
 		c2 > ResourcePack color=PINK
-		c6 > ResourcePack color=PURPLE
 		c5 > Chaser color=LIGHTGREEN fleeing=False stype=c4
 		c4 > Resource color=YELLOW
 	InteractionSet
-		c3 c5 > killSprite
-		c5 c3 > killSprite
-		c2 c4 > killSprite
-		c5 EOS > stepBack
-		avatar c6 > nothing
-		c4 c5 > killSprite
-		avatar c3 > stepBack
-		c5 c2 > stepBack
+		c2 avatar > killSprite
+		c2 c5 > killSprite
+		c5 c2 > killSprite
 		c4 EOS > stepBack
-		c4 c3 > stepBack
-		c6 c2 > killSprite
-		c2 c6 > killSprite
-		c4 c6 > nothing
-		c2 c2 > killSprite
-		c5 c6 > stepBack
-		c3 c3 > killSprite
-		c3 EOS > stepBack
-		c6 c3 > killSprite
-		c3 c6 > killSprite
+		c5 c3 > stepBack
+		c5 EOS > stepBack
 		c2 c3 > killSprite
 		c3 c2 > killSprite
-		c6 EOS > stepBack
-		avatar c5 > nothing
-		c4 avatar > bounceForward
+		c2 c4 > killSprite
+		c2 c2 > killSprite
+		c5 avatar > killSprite
+		avatar c3 > stepBack
+		c3 c3 > killSprite
+		c4 c5 > killSprite
 		c5 c5 > killSprite
 		c2 EOS > stepBack
-		c2 avatar > killSprite
+		c4 avatar > bounceForward
+		c3 EOS > stepBack
 		c4 c4 > killSprite
+		c4 c3 > stepBack
 	TerminationSet
+		NoveltyTermination s1=c2 s2=avatar win=True
 		NoveltyTermination s1=c2 s2=c2 win=True
 		NoveltyTermination s1=c2 s2=c3 win=True
+		NoveltyTermination s1=c2 s2=c5 win=True
 		NoveltyTermination s1=c3 s2=c3 win=True
-		NoveltyTermination s1=c3 s2=c5 win=True
 		NoveltyTermination s1=c4 s2=c4 win=True
+		NoveltyTermination s1=c5 s2=avatar win=True
 		NoveltyTermination s1=c5 s2=c5 win=True
-		NoveltyTermination s1=c6 s2=c2 win=True
-		NoveltyTermination s1=c6 s2=c3 win=True
 		SpriteCounter stype=avatar limit=0 win=False
 		SpriteCounter stype=c4 limit=0 win=False
 		SpriteCounter stype=c2 limit=0 win=True
 	LevelMapping
 		0 > c2
-		1 > c6
 		2 > c3
 		3 > c4
 		4 > c5
 		5 > avatar
-		9 > avatar c6
-		8 > avatar c5
-		b > c4 c6
 """
 if __name__ == "__main__":
 	from vgdl.core import VGDLParser
