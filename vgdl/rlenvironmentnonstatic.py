@@ -575,9 +575,12 @@ def createRLAliens( obsType=OBSERVATION_LOCAL ):
 
 def createRLInputGame(filename, obsType=OBSERVATION_GLOBAL):
     game_file = importlib.import_module(filename)
-    return RLEnvironmentNonStatic(game_file.game, game_file.level, \
+    try:    
+        return RLEnvironmentNonStatic(game_file.game, game_file.level, \
+                observationType = obsType)
+    except:
+        return RLEnvironmentNonStatic(game_file.game, game_file.level1, \
             observationType = obsType)
-
 
 def createRLInputGameFromStrings(game, level):
     return RLEnvironmentNonStatic(game, level, \

@@ -153,7 +153,7 @@ class ContinuousPhysics(GridPhysics):
 
 
     def activeMovement(self, sprite, action, speed=None):
-        print self.gridsize
+        # print self.gridsize
         """ Here the assumption is that the controls determine the direction of
         acceleration of the sprite. """
         if speed is None:
@@ -515,9 +515,9 @@ class AStarChaser(VGDLSprite): ##
         # print path
         # print 'in astar', [world.get_sprite_tile_position(p.sprite) for p in path]
         # Uncomment below to draw debug paths.
-        # self._setDebugVariables(world,path)
-        print 'updating'
-        print len(self.path)
+        # # self._setDebugVariables(world,path)
+        # print 'updating'
+        # print len(self.path)
         if self.path:
             # n = min(5, len(self.path)-1)
 
@@ -532,8 +532,8 @@ class AStarChaser(VGDLSprite): ##
             self_x, self_y = self.rect.x, self.rect.y
 
 
-            print next_x, next_y
-            print self_x, self_y
+            # print next_x, next_y
+            # print self_x, self_y
 
             dx = abs(next_x - self_x)
             dy = abs(next_y - self_y)
@@ -546,7 +546,7 @@ class AStarChaser(VGDLSprite): ##
             if dx < error and dy < error:
                 self.last_move = self.next_move
                 self.next_move = None
-            print dx, dy, movement
+            # print dx, dy, movement
 
             self.physics.activeMovement(self, movement)
 
