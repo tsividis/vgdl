@@ -716,6 +716,7 @@ class BasicGame(object):
                     ss[str(pos)] = attrs
                 else:
                     ss[pos] = attrs
+
                 for a, val in s.__dict__.iteritems():
                     if a not in ias:
                         attrs[a] = val
@@ -1046,11 +1047,11 @@ class BasicGame(object):
             #         pygame.display.flip()
             #     if self.keystate[K_1]:
             #         self._lastsaved = self.getFullState()
-            try:
-                self.setFullState(self.playback_states[self.playback_index])
-            except:
-                print "playback is failing"
-                embed()
+            # try:
+            self.setFullState(self.playback_states[self.playback_index])
+            # except:
+            #     print "playback is failing"
+            #     embed()
 
             # Save the event and agent state
             try:
