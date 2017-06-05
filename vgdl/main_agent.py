@@ -91,7 +91,7 @@ class Agent:
 		self.hypotheses = newHypotheses
 
 
-	def playCurriculum(self):
+	def playCurriculum(self, heatmap=False):
 		""" Plays a game level until it wins, then moves to the next one until
 		completion. """
 		level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
@@ -101,11 +101,23 @@ class Agent:
 			(self.gameString, self.levelString) = level_game
 			win = False
 			gameObject = None
+			i=0
+			allStatesEncountered = []
 			while not win:
 				gameObject, win, score, steps, statesEncountered = self.playEpisode(gameObject)
 				episodes.append((n_level, steps, win, score))
+				allStatesEncountered.extend(statesEncountered)
 				VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
 				persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
+
+
+				i += 1
+				if i >=10:
+					break
+			if heatmap:
+				self.makeHeatmap(allStatesEncountered, '{}_{}_level{}_heatmap.pdf'.format(
+					self.gameFilename[self.gameFilename.find('expt'):],
+					self.modelType, n_level))
 
 		output = {'modelType':self.modelType,
 					'gameName': self.gameFilename[self.gameFilename.find('expt'):],
@@ -114,6 +126,25 @@ class Agent:
 
 		write_to_csv('pilotModelRuns.csv', output)
 		self.makeMovie()
+
+	def makeHeatmap(self, statesEncountered, filename):
+		from vgdl.plotting import featurePlot
+		import numpy as np
+		import pylab
+
+		states = [s['objects']['avatar'].keys()[0] for s in statesEncountered
+				  if s['objects']['avatar'].keys()]
+		width, height = self.rle._game.width, self.rle._game.height
+		correction_factor = self.rle._game.screensize[0]/width
+		corrected_states = [(s[0]/correction_factor, s[1]/correction_factor) for s in states]
+
+		m = np.zeros((width, height))
+		for s in corrected_states:
+			x = s[0]
+			y = s[1]
+			m[x, y] += 1
+		pylab.imshow(-m.T, cmap=pylab.cm.RdGy)
+		pylab.savefig(filename, bbox_inches='tight')
 
 	def makeMovie(self):
 		import os, subprocess, shutil
@@ -367,7 +398,7 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.demo_helper"
 
-	filename = "examples.gridphysics.expt_antagonist"
+	filename = "examples.gridphysics.expt_push_boulders"
 
 	# filename = "examples.gridphysics.expt_physics_sharpshooter"
 	# filename = "examples.gridphysics.demo_transform_relational"
@@ -382,4 +413,4 @@ if __name__ == "__main__":
 
 	##then pass this down for multiple episodes
 	gameObject = None
-	agent.playCurriculum()
+	agent.playCurriculum(heatmap=True)
