@@ -654,7 +654,7 @@ class FlakAvatar(HorizontalAvatar, SpriteProducer):
         self._shoot(game)
 
     def _shoot(self, game):
-        from pygame.locals import K_SPAC
+        from pygame.locals import K_SPACE
         if self.stype and game.keystate[K_SPACE]:
             spawn = game._createSprite([self.stype], (self.rect.left, self.rect.top))
 

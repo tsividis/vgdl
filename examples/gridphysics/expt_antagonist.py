@@ -81,8 +81,8 @@ w       a                      w
 w               a              w
 w         m    A   b           w
 w     a     a            ffffffw
-w     a   a              f     w
-www                  a   f     w
+w     a   a              f    fw
+www                  a   ffffffw
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -107,7 +107,7 @@ BasicGame frame_rate=30
         box > Passive
             box1 > color=PINK
             box2 > color=YELLOW
-        chaser > VGDLSprite cooldown=0#16
+        chaser > VGDLSprite cooldown=0
             randomChaser > RandomNPC color=WHITE
             mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=0
             goodChaser > AStarChaser color=RED stype=box2
@@ -142,7 +142,7 @@ BasicGame frame_rate=30
         SpriteCounter stype=box1 limit=0 win=True
 """
 
-level_game_pairs = [[game, level0], [game, level1], [game, level2]]
+level_game_pairs = [[game, level0], [game, level1], [game, level2],
                     [game, level3]]
 
 # level_game_pairs = [[game, level0], [game, level1], [game, level4]]

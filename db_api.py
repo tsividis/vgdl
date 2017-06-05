@@ -72,7 +72,6 @@ def generate_csv(cursor, file_name):
 
 
 if __name__ == '__main__':
-	embed()
 	client = psycopg2.connect("dbname='{dbname}' user='{user}' host='{host}' password='{password}'".format(**config))
 
 	cur = client.cursor()
