@@ -129,8 +129,9 @@ class Agent:
 
 	def makeHeatmap(self, statesEncountered, filename):
 		from vgdl.plotting import featurePlot
+		import matplotlib.pyplot as plt
+		from matplotlib.ticker import NullLocator
 		import numpy as np
-		import pylab
 
 		states = [s['objects']['avatar'].keys()[0] for s in statesEncountered
 				  if s['objects']['avatar'].keys()]
@@ -143,8 +144,14 @@ class Agent:
 			x = s[0]
 			y = s[1]
 			m[x, y] += 1
-		pylab.imshow(-m.T, cmap=pylab.cm.RdGy)
-		pylab.savefig(filename, bbox_inches='tight')
+		plt.imshow(m.T, cmap='viridis')
+		plt.gca().set_axis_off()
+		plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
+            hspace = 0, wspace = 0)
+		plt.margins(0, 0)
+		plt.gca().xaxis.set_major_locator(NullLocator())
+		plt.gca().yaxis.set_major_locator(NullLocator())
+		plt.savefig(filename, bbox_inches='tight', pad_inches=0)
 
 	def makeMovie(self):
 		import os, subprocess, shutil
