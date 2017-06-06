@@ -96,17 +96,20 @@ class Agent:
 		completion. """
 		level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
 		episodes = []
+		allEffectsEncountered = []
 		for n_level, level_game in enumerate(level_game_pairs):
 			print("Playing level {}".format(n_level))
 			(self.gameString, self.levelString) = level_game
 			win = False
 			gameObject = None
 			i=0
+			levelEffectsEncountered = []
 			allStatesEncountered = []
 			while not win:
-				gameObject, win, score, steps, statesEncountered = self.playEpisode(gameObject)
+				gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject)
 				episodes.append((n_level, steps, win, score))
 				allStatesEncountered.extend(statesEncountered)
+				levelEffectsEncountered.append(effectsEncountered)
 				VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
 				persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
 
@@ -119,6 +122,9 @@ class Agent:
 					self.gameFilename[self.gameFilename.find('expt'):],
 					self.modelType, n_level))
 
+			allEffectsEncountered.append(levelEffectsEncountered)
+
+		embed()
 		output = {'modelType':self.modelType,
 					'gameName': self.gameFilename[self.gameFilename.find('expt'):],
 					'condition': 'no_score',
@@ -153,6 +159,26 @@ class Agent:
 		plt.gca().yaxis.set_major_locator(NullLocator())
 		plt.savefig(filename, bbox_inches='tight', pad_inches=0)
 
+	def makeSummaryPlot(self, allEffectsEncountered):
+		import matplotlib.pyplot as plt
+		import importlib
+
+		mod = importlib('vgdl.colors')
+		colors = [cl[0].color for cl in self.hypotheses[0].classes.values()]
+		for color in colors:
+			times_touched_per_level = []
+			for level in allEffectsEncountered:
+				times_touched = len([effect
+					for attempt in level
+					for effect in attempt
+					if ((effect[1]==color and effect[2]=='DARKBLUE')
+					    or (effect[2]==color and effect[1]=='DARKBLUE'))])
+				times_touched_per_level.append(times_touched)
+			color_to_plot = [float(value)/255 for value in getattr(mod, color)]
+			plt.plot(times_touched_per_level, color=color_to_plot)
+		plt.show()
+
+
 	def makeMovie(self):
 		import os, subprocess, shutil
 		print "Creating Movie"
@@ -177,7 +203,7 @@ class Agent:
 		gameObject = None
 		wins, scores = [], []
 		while i<num_episodes:
-			gameObject, win, score, statesEncountered = self.playEpisode(gameObject)
+			gameObject, win, score, statesEncountered, _ = self.playEpisode(gameObject)
 			wins.append(win)
 			scores.append(score)
 			i+=1
@@ -195,6 +221,7 @@ class Agent:
 		ended, win = self.rle._isDone()
 		annealing = 1
 		## Start storing encountered states.
+		effectsEncountered = []
 		statesEncountered = [self.rle._game.getFullState()]
 		self.statesEncountered.append(self.rle._game.getFullState())
 
@@ -226,7 +253,8 @@ class Agent:
 			if not quitting:
 				for i, action in enumerate(solution):
 					self.hypotheses[0].dryingPaint = set()
-					hypotheses, theory_change_flag = self.executeStep(action, self.hypotheses[0], statesEncountered)
+					hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses[0], statesEncountered)
+					effectsEncountered.extend(effects)
 					steps +=1
 					if theory_change_flag:
 						del self.hypotheses[0]
@@ -252,14 +280,14 @@ class Agent:
 				## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
 				## Search more deeply next time.
 				self.max_nodes *= 2
-				return gameObject, False, self.rle._game.score, steps, statesEncountered
+				return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered
 
 
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
 		score = self.rle._game.score
 		print "ended episode. Win={}".format(win)
-		return gameObject, win, score, steps, statesEncountered
+		return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
 	def matchEventToRuleByIDAndSpriteName(self, event, rule):
 		# Check if the two objects involved in the
@@ -397,7 +425,7 @@ class Agent:
 
 		print self.rle.show()
 
-		return hypotheses, theory_change_flag
+		return hypotheses, theory_change_flag, effects
 
 
 if __name__ == "__main__":

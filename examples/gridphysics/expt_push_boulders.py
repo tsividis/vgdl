@@ -214,7 +214,9 @@ BasicGame frame_rate=30
         goal avatar > killSprite
         box1 avatar > bounceForward
         box2 avatar  > killSprite
-        poison wall > stepBack
+        poison1 wall > stepBack
+        poison2 wall > stepBack
+        poison3 wall > stepBack
         goal box1 > stepBack
         goal box2 > stepBack
         goal wall > stepBack
