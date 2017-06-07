@@ -104,14 +104,14 @@ game = """
 BasicGame frame_rate=30
     SpriteSet
         avatar > MovingAvatar color=DARKBLUE cooldown=0#6
+        chaser > VGDLSprite cooldown=8
+            randomChaser > RandomNPC color=WHITE
+            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=8
+            goodChaser > AStarChaser color=RED stype=box2
+        forcefield > Passive color=PURPLE
         box > Passive
             box1 > color=PINK
             box2 > color=YELLOW
-        chaser > VGDLSprite cooldown=0#16
-            randomChaser > RandomNPC color=WHITE
-            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=0
-            goodChaser > AStarChaser color=RED stype=box2
-        forcefield > Passive color=PURPLE
         wall > Immovable color=DARKGRAY
     LevelMapping
         w > wall
@@ -161,17 +161,19 @@ if __name__ == "__main__":
     else:
         # index = random.choice(range(len(level_game_pairs)))
         for index, level in enumerate(level_game_pairs):
-            win = False
-            while not win:
+            wins = 0
+            while wins<2:
                 VGDLParser.playGame(*level)
                 time.sleep(1)
                 data = np.load("temp_data.npy")
                 win = data[2]
-                levels_won = index if not data[2] else index+int(data[2])
+                if win:
+                    wins+=1
+                levels_won = index*2 + wins
                 # Save in format [subect, condition, gamename, levels won, steps taken, score, time elapsed]
                 row = ['human', 'no_score', 'expt_antagonist', levels_won, data[1], data[3], data[0]]
 
-                filename = "expt_antagonist_human_data.csv"
+                filename = "human_data.csv"
                 f = open(filename, 'a+') ##append, but also read.
                 g = open(filename, 'r')
                 writer = csv.writer(f)

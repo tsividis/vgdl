@@ -7,6 +7,7 @@ spriteInduction, selectObjectGoal, distributionInitSetup
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
 SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
 generateTheoryFromGame
+import os, subprocess, shutil
 import WBP
 import importlib
 import numpy as np
@@ -97,6 +98,8 @@ class Agent:
 		level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
 		episodes = []
 		allEffectsEncountered = []
+		shutil.rmtree("images/tmp")
+		os.makedirs("images/tmp")
 		for n_level, level_game in enumerate(level_game_pairs):
 			print("Playing level {}".format(n_level))
 			(self.gameString, self.levelString) = level_game
@@ -112,7 +115,6 @@ class Agent:
 				levelEffectsEncountered.append(effectsEncountered)
 				VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
 				persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
-
 
 				i += 1
 				if i >=10:
@@ -180,7 +182,6 @@ class Agent:
 
 
 	def makeMovie(self):
-		import os, subprocess, shutil
 		print "Creating Movie"
 		movie_dir = "videos/"+self.gameFilename
 

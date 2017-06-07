@@ -40,9 +40,9 @@ wwwwwwwwwwwwwwwwwwwwww
 
 level2 = """
 wwwwwwwwwwwwwwwwwwwwww
-w    1 p   p  w  w   w
-w  1 w        w   1  w
-wA   w   p    2 p 11 w
+w    1 A 1  p 1  w   w
+w  1 wwwwwwww   1    w
+w        p    2 p 11 w
 wwwwwwwwwwwwwwwwwww ww
 ww   p    w ww   w  zw
 wwwww   w   1   ww   w
@@ -190,14 +190,13 @@ game = """
 BasicGame frame_rate=30
     SpriteSet
         avatar > MovingAvatar color=DARKBLUE
-        goal > ResourcePack color=GOLD
+        goal > ResourcePack color=PINK
         poison1 > ResourcePack color=ORANGE
-        poison2 > ResourcePack color=PINK
+        poison2 > ResourcePack color=GOLD
         poison3 > ResourcePack color=DARKGRAY
         box1 > ResourcePack color=GREEN
         box2 > ResourcePack color=LIGHTBLUE
         wall > Immovable color=DARKGRAY
-        score > Resource limit=10 color=PINK
     LevelMapping
         p > poison1
         q > poison2
@@ -249,17 +248,19 @@ if __name__ == "__main__":
     else:
         # index = random.choice(range(len(level_game_pairs)))
         for index, level in enumerate(level_game_pairs):
-            win = False
-            while not win:
+            wins = 0
+            while wins<2:
                 VGDLParser.playGame(*level)
                 time.sleep(1)
                 data = np.load("temp_data.npy")
                 win = data[2]
-                levels_won = index if not data[2] else index+int(data[2])
+                if win:
+                    wins+=1
+                levels_won = index*2 + wins
                 # Save in format [subect, condition, gamename, levels won, steps taken, score, time elapsed]
                 row = ['human', 'no_score', 'expt_push_boulders', levels_won, data[1], data[3], data[0]]
 
-                filename = "expt_push_boulders_human_data.csv"
+                filename = "human_data.csv"
                 f = open(filename, 'a+') ##append, but also read.
                 g = open(filename, 'r')
                 writer = csv.writer(f)
