@@ -449,4 +449,4 @@ if __name__ == "__main__":
 
 	##then pass this down for multiple episodes
 	gameObject = None
-	agent.playCurriculum(heatmap=True)
+	agent.playCurriculum(heatmap=False)
