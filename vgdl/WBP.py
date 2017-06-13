@@ -29,18 +29,23 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', NONE: 'wait'}
+actionMap = {273: K_UP,274:K_DOWN, 275: K_RIGHT, 276: K_LEFT}
+LIMIT = 4
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=500):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=5000):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
-		self.vecDim = [rle.outdim[0]*rle.outdim[1], 2, self.T]
+		
 		self.trueAtoms = defaultdict(lambda:0) #set() ## set of atoms that have been true at some point thus far in the planner.
 		self.objectTypes = rle._game.sprite_groups.keys()
-		self.objectTypes.sort()
-		self.phiSize = sum([len(rle._game.sprite_groups[k]) for k in rle._game.sprite_groups.keys() if k not in ['wall', 'avatar']])
+		self.objectTypes.sort() #wall, avatar, etc.
+		self.phiSize = sum([len(rle._game.sprite_groups[k]) for k in rle._game.sprite_groups.keys() if k not in ['wall', 'avatar']])#number of not wall/avatar objects
+		self.avatar = rle._game.sprite_groups["avatar"][0]
+		self.square_size = (self.avatar.rect.width,self.avatar.rect.height)
+		self.vecDim = [rle.outdim[0]*rle.outdim[1]*self.square_size[0]*self.square_size[1], 2, self.T]
 		self.objIDs = {}
 		self.solution = None
 		self.maxNumObjects = 6
@@ -64,23 +69,26 @@ class WBP():
 		# 		ipdb.set_trace()
 		i=1
 		for k in rle._game.all_objects.keys():
-			self.objIDs[k] = i * (rle.outdim[0]*rle.outdim[1]+self.padding)
+			self.objIDs[k] = i * (self.vecDim[0]+self.padding)
 			i+=1
 		self.addSpaceBarToActions()
 
-
+	#returns array of locations of objects of a given type
+	#each block corresponds to 1 unit
 	def findObjectsInRLE(self, rle, objName):
 		try:
-			objLocs = [rle._rect2pos(element.rect) for element in rle._game.sprite_groups[objName]
+			objLocs = [(element.rect.left,element.rect.top) for element in rle._game.sprite_groups[objName]
 			if element not in rle._game.kill_list]
 		except:
 			return None
 		return objLocs
 
+	#same as above but for the avatar
 	def findAvatarInRLE(self, rle):
-		avatar_loc = rle._rect2pos(rle._game.sprite_groups['avatar'][0].rect)
+		avatar_loc = (rle._game.sprite_groups['avatar'][0].rect.left,rle._game.sprite_groups['avatar'][0].rect.top)
 		return avatar_loc
 
+	#adds spacebar to actions (ex. shooting game)
 	def addSpaceBarToActions(self):
 		## Note: if an object that isn't instantiated in the beginning is of a class that
 		## spacebar applies to, we won't pick up on it here.
@@ -94,23 +102,27 @@ class WBP():
 		if spacebarAvailable:
 			self.actions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
 		else:
-			self.actions = [K_UP, K_DOWN, K_LEFT, K_RIGHT]
+			#self.actions = [K_UP, K_DOWN, K_LEFT, K_RIGHT]
+			self.actions = [K_RIGHT,K_UP, K_DOWN, K_LEFT]
 		if self.addWaitAction:
 			self.actions.append(NONE)
 		return
 
+	#returns set of atom values
 	def calculateAtoms(self, rle):
 		lst = []
+
 		for k in rle._game.sprite_groups.keys():
 			for o in rle._game.sprite_groups[k]:
 				if o not in rle._game.kill_list:
-					## turn location into vector posd2[ition (rows appended one after the other.)
-					pos = rle._rect2pos(o.rect) #x,y
-					vecValue = pos[1] + pos[0]*rle.outdim[0] + 1
+					## turn location into vector posd2[ition (rows appended one after the other.) 0 if object has been killed
+					#pos = rle._rect2pos(o.rect) #x,y
+					pos = (o.rect.left, o.rect.top)
+					vecValue = pos[1] + pos[0]*rle.outdim[0]*self.square_size[1] + 1
 				else:
 					vecValue = 0
 				objPosCombination = self.objIDs[o.ID] + vecValue
-				lst.append(objPosCombination)
+				lst.append(objPosCombination) #unique for each object-location combination
 		present = []
 		for k in [t for t in self.objectTypes if t not in ['wall', 'avatar']]: ##maybe add the avatar to this global state
 			# for o in rle._game.sprite_groups[k]:
@@ -119,7 +131,7 @@ class WBP():
 					present.append(1)
 				else:
 					present.append(0)
-		ind = sum([present[i]*2**i for i in range(len(present))])
+		ind = sum([present[i]*2**i for i in range(len(present))]) #atom indicating which objects are alive
 		lst.append(ind)
 		if not self.vecSize:
 			self.vecSize = len(lst)
@@ -137,6 +149,7 @@ class WBP():
 			diff = node2.state-node1.state
 		return diff
 
+	#selects node with lowest novelty, using greatest reward as tiebreaker
 	def noveltySelection(self, QNovelty, QReward):
 		bestNodes = sorted(QNovelty, key=lambda n: (n.novelty, -n.intrinsic_reward))
 		current = bestNodes.pop(0)
@@ -147,6 +160,7 @@ class WBP():
 			pass
 		return current
 
+	#selects node with greatest reward (only considering those w/ novelty = 1,2), using novelty as tiebreaker
 	def rewardSelection(self, QReward, QNovelty):
 		# acceptableNodes = QReward
 		acceptableNodes = filter(lambda n:n.novelty<3, QReward)
@@ -166,7 +180,6 @@ class WBP():
 			pass
 		return current
 
-
 	def BFS(self):
 		QNovelty, QReward = [], []
 		visited, rejected = [], []
@@ -177,6 +190,7 @@ class WBP():
 		QNovelty.append(start)
 		QReward.append(start)
 		i=0
+		path = []
 
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
 			"""
@@ -186,20 +200,32 @@ class WBP():
 			# current = self.noveltySelection(QNovelty, QReward)
 			current = self.rewardSelection(QReward, QNovelty)
 			# print embed()
+
+			
+			#for n in QNovelty:
+				#print(n.WBP.findAvatarInRLE(n.rle))
+			
+
 			if current is None:
 				self.quitting = True
+				print("quitting, no novel node found")
 				return None
 			self.statesEncountered.append(current.rle._game.getFullState())
-
+			print("BFS")
 			print current.rle.show(indent=True)
-
+			print current.rle._game.sprite_groups["avatar"][0].rect
+			#path.append(current.rle.show(indent=True))
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
 			visited.append(current)
 
 			for a in self.actions:
+				
 				child = Node(self.rle, self, current.actionSeq+[a], current)
 				child.eval()
+				#print(actionDict[a])
+				#print(child.WBP.findAvatarInRLE(child.rle))
+				#print("")
 				if child.win:
 					# Get the gameString representation of the RLE at each
 					# timestep in the chosen solution, so as to be able to
@@ -215,12 +241,17 @@ class WBP():
 					child.rle._isDone()
 					self.solution = child.actionSeq
 					self.statesEncountered.append(child.rle._game.getFullState())
+					print(child.rle.show(indent=True))
+					#path.append(child.rle.show(indent=True))
+					print("WIN!")
+					print i
 					return child, gameString_array
+					#return child, gameString_array, path
 				else:
 					QNovelty.append(child)
 					QReward.append(child)
 			i+=1
-			# print i
+			#print i
 		self.solution = []#Node(self.rle, self, [], None)
 		if i>=self.max_nodes:
 			self.quitting = True
@@ -233,7 +264,7 @@ class Node():
 		self.WBP = WBP
 		self.actionSeq = actionSeq
 		self.parent = parent
-		self.state = {}
+		self.state = {} #values of atoms
 		self.candidates = []
 		self.novelty = None
 		self.reward = None
@@ -268,17 +299,21 @@ class Node():
 		return 0.# metabolic_cost
 
 	def rollout(self, vrle):
+		#print("begin rollout")
 		successfulRollout = False
 		while not successfulRollout:
 			vrle = copy.deepcopy(vrle)
 			prevHeuristicVal = self.heuristics(vrle)
+			#prevHeuristicVal = 0
 			rolloutArray = []
 			i=0
 			terminal, win = vrle._isDone()
+			#terminal = False
 			while i<self.rolloutDepth and not terminal:
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
 				vrle.step(a)
-				print vrle.show(indent=True)
+				#print("rollout")
+				#print vrle.show(indent=True)
 				currHeuristicVal = self.heuristics(vrle)
 				heuristicVal = currHeuristicVal-prevHeuristicVal
 				rolloutArray.append(heuristicVal)
@@ -293,6 +328,7 @@ class Node():
 				print "rolling out again"
 			else:
 				successfulRollout = True
+		#print("end rollout")
 		return rolloutArray
 
 	def spritecounter_val(self, theory, term, stype, rle, first_alpha=1000,
@@ -495,6 +531,7 @@ class Node():
 			heuristicVal += max(avatarNoveltyVals)
 		return heuristicVal
 
+	#returns the rle (with total action sequence) and whether game has been won
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
 			## try to copy parent lastState. Then take action and store as current lastState.
@@ -503,7 +540,13 @@ class Node():
 				vrle = copy.deepcopy(self.parent.rle)
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
+					#print(self.WBP.findAvatarInRLE(vrle))
+					#print(a)
 					res = vrle.step(a)
+					#print(res)
+					#res = vrle.step(275)
+					#res = vrle.step(K_RIGHT)
+					#print(self.WBP.findAvatarInRLE(vrle))
 					# relevantEvents = [t for t in res['effectList'] if t[0] == 'stepBack']
 					# if relevantEvents:
 					# 	import ipdb;ipdb.set_trace()
@@ -513,6 +556,7 @@ class Node():
 				print "conditions met but copy failed"
 				embed()
 		else:
+			
 			self.reconstructed=True
 			# print "copy failed; replaying from top"
 			vrle = copy.deepcopy(self.rle)
@@ -532,13 +576,13 @@ class Node():
 		self.rle, self.win = self.getToCurrentState()
 
 		self.updateObjIDs(self.rle)
-		self.state = self.WBP.calculateAtoms(self.rle)
+		self.state = self.WBP.calculateAtoms(self.rle) #new atom values
 
 		for i in range(1,3):
 			for c in itertools.combinations(self.state, i):
 				if self.WBP.trueAtoms[c] == 0:
 					self.candidates.append(c)
-		self.updateNovelty()
+		self.updateNovelty() #calculates novelty based on state of node (1, 2, 3)
 
 		# if self.win:
 			# embed()
@@ -546,7 +590,7 @@ class Node():
 		## Try rollouts for aliens?
 		if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
 			self.rolloutArray = self.rollout(self.rle)
-			print "in rollout"
+			#print "in rollout"
 
 		self.heuristicVal = self.heuristics()
 
@@ -575,6 +619,7 @@ class Node():
 			n.novelty = n.updateNovelty()
 		return
 
+	#update IDs if we get new objects
 	def updateObjIDs(self, vrle):
 		i = 0
 		for objType in vrle._game.sprite_groups:
@@ -584,7 +629,7 @@ class Node():
 						s.ID = len([o for o in vrle._game.sprite_groups[objType] if o not in vrle._game.kill_list])
 					else:
 						s.ID = len(vrle._game.sprite_groups[objType])
-					self.WBP.objIDs[s.ID] = (len(self.WBP.objIDs.keys())+1) * (self.rle.outdim[0]*self.rle.outdim[1]+self.WBP.padding)
+					self.WBP.objIDs[s.ID] = (len(self.WBP.objIDs.keys())+1) * (self.WBP.vecDim[0]+self.WBP.padding)
 					i+=1
 		return
 
@@ -594,6 +639,7 @@ class Node():
 	def isWin(self):
 		return self.rle._isDone()[1]
 
+	#does this do anything???
 	def playBack(self, make_movie=False):
 		vrle = copy.deepcopy(self.rle)
 		self.finalStatesEncountered = []
@@ -626,7 +672,7 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.demo_preconditions"
 	# gameFilename = "examples.gridphysics.demo_waterfall"
 	# gameFilename = "examples.gridphysics.pick_apples"
-	gameFilename = "examples.gridphysics.demo_chaser"
+	# gameFilename = "examples.gridphysics.demo_chaser"
 	# gameFilename = "examples.gridphysics.simpleGame_push_boulders"
 	# gameFilename = "examples.gridphysics.chase" #yes!!!
 	# gameFilename = "examples.gridphysics.survivezombies" # solvable, just not very fast if long timeout.
@@ -655,8 +701,8 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.simpleGame4_small"
 	# gameFilename = "examples.gridphysics.demo_multigoal_and"
 
-	# gameFilename = "examples.gridphysics.demo_multigoal_and_score"  ##easy version solved!
-	# gameFilename = "examples.gridphysics.demo_sokoban" #later
+	#gameFilename = "examples.gridphysics.demo_multigoal_and_score"  ##easy version solved!
+	#gameFilename = "examples.gridphysics.demo_sokoban" #later
 	# gameFilename = "examples.gridphysics.demo_sokoban_score" #later
 	# gameFilename = "examples.gridphysics.portals" ## stochasticity breaks it
 	# gameFilename = "examples.gridphysics.demo_helper"
@@ -668,28 +714,35 @@ if __name__ == "__main__":
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
-	gameFilename = "examples.continuousphysics.mario"
+	#gameFilename = "examples.continuousphysics.mario"
+	gameFilename = "examples.continuousphysics.simple"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
 	# gameFilename = "examples.gridphysics.expt_exploration_exploitation"
+	# gameFilename = "examples.continuousphysics.ptsp_simple"
 
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
-	# embed()
+	
+	#embed()
+	
 	p = WBP(rle, gameFilename)
 
 
-	# embed()
+	#embed()
 	t1 = time.time()
 	last, gameString_array = p.BFS()
 	from core import VGDLParser
-	# embed()
+	#embed()
+	#for i in path:
+	#	print(i)
+	
 	last.playBack(make_movie=True)
 	# VGDLParser.playGame(gameString, levelString, p.statesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
 	# VGDLParser.playGame(gameString, levelString, last.finalStatesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
 
-
+	#print("time:")
 	print time.time()-t1
 	# embed()
 

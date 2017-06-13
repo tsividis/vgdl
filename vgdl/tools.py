@@ -19,7 +19,7 @@ def vectNorm(v):
 
 def unitVector(v):
     l = vectNorm(v)
-    print l
+    #print l
     if l > 0:
         return (v[0]/l, v[1]/l)
     else:

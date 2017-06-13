@@ -133,13 +133,20 @@ class GridPhysics():
 class ContinuousPhysics(GridPhysics):
     gravity = 0.
     friction = 0.02
+    #friction = 0.
 
     def passiveMovement(self, sprite):
+        
         if sprite.speed != 0 and hasattr(sprite, 'orientation'):
+            #print("update pos")
             sprite._updatePos(sprite.orientation, sprite.speed)
+            
             if self.gravity > 0 and sprite.mass > 0:
+
                 self.activeMovement(sprite, (0, self.gravity * sprite.mass))
+                
             sprite.speed *= (1 - self.friction)
+        
 
     def calculatePassiveMovement(self, sprite):
         if sprite.speed != 0 and hasattr(sprite, 'orientation'):
@@ -156,12 +163,21 @@ class ContinuousPhysics(GridPhysics):
         # print self.gridsize
         """ Here the assumption is that the controls determine the direction of
         acceleration of the sprite. """
+        #print("active movement")
         if speed is None:
             speed = sprite.speed
+
         v1 = action[0] / float(sprite.mass) + sprite.orientation[0] * speed
         v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed
+        
         sprite.orientation = unitVector((v1, v2))
+        
         sprite.speed = vectNorm((v1, v2)) / vectNorm(sprite.orientation)
+        '''
+        print(sprite.orientation)
+        print(sprite.speed)
+        print("")
+        '''
 
     def calculateActiveMovement(self, sprite, action, speed=None):
         """ Here the assumption is that the controls determine the direction of
@@ -602,6 +618,7 @@ class MovingAvatar(VGDLSprite, Avatar):
     def update(self, game):
         VGDLSprite.update(self, game)
         action = self._readAction(game)
+        #print(action)
         if action:
             self.physics.activeMovement(self, action)
 
@@ -801,6 +818,7 @@ class AimedFlakAvatar(AimedAvatar):
 
 class InertialAvatar(OrientedAvatar):
     speed = 1
+    #physicstype = ContinuousPhysics
     physicstype = ContinuousPhysics
     def update(self, game):
         MovingAvatar.update(self, game)

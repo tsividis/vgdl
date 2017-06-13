@@ -5,7 +5,7 @@ VGDL example: a simplified version the physical TSP benchmark.
 '''
 
 
-ptsp_game = """
+game = """
 BasicGame
     SpriteSet    
         pad    > Immovable color=BLUE 
@@ -24,7 +24,8 @@ BasicGame
         G > pad
 """
 
-ptsp_level = """
+
+level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwww
 w        w    w    w       w
 w    A    wwww    www      w
@@ -42,5 +43,5 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwww
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(ptsp_game, ptsp_level)
+    VGDLParser.playGame(game, level)
         

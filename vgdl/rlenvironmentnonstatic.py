@@ -264,26 +264,36 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
         # self._avatar._readMultiActions = lambda *x: [self._actionset[action]] # old
         possible_actions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
-
+        
         if action in possible_actions:
             self._game.keystate[action] = True
 
 
         if self.visualize:
             self._game._clearAll(self.visualize)
-
+        
         # update sprites
         if onlyavatar:
+            
             if action != 0:
                 self._avatar.update(self._game)
-
+        
         else:
+            
             for s in self._game:
+                
                 if s == self._avatar and action == 0:
                     continue
+                
                 if s not in self._game.kill_list:
+                    #print("A")
                     s.update(self._game)
-
+                
+                #if s == self._avatar:
+                    
+                    #print(s.rect)
+                    
+    
         events = self._game._eventHandling()
         ## get events (e.g., (stepBack obj1ID, obj2ID))
 
@@ -293,14 +303,13 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         ## Added 5/2, to correct for the fact that some gmaes don't have _gravepoints by default
         if not hasattr(self, '_gravepoints'):
             self._gravepoints = {}
-
+        
         # ### BEGINNING OF CHANGES
         for skey in self._other_types:
             ss = self._game.sprite_groups[skey]
             self._obstypes[skey] = [self._sprite2state(sprite, oriented=False)
                                         for sprite in ss]
-
-        ## Added 4/31
+                ## Added 4/31
         ## Logic (I think) was to make sure everything that could exist was in gravepoints because
         ## getState (defined in stateobsnonstatic) uses it to populate getState, getSensors, etc.
         for k in self._game.sprite_groups:
@@ -309,6 +318,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                     self._gravepoints[(k, self._rect2pos(sprite.rect))] = True
         # print "after adding gravepoints"
         # embed()
+        #print("hi")
+        #print(self._avatar.rect)
         return events
 
         # if self.visualize:
@@ -327,11 +338,14 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         #     self._allEvents.append((self._previous_state, action, self._last_state))
 
     def step(self, action):
+        #print("start step")
         if action == ('space'):
             self._game.keystate[32] = True
             action = (0,0)
         pre_step_score = self._game.score
+        #print("start action")
         events = self._performAction(action)
+        #print("end action")
         observation = self._getSensors()
         (ended, won) = self._isDone()
         self._game.time+=1
@@ -349,7 +363,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             reward = dScore
         for k in self._game.keystate:
             self._game.keystate[k] = False
-
+        #print("end step")
         return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
 
 ## the game in the agent's 'head'
@@ -431,6 +445,7 @@ def natcasecmp(a, b):
 
 def defInputGame(filename, randomize=False, index=None):
     game_file = importlib.import_module(filename)
+    print(game_file)
     levels = [k for k in game_file.__dict__.keys() if 'level' in k]
     levels.sort(natcasecmp)
     # print levels

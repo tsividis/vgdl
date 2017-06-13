@@ -409,7 +409,8 @@ class VGDLParser(object):
             # a char can map to multiple sprites
             keys = [x.strip() for x in val.split(" ") if len(x)>0]
             if self.verbose:
-                print "Mapping", c, keys
+                
+                 "Mapping", c, keys
             self.game.char_mapping[c] = keys
 
     def _parseArgs(self, s,  sclass=None, args=None):
@@ -1385,7 +1386,7 @@ class BasicGame(object):
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(10)
-        print len(self.actions), win, self.score
+        #print len(self.actions), win, self.score
         return win, self.score
 
 
@@ -1502,21 +1503,36 @@ class VGDLSprite(object):
 
     def update(self, game):
         """ The main place where subclasses differ. """
+        #print("begin")
         self.x = self.rect.x
         self.y = self.rect.y
         self.lastrect = self.rect.copy()
         # no need to redraw if nothing was updated
         self.lastmove += 1
+        #print("middle")
         if not self.is_static and not self.only_active:
-            self.physics.passiveMovement(self)
+            #print("PASSIVE MOvEMEnt")
+            self.physics.passiveMovement(self) #something is printed here
+            
+        #print("end")
 
     def _updatePos(self, orientation, speed=None):
         if speed is None:
             speed = self.speed
 
         if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
+            '''
+            print("updating position")
+            print(self.rect)
+            print(speed)
+            print(orientation[0]*speed,orientation[1]*speed)
+            '''
             self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
+            #self.rect = self.rect.move((1,-1))
+            #print(self.rect)
             self.lastmove = 0
+
+        
 
 
     def _velocity(self):
