@@ -42,7 +42,7 @@ BasicGame
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                          w
-w                        G1w
+w                        1Gw
 w             ===       wwww
 w                     1    w
 w                w  2 ww   w

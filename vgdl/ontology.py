@@ -616,11 +616,19 @@ class MovingAvatar(VGDLSprite, Avatar):
         return res
 
     def update(self, game):
+
         VGDLSprite.update(self, game)
+        
         action = self._readAction(game)
         #print(action)
         if action:
             self.physics.activeMovement(self, action)
+
+        #VGDLSprite.update(self, game)
+
+
+
+
 
 class HorizontalAvatar(MovingAvatar):
     """ Only horizontal moves.  """
@@ -818,10 +826,17 @@ class AimedFlakAvatar(AimedAvatar):
 
 class InertialAvatar(OrientedAvatar):
     speed = 1
-    #physicstype = ContinuousPhysics
     physicstype = ContinuousPhysics
+
     def update(self, game):
         MovingAvatar.update(self, game)
+
+        """
+        action = MovingAvatar._readAction(self,game)
+        if action:
+            self.physics.activeMovement(self, action)
+        VGDLSprite.update(self, game)
+        """
 
 class MarioAvatar(InertialAvatar):
     physicstype = GravityPhysics

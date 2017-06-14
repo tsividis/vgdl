@@ -1,9 +1,9 @@
 game = """
-BasicGame
+BasicGame frame_rate=30
     SpriteSet 
-        avatar > InertialAvatar color=WHITE
-        evil   >  orientation=LEFT speed=0.01
-                goomba     >  Walker color=BROWN 
+        avatar > MovingAvatar color=WHITE
+        evil   >  
+            goomba     > Immovable color=BROWN 
         goal > Immovable color=GREEN
         wall > Immovable color=BLACK
         poison > Immovable color=RED
@@ -14,11 +14,9 @@ BasicGame
            
     InteractionSet
         goal avatar > killSprite
-        avatar wall > wallStop friction=0.0
-        evil wall > wallStop friction=0.0
+        avatar wall > stepBack
         avatar poison > killSprite
         avatar evil > killIfAlive
-        evil EOS > wrapAround
         
         
     LevelMapping
@@ -29,21 +27,15 @@ BasicGame
 """
 
 
+
 level = """
-wwwwwww
-wG A Gw
-wwwwwww
+wwwwwwwwwww
+wG   A   Gw
+wwwwwwwwwww
 """
 
 level = """
 wwwwwwwwww
-wG      Gw
-w        w
-w  wwww  w
-w  wwww  w
-w  wwww  w
-w  wwww  w
-w        w
 wA      Gw
 wwwwwwwwww
 """
@@ -51,11 +43,31 @@ wwwwwwwwww
 level = """
 wwwwwww
 w    Gw
-      1
+w     w
+wwww  w
+w     w
 wA    w
 wwwwwww
 """
 
+level = """
+wwwwwwwwww
+w        w
+w wwwwww w
+w w  A   w
+w w wwwwww
+w w w    w
+w w w    w
+w w wwwwww
+wGw1     w
+wwwwwwwwww
+"""
+
+level = """
+wwwwwwwwwww
+wG   A   Gw
+wwwwwwwwwww
+"""
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

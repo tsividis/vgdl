@@ -29,8 +29,7 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', NONE: 'wait'}
-actionMap = {273: K_UP,274:K_DOWN, 275: K_RIGHT, 276: K_LEFT}
-LIMIT = 4
+LIMIT = 1
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
@@ -169,11 +168,12 @@ class WBP():
 			# print "Removed filter"
 			# embed()
 		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
+		
 		try:
 			current = bestNodes.pop(0)
 		except:
 			return None
-		QReward.remove(current)
+		#QReward.remove(current)
 		try:
 			QNovelty.remove(current)
 		except:
@@ -208,12 +208,15 @@ class WBP():
 
 			if current is None:
 				self.quitting = True
+				print(i)
 				print("quitting, no novel node found")
 				return None
 			self.statesEncountered.append(current.rle._game.getFullState())
 			print("BFS")
 			print current.rle.show(indent=True)
 			print current.rle._game.sprite_groups["avatar"][0].rect
+			if current.actionSeq:
+				print actionDict[current.actionSeq[-1]]
 			#path.append(current.rle.show(indent=True))
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
@@ -534,29 +537,29 @@ class Node():
 	#returns the rle (with total action sequence) and whether game has been won
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
+			
 			## try to copy parent lastState. Then take action and store as current lastState.
 			## if that fails, replay from beginning and store as current lastState
-			try:
+			#try:
+			for i in range(1):
 				vrle = copy.deepcopy(self.parent.rle)
+				
 				if len(self.actionSeq)>0:
+					
 					a = self.actionSeq[-1]
-					#print(self.WBP.findAvatarInRLE(vrle))
-					#print(a)
+
 					res = vrle.step(a)
-					#print(res)
-					#res = vrle.step(275)
-					#res = vrle.step(K_RIGHT)
-					#print(self.WBP.findAvatarInRLE(vrle))
+					
 					# relevantEvents = [t for t in res['effectList'] if t[0] == 'stepBack']
 					# if relevantEvents:
 					# 	import ipdb;ipdb.set_trace()
 					self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
+
 					terminal, win = vrle._isDone()
-			except:
-				print "conditions met but copy failed"
-				embed()
+			#except:
+			#	print "conditions met but copy failed"
+				#embed()
 		else:
-			
 			self.reconstructed=True
 			# print "copy failed; replaying from top"
 			vrle = copy.deepcopy(self.rle)
@@ -580,7 +583,8 @@ class Node():
 
 		for i in range(1,3):
 			for c in itertools.combinations(self.state, i):
-				if self.WBP.trueAtoms[c] == 0:
+				#if self.WBP.trueAtoms[c] == 0:
+				if self.WBP.trueAtoms[c] < LIMIT:
 					self.candidates.append(c)
 		self.updateNovelty() #calculates novelty based on state of node (1, 2, 3)
 
@@ -610,11 +614,22 @@ class Node():
 	def updateNoveltyDict(self, QNovelty, QReward):
 		jointSet = list(set(QNovelty+QReward))
 		for c in self.candidates:
+			'''
 			if self.WBP.trueAtoms[c] == 0:
 				self.WBP.trueAtoms[c] = 1
 				for n in jointSet:
 					if c in n.candidates:
 						n.candidates.remove(c)
+			'''
+			changed = False
+			if self.WBP.trueAtoms[c] < LIMIT:
+				self.WBP.trueAtoms[c] += 1
+				changed = True
+			if changed and self.WBP.trueAtoms[c] == LIMIT:
+				for n in jointSet:
+					if c in n.candidates:
+						n.candidates.remove(c)
+
 		for n in jointSet:
 			n.novelty = n.updateNovelty()
 		return
@@ -714,10 +729,12 @@ if __name__ == "__main__":
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
-	#gameFilename = "examples.continuousphysics.mario"
-	gameFilename = "examples.continuousphysics.simple"
+	gameFilename = "examples.continuousphysics.mario"
+	#gameFilename = "examples.continuousphysics.simple"
+	#gameFilename = "examples.continuousphysics.crossroad"
+	#gameFilename = "examples.gridphysics.simple_grid"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
-	# gameFilename = "examples.gridphysics.expt_exploration_exploitation"
+	#gameFilename = "examples.gridphysics.expt_exploration_exploitation"
 	# gameFilename = "examples.continuousphysics.ptsp_simple"
 
 
