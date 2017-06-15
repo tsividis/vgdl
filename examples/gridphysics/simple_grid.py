@@ -41,16 +41,6 @@ wwwwwwwwww
 """
 
 level = """
-wwwwwww
-w    Gw
-w     w
-wwww  w
-w     w
-wA    w
-wwwwwww
-"""
-
-level = """
 wwwwwwwwww
 w        w
 w wwwwww w
@@ -67,6 +57,16 @@ level = """
 wwwwwwwwwww
 wG   A   Gw
 wwwwwwwwwww
+"""
+
+level = """
+wwwwwww
+w    Gw
+w     w
+ww   ww
+w     w
+wA    w
+wwwwwww
 """
 
 if __name__ == "__main__":

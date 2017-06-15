@@ -50,7 +50,7 @@ class WBP():
 		self.maxNumObjects = 6
 		self.trackTokens = False
 		self.vecSize = None
-		self.addWaitAction = False
+		self.addWaitAction = True
 		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
@@ -173,7 +173,7 @@ class WBP():
 			current = bestNodes.pop(0)
 		except:
 			return None
-		#QReward.remove(current)
+		QReward.remove(current)
 		try:
 			QNovelty.remove(current)
 		except:
@@ -223,7 +223,6 @@ class WBP():
 			visited.append(current)
 
 			for a in self.actions:
-				
 				child = Node(self.rle, self, current.actionSeq+[a], current)
 				child.eval()
 				#print(actionDict[a])
@@ -679,8 +678,8 @@ if __name__ == "__main__":
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
-	gameFilename = "examples.continuousphysics.mario"
-	#gameFilename = "examples.continuousphysics.simple"
+	#gameFilename = "examples.continuousphysics.mario"
+	gameFilename = "examples.continuousphysics.simple"
 	#gameFilename = "examples.continuousphysics.crossroad"
 	#gameFilename = "examples.gridphysics.simple_grid"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.

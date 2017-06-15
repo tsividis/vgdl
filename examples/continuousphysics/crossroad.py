@@ -40,7 +40,7 @@ w     w
       1
 wA    w
 wwwwwww
-"""
+"""#works!
 
 
 if __name__ == "__main__":

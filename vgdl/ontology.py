@@ -829,14 +829,12 @@ class InertialAvatar(OrientedAvatar):
     physicstype = ContinuousPhysics
 
     def update(self, game):
-        MovingAvatar.update(self, game)
+        #MovingAvatar.update(self, game)
 
-        """
         action = MovingAvatar._readAction(self,game)
         if action:
             self.physics.activeMovement(self, action)
         VGDLSprite.update(self, game)
-        """
 
 class MarioAvatar(InertialAvatar):
     physicstype = GravityPhysics

@@ -1,3 +1,6 @@
+levels = {}
+i = 3
+
 game = """
 BasicGame
     SpriteSet 
@@ -29,13 +32,17 @@ BasicGame
 """
 
 
-level = """
+levels[1] = """
 wwwwwww
-wG A Gw
+w   G w
+w     w
+w     w
+w     w
+wA    w
 wwwwwww
-"""
+"""#works
 
-level = """
+levels[2] = """
 wwwwwwwwww
 wG      Gw
 w        w
@@ -46,16 +53,25 @@ w  wwww  w
 w        w
 wA      Gw
 wwwwwwwwww
-"""
+"""#works
 
-level = """
+levels[3] = """
 wwwwwww
 w    Gw
-      1
+w     w
+w    ww
+w     w
 wA    w
 wwwwwww
-"""
+"""#doesnt terminate
 
+levels[4] = """
+wwwwwwwwwww
+wG   A   Gw
+wwwwwwwwwww
+"""#only works with LIMIT >= 4
+
+level = levels[i]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
