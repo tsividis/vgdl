@@ -50,7 +50,7 @@ class WBP():
 		self.maxNumObjects = 6
 		self.trackTokens = False
 		self.vecSize = None
-		self.addWaitAction = True
+		self.addWaitAction = False
 		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
@@ -71,6 +71,68 @@ class WBP():
 			self.objIDs[k] = i * (self.vecDim[0]+self.padding)
 			i+=1
 		self.addSpaceBarToActions()
+
+		#self.unvisited = [[0,0],0]
+		#self.init_unvisited(rle)
+		self.avatar_locs = set()
+
+		#move away from squares we've already been in heuristic:
+		self.visited = [[0,0],0]
+
+		self.all_locs = []
+
+		#self.init_visited(rle)
+		#self.avatar_
+
+	'''
+	def init_visited(self,rle):
+		open_squares = []
+		for i in range(rle.outdim[0]):
+			row = []
+			for j in range(rle.outdim[1]):
+				row.append(False)
+			open_squares.append(row)
+		for wall in rle._game.sprite_groups["wall"]:
+			(j,i) = (rle._rect2pos(wall.rect))
+			open_squares[i][j]=True
+		coord_sum = [0,0]
+		n = 0
+		for i in range(len(open_squares)):
+			for j in range(len(open_squares[i])):
+				if open_squares[i][j]:
+					coord_sum[0] += j
+					coord_sum[1] += i
+					n += 1
+		self.visited = [coord_sum,n]
+	'''
+	
+
+	'''
+	def init_unvisited(self,rle):
+		open_squares = []
+		for i in range(rle.outdim[0]*self.square_size[1]):
+			row = []
+			for j in range(rle.outdim[1]*self.square_size[0]):
+				row.append(True)
+			open_squares.append(row)
+		for wall in rle._game.sprite_groups["wall"]:
+			for i in range(wall.rect.top-wall.rect.height,wall.rect.top+wall.rect.height):
+				for j in range(wall.rect.left-wall.rect.width,wall.rect.left+wall.rect.width):
+					try:
+						open_squares[i][j]=False
+					except:
+						k=0
+		coord_sum = [0,0]
+		n = 0
+		for i in range(len(open_squares)):
+			for j in range(len(open_squares[i])):
+				if open_squares[i][j]:
+					coord_sum[0] += j
+					coord_sum[1] += i
+					n += 1
+		
+		self.unvisited = [coord_sum,n]
+	'''
 
 	#returns array of locations of objects of a given type
 	#each block corresponds to 1 unit
@@ -192,6 +254,8 @@ class WBP():
 		i=0
 		path = []
 
+		print(actionDict)
+
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
 			"""
 			if i%2==0:
@@ -212,15 +276,26 @@ class WBP():
 				print("quitting, no novel node found")
 				return None
 			self.statesEncountered.append(current.rle._game.getFullState())
-			print("BFS")
+			#print("BFS")
 			print current.rle.show(indent=True)
 			print current.rle._game.sprite_groups["avatar"][0].rect
-			if current.actionSeq:
-				print actionDict[current.actionSeq[-1]]
+			
+			try:
+				if self.findAvatarInRLE(current.rle) == self.all_locs[-1]:
+					embed()
+			except:
+				z=0
+			
+			
+			self.all_locs.append(self.findAvatarInRLE(current.rle))
+			#if current.actionSeq:
+			#	print actionDict[current.actionSeq[-1]]
 			#path.append(current.rle.show(indent=True))
 			current.updateNoveltyDict(QNovelty, QReward)
-			# embed()
+			current.updateCenter()
+			#embed()
 			visited.append(current)
+			self.avatar_locs.add(current.rle._rect2pos(current.rle._game.sprite_groups['avatar'][0].rect))
 
 			for a in self.actions:
 				child = Node(self.rle, self, current.actionSeq+[a], current)
@@ -282,6 +357,8 @@ class Node():
 		else:
 			self.rolloutArray = []
 
+		self.do_rollout = False
+
 
 ## when to trigger rollouts, if any
 ## rollout length
@@ -301,6 +378,10 @@ class Node():
 		return 0.# metabolic_cost
 
 	def rollout(self, vrle):
+		
+		#if not do_rollout:
+		#	return []
+
 		#print("begin rollout")
 		successfulRollout = False
 		while not successfulRollout:
@@ -453,10 +534,13 @@ class Node():
 				# were not yet observed will have their distance penalized twice
 				# as much when none of those objects is an avatar. This implies
 				# that non-avatar novel interactions will be favored over others
+				
 				possiblePairList = [manhattanDist(obj, pos)
 					 for pos in s2_positions
 					 for obj in s1_positions
 					 if manhattanDist(obj, pos) != 0]
+				
+				
 				distance = min(possiblePairList)
 					 # This is a trick to avoid getting distance 0 for objects
 					 # of same type. If the list turns out to be empty, it will
@@ -490,6 +574,67 @@ class Node():
 		val += mult * distance_to_goal
 
 		return val
+
+	def updateCenter(self):
+
+		'''
+		center = self.WBP.unvisited[0]
+		n = self.WBP.unvisited[1]
+
+		vis_center = self.WBP.visited[0]
+		vis_n = self.WBP.visited[1]
+
+		avatar_loc = self.WBP.findAvatarInRLE(self.rle)
+
+		if avatar_loc not in self.WBP.avatar_locs:
+			#embed()
+			center[0] -= avatar_loc[0]
+			center[1] -= avatar_loc[1]
+			n -= 1
+			self.WBP.unvisited = [center,n]
+
+			vis_center[0] += avatar_loc[0]
+			vis_center[1] += avatar_loc[1]
+			vis_n += 1
+			self.WBP.visited = [vis_center,vis_n]
+		'''
+		center = self.WBP.visited[0]
+		n = self.WBP.visited[1]
+
+		#avatar_loc = self.WBP.findAvatarInRLE(self.rle)
+		avatar_loc = self.rle._rect2pos(self.rle._game.sprite_groups['avatar'][0].rect)
+
+		if avatar_loc not in self.WBP.avatar_locs:
+			center[0] += avatar_loc[0]
+			center[1] += avatar_loc[1]
+			n += 1
+			self.WBP.visited = [center,n]
+		
+		print([x/float(n) for x in center])
+
+		
+
+	'''
+	def distCenter(self,weight=0.5):
+		center = self.WBP.unvisited[0]
+		n = float(self.WBP.unvisited[1])
+		c = [center[0]/n,center[1]/n]
+		a = self.WBP.findAvatarInRLE(self.rle)
+		return -math.sqrt(float((c[0] - a[0]) ** 2 + (c[1] - a[1]) ** 2))*weight
+	'''
+
+
+
+	def distVisited(self,weight=0):
+		center = self.WBP.visited[0]
+		n = float(self.WBP.visited[1])
+		try:
+			c = [center[0]*self.WBP.square_size[0]/n,center[1]*self.WBP.square_size[1]/n]
+		except:
+			c = [0,0]
+		a = self.WBP.findAvatarInRLE(self.rle)
+		#return math.sqrt(float((c[0] - a[0]) ** 2 + (c[1] - a[1]) ** 2))*weight
+		return weight*euclideanDist(a,c)
 
 	def heuristics(self, rle=None, first_alpha=1000, second_alpha=1,
 				   time_alpha=10):
@@ -531,6 +676,7 @@ class Node():
 		if avatarNoveltyVals:
 			# print noveltyVals
 			heuristicVal += max(avatarNoveltyVals)
+
 		return heuristicVal
 
 	#returns the rle (with total action sequence) and whether game has been won
@@ -582,6 +728,7 @@ class Node():
 
 		for i in range(1,3):
 			for c in itertools.combinations(self.state, i):
+				c = tuple(sorted(c))
 				#if self.WBP.trueAtoms[c] == 0:
 				if self.WBP.trueAtoms[c] < LIMIT:
 					self.candidates.append(c)
@@ -592,14 +739,17 @@ class Node():
 
 		## Try rollouts for aliens?
 		if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
+			embed()
 			self.rolloutArray = self.rollout(self.rle)
 			#print "in rollout"
 
 		self.heuristicVal = self.heuristics()
+		self.dist = self.distVisited()
 
 		# print self.lastState._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost
 		self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
-		sum(self.rolloutArray) - self.metabolic_cost
+		sum(self.rolloutArray) - self.metabolic_cost + self.dist
+		#embed()	
 		# self.intrinsic_reward = 0
 		return self.win
 
@@ -620,6 +770,7 @@ class Node():
 					if c in n.candidates:
 						n.candidates.remove(c)
 			'''
+
 			changed = False
 			if self.WBP.trueAtoms[c] < LIMIT:
 				self.WBP.trueAtoms[c] += 1
@@ -672,6 +823,14 @@ class Node():
 			terminal = vrle._isDone()[0]
 			i+=1
 
+'''
+def manhattanDist(a,b):
+	return euclideanDist(a,b)
+'''
+
+def euclideanDist(a,b):
+	return math.sqrt(float((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2))
+
 
 if __name__ == "__main__":
 
@@ -700,7 +859,7 @@ if __name__ == "__main__":
 	t1 = time.time()
 	last, gameString_array = p.BFS()
 	from core import VGDLParser
-	#embed()
+	embed()
 	#for i in path:
 	#	print(i)
 	

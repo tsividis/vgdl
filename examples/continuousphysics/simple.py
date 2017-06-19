@@ -34,10 +34,10 @@ BasicGame
 
 levels[1] = """
 wwwwwww
-w   G w
 w     w
 w     w
 w     w
+w    Gw
 wA    w
 wwwwwww
 """#works
@@ -59,7 +59,7 @@ levels[3] = """
 wwwwwww
 w    Gw
 w     w
-w    ww
+w     w
 w     w
 wA    w
 wwwwwww
