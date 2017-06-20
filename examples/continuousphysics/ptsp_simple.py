@@ -17,7 +17,7 @@ BasicGame
         SpriteCounter stype=avatar win=False     
            
     InteractionSet
-        inertial wall > wallBounce 
+        inertial wall > wallBounce
         pad avatar    > killSprite
         
     LevelMapping

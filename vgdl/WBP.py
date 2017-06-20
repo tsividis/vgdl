@@ -29,7 +29,8 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', NONE: 'wait'}
-LIMIT = 1
+LIMIT = 2
+MAX_TIMES_IN_SQUARE = 220
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
@@ -81,8 +82,9 @@ class WBP():
 
 		self.all_locs = []
 
+		self.avatar_locs_disc = defaultdict(lambda:0)
+
 		#self.init_visited(rle)
-		#self.avatar_
 
 	'''
 	def init_visited(self,rle):
@@ -104,10 +106,7 @@ class WBP():
 					coord_sum[1] += i
 					n += 1
 		self.visited = [coord_sum,n]
-	'''
-	
 
-	'''
 	def init_unvisited(self,rle):
 		open_squares = []
 		for i in range(rle.outdim[0]*self.square_size[1]):
@@ -224,15 +223,19 @@ class WBP():
 	#selects node with greatest reward (only considering those w/ novelty = 1,2), using novelty as tiebreaker
 	def rewardSelection(self, QReward, QNovelty):
 		# acceptableNodes = QReward
-		acceptableNodes = filter(lambda n:n.novelty<3, QReward)
+
+		acceptableNodes = filter(lambda n: (n.novelty<3 and self.avatar_locs_disc[n.rle._rect2pos(n.rle._game.sprite_groups["avatar"][0].rect)] < MAX_TIMES_IN_SQUARE), QReward)
 		# if len(acceptableNodes)==0:
 			# acceptableNodes = QReward
 			# print "Removed filter"
 			# embed()
 		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
 		
+		maxNodes = [x for x in bestNodes if x.intrinsic_reward == bestNodes[0].intrinsic_reward]
+		
 		try:
-			current = bestNodes.pop(0)
+			#current = bestNodes.pop(0)
+			current = random.choice(maxNodes)
 		except:
 			return None
 		QReward.remove(current)
@@ -280,19 +283,14 @@ class WBP():
 			print current.rle.show(indent=True)
 			print current.rle._game.sprite_groups["avatar"][0].rect
 			
-			try:
-				if self.findAvatarInRLE(current.rle) == self.all_locs[-1]:
-					embed()
-			except:
-				z=0
-			
-			
 			self.all_locs.append(self.findAvatarInRLE(current.rle))
 			#if current.actionSeq:
 			#	print actionDict[current.actionSeq[-1]]
 			#path.append(current.rle.show(indent=True))
 			current.updateNoveltyDict(QNovelty, QReward)
 			current.updateCenter()
+			self.avatar_locs_disc[self.rle._rect2pos(current.rle._game.sprite_groups["avatar"][0].rect)]+=1
+			#print(self.avatar_locs_disc[self.rle._rect2pos(current.rle._game.sprite_groups["avatar"][0].rect)])
 			#embed()
 			visited.append(current)
 			self.avatar_locs.add(current.rle._rect2pos(current.rle._game.sprite_groups['avatar'][0].rect))
@@ -575,33 +573,14 @@ class Node():
 
 		return val
 
+	#def updateSquareTimes(self):
+
+
 	def updateCenter(self):
 
-		'''
-		center = self.WBP.unvisited[0]
-		n = self.WBP.unvisited[1]
-
-		vis_center = self.WBP.visited[0]
-		vis_n = self.WBP.visited[1]
-
-		avatar_loc = self.WBP.findAvatarInRLE(self.rle)
-
-		if avatar_loc not in self.WBP.avatar_locs:
-			#embed()
-			center[0] -= avatar_loc[0]
-			center[1] -= avatar_loc[1]
-			n -= 1
-			self.WBP.unvisited = [center,n]
-
-			vis_center[0] += avatar_loc[0]
-			vis_center[1] += avatar_loc[1]
-			vis_n += 1
-			self.WBP.visited = [vis_center,vis_n]
-		'''
 		center = self.WBP.visited[0]
 		n = self.WBP.visited[1]
 
-		#avatar_loc = self.WBP.findAvatarInRLE(self.rle)
 		avatar_loc = self.rle._rect2pos(self.rle._game.sprite_groups['avatar'][0].rect)
 
 		if avatar_loc not in self.WBP.avatar_locs:
@@ -610,20 +589,13 @@ class Node():
 			n += 1
 			self.WBP.visited = [center,n]
 		
-		print([x/float(n) for x in center])
+		#print([x/float(n) for x in center])
 
-		
-
-	'''
-	def distCenter(self,weight=0.5):
-		center = self.WBP.unvisited[0]
-		n = float(self.WBP.unvisited[1])
-		c = [center[0]/n,center[1]/n]
-		a = self.WBP.findAvatarInRLE(self.rle)
-		return -math.sqrt(float((c[0] - a[0]) ** 2 + (c[1] - a[1]) ** 2))*weight
-	'''
-
-
+	
+	def novel_squares(self,weight=0.0):
+		loc = self.rle._rect2pos(self.rle._game.sprite_groups["avatar"][0].rect)
+		return -self.WBP.avatar_locs_disc[loc]*weight
+	
 
 	def distVisited(self,weight=0):
 		center = self.WBP.visited[0]
@@ -633,7 +605,7 @@ class Node():
 		except:
 			c = [0,0]
 		a = self.WBP.findAvatarInRLE(self.rle)
-		#return math.sqrt(float((c[0] - a[0]) ** 2 + (c[1] - a[1]) ** 2))*weight
+		
 		return weight*euclideanDist(a,c)
 
 	def heuristics(self, rle=None, first_alpha=1000, second_alpha=1,
@@ -726,6 +698,8 @@ class Node():
 		self.updateObjIDs(self.rle)
 		self.state = self.WBP.calculateAtoms(self.rle) #new atom values
 
+		
+
 		for i in range(1,3):
 			for c in itertools.combinations(self.state, i):
 				c = tuple(sorted(c))
@@ -745,10 +719,11 @@ class Node():
 
 		self.heuristicVal = self.heuristics()
 		self.dist = self.distVisited()
+		self.novel_squares = self.novel_squares()
 
 		# print self.lastState._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost
 		self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
-		sum(self.rolloutArray) - self.metabolic_cost + self.dist
+		sum(self.rolloutArray) - self.metabolic_cost + self.dist + self.novel_squares
 		#embed()	
 		# self.intrinsic_reward = 0
 		return self.win
@@ -823,10 +798,6 @@ class Node():
 			terminal = vrle._isDone()[0]
 			i+=1
 
-'''
-def manhattanDist(a,b):
-	return euclideanDist(a,b)
-'''
 
 def euclideanDist(a,b):
 	return math.sqrt(float((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2))
@@ -843,7 +814,7 @@ if __name__ == "__main__":
 	#gameFilename = "examples.gridphysics.simple_grid"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
 	#gameFilename = "examples.gridphysics.expt_exploration_exploitation"
-	# gameFilename = "examples.continuousphysics.ptsp_simple"
+	#gameFilename = "examples.continuousphysics.ptsp_simple"
 
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)

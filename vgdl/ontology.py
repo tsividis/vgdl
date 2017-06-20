@@ -862,8 +862,8 @@ class MarioAvatar(InertialAvatar):
         if self.last_vy == self.lastrect.y - self.rect.y:
             self.wait_step += 1
             if not self.jumping:
-                action[0] = action[0] * self.movestrength
-
+                #action[0] = action[0] * self.movestrength
+                action = [action[0] * self.movestrength,0]
                 if game.keystate[K_SPACE] and not self.jumping:
                     action[1] = -self.strength
                     self.jumping = True
