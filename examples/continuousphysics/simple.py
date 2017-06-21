@@ -1,5 +1,5 @@
 levels = {}
-i = 6
+i = 5
 
 game = """
 BasicGame
@@ -53,7 +53,7 @@ levels[3] = """
 wwwww
 w  Gw
 w   w
-wA  w
+wAw w
 wwwww
 """#doesnt terminate
 

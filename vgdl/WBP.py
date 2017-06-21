@@ -84,54 +84,90 @@ class WBP():
 
 		self.avatar_locs_disc = defaultdict(lambda:0)
 
+		self.distances = self.dijkstra()
+
 		#self.init_visited(rle)
 
-	'''
-	def init_visited(self,rle):
-		open_squares = []
-		for i in range(rle.outdim[0]):
-			row = []
-			for j in range(rle.outdim[1]):
-				row.append(False)
-			open_squares.append(row)
-		for wall in rle._game.sprite_groups["wall"]:
-			(j,i) = (rle._rect2pos(wall.rect))
-			open_squares[i][j]=True
-		coord_sum = [0,0]
-		n = 0
-		for i in range(len(open_squares)):
-			for j in range(len(open_squares[i])):
-				if open_squares[i][j]:
-					coord_sum[0] += j
-					coord_sum[1] += i
-					n += 1
-		self.visited = [coord_sum,n]
+	def makeGraph(self):
+		graph = {}
+		wallLocs = self.findObjectsInRLE(self.rle,'wall')
+		wallLocs = set([(x[0]/self.square_size[0],x[1]/self.square_size[1]) for x in wallLocs])
+		for i in range(self.rle.outdim[1]):
+			for j in range(self.rle.outdim[0]):
+				#(i,j) is grid_loc
+				if (i,j) not in wallLocs:
+					graph[(i,j)] = set()
+					for (x,y) in [(0,1),(0,-1),(1,0),(-1,0)]:
+						try:
+							if (i + x, j + y) not in wallLocs:
+								graph[(i,j)].add((i+x,j+y))
+						except:
+							pass
+		return graph
 
-	def init_unvisited(self,rle):
-		open_squares = []
-		for i in range(rle.outdim[0]*self.square_size[1]):
-			row = []
-			for j in range(rle.outdim[1]*self.square_size[0]):
-				row.append(True)
-			open_squares.append(row)
-		for wall in rle._game.sprite_groups["wall"]:
-			for i in range(wall.rect.top-wall.rect.height,wall.rect.top+wall.rect.height):
-				for j in range(wall.rect.left-wall.rect.width,wall.rect.left+wall.rect.width):
-					try:
-						open_squares[i][j]=False
-					except:
-						k=0
-		coord_sum = [0,0]
-		n = 0
-		for i in range(len(open_squares)):
-			for j in range(len(open_squares[i])):
-				if open_squares[i][j]:
-					coord_sum[0] += j
-					coord_sum[1] += i
-					n += 1
+	def dijkstra(self):
+		graph = self.makeGraph()
+		#start with only one goal
+		goal_loc = self.findObjectsInRLE(self.rle,'goal')[0]
+		goal = (goal_loc[0]/self.square_size[0],goal_loc[1]/self.square_size[1])
+
+		dist = {}
+		dist[goal] = 0
+		queue = {goal}
+		visited = set()
+
+		while queue:
+
+			minNode = None
+			for node in queue:
+				if minNode is None:
+					minNode = node
+				else:
+					if dist[node] < dist[minNode]:
+						minNode = node
+
+			queue.remove(minNode)
+			visited.add(minNode)
+			current = minNode
+
+			for neighbor in graph[current]:
+				if neighbor not in visited:
+					if neighbor in dist:
+						if dist[current] + 1 < dist[neighbor]:
+							dist[neighbor] = dist[current] + 1
+					else:
+						dist[neighbor] = dist[current] + 1
+					queue.add(neighbor)
+		#embed()
+		return dist
+
+	def grid(self,loc):
+		return (loc[0]/self.square_size[0],loc[1]/self.square_size[1])
+
+	#distance from location to SINGLE goal
+	def geoDist(self,loc):
 		
-		self.unvisited = [coord_sum,n]
-	'''
+		grid = self.grid(loc)
+		delta_x = loc[0]/float(self.square_size[0]) - grid[0]
+		delta_y = loc[1]/float(self.square_size[1]) - grid[1]
+
+		right = (grid[0]+1,grid[1])
+		down = (grid[0],grid[1]+1)
+
+		if delta_x == 0:
+			x_weight = 0
+		else:
+			x_weight = self.distances[right] - self.distances[grid]
+
+		if delta_y == 0:
+			y_weight = 0
+		else:
+			y_weight = self.distances[down] - self.distances[grid]
+		#grid2 = self.grid(loc2)
+		
+		dist = self.distances[grid] + delta_x*x_weight + delta_y*y_weight
+		#embed()
+		return dist
 
 	#returns array of locations of objects of a given type
 	#each block corresponds to 1 unit
@@ -225,14 +261,17 @@ class WBP():
 		# acceptableNodes = QReward
 
 		acceptableNodes = filter(lambda n: (n.novelty<3 and self.avatar_locs_disc[n.rle._rect2pos(n.rle._game.sprite_groups["avatar"][0].rect)] < MAX_TIMES_IN_SQUARE), QReward)
+		#QReward = filter(lambda n: (n.novelty<3 and self.avatar_locs_disc[n.rle._rect2pos(n.rle._game.sprite_groups["avatar"][0].rect)] < MAX_TIMES_IN_SQUARE), QReward)
 		# if len(acceptableNodes)==0:
 			# acceptableNodes = QReward
 			# print "Removed filter"
 			# embed()
 		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
+		#QReward = sorted(QReward, key=lambda n: (-n.intrinsic_reward, n.novelty))
 		
-		maxNodes = [x for x in bestNodes if x.intrinsic_reward == bestNodes[0].intrinsic_reward]
-		
+		maxNodes = [x for x in bestNodes if x.intrinsic_reward == bestNodes[0].intrinsic_reward and x.novelty == bestNodes[0].novelty]
+		#maxNodes = [x for x in QReward if x.intrinsic_reward == QReward[0].intrinsic_reward and x.novelty == QReward[0].novelty]
+		#embed()
 		try:
 			#current = bestNodes.pop(0)
 			current = random.choice(maxNodes)
@@ -471,9 +510,13 @@ class Node():
 				# were not yet observed will have their distance penalized twice
 				# as much when none of those objects is an avatar. This implies
 				# that avatar novel interactions will be favored over other ones
-				possiblePairList = [manhattanDist(obj, pos)
-					 for pos in kill_positions
-					 for obj in stype_positions]
+				#possiblePairList = [manhattanDist(obj, pos)/float(self.WBP.square_size[0])
+				#	 for pos in kill_positions
+				#	 for obj in stype_positions]
+				#embed()
+				possiblePairList = [self.WBP.geoDist(tuple(pos))
+					for pos in kill_positions
+					for obj in stype_positions]
 
 				distance = min(possiblePairList)
 				# print distance
@@ -526,6 +569,7 @@ class Node():
 			"""
 
 			n_sprites = len(s1_positions)
+			embed()
 			try:
 				# A consequence of the two-way generic interactions in the
 				# theory is that minimum-distance object pairs whose interactions
@@ -533,10 +577,13 @@ class Node():
 				# as much when none of those objects is an avatar. This implies
 				# that non-avatar novel interactions will be favored over others
 				
-				possiblePairList = [manhattanDist(obj, pos)
+				
+				possiblePairList = [manhattanDist(obj, pos)/float(self.WBP.square_size[0])
 					 for pos in s2_positions
 					 for obj in s1_positions
 					 if manhattanDist(obj, pos) != 0]
+				
+
 				
 				
 				distance = min(possiblePairList)
@@ -596,8 +643,7 @@ class Node():
 		loc = self.rle._rect2pos(self.rle._game.sprite_groups["avatar"][0].rect)
 		return -self.WBP.avatar_locs_disc[loc]*weight
 	
-
-	def distVisited(self,weight=0):
+	def distVisited(self,weight=0.0):
 		center = self.WBP.visited[0]
 		n = float(self.WBP.visited[1])
 		try:
@@ -606,7 +652,7 @@ class Node():
 			c = [0,0]
 		a = self.WBP.findAvatarInRLE(self.rle)
 		
-		return weight*euclideanDist(a,c)
+		return weight*euclideanDist(a,c)/self.WBP.square_size[0]
 
 	def heuristics(self, rle=None, first_alpha=1000, second_alpha=1,
 				   time_alpha=10):
@@ -803,6 +849,7 @@ def euclideanDist(a,b):
 	return math.sqrt(float((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2))
 
 
+
 if __name__ == "__main__":
 
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
@@ -830,7 +877,7 @@ if __name__ == "__main__":
 	t1 = time.time()
 	last, gameString_array = p.BFS()
 	from core import VGDLParser
-	embed()
+	#embed()
 	#for i in path:
 	#	print(i)
 	
