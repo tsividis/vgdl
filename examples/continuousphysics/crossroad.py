@@ -2,9 +2,8 @@ game = """
 BasicGame
     SpriteSet 
         avatar > InertialAvatar color=WHITE
-        evil   >  orientation=LEFT 
-                fast     >  Walker color=BROWN speed=0.2
-                slow     > Walker color=BROWN speed=0.1
+        fast     >  Walker color=BROWN speed=0.16 orientation=LEFT
+        slow     > Walker color=BROWN speed=0.08 orientation=LEFT
         goal > Immovable color=GREEN
         wall > Immovable color=BLACK
         poison > Immovable color=RED
@@ -16,9 +15,10 @@ BasicGame
     InteractionSet
         goal avatar > killSprite
         avatar wall > wallStop friction=0.0
-        evil wall > wallStop friction=0.0
-        avatar evil > killIfAlive
-        evil EOS > wrapAround
+        avatar fast > killSprite
+        avatar slow > killSprite
+        fast EOS > wrapAround
+        slow EOS > wrapAround
         
         
     LevelMapping
@@ -27,6 +27,7 @@ BasicGame
         1 > slow
         2 > fast
 """
+
 
 level = """
 wwwwwww

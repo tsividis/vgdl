@@ -98,14 +98,10 @@ class WBP():
 				if (i,j) not in wallLocs:
 					graph[(i,j)] = set()
 					for (x,y) in [(0,1),(0,-1),(1,0),(-1,0)]:
-						try:
-							if (i + x, j + y) not in wallLocs:
+						if (i + x, j + y) not in wallLocs and i+x in range(rle.outdim[1]) and j+y in range(rle.outdim[0]):
 								graph[(i,j)].add((i+x,j+y))
-						except:
-							pass
 		edges = defaultdict(lambda:1)
 
-		
 		for wall in wallLocs:
 			for (x,y) in [(1,1),(1,-1),(-1,1),(-1,-1)]:
 				diag = (wall[0]+x,wall[1]+y)
@@ -114,7 +110,6 @@ class WBP():
 				if diag in graph and horiz in graph and vert in graph:
 					edges[(vert,diag)] = 2
 					edges[(diag,vert)] = 2
-					#if left in graph:
 					edges[(horiz,diag)] = 2
 					edges[(diag,horiz)] = 2
 		
@@ -123,13 +118,18 @@ class WBP():
 
 	def dijkstra(self):
 		graph, edges = self.makeGraph()
-		#start with only one goal
-		goal_loc = self.findObjectsInRLE(self.rle,'goal')[0]
-		goal = (goal_loc[0]/self.square_size[0],goal_loc[1]/self.square_size[1])
-
 		dist = {}
-		dist[goal] = 0
-		queue = {goal}
+		#embed()
+		for (i,j) in graph:
+
+			dist[(i,j)] = self.single_source(graph, edges, (i,j))
+		#embed()
+		return dist
+
+	def single_source(self, graph, edges, source):
+		dist = {}
+		dist[source] = 0
+		queue = {source}
 		visited = set()
 
 		while queue:
@@ -154,38 +154,52 @@ class WBP():
 					else:
 						dist[neighbor] = dist[current] + edges[(current,neighbor)]
 					queue.add(neighbor)
-		#embed()
 		return dist
+		
 
 	def grid(self,loc):
 		return (loc[0]/self.square_size[0],loc[1]/self.square_size[1])
 
 	#distance from location to SINGLE goal
-	def geoDist(self,loc):
+	def geoDist(self,loc1,loc2):
 		
-		grid = self.grid(loc)
-		x = loc[0]/float(self.square_size[0]) - grid[0]
-		y = loc[1]/float(self.square_size[1]) - grid[1]
+		grid1= self.grid(loc1)
+		grid2= self.grid(loc2)
 
-		A = self.distances[grid]
-		if x == 0:
-			B = 0
-		else:
-			B = self.distances[(grid[0]+1,grid[1])]
+		x1 = loc1[0]/float(self.square_size[0]) - grid1[0]
+		y1 = loc1[1]/float(self.square_size[1]) - grid1[1]
+		x2 = loc2[0]/float(self.square_size[0]) - grid2[0]
+		y2 = loc2[1]/float(self.square_size[1]) - grid2[1]
 
-		if y == 0:
-			C = 0
-		else:
-			C = self.distances[(grid[0],grid[1]+1)]
+		dist = 0
+		a1 = self.loop4d()
+		a2 = self.loop4d()
+		for exp in a1:
+			for coord in a2:
+				if all(i >= j for i, j in zip(exp,coord)):
+					val = self.comp_exp((x1,y1,x2,y2),exp)
+					if val:
+						dist += (1 if (sum(coord)%2 == sum(exp)%2) else -1)*val*self.distances[(grid1[0]+coord[0],grid1[1]+coord[1])][(grid2[0]+coord[2],grid2[1]+coord[3])]
+					
 
-		if x*y == 0:
-			D = 0
-		else:
-			D = self.distances[(grid[0]+1,grid[1]+1)]
 		
-		dist = A + (B-A)*x + (C-A)*y + (A-B-C+D)*x*y
-		#embed()
 		return dist
+
+	def loop4d(self):
+		array = []
+		for x1 in [0,1]:
+			for y1 in [0,1]:
+				for x2 in [0,1]:
+					for y2 in [0,1]:
+						array.append((x1,y1,x2,y2))
+		return array
+
+	def comp_exp(self,var,exp):
+		prod = 1
+		for i in range(4):
+			if exp[i]:
+					prod*=var[i]
+		return prod
 
 	#returns array of locations of objects of a given type
 	#each block corresponds to 1 unit
@@ -348,6 +362,8 @@ class WBP():
 			current.updateCenter()
 			self.avatar_locs_disc[self.rle._rect2pos(current.rle._game.sprite_groups["avatar"][0].rect)]+=1
 			#print(self.avatar_locs_disc[self.rle._rect2pos(current.rle._game.sprite_groups["avatar"][0].rect)])
+			
+			#print current.heuristicVal
 			#embed()
 			visited.append(current)
 			self.avatar_locs.add(current.rle._rect2pos(current.rle._game.sprite_groups['avatar'][0].rect))
@@ -491,7 +507,7 @@ class Node():
 
 		# Get attributes from terminationSet
 		limit = term.termination.limit
-		# embed()
+		#embed()
 
 		if 'SpawnPoint' in str(theory.classes[stype][0].vgdlType) and not killer_types:
 			distance_to_goal = 0
@@ -532,7 +548,7 @@ class Node():
 				#	 for pos in kill_positions
 				#	 for obj in stype_positions]
 				#embed()
-				possiblePairList = [self.WBP.geoDist(tuple(pos))
+				possiblePairList = [self.WBP.geoDist(pos,obj)
 					for pos in kill_positions
 					for obj in stype_positions]
 
@@ -547,7 +563,7 @@ class Node():
 				# goals that involve killing fewer objects
 				val += float(mult * second_alpha * distance)/n_sprites
 			else:
-				distance = 100
+				distance = 1000
 				val += float(mult * second_alpha * distance)
 
 		return val
@@ -596,10 +612,10 @@ class Node():
 				# that non-avatar novel interactions will be favored over others
 				
 				
-				possiblePairList = [manhattanDist(obj, pos)/float(self.WBP.square_size[0])
+				possiblePairList = [self.WBP.geoDist(obj,pos)
 					 for pos in s2_positions
 					 for obj in s1_positions
-					 if manhattanDist(obj, pos) != 0]
+					 if geoDist(obj,pos) != 0]
 				
 
 				
@@ -680,6 +696,7 @@ class Node():
 		theory = self.WBP.theory
 		heuristicVal = 0
 		avatarNoveltyVals = []
+		#embed()
 		for term in theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
@@ -876,6 +893,7 @@ if __name__ == "__main__":
 	#gameFilename = "examples.continuousphysics.mario_small"
 	gameFilename = "examples.continuousphysics.simple"
 	#gameFilename = "examples.continuousphysics.crossroad"
+
 	#gameFilename = "examples.gridphysics.simple_grid"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
 	#gameFilename = "examples.gridphysics.expt_exploration_exploitation"
@@ -887,25 +905,29 @@ if __name__ == "__main__":
 	rle = rleCreateFunc()
 	
 	#embed()
+	fails = 0
+	#for i in range(10):
 	t1 = time.time()
 	p = WBP(rle, gameFilename)
 
 
 	#embed()
-	
+	#	try:
 	last, gameString_array = p.BFS()
 	from core import VGDLParser
+	last.playBack(make_movie=True)
+	#	except:
+	#		fails += 1
 	#embed()
 	#for i in path:
 	#	print(i)
 	
-	last.playBack(make_movie=True)
-	# VGDLParser.playGame(gameString, levelString, p.statesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
+				# VGDLParser.playGame(gameString, levelString, p.statesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
 	# VGDLParser.playGame(gameString, levelString, last.finalStatesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
 
 	#print("time:")
 	print time.time()-t1
-	# embed()
+	embed()
 
 
 #

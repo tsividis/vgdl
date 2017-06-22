@@ -1,13 +1,13 @@
 levels = {}
-i = 7
+i = 1
 
 game = """
 BasicGame
     SpriteSet
-        inertial >
-            avatar > InertialAvatar color=WHITE 
+        avatar > InertialAvatar color=WHITE 
         goal > Immovable color=GREEN
         wall > Immovable color=BLACK
+        poison > Immovable color=RED
             
     TerminationSet
         SpriteCounter stype=goal   win=True     
@@ -16,11 +16,13 @@ BasicGame
     InteractionSet
         goal avatar > killSprite
         avatar wall > wallStop friction=0
+        avatar poison > killSprite
         
         
     LevelMapping
         w > wall
         G > goal
+        p > poison
 """
 
 
@@ -65,26 +67,26 @@ wwwwwwwwwww
 
 levels[5] = """
 wwwwwwwwwwww
-w      ww Gw
-w      ww  w
-w  ww  ww  w
-w  ww  ww  w
-w  ww  ww  w
-w  ww  ww  w
-w  ww  ww  w
-w  ww  ww  w
-w  ww      w
-wA ww      w
+w          w
+w w  G     w
+w  w   w  Gw
+w   w   w  w
+w    G   w w
+w     w    w
+w     wG   w
+w     w    w
+w          w
+wA         w
 wwwwwwwwwwww
 """#works
 
 levels[6] = """
 wwwwwww
+w G p w
 w     w
-w  w  w
-w  w  w
-w  w  w
-wA w Gw
+w     w
+w     w
+wA    w
 wwwwwww
 """
 

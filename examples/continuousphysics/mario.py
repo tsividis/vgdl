@@ -14,7 +14,7 @@ BasicGame
                 goomba     > Walker     color=BROWN 
                 paratroopa > WalkJumper color=RED prob=.9
         goal > Immovable color=GREEN
-        wall > ResourcePack color=BLACK
+        wall > Immovable color=BLACK
             
     TerminationSet
         SpriteCounter stype=goal      win=True     
