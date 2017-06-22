@@ -30,7 +30,7 @@ NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', NONE: 'wait'}
 LIMIT = 2
-MAX_TIMES_IN_SQUARE = 220
+MAX_TIMES_IN_SQUARE = sys.maxint
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
@@ -103,10 +103,26 @@ class WBP():
 								graph[(i,j)].add((i+x,j+y))
 						except:
 							pass
-		return graph
+		edges = defaultdict(lambda:1)
+
+		
+		for wall in wallLocs:
+			for (x,y) in [(1,1),(1,-1),(-1,1),(-1,-1)]:
+				diag = (wall[0]+x,wall[1]+y)
+				vert = (wall[0],wall[1]+y)
+				horiz = (wall[0]+x,wall[1])
+				if diag in graph and horiz in graph and vert in graph:
+					edges[(vert,diag)] = 2
+					edges[(diag,vert)] = 2
+					#if left in graph:
+					edges[(horiz,diag)] = 2
+					edges[(diag,horiz)] = 2
+		
+
+		return graph, edges
 
 	def dijkstra(self):
-		graph = self.makeGraph()
+		graph, edges = self.makeGraph()
 		#start with only one goal
 		goal_loc = self.findObjectsInRLE(self.rle,'goal')[0]
 		goal = (goal_loc[0]/self.square_size[0],goal_loc[1]/self.square_size[1])
@@ -133,10 +149,10 @@ class WBP():
 			for neighbor in graph[current]:
 				if neighbor not in visited:
 					if neighbor in dist:
-						if dist[current] + 1 < dist[neighbor]:
-							dist[neighbor] = dist[current] + 1
+						if dist[current] + edges[(current,neighbor)] < dist[neighbor]:
+							dist[neighbor] = dist[current] + edges[(current,neighbor)]
 					else:
-						dist[neighbor] = dist[current] + 1
+						dist[neighbor] = dist[current] + edges[(current,neighbor)]
 					queue.add(neighbor)
 		#embed()
 		return dist
@@ -148,24 +164,26 @@ class WBP():
 	def geoDist(self,loc):
 		
 		grid = self.grid(loc)
-		delta_x = loc[0]/float(self.square_size[0]) - grid[0]
-		delta_y = loc[1]/float(self.square_size[1]) - grid[1]
+		x = loc[0]/float(self.square_size[0]) - grid[0]
+		y = loc[1]/float(self.square_size[1]) - grid[1]
 
-		right = (grid[0]+1,grid[1])
-		down = (grid[0],grid[1]+1)
-
-		if delta_x == 0:
-			x_weight = 0
+		A = self.distances[grid]
+		if x == 0:
+			B = 0
 		else:
-			x_weight = self.distances[right] - self.distances[grid]
+			B = self.distances[(grid[0]+1,grid[1])]
 
-		if delta_y == 0:
-			y_weight = 0
+		if y == 0:
+			C = 0
 		else:
-			y_weight = self.distances[down] - self.distances[grid]
-		#grid2 = self.grid(loc2)
+			C = self.distances[(grid[0],grid[1]+1)]
+
+		if x*y == 0:
+			D = 0
+		else:
+			D = self.distances[(grid[0]+1,grid[1]+1)]
 		
-		dist = self.distances[grid] + delta_x*x_weight + delta_y*y_weight
+		dist = A + (B-A)*x + (C-A)*y + (A-B-C+D)*x*y
 		#embed()
 		return dist
 
@@ -569,7 +587,7 @@ class Node():
 			"""
 
 			n_sprites = len(s1_positions)
-			embed()
+			#embed()
 			try:
 				# A consequence of the two-way generic interactions in the
 				# theory is that minimum-distance object pairs whose interactions
@@ -759,7 +777,7 @@ class Node():
 
 		## Try rollouts for aliens?
 		if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
-			embed()
+			#embed()
 			self.rolloutArray = self.rollout(self.rle)
 			#print "in rollout"
 
@@ -855,7 +873,7 @@ if __name__ == "__main__":
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
-	#gameFilename = "examples.continuousphysics.mario"
+	#gameFilename = "examples.continuousphysics.mario_small"
 	gameFilename = "examples.continuousphysics.simple"
 	#gameFilename = "examples.continuousphysics.crossroad"
 	#gameFilename = "examples.gridphysics.simple_grid"
@@ -869,12 +887,12 @@ if __name__ == "__main__":
 	rle = rleCreateFunc()
 	
 	#embed()
-	
+	t1 = time.time()
 	p = WBP(rle, gameFilename)
 
 
 	#embed()
-	t1 = time.time()
+	
 	last, gameString_array = p.BFS()
 	from core import VGDLParser
 	#embed()

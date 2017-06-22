@@ -1,5 +1,5 @@
 levels = {}
-i = 5
+i = 7
 
 game = """
 BasicGame
@@ -33,7 +33,7 @@ w  wwwww  w
 w  wwwww  w
 w    w    w
 w   GwA   w
-wwwwwwwwwww 
+wwwwwwwwwww
 """#failed
 
 levels[2] = """
@@ -64,6 +64,31 @@ wwwwwwwwwww
 """#only works with LIMIT >= 4
 
 levels[5] = """
+wwwwwwwwwwww
+w      ww Gw
+w      ww  w
+w  ww  ww  w
+w  ww  ww  w
+w  ww  ww  w
+w  ww  ww  w
+w  ww  ww  w
+w  ww  ww  w
+w  ww      w
+wA ww      w
+wwwwwwwwwwww
+"""#works
+
+levels[6] = """
+wwwwwww
+w     w
+w  w  w
+w  w  w
+w  w  w
+wA w Gw
+wwwwwww
+"""
+
+levels[7] = """
 wwwwwwwwww
 w     w Gw
 w     w  w
@@ -71,16 +96,6 @@ w  w  w  w
 w  w     w
 wA w     w
 wwwwwwwwww
-"""#works
-
-levels[6] = """
-wwwwwww
-w     w
-w     w
-w     w
-w     w
-wA w Gw
-wwwwwww
 """
 
 
