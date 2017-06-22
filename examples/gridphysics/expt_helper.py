@@ -97,10 +97,10 @@ BasicGame frame_rate=30
     SpriteSet
         avatar > MovingAvatar color=DARKBLUE cooldown=0
         mover > VGDLSprite
-            rand > RandomNPC cooldown=1 color=LIGHTBLUE speed=1 #12 for humans, 2 for Planner
+            rand > RandomNPC color=LIGHTBLUE cooldown=1 #12 for humans, 2 for Planner
             chaser > Chaser
-                chaser1 > stype=box1 color=ORANGE  cooldown=12 #for humans
-                chaser2 > stype=box3 color=LIGHTBLUE cooldown=12 #for humans
+                chaser1 > stype=box1 color=ORANGE  cooldown=0 #for humans
+                chaser2 > stype=box3 color=LIGHTBLUE cooldown=0 #for humans
         wall > Immovable color=BLACK
         forcefield > Passive color=PURPLE
         box > Passive
@@ -134,6 +134,7 @@ BasicGame frame_rate=30
         box1 box3 > nothing
         avatar box3 > nothing
         box3 chaser > killSprite
+        box1 forcefield > nothing
         box2 forcefield > nothing
         rand forcefield > stepBack
         forcefield rand > stepBack
@@ -142,6 +143,7 @@ BasicGame frame_rate=30
         avatar rand > nothing
         chaser wall > stepBack
         chaser box2 > stepBack
+        chaser chaser > nothing
         missile EOS > wrapAround
         missile avatar > killSprite
         missile missile > reverseDirection

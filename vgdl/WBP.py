@@ -68,7 +68,6 @@ class WBP():
 			i+=1
 		self.addSpaceBarToActions()
 
-
 	def findObjectsInRLE(self, rle, objName):
 		try:
 			objLocs = [rle._rect2pos(element.rect) for element in rle._game.sprite_groups[objName]
@@ -92,9 +91,9 @@ class WBP():
 				spacebarAvailable = True
 				break
 		if spacebarAvailable:
-			self.actions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
+			self.actions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
 		else:
-			self.actions = [K_UP, K_DOWN, K_LEFT, K_RIGHT]
+			self.actions = [K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
 		if self.addWaitAction:
 			self.actions.append(NONE)
 		return
@@ -215,6 +214,8 @@ class WBP():
 					child.rle._isDone()
 					self.solution = child.actionSeq
 					self.statesEncountered.append(child.rle._game.getFullState())
+					# print "win"
+					# embed()
 					return child, gameString_array
 				else:
 					QNovelty.append(child)
@@ -257,7 +258,8 @@ class Node():
 	def metabolics(self, rle, events, action, n=10, mult=.3):
 
 		metabolic_cost = 1./n
-		if action==32:
+		# if action==32:
+		if action!=NONE:
 			metabolic_cost += (1-1./n)*mult
 		if len(events)>0:
 			# metabolic_cost = .3
@@ -265,7 +267,7 @@ class Node():
 				metabolic_cost += .3#(1-1./n)*mult
 			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
 			# 	metabolic_cost += 0.3
-		return 0.# metabolic_cost
+		return metabolic_cost
 
 	def rollout(self, vrle):
 		successfulRollout = False
@@ -507,6 +509,7 @@ class Node():
 				vrle = copy.deepcopy(self.parent.rle)
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
+					# print a
 					res = vrle.step(a)
 					# relevantEvents = [t for t in res['effectList'] if t[0] == 'stepBack']
 					# if relevantEvents:
@@ -619,60 +622,11 @@ class Node():
 
 if __name__ == "__main__":
 
-	# gameFilename = "examples.gridphysics.simpleGame4_small"
-
-	## make better versions
-	# gameFilename = "examples.gridphysics.demo_teleport"
-	# gameFilename = "examples.gridphysics.movers3c" ##solved!!
-	# gameFilename = "examples.gridphysics.rivercross" ## solved!!
-	# gameFilename = "examples.gridphysics.demo_dodge"  ##solved!!
-	# gameFilename = "examples.gridphysics.movers5" ##solved!!
-	# gameFilename = "examples.gridphysics.demo_preconditions"
-	# gameFilename = "examples.gridphysics.demo_waterfall"
-	# gameFilename = "examples.gridphysics.pick_apples"
-	gameFilename = "examples.gridphysics.demo_chaser"
-	# gameFilename = "examples.gridphysics.simpleGame_push_boulders"
-	# gameFilename = "examples.gridphysics.chase" #yes!!!
-	# gameFilename = "examples.gridphysics.survivezombies" # solvable, just not very fast if long timeout.
-	# gameFilename = "examples.gridphysics.demo_transform_small"
-
-	# gameFilename = "examples.gridphysics.zelda_orig2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
-	# gameFilename = "examples.gridphysics.missilecommand2" ## We can probably handle this, provided subgoal heuristics, once Chaser/A* are deterministic
-	# gameFilename = "examples.gridphysics.chase2"
-	# gameFilename = "examples.gridphysics.aliens2"
-
-
-	# gameFilename = "examples.gridphysics.demo_helper"  ##
-	# gameFilename = "examples.gridphysics.demo_transform" ##
-
-	# gameFilename = "examples.gridphysics.simpleGame_missile" #later.
-
-	# gameFilename = "examples.gridphysics.simpleGame_push_boulders2"
-
-	# gameFilename = "examples.gridphysics.frogs" ## worked with k=2.
-
-	# gameFilename = "examples.gridphysics.waypointtheory"  ##easy version solved!
-
-	# gameFilename = "examples.gridphysics.simpleGame_push_boulders_multigoal" ## k=2 works!
-	# gameFilename = "examples.gridphysics.simpleGame4"
-
-	# gameFilename = "examples.gridphysics.simpleGame4_small"
-	# gameFilename = "examples.gridphysics.demo_multigoal_and"
-
-	# gameFilename = "examples.gridphysics.demo_multigoal_and_score"  ##easy version solved!
-	# gameFilename = "examples.gridphysics.demo_sokoban" #later
-	# gameFilename = "examples.gridphysics.demo_sokoban_score" #later
-	# gameFilename = "examples.gridphysics.portals" ## stochasticity breaks it
-	# gameFilename = "examples.gridphysics.demo_helper"
-
-
-	# gameFilename = "examples.gridphysics.demo_multigoal_and"  ##takes forever if you have many boxes and don't use 2BFS (with metabolic penalty)
-
 
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
-	gameFilename = "examples.continuousphysics.mario"
+	gameFilename = "examples.gridphysics.theorytest2"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
 	# gameFilename = "examples.gridphysics.expt_helper"
 
@@ -680,7 +634,7 @@ if __name__ == "__main__":
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
-	# embed()
+	embed()
 	p = WBP(rle, gameFilename)
 
 

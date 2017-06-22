@@ -1,8 +1,4 @@
-'''
-VGDL example: a simplified variant of the classic space-invaders.
 
-@author: Tom Schaul
-'''
 
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww

@@ -285,7 +285,8 @@ class Theory(object):
 			self.spriteSet = spriteInductionResult
 
 		# End of screen is a special object. Initialize it here.
-		eos = Sprite(core.VGDLSprite, 'ENDOFSCREEN', None, None)
+		# eos = Sprite(core.VGDLSprite, 'ENDOFSCREEN', None, None)
+		eos = Sprite(core.EOS, 'ENDOFSCREEN', None, None)
 		self.spriteSet.append(eos)
 
 		# Get mapping from sprite color to Sprite object
@@ -375,15 +376,16 @@ class Theory(object):
 		else:
 			failCase = self.getFailCases(event, timestep)
 
-			print event
-			print "\tFail case: ", failCase
-			print ""
+			# print event
+			# print "\tFail case: ", failCase
+			# print ""
 
 			# This particular event is explained. Don't change anything.
 			if failCase == 0:
 				theories.append(self)
 			# Add preconditions
 			elif failCase in [1,2,3]:
+				# ipdb.set_trace()
 				theories.extend(self.addPreconditions(event, timestep))
 			# Add new rule
 			elif failCase == 4:
@@ -464,11 +466,15 @@ class Theory(object):
 			likelihood = 0.
 		return likelihood
 
-	def updateInteractionsPreconditions(self, resource):
-
-		new_precond = Precondition(
+	def updateInteractionsPreconditions(self, resource, limit=None):
+		if not limit:
+			new_precond = Precondition(
 			text='new precondition for '+resource,
 			item=resource, operator_name='>=', num=0)
+		else:
+			new_precond = Precondition(
+			text='new precondition for '+resource,
+			item=resource, operator_name='>=', num=limit)	
 
 		# Add new generic rules for the avatar with preconditions
 		newInteractionRules = []
@@ -476,6 +482,7 @@ class Theory(object):
 		for o in nonAvatars:
 			rule = InteractionRule('killSprite', o.className, 'avatar', {}, set([new_precond]), generic=True)
 			newInteractionRules.append(rule)
+		# ipdb.set_trace()
 
 		return newInteractionRules
 
@@ -591,7 +598,7 @@ class Theory(object):
 
 
 
-		print (eventInRules, predictionsHappened)
+		# print (eventInRules, predictionsHappened)
 		# self.display()
 		# print "event", event
 		# print "interaction set:", [i.asTuple() for i in self.interactionSet]
@@ -693,7 +700,7 @@ class Theory(object):
 		Creates preconditions based on the agentState that might help to explain the event.
 		Returns a list of theories.
 		"""
-		# timestep.agentState = {'medicine':0}
+
 		newTheories = []
 
 		obj1 = self.spriteObjects[event[1]]
@@ -741,9 +748,9 @@ class Theory(object):
 						newTheories.append(self) ##TODO you didn't create a child theory, so your tracking of theory
 													## genealogy will be off.
 
-				else:
-					print "relevantEvents and relevantInteractionSetRules are disjoint but of same length"
-					embed()
+				# else:
+				# 	print "relevantEvents and relevantInteractionSetRules are disjoint but of same length"
+				# 	embed()
 
 		return newTheories
 
@@ -1325,7 +1332,17 @@ class Theory(object):
 			text = item+">"+str(0)
 			operator = '>'
 			concepts.append((text,item,operator,0))
-		return concepts 					# TODO: Should this return functions and text? (text, function) tuples?
+		
+		## Check for limits of resources and add count(resource)==limit to the concepts.
+		for rule in self.interactionSet:
+			if 'resource' in rule.args.keys() and rule.args['resource']==item and 'limit' in rule.args.keys() and num>=rule.args['limit']:
+				limit = rule.args['limit']
+				##Also have a concept that is == num:
+				text = item+">="+str(limit)
+				operator = '>='
+				concepts = [(text,item,operator,num)] ##superstition that you won because you had all of the limit items.
+				break
+		return concepts
 
 	def getClassFromColor(self, color):
 		for c in self.classes:
@@ -1622,7 +1639,10 @@ class Game(object):
 						print "theory:"
 						newTheory.display()
 						self.nodes_eliminated +=1
+				# embed()
+				max_likelihood = np.unique([sum([h.likelihood(ts) for ts in timesteps]) for h in self.hypothesisSpace])[-1]
 
+				self.hypothesisSpace = [h for h in self.hypothesisSpace if sum([h.likelihood(ts) for ts in timesteps]) == max_likelihood]
 				if verbose:
 					print "New theories that passed likelihood tests: ", newTheoriesCount
 					print "New hyp space length: ", len(self.hypothesisSpace)
@@ -1796,6 +1816,10 @@ class Game(object):
 				theory.display()
 			self.DFSinduction(theory, timesteps, maxNumTheories, override=True, verbose=verbose) ##override anything that was in the original set.
 
+
+		max_likelihood = np.unique([sum([h.likelihood(ts) for ts in timesteps]) for h in self.hypothesisSpace])[-1]
+		self.hypothesisSpace = [h for h in self.hypothesisSpace if sum([h.likelihood(ts) for ts in timesteps]) == max_likelihood]
+		
 		# Termination set induction
 		## TODO: add this again.
 		# if result:
@@ -2053,40 +2077,23 @@ def generateSymbolDict(rle):
 	## if new objects appear that are of an unknown type we have to be able to deal with this; writeTheoryToTxt should be
 	## able to append to this dict if it finds any unknown objects.
 	inverseMapping = dict()
-	# numbers = '0123456789'
-	# alnum = numbers + 'bcdefhijklmnpqrstuvwxyz'
+
 	idx = 0
-	# Generate all possible tuples of length 1, 2, and 3 of possible objects being in a space.
-	colors = [colorDict[str(rle._game.sprite_constr[k][1]['color'])] for k in rle._obstypes.keys()]
-	# embed()
+	try:
+		colors = [colorDict[str(rle._game.sprite_constr[k][1]['color'])] for k in rle._obstypes.keys()]
+	except:
+		embed()
 	try:
 		colors.append(colorDict[str(rle._game.sprite_constr['avatar'][1]['color'])])
 	except:
 		colors.append(colorDict[str(rle._game.sprite_constr['avatar'][0].color)])
 	possibilities = list(set([c for c in colors]))
-	# for i in [2,3]:
-		# possibilities.extend(itertools.combinations(colors, i))
+
 	for p in possibilities:
 		inverseMapping[p] = ALNUM[idx]
 		idx+=1
 
-	# try:
-		# inverseMapping[colorDict[str(rle._game.sprite_constr['avatar'][1]['color'])]] = 'A'
-	# except:
-		# inverseMapping[colorDict[str(rle._game.sprite_constr['avatar'][0].color)]] = 'A'
 	return inverseMapping
-
-	# for s in rle._obstypes.keys():
-	# 	col = colorDict[str(rle._game.sprite_constr[s][1]['color'])]
-	# 	inverseMapping[col] = alnum[idx]
-	# 	idx+=1
-	# try:
-	# 	inverseMapping[colorDict[str(rle._game.sprite_constr['avatar'][1]['color'])]] = 'A'
-	# except:
-	# 	inverseMapping[colorDict[str(rle._game.sprite_constr['avatar'][0].color)]] = 'A'
-
-	# return inverseMapping
-
 
 def getKeywordsFromOntology(interactionName):
 	ontologyKeywordDict = \
@@ -2164,7 +2171,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 						limit = precondition.num
 
 				elif true_operator in {">", ">="}:
-					newInteractionName = 'killIfHasMore'
+					newInteractionName = 'killIfOtherHasMore'
 					if true_operator == ">":
 						limit = precondition.num + 1
 					else:
@@ -2175,6 +2182,8 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 			argsString = ""
 		else:
 			if interactionRule.args:
+				# print "in writeTheory"
+				# embed()
 				argsString = ""
 				for k,v in interactionRule.args.items():
 					if k in ['stype', 'strigger']:
@@ -2301,12 +2310,18 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					pass
 
 				try:
+					argsString += " %s=%s"%("cooldown", s.cooldown)
+				except AttributeError:
+					pass
+
+				try:
 					##when we initialized stypes in spriteInduction, we didn't have access to what we would call objects in the theory.
 					colorConvertedToSType = theory.spriteObjects[s.stype].className
 					# embed()
 					argsString += " %s=%s"%("stype", colorConvertedToSType)
 				except AttributeError:
 					pass
+
 
 				if "core" in stype:
 					stype = stype[stype.find("core.")+len("core."):]

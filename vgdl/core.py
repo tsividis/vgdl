@@ -233,7 +233,7 @@ class BasicGame(object):
         # conditional criteria
         self.conditions = []
         # resource properties
-        self.resources_limits = defaultdict(lambda: 2)
+        self.resources_limits = defaultdict(lambda: 4)
         self.resources_colors = defaultdict(lambda: GOLD)
 
         self.is_stochastic = False
@@ -243,6 +243,8 @@ class BasicGame(object):
         self.spriteDistribution = {}
         self.movement_options = {}
         self.all_objects = None
+
+        self.EOS = EOS((-1, -1))
 
         self.reset()
 
@@ -581,19 +583,20 @@ class BasicGame(object):
                 # special case for end-of-screen
                 if class2 == "EOS":
                     ss1, l1 = self.lastcollisions[class1]
+                    # print effect, class1, 'EOS'
+                    # print effect(class1, 'EOS', kwargs)
+                    # embed()
                     for s1 in ss1:
                         if not pygame.Rect((0,0), self.screensize).contains(s1.rect):
-                            effect(s1, None, self, **kwargs)
+                            # effect(s1, None, self, **kwargs)
+                            # print effect(s1, self.EOS, self, **kwargs)
+                            # embed()
+                            new_effects.append(effect(s1, self.EOS, self, **kwargs))
                     continue
 
-                # print self.lastcollisions['box']
                 # iterate over the shorter one
                 sprite_list1 = self.lastcollisions[class1][0][:]
                 sprite_list2 = self.lastcollisions[class2][0][:]
-                # if l1 < l2:
-                #     shortss, longss, switch = ss1, ss2, False
-                # else:
-                #     shortss, longss, switch = ss2, ss1, True
 
                 # score argument is not passed along to the effect function
                 score = 0
@@ -674,10 +677,17 @@ class BasicGame(object):
 
                         else:
                             # embed()
+                            # if sprite1.name == 'c2':
+                            #     embed()
                             new_effects.append(effect(sprite1, sprite2, self, **kwargs))
+            # print new_effects
+            # embed()
+            # print self.effectList
             self.effectList += [new_effect for new_effect in new_effects if new_effect]
             collision_set = collision_set.union(new_collisions)
 
+        # print self.effectList
+        # embed()
         self.kill_list = list(set(self.kill_list))
         # self.kill_list = dead[:]
         # if len(self.effectList) > 0:
@@ -1211,6 +1221,8 @@ class VGDLSprite(object):
         self.direction = None
         #TODO: change the choice to be from colors that are not taken?
         self.color = color or self.color or PURPLE#(140, 20, 140)
+        if self.color == ENDOFSCREEN:
+            self.ID = 'ENDOFSCREEN'
         self.colorName = colorDict[str(self.color)]
         # print 'color', self.color
 
@@ -1305,6 +1317,8 @@ class VGDLSprite(object):
     def __repr__(self):
         return str(self.name)+" at (%s,%s)"%(self.rect.left, self.rect.top)
 
+class EOS(VGDLSprite):
+    color = ENDOFSCREEN
 
 class Avatar(object):
     """ Abstract superclass of all avatars. """

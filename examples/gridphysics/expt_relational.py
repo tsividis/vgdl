@@ -156,8 +156,8 @@ BasicGame frame_rate=30
 """
 
 
-level_game_pairs = [[game0, level0], [game0, level1], [game0, level2],
-                    [game3, level3]]
+level_game_pairs = [[game0, level0], [game0, level1]]#, [game0, level2],
+                    # [game3, level3]]
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     import random, sys, time

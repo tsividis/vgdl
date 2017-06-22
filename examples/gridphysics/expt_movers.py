@@ -108,9 +108,9 @@ BasicGame frame_rate=30
         chaser > AStarChaser color=BROWN stype=avatar
         wall > ResourcePack color=BLACK
         missile > Missile
-            missile1 > color=YELLOW orientation=RIGHT speed=.5
-            missile2 > color=PINK orientation=RIGHT speed=.5
-            missile3 > color=LIGHTBLUE orientation=UP speed=.5
+            missile1 > color=YELLOW orientation=RIGHT speed=.2
+            missile2 > color=PINK orientation=RIGHT speed=.4
+            missile3 > color=LIGHTBLUE orientation=UP speed=.2
         goal > Passive color=GREEN
     LevelMapping
         w > wall
@@ -153,7 +153,7 @@ also vice-versa.
 """
 
 level_game_pairs = [[game, level1], [game, level2], [game, level3],
-                    [game, level4], [game, level4]]
+                    [game, level4]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

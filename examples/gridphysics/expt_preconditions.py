@@ -11,19 +11,26 @@ w                w
 w             g  w
 wwwwwwwwwwwwwwwwww
 """
-
 level1 = """
 wwwwwwwwwwwwwwwwww
 w b p   w    m   w
 w   p   w A  wwwww
-wpppp      p     w
-w     p p       ww
-ww   www         w
-wpppp          p w
-w   pp           w
-w g p    p    p  w
+w g p         p  w
 wwwwwwwwwwwwwwwwww
 """
+
+# level1 = """
+# wwwwwwwwwwwwwwwwww
+# w b p   w    m   w
+# w   p   w A  wwwww
+# wpppp      p     w
+# w     p p       ww
+# ww   www         w
+# wpppp          p w
+# w   pp           w
+# w g p    p    p  w
+# wwwwwwwwwwwwwwwwww
+# """
 
 level2 = """
 wwwwwwwwwwwwwwwwww
@@ -129,7 +136,7 @@ BasicGame frame_rate=30
         goal > Passive color=GOLD
         box > Passive color=ORANGE
         medicine > Resource limit=4 color=WHITE
-        poison > Resource limit=3 color=RED
+        poison > Resource limit=3 color=PINK
         suit > Resource limit=1 color=GREEN
         wall > Immovable color=BLACK
     LevelMapping
@@ -157,8 +164,8 @@ BasicGame frame_rate=30
         SpriteCounter stype=goal limit=0 win=True
 """
 
-level_game_pairs = [[game, level0], [game, level1], [game, level2],
-                    [game, level3]]
+level_game_pairs = [[game, level0], [game, level1]]#, [game, level2],
+                    # [game, level3]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

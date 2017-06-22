@@ -1,97 +1,109 @@
 level="""
-4444444444444444444444
-4    5   6    4  4 4 4
-4  5 4 6      45  5 44
-4 0  4     6  5   55 4
-4444444444444444444 44
-4   42 6  4 4    4  44
-4444 5    4 5 4  4   4
-4    344 2    4  44 44
-4  4  4 4 4   4     44
-4444444444444444444444
+5555555555555555555555555555
+5     2   5  3  5          5
+5000000077770007700070000089
+b000777700007770700007000079
+555   55   555    555  55555
+c44   44    6     444      5
+566   66     6   666     6 5
+5                          5
+5555555555555555555555555555
 """
 game = """
 BasicGame
 	SpriteSet
 		avatar > MovingAvatar color=DARKBLUE
-		c3 > ResourcePack color=LIGHTBLUE
-		c2 > Resource color=PINK
-		c7 > Resource color=ORANGE
-		c6 > ResourcePack color=GREEN
-		c5 > Resource color=DARKGRAY
-		c4 > Resource color=GOLD
+		c3 > Missile color=BROWN speed=0.5 orientation=LEFT
+		c2 > ResourcePack color=BLUE
+		c7 > Missile color=RED speed=0.5 orientation=RIGHT
+		c6 > Resource color=BLACK
+		c5 > Missile color=ORANGE speed=0.5 orientation=RIGHT
+		c4 > Resource color=GREEN
+		safety > Resource color=RESOURCETOADD
 	InteractionSet
 		c3 c5 > killSprite
 		c5 c3 > killSprite
-		c7 c6 > killSprite
+		c7 c6 > nothing
 		c2 c4 > killSprite
 		c4 c2 > killSprite
-		c5 EOS > stepBack
-		c6 avatar > bounceForward
-		c4 c5 > stepBack
+		c5 EOS > wrapAround offset=0
+		avatar c6 > stepBack
+		c4 c5 > killSprite
+		c5 c4 > killSprite
 		c3 c4 > killSprite
 		c4 c3 > killSprite
 		c2 c5 > killSprite
 		c5 c2 > killSprite
 		c4 EOS > stepBack
-		avatar c7 > killSprite
+		c7 avatar > killSprite
+		c7 avatar > killIfOtherHasMore resource=safety limit=0
 		c5 c7 > killSprite
 		c7 c5 > killSprite
-		c3 avatar > killSprite
-		c2 c6 > killSprite
-		c6 c2 > killSprite
-		c4 c6 > bounceForward
+		avatar c3 > changeResource resource=safety limit=4 value=1
+		avatar c3 > pullWithIt
+		c6 c2 > nothing
+		c4 c6 > killSprite
+		c6 c4 > killSprite
 		c3 c7 > killSprite
 		c7 c3 > killSprite
 		c2 c2 > killSprite
-		c6 c5 > stepBack
-		c7 EOS > stepBack
-		c3 c3 > killSprite
-		c3 EOS > stepBack
+		c5 c6 > nothing
+		c7 EOS > wrapAround offset=0
+		c4 avatar > killSprite
+		c4 avatar > killIfOtherHasMore resource=safety limit=0
+		c3 EOS > killSprite
 		c2 c7 > killSprite
 		c7 c2 > killSprite
 		c4 c7 > killSprite
 		c7 c4 > killSprite
-		c6 c3 > nothing
-		c6 c6 > stepBack
-		c2 c3 > killSprite
-		c3 c2 > killSprite
+		c3 c6 > nothing
+		c6 c6 > nothing
+		c2 c3 > nothing
 		c7 c7 > killSprite
 		c6 EOS > stepBack
-		avatar c5 > stepBack
-		avatar c4 > killSprite
+		c5 avatar > killSprite
+		c5 avatar > killIfOtherHasMore resource=safety limit=0
+		c3 c3 > nothing
 		c5 c5 > killSprite
 		c2 EOS > stepBack
-		c2 avatar > killSprite
+		avatar c2 > changeResource limit=4 resource=safety value=-1
 		c4 c4 > killSprite
 	TerminationSet
 		NoveltyTermination s1=c2 s2=c2 win=True
-		NoveltyTermination s1=c2 s2=c3 win=True
 		NoveltyTermination s1=c2 s2=c4 win=True
 		NoveltyTermination s1=c2 s2=c5 win=True
-		NoveltyTermination s1=c2 s2=c6 win=True
 		NoveltyTermination s1=c2 s2=c7 win=True
-		NoveltyTermination s1=c3 s2=c3 win=True
 		NoveltyTermination s1=c3 s2=c4 win=True
 		NoveltyTermination s1=c3 s2=c5 win=True
 		NoveltyTermination s1=c3 s2=c7 win=True
+		NoveltyTermination s1=c4 s2=avatar win=True
 		NoveltyTermination s1=c4 s2=c4 win=True
+		NoveltyTermination s1=c4 s2=c5 win=True
+		NoveltyTermination s1=c4 s2=c6 win=True
 		NoveltyTermination s1=c4 s2=c7 win=True
+		NoveltyTermination s1=c5 s2=avatar win=True
 		NoveltyTermination s1=c5 s2=c5 win=True
 		NoveltyTermination s1=c5 s2=c7 win=True
+		NoveltyTermination s1=c7 s2=avatar win=True
 		NoveltyTermination s1=c7 s2=c7 win=True
 		SpriteCounter stype=avatar limit=0 win=False
-		SpriteCounter stype=c2 limit=0 win=True
-		SpriteCounter stype=c7 limit=0 win=True
+		SpriteCounter stype=c3 limit=0 win=True
 	LevelMapping
 		0 > c2
 		1 > c3
-		2 > c4
-		3 > avatar
-		4 > c5
-		7 > c6 c3
+		e > avatar c2
+		2 > avatar
+		d > c7 c6
+		9 > c6 c6
+		8 > c6 c2
+		f > avatar c3 c2
 		5 > c6
+		b > c3 c6
+		4 > c5
+		3 > c4
+		7 > c3 c2
 		6 > c7
+		c > c5 c6
 """
 if __name__ == "__main__":
 	from vgdl.core import VGDLParser

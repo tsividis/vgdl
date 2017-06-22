@@ -16,22 +16,16 @@ from ai import AStarWorld
 from IPython import embed
 import core
 
-
-
 UP = (0, -1)
 DOWN = (0, 1)
 LEFT = (-1, 0)
 RIGHT = (1, 0)
 
-
-
 BASEDIRS = [UP, LEFT, DOWN, RIGHT]
-
-
 
 spriteToParams = {'Resource': [], \
                 'ResourcePack': [], \
-                'RandomNPC': [], \
+                'RandomNPC': ['cooldown'], \
                 'Chaser': ['fleeing', 'stype'], \
                 'AStarChaser': ['fleeing', 'speed', 'stype'], \
                 'OrientedSprite': ['orientation'], \
@@ -1034,6 +1028,7 @@ class SpriteCounter(Termination):
     def isDone(self, game):
         if game.numSprites(self.stype) <= self.limit:
             # embed()
+            print self.name, self.stype, self.limit
             return True, self.win
         else:
             return False, None
@@ -1062,12 +1057,23 @@ class NoveltyTermination(Termination):
     def isDone(self, game):
         for e in game.effectList:
             if (e[0]=='killSprite' or e[0] == 'transformTo'):
-                        try:
-                                    if ((game.all_objects[e[1]]['sprite'].name==self.s1 and game.all_objects[e[2]]['sprite'].name==self.s2) or\
-                                    (game.all_objects[e[1]]['sprite'].name==self.s2 and game.all_objects[e[2]]['sprite'].name==self.s1)) :
-                                                return True, self.win
+                        try:                            
+                            if ((game.all_objects[e[1]]['sprite'].name==self.s1 and game.all_objects[e[2]]['sprite'].name==self.s2) or\
+                                (game.all_objects[e[1]]['sprite'].name==self.s2 and game.all_objects[e[2]]['sprite'].name==self.s1)):
+                                print self.name, self.s1, self.s2
+                                return True, self.win
                         except:
+                            if e[1]=='ENDOFSCREEN':
+                                name1, name2 = 'ENDOFSCREEN', game.all_objects[e[2]]['sprite'].name
+                                if name1==self.s1 and name2==self.s2:
                                     return True, self.win
+                            elif e[2]=='ENDOFSCREEN':
+                                name2, name1 = 'ENDOFSCREEN', game.all_objects[e[1]]['sprite'].name
+                                if name1==self.s1 and name2==self.s2:
+                                    return True, self.win
+                            else:
+                                print "exception in NoveltyTermination", self.s1, self.s2
+                                embed()
         return False, None
 
 # ---------------------------------------------------------------------
@@ -1089,6 +1095,7 @@ def getColor(sprite):
 # ---------------------------------------------------------------------
 def nothing(sprite, partner, game):
     """ Returns no interaction """
+    # print ("nothing", sprite.rect, partner.rect, colorDict[str(sprite.color)], colorDict[str(partner.color)])
     return ("nothing", sprite.ID, partner.ID)
 
 def killSprite(sprite, partner, game): ## FLAG
@@ -1347,18 +1354,21 @@ def collectResource(sprite, partner, game): # FLAG
     # return ('collectResource', colorDict[str(partner.color)], colorDict[str(sprite.color)])
     return ('collectResource' , sprite.ID, partner.ID)
 
-def changeResource(sprite, partner, resourceColor, game, resource, value=1):
+def changeResource(sprite, partner, resourceColor, game, resource, value=1, limit=None):
     """ Increments a specific resource type in sprite """
+    # print "in changeResource"
+    # embed()
     sprite.resources[resource] = max(-1, min(sprite.resources[resource]+value, game.resources_limits[resource]))
     # NOTE: partner is the color of the resource (see _eventHandling() in core.py)
     # embed()
-    args = {'resource':resource, 'value':value}
+    args = {'resource':resource, 'value':value, 'limit':game.resources_limits[resource]}
+    print args
     return ('changeResource', sprite.ID, partner.ID, args)
 
 def changeScore(sprite, partner, game, value):
     game.score += value
     # print "score", game.score
-    args = {'value':value}
+    args = {'value': value}
     return ('changeScore', sprite.ID, partner.ID, args)
 
 def spawnIfHasMore(sprite, partner, game, resource, stype, limit=1):
@@ -1378,6 +1388,7 @@ def killIfHasMore(sprite, partner, game, resource, limit=1):
 def killIfOtherHasMore(sprite, partner, game, resource, limit=1):
     """ If 'partner' has more than a limit of the resource type given, sprite dies. """
     if partner.resources[resource] >= limit:
+        # embed()
         return killSprite(sprite, partner, game)
         # return ('killIfOtherHasMore' , sprite.ID, partner.ID)
 
@@ -1407,19 +1418,26 @@ def wrapAround(sprite, partner, game, offset=0):
         sprite.rect.top = game.screensize[1] - sprite.rect.size[1] * (1 + offset)
     sprite.lastmove = 0
     args = {'offset':offset}
-    return ('wrapAround', sprite.ID, 'EOS', args)
+    print ('wrapAround', sprite.colorName, partner.colorName, args)
+    return ('wrapAround', sprite.ID, partner.ID, args)
 
 def pullWithIt(sprite, partner, game):
     """ The partner sprite adds its movement to the sprite's. """
     if not oncePerStep(sprite, game, 'lastpull'):
         return
+    # print "in pullWithIt"
+    # embed()
     tmp = sprite.lastrect
     v = unitVector(partner.lastdirection)
     sprite._updatePos(v, partner.speed * sprite.physics.gridsize[0])
+    # except:
+        # print "in pullwithit"
+        # embed()
     if isinstance(sprite.physics, ContinuousPhysics):
         sprite.speed = partner.speed
         sprite.orientation = partner.lastdirection
     sprite.lastrect = tmp
+
     return ('pullWithIt' , sprite.ID, partner.ID)
 
 def collideFromAbove(sprite, partner, game):
@@ -1473,7 +1491,9 @@ def cannotActivateSwitch(sprite, partner, game):
 #     Sprite Induction
 # ---------------------------------------------------------------------
 ## TODO: Make sure you put these other types back when you fix sprite induction!!
-sprite_types = [Resource, ResourcePack, RandomNPC, Missile, Chaser] #removed Immovable, Passive, AStarChaser,
+sprite_types = [Resource, ResourcePack, RandomNPC, Missile, Chaser] #removed Chaser, Immovable, Passive, AStarChaser,
+
+
 def getSpeed(params):
     """
     params = a dict mapping sprite attributes to values
@@ -1552,6 +1572,8 @@ def setSpriteParams(param, sprite):
             sprite.orientation = param[p]
         elif p == "stype":
             sprite.stype = param[p]
+        elif p == "cooldown":
+            sprite.cooldown = param[p]
 
 
 def updateOptions(game, sprite_type, current_sprite, params={}):
@@ -1716,7 +1738,7 @@ def initializeDistribution(sprite_types, objectColors):
     initial_distribution = {"OTHER": {'prob': catch_all_prior, 'args': {}}}
 
     stationary_sprites = [Resource, ResourcePack] #removed Immovable, Passive
-    moving_sprites = [RandomNPC, Chaser, OrientedSprite, Missile] # removed AStarChaser
+    moving_sprites = [RandomNPC, OrientedSprite, Missile, Chaser, AStarChaser] # removed Chaser, AStarChaser
 
     moving_sprite_prob = .1
     for sprite_type in sprite_types:
@@ -1728,7 +1750,6 @@ def initializeDistribution(sprite_types, objectColors):
             args = initializeDistributionArgs(sprite_type, objectColors)
 
             initial_distribution[sprite_type] = {'prob': (moving_sprite_prob)/(len(moving_sprites)), 'args': args}
-
 
     return initial_distribution
 
@@ -1743,7 +1764,8 @@ def initializeDistributionArgs(sprite_type, objectColors):
         args[attribute] = {v: 1./len(values) for v in values}
 
     def initializeSpeed(args):
-        speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1., 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1]
+        speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1., 
+        1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1]
         initializeProperty(args, 'speed', speedValues)
 
     def initializeOrientation(args):
@@ -1758,6 +1780,10 @@ def initializeDistributionArgs(sprite_type, objectColors):
     def initializeStype(args):
         stypeValues = objectColors
         initializeProperty(args, 'stype', stypeValues)
+    
+    def initializeCooldown(args):
+        stypeValues = [1]
+        initializeProperty(args, 'cooldown', stypeValues)
 
     args = {}
     spriteParams = spriteToParams[sprite_type.__name__]
@@ -1770,6 +1796,8 @@ def initializeDistributionArgs(sprite_type, objectColors):
             initializeOrientation(args)
         elif s=='stype':
             initializeStype(args)
+        elif s=='cooldown':
+            initializeCooldown(args)
 
     return args
 
@@ -1931,6 +1959,8 @@ def sampleFromDistribution(curr_distribution, all_objects):
         lst.sort()
         probs = [sprite_possibilities[l]['prob'] for l in lst]
         # print obj_type, [(l, sprite_possibilities[l]['prob']) for l in lst]
+        # print "in sample"
+        # embed()
         s_probs = softmax(probs, .01)
         index = np.random.choice(range(len(probs)), p=s_probs)
         sprite_type = lst[index] ##you might also want to return sprite_possibilities[lst[index]], which is the associated probability.
@@ -1955,6 +1985,7 @@ def sampleFromDistribution(curr_distribution, all_objects):
 
 
         setSpriteParams(param, s) # set the parameters for sprite s
+
         sample.append(s)
 
     return sample
@@ -1984,6 +2015,8 @@ def spriteInduction(game, step, old_outcome=None):
         ## every time you act, make sure there aren't new objects
         ## if there are, update spriteDistribution etc.
         objects = game.getObjects()
+        # print "step1"
+        # print objects.keys()
         for sprite in objects:
             if sprite not in game.spriteDistribution:
                 game.all_objects[sprite] = objects[sprite]
@@ -1992,6 +2025,11 @@ def spriteInduction(game, step, old_outcome=None):
     elif step == 2:
         ## See the update options for each sprite type the sprite could be
         objects = game.getObjects()
+        notUpdated = [s for s in objects.keys() if s not in game.spriteDistribution.keys()]
+        if notUpdated:
+            print "step 2: not in sprite distribution:", notUpdated
+            embed()
+
         game = game                                               # Save game state
         for sprite in game.spriteDistribution.keys():                  # Keys are the IDs of the game objects
             for sprite_type in game.spriteDistribution[sprite].keys(): # Check each potential sprite type
@@ -2012,6 +2050,10 @@ def spriteInduction(game, step, old_outcome=None):
                             ##we are sprite_obj, and we are updating the options for where it could be next contingent on its being 'sprite_type'
                             # given a set of potential attribute values, update the movement options
                             # for this attribute tuple (i.e. candidate set of parameters)
+        # logs = [s for s in game.spriteDistribution.keys() if objects[s]['features']['color']=='BROWN']
+        # print "logs:"
+        # print "just updated options"
+        # embed()
 
     elif step==3:
         # specialID = [k for k in game.all_objects.keys() if game.all_objects[k]['features']['color']=='LIGHTBLUE'][0]
@@ -2021,15 +2063,23 @@ def spriteInduction(game, step, old_outcome=None):
         # print game.spriteDistribution[specialID][ch]
         # print game.all_objects[specialID]['sprite']
         # print specialID
-        # embed()
         ## Sprite Induction Part 2: Update sprite distribution based on observations
         objects = game.getObjects()
+        notUpdated = [s for s in objects.keys() if s not in game.spriteDistribution.keys()]
+        # if notUpdated:
+            # print "Step 3: not in sprite distribution:", notUpdated
+            # embed()
+        # logs = [s for s in game.spriteDistribution.keys() if objects[s]['features']['color']=='BROWN']
+        # print "logs:"
+        # print logs
+        # print "before updateDistribution"
+        # embed()
         for sprite in game.spriteDistribution.keys():        # Keys are the IDs of the game objects
             if sprite in objects.keys():                # Sprite may have been killed
                 sprite_obj = objects[sprite]["sprite"]
                 # if sprite_obj.name!='avatar':
                     # if sprite not in game.collision_objects and sprite_obj.name != 'avatar':
-                if all([sprite not in e for e in game.effectList]) and sprite not in game.ignoreList and sprite_obj.name != 'avatar':
+                if all([sprite not in e for e in game.effectList if e[0]!='nothing']) and sprite not in game.ignoreList and sprite_obj.name != 'avatar':
                     # only update the distribution in this fashion if there are no events for this
                     # time step involving this sprite.
                     outcome = objects[sprite]["position"]

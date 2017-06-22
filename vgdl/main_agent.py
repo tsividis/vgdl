@@ -8,6 +8,7 @@ from theory_template import TimeStep, Precondition, InteractionRule, Termination
 SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
 generateTheoryFromGame
 import os, subprocess, shutil
+from collections import defaultdict
 import WBP
 import importlib
 import numpy as np
@@ -24,7 +25,7 @@ class Agent:
 		self.gameString = None
 		self.levelString = None
 		self.annealingFactor = .9
-		self.max_nodes = 100000
+		self.max_nodes = 1000
 		self.hypotheses = []
 		self.symbolDict = None
 		self.finalEventList = []
@@ -55,7 +56,10 @@ class Agent:
 		## Initialize multiple VRLEs, each corresponding to one hypothesis in self.hypotheses
 		VRLEs = []
 		# print "in VrleInitPhase.", len(self.hypotheses), "hypotheses"
-		for hypothesis in self.hypotheses:
+		# if len(self.hypotheses)>1:
+		# 	print "more than one hypothesis"
+		# 	embed()
+		for hypothesis in self.hypotheses[0:1]:
 			tempHypothesis = copy.deepcopy(hypothesis)
 			tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
 			tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
@@ -64,12 +68,15 @@ class Agent:
 			# if self.fakeInteractionRules:
 				# tempHypothesis.display()
 			VRLEs.append(self.initializeVrle(tempHypothesis))
+		# embed()
 		return VRLEs
 
 	def initializeHypotheses(self, allObjects, learnSprites=True):
 		if learnSprites:
-			observe(self.rle, 3)
+			observe(self.rle, 5)
 			spriteTypeHypothesis = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects)
+			# print "sampled hypothesis"
+			# embed()
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 			initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
 		else:
@@ -113,12 +120,11 @@ class Agent:
 				episodes.append((n_level, steps, win, score))
 				allStatesEncountered.extend(statesEncountered)
 				levelEffectsEncountered.append(effectsEncountered)
-				VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
-				persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
-
+				# VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
+				# persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
 				i += 1
-				if i >=10:
-					break
+				# if i >=10:
+					# break
 			if heatmap:
 				self.makeHeatmap(allStatesEncountered, '{}_{}_level{}_heatmap.pdf'.format(
 					self.gameFilename[self.gameFilename.find('expt'):],
@@ -126,14 +132,13 @@ class Agent:
 
 			allEffectsEncountered.append(levelEffectsEncountered)
 
-		embed()
 		output = {'modelType':self.modelType,
 					'gameName': self.gameFilename[self.gameFilename.find('expt'):],
 					'condition': 'no_score',
 					'episodes' : episodes}
 
 		write_to_csv('pilotModelRuns.csv', output)
-		self.makeMovie()
+		# self.makeMovie()
 
 	def makeHeatmap(self, statesEncountered, filename):
 		from vgdl.plotting import featurePlot
@@ -254,13 +259,11 @@ class Agent:
 			if not quitting:
 				for i, action in enumerate(solution):
 					self.hypotheses[0].dryingPaint = set()
-					hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses[0], statesEncountered)
+					hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered)
 					effectsEncountered.extend(effects)
 					steps +=1
 					if theory_change_flag:
-						del self.hypotheses[0]
 						self.hypotheses = hypotheses
-						# self.hypotheses.extend(hypotheses)
 						break
 					ended, win = self.rle._isDone()
 					if ended:
@@ -268,7 +271,7 @@ class Agent:
 
 					# Check for disparities between plan and reality
 					# (e.g. stochastic effects)
-					if self.rle._game.is_stochastic and i>0:
+					if self.rle._game.is_stochastic and i>-1:
 					# if True:
 						try:
 							if any(np.where(list(gameString_array[i+1]))[0] !=
@@ -340,9 +343,8 @@ class Agent:
 		[self.new_objects.pop(k, None) for k in self.new_objects.keys() if self.new_objects[k]>5] ## don't track items once we've updated the theory
 		return hypotheses
 
-	def executeStep(self, action, hypothesis, statesEncountered):
+	def executeStep(self, action, hypotheses, statesEncountered):
 
-		hypotheses = [hypothesis]
 		theory_change_flag = False
 
 
@@ -350,16 +352,48 @@ class Agent:
 		# spriteInduction(self.rle._game, step=1)
 		# spriteInduction(self.rle._game, step=2)
 
+		# try:
+		# 	agentState = dict(self.rle._game.getAvatars()[0].resources)
+		# 	self.rle.agentStatePrev = agentState
+		# # If agent is killed before we get agentState
+		# except Exception as e:
+		# 	agentState = self.rle.agentStatePrev
+		# 	print "didn't find agentState resources"
+		# 	embed()
+
+
+		res = self.rle.step(action)
+
 		try:
 			agentState = dict(self.rle._game.getAvatars()[0].resources)
+			for e in res['effectList']:
+				if 'changeResource' in e:
+					changes = e[3]
+					if changes['value'] < 0:
+						# ipdb.set_trace()
+						# undo one negative change to account for eventhandler ordering
+						agentState[changes['resource']] -= changes['value']
+						break
 			self.rle.agentStatePrev = agentState
 		# If agent is killed before we get agentState
 		except Exception as e:
-			agentState = self.rle.agentStatePrev
-			print "didn't find agentState resources"
-			embed()
+			agentState = defaultdict(lambda:0)
+			ignored_negative_change = False
+			for e in res['effectList']:
+				if 'changeResource' in e:
+					changes = e[3]
+					if changes['value'] > 0 or ignored_negative_change:
+						agentState[changes['resource']] += changes['value']
+					else:
+						ignored_negative_change = True
+			self.rle.agentStatePrev = agentState
 
-		res = self.rle.step(action)
+			# agentState = self.rle.agentStatePrev
+
+		# if len([e for e in res['effectList'] if e[0]=='changeResource'])>0:
+		# 	print res['effectList']
+		# 	print "called changeResource"
+		# 	embed()
 
 		hypotheses = self.manageNewObjects(hypotheses)
 
@@ -369,6 +403,7 @@ class Agent:
 
 
 		# spriteInduction(self.rle._game, step=3)
+
 		effects = translateEvents(res['effectList'], self.all_objects, self.rle)
 
 		all_effects = [item for sublist in [e['effectList'] for e in self.finalEventList] for item in sublist]
@@ -404,17 +439,23 @@ class Agent:
 		 	# - Only one resource can change for each timestep
 			# - The first time a resource changes, it goes from 0 to a positive
 			#   value
-			for change_resource in [e[3] for e in event['effectList'] if 'changeResource' in e]:
-				resource = change_resource['resource']
-				val = change_resource['value']
+			for change_resource_effect in [e[3] for e in event['effectList'] if 'changeResource' in e]:
+				resource = change_resource_effect['resource']
+				val = change_resource_effect['value']
+				limit = change_resource_effect['limit']
+
 				# print "adding fake rules"
 				# import ipdb; ipdb.set_trace()
-				if resource not in self.seen_resources and val>0:
+				# ipdb.set_trace()
+
+				if (resource not in self.seen_resources and val>0):
 					self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
 					self.fakeInteractionRules = list(set(self.fakeInteractionRules))
 					# Add resource change to seen_resources list
 					self.seen_resources.append(resource)
-
+				elif agentState[resource]==limit:
+					self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
+					self.fakeInteractionRules = list(set(self.fakeInteractionRules))
 
 		if event['effectList']:
 			[t.updateTerminations(event=event) for t in hypotheses]
@@ -434,7 +475,7 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.demo_helper"
 
-	filename = "examples.gridphysics.expt_push_boulders"
+	filename = "examples.gridphysics.frogs"
 
 	# filename = "examples.gridphysics.expt_physics_sharpshooter"
 	# filename = "examples.gridphysics.demo_transform_relational"

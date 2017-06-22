@@ -106,7 +106,7 @@ BasicGame frame_rate=30
         avatar > MovingAvatar color=DARKBLUE cooldown=0#6
         chaser > VGDLSprite cooldown=8
             randomChaser > RandomNPC color=WHITE
-            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=8
+            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=0
             goodChaser > AStarChaser color=RED stype=box2
         forcefield > Passive color=PURPLE
         box > Passive
