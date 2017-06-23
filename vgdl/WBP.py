@@ -543,6 +543,7 @@ class Node():
 
 		for i in range(1,3):
 			for c in itertools.combinations(self.state, i):
+				c = tuple(sorted(c))
 				if self.WBP.trueAtoms[c] == 0:
 					self.candidates.append(c)
 		self.updateNovelty()

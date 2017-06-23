@@ -2367,17 +2367,19 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 	sortedInteractions = []
 	for pair in sortedInteractionDict:
-		killInteractions, scoreChangeInteractions, nonKillInteractions = [], [], []
+		killInteractions, scoreChangeInteractions, nonKillInteractions, changeResourceInteractions = [], [], [], []
 		for interactionRule in sortedInteractionDict[pair]:
 			if "kill" in interactionRule.interaction:
 				# check whether this is a killing interaction
 				killInteractions.append(interactionRule)
 			elif "changeScore" in interactionRule.interaction:
 				scoreChangeInteractions.append(interactionRule)
+			elif "changeResource" in interactionRule.interaction:
+				changeResourceInteractions.append(interactionRule)
 			else:
 				nonKillInteractions.append(interactionRule)
 
-		sortedInteractions += scoreChangeInteractions + killInteractions + nonKillInteractions
+		sortedInteractions += scoreChangeInteractions + changeResourceInteractions + killInteractions + nonKillInteractions
 		# make sure that killing interactions get processed before interactions
 		# that don't kill.
 

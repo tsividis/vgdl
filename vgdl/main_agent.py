@@ -385,6 +385,7 @@ class Agent:
 					if changes['value'] > 0 or ignored_negative_change:
 						agentState[changes['resource']] += changes['value']
 					else:
+						agentState[changes['resource']] += 0
 						ignored_negative_change = True
 			self.rle.agentStatePrev = agentState
 
@@ -475,7 +476,7 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.demo_helper"
 
-	filename = "examples.gridphysics.frogs"
+	filename = "examples.gridphysics.frogs2"
 
 	# filename = "examples.gridphysics.expt_physics_sharpshooter"
 	# filename = "examples.gridphysics.demo_transform_relational"

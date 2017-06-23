@@ -1362,7 +1362,7 @@ def changeResource(sprite, partner, resourceColor, game, resource, value=1, limi
     # NOTE: partner is the color of the resource (see _eventHandling() in core.py)
     # embed()
     args = {'resource':resource, 'value':value, 'limit':game.resources_limits[resource]}
-    print args
+    # print args
     return ('changeResource', sprite.ID, partner.ID, args)
 
 def changeScore(sprite, partner, game, value):
@@ -1418,7 +1418,7 @@ def wrapAround(sprite, partner, game, offset=0):
         sprite.rect.top = game.screensize[1] - sprite.rect.size[1] * (1 + offset)
     sprite.lastmove = 0
     args = {'offset':offset}
-    print ('wrapAround', sprite.colorName, partner.colorName, args)
+    # print ('wrapAround', sprite.colorName, partner.colorName, args)
     return ('wrapAround', sprite.ID, partner.ID, args)
 
 def pullWithIt(sprite, partner, game):

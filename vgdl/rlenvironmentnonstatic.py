@@ -128,7 +128,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                     gameString += self.symbolDict['avatar']
                 else:
                     spriteIndex = int(round(math.log(state[i][j],2)))-1
-                    if state[i][j] != 2**(spriteIndex+1):
+                    if state[i][j]%2 == 1:
+                        gameString += "X"
+                    elif state[i][j] != 2**(spriteIndex+1):
                         gameString += "$"
                     else:
                         # spriteOverlap = True
