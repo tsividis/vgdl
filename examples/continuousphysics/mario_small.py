@@ -34,13 +34,13 @@ wwwwwwwwwwww
 # wwww   wwww        2       w
 # wwwwwwwwww      wwww       w
 # """
-
+# 
 
 game = """
 BasicGame
     SpriteSet 
         avatar > MarioAvatar strength=20 physicstype=GravityPhysics color=WHITE
-        goomba     > Walker orientation=LEFT color=BROWN physicstype=GravityPhysics
+        goomba > Walker orientation=LEFT color=BROWN physicstype=GravityPhysics
         goal > Immovable color=GREEN
         wall > Immovable color=BLACK
             

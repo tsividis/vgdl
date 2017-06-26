@@ -275,15 +275,16 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # update sprites
         if onlyavatar:
             
-            if action != 0:
-                self._avatar.update(self._game)
+            #if action != 0:
+            #    self._avatar.update(self._game)
+            self._avatar.update(self._game)
         
         else:
             
             for s in self._game:
                 
-                if s == self._avatar and action == 0:
-                    continue
+                #if s == self._avatar and action == 0:
+                #    continue
                 
                 if s not in self._game.kill_list:
                     #print("A")

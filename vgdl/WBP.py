@@ -14,6 +14,7 @@ from threading import Thread
 from collections import defaultdict, deque
 import time
 import ipdb
+import heapq
 import copy
 from threading import Lock
 from Queue import Queue
@@ -30,6 +31,7 @@ NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', NONE: 'wait'}
 LIMIT = 2
+WALL_EDGE = 1
 MAX_TIMES_IN_SQUARE = sys.maxint
 
 ## Base class for width-based planners (IW(k) and 2BFS)
@@ -51,7 +53,7 @@ class WBP():
 		self.maxNumObjects = 6
 		self.trackTokens = False
 		self.vecSize = None
-		self.addWaitAction = False
+		self.addWaitAction = True
 		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
@@ -108,10 +110,10 @@ class WBP():
 				vert = (wall[0],wall[1]+y)
 				horiz = (wall[0]+x,wall[1])
 				if diag in graph and horiz in graph and vert in graph:
-					edges[(vert,diag)] = 2
-					edges[(diag,vert)] = 2
-					edges[(horiz,diag)] = 2
-					edges[(diag,horiz)] = 2
+					edges[(vert,diag)] = WALL_EDGE
+					edges[(diag,vert)] = WALL_EDGE
+					edges[(horiz,diag)] = WALL_EDGE
+					edges[(diag,horiz)] = WALL_EDGE
 		
 
 		return graph, edges
@@ -160,17 +162,19 @@ class WBP():
 	def grid(self,loc):
 		return (loc[0]/self.square_size[0],loc[1]/self.square_size[1])
 
-	#distance from location to SINGLE goal
+	#return geodesic distance between two locations
 	def geoDist(self,loc1,loc2):
 		
 		grid1= self.grid(loc1)
 		grid2= self.grid(loc2)
 
+		
 		x1 = loc1[0]/float(self.square_size[0]) - grid1[0]
 		y1 = loc1[1]/float(self.square_size[1]) - grid1[1]
 		x2 = loc2[0]/float(self.square_size[0]) - grid2[0]
 		y2 = loc2[1]/float(self.square_size[1]) - grid2[1]
 
+		#smooth out distances at grid vertices to calculate distances between points at interior of squares
 		dist = 0
 		a1 = self.loop4d()
 		a2 = self.loop4d()
@@ -179,9 +183,8 @@ class WBP():
 				if all(i >= j for i, j in zip(exp,coord)):
 					val = self.comp_exp((x1,y1,x2,y2),exp)
 					if val:
-						dist += (1 if (sum(coord)%2 == sum(exp)%2) else -1)*val*self.distances[(grid1[0]+coord[0],grid1[1]+coord[1])][(grid2[0]+coord[2],grid2[1]+coord[3])]
-					
-
+						dist += (1 if (sum(coord)%2 == sum(exp)%2) else -1)*val* \
+						self.distances[(grid1[0]+coord[0],grid1[1]+coord[1])][(grid2[0]+coord[2],grid2[1]+coord[3])]
 		
 		return dist
 
@@ -221,12 +224,18 @@ class WBP():
 		## Note: if an object that isn't instantiated in the beginning is of a class that
 		## spacebar applies to, we won't pick up on it here.
 		shootingClasses = ['MarioAvatar', 'ClimbingAvatar', 'ShootAvatar', 'Switch', 'FlakAvatar']
+		#embed()
 		classes = [str(o[0].__class__) for o in self.rle._game.sprite_groups.values() if len(o)>0]
 		spacebarAvailable = False
+		noUp = False
 		for sc in shootingClasses:
 			if any([sc in c for c in classes]):
 				spacebarAvailable = True
+				if sc == 'MarioAvatar':
+					noUp = True
 				break
+
+
 		if spacebarAvailable:
 			self.actions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
 		else:
@@ -234,6 +243,9 @@ class WBP():
 			self.actions = [K_RIGHT,K_UP, K_DOWN, K_LEFT]
 		if self.addWaitAction:
 			self.actions.append(NONE)
+		if noUp:
+			self.actions.remove(K_UP)
+			self.actions.remove(K_DOWN)
 		return
 
 	#returns set of atom values
@@ -289,23 +301,34 @@ class WBP():
 		return current
 
 	#selects node with greatest reward (only considering those w/ novelty = 1,2), using novelty as tiebreaker
-	def rewardSelection(self, QReward, QNovelty):
-		# acceptableNodes = QReward
+	#removed the max times in each square thing
+	
+	def rewardSelection(self, QReward, QNovelty): #12s
 
-		acceptableNodes = filter(lambda n: (n.novelty<3 and self.avatar_locs_disc[n.rle._rect2pos(n.rle._game.sprite_groups["avatar"][0].rect)] < MAX_TIMES_IN_SQUARE), QReward)
-		#QReward = filter(lambda n: (n.novelty<3 and self.avatar_locs_disc[n.rle._rect2pos(n.rle._game.sprite_groups["avatar"][0].rect)] < MAX_TIMES_IN_SQUARE), QReward)
-		# if len(acceptableNodes)==0:
-			# acceptableNodes = QReward
-			# print "Removed filter"
-			# embed()
-		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
-		#QReward = sorted(QReward, key=lambda n: (-n.intrinsic_reward, n.novelty))
-		
-		maxNodes = [x for x in bestNodes if x.intrinsic_reward == bestNodes[0].intrinsic_reward and x.novelty == bestNodes[0].novelty]
-		#maxNodes = [x for x in QReward if x.intrinsic_reward == QReward[0].intrinsic_reward and x.novelty == QReward[0].novelty]
-		#embed()
+		badNodes = []
+		for n in QReward:
+			if n.novelty >= 3:
+				badNodes.append(n)
+		for n in badNodes:
+			QReward.remove(n)
+
+		current = min(QReward)
+		QReward.remove(current)
+		return current
+
+
+	'''
+	def rewardSelection(self, QReward, QNovelty):
+
+		#acceptableNodes = filter(lambda n: n.novelty<3, QReward) #11s
+		QReward = filter(lambda n: n.novelty<3, QReward) #14s
+
+		#bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
+		QReward = sorted(QReward, key=lambda n: (-n.intrinsic_reward, n.novelty))
+
+		#maxNodes = [x for x in bestNodes if x.intrinsic_reward == bestNodes[0].intrinsic_reward and x.novelty == bestNodes[0].novelty]
+		maxNodes = [x for x in QReward if x.intrinsic_reward == QReward[0].intrinsic_reward and x.novelty == QReward[0].novelty]
 		try:
-			#current = bestNodes.pop(0)
 			current = random.choice(maxNodes)
 		except:
 			return None
@@ -315,28 +338,37 @@ class WBP():
 		except:
 			pass
 		return current
+		'''
+
 
 	def BFS(self):
 		QNovelty, QReward = [], []
+		#QReward = []
 		visited, rejected = [], []
 		start = Node(self.rle, self, [], None)
 		start.rle = self.rle
 		visited.append(start)
 		start.eval()
-		QNovelty.append(start)
+		#QNovelty.append(start)
 		QReward.append(start)
+		#heapq.heappush(QReward,start)
+		
 		i=0
 		path = []
 
 		print(actionDict)
-
+		#embed()
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
 			"""
 			if i%2==0:
 			else:
 			"""
 			# current = self.noveltySelection(QNovelty, QReward)
+			#embed()
 			current = self.rewardSelection(QReward, QNovelty)
+			#embed()
+			#QReward.remove(current)
+			#embed()
 			# print embed()
 
 			
@@ -356,6 +388,8 @@ class WBP():
 			
 			self.all_locs.append(self.findAvatarInRLE(current.rle))
 			#if current.actionSeq:
+			#	if current.actionSeq[-1]==0:
+			#		embed()
 			#	print actionDict[current.actionSeq[-1]]
 			#path.append(current.rle.show(indent=True))
 			current.updateNoveltyDict(QNovelty, QReward)
@@ -364,7 +398,8 @@ class WBP():
 			#print(self.avatar_locs_disc[self.rle._rect2pos(current.rle._game.sprite_groups["avatar"][0].rect)])
 			
 			#print current.heuristicVal
-			#embed()
+			#if i > 100:
+			#	embed()
 			visited.append(current)
 			self.avatar_locs.add(current.rle._rect2pos(current.rle._game.sprite_groups['avatar'][0].rect))
 
@@ -393,11 +428,12 @@ class WBP():
 					#path.append(child.rle.show(indent=True))
 					print("WIN!")
 					print i
-					return child, gameString_array
+					return child, gameString_array, i
 					#return child, gameString_array, path
 				else:
-					QNovelty.append(child)
+					#QNovelty.append(child)
 					QReward.append(child)
+					#heapq.heappush(QReward,child)
 			i+=1
 			#print i
 		self.solution = []#Node(self.rle, self, [], None)
@@ -428,17 +464,29 @@ class Node():
 		else:
 			self.rolloutArray = []
 
-		self.do_rollout = False
+		self.rand = random.random()
+
+		if self.parent is None:
+			self.depth = 1
+		else:
+			self.depth = self.parent.depth + 1
+
+	def __eq__(self,other):
+		return (-self.intrinsic_reward, self.novelty, self.rand) == (-other.intrinsic_reward, other.novelty, other.rand)
+
+	def __gt__(self,other):
+		return (-self.intrinsic_reward, self.novelty, self.rand) > (-other.intrinsic_reward, other.novelty, other.rand)
 
 
 ## when to trigger rollouts, if any
 ## rollout length
 ## repeating rollouts if death? e.g., are they optimistic?
 ## multiple samples??
-	def metabolics(self, rle, events, action, n=10, mult=.3):
+	def metabolics(self, rle, events, action, n=1000, mult=.3):
 
 		metabolic_cost = 1./n
-		if action==32:
+		#if action==32:
+		if action!=NONE:
 			metabolic_cost += (1-1./n)*mult
 		if len(events)>0:
 			# metabolic_cost = .3
@@ -446,7 +494,8 @@ class Node():
 				metabolic_cost += .3#(1-1./n)*mult
 			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
 			# 	metabolic_cost += 0.3
-		return 0.# metabolic_cost
+		return 0.0
+		#return metabolic_cost
 
 	def rollout(self, vrle):
 		
@@ -492,10 +541,10 @@ class Node():
 
 		# Check if condition is win or loss and multiply accordingly
 		if term.termination.win:
-			mult = -1
+			mult = -10
 		else:
 			# compute_second_order = False
-			mult = 10
+			mult = 1
 
 		# Get all types that kill or transform stype
 		killer_types = [
@@ -676,7 +725,6 @@ class Node():
 	def novel_squares(self,weight=0.0):
 		loc = self.rle._rect2pos(self.rle._game.sprite_groups["avatar"][0].rect)
 		return -self.WBP.avatar_locs_disc[loc]*weight
-	
 	def distVisited(self,weight=0.0):
 		center = self.WBP.visited[0]
 		n = float(self.WBP.visited[1])
@@ -779,8 +827,6 @@ class Node():
 		self.updateObjIDs(self.rle)
 		self.state = self.WBP.calculateAtoms(self.rle) #new atom values
 
-		
-
 		for i in range(1,3):
 			for c in itertools.combinations(self.state, i):
 				c = tuple(sorted(c))
@@ -793,18 +839,20 @@ class Node():
 			# embed()
 
 		## Try rollouts for aliens?
-		if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
+		#if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
 			#embed()
-			self.rolloutArray = self.rollout(self.rle)
+		#	self.rolloutArray = self.rollout(self.rle)
 			#print "in rollout"
 
 		self.heuristicVal = self.heuristics()
 		self.dist = self.distVisited()
 		self.novel_squares = self.novel_squares()
+		weight = 0.75
 
 		# print self.lastState._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost
-		self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
-		sum(self.rolloutArray) - self.metabolic_cost + self.dist + self.novel_squares
+		self.intrinsic_reward = self.rle._game.score + self.heuristicVal - \
+		self.metabolic_cost+sum(self.rolloutArray) + weight*self.depth 
+		
 		#embed()	
 		# self.intrinsic_reward = 0
 		return self.win
@@ -814,10 +862,12 @@ class Node():
 			self.novelty = 3
 		else:
 			self.novelty = min([len(c) for c in self.candidates])
+
 		return self.novelty
 
 	def updateNoveltyDict(self, QNovelty, QReward):
-		jointSet = list(set(QNovelty+QReward))
+		#jointSet = list(set(QNovelty)+set(QReward))
+		jointSet = list(QReward)
 		for c in self.candidates:
 			'''
 			if self.WBP.trueAtoms[c] == 0:
@@ -890,8 +940,9 @@ if __name__ == "__main__":
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
-	#gameFilename = "examples.continuousphysics.mario_small"
-	gameFilename = "examples.continuousphysics.simple"
+	gameFilename = "examples.continuousphysics.mario_small"
+	#gameFilename = "examples.continuousphysics.mario"
+	#gameFilename = "examples.continuousphysics.simple"
 	#gameFilename = "examples.continuousphysics.crossroad"
 
 	#gameFilename = "examples.gridphysics.simple_grid"
@@ -905,17 +956,17 @@ if __name__ == "__main__":
 	rle = rleCreateFunc()
 	
 	#embed()
-	fails = 0
+	times = []
 	#for i in range(10):
 	t1 = time.time()
 	p = WBP(rle, gameFilename)
 
 
-	#embed()
+	embed()
 	#	try:
-	last, gameString_array = p.BFS()
-	from core import VGDLParser
-	last.playBack(make_movie=True)
+	last, gameString_array, nodes = p.BFS()
+	#from core import VGDLParser
+	#last.playBack(make_movie=True)
 	#	except:
 	#		fails += 1
 	#embed()
@@ -927,6 +978,8 @@ if __name__ == "__main__":
 
 	#print("time:")
 	print time.time()-t1
+		#times.append(time.time() - t1)
+
 	embed()
 
 

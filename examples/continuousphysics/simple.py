@@ -1,16 +1,16 @@
 levels = {}
-i = 1
+i = 5
 
 game = """
 BasicGame
     SpriteSet
-        avatar > InertialAvatar color=WHITE 
+        avatar > InertialAvatar color=WHITE
         goal > Immovable color=GREEN
         wall > Immovable color=BLACK
         poison > Immovable color=RED
             
     TerminationSet
-        SpriteCounter stype=goal   win=True     
+        SpriteCounter stype=goal      win=True     
         SpriteCounter stype=avatar    win=False     
            
     InteractionSet
@@ -52,11 +52,11 @@ wwwwwwwwww
 """#works
 
 levels[3] = """
-wwwww
-w  Gw
-w   w
-wAw w
-wwwww
+wwwwwww
+w     w
+w     w
+wA w Gw
+wwwwwww
 """#doesnt terminate
 
 levels[4] = """
@@ -82,11 +82,13 @@ wwwwwwwwwwww
 
 levels[6] = """
 wwwwwww
-w G p w
 w     w
+w A G w
+w  w  w
+w  w  w
+w  w  w
+w G G w
 w     w
-w     w
-wA    w
 wwwwwww
 """
 

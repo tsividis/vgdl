@@ -848,6 +848,16 @@ class MarioAvatar(InertialAvatar):
     wait_step = 0
     airstrength = 1
     decay = .5
+
+    def declare_possible_actions(self):
+        from pygame.locals import K_LEFT, K_RIGHT, K_UP, K_DOWN
+        actions = {}
+        #actions["UP"] = K_UP
+        #actions["DOWN"] = K_DOWN
+        actions["LEFT"] = K_LEFT
+        actions["RIGHT"] = K_RIGHT
+        return actions
+
     def update(self, game):
         from pygame.locals import K_SPACE
 
@@ -856,7 +866,7 @@ class MarioAvatar(InertialAvatar):
         if action == None:
             action = [0, 0]
         action = list(action)
-
+        action[1]=0
         # presumibly, this means the sprite is 'landed'
         self.airstrength *= (1-self.decay)
         if self.last_vy == self.lastrect.y - self.rect.y:
@@ -878,7 +888,7 @@ class MarioAvatar(InertialAvatar):
         # this is pretty hacky. What if sprite doesn't move very fast?
         if self.wait_step > 2:
             self.jumping = False
-
+        
         self.physics.activeMovement(self, action)
 
         vx = self.orientation[0]*self.speed
