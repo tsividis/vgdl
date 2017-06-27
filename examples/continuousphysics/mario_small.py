@@ -4,18 +4,18 @@ VGDL example: Mario, jump around!
 @author: Tom Schaul
 '''
 level = """
-wwwwwwwwwwww
-w          w
-w          w
-w          w
-w        G1w
-w       wwww
-w          w
-w   www    w
-w A        w
-wwww   wwwww
-wwwwwwwwwwww
-"""
+wwwwwwwwwwwwwwwwwww
+w                 w
+w                 w
+w                 w
+w               1Gw
+w       wwwwwwwwwww
+w                 w
+w    ww           w
+w A               w
+wwww     wwwwwwwwww
+wwwwwwwwwwwwwwwwwww
+""" 
 
 
 # level = """

@@ -30,13 +30,13 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', NONE: 'wait'}
-LIMIT = 2
+LIMIT = 4
 WALL_EDGE = 1
 MAX_TIMES_IN_SQUARE = sys.maxint
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=5000):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=1000):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -396,7 +396,7 @@ class WBP():
 			current.updateCenter()
 			self.avatar_locs_disc[self.rle._rect2pos(current.rle._game.sprite_groups["avatar"][0].rect)]+=1
 			#print(self.avatar_locs_disc[self.rle._rect2pos(current.rle._game.sprite_groups["avatar"][0].rect)])
-			
+			#embed()
 			#print current.heuristicVal
 			#if i > 100:
 			#	embed()
@@ -482,7 +482,7 @@ class Node():
 ## rollout length
 ## repeating rollouts if death? e.g., are they optimistic?
 ## multiple samples??
-	def metabolics(self, rle, events, action, n=1000, mult=.3):
+	def metabolics(self, rle, events, action, n=10, mult=.3):
 
 		metabolic_cost = 1./n
 		#if action==32:
@@ -541,7 +541,7 @@ class Node():
 
 		# Check if condition is win or loss and multiply accordingly
 		if term.termination.win:
-			mult = -10
+			mult = -2
 		else:
 			# compute_second_order = False
 			mult = 1
@@ -847,7 +847,7 @@ class Node():
 		self.heuristicVal = self.heuristics()
 		self.dist = self.distVisited()
 		self.novel_squares = self.novel_squares()
-		weight = 0.75
+		weight = 0.5
 
 		# print self.lastState._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost
 		self.intrinsic_reward = self.rle._game.score + self.heuristicVal - \
@@ -941,6 +941,7 @@ if __name__ == "__main__":
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
 	gameFilename = "examples.continuousphysics.mario_small"
+	#gameFilename = "examples.continuousphysics.avoid_goomba"
 	#gameFilename = "examples.continuousphysics.mario"
 	#gameFilename = "examples.continuousphysics.simple"
 	#gameFilename = "examples.continuousphysics.crossroad"
@@ -949,6 +950,7 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
 	#gameFilename = "examples.gridphysics.expt_exploration_exploitation"
 	#gameFilename = "examples.continuousphysics.ptsp_simple"
+	#gameFilename = "examples.continuousphysics.ptsp"
 
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
@@ -962,7 +964,7 @@ if __name__ == "__main__":
 	p = WBP(rle, gameFilename)
 
 
-	embed()
+	#embed()
 	#	try:
 	last, gameString_array, nodes = p.BFS()
 	#from core import VGDLParser
