@@ -1,82 +1,142 @@
 
 level0 = """
-wwwwwwwwwwwwwwwwwwwwwww
-w   www   www   www   w
-w                     w
-w   www   www   www   w
-ww wwwww wwwww wwwww ww
-ww wwwww wwwww wwwww ww
-ww wwwww wwwww wwwww ww
-w   www   www   www   w
-w a     A             w
-w   www   www   www   w
-ww wwwww wwwww wwwww ww
-ww wwwww wwwww wwwww ww
-ww wwwww wwwww wwwww ww
-w   www   www   www   w
-w       b             p
-w   www   www   www   w
-wwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w   www   www   www   www   w
+w                           w
+w   www   www   www   www   w
+ww wwwww wwwww wwwww wwwww ww
+ww wwwww wwwww wwwww wwwww ww
+ww wwwww wwwww wwwww wwwww ww
+w   www   www   www   www   w
+w a           A           b w
+w   www   www   www   www   w
+ww wwwww wwwww wwwww wwwww ww
+ww wwwww wwwww wwwww wwwww ww
+ww wwwww wwwww wwwww wwwww ww
+w   www   www   www   www   w
+w                           w
+w   www   www   www   www   w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 level1 = """
-wwwwwwwwwwwwwwwwwwwwwww
-w   www   www   www   w
-w                     w
-w   www   www   www   w
-ww wwwww wwwww wwwww ww
-ww wwwwwwwwwww wwwww ww
-ww wwwww wwwww wwwww ww
-w   www   www   www   w
-w a  b  A             w
-w   www   www   www   w
-ww wwwww wwwww wwwww ww
-ww wwwww wwwww wwwww ww
-ww wwwww wwwww wwwww ww
-w   www   www   www   w
-w                     p
-w   www   www   www   w
-wwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w   www   www   www   www   w
+w                           w
+w   www   www   www   www   w
+ww wwwww wwwww wwwww wwwww ww
+wwbwwwww wwwww wwwww wwwww ww
+ww wwwww wwwww wwwww wwwww ww
+w   www   www   www   www   w
+w a  b     b  A             w
+w   www   www   www   www   w
+ww wwwww wwwww wwwww wwwww ww
+ww wwwww wwwww wwwww wwwww ww
+ww wwwww wwwww wwwww wwwww ww
+w   www   www   www   www   w
+w          b                w
+w   www   www   www   www   w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 level2 = """
-wwwwwwwwwwwwwwwwwwwwwww
-w   www   www   www   w
-w          w  d     d w
-w   www   www   www   w
-ww wwwww wwwww wwwww ww
-ww wwwww wwwww wwwwwwww
-ww wwwww wwwww wwwww ww
-w   www   www   www   w
-w       A     c     c w
-w   www   www   www   w
-ww wwwww wwwww wwwww ww
-ww wwwww wwwww wwwwwwww
-ww wwwww wwwww wwwww ww
-w   www   www   www   w
-w          w  n       p
-w   www   www   www   w
-wwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w   www   www   www   www   w
+w a  w                      w
+w   www   www   www   www   w
+ww wwwww wwwww wwwww wwwww ww
+wwcwwwww wwwww wwwww wwwww ww
+ww wwwww wwwww wwwww wwwww ww
+w   www   www   www   www   w
+w c  c  c     A             w
+w   www   www   www   www   w
+ww wwwww wwwww wwwww wwwww ww
+wwcwwwww wwwww wwwww wwwww ww
+ww wwwww wwwww wwwww wwwww ww
+w   www   www   www   www   w
+w b  w                      w
+w   www   www   www   www   w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 level3 = """
-wwwwwwwwwwwwwwwwwwwwwww
-w   www   www   www   w
-w          w  f     f w
-w   www   www   www   w
-ww wwwww wwwww wwwww ww
-ww wwwww wwwww wwwwwwww
-ww wwwww wwwww wwwww ww
-w   www   www   www   w
-w       A     e     e w
-w   www   www   www   w
-ww wwwww wwwww wwwww ww
-ww wwwww wwwww wwwwwwww
-ww wwwww wwwww wwwww ww
-w   www   www   www   w
-w          w  m       p
-w   www   www   www   w
-wwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w   www   www   www   www   w
+w d    d         b          w
+w   www   www   www   www   w
+ww wwwww wwwww wwwww wwwww ww
+wwbwwwwwbwwwwwxwwwww wwwww ww
+ww wwwww wwwww wwwww wwwww ww
+w   www   www   www   www   w
+w             A             w
+w   www   www   www   www   w
+ww wwwww wwwww wwwww wwwww ww
+ww wwwww wwwwwxwwwwwbwwwwwbww
+ww wwwww wwwww wwwww wwwww ww
+w   www   www   www   www   w
+w          b         d    d w
+w   www   www   www   www   w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+
+level4 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w   www   www   www x www   w
+w          b  d  c        d w
+w   www   www   www x www   w
+ww wwwww wwwww wwwww wwwww ww
+wwbwwwww wwwwwbwwwww wwwwwbww
+ww wwwww wwwww wwwww wwwww ww
+w   www   www   www   www   w
+w c           A           c w
+w   www   www   www   www   w
+ww wwwww wwwww wwwww wwwww ww
+wwbwwwww wwwwwbwwwww wwwwwbww
+ww wwwww wwwww wwwww wwwww ww
+w   www x www   www   www   w
+w d        c  d  b          w
+w   www x www   www   www   w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+
+level5 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w   www   www   www   www   w
+w    b  d  c  x     d       w
+w   www   www   www   www   w
+ww wwwww wwwwwcwwwww wwwww ww
+ww wwwwwbwwwww wwwww wwwww ww
+ww wwwww wwwww wwwww wwwww ww
+w   www   www   www   www   w
+p             A             w
+w   www   www   www   www   w
+ww wwwww wwwww wwwww wwwww ww
+ww wwwww wwwww wwwwwbwwwww ww
+ww wwwww wwwwwcwwwww wwwww ww
+w   www   www   www   www   w
+w       d     x  c  d  b    w
+w   www   www   www   www   w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+
+level6 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w   www x www   www   www   w
+w d  c        d  b          w
+w   www x www   www   www   w
+ww wwwww wwwww wwwww wwwww ww
+wwbwwwww wwwwwbwwwww wwwwwwww
+ww wwwww wwwww wwwww wwwww ww
+w   www   www   www   www   w
+w c           A             w
+w   www   www   www   www   w
+ww wwwww wwwww wwwww wwwww ww
+wwwwwwww wwwww wwwww wwwwwbww
+ww wwwww wwwww wwwwwcwwwww ww
+w   www   www   www   www   w
+w          b  d     x  c  d w
+w   www   www   www   www   w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 game0 = """
@@ -84,49 +144,48 @@ BasicGame frame_rate=30
     SpriteSet
         apple > Immovable color=ORANGE
         trap > Immovable color=YELLOW
-        goodkey1 > Immovable color=BLUE
-        goodkey2 > Immovable color=BROWN
-        badkey1 > Immovable color=GREEN
-        goodkey3 > Immovable color=PINK
-        nothing1 > Immovable color=LIGHTBLUE
-        nothing2 > Immovable color=LIGHTGREEN
+        key > Immovable color=BLUE
+        goodpair > Immovable color=BROWN
+        block > Immovable color=GREEN
         avatar > MovingAvatar color=WHITE
-        poison > Immovable color=BLACK
         wall > Immovable color=BLACK
     LevelMapping
         w > wall
         a > apple
         b > trap
-        c > goodkey1
-        d > goodkey2
-        e > badkey1
-        f > goodkey3
-        n > nothing1
-        m > nothing2
-        p > poison
+        c > key
+        d > goodpair
+        x > block
     InteractionSet
         avatar wall > stepBack
+        apple wall > stepBack
+        trap wall > stepBack
+        key wall > stepBack
+        goodpair wall > stepBack
+        block wall > stepBack
+
         apple avatar > killSprite
         avatar trap > killSprite
-        avatar poison > killSprite
+        key avatar > bounceForward
+        goodpair avatar > bounceForward
+        block avatar > bounceForward
 
-        goodkey1 avatar > bounceForward
-        goodkey2 avatar > bounceForward
-        goodkey3 avatar > bounceForward
-        badkey1 avatar > bounceForward
+        key key > killSprite
+        goodpair goodpair > killSprite
 
-        goodkey1 goodkey1 > killSprite
-        goodkey2 goodkey2 > killSprite
-        goodkey2 goodkey1 > stepBack
-        goodkey1 goodkey2 > stepBack
-        
-        badkey1 badkey1 > stepBack
-        goodkey3 goodkey3 > killSprite
-        badkey1 goodkey3 > stepBack
-        goodkey3 badkey1 > stepBack
-
-        avatar nothing1 > stepBack
-        avatar nothing2 > stepBack
+        key apple > stepBack
+        apple key > stepBack
+        key trap > stepBack
+        trap key > stepBack
+        apple trap > stepBack
+        trap apple > stepBack
+        block block > stepBack
+        goodpair key > stepBack
+        key goodpair > stepBack
+        goodpair block > stepBack
+        block goodpair > stepBack
+        block key > stepBack
+        key block > stepBack
 
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
@@ -138,113 +197,57 @@ BasicGame frame_rate=30
     SpriteSet
         apple > Immovable color=ORANGE
         trap > Immovable color=YELLOW
-        goodkey1 > Immovable color=BLUE
-        goodkey2 > Immovable color=BROWN
-        badkey1 > Immovable color=GREEN
-        goodkey3 > Immovable color=PINK
-        nothing1 > Immovable color=LIGHTBLUE
-        nothing2 > Immovable color=LIGHTGREEN
+        key > Immovable color=BLUE
+        goodpair > Immovable color=BROWN
+        block > Immovable color=GREEN
         avatar > MovingAvatar color=WHITE
-        poison > Immovable color=BLACK
         wall > Immovable color=BLACK
     LevelMapping
         w > wall
         a > apple
         b > trap
-        c > goodkey1
-        d > goodkey2
-        e > badkey1
-        f > goodkey3
-        n > nothing1
-        m > nothing2
-        p > poison
+        c > key
+        d > goodpair
+        x > block
     InteractionSet
         avatar wall > stepBack
+        apple wall > stepBack
+        trap wall > stepBack
+        key wall > stepBack
+        goodpair wall > stepBack
+        block wall > stepBack
+
         apple avatar > killSprite
         avatar trap > killSprite
-        avatar poison > killSprite
+        key avatar > bounceForward
+        goodpair avatar > bounceForward
+        block avatar > bounceForward
 
-        goodkey1 avatar > bounceForward
-        goodkey2 avatar > bounceForward
-        goodkey3 avatar > bounceForward
-        badkey1 avatar > bounceForward
+        key key > killSprite
+        goodpair goodpair > killSprite
 
-        goodkey1 goodkey1 > killSprite
-        goodkey2 goodkey2 > killSprite
-        goodkey2 goodkey1 > stepBack
-        goodkey1 goodkey2 > stepBack
-        
-        badkey1 badkey1 > stepBack
-        goodkey3 goodkey3 > killSprite
-        badkey1 goodkey3 > stepBack
-        goodkey3 badkey1 > stepBack
+        key apple > stepBack
+        apple key > stepBack
+        key trap > stepBack
+        trap key > stepBack
+        apple trap > stepBack
+        trap apple > stepBack
 
-        avatar nothing1 > stepBack
-        goodkey1 nothing1 > stepBack
-        goodkey2 nothing1 > stepBack
+        block block > stepBack
+        goodpair key > stepBack
+        key goodpair > stepBack
+        goodpair block > stepBack
+        block goodpair > stepBack
+        block key > stepBack
+        key block > stepBack
 
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
-        SpriteCounter stype=goodkey2 limit=0 win=True
+        SpriteCounter stype=goodpair limit=0 win=True
 """
 
-game2 = """
-BasicGame frame_rate=30
-    SpriteSet
-        apple > Immovable color=ORANGE
-        trap > Immovable color=YELLOW
-        goodkey1 > Immovable color=BLUE
-        goodkey2 > Immovable color=BROWN
-        badkey1 > Immovable color=GREEN
-        goodkey3 > Immovable color=PINK
-        nothing1 > Immovable color=LIGHTBLUE
-        nothing2 > Immovable color=LIGHTGREEN
-        avatar > MovingAvatar color=WHITE
-        poison > Immovable color=BLACK
-        wall > Immovable color=BLACK
-    LevelMapping
-        w > wall
-        a > apple
-        b > trap
-        c > goodkey1
-        d > goodkey2
-        e > badkey1
-        f > goodkey3
-        n > nothing1
-        m > nothing2
-        p > poison
-    InteractionSet
-        avatar wall > stepBack
-        apple avatar > killSprite
-        avatar trap > killSprite
-        avatar poison > killSprite
-
-        goodkey1 avatar > bounceForward
-        goodkey2 avatar > bounceForward
-        goodkey3 avatar > bounceForward
-        badkey1 avatar > bounceForward
-
-        goodkey1 goodkey1 > killSprite
-        goodkey2 goodkey2 > killSprite
-        goodkey2 goodkey1 > stepBack
-        goodkey1 goodkey2 > stepBack
-        
-        badkey1 badkey1 > stepBack
-        goodkey3 goodkey3 > killSprite
-        badkey1 goodkey3 > stepBack
-        goodkey3 badkey1 > stepBack
-
-        avatar nothing2 > stepBack
-        goodkey3 nothing2 > stepBack
-        badkey1 nothing2 > stepBack
-
-
-    TerminationSet
-        SpriteCounter stype=avatar  limit=0 win=False
-        SpriteCounter stype=goodkey3 limit=0 win=True
-"""
-
-level_game_pairs = [[game0,level0],[game0,level1],[game1,level2],[game2, level3]]#
+level_game_pairs = [[game0,level0],[game0,level1],[game0,level2],
+                    [game1,level3],[game1,level4],[game1,level5],[game1,level6]]#
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     import random, sys, time
@@ -260,7 +263,7 @@ if __name__ == "__main__":
         # index = random.choice(range(len(level_game_pairs)))
         for index, level in enumerate(level_game_pairs):
             wins = 0
-            while wins<2:
+            while wins<1:
                 VGDLParser.playGame(*level)
                 time.sleep(1)
                 data = np.load("temp_data.npy")
