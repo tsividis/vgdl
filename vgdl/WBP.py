@@ -267,7 +267,7 @@ class Node():
 				metabolic_cost += .3#(1-1./n)*mult
 			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
 			# 	metabolic_cost += 0.3
-		return metabolic_cost
+		return 0#metabolic_cost
 
 	def rollout(self, vrle):
 		successfulRollout = False

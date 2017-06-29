@@ -156,7 +156,8 @@ BasicGame frame_rate=30
 """
 
 
-level_game_pairs = [[game0, level0], [game0, level1]]#, [game0, level2],
+level_game_pairs = [[game0, level2], [game3, level3]]
+# [[game0, level0], [game0, level1]]#, [game0, level2],
                     # [game3, level3]]
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
@@ -173,7 +174,7 @@ if __name__ == "__main__":
         # index = random.choice(range(len(level_game_pairs)))
         for index, level in enumerate(level_game_pairs):
             wins = 0
-            while wins<2:
+            while wins<1:
                 VGDLParser.playGame(*level)
                 time.sleep(1)
                 data = np.load("temp_data.npy")

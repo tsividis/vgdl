@@ -1639,7 +1639,6 @@ class Game(object):
 						print "theory:"
 						newTheory.display()
 						self.nodes_eliminated +=1
-				# embed()
 				max_likelihood = np.unique([sum([h.likelihood(ts) for ts in timesteps]) for h in self.hypothesisSpace])[-1]
 
 				self.hypothesisSpace = [h for h in self.hypothesisSpace if sum([h.likelihood(ts) for ts in timesteps]) == max_likelihood]

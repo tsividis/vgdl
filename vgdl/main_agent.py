@@ -52,7 +52,7 @@ class Agent:
 		# Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
 		return Vrle
 
-	def VrleInitPhase(self):
+	def VrleInitPhase(self, flexible_goals=False):
 		## Initialize multiple VRLEs, each corresponding to one hypothesis in self.hypotheses
 		VRLEs = []
 		# print "in VrleInitPhase.", len(self.hypotheses), "hypotheses"
@@ -63,7 +63,8 @@ class Agent:
 			tempHypothesis = copy.deepcopy(hypothesis)
 			tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
 			tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
-			tempHypothesis.updateTerminations()
+			if not flexible_goals:
+				tempHypothesis.updateTerminations()
 			# print "fake hypotheses"
 			# if self.fakeInteractionRules:
 				# tempHypothesis.display()
@@ -107,7 +108,10 @@ class Agent:
 		allEffectsEncountered = []
 		shutil.rmtree("images/tmp")
 		os.makedirs("images/tmp")
+		j=0
+		flexible_goals = False
 		for n_level, level_game in enumerate(level_game_pairs):
+
 			print("Playing level {}".format(n_level))
 			(self.gameString, self.levelString) = level_game
 			win = False
@@ -116,12 +120,12 @@ class Agent:
 			levelEffectsEncountered = []
 			allStatesEncountered = []
 			while not win:
-				gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject)
+				gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals)
 				episodes.append((n_level, steps, win, score))
 				allStatesEncountered.extend(statesEncountered)
 				levelEffectsEncountered.append(effectsEncountered)
-				# VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
-				# persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
+				VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
+				persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
 				i += 1
 				# if i >=10:
 					# break
@@ -132,13 +136,22 @@ class Agent:
 
 			allEffectsEncountered.append(levelEffectsEncountered)
 
+			## Uncomment if you want to run flexible goals version.
+			# j+=1
+			# if j>0:
+			# 	flexible_goals=True
+
+			if flexible_goals:
+				embed()
+
 		output = {'modelType':self.modelType,
 					'gameName': self.gameFilename[self.gameFilename.find('expt'):],
 					'condition': 'no_score',
 					'episodes' : episodes}
 
-		write_to_csv('pilotModelRuns.csv', output)
+		# write_to_csv('pilotModelRuns.csv', output)
 		# self.makeMovie()
+		# embed()
 
 	def makeHeatmap(self, statesEncountered, filename):
 		from vgdl.plotting import featurePlot
@@ -153,11 +166,20 @@ class Agent:
 		corrected_states = [(s[0]/correction_factor, s[1]/correction_factor) for s in states]
 
 		m = np.zeros((width, height))
+		Xs, Ys = [],[]
+		im = plt.imread('flexible_goals.png')
+		implot = plt.imshow(im)
+		w, h = implot.get_extent()[1], implot.get_extent()[2]
+		block_size = w/width
+
 		for s in corrected_states:
 			x = s[0]
 			y = s[1]
 			m[x, y] += 1
-		plt.imshow(m.T, cmap='viridis')
+			Xs.append(x*block_size+block_size/2.)
+			Ys.append(y*block_size+block_size/2.)
+		plt.scatter(x=Xs, y=Ys, alpha=.5, edgecolor='')
+		# plt.imshow(m.T, cmap='viridis')
 		plt.gca().set_axis_off()
 		plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
             hspace = 0, wspace = 0)
@@ -165,6 +187,7 @@ class Agent:
 		plt.gca().xaxis.set_major_locator(NullLocator())
 		plt.gca().yaxis.set_major_locator(NullLocator())
 		plt.savefig(filename, bbox_inches='tight', pad_inches=0)
+		plt.close()
 
 	def makeSummaryPlot(self, allEffectsEncountered):
 		import matplotlib.pyplot as plt
@@ -217,7 +240,7 @@ class Agent:
 			persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
 		print "Won {} out of {} episodes.".format(sum(wins), i)
 
-	def playEpisode(self, gameObject):
+	def playEpisode(self, gameObject, flexible_goals=False):
 
 		## Initialize external environment
 		self.initializeEnvironment()
@@ -240,11 +263,12 @@ class Agent:
 			print "had hypotheses -- completing them."
 			# If theory is being carried over, falsify termination hypotheses
 			# given new level state
-			[t.updateTerminations(rle=self.rle) for t in self.hypotheses]
+			if not flexible_goals:
+				[t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
 		while not ended:
 			## initialize one or many VRLEs according to hypothesis-selection method
-			theoryRLEs = self.VrleInitPhase()
+			theoryRLEs = self.VrleInitPhase(flexible_goals)
 
 			p = WBP.WBP(theoryRLEs[0], self.gameFilename,
 						theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules, annealing=annealing, max_nodes=self.max_nodes)
@@ -259,7 +283,8 @@ class Agent:
 			if not quitting:
 				for i, action in enumerate(solution):
 					self.hypotheses[0].dryingPaint = set()
-					hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered)
+					hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, 
+						run_induction = not flexible_goals)
 					effectsEncountered.extend(effects)
 					steps +=1
 					if theory_change_flag:
@@ -343,7 +368,7 @@ class Agent:
 		[self.new_objects.pop(k, None) for k in self.new_objects.keys() if self.new_objects[k]>5] ## don't track items once we've updated the theory
 		return hypotheses
 
-	def executeStep(self, action, hypotheses, statesEncountered):
+	def executeStep(self, action, hypotheses, statesEncountered, run_induction=True):
 
 		theory_change_flag = False
 
@@ -414,7 +439,7 @@ class Agent:
 		if event['effectList']:
 			self.finalEventList.append(event)
 
-		if event['effectList']:
+		if event['effectList'] and run_induction:
 			## Delete fake interaction rules for events that were witnessed in this time step.
 			oldFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
 			self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
@@ -458,7 +483,7 @@ class Agent:
 					self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
 					self.fakeInteractionRules = list(set(self.fakeInteractionRules))
 
-		if event['effectList']:
+		if event['effectList'] and run_induction:
 			[t.updateTerminations(event=event) for t in hypotheses]
 			if theory_change_flag:
 				print "changed theory:"
@@ -476,7 +501,7 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.demo_helper"
 
-	filename = "examples.gridphysics.frogs2"
+	# filename = "examples.gridphysics.frogs2"
 
 	# filename = "examples.gridphysics.expt_physics_sharpshooter"
 	# filename = "examples.gridphysics.demo_transform_relational"
@@ -484,11 +509,10 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pick_apples"
 	# filename = "examples.gridphysics.expt_exploration_exploitation"
 
-	# filename = "examples.gridphysics.expt_preconditions"
-
+	filename = "examples.gridphysics.expt_flexible_goals"
 
 	agent = Agent('full', filename)
 
 	##then pass this down for multiple episodes
 	gameObject = None
-	agent.playCurriculum(heatmap=False)
+	agent.playCurriculum(heatmap=True)
