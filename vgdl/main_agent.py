@@ -142,6 +142,7 @@ class Agent:
 			# 	flexible_goals=True
 
 			if flexible_goals:
+				## When you embed, you can manually input changes in theory. See flexible_goals.py for an example.
 				embed()
 
 		output = {'modelType':self.modelType,
@@ -509,7 +510,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pick_apples"
 	# filename = "examples.gridphysics.expt_exploration_exploitation"
 
-	filename = "examples.gridphysics.expt_flexible_goals"
+	filename = "examples.gridphysics.expt_preconditions"
 
 	agent = Agent('full', filename)
 
