@@ -67,6 +67,9 @@ class WBP():
 			self.objIDs[k] = i * (rle.outdim[0]*rle.outdim[1]+self.padding)
 			i+=1
 		self.addSpaceBarToActions()
+		self.pixel_size = self.rle._game.screensize[0]/self.rle._game.width
+		self.visited_positions = np.zeros(np.array(self.rle._game.screensize)/
+		 	self.pixel_size)
 
 	def findObjectsInRLE(self, rle, objName):
 		try:
@@ -184,6 +187,13 @@ class WBP():
 			"""
 			# current = self.noveltySelection(QNovelty, QReward)
 			current = self.rewardSelection(QReward, QNovelty)
+			print("node chosen has position score {}".format(current.position_score()))
+			try:
+				(x, y) = np.array((current.rle._game.getAvatars()[0].rect.x,
+					current.rle._game.getAvatars()[0].rect.y))/self.pixel_size
+				self.visited_positions[x, y] += 1
+			except IndexError:
+				pass
 			# print embed()
 			if current is None:
 				self.quitting = True
@@ -501,6 +511,15 @@ class Node():
 			heuristicVal += max(avatarNoveltyVals)
 		return heuristicVal
 
+	def position_score(self, factor=-1):
+		try:
+			(x, y) = np.array((self.rle._game.getAvatars()[0].rect.x,
+				self.rle._game.getAvatars()[0].rect.y))/self.WBP.pixel_size
+			print factor * self.WBP.visited_positions[x, y]
+			return factor * self.WBP.visited_positions[x, y]
+		except IndexError:
+			return 0
+
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
 			## try to copy parent lastState. Then take action and store as current lastState.
@@ -560,7 +579,7 @@ class Node():
 
 		# print self.lastState._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost
 		self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
-		sum(self.rolloutArray) - self.metabolic_cost
+		sum(self.rolloutArray) - self.metabolic_cost + self.position_score()
 		# self.intrinsic_reward = 0
 		return self.win
 
