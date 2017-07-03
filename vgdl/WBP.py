@@ -25,6 +25,9 @@ from theory_template import TimeStep, Precondition, InteractionRule, Termination
 NoveltyRule, generateSymbolDict, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryFromGame
 from rlenvironmentnonstatic import createRLInputGame
 
+from line_profiler import LineProfiler
+import cPickle
+
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
@@ -168,6 +171,11 @@ class WBP():
 			pass
 		return current
 
+	def BFS_profiler(self):
+		lp = LineProfiler()
+		lp_wrapper = lp(self.BFS)
+		lp_wrapper()
+		lp.print_stats()
 
 	def BFS(self):
 		QNovelty, QReward = [], []
@@ -187,7 +195,7 @@ class WBP():
 			"""
 			# current = self.noveltySelection(QNovelty, QReward)
 			current = self.rewardSelection(QReward, QNovelty)
-			print("node chosen has position score {}".format(current.position_score()))
+			# print("node chosen has position score {}".format(current.position_score()))
 			try:
 				(x, y) = np.array((current.rle._game.getAvatars()[0].rect.x,
 					current.rle._game.getAvatars()[0].rect.y))/self.pixel_size
@@ -277,6 +285,7 @@ class Node():
 				metabolic_cost += .3#(1-1./n)*mult
 			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
 			# 	metabolic_cost += 0.3
+		# metabolic_cost = 0
 		return metabolic_cost
 
 	def rollout(self, vrle):
@@ -414,11 +423,9 @@ class Node():
 			s2_positions = self.WBP.findObjectsInRLE(rle, s2)
 			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
 
-			"""
 			# Second order lesion
 			if s1 != 'avatar' and s2 != 'avatar':
 				return 0
-			"""
 
 			n_sprites = len(s1_positions)
 			try:
@@ -511,21 +518,29 @@ class Node():
 			heuristicVal += max(avatarNoveltyVals)
 		return heuristicVal
 
-	def position_score(self, factor=-1):
+	def position_score(self, factor=0):
 		try:
 			(x, y) = np.array((self.rle._game.getAvatars()[0].rect.x,
 				self.rle._game.getAvatars()[0].rect.y))/self.WBP.pixel_size
-			print factor * self.WBP.visited_positions[x, y]
+			# print factor * self.WBP.visited_positions[x, y]
 			return factor * self.WBP.visited_positions[x, y]
 		except IndexError:
 			return 0
+
+	def getTo_profiler(self):
+		lp = LineProfiler()
+		lp_wrapper = lp(self.getToCurrentState)
+		output = lp_wrapper()
+		lp.print_stats()
+		return output
 
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
 			## try to copy parent lastState. Then take action and store as current lastState.
 			## if that fails, replay from beginning and store as current lastState
 			try:
-				vrle = copy.deepcopy(self.parent.rle)
+				vrle = cPickle.loads(cPickle.dumps(self.parent.rle, -1))
+				# vrle = copy.deepcopy(self.parent.rle)
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
 					# print a
@@ -541,7 +556,8 @@ class Node():
 		else:
 			self.reconstructed=True
 			# print "copy failed; replaying from top"
-			vrle = copy.deepcopy(self.rle)
+			vrle = cPickle.loads(cPickle.dumps(self.rle, -1))
+			# vrle = copy.deepcopy(self.rle)
 			terminal, win = vrle._isDone()
 			i=0
 			while not terminal and len(self.actionSeq)>i:
@@ -551,6 +567,12 @@ class Node():
 				terminal, win = vrle._isDone()
 				i += 1
 		return vrle, win
+
+	def eval_profiler(self):
+		lp = LineProfiler()
+		lp_wrapper = lp(self.eval)
+		lp_wrapper()
+		lp.print_stats()
 
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
@@ -660,7 +682,7 @@ if __name__ == "__main__":
 
 	# embed()
 	t1 = time.time()
-	last, gameString_array = p.BFS()
+	last, gameString_array = p.BFS_profiler()
 	from core import VGDLParser
 	# embed()
 	last.playBack(make_movie=True)

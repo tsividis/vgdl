@@ -1047,7 +1047,7 @@ class MultiSpriteCounter(Termination):
         else:
             return False, None
 
-class NoveltyTermination(Termination):
+class       NoveltyTermination(Termination):
     def __init__(self, s1, s2, win=True):
         self.s1 = s1
         self.s2 = s2
@@ -1057,23 +1057,34 @@ class NoveltyTermination(Termination):
     def isDone(self, game):
         for e in game.effectList:
             if (e[0]=='killSprite' or e[0] == 'transformTo'):
-                        try:                            
-                            if ((game.all_objects[e[1]]['sprite'].name==self.s1 and game.all_objects[e[2]]['sprite'].name==self.s2) or\
-                                (game.all_objects[e[1]]['sprite'].name==self.s2 and game.all_objects[e[2]]['sprite'].name==self.s1)):
-                                print self.name, self.s1, self.s2
-                                return True, self.win
-                        except:
+                        try:
+                            name1 = game.all_objects[e[1]]['sprite'].name
+                        except KeyError:
                             if e[1]=='ENDOFSCREEN':
-                                name1, name2 = 'ENDOFSCREEN', game.all_objects[e[2]]['sprite'].name
-                                if name1==self.s1 and name2==self.s2:
-                                    return True, self.win
-                            elif e[2]=='ENDOFSCREEN':
-                                name2, name1 = 'ENDOFSCREEN', game.all_objects[e[1]]['sprite'].name
-                                if name1==self.s1 and name2==self.s2:
-                                    return True, self.win
+                                name1 = 'ENDOFSCREEN'
+                            elif e[1] in [obj.ID for obj in game.kill_list]:
+                                name1 = [obj.name for obj in game.kill_list
+                                    if obj.ID==e[1]][0]
+                            elif e[1] in game.getObjects().keys():
+                                name1 = game.getObjects()[e[1]]['sprite'].name
                             else:
-                                print "exception in NoveltyTermination", self.s1, self.s2
+                                print "Couldn't find object in NoveltyTermination"
                                 embed()
+                        try:
+                            name2 = game.all_objects[e[2]]['sprite'].name
+                        except KeyError:
+                            if e[2]=='ENDOFSCREEN':
+                                name2 = 'ENDOFSCREEN'
+                            elif e[2] in [obj.ID for obj in game.kill_list]:
+                                name2 = [obj.name for obj in game.kill_list
+                                    if obj.ID==e[2]][0]
+                            elif e[2] in game.getObjects().keys():
+                                name2 = game.getObjects()[e[2]]['sprite'].name
+                            else:
+                                print "Couldn't find object in NoveltyTermination"
+                                embed()
+                        if name1==self.s1 and name2==self.s2:
+                            return True, self.win
         return False, None
 
 # ---------------------------------------------------------------------
@@ -1764,7 +1775,7 @@ def initializeDistributionArgs(sprite_type, objectColors):
         args[attribute] = {v: 1./len(values) for v in values}
 
     def initializeSpeed(args):
-        speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1., 
+        speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.,
         1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1]
         initializeProperty(args, 'speed', speedValues)
 
@@ -1780,7 +1791,7 @@ def initializeDistributionArgs(sprite_type, objectColors):
     def initializeStype(args):
         stypeValues = objectColors
         initializeProperty(args, 'stype', stypeValues)
-    
+
     def initializeCooldown(args):
         stypeValues = [1]
         initializeProperty(args, 'cooldown', stypeValues)
@@ -1807,7 +1818,7 @@ def distributionInitSetup(game, sprite):
     """
     Does setup for initializing distribution
     """
-    objectColors = [game.sprite_groups[k][0].colorName for k in game.sprite_groups.keys() if game.sprite_groups[k] and 
+    objectColors = [game.sprite_groups[k][0].colorName for k in game.sprite_groups.keys() if game.sprite_groups[k] and
     game.sprite_groups[k][0].colorName!='BLACK' and game.sprite_groups[k][0].colorName!='DARKGRAY']
     # embed()
 
