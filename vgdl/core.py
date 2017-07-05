@@ -1202,7 +1202,7 @@ class BasicGame(object):
         #     self.movement_options[sprite] = {"OTHER":{}}
         #     for sprite_type in sprite_types:
         #         self.movement_options[sprite][sprite_type] = {}
-        self.collision_eff.sort(key = lambda x: x[2].__name__ == 'killSprite') # Should make this more modular. alwell.
+        #self.collision_eff.sort(key = lambda x: x[2].__name__ == 'killSprite') # Should make this more modular. alwell.
 
         while not self.ended:
             clock.tick(self.frame_rate)

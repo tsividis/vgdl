@@ -137,7 +137,8 @@ class ContinuousPhysics(GridPhysics):
 
     def passiveMovement(self, sprite):
         
-        if sprite.speed != 0 and hasattr(sprite, 'orientation'):
+        #if sprite.speed != 0 and hasattr(sprite, 'orientation'): (why was this 0 to begin with???)
+        if True:
             #print("update pos")
             sprite._updatePos(sprite.orientation, sprite.speed)
             
@@ -200,7 +201,8 @@ class NoFrictionPhysics(ContinuousPhysics):
     friction = 0
 
 class GravityPhysics(ContinuousPhysics):
-    gravity = 0.8
+    gravity = 2.0
+    friction = 0
 
 
 # ---------------------------------------------------------------------
@@ -841,13 +843,14 @@ class MarioAvatar(InertialAvatar):
     draw_arrow = False
     strength = 1
     movestrength = sqrt(strength)
-    vx_max = 5
-    airsteering = True
+    vx_max = 10
+    airsteering = False
     last_vy = 0
     jumping = False
     wait_step = 0
     airstrength = 1
-    decay = .5
+    #decay = .5
+    decay = 0
 
     def declare_possible_actions(self):
         from pygame.locals import K_LEFT, K_RIGHT, K_UP, K_DOWN
@@ -861,6 +864,10 @@ class MarioAvatar(InertialAvatar):
     def update(self, game):
         from pygame.locals import K_SPACE
 
+
+
+
+
         action = self._readAction(game)
 
         if action == None:
@@ -870,6 +877,7 @@ class MarioAvatar(InertialAvatar):
         # presumibly, this means the sprite is 'landed'
         self.airstrength *= (1-self.decay)
         if self.last_vy == self.lastrect.y - self.rect.y:
+            #print "are equal"
             self.wait_step += 1
             if not self.jumping:
                 #action[0] = action[0] * self.movestrength
@@ -881,15 +889,18 @@ class MarioAvatar(InertialAvatar):
                     self.airstrength = 1
             else:
                 action[0] = action[0] * self.movestrength * self.airstrength
+                #action[0] = 0
 
         else:
             self.wait_step = 0
+            action[0] = 0
 
         # this is pretty hacky. What if sprite doesn't move very fast?
         if self.wait_step > 2:
             self.jumping = False
         
         self.physics.activeMovement(self, action)
+
 
         vx = self.orientation[0]*self.speed
         if abs(vx) > self.vx_max:
@@ -903,6 +914,15 @@ class MarioAvatar(InertialAvatar):
         # a less precise vy, but this is useful
         self.last_vy = self.lastrect.y-self.rect.y
         VGDLSprite.update(self, game)
+
+        
+
+
+
+        #print self.orientation
+        #print self.speed
+
+        #print self.orientation[0]*self.speed
 
 class ClimbingAvatar(MarioAvatar, MovingAvatar):
     climbing = False

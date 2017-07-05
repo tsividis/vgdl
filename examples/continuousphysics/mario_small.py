@@ -3,20 +3,101 @@ VGDL example: Mario, jump around!
 
 @author: Tom Schaul
 '''
-level = """
+level1 = """
 wwwwwwwwwwwwwwwwwww
 w                 w
-w                 w
-w                 w
-w               1Gw
-w       wwwwwwwwwww
-w                 w
-w    ww           w
-w A               w
-wwww     wwwwwwwwww
+w             G   w
+w             w   w
+w            1w   w
+w        wwwwww   w
+w       Gw        w
+w    wwwww        w
+w    w            w
+w A  w            w
+wwwwww G         1w
 wwwwwwwwwwwwwwwwwww
 """ 
 
+level2 = """
+wwwwwwww
+w      w
+w      w
+w    www
+w      w
+www    w
+w     Gw
+w    www
+wG     w
+www    w
+w     Gw
+w    www
+wA     w
+wwwwwwww
+"""
+
+level3 = """
+wwwwwwwwwwwwww
+w            w
+w            w
+w            w
+w        1  Gw
+w     wwwwwwww
+wA           w
+wwwwwwwwwwwwww
+"""
+
+level4 = """
+wwwwwwwwww
+w        w
+w       Gw
+w      www
+w        w
+w   ww   w
+wA       w
+www      w
+w        w
+w        w
+w  G     w
+wwwwwwwwww
+"""
+
+level5 = """
+wwwwwww
+w     w
+w     w
+w    Gw
+wA wwww
+ww    w
+w     w
+w  G  w
+wwwwwww
+"""
+
+level6 = """
+wwwwwwwwwwwwww
+w            w
+w            w
+w            w
+w           Gw
+wA    wwwwwwww
+wwwwwwwwwwwwww
+"""
+
+level7 = """
+wwwwwwwwwwwwwwwwww
+w                w
+w                w
+w                w
+wG       A      Gw
+wwww  wwwwww  wwww
+w                w
+w                w
+w                w
+w         1      w
+wwwwwwwwwwwwwwwwww
+"""
+
+level = level6
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -36,11 +117,13 @@ wwwwwwwwwwwwwwwwwww
 # """
 # 
 
+# goomba > Walker orientation=LEFT color=BROWN physicstype=GravityPhysics
+
 game = """
 BasicGame
     SpriteSet 
-        avatar > MarioAvatar strength=20 physicstype=GravityPhysics color=WHITE
-        goomba > Walker orientation=LEFT color=BROWN physicstype=GravityPhysics
+        avatar > MarioAvatar strength=22 physicstype=GravityPhysics color=WHITE
+        goomba > Immovable color=BROWN
         goal > Immovable color=GREEN
         wall > Immovable color=BLACK
             
@@ -54,8 +137,8 @@ BasicGame
         avatar EOS  > killSprite
         goomba EOS > killSprite
         goal avatar > killSprite
-        avatar wall > wallStop friction=0.1
-        goomba wall > wallStop friction=0.1
+        avatar wall > wallStop
+        goomba wall > wallStop
         
     LevelMapping
         w > wall

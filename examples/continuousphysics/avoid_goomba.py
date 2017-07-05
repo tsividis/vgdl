@@ -6,15 +6,15 @@ w           w
 w           w
 w           w
 w           w
-wA        1Gw
+wA       1 Gw
 wwwwwwwwwwwww
 """
 
 game = """
 BasicGame
     SpriteSet 
-        avatar > MarioAvatar strength=20 physicstype=GravityPhysics color=WHITE
-        goomba > Missile orientation=LEFT color=PURPLE speed=0.3
+        avatar > MarioAvatar strength=25 physicstype=GravityPhysics color=WHITE
+        goomba > Missile orientation=LEFT color=PURPLE 
         goal > Immovable color=GREEN
         wall > Immovable color=BLACK
             
@@ -28,7 +28,7 @@ BasicGame
         avatar EOS  > killSprite
         goomba EOS > killSprite
         goal avatar > killSprite
-        avatar wall > wallStop friction=0.1
+        avatar wall > wallStop
         goomba wall > killSprite
         
     LevelMapping

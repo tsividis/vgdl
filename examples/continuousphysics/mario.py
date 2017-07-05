@@ -7,12 +7,10 @@ VGDL example: Mario, jump around!
 game = """
 BasicGame
     SpriteSet 
-        elevator > Missile orientation=UP speed=0.1 color=BLUE
-        moving > physicstype=GravityPhysics color=WHITE
-            avatar > MarioAvatar strength=15
-            evil   >  orientation=LEFT
-                goomba     > Walker     color=BROWN 
-                paratroopa > WalkJumper color=RED prob=.9
+        elevator > Missile orientation=UP speed=0.1 color=BLUE 
+        avatar > MarioAvatar strength=15 physicstype=GravityPhysics color=WHITE
+        goomba     > Walker     color=BROWN physicstype=GravityPhysics orientation=LEFT
+        paratroopa > WalkJumper color=RED prob=.9 physicstype=GravityPhysics orientation=LEFT
         goal > Immovable color=GREEN
         wall > Immovable color=BLACK
             
@@ -21,14 +19,18 @@ BasicGame
         SpriteCounter stype=avatar    win=False     
            
     InteractionSet
-        evil avatar > killIfFromAbove scoreChange=1
-        avatar evil > killIfAlive
-        moving EOS  > killSprite 
+        avatar goomba > killSprite
+        avatar paratroopa > killSprite
+        avatar EOS  > killSprite
+        goomba EOS  > killSprite
+        paratroopa EOS  > killSprite
         goal avatar > killSprite
         avatar wall > wallStop friction=0.1
         goomba wall > wallStop friction=0.1
         paratroopa wall > wallStop friction=0.1
-        moving elevator > pullWithIt        
+        avatar elevator > pullWithIt
+        goomba elevator > pullWithIt
+        paratroopa elevator > pullWithIt        
         elevator EOS    > wrapAround
         
     LevelMapping

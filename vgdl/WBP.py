@@ -36,7 +36,7 @@ MAX_TIMES_IN_SQUARE = sys.maxint
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=1000):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=5000):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -85,8 +85,9 @@ class WBP():
 		self.all_locs = []
 
 		self.avatar_locs_disc = defaultdict(lambda:0)
-
+		self.graph = {}
 		self.distances = self.dijkstra()
+		self.box_weights = self.calc_weights()
 
 		#self.init_visited(rle)
 
@@ -120,6 +121,7 @@ class WBP():
 
 	def dijkstra(self):
 		graph, edges = self.makeGraph()
+		self.graph = graph
 		dist = {}
 		#embed()
 		for (i,j) in graph:
@@ -158,9 +160,25 @@ class WBP():
 					queue.add(neighbor)
 		return dist
 		
+	def calc_weights(self):
+		weights = {}
+		for (x,y) in self.graph:
+			w = 1.0
+			if (x+1,y) not in self.graph:
+				w = w/self.square_size[0]
+			if (x,y+1) not in self.graph:
+				w = w/self.square_size[1]
+			weights[(x,y)] = w
+		return weights
 
 	def grid(self,loc):
 		return (loc[0]/self.square_size[0],loc[1]/self.square_size[1])
+
+
+	'''
+	def grid_shifted(self,loc):
+		return ((loc[0]-1)/self.square_size[0],(loc[1]-1)/self.square_size[1])
+	'''
 
 	#return geodesic distance between two locations
 	def geoDist(self,loc1,loc2):
@@ -175,6 +193,7 @@ class WBP():
 		y2 = loc2[1]/float(self.square_size[1]) - grid2[1]
 
 		#smooth out distances at grid vertices to calculate distances between points at interior of squares
+		
 		dist = 0
 		a1 = self.loop4d()
 		a2 = self.loop4d()
@@ -186,7 +205,21 @@ class WBP():
 						dist += (1 if (sum(coord)%2 == sum(exp)%2) else -1)*val* \
 						self.distances[(grid1[0]+coord[0],grid1[1]+coord[1])][(grid2[0]+coord[2],grid2[1]+coord[3])]
 		
+		'''
+		ss = float(self.square_size[0])
+		dist = sys.maxint
+		for x1 in [grid1[0],grid1[0]+1]:
+			for y1 in [grid1[1],grid1[1]+1]:
+				for x2 in [grid2[0],grid2[0]+1]:
+					for y2 in [grid2[1],grid2[1]+1]:
+						if (x1,y1) in self.distances and (x2,y2) in self.distances:
+							new_dist = self.distances[(x1,y1)][(x2,y2)] + (manhattanDist((x1*ss,y1*ss),loc1) + manhattanDist((x2*ss,y2*ss),loc2))
+							dist = min(dist,new_dist)
+		'''
+
 		return dist
+
+	
 
 	def loop4d(self):
 		array = []
@@ -203,6 +236,7 @@ class WBP():
 			if exp[i]:
 					prod*=var[i]
 		return prod
+
 
 	#returns array of locations of objects of a given type
 	#each block corresponds to 1 unit
@@ -309,6 +343,8 @@ class WBP():
 		for n in QReward:
 			if n.novelty >= 3:
 				badNodes.append(n)
+		#	else:
+		#		n.eval()
 		for n in badNodes:
 			QReward.remove(n)
 
@@ -394,16 +430,29 @@ class WBP():
 			#path.append(current.rle.show(indent=True))
 			current.updateNoveltyDict(QNovelty, QReward)
 			current.updateCenter()
-			self.avatar_locs_disc[self.rle._rect2pos(current.rle._game.sprite_groups["avatar"][0].rect)]+=1
+			#self.avatar_locs_disc[self.rle._rect2pos(current.rle._game.sprite_groups["avatar"][0].rect)]+=1
+			self.avatar_locs_disc[self.grid(self.findAvatarInRLE(current.rle))] += 1
 			#print(self.avatar_locs_disc[self.rle._rect2pos(current.rle._game.sprite_groups["avatar"][0].rect)])
 			#embed()
 			#print current.heuristicVal
-			#if i > 100:
+			#if i > 2000:
 			#	embed()
+			#print i
 			visited.append(current)
 			self.avatar_locs.add(current.rle._rect2pos(current.rle._game.sprite_groups['avatar'][0].rect))
+			#print current.intrinsic_reward
 
-			for a in self.actions:
+			#print current.rle._game.sprite_groups["avatar"][0].jumping
+
+			actions = self.actions
+			if current.rle._game.sprite_groups["avatar"][0].jumping:
+				actions = [NONE]
+			#embed()
+			for a in actions:
+				#add = True
+				#if a != NONE and current.rle._game.sprite_groups['avatar'][0].jumping:
+				#	add = False
+				#else:
 				child = Node(self.rle, self, current.actionSeq+[a], current)
 				child.eval()
 				#print(actionDict[a])
@@ -722,9 +771,13 @@ class Node():
 		#print([x/float(n) for x in center])
 
 	
-	def novel_squares(self,weight=0.0):
-		loc = self.rle._rect2pos(self.rle._game.sprite_groups["avatar"][0].rect)
-		return -self.WBP.avatar_locs_disc[loc]*weight
+
+	def novel_squares(self,weight=0.00):
+		#loc = self.rle._rect2pos(self.rle._game.sprite_groups["avatar"][0].rect)
+		loc = self.WBP.grid(self.WBP.findAvatarInRLE(self.rle))
+		return -(1.2**self.WBP.avatar_locs_disc[loc])*weight
+		#return -weight*self.WBP.avatar_locs_disc[loc]#/self.WBP.box_weights[loc]
+
 	def distVisited(self,weight=0.0):
 		center = self.WBP.visited[0]
 		n = float(self.WBP.visited[1])
@@ -846,12 +899,12 @@ class Node():
 
 		self.heuristicVal = self.heuristics()
 		self.dist = self.distVisited()
-		self.novel_squares = self.novel_squares()
-		weight = 0.5
+		self.novel = self.novel_squares()
+		weight = 0.0
 
 		# print self.lastState._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost
 		self.intrinsic_reward = self.rle._game.score + self.heuristicVal - \
-		self.metabolic_cost+sum(self.rolloutArray) + weight*self.depth 
+		self.metabolic_cost+sum(self.rolloutArray) + weight*self.depth + self.novel
 		
 		#embed()	
 		# self.intrinsic_reward = 0
@@ -940,8 +993,8 @@ if __name__ == "__main__":
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
-	gameFilename = "examples.continuousphysics.mario_small"
-	#gameFilename = "examples.continuousphysics.avoid_goomba"
+	#gameFilename = "examples.continuousphysics.mario_small"
+	gameFilename = "examples.continuousphysics.avoid_goomba"
 	#gameFilename = "examples.continuousphysics.mario"
 	#gameFilename = "examples.continuousphysics.simple"
 	#gameFilename = "examples.continuousphysics.crossroad"
@@ -951,6 +1004,7 @@ if __name__ == "__main__":
 	#gameFilename = "examples.gridphysics.expt_exploration_exploitation"
 	#gameFilename = "examples.continuousphysics.ptsp_simple"
 	#gameFilename = "examples.continuousphysics.ptsp"
+	#gameFilename = "examples.continuousphysics.breakout"
 
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
