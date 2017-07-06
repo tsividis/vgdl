@@ -20,6 +20,7 @@ import math
 import importlib
 from util import factorize, objectsToSymbol
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
+from line_profiler import LineProfiler
 
 OBSERVATION_LOCAL = 'local'
 OBSERVATION_GLOBAL = 'global'
@@ -71,7 +72,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self._game.all_objects = self._game.getObjects() # Save all objects, some which may be killed in game
         self.makeSymbolDict()
         self._game.ignoreList = [] ## another way to mark objects that shouldn't be processed when doing induction (that is, collision objects)
-        self._game.keystate = defaultdict(lambda:False)
+        #self._game.keystate = defaultdict(lambda:False)
+        self._game.keystate = defaultdict(bool)
         self._game.metabolic_score = 0
         self.game_name = None
 
@@ -198,6 +200,13 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             if ended:
                 return ended, win
         return False, False
+
+    def sensors_profiler(self, state=None):
+        lp = LineProfiler()
+        lp_wrapper = lp(self._getSensors)
+        output = lp_wrapper(state)
+        lp.print_stats()
+        return output
 
     def _getSensors(self, state=None):
         # Get position and orientation
@@ -338,6 +347,14 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         #     self._last_state = self.getState()
         #     self._allEvents.append((self._previous_state, action, self._last_state))
 
+    def step_profiler(self, action):
+        lp = LineProfiler()
+        lp_wrapper = lp(self.step)
+        output = lp_wrapper(action)
+        lp.print_stats()
+
+        return output
+
     def step(self, action):
         #print("start step")
         if action == ('space'):
@@ -348,6 +365,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         events = self._performAction(action)
         #print("end action")
         observation = self._getSensors()
+        #observation = self.sensors_profiler()
         (ended, won) = self._isDone()
         self._game.time+=1
 

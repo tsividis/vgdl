@@ -79,7 +79,7 @@ w            w
 w            w
 w            w
 w           Gw
-wA    wwwwwwww
+wA   1wwwwwwww
 wwwwwwwwwwwwww
 """
 
@@ -93,11 +93,11 @@ wwww  wwwwww  wwww
 w                w
 w                w
 w                w
-w         1      w
+wG        1      w
 wwwwwwwwwwwwwwwwww
 """
 
-level = level6
+level = level7
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -123,7 +123,7 @@ game = """
 BasicGame
     SpriteSet 
         avatar > MarioAvatar strength=22 physicstype=GravityPhysics color=WHITE
-        goomba > Immovable color=BROWN
+        goomba > Missile orientation=LEFT color=BROWN speed=0.2
         goal > Immovable color=GREEN
         wall > Immovable color=BLACK
             
@@ -138,7 +138,7 @@ BasicGame
         goomba EOS > killSprite
         goal avatar > killSprite
         avatar wall > wallStop
-        goomba wall > wallStop
+        goomba wall > wallBounce
         
     LevelMapping
         w > wall

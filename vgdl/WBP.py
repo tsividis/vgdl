@@ -26,6 +26,9 @@ from theory_template import TimeStep, Precondition, InteractionRule, Termination
 NoveltyRule, generateSymbolDict, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryFromGame
 from rlenvironmentnonstatic import createRLInputGame
 
+from line_profiler import LineProfiler
+import cPickle
+
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
@@ -377,6 +380,12 @@ class WBP():
 		'''
 
 
+ 	def BFS_profiler(self):
+ 		lp = LineProfiler()
+ 		lp_wrapper = lp(self.BFS)
+ 		lp_wrapper()
+ 		lp.print_stats()
+
 	def BFS(self):
 		QNovelty, QReward = [], []
 		#QReward = []
@@ -435,8 +444,8 @@ class WBP():
 			#print(self.avatar_locs_disc[self.rle._rect2pos(current.rle._game.sprite_groups["avatar"][0].rect)])
 			#embed()
 			#print current.heuristicVal
-			#if i > 2000:
-			#	embed()
+			#if i > 350:
+				#embed()
 			#print i
 			visited.append(current)
 			self.avatar_locs.add(current.rle._rect2pos(current.rle._game.sprite_groups['avatar'][0].rect))
@@ -447,7 +456,7 @@ class WBP():
 			actions = self.actions
 			if current.rle._game.sprite_groups["avatar"][0].jumping:
 				actions = [NONE]
-			#embed()
+			
 			for a in actions:
 				#add = True
 				#if a != NONE and current.rle._game.sprite_groups['avatar'][0].jumping:
@@ -469,7 +478,6 @@ class WBP():
 						gameString_array.append(node.rle.show())
 						node = node.parent
 					self.gameString_array = gameString_array[::-1]
-
 					child.rle._isDone()
 					self.solution = child.actionSeq
 					self.statesEncountered.append(child.rle._game.getFullState())
@@ -590,7 +598,7 @@ class Node():
 
 		# Check if condition is win or loss and multiply accordingly
 		if term.termination.win:
-			mult = -2
+			mult = -5
 		else:
 			# compute_second_order = False
 			mult = 1
@@ -661,9 +669,10 @@ class Node():
 				# goals that involve killing fewer objects
 				val += float(mult * second_alpha * distance)/n_sprites
 			else:
-				distance = 1000
+				distance = 10000
 				val += float(mult * second_alpha * distance)
-
+		#print term.termination.win
+		#print val
 		return val
 
 	def multispritecounter_val(self, theory, term, rle, first_alpha=1000,
@@ -834,14 +843,21 @@ class Node():
 		return heuristicVal
 
 	#returns the rle (with total action sequence) and whether game has been won
+	def getTo_profiler(self):
+		lp = LineProfiler()
+ 		lp_wrapper = lp(self.getToCurrentState)
+ 		output = lp_wrapper()
+ 		lp.print_stats()
+ 		return output
+
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
 			
 			## try to copy parent lastState. Then take action and store as current lastState.
 			## if that fails, replay from beginning and store as current lastState
-			#try:
-			for i in range(1):
-				vrle = copy.deepcopy(self.parent.rle)
+			try:
+				#vrle = copy.deepcopy(self.parent.rle)
+				vrle = cPickle.loads(cPickle.dumps(self.parent.rle, -1))
 				
 				if len(self.actionSeq)>0:
 					
@@ -855,13 +871,14 @@ class Node():
 					self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
 
 					terminal, win = vrle._isDone()
-			#except:
-			#	print "conditions met but copy failed"
-				#embed()
+			except:
+				print "conditions met but copy failed"
+				embed()
 		else:
 			self.reconstructed=True
 			# print "copy failed; replaying from top"
-			vrle = copy.deepcopy(self.rle)
+			#vrle = copy.deepcopy(self.rle)
+			vrle = cPickle.loads(cPickle.dumps(self.rle, -1))
 			terminal, win = vrle._isDone()
 			i=0
 			while not terminal and len(self.actionSeq)>i:
@@ -871,6 +888,12 @@ class Node():
 				terminal, win = vrle._isDone()
 				i += 1
 		return vrle, win
+
+	def eval_profiler(self):
+ 		lp = LineProfiler()
+ 		lp_wrapper = lp(self.eval)
+ 		lp_wrapper()
+		lp.print_stats()
 
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
@@ -993,8 +1016,8 @@ if __name__ == "__main__":
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
-	#gameFilename = "examples.continuousphysics.mario_small"
-	gameFilename = "examples.continuousphysics.avoid_goomba"
+	gameFilename = "examples.continuousphysics.mario_small"
+	#gameFilename = "examples.continuousphysics.avoid_goomba"
 	#gameFilename = "examples.continuousphysics.mario"
 	#gameFilename = "examples.continuousphysics.simple"
 	#gameFilename = "examples.continuousphysics.crossroad"
@@ -1021,6 +1044,7 @@ if __name__ == "__main__":
 	#embed()
 	#	try:
 	last, gameString_array, nodes = p.BFS()
+	#last, gameString_array, nodes = p.BFS_profiler()
 	#from core import VGDLParser
 	#last.playBack(make_movie=True)
 	#	except:

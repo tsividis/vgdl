@@ -137,16 +137,30 @@ class ContinuousPhysics(GridPhysics):
 
     def passiveMovement(self, sprite):
         
-        #if sprite.speed != 0 and hasattr(sprite, 'orientation'): (why was this 0 to begin with???)
-        if True:
+        if (sprite.speed != 0 or sprite.jumping) and hasattr(sprite, 'orientation'):#(why was this 0 to begin with???)
+        #if (sprite.speed != 0) and hasattr(sprite, 'orientation'):
+        #if True:
             #print("update pos")
+            #print "updating"
             sprite._updatePos(sprite.orientation, sprite.speed)
+            #sprite._updatePos([sprite.orientation[0],0],sprite.speed)
+            #sprite._updatePos([0,sprite.orientation[1]],sprite.speed)
             
             if self.gravity > 0 and sprite.mass > 0:
 
                 self.activeMovement(sprite, (0, self.gravity * sprite.mass))
                 
             sprite.speed *= (1 - self.friction)
+
+        #print sprite.lastrect
+        #print sprite.rect
+        #print sprite.jumping
+
+        #if sprite.lastrect == sprite.rect and not sprite.jumping:
+            #print "NO MOVMEMVOMT"
+        #    sprite.speed = 0
+           
+
         
 
     def calculatePassiveMovement(self, sprite):
@@ -165,11 +179,31 @@ class ContinuousPhysics(GridPhysics):
         """ Here the assumption is that the controls determine the direction of
         acceleration of the sprite. """
         #print("active movement")
+
+        #print action
+
         if speed is None:
             speed = sprite.speed
 
-        v1 = action[0] / float(sprite.mass) + sprite.orientation[0] * speed
+        #print "orientation:"
+        #print sprite.orientation
+
+        
+        #v1 = action[0]*100 / float(sprite.mass) + sprite.orientation[0] * speed
+        
+
+        #if sprite.lastrect.y == sprite.rect.y and not sprite.jumping:
+        #    v2 = 0.0
+        #else:
         v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed
+        
+        
+        if sprite.jumping or action[1]:
+            v1 = sprite.orientation[0] * speed
+        else:
+            v1 = action[0]*sprite.vx_max
+        
+        #v2 = action[1]*sprite.strength
         
         sprite.orientation = unitVector((v1, v2))
         
@@ -864,9 +898,8 @@ class MarioAvatar(InertialAvatar):
     def update(self, game):
         from pygame.locals import K_SPACE
 
-
-
-
+        if self.lastrect == self.rect and not self.jumping:
+            self.speed = 0
 
         action = self._readAction(game)
 
@@ -880,6 +913,7 @@ class MarioAvatar(InertialAvatar):
             #print "are equal"
             self.wait_step += 1
             if not self.jumping:
+                #print "no"
                 #action[0] = action[0] * self.movestrength
                 action = [action[0] * self.movestrength,0]
                 if game.keystate[K_SPACE] and not self.jumping:
@@ -888,6 +922,7 @@ class MarioAvatar(InertialAvatar):
                     self.wait_step = 0
                     self.airstrength = 1
             else:
+                #print "yes"
                 action[0] = action[0] * self.movestrength * self.airstrength
                 #action[0] = 0
 
@@ -900,9 +935,13 @@ class MarioAvatar(InertialAvatar):
             self.jumping = False
         
         self.physics.activeMovement(self, action)
+        #changes speed
 
 
         vx = self.orientation[0]*self.speed
+
+        #print((vx,self.orientation[1]*self.speed))
+
         if abs(vx) > self.vx_max:
             # vx always greater than zero at this point
             sign = abs(vx)/vx
@@ -923,6 +962,14 @@ class MarioAvatar(InertialAvatar):
         #print self.speed
 
         #print self.orientation[0]*self.speed
+
+'''
+class MontezumaAvatar(MarioAvatar):
+
+    def update(self, game):
+'''
+
+
 
 class ClimbingAvatar(MarioAvatar, MovingAvatar):
     climbing = False

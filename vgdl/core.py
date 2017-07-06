@@ -479,8 +479,10 @@ class BasicGame(object):
         # conditional criteria
         self.conditions = []
         # resource properties
-        self.resources_limits = defaultdict(lambda: 2)
-        self.resources_colors = defaultdict(lambda: GOLD)
+        #self.resources_limits = defaultdict(lambda: 2)
+        #self.resources_colors = defaultdict(lambda: GOLD)
+        self.resources_limits = defaultdict(int)
+        self.resources_colors = defaultdict(str)
 
         self.is_stochastic = False
         self._lastsaved = None
@@ -1499,7 +1501,8 @@ class VGDLSprite(object):
         self.lastmove = 0
 
         # management of resources contained in the sprite
-        self.resources = defaultdict(lambda: 0)
+        #self.resources = defaultdict(lambda: 0)
+        self.resources = defaultdict(bool)
 
     def update(self, game):
         """ The main place where subclasses differ. """
