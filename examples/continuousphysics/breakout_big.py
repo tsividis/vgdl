@@ -2,7 +2,7 @@ game = """
 BasicGame
     SpriteSet
         goal > Immovable color=RED
-        avatar > HorizontalAvatar speed=0.25
+        avatar > HorizontalAvatar speed=0.35
         ball > Missile orientation=DOWN speed=15 color=ORANGE physicstype=NoFrictionPhysics
         lost > Immovable color=BLACK
             
@@ -26,46 +26,18 @@ BasicGame
         r > avatar
 """
 
-#SpriteCounter stype=lost limit=3 win=False
-
 level = """
-wwwwwwwwww
-wggggggggw
-wggggggggw
-w        w
-w        w
-w   o    w
-w        w
-w        w
-w   r    w
+wwwwwwwwwwwwwwwwwwww
+wggggggggggggggggggw
+wggggggggggggggggggw
+wggggggggggggggggggw
+w                  w
+w        o         w
+w                  w
+w                  w
+w                  w
+w        r         w
 """
-
-'''
-level = """
-wwwwwww
-wgggggw
-wgggggw
-w     w
-w     w
-w  o  w
-w     w
-w  r  w
-"""
-'''
-
-'''
-level = """
-wwwww
-wgggw
-wgggw
-w o w
-w   w
-w   w
-w   w
-w r w
-"""
-'''
-
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

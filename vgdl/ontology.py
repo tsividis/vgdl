@@ -899,7 +899,8 @@ class MarioAvatar(InertialAvatar):
         from pygame.locals import K_SPACE
 
         if self.lastrect == self.rect and not self.jumping:
-            self.speed = 0
+            self.speed = self.speed * self.orientation[0]
+            self.orientation = (1,0)
 
         action = self._readAction(game)
 

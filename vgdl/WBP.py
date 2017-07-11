@@ -33,7 +33,7 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', NONE: 'wait'}
-LIMIT = 4
+LIMIT = 2
 WALL_EDGE = 1
 MAX_TIMES_IN_SQUARE = sys.maxint
 
@@ -78,21 +78,17 @@ class WBP():
 			i+=1
 		self.addSpaceBarToActions()
 
-		#self.unvisited = [[0,0],0]
-		#self.init_unvisited(rle)
 		self.avatar_locs = set()
 
 		#move away from squares we've already been in heuristic:
 		self.visited = [[0,0],0]
-
+		self.canJump = False
 		self.all_locs = []
 
 		self.avatar_locs_disc = defaultdict(lambda:0)
 		self.graph = {}
 		self.distances = self.dijkstra()
 		self.box_weights = self.calc_weights()
-
-		#self.init_visited(rle)
 
 	def makeGraph(self):
 		graph = {}
@@ -126,11 +122,10 @@ class WBP():
 		graph, edges = self.makeGraph()
 		self.graph = graph
 		dist = {}
-		#embed()
-		for (i,j) in graph:
 
+		for (i,j) in graph:
 			dist[(i,j)] = self.single_source(graph, edges, (i,j))
-		#embed()
+
 		return dist
 
 	def single_source(self, graph, edges, source):
@@ -177,18 +172,11 @@ class WBP():
 	def grid(self,loc):
 		return (loc[0]/self.square_size[0],loc[1]/self.square_size[1])
 
-
-	'''
-	def grid_shifted(self,loc):
-		return ((loc[0]-1)/self.square_size[0],(loc[1]-1)/self.square_size[1])
-	'''
-
 	#return geodesic distance between two locations
 	def geoDist(self,loc1,loc2):
 		
 		grid1= self.grid(loc1)
 		grid2= self.grid(loc2)
-
 		
 		x1 = loc1[0]/float(self.square_size[0]) - grid1[0]
 		y1 = loc1[1]/float(self.square_size[1]) - grid1[1]
@@ -207,18 +195,6 @@ class WBP():
 					if val:
 						dist += (1 if (sum(coord)%2 == sum(exp)%2) else -1)*val* \
 						self.distances[(grid1[0]+coord[0],grid1[1]+coord[1])][(grid2[0]+coord[2],grid2[1]+coord[3])]
-		
-		'''
-		ss = float(self.square_size[0])
-		dist = sys.maxint
-		for x1 in [grid1[0],grid1[0]+1]:
-			for y1 in [grid1[1],grid1[1]+1]:
-				for x2 in [grid2[0],grid2[0]+1]:
-					for y2 in [grid2[1],grid2[1]+1]:
-						if (x1,y1) in self.distances and (x2,y2) in self.distances:
-							new_dist = self.distances[(x1,y1)][(x2,y2)] + (manhattanDist((x1*ss,y1*ss),loc1) + manhattanDist((x2*ss,y2*ss),loc2))
-							dist = min(dist,new_dist)
-		'''
 
 		return dist
 
@@ -261,7 +237,7 @@ class WBP():
 		## Note: if an object that isn't instantiated in the beginning is of a class that
 		## spacebar applies to, we won't pick up on it here.
 		shootingClasses = ['MarioAvatar', 'ClimbingAvatar', 'ShootAvatar', 'Switch', 'FlakAvatar']
-		#embed()
+
 		classes = [str(o[0].__class__) for o in self.rle._game.sprite_groups.values() if len(o)>0]
 		spacebarAvailable = False
 		noUp = False
@@ -270,13 +246,16 @@ class WBP():
 				spacebarAvailable = True
 				if sc == 'MarioAvatar':
 					noUp = True
+					self.canJump = True
 				break
+
+		if any(['HorizontalAvatar' in c for c in classes]):
+			noUp = True
 
 
 		if spacebarAvailable:
 			self.actions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
 		else:
-			#self.actions = [K_UP, K_DOWN, K_LEFT, K_RIGHT]
 			self.actions = [K_RIGHT,K_UP, K_DOWN, K_LEFT]
 		if self.addWaitAction:
 			self.actions.append(NONE)
@@ -293,7 +272,6 @@ class WBP():
 			for o in rle._game.sprite_groups[k]:
 				if o not in rle._game.kill_list:
 					## turn location into vector posd2[ition (rows appended one after the other.) 0 if object has been killed
-					#pos = rle._rect2pos(o.rect) #x,y
 					pos = (o.rect.left, o.rect.top)
 					vecValue = pos[1] + pos[0]*rle.outdim[0]*self.square_size[1] + 1
 				else:
@@ -302,7 +280,6 @@ class WBP():
 				lst.append(objPosCombination) #unique for each object-location combination
 		present = []
 		for k in [t for t in self.objectTypes if t not in ['wall', 'avatar']]: ##maybe add the avatar to this global state
-			# for o in rle._game.sprite_groups[k]:
 			for o in sorted(rle._game.sprite_groups[k], key=lambda s:s.ID):
 				if o not in rle._game.kill_list:
 					present.append(1)
@@ -346,39 +323,12 @@ class WBP():
 		for n in QReward:
 			if n.novelty >= 3:
 				badNodes.append(n)
-		#	else:
-		#		n.eval()
 		for n in badNodes:
 			QReward.remove(n)
 
 		current = min(QReward)
 		QReward.remove(current)
 		return current
-
-
-	'''
-	def rewardSelection(self, QReward, QNovelty):
-
-		#acceptableNodes = filter(lambda n: n.novelty<3, QReward) #11s
-		QReward = filter(lambda n: n.novelty<3, QReward) #14s
-
-		#bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
-		QReward = sorted(QReward, key=lambda n: (-n.intrinsic_reward, n.novelty))
-
-		#maxNodes = [x for x in bestNodes if x.intrinsic_reward == bestNodes[0].intrinsic_reward and x.novelty == bestNodes[0].novelty]
-		maxNodes = [x for x in QReward if x.intrinsic_reward == QReward[0].intrinsic_reward and x.novelty == QReward[0].novelty]
-		try:
-			current = random.choice(maxNodes)
-		except:
-			return None
-		QReward.remove(current)
-		try:
-			QNovelty.remove(current)
-		except:
-			pass
-		return current
-		'''
-
 
  	def BFS_profiler(self):
  		lp = LineProfiler()
@@ -388,7 +338,6 @@ class WBP():
 
 	def BFS(self):
 		QNovelty, QReward = [], []
-		#QReward = []
 		visited, rejected = [], []
 		start = Node(self.rle, self, [], None)
 		start.rle = self.rle
@@ -396,77 +345,47 @@ class WBP():
 		start.eval()
 		#QNovelty.append(start)
 		QReward.append(start)
-		#heapq.heappush(QReward,start)
 		
 		i=0
 		path = []
 
 		print(actionDict)
-		#embed()
-		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
-			"""
-			if i%2==0:
-			else:
-			"""
-			# current = self.noveltySelection(QNovelty, QReward)
-			#embed()
-			current = self.rewardSelection(QReward, QNovelty)
-			#embed()
-			#QReward.remove(current)
-			#embed()
-			# print embed()
 
-			
-			#for n in QNovelty:
-				#print(n.WBP.findAvatarInRLE(n.rle))
-			
+		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
+		
+			current = self.rewardSelection(QReward, QNovelty)
 
 			if current is None:
 				self.quitting = True
 				print(i)
 				print("quitting, no novel node found")
 				return None
+
 			self.statesEncountered.append(current.rle._game.getFullState())
-			#print("BFS")
+
 			print current.rle.show(indent=True)
 			print current.rle._game.sprite_groups["avatar"][0].rect
 			
 			self.all_locs.append(self.findAvatarInRLE(current.rle))
-			#if current.actionSeq:
-			#	if current.actionSeq[-1]==0:
-			#		embed()
-			#	print actionDict[current.actionSeq[-1]]
-			#path.append(current.rle.show(indent=True))
 			current.updateNoveltyDict(QNovelty, QReward)
 			current.updateCenter()
-			#self.avatar_locs_disc[self.rle._rect2pos(current.rle._game.sprite_groups["avatar"][0].rect)]+=1
 			self.avatar_locs_disc[self.grid(self.findAvatarInRLE(current.rle))] += 1
-			#print(self.avatar_locs_disc[self.rle._rect2pos(current.rle._game.sprite_groups["avatar"][0].rect)])
-			#embed()
-			#print current.heuristicVal
-			#if i > 350:
-				#embed()
-			#print i
 			visited.append(current)
 			self.avatar_locs.add(current.rle._rect2pos(current.rle._game.sprite_groups['avatar'][0].rect))
-			#print current.intrinsic_reward
 
-			#print current.rle._game.sprite_groups["avatar"][0].jumping
+			print current.rle._game.sprite_groups["ball"][0].rect
+			print current.intrinsic_reward
+			print current.depth
 
 			actions = self.actions
-			if current.rle._game.sprite_groups["avatar"][0].jumping:
+			if self.canJump and current.rle._game.sprite_groups["avatar"][0].jumping:
 				actions = [NONE]
 			
 			for a in actions:
-				#add = True
-				#if a != NONE and current.rle._game.sprite_groups['avatar'][0].jumping:
-				#	add = False
-				#else:
+
 				child = Node(self.rle, self, current.actionSeq+[a], current)
 				child.eval()
-				#print(actionDict[a])
-				#print(child.WBP.findAvatarInRLE(child.rle))
-				#print("")
+
 				if child.win:
 					# Get the gameString representation of the RLE at each
 					# timestep in the chosen solution, so as to be able to
@@ -488,11 +407,12 @@ class WBP():
 					return child, gameString_array, i
 					#return child, gameString_array, path
 				else:
+					if child.isTerminal() and not child.isWin():
+						print("LOSE")
 					#QNovelty.append(child)
-					QReward.append(child)
-					#heapq.heappush(QReward,child)
+					else:
+						QReward.append(child)
 			i+=1
-			#print i
 		self.solution = []#Node(self.rle, self, [], None)
 		if i>=self.max_nodes:
 			self.quitting = True
@@ -515,7 +435,7 @@ class Node():
 		# self.lastState = None
 		self.reconstructed=False
 		self.expanded = False
-		self.rolloutDepth = 13#max(rle.outdim)
+		self.rolloutDepth = 45#max(rle.outdim)
 		if self.parent is not None:
 			self.rolloutArray = parent.rolloutArray[1:]
 		else:
@@ -555,13 +475,11 @@ class Node():
 		#return metabolic_cost
 
 	def rollout(self, vrle):
-		
-		#if not do_rollout:
-		#	return []
 
 		#print("begin rollout")
 		successfulRollout = False
-		while not successfulRollout:
+		tries = 0
+		while not successfulRollout and tries < 5:
 			vrle = copy.deepcopy(vrle)
 			prevHeuristicVal = self.heuristics(vrle)
 			#prevHeuristicVal = 0
@@ -570,7 +488,8 @@ class Node():
 			terminal, win = vrle._isDone()
 			#terminal = False
 			while i<self.rolloutDepth and not terminal:
-				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
+				#a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
+				a = random.choice(self.WBP.actions)
 				vrle.step(a)
 				#print("rollout")
 				#print vrle.show(indent=True)
@@ -582,9 +501,10 @@ class Node():
 				# print vrle.show()
 				terminal, win = vrle._isDone()
 				i+=1
-			# embed()
+
 			if terminal and not win:
 				successfulRollout = False
+				tries += 1
 				print "rolling out again"
 			else:
 				successfulRollout = True
@@ -761,9 +681,6 @@ class Node():
 
 		return val
 
-	#def updateSquareTimes(self):
-
-
 	def updateCenter(self):
 
 		center = self.WBP.visited[0]
@@ -777,7 +694,6 @@ class Node():
 			n += 1
 			self.WBP.visited = [center,n]
 		
-		#print([x/float(n) for x in center])
 
 	
 
@@ -856,6 +772,7 @@ class Node():
 			## try to copy parent lastState. Then take action and store as current lastState.
 			## if that fails, replay from beginning and store as current lastState
 			try:
+				
 				#vrle = copy.deepcopy(self.parent.rle)
 				vrle = cPickle.loads(cPickle.dumps(self.parent.rle, -1))
 				
@@ -895,6 +812,13 @@ class Node():
  		lp_wrapper()
 		lp.print_stats()
 
+	def do_rollout(self):
+		ball_now = self.rle._game.sprite_groups['ball'][0]
+		ball_prev = self.parent.rle._game.sprite_groups['ball'][0]
+
+		return (ball_now.orientation[1] < 0 and ball_prev.orientation[1] > 0)
+
+
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
 
@@ -906,7 +830,6 @@ class Node():
 		for i in range(1,3):
 			for c in itertools.combinations(self.state, i):
 				c = tuple(sorted(c))
-				#if self.WBP.trueAtoms[c] == 0:
 				if self.WBP.trueAtoms[c] < LIMIT:
 					self.candidates.append(c)
 		self.updateNovelty() #calculates novelty based on state of node (1, 2, 3)
@@ -916,21 +839,21 @@ class Node():
 
 		## Try rollouts for aliens?
 		#if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
-			#embed()
-		#	self.rolloutArray = self.rollout(self.rle)
-			#print "in rollout"
+		if len(self.actionSeq)>0 and self.do_rollout():
+			self.rolloutArray = self.rollout(self.rle)
+			print "in rollout"
+
+		#self.rolloutArray = []
 
 		self.heuristicVal = self.heuristics()
 		self.dist = self.distVisited()
 		self.novel = self.novel_squares()
-		weight = 0.0
+		weight = 1.0
 
 		# print self.lastState._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost
 		self.intrinsic_reward = self.rle._game.score + self.heuristicVal - \
 		self.metabolic_cost+sum(self.rolloutArray) + weight*self.depth + self.novel
 		
-		#embed()	
-		# self.intrinsic_reward = 0
 		return self.win
 
 	def updateNovelty(self):
@@ -945,13 +868,6 @@ class Node():
 		#jointSet = list(set(QNovelty)+set(QReward))
 		jointSet = list(QReward)
 		for c in self.candidates:
-			'''
-			if self.WBP.trueAtoms[c] == 0:
-				self.WBP.trueAtoms[c] = 1
-				for n in jointSet:
-					if c in n.candidates:
-						n.candidates.remove(c)
-			'''
 
 			changed = False
 			if self.WBP.trueAtoms[c] < LIMIT:
@@ -1017,7 +933,7 @@ if __name__ == "__main__":
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
 	gameFilename = "examples.continuousphysics.mario_small"
-	#gameFilename = "examples.continuousphysics.avoid_goomba"
+	gameFilename = "examples.continuousphysics.avoid_goomba"
 	#gameFilename = "examples.continuousphysics.mario"
 	#gameFilename = "examples.continuousphysics.simple"
 	#gameFilename = "examples.continuousphysics.crossroad"
@@ -1027,7 +943,7 @@ if __name__ == "__main__":
 	#gameFilename = "examples.gridphysics.expt_exploration_exploitation"
 	#gameFilename = "examples.continuousphysics.ptsp_simple"
 	#gameFilename = "examples.continuousphysics.ptsp"
-	#gameFilename = "examples.continuousphysics.breakout"
+	gameFilename = "examples.continuousphysics.breakout"
 
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
@@ -1041,7 +957,7 @@ if __name__ == "__main__":
 	p = WBP(rle, gameFilename)
 
 
-	#embed()
+	embed()
 	#	try:
 	last, gameString_array, nodes = p.BFS()
 	#last, gameString_array, nodes = p.BFS_profiler()

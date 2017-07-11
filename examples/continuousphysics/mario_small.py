@@ -66,7 +66,7 @@ wwwwwww
 w     w
 w     w
 w    Gw
-wA wwww
+wA  www
 ww    w
 w     w
 w  G  w
