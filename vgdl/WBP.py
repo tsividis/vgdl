@@ -76,19 +76,25 @@ class WBP():
 		for k in rle._game.all_objects.keys():
 			self.objIDs[k] = i * (self.vecDim[0]+self.padding)
 			i+=1
+
+		self.canJump = False
+
 		self.addSpaceBarToActions()
 
 		self.avatar_locs = set()
 
 		#move away from squares we've already been in heuristic:
 		self.visited = [[0,0],0]
-		self.canJump = False
+		
 		self.all_locs = []
 
 		self.avatar_locs_disc = defaultdict(lambda:0)
 		self.graph = {}
 		self.distances = self.dijkstra()
 		self.box_weights = self.calc_weights()
+
+		self.num_paths = 1
+		self.all_paths = []
 
 	def makeGraph(self):
 		graph = {}
@@ -197,8 +203,6 @@ class WBP():
 						self.distances[(grid1[0]+coord[0],grid1[1]+coord[1])][(grid2[0]+coord[2],grid2[1]+coord[3])]
 
 		return dist
-
-	
 
 	def loop4d(self):
 		array = []
@@ -325,10 +329,12 @@ class WBP():
 				badNodes.append(n)
 		for n in badNodes:
 			QReward.remove(n)
-
-		current = min(QReward)
-		QReward.remove(current)
-		return current
+		try:
+			current = min(QReward)
+			QReward.remove(current)
+			return current
+		except:
+			return None
 
  	def BFS_profiler(self):
  		lp = LineProfiler()
@@ -348,6 +354,10 @@ class WBP():
 		
 		i=0
 		path = []
+		wins = 0
+		min_path_length = sys.maxint
+		best_path = None
+		best_node = None
 
 		print(actionDict)
 
@@ -359,7 +369,8 @@ class WBP():
 				self.quitting = True
 				print(i)
 				print("quitting, no novel node found")
-				return None
+				break
+				
 
 			self.statesEncountered.append(current.rle._game.getFullState())
 
@@ -373,7 +384,7 @@ class WBP():
 			visited.append(current)
 			self.avatar_locs.add(current.rle._rect2pos(current.rle._game.sprite_groups['avatar'][0].rect))
 
-			print current.rle._game.sprite_groups["ball"][0].rect
+			#print current.rle._game.sprite_groups["ball"][0].rect
 			print current.intrinsic_reward
 			print current.depth
 
@@ -381,6 +392,7 @@ class WBP():
 			if self.canJump and current.rle._game.sprite_groups["avatar"][0].jumping:
 				actions = [NONE]
 			
+			#embed()
 			for a in actions:
 
 				child = Node(self.rle, self, current.actionSeq+[a], current)
@@ -391,6 +403,8 @@ class WBP():
 					# timestep in the chosen solution, so as to be able to
 					# compare it to the agent's RLE at execution time and
 					# correct for stochasticity effects
+					wins += 1
+
 					node = child
 					gameString_array = []
 					while node is not None:
@@ -403,8 +417,19 @@ class WBP():
 					print(child.rle.show(indent=True))
 					#path.append(child.rle.show(indent=True))
 					print("WIN!")
-					print i
-					return child, gameString_array, i
+
+					if len(gameString_array) < min_path_length:
+						best_path = gameString_array
+						best_node = child
+						min_path_length = len(gameString_array)
+
+					#print(len(child.actionSeq))
+					#print(child.actionSeq)
+
+					if wins >= self.num_paths:
+						print i
+						print "{} paths found, returning best".format(wins)
+						return best_node, best_path, i
 					#return child, gameString_array, path
 				else:
 					if child.isTerminal() and not child.isWin():
@@ -414,10 +439,12 @@ class WBP():
 						QReward.append(child)
 			i+=1
 		self.solution = []#Node(self.rle, self, [], None)
-		if i>=self.max_nodes:
-			self.quitting = True
-			print "Quitting after {} nodes".format(self.max_nodes)
-		return None
+		#if i>=self.max_nodes:
+		self.quitting = True
+		print "Quitting after {} nodes".format(self.max_nodes)
+		print "{} paths found, returning best".format(wins)
+		return best_node, best_path, i
+		#return None
 
 class Node():
 	def __init__(self, rle, WBP, actionSeq, parent):
@@ -693,7 +720,33 @@ class Node():
 			center[1] += avatar_loc[1]
 			n += 1
 			self.WBP.visited = [center,n]
+	
+	
+	def objcollect_val(self, theory, rle, weight=1.0):
+		objs = rle._game.sprite_groups.keys()
+		for inter in theory.interactionSet:
+			if inter.interaction == 'killSprite' and inter.slot1 == 'avatar':
+				objs.remove(inter.slot2)
+		objs.remove('wall')
+		objs.remove('avatar')
+
+		avatar = self.WBP.findAvatarInRLE(rle)
+
+		min_dist = sys.maxint
 		
+		for obj in objs:
+			locs = self.WBP.findObjectsInRLE(rle,obj)
+			dist = [self.WBP.geoDist(avatar,x) for x in locs]
+			if dist:
+				min_dist = min(min_dist,min(dist))
+
+		#embed()
+
+		return -weight*min_dist
+
+
+	
+
 
 	
 
@@ -724,6 +777,7 @@ class Node():
 		avatarNoveltyVals = []
 		#embed()
 		for term in theory.terminationSet:
+			#embed()
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
@@ -755,6 +809,8 @@ class Node():
 		if avatarNoveltyVals:
 			# print noveltyVals
 			heuristicVal += max(avatarNoveltyVals)
+
+		heuristicVal += self.objcollect_val(theory, rle)
 
 		return heuristicVal
 
@@ -813,10 +869,13 @@ class Node():
 		lp.print_stats()
 
 	def do_rollout(self):
-		ball_now = self.rle._game.sprite_groups['ball'][0]
-		ball_prev = self.parent.rle._game.sprite_groups['ball'][0]
+		try:
+			ball_now = self.rle._game.sprite_groups['ball'][0]
+			ball_prev = self.parent.rle._game.sprite_groups['ball'][0]
 
-		return (ball_now.orientation[1] < 0 and ball_prev.orientation[1] > 0)
+			return (ball_now.orientation[1] < 0 and ball_prev.orientation[1] > 0)
+		except:
+			return False
 
 
 	def eval(self):
@@ -933,7 +992,7 @@ if __name__ == "__main__":
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
 	gameFilename = "examples.continuousphysics.mario_small"
-	gameFilename = "examples.continuousphysics.avoid_goomba"
+	#gameFilename = "examples.continuousphysics.avoid_goomba"
 	#gameFilename = "examples.continuousphysics.mario"
 	#gameFilename = "examples.continuousphysics.simple"
 	#gameFilename = "examples.continuousphysics.crossroad"
@@ -957,7 +1016,7 @@ if __name__ == "__main__":
 	p = WBP(rle, gameFilename)
 
 
-	embed()
+	#embed()
 	#	try:
 	last, gameString_array, nodes = p.BFS()
 	#last, gameString_array, nodes = p.BFS_profiler()

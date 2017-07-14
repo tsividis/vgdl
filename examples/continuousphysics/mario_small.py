@@ -79,7 +79,7 @@ w            w
 w            w
 w            w
 w           Gw
-wA   1wwwwwwww
+wA    wwwwwwww
 wwwwwwwwwwwwww
 """
 
@@ -97,7 +97,7 @@ wG        1      w
 wwwwwwwwwwwwwwwwww
 """
 
-level = level7
+level = level6
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwww
