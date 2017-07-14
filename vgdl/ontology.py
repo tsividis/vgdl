@@ -1056,35 +1056,47 @@ class       NoveltyTermination(Termination):
 
     def isDone(self, game):
         for e in game.effectList:
+            id_not_found = False
             if (e[0]=='killSprite' or e[0] == 'transformTo'):
-                        try:
-                            name1 = game.all_objects[e[1]]['sprite'].name
-                        except KeyError:
-                            if e[1]=='ENDOFSCREEN':
-                                name1 = 'ENDOFSCREEN'
-                            elif e[1] in [obj.ID for obj in game.kill_list]:
-                                name1 = [obj.name for obj in game.kill_list
-                                    if obj.ID==e[1]][0]
-                            elif e[1] in game.getObjects().keys():
-                                name1 = game.getObjects()[e[1]]['sprite'].name
-                            else:
-                                print "Couldn't find object in NoveltyTermination"
-                                embed()
-                        try:
-                            name2 = game.all_objects[e[2]]['sprite'].name
-                        except KeyError:
-                            if e[2]=='ENDOFSCREEN':
-                                name2 = 'ENDOFSCREEN'
-                            elif e[2] in [obj.ID for obj in game.kill_list]:
-                                name2 = [obj.name for obj in game.kill_list
-                                    if obj.ID==e[2]][0]
-                            elif e[2] in game.getObjects().keys():
-                                name2 = game.getObjects()[e[2]]['sprite'].name
-                            else:
-                                print "Couldn't find object in NoveltyTermination"
-                                embed()
-                        if name1==self.s1 and name2==self.s2:
-                            return True, self.win
+                try:
+                    name1 = game.all_objects[e[1]]['sprite'].name
+                except KeyError:
+                    if e[1]=='ENDOFSCREEN':
+                        name1 = 'ENDOFSCREEN'
+                    elif e[1] in [obj.ID for obj in game.kill_list]:
+                        name1 = [obj.name for obj in game.kill_list
+                            if obj.ID==e[1]][0]
+                    elif e[1] in game.getObjects().keys():
+                        name1 = game.getObjects()[e[1]]['sprite'].name
+                    else:
+                        print "Couldn't find object in NoveltyTermination"
+                        id_not_found = True
+                        # embed()
+                        # Default to slot1
+                        name1 = self.s1
+                try:
+                    name2 = game.all_objects[e[2]]['sprite'].name
+                except KeyError:
+                    if e[2]=='ENDOFSCREEN':
+                        name2 = 'ENDOFSCREEN'
+                    elif e[2] in [obj.ID for obj in game.kill_list]:
+                        name2 = [obj.name for obj in game.kill_list
+                            if obj.ID==e[2]][0]
+                    elif e[2] in game.getObjects().keys():
+                        name2 = game.getObjects()[e[2]]['sprite'].name
+                    else:
+                        print "Couldn't find object in NoveltyTermination"
+                        id_not_found = True
+                        # embed()
+                        # Default to slot2
+                        name2 = self.s2
+                if name1==self.s1 and name2==self.s2:
+                    print("NoveltyTermination with {} and {}".format(
+                        name1, name2))
+                    if id_not_found:
+                        # embed()
+                        pass
+                    return True, self.win
         return False, None
 
 # ---------------------------------------------------------------------
@@ -1949,8 +1961,13 @@ def sampleFromDistribution(curr_distribution, all_objects):
             from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
                 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
                     AimedFlakAvatar, InertialAvatar, MarioAvatar
-            # sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
-            sample.append(Sprite(vgdlType=MovingAvatar, color=all_objects[k]['type']['color']))
+            try:
+                sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
+                sample.append(Sprite(vgdlType=Flicker, color='BLUE'))
+                # sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'healthPoints':all_objects[k]['sprite'].healthPoints}))
+            except AttributeError:
+                # No args in avatar
+                sample.append(Sprite(vgdlType=MovingAvatar, color=all_objects[k]['type']['color']))
 
     ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
     types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]))
