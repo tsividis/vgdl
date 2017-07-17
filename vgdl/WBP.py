@@ -601,9 +601,12 @@ class Node():
 				#	 for pos in kill_positions
 				#	 for obj in stype_positions]
 				#embed()
-				possiblePairList = [self.WBP.geoDist(pos,obj)
-					for pos in kill_positions
-					for obj in stype_positions]
+				try:
+					possiblePairList = [self.WBP.geoDist(pos,obj)
+						for pos in kill_positions
+						for obj in stype_positions]
+				except:
+					embed()
 
 				distance = min(possiblePairList)
 				# print distance
@@ -729,6 +732,7 @@ class Node():
 				objs.remove(inter.slot2)
 		objs.remove('wall')
 		objs.remove('avatar')
+		objs.remove('background')
 
 		avatar = self.WBP.findAvatarInRLE(rle)
 
@@ -736,8 +740,11 @@ class Node():
 		
 		for obj in objs:
 			locs = self.WBP.findObjectsInRLE(rle,obj)
-			dist = [self.WBP.geoDist(avatar,x) for x in locs]
-			if dist:
+			try:
+				dist = [self.WBP.geoDist(avatar,x) for x in locs]
+			except:
+				embed()
+			if dist < min_dist:
 				min_dist = min(min_dist,min(dist))
 
 		#embed()
@@ -799,6 +806,8 @@ class Node():
 				noveltytermination_val = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
+				print("NOVELTY")
+				embed()
 				# print("noveltytermination_val for {} and {} is equal to {}".format(
 					# term.termination.s1, term.termination.s2, noveltytermination_val))
 				if 'avatar' == term.termination.s2:
@@ -810,7 +819,7 @@ class Node():
 			# print noveltyVals
 			heuristicVal += max(avatarNoveltyVals)
 
-		heuristicVal += self.objcollect_val(theory, rle)
+		#heuristicVal += self.objcollect_val(theory, rle)
 
 		return heuristicVal
 
@@ -992,8 +1001,9 @@ if __name__ == "__main__":
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
 	gameFilename = "examples.continuousphysics.mario_small"
-	#gameFilename = "examples.continuousphysics.avoid_goomba"
+	gameFilename = "examples.continuousphysics.avoid_goomba"
 	#gameFilename = "examples.continuousphysics.mario"
+	gameFilename = "examples.continuousphysics.montezuma_new"
 	#gameFilename = "examples.continuousphysics.simple"
 	#gameFilename = "examples.continuousphysics.crossroad"
 
@@ -1002,7 +1012,7 @@ if __name__ == "__main__":
 	#gameFilename = "examples.gridphysics.expt_exploration_exploitation"
 	#gameFilename = "examples.continuousphysics.ptsp_simple"
 	#gameFilename = "examples.continuousphysics.ptsp"
-	gameFilename = "examples.continuousphysics.breakout"
+	#gameFilename = "examples.continuousphysics.breakout"
 
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)

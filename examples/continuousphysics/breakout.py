@@ -28,7 +28,7 @@ BasicGame
 
 #SpriteCounter stype=lost limit=3 win=False
 
-'''
+
 level = """
 wwwwwwwwww
 wggggggggw
@@ -40,7 +40,7 @@ w        w
 w        w
 w   r    w
 """
-'''
+
 
 
 level = """
@@ -53,6 +53,7 @@ w  o  w
 w     w
 w  r  w
 """
+
 
 
 '''
