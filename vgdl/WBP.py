@@ -25,6 +25,9 @@ from theory_template import TimeStep, Precondition, InteractionRule, Termination
 NoveltyRule, generateSymbolDict, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryFromGame
 from rlenvironmentnonstatic import createRLInputGame
 
+from line_profiler import LineProfiler
+import cPickle
+
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
@@ -32,7 +35,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=500):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=100000):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -70,6 +73,10 @@ class WBP():
 		self.pixel_size = self.rle._game.screensize[0]/self.rle._game.width
 		self.visited_positions = np.zeros(np.array(self.rle._game.screensize)/
 		 	self.pixel_size)
+
+		self.short_horizon = False
+		self.winning_states = []
+		self.trueAtomsIW1 = []
 
 	def findObjectsInRLE(self, rle, objName):
 		try:
@@ -160,14 +167,22 @@ class WBP():
 		try:
 			current = bestNodes.pop(0)
 		except:
+			print('reward selection error')
+			embed()
 			return None
 		QReward.remove(current)
 		try:
 			QNovelty.remove(current)
 		except:
 			pass
+		# self.trueAtomsIW1.append(current.stateIW1)
 		return current
 
+	def BFS_profiler(self):
+		lp = LineProfiler()
+		lp_wrapper = lp(self.BFS)
+		lp_wrapper()
+		lp.print_stats()
 
 	def BFS(self):
 		QNovelty, QReward = [], []
@@ -187,13 +202,15 @@ class WBP():
 			"""
 			# current = self.noveltySelection(QNovelty, QReward)
 			current = self.rewardSelection(QReward, QNovelty)
-			print("node chosen has position score {}".format(current.position_score()))
+			# print("node chosen has position score {}".format(current.position_score()))
 			try:
 				(x, y) = np.array((current.rle._game.getAvatars()[0].rect.x,
 					current.rle._game.getAvatars()[0].rect.y))/self.pixel_size
 				self.visited_positions[x, y] += 1
 			except IndexError:
 				pass
+			except:
+				embed()
 			# print embed()
 			if current is None:
 				self.quitting = True
@@ -214,6 +231,7 @@ class WBP():
 					# timestep in the chosen solution, so as to be able to
 					# compare it to the agent's RLE at execution time and
 					# correct for stochasticity effects
+					self.winning_states.append(child)
 					node = child
 					gameString_array = []
 					while node is not None:
@@ -234,8 +252,23 @@ class WBP():
 			# print i
 		self.solution = []#Node(self.rle, self, [], None)
 		if i>=self.max_nodes:
-			self.quitting = True
-			print "Quitting after {} nodes".format(self.max_nodes)
+			if self.short_horizon:
+				node = current
+				gameString_array = []
+				while node is not None:
+					gameString_array.append(node.rle.show())
+					node = node.parent
+				self.gameString_array = gameString_array[::-1]
+
+				current.rle._isDone()
+				self.solution = current.actionSeq
+				self.statesEncountered.append(current.rle._game.getFullState())
+				# print "win"
+				# embed()
+				return current, gameString_array
+			else:
+				self.quitting = True
+				print "Quitting after {} nodes".format(self.max_nodes)
 		return None
 
 class Node():
@@ -265,19 +298,23 @@ class Node():
 ## rollout length
 ## repeating rollouts if death? e.g., are they optimistic?
 ## multiple samples??
-	def metabolics(self, rle, events, action, n=10, mult=.3):
+	def metabolics(self, rle, events, action, n=15, mult=.3):
 
-		metabolic_cost = 1./n
+		# metabolic_cost = 1./n
+		metabolic_cost = 0
 		# if action==32:
 		if action!=NONE:
-			metabolic_cost += (1-1./n)*mult
+			metabolic_cost += 1./n
+			pass
 		if len(events)>0:
 			# metabolic_cost = .3
 			if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='bounceForward' for e in events]):
-				metabolic_cost += .3#(1-1./n)*mult
+				# metabolic_cost += .3#(1-1./n)*mult
+				pass
 			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
 			# 	metabolic_cost += 0.3
-		return 0#metabolic_cost
+		# metabolic_cost = 0
+		return metabolic_cost
 
 	def rollout(self, vrle):
 		successfulRollout = False
@@ -316,8 +353,8 @@ class Node():
 		if term.termination.win:
 			mult = -1
 		else:
-			compute_second_order = False
-			mult = 1
+			compute_second_order = True
+			mult = 10
 
 		# Get all types that kill or transform stype
 		killer_types = [
@@ -414,11 +451,9 @@ class Node():
 			s2_positions = self.WBP.findObjectsInRLE(rle, s2)
 			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
 
-			"""
 			# Second order lesion
 			if s1 != 'avatar' and s2 != 'avatar':
 				return 0
-			"""
 
 			n_sprites = len(s1_positions)
 			try:
@@ -515,17 +550,25 @@ class Node():
 		try:
 			(x, y) = np.array((self.rle._game.getAvatars()[0].rect.x,
 				self.rle._game.getAvatars()[0].rect.y))/self.WBP.pixel_size
-			print factor * self.WBP.visited_positions[x, y]
+			# print factor * self.WBP.visited_positions[x, y]
 			return factor * self.WBP.visited_positions[x, y]
 		except IndexError:
 			return 0
+
+	def getTo_profiler(self):
+		lp = LineProfiler()
+		lp_wrapper = lp(self.getToCurrentState)
+		output = lp_wrapper()
+		lp.print_stats()
+		return output
 
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
 			## try to copy parent lastState. Then take action and store as current lastState.
 			## if that fails, replay from beginning and store as current lastState
 			try:
-				vrle = copy.deepcopy(self.parent.rle)
+				vrle = cPickle.loads(cPickle.dumps(self.parent.rle, -1))
+				# vrle = copy.deepcopy(self.parent.rle)
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
 					# print a
@@ -541,7 +584,8 @@ class Node():
 		else:
 			self.reconstructed=True
 			# print "copy failed; replaying from top"
-			vrle = copy.deepcopy(self.rle)
+			vrle = cPickle.loads(cPickle.dumps(self.rle, -1))
+			# vrle = copy.deepcopy(self.rle)
 			terminal, win = vrle._isDone()
 			i=0
 			while not terminal and len(self.actionSeq)>i:
@@ -552,12 +596,19 @@ class Node():
 				i += 1
 		return vrle, win
 
+	def eval_profiler(self):
+		lp = LineProfiler()
+		lp_wrapper = lp(self.eval)
+		lp_wrapper()
+		lp.print_stats()
+
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
 
 		self.rle, self.win = self.getToCurrentState()
 
 		self.updateObjIDs(self.rle)
+
 		self.state = self.WBP.calculateAtoms(self.rle)
 
 		for i in range(1,3):
@@ -567,11 +618,23 @@ class Node():
 					self.candidates.append(c)
 		self.updateNovelty()
 
+		"""
+		try:
+			avatar_pos = self.WBP.findAvatarInRLE(self.rle)
+			vecValue = avatar_pos[1] + avatar_pos[0]*self.rle.outdim[0] + 1
+			self.stateIW1 = [vecValue]
+		except:
+			vecValue = [0]
+
+		self.stateIW1.append([pos for pos, char in enumerate(self.rle.show()) if char== ' '])
+		self.updateNoveltyIW1()
+		"""
+
 		# if self.win:
 			# embed()
 
 		## Try rollouts for aliens?
-		if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
+		if len(self.actionSeq)>0 and self.actionSeq[-1]==32 and False:
 			self.rolloutArray = self.rollout(self.rle)
 			print "in rollout"
 
@@ -590,6 +653,14 @@ class Node():
 			self.novelty = min([len(c) for c in self.candidates])
 		return self.novelty
 
+	def updateNoveltyIW1(self):
+		for state in self.WBP.trueAtomsIW1:
+			if self.stateIW1 == state:
+				self.novelty = 1
+				return self.novelty
+		self.novelty = 0
+		return self.novelty
+
 	def updateNoveltyDict(self, QNovelty, QReward):
 		jointSet = list(set(QNovelty+QReward))
 		for c in self.candidates:
@@ -600,6 +671,12 @@ class Node():
 						n.candidates.remove(c)
 		for n in jointSet:
 			n.novelty = n.updateNovelty()
+		return
+
+	def updateNoveltyDictIW1(self, QNovelty, QReward):
+		jointSet = list(set(QNovelty+QReward))
+		for n in jointSet:
+			n.novelty = n.updateNoveltyIW1()
 		return
 
 	def updateObjIDs(self, vrle):
@@ -646,7 +723,7 @@ if __name__ == "__main__":
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
-	gameFilename = "examples.gridphysics.theorytest2"
+	gameFilename = "examples.gridphysics.frogs2"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
 	# gameFilename = "examples.gridphysics.expt_helper"
 

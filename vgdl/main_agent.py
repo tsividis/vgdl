@@ -1,9 +1,10 @@
 from IPython import embed
 from util import *
 from core import colorDict, VGDLParser, sys
-from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, \
-OrientedSprite, Missile, initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, \
-spriteInduction, selectObjectGoal, distributionInitSetup
+# from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, \
+# OrientedSprite, Missile, initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, \
+# spriteInduction, selectObjectGoal, distributionInitSetup
+from ontology import *
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
 SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
 generateTheoryFromGame
@@ -18,14 +19,21 @@ from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 
 
+
+AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
+RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
+AimedFlakAvatar, InertialAvatar, MarioAvatar]
+
 class Agent:
 	def __init__(self, modelType, gameFilename):
 		self.modelType = modelType
 		self.gameFilename = gameFilename
 		self.gameString = None
 		self.levelString = None
-		self.annealingFactor = .9
-		self.max_nodes = 1000
+		self.annealingFactor = 1.
+		self.starting_max_nodes = 10000
+		self.max_nodes_annealing = 10
+		self.regrounding = 0
 		self.hypotheses = []
 		self.symbolDict = None
 		self.finalEventList = []
@@ -84,6 +92,20 @@ class Agent:
 			gameObject = Game(self.gameString)
 			initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
 
+		# Handle wall vs. projectile interaction (hacky)
+		avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
+		"""
+		if 'stype' in avatar.args.keys():
+			# old_rule1 = InteractionRule('killSprite', avatar.args['stype'], 'c4', {}, set(), generic=True)
+			# old_rule2 = InteractionRule('killSprite', avatar.args['stype'], 'avatar', {}, set(), generic=True)
+			# new_rule = InteractionRule('nothing', avatar.args['stype'], 'avatar', {}, set())
+
+			# initialTheory.interactionSet.remove(old_rule1)
+			# initialTheory.interactionSet.remove(old_rule2)
+			# initialTheory.interactionSet.append(new_rule)
+			pass
+		"""
+
 		self.hypotheses = [initialTheory]
 
 		self.symbolDict = generateSymbolDict(self.rle)
@@ -100,10 +122,11 @@ class Agent:
 		self.hypotheses = newHypotheses
 
 
-	def playCurriculum(self, heatmap=False):
+	def playCurriculum(self, heatmap=False, level_game_pairs=None):
 		""" Plays a game level until it wins, then moves to the next one until
 		completion. """
-		level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
+		if not level_game_pairs:
+			level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
 		episodes = []
 		allEffectsEncountered = []
 		shutil.rmtree("images/tmp")
@@ -114,6 +137,7 @@ class Agent:
 
 			print("Playing level {}".format(n_level))
 			(self.gameString, self.levelString) = level_game
+			self.max_nodes = self.starting_max_nodes
 			win = False
 			gameObject = None
 			i=0
@@ -144,6 +168,9 @@ class Agent:
 			if flexible_goals:
 				## When you embed, you can manually input changes in theory. See flexible_goals.py for an example.
 				embed()
+
+			# self.makeMovie()
+
 
 		output = {'modelType':self.modelType,
 					'gameName': self.gameFilename[self.gameFilename.find('expt'):],
@@ -297,7 +324,8 @@ class Agent:
 
 					# Check for disparities between plan and reality
 					# (e.g. stochastic effects)
-					if self.rle._game.is_stochastic and i>-1:
+					# if self.rle._game.is_stochastic and i>self.regrounding:
+					if i>self.regrounding:
 					# if True:
 						try:
 							if any(np.where(list(gameString_array[i+1]))[0] !=
@@ -306,10 +334,12 @@ class Agent:
 						except:
 							# Mismatch in gamestring lengths
 							break
+
+				self.max_nodes *= 1
 			else:
 				## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
 				## Search more deeply next time.
-				self.max_nodes *= 2
+				self.max_nodes *= self.max_nodes_annealing
 				return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered
 
 
@@ -502,7 +532,6 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.demo_helper"
 
-	# filename = "examples.gridphysics.frogs2"
 
 	# filename = "examples.gridphysics.expt_physics_sharpshooter"
 	# filename = "examples.gridphysics.demo_transform_relational"
@@ -510,10 +539,46 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pick_apples"
 	# filename = "examples.gridphysics.expt_exploration_exploitation"
 
-	filename = "examples.gridphysics.expt_preconditions"
+	filename = "examples.gridphysics.boulderdash"
+
+
+	level_game_pairs = None
+	# Playing GVG-AI games
+	def read_gvgai_game(filename):
+		with open(filename, 'r') as f:
+			new_doc = []
+			g = gen_color()
+			for line in f.readlines():
+				new_line = (" ".join([string if string[:4]!="img="
+					else "color={}".format(next(g))
+					for string in line.split(" ")]))
+				new_doc.append(new_line)
+			new_doc = "\n".join(new_doc)
+		return new_doc
+
+	def gen_color():
+		from vgdl.colors import colorDict
+		color_list = colorDict.values()
+		color_list = [c for c in color_list if c not in ['UUWSWF']]
+		for color in color_list:
+			yield color
+
+	# gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
+		# 'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
+	# gvgname = "../../gvgai/examples/gridphysics/{}".format(gvggames[4])
+
+	# gameString = read_gvgai_game('{}.txt'.format(gvgname))
+
+
+	# level_game_pairs = []
+	# for level_number in range(5):
+		# with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
+			# level_game_pairs.append([gameString, level.read()])
+
 
 	agent = Agent('full', filename)
 
 	##then pass this down for multiple episodes
 	gameObject = None
-	agent.playCurriculum(heatmap=True)
+
+	agent.playCurriculum(heatmap=True, level_game_pairs=level_game_pairs)

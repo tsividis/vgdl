@@ -474,7 +474,7 @@ class Theory(object):
 		else:
 			new_precond = Precondition(
 			text='new precondition for '+resource,
-			item=resource, operator_name='>=', num=limit)	
+			item=resource, operator_name='>=', num=limit)
 
 		# Add new generic rules for the avatar with preconditions
 		newInteractionRules = []
@@ -1332,7 +1332,7 @@ class Theory(object):
 			text = item+">"+str(0)
 			operator = '>'
 			concepts.append((text,item,operator,0))
-		
+
 		## Check for limits of resources and add count(resource)==limit to the concepts.
 		for rule in self.interactionSet:
 			if 'resource' in rule.args.keys() and rule.args['resource']==item and 'limit' in rule.args.keys() and num>=rule.args['limit']:
@@ -1699,14 +1699,24 @@ class Game(object):
 		allSprites = [avatar]+nonAvatars
 		eos = [o for o in T.spriteSet if o.color=='ENDOFSCREEN'][0]
 
-
 		# print "buildgenerictheory"
 		# embed()
 		avatar.className = 'avatar'
 		T.classes[avatar.className] = [avatar]
 
+		projectileName = ''
+		try:
+			projectileName = avatar['stype']
+		except TypeError:
+			pass
+
+		projectileTypes = [Flicker, OrientedFlicker, Missile]
 		for i in range(len(nonAvatars)):
-			nonAvatars[i].className = 'c'+str(i+2)
+			if projectileName and nonAvatars[i].vgdlType in projectileTypes:
+				nonAvatars[i].className = projectileName
+			else:
+				nonAvatars[i].className = 'c'+str(i+2)
+
 			T.classes[nonAvatars[i].className] = [nonAvatars[i]]
 		T.classes['EOS'] = [eos] ##initialize EOS with special name, since it gets such special treatment in VGDL text files.
 
@@ -1818,7 +1828,7 @@ class Game(object):
 
 		max_likelihood = np.unique([sum([h.likelihood(ts) for ts in timesteps]) for h in self.hypothesisSpace])[-1]
 		self.hypothesisSpace = [h for h in self.hypothesisSpace if sum([h.likelihood(ts) for ts in timesteps]) == max_likelihood]
-		
+
 		# Termination set induction
 		## TODO: add this again.
 		# if result:
@@ -2366,11 +2376,16 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 	sortedInteractions = []
 	for pair in sortedInteractionDict:
-		killInteractions, scoreChangeInteractions, nonKillInteractions, changeResourceInteractions = [], [], [], []
+		(killIfHasLessInteractions, killInteractions, scoreChangeInteractions,
+			nonKillInteractions, changeResourceInteractions) = [], [], [], [], []
 		for interactionRule in sortedInteractionDict[pair]:
 			if "kill" in interactionRule.interaction:
-				# check whether this is a killing interaction
-				killInteractions.append(interactionRule)
+				precondition = list(set(interactionRule.preconditions))
+				if precondition and precondition[0].operator_name in ['<', '<=']:
+					killIfHasLessInteractions.append(interactionRule)
+				else:
+					# check whether this is a killing interaction
+					killInteractions.append(interactionRule)
 			elif "changeScore" in interactionRule.interaction:
 				scoreChangeInteractions.append(interactionRule)
 			elif "changeResource" in interactionRule.interaction:
@@ -2378,9 +2393,12 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 			else:
 				nonKillInteractions.append(interactionRule)
 
-		sortedInteractions += scoreChangeInteractions + changeResourceInteractions + killInteractions + nonKillInteractions
+		sortedInteractions += (killIfHasLessInteractions +
+			scoreChangeInteractions + changeResourceInteractions +
+			killInteractions + nonKillInteractions)
 		# make sure that killing interactions get processed before interactions
 		# that don't kill.
+		# EDIT: made killIfHasLess be processed first
 
 	for interactionRule in sortedInteractions:
 		if all([not interactionRule.__eq__(r) for r in added_rules]): ## don't duplicate rules.

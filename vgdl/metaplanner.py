@@ -24,6 +24,10 @@ def translateEvents(events, all_objects, rle):
 			return objectID
 		elif objectID in rle._game.sprite_groups.keys():
 			return colorDict[str(rle._game.sprite_groups[objectID][0].color)]
+		elif objectID in [obj.ID for obj in rle._game.kill_list]:
+			objectColor = [obj.color for obj in rle._game.kill_list
+				if obj.ID==objectID][0]
+			return colorDict[str(objectColor)]
 		else:
 			# for some reason we haven't been passed an ID but rather a sprite object
 			objectName = objectID.name

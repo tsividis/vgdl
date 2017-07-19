@@ -21,9 +21,9 @@ class Sprite(object):
     """
     TODO: Incorporate properties into theory induction loop.
     """
-    def __init__(self, vgdlType, color, className=None, args=None): 
+    def __init__(self, vgdlType, color, className=None, args=None):
         self.vgdlType = vgdlType
-        self.color = color 
+        self.color = color
         self.className = className
         self.args = args
 
@@ -89,7 +89,7 @@ class SpriteParser(object):
         resourceType = self._eval("Resource")
         EOS = "EOS"
         self.sprite_types[EOS] = Sprite(EOS,None,{})
-       
+
         for sn in snodes:
             assert ">" in sn.content
             key, sdef = [x.strip() for x in sn.content.split(">")]
@@ -121,7 +121,6 @@ class SpriteParser(object):
                         self.sprite_types[key+"_resource"] = Sprite(self._eval('ResourcePack'), color_type+"_resource", args_without_color)
                     else:
                         #print "--> will be ITSELF"
-
                         self.sprite_types[key] = Sprite(sclass, color_type, args_without_color)
 
 
@@ -145,7 +144,7 @@ class SpriteParser(object):
                     try:
                         # if s.color == None:
                         #     embed()
-                            
+
                         color = str(s.color)
                         if color in colorDict:
                             color = colorDict[color]
@@ -155,7 +154,7 @@ class SpriteParser(object):
                             self.sprite_types[key+"_resource"] = Sprite(s, color, args_without_color)
                         else:
                             self.sprite_types[key] = Sprite(s, color, args_without_color)
-                            
+
                     except AttributeError:
                         if isResourceType:
                             self.sprite_types[key] = Sprite(s, None, args_without_color)
