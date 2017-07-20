@@ -356,6 +356,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         return output
 
     def step(self, action):
+        #print self._game.sprite_groups['avatar']
         #print("start step")
         if action == ('space'):
             self._game.keystate[32] = True

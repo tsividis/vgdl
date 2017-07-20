@@ -4,6 +4,8 @@ import numpy as np
 from numpy import zeros
 import pygame
 from ontology import BASEDIRS
+import ontology
+import core
 from core import VGDLSprite, colorDict, sys
 from stateobsnonstatic import StateObsHandlerNonStatic
 from rlenvironmentnonstatic import *
@@ -14,6 +16,7 @@ from threading import Thread
 from collections import defaultdict, deque
 import time
 import ipdb
+import vgdl
 import heapq
 import copy
 from threading import Lock
@@ -33,13 +36,13 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', NONE: 'wait'}
-LIMIT = 2
+
 WALL_EDGE = 1
 MAX_TIMES_IN_SQUARE = sys.maxint
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=5000):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=5000, limit=4):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -96,6 +99,9 @@ class WBP():
 		self.num_paths = 1
 		self.all_paths = []
 
+		self.LIMIT = limit
+		self.GRID_LIMIT = 25
+
 	def makeGraph(self):
 		graph = {}
 		wallLocs = self.findObjectsInRLE(self.rle,'wall')
@@ -106,7 +112,7 @@ class WBP():
 				if (i,j) not in wallLocs:
 					graph[(i,j)] = set()
 					for (x,y) in [(0,1),(0,-1),(1,0),(-1,0)]:
-						if (i + x, j + y) not in wallLocs and i+x in range(rle.outdim[1]) and j+y in range(rle.outdim[0]):
+						if (i + x, j + y) not in wallLocs and i+x in range(self.rle.outdim[1]) and j+y in range(self.rle.outdim[0]):
 								graph[(i,j)].add((i+x,j+y))
 		edges = defaultdict(lambda:1)
 
@@ -268,11 +274,56 @@ class WBP():
 			self.actions.remove(K_DOWN)
 		return
 
+	def getAliveAvatar(self,rle):
+		#embed()
+		avatars = []
+		for k in ["avatar","keyavatar","ladderavatar"]:
+				for o in rle._game.sprite_groups[k]:
+					if o not in rle._game.kill_list:
+						avatars.append(o)
+
+		if len(avatars) == 1:
+			print avatars[0]
+			return avatars[0]
+
+		print "Either 0 or >1 avatars!"
+		embed()
+
+
+
+	def getActions(self,rle):
+		#embed()
+		avatar = self.getAliveAvatar(rle)
+		#classes = [str(o[0].__class__) for o in rle._game.sprite_groups.values() if len(o)>0]
+		self.canJump = False
+		#embed()
+		#print avatar.__class__
+		if isinstance(avatar,vgdl.ontology.HorizontalAvatar):
+			self.actions = [K_RIGHT,K_LEFT]
+
+		elif isinstance(avatar,vgdl.ontology.VerticalAvatar):
+			print 'Vertical'
+			self.actions = [K_UP,K_DOWN]
+
+		elif isinstance(avatar,vgdl.ontology.MarioAvatar):
+			print('Mario')
+			self.actions = [K_SPACE, K_LEFT, K_RIGHT]
+			self.canJump = True
+
+		else:
+			self.actions = [K_RIGHT,K_UP, K_DOWN, K_LEFT]
+
+		if self.addWaitAction:
+			self.actions.append(NONE) 
+		return
+
+
 	#returns set of atom values
 	def calculateAtoms(self, rle):
 		lst = []
 
-		for k in rle._game.sprite_groups.keys():
+		#embed()
+		for k in [t for t in rle._game.sprite_groups.keys() if t != 'background']:
 			for o in rle._game.sprite_groups[k]:
 				if o not in rle._game.kill_list:
 					## turn location into vector posd2[ition (rows appended one after the other.) 0 if object has been killed
@@ -283,7 +334,7 @@ class WBP():
 				objPosCombination = self.objIDs[o.ID] + vecValue
 				lst.append(objPosCombination) #unique for each object-location combination
 		present = []
-		for k in [t for t in self.objectTypes if t not in ['wall', 'avatar']]: ##maybe add the avatar to this global state
+		for k in [t for t in self.objectTypes if t not in ['wall', 'avatar','background']]: ##maybe add the avatar to this global state
 			for o in sorted(rle._game.sprite_groups[k], key=lambda s:s.ID):
 				if o not in rle._game.kill_list:
 					present.append(1)
@@ -291,10 +342,32 @@ class WBP():
 					present.append(0)
 		ind = sum([present[i]*2**i for i in range(len(present))]) #atom indicating which objects are alive
 		lst.append(ind)
+
+		#lst.extend(self.gridAtoms(rle))
+		#if rle._game.sprite_groups['keyavatar']:
+		#	embed()
+
 		if not self.vecSize:
 			self.vecSize = len(lst)
-			# print "Vector is length {}".format(self.vecSize)
+		#print "Vector is length {}".format(self.vecSize)
+		#embed()
 		return set(lst)
+
+	def gridAtoms(self,rle):
+		lst = []
+
+		for k in [t for t in rle._game.sprite_groups.keys() if t != 'background']:
+			for o in rle._game.sprite_groups[k]:
+				#if issubclass(type(o),core.Avatar):
+				if o not in rle._game.kill_list:
+					pos = rle._rect2pos(o.rect)
+					vecValue = pos[1] + pos[0]*rle.outdim[0] + 1
+				else:
+					vecValue = 0
+				objPosCombination = -(self.objIDs[o.ID] + vecValue)
+				lst.append(objPosCombination)
+		return set(lst)
+
 
 	def compareDicts(self, d1,d2):
 		## only tells us what is in d2 that isn't in d1, as well as differences in values between shared keys
@@ -375,7 +448,11 @@ class WBP():
 			self.statesEncountered.append(current.rle._game.getFullState())
 
 			print current.rle.show(indent=True)
-			print current.rle._game.sprite_groups["avatar"][0].rect
+
+			#print current.rle._game.sprite_groups["avatar"]
+			#print current.rle._game.sprite_groups["ladderavatar"]
+			#print current.rle._game.kill_list
+			#print(len(current.state))
 			
 			self.all_locs.append(self.findAvatarInRLE(current.rle))
 			current.updateNoveltyDict(QNovelty, QReward)
@@ -385,12 +462,18 @@ class WBP():
 			self.avatar_locs.add(current.rle._rect2pos(current.rle._game.sprite_groups['avatar'][0].rect))
 
 			#print current.rle._game.sprite_groups["ball"][0].rect
-			print current.intrinsic_reward
-			print current.depth
-
+			#print current.intrinsic_reward
+			#print current.depth
+			print(i)
+			print len(current.state)
+			self.getActions(current.rle)
 			actions = self.actions
-			if self.canJump and current.rle._game.sprite_groups["avatar"][0].jumping:
-				actions = [NONE]
+			if self.canJump:
+				try:
+					if current.rle._game.sprite_groups["avatar"][0].jumping or current.rle._game.sprite_groups["keyavatar"][0].jumping:
+						actions = [NONE]
+				except:
+					pass
 			
 			#embed()
 			for a in actions:
@@ -429,6 +512,7 @@ class WBP():
 					if wins >= self.num_paths:
 						print i
 						print "{} paths found, returning best".format(wins)
+						#results[key] = (best_node,best_path,i)
 						return best_node, best_path, i
 					#return child, gameString_array, path
 				else:
@@ -439,11 +523,15 @@ class WBP():
 						QReward.append(child)
 			i+=1
 		self.solution = []#Node(self.rle, self, [], None)
-		#if i>=self.max_nodes:
-		self.quitting = True
-		print "Quitting after {} nodes".format(self.max_nodes)
+		if i>=self.max_nodes:
+			self.quitting = True
+			print "Quitting after {} nodes".format(self.max_nodes)
+		else:
+			print "No novel nodes found"
 		print "{} paths found, returning best".format(wins)
+		#results[key] = (best_node,best_path,i)
 		return best_node, best_path, i
+
 		#return None
 
 class Node():
@@ -453,7 +541,11 @@ class Node():
 		self.actionSeq = actionSeq
 		self.parent = parent
 		self.state = {} #values of atoms
+		self.grid_state = {}
 		self.candidates = []
+		self.grid_candidates = []
+		self.pixel_novelty = None
+		self.grid_novelty = None
 		self.novelty = None
 		self.reward = None
 		self.intrinsic_reward = 0
@@ -553,10 +645,14 @@ class Node():
 		# Get all types that kill or transform stype
 		killer_types = [
 			inter.slot2 for inter in theory.interactionSet
-			if ((inter.interaction == 'killSprite' or
-				 inter.interaction == 'transformTo') and
-				 not inter.generic
+			if (inter.interaction == "killSprite" and
+				not inter.generic
 				and inter.slot1 == stype)]
+
+			#if ((inter.interaction == 'killSprite' or
+			#	 inter.interaction == 'transformTo') and
+			#	 not inter.generic
+			#	and inter.slot1 == stype)]
 
 		# Get attributes from terminationSet
 		limit = term.termination.limit
@@ -725,7 +821,7 @@ class Node():
 			self.WBP.visited = [center,n]
 	
 	
-	def objcollect_val(self, theory, rle, weight=1.0):
+	def objcollect_val(self, theory, rle, weight=0.0):
 		objs = rle._game.sprite_groups.keys()
 		for inter in theory.interactionSet:
 			if inter.interaction == 'killSprite' and inter.slot1 == 'avatar':
@@ -751,14 +847,8 @@ class Node():
 
 		return -weight*min_dist
 
-
-	
-
-
-	
-
 	def novel_squares(self,weight=0.00):
-		#loc = self.rle._rect2pos(self.rle._game.sprite_groups["avatar"][0].rect)
+		#loc = self.rle._rect2pos(self.rle._game.sprite_groups["avatar"][0].rect)	
 		loc = self.WBP.grid(self.WBP.findAvatarInRLE(self.rle))
 		return -(1.2**self.WBP.avatar_locs_disc[loc])*weight
 		#return -weight*self.WBP.avatar_locs_disc[loc]#/self.WBP.box_weights[loc]
@@ -894,12 +984,20 @@ class Node():
 
 		self.updateObjIDs(self.rle)
 		self.state = self.WBP.calculateAtoms(self.rle) #new atom values
+		self.grid_state = self.WBP.gridAtoms(self.rle)
 
 		for i in range(1,3):
 			for c in itertools.combinations(self.state, i):
 				c = tuple(sorted(c))
-				if self.WBP.trueAtoms[c] < LIMIT:
+				if self.WBP.trueAtoms[c] < self.WBP.LIMIT:
 					self.candidates.append(c)
+
+		for i in range(1,3):
+			for c in itertools.combinations(self.grid_state, i):
+				c = tuple(sorted(c))
+				if self.WBP.trueAtoms[c] < self.WBP.GRID_LIMIT:
+					self.grid_candidates.append(c)
+
 		self.updateNovelty() #calculates novelty based on state of node (1, 2, 3)
 
 		# if self.win:
@@ -916,7 +1014,7 @@ class Node():
 		self.heuristicVal = self.heuristics()
 		self.dist = self.distVisited()
 		self.novel = self.novel_squares()
-		weight = 1.0
+		weight = 0.0
 
 		# print self.lastState._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost
 		self.intrinsic_reward = self.rle._game.score + self.heuristicVal - \
@@ -926,25 +1024,43 @@ class Node():
 
 	def updateNovelty(self):
 		if len(self.candidates)==0:
-			self.novelty = 3
+			self.pixel_novelty = 3
 		else:
-			self.novelty = min([len(c) for c in self.candidates])
+			self.pixel_novelty = min([len(c) for c in self.candidates])
 
+		if len(self.grid_candidates)==0:
+			self.grid_novelty = 3
+		else:
+			self.grid_novelty = min([len(c) for c in self.grid_candidates])
+
+		self.novelty = max(self.grid_novelty,self.pixel_novelty)
 		return self.novelty
 
 	def updateNoveltyDict(self, QNovelty, QReward):
 		#jointSet = list(set(QNovelty)+set(QReward))
 		jointSet = list(QReward)
+
 		for c in self.candidates:
 
 			changed = False
-			if self.WBP.trueAtoms[c] < LIMIT:
+			if self.WBP.trueAtoms[c] < self.WBP.LIMIT:
 				self.WBP.trueAtoms[c] += 1
 				changed = True
-			if changed and self.WBP.trueAtoms[c] == LIMIT:
+			if changed and self.WBP.trueAtoms[c] == self.WBP.LIMIT:
 				for n in jointSet:
 					if c in n.candidates:
 						n.candidates.remove(c)
+
+		for c in self.grid_candidates:
+
+			changed = False
+			if self.WBP.trueAtoms[c] < self.WBP.GRID_LIMIT:
+				self.WBP.trueAtoms[c] += 1
+				changed = True
+			if changed and self.WBP.trueAtoms[c] == self.WBP.GRID_LIMIT:
+				for n in jointSet:
+					if c in n.grid_candidates:
+						n.grid_candidates.remove(c)
 
 		for n in jointSet:
 			n.novelty = n.updateNovelty()
@@ -1000,12 +1116,13 @@ if __name__ == "__main__":
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
-	gameFilename = "examples.continuousphysics.mario_small"
-	gameFilename = "examples.continuousphysics.avoid_goomba"
+	#gameFilename = "examples.continuousphysics.mario_small"
+	#gameFilename = "examples.continuousphysics.avoid_goomba"
 	#gameFilename = "examples.continuousphysics.mario"
 	gameFilename = "examples.continuousphysics.montezuma_new"
 	#gameFilename = "examples.continuousphysics.simple"
 	#gameFilename = "examples.continuousphysics.crossroad"
+	#gameFilename = "examples.continuousphysics.collect_key"
 
 	#gameFilename = "examples.gridphysics.simple_grid"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.

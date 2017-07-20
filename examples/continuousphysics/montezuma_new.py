@@ -23,7 +23,7 @@ w..................w
 wwwl..wwwwwww...lwww
 w..l............l..w
 w..l............l..w
-w.........1........w
+w..................w
 wwwwwwwwwwwwwwwwwwww
 """
 

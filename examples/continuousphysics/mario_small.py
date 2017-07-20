@@ -97,7 +97,7 @@ wG        1      w
 wwwwwwwwwwwwwwwwww
 """
 
-level = level6
+level = level5
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwww
