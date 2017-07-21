@@ -1706,8 +1706,8 @@ class Game(object):
 
 		projectileName = ''
 		try:
-			projectileName = avatar['stype']
-		except TypeError:
+			projectileName = avatar.args['stype']
+		except (TypeError, KeyError) as e:
 			pass
 
 		projectileTypes = [Flicker, OrientedFlicker, Missile]
@@ -1787,6 +1787,18 @@ class Game(object):
 					rule = InteractionRule('killSprite', otherSprite.className, s.className, {}, set(), generic=True)
 					theory.interactionSet.append(rule)
 				i+=1
+			else:
+				## If the sampled hypothesis posits a different sprite type, 
+				## find the matching previous Sprite, copy its features, replace with current sprite.
+				matchingSprite = [sprite for sprite in theory.spriteSet if sprite.color==s.color][0]
+				if s.vgdlType != matchingSprite.vgdlType:
+					# print "updating sprites"
+					# embed()
+					s.className = matchingSprite.className
+					theory.classes[s.className] = [s]
+					theory.spriteObjects[s.color] = s
+					theory.spriteSet.remove(matchingSprite)
+					theory.spriteSet.append(s)
 		return theory
 
 		## decide how we're falsifying termination conditions, and tracking ones that weren't falsified.
@@ -2188,6 +2200,8 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 				argsString = " resource=%s limit=%s"%(precondition.item, str(limit))
 		elif interactionRule.interaction=='teleportToExit':
+			argsString = ""
+		elif interactionRule.interaction == 'killIfFromAbove' or interactionRule.interaction == 'killIfFromBelow':
 			argsString = ""
 		else:
 			if interactionRule.args:

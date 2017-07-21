@@ -1,9 +1,6 @@
 from IPython import embed
 from util import *
 from core import colorDict, VGDLParser, sys
-# from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, \
-# OrientedSprite, Missile, initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, \
-# spriteInduction, selectObjectGoal, distributionInitSetup
 from ontology import *
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
 SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
@@ -83,7 +80,8 @@ class Agent:
 	def initializeHypotheses(self, allObjects, learnSprites=True):
 		if learnSprites:
 			observe(self.rle, 5)
-			spriteTypeHypothesis = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects)
+			spriteTypeHypothesis, exceptedObjects = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects)
+			self.rle._game.exceptedObjects = exceptedObjects
 			# print "sampled hypothesis"
 			# embed()
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
@@ -114,7 +112,7 @@ class Agent:
 
 	def completeHypotheses(self, allObjects):
 		observe(self.rle, 0)
-		spriteTypeHypothesis = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects)
+		spriteTypeHypothesis, exceptedObjects = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects)
 		gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 		newHypotheses = []
 		for hypothesis in self.hypotheses:
@@ -169,7 +167,7 @@ class Agent:
 				## When you embed, you can manually input changes in theory. See flexible_goals.py for an example.
 				embed()
 
-			# self.makeMovie()
+		self.makeMovie()
 
 
 		output = {'modelType':self.modelType,
@@ -313,6 +311,7 @@ class Agent:
 					self.hypotheses[0].dryingPaint = set()
 					hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, 
 						run_induction = not flexible_goals)
+					print "theory_change_flag", theory_change_flag
 					effectsEncountered.extend(effects)
 					steps +=1
 					if theory_change_flag:
@@ -330,6 +329,8 @@ class Agent:
 						try:
 							if any(np.where(list(gameString_array[i+1]))[0] !=
 								   np.where(list(self.rle.show()))[0]):
+								print 'regrounding'
+								# embed()
 								break
 						except:
 							# Mismatch in gamestring lengths
@@ -386,7 +387,7 @@ class Agent:
 
 		if any([self.new_objects[k]>5 for k in self.new_objects.keys()]):
 			# if self.new_objects[k] > 5:
-			spriteTypeHypothesis = sampleFromDistribution(self.rle._game.spriteDistribution, self.all_objects)
+			spriteTypeHypothesis, exceptedObjects = sampleFromDistribution(self.rle._game.spriteDistribution, self.all_objects)
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 
 			newHypotheses = []
@@ -403,20 +404,8 @@ class Agent:
 
 		theory_change_flag = False
 
-
-		## returns rle in next state, updated hypothesis,
-		# spriteInduction(self.rle._game, step=1)
-		# spriteInduction(self.rle._game, step=2)
-
-		# try:
-		# 	agentState = dict(self.rle._game.getAvatars()[0].resources)
-		# 	self.rle.agentStatePrev = agentState
-		# # If agent is killed before we get agentState
-		# except Exception as e:
-		# 	agentState = self.rle.agentStatePrev
-		# 	print "didn't find agentState resources"
-		# 	embed()
-
+		spriteInduction(self.rle._game, step=1)
+		spriteInduction(self.rle._game, step=2)
 
 		res = self.rle.step(action)
 
@@ -445,12 +434,6 @@ class Agent:
 						ignored_negative_change = True
 			self.rle.agentStatePrev = agentState
 
-			# agentState = self.rle.agentStatePrev
-
-		# if len([e for e in res['effectList'] if e[0]=='changeResource'])>0:
-		# 	print res['effectList']
-		# 	print "called changeResource"
-		# 	embed()
 
 		hypotheses = self.manageNewObjects(hypotheses)
 
@@ -458,8 +441,11 @@ class Agent:
 		self.statesEncountered.append(self.rle._game.getFullState())
 		terminal = self.rle._isDone()[0]
 
+		distributionsHaveChanged = spriteInduction(self.rle._game, step=3)
 
-		# spriteInduction(self.rle._game, step=3)
+		# if distributionsHaveChanged:
+		# 	print "distributions have changed"
+		# 	embed()
 
 		effects = translateEvents(res['effectList'], self.all_objects, self.rle)
 
@@ -470,23 +456,29 @@ class Agent:
 		if event['effectList']:
 			self.finalEventList.append(event)
 
-		if event['effectList'] and run_induction:
+		if (event['effectList'] and run_induction) or distributionsHaveChanged:
 			## Delete fake interaction rules for events that were witnessed in this time step.
 			oldFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
 			self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
 				not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
 
-			if not all([e in all_effects for e in effects]):
+			if (not all([e in all_effects for e in effects])) or distributionsHaveChanged:
 				theory_change_flag = True
-			sample = sampleFromDistribution(self.rle._game.spriteDistribution, self.all_objects)
+
+			sample, exceptedObjects = sampleFromDistribution(self.rle._game.spriteDistribution, self.all_objects)
+
 			game_object = Game(spriteInductionResult=sample)
+
+			# if distributionsHaveChanged:
+			# 	print "distributions changed"
+			# 	embed()
 
 			terminationCondition = {'ended': False, 'win':False, 'time':self.rle._game.time}
 			trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState'], e['rle']) \
 				for e in self.finalEventList], terminationCondition)
 			# embed()
 			hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
-			verbose=False, existingTheories=hypotheses)) ##if you resample or run sprite induction, this
+			verbose=False, existingTheories=hypotheses))
 			# if len(hypotheses)>1:
 			# 	print "more than one hypothesis"
 			# 	embed()
@@ -516,9 +508,9 @@ class Agent:
 
 		if event['effectList'] and run_induction:
 			[t.updateTerminations(event=event) for t in hypotheses]
-			if theory_change_flag:
-				print "changed theory:"
-				hypotheses[0].display()
+		if theory_change_flag:
+			print "changed theory:"
+			hypotheses[0].display()
 
 
 

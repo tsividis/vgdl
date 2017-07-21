@@ -11,10 +11,12 @@ import itertools
 from math import sqrt
 import pygame
 import numpy as np
+import scipy.stats
 from tools import triPoints, unitVector, vectNorm, oncePerStep
 from ai import AStarWorld
 from IPython import embed
 import core
+import copy
 
 UP = (0, -1)
 DOWN = (0, 1)
@@ -205,7 +207,7 @@ class ResourcePack(Resource):
 class Flicker(VGDLSprite):
     """ A square that persists just a few timesteps. """
     color = RED
-    limit = 1
+    limit = 10
     def __init__(self, **kwargs):
         self._age = 0
         VGDLSprite.__init__(self, **kwargs)
@@ -213,8 +215,10 @@ class Flicker(VGDLSprite):
     def update(self, game):
         VGDLSprite.update(self, game)
         if self._age > self.limit:
-            killSprite(self, None, game)
-        self._age += 1
+            game.kill_list.append(self)
+            # killSprite(self, None, game)
+        else:
+            self._age += 1
 
 class Spreader(Flicker):
     """ Spreads to its four canonical neighbor positions, and replicates itself there,
@@ -804,47 +808,71 @@ class MarioAvatar(InertialAvatar):
     draw_arrow = False
     strength = 1
     movestrength = sqrt(strength)
-    vx_max = 5
-    airsteering = True
+    vx_max = 10
+    airsteering = False
     last_vy = 0
     jumping = False
     wait_step = 0
     airstrength = 1
-    decay = .5
+    decay = 0 #.5
+
+    def declare_possible_actions(self):
+        from pygame.locals import K_LEFT, K_RIGHT, K_UP, K_DOWN
+        actions = {}
+        #actions["UP"] = K_UP
+        #actions["DOWN"] = K_DOWN
+        actions["LEFT"] = K_LEFT
+        actions["RIGHT"] = K_RIGHT
+        return actions
+
     def update(self, game):
         from pygame.locals import K_SPACE
+
+        if self.lastrect == self.rect and not self.jumping:
+            self.speed = self.speed * self.orientation[0]
+            self.orientation = (1,0)
 
         action = self._readAction(game)
 
         if action == None:
             action = [0, 0]
         action = list(action)
-
+        action[1]=0
         # presumibly, this means the sprite is 'landed'
         self.airstrength *= (1-self.decay)
         if self.last_vy == self.lastrect.y - self.rect.y:
+            #print "are equal"
             self.wait_step += 1
             if not self.jumping:
-                action[0] = action[0] * self.movestrength
-
+                #print "no"
+                #action[0] = action[0] * self.movestrength
+                action = [action[0] * self.movestrength,0]
                 if game.keystate[K_SPACE] and not self.jumping:
                     action[1] = -self.strength
                     self.jumping = True
                     self.wait_step = 0
                     self.airstrength = 1
             else:
+                #print "yes"
                 action[0] = action[0] * self.movestrength * self.airstrength
+                #action[0] = 0
 
         else:
             self.wait_step = 0
+            action[0] = 0
 
         # this is pretty hacky. What if sprite doesn't move very fast?
         if self.wait_step > 2:
             self.jumping = False
-
+        
         self.physics.activeMovement(self, action)
+        #changes speed
+
 
         vx = self.orientation[0]*self.speed
+
+        #print((vx,self.orientation[1]*self.speed))
+
         if abs(vx) > self.vx_max:
             # vx always greater than zero at this point
             sign = abs(vx)/vx
@@ -1047,7 +1075,7 @@ class MultiSpriteCounter(Termination):
         else:
             return False, None
 
-class       NoveltyTermination(Termination):
+class NoveltyTermination(Termination):
     def __init__(self, s1, s2, win=True):
         self.s1 = s1
         self.s2 = s2
@@ -1080,6 +1108,7 @@ class       NoveltyTermination(Termination):
                     if e[2]=='ENDOFSCREEN':
                         name2 = 'ENDOFSCREEN'
                     elif e[2] in [obj.ID for obj in game.kill_list]:
+                        # candidates = [obj for obj in game.kill_list]
                         name2 = [obj.name for obj in game.kill_list
                             if obj.ID==e[2]][0]
                     elif e[2] in game.getObjects().keys():
@@ -1091,8 +1120,11 @@ class       NoveltyTermination(Termination):
                         # Default to slot2
                         name2 = self.s2
                 if name1==self.s1 and name2==self.s2:
+                    # embed()
                     print("NoveltyTermination with {} and {}".format(
                         name1, name2))
+                    # if name1=='sword' and name2=='sword':
+                        # embed()
                     if id_not_found:
                         # embed()
                         pass
@@ -1118,15 +1150,14 @@ def getColor(sprite):
 # ---------------------------------------------------------------------
 def nothing(sprite, partner, game):
     """ Returns no interaction """
-    # print ("nothing", sprite.rect, partner.rect, colorDict[str(sprite.color)], colorDict[str(partner.color)])
+    # print ("nothing", sprite.rect, partner.rect, sprite.name, partner.name)
     return ("nothing", sprite.ID, partner.ID)
 
-def killSprite(sprite, partner, game): ## FLAG
+def killSprite(sprite, partner, game):
     """ Kill command """
     game.kill_list.append(sprite)
     if not None in {sprite, partner}:
-        # sprite_info = colorDict[str(sprite.color)]
-        return ("killSprite",sprite.ID ,partner.ID) # partner = agent, sprite = what's being killed
+        return ("killSprite", sprite.ID, partner.ID) # partner = agent, sprite = what's being killed
 
 def cloneSprite(sprite, partner, game):
     newones = game._createSprite([sprite.name], (sprite.rect.left, sprite.rect.top))
@@ -1169,8 +1200,7 @@ def triggerOnLanding(sprite, partner, game, strigger=None):
 def stepBack(sprite, partner, game):
     """ Revert last move. """
     sprite.rect = sprite.lastrect
-    if sprite.name != 'boulder':
-        print 'stepBack', sprite.name, partner.name
+
     if partner:
         try:
             return ("stepBack", sprite.ID, partner.ID)
@@ -1361,8 +1391,11 @@ def killIfFromAbove(sprite, partner, game):
     """ Kills the sprite, only if the other one is higher and moving down. """
     if (sprite.lastrect.top > partner.lastrect.top
         and partner.rect.top > partner.lastrect.top):
-        # return killSprite(sprite, partner, game)
-        return ('killIfFromAbove' , partner.ID, sprite.ID)
+
+        game.kill_list.append(sprite)
+        if not None in {sprite, partner}:
+         # sprite_info = colorDict[str(sprite.color)]
+            return ('killIfFromAbove', partner.ID, sprite.ID)
 
 def killIfAlive(sprite, partner, game):
     """ Perform the killing action, only if no previous collision effect has removed the partner. """
@@ -1375,6 +1408,8 @@ def collectResource(sprite, partner, game): # FLAG
     assert isinstance(sprite, Resource)
     r = sprite.resourceType
     partner.resources[r] = max(-1, min(partner.resources[r]+sprite.value, game.resources_limits[r]))
+    # game.kill_list.append(sprite)
+    killSprite(sprite, partner, game)
     #print 'Collected ', colorDict[str(sprite.color)]#partner.resources[r]
     # return ('collectResource', colorDict[str(partner.color)], colorDict[str(sprite.color)])
     return ('collectResource' , sprite.ID, partner.ID)
@@ -1516,7 +1551,7 @@ def cannotActivateSwitch(sprite, partner, game):
 #     Sprite Induction
 # ---------------------------------------------------------------------
 ## TODO: Make sure you put these other types back when you fix sprite induction!!
-sprite_types = [Resource, ResourcePack, RandomNPC, Missile, Chaser] #removed Chaser, Immovable, Passive, AStarChaser,
+sprite_types = [ResourcePack, RandomNPC, Missile, Chaser] #removed Resource, Immovable, Passive, AStarChaser,
 
 
 def getSpeed(params):
@@ -1762,7 +1797,7 @@ def initializeDistribution(sprite_types, objectColors):
     catch_all_prior = .000001
     initial_distribution = {"OTHER": {'prob': catch_all_prior, 'args': {}}}
 
-    stationary_sprites = [Resource, ResourcePack] #removed Immovable, Passive
+    stationary_sprites = [ResourcePack] #removed Resource, Immovable, Passive
     moving_sprites = [RandomNPC, OrientedSprite, Missile, Chaser, AStarChaser] # removed Chaser, AStarChaser
 
     moving_sprite_prob = .1
@@ -1952,6 +1987,7 @@ def sampleFromDistribution(curr_distribution, all_objects):
     from class_theory_template import Sprite
 
     sample = []
+    exceptions = []
 
     ##remove avatar. For now let's just assume we know which one it is.
     ##TODO: You need to do avatarInduction, unless there's a generic type that can cover all types.
@@ -1965,14 +2001,16 @@ def sampleFromDistribution(curr_distribution, all_objects):
                     AimedFlakAvatar, InertialAvatar, MarioAvatar
             try:
                 sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
-                sample.append(Sprite(vgdlType=Flicker, color='BLUE'))
+                sample.append(Sprite(vgdlType=Flicker, color='BLUE', args={'singleton':'True'}))
+                exceptions.append('BLUE')
                 # sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'healthPoints':all_objects[k]['sprite'].healthPoints}))
             except AttributeError:
                 # No args in avatar
                 sample.append(Sprite(vgdlType=MovingAvatar, color=all_objects[k]['type']['color']))
 
     ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
-    types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]))
+    types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions)) ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately 
+                                                                                                    ## and not doing inference about it.
 
     for obj_type in types:
         options = [k for k in all_objects.keys() if all_objects[k]['type']['color'] == obj_type]
@@ -2018,7 +2056,26 @@ def sampleFromDistribution(curr_distribution, all_objects):
 
         sample.append(s)
 
-    return sample
+    return sample, exceptions
+
+def checkIfDistributionsHaveChanged(game, distributionAtT1, distributionAtT2):
+    KLthreshold = .00001
+
+    changes = False
+    for k in [key for key in distributionAtT1.keys() if 
+            key in game.all_objects.keys() and 
+            game.all_objects[key]['features']['color'] not in game.exceptedObjects and 
+            key in distributionAtT2.keys()]:
+        if game.all_objects[k]['features']['color'] not in game.exceptedObjects and k in distributionAtT2.keys():
+            spriteDistribution1, spriteDistribution2 = distributionAtT1[k], distributionAtT2[k]
+            # print k, getKL(spriteDistribution1, spriteDistribution2)
+            if getKL(spriteDistribution1, spriteDistribution2) > KLthreshold:
+                return True
+    return False
+
+def getKL(spriteDistribution1, spriteDistribution2):
+    d1, d2 = [v['prob'] for v in spriteDistribution1.values()], [v['prob'] for v in spriteDistribution2.values()]
+    return scipy.stats.entropy(d1,d2)
 
 def spriteInduction(game, step, old_outcome=None):
     """
@@ -2035,6 +2092,7 @@ def spriteInduction(game, step, old_outcome=None):
     game.movement_options tells you the probability of a sprite being in a particular position, given a certain
     setting of its attributes (e.g. specific values for speed, orientation, etc.) and also given sprite type.
     """
+    distributionsHaveChanged = False
     if step==0:
     ## Prep for sprite induction
         for sprite in game.getObjects():
@@ -2096,6 +2154,8 @@ def spriteInduction(game, step, old_outcome=None):
         ## Sprite Induction Part 2: Update sprite distribution based on observations
         objects = game.getObjects()
         notUpdated = [s for s in objects.keys() if s not in game.spriteDistribution.keys()]
+
+        distributionAtT1 = copy.deepcopy(game.spriteDistribution)
         # if notUpdated:
             # print "Step 3: not in sprite distribution:", notUpdated
             # embed()
@@ -2123,10 +2183,15 @@ def spriteInduction(game, step, old_outcome=None):
                     for sprite_type in sprite_types:
                         game.spriteDistribution[sprite][sprite_type]['args'] = initializeDistributionArgs(sprite_type, objectColors)
 
+        distributionsHaveChanged = checkIfDistributionsHaveChanged(game, distributionAtT1, game.spriteDistribution)
+        # embed()
         # print game.spriteDistribution[specialID][ch]
         # print ""
     ## Reset ignoreList so that next time around you do inference.
     game.ignoreList = []
+    return distributionsHaveChanged
+
+
 
 def softmax(w, t = 1.0):
     e = np.exp(np.array(w) / t)

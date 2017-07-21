@@ -723,7 +723,7 @@ if __name__ == "__main__":
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
-	gameFilename = "examples.gridphysics.frogs2"
+	gameFilename = "examples.gridphysics.boulderdash"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
 	# gameFilename = "examples.gridphysics.expt_helper"
 

@@ -1301,7 +1301,10 @@ class VGDLSprite(object):
         offset = rect.top+2*rect.height/3.
         for r in sorted(self.resources.keys()):
             wiggle = rect.width/10.
-            prop = max(0,min(1,self.resources[r] / float(game.resources_limits[r])))
+            try:
+                prop = max(0,min(1,self.resources[r] / float(game.resources_limits[r])))
+            except ZeroDivisionError:
+                prop = max(1,min(1,self.resources[r]))
             filled = pygame.Rect(rect.left+wiggle/2, offset, prop*(rect.width-wiggle), barheight)
             rest   = pygame.Rect(rect.left+wiggle/2+prop*(rect.width-wiggle), offset, (1-prop)*(rect.width-wiggle), barheight)
             screen.fill(game.resources_colors[r], filled)

@@ -4,7 +4,7 @@ VGDL example: Boulder Dash.
 @author: Julian Togelius and Tom Schaul
 '''
 
-# level = """
+# level0 = """
 # wwwwwwwwwwwwwwwwwwwwwwwwww
 # w...o.xx.o......o..xoxx..w
 # w...oooooo........o..o...w
@@ -19,31 +19,94 @@ VGDL example: Boulder Dash.
 # w   ..E..........b     ..w
 # wwwwwwwwwwwwwwwwwwwwwwwwww
 # """
-level = """
-wwwwwwww
-wwxo   w
-ww....Aw
-w w....w
-w.x....w
-w......w
-wE.....w
-wwwwwwww
+# level0 = """
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# w...o.xx.o......o..xoxx..w
+# w...oooooo........o..o...w
+# w....xxx.........o.oxoo.ow
+# wx...............oxo...oow
+# wwwwwwwwww........o...wxxw
+# wb ...co..............wxxw
+# w  ........Ao....o....wxxw
+# wooo............. ....w..w
+# w......x....wwwwx x.oow..w
+# wc  .....x....xxo ....w..w
+# w   ..E..........b     ..w
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+
+
+# level0 = """
+# wwwwwwww
+# wwxo   w
+# ww....Aw
+# w w....w
+# w.x....w
+# w......w
+# wE.....w
+# wwwwwwww
+# """
+
+level0 = """
+wwwwwwwwwww
+wwxo      w
+www.    x w
+w w      ww
+w         w
+w   . .   w
+w       A w
+wwwwwwwwwww
 """
+
+level1 = """
+wwwwwwwwwwwwwwwwwwwwwwwwww
+w.................w      w
+wwxo............oxw      w
+ww............... w      w
+w w..A...........w       w
+wwwwwwwwwwwwwwwwww       w
+w                        w
+w                        w
+w                        w
+w                        w
+w                        w
+w                        w
+w                        w
+wwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+
+# level1 = """
+# wwwwwwwwwww
+# wwxo....oxw
+# ww....... w
+# w w..A...ww
+# wwwwwwwwwww
+# """
+
+# level1 = """
+# wwwwwwwwwww
+# wwxo....oxw
+# ww....... w
+# w w......ww
+# wxo.A...oxw
+# w.....x...w
+# ww ..... ww
+# wwwwwwwwwww
+# """
 
 game = """
 BasicGame
 	SpriteSet
-		sword > Flicker color=LIGHTGRAY limit=1 singleton=True
 		dirt > Immovable color=BROWN
 		exitdoor > Immovable color=GREEN
 		diamond > Resource color=YELLOW limit=10 shrinkfactor=0.25
 		boulder > Missile orientation=DOWN color=DARKGRAY speed=0.2
-		moving >
-			avatar  > ShootAvatar   stype=sword
-			enemy > RandomNPC cooldown=5
-				crab > color=RED
-				butterfly > color=PINK
+		avatar  > ShootAvatar   stype=sword
+		crab > RandomNPC cooldown=5 color=RED
+		butterfly > RandomNPC cooldown=5 color=PINK
 		wall > Immovable color=BLACK
+		sword > Flicker color=BLUE limit=1 singleton=True
 	LevelMapping
 		. > dirt
 		E > exitdoor
@@ -52,38 +115,80 @@ BasicGame
 		c > crab
 		b > butterfly
 		w > wall
+		s > sword
 	InteractionSet
 		dirt sword  > killSprite
 		dirt avatar > killSprite
-
 		diamond avatar > collectResource scoreChange=5
 		diamond avatar > killSprite
-		moving wall > stepBack
-		moving boulder > stepBack
+		avatar wall > stepBack
+		avatar boulder > stepBack
+		crab wall > stepBack
+		crab boulder > stepBack
+		butterfly wall > stepBack
+		butterfly boulder > stepBack
 		avatar boulder > killIfFromAbove
 		avatar butterfly > killSprite
 		avatar crab > killSprite
 		boulder dirt > stepBack
 		boulder wall > stepBack
-		boulder boulder > stepBack
 		boulder diamond > stepBack
+		boulder boulder > stepBack
 		enemy dirt > stepBack
 		enemy diamond > stepBack
 		crab butterfly > killSprite
-
+		wall sword > nothing
+		boulder sword > nothing
+		sword boulder > nothing
+		boulder sword > nothing
+		diamond sword > nothing
+		sword avatar > nothing
+		sword sword > nothing
+		wall dirt > nothing
 		butterfly crab > transformTo stype=diamond scoreChange=1
 		#exitdoor avatar > killIfOtherHasMore resource=diamond limit=9 scoreChange=100
+		exitdoor avatar > nothing
 		exitdoor avatar > killIfOtherHasMore resource=diamond limit=2 scoreChange=100
-
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False
-		SpriteCounter stype=exitdoor limit=0 win=True
+		SpriteCounter stype=diamond limit=0 win=True
 
 """
 
-level_game_pairs = [[game, level]]
-
+level_game_pairs = [[game, level0], [game, level1]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(game, level)
+    import random, sys, time
+    import numpy as np
+    import csv
+    from IPython import embed
+
+    levels = [l for l in locals().keys() if 'level' in l and len(l)<8]
+    if len(sys.argv)==2:
+        index = int(sys.argv[1])
+        VGDLParser.playGame(*level_game_pairs[index])
+    else:
+        # index = random.choice(range(len(level_game_pairs)))
+        for index, level in enumerate(level_game_pairs):
+            wins = 0
+            while wins<2:
+                VGDLParser.playGame(*level)
+                time.sleep(1)
+                data = np.load("temp_data.npy")
+                win = data[2]
+                if win:
+                    wins+=1
+                levels_won = index*2 + wins
+                # Save in format [subect, condition, gamename, levels won, steps taken, score, time elapsed]
+                row = ['human', 'no_score', 'expt_preconditions', levels_won, data[1], data[3], data[0]]
+
+                filename = "human_data.csv"
+                f = open(filename, 'a+') ##append, but also read.
+                g = open(filename, 'r')
+                writer = csv.writer(f)
+                if len(g.readlines())==0:
+                    writer.writerow(('subject', 'condition', 'gameName', 'levels_won', 'steps', 'score', 'time'))
+                writer.writerow(row)
+                f.close()
+                g.close()
