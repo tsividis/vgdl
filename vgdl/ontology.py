@@ -204,8 +204,8 @@ class ContinuousPhysics(GridPhysics):
             v1 = action[0]*sprite.vx_max
         
         #v2 = action[1]*sprite.strength
-        
         sprite.orientation = unitVector((v1, v2))
+
         
         sprite.speed = vectNorm((v1, v2)) / vectNorm(sprite.orientation)
         '''
@@ -896,6 +896,12 @@ class MarioAvatar(InertialAvatar):
         return actions
 
     def update(self, game):
+        #if self.jumping:
+        #    print "JUMPING"
+        #else:
+        #    print "NO"
+        #print self
+
         from pygame.locals import K_SPACE
 
         if self.lastrect == self.rect and not self.jumping:
@@ -910,6 +916,7 @@ class MarioAvatar(InertialAvatar):
         action[1]=0
         # presumibly, this means the sprite is 'landed'
         self.airstrength *= (1-self.decay)
+
         if self.last_vy == self.lastrect.y - self.rect.y:
             #print "are equal"
             self.wait_step += 1
@@ -932,8 +939,8 @@ class MarioAvatar(InertialAvatar):
             action[0] = 0
 
         # this is pretty hacky. What if sprite doesn't move very fast?
-        if self.wait_step > 2:
-            self.jumping = False
+        if self.wait_step > 1:
+           self.jumping = False
         
         self.physics.activeMovement(self, action)
         #changes speed
@@ -953,7 +960,11 @@ class MarioAvatar(InertialAvatar):
 
         # a less precise vy, but this is useful
         self.last_vy = self.lastrect.y-self.rect.y
+
+        #two_ago = self.lastrect.y
         VGDLSprite.update(self, game)
+        #if self.rect.y == self.lastrect.y and self.rect.y == two_ago:
+        #    self.jumping = False
 
         
 
@@ -1221,10 +1232,12 @@ def cloneSprite(sprite, partner, game):
 
 def transformTo(sprite, partner, game, stype='wall'):
     newones = game._createSprite([stype], (sprite.rect.left, sprite.rect.top))
-
+    #embed()
     if len(newones) > 0:
         if isinstance(sprite, OrientedSprite) and isinstance(newones[0], OrientedSprite):
+            
             newones[0].orientation = sprite.orientation
+        newones[0].resources = sprite.resources
         game.kill_list.append(sprite)
         # game.dead.append(sprite)
     args = {'stype':stype}

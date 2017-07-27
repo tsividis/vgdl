@@ -40,9 +40,11 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 WALL_EDGE = 1
 MAX_TIMES_IN_SQUARE = sys.maxint
 
+REMOVE_MOVERS = True
+
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=5000, limit=4):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=10000, limit=4):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -72,12 +74,17 @@ class WBP():
 			self.theory=theory
 		print 'max nodes', self.max_nodes
 
+		self.avatar_ID = None
+
 		# for rule in self.theory.interactionSet:
 		# 	if 'stepBack'==rule.interaction:
 		# 		ipdb.set_trace()
 		i=1
+		#embed()
 		for k in rle._game.all_objects.keys():
 			self.objIDs[k] = i * (self.vecDim[0]+self.padding)
+			if isinstance(rle._game.all_objects[k]['sprite'],vgdl.core.Avatar):
+				self.avatar_ID = i * (self.vecDim[0]+self.padding)
 			i+=1
 
 		self.canJump = False
@@ -92,6 +99,8 @@ class WBP():
 		self.all_locs = []
 
 		self.avatar_locs_disc = defaultdict(lambda:0)
+		self.key = defaultdict(lambda:0)
+		self.no_key = defaultdict(lambda:0)
 		self.graph = {}
 		self.distances = self.dijkstra()
 		self.box_weights = self.calc_weights()
@@ -99,8 +108,8 @@ class WBP():
 		self.num_paths = 1
 		self.all_paths = []
 
-		self.LIMIT = limit
-		self.GRID_LIMIT = 25
+		self.LIMIT = 3
+		self.GRID_LIMIT = 100
 
 	def makeGraph(self):
 		graph = {}
@@ -195,19 +204,72 @@ class WBP():
 		x2 = loc2[0]/float(self.square_size[0]) - grid2[0]
 		y2 = loc2[1]/float(self.square_size[1]) - grid2[1]
 
+		#if tuple(loc1) in self.graph and tuple(loc2) in self.graph:
+		#	return self.distances[loc1][loc2]
+
+		inWall = False
+
 		#smooth out distances at grid vertices to calculate distances between points at interior of squares
 		
 		dist = 0
 		a1 = self.loop4d()
 		a2 = self.loop4d()
+		
 		for exp in a1:
 			for coord in a2:
 				if all(i >= j for i, j in zip(exp,coord)):
 					val = self.comp_exp((x1,y1,x2,y2),exp)
 					if val:
-						dist += (1 if (sum(coord)%2 == sum(exp)%2) else -1)*val* \
-						self.distances[(grid1[0]+coord[0],grid1[1]+coord[1])][(grid2[0]+coord[2],grid2[1]+coord[3])]
+						try:
+							dist += (1 if (sum(coord)%2 == sum(exp)%2) else -1)*val* \
+							self.distances[(grid1[0]+coord[0],grid1[1]+coord[1])][(grid2[0]+coord[2],grid2[1]+coord[3])]
+						except:
+							inWall = True
+							break
 
+		#this stuff is not generalizable and hardcoded to get montezuma to work for now
+		if inWall:
+			wall_loc = [(grid1[0] + i,grid1[1] + j) for i in [0,1] for j in [0,1] if 
+				(grid1[0] + i,grid1[1] + j) not in self.graph and i - x1 < 1 and j - y1 < 1]
+			#embed()
+			if not wall_loc:
+				wall_loc = [(grid2[0] + i,grid2[1] + j) for i in [0,1] for j in [0,1] if 
+				(grid2[0] + i,grid2[1] + j) not in self.graph and i - x2 < 1 and j - y2 < 1]
+				#embed()
+				wall = wall_loc[0]
+				
+				s = self.square_size[0]
+
+				try:
+					if grid2 in self.graph:
+						A = self.geoDist(loc1,(grid2[0]*s,grid2[1]*s))
+						#print A
+					if (grid2[0],grid2[1]+1) in self.graph:
+						B = self.geoDist(loc1,(grid2[0]*s,s*(grid2[1]+1)))
+						#print B
+					if (grid2[0]+1,grid2[1]) in self.graph:
+						C = self.geoDist(loc1,(s*(grid2[0]+1),s*grid2[1]))
+						#print C
+					if (grid2[0]+1,grid2[1]+1) in self.graph:
+						D = self.geoDist(loc1,(s*(grid2[0]+1),s*(grid2[1]+1)))
+						#print D
+
+					if not grid2 in self.graph:
+						A = B + C - D
+					if not (grid2[0],grid2[1]+1) in self.graph:
+						B = A + D - C
+					if not (grid2[0]+1,grid2[1]) in self.graph:
+						C = A + D - B
+					if not (grid2[0]+1,grid2[1]+1) in self.graph:
+						D = B + C - A
+
+					return A + (C-A)*x2 + (B-A)*y2
+				except:
+					#embed()
+					return sys.maxint
+
+			return self.geoDist(loc2,loc1)
+					
 		return dist
 
 	def loop4d(self):
@@ -276,20 +338,20 @@ class WBP():
 
 	def getAliveAvatar(self,rle):
 		#embed()
+
 		avatars = []
-		for k in ["avatar","keyavatar","ladderavatar"]:
+		for k in rle._game.sprite_groups.keys():
 				for o in rle._game.sprite_groups[k]:
-					if o not in rle._game.kill_list:
+					if o not in rle._game.kill_list and isinstance(o,vgdl.core.Avatar):
 						avatars.append(o)
 
 		if len(avatars) == 1:
-			print avatars[0]
+			#print avatars[0]
 			return avatars[0]
 
 		print "Either 0 or >1 avatars!"
+		return None
 		embed()
-
-
 
 	def getActions(self,rle):
 		#embed()
@@ -302,11 +364,11 @@ class WBP():
 			self.actions = [K_RIGHT,K_LEFT]
 
 		elif isinstance(avatar,vgdl.ontology.VerticalAvatar):
-			print 'Vertical'
+			#print 'Vertical'
 			self.actions = [K_UP,K_DOWN]
 
 		elif isinstance(avatar,vgdl.ontology.MarioAvatar):
-			print('Mario')
+			#print('Mario')
 			self.actions = [K_SPACE, K_LEFT, K_RIGHT]
 			self.canJump = True
 
@@ -323,49 +385,75 @@ class WBP():
 		lst = []
 
 		#embed()
-		for k in [t for t in rle._game.sprite_groups.keys() if t != 'background']:
+		for k in [t for t in rle._game.sprite_groups.keys() if t not in ['wall', 'background','ladder']]:
 			for o in rle._game.sprite_groups[k]:
-				if o not in rle._game.kill_list:
+				if not isinstance(o, vgdl.core.Avatar) and (not isinstance(o,vgdl.ontology.RandomNPC) and not isinstance(o,vgdl.ontology.Missile) or not REMOVE_MOVERS):
+					if o not in rle._game.kill_list:
 					## turn location into vector posd2[ition (rows appended one after the other.) 0 if object has been killed
-					pos = (o.rect.left, o.rect.top)
-					vecValue = pos[1] + pos[0]*rle.outdim[0]*self.square_size[1] + 1
-				else:
-					vecValue = 0
-				objPosCombination = self.objIDs[o.ID] + vecValue
-				lst.append(objPosCombination) #unique for each object-location combination
+						pos = (o.rect.left, o.rect.top)
+						vecValue = pos[1] + pos[0]*rle.outdim[0]*self.square_size[1] + 1
+					else:
+						vecValue = 0
+					objPosCombination = self.objIDs[o.ID] + vecValue
+					lst.append(objPosCombination) #unique for each object-location combination
+
+		#avatar atom:
+		avatar = self.getAliveAvatar(rle)
+		if avatar is not None:
+			pos = (avatar.rect.left, avatar.rect.top)
+			try:
+				ori = avatar.orientation
+				a = 1 if ori[0] > ori[1] else 0
+				b = 1 if ori[0] + ori[1] > 0 else 0
+				vecValue = pos[1] + pos[0]*rle.outdim[0]*self.square_size[1] + 1 + 0.5*a + 0.25*b
+			except:
+				vecValue = pos[1] + pos[0]*rle.outdim[0]*self.square_size[1] + 1
+			objPosCombination = self.avatar_ID + vecValue
+			lst.append(objPosCombination)
+
+
+
 		present = []
-		for k in [t for t in self.objectTypes if t not in ['wall', 'avatar','background']]: ##maybe add the avatar to this global state
+		for k in [t for t in self.objectTypes if t not in ['wall', 'avatar','background','ladder']]: ##maybe add the avatar to this global state
 			for o in sorted(rle._game.sprite_groups[k], key=lambda s:s.ID):
-				if o not in rle._game.kill_list:
-					present.append(1)
-				else:
-					present.append(0)
+				if not isinstance(o, vgdl.core.Avatar):
+					if o not in rle._game.kill_list:
+						present.append(1)
+					else:
+						present.append(0)
 		ind = sum([present[i]*2**i for i in range(len(present))]) #atom indicating which objects are alive
 		lst.append(ind)
 
 		#lst.extend(self.gridAtoms(rle))
 		#if rle._game.sprite_groups['keyavatar']:
 		#	embed()
-
+		#print(lst)
 		if not self.vecSize:
 			self.vecSize = len(lst)
 		#print "Vector is length {}".format(self.vecSize)
-		#embed()
 		return set(lst)
+
 
 	def gridAtoms(self,rle):
 		lst = []
 
-		for k in [t for t in rle._game.sprite_groups.keys() if t != 'background']:
+		for k in [t for t in rle._game.sprite_groups.keys() if t not in ['wall', 'background','ladder']]:
 			for o in rle._game.sprite_groups[k]:
-				#if issubclass(type(o),core.Avatar):
-				if o not in rle._game.kill_list:
-					pos = rle._rect2pos(o.rect)
-					vecValue = pos[1] + pos[0]*rle.outdim[0] + 1
-				else:
-					vecValue = 0
-				objPosCombination = -(self.objIDs[o.ID] + vecValue)
-				lst.append(objPosCombination)
+				if not isinstance(o, vgdl.core.Avatar) and (not isinstance(o,vgdl.ontology.RandomNPC) and not isinstance(o,vgdl.ontology.Missile) or not REMOVE_MOVERS):
+					if o not in rle._game.kill_list:
+						pos = rle._rect2pos(o.rect)
+						vecValue = pos[1] + pos[0]*rle.outdim[0] + 1
+					else:
+						vecValue = 0
+					objPosCombination = -(self.objIDs[o.ID] + vecValue)
+					lst.append(objPosCombination)
+
+		avatar = self.getAliveAvatar(rle)
+		if avatar is not None:
+			pos = rle._rect2pos(avatar.rect)
+			vecValue = pos[1] + pos[0]*rle.outdim[0] + 1
+			objPosCombination = -(self.avatar_ID + vecValue)
+			lst.append(objPosCombination)
 		return set(lst)
 
 
@@ -431,6 +519,7 @@ class WBP():
 		min_path_length = sys.maxint
 		best_path = None
 		best_node = None
+		found_key = False
 
 		print(actionDict)
 
@@ -447,35 +536,51 @@ class WBP():
 
 			self.statesEncountered.append(current.rle._game.getFullState())
 
-			print current.rle.show(indent=True)
-
-			#print current.rle._game.sprite_groups["avatar"]
-			#print current.rle._game.sprite_groups["ladderavatar"]
-			#print current.rle._game.kill_list
-			#print(len(current.state))
-			
-			self.all_locs.append(self.findAvatarInRLE(current.rle))
 			current.updateNoveltyDict(QNovelty, QReward)
 			current.updateCenter()
-			self.avatar_locs_disc[self.grid(self.findAvatarInRLE(current.rle))] += 1
+			
 			visited.append(current)
-			self.avatar_locs.add(current.rle._rect2pos(current.rle._game.sprite_groups['avatar'][0].rect))
 
-			#print current.rle._game.sprite_groups["ball"][0].rect
-			#print current.intrinsic_reward
-			#print current.depth
 			print(i)
-			print len(current.state)
+
+			avatar = self.getAliveAvatar(current.rle)
+			if avatar is not None:
+				loc = current.rle._rect2pos(avatar.rect)
+				if len([o for o in current.rle._game.kill_list if o in current.rle._game.sprite_groups['key']]) > 0:
+					self.key[loc] += 1
+					print 'key'
+				else:
+					self.no_key[loc] += 1
+				self.avatar_locs_disc[loc] += 1
+				print loc
+			else:
+				"NO AVATAR"
+				embed()
+			print avatar
+
+			
+
 			self.getActions(current.rle)
+
 			actions = self.actions
+			#if i % 1000 == 0 and i > 3000:
+				#embed()
+			if i % 500 == 0:
+				print self.avatar_locs_disc
+				print self.key
 			if self.canJump:
 				try:
-					if current.rle._game.sprite_groups["avatar"][0].jumping or current.rle._game.sprite_groups["keyavatar"][0].jumping:
+					if self.getAliveAvatar(current.rle).jumping:
 						actions = [NONE]
 				except:
 					pass
-			
+			#print actions
 			#embed()
+			#goal = self.findObjectsInRLE(current.rle,'goal')[0]
+			#avatar = self.getAliveAvatar(current.rle)
+			#print self.geoDist(goal,(avatar.rect.x,avatar.rect.y))
+			#embed()
+
 			for a in actions:
 
 				child = Node(self.rle, self, current.actionSeq+[a], current)
@@ -645,7 +750,7 @@ class Node():
 		# Get all types that kill or transform stype
 		killer_types = [
 			inter.slot2 for inter in theory.interactionSet
-			if (inter.interaction == "killSprite" and
+			if (inter.interaction in ["killSprite","killIfOtherHasMore"] and
 				not inter.generic
 				and inter.slot1 == stype)]
 
@@ -678,12 +783,29 @@ class Node():
 			## Get all positions of objects whose type is in killer_types; compute minimum distance
 			## of each to the stypes we have to destroy. Return min over all mins.
 			# embed()
-			objs = [self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types]
+			objs = []
+			for ktype in killer_types:
+				objs.extend(self.WBP.findObjectsInRLE(rle, ktype))
+			if len([i for i in killer_types if 'avatar' in i]) > 0:
+				avatar = self.WBP.getAliveAvatar(rle)
+				#objs.append(self.WBP.getAliveAvatar(rle))
+				if avatar and (avatar.rect.x,avatar.rect.y) not in objs:
+					objs.append((avatar.rect.x,avatar.rect.y))
+			kill_positions = objs
 
-			if len(objs)>0:
-				kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
-			else:
-				kill_positions = np.array(objs)
+
+			#objs = [self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types]
+
+			#if len([i for i in killer_types if 'avatar' in i]) > 0:
+			#	avatar = self.WBP.getAliveAvatar(rle)
+			#	objs.append([(avatar.rect.x,avatar.rect.y)])
+			#print objs
+			#if len(objs)>0:
+			#	kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
+			#	#print kill_positions
+			#else:
+			#	kill_positions = np.array(objs)
+
 
 			# kill_positions = np.concatenate([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types])
 			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
@@ -693,16 +815,12 @@ class Node():
 				# were not yet observed will have their distance penalized twice
 				# as much when none of those objects is an avatar. This implies
 				# that avatar novel interactions will be favored over other ones
-				#possiblePairList = [manhattanDist(obj, pos)/float(self.WBP.square_size[0])
-				#	 for pos in kill_positions
-				#	 for obj in stype_positions]
+				#try:
+				possiblePairList = [self.WBP.geoDist(pos,obj)
+					for pos in kill_positions
+					for obj in stype_positions]
+				#except:
 				#embed()
-				try:
-					possiblePairList = [self.WBP.geoDist(pos,obj)
-						for pos in kill_positions
-						for obj in stype_positions]
-				except:
-					embed()
 
 				distance = min(possiblePairList)
 				# print distance
@@ -711,6 +829,8 @@ class Node():
 
 			if possiblePairList:
 				n_sprites = len(possiblePairList)
+				#CHANGING FOR NOW TO DEAL WITH HAVING THIS HEURISTIC USE ANY AVATAR OBJECT
+				#n_sprites = len(stype_positions)
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
 				val += float(mult * second_alpha * distance)/n_sprites
@@ -880,11 +1000,13 @@ class Node():
 					first_alpha=first_alpha, second_alpha=second_alpha)
 				# print("spritecounter_val for {} is equal to {}".format(
 					# term.termination.stype, spritecounter_val))
+				#print("spritecounter = {}".format(spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
 				multispritecounter_val = self.multispritecounter_val(theory, term, rle,
 						first_alpha=first_alpha, second_alpha=second_alpha)
+				#print("mulitspritecounter = {}".format(multispritecounter_val))
 				heuristicVal += multispritecounter_val
 
 			elif isinstance(term, TimeoutRule):
@@ -1071,7 +1193,7 @@ class Node():
 		i = 0
 		for objType in vrle._game.sprite_groups:
 			for s in vrle._game.sprite_groups[objType]:
-				if s.ID not in self.WBP.objIDs.keys():
+				if s.ID not in self.WBP.objIDs.keys() and not isinstance(s,vgdl.core.Avatar):
 					if s.name=='bullet':
 						s.ID = len([o for o in vrle._game.sprite_groups[objType] if o not in vrle._game.kill_list])
 					else:
@@ -1120,9 +1242,11 @@ if __name__ == "__main__":
 	#gameFilename = "examples.continuousphysics.avoid_goomba"
 	#gameFilename = "examples.continuousphysics.mario"
 	gameFilename = "examples.continuousphysics.montezuma_new"
+	#gameFilename = "examples.continuousphysics.ladder"
 	#gameFilename = "examples.continuousphysics.simple"
 	#gameFilename = "examples.continuousphysics.crossroad"
 	#gameFilename = "examples.continuousphysics.collect_key"
+	#gameFilename = "examples.continuousphysics.collect_resource"
 
 	#gameFilename = "examples.gridphysics.simple_grid"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
@@ -1143,10 +1267,10 @@ if __name__ == "__main__":
 	p = WBP(rle, gameFilename)
 
 
-	#embed()
+	embed()
 	#	try:
 	last, gameString_array, nodes = p.BFS()
-	#last, gameString_array, nodes = p.BFS_profiler()
+	#result = p.BFS_profiler()
 	#from core import VGDLParser
 	#last.playBack(make_movie=True)
 	#	except:
