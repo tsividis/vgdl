@@ -4,7 +4,76 @@ VGDL example: Boulder Dash.
 @author: Julian Togelius and Tom Schaul
 '''
 
-# level0 = """
+
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# w ..o.  .o.              w
+# w ..oooo  .   A          w
+# w...wwww.w               w
+# w    xxx     E.          w
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# w                        w
+# w                        w
+# w                        w
+# w                        w
+# w                        w
+# w                        w
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# w ..o.  .o.              w
+# w x.oxx  o.   A          w
+# w.x.wwwww.               w
+# w x      .   E.          w
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# w                        w
+# w                        w
+# w                        w
+# w                        w
+# w                        w
+# w                        w
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwww
+w ..o.xx.o.  w           w
+w ..oooooo. Aw           w
+w...wxxx..   w           w
+wx   w      Ew           w
+wwwwwwwwwwwwwwwwwwwwwwwwww
+w                        w
+w                        w
+w                        w
+w                        w
+w                        w
+w                        w
+wwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+
+
+
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# w ..o.xx.o.              w
+# w ..oooooo.   A          w
+# w....xxx..               w
+# wx           E.          w
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# w                        w
+# w                        w
+# w                        w
+# w                        w
+# w                        w
+# w                        w
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+
+# level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwww
 # w...o.xx.o......o..xoxx..w
 # w...oooooo........o..o...w
@@ -36,6 +105,16 @@ VGDL example: Boulder Dash.
 # """
 
 
+# level = """
+# wwwwwwww
+# wwxo   w
+# ww    Aw
+# w w    w
+# w.     w
+# w.     w
+# wE     w
+# wwwwwwww
+# """
 
 # level0 = """
 # wwwwwwww
@@ -48,33 +127,33 @@ VGDL example: Boulder Dash.
 # wwwwwwww
 # """
 
-level0 = """
-wwwwwwwwwww
-wwxo      w
-www.    x w
-w w      ww
-w         w
-w   . .   w
-w       A w
-wwwwwwwwwww
-"""
+# level0 = """
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# wwxo                     w
+# www.                   x w
+# w w                     ww
+# w                        w
+# w   . .                  w
+# w E                    A w
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
-level1 = """
-wwwwwwwwwwwwwwwwwwwwwwwwww
-w.................w      w
-wwxo............oxw      w
-ww............... w      w
-w w..A...........w       w
-wwwwwwwwwwwwwwwwww       w
-w                        w
-w                        w
-w                        w
-w                        w
-w                        w
-w                        w
-w                        w
-wwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level1 = """
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# w.................w      w
+# wwxo............oxw      w
+# ww............... w      w
+# w w..A......E....w       w
+# wwwwwwwwwwwwwwwwww       w
+# w                        w
+# w                        w
+# w                        w
+# w                        w
+# w                        w
+# w                        w
+# w                        w
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # level1 = """
 # wwwwwwwwwww
@@ -100,13 +179,13 @@ BasicGame
 	SpriteSet
 		dirt > Immovable color=BROWN
 		exitdoor > Immovable color=GREEN
-		diamond > Resource color=YELLOW limit=10 shrinkfactor=0.25
+		diamond > Resource color=YELLOW limit=3 shrinkfactor=0.25
 		boulder > Missile orientation=DOWN color=DARKGRAY speed=0.2
 		avatar  > ShootAvatar   stype=sword
 		crab > RandomNPC cooldown=5 color=RED
 		butterfly > RandomNPC cooldown=5 color=PINK
 		wall > Immovable color=BLACK
-		sword > Flicker color=BLUE limit=1 singleton=True
+		sword > Flicker color=BLUE limit=0 singleton=True
 	LevelMapping
 		. > dirt
 		E > exitdoor
@@ -119,8 +198,9 @@ BasicGame
 	InteractionSet
 		dirt sword  > killSprite
 		dirt avatar > killSprite
-		diamond avatar > collectResource scoreChange=5
+		avatar diamond > changeResource resource=diamond value=1
 		diamond avatar > killSprite
+		# avatar diamond > collectResource
 		avatar wall > stepBack
 		avatar boulder > stepBack
 		crab wall > stepBack
@@ -146,16 +226,18 @@ BasicGame
 		sword sword > nothing
 		wall dirt > nothing
 		butterfly crab > transformTo stype=diamond scoreChange=1
-		#exitdoor avatar > killIfOtherHasMore resource=diamond limit=9 scoreChange=100
+		#exitdoor avatar > killIfOtherHasMore resource=diamond limit=9 #scoreChange=100
+		exitdoor boulder > nothing
+		exitdoor sword > nothing
 		exitdoor avatar > nothing
-		exitdoor avatar > killIfOtherHasMore resource=diamond limit=2 scoreChange=100
+		exitdoor avatar > killIfOtherHasMore resource=diamond limit=3 #scoreChange=100
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False
-		SpriteCounter stype=diamond limit=0 win=True
+		SpriteCounter stype=exitdoor limit=0 win=True
 
 """
 
-level_game_pairs = [[game, level0], [game, level1]]
+level_game_pairs = [[game, level]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

@@ -1,6 +1,6 @@
 from IPython import embed
 from util import *
-from core import colorDict, VGDLParser, sys
+from core import colorDict, VGDLParser, sys, keyPresses
 from ontology import *
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
 SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
@@ -10,11 +10,10 @@ from collections import defaultdict
 import WBP
 import importlib
 import numpy as np
-import ipdb
+import ipdb, time
 import copy
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
-
 
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
@@ -37,7 +36,9 @@ class Agent:
 		self.statesEncountered = []
 		self.fakeInteractionRules = []
 		self.all_objects = {}
+		self.bestSpriteTypeDict = defaultdict(lambda: {'count':0, 'distribution':None}) ## To track how many times we have run spriteType updates to each particular object
 		self.seen_resources = []
+		self.seen_limits = []
 		self.new_objects = {}
 
 	def initializeEnvironment(self):
@@ -53,7 +54,7 @@ class Agent:
 				 "./examples/gridphysics/theorytest.py")
 		Vrle = createMindEnv(gameString, levelString, output=False)
 		Vrle._game.getAvatars()[0].resources = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
-		# embed()
+		Vrle._game.getAvatars()[0].orientation = copy.deepcopy(self.rle._game.getAvatars()[0].orientation)
 		# Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
 		return Vrle
 
@@ -80,7 +81,7 @@ class Agent:
 	def initializeHypotheses(self, allObjects, learnSprites=True):
 		if learnSprites:
 			observe(self.rle, 5)
-			spriteTypeHypothesis, exceptedObjects = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects)
+			spriteTypeHypothesis, exceptedObjects = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
 			self.rle._game.exceptedObjects = exceptedObjects
 			# print "sampled hypothesis"
 			# embed()
@@ -112,7 +113,7 @@ class Agent:
 
 	def completeHypotheses(self, allObjects):
 		observe(self.rle, 0)
-		spriteTypeHypothesis, exceptedObjects = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects)
+		spriteTypeHypothesis, exceptedObjects = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
 		gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 		newHypotheses = []
 		for hypothesis in self.hypotheses:
@@ -141,6 +142,7 @@ class Agent:
 			i=0
 			levelEffectsEncountered = []
 			allStatesEncountered = []
+			t1 = time.time()
 			while not win:
 				gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals)
 				episodes.append((n_level, steps, win, score))
@@ -149,6 +151,7 @@ class Agent:
 				VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
 				persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
 				i += 1
+				print "Won in ", time.time() - t1
 				# if i >=10:
 					# break
 			if heatmap:
@@ -266,6 +269,21 @@ class Agent:
 			persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
 		print "Won {} out of {} episodes.".format(sum(wins), i)
 
+	def updateMemory(self, rle):
+		
+		types = list(set([rle._game.all_objects[k]['type']['color'] for k in rle._game.all_objects.keys()]))
+		for obj_type in types:
+			## find the most-updated object, use that one for the sprite hypothesis.
+			options = [k for k in rle._game.all_objects.keys() if rle._game.all_objects[k]['type']['color'] == obj_type]
+			k = max(options, key=lambda x:rle._game.spriteUpdateDict[x])
+			
+			if rle._game.spriteUpdateDict[k] > self.bestSpriteTypeDict[obj_type]['count']:
+				self.bestSpriteTypeDict[obj_type]['count'] = copy.deepcopy(rle._game.spriteUpdateDict[k])
+				self.bestSpriteTypeDict[obj_type]['distribution'] = copy.deepcopy(rle._game.spriteDistribution[k])
+		print "in updateMemory"
+		embed()
+		return
+
 	def playEpisode(self, gameObject, flexible_goals=False):
 
 		## Initialize external environment
@@ -297,7 +315,7 @@ class Agent:
 			theoryRLEs = self.VrleInitPhase(flexible_goals)
 
 			p = WBP.WBP(theoryRLEs[0], self.gameFilename,
-						theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules, annealing=annealing, max_nodes=self.max_nodes)
+						theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules, seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes)
 			p.BFS()
 			solution = p.solution
 			quitting = p.quitting
@@ -334,6 +352,9 @@ class Agent:
 								break
 						except:
 							# Mismatch in gamestring lengths
+							print 'regrounding'
+							# print "mismatch in gamestring lengths"
+							# embed()
 							break
 
 				self.max_nodes *= 1
@@ -341,12 +362,17 @@ class Agent:
 				## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
 				## Search more deeply next time.
 				self.max_nodes *= self.max_nodes_annealing
+				self.updateMemory(self.rle)
+				embed()
 				return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered
 
 
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
+		
 		score = self.rle._game.score
+		self.updateMemory(self.rle)
+		embed()
 		print "ended episode. Win={}".format(win)
 		return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
@@ -387,7 +413,7 @@ class Agent:
 
 		if any([self.new_objects[k]>5 for k in self.new_objects.keys()]):
 			# if self.new_objects[k] > 5:
-			spriteTypeHypothesis, exceptedObjects = sampleFromDistribution(self.rle._game.spriteDistribution, self.all_objects)
+			spriteTypeHypothesis, exceptedObjects = sampleFromDistribution(self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 
 			newHypotheses = []
@@ -408,6 +434,9 @@ class Agent:
 		spriteInduction(self.rle._game, step=2)
 
 		res = self.rle.step(action)
+
+		print ""
+		print keyPresses[action]
 
 		try:
 			agentState = dict(self.rle._game.getAvatars()[0].resources)
@@ -448,6 +477,7 @@ class Agent:
 		# 	embed()
 
 		effects = translateEvents(res['effectList'], self.all_objects, self.rle)
+		print self.rle.show()
 
 		all_effects = [item for sublist in [e['effectList'] for e in self.finalEventList] for item in sublist]
 
@@ -457,6 +487,9 @@ class Agent:
 			self.finalEventList.append(event)
 
 		if (event['effectList'] and run_induction) or distributionsHaveChanged:
+
+			print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
+
 			## Delete fake interaction rules for events that were witnessed in this time step.
 			oldFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
 			self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
@@ -465,7 +498,7 @@ class Agent:
 			if (not all([e in all_effects for e in effects])) or distributionsHaveChanged:
 				theory_change_flag = True
 
-			sample, exceptedObjects = sampleFromDistribution(self.rle._game.spriteDistribution, self.all_objects)
+			sample, exceptedObjects = sampleFromDistribution(self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
 
 			game_object = Game(spriteInductionResult=sample)
 
@@ -500,11 +533,22 @@ class Agent:
 				if (resource not in self.seen_resources and val>0):
 					self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
 					self.fakeInteractionRules = list(set(self.fakeInteractionRules))
+					# resourceColor = self.rle._game.sprite_groups[resource][0].colorName
 					# Add resource change to seen_resources list
 					self.seen_resources.append(resource)
-				elif agentState[resource]==limit:
+					# print "found resource"
+					# embed()
+					hypotheses[0].resource_limits[resource] = limit
+					# print "got a resource"
+					# embed()
+				elif agentState[resource]==limit and resource not in self.seen_limits:
 					self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
 					self.fakeInteractionRules = list(set(self.fakeInteractionRules))
+					# resourceColor = self.rle._game.sprite_groups[resource][0].colorName
+					self.seen_limits.append(resource)
+					theory_change_flag = True
+					print "reached limit"
+					embed()
 
 		if event['effectList'] and run_induction:
 			[t.updateTerminations(event=event) for t in hypotheses]
@@ -512,9 +556,6 @@ class Agent:
 			print "changed theory:"
 			hypotheses[0].display()
 
-
-
-		print self.rle.show()
 
 		return hypotheses, theory_change_flag, effects
 

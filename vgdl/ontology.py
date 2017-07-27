@@ -207,7 +207,7 @@ class ResourcePack(Resource):
 class Flicker(VGDLSprite):
     """ A square that persists just a few timesteps. """
     color = RED
-    limit = 10
+    limit = 0
     def __init__(self, **kwargs):
         self._age = 0
         VGDLSprite.__init__(self, **kwargs)
@@ -1123,7 +1123,7 @@ class NoveltyTermination(Termination):
                     # embed()
                     print("NoveltyTermination with {} and {}".format(
                         name1, name2))
-                    # if name1=='sword' and name2=='sword':
+                    # if name1=='c5' and name2=='avatar':
                         # embed()
                     if id_not_found:
                         # embed()
@@ -1173,10 +1173,10 @@ def cloneSprite(sprite, partner, game):
 
 def transformTo(sprite, partner, game, stype='wall'):
     newones = game._createSprite([stype], (sprite.rect.left, sprite.rect.top))
-
     if len(newones) > 0:
         if isinstance(sprite, OrientedSprite) and isinstance(newones[0], OrientedSprite):
             newones[0].orientation = sprite.orientation
+            newones[0].resources = sprite.resources
         game.kill_list.append(sprite)
         # game.dead.append(sprite)
     args = {'stype':stype}
@@ -1980,7 +1980,7 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome, spe
 
     return curr_distribution
 
-def sampleFromDistribution(curr_distribution, all_objects):
+def sampleFromDistribution(curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict):
 
     import random
     import numpy as np
@@ -2013,16 +2013,24 @@ def sampleFromDistribution(curr_distribution, all_objects):
                                                                                                     ## and not doing inference about it.
 
     for obj_type in types:
+        ## find the most-updated object, use that one for the sprite hypothesis.
         options = [k for k in all_objects.keys() if all_objects[k]['type']['color'] == obj_type]
-        k = random.choice(options)
+        k = max(options, key=lambda x:spriteUpdateDict[x])
 
-        ## always alphabetize the keys
-        ## sample multinomially from the spriteDistribution[key] dictionary, to get the spriteType
-        ## add that to the color info for that object.
-        if k not in curr_distribution.keys():
-            print k, "not in curr_distribution"
-            embed()
-        sprite_possibilities = curr_distribution[k]
+        if spriteUpdateDict[k] >= bestSpriteTypeDict[obj_type]['count']: ## If we have more observations in the current episode than in our memory, use the current distribution
+            # embed()
+            # k = random.choice(options)
+            ## always alphabetize the keys
+            ## sample multinomially from the spriteDistribution[key] dictionary, to get the spriteType
+            ## add that to the color info for that object.
+            if k not in curr_distribution.keys():
+                print k, "not in curr_distribution"
+                embed()
+            sprite_possibilities = curr_distribution[k]
+        else:
+            # embed()
+            sprite_possibilities = bestSpriteTypeDict[obj_type]['distribution'] ## otherwise use the one we have learned from the previous episode.
+
         lst = sprite_possibilities.keys()
         lst.sort()
         probs = [sprite_possibilities[l]['prob'] for l in lst]
@@ -2032,7 +2040,10 @@ def sampleFromDistribution(curr_distribution, all_objects):
         s_probs = softmax(probs, .01)
         index = np.random.choice(range(len(probs)), p=s_probs)
         sprite_type = lst[index] ##you might also want to return sprite_possibilities[lst[index]], which is the associated probability.
-        color = all_objects[k]['type']['color']
+        
+        color = obj_type
+        # color = all_objects[k]['type']['color']
+        
         if sprite_type=='OTHER':
             from ontology import RandomNPC
             sprite_type = RandomNPC
@@ -2144,8 +2155,6 @@ def spriteInduction(game, step, old_outcome=None):
         # embed()
 
     elif step==3:
-        # specialID = [k for k in game.all_objects.keys() if game.all_objects[k]['features']['color']=='LIGHTBLUE'][0]
-
         # ch = [k for k in game.spriteDistribution[specialID].keys() if 'Chaser' in str(k)][0]
         # rp = [k for k in game.spriteDistribution[specialID].keys() if 'Resource' in str(k)][0]
         # print game.spriteDistribution[specialID][ch]
@@ -2172,9 +2181,14 @@ def spriteInduction(game, step, old_outcome=None):
                 if all([sprite not in e for e in game.effectList if e[0]!='nothing']) and sprite not in game.ignoreList and sprite_obj.name != 'avatar':
                     # only update the distribution in this fashion if there are no events for this
                     # time step involving this sprite.
+
+                    if objects[sprite]['features']['color']=='DARKGRAY':
+                        print game.spriteDistribution[sprite]
+
                     outcome = objects[sprite]["position"]
                     game.spriteDistribution = updateDistribution(sprite, game.spriteDistribution, \
                                               game.movement_options, outcome)
+                    game.spriteUpdateDict[sprite] += 1
 
                 elif any([sprite in e for e in game.effectList]) and sprite not in game.ignoreList and sprite_obj.name !='avatar':
                     # if there are events for this sprite in this time step, just re-initialize the distribution for

@@ -33,7 +33,7 @@ disableContinuousKeyPress = True
 actionToKeyPress = {(-1,0): pygame.K_LEFT, (1,0): pygame.K_RIGHT,
                     (0,1): pygame.K_DOWN, (0,-1): pygame.K_UP}
 
-keyPresses = {273: 'up', 274: 'down', 276: 'left', 275: 'right', 32: 'spacebar'}
+keyPresses = {273: 'up', 274: 'down', 276: 'left', 275: 'right', 32: 'spacebar', 0:'none'}
 emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
 
 
@@ -241,6 +241,7 @@ class BasicGame(object):
         self.win = None
         self.effectList = [] # list of effects that happened this current timestep
         self.spriteDistribution = {}
+        self.spriteUpdateDict = defaultdict(int) ## track how many times we have run spriteType updates to each particular object
         self.movement_options = {}
         self.all_objects = None
 
@@ -937,7 +938,9 @@ class BasicGame(object):
         #     self.movement_options[sprite] = {"OTHER":{}}
         #     for sprite_type in sprite_types:
         #         self.movement_options[sprite][sprite_type] = {}
-        self.collision_eff.sort(key = lambda x: x[2].__name__ == 'killSprite') # Should make this more modular. alwell.
+
+
+        self.collision_eff.sort(key = lambda x: x[2].__name__ == 'killSprite', reverse=True) # Should make this more modular. alwell.
 
         while not self.ended:
             clock.tick(self.frame_rate)

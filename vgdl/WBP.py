@@ -35,7 +35,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=100000):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -44,6 +44,7 @@ class WBP():
 		self.objectTypes = rle._game.sprite_groups.keys()
 		self.objectTypes.sort()
 		self.phiSize = sum([len(rle._game.sprite_groups[k]) for k in rle._game.sprite_groups.keys() if k not in ['wall', 'avatar']])
+		self.seen_limits = seen_limits
 		self.objIDs = {}
 		self.solution = None
 		self.maxNumObjects = 6
@@ -59,7 +60,9 @@ class WBP():
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
-			self.theory=theory
+			self.theory=copy.deepcopy(theory)
+			self.theory.interactionSet.extend(fakeInteractionRules)
+			self.theory.updateTerminations()
 		print 'max nodes', self.max_nodes
 
 		# for rule in self.theory.interactionSet:
@@ -111,23 +114,44 @@ class WBP():
 	def calculateAtoms(self, rle):
 		lst = []
 		for k in rle._game.sprite_groups.keys():
-			for o in rle._game.sprite_groups[k]:
-				if o not in rle._game.kill_list:
-					## turn location into vector posd2[ition (rows appended one after the other.)
-					pos = rle._rect2pos(o.rect) #x,y
-					vecValue = pos[1] + pos[0]*rle.outdim[0] + 1
-				else:
-					vecValue = 0
-				objPosCombination = self.objIDs[o.ID] + vecValue
-				lst.append(objPosCombination)
+
+			## Don't track Flicker in atoms. The point is that the Flicker should have an effect on other objects, so atom novelty that would have been
+			## a function of the Flicker's presence is being taken care of by that. Otherwise the agent can keep exploring states that have no actual effect
+			## on the game state.
+			if (len(rle._game.sprite_groups[k])>0 and 
+					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and 
+					'Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)):
+				pass
+			else:
+				for o in rle._game.sprite_groups[k]:
+					if o not in rle._game.kill_list:
+						## turn location into vector position (rows appended one after the other.)
+						pos = rle._rect2pos(o.rect) #x,y
+						vecValue = pos[1] + pos[0]*rle.outdim[0] + 1
+					else:
+						vecValue = 0
+					objPosCombination = self.objIDs[o.ID] + vecValue
+					lst.append(objPosCombination)
 		present = []
 		for k in [t for t in self.objectTypes if t not in ['wall', 'avatar']]: ##maybe add the avatar to this global state
-			# for o in rle._game.sprite_groups[k]:
-			for o in sorted(rle._game.sprite_groups[k], key=lambda s:s.ID):
-				if o not in rle._game.kill_list:
-					present.append(1)
-				else:
-					present.append(0)
+			
+			## Don't track Flicker in atoms. The point is that the Flicker should have an effect on other objects, so atom novelty that would have been
+			## a function of the Flicker's presence is being taken care of by that. Otherwise the agent can keep exploring states that have no actual effect
+			## on the game state.
+			if (len(rle._game.sprite_groups[k])>0 and 
+					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and 
+					'Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)):
+				pass
+			else:
+				for o in sorted(rle._game.sprite_groups[k], key=lambda s:s.ID):
+					if k=='sword':
+						print "found sword"
+						## the point was to have caught the sword 8 lines up, so we should never have entered this condition. Check why that catch failed.
+						embed()
+					if o not in rle._game.kill_list:
+						present.append(1)
+					else:
+						present.append(0)
 		ind = sum([present[i]*2**i for i in range(len(present))])
 		lst.append(ind)
 		if not self.vecSize:
@@ -437,6 +461,8 @@ class Node():
 		val = 0
 		compute_second_order = True
 
+		if 'Flicker' in str(theory.classes[s1][0].vgdlType) or 'Flicker' in str(theory.classes[s2][0].vgdlType):
+			return 0
 		# Check if condition is win or loss and multiply accordingly
 		if term.termination.win:
 			mult = -1
@@ -573,9 +599,7 @@ class Node():
 					a = self.actionSeq[-1]
 					# print a
 					res = vrle.step(a)
-					# relevantEvents = [t for t in res['effectList'] if t[0] == 'stepBack']
-					# if relevantEvents:
-					# 	import ipdb;ipdb.set_trace()
+					relevantEvents = [t for t in res['effectList'] if t[0] == 'changeResource']
 					self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
 					terminal, win = vrle._isDone()
 			except:
@@ -644,6 +668,11 @@ class Node():
 		self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		sum(self.rolloutArray) - self.metabolic_cost + self.position_score()
 		# self.intrinsic_reward = 0
+
+		## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
+		if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
+			self.win=True
+
 		return self.win
 
 	def updateNovelty(self):
@@ -723,7 +752,7 @@ if __name__ == "__main__":
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
-	gameFilename = "examples.gridphysics.boulderdash"
+	gameFilename = "examples.gridphysics.theorytest"
 	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
 	# gameFilename = "examples.gridphysics.expt_helper"
 

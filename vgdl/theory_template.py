@@ -6,6 +6,7 @@ from class_theory_template import *
 from taxonomy import *
 from IPython import embed
 from ontology import *
+from collections import defaultdict
 import ipdb
 import operator
 import time, math
@@ -274,6 +275,8 @@ class Theory(object):
 		self.posterior = False
 
 		self.goalColor = False ## TODO. Hack added 1/18/17 in lieu of termination set.
+
+		self.resource_limits = defaultdict(lambda:1)
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
 		if not (vgdlSpriteParse or spriteInductionResult):
@@ -1639,8 +1642,11 @@ class Game(object):
 						print "theory:"
 						newTheory.display()
 						self.nodes_eliminated +=1
-				max_likelihood = np.unique([sum([h.likelihood(ts) for ts in timesteps]) for h in self.hypothesisSpace])[-1]
-
+				try:
+					max_likelihood = np.unique([sum([h.likelihood(ts) for ts in timesteps]) for h in self.hypothesisSpace])[-1]
+				except:
+					print "max_likelihood failed"
+					embed()
 				self.hypothesisSpace = [h for h in self.hypothesisSpace if sum([h.likelihood(ts) for ts in timesteps]) == max_likelihood]
 				if verbose:
 					print "New theories that passed likelihood tests: ", newTheoriesCount
@@ -2118,7 +2124,7 @@ def generateSymbolDict(rle):
 
 def getKeywordsFromOntology(interactionName):
 	ontologyKeywordDict = \
-	{'changeResource': ['resource', 'value'],\
+	{'changeResource': ['resource', 'value', 'limit'],\
 	'changeScore': ['value'],\
 	'transformTo': ['stype'],\
 	'transformToOnLanding': ['stype'],\
@@ -2205,8 +2211,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 			argsString = ""
 		else:
 			if interactionRule.args:
-				# print "in writeTheory"
-				# embed()
 				argsString = ""
 				for k,v in interactionRule.args.items():
 					if k in ['stype', 'strigger']:
@@ -2360,7 +2364,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 						theoryString += "\t\t%s > %s color=%s%s\n"%("goal", stype, s.color, argsString)
 
 	for resource in resourcesToAdd:
-		theoryString += "\t\t%s > Resource color=RESOURCETOADD\n"%resource
+		theoryString += "\t\t%s > Resource color=RESOURCETOADD limit=%s\n"%(resource, theory.resource_limits[resource])
 
 	if goalLoc:
 		if newGoalType == 'blank_space':
