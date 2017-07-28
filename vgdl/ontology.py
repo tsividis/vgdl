@@ -886,7 +886,7 @@ class MarioAvatar(InertialAvatar):
     draw_arrow = False
     strength = 1
     movestrength = sqrt(strength)
-    vx_max = 10
+    vx_max = 8
     airsteering = False
     last_vy = 0
     jumping = False
@@ -986,6 +986,35 @@ class MarioAvatar(InertialAvatar):
         #print (self.orientation[0]*self.speed, self.orientation[1]*self.speed)
 
         #print self.orientation[0]*self.speed
+
+class RopeAvatar(InertialAvatar):
+
+    max_speed = 5
+    vx_max = 1
+    jumping = False
+    speed_bonus = [0,0]
+
+    def declare_possible_actions(self):
+        from pygame.locals import K_LEFT, K_RIGHT, K_UP, K_DOWN
+        actions = {}
+        actions["UP"] = K_UP
+        actions["DOWN"] = K_DOWN
+        actions["LEFT"] = K_LEFT
+        actions["RIGHT"] = K_RIGHT
+        return actions
+
+    def update(self,game):
+        action = self._readAction(game)
+        if action==None:
+            action=[0,0]
+        action=list(action)
+        self.speed = 0
+        action = [self.max_speed*action[0],self.max_speed*action[1]]
+        
+        self.physics.activeMovement(self,action)
+        #print(self.rect)
+        VGDLSprite.update(self, game)
+        
 
 '''
 class MontezumaAvatar(MarioAvatar):
@@ -1247,8 +1276,9 @@ def transformTo(sprite, partner, game, stype='wall'):
     #embed()
     if len(newones) > 0:
         if isinstance(sprite, OrientedSprite) and isinstance(newones[0], OrientedSprite):
-            
+            #print("KEEPING ORIENTATION SPEED")
             newones[0].orientation = sprite.orientation
+            newones[0].speed = sprite.speed
         newones[0].resources = sprite.resources
         game.kill_list.append(sprite)
         # game.dead.append(sprite)
