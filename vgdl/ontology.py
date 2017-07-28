@@ -198,10 +198,19 @@ class ContinuousPhysics(GridPhysics):
         v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed
         
         
+        
         if sprite.jumping or action[1]:
             v1 = sprite.orientation[0] * speed
         else:
             v1 = action[0]*sprite.vx_max
+
+        if not sprite.jumping:
+            v2 += sprite.speed_bonus[1]
+            v1 += sprite.speed_bonus[0]
+
+        sprite.speed_bonus = [0,0]
+
+        #print(v1,v2)
         
         #v2 = action[1]*sprite.strength
         sprite.orientation = unitVector((v1, v2))
@@ -883,6 +892,7 @@ class MarioAvatar(InertialAvatar):
     jumping = False
     wait_step = 0
     airstrength = 1
+    speed_bonus = [0,0]
     #decay = .5
     decay = 0
 
@@ -901,6 +911,8 @@ class MarioAvatar(InertialAvatar):
         #else:
         #    print "NO"
         #print self
+
+        #print("UPDATING")
 
         from pygame.locals import K_SPACE
 
@@ -971,7 +983,7 @@ class MarioAvatar(InertialAvatar):
 
 
         #print self.orientation
-        #print self.speed
+        #print (self.orientation[0]*self.speed, self.orientation[1]*self.speed)
 
         #print self.orientation[0]*self.speed
 
@@ -1288,7 +1300,9 @@ def conveySprite(sprite, partner, game):
     """ Moves the partner in target direction by some step size. """
     tmp = sprite.lastrect
     v = unitVector(partner.orientation)
-    sprite.physics.activeMovement(sprite, v, speed=partner.strength)
+    #print "CONVEYING"
+    #sprite.physics.activeMovement(sprite, v, speed=partner.strength)
+    sprite.speed_bonus = [v[0]*partner.strength,v[1]*partner.strength]
     sprite.lastrect = tmp
     game._updateCollisionDict(sprite)
     # return ('conveySprite', colorDict[str(sprite.color)], colorDict[str(partner.color)])
@@ -1575,6 +1589,11 @@ def teleportToExit(sprite, partner, game):
     sprite.lastmove = 0
     args = {'stype':partner.stype}
     return ('teleportToExit', sprite.ID, partner.ID, args)
+
+def killIfTooFast(sprite,partner,game, speed):
+    if sprite.speed*sprite.orientation[1] > speed:
+        return killSprite(sprite, partner, game)
+
 
 # this allows us to determine whether the game has stochastic elements or not
 stochastic_effects = [teleportToExit, windGust, slipForward, attractGaze, flipDirection]

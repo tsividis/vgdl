@@ -33,6 +33,7 @@ BasicGame
         goal > Immovable color=GREEN
         wall > Immovable color=BLACK
         key > Resource limit=1 color=GOLD
+        
 
     TerminationSet
         SpriteCounter stype=goal      win=True     

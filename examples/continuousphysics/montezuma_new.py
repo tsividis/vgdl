@@ -1,15 +1,4 @@
-# level = """
-# wwwwwwwwwwwwwwwwwwww
-# w                  w
-# wG       A        Gw
-# wwww   wwlww    wwww
-# w        l         w
-# w                  w
-# wwwl  wwwwwww   lwww
-# w  l            l  w
-# wG        1        w
-# wwwwwwwwwwwwwwwwwwww
-# """
+
 
 level = """
 wwwwwwwwwwwwwwwwwwww
@@ -20,87 +9,29 @@ wwww...wwlww....wwww
 wk.......l.........w
 w..................w
 w..................w
-wwwl..wwwwwww...lwww
+wwwl..ccccccc...lwww
 w..l............l..w
 w..l............l..w
-w..................w
+w.........1........w
 wwwwwwwwwwwwwwwwwwww
 """
 
-'''
 level = """
 wwwwwwwwwwwwwwwwwwww
 w..................w
 w..................w
-wG.................w
+wG.........A.......w
 wwww...wwlww....wwww
-w........l.........w
+wk.......l.........w
 w..................w
-wA.................w
-wwwl..wwwwwww...lwww
+w..................w
+wwwl..ccccccc...lwww
 w..l............l..w
 w..l............l..w
-w..................w
+w.........1........w
 wwwwwwwwwwwwwwwwwwww
 """
-'''
 
-
-#avatar goal > stepBack
-#        keyavatar > MarioAvatar strength=22 physicstype=GravityPhysics color=WHITE
-#        keyladderavatar > VerticalAvatar speed=0.3 color=WHITE
-'''
-game = """
-BasicGame
-    SpriteSet
-        background > Immovable color=LIGHTGRAY
-        goomba > Missile orientation=LEFT color=BROWN speed=0.2
-        goal > Immovable color=GREEN
-        key > Immovable color=GOLD
-        wall > Immovable color=BLACK
-        ladder > Immovable color=YELLOW
-
-        avatar > MarioAvatar strength=22 physicstype=GravityPhysics color=WHITE
-        ladderavatar > VerticalAvatar speed=0.3 color=WHITE
-        keyavatar > MarioAvatar strength=22 physicstype=GravityPhysics color=WHITE
-        keyladderavatar > VerticalAvatar speed=0.3 color=WHITE
-
-
-    TerminationSet
-        SpriteCounter stype=goal      win=True
-        MultiSpriteCounter stype1=avatar stype2=ladderavatar stype3=keyavatar stype4=keyladderavatar win=False
-
-    InteractionSet
-
-        avatar goomba > killSprite
-        avatar EOS  > killSprite
-        goomba EOS > killSprite
-        ladderavatar goomba > killSprite
-
-        avatar goal > stepBack
-        goal keyavatar > killSprite
-        key avatar > killSprite
-        avatar key > transformTo stype=keyavatar
-        avatar wall > wallStop
-        goomba wall > wallBounce
-        keyavatar goomba > killSprite
-        keyavatar EOS  > killSprite
-        keyavatar wall > wallStop
-        ladderavatar background > transformTo stype=avatar
-        avatar ladder > transformTo stype=ladderavatar
-        keyladderavatar background > transformTo stype=keyavatar
-        keyavatar ladder > transformTo stype=keyladderavatar
-
-    LevelMapping
-        . > background
-        w > background wall
-        G > background goal
-        1 > background goomba
-        l > background ladder
-        k > background key
-        A > background avatar
-"""
-'''
 game = """
 BasicGame
     SpriteSet
@@ -111,8 +42,11 @@ BasicGame
         wall > Immovable color=BLACK
         ladder > Immovable color=YELLOW
 
-        avatar > MarioAvatar strength=22 physicstype=GravityPhysics color=WHITE
+        avatar > MarioAvatar strength=15 physicstype=GravityPhysics color=WHITE
         ladderavatar > VerticalAvatar speed=0.3 color=WHITE
+
+        conveyor > Conveyor strength=5
+
 
     TerminationSet
         SpriteCounter stype=goal      win=True
@@ -129,9 +63,14 @@ BasicGame
         goal avatar > killIfOtherHasMore resource=key
         key avatar > killSprite
         avatar key > changeResource resource=key value=1
+        avatar wall > killIfTooFast speed=26
         avatar wall > wallStop
         goomba wall > wallBounce
         avatar goal > stepBack
+        
+        avatar conveyor > killIfTooFast speed=26
+        avatar conveyor > conveySprite
+        avatar conveyor > wallStop
 
         ladderavatar background > transformTo stype=avatar
         avatar ladder > transformTo stype=ladderavatar
@@ -145,6 +84,8 @@ BasicGame
         l > background ladder
         k > background key
         A > background avatar
+        c > background conveyor
+
 """
 
 if __name__ == "__main__":

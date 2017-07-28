@@ -44,7 +44,7 @@ REMOVE_MOVERS = True
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=10000, limit=4):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=10000, limit=3, grid_limit=100):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -108,8 +108,10 @@ class WBP():
 		self.num_paths = 1
 		self.all_paths = []
 
-		self.LIMIT = 3
-		self.GRID_LIMIT = 100
+		self.LIMIT = limit
+		self.GRID_LIMIT = grid_limit
+		self.speed_thresh = []
+		#self.speed_thresh = [1,5,10,15]
 
 	def makeGraph(self):
 		graph = {}
@@ -385,7 +387,7 @@ class WBP():
 		lst = []
 
 		#embed()
-		for k in [t for t in rle._game.sprite_groups.keys() if t not in ['wall', 'background','ladder']]:
+		for k in [t for t in rle._game.sprite_groups.keys() if t not in ['wall', 'background','ladder','conveyor']]:
 			for o in rle._game.sprite_groups[k]:
 				if not isinstance(o, vgdl.core.Avatar) and (not isinstance(o,vgdl.ontology.RandomNPC) and not isinstance(o,vgdl.ontology.Missile) or not REMOVE_MOVERS):
 					if o not in rle._game.kill_list:
@@ -408,13 +410,25 @@ class WBP():
 				vecValue = pos[1] + pos[0]*rle.outdim[0]*self.square_size[1] + 1 + 0.5*a + 0.25*b
 			except:
 				vecValue = pos[1] + pos[0]*rle.outdim[0]*self.square_size[1] + 1
+
+			if self.speed_thresh:
+				#embed()
+				speed = avatar.speed
+				if speed <= self.speed_thresh[0]:
+					ind = 0
+				elif speed > self.speed_thresh[-1]:
+					ind = len(self.speed_thresh)
+				else:
+					ind = [i for i in range(1,len(self.speed_thresh)) if self.speed_thresh[i-1] < speed and self.speed_thresh[i] >=  speed][0]
+				vecValue += ind/float(4*(len(self.speed_thresh)+1))
+
 			objPosCombination = self.avatar_ID + vecValue
 			lst.append(objPosCombination)
 
 
 
 		present = []
-		for k in [t for t in self.objectTypes if t not in ['wall', 'avatar','background','ladder']]: ##maybe add the avatar to this global state
+		for k in [t for t in self.objectTypes if t not in ['wall', 'avatar','background','ladder','conveyor']]: ##maybe add the avatar to this global state
 			for o in sorted(rle._game.sprite_groups[k], key=lambda s:s.ID):
 				if not isinstance(o, vgdl.core.Avatar):
 					if o not in rle._game.kill_list:
@@ -437,7 +451,7 @@ class WBP():
 	def gridAtoms(self,rle):
 		lst = []
 
-		for k in [t for t in rle._game.sprite_groups.keys() if t not in ['wall', 'background','ladder']]:
+		for k in [t for t in rle._game.sprite_groups.keys() if t not in ['wall', 'background','ladder','conveyor']]:
 			for o in rle._game.sprite_groups[k]:
 				if not isinstance(o, vgdl.core.Avatar) and (not isinstance(o,vgdl.ontology.RandomNPC) and not isinstance(o,vgdl.ontology.Missile) or not REMOVE_MOVERS):
 					if o not in rle._game.kill_list:
@@ -543,6 +557,7 @@ class WBP():
 
 			print(i)
 
+
 			avatar = self.getAliveAvatar(current.rle)
 			if avatar is not None:
 				loc = current.rle._rect2pos(avatar.rect)
@@ -557,7 +572,6 @@ class WBP():
 				"NO AVATAR"
 				embed()
 			print avatar
-
 			
 
 			self.getActions(current.rle)
@@ -1210,7 +1224,7 @@ class Node():
 
 	#does this do anything???
 	def playBack(self, make_movie=False):
-		vrle = copy.deepcopy(self.rle)
+		# = copy.deepcopy(self.rle)
 		self.finalStatesEncountered = []
 		terminal = vrle._isDone()[0]
 		i=0
@@ -1232,6 +1246,37 @@ def euclideanDist(a,b):
 	return math.sqrt(float((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2))
 
 
+def multi_plan():
+	t1 = time.time()
+	#gameFilename = "examples.continuousphysics.montezuma_new"
+	gameFilename = "examples.continuousphysics.collect_resource"
+	gameString, levelString = defInputGame(gameFilename, randomize=True)
+	rleCreateFunc = lambda: createRLInputGame(gameFilename)
+	rle = rleCreateFunc()
+
+	params = [(3,50),(3,75),(3,100),(3,120),(3,150)]
+	result = []
+	for param in params: 
+		print param
+		p = WBP(rle,gameFilename,limit=param[0],grid_limit=param[1])
+		last, gameString_array, nodes = p.BFS()
+		result.append((gameString_array,nodes))
+
+	i = 0
+	#embed()
+	for [gameString_array,nodes] in result:
+		print params[i]
+		print("nodes searched = {}".format(nodes))
+		if gameString_array is not None:
+			print("SUCCESS! path length = {}".format(len(gameString_array)))
+		else:
+			print("FAILURE")
+		i += 1
+
+	print time.time()-t1
+	embed()
+
+
 
 if __name__ == "__main__":
 
@@ -1249,44 +1294,31 @@ if __name__ == "__main__":
 	#gameFilename = "examples.continuousphysics.collect_resource"
 
 	#gameFilename = "examples.gridphysics.simple_grid"
-	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
+	#gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
 	#gameFilename = "examples.gridphysics.expt_exploration_exploitation"
 	#gameFilename = "examples.continuousphysics.ptsp_simple"
 	#gameFilename = "examples.continuousphysics.ptsp"
 	#gameFilename = "examples.continuousphysics.breakout"
 
-
+	
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
-	
-	#embed()
-	times = []
-	#for i in range(10):
+
 	t1 = time.time()
 	p = WBP(rle, gameFilename)
 
-
-	embed()
-	#	try:
-	last, gameString_array, nodes = p.BFS()
-	#result = p.BFS_profiler()
-	#from core import VGDLParser
-	#last.playBack(make_movie=True)
-	#	except:
-	#		fails += 1
 	#embed()
-	#for i in path:
-	#	print(i)
-	
-				# VGDLParser.playGame(gameString, levelString, p.statesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
-	# VGDLParser.playGame(gameString, levelString, last.finalStatesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
 
-	#print("time:")
+	last, gameString_array, nodes = p.BFS()
+
 	print time.time()-t1
-		#times.append(time.time() - t1)
 
 	embed()
+
+	#
+	#multi_plan()
+	#
 
 
 #
