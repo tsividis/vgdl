@@ -1697,7 +1697,7 @@ class Game(object):
 			T.initializeSpriteSet(vgdlSpriteParse = vgdlSpriteParse, spriteInductionResult=False)
 
 		# Assign class names
-		# avatar = [o for o in T.spriteSet if o.vgdlType==MovingAvatar][0]
+
 		avatar = [o for o in T.spriteSet if o.vgdlType in AvatarTypes][0]
 		nonAvatars = [o for o in T.spriteSet if o.vgdlType not in AvatarTypes and o.color!='ENDOFSCREEN']
 		# wall = [o for o in T.spriteSet if o.color == "BLACK" or o.color=="GRAY"][0]
@@ -1718,7 +1718,7 @@ class Game(object):
 
 		projectileTypes = [Flicker, OrientedFlicker, Missile]
 		for i in range(len(nonAvatars)):
-			if projectileName and nonAvatars[i].vgdlType in projectileTypes:
+			if projectileName == nonAvatars[i].className:
 				nonAvatars[i].className = projectileName
 			else:
 				nonAvatars[i].className = 'c'+str(i+2)

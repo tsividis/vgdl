@@ -1591,6 +1591,10 @@ def getStype(params):
     if 'stype' in params:
         return params['stype']
 
+def getCooldown(params):
+    if 'cooldown' in params:
+        return params['stype']
+
 def chaserClosestTargets(sprite, game):
     bestd = 1e100
     res = []
@@ -1656,6 +1660,7 @@ def updateOptions(game, sprite_type, current_sprite, params={}):
         speed = getSpeed(params)
         fleeing = getFleeing(params)
         targetColor = getStype(params)
+        # cooldown = getCooldown(params)
         try:
             targetName = [k for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName==targetColor][0]
             targets = game.sprite_groups[targetName]
@@ -1842,7 +1847,7 @@ def initializeDistributionArgs(sprite_type, objectColors):
         initializeProperty(args, 'stype', stypeValues)
 
     def initializeCooldown(args):
-        stypeValues = [1]
+        stypeValues = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         initializeProperty(args, 'cooldown', stypeValues)
 
     args = {}
@@ -1980,11 +1985,13 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome, spe
 
     return curr_distribution
 
-def sampleFromDistribution(curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict):
+def sampleFromDistribution(curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict, oldSpriteSet = None):
 
     import random
     import numpy as np
     from class_theory_template import Sprite
+
+    distributionsHaveChanged = False
 
     sample = []
     exceptions = []
@@ -1999,9 +2006,11 @@ def sampleFromDistribution(curr_distribution, all_objects, spriteUpdateDict, bes
             from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
                 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
                     AimedFlakAvatar, InertialAvatar, MarioAvatar
+
+            ## TODO: Pass in sprite_groups so that you can get the actual color of the Flicker. Also generalize beyond Flicker to Missile, etc.
             try:
                 sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
-                sample.append(Sprite(vgdlType=Flicker, color='BLUE', args={'singleton':'True'}))
+                sample.append(Sprite(vgdlType=Flicker, color='BLUE', className=all_objects[k]['sprite'].stype, args={'singleton':'True'}))
                 exceptions.append('BLUE')
                 # sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'healthPoints':all_objects[k]['sprite'].healthPoints}))
             except AttributeError:
@@ -2063,32 +2072,94 @@ def sampleFromDistribution(curr_distribution, all_objects, spriteUpdateDict, bes
             param[arg] = param_list[index]
 
 
+        ## Find matching object in the existing hypothesis
+        if oldSpriteSet:
+            matchingSprite = [sprite for sprite in oldSpriteSet if s.color==sprite.color][0]
+            if s.vgdlType!=matchingSprite.vgdlType or s.args!=matchingSprite.args:
+                distributionsHaveChanged = True
+
         setSpriteParams(param, s) # set the parameters for sprite s
 
         sample.append(s)
 
-    return sample, exceptions
 
-def checkIfDistributionsHaveChanged(game, distributionAtT1, distributionAtT2):
-    KLthreshold = .00001
+    return sample, exceptions, distributionsHaveChanged
 
+def checkIfDistributionsHaveChanged(game, spriteUpdateDict, bestSpriteTypeDict):
+
+    all_objects = game.all_objects
+    curr_distribution = game.spriteDistribution
     changes = False
-    for k in [key for key in distributionAtT1.keys() if 
-            key in game.all_objects.keys() and 
-            game.all_objects[key]['features']['color'] not in game.exceptedObjects and 
-            key in distributionAtT2.keys()]:
-        if game.all_objects[k]['features']['color'] not in game.exceptedObjects and k in distributionAtT2.keys():
-            spriteDistribution1, spriteDistribution2 = distributionAtT1[k], distributionAtT2[k]
-            # print k, getKL(spriteDistribution1, spriteDistribution2)
-            if getKL(spriteDistribution1, spriteDistribution2) > KLthreshold:
-                return True
+    exceptions = []
+
+    ## We don't do sprite inference for the avatar and for Flak 
+    non_avatar_keys = []
+    for k in all_objects.keys():
+        if all_objects[k]['sprite'].name is not 'avatar':
+            non_avatar_keys.append(k)
+        else:
+            exceptions.append('BLUE')
+
+    ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
+    types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions)) ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately 
+                                                                                                    ## and not doing inference about it.
+    for obj_type in types:
+        ## find the most-updated object, use that one for the sprite hypothesis.
+        options = [k for k in all_objects.keys() if all_objects[k]['type']['color'] == obj_type]
+        k = max(options, key=lambda x:spriteUpdateDict[x])
+
+        oldDistribution = bestSpriteTypeDict[obj_type]['distribution']
+
+        if spriteUpdateDict[k] >= bestSpriteTypeDict[obj_type]['count']: ## If we have more observations in the current episode than in our memory, use the current distribution
+            # embed()
+            # k = random.choice(options)
+            ## always alphabetize the keys
+            ## sample multinomially from the spriteDistribution[key] dictionary, to get the spriteType
+            ## add that to the color info for that object.
+            if k not in curr_distribution.keys():
+                print k, "not in curr_distribution"
+                embed()
+            sprite_possibilities = curr_distribution[k]
+
+
+        else:
+            # embed()
+            sprite_possibilities = bestSpriteTypeDict[obj_type]['distribution']
+
+        newDistribution = sprite_possibilities
+
     return False
+    # for k in [key for key in distributionAtT1.keys() if 
+    #         key in game.all_objects.keys() and 
+    #         game.all_objects[key]['features']['color'] not in game.exceptedObjects and 
+    #         key in distributionAtT2.keys()]:
+    #     if game.all_objects[k]['features']['color'] not in game.exceptedObjects and k in distributionAtT2.keys():
+    #         spriteDistribution1, spriteDistribution2 = distributionAtT1[k], distributionAtT2[k]
+    #         # print k, getKL(spriteDistribution1, spriteDistribution2)
+    #         if getKL(spriteDistribution1, spriteDistribution2) > KLthreshold:
+    #             return True
+    # return False
+
+# def checkIfDistributionsHaveChanged(game, distributionAtT1, distributionAtT2):
+#     KLthreshold = .00001
+
+#     changes = False
+#     for k in [key for key in distributionAtT1.keys() if 
+#             key in game.all_objects.keys() and 
+#             game.all_objects[key]['features']['color'] not in game.exceptedObjects and 
+#             key in distributionAtT2.keys()]:
+#         if game.all_objects[k]['features']['color'] not in game.exceptedObjects and k in distributionAtT2.keys():
+#             spriteDistribution1, spriteDistribution2 = distributionAtT1[k], distributionAtT2[k]
+#             # print k, getKL(spriteDistribution1, spriteDistribution2)
+#             if getKL(spriteDistribution1, spriteDistribution2) > KLthreshold:
+#                 return True
+#     return False
 
 def getKL(spriteDistribution1, spriteDistribution2):
     d1, d2 = [v['prob'] for v in spriteDistribution1.values()], [v['prob'] for v in spriteDistribution2.values()]
     return scipy.stats.entropy(d1,d2)
 
-def spriteInduction(game, step, old_outcome=None):
+def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None):
     """
     An explanation of important data structures used in this function:
     game = a BasicGame object
@@ -2182,22 +2253,22 @@ def spriteInduction(game, step, old_outcome=None):
                     # only update the distribution in this fashion if there are no events for this
                     # time step involving this sprite.
 
-                    if objects[sprite]['features']['color']=='DARKGRAY':
-                        print game.spriteDistribution[sprite]
-
                     outcome = objects[sprite]["position"]
                     game.spriteDistribution = updateDistribution(sprite, game.spriteDistribution, \
                                               game.movement_options, outcome)
                     game.spriteUpdateDict[sprite] += 1
 
-                elif any([sprite in e for e in game.effectList]) and sprite not in game.ignoreList and sprite_obj.name !='avatar':
-                    # if there are events for this sprite in this time step, just re-initialize the distribution for
-                    # this particular sprite.
-                    objectColors = [game.sprite_groups[k][0].colorName for k in game.sprite_groups.keys() if game.sprite_groups[k]]
-                    for sprite_type in sprite_types:
-                        game.spriteDistribution[sprite][sprite_type]['args'] = initializeDistributionArgs(sprite_type, objectColors)
+                # elif any([sprite in e for e in game.effectList]) and sprite not in game.ignoreList and sprite_obj.name !='avatar':
+                #     # if there are events for this sprite in this time step, just re-initialize the distribution for
+                #     # this particular sprite.
+                #     objectColors = [game.sprite_groups[k][0].colorName for k in game.sprite_groups.keys() if game.sprite_groups[k]]
+                #     for sprite_type in sprite_types:
+                #         game.spriteDistribution[sprite][sprite_type]['args'] = initializeDistributionArgs(sprite_type, objectColors)
 
-        distributionsHaveChanged = checkIfDistributionsHaveChanged(game, distributionAtT1, game.spriteDistribution)
+        sample, exceptions, distributionsHaveChanged = sampleFromDistribution(game.spriteDistribution, game.all_objects, game.spriteUpdateDict, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
+
+        # distributionsHaveChanged = checkIfDistributionsHaveChanged(game, game.spriteUpdateDict, bestSpriteTypeDict)
+
         # embed()
         # print game.spriteDistribution[specialID][ch]
         # print ""

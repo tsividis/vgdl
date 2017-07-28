@@ -66,20 +66,20 @@ def translateEvents(events, all_objects, rle):
 	return uniqueEventList
 
 
-def observe(rle, obsSteps):
+def observe(rle, obsSteps, bestSpriteTypeDict):
         print "observing"
         if obsSteps>0:
                 for i in range(obsSteps):
                         # print rle.show()
-                        spriteInduction(rle._game, step=1)
-                        spriteInduction(rle._game, step=2)
+                        spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
+                        spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
                         rle.step((0,0))
                         # chaserID = [k for k in rle._game.all_objects.keys() if rle._game.all_objects[k]['features']['color']=='ORANGE'][0]
                         # print rle._game.all_objects[chaserID]['sprite'].rect
-                        spriteInduction(rle._game, step=3)
+                        spriteInduction(rle._game, step=3, bestSpriteTypeDict=bestSpriteTypeDict)
         else:
-                spriteInduction(rle._game, step=1)
-                spriteInduction(rle._game, step=2)
+                spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
+                spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
                 # spriteInduction(rle._game, step=3)
         return
 

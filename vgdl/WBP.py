@@ -35,7 +35,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -77,7 +77,7 @@ class WBP():
 		self.visited_positions = np.zeros(np.array(self.rle._game.screensize)/
 		 	self.pixel_size)
 
-		self.short_horizon = False
+		self.short_horizon = shortHorizon
 		self.winning_states = []
 		self.trueAtomsIW1 = []
 
@@ -120,7 +120,8 @@ class WBP():
 			## on the game state.
 			if (len(rle._game.sprite_groups[k])>0 and 
 					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and 
-					'Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)):
+					('Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) or 
+						('Random' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)))):
 				pass
 			else:
 				for o in rle._game.sprite_groups[k]:
@@ -140,7 +141,8 @@ class WBP():
 			## on the game state.
 			if (len(rle._game.sprite_groups[k])>0 and 
 					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and 
-					'Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)):
+					('Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) or 
+						('Random' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)))):
 				pass
 			else:
 				for o in sorted(rle._game.sprite_groups[k], key=lambda s:s.ID):
@@ -227,18 +229,20 @@ class WBP():
 			# current = self.noveltySelection(QNovelty, QReward)
 			current = self.rewardSelection(QReward, QNovelty)
 			# print("node chosen has position score {}".format(current.position_score()))
+
+
+			# print embed()
+			if current is None:
+				self.quitting = True
+				return None
+
 			try:
 				(x, y) = np.array((current.rle._game.getAvatars()[0].rect.x,
 					current.rle._game.getAvatars()[0].rect.y))/self.pixel_size
 				self.visited_positions[x, y] += 1
 			except IndexError:
 				pass
-			except:
-				embed()
-			# print embed()
-			if current is None:
-				self.quitting = True
-				return None
+			
 			self.statesEncountered.append(current.rle._game.getFullState())
 
 			print current.rle.show(indent=True)
@@ -277,19 +281,18 @@ class WBP():
 		self.solution = []#Node(self.rle, self, [], None)
 		if i>=self.max_nodes:
 			if self.short_horizon:
-				node = current
+				node = max(visited, key=lambda n:n.reward)
+				self.solution = node.actionSeq
+
 				gameString_array = []
 				while node is not None:
 					gameString_array.append(node.rle.show())
 					node = node.parent
 				self.gameString_array = gameString_array[::-1]
 
-				current.rle._isDone()
-				self.solution = current.actionSeq
-				self.statesEncountered.append(current.rle._game.getFullState())
 				# print "win"
 				# embed()
-				return current, gameString_array
+				return node, gameString_array
 			else:
 				self.quitting = True
 				print "Quitting after {} nodes".format(self.max_nodes)
@@ -669,9 +672,12 @@ class Node():
 		sum(self.rolloutArray) - self.metabolic_cost + self.position_score()
 		# self.intrinsic_reward = 0
 
-		## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
-		if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
-			self.win=True
+		try:
+			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
+			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
+				self.win=True
+		except IndexError:
+			pass
 
 		return self.win
 

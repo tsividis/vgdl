@@ -38,24 +38,24 @@ VGDL example: Boulder Dash.
 # """
 
 
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwww
-w ..o.xx.o.  w           w
-w ..oooooo. Aw           w
-w...wxxx..   w           w
-wx   w      Ew           w
-wwwwwwwwwwwwwwwwwwwwwwwwww
-w                        w
-w                        w
-w                        w
-w                        w
-w                        w
-w                        w
-wwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# w ..o.xx.o.  w           w
+# w ..oooooo. Aw           w
+# w...wxxx..   w           w
+# wx   w      Ew           w
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# w                        w
+# w                        w
+# w                        w
+# w                        w
+# w                        w
+# w                        w
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 
-
+ ##the level we were testing.
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwww
 # w ..o.xx.o.              w
@@ -73,6 +73,23 @@ wwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
 
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwww
+w   o.xx.o      o  xoxx. w
+w   oooooo      . o..o.. w
+w   .xxx..       o.oxoo.ow
+wx  .....        oxo...oow
+wwwwwwwwww       .o.  wxxw
+wb .  co.        ..   wxxw
+w  .  ..   Ao....o    wxxw
+wooo.....   .    .    w..w
+w.... .x....wwwwx x.oow  w
+w    ....x..ooxxo ....w  w
+w    .E.    .....        w
+wwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+
+
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwww
 # w...o.xx.o......o..xoxx..w
@@ -88,6 +105,8 @@ wwwwwwwwwwwwwwwwwwwwwwwwww
 # w   ..E..........b     ..w
 # wwwwwwwwwwwwwwwwwwwwwwwwww
 # """
+
+
 # level0 = """
 # wwwwwwwwwwwwwwwwwwwwwwwwww
 # w...o.xx.o......o..xoxx..w
@@ -179,7 +198,7 @@ BasicGame
 	SpriteSet
 		dirt > Immovable color=BROWN
 		exitdoor > Immovable color=GREEN
-		diamond > Resource color=YELLOW limit=3 shrinkfactor=0.25
+		diamond > Resource color=YELLOW limit=5 shrinkfactor=0.25
 		boulder > Missile orientation=DOWN color=DARKGRAY speed=0.2
 		avatar  > ShootAvatar   stype=sword
 		crab > RandomNPC cooldown=5 color=RED
@@ -200,6 +219,7 @@ BasicGame
 		dirt avatar > killSprite
 		avatar diamond > changeResource resource=diamond value=1
 		diamond avatar > killSprite
+		diamond avatar > changeScore value=5
 		# avatar diamond > collectResource
 		avatar wall > stepBack
 		avatar boulder > stepBack
@@ -214,8 +234,10 @@ BasicGame
 		boulder wall > stepBack
 		boulder diamond > stepBack
 		boulder boulder > stepBack
-		enemy dirt > stepBack
-		enemy diamond > stepBack
+		crab dirt > stepBack
+		crab diamond > stepBack
+		butterfly dirt > stepBack
+		butterfly diamond > stepBack
 		crab butterfly > killSprite
 		wall sword > nothing
 		boulder sword > nothing
@@ -230,7 +252,7 @@ BasicGame
 		exitdoor boulder > nothing
 		exitdoor sword > nothing
 		exitdoor avatar > nothing
-		exitdoor avatar > killIfOtherHasMore resource=diamond limit=3 #scoreChange=100
+		exitdoor avatar > killIfOtherHasMore resource=diamond limit=5 #scoreChange=100
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False
 		SpriteCounter stype=exitdoor limit=0 win=True
