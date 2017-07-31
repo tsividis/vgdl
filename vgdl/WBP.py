@@ -75,7 +75,7 @@ class WBP():
 		self.addSpaceBarToActions()
 		self.pixel_size = self.rle._game.screensize[0]/self.rle._game.width
 		self.visited_positions = np.zeros(np.array(self.rle._game.screensize)/
-		 	self.pixel_size)
+			self.pixel_size)
 
 		self.short_horizon = shortHorizon
 		self.winning_states = []
@@ -146,10 +146,10 @@ class WBP():
 				pass
 			else:
 				for o in sorted(rle._game.sprite_groups[k], key=lambda s:s.ID):
-					if k=='sword':
-						print "found sword"
+					# if k=='sword':
+						# print "found sword"
 						## the point was to have caught the sword 8 lines up, so we should never have entered this condition. Check why that catch failed.
-						embed()
+						# embed()
 					if o not in rle._game.kill_list:
 						present.append(1)
 					else:
@@ -281,13 +281,16 @@ class WBP():
 		self.solution = []#Node(self.rle, self, [], None)
 		if i>=self.max_nodes:
 			if self.short_horizon:
-				node = max(visited, key=lambda n:n.reward)
+				print "playing with short horizon; reached max"
+				# embed()
+				node = max(visited, key=lambda n:n.intrinsic_reward)
+				parentNode = copy.deepcopy(node)
 				self.solution = node.actionSeq
 
 				gameString_array = []
-				while node is not None:
-					gameString_array.append(node.rle.show())
-					node = node.parent
+				while parentNode is not None:
+					gameString_array.append(parentNode.rle.show())
+					parentNode = parentNode.parent
 				self.gameString_array = gameString_array[::-1]
 
 				# print "win"
@@ -388,8 +391,32 @@ class Node():
 			inter.slot2 for inter in theory.interactionSet
 			if ((inter.interaction == 'killSprite' or
 				 inter.interaction == 'transformTo') and
-				 not inter.generic
+				 not inter.generic and
+				 not inter.preconditions
 				and inter.slot1 == stype)]
+
+		# This list comprehension checks whether the avatar kills the stype with a preconditioned
+		# interaction, and if so adds 'avatar' to the list as well as the precondition for that rule
+		avatar_preconditions = [
+			(inter.slot2, inter.preconditions) for inter in theory.interactionSet
+			if ((inter.interaction == 'killSprite' or
+				inter.interaction == 'killIfOtherHasMore' or
+				 inter.interaction == 'transformTo') and
+				 not inter.generic
+				 and inter.preconditions
+				and inter.slot1 == stype)]
+
+		if avatar_preconditions:
+			embed()
+
+		tmp_list = []
+		for avatar in avatar_preconditions:
+			if rle._game.sprite_groups[avatar].resources[list(avatar[1])[0].item] == list(avatar[1])[0].num:
+				tmp_list.append(avatar)
+		
+		for t in tmp_list:
+			killer_types.append(t[0])
+			avatar_preconditions.remove(t)
 
 		# Get attributes from terminationSet
 		limit = term.termination.limit
@@ -412,6 +439,8 @@ class Node():
 		val += mult * first_alpha * distance_to_goal
 		# print stype, n_stypes, distance_to_goal, val
 		if compute_second_order:
+
+
 			## Get all positions of objects whose type is in killer_types; compute minimum distance
 			## of each to the stypes we have to destroy. Return min over all mins.
 			# embed()
@@ -445,8 +474,78 @@ class Node():
 				# goals that involve killing fewer objects
 				val += float(mult * second_alpha * distance)/n_sprites
 			else:
+				# This helps in cases in which either the stype or the killer_type is not always on the screen
+				# Then, you should not be disincentivized to create it, which can be achieved through this high penalty
 				distance = 100
 				val += float(mult * second_alpha * distance)
+
+
+			avatars = [self.WBP.findObjectsInRLE(rle, ktype[0]) for ktype in avatar_preconditions]
+
+			# kill_positions = np.concatenate([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types])
+			resource_names = [list(resource[1])[0].item for resource in avatar_preconditions]
+			# if resource_names:
+				# embed()
+			try:
+				resource_yielder_names = [[inter.slot2 if (inter.interaction=='changeResource' and inter.args['resource']==res) else res if (inter.interaction=='collectResource' and res==inter.slot1) else None
+				for inter in theory.interactionSet] for res in resource_names]
+			except:
+				embed()
+
+			resource_yielder_names = [[r for r in ryn if r] for ryn in resource_yielder_names] ## Remove 'None' yielded by last else condition above
+
+			resource_positions = [np.hstack([self.WBP.findObjectsInRLE(rle, yielder) for yielder in yielders]) for yielders in resource_yielder_names]
+			resource_limits = np.array([list(resource[1])[0].num for resource in avatar_preconditions])
+			avatar_resource_quantities = np.array([rle._game.getAvatars()[0].resources[res] for res in resource_names])
+			precondition_distances = []
+			try:
+				for (obj1_positions, obj2_positions) in zip(avatars, resource_positions):
+					# A consequence of the two-way generic interactions in the
+					# theory is that minimum-distance object pairs whose interactions
+					# were not yet observed will have their distance penalized twice
+					# as much when none of those objects is an avatar. This implies
+					# that avatar novel interactions will be favored over other ones
+					possiblePairList = np.array([manhattanDist(obj1, obj2)
+						for obj1 in obj1_positions
+						for obj2 in obj2_positions])
+
+					precondition_distances.append(min(possiblePairList))
+
+				effective_distance = min(precondition_distances/(resource_limits-avatar_resource_quantities))
+
+				# Normalize by number of sprites, enforcing a prior that encourages
+				# goals that involve killing fewer objects
+				val += float(mult * second_alpha * effective_distance)
+
+				# print distance
+			except ValueError:
+				effective_distance = 0
+
+			if not resource_positions:
+				# This helps in cases in which either the stype or the killer_type is not always on the screen
+				# Then, you should not be disincentivized to create it, which can be achieved through this high penalty
+				distance = 100
+				val += float(mult * second_alpha * distance)
+
+			if stype == 'avatar':
+				# if the avatar's death depends on a precondition
+				preconditions = [inter.preconditions for inter in theory.interactionSet if ((inter.interaction == 'killSprite') and (not inter.generic) and (inter.slot1 == stype) and (inter.preconditions))]
+				for precondition_set in preconditions:
+					precondition = list(precondition_set)[0]
+					# Give intrinsic reward based on resource distance to kill value
+					if precondition.negated:
+						oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
+						true_operator = oppositeOperatorMap[precondition.operator_name]
+					else:
+						true_operator = precondition.operator_name
+					resource = precondition.item
+					current_val = self.WBP.rle._game.getAvatars()[0].resources[resource]
+					if true_operator in {"<", "<="}:
+						val += mult * second_alpha * (precondition.num-current_val)
+					elif true_operator in {">", ">="}:
+						val += mult * second_alpha * (current_val-precondition.num)
+
+
 
 		return val
 
@@ -758,15 +857,15 @@ if __name__ == "__main__":
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
-	gameFilename = "examples.gridphysics.theorytest"
-	# gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
+	# gameFilename = "examples.gridphysics.theorytest"
+	gameFilename = "examples.gridphysics.boulderdash"
 	# gameFilename = "examples.gridphysics.expt_helper"
 
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
-	embed()
+	# embed()
 	p = WBP(rle, gameFilename)
 
 

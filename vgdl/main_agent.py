@@ -325,7 +325,8 @@ class Agent:
 			solution = p.solution
 			quitting = p.quitting
 			gameString_array = p.gameString_array
-			# print "got solution"
+			if solution:
+				print "got solution of length", len(solution)
 			# embed()
 			## add new objects? (line 310 of metaplanner)
 
@@ -579,7 +580,6 @@ if __name__ == "__main__":
 
 	filename = "examples.gridphysics.boulderdash"
 
-
 	level_game_pairs = None
 	# Playing GVG-AI games
 	def read_gvgai_game(filename):
@@ -612,7 +612,6 @@ if __name__ == "__main__":
 	# for level_number in range(5):
 		# with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
 			# level_game_pairs.append([gameString, level.read()])
-
 
 	agent = Agent('full', filename)
 

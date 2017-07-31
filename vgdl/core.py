@@ -1239,7 +1239,7 @@ class VGDLSprite(object):
         self.lastmove = 0
 
         # management of resources contained in the sprite
-        self.resources = defaultdict(bool)
+        self.resources = defaultdict(int)
 
     def update(self, game):
         """ The main place where subclasses differ. """
