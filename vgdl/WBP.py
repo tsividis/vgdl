@@ -37,14 +37,25 @@ NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', NONE: 'wait'}
 
-WALL_EDGE = 1
-MAX_TIMES_IN_SQUARE = sys.maxint
 
-REMOVE_MOVERS = True
+#-----parameters------
+WALL_EDGE = 1 #weight of edge adjacent to a wall when constructing graph.                                                                       
+REMOVE_MOVERS = True #whether to remove moving NPCs from the set of atoms
+LIMIT = 3 #number of times pixel atom can be seen before counted as true
+GRID_LIMIT = 150 #number of times grid atom can be seen before counted as true
+SPEED_THRESH = [] #speed threshholds when incorporating speed into the atoms. If list is empty, speed is not used
+ROLLOUT_DEPTH = 45 #number of frames we look ahead in a rollout
+WIN_RATIO = 5 #ratio of how many more times winning termination conditions count than losing conditions
+DEPTH_WEIGHT = 0.0 #how much to weight the depth of a node in the tree
+ALPHA1 = 1000 #weight given toward collecting an object which gives progress towards a goal (first order heuristic)
+ALPHA2 = 1 #weight give towards distance to good objects (second order heuristic)
+
+ignored_sprites = ['wall', 'background','ladder','conveyor','rope','offrope'] #sprite types we ignore in calculating atoms
+#----------------------
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=10000, limit=3, grid_limit=100):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=sys.maxint, limit=LIMIT, grid_limit=GRID_LIMIT):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -68,19 +79,14 @@ class WBP():
 		self.max_nodes = max_nodes
 		self.quitting = False
 		self.gameString_array = []
+		self.avatar_ID = None
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
 			self.theory=theory
 		print 'max nodes', self.max_nodes
 
-		self.avatar_ID = None
-
-		# for rule in self.theory.interactionSet:
-		# 	if 'stepBack'==rule.interaction:
-		# 		ipdb.set_trace()
 		i=1
-		#embed()
 		for k in rle._game.all_objects.keys():
 			self.objIDs[k] = i * (self.vecDim[0]+self.padding)
 			if isinstance(rle._game.all_objects[k]['sprite'],vgdl.core.Avatar):
@@ -88,30 +94,19 @@ class WBP():
 			i+=1
 
 		self.canJump = False
-
 		self.addSpaceBarToActions()
-
-		self.avatar_locs = set()
-
-		#move away from squares we've already been in heuristic:
-		self.visited = [[0,0],0]
-		
 		self.all_locs = []
-
 		self.avatar_locs_disc = defaultdict(lambda:0)
 		self.key = defaultdict(lambda:0)
 		self.no_key = defaultdict(lambda:0)
 		self.graph = {}
 		self.distances = self.dijkstra()
-		self.box_weights = self.calc_weights()
-
 		self.num_paths = 1
 		self.all_paths = []
-
 		self.LIMIT = limit
 		self.GRID_LIMIT = grid_limit
-		self.speed_thresh = []
-		#self.speed_thresh = [1,5,10,15]
+
+		self.speed_thresh = SPEED_THRESH
 
 	def makeGraph(self):
 		graph = {}
@@ -119,7 +114,6 @@ class WBP():
 		wallLocs = set([(x[0]/self.square_size[0],x[1]/self.square_size[1]) for x in wallLocs])
 		for i in range(self.rle.outdim[1]):
 			for j in range(self.rle.outdim[0]):
-				#(i,j) is grid_loc
 				if (i,j) not in wallLocs:
 					graph[(i,j)] = set()
 					for (x,y) in [(0,1),(0,-1),(1,0),(-1,0)]:
@@ -180,22 +174,12 @@ class WBP():
 						dist[neighbor] = dist[current] + edges[(current,neighbor)]
 					queue.add(neighbor)
 		return dist
-		
-	def calc_weights(self):
-		weights = {}
-		for (x,y) in self.graph:
-			w = 1.0
-			if (x+1,y) not in self.graph:
-				w = w/self.square_size[0]
-			if (x,y+1) not in self.graph:
-				w = w/self.square_size[1]
-			weights[(x,y)] = w
-		return weights
 
 	def grid(self,loc):
 		return (loc[0]/self.square_size[0],loc[1]/self.square_size[1])
 
-	#return geodesic distance between two locations
+	#return geodesic distance between two locations ----------------------
+	#(Note: this is probably unnecessarily complicated)
 	def geoDist(self,loc1,loc2):
 		
 		grid1= self.grid(loc1)
@@ -229,15 +213,14 @@ class WBP():
 							inWall = True
 							break
 
-		#this stuff is not generalizable and hardcoded to get montezuma to work for now
+		#this stuff is not generalizable and hardcoded to get montezuma to work for now. 
+		#Allows for ladder avatars to have part of their body inside a wall
 		if inWall:
 			wall_loc = [(grid1[0] + i,grid1[1] + j) for i in [0,1] for j in [0,1] if 
 				(grid1[0] + i,grid1[1] + j) not in self.graph and i - x1 < 1 and j - y1 < 1]
-			#embed()
 			if not wall_loc:
 				wall_loc = [(grid2[0] + i,grid2[1] + j) for i in [0,1] for j in [0,1] if 
 				(grid2[0] + i,grid2[1] + j) not in self.graph and i - x2 < 1 and j - y2 < 1]
-				#embed()
 				wall = wall_loc[0]
 				
 				s = self.square_size[0]
@@ -245,16 +228,12 @@ class WBP():
 				try:
 					if grid2 in self.graph:
 						A = self.geoDist(loc1,(grid2[0]*s,grid2[1]*s))
-						#print A
 					if (grid2[0],grid2[1]+1) in self.graph:
 						B = self.geoDist(loc1,(grid2[0]*s,s*(grid2[1]+1)))
-						#print B
 					if (grid2[0]+1,grid2[1]) in self.graph:
 						C = self.geoDist(loc1,(s*(grid2[0]+1),s*grid2[1]))
-						#print C
 					if (grid2[0]+1,grid2[1]+1) in self.graph:
 						D = self.geoDist(loc1,(s*(grid2[0]+1),s*(grid2[1]+1)))
-						#print D
 
 					if not grid2 in self.graph:
 						A = B + C - D
@@ -267,7 +246,6 @@ class WBP():
 
 					return A + (C-A)*x2 + (B-A)*y2
 				except:
-					#embed()
 					return sys.maxint
 
 			return self.geoDist(loc2,loc1)
@@ -290,6 +268,8 @@ class WBP():
 					prod*=var[i]
 		return prod
 
+	#------------------------------------------------------
+
 
 	#returns array of locations of objects of a given type
 	#each block corresponds to 1 unit
@@ -302,6 +282,7 @@ class WBP():
 		return objLocs
 
 	#same as above but for the avatar
+	#WRONG if we have avatar transitions
 	def findAvatarInRLE(self, rle):
 		avatar_loc = (rle._game.sprite_groups['avatar'][0].rect.left,rle._game.sprite_groups['avatar'][0].rect.top)
 		return avatar_loc
@@ -338,9 +319,8 @@ class WBP():
 			self.actions.remove(K_DOWN)
 		return
 
+	# returns the current avatar in the game
 	def getAliveAvatar(self,rle):
-		#embed()
-
 		avatars = []
 		for k in rle._game.sprite_groups.keys():
 				for o in rle._game.sprite_groups[k]:
@@ -348,29 +328,24 @@ class WBP():
 						avatars.append(o)
 
 		if len(avatars) == 1:
-			#print avatars[0]
 			return avatars[0]
 
-		print "Either 0 or >1 avatars!"
+		#print "Either 0 or >1 avatars!"
 		return None
 		embed()
 
+	#returns a list of all actions available to the avatar
 	def getActions(self,rle):
-		#embed()
 		avatar = self.getAliveAvatar(rle)
-		#classes = [str(o[0].__class__) for o in rle._game.sprite_groups.values() if len(o)>0]
 		self.canJump = False
-		#embed()
-		#print avatar.__class__
+
 		if isinstance(avatar,vgdl.ontology.HorizontalAvatar):
 			self.actions = [K_RIGHT,K_LEFT]
 
 		elif isinstance(avatar,vgdl.ontology.VerticalAvatar):
-			#print 'Vertical'
 			self.actions = [K_UP,K_DOWN]
 
 		elif isinstance(avatar,vgdl.ontology.MarioAvatar):
-			#print('Mario')
 			self.actions = [K_SPACE, K_LEFT, K_RIGHT]
 			self.canJump = True
 
@@ -382,12 +357,11 @@ class WBP():
 		return
 
 
-	#returns set of atom values
+	#returns set of atom values, using pixel locations to calculate
 	def calculateAtoms(self, rle):
 		lst = []
 
-		#embed()
-		for k in [t for t in rle._game.sprite_groups.keys() if t not in ['wall', 'background','ladder','conveyor']]:
+		for k in [t for t in rle._game.sprite_groups.keys() if t not in ignored_sprites]:
 			for o in rle._game.sprite_groups[k]:
 				if not isinstance(o, vgdl.core.Avatar) and (not isinstance(o,vgdl.ontology.RandomNPC) and not isinstance(o,vgdl.ontology.Missile) or not REMOVE_MOVERS):
 					if o not in rle._game.kill_list:
@@ -412,7 +386,6 @@ class WBP():
 				vecValue = pos[1] + pos[0]*rle.outdim[0]*self.square_size[1] + 1
 
 			if self.speed_thresh:
-				#embed()
 				speed = avatar.speed
 				if speed <= self.speed_thresh[0]:
 					ind = 0
@@ -426,9 +399,9 @@ class WBP():
 			lst.append(objPosCombination)
 
 
-
+		#atom expressing which objects are currently alive
 		present = []
-		for k in [t for t in self.objectTypes if t not in ['wall', 'avatar','background','ladder','conveyor']]: ##maybe add the avatar to this global state
+		for k in [t for t in self.objectTypes if t not in ignored_sprites]: ##maybe add the avatar to this global state
 			for o in sorted(rle._game.sprite_groups[k], key=lambda s:s.ID):
 				if not isinstance(o, vgdl.core.Avatar):
 					if o not in rle._game.kill_list:
@@ -438,20 +411,15 @@ class WBP():
 		ind = sum([present[i]*2**i for i in range(len(present))]) #atom indicating which objects are alive
 		lst.append(ind)
 
-		#lst.extend(self.gridAtoms(rle))
-		#if rle._game.sprite_groups['keyavatar']:
-		#	embed()
-		#print(lst)
 		if not self.vecSize:
 			self.vecSize = len(lst)
-		#print "Vector is length {}".format(self.vecSize)
 		return set(lst)
 
-
+	#returns set of atom values which use grid locations to calculate
 	def gridAtoms(self,rle):
 		lst = []
 
-		for k in [t for t in rle._game.sprite_groups.keys() if t not in ['wall', 'background','ladder','conveyor']]:
+		for k in [t for t in rle._game.sprite_groups.keys() if t not in ignored_sprites]:
 			for o in rle._game.sprite_groups[k]:
 				if not isinstance(o, vgdl.core.Avatar) and (not isinstance(o,vgdl.ontology.RandomNPC) and not isinstance(o,vgdl.ontology.Missile) or not REMOVE_MOVERS):
 					if o not in rle._game.kill_list:
@@ -494,9 +462,7 @@ class WBP():
 		return current
 
 	#selects node with greatest reward (only considering those w/ novelty = 1,2), using novelty as tiebreaker
-	#removed the max times in each square thing
-	
-	def rewardSelection(self, QReward, QNovelty): #12s
+	def rewardSelection(self, QReward, QNovelty): 
 
 		badNodes = []
 		for n in QReward:
@@ -505,7 +471,8 @@ class WBP():
 		for n in badNodes:
 			QReward.remove(n)
 		try:
-			current = min(QReward)
+			best = min(QReward)
+			current = random.choice([i for i in QReward if i.__eq__(best)])
 			QReward.remove(current)
 			return current
 		except:
@@ -517,6 +484,8 @@ class WBP():
  		lp_wrapper()
  		lp.print_stats()
 
+
+ 	#Runs our best-first search algorithm with novelty pruning
 	def BFS(self):
 		QNovelty, QReward = [], []
 		visited, rejected = [], []
@@ -524,7 +493,6 @@ class WBP():
 		start.rle = self.rle
 		visited.append(start)
 		start.eval()
-		#QNovelty.append(start)
 		QReward.append(start)
 		
 		i=0
@@ -534,8 +502,6 @@ class WBP():
 		best_path = None
 		best_node = None
 		found_key = False
-
-		print(actionDict)
 
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
 		
@@ -547,17 +513,11 @@ class WBP():
 				print("quitting, no novel node found")
 				break
 				
-
 			self.statesEncountered.append(current.rle._game.getFullState())
-
 			current.updateNoveltyDict(QNovelty, QReward)
-			current.updateCenter()
-			
 			visited.append(current)
 
 			print(i)
-
-
 			avatar = self.getAliveAvatar(current.rle)
 			if avatar is not None:
 				loc = current.rle._rect2pos(avatar.rect)
@@ -572,28 +532,20 @@ class WBP():
 				"NO AVATAR"
 				embed()
 			print avatar
+			if i % 500 == 0:
+				print self.avatar_locs_disc
+				print self.key
 			
 
 			self.getActions(current.rle)
 
 			actions = self.actions
-			#if i % 1000 == 0 and i > 3000:
-				#embed()
-			if i % 500 == 0:
-				print self.avatar_locs_disc
-				print self.key
 			if self.canJump:
 				try:
 					if self.getAliveAvatar(current.rle).jumping:
 						actions = [NONE]
 				except:
 					pass
-			#print actions
-			#embed()
-			#goal = self.findObjectsInRLE(current.rle,'goal')[0]
-			#avatar = self.getAliveAvatar(current.rle)
-			#print self.geoDist(goal,(avatar.rect.x,avatar.rect.y))
-			#embed()
 
 			for a in actions:
 
@@ -625,34 +577,28 @@ class WBP():
 						best_node = child
 						min_path_length = len(gameString_array)
 
-					#print(len(child.actionSeq))
-					#print(child.actionSeq)
-
 					if wins >= self.num_paths:
 						print i
 						print "{} paths found, returning best".format(wins)
-						#results[key] = (best_node,best_path,i)
 						return best_node, best_path, i
-					#return child, gameString_array, path
+
 				else:
 					if child.isTerminal() and not child.isWin():
 						print("LOSE")
-					#QNovelty.append(child)
 					else:
 						QReward.append(child)
 			i+=1
-		self.solution = []#Node(self.rle, self, [], None)
+
+		self.solution = []
 		if i>=self.max_nodes:
 			self.quitting = True
 			print "Quitting after {} nodes".format(self.max_nodes)
 		else:
 			print "No novel nodes found"
 		print "{} paths found, returning best".format(wins)
-		#results[key] = (best_node,best_path,i)
 		return best_node, best_path, i
 
-		#return None
-
+#Class for a node in our search tree
 class Node():
 	def __init__(self, rle, WBP, actionSeq, parent):
 		self.rle = rle
@@ -670,16 +616,15 @@ class Node():
 		self.intrinsic_reward = 0
 		self.metabolic_cost = 0
 		self.children = None
-		# self.lastState = None
 		self.reconstructed=False
 		self.expanded = False
-		self.rolloutDepth = 45#max(rle.outdim)
+		self.rolloutDepth = ROLLOUT_DEPTH
 		if self.parent is not None:
 			self.rolloutArray = parent.rolloutArray[1:]
 		else:
 			self.rolloutArray = []
 
-		self.rand = random.random()
+		self.rand = random.random() #random id given to each node, used for picking a random node in reward selection
 
 		if self.parent is None:
 			self.depth = 1
@@ -687,10 +632,12 @@ class Node():
 			self.depth = self.parent.depth + 1
 
 	def __eq__(self,other):
-		return (-self.intrinsic_reward, self.novelty, self.rand) == (-other.intrinsic_reward, other.novelty, other.rand)
+		#return (-self.intrinsic_reward, self.novelty, self.rand) == (-other.intrinsic_reward, other.novelty, other.rand)
+		return (-self.intrinsic_reward, self.novelty) == (-other.intrinsic_reward, other.novelty)
 
 	def __gt__(self,other):
-		return (-self.intrinsic_reward, self.novelty, self.rand) > (-other.intrinsic_reward, other.novelty, other.rand)
+		#return (-self.intrinsic_reward, self.novelty, self.rand) > (-other.intrinsic_reward, other.novelty, other.rand)
+		return (-self.intrinsic_reward, self.novelty) > (-other.intrinsic_reward, other.novelty)
 
 
 ## when to trigger rollouts, if any
@@ -713,30 +660,24 @@ class Node():
 		#return metabolic_cost
 
 	def rollout(self, vrle):
-
-		#print("begin rollout")
 		successfulRollout = False
 		tries = 0
 		while not successfulRollout and tries < 5:
 			vrle = copy.deepcopy(vrle)
 			prevHeuristicVal = self.heuristics(vrle)
-			#prevHeuristicVal = 0
 			rolloutArray = []
 			i=0
 			terminal, win = vrle._isDone()
-			#terminal = False
 			while i<self.rolloutDepth and not terminal:
-				#a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
+
 				a = random.choice(self.WBP.actions)
 				vrle.step(a)
-				#print("rollout")
-				#print vrle.show(indent=True)
+
 				currHeuristicVal = self.heuristics(vrle)
 				heuristicVal = currHeuristicVal-prevHeuristicVal
 				rolloutArray.append(heuristicVal)
 				prevHeuristicVal = currHeuristicVal
-				# print "in rollout"
-				# print vrle.show()
+
 				terminal, win = vrle._isDone()
 				i+=1
 
@@ -746,7 +687,6 @@ class Node():
 				print "rolling out again"
 			else:
 				successfulRollout = True
-		#print("end rollout")
 		return rolloutArray
 
 	def spritecounter_val(self, theory, term, stype, rle, first_alpha=1000,
@@ -756,7 +696,7 @@ class Node():
 
 		# Check if condition is win or loss and multiply accordingly
 		if term.termination.win:
-			mult = -5
+			mult = -WIN_RATIO
 		else:
 			# compute_second_order = False
 			mult = 1
@@ -768,14 +708,8 @@ class Node():
 				not inter.generic
 				and inter.slot1 == stype)]
 
-			#if ((inter.interaction == 'killSprite' or
-			#	 inter.interaction == 'transformTo') and
-			#	 not inter.generic
-			#	and inter.slot1 == stype)]
-
 		# Get attributes from terminationSet
 		limit = term.termination.limit
-		#embed()
 
 		if 'SpawnPoint' in str(theory.classes[stype][0].vgdlType) and not killer_types:
 			distance_to_goal = 0
@@ -792,7 +726,7 @@ class Node():
 			distance_to_goal = abs(n_stypes - limit)
 
 		val += mult * first_alpha * distance_to_goal
-		# print stype, n_stypes, distance_to_goal, val
+
 		if compute_second_order:
 			## Get all positions of objects whose type is in killer_types; compute minimum distance
 			## of each to the stypes we have to destroy. Return min over all mins.
@@ -802,26 +736,10 @@ class Node():
 				objs.extend(self.WBP.findObjectsInRLE(rle, ktype))
 			if len([i for i in killer_types if 'avatar' in i]) > 0:
 				avatar = self.WBP.getAliveAvatar(rle)
-				#objs.append(self.WBP.getAliveAvatar(rle))
 				if avatar and (avatar.rect.x,avatar.rect.y) not in objs:
 					objs.append((avatar.rect.x,avatar.rect.y))
 			kill_positions = objs
 
-
-			#objs = [self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types]
-
-			#if len([i for i in killer_types if 'avatar' in i]) > 0:
-			#	avatar = self.WBP.getAliveAvatar(rle)
-			#	objs.append([(avatar.rect.x,avatar.rect.y)])
-			#print objs
-			#if len(objs)>0:
-			#	kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
-			#	#print kill_positions
-			#else:
-			#	kill_positions = np.array(objs)
-
-
-			# kill_positions = np.concatenate([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types])
 			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
 			try:
 				# A consequence of the two-way generic interactions in the
@@ -829,30 +747,24 @@ class Node():
 				# were not yet observed will have their distance penalized twice
 				# as much when none of those objects is an avatar. This implies
 				# that avatar novel interactions will be favored over other ones
-				#try:
 				possiblePairList = [self.WBP.geoDist(pos,obj)
 					for pos in kill_positions
 					for obj in stype_positions]
-				#except:
-				#embed()
 
 				distance = min(possiblePairList)
-				# print distance
 			except ValueError:
 				distance = 0
 
 			if possiblePairList:
 				n_sprites = len(possiblePairList)
 				#CHANGING FOR NOW TO DEAL WITH HAVING THIS HEURISTIC USE ANY AVATAR OBJECT
-				#n_sprites = len(stype_positions)
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
 				val += float(mult * second_alpha * distance)/n_sprites
 			else:
 				distance = 10000
 				val += float(mult * second_alpha * distance)
-		#print term.termination.win
-		#print val
+
 		return val
 
 	def multispritecounter_val(self, theory, term, rle, first_alpha=1000,
@@ -890,7 +802,6 @@ class Node():
 			"""
 
 			n_sprites = len(s1_positions)
-			#embed()
 			try:
 				# A consequence of the two-way generic interactions in the
 				# theory is that minimum-distance object pairs whose interactions
@@ -911,9 +822,7 @@ class Node():
 					 # This is a trick to avoid getting distance 0 for objects
 					 # of same type. If the list turns out to be empty, it will
 					 # raise an error and set the distance to 0
-				# print distance
 			except ValueError:
-				# embed()
 				distance = 0
 
 			if possiblePairList:
@@ -941,79 +850,21 @@ class Node():
 
 		return val
 
-	def updateCenter(self):
-
-		center = self.WBP.visited[0]
-		n = self.WBP.visited[1]
-
-		avatar_loc = self.rle._rect2pos(self.rle._game.sprite_groups['avatar'][0].rect)
-
-		if avatar_loc not in self.WBP.avatar_locs:
-			center[0] += avatar_loc[0]
-			center[1] += avatar_loc[1]
-			n += 1
-			self.WBP.visited = [center,n]
-	
-	
-	def objcollect_val(self, theory, rle, weight=0.0):
-		objs = rle._game.sprite_groups.keys()
-		for inter in theory.interactionSet:
-			if inter.interaction == 'killSprite' and inter.slot1 == 'avatar':
-				objs.remove(inter.slot2)
-		objs.remove('wall')
-		objs.remove('avatar')
-		objs.remove('background')
-
-		avatar = self.WBP.findAvatarInRLE(rle)
-
-		min_dist = sys.maxint
-		
-		for obj in objs:
-			locs = self.WBP.findObjectsInRLE(rle,obj)
-			try:
-				dist = [self.WBP.geoDist(avatar,x) for x in locs]
-			except:
-				embed()
-			if dist < min_dist:
-				min_dist = min(min_dist,min(dist))
-
-		#embed()
-
-		return -weight*min_dist
-
-	def novel_squares(self,weight=0.00):
-		#loc = self.rle._rect2pos(self.rle._game.sprite_groups["avatar"][0].rect)	
-		loc = self.WBP.grid(self.WBP.findAvatarInRLE(self.rle))
-		return -(1.2**self.WBP.avatar_locs_disc[loc])*weight
-		#return -weight*self.WBP.avatar_locs_disc[loc]#/self.WBP.box_weights[loc]
-
-	def distVisited(self,weight=0.0):
-		center = self.WBP.visited[0]
-		n = float(self.WBP.visited[1])
-		try:
-			c = [center[0]*self.WBP.square_size[0]/n,center[1]*self.WBP.square_size[1]/n]
-		except:
-			c = [0,0]
-		a = self.WBP.findAvatarInRLE(self.rle)
-		
-		return weight*euclideanDist(a,c)/self.WBP.square_size[0]
-
-	def heuristics(self, rle=None, first_alpha=1000, second_alpha=1,
+	def heuristics(self, rle=None, first_alpha=ALPHA1, second_alpha=ALPHA2,
 				   time_alpha=10):
+
 		if rle==None:
 			rle = self.rle
 
 		theory = self.WBP.theory
 		heuristicVal = 0
 		avatarNoveltyVals = []
-		#embed()
+
 		for term in theory.terminationSet:
-			#embed()
+
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				# print("spritecounter_val for {} is equal to {}".format(
-					# term.termination.stype, spritecounter_val))
 				#print("spritecounter = {}".format(spritecounter_val))
 				heuristicVal += spritecounter_val
 
@@ -1033,7 +884,6 @@ class Node():
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
 				print("NOVELTY")
-				embed()
 				# print("noveltytermination_val for {} and {} is equal to {}".format(
 					# term.termination.s1, term.termination.s2, noveltytermination_val))
 				if 'avatar' == term.termination.s2:
@@ -1042,10 +892,7 @@ class Node():
 					heuristicVal += .5 * self.WBP.annealing * noveltytermination_val
 
 		if avatarNoveltyVals:
-			# print noveltyVals
 			heuristicVal += max(avatarNoveltyVals)
-
-		#heuristicVal += self.objcollect_val(theory, rle)
 
 		return heuristicVal
 
@@ -1063,8 +910,6 @@ class Node():
 			## try to copy parent lastState. Then take action and store as current lastState.
 			## if that fails, replay from beginning and store as current lastState
 			try:
-				
-				#vrle = copy.deepcopy(self.parent.rle)
 				vrle = cPickle.loads(cPickle.dumps(self.parent.rle, -1))
 				
 				if len(self.actionSeq)>0:
@@ -1084,8 +929,6 @@ class Node():
 				embed()
 		else:
 			self.reconstructed=True
-			# print "copy failed; replaying from top"
-			#vrle = copy.deepcopy(self.rle)
 			vrle = cPickle.loads(cPickle.dumps(self.rle, -1))
 			terminal, win = vrle._isDone()
 			i=0
@@ -1103,6 +946,7 @@ class Node():
  		lp_wrapper()
 		lp.print_stats()
 
+	#whether to do a rollout (specifically, whether this game is breakout or not)
 	def do_rollout(self):
 		try:
 			ball_now = self.rle._game.sprite_groups['ball'][0]
@@ -1115,7 +959,6 @@ class Node():
 
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
-
 		self.rle, self.win = self.getToCurrentState()
 
 		self.updateObjIDs(self.rle)
@@ -1136,28 +979,19 @@ class Node():
 
 		self.updateNovelty() #calculates novelty based on state of node (1, 2, 3)
 
-		# if self.win:
-			# embed()
-
-		## Try rollouts for aliens?
-		#if len(self.actionSeq)>0 and self.actionSeq[-1]==32:
 		if len(self.actionSeq)>0 and self.do_rollout():
 			self.rolloutArray = self.rollout(self.rle)
 			print "in rollout"
 
-		#self.rolloutArray = []
-
 		self.heuristicVal = self.heuristics()
-		self.dist = self.distVisited()
-		self.novel = self.novel_squares()
-		weight = 0.0
 
 		# print self.lastState._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost
 		self.intrinsic_reward = self.rle._game.score + self.heuristicVal - \
-		self.metabolic_cost+sum(self.rolloutArray) + weight*self.depth + self.novel
+		self.metabolic_cost+sum(self.rolloutArray) + DEPTH_WEIGHT*self.depth
 		
 		return self.win
 
+	#update the novelty of a single atom
 	def updateNovelty(self):
 		if len(self.candidates)==0:
 			self.pixel_novelty = 3
@@ -1172,8 +1006,9 @@ class Node():
 		self.novelty = max(self.grid_novelty,self.pixel_novelty)
 		return self.novelty
 
+	#update the novelty of atoms in the Queue
 	def updateNoveltyDict(self, QNovelty, QReward):
-		#jointSet = list(set(QNovelty)+set(QReward))
+
 		jointSet = list(QReward)
 
 		for c in self.candidates:
@@ -1224,7 +1059,7 @@ class Node():
 
 	#does this do anything???
 	def playBack(self, make_movie=False):
-		# = copy.deepcopy(self.rle)
+
 		self.finalStatesEncountered = []
 		terminal = vrle._isDone()[0]
 		i=0
@@ -1245,7 +1080,7 @@ class Node():
 def euclideanDist(a,b):
 	return math.sqrt(float((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2))
 
-
+#runs multiple planners in series with different sets of parameters
 def multi_plan():
 	t1 = time.time()
 	#gameFilename = "examples.continuousphysics.montezuma_new"
@@ -1263,7 +1098,7 @@ def multi_plan():
 		result.append((gameString_array,nodes))
 
 	i = 0
-	#embed()
+
 	for [gameString_array,nodes] in result:
 		print params[i]
 		print("nodes searched = {}".format(nodes))
@@ -1291,8 +1126,8 @@ if __name__ == "__main__":
 	#gameFilename = "examples.continuousphysics.simple"
 	#gameFilename = "examples.continuousphysics.crossroad"
 	#gameFilename = "examples.continuousphysics.collect_key"
-	#gameFilename = "examples.continuousphysics.collect_resource"
-
+	gameFilename = "examples.continuousphysics.collect_resource"
+	#gameFilename = "examples.continuousphysics.rope_test"
 	#gameFilename = "examples.gridphysics.simple_grid"
 	#gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
 	#gameFilename = "examples.gridphysics.expt_exploration_exploitation"
@@ -1315,10 +1150,3 @@ if __name__ == "__main__":
 	print time.time()-t1
 
 	embed()
-
-	#
-	#multi_plan()
-	#
-
-
-#
