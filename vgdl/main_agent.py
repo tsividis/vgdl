@@ -87,7 +87,7 @@ class Agent:
 		if learnSprites:
 			observe(self.rle, 5, self.bestSpriteTypeDict)
 			spriteTypeHypothesis, exceptedObjects, _ = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
-			
+
 			self.rle._game.exceptedObjects = exceptedObjects
 			# print "sampled hypothesis"
 			# embed()
@@ -277,13 +277,13 @@ class Agent:
 		print "Won {} out of {} episodes.".format(sum(wins), i)
 
 	def updateMemory(self, rle):
-		
+
 		types = list(set([rle._game.all_objects[k]['type']['color'] for k in rle._game.all_objects.keys()]))
 		for obj_type in types:
 			## find the most-updated object, use that one for the sprite hypothesis.
 			options = [k for k in rle._game.all_objects.keys() if rle._game.all_objects[k]['type']['color'] == obj_type]
 			k = max(options, key=lambda x:rle._game.spriteUpdateDict[x])
-			
+
 			if rle._game.spriteUpdateDict[k] > self.bestSpriteTypeDict[obj_type]['count']:
 				self.bestSpriteTypeDict[obj_type]['count'] = copy.deepcopy(rle._game.spriteUpdateDict[k])
 				self.bestSpriteTypeDict[obj_type]['distribution'] = copy.deepcopy(rle._game.spriteDistribution[k])
@@ -333,7 +333,7 @@ class Agent:
 			if not quitting:
 				for i, action in enumerate(solution):
 					self.hypotheses[0].dryingPaint = set()
-					hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, 
+					hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
 						run_induction = not flexible_goals)
 					print "theory_change_flag", theory_change_flag
 					effectsEncountered.extend(effects)
@@ -375,7 +375,7 @@ class Agent:
 
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
-		
+
 		score = self.rle._game.score
 		self.updateMemory(self.rle)
 		print "ended episode. Win={}".format(win)
@@ -618,4 +618,4 @@ if __name__ == "__main__":
 	##then pass this down for multiple episodes
 	gameObject = None
 
-	agent.playCurriculum(heatmap=True, level_game_pairs=level_game_pairs)
+	agent.playCurriculum(level_game_pairs=level_game_pairs)

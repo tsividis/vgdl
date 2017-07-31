@@ -118,9 +118,9 @@ class WBP():
 			## Don't track Flicker in atoms. The point is that the Flicker should have an effect on other objects, so atom novelty that would have been
 			## a function of the Flicker's presence is being taken care of by that. Otherwise the agent can keep exploring states that have no actual effect
 			## on the game state.
-			if (len(rle._game.sprite_groups[k])>0 and 
-					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and 
-					('Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) or 
+			if (len(rle._game.sprite_groups[k])>0 and
+					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and
+					('Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) or
 						('Random' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)))):
 				pass
 			else:
@@ -135,13 +135,13 @@ class WBP():
 					lst.append(objPosCombination)
 		present = []
 		for k in [t for t in self.objectTypes if t not in ['wall', 'avatar']]: ##maybe add the avatar to this global state
-			
+
 			## Don't track Flicker in atoms. The point is that the Flicker should have an effect on other objects, so atom novelty that would have been
 			## a function of the Flicker's presence is being taken care of by that. Otherwise the agent can keep exploring states that have no actual effect
 			## on the game state.
-			if (len(rle._game.sprite_groups[k])>0 and 
-					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and 
-					('Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) or 
+			if (len(rle._game.sprite_groups[k])>0 and
+					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and
+					('Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) or
 						('Random' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)))):
 				pass
 			else:
@@ -242,7 +242,7 @@ class WBP():
 				self.visited_positions[x, y] += 1
 			except IndexError:
 				pass
-			
+
 			self.statesEncountered.append(current.rle._game.getFullState())
 
 			print current.rle.show(indent=True)
@@ -406,14 +406,16 @@ class Node():
 				 and inter.preconditions
 				and inter.slot1 == stype)]
 
-		if avatar_preconditions:
-			embed()
+		# if avatar_preconditions:
+			# embed()
 
 		tmp_list = []
+		# if avatar_preconditions:
+			# embed()
 		for avatar in avatar_preconditions:
-			if rle._game.sprite_groups[avatar].resources[list(avatar[1])[0].item] == list(avatar[1])[0].num:
+			if rle._game.sprite_groups[avatar[0]][0].resources[list(avatar[1])[0].item] == list(avatar[1])[0].num:
 				tmp_list.append(avatar)
-		
+
 		for t in tmp_list:
 			killer_types.append(t[0])
 			avatar_preconditions.remove(t)
