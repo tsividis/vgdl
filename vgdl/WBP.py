@@ -146,10 +146,10 @@ class WBP():
 				pass
 			else:
 				for o in sorted(rle._game.sprite_groups[k], key=lambda s:s.ID):
-					# if k=='sword':
-						# print "found sword"
+					if k=='sword':
+						print "found sword"
 						## the point was to have caught the sword 8 lines up, so we should never have entered this condition. Check why that catch failed.
-						# embed()
+						embed()
 					if o not in rle._game.kill_list:
 						present.append(1)
 					else:
@@ -374,7 +374,7 @@ class Node():
 				successfulRollout = True
 		return rolloutArray
 
-	def spritecounter_val(self, theory, term, stype, rle, first_alpha=1000,
+	def spritecounter_val(self, theory, term, stype, rle, first_alpha=1000.,
 						  second_alpha=1):
 		val = 0
 		compute_second_order = True
@@ -438,8 +438,8 @@ class Node():
 
 			distance_to_goal = abs(n_stypes - limit)
 
-		val += mult * first_alpha * distance_to_goal
-		# print stype, n_stypes, distance_to_goal, val
+		val += mult * first_alpha / distance_to_goal
+		print stype, n_stypes, distance_to_goal, val
 		if compute_second_order:
 
 
@@ -565,8 +565,11 @@ class Node():
 		val = 0
 		compute_second_order = True
 
+		## Don't give heuristic bonus for using the flicker. But the agent is still incentivized to try to make the flicker interact with other objects
+		## because of noveltyTerminationConditions.
 		if 'Flicker' in str(theory.classes[s1][0].vgdlType) or 'Flicker' in str(theory.classes[s2][0].vgdlType):
 			return 0
+
 		# Check if condition is win or loss and multiply accordingly
 		if term.termination.win:
 			mult = -1
@@ -630,7 +633,7 @@ class Node():
 
 		return val
 
-	def heuristics(self, rle=None, first_alpha=1000, second_alpha=1,
+	def heuristics(self, rle=None, first_alpha=1000., second_alpha=1,
 				   time_alpha=10):
 		if rle==None:
 			rle = self.rle
@@ -642,8 +645,8 @@ class Node():
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				# print("spritecounter_val for {} is equal to {}".format(
-					# term.termination.stype, spritecounter_val))
+				print("spritecounter_val for {} is equal to {}".format(
+					term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):

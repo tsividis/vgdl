@@ -1395,7 +1395,7 @@ def killIfFromAbove(sprite, partner, game):
         game.kill_list.append(sprite)
         if not None in {sprite, partner}:
          # sprite_info = colorDict[str(sprite.color)]
-            return ('killIfFromAbove', partner.ID, sprite.ID)
+            return ('killIfFromAbove', sprite.ID, partner.ID)
 
 def killIfAlive(sprite, partner, game):
     """ Perform the killing action, only if no previous collision effect has removed the partner. """
@@ -1985,7 +1985,7 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome, spe
 
     return curr_distribution
 
-def sampleFromDistribution(curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict, oldSpriteSet = None):
+def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict, oldSpriteSet = None):
 
     import random
     import numpy as np
@@ -2007,11 +2007,19 @@ def sampleFromDistribution(curr_distribution, all_objects, spriteUpdateDict, bes
                 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
                     AimedFlakAvatar, InertialAvatar, MarioAvatar
 
-            ## TODO: Pass in sprite_groups so that you can get the actual color of the Flicker. Also generalize beyond Flicker to Missile, etc.
             try:
+                ## Add avatar, and add the attached arguments, i.e., what the avatar shoots.
                 sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
-                sample.append(Sprite(vgdlType=Flicker, color='BLUE', className=all_objects[k]['sprite'].stype, args={'singleton':'True'}))
-                exceptions.append('BLUE')
+                
+                ## Get the object the Avatar shoots, add that.
+                ao = game.sprite_constr[all_objects[k]['sprite'].stype]
+                ao_vgdl_type = ao[0]
+                ao_color = colorDict[str(ao[1]['color'])]
+                sample.append(Sprite(vgdlType=ao_vgdl_type, color=ao_color, className=all_objects[k]['sprite'].stype, args={'singleton':'True'}))
+
+                # sample.append(Sprite(vgdlType=Flicker, color='BLUE', className=all_objects[k]['sprite'].stype, args={'singleton':'True'}))
+                exceptions.append(ao_color)
+
                 # sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'healthPoints':all_objects[k]['sprite'].healthPoints}))
             except AttributeError:
                 # No args in avatar
@@ -2265,7 +2273,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                 #     for sprite_type in sprite_types:
                 #         game.spriteDistribution[sprite][sprite_type]['args'] = initializeDistributionArgs(sprite_type, objectColors)
 
-        sample, exceptions, distributionsHaveChanged = sampleFromDistribution(game.spriteDistribution, game.all_objects, game.spriteUpdateDict, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
+        sample, exceptions, distributionsHaveChanged = sampleFromDistribution(game, game.spriteDistribution, game.all_objects, game.spriteUpdateDict, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
 
         # distributionsHaveChanged = checkIfDistributionsHaveChanged(game, game.spriteUpdateDict, bestSpriteTypeDict)
 

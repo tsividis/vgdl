@@ -73,21 +73,21 @@ VGDL example: Boulder Dash.
 # """
 
 
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwww
-# w   o.xx.o      o  xoxx. w
-# w   oooooo      . o..o.. w
-# w   .xxx..       o.oxoo.ow
-# wx  .....        oxo...oow
-# wwwwwwwwww       .o.  wxxw
-# wb .  co.        ..   wxxw
-# w  .  ..   Ao....o    wxxw
-# wooo.....   .    .    w..w
-# w.... .x....wwwwx x.oow  w
-# w    ....x..ooxxo ....w  w
-# w    .E.    .....        w
-# wwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwww
+w   o.xx.o      o  xoxx. w
+w   oooooo      . o..o.. w
+w   .xxx..       o.oxoo.ow
+wx  .....        oxo...oow
+wwwwwwwwww       .o.  wxxw
+wb .  co.        ..   wxxw
+w  .  ..   Ao....o    wxxw
+wooo.....   .    .    w..w
+w.... .x....wwwwx x.oow  w
+w    ....x..ooxxo ....w  w
+w    .E.    .....        w
+wwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 
 # level = """
@@ -135,7 +135,7 @@ VGDL example: Boulder Dash.
 # wwwwwwww
 # """
 
-# level0 = """
+# level = """
 # wwwwwwww
 # wwxo   w
 # ww....Aw
@@ -146,27 +146,27 @@ VGDL example: Boulder Dash.
 # wwwwwwww
 # """
 
-level0 = """
-wwwwwwwwwwwwwwwwwwwwwwwwww
-wwxxx                 w  w
-www.                  wx w
-w w                   wxww
-w                     wx w
-w   . .               wE w
-w                     wA w
-wwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# wwxxx                 w  w
+# www.                  wx w
+# w w                   wxww
+# w                     wx w
+# w   . .               wE w
+# w                     wA w
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
-level1 = """
-wwwwwwwwwwwwwwwwwwwwwwwwww
-wwxxx                    w
-www.                    Ew
-w w                     ww
-w                        w
-w                        w
-w                      A w
-wwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# wwxxx                    w
+# www.                    Ew
+# w w                     ww
+# w                        w
+# w                        w
+# w                      A w
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # level1 = """
 # wwwwwwwwwwwwwwwwwwwwwwwwww
@@ -209,13 +209,15 @@ BasicGame
 	SpriteSet
 		dirt > Immovable color=BROWN
 		exitdoor > Immovable color=GREEN
-		diamond > Resource color=YELLOW limit=3 shrinkfactor=0.25
+		diamond > Resource color=YELLOW limit=5 shrinkfactor=0.25
 		boulder > Missile orientation=DOWN color=DARKGRAY speed=0.2
 		avatar  > ShootAvatar   stype=sword
 		crab > RandomNPC cooldown=5 color=RED
 		butterfly > RandomNPC cooldown=5 color=PINK
 		wall > Immovable color=BLACK
 		sword > Flicker color=BLUE limit=0 singleton=True
+		# sword > Missile color=BLUE speed=1
+
 	LevelMapping
 		. > dirt
 		E > exitdoor
@@ -263,14 +265,14 @@ BasicGame
 		exitdoor boulder > nothing
 		exitdoor sword > nothing
 		exitdoor avatar > nothing
-		exitdoor avatar > killIfOtherHasMore resource=diamond limit=3 #scoreChange=100
+		exitdoor avatar > killIfOtherHasMore resource=diamond limit=5 #scoreChange=100
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False
 		SpriteCounter stype=exitdoor limit=0 win=True
 
 """
 
-level_game_pairs = [[game, level0], [game,level1]]
+level_game_pairs = [[game, level]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

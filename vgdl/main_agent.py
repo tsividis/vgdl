@@ -86,7 +86,7 @@ class Agent:
 	def initializeHypotheses(self, allObjects, learnSprites=True):
 		if learnSprites:
 			observe(self.rle, 5, self.bestSpriteTypeDict)
-			spriteTypeHypothesis, exceptedObjects, _ = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
+			spriteTypeHypothesis, exceptedObjects, _ = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
 
 			self.rle._game.exceptedObjects = exceptedObjects
 			# print "sampled hypothesis"
@@ -120,7 +120,7 @@ class Agent:
 
 	def completeHypotheses(self, allObjects):
 		observe(self.rle, 0, self.bestSpriteTypeDict)
-		spriteTypeHypothesis, exceptedObjects, _ = sampleFromDistribution(self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
+		spriteTypeHypothesis, exceptedObjects, _ = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
 		gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 		newHypotheses = []
 		for hypothesis in self.hypotheses:
@@ -319,8 +319,9 @@ class Agent:
 			## initialize one or many VRLEs according to hypothesis-selection method
 			theoryRLEs = self.VrleInitPhase(flexible_goals)
 
-			p = WBP.WBP(theoryRLEs[0], self.gameFilename,
-						theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules, seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon)
+			p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules, 
+				seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon)
+			print p.rle._game.getAvatars()[0].resources
 			p.BFS()
 			solution = p.solution
 			quitting = p.quitting
@@ -418,7 +419,7 @@ class Agent:
 
 		if any([self.new_objects[k]>5 for k in self.new_objects.keys()]):
 			# if self.new_objects[k] > 5:
-			spriteTypeHypothesis, exceptedObjects, _ = sampleFromDistribution(self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
+			spriteTypeHypothesis, exceptedObjects, _ = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 
 			newHypotheses = []
@@ -504,7 +505,7 @@ class Agent:
 			if (not all([e in all_effects for e in effects])) or distributionsHaveChanged:
 				theory_change_flag = True
 
-			sample, exceptedObjects, _ = sampleFromDistribution(self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
+			sample, exceptedObjects, _ = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
 
 			game_object = Game(spriteInductionResult=sample)
 
