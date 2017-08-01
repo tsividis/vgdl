@@ -146,16 +146,16 @@ wwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwww
 # """
 
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwww
-wwxxx                 wE w
-www.                  wo w
-w w                   w.ww
-w    m                w ww
-w   . .               w ww
-w                     wAww
-wwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# wwxxx                 wE w
+# www.                  wo w
+# w w                   w.ww
+# w    m                w ww
+# w   . .               w ww
+# w                     wAww
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwww
@@ -241,7 +241,7 @@ BasicGame
 		crab boulder > stepBack
 		butterfly wall > stepBack
 		butterfly boulder > stepBack
-		avatar boulder > killIfFromAbove
+		# avatar boulder > killIfFromAbove
 		avatar butterfly > killSprite
 		avatar crab > killSprite
 		boulder dirt > stepBack

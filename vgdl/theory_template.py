@@ -2397,7 +2397,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	sortedInteractions = []
 	for pair in sortedInteractionDict:
 		(killIfHasLessInteractions, killInteractions, scoreChangeInteractions,
-			nonKillInteractions, changeResourceInteractions) = [], [], [], [], []
+			nonKillInteractions, changeResourceInteractions, avatarStepBackInteractions) = [], [], [], [], [], []
 		for interactionRule in sortedInteractionDict[pair]:
 			if "kill" in interactionRule.interaction:
 				precondition = list(set(interactionRule.preconditions))
@@ -2410,12 +2410,14 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				scoreChangeInteractions.append(interactionRule)
 			elif "changeResource" in interactionRule.interaction:
 				changeResourceInteractions.append(interactionRule)
+			elif "stepBack" in interactionRule.interaction and 'avatar' in [interactionRule.slot1, interactionRule.slot2]:
+				avatarStepBackInteractions.append(interactionRule)
 			else:
 				nonKillInteractions.append(interactionRule)
 
 		sortedInteractions += (killIfHasLessInteractions +
 			scoreChangeInteractions + changeResourceInteractions +
-			killInteractions + nonKillInteractions)
+			killInteractions + avatarStepBackInteractions + nonKillInteractions)
 		# make sure that killing interactions get processed before interactions
 		# that don't kill.
 		# EDIT: made killIfHasLess be processed first

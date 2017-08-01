@@ -30,7 +30,7 @@ class Agent:
 		self.shortHorizon = True
 		if self.shortHorizon == True:
 			self.starting_max_nodes = 20
-			self.max_nodes_annealing = 1.005
+			self.max_nodes_annealing = 1.01
 		else:
 			self.starting_max_nodes = 10000
 			self.max_nodes_annealing = 10
@@ -158,7 +158,7 @@ class Agent:
 				VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
 				persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
 				i += 1
-				print "Won in ", time.time() - t1
+				print "Finished in ", time.time() - t1
 				# if i >=10:
 					# break
 			if heatmap:
@@ -321,7 +321,6 @@ class Agent:
 
 			p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules, 
 				seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon)
-			print p.rle._game.getAvatars()[0].resources
 			p.BFS()
 			solution = p.solution
 			quitting = p.quitting
@@ -553,6 +552,13 @@ class Agent:
 					self.fakeInteractionRules = list(set(self.fakeInteractionRules))
 					# resourceColor = self.rle._game.sprite_groups[resource][0].colorName
 					self.seen_limits.append(resource)
+
+					## go through everything that can be killed and add a SpriteCounterRule for it?
+					spritecounter = SpriteCounterRule(limit=limit,
+											  stype=resource,
+											  win=True)
+					hypotheses[0].terminationSet.append(spritecounter)
+					
 					theory_change_flag = True
 					print "reached resource limit for", resource
 					# embed()

@@ -104,9 +104,9 @@ class WBP():
 				spacebarAvailable = True
 				break
 		if spacebarAvailable:
-			self.actions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
+			self.actions = [NONE, K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE]
 		else:
-			self.actions = [K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
+			self.actions = [NONE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
 		if self.addWaitAction:
 			self.actions.append(NONE)
 		return
@@ -146,10 +146,6 @@ class WBP():
 				pass
 			else:
 				for o in sorted(rle._game.sprite_groups[k], key=lambda s:s.ID):
-					if k=='sword':
-						print "found sword"
-						## the point was to have caught the sword 8 lines up, so we should never have entered this condition. Check why that catch failed.
-						embed()
 					if o not in rle._game.kill_list:
 						present.append(1)
 					else:
@@ -343,7 +339,7 @@ class Node():
 				pass
 			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
 			# 	metabolic_cost += 0.3
-		# metabolic_cost = 0
+		metabolic_cost = 0
 		return metabolic_cost
 
 	def rollout(self, vrle):
@@ -374,8 +370,8 @@ class Node():
 				successfulRollout = True
 		return rolloutArray
 
-	def spritecounter_val(self, theory, term, stype, rle, first_alpha=1000.,
-						  second_alpha=1):
+	def spritecounter_val(self, theory, term, stype, rle, first_alpha=10000.,
+						  second_alpha=10):
 		val = 0
 		compute_second_order = True
 
@@ -439,9 +435,12 @@ class Node():
 			distance_to_goal = abs(n_stypes - limit)
 
 		if distance_to_goal!=0:
-			val += mult * first_alpha / distance_to_goal
+			val -= mult * first_alpha / distance_to_goal**2
 		else:
-			val += mult*first_alpha
+			val -= mult*first_alpha
+
+		# val += mult * first_alpha * distance_to_goal
+
 		# print stype, n_stypes, distance_to_goal, val
 		if compute_second_order:
 
@@ -477,7 +476,7 @@ class Node():
 				n_sprites = len(possiblePairList)
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
-				val += float(mult * second_alpha * distance)/n_sprites
+				val += float(mult * second_alpha * distance)/n_sprites**2
 			else:
 				# This helps in cases in which either the stype or the killer_type is not always on the screen
 				# Then, you should not be disincentivized to create it, which can be achieved through this high penalty
@@ -647,9 +646,9 @@ class Node():
 		for term in theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
-					first_alpha=first_alpha, second_alpha=second_alpha)
-				print("spritecounter_val for {} is equal to {}".format(
-					term.termination.stype, spritecounter_val))
+					first_alpha=5000, second_alpha=5)
+				# print("spritecounter_val for {} is equal to {}".format(
+					# term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
