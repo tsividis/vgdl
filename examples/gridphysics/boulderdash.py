@@ -127,7 +127,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwww
 # level = """
 # wwwwwwww
 # wwxo   w
-# ww    Aw
+# ww .  Aw
 # w w    w
 # w.     w
 # w.     w
@@ -146,16 +146,16 @@ wwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwww
 # """
 
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwww
-# wwxxx                 w  w
-# www.                  wx w
-# w w                   wxww
-# w                     wx w
-# w   . .               wE w
-# w                     wA w
-# wwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwww
+wwxxx                 wE w
+www.                  wo w
+w w                   w.ww
+w    m                w ww
+w   . .               w ww
+w                     wAww
+wwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwww
@@ -210,14 +210,14 @@ BasicGame
 		dirt > Immovable color=BROWN
 		exitdoor > Immovable color=GREEN
 		diamond > Resource color=YELLOW limit=5 shrinkfactor=0.25
-		boulder > Missile orientation=DOWN color=DARKGRAY speed=0.2
+		boulder > Missile orientation=DOWN color=DARKGRAY speed=.2
 		avatar  > ShootAvatar   stype=sword
 		crab > RandomNPC cooldown=5 color=RED
 		butterfly > RandomNPC cooldown=5 color=PINK
 		wall > Immovable color=BLACK
 		sword > Flicker color=BLUE limit=0 singleton=True
 		# sword > Missile color=BLUE speed=1
-
+		missile > Missile color=PINK speed=1
 	LevelMapping
 		. > dirt
 		E > exitdoor
@@ -227,6 +227,7 @@ BasicGame
 		b > butterfly
 		w > wall
 		s > sword
+		m > missile
 	InteractionSet
 		dirt sword  > killSprite
 		dirt avatar > killSprite

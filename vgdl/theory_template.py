@@ -388,8 +388,11 @@ class Theory(object):
 				theories.append(self)
 			# Add preconditions
 			elif failCase in [1,2,3]:
-				# ipdb.set_trace()
-				theories.extend(self.addPreconditions(event, timestep))
+				if failCase ==2 and event[0]=='killIfFromAbove': ## we're forgoing the process of doing proper precondition reasoning here; would be straightforward to do it.
+					# interpretation = self.interpret(event)
+					theories.extend(self.addRules(event))
+				else:
+					theories.extend(self.addPreconditions(event, timestep))
 			# Add new rule
 			elif failCase == 4:
 				theories.extend(self.addRules(event))
@@ -595,7 +598,6 @@ class Theory(object):
 					 "Solution: Add new rule with precondition on it; negate that precondition for other relevant rules."],
 					 (False, ()):    [4, "Event likelihood failed because interactionSet hasn't seen the event."+
 					 "Solution: AddRule()"]}
-
 
 		(eventInRules, predictionsHappened) = self.checkEvents(self.interpret(event), timestep), self.checkPredictions(event, timestep)
 

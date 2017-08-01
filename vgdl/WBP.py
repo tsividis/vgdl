@@ -438,8 +438,11 @@ class Node():
 
 			distance_to_goal = abs(n_stypes - limit)
 
-		val += mult * first_alpha / distance_to_goal
-		print stype, n_stypes, distance_to_goal, val
+		if distance_to_goal!=0:
+			val += mult * first_alpha / distance_to_goal
+		else:
+			val += mult*first_alpha
+		# print stype, n_stypes, distance_to_goal, val
 		if compute_second_order:
 
 
@@ -865,12 +868,12 @@ if __name__ == "__main__":
 	# gameFilename = "examples.gridphysics.theorytest"
 	gameFilename = "examples.gridphysics.boulderdash"
 	# gameFilename = "examples.gridphysics.expt_helper"
-
+	# gameFilename = "examples.continuousphysics.breakout_big"
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
-	# embed()
+	embed()
 	p = WBP(rle, gameFilename)
 
 
