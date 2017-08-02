@@ -2081,11 +2081,16 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
 
 
         ## Find matching object in the existing hypothesis
-        if oldSpriteSet:
-            matchingSprite = [sprite for sprite in oldSpriteSet if s.color==sprite.color][0]
-            if s.vgdlType!=matchingSprite.vgdlType or s.args!=matchingSprite.args:
-                distributionsHaveChanged = True
-
+        try:
+            if oldSpriteSet:
+                if s.color in [sprite.color for sprite in oldSpriteSet]:
+                    matchingSprite = [sprite for sprite in oldSpriteSet if s.color==sprite.color][0]
+                    if s.vgdlType!=matchingSprite.vgdlType or s.args!=matchingSprite.args:
+                        distributionsHaveChanged = True
+                else:
+                    distributionsHaveChanged = True
+        except:
+            embed()
         setSpriteParams(param, s) # set the parameters for sprite s
 
         sample.append(s)

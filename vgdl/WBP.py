@@ -372,6 +372,10 @@ class Node():
 
 	def spritecounter_val(self, theory, term, stype, rle, first_alpha=10000.,
 						  second_alpha=10):
+		
+		# First order: progress in terms of number of sprites remaining.
+		# Second order: distance to the closest instance of a target sprite type.
+
 		val = 0
 		compute_second_order = True
 
@@ -382,7 +386,7 @@ class Node():
 			compute_second_order = True
 			mult = 10
 
-		# Get all types that kill or transform stype
+		# Get all types that kill or transform stype (the target)
 		killer_types = [
 			inter.slot2 for inter in theory.interactionSet
 			if ((inter.interaction == 'killSprite' or

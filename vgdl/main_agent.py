@@ -27,7 +27,7 @@ class Agent:
 		self.gameString = None
 		self.levelString = None
 		self.annealingFactor = 1.
-		self.shortHorizon = True
+		self.shortHorizon = False
 		if self.shortHorizon == True:
 			self.starting_max_nodes = 20
 			self.max_nodes_annealing = 1.01
@@ -59,7 +59,10 @@ class Agent:
 				 "./examples/gridphysics/theorytest.py")
 		Vrle = createMindEnv(gameString, levelString, output=False)
 		Vrle._game.getAvatars()[0].resources = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
-		Vrle._game.getAvatars()[0].orientation = copy.deepcopy(self.rle._game.getAvatars()[0].orientation)
+		try:
+			Vrle._game.getAvatars()[0].orientation = copy.deepcopy(self.rle._game.getAvatars()[0].orientation)
+		except AttributeError:
+			pass
 		# Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
 		return Vrle
 
