@@ -80,10 +80,10 @@ class Agent:
 			if not flexible_goals:
 				tempHypothesis.updateTerminations()
 			# print "fake hypotheses"
-			# if self.fakeInteractionRules:
+			# if self.fakeInteractionRules:/
 				# tempHypothesis.display()
 			VRLEs.append(self.initializeVrle(tempHypothesis))
-		# embed()
+
 		return VRLEs
 
 	def initializeHypotheses(self, allObjects, learnSprites=True):
@@ -441,6 +441,8 @@ class Agent:
 		spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 		spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 
+		agentState = dict(self.rle._game.getAvatars()[0].resources)
+
 		res = self.rle.step(action)
 
 		print ""
@@ -448,6 +450,7 @@ class Agent:
 
 		try:
 			agentState = dict(self.rle._game.getAvatars()[0].resources)
+
 			for e in res['effectList']:
 				if 'changeResource' in e:
 					changes = e[3]
@@ -459,7 +462,8 @@ class Agent:
 			self.rle.agentStatePrev = agentState
 		# If agent is killed before we get agentState
 		except Exception as e:
-			agentState = defaultdict(lambda:0)
+			# agentState = defaultdict(lambda:0)
+
 			ignored_negative_change = False
 			for e in res['effectList']:
 				if 'changeResource' in e:
@@ -470,6 +474,7 @@ class Agent:
 						agentState[changes['resource']] += 0
 						ignored_negative_change = True
 			self.rle.agentStatePrev = agentState
+
 
 
 		hypotheses = self.manageNewObjects(hypotheses)
@@ -563,7 +568,7 @@ class Agent:
 					hypotheses[0].terminationSet.append(spritecounter)
 					
 					theory_change_flag = True
-					print "reached resource limit for", resource
+					# print "reached resource limit for", resource
 					# embed()
 
 		if event['effectList'] and run_induction:
@@ -588,7 +593,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pick_apples"
 	# filename = "examples.gridphysics.expt_exploration_exploitation"
 
-	filename = "examples.gridphysics.boulderdash"
+	filename = "examples.gridphysics.boulderdash2"
 
 	level_game_pairs = None
 	# Playing GVG-AI games

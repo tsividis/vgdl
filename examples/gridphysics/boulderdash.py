@@ -81,10 +81,10 @@ w   .xxx..       o.oxoo.ow
 wx  .....        oxo...oow
 wwwwwwwwww       .o.  wxxw
 w  .   o.        ..   wxxw
-w  .  ..   Ao....o    wxxw
+wc .  ..   Ao....o    wxxw
 wooo.....   .    .    w..w
 w.... .x....wwwwx x.oow  w
-w    ....x..ooxxo ....w  w
+wb   ....x..ooxxo ....w  w
 w    .E.    .....        w
 wwwwwwwwwwwwwwwwwwwwwwwwww
 """
@@ -164,6 +164,28 @@ wwwwwwwwwwwwwwwwwwwwwwwwww
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwww
+# wwxxx                 w  w
+# www.                  wx w
+# w w                   wxww
+# w    m                w ww
+# w   . .               wEww
+# w                     wAww
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# w                        w
+# w                      xxw
+# w                      xcw
+# wE                     xxw
+# w                        w
+# wA                       w
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwww
 # wwxxx                 wE w
 # www.                  wo w
 # w w                   w.ww
@@ -225,10 +247,11 @@ BasicGame
 	SpriteSet
 		dirt > Immovable color=BROWN
 		exitdoor > Immovable color=GREEN
-		diamond > Resource color=YELLOW limit=9 shrinkfactor=0.25
+		diamond > Resource color=YELLOW limit=3 shrinkfactor=0.25
 		boulder > Missile orientation=DOWN color=DARKGRAY speed=.2
 		avatar  > ShootAvatar   stype=sword
 		crab > RandomNPC cooldown=5 color=RED
+		# crab > Immovable color=RED
 		butterfly > RandomNPC cooldown=5 color=PINK
 		wall > Immovable color=BLACK
 		sword > Flicker color=BLUE limit=0 singleton=True
@@ -278,11 +301,11 @@ BasicGame
 		sword sword > nothing
 		wall dirt > nothing
 		butterfly crab > transformTo stype=diamond scoreChange=1
-		exitdoor avatar > killIfOtherHasMore resource=diamond limit=9 #scoreChange=100
+		# exitdoor avatar > killIfOtherHasMore resource=diamond limit=9 #scoreChange=100
 		exitdoor boulder > nothing
 		exitdoor sword > nothing
 		exitdoor avatar > nothing
-		# exitdoor avatar > killIfOtherHasMore resource=diamond limit=5 #scoreChange=100
+		exitdoor avatar > killIfOtherHasMore resource=diamond limit=3 #scoreChange=100
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False
 		SpriteCounter stype=exitdoor limit=0 win=True

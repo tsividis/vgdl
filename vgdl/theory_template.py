@@ -103,7 +103,10 @@ class Precondition(object):
 		print self.text
 
 	def __eq__(self, other):
-		return self.text == other.text
+		try:
+			return self.text == other.text
+		except AttributeError:
+			return False
 
 	def __ne__(self, other):
 		return not self.__eq__(other)
@@ -185,17 +188,17 @@ class TimeoutRule(TerminationRule):
 
 class NoveltyRule(TerminationRule):
 	""" Game ends when the number of sprites of type 'stype' hits 'limit' (or below). """
-	def __init__(self,s1,s2,win):
+	def __init__(self,s1,s2,win,args=None):
 		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
-		self.termination = NoveltyTermination(s1=s1, s2=s2, win=win)
+		self.termination = NoveltyTermination(s1=s1, s2=s2, win=win, args=args)
 		self.ruleType = "NoveltyRule"
 
 	def display(self):
-		print self.ruleType, self.termination.s1, self.termination.s2, self.termination.win
+		print self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, self.termination.args
 		return
 
 	def asTuple(self):
-		return (self.ruleType, self.termination.s1, self.termination.s2, self.termination.win)
+		return (self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, self.termination.args)
 
 
 class SpriteCounterRule(TerminationRule):
@@ -969,7 +972,9 @@ class Theory(object):
 
 		for rule in self.interactionSet:
 			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo']:
-				if rule.generic:
+				if rule.generic and rule.preconditions:
+					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, rule.preconditions)
+				elif rule.generic and not rule.preconditions:
 					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
 				else:
 					terminationRule = SpriteCounterRule(rule.slot1, 0, True)

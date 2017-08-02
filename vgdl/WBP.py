@@ -127,8 +127,10 @@ class WBP():
 				for o in rle._game.sprite_groups[k]:
 					if o not in rle._game.kill_list:
 						## turn location into vector position (rows appended one after the other.)
-						pos = rle._rect2pos(o.rect) #x,y
-						vecValue = pos[1] + pos[0]*rle.outdim[0] + 1
+						# pos = rle._rect2pos(o.rect) #x,y
+						pos = o.rect.left, o.rect.top
+						vecValue = pos[1] + pos[0]*rle.outdim[0]*rle._game.block_size + 1						
+						# vecValue = pos[1] + pos[0]*rle.outdim[0] + 1
 					else:
 						vecValue = 0
 					objPosCombination = self.objIDs[o.ID] + vecValue
@@ -383,7 +385,7 @@ class Node():
 		if term.termination.win:
 			mult = -1
 		else:
-			compute_second_order = True
+			compute_second_order = False
 			mult = 10
 
 		# Get all types that kill or transform stype (the target)
@@ -439,13 +441,13 @@ class Node():
 			distance_to_goal = abs(n_stypes - limit)
 
 		if distance_to_goal!=0:
-			val -= mult * first_alpha / distance_to_goal**2
+			val -= float(mult * first_alpha) / distance_to_goal**2
 		else:
 			val -= mult*first_alpha
 
 		# val += mult * first_alpha * distance_to_goal
 
-		# print stype, n_stypes, distance_to_goal, val
+		# print "stype, n_stypes, distance_to_goal, val", stype, n_stypes, distance_to_goal, val
 		if compute_second_order:
 
 
@@ -553,8 +555,6 @@ class Node():
 					elif true_operator in {">", ">="}:
 						val += mult * second_alpha * (current_val-precondition.num)
 
-
-
 		return val
 
 	def multispritecounter_val(self, theory, term, rle, first_alpha=1000,
@@ -571,17 +571,36 @@ class Node():
 		val = 0
 		compute_second_order = True
 
-		## Don't give heuristic bonus for using the flicker. But the agent is still incentivized to try to make the flicker interact with other objects
-		## because of noveltyTerminationConditions.
-		if 'Flicker' in str(theory.classes[s1][0].vgdlType) or 'Flicker' in str(theory.classes[s2][0].vgdlType):
-			return 0
-
 		# Check if condition is win or loss and multiply accordingly
 		if term.termination.win:
 			mult = -1
 		else:
 			compute_second_order = False
 			mult = 1
+
+		## Don't give heuristic bonus for using the flicker. But the agent is still incentivized to try to make the flicker interact with other objects
+		## because of noveltyTerminationConditions.
+		if 'Flicker' in str(theory.classes[s1][0].vgdlType) or 'Flicker' in str(theory.classes[s2][0].vgdlType):
+			return 0
+
+		## If the terminationRule is precondition-dependent, check that first. Don't give heuristic val if the preconditions aren't fulfilled.
+		if term.termination.args:
+			item, num, negated, operator_name = term.termination.args.item, term.termination.args.num, term.termination.args.negated, term.termination.args.operator_name
+			if negated:
+				oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
+				true_operator = oppositeOperatorMap[operator_name]
+			else:
+				true_operator = operator_name            
+			
+			try:
+				resource_str = str(rle._game.getAvatars()[0].resources[item])
+			except IndexError:
+				return 2 * mult * first_alpha
+
+			if not eval(resource_str+true_operator+str(num)):
+				return 2 * mult * first_alpha
+
+
 
 		if compute_second_order:
 			## Get all positions of objects whose type is in killer_types; compute minimum distance
@@ -651,8 +670,9 @@ class Node():
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=5000, second_alpha=5)
-				# print("spritecounter_val for {} is equal to {}".format(
-					# term.termination.stype, spritecounter_val))
+				# if spritecounter_val!=0:
+					# print("spritecounter_val for {} is equal to {}".format(
+						# term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
@@ -669,9 +689,10 @@ class Node():
 				noveltytermination_val = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				# print("noveltytermination_val for {} and {} is equal to {}".format(
-					# term.termination.s1, term.termination.s2, noveltytermination_val))
-				if 'avatar' == term.termination.s2:
+				# if noveltytermination_val !=0:
+					# print("noveltytermination_val for {} and {} is equal to {}".format(
+						# term.termination.s1, term.termination.s2, noveltytermination_val))
+				if 'avatar' == term.termination.s2 and False:
 					avatarNoveltyVals.append(.5*self.WBP.annealing*noveltytermination_val)
 				else:
 					heuristicVal += .5 * self.WBP.annealing * noveltytermination_val

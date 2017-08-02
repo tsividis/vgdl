@@ -1076,13 +1076,33 @@ class MultiSpriteCounter(Termination):
             return False, None
 
 class NoveltyTermination(Termination):
-    def __init__(self, s1, s2, win=True):
+    def __init__(self, s1, s2, win=True, args=None):
         self.s1 = s1
         self.s2 = s2
         self.win = win
         self.name = 'NoveltyTermination'
+        self.args = args
+        if self.args is not None:  
+            self.args = list(self.args)[0]
 
     def isDone(self, game):
+
+        ## self.args lets us do precondition-dependent terminations.
+        if self.args:
+            item, num, negated, operator_name = self.args.item, self.args.num, self.args.negated, self.args.operator_name
+            if negated:
+                oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
+                true_operator = oppositeOperatorMap[operator_name]
+            else:
+                true_operator = operator_name            
+            try:
+                resource_str = str(game.getAvatars()[0].resources[item])
+            except IndexError:
+                return False, None
+
+            if not eval(resource_str+true_operator+str(num)):
+                return False, None
+
         for e in game.effectList:
             id_not_found = False
             if (e[0]=='killSprite' or e[0] == 'transformTo'):
