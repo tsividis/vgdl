@@ -1796,7 +1796,7 @@ class Game(object):
 					theory.interactionSet.append(rule)
 				i+=1
 			else:
-				## If the sampled hypothesis posits a different sprite type, 
+				## If the sampled hypothesis posits a different sprite type,
 				## find the matching previous Sprite, copy its features, replace with current sprite.
 				matchingSprite = [sprite for sprite in theory.spriteSet if sprite.color==s.color][0]
 				if s.vgdlType != matchingSprite.vgdlType:
@@ -2395,9 +2395,12 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 			sortedInteractionDict[(c1, c2)].append(interactionRule)
 
 	sortedInteractions = []
+	# For some games (e.g. boulderdash), the order of 'stepBack' interactions
+	# matters: this list puts those that don't involve the avatar at the end
+	nonAvatarStepBackInteractions = []
 	for pair in sortedInteractionDict:
 		(killIfHasLessInteractions, killInteractions, scoreChangeInteractions,
-			nonKillInteractions, changeResourceInteractions, avatarStepBackInteractions) = [], [], [], [], [], []
+			nonKillInteractions, changeResourceInteractions) = [], [], [], [], []
 		for interactionRule in sortedInteractionDict[pair]:
 			if "kill" in interactionRule.interaction:
 				precondition = list(set(interactionRule.preconditions))
@@ -2410,17 +2413,19 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				scoreChangeInteractions.append(interactionRule)
 			elif "changeResource" in interactionRule.interaction:
 				changeResourceInteractions.append(interactionRule)
-			elif "stepBack" in interactionRule.interaction and 'avatar' in [interactionRule.slot1, interactionRule.slot2]:
-				avatarStepBackInteractions.append(interactionRule)
+			elif "stepBack" in interactionRule.interaction and 'avatar' not in [interactionRule.slot1, interactionRule.slot2]:
+				nonAvatarStepBackInteractions.append(interactionRule)
 			else:
 				nonKillInteractions.append(interactionRule)
 
 		sortedInteractions += (killIfHasLessInteractions +
 			scoreChangeInteractions + changeResourceInteractions +
-			killInteractions + avatarStepBackInteractions + nonKillInteractions)
+			killInteractions + nonKillInteractions)
 		# make sure that killing interactions get processed before interactions
 		# that don't kill.
 		# EDIT: made killIfHasLess be processed first
+
+	sortedInteractions += nonAvatarStepBackInteractions
 
 	for interactionRule in sortedInteractions:
 		if all([not interactionRule.__eq__(r) for r in added_rules]): ## don't duplicate rules.
