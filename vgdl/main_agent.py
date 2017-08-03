@@ -168,7 +168,8 @@ class Agent:
 					# break
 			if heatmap:
 				self.makeHeatmap(allStatesEncountered, '{}_{}_level{}_heatmap.pdf'.format(
-					self.gameFilename[self.gameFilename.find('expt'):],
+					# self.gameFilename[self.gameFilename.find('expt'):],
+					gvgname[gvgname.find('set_1/')+6:],
 					self.modelType, n_level))
 
 			allEffectsEncountered.append(levelEffectsEncountered)
@@ -182,16 +183,17 @@ class Agent:
 				## When you embed, you can manually input changes in theory. See flexible_goals.py for an example.
 				embed()
 
-		self.makeMovie()
+		# self.makeMovie()
 
 
 		output = {'modelType':self.modelType,
-					'gameName': self.gameFilename[self.gameFilename.find('expt'):],
-					'condition': 'no_score',
+					# 'gameName': self.gameFilename[self.gameFilename.find('expt'):],
+					'gameName': gvgname[gvgname.find('set_1/')+6:],
+					'condition': 'normal',
 					'episodes' : episodes}
 
-		# write_to_csv('pilotModelRuns.csv', output)
-		# self.makeMovie()
+		write_to_csv('pilotModelRuns_'+gvgname[gvgname.find('set_1/')+6:]+'.csv', output)
+		self.makeMovie()
 		# embed()
 
 	def makeHeatmap(self, statesEncountered, filename):
@@ -534,6 +536,8 @@ class Agent:
 			self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
 				not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
 
+			
+
 			if (not all([e in all_effects for e in effects])) or distributionsHaveChanged:
 				theory_change_flag = True
 
@@ -551,6 +555,13 @@ class Agent:
 			# embed()
 			hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
 			verbose=False, existingTheories=hypotheses))
+
+			if any(['GOLD' in e for e in event['effectList']]):
+				ipdb.set_trace()
+
+			if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
+				theory_change_flag = True
+
 			# if len(hypotheses)>1:
 			# 	print "more than one hypothesis"
 			# 	embed()
@@ -643,7 +654,7 @@ if __name__ == "__main__":
 
 	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
-	gvgname = "../../gvgai/training_set_1/{}".format(gvggames[9])
+	gvgname = "../gvgai/training_set_1/{}".format(gvggames[9])
 
 	gameString = read_gvgai_game('{}.txt'.format(gvgname))
 

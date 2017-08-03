@@ -317,7 +317,7 @@ class Theory(object):
 		return negBin(k,5,.5)
 
 
-	def explainTimeStep(self, timestep, fullTimestep, currTheories=False, override=False):
+	def explainTimeStep(self, timestep, fullTimestep, timesteps, currTheories=False, override=False):
 		"""
 		Recursive function. Explains first event, then calls itself to explain the next events
 		contingent on current explanations.
@@ -332,14 +332,14 @@ class Theory(object):
 
 		# If we haven't provided theories that explain part of the time step, just explain the first event in the timestep
 		if not currTheories:
-			theories.extend(self.explainEvent(timestep.events[0], fullTimestep, override=override))
+			theories.extend(self.explainEvent(timestep.events[0], fullTimestep, timesteps, override=override))
 
 		# Otherwise, you're now being passed the remainder of the timestep,
 		# so timestep.events[0] is actually the first as-of-yet unexplained event.
 		# Generate theories based on hypothetical theories (aka, currTheories)
 		else:
 			for theory in currTheories:
-				newTheory = theory.explainEvent(timestep.events[0], fullTimestep, override=override)
+				newTheory = theory.explainEvent(timestep.events[0], fullTimestep, timesteps, override=override)
 				theories.extend(newTheory)
 
 
@@ -362,9 +362,9 @@ class Theory(object):
 			# Create new timestep that consist of remaining unexpplained eventsl pass to the same function
 			# print "in recursive case"
 			updatedTimeStep = TimeStep(timestep.agentAction, timestep.agentState, timestep.events[1:], timestep.gameState, timestep.rle)
-			return self.explainTimeStep(updatedTimeStep, fullTimestep, currTheories=theories, override=override)
+			return self.explainTimeStep(updatedTimeStep, fullTimestep, timesteps, currTheories=theories, override=override)
 
-	def explainEvent(self, event, timestep, override=False):
+	def explainEvent(self, event, timestep, timesteps, override=False):
 		"""
 		Returns theories based on 'self' that explain the event, which is a tuple like:
 			(bounceForward, BLUE, ORANGE)
@@ -395,7 +395,7 @@ class Theory(object):
 					# interpretation = self.interpret(event)
 					theories.extend(self.addRules(event))
 				else:
-					theories.extend(self.addPreconditions(event, timestep))
+					theories.extend(self.addPreconditions(event, timestep, timesteps))
 			# Add new rule
 			elif failCase == 4:
 				theories.extend(self.addRules(event))
@@ -703,7 +703,7 @@ class Theory(object):
 		# print "adding {} theories with new assignments".format(len(newTheories))
 		return newTheories
 
-	def addPreconditions(self, event, timestep):
+	def addPreconditions(self, event, timestep, timesteps):
 		"""
 		Creates preconditions based on the agentState that might help to explain the event.
 		Returns a list of theories.
@@ -731,30 +731,49 @@ class Theory(object):
 			generatedPreconditions = self.makePreconditions(concepts)
 			for p in generatedPreconditions:
 
-				interpretation = self.interpret(event)
+				tmp_theory = copy.deepcopy(self)
 
+				interpretation = tmp_theory.interpret(event)
+
+				# ipdb.set_trace()
 				# Find what rules you will need to negate
-				relevantInteractionSetRules = self.findRelatedRules(classPair, self.interactionSet)
-				relevantEvents = self.findRelatedRules(classPair, [self.interpret(e) for e in timestep.events])
+				relevantInteractionSetRules = tmp_theory.findRelatedRules(classPair, tmp_theory.interactionSet)
+				relevantEvents = tmp_theory.findRelatedRules(classPair, [tmp_theory.interpret(e) for e in timestep.events])
 
 				if len(relevantEvents)>len(relevantInteractionSetRules):
 					# We want to add preconditions to the events that just happened that weren't predicted
 					eventsToModify = [r for r in relevantEvents if r not in relevantInteractionSetRules]
-					interpretation.addPrecondition(p)
-					newTheory = self.createChild([interpretation, False]) #TODO: make sure this is properly negating all other similar events
 
-					if newTheory:
-						newTheories.append(newTheory)
+					# And we need to make sure that the number concepts that we propose actually would have not been true in pervious cases (where this event didn't happen)
+					relevantTimesteps = [t for t in timesteps[:-1] if [tmp_theory.interpret(event) for event in t.events if tmp_theory.interpret(event) in relevantEvents]]
+
+					if all([not p.check(t.agentState) for t in relevantTimesteps]):
+						for e in eventsToModify:
+							e.addPrecondition(p)
+							tmp_theory = tmp_theory.createChild([e, False])
+						newTheories.append(tmp_theory)
+						# interpretation.addPrecondition(p)
+						# newTheories.append(tmp_theory)
+						# newTheory = self.createChild([interpretation, False]) #TODO: make sure this is properly negating all other similar events
+
+						# if newTheory:
+							# newTheories.append(newTheory)
+					ipdb.set_trace()
 
 				elif len(relevantInteractionSetRules)>len(relevantEvents):
 					# We want to add preconditions to rules we have already put in the theory
 					eventsToModify = [r for r in relevantInteractionSetRules if r not in relevantEvents]
 					p.negate()
-					for e in eventsToModify:
-						e.addPrecondition(p)
-						# newTheory = self.createChild([e, False])
-						newTheories.append(self) ##TODO you didn't create a child theory, so your tracking of theory
-													## genealogy will be off.
+					## We're positing that the negated p (now called p) should have been true in that previous time step. If that's not true
+					## it's because we generated a bad numberConcept, in which case we should just move on and not add it to the theory.
+					relevantTimesteps = [t for t in timesteps[:-1] if [tmp_theory.interpret(event) for event in t.events if tmp_theory.interpret(event) in eventsToModify]]
+					if all([p.check(t.agentState) for t in relevantTimesteps]):
+						for e in eventsToModify:
+							e.addPrecondition(p)
+							# newTheory = self.createChild([e, False])
+							newTheories.append(tmp_theory) ##TODO you didn't create a child theory, so your tracking of theory
+														## genealogy will be off.
+					# ipdb.set_trace()
 
 				# else:
 				# 	print "relevantEvents and relevantInteractionSetRules are disjoint but of same length"
@@ -808,7 +827,7 @@ class Theory(object):
 
 	def findRelatedRules(self, classPair, interactionList):
 		#needs to take a list of interpretations or a list of interaction rules
-		return [interaction for interaction in interactionList if classPair == interaction.asTuple()[1:3]]
+		return [interaction for interaction in interactionList if set(classPair) == set(interaction.asTuple()[1:3])]
 
 	def negatePreconditions(self, unfulfilledPredictions):
 		"""
@@ -1626,7 +1645,7 @@ class Game(object):
 
 
 			# Explain current timestep
-			newTheories = theory.explainTimeStep(timesteps[ts_index], timesteps[ts_index], override=override)
+			newTheories = theory.explainTimeStep(timesteps[ts_index], timesteps[ts_index], timesteps, override=override)
 
 			self.nodes_generated += len(newTheories)
 			if verbose:
@@ -1651,6 +1670,9 @@ class Game(object):
 						self.nodes_eliminated +=1
 				try:
 					max_likelihood = np.unique([sum([h.likelihood(ts) for ts in timesteps]) for h in self.hypothesisSpace])[-1]
+					# if len(timesteps)>6:
+						# print "first max_likelihood"
+						# embed()
 				except:
 					print "max_likelihood failed"
 					embed()
@@ -1854,6 +1876,9 @@ class Game(object):
 		max_likelihood = np.unique([sum([h.likelihood(ts) for ts in timesteps]) for h in self.hypothesisSpace])[-1]
 		self.hypothesisSpace = [h for h in self.hypothesisSpace if sum([h.likelihood(ts) for ts in timesteps]) == max_likelihood]
 
+		# if len(timesteps)>6:
+		# 	print "second max_likelihood"
+		# 	embed()
 		# Termination set induction
 		## TODO: add this again.
 		# if result:
@@ -1946,7 +1971,7 @@ class Game(object):
 			# For every theory
 			for theory in self.hypothesisSpace:
 				if theory.likelihood(timestep) < 1.0: 	# Theory needs to be changed
-					newTheories.extend(theory.explainTimeStep(timestep, timestep))
+					newTheories.extend(theory.explainTimeStep(timestep, timestep, timesteps))
 
 			# Make sure only to add unique theories
 			#print "Iterating through new theories"

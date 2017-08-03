@@ -124,8 +124,8 @@ class WBP():
 	def calculateAtoms(self, rle):
 		lst = []
 
-		for k in self.objectsToTrack:
-		# for k in self.rle._game.sprite_groups.keys():
+		# for k in self.objectsToTrack:
+		for k in self.rle._game.sprite_groups.keys():
 			## Don't track Flicker in atoms. The point is that the Flicker should have an effect on other objects, so atom novelty that would have been
 			## a function of the Flicker's presence is being taken care of by that. Otherwise the agent can keep exploring states that have no actual effect
 			## on the game state.
@@ -156,7 +156,7 @@ class WBP():
 								vecValue += 200000
 							elif orientation[0] == 0 and orientation[1] > 0:
 								vecValue += 300000
-					except IndexError:
+					except (IndexError, AttributeError) as e:
 						pass
 					objPosCombination = self.objIDs[o.ID] + vecValue
 					# print("ObjId = {}, vecValue = {}".format(self.objIDs[o.ID], vecValue))
@@ -451,9 +451,11 @@ class Node():
 		for avatar in avatar_preconditions:
 			# print("in avatar preconditions")
 			# embed()
-			if eval(str(rle._game.sprite_groups[avatar[0]][0].resources[list(avatar[1])[0].item]) +
-			 		str(list(avatar[1])[0].operator_name)+
-					str(list(avatar[1])[0].num)):
+			current_resources = rle._game.sprite_groups[avatar[0]][0].resources[list(avatar[1])[0].item]
+			if avatar[1].check(current_resources):
+			# if eval(str(rle._game.sprite_groups[avatar[0]][0].resources[list(avatar[1])[0].item]) +
+			 		# str(list(avatar[1])[0].operator_name)+
+					# str(list(avatar[1])[0].num)):
 				tmp_list.append(avatar)
 
 		for t in tmp_list:
