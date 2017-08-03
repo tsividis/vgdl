@@ -27,14 +27,16 @@ class Agent:
 		self.gameString = None
 		self.levelString = None
 		self.annealingFactor = 1.
-		self.shortHorizon = False
+		self.shortHorizon = True
 		if self.shortHorizon == True:
-			self.starting_max_nodes = 20
-			self.max_nodes_annealing = 1.01
+			self.starting_max_nodes = 100
+			self.max_nodes_annealing = 1.005
 		else:
 			self.starting_max_nodes = 10000
 			self.max_nodes_annealing = 10
-		self.regrounding = 7
+		self.regrounding = 20
+		self.avoid_danger = True
+		self.safeDistance = 3
 		self.hypotheses = []
 		self.symbolDict = None
 		self.finalEventList = []
@@ -322,7 +324,7 @@ class Agent:
 			## initialize one or many VRLEs according to hypothesis-selection method
 			theoryRLEs = self.VrleInitPhase(flexible_goals)
 
-			p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules, 
+			p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
 				seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon)
 			p.BFS()
 			solution = p.solution
@@ -368,6 +370,26 @@ class Agent:
 							# print "mismatch in gamestring lengths"
 							# embed()
 							break
+
+					if self.avoid_danger:
+						try:
+							random_npcs = [rle._rect2pos(element.rect)
+								for objName in rle._game.sprite_groups.keys()
+								for element in rle._game.sprite_groups[objName]
+								if element not in rle._game.kill_list and
+								'RandomNPC' in str(element.__class__)]
+
+							possiblePairList = [manhattanDist(avatar, random)
+								for avatar in self.rle._game.getAvatars()
+								for random in random_npcs]
+
+							if min(possiblePairList) < self.safeDistance:
+								print("Close to RandomNPC, regrounding")
+								break
+
+						except:
+							pass
+
 				if self.shortHorizon:
 					self.max_nodes *= self.max_nodes_annealing
 			else:
@@ -569,7 +591,7 @@ class Agent:
 											  stype=resource,
 											  win=True)
 					hypotheses[0].terminationSet.append(spritecounter)
-					
+
 					theory_change_flag = True
 					# print "reached resource limit for", resource
 					# embed()
@@ -619,17 +641,17 @@ if __name__ == "__main__":
 		for color in color_list:
 			yield color
 
-	# gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
-		# 'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
-	# gvgname = "../../gvgai/examples/gridphysics/{}".format(gvggames[4])
+	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
+		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
+	gvgname = "../../gvgai/training_set_1/{}".format(gvggames[9])
 
-	# gameString = read_gvgai_game('{}.txt'.format(gvgname))
+	gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
 
-	# level_game_pairs = []
-	# for level_number in range(5):
-		# with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
-			# level_game_pairs.append([gameString, level.read()])
+	level_game_pairs = []
+	for level_number in range(5):
+		with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
+			level_game_pairs.append([gameString, level.read()])
 
 	agent = Agent('full', filename)
 
