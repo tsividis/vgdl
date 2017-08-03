@@ -70,7 +70,7 @@ class WBP():
 		# 		ipdb.set_trace()
 		i=1
 		for k in rle._game.all_objects.keys():
-			self.objIDs[k] = i * (rle.outdim[0]*rle.outdim[1]+self.padding)
+			self.objIDs[k] = i * 100 * (rle.outdim[0]*rle.outdim[1]+self.padding)
 			i+=1
 		self.addSpaceBarToActions()
 		self.pixel_size = self.rle._game.screensize[0]/self.rle._game.width
@@ -128,12 +128,13 @@ class WBP():
 					if o not in rle._game.kill_list:
 						## turn location into vector position (rows appended one after the other.)
 						# pos = rle._rect2pos(o.rect) #x,y
-						pos = o.rect.left, o.rect.top
-						vecValue = pos[1] + pos[0]*rle.outdim[0]*rle._game.block_size + 1						
 						# vecValue = pos[1] + pos[0]*rle.outdim[0] + 1
+						pos = float(o.rect.left)/rle._game.block_size, float(o.rect.top)/rle._game.block_size
+						vecValue = 10*pos[1] + 10*pos[0]*rle.outdim[0] + 10
 					else:
 						vecValue = 0
 					objPosCombination = self.objIDs[o.ID] + vecValue
+					# print("ObjId = {}, vecValue = {}".format(self.objIDs[o.ID], vecValue))
 					lst.append(objPosCombination)
 		present = []
 		for k in [t for t in self.objectTypes if t not in ['wall', 'avatar']]: ##maybe add the avatar to this global state
@@ -382,7 +383,7 @@ class Node():
 
 	def spritecounter_val(self, theory, term, stype, rle, first_alpha=10000.,
 						  second_alpha=10):
-		
+
 		# First order: progress in terms of number of sprites remaining.
 		# Second order: distance to the closest instance of a target sprite type.
 
@@ -514,7 +515,10 @@ class Node():
 
 			resource_positions = [np.hstack([self.WBP.findObjectsInRLE(rle, yielder) for yielder in yielders]) for yielders in resource_yielder_names]
 			resource_limits = np.array([list(resource[1])[0].num for resource in avatar_preconditions])
-			avatar_resource_quantities = np.array([rle._game.getAvatars()[0].resources[res] for res in resource_names])
+			try:
+				avatar_resource_quantities = np.array([rle._game.getAvatars()[0].resources[res] for res in resource_names])
+			except IndexError:
+				avatar_resource_quantities = np.array([0 for res in resource_names])
 			precondition_distances = []
 			try:
 				for (obj1_positions, obj2_positions) in zip(avatars, resource_positions):
@@ -598,8 +602,8 @@ class Node():
 				oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
 				true_operator = oppositeOperatorMap[operator_name]
 			else:
-				true_operator = operator_name            
-			
+				true_operator = operator_name
+
 			try:
 				resource_str = str(rle._game.getAvatars()[0].resources[item])
 			except IndexError:
@@ -863,7 +867,7 @@ class Node():
 						s.ID = len([o for o in vrle._game.sprite_groups[objType] if o not in vrle._game.kill_list])
 					else:
 						s.ID = len(vrle._game.sprite_groups[objType])
-					self.WBP.objIDs[s.ID] = (len(self.WBP.objIDs.keys())+1) * (self.rle.outdim[0]*self.rle.outdim[1]+self.WBP.padding)
+					self.WBP.objIDs[s.ID] = (len(self.WBP.objIDs.keys())+1) * 100 * (self.rle.outdim[0]*self.rle.outdim[1]+self.WBP.padding)
 					i+=1
 		return
 
