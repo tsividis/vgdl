@@ -27,15 +27,16 @@ class Agent:
 		self.gameString = None
 		self.levelString = None
 		self.annealingFactor = 1.
-		self.shortHorizon = False
+		self.shortHorizon = True
 		if self.shortHorizon == True:
-			self.starting_max_nodes = 20
-			self.max_nodes_annealing = 1.01
+			self.starting_max_nodes = 100
+			self.max_nodes_annealing = 1.005
 		else:
 			self.starting_max_nodes = 10000
 			self.max_nodes_annealing = 10
-		self.regrounding = 0
+		self.regrounding = 20
 		self.avoid_danger = True
+		self.safeDistance = 3
 		self.hypotheses = []
 		self.symbolDict = None
 		self.finalEventList = []
@@ -379,9 +380,10 @@ class Agent:
 								for avatar in self.rle._game.getAvatars()
 								for random in random_npcs]
 
-							print("Close to RandomNPC, regrounding")
-							break
-							
+							if min(possiblePairList) < self.safeDistance:
+								print("Close to RandomNPC, regrounding")
+								break
+
 						except:
 							pass
 
@@ -611,9 +613,9 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.demo_transform_relational"
 	# filename = "examples.gridphysics.simpleGame_push_boulders"
 	# filename = "examples.gridphysics.pick_apples"
-	# filename = "examples.gridphysics.expt_exploration_exploitation"
+	filename = "examples.gridphysics.expt_exploration_exploitation"
 
-	filename = "examples.gridphysics.boulderdash2"
+	# filename = "examples.gridphysics.boulderdash2"
 
 	level_game_pairs = None
 	# Playing GVG-AI games
