@@ -73,21 +73,21 @@ VGDL example: Boulder Dash.
 # """
 
 
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwww
-w   o.xx.o      o  xoxx. w
-w   oooooo      . o..o.. w
-w   .xxx..       o.oxoo.ow
-wx  .....        oxo...oow
-wwwwwwwwww       .o.  wxxw
-w  .   o.        ..   wxxw
-wc .  ..   Ao....o    wxxw
-wooo.....   .    .    w..w
-w.... .x....wwwwx x.oow  w
-wb   ....x..ooxxo ....w  w
-w    .E.    .....        w
-wwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# w   o.xx.o      o  xoxx. w
+# w   oooooo      . o..o.. w
+# w   .xxx..       o.oxoo.ow
+# wx  .....        oxo...oow
+# wwwwwwwwww       .o.  wxxw
+# w  .   o.        ..   wxxw
+# wc .  ..   Ao....o    wxxw
+# wooo.....   .    .    w..w
+# w.... .x....wwwwx x.oow  w
+# wb   ....x..ooxxo ....w  w
+# w    .E.    .....        w
+# wwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwww
@@ -106,21 +106,21 @@ wwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
 
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwww
-# w...o.xx.o......o..xoxx..w
-# w...oooooo........o..o...w
-# w....xxx.........o.oxoo.ow
-# wx...............oxo...oow
-# wwwwwwwwww........o...wxxw
-# wb ...co..............wxxw
-# w  ........Ao....o....wxxw
-# wooo............. ....w..w
-# w......x....wwwwx x.oow..w
-# wc  .....x..ooxxo ....w..w
-# w   ..E..........b     ..w
-# wwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwww
+w...o.xx.o......o..xoxx..w
+w...oooooo........o..o...w
+w....xxx.........o.oxoo.ow
+wx...............oxo...oow
+wwwwwwwwww........o...wxxw
+wb ...co..............wxxw
+w  ........Ao....o....wxxw
+wooo............. ....w..w
+w......x....wwwwx x.oow..w
+wc  .....x..ooxxo ....w..w
+w   ..E..........b     ..w
+wwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 
 # level0 = """

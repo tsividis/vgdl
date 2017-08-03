@@ -81,6 +81,16 @@ class WBP():
 		self.winning_states = []
 		self.trueAtomsIW1 = []
 
+		## Find objects we don't want to track (i.e., non-moving immovables.)
+		self.objectsToTrack = []
+		for k in rle._game.sprite_groups.keys():
+			if k in self.theory.classes.keys() and ('Resource' or 'Immovable') in str(self.theory.classes[k][0].vgdlType) and not \
+			(('bounceForward' or 'pullWithIt') in [rule.interaction for rule in self.theory.interactionSet if k in [rule.slot1, rule.slot2]]):
+				pass# self.objectsToNotTrackInAtomList.append(k)
+			else:
+				self.objectsToTrack.append(k)
+		print "Tracking", self.objectsToTrack
+
 	def findObjectsInRLE(self, rle, objName):
 		try:
 			objLocs = [rle._rect2pos(element.rect) for element in rle._game.sprite_groups[objName]
@@ -113,8 +123,9 @@ class WBP():
 
 	def calculateAtoms(self, rle):
 		lst = []
-		for k in rle._game.sprite_groups.keys():
 
+		for k in self.objectsToTrack:
+		# for k in self.rle._game.sprite_groups.keys():
 			## Don't track Flicker in atoms. The point is that the Flicker should have an effect on other objects, so atom novelty that would have been
 			## a function of the Flicker's presence is being taken care of by that. Otherwise the agent can keep exploring states that have no actual effect
 			## on the game state.
@@ -701,9 +712,9 @@ class Node():
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				if noveltytermination_val !=0:
-					print("noveltytermination_val for {} and {} is equal to {}".format(
-						term.termination.s1, term.termination.s2, noveltytermination_val))
+				# if noveltytermination_val !=0:
+					# print("noveltytermination_val for {} and {} is equal to {}".format(
+						# term.termination.s1, term.termination.s2, noveltytermination_val))
 				if 'avatar' == term.termination.s2:
 					avatarNoveltyVals.append([.5*self.WBP.annealing*noveltytermination_val,
 						ranking])
@@ -904,8 +915,8 @@ if __name__ == "__main__":
 	## objects.
 	# gameFilename = "examples.gridphysics.theorytest"
 	# gameFilename = "examples.gridphysics.boulderdash"
-	# gameFilename = "examples.gridphysics.expt_helper"
-	gameFilename = "examples.continuousphysics.breakout_big"
+	gameFilename = "examples.gridphysics.zelda_orig"
+	# gameFilename = "examples.continuousphysics.breakout_big"
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)

@@ -348,6 +348,9 @@ class Agent:
 					if ended:
 						break
 
+
+					## Make sure you're far enough from unpredictable dangerous objects.
+
 					# Check for disparities between plan and reality
 					# (e.g. stochastic effects)
 					# if self.rle._game.is_stochastic and i>self.regrounding:
@@ -591,9 +594,9 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.demo_transform_relational"
 	# filename = "examples.gridphysics.simpleGame_push_boulders"
 	# filename = "examples.gridphysics.pick_apples"
-	filename = "examples.gridphysics.expt_exploration_exploitation"
+	# filename = "examples.gridphysics.expt_exploration_exploitation"
 
-	# filename = "examples.gridphysics.boulderdash2"
+	filename = "examples.gridphysics.boulderdash"
 
 	level_game_pairs = None
 	# Playing GVG-AI games
