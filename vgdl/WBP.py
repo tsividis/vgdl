@@ -270,11 +270,19 @@ class WBP():
 					self.statesEncountered.append(child.rle._game.getFullState())
 					# print "win"
 					# embed()
-					return child, gameString_array
+					# return child, gameString_array
 				else:
 					QNovelty.append(child)
 					QReward.append(child)
 			i+=1
+
+			if self.winning_states:
+				print "we have {} winning states".format(len(self.winning_states))
+				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
+				bestNode = bestNodes[0]
+				gameString_array.append(bestNode.rle.show())
+				return bestNode, gameString_array
+
 			# print i
 		self.solution = []#Node(self.rle, self, [], None)
 		if i>=self.max_nodes:
@@ -581,7 +589,7 @@ class Node():
 		## Don't give heuristic bonus for using the flicker. But the agent is still incentivized to try to make the flicker interact with other objects
 		## because of noveltyTerminationConditions.
 		if 'Flicker' in str(theory.classes[s1][0].vgdlType) or 'Flicker' in str(theory.classes[s2][0].vgdlType):
-			return 0
+			return 0, 10000
 
 		## If the terminationRule is precondition-dependent, check that first. Don't give heuristic val if the preconditions aren't fulfilled.
 		if term.termination.args:
@@ -595,10 +603,10 @@ class Node():
 			try:
 				resource_str = str(rle._game.getAvatars()[0].resources[item])
 			except IndexError:
-				return 2 * mult * first_alpha
+				return 2 * mult * first_alpha, 10000
 
 			if not eval(resource_str+true_operator+str(num)):
-				return 2 * mult * first_alpha
+				return 2 * mult * first_alpha, 10000
 
 
 
@@ -611,7 +619,7 @@ class Node():
 
 			# Second order lesion
 			if s1 != 'avatar' and s2 != 'avatar':
-				return 0
+				return 0, 10000
 
 			n_sprites = len(s1_positions)
 			try:
@@ -639,7 +647,7 @@ class Node():
 				# goals that involve killing fewer objects
 				val += float(mult * second_alpha * distance)/n_sprites
 
-		return val
+		return val, distance*n_sprites
 
 	def timeout_val(self, theory, term, rle):
 		val = 0
@@ -686,14 +694,15 @@ class Node():
 				heuristicVal += timeout_val
 
 			elif isinstance(term, NoveltyRule):
-				noveltytermination_val = self.noveltytermination_val(
+				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				# if noveltytermination_val !=0:
-					# print("noveltytermination_val for {} and {} is equal to {}".format(
-						# term.termination.s1, term.termination.s2, noveltytermination_val))
-				if 'avatar' == term.termination.s2 and False:
-					avatarNoveltyVals.append(.5*self.WBP.annealing*noveltytermination_val)
+				if noveltytermination_val !=0:
+					print("noveltytermination_val for {} and {} is equal to {}".format(
+						term.termination.s1, term.termination.s2, noveltytermination_val))
+				if 'avatar' == term.termination.s2:
+					avatarNoveltyVals.append([.5*self.WBP.annealing*noveltytermination_val,
+						ranking])
 				else:
 					heuristicVal += .5 * self.WBP.annealing * noveltytermination_val
 					# Exploit only
@@ -703,7 +712,7 @@ class Node():
 
 		if avatarNoveltyVals:
 			# print noveltyVals
-			heuristicVal += max(avatarNoveltyVals)
+			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
 		return heuristicVal
 
 	def position_score(self, factor=-1):
@@ -890,9 +899,9 @@ if __name__ == "__main__":
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
 	# gameFilename = "examples.gridphysics.theorytest"
-	gameFilename = "examples.gridphysics.boulderdash"
+	# gameFilename = "examples.gridphysics.boulderdash"
 	# gameFilename = "examples.gridphysics.expt_helper"
-	# gameFilename = "examples.continuousphysics.breakout_big"
+	gameFilename = "examples.continuousphysics.breakout_big"
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)

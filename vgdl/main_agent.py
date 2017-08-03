@@ -591,9 +591,9 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.demo_transform_relational"
 	# filename = "examples.gridphysics.simpleGame_push_boulders"
 	# filename = "examples.gridphysics.pick_apples"
-	# filename = "examples.gridphysics.expt_exploration_exploitation"
+	filename = "examples.gridphysics.expt_exploration_exploitation"
 
-	filename = "examples.gridphysics.boulderdash2"
+	# filename = "examples.gridphysics.boulderdash2"
 
 	level_game_pairs = None
 	# Playing GVG-AI games
