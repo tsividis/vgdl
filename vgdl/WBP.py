@@ -40,7 +40,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 
 #-----parameters------
 WALL_EDGE = 1 #weight of edge adjacent to a wall when constructing graph.                                                                       
-REMOVE_MOVERS = True #whether to remove moving NPCs from the set of atoms
+REMOVE_MOVERS = False #whether to remove moving NPCs from the set of atoms
 LIMIT = 3 #number of times pixel atom can be seen before counted as true
 GRID_LIMIT = 150 #number of times grid atom can be seen before counted as true
 SPEED_THRESH = [] #speed threshholds when incorporating speed into the atoms. If list is empty, speed is not used
@@ -64,8 +64,10 @@ class WBP():
 		self.objectTypes = rle._game.sprite_groups.keys()
 		self.objectTypes.sort() #wall, avatar, etc.
 		self.phiSize = sum([len(rle._game.sprite_groups[k]) for k in rle._game.sprite_groups.keys() if k not in ['wall', 'avatar']])#number of not wall/avatar objects
-		self.avatar = rle._game.sprite_groups["avatar"][0]
-		self.square_size = (self.avatar.rect.width,self.avatar.rect.height)
+		
+		self.avatar = rle._game.sprite_groups["avatar"][0]#FIX
+		self.square_size = (self.avatar.rect.width,self.avatar.rect.height)#FIX
+		
 		self.vecDim = [rle.outdim[0]*rle.outdim[1]*self.square_size[0]*self.square_size[1], 2, self.T]
 		self.objIDs = {}
 		self.solution = None
@@ -486,12 +488,12 @@ class WBP():
 
 
  	#Runs our best-first search algorithm with novelty pruning
-	def BFS(self):
+	def BFS(self,return_best = False):
 		QNovelty, QReward = [], []
 		visited, rejected = [], []
 		start = Node(self.rle, self, [], None)
 		start.rle = self.rle
-		visited.append(start)
+		#visited.append(start)
 		start.eval()
 		QReward.append(start)
 		
@@ -509,7 +511,7 @@ class WBP():
 
 			if current is None:
 				self.quitting = True
-				print(i)
+				#print(i)
 				print("quitting, no novel node found")
 				break
 				
@@ -517,7 +519,10 @@ class WBP():
 			current.updateNoveltyDict(QNovelty, QReward)
 			visited.append(current)
 
-			print(i)
+			
+			#print(i)
+			#print(current.rle.show())
+			'''
 			avatar = self.getAliveAvatar(current.rle)
 			if avatar is not None:
 				loc = current.rle._rect2pos(avatar.rect)
@@ -535,6 +540,9 @@ class WBP():
 			if i % 500 == 0:
 				print self.avatar_locs_disc
 				print self.key
+			'''
+			
+			
 			
 
 			self.getActions(current.rle)
@@ -583,11 +591,20 @@ class WBP():
 						return best_node, best_path, i
 
 				else:
-					if child.isTerminal() and not child.isWin():
-						print("LOSE")
-					else:
-						QReward.append(child)
+					#if child.isTerminal() and not child.isWin():
+					#	print("LOSE")
+					#else:
+					QReward.append(child)
 			i+=1
+
+		if return_best:
+			#embed()
+			visited.remove(start)
+			best = min(visited)
+			last = random.choice([n for n in visited if n.__eq__(best)])
+			
+			return last, visited, i
+			#should remove visited later
 
 		self.solution = []
 		if i>=self.max_nodes:
@@ -684,7 +701,7 @@ class Node():
 			if terminal and not win:
 				successfulRollout = False
 				tries += 1
-				print "rolling out again"
+				#print "rolling out again"
 			else:
 				successfulRollout = True
 		return rolloutArray
@@ -850,6 +867,36 @@ class Node():
 
 		return val
 
+	#--------------------------- a bit of a cheat, should remove
+
+	def objcollect_val(self, theory, rle, weight=0.5):
+		objs = rle._game.sprite_groups.keys()
+		for inter in theory.interactionSet:
+			if inter.interaction == 'killSprite' and inter.slot1 == 'avatar':
+				objs.remove(inter.slot2)
+		objs.remove('wall')
+		objs.remove('avatar')
+		#objs.remove('background')
+
+		avatar = self.WBP.findAvatarInRLE(rle)
+
+		min_dist = sys.maxint
+		
+		for obj in objs:
+			locs = self.WBP.findObjectsInRLE(rle,obj)
+			try:
+				dist = [self.WBP.geoDist(avatar,x) for x in locs]
+			except:
+				embed()
+			if dist < min_dist:
+				min_dist = min(min_dist,min(dist))
+
+		#embed()
+
+		return -weight*min_dist
+
+	#-----------------------------------------------
+
 	def heuristics(self, rle=None, first_alpha=ALPHA1, second_alpha=ALPHA2,
 				   time_alpha=10):
 
@@ -910,6 +957,7 @@ class Node():
 			## try to copy parent lastState. Then take action and store as current lastState.
 			## if that fails, replay from beginning and store as current lastState
 			try:
+				#embed()
 				vrle = cPickle.loads(cPickle.dumps(self.parent.rle, -1))
 				
 				if len(self.actionSeq)>0:
@@ -981,7 +1029,7 @@ class Node():
 
 		if len(self.actionSeq)>0 and self.do_rollout():
 			self.rolloutArray = self.rollout(self.rle)
-			print "in rollout"
+			#print "in rollout"
 
 		self.heuristicVal = self.heuristics()
 
@@ -1083,13 +1131,13 @@ def euclideanDist(a,b):
 #runs multiple planners in series with different sets of parameters
 def multi_plan():
 	t1 = time.time()
-	#gameFilename = "examples.continuousphysics.montezuma_new"
-	gameFilename = "examples.continuousphysics.collect_resource"
+	gameFilename = "examples.continuousphysics.montezuma_new"
+	#gameFilename = "examples.continuousphysics.collect_resource"
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
 
-	params = [(3,50),(3,75),(3,100),(3,120),(3,150)]
+	params = [(3,150),(3,200),(3,250),(3,300)]
 	result = []
 	for param in params: 
 		print param
@@ -1133,7 +1181,7 @@ if __name__ == "__main__":
 	#gameFilename = "examples.gridphysics.expt_exploration_exploitation"
 	#gameFilename = "examples.continuousphysics.ptsp_simple"
 	#gameFilename = "examples.continuousphysics.ptsp"
-	#gameFilename = "examples.continuousphysics.breakout"
+	gameFilename = "examples.continuousphysics.breakout"
 
 	
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
@@ -1143,10 +1191,13 @@ if __name__ == "__main__":
 	t1 = time.time()
 	p = WBP(rle, gameFilename)
 
-	#embed()
+	embed()
 
 	last, gameString_array, nodes = p.BFS()
 
 	print time.time()-t1
 
 	embed()
+	
+	#
+	#multi_plan()

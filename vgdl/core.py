@@ -1515,6 +1515,7 @@ class VGDLSprite(object):
         #print("middle")
         if not self.is_static and not self.only_active:
             #print("PASSIVE MOvEMEnt")
+            #print self.physics
             self.physics.passiveMovement(self) #something is printed here
             
         #print("end")
@@ -1530,7 +1531,10 @@ class VGDLSprite(object):
             print(speed)
             print(orientation[0]*speed,orientation[1]*speed)
             '''
+            #print self.rect
+            #print (orientation[0]*speed, orientation[1]*speed)
             self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
+            #print self.rect
             #self.rect = self.rect.move((1,-1))
             #print(self.rect)
             self.lastmove = 0

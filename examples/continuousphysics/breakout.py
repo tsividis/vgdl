@@ -4,7 +4,6 @@ BasicGame
         goal > Immovable color=RED
         avatar > HorizontalAvatar speed=0.25
         ball > Missile orientation=DOWN speed=15 color=ORANGE physicstype=NoFrictionPhysics
-        lost > Immovable color=BLACK
             
     TerminationSet # from the perspective of player 1 (on the left)
         SpriteCounter stype=goal limit=0 win=True   
@@ -16,12 +15,10 @@ BasicGame
         ball avatar > bounceDirection
         ball wall   > wallBounce
         avatar wall > stepBack
-        lost ball > killSprite
         ball EOS > killSprite
         
     LevelMapping
         g > goal
-        l > lost
         o > ball
         r > avatar
 """
@@ -42,7 +39,7 @@ w   r    w
 """
 
 
-
+'''
 level = """
 wwwwwww
 wgggggw
@@ -53,6 +50,7 @@ w  o  w
 w     w
 w  r  w
 """
+'''
 
 
 

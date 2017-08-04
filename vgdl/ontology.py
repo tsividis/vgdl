@@ -136,8 +136,11 @@ class ContinuousPhysics(GridPhysics):
     #friction = 0.
 
     def passiveMovement(self, sprite):
-        
-        if (sprite.speed != 0 or sprite.jumping) and hasattr(sprite, 'orientation'):#(why was this 0 to begin with???)
+        #if isinstance(sprite,Missile) and sprite.speed != 0:
+        #    print 'moving'
+            #embed()
+        #print sprite.speed
+        if (sprite.speed != 0 or hasattr(sprite,'jumping') and sprite.jumping) and hasattr(sprite, 'orientation'):#(why was this 0 to begin with???)
         #if (sprite.speed != 0) and hasattr(sprite, 'orientation'):
         #if True:
             #print("update pos")

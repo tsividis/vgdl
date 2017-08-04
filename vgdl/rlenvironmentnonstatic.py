@@ -117,6 +117,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         gameString = ""
         spriteOverlap = False # represents whether 2 sprites are on same location
         state = np.reshape(self._getSensors(), self.outdim)
+        #print state
         for i in range(self.outdim[0]):
             if indent:
                 gameString += "     "
@@ -248,6 +249,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             # 200002
             # 210002
             # 222222
+            
             ns = self.nsAllCells
             for i, n in enumerate(ns):
                 # check if the avatar is here
@@ -611,12 +613,18 @@ def createRLAliens( obsType=OBSERVATION_LOCAL ):
 
 def createRLInputGame(filename, obsType=OBSERVATION_GLOBAL):
     game_file = importlib.import_module(filename)
+    embed()
     try:    
         return RLEnvironmentNonStatic(game_file.game, game_file.level, \
                 observationType = obsType)
     except:
         return RLEnvironmentNonStatic(game_file.game, game_file.level1, \
             observationType = obsType)
+
+def createRLInputGameChangeLevel(filename, level):
+    game_file = importlib.import_module(filename)
+    return RLEnvironmentNonStatic(game_file.game, level, \
+                observationType = OBSERVATION_GLOBAL)
 
 def createRLInputGameFromStrings(game, level):
     return RLEnvironmentNonStatic(game, level, \
