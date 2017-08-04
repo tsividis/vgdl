@@ -85,6 +85,8 @@ class Agent:
 			# if self.fakeInteractionRules:/
 				# tempHypothesis.display()
 			VRLEs.append(self.initializeVrle(tempHypothesis))
+		# print("wrote theory to text")
+		# embed()
 
 		return VRLEs
 
@@ -421,6 +423,8 @@ class Agent:
 			if not rule.preconditions:
 				return True
 			else:
+				print("In matcheventblabla")
+				# embed()
 				if not all([p.check(self.rle.agentStatePrev) for p in list(rule.preconditions)]):
 					return False
 				else:
@@ -536,7 +540,7 @@ class Agent:
 			self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
 				not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
 
-			
+
 
 			if (not all([e in all_effects for e in effects])) or distributionsHaveChanged:
 				theory_change_flag = True
@@ -555,9 +559,6 @@ class Agent:
 			# embed()
 			hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
 			verbose=False, existingTheories=hypotheses))
-
-			if any(['GOLD' in e for e in event['effectList']]):
-				ipdb.set_trace()
 
 			if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
 				theory_change_flag = True

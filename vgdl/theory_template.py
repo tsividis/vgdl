@@ -479,7 +479,7 @@ class Theory(object):
 		if not limit:
 			new_precond = Precondition(
 			text='new precondition for '+resource,
-			item=resource, operator_name='>=', num=0)
+			item=resource, operator_name='>', num=0)
 		else:
 			new_precond = Precondition(
 			text='new precondition for '+resource,
@@ -758,7 +758,7 @@ class Theory(object):
 
 						# if newTheory:
 							# newTheories.append(newTheory)
-					ipdb.set_trace()
+					# ipdb.set_trace()
 
 				elif len(relevantInteractionSetRules)>len(relevantEvents):
 					# We want to add preconditions to rules we have already put in the theory
@@ -1670,13 +1670,15 @@ class Game(object):
 						self.nodes_eliminated +=1
 				try:
 					max_likelihood = np.unique([sum([h.likelihood(ts) for ts in timesteps]) for h in self.hypothesisSpace])[-1]
+					self.hypothesisSpace = [h for h in self.hypothesisSpace if sum([h.likelihood(ts) for ts in timesteps]) == max_likelihood]
 					# if len(timesteps)>6:
 						# print "first max_likelihood"
 						# embed()
-				except:
+				except IndexError:
+					# timesteps is an empty list
+					max_likelihood = 0
 					print "max_likelihood failed"
 					embed()
-				self.hypothesisSpace = [h for h in self.hypothesisSpace if sum([h.likelihood(ts) for ts in timesteps]) == max_likelihood]
 				if verbose:
 					print "New theories that passed likelihood tests: ", newTheoriesCount
 					print "New hyp space length: ", len(self.hypothesisSpace)
@@ -1845,7 +1847,12 @@ class Game(object):
 		timesteps, result = trace
 
 		## fiter for unique timesteps so that you don't waste time checking likelihoods, etc.
-		unique_timesteps = [timesteps[0]]
+		try:
+			unique_timesteps = [timesteps[0]]
+		except IndexError:
+			# timesteps is an empty list
+			unique_timesteps = []
+
 		for t in timesteps:
 			if t.events not in [timestep.events for timestep in unique_timesteps]:
 				unique_timesteps.append(t)
@@ -1872,9 +1879,13 @@ class Game(object):
 				theory.display()
 			self.DFSinduction(theory, timesteps, maxNumTheories, override=True, verbose=verbose) ##override anything that was in the original set.
 
+		try:
+			max_likelihood = np.unique([sum([h.likelihood(ts) for ts in timesteps]) for h in self.hypothesisSpace])[-1]
+			self.hypothesisSpace = [h for h in self.hypothesisSpace if sum([h.likelihood(ts) for ts in timesteps]) == max_likelihood]
+		except IndexError:
+			# timesteps is an empty list
+			max_likelihood = 0
 
-		max_likelihood = np.unique([sum([h.likelihood(ts) for ts in timesteps]) for h in self.hypothesisSpace])[-1]
-		self.hypothesisSpace = [h for h in self.hypothesisSpace if sum([h.likelihood(ts) for ts in timesteps]) == max_likelihood]
 
 		# if len(timesteps)>6:
 		# 	print "second max_likelihood"

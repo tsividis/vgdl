@@ -451,12 +451,19 @@ class Node():
 		for avatar in avatar_preconditions:
 			# print("in avatar preconditions")
 			# embed()
-			current_resources = rle._game.sprite_groups[avatar[0]][0].resources[list(avatar[1])[0].item]
-			if avatar[1].check(current_resources):
-			# if eval(str(rle._game.sprite_groups[avatar[0]][0].resources[list(avatar[1])[0].item]) +
-			 		# str(list(avatar[1])[0].operator_name)+
-					# str(list(avatar[1])[0].num)):
-				tmp_list.append(avatar)
+			precondition = list(avatar[1])[0]
+			item, num, negated, operator_name = precondition.item, precondition.num, precondition.negated, precondition.operator_name
+			if negated:
+				oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
+				true_operator = oppositeOperatorMap[operator_name]
+			else:
+				true_operator = operator_name
+			try:
+				current_resource = rle._game.sprite_groups[avatar[0]][0].resources[precondition.item]
+				if eval("{}{}{}".format(current_resource, true_operator, num)):
+					tmp_list.append(avatar)
+			except IndexError:
+				pass
 
 		for t in tmp_list:
 			killer_types.append(t[0])
