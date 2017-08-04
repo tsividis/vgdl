@@ -27,7 +27,7 @@ class Agent:
 		self.gameString = None
 		self.levelString = None
 		self.annealingFactor = 1.
-		self.shortHorizon = True
+		self.shortHorizon = False
 		if self.shortHorizon == True:
 			self.starting_max_nodes = 20
 			self.max_nodes_annealing = 1.005
@@ -299,6 +299,7 @@ class Agent:
 		return
 
 	def playEpisode(self, gameObject, flexible_goals=False):
+		from vgdl.util import manhattanDist
 
 		## Initialize external environment
 		self.initializeEnvironment()
@@ -354,7 +355,6 @@ class Agent:
 					if ended:
 						break
 
-
 					## Make sure you're far enough from unpredictable dangerous objects.
 
 					# Check for disparities between plan and reality
@@ -377,21 +377,26 @@ class Agent:
 
 					if self.avoid_danger:
 						try:
-							random_npcs = [rle._rect2pos(element.rect)
-								for objName in rle._game.sprite_groups.keys()
-								for element in rle._game.sprite_groups[objName]
-								if element not in rle._game.kill_list and
+							random_npc_positions = [self.rle._rect2pos(element.rect)
+								for objName in self.rle._game.sprite_groups.keys()
+								for element in self.rle._game.sprite_groups[objName]
+								if element not in self.rle._game.kill_list and
 								'RandomNPC' in str(element.__class__)]
 
+							avatar_positions = [self.rle._rect2pos(avatar.rect)
+							 	for avatar in self.rle._game.getAvatars()]
+
 							possiblePairList = [manhattanDist(avatar, random)
-								for avatar in self.rle._game.getAvatars()
-								for random in random_npcs]
+								for avatar in avatar_positions
+								for random in random_npc_positions]
 
 							if min(possiblePairList) < self.safeDistance:
 								print("Close to RandomNPC, regrounding")
 								break
 
-						except:
+						except ValueError: 
+							# print("error in avoid_danger: is the avatar dead?")
+							# embed()
 							pass
 
 				if self.shortHorizon:
@@ -630,7 +635,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pick_apples"
 	# filename = "examples.gridphysics.expt_exploration_exploitation"
 
-	filename = "examples.gridphysics.boulderdash"
+	# filename = "examples.gridphysics.boulderdash"
 
 	level_game_pairs = None
 	# Playing GVG-AI games
@@ -655,7 +660,9 @@ if __name__ == "__main__":
 
 	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
-	gvgname = "../gvgai/training_set_1/{}".format(gvggames[3])
+
+	gameName = gvggames[3]
+	gvgname = "../gvgai/training_set_1/{}".format(gameName)
 
 	gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
@@ -665,7 +672,7 @@ if __name__ == "__main__":
 		with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
 			level_game_pairs.append([gameString, level.read()])
 
-	agent = Agent('full', filename)
+	agent = Agent('full', gameName)
 
 	##then pass this down for multiple episodes
 	gameObject = None

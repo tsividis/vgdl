@@ -209,6 +209,7 @@ class WBP():
 	def rewardSelection(self, QReward, QNovelty):
 		# acceptableNodes = QReward
 		acceptableNodes = filter(lambda n:n.novelty<3, QReward)
+		acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
 		# if len(acceptableNodes)==0:
 			# acceptableNodes = QReward
 			# print "Removed filter"
@@ -420,7 +421,7 @@ class Node():
 			mult = -1
 		else:
 			compute_second_order = True
-			mult = .1
+			mult = .5
 
 		# Get all types that kill or transform stype (the target)
 		killer_types = [
@@ -781,7 +782,7 @@ class Node():
 					res = vrle.step(a)
 					relevantEvents = [t for t in res['effectList'] if t[0] == 'changeResource']
 					self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
-					terminal, win = vrle._isDone()
+					self.terminal, self.win = vrle._isDone()
 			except:
 				print "conditions met but copy failed"
 				embed()
@@ -790,15 +791,15 @@ class Node():
 			# print "copy failed; replaying from top"
 			vrle = cPickle.loads(cPickle.dumps(self.rle, -1))
 			# vrle = copy.deepcopy(self.rle)
-			terminal, win = vrle._isDone()
+			self.terminal, self.win = vrle._isDone()
 			i=0
-			while not terminal and len(self.actionSeq)>i:
+			while not self.terminal and len(self.actionSeq)>i:
 				a = self.actionSeq[i]
 				res = vrle.step(a)
 				self.metabolic_cost += self.metabolics(vrle, res['effectList'], a)
-				terminal, win = vrle._isDone()
+				self.terminal, self.win = vrle._isDone()
 				i += 1
-		return vrle, win
+		return vrle, self.win
 
 	def eval_profiler(self):
 		lp = LineProfiler()

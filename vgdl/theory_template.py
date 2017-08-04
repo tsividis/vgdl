@@ -1639,6 +1639,10 @@ class Game(object):
 		if len(self.hypothesisSpace) - 1 < maxNumTheories: # Subtracting one because of the initial hypothesis we must start out with to do induction
 			ts_index = min(theory.depth, len(timesteps)-1) ## don't try to access nonexistent timesteps.
 
+			if not timesteps:
+				# If timesteps is an empty list, do nothing
+				return
+
 			if verbose:
 				print "Current theory depth: ", ts_index
 				print "Explaining event", timesteps[ts_index].events
