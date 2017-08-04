@@ -444,6 +444,8 @@ class Node():
 
 		tmp_list = []
 
+		## If we have preconditions, find the objects that we should go to given that we satisfy the relevant preconditions. E.g., if we have a key and want to know what
+		## happens with item x, go to it.
 		for avatar in avatar_preconditions:
 
 			precondition = list(avatar[1])[0]
@@ -466,7 +468,6 @@ class Node():
 
 		# Get attributes from terminationSet
 		limit = term.termination.limit
-		# embed()
 
 		if 'SpawnPoint' in str(theory.classes[stype][0].vgdlType) and not killer_types:
 			distance_to_goal = 0
@@ -485,14 +486,10 @@ class Node():
 		if distance_to_goal!=0:
 			val -= float(mult * first_alpha) / distance_to_goal**2
 		else:
-			val -= mult*first_alpha
-
-		# val += mult * first_alpha * distance_to_goal
+			val -= mult*first_alpha ## we shouldn't go in here, as if we've actually destroyed the relevant sprite we'll trigger a win condition.
 
 		# print "stype, n_stypes, distance_to_goal, val", stype, n_stypes, distance_to_goal, val
 		if compute_second_order:
-
-
 			## Get all positions of objects whose type is in killer_types; compute minimum distance
 			## of each to the stypes we have to destroy. Return min over all mins.
 			# embed()

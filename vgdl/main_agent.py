@@ -29,12 +29,12 @@ class Agent:
 		self.annealingFactor = 1.
 		self.shortHorizon = True
 		if self.shortHorizon == True:
-			self.starting_max_nodes = 100
+			self.starting_max_nodes = 20
 			self.max_nodes_annealing = 1.005
 		else:
 			self.starting_max_nodes = 10000
 			self.max_nodes_annealing = 10
-		self.regrounding = 20
+		self.regrounding = 7
 		self.avoid_danger = True
 		self.safeDistance = 3
 		self.hypotheses = []
@@ -655,7 +655,7 @@ if __name__ == "__main__":
 
 	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
-	gvgname = "../gvgai/training_set_1/{}".format(gvggames[9])
+	gvgname = "../gvgai/training_set_1/{}".format(gvggames[3])
 
 	gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
