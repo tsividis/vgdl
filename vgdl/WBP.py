@@ -452,7 +452,8 @@ class Node():
 			# print("in avatar preconditions")
 			# embed()
 			current_resources = rle._game.sprite_groups[avatar[0]][0].resources[list(avatar[1])[0].item]
-			if avatar[1].check(current_resources):
+			# embed()
+			if list(avatar[1]).check(current_resources):
 			# if eval(str(rle._game.sprite_groups[avatar[0]][0].resources[list(avatar[1])[0].item]) +
 			 		# str(list(avatar[1])[0].operator_name)+
 					# str(list(avatar[1])[0].num)):
