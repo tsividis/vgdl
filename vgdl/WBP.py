@@ -218,6 +218,7 @@ class WBP():
 		#this stuff is not generalizable and hardcoded to get montezuma to work for now. 
 		#Allows for ladder avatars to have part of their body inside a wall
 		if inWall:
+			'''
 			wall_loc = [(grid1[0] + i,grid1[1] + j) for i in [0,1] for j in [0,1] if 
 				(grid1[0] + i,grid1[1] + j) not in self.graph and i - x1 < 1 and j - y1 < 1]
 			if not wall_loc:
@@ -251,6 +252,9 @@ class WBP():
 					return sys.maxint
 
 			return self.geoDist(loc2,loc1)
+			'''
+			return euclideanDist(loc1,loc2) 
+			#this is wrong and only works for breakout but i dont want to worry about this right now
 					
 		return dist
 
@@ -674,6 +678,7 @@ class Node():
 			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
 			# 	metabolic_cost += 0.3
 		return 0.0
+		#print metabolic_cost
 		#return metabolic_cost
 
 	def rollout(self, vrle):
@@ -869,7 +874,7 @@ class Node():
 
 	#--------------------------- a bit of a cheat, should remove
 
-	def objcollect_val(self, theory, rle, weight=0.5):
+	def objcollect_val(self, theory, rle, weight=0.005):
 		objs = rle._game.sprite_groups.keys()
 		for inter in theory.interactionSet:
 			if inter.interaction == 'killSprite' and inter.slot1 == 'avatar':
@@ -880,16 +885,20 @@ class Node():
 
 		avatar = self.WBP.findAvatarInRLE(rle)
 
-		min_dist = sys.maxint
+		min_dist = 100
 		
 		for obj in objs:
 			locs = self.WBP.findObjectsInRLE(rle,obj)
 			try:
 				dist = [self.WBP.geoDist(avatar,x) for x in locs]
+				if dist:
+					val = min(dist)
+					if val < min_dist:
+						min_dist = min(min_dist,val)
 			except:
-				embed()
-			if dist < min_dist:
-				min_dist = min(min_dist,min(dist))
+				print 'no distance available, or unable to calculate'
+				pass
+			
 
 		#embed()
 
@@ -940,6 +949,8 @@ class Node():
 
 		if avatarNoveltyVals:
 			heuristicVal += max(avatarNoveltyVals)
+
+		heuristicVal += self.objcollect_val(theory, rle)
 
 		return heuristicVal
 
@@ -1029,13 +1040,13 @@ class Node():
 
 		if len(self.actionSeq)>0 and self.do_rollout():
 			self.rolloutArray = self.rollout(self.rle)
-			#print "in rollout"
+			print "in rollout"
 
 		self.heuristicVal = self.heuristics()
 
 		# print self.lastState._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost
-		self.intrinsic_reward = self.rle._game.score + self.heuristicVal - \
-		self.metabolic_cost+sum(self.rolloutArray) + DEPTH_WEIGHT*self.depth
+		self.intrinsic_reward = self.rle._game.score + self.heuristicVal\
+		- self.metabolic_cost+sum(self.rolloutArray) + DEPTH_WEIGHT*self.depth
 		
 		return self.win
 

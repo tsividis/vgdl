@@ -91,6 +91,8 @@ class GridPhysics():
                 speed = 1.0
             else:
                 speed = float(sprite.speed)
+
+        #print speed
         if speed != 0 and action is not None:
             sprite._updatePos(action, speed * self.gridsize[0])
 
@@ -694,6 +696,29 @@ class HorizontalAvatar(MovingAvatar):
         action = self._readAction(game)
         if action in [RIGHT, LEFT]:
             self.physics.activeMovement(self, action)
+
+class Paddle(HorizontalAvatar):
+    last_action = None
+    c1 = 0.2 #None, move
+    c2 = 0.1 #move, none
+    c3 = 0.3 #same move
+    c4 = -0.1 #opposite move
+    def update(self, game):
+        VGDLSprite.update(self, game)
+        action = self._readAction(game)
+        if action in [RIGHT,LEFT]:
+            if self.last_action == None:
+                self.speed = self.c1
+            elif self.last_action == action:
+                self.speed = self.c3
+            else: 
+                self.speed = self.c4
+        elif self.last_action in [RIGHT, LEFT]:
+            self.speed = self.c2
+        #print action
+        #print self.last_action
+        self.last_action = action
+        self.physics.activeMovement(self, action)    
 
 class VerticalAvatar(MovingAvatar):
     """ Only vertical moves.  """
