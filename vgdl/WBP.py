@@ -131,8 +131,8 @@ class WBP():
 			## on the game state.
 			if (len(rle._game.sprite_groups[k])>0 and
 					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and
-					('Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) or
-						('Random' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)))):
+					('Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType))): #or
+						# ('Random' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)))):
 				pass
 			else:
 				for o in rle._game.sprite_groups[k]:
@@ -219,8 +219,8 @@ class WBP():
 			current = bestNodes.pop(0)
 		except:
 			print('reward selection error')
-			embed()
-			return None
+			# embed()
+			return 'pickMaxNode'
 		QReward.remove(current)
 		try:
 			QNovelty.remove(current)
@@ -253,13 +253,24 @@ class WBP():
 			"""
 			# current = self.noveltySelection(QNovelty, QReward)
 			current = self.rewardSelection(QReward, QNovelty)
+
 			# print("node chosen has position score {}".format(current.position_score()))
-
-
 			# print embed()
-			if current is None:
+			if current in [None, 'pickMaxNode']:
+				node = max(visited, key=lambda n:n.intrinsic_reward)
+				
+				parentNode = copy.deepcopy(node)
+				self.solution = node.actionSeq
+
+				gameString_array = []
+				while parentNode is not None:
+					gameString_array.append(parentNode.rle.show())
+					parentNode = parentNode.parent
+				self.gameString_array = gameString_array[::-1]
+
 				self.quitting = True
-				return None
+				# return None
+				return node, gameString_array
 
 			try:
 				(x, y) = np.array((current.rle._game.getAvatars()[0].rect.x,
@@ -421,7 +432,7 @@ class Node():
 			mult = -1
 		else:
 			compute_second_order = True
-			mult = .5
+			mult = 10
 
 		# Get all types that kill or transform stype (the target)
 		killer_types = [
@@ -431,6 +442,15 @@ class Node():
 				 not inter.generic and
 				 not inter.preconditions
 				and inter.slot1 == stype)]
+		
+		## If you can shoot a Flicker, give yourself credit for being close to things it kills, but remove credit for that Flicker being close to those things.
+		try:
+			if (rle._game.getAvatars()[0].stype in killer_types and 
+				'Flicker' in str(theory.spriteObjects[rle._game.sprite_groups[rle._game.getAvatars()[0].stype][0].colorName].vgdlType)):
+					killer_types.append(rle._game.getAvatars()[0].name)
+					killer_types.remove(rle._game.getAvatars()[0].stype)
+		except (IndexError, AttributeError) as e:
+			pass
 
 		# This list comprehension checks whether the avatar kills the stype with a preconditioned
 		# interaction, and if so adds 'avatar' to the list as well as the precondition for that rule
@@ -716,9 +736,9 @@ class Node():
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=5000, second_alpha=5)
-				# if spritecounter_val!=0:
-					# print("spritecounter_val for {} is equal to {}".format(
-						# term.termination.stype, spritecounter_val))
+				if spritecounter_val!=0:
+					print("spritecounter_val for {} is equal to {}".format(
+						term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):

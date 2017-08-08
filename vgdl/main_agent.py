@@ -37,6 +37,7 @@ class Agent:
 		self.regrounding = 7
 		self.avoid_danger = True
 		self.safeDistance = 3
+		self.max_quits = 3
 		self.hypotheses = []
 		self.symbolDict = None
 		self.finalEventList = []
@@ -148,6 +149,7 @@ class Agent:
 		flexible_goals = False
 		for n_level, level_game in enumerate(level_game_pairs):
 
+			self.quits = 0
 			print("Playing level {}".format(n_level))
 			(self.gameString, self.levelString) = level_game
 			self.max_nodes = self.starting_max_nodes
@@ -333,7 +335,11 @@ class Agent:
 				seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon)
 			p.BFS()
 			solution = p.solution
-			quitting = p.quitting
+			
+			self.quits += p.quitting #1 if p.quitting else 0
+
+			quitting = self.quits>self.max_quits
+
 			gameString_array = p.gameString_array
 			if solution:
 				print "got solution of length", len(solution)
@@ -661,7 +667,7 @@ if __name__ == "__main__":
 	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-	gameName = gvggames[3]
+	gameName = gvggames[5]
 	gvgname = "../gvgai/training_set_1/{}".format(gameName)
 
 	gameString = read_gvgai_game('{}.txt'.format(gvgname))
