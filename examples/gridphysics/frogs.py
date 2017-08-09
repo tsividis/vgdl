@@ -49,10 +49,10 @@ game = """
 BasicGame
     SpriteSet
         forest > SpawnPoint stype=log prob=0.4  cooldown=10 color=BLACK
+        log    > Missile   orientation=LEFT  speed=0.5 color=BROWN
         structure > Immovable
             water > color=BLUE
             goal  > color=GREEN
-        log    > Missile   orientation=LEFT  speed=0.5 color=BROWN
         safety > Resource  limit=4 color=BROWN
         truck  > Missile   orientation=RIGHT 
             slowtruck  > speed=.5 color=RED

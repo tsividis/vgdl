@@ -47,7 +47,6 @@ class WBP():
 		self.seen_limits = seen_limits
 		self.objIDs = {}
 		self.solution = None
-		self.maxNumObjects = 6
 		self.trackTokens = False
 		self.vecSize = None
 		self.addWaitAction = False
@@ -81,7 +80,7 @@ class WBP():
 		self.winning_states = []
 		self.trueAtomsIW1 = []
 
-		## Find objects we don't want to track (i.e., non-moving immovables.)
+		## Ignore objects we don't want to track (i.e., non-moving immovables.)
 		self.objectsToTrack = []
 		for k in rle._game.sprite_groups.keys():
 			if k in self.theory.classes.keys() and ('Resource' or 'Immovable') in str(self.theory.classes[k][0].vgdlType) and not \
@@ -124,8 +123,8 @@ class WBP():
 	def calculateAtoms(self, rle):
 		lst = []
 
-		# for k in self.objectsToTrack:
-		for k in self.rle._game.sprite_groups.keys():
+		for k in self.objectsToTrack:
+		# for k in self.rle._game.sprite_groups.keys():
 			## Don't track Flicker in atoms. The point is that the Flicker should have an effect on other objects, so atom novelty that would have been
 			## a function of the Flicker's presence is being taken care of by that. Otherwise the agent can keep exploring states that have no actual effect
 			## on the game state.
@@ -169,8 +168,8 @@ class WBP():
 			## on the game state.
 			if (len(rle._game.sprite_groups[k])>0 and
 					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and
-					('Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) or
-						('Random' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)))):
+					('Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType))): #or
+						# ('Random' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)))):
 				pass
 			else:
 				for o in sorted(rle._game.sprite_groups[k], key=lambda s:s.ID):
@@ -432,7 +431,7 @@ class Node():
 			mult = -1
 		else:
 			compute_second_order = True
-			mult = 10
+			mult = .1
 
 		# Get all types that kill or transform stype (the target)
 		killer_types = [
@@ -554,6 +553,7 @@ class Node():
 
 			# kill_positions = np.concatenate([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types])
 			resource_names = [list(resource[1])[0].item for resource in avatar_preconditions]
+			resource_names = []
 			# if resource_names:
 				# embed()
 			try:
@@ -564,7 +564,8 @@ class Node():
 
 			resource_yielder_names = [[r for r in ryn if r] for ryn in resource_yielder_names] ## Remove 'None' yielded by last else condition above
 
-			resource_positions = [np.hstack([self.WBP.findObjectsInRLE(rle, yielder) for yielder in yielders]) for yielders in resource_yielder_names]
+			resource_positions = [np.concatenate([self.WBP.findObjectsInRLE(rle, yielder) for yielder in yielders]) for yielders in resource_yielder_names]
+
 			resource_limits = np.array([list(resource[1])[0].num + 1
 				if list(resource[1])[0].operator_name == '>'
 				else list(resource[1])[0].num
@@ -581,9 +582,12 @@ class Node():
 					# were not yet observed will have their distance penalized twice
 					# as much when none of those objects is an avatar. This implies
 					# that avatar novel interactions will be favored over other ones
-					possiblePairList = np.array([manhattanDist(obj1, obj2)
-						for obj1 in obj1_positions
-						for obj2 in obj2_positions])
+					try:
+						possiblePairList = np.array([manhattanDist(obj1, obj2)
+							for obj1 in obj1_positions
+							for obj2 in obj2_positions])
+					except:
+						embed()
 
 					precondition_distances.append(min(possiblePairList))
 

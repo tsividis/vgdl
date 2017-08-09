@@ -1141,8 +1141,8 @@ class NoveltyTermination(Termination):
                         name2 = self.s2
                 if name1==self.s1 and name2==self.s2:
                     # embed()
-                    print("NoveltyTermination with {} and {}".format(
-                        name1, name2))
+                    # print("NoveltyTermination with {} and {}".format(
+                        # name1, name2))
                     # if name1=='c5' and name2=='avatar':
                         # embed()
                     if id_not_found:

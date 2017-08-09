@@ -32,9 +32,9 @@ class Agent:
 			self.starting_max_nodes = 20
 			self.max_nodes_annealing = 1.005
 		else:
-			self.starting_max_nodes = 10000
+			self.starting_max_nodes = 1000
 			self.max_nodes_annealing = 10
-		self.regrounding = 7
+		self.regrounding = 1
 		self.avoid_danger = True
 		self.safeDistance = 3
 		self.max_quits = 3
@@ -419,6 +419,8 @@ class Agent:
 
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
+			if ended and not win:
+				embed()
 
 		score = self.rle._game.score
 		self.updateMemory(self.rle)
@@ -668,7 +670,7 @@ if __name__ == "__main__":
 	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-	gameName = gvggames[5]
+	gameName = gvggames[4]
 	gvgname = "../gvgai/training_set_1/{}".format(gameName)
 
 	gameString = read_gvgai_game('{}.txt'.format(gvgname))
