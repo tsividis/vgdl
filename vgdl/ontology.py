@@ -1110,7 +1110,7 @@ class NoveltyTermination(Termination):
                     name1 = game.all_objects[e[1]]['sprite'].name
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
-                        name1 = 'ENDOFSCREEN'
+                        name1 = 'EOS'
                     elif e[1] in [obj.ID for obj in game.kill_list]:
                         name1 = [obj.name for obj in game.kill_list
                             if obj.ID==e[1]][0]
@@ -1126,7 +1126,7 @@ class NoveltyTermination(Termination):
                     name2 = game.all_objects[e[2]]['sprite'].name
                 except KeyError:
                     if e[2]=='ENDOFSCREEN':
-                        name2 = 'ENDOFSCREEN'
+                        name2 = 'EOS'
                     elif e[2] in [obj.ID for obj in game.kill_list]:
                         # candidates = [obj for obj in game.kill_list]
                         name2 = [obj.name for obj in game.kill_list
@@ -1147,6 +1147,30 @@ class NoveltyTermination(Termination):
                         # embed()
                     if id_not_found:
                         # embed()
+                        pass
+                    return True, self.win
+            elif e[2]=='ENDOFSCREEN':
+                name2 = 'EOS'
+                try:
+                    name1 = game.all_objects[e[1]]['sprite'].name
+                except KeyError:
+                    if e[1]=='ENDOFSCREEN':
+                        name1 = 'EOS'
+                    elif e[1] in [obj.ID for obj in game.kill_list]:
+                        name1 = [obj.name for obj in game.kill_list
+                            if obj.ID==e[1]][0]
+                    elif e[1] in game.getObjects().keys():
+                        name1 = game.getObjects()[e[1]]['sprite'].name
+                    else:
+                        print "Couldn't find object in NoveltyTermination"
+                        id_not_found = True
+                        # embed()
+                        # Default to slot1
+                        name1 = self.s1
+                # self.s2 returns a type for the EOS for some reason, so the
+                # check has to be performed like this
+                if name1==self.s1 and name2 in str(self.s2):
+                    if id_not_found:
                         pass
                     return True, self.win
         return False, None

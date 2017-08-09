@@ -1007,6 +1007,9 @@ class Theory(object):
 					if (all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 						all([not terminationRule.__eq__(t) for t in self.falsified])):
 						self.terminationSet.append(terminationRule)
+			if rule.slot2 == 'EOS' and rule.generic:
+				terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
+				self.terminationSet.append(terminationRule)
 
 		self.terminationSet = sorted(self.terminationSet, key=lambda t:t.ruleType)
 
@@ -1779,7 +1782,7 @@ class Game(object):
 		# 		rule = InteractionRule('killSprite', s1.className, s2.className, {}, set(), generic=True)
 		# 		T.interactionSet.append(rule)
 
-		for s1 in nonAvatars:
+		for s1 in nonAvatars + [avatar]:
 			## append EOS rule
 			rule = InteractionRule('stepBack', s1.className, 'EOS', {}, set(), generic=True)
 			T.interactionSet.append(rule)
