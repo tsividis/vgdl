@@ -864,7 +864,7 @@ class MarioAvatar(InertialAvatar):
         # this is pretty hacky. What if sprite doesn't move very fast?
         if self.wait_step > 2:
             self.jumping = False
-        
+
         self.physics.activeMovement(self, action)
         #changes speed
 
@@ -1082,7 +1082,7 @@ class NoveltyTermination(Termination):
         self.win = win
         self.name = 'NoveltyTermination'
         self.args = args
-        if self.args is not None:  
+        if self.args is not None:
             self.args = list(self.args)[0]
 
     def isDone(self, game):
@@ -1094,7 +1094,7 @@ class NoveltyTermination(Termination):
                 oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
                 true_operator = oppositeOperatorMap[operator_name]
             else:
-                true_operator = operator_name            
+                true_operator = operator_name
             try:
                 resource_str = str(game.getAvatars()[0].resources[item])
             except IndexError:
@@ -1110,7 +1110,7 @@ class NoveltyTermination(Termination):
                     name1 = game.all_objects[e[1]]['sprite'].name
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
-                        name1 = 'ENDOFSCREEN'
+                        name1 = 'EOS'
                     elif e[1] in [obj.ID for obj in game.kill_list]:
                         name1 = [obj.name for obj in game.kill_list
                             if obj.ID==e[1]][0]
@@ -1126,7 +1126,7 @@ class NoveltyTermination(Termination):
                     name2 = game.all_objects[e[2]]['sprite'].name
                 except KeyError:
                     if e[2]=='ENDOFSCREEN':
-                        name2 = 'ENDOFSCREEN'
+                        name2 = 'EOS'
                     elif e[2] in [obj.ID for obj in game.kill_list]:
                         # candidates = [obj for obj in game.kill_list]
                         name2 = [obj.name for obj in game.kill_list
@@ -1147,6 +1147,30 @@ class NoveltyTermination(Termination):
                         # embed()
                     if id_not_found:
                         # embed()
+                        pass
+                    return True, self.win
+            elif e[2]=='ENDOFSCREEN':
+                name2 = 'EOS'
+                try:
+                    name1 = game.all_objects[e[1]]['sprite'].name
+                except KeyError:
+                    if e[1]=='ENDOFSCREEN':
+                        name1 = 'EOS'
+                    elif e[1] in [obj.ID for obj in game.kill_list]:
+                        name1 = [obj.name for obj in game.kill_list
+                            if obj.ID==e[1]][0]
+                    elif e[1] in game.getObjects().keys():
+                        name1 = game.getObjects()[e[1]]['sprite'].name
+                    else:
+                        print "Couldn't find object in NoveltyTermination"
+                        id_not_found = True
+                        # embed()
+                        # Default to slot1
+                        name1 = self.s1
+                # self.s2 returns a type for the EOS for some reason, so the
+                # check has to be performed like this
+                if name1==self.s1 and name2 in str(self.s2):
+                    if id_not_found:
                         pass
                     return True, self.win
         return False, None
@@ -2030,12 +2054,14 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             try:
                 ## Add avatar, and add the attached arguments, i.e., what the avatar shoots.
                 sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
-                
+
                 ## Get the object the Avatar shoots, add that.
                 ao = game.sprite_constr[all_objects[k]['sprite'].stype]
                 ao_vgdl_type = ao[0]
                 ao_color = colorDict[str(ao[1]['color'])]
-                sample.append(Sprite(vgdlType=ao_vgdl_type, color=ao_color, className=all_objects[k]['sprite'].stype, args={'singleton':'True'}))
+                ao_args = ao[1]
+                ao_args.update({'singleton': 'True'})
+                sample.append(Sprite(vgdlType=ao_vgdl_type, color=ao_color, className=all_objects[k]['sprite'].stype, args=ao_args))
 
                 # sample.append(Sprite(vgdlType=Flicker, color='BLUE', className=all_objects[k]['sprite'].stype, args={'singleton':'True'}))
                 exceptions.append(ao_color)
@@ -2046,7 +2072,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                 sample.append(Sprite(vgdlType=MovingAvatar, color=all_objects[k]['type']['color']))
 
     ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
-    types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions)) ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately 
+    types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions)) ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately
                                                                                                     ## and not doing inference about it.
 
     for obj_type in types:
@@ -2077,10 +2103,10 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         s_probs = softmax(probs, .01)
         index = np.random.choice(range(len(probs)), p=s_probs)
         sprite_type = lst[index] ##you might also want to return sprite_possibilities[lst[index]], which is the associated probability.
-        
+
         color = obj_type
         # color = all_objects[k]['type']['color']
-        
+
         if sprite_type=='OTHER':
             from ontology import RandomNPC
             sprite_type = RandomNPC
@@ -2125,7 +2151,7 @@ def checkIfDistributionsHaveChanged(game, spriteUpdateDict, bestSpriteTypeDict):
     changes = False
     exceptions = []
 
-    ## We don't do sprite inference for the avatar and for Flak 
+    ## We don't do sprite inference for the avatar and for Flak
     non_avatar_keys = []
     for k in all_objects.keys():
         if all_objects[k]['sprite'].name is not 'avatar':
@@ -2134,7 +2160,7 @@ def checkIfDistributionsHaveChanged(game, spriteUpdateDict, bestSpriteTypeDict):
             exceptions.append('BLUE')
 
     ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
-    types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions)) ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately 
+    types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions)) ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately
                                                                                                     ## and not doing inference about it.
     for obj_type in types:
         ## find the most-updated object, use that one for the sprite hypothesis.
@@ -2162,9 +2188,9 @@ def checkIfDistributionsHaveChanged(game, spriteUpdateDict, bestSpriteTypeDict):
         newDistribution = sprite_possibilities
 
     return False
-    # for k in [key for key in distributionAtT1.keys() if 
-    #         key in game.all_objects.keys() and 
-    #         game.all_objects[key]['features']['color'] not in game.exceptedObjects and 
+    # for k in [key for key in distributionAtT1.keys() if
+    #         key in game.all_objects.keys() and
+    #         game.all_objects[key]['features']['color'] not in game.exceptedObjects and
     #         key in distributionAtT2.keys()]:
     #     if game.all_objects[k]['features']['color'] not in game.exceptedObjects and k in distributionAtT2.keys():
     #         spriteDistribution1, spriteDistribution2 = distributionAtT1[k], distributionAtT2[k]
@@ -2177,9 +2203,9 @@ def checkIfDistributionsHaveChanged(game, spriteUpdateDict, bestSpriteTypeDict):
 #     KLthreshold = .00001
 
 #     changes = False
-#     for k in [key for key in distributionAtT1.keys() if 
-#             key in game.all_objects.keys() and 
-#             game.all_objects[key]['features']['color'] not in game.exceptedObjects and 
+#     for k in [key for key in distributionAtT1.keys() if
+#             key in game.all_objects.keys() and
+#             game.all_objects[key]['features']['color'] not in game.exceptedObjects and
 #             key in distributionAtT2.keys()]:
 #         if game.all_objects[k]['features']['color'] not in game.exceptedObjects and k in distributionAtT2.keys():
 #             spriteDistribution1, spriteDistribution2 = distributionAtT1[k], distributionAtT2[k]
