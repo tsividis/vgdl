@@ -268,8 +268,8 @@ class BasicGame(object):
         # assert self.width%2 == 0, "Level has odd-numbered width."
         # assert self.height%2==0, "Level has odd-numbered height."
         # rescale pixels per block to adapt to the level
-        self.block_size = max(2,int(800./max(self.width, self.height)))
-        # self.block_size = max(2,int(400./max(self.width, self.height)))
+        # self.block_size = max(2,int(800./max(self.width, self.height)))
+        self.block_size = 30
         self.screensize = (self.width*self.block_size, self.height*self.block_size)
 
         # set up resources

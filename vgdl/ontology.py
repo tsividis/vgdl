@@ -2043,8 +2043,9 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
     ##remove avatar. For now let's just assume we know which one it is.
     ##TODO: You need to do avatarInduction, unless there's a generic type that can cover all types.
     non_avatar_keys = []
+
     for k in all_objects.keys():
-        if all_objects[k]['sprite'].name is not 'avatar':
+        if all_objects[k]['sprite'].name != 'avatar':
             non_avatar_keys.append(k)
         else:
             from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
@@ -2188,31 +2189,6 @@ def checkIfDistributionsHaveChanged(game, spriteUpdateDict, bestSpriteTypeDict):
         newDistribution = sprite_possibilities
 
     return False
-    # for k in [key for key in distributionAtT1.keys() if
-    #         key in game.all_objects.keys() and
-    #         game.all_objects[key]['features']['color'] not in game.exceptedObjects and
-    #         key in distributionAtT2.keys()]:
-    #     if game.all_objects[k]['features']['color'] not in game.exceptedObjects and k in distributionAtT2.keys():
-    #         spriteDistribution1, spriteDistribution2 = distributionAtT1[k], distributionAtT2[k]
-    #         # print k, getKL(spriteDistribution1, spriteDistribution2)
-    #         if getKL(spriteDistribution1, spriteDistribution2) > KLthreshold:
-    #             return True
-    # return False
-
-# def checkIfDistributionsHaveChanged(game, distributionAtT1, distributionAtT2):
-#     KLthreshold = .00001
-
-#     changes = False
-#     for k in [key for key in distributionAtT1.keys() if
-#             key in game.all_objects.keys() and
-#             game.all_objects[key]['features']['color'] not in game.exceptedObjects and
-#             key in distributionAtT2.keys()]:
-#         if game.all_objects[k]['features']['color'] not in game.exceptedObjects and k in distributionAtT2.keys():
-#             spriteDistribution1, spriteDistribution2 = distributionAtT1[k], distributionAtT2[k]
-#             # print k, getKL(spriteDistribution1, spriteDistribution2)
-#             if getKL(spriteDistribution1, spriteDistribution2) > KLthreshold:
-#                 return True
-#     return False
 
 def getKL(spriteDistribution1, spriteDistribution2):
     d1, d2 = [v['prob'] for v in spriteDistribution1.values()], [v['prob'] for v in spriteDistribution2.values()]
@@ -2238,12 +2214,12 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
     ## Prep for sprite induction
         for sprite in game.getObjects():
             distributionInitSetup(game, sprite)
-
     elif step==1:
         ## Sprite Induction Part 1:
         ## every time you act, make sure there aren't new objects
         ## if there are, update spriteDistribution etc.
         objects = game.getObjects()
+
         # print "step1"
         # print objects.keys()
         for sprite in objects:

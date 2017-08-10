@@ -56,11 +56,34 @@ class Agent:
 		self.rle = self.rleCreateFunc()
 		return
 
+	def getSpritesByColor(self, rle, color):
+		for k in rle._game.sprite_groups.keys():
+			if rle._game.sprite_groups[k] and rle._game.sprite_groups[k][0].colorName==color:
+				return rle._game.sprite_groups[k]
+		return None
+
+	def findNearestSprite(self, sprite, spriteList):
+		## returns the sprite in spriteList whose location best matches the location of sprite.
+		return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
+
+	def setSpritePositions(self, rle, Vrle):
+		## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
+		for k in Vrle._game.sprite_groups.keys():
+			if Vrle._game.sprite_groups[k]:
+				color = Vrle._game.sprite_groups[k][0].colorName
+				matchingSpritesInRLE = self.getSpritesByColor(rle, color)
+				for sprite in Vrle._game.sprite_groups[k]:
+					matchingSprite = self.findNearestSprite(sprite, matchingSpritesInRLE)
+					sprite.rect = matchingSprite.rect
+		return
+
+
 	def initializeVrle(self, hypothesis):
 		## World in agent's head given 'hypothesis', including object goal
 		gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
 				 "./examples/gridphysics/theorytest.py")
 		Vrle = createMindEnv(gameString, levelString, output=False)
+		self.setSpritePositions(self.rle, Vrle)
 		Vrle._game.getAvatars()[0].resources = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
 		try:
 			Vrle._game.getAvatars()[0].orientation = copy.deepcopy(self.rle._game.getAvatars()[0].orientation)
@@ -334,7 +357,7 @@ class Agent:
 
 			p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
 				seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon)
-			p.BFS()
+			bestNode, gameStringArray = p.BFS()
 			solution = p.solution
 			
 			self.quits += p.quitting #1 if p.quitting else 0
@@ -350,6 +373,9 @@ class Agent:
 			if not quitting:
 				for i, action in enumerate(solution):
 					self.hypotheses[0].dryingPaint = set()
+
+					# if i==len(solution)-1:
+					# 	embed()
 					hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
 						run_induction = not flexible_goals)
 					print "theory_change_flag", theory_change_flag
@@ -420,6 +446,7 @@ class Agent:
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
 			if ended and not win:
+				print "lost game. embedding"
 				embed()
 
 		score = self.rle._game.score

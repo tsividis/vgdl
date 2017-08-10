@@ -1735,7 +1735,6 @@ class Game(object):
 			T.initializeSpriteSet(vgdlSpriteParse = vgdlSpriteParse, spriteInductionResult=False)
 
 		# Assign class names
-
 		avatar = [o for o in T.spriteSet if o.vgdlType in AvatarTypes][0]
 		nonAvatars = [o for o in T.spriteSet if o.vgdlType not in AvatarTypes and o.color!='ENDOFSCREEN']
 		# wall = [o for o in T.spriteSet if o.color == "BLACK" or o.color=="GRAY"][0]
