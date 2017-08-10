@@ -2564,7 +2564,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 			# multi sprite counter rule
 			theoryString += "\t\tMultiSpriteCounter "
 			for i in range(len(terminationRule.termination.stypes)):
-				theoryString += "stype%i = %s " % (i, terminationRule.termination.stypes[i])
+				theoryString += "stype%i=%s " % (i, terminationRule.termination.stypes[i])
 
 			theoryString += "limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
 

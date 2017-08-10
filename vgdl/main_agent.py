@@ -34,7 +34,7 @@ class Agent:
 		else:
 			self.starting_max_nodes = 1000
 			self.max_nodes_annealing = 10
-		self.regrounding = 1
+		self.regrounding = 0
 		self.avoid_danger = True
 		self.safeDistance = 3
 		self.max_quits = 3
@@ -445,9 +445,9 @@ class Agent:
 
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
-			if ended and not win:
-				print "lost game. embedding"
-				embed()
+			# if ended and not win:
+			# 	print "lost game. embedding"
+			# 	embed()
 
 		score = self.rle._game.score
 		self.updateMemory(self.rle)
