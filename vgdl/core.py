@@ -289,11 +289,13 @@ class VGDLParser(object):
 
 
     @staticmethod
-    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", padding=0):
+    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", padding=0,positions=None):
         """ Parses the game and level map strings, and starts the game. """
         g = VGDLParser().parseGame(game_str)
-
-        g.buildLevel(map_str)
+        if positions is not None:
+            g.buildLevelFromPos(positions)
+        else:
+            g.buildLevel(map_str)
         g.uiud = uuid.uuid4()
         if playback_states:
             g.playback_states = playback_states
@@ -532,6 +534,7 @@ class BasicGame(object):
         # print "in buildLevel"
         # embed()
         # create sprites
+        embed()
         for row, l in enumerate(lines):
             for col, c in enumerate(l):
                 if c in self.char_mapping:
@@ -551,6 +554,45 @@ class BasicGame(object):
         # guarantee that avatar is always visible
         self.sprite_order.remove('avatar')
         self.sprite_order.append('avatar')
+
+    def buildLevelFromPos(self, positions):
+        from ontology import stochastic_effects
+        dims = positions[0]
+        self.width = dims[0]
+        self.height = dims[1]
+
+        pos = positions[1]
+
+        self.block_size = max(2,int(800./max(self.width, self.height)))
+        self.screensize = (self.width*self.block_size, self.height*self.block_size)
+
+        for res_type, (sclass, args, _) in self.sprite_constr.iteritems():
+            if issubclass(sclass, Resource):
+                if 'res_type' in args:
+                    res_type = args['res_type']
+                if 'color' in args:
+                    self.resources_colors[res_type] = args['color']
+                if 'limit' in args:
+                    self.resources_limits[res_type] = args['limit']
+            else:
+                self.sprite_groups[res_type] = []
+
+        for key in pos:
+            for loc in pos[key]:
+                print loc
+                self._createSprite([key],(loc[0]*self.block_size,loc[1]*self.block_size))
+
+        self.kill_list=[]
+
+        for _, _, effect, _ in self.collision_eff:
+            if effect in stochastic_effects:
+                self.is_stochastic = True
+
+        # guarantee that avatar is always visible
+        self.sprite_order.remove('avatar')
+        self.sprite_order.append('avatar')
+
+
 
 
     def emptyBlocks(self):
@@ -1472,6 +1514,8 @@ class VGDLSprite(object):
     mass     = 1
     physicstype=None
     shrinkfactor=0
+    width = 1.0
+    height = 1.0
 
     def __init__(self, pos, size=(10,10), color=None, speed=None, cooldown=None, physicstype=None, **kwargs):
         from ontology import GridPhysics
@@ -1503,6 +1547,9 @@ class VGDLSprite(object):
         # management of resources contained in the sprite
         #self.resources = defaultdict(lambda: 0)
         self.resources = defaultdict(bool)
+
+        self.rect.width = self.width*self.rect.width
+        self.rect.height = self.height*self.rect.height
 
     def update(self, game):
         """ The main place where subclasses differ. """
@@ -1557,6 +1604,7 @@ class VGDLSprite(object):
     def _draw(self, game):
         from ontology import LIGHTGREEN
         screen = game.screen
+
         if self.shrinkfactor != 0:
             shrunk = self.rect.inflate(-self.rect.width*self.shrinkfactor,
                                        -self.rect.height*self.shrinkfactor)
@@ -1564,13 +1612,18 @@ class VGDLSprite(object):
             shrunk = self.rect
 
         if self.is_avatar:
+            '''
             rounded = roundedPoints(shrunk)
             pygame.draw.polygon(screen, self.color, rounded)
             pygame.draw.lines(screen, LIGHTGREEN, True, rounded, 2)
+            '''
+            pygame.draw.rect(screen, self.color, shrunk)
+            #pygame.draw.lines(screen, LIGHTGREEN, True, shrunk, 2)
             r = self.rect.copy()
         elif not self.is_static:
-            rounded = roundedPoints(shrunk)
-            pygame.draw.polygon(screen, self.color, rounded)
+            #rounded = roundedPoints(shrunk)
+            #pygame.draw.polygon(screen, self.color, rounded)
+            pygame.draw.rect(screen, self.color, shrunk)
             r = self.rect.copy()
         else:
             r = screen.fill(self.color, shrunk)

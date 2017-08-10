@@ -41,8 +41,11 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     # Recording events (in slightly redundant format state-action-nextstate)
     recordingEnabled = False
 
-    def __init__(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, actionset=BASEDIRS, **kwargs):
-        game = _createVGDLGame( gameDef, levelDef )
+    def __init__(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, actionset=BASEDIRS, positions=None, **kwargs):
+        if positions is not None:
+            game = _createVGDLGameFromPos(gameDef,positions)
+        else:
+            game = _createVGDLGame( gameDef, levelDef )
         StateObsHandlerNonStatic.__init__(self, game, **kwargs)
         self._actionset = actionset
         self.visualize = visualize
@@ -494,6 +497,16 @@ def _createVGDLGame( gameSpec, levelSpec ):
     game.uiud = uuid.uuid4()
     return game
 
+def _createVGDLGameFromPos(gameSpec, positions):
+    import uuid
+    from vgdl.core import VGDLParser
+    # parse, run and play.
+    game = VGDLParser().parseGame(gameSpec)
+    #game.buildLevel(levelSpec)
+    game.buildLevelFromPos(positions)
+    game.uiud = uuid.uuid4()
+    return game
+
 def playTestMaze():
     game = _createVGDLGame( *defMaze() )
     headless = False
@@ -625,6 +638,12 @@ def createRLInputGameChangeLevel(filename, level):
     game_file = importlib.import_module(filename)
     return RLEnvironmentNonStatic(game_file.game, level, \
                 observationType = OBSERVATION_GLOBAL)
+
+def createRLInputGameFromPositions(filename, positions=None):
+    game_file = importlib.import_module(filename)
+    if positions is None:
+        positions = game_file.positions
+    return RLEnvironmentNonStatic(game_file.game, None, positions = positions, observationType= OBSERVATION_GLOBAL)
 
 def createRLInputGameFromStrings(game, level):
     return RLEnvironmentNonStatic(game, level, \

@@ -373,6 +373,14 @@ class Missile(OrientedSprite): ##
     speed = 1
     color = PURPLE
 
+class BreakoutBall(Missile):
+    def __init__(self, **kwargs):
+        Missile.__init__(self,**kwargs)
+        self.rect.width = 0.5*self.rect.width
+        self.rect.height = 0.5*self.rect.height
+
+
+
 class Switch(VGDLSprite):
     activated = False
     wait_for_release = False
@@ -617,6 +625,22 @@ class AStarChaser(VGDLSprite): ##
             self.physics.activeMovement(self, movement)
 
 
+##some montezuma specific objects:
+class ThinImmovable(Immovable):
+    width = 1.0
+    height = 1.0
+    def __init__(self, **kwargs):
+        Immovable.__init__(self, **kwargs)
+        self.rect.width = self.width*self.rect.width
+        self.rect.height = self.height*self.rect.height
+
+class ThinConveyor(Conveyor,ThinImmovable):
+    width = 1.0
+    height = 1.0
+
+
+
+
 
 # ---------------------------------------------------------------------
 #     Avatars: player-controlled sprite types
@@ -677,9 +701,6 @@ class MovingAvatar(VGDLSprite, Avatar):
         #VGDLSprite.update(self, game)
 
 
-
-
-
 class HorizontalAvatar(MovingAvatar):
     """ Only horizontal moves.  """
 
@@ -692,10 +713,20 @@ class HorizontalAvatar(MovingAvatar):
 
 
     def update(self, game):
+        #print self.rect
         VGDLSprite.update(self, game)
         action = self._readAction(game)
         if action in [RIGHT, LEFT]:
             self.physics.activeMovement(self, action)
+
+class BreakoutAvatar(HorizontalAvatar):
+    def __init__(self,**kwargs):
+        HorizontalAvatar.__init__(self,**kwargs)
+        #print self.rect
+        self.rect.width = 2*self.rect.width
+        #print self.rect
+
+
 
 class Paddle(HorizontalAvatar):
     last_action = None
@@ -1163,6 +1194,16 @@ class FrostbiteIgloo(SpawnPoint, Switch):
         if self.detriggered and self.triggers > 0:
             self.triggers -= 1
             self.detriggered = False
+
+class MontezumaAvatar(MarioAvatar):
+    width = 1.0
+    height = 1.0
+    def __init__(self, **kwargs):
+        MarioAvatar.__init__(self, **kwargs)
+        self.rect.width = self.width*self.rect.width
+        self.rect.height = self.height*self.rect.height
+
+
 
 # ---------------------------------------------------------------------
 #     Conditional criteria

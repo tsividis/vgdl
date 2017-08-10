@@ -114,9 +114,9 @@ class StateObsHandlerNonStatic(object):
     @property
     def _avatar(self):
         ss = self._game.getAvatars()
-        assert len(ss) <= 1, 'Not supported: Only a single avatar can be used, found %s' % ss
-        if len(ss) == 0:
-            return None
+        #assert len(ss) <= 1, 'Not supported: Only a single avatar can be used, found %s' % ss
+        #if len(ss) == 0:
+        #    return None
         return ss[0]
     
     def setState(self, state):

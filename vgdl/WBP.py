@@ -49,6 +49,11 @@ WIN_RATIO = 5 #ratio of how many more times winning termination conditions count
 DEPTH_WEIGHT = 0.0 #how much to weight the depth of a node in the tree
 ALPHA1 = 1000 #weight given toward collecting an object which gives progress towards a goal (first order heuristic)
 ALPHA2 = 1 #weight give towards distance to good objects (second order heuristic)
+OBJCOLLECT_WEIGHT = 0.0 #.005
+
+N_METABOLICS = 1000
+MULT_METABOLICS = 0.1#0.0012
+DO_METABOLICS = True #False
 
 ignored_sprites = ['wall', 'background','ladder','conveyor','rope','offrope'] #sprite types we ignore in calculating atoms
 #----------------------
@@ -102,7 +107,9 @@ class WBP():
 		self.key = defaultdict(lambda:0)
 		self.no_key = defaultdict(lambda:0)
 		self.graph = {}
-		self.distances = self.dijkstra()
+
+		#self.distances = self.dijkstra() #uncomment if any other game than breakout
+
 		self.num_paths = 1
 		self.all_paths = []
 		self.LIMIT = limit
@@ -183,6 +190,8 @@ class WBP():
 	#return geodesic distance between two locations ----------------------
 	#(Note: this is probably unnecessarily complicated)
 	def geoDist(self,loc1,loc2):
+
+		return manhattanDist(loc1,loc2)/float(self.square_size[0]) #REMOVE this if any other game than breakout
 		
 		grid1= self.grid(loc1)
 		grid2= self.grid(loc2)
@@ -253,7 +262,7 @@ class WBP():
 
 			return self.geoDist(loc2,loc1)
 			'''
-			return euclideanDist(loc1,loc2) 
+			return manhattanDist(loc1,loc2)/float(self.square_size[0])
 			#this is wrong and only works for breakout but i dont want to worry about this right now
 					
 		return dist
@@ -333,7 +342,7 @@ class WBP():
 					if o not in rle._game.kill_list and isinstance(o,vgdl.core.Avatar):
 						avatars.append(o)
 
-		if len(avatars) == 1:
+		if len(avatars) >= 1:
 			return avatars[0]
 
 		#print "Either 0 or >1 avatars!"
@@ -517,16 +526,17 @@ class WBP():
 				self.quitting = True
 				#print(i)
 				print("quitting, no novel node found")
+				#embed()
 				break
 				
 			self.statesEncountered.append(current.rle._game.getFullState())
 			current.updateNoveltyDict(QNovelty, QReward)
 			visited.append(current)
-
-			
-			#print(i)
-			#print(current.rle.show())
+			#print current.predict
 			'''
+			print(i)
+			print(current.rle.show())
+			
 			avatar = self.getAliveAvatar(current.rle)
 			if avatar is not None:
 				loc = current.rle._rect2pos(avatar.rect)
@@ -538,17 +548,14 @@ class WBP():
 				self.avatar_locs_disc[loc] += 1
 				print loc
 			else:
-				"NO AVATAR"
-				embed()
+				print "NO AVATAR"
+				#embed()
 			print avatar
 			if i % 500 == 0:
 				print self.avatar_locs_disc
 				print self.key
 			'''
 			
-			
-			
-
 			self.getActions(current.rle)
 
 			actions = self.actions
@@ -665,7 +672,7 @@ class Node():
 ## rollout length
 ## repeating rollouts if death? e.g., are they optimistic?
 ## multiple samples??
-	def metabolics(self, rle, events, action, n=10, mult=.3):
+	def metabolics(self, rle, events, action, n=N_METABOLICS, mult=MULT_METABOLICS):
 
 		metabolic_cost = 1./n
 		#if action==32:
@@ -677,9 +684,10 @@ class Node():
 				metabolic_cost += .3#(1-1./n)*mult
 			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
 			# 	metabolic_cost += 0.3
-		return 0.0
+		if not DO_METABOLICS:
+			return 0.0
 		#print metabolic_cost
-		#return metabolic_cost
+		return metabolic_cost
 
 	def rollout(self, vrle):
 		successfulRollout = False
@@ -758,8 +766,13 @@ class Node():
 				objs.extend(self.WBP.findObjectsInRLE(rle, ktype))
 			if len([i for i in killer_types if 'avatar' in i]) > 0:
 				avatar = self.WBP.getAliveAvatar(rle)
-				if avatar and (avatar.rect.x,avatar.rect.y) not in objs:
-					objs.append((avatar.rect.x,avatar.rect.y))
+				if avatar:
+					if isinstance(avatar,vgdl.ontology.BreakoutAvatar):
+						pos = (avatar.rect.x + 0.75*rle._game.block_size, avatar.rect.y)
+					else:
+						pos = (avatar.rect.x,avatar.rect.y)
+					if pos not in objs:
+						objs.append((avatar.rect.x,avatar.rect.y))
 			kill_positions = objs
 
 			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
@@ -874,7 +887,7 @@ class Node():
 
 	#--------------------------- a bit of a cheat, should remove
 
-	def objcollect_val(self, theory, rle, weight=0.005):
+	def objcollect_val(self, theory, rle, weight=OBJCOLLECT_WEIGHT):
 		objs = rle._game.sprite_groups.keys()
 		for inter in theory.interactionSet:
 			if inter.interaction == 'killSprite' and inter.slot1 == 'avatar':
@@ -883,14 +896,18 @@ class Node():
 		objs.remove('avatar')
 		#objs.remove('background')
 
-		avatar = self.WBP.findAvatarInRLE(rle)
+		avatar = self.WBP.getAliveAvatar(rle)
+		if isinstance(avatar,vgdl.ontology.BreakoutAvatar):
+			pos = (avatar.rect.x + 0.75*rle._game.block_size, avatar.rect.y)
+		else:
+			pos = (avatar.rect.x,avatar.rect.y)
 
 		min_dist = 100
 		
 		for obj in objs:
 			locs = self.WBP.findObjectsInRLE(rle,obj)
 			try:
-				dist = [self.WBP.geoDist(avatar,x) for x in locs]
+				dist = [self.WBP.geoDist(pos,x) for x in locs]
 				if dist:
 					val = min(dist)
 					if val < min_dist:
@@ -903,6 +920,42 @@ class Node():
 		#embed()
 
 		return -weight*min_dist
+
+	def predictball_val(self, rle, weight = 0.1):
+		y = self.WBP.getAliveAvatar(rle).rect.y
+		try:
+			ball = [i for i in rle._game.sprite_groups['ball'] if i not in rle._game.kill_list][0]
+		except:
+			return 0
+		dx = ball.speed*ball.orientation[0]
+		dy = ball.speed*ball.orientation[1]
+		if dy <= 0.1:
+			return 0
+
+		t = (y - ball.rect.y)/dy
+		x_pred = ball.rect.x + t*dx
+
+		left = rle._game.block_size
+		right = rle._game.block_size*(rle.outdim[1]-1) - ball.rect.width
+
+		count = 0
+		while x_pred < left or x_pred > right:
+			count += 1
+			if x_pred < left:
+				x_pred = 2*left - x_pred
+			else:
+				x_pred = 2*right - x_pred
+
+			if count > 20:
+				embed()
+
+		self.pred_x = x_pred
+
+
+		dist = abs(self.WBP.getAliveAvatar(rle).rect.x + 0.75*rle._game.block_size - x_pred)/rle._game.block_size
+
+		return -weight*dist
+
 
 	#-----------------------------------------------
 
@@ -1008,8 +1061,8 @@ class Node():
 	#whether to do a rollout (specifically, whether this game is breakout or not)
 	def do_rollout(self):
 		try:
-			ball_now = self.rle._game.sprite_groups['ball'][0]
-			ball_prev = self.parent.rle._game.sprite_groups['ball'][0]
+			ball_now = [i for i in self.rle._game.sprite_groups['ball'] if i not in self.rle._game.kill_list][0]
+			ball_prev = [i for i in self.parent.rle._game.sprite_groups['ball'] if i not in self.parent.rle._game.kill_list][0]
 
 			return (ball_now.orientation[1] < 0 and ball_prev.orientation[1] > 0)
 		except:
@@ -1043,10 +1096,11 @@ class Node():
 			print "in rollout"
 
 		self.heuristicVal = self.heuristics()
+		self.predict = self.predictball_val(self.rle)
 
 		# print self.lastState._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost
 		self.intrinsic_reward = self.rle._game.score + self.heuristicVal\
-		- self.metabolic_cost+sum(self.rolloutArray) + DEPTH_WEIGHT*self.depth
+		- self.metabolic_cost+sum(self.rolloutArray) + DEPTH_WEIGHT*self.depth + self.predict
 		
 		return self.win
 
@@ -1139,6 +1193,8 @@ class Node():
 def euclideanDist(a,b):
 	return math.sqrt(float((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2))
 
+def manhattanDist(a,b):
+	return (abs(b[0] - a[0]) + abs(b[1] - a[1]))
 #runs multiple planners in series with different sets of parameters
 def multi_plan():
 	t1 = time.time()

@@ -13,11 +13,12 @@ import sys
 import random
 import copy
 import importlib
+import math
 sys.path.append('/Users/eshaannichani/gameplay')
 from perception.simple import Breakout, ContinuousVisualizer, BreakoutPolicy
 
-
 ACTIONS = {0:0,275:2, 276:3}
+NODES_TO_SEARCH = 50
 
 class AtariPlanner():
 
@@ -26,7 +27,8 @@ class AtariPlanner():
 		self.square_size = None
 		self.states = []
 		self.actions = [0]
-		self.error = 40
+		self.error = 28
+		self.reground_threshhold = 120
 		#self.speed_array = [[],[],[],[]]
 		self.speed_array = []
 		self.ball_array = []
@@ -45,7 +47,6 @@ class AtariPlanner():
 		return string
 
 	def setDimensions(self,rle,objects):
-		#embed()
 		height= max([i[1][0] for i in objects]) + 1
 		width = max([i[1][1] for i in objects]) + 1
 
@@ -55,13 +56,11 @@ class AtariPlanner():
 		rle._game.screensize = (width*self.square_size,height*self.square_size)
 
 
-	#general update function for all sprites
-	
+	#initialize positions of sprites at beginning of game
 	def InitializeSprites(self,rle,objects):
 		changed = False
-		#embed()
+
 		for k in rle._game.sprite_groups.keys():
-			#print k
 			locs = set()
 			for o in rle._game.sprite_groups[k]:
 				if o not in rle._game.kill_list:
@@ -82,10 +81,10 @@ class AtariPlanner():
 						can_change = False
 					if (sprite.rect.x,sprite.rect.y) not in obj_locs:
 						if can_change:
-
 							sprite.rect.x = new_locs[i][0]
 							sprite.rect.y = new_locs[i][1]
-							
+							#dont want to modify speeds of objects cause they'll then be 0
+							'''
 							if not isinstance(sprite,vgdl.ontology.Immovable):
 								vec = (sprite.rect.x-sprite.lastrect.x,sprite.rect.y-sprite.lastrect.y)
 								if not isinstance(sprite.physics,vgdl.ontology.ContinuousPhysics):
@@ -93,7 +92,7 @@ class AtariPlanner():
 								else:
 									sprite.orientation = unitVector(vec)
 									sprite.speed = vectNorm(vec)
-
+							'''
 							i+=1
 						else:
 							rle._game.kill_list.append(sprite) #don't realize a sprite is killed
@@ -103,11 +102,22 @@ class AtariPlanner():
 						new_sprite.rect.x = loc[0]
 						new_sprite.rect.y = loc[1]
 						rle._game.sprite_groups[k].append(new_sprite)
+
+		rle._game.sprite_groups['avatar'][0].speed = 2.0 #CHANGING SPEED
+		rle._game.sprite_groups['ball'][0].speed = 20.0
 		return changed
 	
-
+	#updating velocity + position of ball/avatar on each step
 	def updateSprites(self,rle,objects,ended = False):
 		changed = False
+
+		new_aloc = objects['avatar'][0]
+		avatar = rle._game.sprite_groups['avatar'][0]
+		old_aloc = self.states[-2]['avatar'][0]
+
+		if abs(avatar.rect.x - new_aloc[0]) > self.error or abs(avatar.rect.y - new_aloc[1]) > self.error:
+			changed = True
+
 		#ball:
 		try:
 			new =  objects['ball']
@@ -119,11 +129,13 @@ class AtariPlanner():
 			old_loc = self.states[-2]['ball'][0]
 			ball = old[0]
 			vec = (new_loc[0] - old_loc[0], new_loc[1] - old_loc[1])
-			self.ball_array.append(vectNorm(vec))
-			if ended or abs(ball.rect.x - new_loc[0]) > self.error or abs(ball.rect.y - new_loc[1]) > self.error:
+			#self.ball_array.append(vectNorm(vec))
+			if changed or ended or abs(ball.rect.x - new_loc[0]) > self.error or abs(ball.rect.y - new_loc[1]) > self.error:
 				ball.rect.x = new_loc[0]
 				ball.rect.y = new_loc[1]
-				ball.speed = mean(self.ball_array)
+				#ball.speed = mean(self.ball_array)
+				#ball.speed = 20.0
+				ball.speed = (vectNorm(vec))
 				ball.orientation = unitVector(vec)
 				changed = True
 		elif old:
@@ -139,40 +151,22 @@ class AtariPlanner():
 			changed = True
 
 		#avatar:
-		new_loc = objects['avatar'][0]
-		avatar = rle._game.sprite_groups['avatar'][0]
-		old_loc = self.states[-2]['avatar'][0]
-		speed = vectNorm((new_loc[0] - old_loc[0],new_loc[1] - old_loc[1]))/self.square_size
-		if speed != 0:
-			self.speed_array.append(speed)
+		
+		#speed = vectNorm((new_loc[0] - old_loc[0],new_loc[1] - old_loc[1]))/self.square_size
+		#if speed != 0:
+		#	self.speed_array.append(speed)
 
-		if ended or changed or abs(avatar.rect.x - new_loc[0]) > self.error or abs(avatar.rect.y - new_loc[1]) > self.error:
-			avatar.rect.x = new_loc[0]
-			avatar.rect.y = new_loc[1]
-			if speed != 0 and self.actions[-1] != 0:
-				print 'updating'
-				avatar.speed = mean(self.speed_array)
-				'''
-				a1 = self.actions[-1]
-				a0 = self.actions[-2]
-				if a1 in [2,3]:
-					if a0 == 0:
-						self.speed_array[0].append(speed)
-						avatar.c1 = mean(self.speed_array[0])
-					elif a1 == a0:
-						self.speed_array[2].append(speed)
-						avatar.c3 = mean(self.speed_array[2])
-					else: 
-						self.speed_array[3].append(speed)
-						avatar.c4 = -mean(self.speed_array[3])
-				elif a0 in [2,3]:
-					self.speed_array[1].append(speed)
-					avatar.c2 = mean(self.speed_array[1])
-				'''
+		if ended or changed:
+			avatar.rect.x = new_aloc[0]
+			avatar.rect.y = new_aloc[1]
+			#if speed != 0 and self.actions[-1] != 0:
+				#print 'updating'
+				#avatar.speed = mean(self.speed_array)
 			changed = True
 
 		return changed
 
+	#return path from last node in BFS
 	def getPath(self,last):
 		node = last
 		array = []
@@ -182,6 +176,7 @@ class AtariPlanner():
 			
 		return array
 
+	#turn list of (obj,pos) pairs into dictionary
 	def makeDict(self,objects):
 		objs = {}
 		for obj, pos in objects:
@@ -191,68 +186,72 @@ class AtariPlanner():
 			else:
 				objs[obj] = [new_pos]
 
-		##hardcoded in to get around there being 2 avatars for now, can remove when that is fixed
+		
 		avatars = objs['agent']
-		objs['avatar'] = [(sum(i[0] for i in avatars)/len(avatars),sum(i[1] for i in avatars)/len(avatars))]
+		#objs['avatar'] = [(sum(i[0] for i in avatars)/len(avatars),sum(i[1] for i in avatars)/len(avatars))]
+		objs['avatar'] = [(min(i[0] for i in avatars),avatars[0][1])]
 		objs['agent'] = []
 		return objs
 
+	#the loop between planning and ALE actions
 	def plan(self, max_nodes):
 
 		gameFilename = "examples.continuousphysics.breakout"
-
 		env = Breakout()
 
 		objects, _raw = env.reset() 
 		objects, _raw = env.step(1)
 
-
-
-
 		level = self.createLevel(objects)
 
 		rleCreateFunc = lambda: createRLInputGameChangeLevel(gameFilename,level)
-
 		self.rle = rleCreateFunc()
 
 		self.square_size = self.rle._game.block_size
 
-		embed()
-		
 		p = WBP(self.rle,gameFilename,max_nodes=max_nodes)
 
 		visualizer = ContinuousVisualizer({'agent': (0,1,0), 'ball': (0,0,1), 'goal': (1,0,0), 'wall':(0.33,0.33,0.33)})
 
-		#updateSprites to initialize game
-		#self.setDimensions(self.rle,objects)
+		#Initialize the game
 		object_dict = self.makeDict(objects)
 		self.states.append(object_dict)
 		self.actions.append(0)
 		self.InitializeSprites(self.rle,object_dict)
-		#print object_dict['ball']
-		#print self.rle._game.sprite_groups['ball']
-		#embed()
-		
+
 		last, visited, length = p.BFS(return_best = True)
 		print last.actionSeq
 		path = self.getPath(last)
-		#embed()
 		i = 1
+		no_ball = 0
+		#action_array = [0,0,0,0,0,0,0,0,0,0,276,0,0,0,0,0,0,0,0,0,0,275]
+		pos = []
+		#print object_dict['avatar']
+		for j in tqdm(range(1000)):
 
-		for j in tqdm(range(200)):#FILL (handle later maybe)
-
-			#if j >= 10:
+			#if j == 200:
 				#embed()
+
 			'''
-			action = 276
-			print("action = {}".format(action))
+			if j % 10 != 9:
+				action = 0
+			else:
+				action = random.choice([275,276])
+				#print action
+			#action = action_array[j % len(action_array)]
+			#if action != 0:	
+			#	print action
 			objects, _raw = env.step(ACTIONS[action])
 			object_dict = self.makeDict(objects)
-			#print [i[1] for i in objects if i[0]=='agent']
+			if 'ball' in object_dict.keys():
+				pos.append(object_dict['ball'][0])
 			'''
-
-			
 			#embed()
+			'''
+			action = random.choice([275,276])
+			objects, _raw = env.step(ACTIONS[action])
+			object_dict = self.makeDict(objects)
+			'''
 			
 			if len(path) > 1:
 				self.rle = path[i].rle
@@ -262,35 +261,37 @@ class AtariPlanner():
 				object_dict = self.makeDict(objects)
 				self.states.append(object_dict)
 				self.actions.append(ACTIONS[action])
-				#print object_dict['avatar']
-				#embed()
-				#print object_dict['ball']
-				#print self.rle._game.sprite_groups['ball']
+
 			else:
 				print("no action taken")
 				env.step(1) #restart game
-				#embed()
+			
+
 
 			print self.rle._game.sprite_groups['avatar']
-			#print self.rle._game.sprite_groups['avatar'][0].speed
 			print object_dict['avatar']
-
 			try:
 				print self.rle._game.sprite_groups['ball']
 				print object_dict['ball']
+				pos.append(object_dict['ball'][0])
 			except:
-				pass
+				no_ball += 1
 
-			'''
-			if i < len(path) -1 and i < 6:
-				i+= 1
-				print("NEXT")
-			'''
-				#self.updateSprites(self.rle,object_dict)
+			if no_ball > 1:
+				print("restarting game")
+				env.step(1)
+				no_ball = 0
+			
+			avatar_loc = (object_dict['avatar'][0][0]+0.75*self.rle._game.block_size, object_dict['avatar'][0][1])
+			#whether we reground or not
+			#print object_dict.keys()
 			if i >= len(path) - 1:
+				ended = True
+			elif 'ball' in object_dict.keys() and euclideanDist(object_dict['ball'][0],avatar_loc) < self.reground_threshhold:
 				ended = True
 			else:
 				ended = False
+
 			if not self.updateSprites(self.rle,object_dict, ended):
 				i += 1
 				print("NEXT")
@@ -303,21 +304,23 @@ class AtariPlanner():
 				print last.actionSeq
 				i = 1
 
-			#if len(path) > 1:
-
+			#visualizing gameplay
 			screen = visualizer.vis(objects, _raw)
 			scipy.misc.imsave('observations/%05d.png' % j, screen)
 			
+		
+		
+
+		#embed()	
 def mean(array):
 	return sum(array)/len(array)
 
-if __name__ == '__main__':
-	gameFilename = "examples.continuousphysics.breakout"
-	rleCreateFunc = lambda: createRLInputGame(gameFilename)
-	#rle = rleCreateFunc()
+def euclideanDist(a,b):
+	return math.sqrt(float((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2))
 
+if __name__ == '__main__':
 	ap = AtariPlanner()
-	ap.plan(50)
+	ap.plan(NODES_TO_SEARCH)
 
 
 			
