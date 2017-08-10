@@ -27,15 +27,15 @@ class Agent:
 		self.gameString = None
 		self.levelString = None
 		self.annealingFactor = 1.
-		self.shortHorizon = False
+		self.shortHorizon = True
 		if self.shortHorizon == True:
 			self.starting_max_nodes = 20
 			self.max_nodes_annealing = 1.005
 		else:
 			self.starting_max_nodes = 1000
 			self.max_nodes_annealing = 10
-		self.regrounding = 1
-		self.avoid_danger = True
+		self.regrounding = 0
+		self.avoid_danger = False
 		self.safeDistance = 3
 		self.max_quits = 3
 		self.hypotheses = []
@@ -359,7 +359,7 @@ class Agent:
 				seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon)
 			bestNode, gameStringArray = p.BFS()
 			solution = p.solution
-			
+
 			self.quits += p.quitting #1 if p.quitting else 0
 
 			quitting = self.quits>self.max_quits
@@ -427,7 +427,7 @@ class Agent:
 								print("Close to RandomNPC, regrounding")
 								break
 
-						except ValueError: 
+						except ValueError:
 							# print("error in avoid_danger: is the avatar dead?")
 							# embed()
 							pass
@@ -669,7 +669,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.demo_transform_relational"
 	# filename = "examples.gridphysics.simpleGame_push_boulders"
 	# filename = "examples.gridphysics.pick_apples"
-	# filename = "examples.gridphysics.expt_exploration_exploitation"
+	filename = "examples.gridphysics.expt_exploration_exploitation_debugging"
 
 	# filename = "examples.gridphysics.boulderdash"
 
@@ -697,20 +697,21 @@ if __name__ == "__main__":
 	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-	gameName = gvggames[4]
+	gameName = gvggames[5]
 	gvgname = "../gvgai/training_set_1/{}".format(gameName)
 
 	gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
 
-	level_game_pairs = []
-	for level_number in range(5):
-		with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
-			level_game_pairs.append([gameString, level.read()])
+	# level_game_pairs = []
+	# for level_number in range(5):
+		# with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
+			# level_game_pairs.append([gameString, level.read()])
 
+	gameName = filename
 	agent = Agent('full', gameName)
 
 	##then pass this down for multiple episodes
 	gameObject = None
 
-	agent.playCurriculum(level_game_pairs=level_game_pairs)
+	agent.playCurriculum(level_game_pairs=None)
