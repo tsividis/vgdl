@@ -289,6 +289,11 @@ class WBP():
 			for a in self.actions:
 				child = Node(self.rle, self, current.actionSeq+[a], current)
 				child.eval()
+
+				# if a==32:
+				# 	print "shot"
+				# 	print child.rle.show(indent=True)
+
 				if child.win:
 					# Get the gameString representation of the RLE at each
 					# timestep in the chosen solution, so as to be able to
@@ -326,10 +331,10 @@ class WBP():
 			if self.short_horizon:
 				print "playing with short horizon; reached max"
 				# embed()
-				node = max(visited, key=lambda n:n.intrinsic_reward)
+				node = max(visited, key=lambda n:-n.intrinsic_reward)
 				parentNode = copy.deepcopy(node)
 				self.solution = node.actionSeq
-
+				print self.solution
 				gameString_array = []
 				while parentNode is not None:
 					gameString_array.append(parentNode.rle.show())
@@ -386,7 +391,7 @@ class Node():
 				pass
 			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
 			# 	metabolic_cost += 0.3
-		# metabolic_cost = 0
+		metabolic_cost = 0
 		return metabolic_cost
 
 	def rollout(self, vrle):
@@ -431,7 +436,7 @@ class Node():
 			mult = -1
 		else:
 			compute_second_order = True
-			mult = .1
+			mult = 10
 
 		# Get all types that kill or transform stype (the target)
 		killer_types = [
@@ -627,9 +632,11 @@ class Node():
 
 		return val
 
-	def multispritecounter_val(self, theory, term, rle, first_alpha=1000,
-							   second_alpha=1):
+	def multispritecounter_val(self, theory, term, rle, first_alpha=10000,
+							   second_alpha=10):
 		val = 0
+		# print "in multispritecounter"
+		# embed()
 		for stype in term.termination.stypes:
 			val += self.spritecounter_val(theory, term, stype, rle,
 				first_alpha=first_alpha, second_alpha=second_alpha)
@@ -747,7 +754,10 @@ class Node():
 
 			elif isinstance(term, MultiSpriteCounterRule):
 				multispritecounter_val = self.multispritecounter_val(theory, term, rle,
-						first_alpha=first_alpha, second_alpha=second_alpha)
+						first_alpha=500, second_alpha=5)
+				# if multispritecounter_val!=0:
+					# print("multispritecounter_val for {} is equal to {}".format(
+						# term.termination.stypes, multispritecounter_val))
 				heuristicVal += multispritecounter_val
 
 			elif isinstance(term, TimeoutRule):

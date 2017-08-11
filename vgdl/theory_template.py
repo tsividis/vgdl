@@ -274,6 +274,7 @@ class Theory(object):
 		self.inModification = {}
 
 		self.falsified = []
+		self.multi_falsified = []
 
 		self.posterior = False
 
@@ -977,7 +978,8 @@ class Theory(object):
 		if rle and not rle._isDone()[0]:
 			knownColors = [sprite[0].color for sprite in self.classes.values()]
 			presentColors = [rle._game.sprite_groups[o][0].colorName for o in rle._game.sprite_groups
-							 if len(rle._game.sprite_groups[o])>0 and
+							 if (len(rle._game.sprite_groups[o]) >
+							 	len([dead_sprite for dead_sprite in rle._game.kill_list if dead_sprite.name==o])) and
 							 rle._game.sprite_groups[o][0].colorName in knownColors]
 			absentColors = [color for color in knownColors
 							if color not in presentColors]
@@ -988,6 +990,11 @@ class Theory(object):
 				self.falsified.append(SpriteCounterRule(self.colorToClassMapper(color), 0, True))
 				self.falsified.append(SpriteCounterRule(self.colorToClassMapper(color), 0, False))
 
+			for n in range(2, len(absentColors) + 1):
+				for color_combination in itertools.combinations(absentColors, n):
+					class_combination = [self.colorToClassMapper(color)
+						for color in color_combination]
+					self.multi_falsified.append(MultiSpriteCounterRule(stypes=class_combination))
 
 		for rule in self.interactionSet:
 			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo']:
@@ -1011,6 +1018,26 @@ class Theory(object):
 				terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
 				self.terminationSet.append(terminationRule)
 
+		falsified_win_stypes = set([sprite_rule.termination.stype for sprite_rule in self.falsified
+			if (sprite_rule.termination.win and sprite_rule.termination.stype != 'EOS')])
+		
+		try:
+			falsified_win_stypes.remove(self.classes['avatar'][0].args['stype'])
+		except:
+			pass
+		# if self.classes['avatar'][0].args and 'stype' in self.classes['avatar'][0].args.keys():
+		# 	if sel
+		# if any([rule.termination.stype=='explosion' for rule in self.falsified]):
+		# 	embed()
+		for n in range(2, len(falsified_win_stypes) + 1):
+			for sprite_combination in itertools.combinations(falsified_win_stypes, n):
+				terminationRule = MultiSpriteCounterRule(stypes=sprite_combination)
+				if (all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
+					all([not terminationRule.__eq__(t) for t in self.multi_falsified])):
+					self.terminationSet.append(terminationRule)
+
+		# if falsified_win_stypes:
+		# 	embed()
 		self.terminationSet = sorted(self.terminationSet, key=lambda t:t.ruleType)
 
 		return
