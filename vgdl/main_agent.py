@@ -75,7 +75,6 @@ class Agent:
 				for sprite in Vrle._game.sprite_groups[k]:
 					matchingSprite = self.findNearestSprite(sprite, matchingSpritesInRLE)
 					sprite.rect = matchingSprite.rect
-					
 					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType):
 						try:
 							orientationDict = self.rle._game.object_token_spriteDistribution[matchingSprite.ID][hypothesis.classes[sprite.name][0].vgdlType]['args']['orientation']
@@ -91,16 +90,8 @@ class Agent:
 				 "./examples/gridphysics/theorytest.py")
 		Vrle = createMindEnv(gameString, levelString, output=False)
 
-
 		self.setSpritePositions(self.rle, Vrle, hypothesis)
 
-		# try:
-		# 	print([(s.rect, s.orientation) for s in Vrle._game.sprite_groups['c4']])
-		# 	print([(s.rect, s.orientation) for s in self.rle._game.sprite_groups['missile1']])
-		# except:
-		# 	pass
-
-		# embed()
 		Vrle._game.getAvatars()[0].resources = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
 		try:
 			Vrle._game.getAvatars()[0].orientation = copy.deepcopy(self.rle._game.getAvatars()[0].orientation)
@@ -701,6 +692,7 @@ if __name__ == "__main__":
 	##uncomment this line to run local games
 	# gameName = filename
 
+
 	agent = Agent('full', gameName)
 
 	##then pass this down for multiple episodes
@@ -709,3 +701,4 @@ if __name__ == "__main__":
 
 	##and use this line
 	# agent.playCurriculum(level_game_pairs=None)
+

@@ -1789,6 +1789,7 @@ def updateOptions(game, sprite_type, current_sprite, params={}, missileOrientati
             speed = getSpeed(params)
             orientation = getOrientation(params)
             coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
+
             # If object has speed = 0 or no 'orientation' attribute
             position_options = {}
             if coords == None:
@@ -1800,6 +1801,7 @@ def updateOptions(game, sprite_type, current_sprite, params={}, missileOrientati
                 position_options[(coords[0], coords[1])] = .5
                 #flip orientation
                 orientation = (orientation[0]*-1, orientation[1]*-1)
+
                 coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
                 position_options[(coords[0], coords[1])] = .5
 
@@ -1986,7 +1988,7 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome, spe
 
                         for p, val in param:
                             if missileOrientationClustering:
-                                newParameterLikelihood[p][val] += movement_options[sprite][sprite_type][param][outcome] * attributeProduct
+                                newParameterLikelihood[p][val] += movement_options[sprite][sprite_type][param][outcome]**2 * attributeProduct
                             else:
                                 newParameterLikelihood[p][val] += movement_options[sprite][sprite_type][param][outcome]*attributeProduct
 
@@ -2281,11 +2283,13 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                             ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving
                             ## objects
                             game.movement_options[sprite][sprite_type][attributeTuple] = \
-                            updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=False)
+                            updateOptions(game, sprite_type, sprite_obj, params=attributeDict)
 
                             ## but we also do inference for particular object tokens
+
                             game.object_token_movement_options[sprite][sprite_type][attributeTuple] = \
-                            updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=False)  
+                            updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
+ 
         # logs = [s for s in game.spriteDistribution.keys() if objects[s]['features']['color']=='BROWN']
         # print "logs:"
         # print "just updated options"
@@ -2320,7 +2324,8 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                     game.spriteDistribution = updateDistribution(sprite, game.spriteDistribution, \
                                               game.movement_options, outcome)
                     game.object_token_spriteDistribution = updateDistribution(sprite, game.object_token_spriteDistribution, \
-                                              game.object_token_movement_options, outcome, missileOrientationClustering=False)
+                                              game.object_token_movement_options, outcome, missileOrientationClustering=True)
+
                     game.spriteUpdateDict[sprite] += 1
 
                 # elif any([sprite in e for e in game.effectList]) and sprite not in game.ignoreList and sprite_obj.name !='avatar':
