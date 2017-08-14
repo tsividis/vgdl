@@ -66,7 +66,7 @@ class Agent:
 		## returns the sprite in spriteList whose location best matches the location of sprite.
 		return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
 
-	def setSpritePositions(self, rle, Vrle):
+	def setSpritePositions(self, rle, Vrle, hypothesis):
 		## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
 		for k in Vrle._game.sprite_groups.keys():
 			if Vrle._game.sprite_groups[k]:
@@ -75,6 +75,14 @@ class Agent:
 				for sprite in Vrle._game.sprite_groups[k]:
 					matchingSprite = self.findNearestSprite(sprite, matchingSpritesInRLE)
 					sprite.rect = matchingSprite.rect
+
+					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType):
+
+						try:
+							orientationDict = self.rle._game.object_token_spriteDistribution[matchingSprite.ID][hypothesis.classes[sprite.name][0].vgdlType]['args']['orientation']
+							sprite.orientation = max(orientationDict, key=orientationDict.get)
+						except KeyError:
+							pass
 		return
 
 
@@ -83,7 +91,7 @@ class Agent:
 		gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
 				 "./examples/gridphysics/theorytest.py")
 		Vrle = createMindEnv(gameString, levelString, output=False)
-		self.setSpritePositions(self.rle, Vrle)
+		self.setSpritePositions(self.rle, Vrle, hypothesis)
 		Vrle._game.getAvatars()[0].resources = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
 		try:
 			Vrle._game.getAvatars()[0].orientation = copy.deepcopy(self.rle._game.getAvatars()[0].orientation)
@@ -697,16 +705,16 @@ if __name__ == "__main__":
 	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-	gameName = gvggames[5]
+	gameName = gvggames[0]
 	gvgname = "../gvgai/training_set_1/{}".format(gameName)
 
 	gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
 
-	# level_game_pairs = []
-	# for level_number in range(5):
-		# with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
-			# level_game_pairs.append([gameString, level.read()])
+	level_game_pairs = []
+	for level_number in range(5):
+		with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
+			level_game_pairs.append([gameString, level.read()])
 
 	gameName = filename
 	agent = Agent('full', gameName)
@@ -714,4 +722,4 @@ if __name__ == "__main__":
 	##then pass this down for multiple episodes
 	gameObject = None
 
-	agent.playCurriculum(level_game_pairs=None)
+	agent.playCurriculum(level_game_pairs=level_game_pairs)

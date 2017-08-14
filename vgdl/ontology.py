@@ -1684,7 +1684,7 @@ def setSpriteParams(param, sprite):
             sprite.cooldown = param[p]
 
 
-def updateOptions(game, sprite_type, current_sprite, params={}):
+def updateOptions(game, sprite_type, current_sprite, params={}, missileOrientationClustering=False):
     """
     This method gets all of the parameter information from the params variable
     instead of directly accessing the parameters in current_sprite.
@@ -1806,11 +1806,24 @@ def updateOptions(game, sprite_type, current_sprite, params={}):
             orientation = getOrientation(params)
             coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
 
-            # If object has speed = 0 or no 'orientation' attribute
+            position_options = {}
             if coords == None:
-                return {}
+                return position_options
 
-            return {(coords[0], coords[1]): 1.0}
+            # If object has speed = 0 or no 'orientation' attribute
+            # if coords == None:
+                # return {}
+
+            position_options[(coords[0], coords[1])] = 1.
+
+            if missileOrientationClustering:
+                position_options[(coords[0], coords[1])] = .5
+                # flip orientation
+                orientation = (orientation[0]*(-1), orientation[1]*(-1))
+                coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
+                position_options[(coords[0], coords[1])] = .5
+
+            return position_options
 
         # Catches objects that can't be Oriented Sprite and Missile types b/c fails the if-statement
         return {}
@@ -1921,15 +1934,19 @@ def distributionInitSetup(game, sprite):
     # embed()
 
     game.spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
+    game.object_token_spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
     game.movement_options[sprite] = {"OTHER":{}}
+    game.object_token_movement_options[sprite] = {"OTHER":{}}
     for sprite_type in sprite_types:
         game.movement_options[sprite][sprite_type] = {}
+        game.object_token_movement_options[sprite][sprite_type] = {}
         attributeTupleCombinations = getAttributeTupleCombinations(game, sprite, sprite_type)
         for attributeTuple in attributeTupleCombinations:
             game.movement_options[sprite][sprite_type][attributeTuple] = {}
+            game.object_token_movement_options[sprite][sprite_type][attributeTuple] = {}
 
 
-def updateDistribution(sprite, curr_distribution, movement_options, outcome, specialID=None):
+def updateDistribution(sprite, curr_distribution, movement_options, outcome, specialID=None, missileOrientationClustering=False):
     """
     Updates the sprite distribution for a given object in the game.
 
@@ -1991,7 +2008,10 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome, spe
                         spriteTypeLikelihood += movement_options[sprite][sprite_type][param][outcome] * attributeProduct
 
                         for p, val in param:
-                            newParameterLikelihood[p][val] += movement_options[sprite][sprite_type][param][outcome]*attributeProduct
+                            if missileOrientationClustering:
+                                newParameterLikelihood[p][val] += movement_options[sprite][sprite_type][param][outcome]**2 * attributeProduct
+                            else:
+                                newParameterLikelihood[p][val] += movement_options[sprite][sprite_type][param][outcome]*attributeProduct
 
                 curr_distribution[sprite][sprite_type]['prob'] *= spriteTypeLikelihood
                 curr_distribution[sprite][sprite_type]['args'] = newParameterLikelihood
@@ -2282,6 +2302,9 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                         if sprite_obj.name != 'avatar':
                             game.movement_options[sprite][sprite_type][attributeTuple] = \
                             updateOptions(game, sprite_type, sprite_obj, params=attributeDict)
+
+                            game.object_token_movement_options[sprite][sprite_type][attributeTuple] = \
+                            updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
                             ##we are sprite_obj, and we are updating the options for where it could be next contingent on its being 'sprite_type'
                             # given a set of potential attribute values, update the movement options
                             # for this attribute tuple (i.e. candidate set of parameters)
@@ -2321,6 +2344,8 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                     outcome = objects[sprite]["position"]
                     game.spriteDistribution = updateDistribution(sprite, game.spriteDistribution, \
                                               game.movement_options, outcome)
+                    game.object_token_spriteDistribution = updateDistribution(sprite, game.object_token_spriteDistribution, \
+                                              game.movement_options, outcome, missileOrientationClustering=True)
                     game.spriteUpdateDict[sprite] += 1
 
                 # elif any([sprite in e for e in game.effectList]) and sprite not in game.ignoreList and sprite_obj.name !='avatar':

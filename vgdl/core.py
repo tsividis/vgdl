@@ -119,6 +119,9 @@ class VGDLParser(object):
         #print self.game.collision_eff
 
     def parseTerminations(self, tnodes):
+        if any(['Multi' in tnode.content for tnode in tnodes]):
+            print("found MultiSpriteCounter in parseTerminations")
+            # import ipdb; ipdb.set_trace()
         for tn in tnodes:
             sclass, args = self._parseArgs(tn.content)
             if self.verbose:
@@ -241,8 +244,10 @@ class BasicGame(object):
         self.win = None
         self.effectList = [] # list of effects that happened this current timestep
         self.spriteDistribution = {}
+        self.object_token_spriteDistribution = {}
         self.spriteUpdateDict = defaultdict(int) ## track how many times we have run spriteType updates to each particular object
         self.movement_options = {}
+        self.object_token_movement_options = {}
         self.all_objects = None
 
         self.EOS = EOS((-1, -1))
