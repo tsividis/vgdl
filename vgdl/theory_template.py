@@ -1863,7 +1863,6 @@ class Game(object):
 				matchingSprite = [sprite for sprite in theory.spriteSet if sprite.color==s.color][0]
 				if s.vgdlType != matchingSprite.vgdlType:
 					# print "updating sprites"
-					# embed()
 					s.className = matchingSprite.className
 					theory.classes[s.className] = [s]
 					theory.spriteObjects[s.color] = s
@@ -1919,10 +1918,6 @@ class Game(object):
 			# timesteps is an empty list
 			max_likelihood = 0
 
-
-		# if len(timesteps)>6:
-		# 	print "second max_likelihood"
-		# 	embed()
 		# Termination set induction
 		## TODO: add this again.
 		# if result:
@@ -2185,6 +2180,7 @@ def generateSymbolDict(rle):
 	try:
 		colors = [colorDict[str(rle._game.sprite_constr[k][1]['color'])] for k in rle._obstypes.keys()]
 	except:
+		print "problem with generateSymbolDict"
 		embed()
 	try:
 		colors.append(colorDict[str(rle._game.sprite_constr['avatar'][1]['color'])])

@@ -247,7 +247,7 @@ BasicGame
 	SpriteSet
 		dirt > Immovable color=BROWN
 		exitdoor > Immovable color=GREEN
-		diamond > Resource color=YELLOW limit=3 shrinkfactor=0.25
+		diamond > Resource color=YELLOW limit=9 shrinkfactor=0.25
 		boulder > Missile orientation=DOWN color=DARKGRAY speed=.2
 		avatar  > ShootAvatar   stype=sword
 		crab > RandomNPC cooldown=5 color=RED
@@ -301,11 +301,11 @@ BasicGame
 		sword sword > nothing
 		wall dirt > nothing
 		butterfly crab > transformTo stype=diamond scoreChange=1
-		# exitdoor avatar > killIfOtherHasMore resource=diamond limit=9 #scoreChange=100
+		exitdoor avatar > killIfOtherHasMore resource=diamond limit=9 #scoreChange=100
 		exitdoor boulder > nothing
 		exitdoor sword > nothing
 		exitdoor avatar > nothing
-		exitdoor avatar > killIfOtherHasMore resource=diamond limit=3 #scoreChange=100
+		# exitdoor avatar > killIfOtherHasMore resource=diamond limit=3 #scoreChange=100
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False
 		SpriteCounter stype=exitdoor limit=0 win=True

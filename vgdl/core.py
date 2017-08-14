@@ -241,8 +241,11 @@ class BasicGame(object):
         self.win = None
         self.effectList = [] # list of effects that happened this current timestep
         self.spriteDistribution = {}
+        self.object_token_spriteDistribution = {}
+
         self.spriteUpdateDict = defaultdict(int) ## track how many times we have run spriteType updates to each particular object
         self.movement_options = {}
+        self.object_token_movement_options = {}
         self.all_objects = None
 
         self.EOS = EOS((-1, -1))
@@ -284,8 +287,6 @@ class BasicGame(object):
             else:
                 self.sprite_groups[res_type] = []
 
-        # print "in buildLevel"
-        # embed()
         # create sprites
         for row, l in enumerate(lines):
             for col, c in enumerate(l):
@@ -584,14 +585,9 @@ class BasicGame(object):
                 # special case for end-of-screen
                 if class2 == "EOS":
                     ss1, l1 = self.lastcollisions[class1]
-                    # print effect, class1, 'EOS'
-                    # print effect(class1, 'EOS', kwargs)
-                    # embed()
+
                     for s1 in ss1:
                         if not pygame.Rect((0,0), self.screensize).contains(s1.rect):
-                            # effect(s1, None, self, **kwargs)
-                            # print effect(s1, self.EOS, self, **kwargs)
-                            # embed()
                             new_effects.append(effect(s1, self.EOS, self, **kwargs))
                     continue
 
@@ -677,18 +673,11 @@ class BasicGame(object):
                                 new_effects.append(effect(sprite1, sprite2, self, **kwargs))
 
                         else:
-                            # embed()
-                            # if sprite1.name == 'c2':
-                            #     embed()
                             new_effects.append(effect(sprite1, sprite2, self, **kwargs))
-            # print new_effects
-            # embed()
-            # print self.effectList
+
             self.effectList += [new_effect for new_effect in new_effects if new_effect]
             collision_set = collision_set.union(new_collisions)
 
-        # print self.effectList
-        # embed()
         self.kill_list = list(set(self.kill_list))
         # self.kill_list = dead[:]
         # if len(self.effectList) > 0:
@@ -752,66 +741,12 @@ class BasicGame(object):
         allStates = [self.getFullState()]
 
 
-        # spriteInduction(self, step=0)
-
-        # if self.playback_states:
-        #     print "got playback states"
-        #     embed()
         while self.playback_index < len(self.playback_states):
             clock.tick(self.frame_rate)
             self.time += 1
 
-
-
-            ## The below will pause at t=100 and run a theory-induction loop, using everything the agent has seen so far.
-            ## Should work as long as we're using a gridphysics game with a movingAvatar
-            ## Note: this won't work right now; complaining about importing from theory template.
-            # if self.time==100:
-            #     def getObjectType(objectID):
-            #         return self.all_objects[objectID]['type']['color']
-            #     from theory_template import *
-            #     sample = sampleFromDistribution(self.spriteDistribution, self.all_objects)
-            #     g = Game(spriteInductionResult=sample)
-            #     terminationCondition = {'ended': False, 'win':False, 'time':self.time}
-            #     trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState']) for e in finalEventList], terminationCondition)
-
-            #     ##clean up trace; convert object IDs to object types (for now this is just object color).
-
-
-            #     for i in range(len(trace[0])):
-            #         timestep = trace[0][i]
-            #         for j in range(len(timestep.events)):
-            #             event = timestep.events[j]
-            #             if len(event)==3:
-            #                 timestep.events[j] = (event[0], getObjectType(timestep, event[1], all_objects), getObjectType(timestep, event[2], all_objects))
-            #             elif len(event)==2:
-            #                 timestep.events[j] = (event[0], getObjectType(timestep, event[1], all_objects))
-
-
-            #     hypotheses = list(g.runDFSInduction(trace, 20, True))
-            #     embed()
-
-            # if self.time>100:
-            #     break
-
-
-            # print "t=", self.time
             self._clearAll()
 
-            # For new objects that appear; sprite induction
-            # spriteInduction(self, step=1)
-
-
-
-            # # load/save handling
-            # if self.load_.save_enabled:
-            #     from pygame.locals import K_1, K_2
-            #     if self.keystate[K_2] and self._lastsaved is not None:
-            #         self.setFullState(self._lastsaved)
-            #         self._initScreen(self.screensize,headless)
-            #         pygame.display.flip()
-            #     if self.keystate[K_1]:
-            #         self._lastsaved = self.getFullState()
             try:
                 self.setFullState(self.playback_states[self.playback_index])
             except:
@@ -851,7 +786,7 @@ class BasicGame(object):
 
             VGDLSprite.dirtyrects = []
             allStates.append(self.getFullState())
-            # embed()
+
             self.playback_index += 1
 
 
@@ -860,10 +795,6 @@ class BasicGame(object):
 
         if win:
             self.score += 1
-            # winning a game always gives a positive score.
-            # if self.score <= 0:
-                # self.score = 1
-
             self.win = True
             print "Game won, with score %s" % self.score
         else:
@@ -1036,7 +967,7 @@ class BasicGame(object):
                         print "Game lost. Score=%s" % self.score
                     np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
                     allStates.append(self.getFullState())
-                    # embed()
+
                     pygame.time.wait(10)
                     print len(self.actions), win, self.score
                     return win, self.score
@@ -1116,11 +1047,6 @@ class BasicGame(object):
             print "Game lost. Score=%s" % self.score
             np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
 
-
-        # if "killSprite" in [e[0] for e in self.effectList]:
-        #         embed()
-
-        # ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(10)

@@ -27,15 +27,15 @@ class Agent:
 		self.gameString = None
 		self.levelString = None
 		self.annealingFactor = 1.
-		self.shortHorizon = True
+		self.shortHorizon = False
 		if self.shortHorizon == True:
-			self.starting_max_nodes = 30
-			self.max_nodes_annealing = 1.001
+			self.starting_max_nodes = 20
+			self.max_nodes_annealing = 1.005
 		else:
 			self.starting_max_nodes = 1000
 			self.max_nodes_annealing = 10
-		self.regrounding = 3
-		self.avoid_danger = True
+		self.regrounding = 7
+		self.avoid_danger = False
 		self.safeDistance = 3
 		self.max_quits = 3
 		self.hypotheses = []
@@ -66,7 +66,7 @@ class Agent:
 		## returns the sprite in spriteList whose location best matches the location of sprite.
 		return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
 
-	def setSpritePositions(self, rle, Vrle):
+	def setSpritePositions(self, rle, Vrle, hypothesis):
 		## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
 		for k in Vrle._game.sprite_groups.keys():
 			if Vrle._game.sprite_groups[k]:
@@ -75,6 +75,13 @@ class Agent:
 				for sprite in Vrle._game.sprite_groups[k]:
 					matchingSprite = self.findNearestSprite(sprite, matchingSpritesInRLE)
 					sprite.rect = matchingSprite.rect
+					
+					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType):
+						try:
+							orientationDict = self.rle._game.object_token_spriteDistribution[matchingSprite.ID][hypothesis.classes[sprite.name][0].vgdlType]['args']['orientation']
+							sprite.orientation = max(orientationDict, key=orientationDict.get) ## gets max key by val
+						except KeyError:
+							pass
 		return
 
 
@@ -83,7 +90,17 @@ class Agent:
 		gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
 				 "./examples/gridphysics/theorytest.py")
 		Vrle = createMindEnv(gameString, levelString, output=False)
-		self.setSpritePositions(self.rle, Vrle)
+
+
+		self.setSpritePositions(self.rle, Vrle, hypothesis)
+
+		# try:
+		# 	print([(s.rect, s.orientation) for s in Vrle._game.sprite_groups['c4']])
+		# 	print([(s.rect, s.orientation) for s in self.rle._game.sprite_groups['missile1']])
+		# except:
+		# 	pass
+
+		# embed()
 		Vrle._game.getAvatars()[0].resources = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
 		try:
 			Vrle._game.getAvatars()[0].orientation = copy.deepcopy(self.rle._game.getAvatars()[0].orientation)
@@ -98,7 +115,7 @@ class Agent:
 		# print "in VrleInitPhase.", len(self.hypotheses), "hypotheses"
 		# if len(self.hypotheses)>1:
 		# 	print "more than one hypothesis"
-		# 	embed()
+
 		for hypothesis in self.hypotheses[0:1]:
 			tempHypothesis = copy.deepcopy(hypothesis)
 			tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
@@ -110,7 +127,7 @@ class Agent:
 				# tempHypothesis.display()
 			VRLEs.append(self.initializeVrle(tempHypothesis))
 		# print("wrote theory to text")
-		# embed()
+
 
 		return VRLEs
 
@@ -120,8 +137,6 @@ class Agent:
 			spriteTypeHypothesis, exceptedObjects, _ = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
 
 			self.rle._game.exceptedObjects = exceptedObjects
-			# print "sampled hypothesis"
-			# embed()
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 			initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
 
@@ -208,6 +223,7 @@ class Agent:
 
 			if flexible_goals:
 				## When you embed, you can manually input changes in theory. See flexible_goals.py for an example.
+				print "in main_agent; playing with flexible_goals"
 				embed()
 
 		# self.makeMovie()
@@ -221,7 +237,6 @@ class Agent:
 
 		write_to_csv('pilotModelRuns_'+gvgname[gvgname.find('set_1/')+6:]+'.csv', output)
 		self.makeMovie()
-		# embed()
 
 	def makeHeatmap(self, statesEncountered, filename):
 		from vgdl.plotting import featurePlot
@@ -367,15 +382,12 @@ class Agent:
 			gameString_array = p.gameString_array
 			if solution:
 				print "got solution of length", len(solution)
-			# embed()
 			## add new objects? (line 310 of metaplanner)
 
 			if not quitting:
 				for i, action in enumerate(solution):
 					self.hypotheses[0].dryingPaint = set()
 
-					# if i==len(solution)-1:
-					# 	embed()
 					hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
 						run_induction = not flexible_goals)
 					print "theory_change_flag", theory_change_flag
@@ -399,13 +411,10 @@ class Agent:
 							if any(np.where(list(gameString_array[i+1]))[0] !=
 								   np.where(list(self.rle.show()))[0]):
 								print 'regrounding'
-								# embed()
 								break
 						except:
 							# Mismatch in gamestring lengths
 							print 'regrounding'
-							# print "mismatch in gamestring lengths"
-							# embed()
 							break
 
 					if self.avoid_danger:
@@ -429,7 +438,6 @@ class Agent:
 
 						except ValueError:
 							# print("error in avoid_danger: is the avatar dead?")
-							# embed()
 							pass
 
 				if self.shortHorizon:
@@ -464,8 +472,6 @@ class Agent:
 			if not rule.preconditions:
 				return True
 			else:
-				print("In matcheventblabla")
-				# embed()
 				if not all([p.check(self.rle.agentStatePrev) for p in list(rule.preconditions)]):
 					return False
 				else:
@@ -480,7 +486,6 @@ class Agent:
 			spriteName = current_objects[k]['sprite'].name
 			if spriteName not in [self.all_objects[key]['sprite'].name for key in self.all_objects.keys()]:
 				print "new object", spriteName
-				# embed()
 				self.all_objects[k] = current_objects[k]
 				distributionInitSetup(self.rle._game, k)
 				## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep.
@@ -500,8 +505,6 @@ class Agent:
 			for hypothesis in hypotheses:
 				newHypotheses.append(gameObject.addNewObjectsToTheory(hypothesis, spriteTypeHypothesis))
 			hypotheses = newHypotheses
-			# print "updated new object..."
-			# embed()
 
 		[self.new_objects.pop(k, None) for k in self.new_objects.keys() if self.new_objects[k]>5] ## don't track items once we've updated the theory
 		return hypotheses
@@ -557,10 +560,6 @@ class Agent:
 
 		distributionsHaveChanged = spriteInduction(self.rle._game, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 
-		# if distributionsHaveChanged:
-		# 	print "distributions have changed"
-		# 	embed()
-
 		effects = translateEvents(res['effectList'], self.all_objects, self.rle)
 		print self.rle.show()
 		print self.rle._game.score
@@ -590,14 +589,9 @@ class Agent:
 
 			game_object = Game(spriteInductionResult=sample)
 
-			# if distributionsHaveChanged:
-			# 	print "distributions changed"
-			# 	embed()
-
 			terminationCondition = {'ended': False, 'win':False, 'time':self.rle._game.time}
 			trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState'], e['rle']) \
 				for e in self.finalEventList], terminationCondition)
-			# embed()
 			hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
 			verbose=False, existingTheories=hypotheses))
 
@@ -606,7 +600,6 @@ class Agent:
 
 			# if len(hypotheses)>1:
 			# 	print "more than one hypothesis"
-			# 	embed()
 
 			#  PRECONDITIONS HANDLING
 			# Current assumptions:
@@ -628,11 +621,9 @@ class Agent:
 					# resourceColor = self.rle._game.sprite_groups[resource][0].colorName
 					# Add resource change to seen_resources list
 					self.seen_resources.append(resource)
-					# print "found resource"
-					# embed()
+
 					hypotheses[0].resource_limits[resource] = limit
-					# print "got a resource"
-					# embed()
+
 				elif agentState[resource]==limit and resource not in self.seen_limits:
 					self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
 					self.fakeInteractionRules = list(set(self.fakeInteractionRules))
@@ -647,7 +638,6 @@ class Agent:
 
 					theory_change_flag = True
 					# print "reached resource limit for", resource
-					# embed()
 
 		if event['effectList'] and run_induction:
 			[t.updateTerminations(event=event) for t in hypotheses]
@@ -669,9 +659,9 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.demo_transform_relational"
 	# filename = "examples.gridphysics.simpleGame_push_boulders"
 	# filename = "examples.gridphysics.pick_apples"
-	filename = "examples.gridphysics.expt_exploration_exploitation_debugging"
+	# filename = "examples.gridphysics.expt_exploration_exploitation_debugging"
 
-	# filename = "examples.gridphysics.boulderdash"
+	filename = "examples.gridphysics.expt_movers"
 
 	level_game_pairs = None
 	# Playing GVG-AI games
@@ -697,7 +687,7 @@ if __name__ == "__main__":
 	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-	gameName = gvggames[5]
+	gameName = gvggames[0]
 	gvgname = "../gvgai/training_set_1/{}".format(gameName)
 
 	gameString = read_gvgai_game('{}.txt'.format(gvgname))

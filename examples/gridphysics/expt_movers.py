@@ -1,24 +1,40 @@
 
+
 level0 = """
 wwwwwwwwwwwwwwwwww
-w  1    a        w
+w  1             w
 w                w
-wA  b        w  ww
-w    w       w  ww
-ww         b     w
-w   a          1 w
-w        2   b   w
-w                g
+w              g w
+wwwwwwwwwwwwwwwwww
+w                w
+w     A          w
+w                w
+w                w
+w                w
+w                w
+w                w
 wwwwwwwwwwwwwwwwww
 """
 
+# level1 = """
+# wwwwwwwwwwwwwwwwww
+# w  1    a        w
+# w    wwwww       w
+# w            w  ww
+# w    w     3 w1 ww
+# w1   w     b     w
+# w   a w          w
+# w     w  2   b   w
+# w   A w         gw
+# wwwwwwwwwwwwwwwwww
+# """
 level1 = """
 wwwwwwwwwwwwwwwwww
-w  1    a        w
+w  1 w w         w
 w    wwwww       w
 w            w  ww
-w    w     3 w1 ww
-w1   w     b     w
+w    w     3 w  ww
+w    w     b     w
 w   a w          w
 w     w  2   b   w
 w   A w         gw
@@ -108,7 +124,7 @@ BasicGame frame_rate=30
         chaser > AStarChaser color=BROWN stype=avatar
         wall > ResourcePack color=BLACK
         missile > Missile
-            missile1 > color=YELLOW orientation=RIGHT speed=.2
+            missile1 > color=YELLOW orientation=RIGHT speed=.4
             missile2 > color=PINK orientation=RIGHT speed=.4
             missile3 > color=LIGHTBLUE orientation=UP speed=.2
         goal > Passive color=GREEN
@@ -152,8 +168,8 @@ same prediction should be highest for other moving items of same speed, then for
 also vice-versa.
 """
 
-level_game_pairs = [[game, level1], [game, level2], [game, level3],
-                    [game, level4]]
+level_game_pairs = [[game, level1]]#, [game, level2], [game, level3],
+                    # [game, level4]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

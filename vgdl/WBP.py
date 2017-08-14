@@ -331,7 +331,7 @@ class WBP():
 			if self.short_horizon:
 				print "playing with short horizon; reached max"
 				# embed()
-				node = max(visited, key=lambda n:-n.intrinsic_reward)
+				node = max(visited, key=lambda n:n.intrinsic_reward)
 				parentNode = copy.deepcopy(node)
 				self.solution = node.actionSeq
 				print self.solution
@@ -436,7 +436,7 @@ class Node():
 			mult = -1
 		else:
 			compute_second_order = True
-			mult = 10
+			mult = -1
 
 		# Get all types that kill or transform stype (the target)
 		killer_types = [
@@ -558,13 +558,13 @@ class Node():
 
 			# kill_positions = np.concatenate([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types])
 			resource_names = [list(resource[1])[0].item for resource in avatar_preconditions]
-			resource_names = []
-			# if resource_names:
-				# embed()
+			# resource_names = []
+
 			try:
 				resource_yielder_names = [[inter.slot2 if (inter.interaction=='changeResource' and inter.args['resource']==res) else res if (inter.interaction=='collectResource' and res==inter.slot1) else None
 				for inter in theory.interactionSet] for res in resource_names]
 			except:
+				print "failure with resource_yielder_names"
 				embed()
 
 			resource_yielder_names = [[r for r in ryn if r] for ryn in resource_yielder_names] ## Remove 'None' yielded by last else condition above
@@ -592,6 +592,7 @@ class Node():
 							for obj1 in obj1_positions
 							for obj2 in obj2_positions])
 					except:
+						print "failure with obj1_positions"
 						embed()
 
 					precondition_distances.append(min(possiblePairList))
@@ -873,7 +874,7 @@ class Node():
 			# embed()
 
 		## Try rollouts for aliens?
-		if len(self.actionSeq)>0 and self.actionSeq[-1]==32 and False:
+		if len(self.actionSeq)>0 and self.actionSeq[-1]==32:# and False:
 			self.rolloutArray = self.rollout(self.rle)
 			print "in rollout"
 
