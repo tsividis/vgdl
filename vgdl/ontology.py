@@ -2122,8 +2122,8 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         options = [k for k in all_objects.keys() if all_objects[k]['type']['color'] == obj_type]
         optionsDict = dict((k, spriteUpdateDict[k]) for k in options)
         k=max(optionsDict, key=optionsDict.get)
-        if obj_type=='RED':
-            embed()
+        # if obj_type=='RED':
+            # embed()
         if spriteUpdateDict[k] >= bestSpriteTypeDict[obj_type]['count']: ## If we have more observations in the current episode than in our memory, use the current distribution
             # k = random.choice(options)
             ## always alphabetize the keys
