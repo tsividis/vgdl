@@ -54,6 +54,9 @@ class WBP():
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
 		self.max_nodes = max_nodes
+		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random', 'Missile']
+		self.objectsWhosePresenceWeIgnore = ['Flicker']
+		self.allowRollouts = True
 		self.quitting = False
 		self.gameString_array = []
 		if theory == None:
@@ -123,15 +126,17 @@ class WBP():
 	def calculateAtoms(self, rle):
 		lst = []
 
+		## Track specific locations of objects
 		for k in self.objectsToTrack:
-		# for k in self.rle._game.sprite_groups.keys():
 			## Don't track Flicker in atoms. The point is that the Flicker should have an effect on other objects, so atom novelty that would have been
 			## a function of the Flicker's presence is being taken care of by that. Otherwise the agent can keep exploring states that have no actual effect
 			## on the game state.
 			if (len(rle._game.sprite_groups[k])>0 and
-					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and
-					('Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType))): #or
-						# ('Random' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)))):
+					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and 
+					any([obj in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) for obj in self.objectsWhoseLocationsWeIgnore])):
+					# (('Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)) or
+						# ('Random' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)) or
+						# ('Missile' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)))):
 				pass
 			else:
 				for o in rle._game.sprite_groups[k]:
@@ -160,6 +165,8 @@ class WBP():
 					objPosCombination = self.objIDs[o.ID] + vecValue
 					# print("ObjId = {}, vecValue = {}".format(self.objIDs[o.ID], vecValue))
 					lst.append(objPosCombination)
+		
+		## Track present/absent objects
 		present = []
 		for k in [t for t in self.objectTypes if t not in ['wall', 'avatar']]: ##maybe add the avatar to this global state
 
@@ -168,7 +175,8 @@ class WBP():
 			## on the game state.
 			if (len(rle._game.sprite_groups[k])>0 and
 					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and
-					('Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType))): #or
+					any([obj in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) for obj in self.objectsWhosePresenceWeIgnore])):
+					# ('Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType))): #or
 						# ('Random' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)))):
 				pass
 			else:
@@ -394,23 +402,25 @@ class Node():
 		metabolic_cost = 0
 		return metabolic_cost
 
-	def rollout(self, vrle):
+	def rollout(self, Vrle):
 		successfulRollout = False
+
 		while not successfulRollout:
-			vrle = copy.deepcopy(vrle)
+			vrle = copy.deepcopy(Vrle)
 			prevHeuristicVal = self.heuristics(vrle)
 			rolloutArray = []
 			i=0
 			terminal, win = vrle._isDone()
+			print "in rollout"
 			while i<self.rolloutDepth and not terminal:
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
+				# print a
 				vrle.step(a)
 				print vrle.show(indent=True)
 				currHeuristicVal = self.heuristics(vrle)
 				heuristicVal = currHeuristicVal-prevHeuristicVal
 				rolloutArray.append(heuristicVal)
 				prevHeuristicVal = currHeuristicVal
-				# print "in rollout"
 				# print vrle.show()
 				terminal, win = vrle._isDone()
 				i+=1
@@ -418,8 +428,13 @@ class Node():
 			if terminal and not win:
 				successfulRollout = False
 				print "rolling out again"
+				embed()
 			else:
 				successfulRollout = True
+
+		if win:
+			self.terminal = terminal
+			self.win = win
 		return rolloutArray
 
 	def spritecounter_val(self, theory, term, stype, rle, first_alpha=10000.,
@@ -747,7 +762,7 @@ class Node():
 		for term in theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
-					first_alpha=5000, second_alpha=5)
+					first_alpha=5000, second_alpha=0)
 				# if spritecounter_val!=0:
 					# print("spritecounter_val for {} is equal to {}".format(
 						# term.termination.stype, spritecounter_val))
@@ -755,7 +770,7 @@ class Node():
 
 			elif isinstance(term, MultiSpriteCounterRule):
 				multispritecounter_val = self.multispritecounter_val(theory, term, rle,
-						first_alpha=500, second_alpha=5)
+						first_alpha=500, second_alpha=0)
 				# if multispritecounter_val!=0:
 					# print("multispritecounter_val for {} is equal to {}".format(
 						# term.termination.stypes, multispritecounter_val))
@@ -870,20 +885,18 @@ class Node():
 		self.updateNoveltyIW1()
 		"""
 
-		# if self.win:
-			# embed()
-
 		## Try rollouts for aliens?
-		if len(self.actionSeq)>0 and self.actionSeq[-1]==32:# and False:
+		if self.WBP.allowRollouts and len(self.actionSeq)>0 and self.actionSeq[-1]==32:
 			self.rolloutArray = self.rollout(self.rle)
-			print "in rollout"
+			# print self.rolloutArray
+			# print "in rollout"
 
 		self.heuristicVal = self.heuristics()
 
-		# print self.lastState._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost
+		# print self.rle._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost, self.position_score()
+
 		self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		sum(self.rolloutArray) - self.metabolic_cost + self.position_score()
-		# self.intrinsic_reward = 0
 
 		try:
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)

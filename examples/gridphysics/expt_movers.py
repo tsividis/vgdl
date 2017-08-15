@@ -7,6 +7,17 @@ w                w
 w              g w
 wwwwwwwwwwwwwwwwww
 w                w
+w                w
+w                w
+w                w
+w       y        w
+w                w
+w                w
+w                w
+w                w
+w                w
+wwwwwwwwwwwwwwwwww
+w                w
 w     A          w
 w                w
 w                w
@@ -115,12 +126,10 @@ BasicGame frame_rate=30
     SpriteSet
         avatar > MovingAvatar color=DARKBLUE
         box > Passive
-            box1 > color=RED
-            box2 > color=LIGHTGREEN
-        mover > VGDLSprite
-            rand > RandomNPC cooldown=10
-                rand1 > color=LIGHTORANGE
-                rand2 > color=BLUE
+            box1 > color=LIGHTGREEN
+            box2 > color=RED
+        rand1 > RandomNPC cooldown=3 color=LIGHTORANGE
+        rand2 > RandomNPC cooldown=10 color=BLUE
         chaser > AStarChaser color=BROWN stype=avatar
         wall > ResourcePack color=BLACK
         missile > Missile
@@ -141,7 +150,8 @@ BasicGame frame_rate=30
         g > goal
     InteractionSet
         avatar wall > stepBack
-        mover wall > stepBack
+        rand1 wall > stepBack
+        rand2 wall > stepBack
         box avatar > killSprite
         avatar box2 > killSprite
         avatar rand > killSprite
@@ -153,9 +163,13 @@ BasicGame frame_rate=30
         missile EOS > wrapAround offset=0
         missile wall > turn
         missile missile > reverseDirection
-        mover mover > stepBack
-        mover missile > stepBack
-        mover box > stepBack
+        rand1 rand1 > stepBack
+        rand1 rand2 > stepBack
+        rand2 rand1 > stepBack
+        rand1 missile > stepBack
+        rand2 missile > stepBack
+        rand1 box > stepBack
+        rand2 box > stepBack
         goal avatar > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
@@ -168,7 +182,7 @@ same prediction should be highest for other moving items of same speed, then for
 also vice-versa.
 """
 
-level_game_pairs = [[game, level1]]#, [game, level2], [game, level3],
+level_game_pairs = [[game, level0]]#, [game, level2], [game, level3],
                     # [game, level4]]
 
 if __name__ == "__main__":

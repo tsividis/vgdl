@@ -27,14 +27,14 @@ class Agent:
 		self.gameString = None
 		self.levelString = None
 		self.annealingFactor = 1.
-		self.shortHorizon = False
+		self.shortHorizon = True
 		if self.shortHorizon == True:
 			self.starting_max_nodes = 20
 			self.max_nodes_annealing = 1.005
 		else:
 			self.starting_max_nodes = 1000
 			self.max_nodes_annealing = 10
-		self.regrounding = 7
+		self.regrounding = 5
 		self.avoid_danger = False
 		self.safeDistance = 3
 		self.max_quits = 3
@@ -381,7 +381,17 @@ class Agent:
 
 					hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
 						run_induction = not flexible_goals)
-					print "theory_change_flag", theory_change_flag
+
+
+					# ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='RED']
+					# if ID:
+					# 	ID = ID[0]
+					# 	for k,v in self.rle._game.spriteDistribution[ID].items():
+					# 		print k, self.rle._game.spriteDistribution[ID][k]['prob']
+
+					# print "theory_change_flag", theory_change_flag
+					# if theory_change_flag:
+					# 	embed()
 					effectsEncountered.extend(effects)
 					steps +=1
 					if theory_change_flag:
@@ -402,6 +412,7 @@ class Agent:
 							if any(np.where(list(gameString_array[i+1]))[0] !=
 								   np.where(list(self.rle.show()))[0]):
 								print 'regrounding'
+								# embed()
 								break
 						except:
 							# Mismatch in gamestring lengths
@@ -578,6 +589,9 @@ class Agent:
 
 			sample, exceptedObjects, _ = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
 
+			# for s in sample:
+				# s.display()
+			# embed()
 			game_object = Game(spriteInductionResult=sample)
 
 			terminationCondition = {'ended': False, 'win':False, 'time':self.rle._game.time}

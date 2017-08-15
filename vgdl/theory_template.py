@@ -1019,7 +1019,7 @@ class Theory(object):
 				self.terminationSet.append(terminationRule)
 
 		falsified_win_stypes = set([sprite_rule.termination.stype for sprite_rule in self.falsified
-			if (sprite_rule.termination.win and sprite_rule.termination.stype != 'EOS')])
+			if (sprite_rule.termination.win and sprite_rule.termination.stype != 'EOS' and sprite_rule.termination.stype !='avatar')])
 		
 		try:
 			falsified_win_stypes.remove(self.classes['avatar'][0].args['stype'])

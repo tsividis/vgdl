@@ -17,6 +17,7 @@ from ai import AStarWorld
 from IPython import embed
 import core
 import copy
+import ipdb
 
 UP = (0, -1)
 DOWN = (0, 1)
@@ -59,7 +60,8 @@ class GridPhysics():
         if speed != 0 and hasattr(sprite, 'orientation'):
             orientation = sprite.orientation
             speed = speed * self.gridsize[0]
-            if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
+            if not(sprite.lastmove%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
+            # if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
                 pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
                 return pos.left, pos.top
         else:   # If object has speed = 0 or no 'orientation' attribute
@@ -75,7 +77,8 @@ class GridPhysics():
 
         if speed != 0 and hasattr(sprite, 'orientation'):
             speed = speed * self.gridsize[0]
-            if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
+            if not(sprite.lastmove%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
+            # if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
                 pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
                 return pos.left, pos.top
         else:   # If object has speed = 0 or no 'orientation' attribute
@@ -95,6 +98,8 @@ class GridPhysics():
         Calculate where the sprite would end up in a timestep, without actually updating its position.
         """
          ## This is where you could make hypotheses about speed, etc. for the object.
+        # if sprite.colorName=='LIGHTORANGE' and sprite.cooldown>1 and sprite.lastmove>1:
+            # embed()
         if speed is None:
             if sprite.speed is None:
                 speed = 1
@@ -107,7 +112,11 @@ class GridPhysics():
 
             orientation = action
 
-            if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
+            if not(sprite.lastmove%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
+
+            # if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
+                # if sprite.colorName=='LIGHTORANGE':
+                    # embed()
                 pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
                 return pos.left, pos.top
         return(sprite.rect.left, sprite.rect.top)
@@ -244,15 +253,15 @@ class SpawnPoint(SpriteProducer):
     prob = None
     total = None
     color = BLACK
-    cooldown = None
+    spawnCooldown = None
     is_static = True
-    def __init__(self, cooldown=1, prob=1, total=None, **kwargs):
+    def __init__(self, spawnCooldown=1, prob=1, total=None, **kwargs):
         SpriteProducer.__init__(self, **kwargs)
         if prob:
             self.prob = prob
             self.is_stochastic = (prob > 0 and prob < 1)
-        if cooldown:
-            self.cooldown = cooldown
+        if spawnCooldown:
+            self.spawnCooldown = spawnCooldown
         if total:
             self.total = total
         self.counter = 0
@@ -262,7 +271,7 @@ class SpawnPoint(SpriteProducer):
             killSprite(self, None, game)
             return
 
-        if (game.time % self.cooldown == 0 and random.random() < self.prob):
+        if (game.time % self.spawnCooldown == 0 and random.random() < self.prob):
             game._createSprite([self.stype], (self.rect.left, self.rect.top))
             self.counter += 1
 
@@ -1116,10 +1125,11 @@ class NoveltyTermination(Termination):
                     elif e[1] in game.getObjects().keys():
                         name1 = game.getObjects()[e[1]]['sprite'].name
                     else:
-                        print "Couldn't find object in NoveltyTermination"
                         id_not_found = True
-                        # Default to slot1
-                        name1 = self.s1
+                        # embed()
+                        ## This happens when we shoot an object and IDs are mismatched; default to the thing we shoot.
+                        ## We've confirmed that this isn't due to other objects shot by other objects.
+                        name1 = game.getAvatars()[0].stype
                 try:
                     name2 = game.all_objects[e[2]]['sprite'].name
                 except KeyError:
@@ -1132,15 +1142,20 @@ class NoveltyTermination(Termination):
                     elif e[2] in game.getObjects().keys():
                         name2 = game.getObjects()[e[2]]['sprite'].name
                     else:
-                        print "Couldn't find object in NoveltyTermination"
                         id_not_found = True
-                        # Default to slot2
-                        name2 = self.s2
+                        # embed()
+
+                        ## This happens when we shoot an object and IDs are mismatched; default to the thing we shoot.
+                        ## We've confirmed that this isn't due to other objects shot by other objects.
+                        name2 = game.getAvatars()[0].stype
+
                 if name1==self.s1 and name2==self.s2:
-                    # print("NoveltyTermination with {} and {}".format(
-                        # name1, name2))
                     if id_not_found:
                         pass
+                    # print("NoveltyTermination with {} and {}".format(
+                        # name1, name2))
+                    # embed()
+
                     return True, self.win
             elif e[2]=='ENDOFSCREEN':
                 name2 = 'EOS'
@@ -1155,15 +1170,18 @@ class NoveltyTermination(Termination):
                     elif e[1] in game.getObjects().keys():
                         name1 = game.getObjects()[e[1]]['sprite'].name
                     else:
-                        print "Couldn't find object in NoveltyTermination"
+                        # print "Couldn't find object in NoveltyTermination"
                         id_not_found = True
-                        # Default to slot1
-                        name1 = self.s1
+                        # embed()
+                        name1 = game.getAvatars()[0].stype
                 # self.s2 returns a type for the EOS for some reason, so the
                 # check has to be performed like this
                 if name1==self.s1 and name2 in str(self.s2):
                     if id_not_found:
                         pass
+                    # print("NoveltyTermination with {} and {}".format(
+                        # name1, name2))
+                    # embed()
                     return True, self.win
         return False, None
 
@@ -1623,7 +1641,9 @@ def getStype(params):
 
 def getCooldown(params):
     if 'cooldown' in params:
-        return params['stype']
+        return params['cooldown']
+    else:
+        return 1
 
 def chaserClosestTargets(sprite, game):
     bestd = 1e100
@@ -1682,7 +1702,7 @@ def updateOptions(game, sprite_type, current_sprite, params={}, missileOrientati
     assume default values for each attribute.
     """
     # Immovable, Passive, ResourcePack
-    if (sprite_type == Immovable) or (sprite_type == Passive) or (sprite_type == ResourcePack) or (sprite_type == Resource):
+    if (sprite_type == Immovable) or (sprite_type == Passive) or (sprite_type == ResourcePack) or (sprite_type == Resource) or (sprite_type=='OTHER'):
         return {(current_sprite.rect.left, current_sprite.rect.top): 1.} ##object stays in position
 
     # Chaser
@@ -1690,7 +1710,13 @@ def updateOptions(game, sprite_type, current_sprite, params={}, missileOrientati
         speed = getSpeed(params)
         fleeing = getFleeing(params)
         targetColor = getStype(params)
-        # cooldown = getCooldown(params)
+        cooldown = getCooldown(params)
+
+        realCooldown = current_sprite.cooldown
+        current_sprite.cooldown = cooldown
+        # if current_sprite.colorName=='LIGHTORANGE':
+            # print 'chaser'
+            # embed()
         try:
             targetName = [k for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName==targetColor][0]
             targets = game.sprite_groups[targetName]
@@ -1722,7 +1748,7 @@ def updateOptions(game, sprite_type, current_sprite, params={}, missileOrientati
             if current_sprite.colorName == 'ORANGE':
                 print "problem in movementOtions"
                 embed()
-
+        current_sprite.cooldown = realCooldown
         return position_options
 
     # AStarChaser
@@ -1766,18 +1792,24 @@ def updateOptions(game, sprite_type, current_sprite, params={}, missileOrientati
 
     # Random NPC
     elif sprite_type == RandomNPC:
-        # if current_sprite.colorName=='PURPLE' and 'Random' in str(sprite_type):
-        #     print "in updateOptions"
-        #     print current_sprite
-        speed = getSpeed(params)
 
+        realCooldown = current_sprite.cooldown
+        speed, cooldown = getSpeed(params), getCooldown(params)
+        current_sprite.cooldown = cooldown
         position_options = {}
+
         for option in BASEDIRS:
             left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed)
             if (left, top) in position_options.keys():
                 position_options[(left, top)] += 1.0/len(BASEDIRS)
             else:
                 position_options[(left, top)] = 1.0/len(BASEDIRS)
+        # if current_sprite.colorName == 'RED':
+            # print "in updateOptions"
+            # print current_sprite, params
+            # print position_options
+            # embed()
+        current_sprite.cooldown = realCooldown
         return position_options
 
     # Missile or OrientedSprite
@@ -1788,6 +1820,10 @@ def updateOptions(game, sprite_type, current_sprite, params={}, missileOrientati
             # (i.e. make these fields in the params variable)
             speed = getSpeed(params)
             orientation = getOrientation(params)
+            cooldown = getCooldown(params)
+            realCooldown = current_sprite.cooldown
+            current_sprite.cooldown = cooldown
+
             coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
 
             # If object has speed = 0 or no 'orientation' attribute
@@ -1805,6 +1841,10 @@ def updateOptions(game, sprite_type, current_sprite, params={}, missileOrientati
                 coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
                 position_options[(coords[0], coords[1])] = .5
 
+            # if current_sprite.colorName=='RED' and missileOrientationClustering:
+            #     print position_options
+            #     embed()
+            current_sprite.cooldown = realCooldown
             return position_options
 
         # Catches objects that can't be Oriented Sprite and Missile types b/c fails the if-statement
@@ -1925,7 +1965,7 @@ def distributionInitSetup(game, sprite):
             game.object_token_movement_options[sprite][sprite_type][attributeTuple] = {}
 
 
-def updateDistribution(sprite, curr_distribution, movement_options, outcome, specialID=None, missileOrientationClustering=False):
+def updateDistribution(game, sprite, curr_distribution, movement_options, outcome, specialID=None, missileOrientationClustering=False):
     """
     Updates the sprite distribution for a given object in the game.
 
@@ -1963,10 +2003,12 @@ def updateDistribution(sprite, curr_distribution, movement_options, outcome, spe
     """
 
     if sprite in curr_distribution.keys():
+        # if sprite in game.all_objects.keys() and game.all_objects[sprite]['sprite'].colorName=='ORANGE':
+            # ipdb.set_trace()
         for sprite_type in curr_distribution[sprite].keys():
-            if sprite_type == "OTHER":
+            # if sprite_type == "OTHER":
                 # sprite type is unknown.
-                movement_options[sprite][sprite_type][()] = {outcome: 1.0/5} #up down left right stay
+                # movement_options[sprite][sprite_type][()] = {outcome: 1.0/5} #up down left right stay
 
 
             if curr_distribution[sprite][sprite_type]['prob'] > 0:
@@ -2059,7 +2101,8 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                 ao_vgdl_type = ao[0]
                 ao_color = colorDict[str(ao[1]['color'])]
                 ao_args = ao[1]
-                # ao_args.update({'singleton': 'True'})
+                # embed()
+                ao_args.update({'singleton': 'True'})
                 sample.append(Sprite(vgdlType=ao_vgdl_type, color=ao_color, className=all_objects[k]['sprite'].stype, args=ao_args))
                 # sample.append(Sprite(vgdlType=Flicker, color='BLUE', className=all_objects[k]['sprite'].stype, args={'singleton':'True'}))
 
@@ -2074,10 +2117,13 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                                                                                                     ## and not doing inference about it.
 
     for obj_type in types:
+
         ## find the most-updated object, use that one for the sprite hypothesis.
         options = [k for k in all_objects.keys() if all_objects[k]['type']['color'] == obj_type]
-        k = max(options, key=lambda x:spriteUpdateDict[x])
-
+        optionsDict = dict((k, spriteUpdateDict[k]) for k in options)
+        k=max(optionsDict, key=optionsDict.get)
+        if obj_type=='RED':
+            embed()
         if spriteUpdateDict[k] >= bestSpriteTypeDict[obj_type]['count']: ## If we have more observations in the current episode than in our memory, use the current distribution
             # k = random.choice(options)
             ## always alphabetize the keys
@@ -2103,8 +2149,10 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         # color = all_objects[k]['type']['color']
 
         if sprite_type=='OTHER':
-            from ontology import RandomNPC
-            sprite_type = RandomNPC
+            # from ontology import RandomNPC
+            # sprite_type = RandomNPC
+            from ontology import ResourcePack
+            sprite_type = ResourcePack
 
         s = Sprite(vgdlType=sprite_type, color=color)
         param = {}
@@ -2159,6 +2207,8 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                                     to {}".format(s.args, matchingSprite.args))
 
                 else:
+                    # print s.color, oldSpriteSet
+                    # embed()
                     distributionsHaveChanged = True
         except:
             print "failed to find matching object in sampleFromDistribution"
@@ -2283,13 +2333,15 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                             ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving
                             ## objects
                             game.movement_options[sprite][sprite_type][attributeTuple] = \
-                            updateOptions(game, sprite_type, sprite_obj, params=attributeDict)
+                            updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
 
                             ## but we also do inference for particular object tokens
 
                             game.object_token_movement_options[sprite][sprite_type][attributeTuple] = \
-                            updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
- 
+                            updateOptions(game, sprite_type, sprite_obj, params=attributeDict)
+                    # if sprite_obj.colorName=='RED' and 'Random' in str(sprite_type):
+                        # print game.movement_options[sprite][sprite_type]
+                        # embed()
         # logs = [s for s in game.spriteDistribution.keys() if objects[s]['features']['color']=='BROWN']
         # print "logs:"
         # print "just updated options"
@@ -2321,10 +2373,10 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                     # time step involving this sprite.
 
                     outcome = objects[sprite]["position"]
-                    game.spriteDistribution = updateDistribution(sprite, game.spriteDistribution, \
-                                              game.movement_options, outcome)
-                    game.object_token_spriteDistribution = updateDistribution(sprite, game.object_token_spriteDistribution, \
-                                              game.object_token_movement_options, outcome, missileOrientationClustering=True)
+                    game.spriteDistribution = updateDistribution(game, sprite, game.spriteDistribution, \
+                                              game.movement_options, outcome, missileOrientationClustering=True)
+                    game.object_token_spriteDistribution = updateDistribution(game, sprite, game.object_token_spriteDistribution, \
+                                              game.object_token_movement_options, outcome)
 
                     game.spriteUpdateDict[sprite] += 1
 

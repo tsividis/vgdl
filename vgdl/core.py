@@ -245,10 +245,6 @@ class BasicGame(object):
         self.effectList = [] # list of effects that happened this current timestep
         self.spriteDistribution = {}
         self.object_token_spriteDistribution = {}
-<<<<<<< HEAD
-
-=======
->>>>>>> 619e734fda25d784d3403b936cd30fa3060ed118
         self.spriteUpdateDict = defaultdict(int) ## track how many times we have run spriteType updates to each particular object
         self.movement_options = {}
         self.object_token_movement_options = {}
@@ -1135,7 +1131,8 @@ class VGDLSprite(object):
     is_avatar= False
     is_stochastic = False
     color    = None
-    cooldown = 0 # pause ticks in-between two moves
+    cooldown = 1
+    # cooldown = 0 # pause ticks in-between two moves
     speed    = None
     mass     = 1
     physicstype=None
@@ -1187,10 +1184,10 @@ class VGDLSprite(object):
 
         if speed is None:
             speed = self.speed
-
-        if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
+        if not(self.lastmove%self.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
+        # if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
             self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
-            self.lastmove = 0
+            # self.lastmove = 0
 
 
     def _velocity(self):
