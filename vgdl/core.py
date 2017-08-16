@@ -1179,14 +1179,14 @@ class VGDLSprite(object):
         self.lastmove += 1
         # if self.colorName == 'RED':
             # ipdb.set_trace()
-        if not self.is_static and not self.only_active and random_npc:
+        if not self.is_static and not self.only_active and not random_npc:
             self.physics.passiveMovement(self)
 
     def _updatePos(self, orientation, speed=None):
 
         if speed is None:
             speed = self.speed
-        if not((self.lastmove % self.cooldown != 0) or abs(orientation[0])+abs(orientation[1])==0):
+        if not(((self.lastmove+1) % self.cooldown != 0) or abs(orientation[0])+abs(orientation[1])==0):
         # if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
             self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
             # self.lastmove = 0

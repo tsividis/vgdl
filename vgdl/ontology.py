@@ -112,7 +112,7 @@ class GridPhysics():
 
             orientation = action
 
-            if not(sprite.lastmove%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
+            if not((sprite.lastmove+1)%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
 
             # if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
                 # if sprite.colorName=='LIGHTORANGE':
@@ -148,7 +148,7 @@ class ContinuousPhysics(GridPhysics):
 
     def calculatePassiveMovement(self, sprite):
         if sprite.speed != 0 and hasattr(sprite, 'orientation'):
-            if not(sprite.cooldown > sprite.lastmove+1 or abs(sprite.orientation[0])+abs(sprite.orientation[1])==0):
+            if not((sprite.lastmove+1) % sprite.cooldown != 0 or abs(sprite.orientation[0])+abs(sprite.orientation[1])==0):
                 pos = sprite.rect.move((sprite.orientation[0]*sprite.speed, sprite.orientation[1]*sprite.speed))
             if self.gravity > 0 and sprite.mass > 0:
                 return self.calculateActiveMovement(sprite, (0, self.gravity * sprite.mass))
