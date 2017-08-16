@@ -534,7 +534,7 @@ class BasicGame(object):
         # print "in buildLevel"
         # embed()
         # create sprites
-        embed()
+        #embed()
         for row, l in enumerate(lines):
             for col, c in enumerate(l):
                 if c in self.char_mapping:

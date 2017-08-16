@@ -2,7 +2,7 @@ game = """
 BasicGame
     SpriteSet
         background > Immovable color=LIGHTGRAY
-        offrope > Immovable color=LIGHTGRAY
+        offrope > Immovable color=LIGHTGRAY width=0.75
         goomba > Missile orientation=LEFT color=BROWN speed=0.2 width=0.7 height=0.7
         goal > Immovable color=GREEN width=0.7 height=0.9
         key > Resource limit=1 color=GOLD width=0.7 height=0.9
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     pos['avatar'] = [(13,3)]
     pos['ladder'] = [(12,4),(12,5),(12,6),(2,8),(2,9),(2,10),(22,8),(22,9),(22,10)]
     pos['conveyor'] = [(10,8),(11,8),(12,8),(13,8),(14,8)]
-    pos['rope'] = [(17,i) for i in range(4,8)]
+    pos['rope'] = [(17.375,i) for i in range(4,8)]
     pos['key'] = [(1.5,5)]
     pos['goal'] = [(1,3.1)]
     floor_locs = range(1,8)
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     floor_locs.extend([11,13])
     pos['floor'] = [(i,4) for i in floor_locs]
     pos['floor'].extend([(i,8) for i in [1,3,4,20,21,23]])
-    pos['offrope'] = [(15,5),(15,6),(15,7),(15,8),(15,9),(16,9),(17,9),(18,9),(18,8),(18,7),(18,6),(18,5)]
+    pos['offrope'] = [(16.625,5),(16.625,6),(16.625,7),(16.625,8),(17.625,8),(17.625,7),(17.625,6),(17.625,5)]
     pos['goomba'] = [(13,11.3)]
     pos_set = [dims,pos]
     VGDLParser.playGame(game, None, positions = pos_set)

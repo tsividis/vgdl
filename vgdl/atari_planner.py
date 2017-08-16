@@ -1,7 +1,7 @@
 from IPython import embed
 
 import rlenvironmentnonstatic
-from rlenvironmentnonstatic import createRLInputGameChangeLevel
+from rlenvironmentnonstatic import createRLInputGameFromPositions
 from WBP import WBP
 from tools import unitVector, vectNorm
 import ontology
@@ -177,10 +177,14 @@ class AtariPlanner():
 		return array
 
 	#turn list of (obj,pos) pairs into dictionary
-	def makeDict(self,objects):
+	def makeDict(self,objects,grid=False):
 		objs = {}
 		for obj, pos in objects:
-			new_pos = (pos[1]*self.square_size,pos[0]*self.square_size)
+			#new_pos = (pos[1]*self.square_size,pos[0]*self.square_size)
+			if grid:
+				new_pos = (pos[1],pos[0])
+			else:
+				new_pos = (pos[1]*self.square_size,pos[0]*self.square_size)
 			if obj in objs:
 				objs[obj].append(new_pos)
 			else:
@@ -199,12 +203,20 @@ class AtariPlanner():
 		gameFilename = "examples.continuousphysics.breakout"
 		env = Breakout()
 
-		objects, _raw = env.reset() 
-		objects, _raw = env.step(1)
+		objects, _raw = env.reset()
+		object_dict = {}
+		i = 1
+		while 'ball' not in object_dict.keys():
+			print i
+			objects, _raw = env.step(1)
+			object_dict = self.makeDict(objects,grid=True)
+			i += 1
+		height= max([i[1][0] for i in objects]) + 1
+		width = max([i[1][1] for i in objects]) + 1
 
-		level = self.createLevel(objects)
+		#level = self.createLevel(objects)
 
-		rleCreateFunc = lambda: createRLInputGameChangeLevel(gameFilename,level)
+		rleCreateFunc = lambda: createRLInputGameFromPositions(gameFilename, [(width,height),object_dict])
 		self.rle = rleCreateFunc()
 
 		self.square_size = self.rle._game.block_size
@@ -217,7 +229,7 @@ class AtariPlanner():
 		object_dict = self.makeDict(objects)
 		self.states.append(object_dict)
 		self.actions.append(0)
-		self.InitializeSprites(self.rle,object_dict)
+		#self.InitializeSprites(self.rle,object_dict)
 
 		last, visited, length = p.BFS(return_best = True)
 		print last.actionSeq
@@ -227,7 +239,7 @@ class AtariPlanner():
 		#action_array = [0,0,0,0,0,0,0,0,0,0,276,0,0,0,0,0,0,0,0,0,0,275]
 		pos = []
 		#print object_dict['avatar']
-		for j in tqdm(range(1000)):
+		for j in tqdm(range(20000)):
 
 			#if j == 200:
 				#embed()
@@ -274,15 +286,17 @@ class AtariPlanner():
 				print self.rle._game.sprite_groups['ball']
 				print object_dict['ball']
 				pos.append(object_dict['ball'][0])
+				c = 0.5*(1 - self.rle._game.sprite_groups['ball'][0].width)
 			except:
 				no_ball += 1
+				c = 0.75
 
 			if no_ball > 1:
 				print("restarting game")
 				env.step(1)
 				no_ball = 0
 			
-			avatar_loc = (object_dict['avatar'][0][0]+0.75*self.rle._game.block_size, object_dict['avatar'][0][1])
+			avatar_loc = (object_dict['avatar'][0][0]+c*self.rle._game.block_size, object_dict['avatar'][0][1])
 			#whether we reground or not
 			#print object_dict.keys()
 			if i >= len(path) - 1:

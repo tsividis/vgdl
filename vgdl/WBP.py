@@ -13,6 +13,7 @@ import argparse
 import random
 import math
 from threading import Thread
+from threading import Lock
 from collections import defaultdict, deque
 import time
 import ipdb
@@ -55,12 +56,14 @@ N_METABOLICS = 1000
 MULT_METABOLICS = 0.1#0.0012
 DO_METABOLICS = True #False
 
+C = 0.875 #(1-ball_width/2)
+
 ignored_sprites = ['wall', 'background','ladder','conveyor','rope','offrope'] #sprite types we ignore in calculating atoms
 #----------------------
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=sys.maxint, limit=LIMIT, grid_limit=GRID_LIMIT):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=500, limit=LIMIT, grid_limit=GRID_LIMIT):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -626,6 +629,97 @@ class WBP():
 		print "{} paths found, returning best".format(wins)
 		return best_node, best_path, i
 
+	def openNode(self, lock,QReward,QNovelty,visited):
+		generated_nodes = []
+		while self.nodes < self.max_nodes and not self.won:
+			lock.acquire()
+			try:
+				QReward.extend(generated_nodes)
+				generated_nodes = []
+				current = self.rewardSelection(QReward, QNovelty)
+				if current is None:
+					wait = True
+				else:
+					wait = False
+					self.nodes += 1
+					print self.nodes
+					self.statesEncountered.append(current.rle._game.getFullState())
+					current.updateNoveltyDict(QNovelty, QReward)
+					visited.append(current)
+					#print current.rle.show()
+					#embed()
+					self.getActions(current.rle)
+					actions = self.actions
+			finally:
+				lock.release()
+
+			if wait:
+				time.sleep(1)
+			if current is not None and not self.won:
+				if self.canJump:
+					try:
+						if self.getAliveAvatar(current.rle).jumping:
+							actions = [NONE]
+					except:
+						pass
+
+				for a in actions:
+					child = Node(self.rle, self, current.actionSeq+[a], current)
+					child.eval()
+					generated_nodes.append(child)
+
+					if child.win:
+						self.won = True
+						node = child
+						gameString_array = []
+						while node is not None:
+							gameString_array.append(node.rle.show())
+							node = node.parent
+						self.gameString_array = gameString_array[::-1]
+						child.rle._isDone()
+						self.solution = child.actionSeq
+						self.statesEncountered.append(child.rle._game.getFullState())
+						print(child.rle.show(indent=True))
+						print("WIN!")
+						break
+
+
+	def parallelBFS(self, num_processes, return_best=True):
+		QNovelty, QReward = [], []
+		visited, rejected = [], []
+		start = Node(self.rle, self, [], None)
+		start.rle = self.rle
+		#visited.append(start)
+		start.eval()
+		QReward.append(start)
+		self.nodes = 0
+		lock = Lock()
+		self.won=False
+		
+		#i=0
+		path = []
+		wins = 0
+		min_path_length = sys.maxint
+		best_path = None
+		best_node = None
+		found_key = False
+
+		threads = []
+		for i in range(num_processes):
+			threads.append(Thread(target=self.openNode, args=(lock,QReward,QNovelty,visited)))
+			threads[i].start()
+
+		for i in range(num_processes):
+			threads[i].join()
+
+		if return_best:
+			#embed()
+			visited.remove(start)
+			best = min(visited)
+			last = random.choice([n for n in visited if n.__eq__(best)])
+			
+			return last, visited, self.nodes
+
 #Class for a node in our search tree
 class Node():
 	def __init__(self, rle, WBP, actionSeq, parent):
@@ -768,7 +862,7 @@ class Node():
 				avatar = self.WBP.getAliveAvatar(rle)
 				if avatar:
 					if isinstance(avatar,vgdl.ontology.BreakoutAvatar):
-						pos = (avatar.rect.x + 0.75*rle._game.block_size, avatar.rect.y)
+						pos = (avatar.rect.x + C*rle._game.block_size, avatar.rect.y)
 					else:
 						pos = (avatar.rect.x,avatar.rect.y)
 					if pos not in objs:
@@ -791,7 +885,8 @@ class Node():
 				distance = 0
 
 			if possiblePairList:
-				n_sprites = len(possiblePairList)
+				#n_sprites = len(possiblePairList)
+				n_sprites = 100
 				#CHANGING FOR NOW TO DEAL WITH HAVING THIS HEURISTIC USE ANY AVATAR OBJECT
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
@@ -898,7 +993,7 @@ class Node():
 
 		avatar = self.WBP.getAliveAvatar(rle)
 		if isinstance(avatar,vgdl.ontology.BreakoutAvatar):
-			pos = (avatar.rect.x + 0.75*rle._game.block_size, avatar.rect.y)
+			pos = (avatar.rect.x + C*rle._game.block_size, avatar.rect.y)
 		else:
 			pos = (avatar.rect.x,avatar.rect.y)
 
@@ -952,7 +1047,7 @@ class Node():
 		self.pred_x = x_pred
 
 
-		dist = abs(self.WBP.getAliveAvatar(rle).rect.x + 0.75*rle._game.block_size - x_pred)/rle._game.block_size
+		dist = abs(self.WBP.getAliveAvatar(rle).rect.x + C*rle._game.block_size - x_pred)/rle._game.block_size
 
 		return -weight*dist
 
@@ -1241,29 +1336,44 @@ if __name__ == "__main__":
 	#gameFilename = "examples.continuousphysics.simple"
 	#gameFilename = "examples.continuousphysics.crossroad"
 	#gameFilename = "examples.continuousphysics.collect_key"
-	gameFilename = "examples.continuousphysics.collect_resource"
+	#gameFilename = "examples.continuousphysics.collect_resource"
 	#gameFilename = "examples.continuousphysics.rope_test"
 	#gameFilename = "examples.gridphysics.simple_grid"
 	#gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
 	#gameFilename = "examples.gridphysics.expt_exploration_exploitation"
 	#gameFilename = "examples.continuousphysics.ptsp_simple"
 	#gameFilename = "examples.continuousphysics.ptsp"
-	gameFilename = "examples.continuousphysics.breakout"
+	#gameFilename = "examples.continuousphysics.breakout"
 
 	
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
 
+	times = []
+
+	'''
+	for i in range(1,6):
+		x = []
+		for j in range(5):
+
+			t1 = time.time()
+			p = WBP(rle, gameFilename)
+
+	#embed()
+
+	#last, gameString_array, nodes = p.BFS()
+			last, gameString_array, nodes = p.parallelBFS(i)
+			#print time.time()-t1
+			x.append(time.time()-t1)
+		times.append(x)
+
+	print times
+	'''
 	t1 = time.time()
 	p = WBP(rle, gameFilename)
-
-	embed()
-
-	last, gameString_array, nodes = p.BFS()
-
+	last, gameString_array, nodes = p.parallelBFS(4)
 	print time.time()-t1
-
 	embed()
 	
 	#
