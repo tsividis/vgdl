@@ -29,13 +29,13 @@ class Agent:
 		self.annealingFactor = 1.
 		self.shortHorizon = True
 		if self.shortHorizon == True:
-			self.starting_max_nodes = 5
-			self.max_nodes_annealing = 1.005
+			self.starting_max_nodes = 20
+			self.max_nodes_annealing = 1.05
 		else:
 			self.starting_max_nodes = 1000
 			self.max_nodes_annealing = 10
 		self.regrounding = 5
-		self.avoid_danger = False
+		self.avoid_danger = True
 		self.safeDistance = 3
 		self.max_quits = 3
 		self.emptyPlansLimit = 5
@@ -69,11 +69,12 @@ class Agent:
 
 	def setSpritePositions(self, rle, Vrle, hypothesis):
 		## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
-		for k in Vrle._game.sprite_groups.keys():
-			if Vrle._game.sprite_groups[k]:
+		old_sprite_groups = copy.deepcopy(Vrle._game.sprite_groups)
+		for k in old_sprite_groups.keys():
+			if old_sprite_groups[k]:
 				color = Vrle._game.sprite_groups[k][0].colorName
 				matchingSpritesInRLE = self.getSpritesByColor(rle, color)
-				for sprite in Vrle._game.sprite_groups[k]:
+				for sprite in old_sprite_groups[k]:
 					matchingSprite = self.findNearestSprite(sprite, matchingSpritesInRLE)
 					sprite.rect = matchingSprite.rect
 					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType):
@@ -367,7 +368,7 @@ class Agent:
 				seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon)
 			bestNode, gameStringArray = p.BFS()
 			solution = p.solution
-			
+
 			if self.shortHorizon:
 				if not solution:
 					emptyPlans +=1
@@ -703,7 +704,7 @@ if __name__ == "__main__":
 	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-	gameName = gvggames[0]
+	gameName = gvggames[1]
 	gvgname = "../gvgai/training_set_1/{}".format(gameName)
 
 	gameString = read_gvgai_game('{}.txt'.format(gvgname))
@@ -726,4 +727,3 @@ if __name__ == "__main__":
 
 	##and use this line
 	# agent.playCurriculum(level_game_pairs=None)
-
