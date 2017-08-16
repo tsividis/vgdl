@@ -60,7 +60,7 @@ class GridPhysics():
         if speed != 0 and hasattr(sprite, 'orientation'):
             orientation = sprite.orientation
             speed = speed * self.gridsize[0]
-            if not(sprite.lastmove%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
+            if not((sprite.lastmove+1)%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
             # if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
                 pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
                 return pos.left, pos.top
@@ -77,7 +77,7 @@ class GridPhysics():
 
         if speed != 0 and hasattr(sprite, 'orientation'):
             speed = speed * self.gridsize[0]
-            if not(sprite.lastmove%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
+            if not((sprite.lastmove+1)%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
             # if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
                 pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
                 return pos.left, pos.top
@@ -283,7 +283,7 @@ class RandomNPC(VGDLSprite):
     is_stochastic = True
 
     def update(self, game):
-        VGDLSprite.update(self, game)
+        VGDLSprite.update(self, game, random_npc=True)
         self.orientation = random.choice(BASEDIRS) #TODO: Make work with random direction
         self.physics.activeMovement(self, self.orientation)
 
@@ -1152,8 +1152,8 @@ class NoveltyTermination(Termination):
                 if name1==self.s1 and name2==self.s2:
                     if id_not_found:
                         pass
-                    # print("NoveltyTermination with {} and {}".format(
-                        # name1, name2))
+                    print("NoveltyTermination with {} and {}".format(
+                        name1, name2))
                     # embed()
 
                     return True, self.win
@@ -1179,8 +1179,8 @@ class NoveltyTermination(Termination):
                 if name1==self.s1 and name2 in str(self.s2):
                     if id_not_found:
                         pass
-                    # print("NoveltyTermination with {} and {}".format(
-                        # name1, name2))
+                    print("NoveltyTermination with {} and {}".format(
+                        name1, name2))
                     # embed()
                     return True, self.win
         return False, None
@@ -1830,7 +1830,7 @@ def updateOptions(game, sprite_type, current_sprite, params={}, missileOrientati
             position_options = {}
             if coords == None:
                 return position_options
-            
+
             position_options[(coords[0], coords[1])] = 1.
 
             if missileOrientationClustering:
