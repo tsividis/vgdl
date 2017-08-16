@@ -1,4 +1,4 @@
-from IPython import embed
+#from IPython import embed
 import itertools
 import numpy as np
 from numpy import zeros
@@ -41,7 +41,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 
 #-----parameters------
 WALL_EDGE = 1 #weight of edge adjacent to a wall when constructing graph.                                                                       
-REMOVE_MOVERS = False #whether to remove moving NPCs from the set of atoms
+REMOVE_MOVERS = True #whether to remove moving NPCs from the set of atoms
 LIMIT = 3 #number of times pixel atom can be seen before counted as true
 GRID_LIMIT = 150 #number of times grid atom can be seen before counted as true
 SPEED_THRESH = [] #speed threshholds when incorporating speed into the atoms. If list is empty, speed is not used
@@ -54,7 +54,7 @@ OBJCOLLECT_WEIGHT = 0.0 #.005
 
 N_METABOLICS = 1000
 MULT_METABOLICS = 0.1#0.0012
-DO_METABOLICS = True #False
+DO_METABOLICS = False #False
 
 C = 0.875 #(1-ball_width/2)
 
@@ -63,7 +63,7 @@ ignored_sprites = ['wall', 'background','ladder','conveyor','rope','offrope'] #s
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=500, limit=LIMIT, grid_limit=GRID_LIMIT):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=sys.maxint, limit=LIMIT, grid_limit=GRID_LIMIT):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -539,7 +539,7 @@ class WBP():
 			'''
 			print(i)
 			print(current.rle.show())
-			
+			'''
 			avatar = self.getAliveAvatar(current.rle)
 			if avatar is not None:
 				loc = current.rle._rect2pos(avatar.rect)
@@ -557,7 +557,7 @@ class WBP():
 			if i % 500 == 0:
 				print self.avatar_locs_disc
 				print self.key
-			'''
+			
 			
 			self.getActions(current.rle)
 
@@ -656,12 +656,21 @@ class WBP():
 			if wait:
 				time.sleep(1)
 			if current is not None and not self.won:
+
+				avatar = self.getAliveAvatar(current.rle)
+				#print self.nodes
+				if avatar is not None:
+					loc = current.rle._rect2pos(avatar.rect)
+					print loc
+
 				if self.canJump:
 					try:
 						if self.getAliveAvatar(current.rle).jumping:
 							actions = [NONE]
 					except:
 						pass
+
+
 
 				for a in actions:
 					child = Node(self.rle, self, current.actionSeq+[a], current)
@@ -1331,7 +1340,8 @@ if __name__ == "__main__":
 	#gameFilename = "examples.continuousphysics.mario_small"
 	#gameFilename = "examples.continuousphysics.avoid_goomba"
 	#gameFilename = "examples.continuousphysics.mario"
-	gameFilename = "examples.continuousphysics.montezuma_new"
+	#gameFilename = "examples.continuousphysics.montezuma_new"
+	gameFilename = "examples.continuousphysics.montezuma_3"
 	#gameFilename = "examples.continuousphysics.ladder"
 	#gameFilename = "examples.continuousphysics.simple"
 	#gameFilename = "examples.continuousphysics.crossroad"
@@ -1348,6 +1358,7 @@ if __name__ == "__main__":
 	
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
+	
 	rle = rleCreateFunc()
 
 	times = []
@@ -1372,9 +1383,10 @@ if __name__ == "__main__":
 	'''
 	t1 = time.time()
 	p = WBP(rle, gameFilename)
-	last, gameString_array, nodes = p.parallelBFS(4)
+	
+	last, gameString_array, nodes = p.parallelBFS(10)
 	print time.time()-t1
-	embed()
+	#embed()
 	
 	#
 	#multi_plan()
