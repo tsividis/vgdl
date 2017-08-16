@@ -271,7 +271,7 @@ class SpawnPoint(SpriteProducer):
             killSprite(self, None, game)
             return
 
-        if (game.time+1 % self.spawnCooldown == 0 and random.random() < self.prob):
+        if ((game.time+1) % self.spawnCooldown == 0 and random.random() < self.prob):
             game._createSprite([self.stype], (self.rect.left, self.rect.top))
             self.counter += 1
 
@@ -1712,7 +1712,7 @@ def updateOptions(game, sprite_type, current_sprite, params={}, missileOrientati
         targetColor = getStype(params)
         cooldown = getCooldown(params)
 
-        realCooldown = current_sprite.cooldown
+        realCooldown = int(current_sprite.cooldown)
         current_sprite.cooldown = cooldown
         # if current_sprite.colorName=='LIGHTORANGE':
             # print 'chaser'
@@ -1793,7 +1793,7 @@ def updateOptions(game, sprite_type, current_sprite, params={}, missileOrientati
     # Random NPC
     elif sprite_type == RandomNPC:
 
-        realCooldown = current_sprite.cooldown
+        realCooldown = int(current_sprite.cooldown)
         speed, cooldown = getSpeed(params), getCooldown(params)
         current_sprite.cooldown = cooldown
         position_options = {}
@@ -1821,7 +1821,7 @@ def updateOptions(game, sprite_type, current_sprite, params={}, missileOrientati
             speed = getSpeed(params)
             orientation = getOrientation(params)
             cooldown = getCooldown(params)
-            realCooldown = current_sprite.cooldown
+            realCooldown = int(current_sprite.cooldown)
             current_sprite.cooldown = cooldown
 
             coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)

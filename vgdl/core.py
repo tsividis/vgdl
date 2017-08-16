@@ -1158,6 +1158,7 @@ class VGDLSprite(object):
         self.colorName = colorDict[str(self.color)]
         # print 'color', self.color
 
+
         #self.color = color or self.color or (choice(self.COLOR_DISC), choice(self.COLOR_DISC), choice(self.COLOR_DISC))
         for name, value in kwargs.iteritems():
             try:
@@ -1177,6 +1178,8 @@ class VGDLSprite(object):
         self.lastrect = self.rect
         # no need to redraw if nothing was updated
         self.lastmove += 1
+        if self.colorName=='RED':
+            print self.lastmove, self.cooldown, self.lastmove%self.cooldown 
         if not self.is_static and not self.only_active:
             self.physics.passiveMovement(self)
 
@@ -1185,7 +1188,11 @@ class VGDLSprite(object):
         if speed is None:
             speed = self.speed
         if not(self.lastmove%self.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
+            if self.colorName=='RED':
+                print 'updating'
         # if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
+            # if self.colorName=='RED':
+                # print 'updating'
             self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
             # self.lastmove = 0
 

@@ -29,12 +29,12 @@ class Agent:
 		self.annealingFactor = 1.
 		self.shortHorizon = True
 		if self.shortHorizon == True:
-			self.starting_max_nodes = 5
+			self.starting_max_nodes = 20
 			self.max_nodes_annealing = 1.005
 		else:
 			self.starting_max_nodes = 1000
 			self.max_nodes_annealing = 10
-		self.regrounding = 5
+		self.regrounding = 15
 		self.avoid_danger = False
 		self.safeDistance = 3
 		self.max_quits = 3
@@ -78,8 +78,16 @@ class Agent:
 					sprite.rect = matchingSprite.rect
 					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType):
 						try:
+							# embed()
+							## Enforce consistency: inferred value for individual orientations has to be consistent with what we're saying the horizontal/vertical orientation is of the entire group.
+							bestVal = max(self.rle._game.spriteDistribution[matchingSprite.ID][hypothesis.classes[sprite.name][0].vgdlType]['args']['orientation'].values())
+							bestOrientations = [k for k in self.rle._game.spriteDistribution[matchingSprite.ID][hypothesis.classes[sprite.name][0].vgdlType]['args']['orientation'].keys() \
+							if self.rle._game.spriteDistribution[matchingSprite.ID][hypothesis.classes[sprite.name][0].vgdlType]['args']['orientation'][k]==bestVal]
+
 							orientationDict = self.rle._game.object_token_spriteDistribution[matchingSprite.ID][hypothesis.classes[sprite.name][0].vgdlType]['args']['orientation']
-							sprite.orientation = max(orientationDict, key=orientationDict.get) ## gets max key by val
+							sprite.orientation = max(bestOrientations, key=lambda x: orientationDict[x])
+
+							# sprite.orientation = max(orientationDict, key=orientationDict.get) ## gets max key by val
 						except KeyError:
 							pass
 		return
@@ -375,7 +383,7 @@ class Agent:
 					emptyPlans = 0
 
 			if emptyPlans > self.emptyPlansLimit:
-				self.observe(self.rle, 5, self.bestSpriteTypeDict)
+				observe(self.rle, 5, self.bestSpriteTypeDict)
 
 			self.quits += p.quitting #1 if p.quitting else 0
 

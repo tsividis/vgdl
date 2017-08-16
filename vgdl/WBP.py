@@ -91,7 +91,6 @@ class WBP():
 				pass# self.objectsToNotTrackInAtomList.append(k)
 			else:
 				self.objectsToTrack.append(k)
-		print "Tracking", self.objectsToTrack
 
 	def findObjectsInRLE(self, rle, objName):
 		try:
