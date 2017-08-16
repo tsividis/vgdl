@@ -119,8 +119,8 @@ class VGDLParser(object):
         #print self.game.collision_eff
 
     def parseTerminations(self, tnodes):
-        if any(['Multi' in tnode.content for tnode in tnodes]):
-            print("found MultiSpriteCounter in parseTerminations")
+        # if any(['Multi' in tnode.content for tnode in tnodes]):
+            # print("found MultiSpriteCounter in parseTerminations")
             # import ipdb; ipdb.set_trace()
         for tn in tnodes:
             sclass, args = self._parseArgs(tn.content)

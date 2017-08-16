@@ -29,7 +29,7 @@ class Agent:
 		self.annealingFactor = 1.
 		self.shortHorizon = True
 		if self.shortHorizon == True:
-			self.starting_max_nodes = 20
+			self.starting_max_nodes = 5
 			self.max_nodes_annealing = 1.005
 		else:
 			self.starting_max_nodes = 1000
@@ -38,6 +38,7 @@ class Agent:
 		self.avoid_danger = False
 		self.safeDistance = 3
 		self.max_quits = 3
+		self.emptyPlansLimit = 5
 		self.hypotheses = []
 		self.symbolDict = None
 		self.finalEventList = []
@@ -356,6 +357,7 @@ class Agent:
 			if not flexible_goals:
 				[t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
+		emptyPlans = 0
 		while not ended:
 			## initialize one or many VRLEs according to hypothesis-selection method
 			theoryRLEs = self.VrleInitPhase(flexible_goals)
@@ -365,6 +367,15 @@ class Agent:
 				seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon)
 			bestNode, gameStringArray = p.BFS()
 			solution = p.solution
+			
+			if self.shortHorizon:
+				if not solution:
+					emptyPlans +=1
+				else:
+					emptyPlans = 0
+
+			if emptyPlans > self.emptyPlansLimit:
+				self.observe(self.rle, 5, self.bestSpriteTypeDict)
 
 			self.quits += p.quitting #1 if p.quitting else 0
 
@@ -391,7 +402,7 @@ class Agent:
 
 					# print "theory_change_flag", theory_change_flag
 					# if theory_change_flag:
-					# 	embed()
+
 					effectsEncountered.extend(effects)
 					steps +=1
 					if theory_change_flag:

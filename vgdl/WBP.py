@@ -404,7 +404,7 @@ class Node():
 
 	def rollout(self, Vrle):
 		successfulRollout = False
-
+		j=0
 		while not successfulRollout:
 			vrle = copy.deepcopy(Vrle)
 			prevHeuristicVal = self.heuristics(vrle)
@@ -425,10 +425,12 @@ class Node():
 				terminal, win = vrle._isDone()
 				i+=1
 			# embed()
-			if terminal and not win:
+			## we want optimistic estimates of the future value of a shot. Take up to 100 samples but don't get caught in an infinite loop.
+			if terminal and not win and j<100:
 				successfulRollout = False
 				print "rolling out again"
-				embed()
+				j+=1
+				# embed()
 			else:
 				successfulRollout = True
 
