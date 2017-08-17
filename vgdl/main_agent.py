@@ -30,7 +30,7 @@ class Agent:
 		self.shortHorizon = True
 		if self.shortHorizon == True:
 			self.starting_max_nodes = 20
-			self.max_nodes_annealing = 1.05
+			self.max_nodes_annealing = 1.005
 		else:
 			self.starting_max_nodes = 1000
 			self.max_nodes_annealing = 10
@@ -376,7 +376,7 @@ class Agent:
 					emptyPlans = 0
 
 			if emptyPlans > self.emptyPlansLimit:
-				self.observe(self.rle, 5, self.bestSpriteTypeDict)
+				observe(self.rle, 5, self.bestSpriteTypeDict)
 
 			self.quits += p.quitting #1 if p.quitting else 0
 
@@ -433,11 +433,14 @@ class Agent:
 
 					if self.avoid_danger:
 						try:
+							embed()
 							random_npc_positions = [self.rle._rect2pos(element.rect)
 								for objName in self.rle._game.sprite_groups.keys()
 								for element in self.rle._game.sprite_groups[objName]
 								if element not in self.rle._game.kill_list and
-								'RandomNPC' in str(element.__class__)]
+								'RandomNPC' in self.hypotheses[0].classes[
+									self.hypotheses[0].colorToClassMapper(
+									element.colorName)][0].__class__]
 
 							avatar_positions = [self.rle._rect2pos(avatar.rect)
 							 	for avatar in self.rle._game.getAvatars()]
@@ -530,7 +533,7 @@ class Agent:
 		spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 		spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 
-		agentState = dict(self.rle._game.getAvatars()[0].resources)
+		agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
 
 		res = self.rle.step(action)
 
@@ -538,7 +541,7 @@ class Agent:
 		print keyPresses[action]
 
 		try:
-			agentState = dict(self.rle._game.getAvatars()[0].resources)
+			agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
 
 			for e in res['effectList']:
 				if 'changeResource' in e:

@@ -1113,7 +1113,7 @@ class NoveltyTermination(Termination):
 
         for e in game.effectList:
             id_not_found = False
-            if (e[0]=='killSprite' or e[0] == 'transformTo'):
+            if (e[0]=='killSprite' or e[0] == 'transformTo') and len(e) > 2:
                 try:
                     name1 = game.all_objects[e[1]]['sprite'].name
                 except KeyError:
@@ -1134,7 +1134,9 @@ class NoveltyTermination(Termination):
                         except (AttributeError, IndexError) as e:
                             # Avatar dead or doesn't have stype
                             name1 = ''
-
+                except IndexError:
+                    print("IndexError in game.all_objects")
+                    embed()
                 try:
                     name2 = game.all_objects[e[2]]['sprite'].name
                 except KeyError:
@@ -1157,6 +1159,9 @@ class NoveltyTermination(Termination):
                         except (AttributeError, IndexError) as e:
                             # Avatar dead or doesn't have stype
                             name2 = ''
+                except IndexError:
+                    print("IndexError in game.all_objects")
+                    embed()
 
                 if name1==self.s1 and name2==self.s2:
                     if id_not_found:
@@ -1166,7 +1171,7 @@ class NoveltyTermination(Termination):
                     # embed()
 
                     return True, self.win
-            elif e[2]=='ENDOFSCREEN':
+            elif len(e) > 2 and e[2]=='ENDOFSCREEN':
                 name2 = 'EOS'
                 try:
                     name1 = game.all_objects[e[1]]['sprite'].name
@@ -1187,6 +1192,9 @@ class NoveltyTermination(Termination):
                         except (AttributeError, IndexError) as e:
                             # Avatar dead or doesn't have stype
                             name1 = ''
+                except IndexError:
+                    print("IndexError in game.all_objects")
+                    embed()
                 # self.s2 returns a type for the EOS for some reason, so the
                 # check has to be performed like this
                 if name1==self.s1 and name2 in str(self.s2):
@@ -1847,12 +1855,14 @@ def updateOptions(game, sprite_type, current_sprite, params={}, missileOrientati
             position_options[(coords[0], coords[1])] = 1.
 
             if missileOrientationClustering:
-                position_options[(coords[0], coords[1])] = .5
+
+                epsilon_prob = 0.005
+                position_options[(coords[0], coords[1])] = .5 + epsilon_prob
                 #flip orientation
                 orientation = (orientation[0]*-1, orientation[1]*-1)
 
                 coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
-                position_options[(coords[0], coords[1])] = .5
+                position_options[(coords[0], coords[1])] = .5 - epsilon_prob
 
             # if current_sprite.colorName=='RED' and missileOrientationClustering:
             #     print position_options
