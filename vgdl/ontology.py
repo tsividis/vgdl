@@ -1129,7 +1129,12 @@ class NoveltyTermination(Termination):
                         # embed()
                         ## This happens when we shoot an object and IDs are mismatched; default to the thing we shoot.
                         ## We've confirmed that this isn't due to other objects shot by other objects.
-                        name1 = game.getAvatars()[0].stype
+                        try:
+                            name1 = game.getAvatars()[0].stype
+                        except (AttributeError, IndexError) as e:
+                            # Avatar dead or doesn't have stype
+                            name1 = ''
+
                 try:
                     name2 = game.all_objects[e[2]]['sprite'].name
                 except KeyError:
@@ -1147,7 +1152,11 @@ class NoveltyTermination(Termination):
 
                         ## This happens when we shoot an object and IDs are mismatched; default to the thing we shoot.
                         ## We've confirmed that this isn't due to other objects shot by other objects.
-                        name2 = game.getAvatars()[0].stype
+                        try:
+                            name2 = game.getAvatars()[0].stype
+                        except (AttributeError, IndexError) as e:
+                            # Avatar dead or doesn't have stype
+                            name2 = ''
 
                 if name1==self.s1 and name2==self.s2:
                     if id_not_found:
@@ -1173,7 +1182,11 @@ class NoveltyTermination(Termination):
                         # print "Couldn't find object in NoveltyTermination"
                         id_not_found = True
                         # embed()
-                        name1 = game.getAvatars()[0].stype
+                        try:
+                            name1 = game.getAvatars()[0].stype
+                        except (AttributeError, IndexError) as e:
+                            # Avatar dead or doesn't have stype
+                            name1 = ''
                 # self.s2 returns a type for the EOS for some reason, so the
                 # check has to be performed like this
                 if name1==self.s1 and name2 in str(self.s2):
