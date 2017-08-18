@@ -451,8 +451,8 @@ class Node():
 		if term.termination.win:
 			mult = -1
 		else:
-			compute_second_order = True
-			mult = -.1
+			compute_second_order = False
+			mult = .1
 
 		# Get all types that kill or transform stype (the target)
 		killer_types = [

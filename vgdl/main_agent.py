@@ -20,6 +20,9 @@ AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, Aimed
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
+orientationPairs = {UP:DOWN, DOWN:UP, LEFT:RIGHT, RIGHT:LEFT}
+
+
 class Agent:
 	def __init__(self, modelType, gameFilename):
 		self.modelType = modelType
@@ -45,7 +48,9 @@ class Agent:
 		self.statesEncountered = []
 		self.fakeInteractionRules = []
 		self.all_objects = {}
-		self.bestSpriteTypeDict = defaultdict(lambda: {'count':0, 'distribution':None}) ## To track how many times we have run spriteType updates to each particular object
+		self.bestSpriteTypeDict = defaultdict(lambda : {})
+		self.best_params = None
+		# self.bestSpriteTypeDict = defaultdict(lambda: {'count':0, 'distribution':None}) ## To track how many times we have run spriteType updates to each particular object
 		self.seen_resources = []
 		self.seen_limits = []
 		self.new_objects = {}
@@ -78,17 +83,22 @@ class Agent:
 				for sprite in old_sprite_groups[k]:
 					matchingSprite = self.findNearestSprite(sprite, matchingSpritesInRLE)
 					sprite.rect = matchingSprite.rect
-					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType):
+					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and self.best_params!=None:
 						try:
 							## Enforce consistency: inferred value for individual orientations has to be consistent with what we're saying the horizontal/vertical orientation is of the entire group.
-							bestVal = max(self.rle._game.spriteDistribution[matchingSprite.ID][hypothesis.classes[sprite.name][0].vgdlType]['args']['orientation'].values())
-							bestOrientations = [k for k in self.rle._game.spriteDistribution[matchingSprite.ID][hypothesis.classes[sprite.name][0].vgdlType]['args']['orientation'].keys() \
-							if self.rle._game.spriteDistribution[matchingSprite.ID][hypothesis.classes[sprite.name][0].vgdlType]['args']['orientation'][k]==bestVal]
+							param1 = self.best_params[color]
+							param_dict = dict(param1)
+							orientation1 = param_dict['orientation']
+							likelihood1 =  self.rle._game.object_token_spriteDistribution[matchingSprite.ID][param1]
+							
+							param_dict['orientation'] = orientationPairs[orientation1]
+							param2 = tuple(param_dict)
+							orientation2= param_dict['orientation']
+							likelihood2 =  self.rle._game.object_token_spriteDistribution[matchingSprite.ID][param2]
 
-							orientationDict = self.rle._game.object_token_spriteDistribution[matchingSprite.ID][hypothesis.classes[sprite.name][0].vgdlType]['args']['orientation']
-							sprite.orientation = max(bestOrientations, key=lambda x: orientationDict[x])
+							orientation = orientation1 if likelihood1>=likelihood2 else orientation2
+							sprite.orientation = orientation
 
-							# sprite.orientation = max(orientationDict, key=orientationDict.get) ## gets max key by val
 						except KeyError:
 							pass
 		return
@@ -102,10 +112,10 @@ class Agent:
 
 		self.setSpritePositions(self.rle, Vrle, hypothesis)
 
-		Vrle._game.getAvatars()[0].resources = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
 		try:
+			Vrle._game.getAvatars()[0].resources = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
 			Vrle._game.getAvatars()[0].orientation = copy.deepcopy(self.rle._game.getAvatars()[0].orientation)
-		except AttributeError:
+		except (IndexError, AttributeError) as e:
 			pass
 		# Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
 		return Vrle
@@ -135,7 +145,7 @@ class Agent:
 	def initializeHypotheses(self, allObjects, learnSprites=True):
 		if learnSprites:
 			observe(self.rle, 5, self.bestSpriteTypeDict)
-			spriteTypeHypothesis, exceptedObjects, _ = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
+			spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
 
 			self.rle._game.exceptedObjects = exceptedObjects
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
@@ -167,7 +177,7 @@ class Agent:
 
 	def completeHypotheses(self, allObjects):
 		observe(self.rle, 0, self.bestSpriteTypeDict)
-		spriteTypeHypothesis, exceptedObjects, _ = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
+		spriteTypeHypothesis, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
 		gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 		newHypotheses = []
 		for hypothesis in self.hypotheses:
@@ -326,18 +336,19 @@ class Agent:
 			persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
 		print "Won {} out of {} episodes.".format(sum(wins), i)
 
-	def updateMemory(self, rle):
+	# def updateMemory(self, rle):
 
-		types = list(set([rle._game.all_objects[k]['type']['color'] for k in rle._game.all_objects.keys()]))
-		for obj_type in types:
-			## find the most-updated object, use that one for the sprite hypothesis.
-			options = [k for k in rle._game.all_objects.keys() if rle._game.all_objects[k]['type']['color'] == obj_type]
-			k = max(options, key=lambda x:rle._game.spriteUpdateDict[x])
+	# 	types = list(set([rle._game.all_objects[k]['type']['color'] for k in rle._game.all_objects.keys()]))
+	# 	for obj_type in types:
+	# 		## find the most-updated object, use that one for the sprite hypothesis.
+	# 		options = [k for k in rle._game.all_objects.keys() if rle._game.all_objects[k]['type']['color'] == obj_type]
+	# 		k = max(options, key=lambda x:rle._game.spriteUpdateDict[x])
 
-			if rle._game.spriteUpdateDict[k] > self.bestSpriteTypeDict[obj_type]['count']:
-				self.bestSpriteTypeDict[obj_type]['count'] = copy.deepcopy(rle._game.spriteUpdateDict[k])
-				self.bestSpriteTypeDict[obj_type]['distribution'] = copy.deepcopy(rle._game.spriteDistribution[k])
-		return
+	# 		if rle._game.spriteUpdateDict[k] > self.bestSpriteTypeDict[obj_type]['count']:
+	# 			self.bestSpriteTypeDict[obj_type]['ID'] = k
+	# 			self.bestSpriteTypeDict[obj_type]['count'] = copy.deepcopy(rle._game.spriteUpdateDict[k])
+	# 			self.bestSpriteTypeDict[obj_type]['distribution'] = copy.deepcopy(rle._game.spriteDistribution[k])
+	# 	return
 
 	def playEpisode(self, gameObject, flexible_goals=False):
 		from vgdl.util import manhattanDist
@@ -403,11 +414,10 @@ class Agent:
 						run_induction = not flexible_goals)
 
 
-					# ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='RED']
-					# if ID:
-					# 	ID = ID[0]
-					# 	for k,v in self.rle._game.spriteDistribution[ID].items():
-					# 		print k, self.rle._game.spriteDistribution[ID][k]['prob']
+					ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
+
+					# for k,v in self.best_params.items():
+						# print k,v
 
 					# print "theory_change_flag", theory_change_flag
 					# if theory_change_flag:
@@ -456,7 +466,7 @@ class Agent:
 								for avatar in avatar_positions
 								for random in random_npc_positions]
 
-							if min(possiblePairList) < self.safeDistance:
+							if min(possiblePairList) <= self.safeDistance:
 								print("Close to RandomNPC, regrounding")
 								break
 
@@ -470,7 +480,7 @@ class Agent:
 				## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
 				## Search more deeply next time.
 				self.max_nodes *= self.max_nodes_annealing
-				self.updateMemory(self.rle)
+				# self.updateMemory(self.rle)
 
 				return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered
 
@@ -482,7 +492,7 @@ class Agent:
 			# 	embed()
 
 		score = self.rle._game.score
-		self.updateMemory(self.rle)
+		# self.updateMemory(self.rle)
 		print "ended episode. Win={}".format(win)
 		return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
@@ -522,7 +532,7 @@ class Agent:
 
 		if any([self.new_objects[k]>5 for k in self.new_objects.keys()]):
 			# if self.new_objects[k] > 5:
-			spriteTypeHypothesis, exceptedObjects, _ = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
+			spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 
 			newHypotheses = []
@@ -560,9 +570,8 @@ class Agent:
 						break
 			self.rle.agentStatePrev = agentState
 		# If agent is killed before we get agentState
-		except Exception as e:
+		except (IndexError, AttributeError) as e:
 			# agentState = defaultdict(lambda:0)
-
 			ignored_negative_change = False
 			for e in res['effectList']:
 				if 'changeResource' in e:
@@ -609,7 +618,7 @@ class Agent:
 			if (not all([e in all_effects for e in effects])) or distributionsHaveChanged:
 				theory_change_flag = True
 
-			sample, exceptedObjects, _ = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
+			sample, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
 
 			# for s in sample:
 				# s.display()
