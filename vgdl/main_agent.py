@@ -433,14 +433,13 @@ class Agent:
 
 					if self.avoid_danger:
 						try:
-							embed()
 							random_npc_positions = [self.rle._rect2pos(element.rect)
 								for objName in self.rle._game.sprite_groups.keys()
 								for element in self.rle._game.sprite_groups[objName]
 								if element not in self.rle._game.kill_list and
-								'RandomNPC' in self.hypotheses[0].classes[
+								'RandomNPC' in str(self.hypotheses[0].classes[
 									self.hypotheses[0].colorToClassMapper(
-									element.colorName)][0].__class__]
+									element.colorName)][0].__class__)]
 
 							avatar_positions = [self.rle._rect2pos(avatar.rect)
 							 	for avatar in self.rle._game.getAvatars()]
