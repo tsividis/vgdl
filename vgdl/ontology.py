@@ -60,7 +60,7 @@ class GridPhysics():
         if speed != 0 and hasattr(sprite, 'orientation'):
             orientation = sprite.orientation
             speed = speed * self.gridsize[0]
-            if not(sprite.lastmove%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
+            if not((sprite.lastmove+1)%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
             # if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
                 pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
                 return pos.left, pos.top
@@ -77,7 +77,7 @@ class GridPhysics():
 
         if speed != 0 and hasattr(sprite, 'orientation'):
             speed = speed * self.gridsize[0]
-            if not(sprite.lastmove%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
+            if not((sprite.lastmove+1)%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
             # if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
                 pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
                 return pos.left, pos.top
@@ -112,7 +112,7 @@ class GridPhysics():
 
             orientation = action
 
-            if not(sprite.lastmove%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
+            if not((sprite.lastmove+1)%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
 
             # if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
                 # if sprite.colorName=='LIGHTORANGE':
@@ -148,7 +148,7 @@ class ContinuousPhysics(GridPhysics):
 
     def calculatePassiveMovement(self, sprite):
         if sprite.speed != 0 and hasattr(sprite, 'orientation'):
-            if not(sprite.cooldown > sprite.lastmove+1 or abs(sprite.orientation[0])+abs(sprite.orientation[1])==0):
+            if not((sprite.lastmove+1) % sprite.cooldown != 0 or abs(sprite.orientation[0])+abs(sprite.orientation[1])==0):
                 pos = sprite.rect.move((sprite.orientation[0]*sprite.speed, sprite.orientation[1]*sprite.speed))
             if self.gravity > 0 and sprite.mass > 0:
                 return self.calculateActiveMovement(sprite, (0, self.gravity * sprite.mass))
@@ -283,7 +283,7 @@ class RandomNPC(VGDLSprite):
     is_stochastic = True
 
     def update(self, game):
-        VGDLSprite.update(self, game)
+        VGDLSprite.update(self, game, random_npc=True)
         self.orientation = random.choice(BASEDIRS) #TODO: Make work with random direction
         self.physics.activeMovement(self, self.orientation)
 
@@ -1113,7 +1113,7 @@ class NoveltyTermination(Termination):
 
         for e in game.effectList:
             id_not_found = False
-            if (e[0]=='killSprite' or e[0] == 'transformTo'):
+            if (e[0]=='killSprite' or e[0] == 'transformTo') and len(e) > 2:
                 try:
                     name1 = game.all_objects[e[1]]['sprite'].name
                 except KeyError:
@@ -1129,7 +1129,14 @@ class NoveltyTermination(Termination):
                         # embed()
                         ## This happens when we shoot an object and IDs are mismatched; default to the thing we shoot.
                         ## We've confirmed that this isn't due to other objects shot by other objects.
-                        name1 = game.getAvatars()[0].stype
+                        try:
+                            name1 = game.getAvatars()[0].stype
+                        except (AttributeError, IndexError) as e:
+                            # Avatar dead or doesn't have stype
+                            name1 = ''
+                except IndexError:
+                    print("IndexError in game.all_objects")
+                    embed()
                 try:
                     name2 = game.all_objects[e[2]]['sprite'].name
                 except KeyError:
@@ -1147,17 +1154,24 @@ class NoveltyTermination(Termination):
 
                         ## This happens when we shoot an object and IDs are mismatched; default to the thing we shoot.
                         ## We've confirmed that this isn't due to other objects shot by other objects.
-                        name2 = game.getAvatars()[0].stype
+                        try:
+                            name2 = game.getAvatars()[0].stype
+                        except (AttributeError, IndexError) as e:
+                            # Avatar dead or doesn't have stype
+                            name2 = ''
+                except IndexError:
+                    print("IndexError in game.all_objects")
+                    embed()
 
                 if name1==self.s1 and name2==self.s2:
                     if id_not_found:
                         pass
-                    # print("NoveltyTermination with {} and {}".format(
-                        # name1, name2))
+                    print("NoveltyTermination with {} and {}".format(
+                        name1, name2))
                     # embed()
 
                     return True, self.win
-            elif e[2]=='ENDOFSCREEN':
+            elif len(e) > 2 and e[2]=='ENDOFSCREEN':
                 name2 = 'EOS'
                 try:
                     name1 = game.all_objects[e[1]]['sprite'].name
@@ -1173,14 +1187,21 @@ class NoveltyTermination(Termination):
                         # print "Couldn't find object in NoveltyTermination"
                         id_not_found = True
                         # embed()
-                        name1 = game.getAvatars()[0].stype
+                        try:
+                            name1 = game.getAvatars()[0].stype
+                        except (AttributeError, IndexError) as e:
+                            # Avatar dead or doesn't have stype
+                            name1 = ''
+                except IndexError:
+                    print("IndexError in game.all_objects")
+                    embed()
                 # self.s2 returns a type for the EOS for some reason, so the
                 # check has to be performed like this
                 if name1==self.s1 and name2 in str(self.s2):
                     if id_not_found:
                         pass
-                    # print("NoveltyTermination with {} and {}".format(
-                        # name1, name2))
+                    print("NoveltyTermination with {} and {}".format(
+                        name1, name2))
                     # embed()
                     return True, self.win
         return False, None
@@ -1830,16 +1851,18 @@ def updateOptions(game, sprite_type, current_sprite, params={}, missileOrientati
             position_options = {}
             if coords == None:
                 return position_options
-            
+
             position_options[(coords[0], coords[1])] = 1.
 
             if missileOrientationClustering:
-                position_options[(coords[0], coords[1])] = .5
+
+                epsilon_prob = 0.005
+                position_options[(coords[0], coords[1])] = .5 + epsilon_prob
                 #flip orientation
                 orientation = (orientation[0]*-1, orientation[1]*-1)
 
                 coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
-                position_options[(coords[0], coords[1])] = .5
+                position_options[(coords[0], coords[1])] = .5 - epsilon_prob
 
             # if current_sprite.colorName=='RED' and missileOrientationClustering:
             #     print position_options

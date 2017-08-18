@@ -69,12 +69,13 @@ class Agent:
 
 	def setSpritePositions(self, rle, Vrle, hypothesis):
 		## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
-		# embed()
-		for k in Vrle._game.sprite_groups.keys():
-			if Vrle._game.sprite_groups[k]:
+
+		old_sprite_groups = copy.deepcopy(Vrle._game.sprite_groups)
+		for k in old_sprite_groups.keys():
+			if old_sprite_groups[k]:
 				color = Vrle._game.sprite_groups[k][0].colorName
 				matchingSpritesInRLE = self.getSpritesByColor(rle, color)
-				for sprite in Vrle._game.sprite_groups[k]:
+				for sprite in old_sprite_groups[k]:
 					matchingSprite = self.findNearestSprite(sprite, matchingSpritesInRLE)
 					sprite.rect = matchingSprite.rect
 					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType):
@@ -375,7 +376,7 @@ class Agent:
 				seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon)
 			bestNode, gameStringArray = p.BFS()
 			solution = p.solution
-			
+
 			if self.shortHorizon:
 				if not solution:
 					emptyPlans +=1
@@ -444,7 +445,9 @@ class Agent:
 								for objName in self.rle._game.sprite_groups.keys()
 								for element in self.rle._game.sprite_groups[objName]
 								if element not in self.rle._game.kill_list and
-								'RandomNPC' in str(element.__class__)]
+								'RandomNPC' in str(self.hypotheses[0].classes[
+									self.hypotheses[0].colorToClassMapper(
+									element.colorName)][0].__class__)]
 
 							avatar_positions = [self.rle._rect2pos(avatar.rect)
 							 	for avatar in self.rle._game.getAvatars()]
@@ -537,7 +540,7 @@ class Agent:
 		spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 		spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 
-		agentState = dict(self.rle._game.getAvatars()[0].resources)
+		agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
 
 		res = self.rle.step(action)
 
@@ -545,7 +548,7 @@ class Agent:
 		print keyPresses[action]
 
 		try:
-			agentState = dict(self.rle._game.getAvatars()[0].resources)
+			agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
 
 			for e in res['effectList']:
 				if 'changeResource' in e:
@@ -712,6 +715,7 @@ if __name__ == "__main__":
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
 	gameName = gvggames[6]
+
 	gvgname = "../gvgai/training_set_1/{}".format(gameName)
 
 	gameString = read_gvgai_game('{}.txt'.format(gvgname))
@@ -734,4 +738,3 @@ if __name__ == "__main__":
 
 	##and use this line
 	# agent.playCurriculum(level_game_pairs=None)
-

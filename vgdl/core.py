@@ -872,7 +872,15 @@ class BasicGame(object):
         #         self.movement_options[sprite][sprite_type] = {}
 
 
-        self.collision_eff.sort(key = lambda x: x[2].__name__ == 'killSprite', reverse=True) # Should make this more modular. alwell.
+        def colision_sorting(effect_name):
+            if effect_name == 'bounceForward' or 'stepBack':
+                return 0
+            elif effect_name == 'killSprite':
+                return 1
+            else:
+                return 2
+
+        self.collision_eff.sort(key = lambda x: colision_sorting(x[2].__name__))
 
         while not self.ended:
             clock.tick(self.frame_rate)
@@ -1170,25 +1178,23 @@ class VGDLSprite(object):
         # management of resources contained in the sprite
         self.resources = defaultdict(int)
 
-    def update(self, game):
+    def update(self, game, random_npc=False):
         """ The main place where subclasses differ. """
         self.x = self.rect.x
         self.y = self.rect.y
         self.lastrect = self.rect
         # no need to redraw if nothing was updated
         self.lastmove += 1
-        # if self.colorName=='RED':
-            # print self.lastmove, self.cooldown, self.lastmove%self.cooldown 
-        if not self.is_static and not self.only_active:
+        # if self.colorName == 'RED':
+            # ipdb.set_trace()
+        if not self.is_static and not self.only_active and not random_npc:
             self.physics.passiveMovement(self)
 
     def _updatePos(self, orientation, speed=None):
 
         if speed is None:
             speed = self.speed
-        if not(self.lastmove%self.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
-            # if self.colorName=='RED':
-                # print 'updating'
+        if not(((self.lastmove+1) % self.cooldown != 0) or abs(orientation[0])+abs(orientation[1])==0):
         # if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
             # if self.colorName=='RED':
                 # print 'updating'
