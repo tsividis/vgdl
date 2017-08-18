@@ -59,6 +59,7 @@ class StateObsHandlerNonStatic(object):
                     self.orientedAvatar = True
             if skey not in game.sprite_groups:
                 continue
+
             ss = game.sprite_groups[skey]
             if len(ss) == 0:
                 self._other_types += [skey] ## Added 4/31/17
@@ -101,7 +102,8 @@ class StateObsHandlerNonStatic(object):
                 self._obstypes[skey] = [self._sprite2state(sprite, oriented=False) for sprite in ss]
                 self._obscols[skey] = ss[0].color
             else:
-                self._obstypes[skey] = []
+                if type(skey)==str:
+                    self._obstypes[skey] = []
         # for skey in self._other_types:
         #     ss = game.sprite_groups[skey]
         #     self._obstypes[skey] = [self._sprite2state(sprite, oriented=False) for sprite in ss]

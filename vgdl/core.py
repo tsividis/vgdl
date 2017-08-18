@@ -204,7 +204,7 @@ class BasicGame(object):
     load_save_enabled = True
 
     def __init__(self, **kwargs):
-        from ontology import Immovable, DARKGRAY, MovingAvatar, GOLD
+        from ontology import Immovable, DARKGRAY, BLACK, MovingAvatar, GOLD
         for name, value in kwargs.iteritems():
             # print "NAME: ", name
             if hasattr(self, name):
@@ -654,7 +654,6 @@ class BasicGame(object):
                             new_sprite = self.getSprites(kwargs['stype'])[-1]
                             new_collisions.add((sprite1, new_sprite))
                             dead.append(sprite1)
-
 
                         # Deal with push effects
                         elif effect.__name__ == push_effect:
@@ -1178,8 +1177,8 @@ class VGDLSprite(object):
         self.lastrect = self.rect
         # no need to redraw if nothing was updated
         self.lastmove += 1
-        if self.colorName=='RED':
-            print self.lastmove, self.cooldown, self.lastmove%self.cooldown 
+        # if self.colorName=='RED':
+            # print self.lastmove, self.cooldown, self.lastmove%self.cooldown 
         if not self.is_static and not self.only_active:
             self.physics.passiveMovement(self)
 
@@ -1188,8 +1187,8 @@ class VGDLSprite(object):
         if speed is None:
             speed = self.speed
         if not(self.lastmove%self.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
-            if self.colorName=='RED':
-                print 'updating'
+            # if self.colorName=='RED':
+                # print 'updating'
         # if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
             # if self.colorName=='RED':
                 # print 'updating'

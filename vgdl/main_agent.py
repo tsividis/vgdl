@@ -29,14 +29,14 @@ class Agent:
 		self.annealingFactor = 1.
 		self.shortHorizon = True
 		if self.shortHorizon == True:
-			self.starting_max_nodes = 20
-			self.max_nodes_annealing = 1.005
+			self.starting_max_nodes = 50
+			self.max_nodes_annealing = 1.05
 		else:
 			self.starting_max_nodes = 1000
 			self.max_nodes_annealing = 10
-		self.regrounding = 15
-		self.avoid_danger = False
-		self.safeDistance = 3
+		self.regrounding = 20
+		self.avoid_danger = True
+		self.safeDistance = 1
 		self.max_quits = 3
 		self.emptyPlansLimit = 5
 		self.hypotheses = []
@@ -69,6 +69,7 @@ class Agent:
 
 	def setSpritePositions(self, rle, Vrle, hypothesis):
 		## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
+		# embed()
 		for k in Vrle._game.sprite_groups.keys():
 			if Vrle._game.sprite_groups[k]:
 				color = Vrle._game.sprite_groups[k][0].colorName
@@ -78,7 +79,6 @@ class Agent:
 					sprite.rect = matchingSprite.rect
 					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType):
 						try:
-							# embed()
 							## Enforce consistency: inferred value for individual orientations has to be consistent with what we're saying the horizontal/vertical orientation is of the entire group.
 							bestVal = max(self.rle._game.spriteDistribution[matchingSprite.ID][hypothesis.classes[sprite.name][0].vgdlType]['args']['orientation'].values())
 							bestOrientations = [k for k in self.rle._game.spriteDistribution[matchingSprite.ID][hypothesis.classes[sprite.name][0].vgdlType]['args']['orientation'].keys() \
@@ -711,7 +711,7 @@ if __name__ == "__main__":
 	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-	gameName = gvggames[0]
+	gameName = gvggames[6]
 	gvgname = "../gvgai/training_set_1/{}".format(gameName)
 
 	gameString = read_gvgai_game('{}.txt'.format(gvgname))

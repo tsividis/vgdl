@@ -54,7 +54,7 @@ class WBP():
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
 		self.max_nodes = max_nodes
-		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random', 'Missile']
+		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random']#, 'Missile']
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
 		self.allowRollouts = True
 		self.quitting = False
@@ -336,7 +336,7 @@ class WBP():
 		self.solution = []#Node(self.rle, self, [], None)
 		if i>=self.max_nodes:
 			if self.short_horizon:
-				print "playing with short horizon; reached max"
+				print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
 				# embed()
 				node = max(visited, key=lambda n:n.intrinsic_reward)
 				parentNode = copy.deepcopy(node)
@@ -452,7 +452,7 @@ class Node():
 			mult = -1
 		else:
 			compute_second_order = True
-			mult = -1
+			mult = -.1
 
 		# Get all types that kill or transform stype (the target)
 		killer_types = [
@@ -763,7 +763,7 @@ class Node():
 		for term in theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
-					first_alpha=5000, second_alpha=0)
+					first_alpha=5000, second_alpha=50)
 				# if spritecounter_val!=0:
 					# print("spritecounter_val for {} is equal to {}".format(
 						# term.termination.stype, spritecounter_val))
@@ -771,7 +771,7 @@ class Node():
 
 			elif isinstance(term, MultiSpriteCounterRule):
 				multispritecounter_val = self.multispritecounter_val(theory, term, rle,
-						first_alpha=500, second_alpha=0)
+						first_alpha=500, second_alpha=5)
 				# if multispritecounter_val!=0:
 					# print("multispritecounter_val for {} is equal to {}".format(
 						# term.termination.stypes, multispritecounter_val))
@@ -897,7 +897,7 @@ class Node():
 		# print self.rle._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost, self.position_score()
 
 		self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
-		sum(self.rolloutArray) - self.metabolic_cost + self.position_score()
+		sum(self.rolloutArray) - self.metabolic_cost + self.position_score(-25)
 
 		try:
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
