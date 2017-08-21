@@ -28,7 +28,7 @@ BASEDIRS = [UP, LEFT, DOWN, RIGHT]
 
 spriteToParams = {'Resource': [], \
                 'ResourcePack': [], \
-                'RandomNPC': ['cooldown'], \
+                'RandomNPC': ['cooldown', 'speed'], \
                 'Chaser': ['fleeing', 'stype'], \
                 'AStarChaser': ['fleeing', 'speed', 'stype'], \
                 'OrientedSprite': ['orientation'], \
@@ -1746,8 +1746,8 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
             targetName = [k for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName==targetColor][0]
             targets = game.sprite_groups[targetName]
         except:
-            print "in updateOptions"
-            embed()
+            targets = []
+            pass
         # if current_sprite.colorName=='ORANGE' and 'Chaser' in str(sprite_type):
         #     print "in updateOptions"
         #     print current_sprite
@@ -2028,10 +2028,19 @@ def distributionInitSetup(game, sprite):
     Does setup for initializing distribution
     'sprite' is an object ID
     """
-    objectColors = [game.sprite_groups[k][0].colorName for k in game.sprite_groups.keys() if game.sprite_groups[k] and
-    game.sprite_groups[k][0].colorName!='BLACK' and game.sprite_groups[k][0].colorName!='DARKGRAY']
+    objectColors = [colorDict[str(game.sprite_constr[k][1]['color'])] for k in game.sprite_constr.keys() if game.sprite_constr[k] and
+        colorDict[str(game.sprite_constr[k][1]['color'])] not in ['BLACK', 'DARKGRAY']]
+    objectColors = list(set(objectColors))
+    # for k in game.sprite_constr.keys():
+        # if colorDict[str(game.sprite_constr[k][1]['color'])] not in objectColors:
+
+    #if 'RED' not in objectColors:
+    #    print "No red found in objectColors!"
+    #    embed()
     game.spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
     game.object_token_spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
+    if sprite not in game.all_objects.keys():
+        game.all_objects[sprite] = game.getObjects()[sprite]
 
     game.movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
     game.object_token_movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
@@ -2049,12 +2058,37 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
 
     epsilon_prob = 0.005
 
+    # For computing the new normalized likelihoods, we proceed as follows:
+
+    # The normalized likelihood for a given observation sequence o_1, ... o_t-1 given a parameter p_j is:
+    #   p(o_1, ..., o_t-1|p_j) / sum_i(p(o_1, .., o_t-1|p_i))
+    #
+    # We want to arrive at the new normalized likelihoods p(o_1, ..., o_t-1, o_t|p_j) / sum_i(p(o_1, .., o_t-1, o_t|p_i))
+    #
+    # We first compute the ratio between the normalization constants:
+    # sum_i(p(o_1, .., o_t-1, o_t|p_i)) / sum_j(p(o_1, .., o_t-1|p_j)) =
+    # sum_i(p(o_1, .., o_t-1|p_i) * p(o_t|p_i)) / sum_j(p(o_1, .., o_t-1|p_j))
+    #
+    # Now, we can get the new normalized likelihood by doing:
+    # p(o_1, ..., o_t-1, o_t|p_j) / sum_i(p(o_1, .., o_t-1, o_t|p_i)) =
+    #   p(o_1, ..., o_t-1|p_j) / sum_i(p(o_1, .., o_t-1|p_i)) *
+    #   p(o_t|p_j)
+    #   sum_i(p(o_1, .., o_t-1|p_i) * p(o_t|p_i)) / sum_k(p(o_1, .., o_t-1|p_k))
+
+    normalization_ratio = 0
     if sprite in curr_distribution.keys():
         for param_combination in curr_distribution[sprite].keys():
             if outcome in movement_options[sprite][param_combination].keys():
-                curr_distribution[sprite][param_combination] *= movement_options[sprite][param_combination][outcome]
+                normalization_ratio += curr_distribution[sprite][param_combination] * movement_options[sprite][param_combination][outcome]
             else:
-                curr_distribution[sprite][param_combination] *= epsilon_prob
+                normalization_ratio += curr_distribution[sprite][param_combination] * epsilon_prob
+
+    if sprite in curr_distribution.keys():
+        for param_combination in curr_distribution[sprite].keys():
+            if outcome in movement_options[sprite][param_combination].keys():
+                curr_distribution[sprite][param_combination] *= (movement_options[sprite][param_combination][outcome] / normalization_ratio)
+            else:
+                curr_distribution[sprite][param_combination] *= (epsilon_prob / normalization_ratio)
 
     return curr_distribution
 
@@ -2212,20 +2246,31 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
     for obj_type in types:
 
         ## Integrate evidence across all episodes; pick best hypothesis.
-        param_product = {k:1 for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
+        param_product = {k:0 for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
+        z = 0.
         for k in bestSpriteTypeDict[obj_type].keys():
             for param in param_product.keys():
-                param_product[param]*=bestSpriteTypeDict[obj_type][k][param]
+                try:
+                    param_product[param] += spriteUpdateDict[k]*bestSpriteTypeDict[obj_type][k][param]
+                except KeyError:
+                    embed()
+
+            z += spriteUpdateDict[k]
+
+        for k in param_product:
+            try:
+                param_product[k] /= z
+            except ZeroDivisionError:
+                pass
 
         best_param = max(param_product, key=param_product.get)
         best_params[obj_type] = best_param
 
-        if obj_type == 'BROWN':
-            for i, k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
+        if obj_type=='BROWN':
+            for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
                 print(k, param_product[k])
                 if i>10:
                     break
-
         sprite_type = best_param[0][1]
 
         color = obj_type
@@ -2427,7 +2472,10 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
 
         ## Update the global memory
         for k in game.spriteDistribution.keys():
-            color = game.all_objects[k]['type']['color']
+            try:
+                color = game.all_objects[k]['type']['color']
+            except KeyError:
+                embed()
             bestSpriteTypeDict[color][k] = game.spriteDistribution[k]
 
         sample, exceptions, distributionsHaveChanged, _ = sampleFromDistribution(game, game.spriteDistribution, game.all_objects, game.spriteUpdateDict, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)

@@ -23,6 +23,7 @@ import re
 from IPython import embed
 import time
 import os
+import uuid
 
 # ---------------------------------------------------------------------
 #     Constants
@@ -566,6 +567,8 @@ class BasicGame(object):
         dead = self.kill_list[:] # copy kill list
         created = []
 
+        self.collision_eff.sort(key=lambda x:2 if x[2].__name__==('bounceForward' or 'stepBack')
+            else (1 if x[2].__name__=='killSprite' else 0))
         # build the current sprite lists (if not yet available)
         # for class1, class2, effect, kwargs in self.collision_eff:
         while new_collisions:
@@ -1156,7 +1159,8 @@ class VGDLSprite(object):
         self.physics.gridsize = size
         self.speed = speed or self.speed
         self.cooldown = cooldown or self.cooldown
-        self.ID = id(self) # TODO: Make sure that these are unique, maintained during the lifetime of the object
+        # self.ID = id(self) # TODO: Make sure that these are unique, maintained during the lifetime of the object
+        self.ID = uuid.uuid1()
         self.direction = None
         #TODO: change the choice to be from colors that are not taken?
         self.color = color or self.color or PURPLE#(140, 20, 140)
@@ -1195,6 +1199,7 @@ class VGDLSprite(object):
         if speed is None:
             speed = self.speed
         if not(((self.lastmove+1) % self.cooldown != 0) or abs(orientation[0])+abs(orientation[1])==0):
+
         # if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
             # if self.colorName=='RED':
                 # print 'updating'
