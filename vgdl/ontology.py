@@ -1953,7 +1953,7 @@ def initializeDistributionArgs(sprite_type, objectColors):
 
     paramList = []
     spriteParams = spriteToParams[sprite_type.__name__]
-    
+
     for s in spriteParams:
         if s == "speed":
             paramList.append(initializeSpeed())
@@ -2032,7 +2032,7 @@ def distributionInitSetup(game, sprite):
     game.sprite_groups[k][0].colorName!='BLACK' and game.sprite_groups[k][0].colorName!='DARKGRAY']
     game.spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
     game.object_token_spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
-    
+
     game.movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
     game.object_token_movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
 
@@ -2219,6 +2219,12 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
 
         best_param = max(param_product, key=param_product.get)
         best_params[obj_type] = best_param
+
+        if obj_type == 'BROWN':
+            for i, k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
+                print(k, param_product[k])
+                if i>10:
+                    break
 
         sprite_type = best_param[0][1]
 
@@ -2422,8 +2428,8 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
         ## Update the global memory
         for k in game.spriteDistribution.keys():
             color = game.all_objects[k]['type']['color']
-            bestSpriteTypeDict[color][k] = game.spriteDistribution[k] 
-        
+            bestSpriteTypeDict[color][k] = game.spriteDistribution[k]
+
         sample, exceptions, distributionsHaveChanged, _ = sampleFromDistribution(game, game.spriteDistribution, game.all_objects, game.spriteUpdateDict, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
 
     ## Reset ignoreList so that next time around you do inference.
