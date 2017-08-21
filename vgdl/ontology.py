@@ -28,7 +28,7 @@ BASEDIRS = [UP, LEFT, DOWN, RIGHT]
 
 spriteToParams = {'Resource': [], \
                 'ResourcePack': [], \
-                'RandomNPC': ['cooldown'], \
+                'RandomNPC': ['cooldown', 'speed'], \
                 'Chaser': ['fleeing', 'stype'], \
                 'AStarChaser': ['fleeing', 'speed', 'stype'], \
                 'OrientedSprite': ['orientation'], \
@@ -2049,12 +2049,37 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
 
     epsilon_prob = 0.005
 
+    # For computing the new normalized likelihoods, we proceed as follows:
+
+    # The normalized likelihood for a given observation sequence o_1, ... o_t-1 given a parameter p_j is:
+    #   p(o_1, ..., o_t-1|p_j) / sum_i(p(o_1, .., o_t-1|p_i))
+    # 
+    # We want to arrive at the new normalized likelihoods p(o_1, ..., o_t-1, o_t|p_j) / sum_i(p(o_1, .., o_t-1, o_t|p_i))
+    #
+    # We first compute the ratio between the normalization constants:
+    # sum_i(p(o_1, .., o_t-1, o_t|p_i)) / sum_j(p(o_1, .., o_t-1|p_j)) =
+    # sum_i(p(o_1, .., o_t-1|p_i) * p(o_t|p_i)) / sum_j(p(o_1, .., o_t-1|p_j))
+    #
+    # Now, we can get the new normalized likelihood by doing:
+    # p(o_1, ..., o_t-1, o_t|p_j) / sum_i(p(o_1, .., o_t-1, o_t|p_i)) =
+    #   p(o_1, ..., o_t-1|p_j) / sum_i(p(o_1, .., o_t-1|p_i)) * 
+    #   p(o_t|p_j)
+    #   sum_i(p(o_1, .., o_t-1|p_i) * p(o_t|p_i)) / sum_k(p(o_1, .., o_t-1|p_k))
+
+    normalization_ratio = 0
     if sprite in curr_distribution.keys():
         for param_combination in curr_distribution[sprite].keys():
             if outcome in movement_options[sprite][param_combination].keys():
-                curr_distribution[sprite][param_combination] *= movement_options[sprite][param_combination][outcome]
+                normalization_ratio += curr_distribution[sprite][param_combination] * movement_options[sprite][param_combination][outcome]
             else:
-                curr_distribution[sprite][param_combination] *= epsilon_prob
+                normalization_ratio += curr_distribution[sprite][param_combination] * epsilon_prob
+
+    if sprite in curr_distribution.keys():
+        for param_combination in curr_distribution[sprite].keys():
+            if outcome in movement_options[sprite][param_combination].keys():
+                curr_distribution[sprite][param_combination] *= (movement_options[sprite][param_combination][outcome] / normalization_ratio)
+            else:
+                curr_distribution[sprite][param_combination] *= (epsilon_prob / normalization_ratio)
 
     return curr_distribution
 
@@ -2212,14 +2237,26 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
     for obj_type in types:
 
         ## Integrate evidence across all episodes; pick best hypothesis.
-        param_product = {k:1 for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
+        param_product = {k:0 for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
+        z = 0.
         for k in bestSpriteTypeDict[obj_type].keys():
             for param in param_product.keys():
-                param_product[param]*=bestSpriteTypeDict[obj_type][k][param]
+                param_product[param] += spriteUpdateDict[k]*bestSpriteTypeDict[obj_type][k][param]
+            
+            z += spriteUpdateDict[k]
+
+        for k in param_product:
+            param_product[k] /= z
 
         best_param = max(param_product, key=param_product.get)
         best_params[obj_type] = best_param
 
+
+        if obj_type=='BROWN':
+            for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
+                print(k, param_product[k])
+                if i>10:
+                    break
         sprite_type = best_param[0][1]
 
         color = obj_type

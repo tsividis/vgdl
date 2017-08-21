@@ -14,7 +14,7 @@ import ipdb, time
 import copy
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
-
+from termcolor import colored
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
@@ -39,7 +39,7 @@ class Agent:
 			self.max_nodes_annealing = 10
 		self.regrounding = 20
 		self.avoid_danger = True
-		self.safeDistance = 1
+		self.safeDistance = 3
 		self.max_quits = 3
 		self.emptyPlansLimit = 5
 		self.hypotheses = []
@@ -49,6 +49,7 @@ class Agent:
 		self.fakeInteractionRules = []
 		self.all_objects = {}
 		self.bestSpriteTypeDict = defaultdict(lambda : {})
+		self.spriteUpdateDict = defaultdict(lambda : 0)
 		self.best_params = None
 		# self.bestSpriteTypeDict = defaultdict(lambda: {'count':0, 'distribution':None}) ## To track how many times we have run spriteType updates to each particular object
 		self.seen_resources = []
@@ -60,6 +61,7 @@ class Agent:
 			self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
 		self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
 		self.rle = self.rleCreateFunc()
+		self.rle._game.spriteUpdateDict = self.spriteUpdateDict
 		return
 
 	def getSpritesByColor(self, rle, color):
@@ -490,10 +492,26 @@ class Agent:
 			# if ended and not win:
 			# 	print "lost game. embedding"
 			# 	embed()
+		
+
+		## Update global memory of updates
+		# for k in game.spriteUpdateDict:
+			# self.spriteUpdateDict[k] = game.spriteUpdateDict[k]
 
 		score = self.rle._game.score
 		# self.updateMemory(self.rle)
-		print "ended episode. Win={}".format(win)
+
+		output = "ended episode. Win={}".format(win)
+		if win:
+			print colored('________________________________________________________________', 'green')
+			print colored('________________________________________________________________', 'green')
+
+			print colored(output, 'green')
+			print colored('________________________________________________________________', 'green')
+		else:
+			print colored('________________________________________________________________', 'red')
+			print colored(output, 'red')
+			print colored('________________________________________________________________', 'red')			
 		return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
 	def matchEventToRuleByIDAndSpriteName(self, event, rule):
@@ -550,7 +568,10 @@ class Agent:
 		spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 		spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 
-		agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+		try:
+			agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+		except IndexError:
+			agentState = defaultdict(lambda: 0)
 
 		res = self.rle.step(action)
 
