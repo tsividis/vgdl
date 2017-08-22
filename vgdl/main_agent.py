@@ -15,12 +15,13 @@ import copy
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
+from line_profiler import LineProfiler
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
-orientationPairs = {UP:DOWN, DOWN:UP, LEFT:RIGHT, RIGHT:LEFT}
+# orientationPairs = {(0, 1):(0, -1), DOWN:UP, LEFT:RIGHT, RIGHT:LEFT}
 
 
 class Agent:
@@ -37,9 +38,9 @@ class Agent:
 		else:
 			self.starting_max_nodes = 1000
 			self.max_nodes_annealing = 10
-		self.regrounding = 20
+		self.regrounding = 5
 		self.avoid_danger = True
-		self.safeDistance = 3
+		self.safeDistance = 2
 		self.max_quits = 3
 		self.emptyPlansLimit = 5
 		self.hypotheses = []
@@ -86,23 +87,26 @@ class Agent:
 					matchingSprite = self.findNearestSprite(sprite, matchingSpritesInRLE)
 					sprite.rect = matchingSprite.rect
 					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and self.best_params!=None:
-						try:
+						# try:
 							## Enforce consistency: inferred value for individual orientations has to be consistent with what we're saying the horizontal/vertical orientation is of the entire group.
-							param1 = self.best_params[color]
-							param_dict = dict(param1)
-							orientation1 = param_dict['orientation']
-							likelihood1 =  self.rle._game.object_token_spriteDistribution[matchingSprite.ID][param1]
-							
-							param_dict['orientation'] = orientationPairs[orientation1]
-							param2 = tuple(param_dict)
-							orientation2= param_dict['orientation']
-							likelihood2 =  self.rle._game.object_token_spriteDistribution[matchingSprite.ID][param2]
+							# embed()
+						param1 = self.best_params[color]
+						param_dict = dict(param1)
+						orientation1 = param_dict['orientation']
+						likelihood1 =  self.rle._game.object_token_spriteDistribution[matchingSprite.ID][param1]
+						param_dict['orientation'] = (orientation1[0]*-1, orientation1[1]*-1)
+						param2 = tuple([[('vgdlType', param_dict['vgdlType'])] + sorted([(k,v) for (k,v) in param_dict.iteritems() if k!='vgdlType'])][0])
+						# param2 = tuple(param_dict.items())
+						orientation2= param_dict['orientation']
+						likelihood2 =  self.rle._game.object_token_spriteDistribution[matchingSprite.ID][param2]
 
-							orientation = orientation1 if likelihood1>=likelihood2 else orientation2
-							sprite.orientation = orientation
+						orientation = orientation1 if likelihood1>=likelihood2 else orientation2
+						sprite.orientation = orientation
 
-						except KeyError:
-							pass
+						# except KeyError:
+							# print "Failed to get params for Missile in main_agent"
+							# embed()
+							# pass
 		return
 
 
@@ -405,7 +409,11 @@ class Agent:
 
 			gameString_array = p.gameString_array
 			if solution:
+				print "============================================="
 				print "got solution of length", len(solution)
+				for g in p.gameString_array:
+					print colored(g, 'green')
+				print "============================================="
 			## add new objects? (line 310 of metaplanner)
 
 			if not quitting:
@@ -545,21 +553,29 @@ class Agent:
 				self.new_objects[spriteName] = 0
 
 
-		for k in self.new_objects.keys():
-			self.new_objects[k] += 1
+		# for k in self.new_objects.keys():
+		# 	self.new_objects[k] += 1
 
-		if any([self.new_objects[k]>5 for k in self.new_objects.keys()]):
-			# if self.new_objects[k] > 5:
-			spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
-			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
+		# if any([self.new_objects[k]>5 for k in self.new_objects.keys()]):
+		# 	# if self.new_objects[k] > 5:
+		# 	spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
+		# 	gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 
-			newHypotheses = []
-			for hypothesis in hypotheses:
-				newHypotheses.append(gameObject.addNewObjectsToTheory(hypothesis, spriteTypeHypothesis))
-			hypotheses = newHypotheses
+		# 	newHypotheses = []
+		# 	for hypothesis in hypotheses:
+		# 		newHypotheses.append(gameObject.addNewObjectsToTheory(hypothesis, spriteTypeHypothesis))
+		# 	hypotheses = newHypotheses
 
-		[self.new_objects.pop(k, None) for k in self.new_objects.keys() if self.new_objects[k]>5] ## don't track items once we've updated the theory
+		# [self.new_objects.pop(k, None) for k in self.new_objects.keys() if self.new_objects[k]>5] ## don't track items once we've updated the theory
 		return hypotheses
+
+	def executeStepProfiler(self, action, hypotheses, statesEncountered, run_induction=True):
+		lp = LineProfiler()
+		lp_wrapper = lp(self.executeStep)
+		hypotheses, theory_change_flag, effects = lp_wrapper(action, hypotheses, statesEncountered, run_induction)
+		lp.print_stats()
+		return hypotheses, theory_change_flag, effects
+		
 
 	def executeStep(self, action, hypotheses, statesEncountered, run_induction=True):
 
@@ -615,7 +631,7 @@ class Agent:
 		distributionsHaveChanged = spriteInduction(self.rle._game, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 
 		effects = translateEvents(res['effectList'], self.all_objects, self.rle)
-		print self.rle.show()
+		print colored(self.rle.show(), 'blue')
 		print self.rle._game.score
 
 		all_effects = [item for sublist in [e['effectList'] for e in self.finalEventList] for item in sublist]

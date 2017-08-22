@@ -18,8 +18,10 @@ from IPython import embed
 import random
 import math
 import importlib
+from colors import *
 from util import factorize, objectsToSymbol
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
+from termcolor import colored
 
 import cPickle
 from line_profiler import LineProfiler
@@ -91,11 +93,14 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
     def makeSymbolDict(self):
         inverseMapping = dict()
+        colorMapping = dict()
         numbers = '0123456789'
         alnum = numbers + 'abcdefghijklmnopqrstuvwxyz'
         idx = 0
         OLD_GOAL = "oldGl"
+        # embed()
         for s in self._obstypes.keys():
+            # colorMapping[s] = colorDict[str(self._game.sprite_constr[s][1]['color'])].lower()
             if not s == "goal":
                 inverseMapping[s] = alnum[idx]
                 idx+=1
@@ -109,6 +114,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         #     inverseMapping["goal"] = "G"
 
         self.symbolDict = inverseMapping
+        # self.colorMapping = colorMapping
         return
 
     def show(self, indent=False, showArrays=False):

@@ -18,6 +18,7 @@ from IPython import embed
 import core
 import copy
 import ipdb
+from line_profiler import LineProfiler
 
 UP = (0, -1)
 DOWN = (0, 1)
@@ -98,27 +99,27 @@ class GridPhysics():
         Calculate where the sprite would end up in a timestep, without actually updating its position.
         """
          ## This is where you could make hypotheses about speed, etc. for the object.
-        # if sprite.colorName=='LIGHTORANGE' and sprite.cooldown>1 and sprite.lastmove>1:
-            # embed()
-        if speed is None:
-            if sprite.speed is None:
-                speed = 1
-            else:
-                speed = sprite.speed
-        if speed != 0 and action is not None:
-            speed = float(speed) * self.gridsize[0]
-            if speed is None:
-                speed = sprite.speed
-
+        if action is not None: 
             orientation = action
+        if (sprite.lastmove+1)%sprite.cooldown==0 or abs(orientation[0])+abs(orientation[1])!=0:
 
-            if not((sprite.lastmove+1)%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
+            if speed is None:
+                if sprite.speed is None:
+                    speed = 1
+                else:
+                    speed = sprite.speed
+            if speed != 0:# and action is not None:
+                speed = float(speed) * self.gridsize[0]
+                # if speed is None:
+                #     speed = sprite.speed
 
-            # if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
-                # if sprite.colorName=='LIGHTORANGE':
-                    # embed()
-                pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
-                return pos.left, pos.top
+                # orientation = action
+
+        # if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
+            # if sprite.colorName=='LIGHTORANGE':
+                # embed()
+            pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
+            return pos.left, pos.top
         return(sprite.rect.left, sprite.rect.top)
 
     # using euclidian distance is also used here because it just works better
@@ -1131,7 +1132,7 @@ class NoveltyTermination(Termination):
                         ## We've confirmed that this isn't due to other objects shot by other objects.
                         try:
                             name1 = game.getAvatars()[0].stype
-                        except (AttributeError, IndexError) as e:
+                        except (AttributeError, IndexError) as err:
                             # Avatar dead or doesn't have stype
                             name1 = ''
                 except IndexError:
@@ -1156,7 +1157,7 @@ class NoveltyTermination(Termination):
                         ## We've confirmed that this isn't due to other objects shot by other objects.
                         try:
                             name2 = game.getAvatars()[0].stype
-                        except (AttributeError, IndexError) as e:
+                        except (AttributeError, IndexError) as err:
                             # Avatar dead or doesn't have stype
                             name2 = ''
                 except IndexError:
@@ -1189,7 +1190,7 @@ class NoveltyTermination(Termination):
                         # embed()
                         try:
                             name1 = game.getAvatars()[0].stype
-                        except (AttributeError, IndexError) as e:
+                        except (AttributeError, IndexError) as err:
                             # Avatar dead or doesn't have stype
                             name1 = ''
                 except IndexError:
@@ -1710,6 +1711,12 @@ def setSpriteParams(param, sprite):
         elif p == "cooldown":
             sprite.cooldown = param[p]
 
+def updateOptionsProfiler(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False):
+    lp = LineProfiler()
+    lp_wrapper = lp(updateOptions)
+    d1, d2 = lp_wrapper(game, sprite_type_tuple, current_sprite, params, missileOrientationClustering)
+    lp.print_stats()
+    return d1, d2
 
 def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False):
     """
@@ -1727,8 +1734,9 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
     # if current_sprite.name!='wall':
     #     embed()
     # Immovable, Passive, ResourcePack
-    if (sprite_type == Immovable) or (sprite_type == Passive) or (sprite_type == ResourcePack) or (sprite_type == Resource) or (sprite_type=='OTHER'):
-        return {(current_sprite.rect.left, current_sprite.rect.top): 1.} ##object stays in position
+    if sprite_type in [Immovable, Passive, ResourcePack, Resource, 'OTHER']:
+    # if (sprite_type == Immovable) or (sprite_type == Passive) or (sprite_type == ResourcePack) or (sprite_type == Resource) or (sprite_type=='OTHER'):
+        return {(current_sprite.rect.left, current_sprite.rect.top): 1.}, {(current_sprite.rect.left, current_sprite.rect.top): 1.} ##object stays in position
 
     # Chaser
     elif sprite_type == Chaser:
@@ -1774,7 +1782,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
                 print "problem in movementOtions"
                 embed()
         current_sprite.cooldown = realCooldown
-        return position_options
+        return position_options, position_options
 
     # AStarChaser
     elif sprite_type == AStarChaser:
@@ -1784,7 +1792,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         # If nothing to chase, then will stay in place
         killed = [s.name for s in game.kill_list]
         if 'avatar' in killed:
-            return {(current_sprite.rect.left, current_sprite.rect.top): 1.}
+            return {(current_sprite.rect.left, current_sprite.rect.top): 1.}, {(current_sprite.rect.left, current_sprite.rect.top): 1.}
 
         path = world.getMoveFor(current_sprite)
         if len(path)>1:
@@ -1813,7 +1821,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
             movement = DOWN
 
         left, top = current_sprite.physics.calculateActiveMovement(current_sprite, movement, speed=speed)
-        return {(left, top): 1.}
+        return {(left, top): 1.}, {(left, top): 1.}
 
     # Random NPC
     elif sprite_type == RandomNPC:
@@ -1835,10 +1843,11 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
             # print position_options
             # embed()
         current_sprite.cooldown = realCooldown
-        return position_options
+        return position_options, position_options
 
     # Missile or OrientedSprite
-    elif sprite_type == Missile or sprite_type==OrientedSprite:
+    elif sprite_type in [Missile, OrientedSprite]:
+    # elif sprite_type == Missile or sprite_type==OrientedSprite:
         if not current_sprite.is_static and not current_sprite.only_active:
             # NOTE: we might want to consider having is_static and only_active be
             # parameters that we have to infer, rather than things we get for free.
@@ -1852,30 +1861,30 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
             coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
 
             # If object has speed = 0 or no 'orientation' attribute
-            position_options = {}
+            position_options, clustered_position_options = {}, {}
             if coords == None:
-                return position_options
+                return position_options, position_options
 
             position_options[(coords[0], coords[1])] = 1.
 
             if missileOrientationClustering:
 
                 epsilon_prob = 0.005
-                position_options[(coords[0], coords[1])] = .5 + epsilon_prob
+                clustered_position_options[(coords[0], coords[1])] = .5 + epsilon_prob
                 #flip orientation
                 orientation = (orientation[0]*-1, orientation[1]*-1)
 
                 coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
-                position_options[(coords[0], coords[1])] = .5 - epsilon_prob
+                clustered_position_options[(coords[0], coords[1])] = .5 - epsilon_prob
 
             # if current_sprite.colorName=='RED' and missileOrientationClustering:
             #     print position_options
             #     embed()
             current_sprite.cooldown = realCooldown
-            return position_options
+            return position_options, clustered_position_options
 
         # Catches objects that can't be Oriented Sprite and Missile types b/c fails the if-statement
-        return {}
+        return {}, {}
 
 # def getAttributeTupleCombinations(game, sprite, sprite_type):
 #     """
@@ -2266,11 +2275,11 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         best_param = max(param_product, key=param_product.get)
         best_params[obj_type] = best_param
 
-        if obj_type=='BROWN':
-            for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
-                print(k, param_product[k])
-                if i>10:
-                    break
+        # if obj_type=='BROWN':
+        #     for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
+        #         print(k, param_product[k])
+        #         if i>10:
+        #             break
         sprite_type = best_param[0][1]
 
         color = obj_type
@@ -2380,6 +2389,13 @@ def getKL(spriteDistribution1, spriteDistribution2):
     d1, d2 = [v['prob'] for v in spriteDistribution1.values()], [v['prob'] for v in spriteDistribution2.values()]
     return scipy.stats.entropy(d1,d2)
 
+def spriteInductionProfiler(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None):
+    lp = LineProfiler()
+    lp_wrapper = lp(spriteInduction)
+    distributionsHaveChanged = lp_wrapper(game, step, bestSpriteTypeDict, oldSpriteSet, old_outcome)
+    lp.print_stats()
+    return distributionsHaveChanged
+
 def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None):
     """
     An explanation of important data structures used in this function:
@@ -2422,9 +2438,9 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
             embed()
 
         game = game                                               # Save game state
-        for sprite in game.spriteDistribution.keys():                  # Keys are the IDs of the game objects
+        for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:                  # Keys are the IDs of the game objects
             for param_combination in game.spriteDistribution[sprite].keys(): # Check each potential sprite type
-                if game.spriteDistribution[sprite][param_combination]> 0 and sprite in objects.keys():    # Make sure sprite_type is an option for sprite, and sprite is not killed
+                if game.spriteDistribution[sprite][param_combination]> 0:    # Make sure sprite_type is an option for sprite, and sprite is not killed
                     sprite_obj = objects[sprite]["sprite"]
 
                     sprite_type = param_combination[0]
@@ -2439,36 +2455,31 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                         ## missileOrientationClustering: considers left/right and up/down to be equivalent options in the likelihood
                         ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving
                         ## objects
-                        game.movement_options[sprite][param_combination] = \
+                        game.object_token_movement_options[sprite][param_combination], game.movement_options[sprite][param_combination] = \
                         updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
 
-                        ## but we also do inference for particular object tokens
-
-                        game.object_token_movement_options[sprite][param_combination] = \
-                        updateOptions(game, sprite_type, sprite_obj, params=attributeDict)
 
     elif step==3:
         ## Update sprite distribution based on observations
         objects = game.getObjects()
         notUpdated = [s for s in objects.keys() if s not in game.spriteDistribution.keys()]
 
-        distributionAtT1 = copy.deepcopy(game.spriteDistribution)
+        # distributionAtT1 = copy.deepcopy(game.spriteDistribution)
 
-        for sprite in game.spriteDistribution.keys():        # Keys are the IDs of the game objects
-            if sprite in objects.keys():                # Sprite may have been killed
-                sprite_obj = objects[sprite]["sprite"]
+        for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:        # Keys are the IDs of the game objects
+            sprite_obj = objects[sprite]["sprite"]
 
-                if all([sprite not in e for e in game.effectList if e[0]!='nothing']) and sprite not in game.ignoreList and sprite_obj.name != 'avatar':
-                    # only update the distribution in this fashion if there are no events for this
-                    # time step involving this sprite.
+            if all([sprite not in e for e in game.effectList if e[0]!='nothing']) and sprite not in game.ignoreList and sprite_obj.name != 'avatar':
+                # only update the distribution in this fashion if there are no events for this
+                # time step involving this sprite.
 
-                    outcome = objects[sprite]["position"]
-                    game.spriteDistribution = updateDistribution(game, sprite, game.spriteDistribution, \
-                                              game.movement_options, outcome, missileOrientationClustering=True)
-                    game.object_token_spriteDistribution = updateDistribution(game, sprite, game.object_token_spriteDistribution, \
-                                              game.object_token_movement_options, outcome)
+                outcome = objects[sprite]["position"]
+                game.spriteDistribution = updateDistribution(game, sprite, game.spriteDistribution, \
+                                          game.movement_options, outcome, missileOrientationClustering=True)
+                game.object_token_spriteDistribution = updateDistribution(game, sprite, game.object_token_spriteDistribution, \
+                                          game.object_token_movement_options, outcome)
 
-                    game.spriteUpdateDict[sprite] += 1
+                game.spriteUpdateDict[sprite] += 1
 
         ## Update the global memory
         for k in game.spriteDistribution.keys():

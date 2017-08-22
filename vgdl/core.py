@@ -567,6 +567,9 @@ class BasicGame(object):
         dead = self.kill_list[:] # copy kill list
         created = []
 
+
+
+
         self.collision_eff.sort(key=lambda x:2 if x[2].__name__==('bounceForward' or 'stepBack')
             else (1 if x[2].__name__=='killSprite' else 0))
         # build the current sprite lists (if not yet available)
@@ -683,6 +686,15 @@ class BasicGame(object):
             collision_set = collision_set.union(new_collisions)
 
         self.kill_list = list(set(self.kill_list))
+
+        ## Remove duplicates
+        new_collision_eff = []
+        for element in self.effectList:
+            if element not in new_collision_eff:
+                new_collision_eff.append(element)
+        self.effectList = new_collision_eff
+
+
         # self.kill_list = dead[:]
         # if len(self.effectList) > 0:
             # print 'effectList', self.effectList

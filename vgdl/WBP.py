@@ -56,7 +56,7 @@ class WBP():
 		self.max_nodes = max_nodes
 		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random']#, 'Missile']
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
-		self.allowRollouts = True
+		self.allowRollouts = False
 		self.quitting = False
 		self.gameString_array = []
 		if theory == None:
@@ -240,6 +240,7 @@ class WBP():
 		lp_wrapper = lp(self.BFS)
 		lp_wrapper()
 		lp.print_stats()
+
 
 	def BFS(self):
 		QNovelty, QReward = [], []
@@ -897,7 +898,7 @@ class Node():
 		# print self.rle._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost, self.position_score()
 
 		self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
-		sum(self.rolloutArray) - self.metabolic_cost + self.position_score(-25)
+		sum(self.rolloutArray) - self.metabolic_cost + self.position_score(-35)
 
 		try:
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
