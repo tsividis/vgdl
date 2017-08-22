@@ -82,6 +82,8 @@ class GridPhysics():
             # if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
                 pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
                 return pos.left, pos.top
+            else:
+                return sprite.rect.left, sprite.rect.top
         else:   # If object has speed = 0 or no 'orientation' attribute
             return None
 
@@ -394,9 +396,9 @@ class Bomber(SpawnPoint, Missile):
     def update(self, game):
         print "Lastmove for bomber is {}".format(self.lastmove)
         self.cooldown = 3
+        self.lastmove -= 1
         Missile.update(self, game)
         SpawnPoint.update(self, game)
-        self.lastmove -= 1
         self.cooldown = 1
 
 class Chaser(RandomNPC): ##
@@ -1857,6 +1859,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
 
     # Missile or OrientedSprite
     elif sprite_type in [Missile, OrientedSprite]:
+
     # elif sprite_type == Missile or sprite_type==OrientedSprite:
         if not current_sprite.is_static and not current_sprite.only_active:
             # NOTE: we might want to consider having is_static and only_active be
@@ -1867,6 +1870,8 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
             cooldown = getCooldown(params)
             realCooldown = int(current_sprite.cooldown)
             current_sprite.cooldown = cooldown
+
+
 
             coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
             # If object has speed = 0 or no 'orientation' attribute
@@ -1886,9 +1891,12 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
                 coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
                 clustered_position_options[(coords[0], coords[1])] = .5 - epsilon_prob
 
-            # if current_sprite.colorName=='RED' and missileOrientationClustering:
-            #     print position_options
-            #     embed()
+            # if current_sprite.colorName=='GOLD' and speed==.8 and cooldown==3:
+                # print "position_options is {}".format(position_options)
+                # print "sprite rect is {}".format(current_sprite.rect)
+                # print "lastmove is {}".format(current_sprite.lastmove)
+                # ipdb.set_trace()
+
             current_sprite.cooldown = realCooldown
             return position_options, clustered_position_options
 
@@ -2288,7 +2296,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
                 print(k, param_product[k])
                 if i>10:
-                    pass
+                    break
 
         sprite_type = best_param[0][1]
 
