@@ -131,7 +131,7 @@ class WBP():
 			## a function of the Flicker's presence is being taken care of by that. Otherwise the agent can keep exploring states that have no actual effect
 			## on the game state.
 			if (len(rle._game.sprite_groups[k])>0 and
-					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and 
+					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and
 					any([obj in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) for obj in self.objectsWhoseLocationsWeIgnore])):
 					# (('Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)) or
 						# ('Random' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)) or
@@ -164,7 +164,7 @@ class WBP():
 					objPosCombination = self.objIDs[o.ID] + vecValue
 					# print("ObjId = {}, vecValue = {}".format(self.objIDs[o.ID], vecValue))
 					lst.append(objPosCombination)
-		
+
 		## Track present/absent objects
 		present = []
 		for k in [t for t in self.objectTypes if t not in ['wall', 'avatar']]: ##maybe add the avatar to this global state
@@ -265,7 +265,7 @@ class WBP():
 			# print embed()
 			if current in [None, 'pickMaxNode']:
 				node = max(visited, key=lambda n:n.intrinsic_reward)
-				
+
 				parentNode = copy.deepcopy(node)
 				self.solution = node.actionSeq
 
@@ -440,7 +440,7 @@ class Node():
 		return rolloutArray
 
 	def spritecounter_val(self, theory, term, stype, rle, first_alpha=10000.,
-						  second_alpha=10):
+						  second_alpha=100):
 
 		# First order: progress in terms of number of sprites remaining.
 		# Second order: distance to the closest instance of a target sprite type.
@@ -463,10 +463,10 @@ class Node():
 				 not inter.generic and
 				 not inter.preconditions
 				and inter.slot1 == stype)]
-		
+
 		## If you can shoot a Flicker, give yourself credit for being close to things it kills, but remove credit for that Flicker being close to those things.
 		try:
-			if (rle._game.getAvatars()[0].stype in killer_types and 
+			if (rle._game.getAvatars()[0].stype in killer_types and
 				'Flicker' in str(theory.spriteObjects[rle._game.sprite_groups[rle._game.getAvatars()[0].stype][0].colorName].vgdlType)):
 					killer_types.append(rle._game.getAvatars()[0].name)
 					killer_types.remove(rle._game.getAvatars()[0].stype)
@@ -651,7 +651,7 @@ class Node():
 		return val
 
 	def multispritecounter_val(self, theory, term, rle, first_alpha=10000,
-							   second_alpha=10):
+							   second_alpha=100):
 		val = 0
 		# print "in multispritecounter"
 		# embed()
@@ -662,7 +662,7 @@ class Node():
 		return val
 
 	def noveltytermination_val(self, theory, term, s1, s2, rle, first_alpha=1000,
-						  second_alpha=1):
+						  second_alpha=10):
 		val = 0
 		compute_second_order = True
 
@@ -764,7 +764,7 @@ class Node():
 		for term in theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
-					first_alpha=5000, second_alpha=50)
+					first_alpha=5000, second_alpha=0)
 				# if spritecounter_val!=0:
 					# print("spritecounter_val for {} is equal to {}".format(
 						# term.termination.stype, spritecounter_val))
@@ -772,7 +772,7 @@ class Node():
 
 			elif isinstance(term, MultiSpriteCounterRule):
 				multispritecounter_val = self.multispritecounter_val(theory, term, rle,
-						first_alpha=500, second_alpha=5)
+						first_alpha=500, second_alpha=0)
 				# if multispritecounter_val!=0:
 					# print("multispritecounter_val for {} is equal to {}".format(
 						# term.termination.stypes, multispritecounter_val))
@@ -786,7 +786,7 @@ class Node():
 			elif isinstance(term, NoveltyRule):
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
-					first_alpha=first_alpha, second_alpha=second_alpha)
+					first_alpha=first_alpha, second_alpha=0)
 				# if noveltytermination_val !=0:
 					# print("noveltytermination_val for {} and {} is equal to {}".format(
 						# term.termination.s1, term.termination.s2, noveltytermination_val))
@@ -805,7 +805,7 @@ class Node():
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
 		return heuristicVal
 
-	def position_score(self, factor=-1):
+	def position_score(self, factor=0):
 		try:
 			(x, y) = np.array((self.rle._game.getAvatars()[0].rect.x,
 				self.rle._game.getAvatars()[0].rect.y))/self.WBP.pixel_size

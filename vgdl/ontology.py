@@ -33,7 +33,7 @@ spriteToParams = {'Resource': [], \
                 'Chaser': ['fleeing', 'stype'], \
                 'AStarChaser': ['fleeing', 'speed', 'stype'], \
                 'OrientedSprite': ['orientation'], \
-                'Missile': ['speed', 'orientation']} ##removed speed from chaser and randomNPC
+                'Missile': ['speed', 'orientation', 'cooldown']} ##removed speed from chaser and randomNPC
 
 # ---------------------------------------------------------------------
 #     Types of physics
@@ -99,7 +99,7 @@ class GridPhysics():
         Calculate where the sprite would end up in a timestep, without actually updating its position.
         """
          ## This is where you could make hypotheses about speed, etc. for the object.
-        if action is not None: 
+        if action is not None:
             orientation = action
         if (sprite.lastmove+1)%sprite.cooldown==0 or abs(orientation[0])+abs(orientation[1])!=0:
 
@@ -276,6 +276,8 @@ class SpawnPoint(SpriteProducer):
             game._createSprite([self.stype], (self.rect.left, self.rect.top))
             self.counter += 1
 
+        self.lastmove += 1
+
 
 
 class RandomNPC(VGDLSprite):
@@ -388,9 +390,14 @@ class ErraticMissile(Missile):
 class Bomber(SpawnPoint, Missile):
     color = ORANGE
     is_static = False
+    lastmove = 0
     def update(self, game):
+        print "Lastmove for bomber is {}".format(self.lastmove)
+        self.cooldown = 3
         Missile.update(self, game)
         SpawnPoint.update(self, game)
+        self.lastmove -= 1
+        self.cooldown = 1
 
 class Chaser(RandomNPC): ##
     """ Pick an action that will move toward the closest sprite of the provided target type. """
@@ -1195,7 +1202,8 @@ class NoveltyTermination(Termination):
                             name1 = ''
                 except IndexError:
                     print("IndexError in game.all_objects")
-                    embed()
+                    # embed()
+                    pass
                 # self.s2 returns a type for the EOS for some reason, so the
                 # check has to be performed like this
                 if name1==self.s1 and name2 in str(self.s2):
@@ -1343,6 +1351,7 @@ def attractGaze(sprite, partner, game, prob=0.5):
 def turnAround(sprite, partner, game):
     sprite.rect = sprite.lastrect
     sprite.lastmove = sprite.cooldown
+    # sprite.lastmove = 4
     sprite.physics.activeMovement(sprite, DOWN)
     # sprite.lastmove = sprite.cooldown
     # sprite.physics.activeMovement(sprite, DOWN)
@@ -1826,6 +1835,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
     # Random NPC
     elif sprite_type == RandomNPC:
 
+
         realCooldown = int(current_sprite.cooldown)
         speed, cooldown = getSpeed(params), getCooldown(params)
         current_sprite.cooldown = cooldown
@@ -1859,7 +1869,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
             current_sprite.cooldown = cooldown
 
             coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
-
             # If object has speed = 0 or no 'orientation' attribute
             position_options, clustered_position_options = {}, {}
             if coords == None:
@@ -2275,11 +2284,12 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         best_param = max(param_product, key=param_product.get)
         best_params[obj_type] = best_param
 
-        # if obj_type=='BROWN':
-        #     for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
-        #         print(k, param_product[k])
-        #         if i>10:
-        #             break
+        if obj_type=='GOLD':
+            for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
+                print(k, param_product[k])
+                if i>10:
+                    pass
+
         sprite_type = best_param[0][1]
 
         color = obj_type
