@@ -33,14 +33,14 @@ class Agent:
 		self.annealingFactor = 1.
 		self.shortHorizon = True
 		if self.shortHorizon == True:
-			self.starting_max_nodes = 50
+			self.starting_max_nodes = 200
 			self.max_nodes_annealing = 1.05
 		else:
 			self.starting_max_nodes = 1000
 			self.max_nodes_annealing = 10
 		self.regrounding = 5
 		self.avoid_danger = True
-		self.safeDistance = 2
+		self.safeDistance = 3
 		self.max_quits = 3
 		self.emptyPlansLimit = 5
 		self.hypotheses = []
@@ -87,25 +87,37 @@ class Agent:
 					matchingSprite = self.findNearestSprite(sprite, matchingSpritesInRLE)
 					sprite.rect = matchingSprite.rect
 					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and self.best_params!=None:
-						# try:
+						try:
 							## Enforce consistency: inferred value for individual orientations has to be consistent with what we're saying the horizontal/vertical orientation is of the entire group.
 							# embed()
-						param1 = self.best_params[color]
-						param_dict = dict(param1)
-						orientation1 = param_dict['orientation']
-						likelihood1 =  self.rle._game.object_token_spriteDistribution[matchingSprite.ID][param1]
-						param_dict['orientation'] = (orientation1[0]*-1, orientation1[1]*-1)
-						param2 = tuple([[('vgdlType', param_dict['vgdlType'])] + sorted([(k,v) for (k,v) in param_dict.iteritems() if k!='vgdlType'])][0])
-						# param2 = tuple(param_dict.items())
-						orientation2= param_dict['orientation']
-						likelihood2 =  self.rle._game.object_token_spriteDistribution[matchingSprite.ID][param2]
 
-						orientation = orientation1 if likelihood1>=likelihood2 else orientation2
-						sprite.orientation = orientation
+							orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
 
-						# except KeyError:
-							# print "Failed to get params for Missile in main_agent"
+							# param1 = self.best_params[color]
+							# param_dict = dict(param1)
+							# orientation1 = param_dict['orientation']
+							# likelihood1 =  self.rle._game.object_token_spriteDistribution[matchingSprite.ID][param1]
+							# param_dict['orientation'] = (orientation1[0]*-1, orientation1[1]*-1)
+							# param2 = tuple([[('vgdlType', param_dict['vgdlType'])] + sorted([(k,v) for (k,v) in param_dict.iteritems() if k!='vgdlType'])][0])
+							# # param2 = tuple(param_dict.items())
+							# orientation2= param_dict['orientation']
+							# likelihood2 =  self.rle._game.object_token_spriteDistribution[matchingSprite.ID][param2]
+
+							# orientation = orientation1 if likelihood1>=likelihood2 else orientation2
+							# if sprite.colorName=='PINK' and matchingSprite.orientation!= orientation:
+							# 	print sprite.rect
+							# 	print "actual orientation", matchingSprite.orientation
+							# 	print param1, likelihood1
+							# 	print param2, likelihood2
+							# 	# embed()
+
+							sprite.orientation = orientation
+						# if sprite.colorName=='PINK':
+							# print "inferred orientation", sprite.orientation
 							# embed()
+						except KeyError:
+							print "Failed to get params for Missile in main_agent"
+							embed()
 							# pass
 		return
 
@@ -371,6 +383,12 @@ class Agent:
 		statesEncountered = [self.rle._game.getFullState()]
 		self.statesEncountered.append(self.rle._game.getFullState())
 
+		## Initialize memory of object positions
+		self.rle._game.objectMemoryDict, self.rle._game.previousPositions = {}, {}
+		for k, v in self.rle._game.all_objects.iteritems():
+			self.rle._game.objectMemoryDict[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+			self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+
 		## initialize theory if necessary.
 		if len(self.hypotheses) == 0:
 			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True)
@@ -420,8 +438,27 @@ class Agent:
 				for i, action in enumerate(solution):
 					self.hypotheses[0].dryingPaint = set()
 
+
+
+
 					hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
 						run_induction = not flexible_goals)
+
+					self.rle._game.nextPositions = {}
+					for k, v in self.rle._game.all_objects.iteritems():
+						self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+						try:
+							if self.rle._game.previousPositions[k] != self.rle._game.nextPositions[k]:
+								self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.rle._game.previousPositions[k])
+						except KeyError:
+							pass
+					self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
+
+
+					# pinkID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['features']['color']=='PINK'][0]
+					# print "prev position", self.rle._game.previousPositions[pinkID]
+					# print "memoryDict", self.rle._game.objectMemoryDict[pinkID]
+					# print "curr position", self.rle._game.all_objects[pinkID]['sprite'].rect
 
 
 					ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
@@ -459,15 +496,24 @@ class Agent:
 							print 'regrounding'
 							break
 
-					if self.avoid_danger:
+					if self.avoid_danger: ## this is just exercising caution when near random objects, irrespective of whether they kill us or not
 						try:
-							random_npc_positions = [self.rle._rect2pos(element.rect)
-								for objName in self.rle._game.sprite_groups.keys()
-								for element in self.rle._game.sprite_groups[objName]
-								if element not in self.rle._game.kill_list and
-								'RandomNPC' in str(self.hypotheses[0].classes[
-									self.hypotheses[0].colorToClassMapper(
-									element.colorName)][0].__class__)]
+							random_npc_colors = [self.hypotheses[0].classes[k][0].color for k in self.hypotheses[0].classes.keys() if self.hypotheses[0].classes[k] and 'Random' in str(self.hypotheses[0].classes[k][0].vgdlType)]
+							random_npc_classes = [k for k in self.rle._game.sprite_groups.keys() if self.rle._game.sprite_groups[k] and self.rle._game.sprite_groups[k][0].colorName in random_npc_colors]
+							random_npc_positions = []
+
+							for c in random_npc_classes:
+								for element in self.rle._game.sprite_groups[c]:
+									if element not in self.rle._game.kill_list:
+										random_npc_positions.append(self.rle._rect2pos(element.rect))
+
+							# random_npc_positions = [self.rle._rect2pos(element.rect)
+							# 	for objName in self.rle._game.sprite_groups.keys()
+							# 	for element in self.rle._game.sprite_groups[objName]
+							# 	if element not in self.rle._game.kill_list and
+							# 	'RandomNPC' in str(self.hypotheses[0].classes[
+							# 		self.hypotheses[0].colorToClassMapper(
+							# 		element.colorName)][0].__class__)]
 
 							avatar_positions = [self.rle._rect2pos(avatar.rect)
 							 	for avatar in self.rle._game.getAvatars()]
@@ -475,7 +521,8 @@ class Agent:
 							possiblePairList = [manhattanDist(avatar, random)
 								for avatar in avatar_positions
 								for random in random_npc_positions]
-
+							# embed()
+							print "random distances", min(possiblePairList)
 							if min(possiblePairList) <= self.safeDistance:
 								print("Close to RandomNPC, regrounding")
 								break
@@ -483,6 +530,7 @@ class Agent:
 						except ValueError:
 							# print("error in avoid_danger: is the avatar dead?")
 							pass
+
 
 				if self.shortHorizon:
 					self.max_nodes *= self.max_nodes_annealing

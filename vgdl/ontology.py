@@ -2085,17 +2085,24 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
     #   sum_i(p(o_1, .., o_t-1|p_i) * p(o_t|p_i)) / sum_k(p(o_1, .., o_t-1|p_k))
 
     normalization_ratio = 0
+    alpha = 1.
     if sprite in curr_distribution.keys():
         for param_combination in curr_distribution[sprite].keys():
             if outcome in movement_options[sprite][param_combination].keys():
-                normalization_ratio += curr_distribution[sprite][param_combination] * movement_options[sprite][param_combination][outcome]
+                if missileOrientationClustering and 'Missile' in str(param_combination[0][1]):
+                    normalization_ratio += curr_distribution[sprite][param_combination] * (movement_options[sprite][param_combination][outcome]**alpha)
+                else:
+                    normalization_ratio += curr_distribution[sprite][param_combination] * movement_options[sprite][param_combination][outcome]
             else:
                 normalization_ratio += curr_distribution[sprite][param_combination] * epsilon_prob
 
     if sprite in curr_distribution.keys():
         for param_combination in curr_distribution[sprite].keys():
             if outcome in movement_options[sprite][param_combination].keys():
-                curr_distribution[sprite][param_combination] *= (movement_options[sprite][param_combination][outcome] / normalization_ratio)
+                if missileOrientationClustering and 'Missile' in str(param_combination[0][1]):
+                    curr_distribution[sprite][param_combination] *= ((movement_options[sprite][param_combination][outcome]**alpha) / normalization_ratio)
+                else:
+                    curr_distribution[sprite][param_combination] *= (movement_options[sprite][param_combination][outcome] / normalization_ratio)
             else:
                 curr_distribution[sprite][param_combination] *= (epsilon_prob / normalization_ratio)
 
@@ -2275,7 +2282,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         best_param = max(param_product, key=param_product.get)
         best_params[obj_type] = best_param
 
-        # if obj_type=='BROWN':
+        # if obj_type=='PINK':
         #     for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
         #         print(k, param_product[k])
         #         if i>10:

@@ -67,21 +67,36 @@ def translateEvents(events, all_objects, rle):
 
 
 def observe(rle, obsSteps, bestSpriteTypeDict):
-        print "observing"
-        if obsSteps>0:
-                for i in range(obsSteps):
-                        # print rle.show()
-                        spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
-                        spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
-                        rle.step((0,0))
-                        # chaserID = [k for k in rle._game.all_objects.keys() if rle._game.all_objects[k]['features']['color']=='ORANGE'][0]
-                        # print rle._game.all_objects[chaserID]['sprite'].rect
-                        spriteInduction(rle._game, step=3, bestSpriteTypeDict=bestSpriteTypeDict)
-        else:
-                spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
-                spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
-                # spriteInduction(rle._game, step=3)
-        return
+	print "observing"
+	if obsSteps>0:
+		for i in range(obsSteps):
+			# print rle.show()
+			spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
+			spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
+
+			rle.step((0,0))
+			
+			rle._game.nextPositions = {}
+			for k, v in rle._game.all_objects.iteritems():
+				rle._game.nextPositions[k] = (int(rle._game.all_objects[k]['sprite'].rect.x), int(rle._game.all_objects[k]['sprite'].rect.y))
+				try:
+					if rle._game.previousPositions[k] != rle._game.nextPositions[k]:
+						rle._game.objectMemoryDict[k] = copy.deepcopy(rle._game.previousPositions[k])
+				except KeyError:
+					pass
+			rle._game.previousPositions = copy.deepcopy(rle._game.nextPositions)
+
+			pinkID = [k for k in rle._game.all_objects.keys() if rle._game.all_objects[k]['features']['color']=='PINK'][0]
+			print "prev position", rle._game.previousPositions[pinkID]
+			print "memoryDict", rle._game.objectMemoryDict[pinkID]
+			print "curr position", rle._game.all_objects[pinkID]['sprite'].rect
+
+			spriteInduction(rle._game, step=3, bestSpriteTypeDict=bestSpriteTypeDict)
+	else:
+		spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
+		spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
+		# spriteInduction(rle._game, step=3)
+	return
 
 
 def planActLoop(rleCreateFunc, filename, max_actions_per_plan, planning_steps, defaultPolicyMaxSteps, playback=False):
@@ -431,7 +446,7 @@ def getToObjectGoal(rle, vrle, plannerType, game_object, hypothesis, game, level
 							else:
 								print np.reshape(new_state, rle.outdim)
 
-					 		## If there were collisions, update history and perform interactionSet induction if the collisions were novel.
+							## If there were collisions, update history and perform interactionSet induction if the collisions were novel.
 							if effects:
 
 								state = rle._game.getFullState()
