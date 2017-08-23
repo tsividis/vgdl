@@ -38,7 +38,7 @@ class Agent:
 		else:
 			self.starting_max_nodes = 1000
 			self.max_nodes_annealing = 10
-		self.regrounding = 5
+		self.regrounding = 2
 		self.avoid_danger = True
 		self.safeDistance = 3
 		self.max_quits = 3
@@ -548,7 +548,7 @@ class Agent:
 			# if ended and not win:
 			# 	print "lost game. embedding"
 			# 	embed()
-		
+
 
 		## Update global memory of updates
 		# for k in game.spriteUpdateDict:
@@ -567,7 +567,7 @@ class Agent:
 		else:
 			print colored('________________________________________________________________', 'red')
 			print colored(output, 'red')
-			print colored('________________________________________________________________', 'red')			
+			print colored('________________________________________________________________', 'red')
 		return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
 	def matchEventToRuleByIDAndSpriteName(self, event, rule):
@@ -623,7 +623,7 @@ class Agent:
 		hypotheses, theory_change_flag, effects = lp_wrapper(action, hypotheses, statesEncountered, run_induction)
 		lp.print_stats()
 		return hypotheses, theory_change_flag, effects
-		
+
 
 	def executeStep(self, action, hypotheses, statesEncountered, run_induction=True):
 
@@ -808,7 +808,7 @@ if __name__ == "__main__":
 	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-	gameName = gvggames[6]
+	gameName = gvggames[0]
 
 	gvgname = "../gvgai/training_set_1/{}".format(gameName)
 

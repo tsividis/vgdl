@@ -33,7 +33,7 @@ spriteToParams = {'Resource': [], \
                 'Chaser': ['fleeing', 'stype'], \
                 'AStarChaser': ['fleeing', 'speed', 'stype'], \
                 'OrientedSprite': ['orientation'], \
-                'Missile': ['speed', 'orientation']} ##removed speed from chaser and randomNPC
+                'Missile': ['speed', 'orientation', 'cooldown']} ##removed speed from chaser and randomNPC
 
 # ---------------------------------------------------------------------
 #     Types of physics
@@ -82,6 +82,8 @@ class GridPhysics():
             # if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
                 pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
                 return pos.left, pos.top
+            else:
+                return sprite.rect.left, sprite.rect.top
         else:   # If object has speed = 0 or no 'orientation' attribute
             return None
 
@@ -99,7 +101,7 @@ class GridPhysics():
         Calculate where the sprite would end up in a timestep, without actually updating its position.
         """
          ## This is where you could make hypotheses about speed, etc. for the object.
-        if action is not None: 
+        if action is not None:
             orientation = action
         if (sprite.lastmove+1)%sprite.cooldown==0 or abs(orientation[0])+abs(orientation[1])!=0:
 
@@ -276,6 +278,8 @@ class SpawnPoint(SpriteProducer):
             game._createSprite([self.stype], (self.rect.left, self.rect.top))
             self.counter += 1
 
+        self.lastmove += 1
+
 
 
 class RandomNPC(VGDLSprite):
@@ -388,9 +392,14 @@ class ErraticMissile(Missile):
 class Bomber(SpawnPoint, Missile):
     color = ORANGE
     is_static = False
+    lastmove = 0
     def update(self, game):
+        print "Lastmove for bomber is {}".format(self.lastmove)
+        self.cooldown = 3
+        self.lastmove -= 1
         Missile.update(self, game)
         SpawnPoint.update(self, game)
+        self.cooldown = 1
 
 class Chaser(RandomNPC): ##
     """ Pick an action that will move toward the closest sprite of the provided target type. """
@@ -1195,7 +1204,8 @@ class NoveltyTermination(Termination):
                             name1 = ''
                 except IndexError:
                     print("IndexError in game.all_objects")
-                    embed()
+                    # embed()
+                    pass
                 # self.s2 returns a type for the EOS for some reason, so the
                 # check has to be performed like this
                 if name1==self.s1 and name2 in str(self.s2):
@@ -1343,6 +1353,7 @@ def attractGaze(sprite, partner, game, prob=0.5):
 def turnAround(sprite, partner, game):
     sprite.rect = sprite.lastrect
     sprite.lastmove = sprite.cooldown
+    # sprite.lastmove = 4
     sprite.physics.activeMovement(sprite, DOWN)
     # sprite.lastmove = sprite.cooldown
     # sprite.physics.activeMovement(sprite, DOWN)
@@ -1826,6 +1837,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
     # Random NPC
     elif sprite_type == RandomNPC:
 
+
         realCooldown = int(current_sprite.cooldown)
         speed, cooldown = getSpeed(params), getCooldown(params)
         current_sprite.cooldown = cooldown
@@ -1847,6 +1859,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
 
     # Missile or OrientedSprite
     elif sprite_type in [Missile, OrientedSprite]:
+
     # elif sprite_type == Missile or sprite_type==OrientedSprite:
         if not current_sprite.is_static and not current_sprite.only_active:
             # NOTE: we might want to consider having is_static and only_active be
@@ -1858,8 +1871,9 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
             realCooldown = int(current_sprite.cooldown)
             current_sprite.cooldown = cooldown
 
-            coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
 
+
+            coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
             # If object has speed = 0 or no 'orientation' attribute
             position_options, clustered_position_options = {}, {}
             if coords == None:
@@ -1877,9 +1891,12 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
                 coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
                 clustered_position_options[(coords[0], coords[1])] = .5 - epsilon_prob
 
-            # if current_sprite.colorName=='RED' and missileOrientationClustering:
-            #     print position_options
-            #     embed()
+            # if current_sprite.colorName=='GOLD' and speed==.8 and cooldown==3:
+                # print "position_options is {}".format(position_options)
+                # print "sprite rect is {}".format(current_sprite.rect)
+                # print "lastmove is {}".format(current_sprite.lastmove)
+                # ipdb.set_trace()
+
             current_sprite.cooldown = realCooldown
             return position_options, clustered_position_options
 
@@ -2287,6 +2304,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         #         print(k, param_product[k])
         #         if i>10:
         #             break
+
         sprite_type = best_param[0][1]
 
         color = obj_type
