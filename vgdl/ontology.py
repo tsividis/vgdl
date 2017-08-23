@@ -394,7 +394,6 @@ class Bomber(SpawnPoint, Missile):
     is_static = False
     lastmove = 0
     def update(self, game):
-        print "Lastmove for bomber is {}".format(self.lastmove)
         self.cooldown = 3
         self.lastmove -= 1
         Missile.update(self, game)
@@ -2279,7 +2278,17 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
     for obj_type in types:
 
         ## Integrate evidence across all episodes; pick best hypothesis.
-        param_product = {k:0 for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
+        try:
+            param_product = {k:0 for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
+
+        except IndexError:
+            # bestSpriteTypeDict has yet to be populated for this object type
+            for k, v in game.getObjects().items():
+                if v['features']['color'] == obj_type:
+                    bestSpriteTypeDict[obj_type][k] = game.spriteDistribution[k]
+
+            param_product = {k:0 for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
+
         z = 0.
         for k in bestSpriteTypeDict[obj_type].keys():
             for param in param_product.keys():

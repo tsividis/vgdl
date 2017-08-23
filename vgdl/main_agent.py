@@ -117,8 +117,8 @@ class Agent:
 							# embed()
 						except KeyError:
 							print "Failed to get params for Missile in main_agent"
-							embed()
-							# pass
+							# embed()
+							pass
 		return
 
 

@@ -54,9 +54,9 @@ class WBP():
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
 		self.max_nodes = max_nodes
-		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random']#, 'Missile']
+		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random', 'Missile']
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
-		self.allowRollouts = False
+		self.allowRollouts = True
 		self.quitting = False
 		self.gameString_array = []
 		if theory == None:
@@ -115,7 +115,7 @@ class WBP():
 				spacebarAvailable = True
 				break
 		if spacebarAvailable:
-			self.actions = [NONE, K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE]
+			self.actions = [NONE, K_LEFT, K_RIGHT, K_SPACE]
 		else:
 			self.actions = [NONE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
 		if self.addWaitAction:
@@ -130,9 +130,10 @@ class WBP():
 			## Don't track Flicker in atoms. The point is that the Flicker should have an effect on other objects, so atom novelty that would have been
 			## a function of the Flicker's presence is being taken care of by that. Otherwise the agent can keep exploring states that have no actual effect
 			## on the game state.
-			if (len(rle._game.sprite_groups[k])>0 and
+			if ((len(rle._game.sprite_groups[k])>0 and
 					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and
-					any([obj in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) for obj in self.objectsWhoseLocationsWeIgnore])):
+					any([obj in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) for obj in self.objectsWhoseLocationsWeIgnore]))
+				and rle._game.sprite_groups[k][0].colorName != 'PINK'):
 					# (('Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)) or
 						# ('Random' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)) or
 						# ('Missile' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)))):
@@ -384,7 +385,7 @@ class Node():
 ## rollout length
 ## repeating rollouts if death? e.g., are they optimistic?
 ## multiple samples??
-	def metabolics(self, rle, events, action, n=15, mult=.3):
+	def metabolics(self, rle, events, action, n=10, mult=.3):
 
 		# metabolic_cost = 1./n
 		metabolic_cost = 0
@@ -786,7 +787,7 @@ class Node():
 			elif isinstance(term, NoveltyRule):
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
-					first_alpha=first_alpha, second_alpha=0)
+					first_alpha=5000, second_alpha=0)
 				# if noveltytermination_val !=0:
 					# print("noveltytermination_val for {} and {} is equal to {}".format(
 						# term.termination.s1, term.termination.s2, noveltytermination_val))
