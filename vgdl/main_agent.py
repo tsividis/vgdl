@@ -38,7 +38,8 @@ class Agent:
 		else:
 			self.starting_max_nodes = 1000
 			self.max_nodes_annealing = 10
-		self.regrounding = 2
+		self.regrounding = 3
+		self.selective_regrounding = True
 		self.avoid_danger = True
 		self.safeDistance = 3
 		self.max_quits = 3
@@ -409,7 +410,7 @@ class Agent:
 
 			p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
 				seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon)
-			bestNode, gameStringArray = p.BFS()
+			bestNode, gameStringArray, objectPositionsArray = p.BFS()
 			solution = p.solution
 
 			if self.shortHorizon:
@@ -437,9 +438,6 @@ class Agent:
 			if not quitting:
 				for i, action in enumerate(solution):
 					self.hypotheses[0].dryingPaint = set()
-
-
-
 
 					hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
 						run_induction = not flexible_goals)
@@ -483,17 +481,43 @@ class Agent:
 					# Check for disparities between plan and reality
 					# (e.g. stochastic effects)
 					# if self.rle._game.is_stochastic and i>self.regrounding:
-					if i>self.regrounding:
+					if (i+1)%self.regrounding==0:
 					# if True:
 						try:
-							if any(np.where(list(gameString_array[i+1]))[0] !=
-								   np.where(list(self.rle.show()))[0]):
-								print 'regrounding'
-								# embed()
+							rlePositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in self.rle._game.sprite_groups.values() for item in sublist])
+							hypPositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in objectPositionsArray[i+1]._game.sprite_groups.values() for item in sublist])
+							rlePositionsTuples, hypPositionsTuples = [(p[0], p[1]) for p in rlePositions], [(p[0], p[1]) for p in hypPositions]
+
+							killer_types = [inter.slot2 for inter in hypotheses[0].interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
+							regroundingFlag = False					
+							for objPos in hypPositions:
+								if not regroundingFlag and (objPos[0], objPos[1]) not in rlePositionsTuples:
+									print "found object position difference", colored(objPos, 'white', 'on_magenta')
+									if self.selective_regrounding:
+										if ((objPos[2].name=='avatar') or 
+											(objPos[2].name in killer_types and manhattanDist(self.rle._rect2pos(objPos[2].rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance)):
+											print 'regrounding because of', objPos
+											regroundingFlag = True
+											# embed()
+											break
+									else:
+										regroundingFlag = True
+										break
+
+							if regroundingFlag:
+								print "regrounding"
 								break
+							# if tuple(rlePositions) != tuple(hypPositions):
+							# # if any(np.where(list(gameString_array[i+1]))[0] !=
+							# # 	   np.where(list(self.rle.show()))[0]):
+							# 	print 'regrounding'
+							# 	embed()
+							# 	# embed()
+							# 	break
 						except:
 							# Mismatch in gamestring lengths
-							print 'regrounding'
+							print 'regrounding problem'
+							embed()
 							break
 
 					if self.avoid_danger: ## this is just exercising caution when near random objects, irrespective of whether they kill us or not
@@ -522,7 +546,7 @@ class Agent:
 								for avatar in avatar_positions
 								for random in random_npc_positions]
 							# embed()
-							print "random distances", min(possiblePairList)
+							# print "random distances", min(possiblePairList)
 							if min(possiblePairList) <= self.safeDistance:
 								print("Close to RandomNPC, regrounding")
 								break
@@ -557,17 +581,17 @@ class Agent:
 		score = self.rle._game.score
 		# self.updateMemory(self.rle)
 
-		output = "ended episode. Win={}".format(win)
+		output = "ended episode. Win={}					".format(win)
 		if win:
-			print colored('________________________________________________________________', 'green')
-			print colored('________________________________________________________________', 'green')
+			print colored('________________________________________________________________', 'white', 'on_green')
+			print colored('________________________________________________________________', 'white', 'on_green')
 
-			print colored(output, 'green')
-			print colored('________________________________________________________________', 'green')
+			print colored(output, 'white', 'on_green')
+			print colored('________________________________________________________________', 'white', 'on_green')
 		else:
-			print colored('________________________________________________________________', 'red')
-			print colored(output, 'red')
-			print colored('________________________________________________________________', 'red')
+			print colored('________________________________________________________________', 'white', 'on_red')
+			print colored(output, 'white', 'on_red')
+			print colored('________________________________________________________________', 'white', 'on_red')
 		return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
 	def matchEventToRuleByIDAndSpriteName(self, event, rule):
@@ -808,7 +832,7 @@ if __name__ == "__main__":
 	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-	gameName = gvggames[0]
+	gameName = gvggames[6]
 
 	gvgname = "../gvgai/training_set_1/{}".format(gameName)
 

@@ -2277,7 +2277,6 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                                                                                                     ## and not doing inference about it.
     best_params = {}
     for obj_type in types:
-
         ## Integrate evidence across all episodes; pick best hypothesis.
         param_product = {k:0 for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
         z = 0.
@@ -2325,15 +2324,13 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                     # If types are different, distributionsHaveChanged is true
                     if s.vgdlType!=matchingSprite.vgdlType:
                         distributionsHaveChanged = True
-                        print ("Distributions have changed from sprite type {} \
-                            to {}".format(matchingSprite.vgdlType, s.vgdlType))
+                        print ("Distributions have changed from sprite type {} to {}".format(matchingSprite.vgdlType, s.vgdlType))
                     # If one of the args is None but not the other,
                     # distributionsHaveChanged is true
                     elif ((s.args==None and matchingSprite.args!=None) or
                         (s.args!=None and matchingSprite.args==None)):
                         distributionsHaveChanged = True
-                        print ("Distributions args have changed from {} \
-                            to {}".format(s.args, matchingSprite.args))
+                        print ("Distributions args have changed from {} to {}".format(s.args, matchingSprite.args))
                     elif (s.args and matchingSprite.args) != None:
                         # If args are different, except for the case where only an
                         # orientation is reversed (e.g. turnAround), then
@@ -2344,15 +2341,13 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                                     in ([LEFT, RIGHT] or [UP, DOWN])):
                                     if s.args[key] != matchingSprite.args[key]:
                                         distributionsHaveChanged = True
-                                    print ("Distributions args have changed from {} \
-                                        to {}".format(s.args, matchingSprite.args))
+                                    print ("Distributions args have changed from {} to {}".format(s.args, matchingSprite.args))
                             except KeyError:
                                 # If the new sprite has an arg that the old one
                                 # doesn't, or vice-versa, then
                                 # distributionsHaveChanged is true
                                 distributionsHaveChanged = True
-                                print ("Distributions args have changed from {} \
-                                    to {}".format(s.args, matchingSprite.args))
+                                print ("Distributions args have changed from {} to {}".format(s.args, matchingSprite.args))
 
                 else:
                     # print s.color, oldSpriteSet
