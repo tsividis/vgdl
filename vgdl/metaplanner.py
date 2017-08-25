@@ -86,6 +86,11 @@ def observe(rle, obsSteps, bestSpriteTypeDict):
 					pass
 			rle._game.previousPositions = copy.deepcopy(rle._game.nextPositions)
 
+			# pinkID = [k for k in rle._game.all_objects.keys() if rle._game.all_objects[k]['features']['color']=='PINK'][0]
+			# print "prev position", rle._game.previousPositions[pinkID]
+			# print "memoryDict", rle._game.objectMemoryDict[pinkID]
+			# print "curr position", rle._game.all_objects[pinkID]['sprite'].rect
+
 			spriteInduction(rle._game, step=3, bestSpriteTypeDict=bestSpriteTypeDict)
 	else:
 		spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)

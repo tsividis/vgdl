@@ -699,7 +699,7 @@ class BasicGame(object):
         # self.kill_list = dead[:]
         # if len(self.effectList) > 0:
             # print 'effectList', self.effectList
-        self.effectList = list(set(self.effectList))
+        # self.effectList = list(set(self.effectList))
 
         return self.effectList
 

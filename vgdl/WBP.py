@@ -270,15 +270,17 @@ class WBP():
 				parentNode = copy.deepcopy(node)
 				self.solution = node.actionSeq
 
-				gameString_array = []
+				gameString_array, object_positions_array = [], []
 				while parentNode is not None:
 					gameString_array.append(parentNode.rle.show())
+					object_positions_array.append(parentNode.rle)
 					parentNode = parentNode.parent
 				self.gameString_array = gameString_array[::-1]
+				self.object_positions_array = object_positions_array[::-1]
 
 				self.quitting = True
 				# return None
-				return node, gameString_array
+				return node, gameString_array, object_positions_array
 
 			try:
 				(x, y) = np.array((current.rle._game.getAvatars()[0].rect.x,
@@ -310,11 +312,13 @@ class WBP():
 					# correct for stochasticity effects
 					self.winning_states.append(child)
 					node = child
-					gameString_array = []
+					gameString_array, object_positions_array = [], []
 					while node is not None:
 						gameString_array.append(node.rle.show())
+						object_positions_array.append(node.rle)
 						node = node.parent
 					self.gameString_array = gameString_array[::-1]
+					self.object_positions_array = object_positions_array[::-1]
 
 					child.rle._isDone()
 					self.solution = child.actionSeq
@@ -332,7 +336,7 @@ class WBP():
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
 				bestNode = bestNodes[0]
 				gameString_array.append(bestNode.rle.show())
-				return bestNode, gameString_array
+				return bestNode, gameString_array, object_positions_array
 
 			# print i
 		self.solution = []#Node(self.rle, self, [], None)
@@ -344,15 +348,16 @@ class WBP():
 				parentNode = copy.deepcopy(node)
 				self.solution = node.actionSeq
 				print self.solution
-				gameString_array = []
+				gameString_array, object_positions_array = [], []
 				while parentNode is not None:
 					gameString_array.append(parentNode.rle.show())
+					object_positions_array.append(node.rle)
 					parentNode = parentNode.parent
 				self.gameString_array = gameString_array[::-1]
-
+				self.object_positions_array = object_positions_array[::-1]
 				# print "win"
 				# embed()
-				return node, gameString_array
+				return node, gameString_array, object_positions_array
 			else:
 				self.quitting = True
 				print "Quitting after {} nodes".format(self.max_nodes)
