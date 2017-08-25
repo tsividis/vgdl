@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/home/slurm/slurmd/job9291677/slurm_script", line 8, in <module>
+    sys.path.extend([''])
+NameError: name 'sys' is not defined

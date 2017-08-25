@@ -14,13 +14,13 @@ import datetime
 import uuid
 import subprocess
 import glob
-import ipdb
+#import ipdb
 from copy import deepcopy
 import logging
 import numpy as np
 import sys
 import re
-from IPython import embed
+#from IPython import embed
 import time
 import os
 

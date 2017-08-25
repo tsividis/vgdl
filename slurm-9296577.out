@@ -1,0 +1,4 @@
+STARTING!
+]0;IPython: eshnich/vgdl]0;IPython: eshnich/vgdlslurmstepd: error: Job 9296577 exceeded memory limit (4331388 > 4194304), being killed
+slurmstepd: error: Exceeded job memory limit
+slurmstepd: error: *** JOB 9296577 ON node048 CANCELLED AT 2017-08-18T12:04:50 ***

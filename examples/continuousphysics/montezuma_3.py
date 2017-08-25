@@ -88,6 +88,27 @@ w............1..........w
 wwwwwwwwwwwwwwwwwwwwwwwww
 """
 
+dims = (25,13)
+pos = {}
+pos['background'] = [(i,j) for i in range(dims[0]) for j in range(dims[1])]
+pos['wall'] = [(i,j) for i in range(dims[0]) for j in range(dims[1]) if i in [0,dims[0]-1] or j in [0,dims[1]-1]]
+pos['avatar'] = [(13,3)]
+pos['ladder'] = [(12,4),(12,5),(12,6),(2,8),(2,9),(2,10),(22,8),(22,9),(22,10)]
+pos['conveyor'] = [(10,8),(11,8),(12,8),(13,8),(14,8)]
+pos['rope'] = [(17.375,i) for i in range(4,8)]
+pos['key'] = [(1.5,5)]
+#pos['key'] = [(22,7)]
+pos['goal'] = [(1,3.1)]
+#pos['goal'] = [(23,7.1)]
+floor_locs = range(1,8)
+floor_locs.extend(range(17,24))
+floor_locs.extend([11,13])
+pos['floor'] = [(i,4) for i in floor_locs]
+pos['floor'].extend([(i,8) for i in [1,3,4,20,21,23]])
+pos['offrope'] = [(16.625,5),(16.625,6),(16.625,7),(16.625,8),(17.625,8),(17.625,7),(17.625,6),(17.625,5)]
+#pos['goomba'] = [(13,11.3)]
+positions = [dims,pos]
+
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     dims = (25,13)
@@ -98,14 +119,16 @@ if __name__ == "__main__":
     pos['ladder'] = [(12,4),(12,5),(12,6),(2,8),(2,9),(2,10),(22,8),(22,9),(22,10)]
     pos['conveyor'] = [(10,8),(11,8),(12,8),(13,8),(14,8)]
     pos['rope'] = [(17.375,i) for i in range(4,8)]
-    pos['key'] = [(1.5,5)]
-    pos['goal'] = [(1,3.1)]
+    #pos['key'] = [(1.5,5)]
+    pos['key'] = [(22,7)]
+    #pos['goal'] = [(1,3.1)]
+    pos['goal'] = [(23,7.1)]
     floor_locs = range(1,8)
     floor_locs.extend(range(17,24))
     floor_locs.extend([11,13])
     pos['floor'] = [(i,4) for i in floor_locs]
     pos['floor'].extend([(i,8) for i in [1,3,4,20,21,23]])
     pos['offrope'] = [(16.625,5),(16.625,6),(16.625,7),(16.625,8),(17.625,8),(17.625,7),(17.625,6),(17.625,5)]
-    pos['goomba'] = [(13,11.3)]
+    #pos['goomba'] = [(13,11.3)]
     pos_set = [dims,pos]
     VGDLParser.playGame(game, None, positions = pos_set)

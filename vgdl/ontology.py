@@ -13,7 +13,7 @@ import pygame
 import numpy as np
 from tools import triPoints, unitVector, vectNorm, oncePerStep
 from ai import AStarWorld
-from IPython import embed
+#from IPython import embed
 import core
 
 

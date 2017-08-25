@@ -1,0 +1,4 @@
+  File "/home/slurm/slurmd/job9297645/slurm_script", line 1052
+    def predictball_val(self, rle, weight = 0.1)
+                                               ^
+SyntaxError: invalid syntax

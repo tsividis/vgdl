@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/home/slurm/slurmd/job9291585/slurm_script", line 8, in <module>
+    from ontology import BASEDIRS
+ImportError: No module named ontology

@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/home/slurm/slurmd/job9289316/slurm_script", line 7, in <module>
+    import pygame
+ImportError: No module named pygame

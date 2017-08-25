@@ -20,7 +20,7 @@ import math
 import importlib
 from util import factorize, objectsToSymbol
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
-from line_profiler import LineProfiler
+#from line_profiler import LineProfiler
 
 OBSERVATION_LOCAL = 'local'
 OBSERVATION_GLOBAL = 'global'
@@ -641,6 +641,7 @@ def createRLInputGameChangeLevel(filename, level):
 
 def createRLInputGameFromPositions(filename, positions=None):
     game_file = importlib.import_module(filename)
+    embed()
     if positions is None:
         positions = game_file.positions
     return RLEnvironmentNonStatic(game_file.game, None, positions = positions, observationType= OBSERVATION_GLOBAL)

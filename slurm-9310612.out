@@ -1,0 +1,2069 @@
+STARTING!
+step1
+step2
+step3
+a
+b
+c
+]0;IPython: eshnich/vgdl]0;IPython: eshnich/vgdlTraceback (most recent call last):
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 1433, in <module>
+    last, gameString_array, nodes = p.parallelBFS(1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 741, in parallelBFS
+    start.eval()
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 1247, in eval
+    self.heuristicVal = self.heuristics()
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 1125, in heuristics
+    first_alpha=first_alpha, second_alpha=second_alpha)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 932, in spritecounter_val
+    for obj in stype_positions]
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 289, in geoDist
+    return self.geoDist(loc2,loc1)
+  File "/home/slurm/slurmd/job9310612/slurm_script", line 222, in geoDist
+    grid1= self.grid(loc1)
+RuntimeError: maximum recursion depth exceeded
+
+If you suspect this is an IPython bug, please report it at:
+    https://github.com/ipython/ipython/issues
+or send an email to the mailing list at ipython-dev@python.org
+
+You can print a more detailed traceback right now with "%tb", or use "%debug"
+to interactively debug it.
+
+Extra-detailed tracebacks for bug-reporting purposes can be enabled via:
+    %config Application.verbose_crash=True
+
+added self, <class 'ontology.Immovable'>
+added self, <class 'ontology.Passive'>
+added self, <class 'core.Resource'>
+added parent, <class 'core.Resource'>
+added self, <class 'ontology.ResourcePack'>
+added self, <class 'ontology.Flicker'>
+added self, <class 'ontology.Spreader'>
+added self, <class 'ontology.SpriteProducer'>
+added self, <class 'ontology.Portal'>
+added self, <class 'ontology.SpawnPoint'>
+added self, <class 'ontology.RandomNPC'>
+added self, <class 'ontology.OrientedSprite'>
+added self, <class 'ontology.Conveyor'>
+added self, <class 'ontology.Missile'>
+added self, <class 'ontology.OrientedFlicker'>
+added self, <class 'ontology.Walker'>
+added self, <class 'ontology.WalkJumper'>
+added self, <class 'ontology.RandomInertial'>
+added self, <class 'ontology.RandomMissile'>
+added self, <class 'ontology.ErraticMissile'>
+added self, <class 'ontology.Bomber'>
+added self, <class 'ontology.Chaser'>
+added self, <class 'ontology.Fleeing'>
+added self, <class 'ontology.AStarChaser'>
+added self, <class 'ontology.MovingAvatar'>
+added self, <class 'ontology.HorizontalAvatar'>
+added self, <class 'ontology.VerticalAvatar'>
+added self, <class 'ontology.FlakAvatar'>
+added self, <class 'ontology.OrientedAvatar'>
+added parent, <class 'ontology.OrientedAvatar'>
+added self, <class 'ontology.ShootAvatar'>
+added parent, <class 'ontology.ShootAvatar'>
+added self, <class 'ontology.AimedAvatar'>
+added parent, <class 'ontology.AimedAvatar'>
+added self, <class 'ontology.AimedFlakAvatar'>
+<class 'ontology.OrientedAvatar'> already in tree.
+added self, <class 'ontology.RotatingAvatar'>
+added self, <class 'ontology.RotatingFlippingAvatar'>
+added self, <class 'ontology.NoisyRotatingFlippingAvatar'>
+<class 'ontology.ShootAvatar'> already in tree.
+<class 'ontology.AimedAvatar'> already in tree.
+<class 'ontology.AimedFlakAvatar'> already in tree.
+added self, <class 'ontology.InertialAvatar'>
+added self, <class 'ontology.MarioAvatar'>
+step4
+FINISHED IMPORTS
+FINISHED SETTING VALUES
+<module 'examples.continuousphysics.montezuma_medium' from 'examples/continuousphysics/montezuma_medium.pyc'>
+max nodes 9223372036854775807
