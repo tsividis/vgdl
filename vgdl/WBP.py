@@ -272,7 +272,7 @@ class WBP():
 				gameString_array, object_positions_array = [], []
 				while parentNode is not None:
 					gameString_array.append(parentNode.rle.show())
-					object_positions_array.append(parentNode.rle)
+					object_positions_array.append(copy.deepcopy(parentNode.rle))
 					parentNode = parentNode.parent
 				self.gameString_array = gameString_array[::-1]
 				self.object_positions_array = object_positions_array[::-1]
@@ -314,7 +314,7 @@ class WBP():
 					gameString_array, object_positions_array = [], []
 					while node is not None:
 						gameString_array.append(node.rle.show())
-						object_positions_array.append(node.rle)
+						object_positions_array.append(copy.deepcopy(node.rle))
 						node = node.parent
 					self.gameString_array = gameString_array[::-1]
 					self.object_positions_array = object_positions_array[::-1]
@@ -334,7 +334,8 @@ class WBP():
 				print "we have {} winning states".format(len(self.winning_states))
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
 				bestNode = bestNodes[0]
-				gameString_array.append(bestNode.rle.show())
+				# gameString_array.append(bestNode.rle.show())
+				# object_positions_array.append(copy.deepcopy(bestNode.rle))
 				return bestNode, gameString_array, object_positions_array
 
 			# print i
@@ -350,7 +351,7 @@ class WBP():
 				gameString_array, object_positions_array = [], []
 				while parentNode is not None:
 					gameString_array.append(parentNode.rle.show())
-					object_positions_array.append(node.rle)
+					object_positions_array.append(copy.deepcopy(parenNode.rle))
 					parentNode = parentNode.parent
 				self.gameString_array = gameString_array[::-1]
 				self.object_positions_array = object_positions_array[::-1]
