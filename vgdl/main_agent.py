@@ -370,6 +370,14 @@ class Agent:
 	# 			self.bestSpriteTypeDict[obj_type]['distribution'] = copy.deepcopy(rle._game.spriteDistribution[k])
 	# 	return
 
+	def playEpisodeProfiler(self, gameObject, flexible_goals=False):
+		lp = LineProfiler()
+		lp_wrapper = lp(self.playEpisode)
+		gameObject, win, score, steps, statesEncountered, effectsEncountered = lp_wrapper(gameObject, flexible_goals)
+		lp.print_stats()
+		return gameObject, win, score, steps, statesEncountered, effectsEncountered
+
+
 	def playEpisode(self, gameObject, flexible_goals=False):
 		from vgdl.util import manhattanDist
 
@@ -429,6 +437,7 @@ class Agent:
 			quitting = self.quits>self.max_quits
 
 			gameString_array = p.gameString_array
+			objectPositionsArray = objectPositionsArray[::-1]
 			if solution:
 				print "============================================="
 				print "got solution of length", len(solution)
@@ -499,6 +508,8 @@ class Agent:
 										if ((objPos[2].name=='avatar') or
 											(objPos[2].name in killer_types and manhattanDist(self.rle._rect2pos(objPos[2].rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance)):
 											print 'regrounding because of', objPos
+											# if objPos[2].name=='avatar':
+												# embed()
 											regroundingFlag = True
 											# embed()
 											break
