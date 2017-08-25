@@ -31,14 +31,15 @@ class Agent:
 		self.gameString = None
 		self.levelString = None
 		self.annealingFactor = 1.
-		self.shortHorizon = True
+		self.shortHorizon = False
 		if self.shortHorizon == True:
 			self.starting_max_nodes = 500
 			self.max_nodes_annealing = 1.05
 		else:
-			self.starting_max_nodes = 1000
+			self.starting_max_nodes = 10000
 			self.max_nodes_annealing = 10
-		self.regrounding = 1
+		self.firstOrderHorizon = True
+		self.regrounding = 3
 		self.selective_regrounding = True
 		self.avoid_danger = True
 		self.safeDistance = 3
@@ -116,8 +117,8 @@ class Agent:
 							# embed()
 						except KeyError:
 							print "Failed to get params for Missile in main_agent"
-							embed()
-							# pass
+							# embed()
+							pass
 		return
 
 
@@ -415,7 +416,8 @@ class Agent:
 
 
 			p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
-				seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon)
+				seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+				firstOrderHorizon=True)
 			bestNode, gameStringArray, objectPositionsArray = p.BFS()
 			solution = p.solution
 
@@ -496,7 +498,7 @@ class Agent:
 							rlePositionsTuples, hypPositionsTuples = [(p[0], p[1]) for p in rlePositions], [(p[0], p[1]) for p in hypPositions]
 
 							killer_types = [inter.slot2 for inter in hypotheses[0].interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
-							regroundingFlag = False					
+							regroundingFlag = False
 							for objPos in hypPositions:
 								if not regroundingFlag and (objPos[0], objPos[1]) not in rlePositionsTuples:
 									print "found object position difference", colored(objPos, 'white', 'on_magenta')
@@ -505,7 +507,7 @@ class Agent:
 									print "Nearest sprite:", nearest.colorName, nearest, "position:", self.rle._rect2pos(nearest.rect), "orientation:", nearest.orientation
 									# embed()
 									if self.selective_regrounding:
-										if ((objPos[2].name=='avatar') or 
+										if ((objPos[2].name=='avatar') or
 											(objPos[2].name in killer_types and manhattanDist(self.rle._rect2pos(objPos[2].rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance)):
 
 											# if objPos[2].name=='avatar':
@@ -845,7 +847,7 @@ if __name__ == "__main__":
 	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-	gameName = gvggames[6]
+	gameName = gvggames[0]
 
 	gvgname = "../gvgai/training_set_1/{}".format(gameName)
 

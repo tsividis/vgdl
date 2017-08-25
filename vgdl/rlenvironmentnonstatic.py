@@ -201,7 +201,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     def close():
         pass
 
-    def _isDone(self):
+    def _isDone(self, getTermination=False):
         # remember reward if the final state ends the game
         for t in self._game.terminations:
             # Convention: the first criterion is for keyboard-interrupt termination
@@ -214,8 +214,14 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                     print t.stype
                 elif t.name=='multiSpriteCounter':
                     print t.stypes
-                return ended, win
-        return False, False
+                if getTermination:
+                    return ended, win, t
+                else:
+                    return ended, win
+        if getTermination:
+            return False, False, None
+        else:
+            return False, False
 
     def sensors_profiler(self, state=None):
         lp = LineProfiler()

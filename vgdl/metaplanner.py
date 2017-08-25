@@ -75,7 +75,7 @@ def observe(rle, obsSteps, bestSpriteTypeDict):
 			spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
 
 			rle.step((0,0))
-			
+
 			rle._game.nextPositions = {}
 			for k, v in rle._game.all_objects.iteritems():
 				rle._game.nextPositions[k] = (int(rle._game.all_objects[k]['sprite'].rect.x), int(rle._game.all_objects[k]['sprite'].rect.y))
