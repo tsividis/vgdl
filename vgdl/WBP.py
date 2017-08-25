@@ -35,7 +35,8 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
+		firstOrderHorizon=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -91,6 +92,15 @@ class WBP():
 				pass# self.objectsToNotTrackInAtomList.append(k)
 			else:
 				self.objectsToTrack.append(k)
+
+		# Compute starting number of each SpriteCounter stype
+		self.firstOrderHorizon = firstOrderHorizon
+		self.starting_stype_n = {}
+		for term in self.theory.terminationSet:
+			if isinstance(term, SpriteCounterRule):
+				stype = term.termination.stype
+				n_stypes = len([0 for sprite in self.findObjectsInRLE(self.rle, stype)])
+				self.starting_stype_n[stype] = n_stypes
 
 	def findObjectsInRLE(self, rle, objName):
 		try:
@@ -298,37 +308,63 @@ class WBP():
 			visited.append(current)
 
 			for a in self.actions:
-				child = Node(self.rle, self, current.actionSeq+[a], current)
-				child.eval()
+				skipAction = False
+				try:
+					# If there's already a projectile on the screen
+					# and the projectile class is a singleton
+					# and the action chosen is shooting
+					if (self.findObjectsInRLE(self.rle, self.rle._game.getAvatars()[0].stype) and
+						bool(self.theory.classes[self.rle._game.getAvatars()[0].stype][0].args['singleton']) and
+						a == K_SPACE):
+						# Then skip the action
+						skipAction = True
 
-				# if a==32:
-				# 	print "shot"
-				# 	print child.rle.show(indent=True)
+				except (IndexError, AttributeError, TypeError) as e:
+					pass
 
-				if child.win:
-					# Get the gameString representation of the RLE at each
-					# timestep in the chosen solution, so as to be able to
-					# compare it to the agent's RLE at execution time and
-					# correct for stochasticity effects
-					self.winning_states.append(child)
-					node = child
-					gameString_array, object_positions_array = [], []
-					while node is not None:
-						gameString_array.append(node.rle.show())
-						object_positions_array.append(node.rle)
-						node = node.parent
-					self.gameString_array = gameString_array[::-1]
-					self.object_positions_array = object_positions_array[::-1]
+				if not skipAction:
+					child = Node(self.rle, self, current.actionSeq+[a], current)
+					child.eval()
 
-					child.rle._isDone()
-					self.solution = child.actionSeq
-					self.statesEncountered.append(child.rle._game.getFullState())
-					# print "win"
-					# embed()
-					# return child, gameString_array
-				else:
-					QNovelty.append(child)
-					QReward.append(child)
+					if self.firstOrderHorizon:
+						# Return plan if first-order progress was made towards
+						# a win condition
+						for term in self.theory.terminationSet:
+							if isinstance(term, SpriteCounterRule):
+								stype = term.termination.stype
+								n_stypes = len([0 for sprite in self.findObjectsInRLE(child.rle, stype)])
+								if self.starting_stype_n[stype] > n_stypes:
+									child.terminal, child.win = True, True
+									break
+
+					# if a==32:
+					# 	print "shot"
+					# 	print child.rle.show(indent=True)
+
+					if child.win:
+						# Get the gameString representation of the RLE at each
+						# timestep in the chosen solution, so as to be able to
+						# correct for stochasticity effects
+						# compare it to the agent's RLE at execution time and
+						self.winning_states.append(child)
+						node = child
+						gameString_array, object_positions_array = [], []
+						while node is not None:
+							gameString_array.append(node.rle.show())
+							object_positions_array.append(node.rle)
+							node = node.parent
+						self.gameString_array = gameString_array[::-1]
+						self.object_positions_array = object_positions_array[::-1]
+
+						child.rle._isDone()
+						self.solution = child.actionSeq
+						self.statesEncountered.append(child.rle._game.getFullState())
+						# print "win"
+						# embed()
+						# return child, gameString_array
+					else:
+						QNovelty.append(child)
+						QReward.append(child)
 			i+=1
 
 			if self.winning_states:
@@ -428,7 +464,18 @@ class Node():
 				rolloutArray.append(heuristicVal)
 				prevHeuristicVal = currHeuristicVal
 				# print vrle.show()
-				terminal, win = vrle._isDone()
+				terminal, win, t = vrle._isDone(getTermination=True)
+				if terminal:
+					try:
+						if (t.name=='noveltyTermination' and
+							self.rle._game.getAvatars()[0].stype
+							not in [t.s1, t.s2]):
+							# If we have a novelty termination not involving
+							# the projectile, ignore it
+							terminal = False
+					except (IndexError, AttributeError) as e:
+						# Avatar is dead or doesn't have projectile
+						pass
 				i+=1
 			# embed()
 			## we want optimistic estimates of the future value of a shot. Take up to 100 samples but don't get caught in an infinite loop.
@@ -869,6 +916,7 @@ class Node():
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
 
+
 		self.rle, self.win = self.getToCurrentState()
 
 		self.updateObjIDs(self.rle)
@@ -896,6 +944,7 @@ class Node():
 
 		## Try rollouts for aliens?
 		if self.WBP.allowRollouts and len(self.actionSeq)>0 and self.actionSeq[-1]==32:
+
 			self.rolloutArray = self.rollout(self.rle)
 			# print self.rolloutArray
 			# print "in rollout"
