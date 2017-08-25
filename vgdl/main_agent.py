@@ -1,4 +1,4 @@
-from IPython import embed
+# from IPython import embed
 from util import *
 from core import colorDict, VGDLParser, sys, keyPresses
 from ontology import *
@@ -33,7 +33,7 @@ class Agent:
 		self.annealingFactor = 1.
 		self.shortHorizon = True
 		if self.shortHorizon == True:
-			self.starting_max_nodes = 200
+			self.starting_max_nodes = 500
 			self.max_nodes_annealing = 1.05
 		else:
 			self.starting_max_nodes = 1000
@@ -87,6 +87,7 @@ class Agent:
 				for sprite in old_sprite_groups[k]:
 					matchingSprite = self.findNearestSprite(sprite, matchingSpritesInRLE)
 					sprite.rect = matchingSprite.rect
+					sprite.lastmove = matchingSprite.lastmove
 					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and self.best_params!=None:
 						try:
 							## Enforce consistency: inferred value for individual orientations has to be consistent with what we're saying the horizontal/vertical orientation is of the entire group.
@@ -105,12 +106,9 @@ class Agent:
 							# likelihood2 =  self.rle._game.object_token_spriteDistribution[matchingSprite.ID][param2]
 
 							# orientation = orientation1 if likelihood1>=likelihood2 else orientation2
-							# if sprite.colorName=='PINK' and matchingSprite.orientation!= orientation:
-							# 	print sprite.rect
-							# 	print "actual orientation", matchingSprite.orientation
-							# 	print param1, likelihood1
-							# 	print param2, likelihood2
-							# 	# embed()
+							# if matchingSprite.orientation!= orientation:
+								# print matchingSprite.name, "actual orientation", matchingSprite.orientation
+								# embed()
 
 							sprite.orientation = orientation
 						# if sprite.colorName=='PINK':
@@ -217,7 +215,6 @@ class Agent:
 		flexible_goals = False
 		for n_level, level_game in enumerate(level_game_pairs):
 
-			self.quits = 0
 			print("Playing level {}".format(n_level))
 			(self.gameString, self.levelString) = level_game
 			self.max_nodes = self.starting_max_nodes
@@ -228,7 +225,7 @@ class Agent:
 			allStatesEncountered = []
 			t1 = time.time()
 			while not win:
-				gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals)
+				gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisodeProfiler(gameObject, flexible_goals)
 				episodes.append((n_level, steps, win, score))
 				allStatesEncountered.extend(statesEncountered)
 				levelEffectsEncountered.append(effectsEncountered)
@@ -347,7 +344,7 @@ class Agent:
 		gameObject = None
 		wins, scores = [], []
 		while i<num_episodes:
-			gameObject, win, score, statesEncountered, _ = self.playEpisode(gameObject)
+			gameObject, win, score, statesEncountered, _ = self.playEpisodeProfiler(gameObject)
 			wins.append(win)
 			scores.append(score)
 			i+=1
@@ -384,6 +381,7 @@ class Agent:
 		self.initializeEnvironment()
 		print "initializing RLE"
 		steps = 0
+		self.quits = 0
 		self.all_objects= self.rle._game.getObjects()
 		ended, win = self.rle._isDone()
 		annealing = 1
@@ -502,10 +500,14 @@ class Agent:
 							for objPos in hypPositions:
 								if not regroundingFlag and (objPos[0], objPos[1]) not in rlePositionsTuples:
 									print "found object position difference", colored(objPos, 'white', 'on_magenta')
+									print 'regrounding because of', objPos[2].colorName, objPos[2], "position:", self.rle._rect2pos(objPos[2].rect), "orientation:", objPos[2].orientation
+									nearest = self.findNearestSprite(objPos[2], [h[2] for h in rlePositions])
+									print "Nearest sprite:", nearest.colorName, nearest, "position:", self.rle._rect2pos(nearest.rect), "orientation:", nearest.orientation
+									# embed()
 									if self.selective_regrounding:
 										if ((objPos[2].name=='avatar') or 
 											(objPos[2].name in killer_types and manhattanDist(self.rle._rect2pos(objPos[2].rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance)):
-											print 'regrounding because of', objPos
+
 											# if objPos[2].name=='avatar':
 												# embed()
 											regroundingFlag = True

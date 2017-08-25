@@ -351,7 +351,7 @@ class WBP():
 				gameString_array, object_positions_array = [], []
 				while parentNode is not None:
 					gameString_array.append(parentNode.rle.show())
-					object_positions_array.append(copy.deepcopy(parenNode.rle))
+					object_positions_array.append(copy.deepcopy(parentNode.rle))
 					parentNode = parentNode.parent
 				self.gameString_array = gameString_array[::-1]
 				self.object_positions_array = object_positions_array[::-1]
@@ -905,7 +905,7 @@ class Node():
 		# print self.rle._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost, self.position_score()
 
 		self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
-		sum(self.rolloutArray) - self.metabolic_cost + self.position_score(-35)
+		sum(self.rolloutArray) - self.metabolic_cost + self.position_score(-250)
 
 		try:
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
