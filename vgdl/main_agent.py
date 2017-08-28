@@ -861,7 +861,7 @@ if __name__ == "__main__":
 	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-	gameName = gvggames[6]
+	gameName = gvggames[1]
 
 	gvgname = "../gvgai/training_set_1/{}".format(gameName)
 

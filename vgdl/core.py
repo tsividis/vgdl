@@ -571,7 +571,7 @@ class BasicGame(object):
 
 
         self.collision_eff.sort(key=lambda x:2 if x[2].__name__==('bounceForward' or 'stepBack')
-            else (1 if x[2].__name__=='killSprite' else 0))
+            else (1 if x[2].__name__=='killSprite' else 0), reverse=True)
 
         # build the current sprite lists (if not yet available)
         # for class1, class2, effect, kwargs in self.collision_eff:
@@ -890,7 +890,7 @@ class BasicGame(object):
         #         self.movement_options[sprite][sprite_type] = {}
 
         self.collision_eff.sort(key=lambda x:2 if x[2].__name__==('bounceForward' or 'stepBack')
-            else (1 if x[2].__name__=='killSprite' else 0))
+            else (1 if x[2].__name__=='killSprite' else 0), reverse=True)
 
         while not self.ended:
             clock.tick(self.frame_rate)

@@ -271,8 +271,8 @@ BasicGame
 		dirt sword  > killSprite
 		dirt avatar > killSprite
 		avatar diamond > changeResource resource=diamond value=1
-		diamond avatar > killSprite
 		diamond avatar > changeScore value=5
+		diamond avatar > killSprite
 		# avatar diamond > collectResource
 		avatar wall > stepBack
 		avatar boulder > stepBack
