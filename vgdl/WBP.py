@@ -466,7 +466,7 @@ class Node():
 				rolloutArray.append(heuristicVal)
 				prevHeuristicVal = currHeuristicVal
 				# print vrle.show()
-				terminal, win, t = vrle._isDone()
+				terminal, win, t = vrle._isDone(getTermination=True)
 				if terminal:
 					try:
 						if (t.name=='noveltyTermination' and
