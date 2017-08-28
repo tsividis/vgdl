@@ -1858,16 +1858,13 @@ class Game(object):
 					theory.interactionSet.append(rule)
 				i+=1
 			else:
-				## If the sampled hypothesis posits a different sprite type,
-				## find the matching previous Sprite, copy its features, replace with current sprite.
+				## Since we're taking care of sprite property inference separately, update sprite info in the theory every time
 				matchingSprite = [sprite for sprite in theory.spriteSet if sprite.color==s.color][0]
-				if s.vgdlType != matchingSprite.vgdlType:
-					# print "updating sprites"
-					s.className = matchingSprite.className
-					theory.classes[s.className] = [s]
-					theory.spriteObjects[s.color] = s
-					theory.spriteSet.remove(matchingSprite)
-					theory.spriteSet.append(s)
+				s.className = matchingSprite.className
+				theory.classes[s.className] = [s]
+				theory.spriteObjects[s.color] = s
+				theory.spriteSet.remove(matchingSprite)
+				theory.spriteSet.append(s)
 		return theory
 
 		## decide how we're falsifying termination conditions, and tracking ones that weren't falsified.

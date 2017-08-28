@@ -80,7 +80,7 @@ class Agent:
 	def setSpritePositions(self, rle, Vrle, hypothesis):
 		## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
 
-		old_sprite_groups = copy.deepcopy(Vrle._game.sprite_groups)
+		old_sprite_groups = Vrle._game.sprite_groups
 		for k in old_sprite_groups.keys():
 			if old_sprite_groups[k]:
 				color = Vrle._game.sprite_groups[k][0].colorName
@@ -96,6 +96,9 @@ class Agent:
 
 							orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
 
+							if orientation == (0,0):
+								print "found 0,0 orientation"
+								embed()
 							# param1 = self.best_params[color]
 							# param_dict = dict(param1)
 							# orientation1 = param_dict['orientation']
@@ -194,7 +197,7 @@ class Agent:
 		return gameObject
 
 	def completeHypotheses(self, allObjects):
-		observe(self.rle, 0, self.bestSpriteTypeDict)
+		observe(self.rle, 2, self.bestSpriteTypeDict) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
 		spriteTypeHypothesis, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
 		gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 		newHypotheses = []
@@ -226,7 +229,7 @@ class Agent:
 			allStatesEncountered = []
 			t1 = time.time()
 			while not win:
-				gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisodeProfiler(gameObject, flexible_goals)
+				gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals)
 				episodes.append((n_level, steps, win, score))
 				allStatesEncountered.extend(statesEncountered)
 				levelEffectsEncountered.append(effectsEncountered)
@@ -345,7 +348,7 @@ class Agent:
 		gameObject = None
 		wins, scores = [], []
 		while i<num_episodes:
-			gameObject, win, score, statesEncountered, _ = self.playEpisodeProfiler(gameObject)
+			gameObject, win, score, statesEncountered, _ = self.playEpisode(gameObject)
 			wins.append(win)
 			scores.append(score)
 			i+=1
@@ -498,13 +501,23 @@ class Agent:
 							rlePositionsTuples, hypPositionsTuples = [(p[0], p[1]) for p in rlePositions], [(p[0], p[1]) for p in hypPositions]
 
 							killer_types = [inter.slot2 for inter in hypotheses[0].interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
+							# print "killer types", killer_types
 							regroundingFlag = False
 							for objPos in hypPositions:
 								if not regroundingFlag and (objPos[0], objPos[1]) not in rlePositionsTuples:
-									print "found object position difference", colored(objPos, 'white', 'on_magenta')
-									print 'regrounding because of', objPos[2].colorName, objPos[2], "position:", self.rle._rect2pos(objPos[2].rect), "orientation:", objPos[2].orientation
+									# print "found object position difference", colored(objPos, 'white', 'on_magenta')
+									# print 'regrounding because of', objPos[2].colorName, objPos[2], "position:", self.rle._rect2pos(objPos[2].rect)
+									# try: 
+										# print "orientation:", objPos[2].orientation
+									# except AttributeError:
+										# pass
 									nearest = self.findNearestSprite(objPos[2], [h[2] for h in rlePositions])
-									print "Nearest sprite:", nearest.colorName, nearest, "position:", self.rle._rect2pos(nearest.rect), "orientation:", nearest.orientation
+									# print "Nearest sprite:", nearest.colorName, nearest, "position:", self.rle._rect2pos(nearest.rect)
+									# try:
+										# print "orientation:", nearest.orientation
+									# except AttributeError:
+										# pass
+									# print ""
 									# embed()
 									if self.selective_regrounding:
 										if ((objPos[2].name=='avatar') or
@@ -531,6 +544,7 @@ class Agent:
 							# 	break
 						except:
 							# Mismatch in gamestring lengths
+							print ""
 							print 'regrounding problem'
 							embed()
 							break
@@ -847,7 +861,7 @@ if __name__ == "__main__":
 	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-	gameName = gvggames[0]
+	gameName = gvggames[6]
 
 	gvgname = "../gvgai/training_set_1/{}".format(gameName)
 

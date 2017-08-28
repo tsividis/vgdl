@@ -55,7 +55,7 @@ class WBP():
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
 		self.max_nodes = max_nodes
-		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random', 'Missile']
+		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random']
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
 		self.allowRollouts = True
 		self.quitting = False
@@ -330,7 +330,7 @@ class WBP():
 						# Return plan if first-order progress was made towards
 						# a win condition
 						for term in self.theory.terminationSet:
-							if isinstance(term, SpriteCounterRule):
+							if isinstance(term, SpriteCounterRule) and term.termination.win==True:
 								stype = term.termination.stype
 								n_stypes = len([0 for sprite in self.findObjectsInRLE(child.rle, stype)])
 								if self.starting_stype_n[stype] > n_stypes:
@@ -356,10 +356,11 @@ class WBP():
 						self.gameString_array = gameString_array[::-1]
 						self.object_positions_array = object_positions_array[::-1]
 
-						child.rle._isDone()
+						ended, win, t = child.rle._isDone(getTermination=True)
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
-						# print "win"
+						print "win"
+						# print t
 						# embed()
 						# return child, gameString_array
 					else:
@@ -818,7 +819,7 @@ class Node():
 		for term in theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
-					first_alpha=5000, second_alpha=0)
+					first_alpha=5000, second_alpha=500)
 				# if spritecounter_val!=0:
 					# print("spritecounter_val for {} is equal to {}".format(
 						# term.termination.stype, spritecounter_val))
@@ -826,7 +827,7 @@ class Node():
 
 			elif isinstance(term, MultiSpriteCounterRule):
 				multispritecounter_val = self.multispritecounter_val(theory, term, rle,
-						first_alpha=500, second_alpha=0)
+						first_alpha=500, second_alpha=05)
 				# if multispritecounter_val!=0:
 					# print("multispritecounter_val for {} is equal to {}".format(
 						# term.termination.stypes, multispritecounter_val))
@@ -840,7 +841,7 @@ class Node():
 			elif isinstance(term, NoveltyRule):
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
-					first_alpha=5000, second_alpha=0)
+					first_alpha=5000, second_alpha=500)
 				# if noveltytermination_val !=0:
 					# print("noveltytermination_val for {} and {} is equal to {}".format(
 						# term.termination.s1, term.termination.s2, noveltytermination_val))
