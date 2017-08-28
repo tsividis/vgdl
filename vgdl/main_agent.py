@@ -68,10 +68,14 @@ class Agent:
 		return
 
 	def getSpritesByColor(self, rle, color):
+		outList = []
 		for k in rle._game.sprite_groups.keys():
 			if rle._game.sprite_groups[k] and rle._game.sprite_groups[k][0].colorName==color:
-				return rle._game.sprite_groups[k]
-		return None
+				outList.extend(rle._game.sprite_groups[k])
+		if outList:
+			return outList
+		else:
+			return None
 
 	def findNearestSprite(self, sprite, spriteList):
 		## returns the sprite in spriteList whose location best matches the location of sprite.
