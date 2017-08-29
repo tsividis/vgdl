@@ -275,7 +275,6 @@ BasicGame
 		diamond avatar > killSprite
 		# avatar diamond > collectResource
 		avatar wall > stepBack
-		avatar boulder > stepBack
 		crab wall > stepBack
 		crab boulder > stepBack
 		butterfly wall > stepBack
@@ -283,6 +282,7 @@ BasicGame
 		avatar boulder > killIfFromAbove
 		avatar butterfly > killSprite
 		avatar crab > killSprite
+		avatar boulder > stepBack
 		boulder dirt > stepBack
 		boulder wall > stepBack
 		boulder diamond > stepBack

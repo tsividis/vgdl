@@ -125,7 +125,7 @@ class WBP():
 				spacebarAvailable = True
 				break
 		if spacebarAvailable:
-			self.actions = [NONE, K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE]
+			self.actions = [NONE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
 		else:
 			self.actions = [NONE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
 		if self.addWaitAction:
@@ -227,6 +227,7 @@ class WBP():
 		# acceptableNodes = QReward
 		acceptableNodes = filter(lambda n:n.novelty<3, QReward)
 		acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
+		print "accetable:", len(acceptableNodes)
 		# if len(acceptableNodes)==0:
 			# acceptableNodes = QReward
 			# print "Removed filter"
@@ -271,7 +272,7 @@ class WBP():
 			"""
 			# current = self.noveltySelection(QNovelty, QReward)
 			current = self.rewardSelection(QReward, QNovelty)
-
+			print "visited:", len(visited)
 			# print("node chosen has position score {}".format(current.position_score()))
 			# print embed()
 			if current in [None, 'pickMaxNode']:
@@ -1047,7 +1048,7 @@ if __name__ == "__main__":
 	## objects.
 	# gameFilename = "examples.gridphysics.theorytest"
 	# gameFilename = "examples.gridphysics.boulderdash"
-	gameFilename = "examples.gridphysics.zelda_orig"
+	gameFilename = "examples.gridphysics.theorytest"
 	# gameFilename = "examples.continuousphysics.breakout_big"
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)

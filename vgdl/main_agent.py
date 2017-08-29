@@ -38,7 +38,7 @@ class Agent:
 		else:
 			self.starting_max_nodes = 10000
 			self.max_nodes_annealing = 10
-		self.firstOrderHorizon = True
+		self.firstOrderHorizon = False ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
 		self.regrounding = 3
 		self.selective_regrounding = True
 		self.avoid_danger = True
@@ -102,11 +102,12 @@ class Agent:
 							orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
 
 							if orientation == (0,0):
+								print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
 								pass
-							# 	print "found 0,0 orientation"
 							# 	embed()
 
-							sprite.orientation = orientation
+							else:
+								sprite.orientation = orientation
 
 						except KeyError:
 							print "Failed to get params for Missile in main_agent"
@@ -412,7 +413,7 @@ class Agent:
 
 			p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
 				seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-				firstOrderHorizon=True)
+				firstOrderHorizon=self.firstOrderHorizon)
 			bestNode, gameStringArray, objectPositionsArray = p.BFS()
 			
 			if bestNode is not None:
@@ -435,7 +436,7 @@ class Agent:
 				else:
 					emptyPlans = 0
 			else:
-				if not solution:
+				if (not solution) or p.quitting:
 					if self.longHorizonObservations<self.longHorizonObservationLimit:
 						observe(self.rle, 5, self.bestSpriteTypeDict)
 						self.longHorizonObservations += 1
@@ -837,7 +838,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pick_apples"
 	# filename = "examples.gridphysics.expt_exploration_exploitation_debugging"
 
-	filename = "examples.gridphysics.expt_movers"
+	filename = "examples.gridphysics.theorytest"
 
 	level_game_pairs = None
 	# Playing GVG-AI games
@@ -876,14 +877,14 @@ if __name__ == "__main__":
 			level_game_pairs.append([gameString, level.read()])
 
 	##uncomment this line to run local games
-	gameName = filename
+	# gameName = filename
 
 
 	agent = Agent('full', gameName)
 
 	##then pass this down for multiple episodes
 	gameObject = None
-	# agent.playCurriculum(level_game_pairs=level_game_pairs)
+	agent.playCurriculum(level_game_pairs=level_game_pairs)
 
 	##and use this line
-	agent.playCurriculum(level_game_pairs=None)
+	# agent.playCurriculum(level_game_pairs=None)
