@@ -219,14 +219,14 @@ class ResourcePack(Resource):
 class Flicker(VGDLSprite):
     """ A square that persists just a few timesteps. """
     color = RED
-    limit = 0
+    limit = 20
     def __init__(self, **kwargs):
         self._age = 0
         VGDLSprite.__init__(self, **kwargs)
 
     def update(self, game):
         VGDLSprite.update(self, game)
-        if self._age > self.limit:
+        if self._age >= self.limit:
             game.kill_list.append(self)
             # killSprite(self, None, game)
         else:

@@ -45,6 +45,7 @@ class Agent:
 		self.safeDistance = 3
 		self.max_quits = 3
 		self.emptyPlansLimit = 5
+		self.longHorizonObservationLimit = 2
 		self.hypotheses = []
 		self.symbolDict = None
 		self.finalEventList = []
@@ -101,27 +102,12 @@ class Agent:
 							orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
 
 							if orientation == (0,0):
-								print "found 0,0 orientation"
-								embed()
-							# param1 = self.best_params[color]
-							# param_dict = dict(param1)
-							# orientation1 = param_dict['orientation']
-							# likelihood1 =  self.rle._game.object_token_spriteDistribution[matchingSprite.ID][param1]
-							# param_dict['orientation'] = (orientation1[0]*-1, orientation1[1]*-1)
-							# param2 = tuple([[('vgdlType', param_dict['vgdlType'])] + sorted([(k,v) for (k,v) in param_dict.iteritems() if k!='vgdlType'])][0])
-							# # param2 = tuple(param_dict.items())
-							# orientation2= param_dict['orientation']
-							# likelihood2 =  self.rle._game.object_token_spriteDistribution[matchingSprite.ID][param2]
-
-							# orientation = orientation1 if likelihood1>=likelihood2 else orientation2
-							# if matchingSprite.orientation!= orientation:
-								# print matchingSprite.name, "actual orientation", matchingSprite.orientation
-								# embed()
+								pass
+							# 	print "found 0,0 orientation"
+							# 	embed()
 
 							sprite.orientation = orientation
-						# if sprite.colorName=='PINK':
-							# print "inferred orientation", sprite.orientation
-							# embed()
+
 						except KeyError:
 							print "Failed to get params for Missile in main_agent"
 							# embed()
@@ -390,6 +376,7 @@ class Agent:
 		print "initializing RLE"
 		steps = 0
 		self.quits = 0
+		self.longHorizonObservations = 0
 		self.all_objects= self.rle._game.getObjects()
 		ended, win = self.rle._isDone()
 		annealing = 1
@@ -421,35 +408,46 @@ class Agent:
 			## initialize one or many VRLEs according to hypothesis-selection method
 			theoryRLEs = self.VrleInitPhase(flexible_goals)
 
+			quitting = False
 
 			p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
 				seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
 				firstOrderHorizon=True)
 			bestNode, gameStringArray, objectPositionsArray = p.BFS()
-			solution = p.solution
+			
+			if bestNode is not None:
+				solution = p.solution
+				gameString_array = p.gameString_array
+				objectPositionsArray = objectPositionsArray[::-1]
+			else:
+				solution = []
 
-			if self.shortHorizon:
-				if not solution:
-					emptyPlans +=1
-				else:
-					emptyPlans = 0
-
-			if emptyPlans > self.emptyPlansLimit:
-				observe(self.rle, 5, self.bestSpriteTypeDict)
-
-			self.quits += p.quitting #1 if p.quitting else 0
-
-			quitting = self.quits>self.max_quits
-
-			gameString_array = p.gameString_array
-			objectPositionsArray = objectPositionsArray[::-1]
 			if solution:
 				print "============================================="
 				print "got solution of length", len(solution)
 				for g in p.gameString_array:
 					print colored(g, 'green')
 				print "============================================="
-			## add new objects? (line 310 of metaplanner)
+
+			if self.shortHorizon:
+				if not solution:
+					emptyPlans +=1
+				else:
+					emptyPlans = 0
+			else:
+				if not solution:
+					if self.longHorizonObservations<self.longHorizonObservationLimit:
+						observe(self.rle, 5, self.bestSpriteTypeDict)
+						self.longHorizonObservations += 1
+					else:
+						quitting = True
+
+			if emptyPlans > self.emptyPlansLimit:
+				observe(self.rle, 5, self.bestSpriteTypeDict)
+
+			# self.quits += p.quitting #1 if p.quitting else 0
+
+			# quitting = self.quits>self.max_quits
 
 			if not quitting:
 				for i, action in enumerate(solution):
@@ -878,14 +876,14 @@ if __name__ == "__main__":
 			level_game_pairs.append([gameString, level.read()])
 
 	##uncomment this line to run local games
-	# gameName = filename
+	gameName = filename
 
 
 	agent = Agent('full', gameName)
 
 	##then pass this down for multiple episodes
 	gameObject = None
-	agent.playCurriculum(level_game_pairs=level_game_pairs)
+	# agent.playCurriculum(level_game_pairs=level_game_pairs)
 
 	##and use this line
-	# agent.playCurriculum(level_game_pairs=None)
+	agent.playCurriculum(level_game_pairs=None)

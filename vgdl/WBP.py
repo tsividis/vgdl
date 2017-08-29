@@ -125,7 +125,7 @@ class WBP():
 				spacebarAvailable = True
 				break
 		if spacebarAvailable:
-			self.actions = [NONE, K_LEFT, K_RIGHT, K_SPACE]
+			self.actions = [NONE, K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE]
 		else:
 			self.actions = [NONE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
 		if self.addWaitAction:
@@ -397,9 +397,9 @@ class WBP():
 				# embed()
 				return node, gameString_array, object_positions_array
 			else:
-				self.quitting = True
-				print "Quitting after {} nodes".format(self.max_nodes)
-		return None
+				# self.quitting = True
+				print "Got no plan after searching {} nodes".format(self.max_nodes)
+		return None, None, None
 
 class Node():
 	def __init__(self, rle, WBP, actionSeq, parent):
@@ -855,6 +855,7 @@ class Node():
 					# Explore only
 					# heuristicVal += 1000 * self.WBP.annealing * noveltytermination_val
 
+		# print "sum:", heuristicVal
 		if avatarNoveltyVals:
 			# print noveltyVals
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]

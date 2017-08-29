@@ -1,28 +1,40 @@
 
 
+# level0 = """
+# wwwwwwwwwwwwwwwwww
+# w  1             w
+# w                w
+# w              g w
+# wwwwwwwwwwwwwwwwww
+# w                w
+# w                w
+# w                w
+# w                w
+# w       y        w
+# w                w
+# w                w
+# w                w
+# w                w
+# w                w
+# wwwwwwwwwwwwwwwwww
+# w                w
+# w     A          w
+# w                w
+# w                w
+# w                w
+# w                w
+# w                w
+# wwwwwwwwwwwwwwwwww
+# """
+
 level0 = """
-wwwwwwwwwwwwwwwwww
-w  1             w
-w                w
-w              g w
-wwwwwwwwwwwwwwwwww
-w                w
-w                w
-w                w
-w                w
-w       y        w
-w                w
-w                w
-w                w
-w                w
-w                w
 wwwwwwwwwwwwwwwwww
 w                w
 w     A          w
 w                w
+wwwwwwwwwwwwwwwwww
 w                w
-w                w
-w                w
+w       g        w
 w                w
 wwwwwwwwwwwwwwwwww
 """
