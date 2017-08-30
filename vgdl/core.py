@@ -122,7 +122,7 @@ class VGDLParser(object):
     def parseTerminations(self, tnodes):
         # if any(['Multi' in tnode.content for tnode in tnodes]):
             # print("found MultiSpriteCounter in parseTerminations")
-            # import ipdb; ipdb.set_trace()
+        # ipdb.set_trace()
         for tn in tnodes:
             sclass, args = self._parseArgs(tn.content)
             if self.verbose:
@@ -180,8 +180,24 @@ class VGDLParser(object):
         if not '=' in sparts[0]:
             sclass = self._eval(sparts[0])
             sparts = sparts[1:]
+        # if any(['args' in sp for sp in sparts]):
+        #     extraArgs = sparts[['args' in sp for sp in sparts].index(True)]
         for sp in sparts:
-            k, val = sp.split("=")
+            ## this is failing once you've written a theory with args
+            if 'args' not in sp:
+                k, val = sp.split("=")
+            else:
+                k='args'
+                val=sp[sp.find('{'):]
+            if k=='args':
+                argsDict = {}
+                vals=val[1:-1].split(',')
+                for v in vals:
+                    v1,v2 = v.split(':')
+                    argsDict[v1] = v2
+                val=argsDict
+
+
             try:
                 args[k] = self._eval(val)
             except:

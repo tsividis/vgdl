@@ -125,7 +125,7 @@ class WBP():
 				spacebarAvailable = True
 				break
 		if spacebarAvailable:
-			self.actions = [NONE, K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE]
+			self.actions = [NONE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
 		else:
 			self.actions = [NONE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
 		if self.addWaitAction:

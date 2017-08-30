@@ -228,7 +228,7 @@ class MultiSpriteCounterRule(TerminationRule):
         return
 
     def asTuple(self):
-        return (self.ruleType, self.termination.stypes, self.termination.limit, self.termination.win)
+        return (self.ruleType, set(self.termination.stypes), self.termination.limit, self.termination.win)
 
 class ruleCluster(object):
 	def __init__(self, interactionAndPreconditionList, pairList):
@@ -997,9 +997,10 @@ class Theory(object):
 					self.multi_falsified.append(MultiSpriteCounterRule(stypes=class_combination))
 
 		for rule in self.interactionSet:
+
 			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo']:
 				if rule.generic and rule.preconditions:
-					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, rule.preconditions)
+					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, copy.deepcopy(rule.preconditions))
 				elif rule.generic and not rule.preconditions:
 					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
 				else:
@@ -1036,9 +1037,17 @@ class Theory(object):
 					all([not terminationRule.__eq__(t) for t in self.multi_falsified])):
 					self.terminationSet.append(terminationRule)
 
+					if 'c5' in sprite_combination and 'c6' in sprite_combination:
+						print "found c5 c6"
+						embed()
+
 		# if falsified_win_stypes:
 		# 	embed()
 		self.terminationSet = sorted(self.terminationSet, key=lambda t:t.ruleType)
+
+		# if any([t.ruleType=='NoveltyRule' and t.termination.s1=='c7' and t.termination.s2=='avatar' and not t.termination.args for t in self.terminationSet]):
+		# 	print "found c7 avatar w/o args"
+		# 	embed()
 
 		return
 
@@ -2578,8 +2587,17 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 			if terminationRule.termination.stype == "goal":
 				goalConditionNotFound = False
 		elif terminationRule.ruleType == "NoveltyRule":
-			theoryString += "\t\tNoveltyTermination s1=%s s2=%s win=%s\n" % \
+
+			theoryString += "\t\tNoveltyTermination s1=%s s2=%s win=%s" % \
 						(terminationRule.termination.s1, terminationRule.termination.s2, str(terminationRule.termination.win))
+			if terminationRule.termination.args:
+				# print "found args in terminationrule"
+				# embed()
+				noveltyArgString = " args={item:%s,num:%s,negated:%s,operator_name:%s}" % \
+				(terminationRule.termination.args.item, terminationRule.termination.args.num, terminationRule.termination.args.negated, terminationRule.termination.args.operator_name)
+				theoryString += noveltyArgString
+
+			theoryString +="\n"
 		else:
 			# multi sprite counter rule
 			theoryString += "\t\tMultiSpriteCounter "

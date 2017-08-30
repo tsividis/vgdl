@@ -1100,13 +1100,21 @@ class NoveltyTermination(Termination):
         self.name = 'NoveltyTermination'
         self.args = args
         if self.args is not None:
-            self.args = list(self.args)[0]
+            # print "found args in noveltytermination"
+            if type(self.args) == set:
+                self.args = list(self.args)[0]
+            elif type(self.args) == dict:
+                # embed()
+                pass
 
     def isDone(self, game):
 
         ## self.args lets us do precondition-dependent terminations.
         if self.args:
-            item, num, negated, operator_name = self.args.item, self.args.num, self.args.negated, self.args.operator_name
+            if type(self.args)==dict:
+                item, num, negated, operator_name = self.args['item'], self.args['num'], eval(self.args['negated']), self.args['operator_name']
+            else:
+                item, num, negated, operator_name = self.args.item, self.args.num, self.args.negated, self.args.operator_name
             if negated:
                 oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
                 true_operator = oppositeOperatorMap[operator_name]
@@ -1119,6 +1127,10 @@ class NoveltyTermination(Termination):
 
             if not eval(resource_str+true_operator+str(num)):
                 return False, None
+
+            # else:
+            #     print "found correct preconditions"
+                # embed()
 
         for e in game.effectList:
             id_not_found = False
@@ -1177,7 +1189,8 @@ class NoveltyTermination(Termination):
                         pass
                     print("NoveltyTermination with {} and {}".format(
                         name1, name2))
-                    # embed()
+                    # if name1=='c7' and name2=='avatar':
+                    #     ipdb.set_trace()
 
                     return True, self.win
             elif len(e) > 2 and e[2]=='ENDOFSCREEN':
@@ -1212,7 +1225,8 @@ class NoveltyTermination(Termination):
                         pass
                     print("NoveltyTermination with {} and {}".format(
                         name1, name2))
-                    # embed()
+                    # if name1=='c7' and name2=='avatar':
+                    #     ipdb.set_trace()
                     return True, self.win
         return False, None
 
