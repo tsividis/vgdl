@@ -33,30 +33,7 @@ class AtariPlanner():
 		self.speed_array = []
 		self.ball_array = []
 
-	def createLevel(self, objects):
-		height= max([i[1][0] for i in objects]) + 1
-		width = max([i[1][1] for i in objects]) + 1
-		string = ''
-		for i in range(height):
-			string += '\n'
-			for j in range(width):
-				string += ' '
-		string = string[:-4]
-		string += 'wgor'
-		string += '\n'	
-		return string
-
-	def setDimensions(self,rle,objects):
-		height= max([i[1][0] for i in objects]) + 1
-		width = max([i[1][1] for i in objects]) + 1
-
-		self.square_size = min(rle._game.screensize[0]/width,rle._game.screensize[1]/height)
-		rle._game.block_size = self.square_size
-		rle.outdim = [height,width]
-		rle._game.screensize = (width*self.square_size,height*self.square_size)
-
-
-	#initialize positions of sprites at beginning of game
+	#initialize positions of sprites at beginning of game (NOT USED, since we create level from positions)
 	def InitializeSprites(self,rle,objects):
 		changed = False
 
@@ -107,7 +84,7 @@ class AtariPlanner():
 		rle._game.sprite_groups['ball'][0].speed = 20.0
 		return changed
 	
-	#updating velocity + position of ball/avatar on each step
+	#updating velocity + position of ball/avatar on each step, if we need to reground
 	def updateSprites(self,rle,objects,ended = False):
 		changed = False
 
@@ -211,11 +188,10 @@ class AtariPlanner():
 			objects, _raw = env.step(1)
 			object_dict = self.makeDict(objects,grid=True)
 			i += 1
+
 		height= max([i[1][0] for i in objects]) + 1
 		width = max([i[1][1] for i in objects]) + 1
-
-		#level = self.createLevel(objects)
-
+		#create rle based on the objects returned from perception
 		rleCreateFunc = lambda: createRLInputGameFromPositions(gameFilename, [(width,height),object_dict])
 		self.rle = rleCreateFunc()
 
@@ -229,41 +205,16 @@ class AtariPlanner():
 		object_dict = self.makeDict(objects)
 		self.states.append(object_dict)
 		self.actions.append(0)
-		#self.InitializeSprites(self.rle,object_dict)
 
 		last, visited, length = p.BFS(return_best = True)
 		print last.actionSeq
 		path = self.getPath(last)
 		i = 1
-		no_ball = 0
-		#action_array = [0,0,0,0,0,0,0,0,0,0,276,0,0,0,0,0,0,0,0,0,0,275]
+		no_ball = 0	
 		pos = []
-		#print object_dict['avatar']
+
+		#planning + updating rle loop
 		for j in tqdm(range(20000)):
-
-			#if j == 200:
-				#embed()
-
-			'''
-			if j % 10 != 9:
-				action = 0
-			else:
-				action = random.choice([275,276])
-				#print action
-			#action = action_array[j % len(action_array)]
-			#if action != 0:	
-			#	print action
-			objects, _raw = env.step(ACTIONS[action])
-			object_dict = self.makeDict(objects)
-			if 'ball' in object_dict.keys():
-				pos.append(object_dict['ball'][0])
-			'''
-			#embed()
-			'''
-			action = random.choice([275,276])
-			objects, _raw = env.step(ACTIONS[action])
-			object_dict = self.makeDict(objects)
-			'''
 			
 			if len(path) > 1:
 				self.rle = path[i].rle
@@ -278,27 +229,26 @@ class AtariPlanner():
 				print("no action taken")
 				env.step(1) #restart game
 			
-
-
 			print self.rle._game.sprite_groups['avatar']
 			print object_dict['avatar']
 			try:
 				print self.rle._game.sprite_groups['ball']
 				print object_dict['ball']
 				pos.append(object_dict['ball'][0])
-				c = 0.5*(1 - self.rle._game.sprite_groups['ball'][0].width)
+				c = 1 - 0.5*self.rle._game.sprite_groups['ball'][0].width #for breakout
 			except:
 				no_ball += 1
-				c = 0.75
+				c = 0.75 #for breakout
 
 			if no_ball > 1:
 				print("restarting game")
 				env.step(1)
 				no_ball = 0
 			
+			#shift loc so we can line up center of squares
 			avatar_loc = (object_dict['avatar'][0][0]+c*self.rle._game.block_size, object_dict['avatar'][0][1])
+			
 			#whether we reground or not
-			#print object_dict.keys()
 			if i >= len(path) - 1:
 				ended = True
 			elif 'ball' in object_dict.keys() and euclideanDist(object_dict['ball'][0],avatar_loc) < self.reground_threshhold:
@@ -325,7 +275,7 @@ class AtariPlanner():
 		
 		
 
-		#embed()	
+			
 def mean(array):
 	return sum(array)/len(array)
 

@@ -641,7 +641,7 @@ def createRLInputGameChangeLevel(filename, level):
 
 def createRLInputGameFromPositions(filename, positions=None):
     game_file = importlib.import_module(filename)
-    embed()
+    #embed()
     if positions is None:
         positions = game_file.positions
     return RLEnvironmentNonStatic(game_file.game, None, positions = positions, observationType= OBSERVATION_GLOBAL)

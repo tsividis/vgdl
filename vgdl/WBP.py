@@ -35,6 +35,7 @@ from Queue import Queue
 from util import *
 print "b"
 import multiprocessing
+#import ctypes
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
 print "c"
@@ -42,7 +43,7 @@ from theory_template import TimeStep, Precondition, InteractionRule, Termination
 NoveltyRule, generateSymbolDict, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryFromGame
 from rlenvironmentnonstatic import createRLInputGame
 print "step4"
-#from line_profiler import LineProfiler
+from line_profiler import LineProfiler
 import cPickle
 
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
@@ -80,7 +81,7 @@ print "FINISHED SETTING VALUES"
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=sys.maxint, limit=LIMIT, grid_limit=GRID_LIMIT):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=100, limit=LIMIT, grid_limit=GRID_LIMIT):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -217,8 +218,11 @@ class WBP():
 	#(Note: this is probably unnecessarily complicated)
 	def geoDist(self,loc1,loc2):
 
-		return manhattanDist(loc1,loc2)/float(self.square_size[0]) #REMOVE this if any other game than breakout
+		return manhattanDist(loc1,loc2)/float(self.square_size[0]) #in the end want to use manhattan distance 
+		#+ learn geodesic distance via teleporting
+
 		
+		'''
 		grid1= self.grid(loc1)
 		grid2= self.grid(loc2)
 		
@@ -292,6 +296,7 @@ class WBP():
 			#this is wrong and only works for breakout but i dont want to worry about this right now
 					
 		return dist
+		'''
 
 	def loop4d(self):
 		array = []
@@ -406,7 +411,7 @@ class WBP():
 			for o in rle._game.sprite_groups[k]:
 				if not isinstance(o, vgdl.core.Avatar) and (not isinstance(o,vgdl.ontology.RandomNPC) and not isinstance(o,vgdl.ontology.Missile) or not REMOVE_MOVERS):
 					if o not in rle._game.kill_list:
-					## turn location into vector posd2[ition (rows appended one after the other.) 0 if object has been killed
+					## turn location into vector position (rows appended one after the other.) 0 if object has been killed
 						pos = (o.rect.left, o.rect.top)
 						vecValue = pos[1] + pos[0]*rle.outdim[0]*self.square_size[1] + 1
 					else:
@@ -652,16 +657,23 @@ class WBP():
 		print "{} paths found, returning best".format(wins)
 		return best_node, best_path, i
 
+	def node_profiler(self,lock,QReward,QNovelty,visited,p):
+		lp = LineProfiler()
+ 		lp_wrapper = lp(self.openNode)
+ 		lp_wrapper(lock,QReward,QNovelty,visited,p)
+ 		lp.print_stats()
+
+ 	#algorithm of one process in our parallelized BFS
 	def openNode(self, lock,QReward,QNovelty,visited,p):
 		generated_nodes = []
 		while self.nodes < self.max_nodes and not self.won and self.wait_steps < 3*p:
 			lock.acquire()
 			try:
-				#print "1"
+			
 				QReward.extend(generated_nodes)
 				generated_nodes = []
 				current = self.rewardSelection(QReward, QNovelty)
-				#print("node in open list = {}".format(len(QReward)))
+
 				if current is None:
 					wait = True
 					self.wait_steps += 1
@@ -671,7 +683,7 @@ class WBP():
 					self.nodes += 1
 					print self.nodes
 					avatar = self.getAliveAvatar(current.rle)
-				#print self.nodes
+
 					if avatar is not None:
 						loc = current.rle._rect2pos(avatar.rect)
 						self.avatar_locs_disc[loc]+=1
@@ -683,13 +695,11 @@ class WBP():
 					self.statesEncountered.append(current.rle._game.getFullState())
 					current.updateNoveltyDict(QNovelty, QReward)
 					visited.append(current)
-					#print current.rle.show()
-					#embed()
+
 					self.getActions(current.rle)
-					#
-					#self.avatar_locs_disc.append(loc)
+
 					actions = self.actions
-					#print "3"
+
 			finally:
 				lock.release()
 
@@ -731,7 +741,8 @@ class WBP():
 						print("WIN!")
 						break
 
-
+	#our parallelized BFS algorithm, to run on openmind
+	#NOTE - doesn't work yet, since python 2 threading doesn't actually speed anything up
 	def parallelBFS(self, num_processes, return_best=True):
 		QNovelty, QReward = [], []
 		visited, rejected = [], []
@@ -834,6 +845,7 @@ class Node():
 		#print metabolic_cost
 		return metabolic_cost
 
+	#computes the value of a rollout
 	def rollout(self, vrle):
 		successfulRollout = False
 		tries = 0
@@ -864,6 +876,7 @@ class Node():
 				successfulRollout = True
 		return rolloutArray
 
+	#heuristics: --------------------------------------------------------------
 	def spritecounter_val(self, theory, term, stype, rle, first_alpha=1000,
 						  second_alpha=1):
 		val = 0
@@ -1031,8 +1044,9 @@ class Node():
 
 		return val
 
-	#--------------------------- a bit of a cheat, should remove
+	#--------------------------- a bit of a cheat, should remove these
 
+	#gives reward for being close to objects that don't killyou
 	def objcollect_val(self, theory, rle, weight=OBJCOLLECT_WEIGHT):
 		objs = rle._game.sprite_groups.keys()
 		for inter in theory.interactionSet:
@@ -1069,7 +1083,8 @@ class Node():
 
 		return -weight*min_dist
 
-	def predictball_val(self, rle, weight = 0.1):
+	#predicts where the ball will be, and moves to that location
+	def predictball_val(self, rle, weight = 0.0):
 	
 		try:
 			y = self.WBP.getAliveAvatar(rle).rect.y
@@ -1107,7 +1122,7 @@ class Node():
 
 
 	#-----------------------------------------------
-
+	#Calculates the sum of all heuristics
 	def heuristics(self, rle=None, first_alpha=ALPHA1, second_alpha=ALPHA2,
 				   time_alpha=10):
 
@@ -1163,7 +1178,8 @@ class Node():
  		output = lp_wrapper()
  		lp.print_stats()
  		return output
-
+ 	
+ 	#copies rle and takes steps to reach the current state
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
 			
@@ -1208,6 +1224,7 @@ class Node():
 		lp.print_stats()
 
 	#whether to do a rollout (specifically, whether this game is breakout or not)
+	#currently calculates
 	def do_rollout(self):
 		try:
 			ball_now = [i for i in self.rle._game.sprite_groups['ball'] if i not in self.rle._game.kill_list][0]
@@ -1219,7 +1236,7 @@ class Node():
 
 
 	def eval(self):
-		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
+		# Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
 		self.rle, self.win = self.getToCurrentState()
 
 		self.updateObjIDs(self.rle)
@@ -1344,6 +1361,7 @@ def euclideanDist(a,b):
 
 def manhattanDist(a,b):
 	return (abs(b[0] - a[0]) + abs(b[1] - a[1]))
+
 #runs multiple planners in series with different sets of parameters
 def multi_plan():
 	t1 = time.time()
@@ -1386,7 +1404,7 @@ if __name__ == "__main__":
 	#gameFilename = "examples.continuousphysics.avoid_goomba"
 	#gameFilename = "examples.continuousphysics.mario"
 	#gameFilename = "examples.continuousphysics.montezuma_new"
-	gameFilename = "examples.continuousphysics.montezuma_3"
+	#gameFilename = "examples.continuousphysics.montezuma_3"
 	#gameFilename = "examples.continuousphysics.montezuma_medium"
 	#gameFilename = "examples.continuousphysics.ladder"
 	#gameFilename = "examples.continuousphysics.simple"
@@ -1406,29 +1424,14 @@ if __name__ == "__main__":
 
 	#rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	
+	gameFilename = "examples.continuousphysics.montezuma_3"
 	rleCreateFunc = lambda: createRLInputGameFromPositions(gameFilename)
+
+
 	rle = rleCreateFunc()
 
 	times = []
 
-	'''
-	for i in range(1,6):
-		x = []
-		for j in range(5):
-
-			t1 = time.time()
-			p = WBP(rle, gameFilename)
-
-	#embed()
-
-	#last, gameString_array, nodes = p.BFS()
-			last, gameString_array, nodes = p.parallelBFS(i)
-			#print time.time()-t1
-			x.append(time.time()-t1)
-		times.append(x)
-
-	print times
-	'''
 	t1 = time.time()
 	p = WBP(rle, gameFilename)
 	
@@ -1440,7 +1443,3 @@ if __name__ == "__main__":
 	print p.nodes
 	print p.won
 	print time.time()-t1
-	#embed()
-	
-	#
-	#multi_plan()

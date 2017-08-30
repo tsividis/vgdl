@@ -110,7 +110,9 @@ pos['offrope'] = [(16.625,5),(16.625,6),(16.625,7),(16.625,8),(17.625,8),(17.625
 positions = [dims,pos]
 
 if __name__ == "__main__":
+
     from vgdl.core import VGDLParser
+    '''
     dims = (25,13)
     pos = {}
     pos['background'] = [(i,j) for i in range(dims[0]) for j in range(dims[1])]
@@ -131,4 +133,5 @@ if __name__ == "__main__":
     pos['offrope'] = [(16.625,5),(16.625,6),(16.625,7),(16.625,8),(17.625,8),(17.625,7),(17.625,6),(17.625,5)]
     #pos['goomba'] = [(13,11.3)]
     pos_set = [dims,pos]
-    VGDLParser.playGame(game, None, positions = pos_set)
+    '''
+    VGDLParser.playGame(game, None, positions = positions)
