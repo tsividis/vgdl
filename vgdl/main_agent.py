@@ -423,7 +423,7 @@ class Agent:
 			else:
 				solution = []
 
-			if solution:
+			if solution and not p.quitting:
 				print "============================================="
 				print "got solution of length", len(solution)
 				for g in p.gameString_array:
@@ -438,7 +438,9 @@ class Agent:
 			else:
 				if (not solution) or p.quitting:
 					if self.longHorizonObservations<self.longHorizonObservationLimit:
+						print "Didn't get solution or decided to quit. Observing, then replanning."
 						observe(self.rle, 5, self.bestSpriteTypeDict)
+						solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
 						self.longHorizonObservations += 1
 					else:
 						quitting = True
