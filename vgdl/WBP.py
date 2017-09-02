@@ -54,9 +54,12 @@ class WBP():
 		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
+		self.objectTrackingLimit = 15
 		self.max_nodes = max_nodes
 		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random']
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
+		self.classesWhoseLocationsWeIgnore = []
+		self.classesWhosePresenceWeIgnore = []
 		self.allowRollouts = False
 		self.quitting = False
 		self.gameString_array = []
@@ -87,12 +90,20 @@ class WBP():
 		## Ignore objects we don't want to track (i.e., non-moving immovables.)
 		self.objectsToTrack = []
 		for k in rle._game.sprite_groups.keys():
-			if k in self.theory.classes.keys() and ('Resource' or 'Immovable') in str(self.theory.classes[k][0].vgdlType) and not \
-			(('bounceForward' or 'pullWithIt') in [rule.interaction for rule in self.theory.interactionSet if k in [rule.slot1, rule.slot2]]):
+			if ((k in self.theory.classes.keys() and ('Resource' or 'Immovable') in str(self.theory.classes[k][0].vgdlType) and not \
+			(('bounceForward' or 'pullWithIt') in [rule.interaction for rule in self.theory.interactionSet if k in [rule.slot1, rule.slot2]])) or 
+			len(rle._game.sprite_groups[k])>self.objectTrackingLimit):
 				pass# self.objectsToNotTrackInAtomList.append(k)
 			else:
 				self.objectsToTrack.append(k)
 
+			## Don't track (in either way) objects that are very numerous; completely breaks calculateAtoms()
+			if len(rle._game.sprite_groups[k])>self.objectTrackingLimit:
+				self.classesWhosePresenceWeIgnore.append(k)
+				self.classesWhoseLocationsWeIgnore.append(k)
+
+		print "ignoring presences for", self.classesWhosePresenceWeIgnore
+		print "ignoring locations for", self.classesWhoseLocationsWeIgnore
 		# Compute starting number of each SpriteCounter stype
 		self.firstOrderHorizon = firstOrderHorizon
 		self.starting_stype_n = {}
@@ -142,10 +153,9 @@ class WBP():
 			## on the game state.
 			if ((len(rle._game.sprite_groups[k])>0 and
 					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and
-					any([obj in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) for obj in self.objectsWhoseLocationsWeIgnore]))):
-					# (('Flicker' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)) or
-						# ('Random' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)) or
-						# ('Missile' in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType)))):
+					any([obj in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) for obj in self.objectsWhoseLocationsWeIgnore])) or
+				k in self.classesWhoseLocationsWeIgnore):
+
 				pass
 			else:
 				# if rle._game.sprite_groups[k]:
@@ -186,7 +196,8 @@ class WBP():
 			## on the game state.
 			if (len(rle._game.sprite_groups[k])>0 and
 					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and
-					any([obj in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) for obj in self.objectsWhosePresenceWeIgnore])):
+					any([obj in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) for obj in self.objectsWhosePresenceWeIgnore]) or
+					k in self.classesWhosePresenceWeIgnore):
 				pass
 			else:
 				for o in sorted(rle._game.sprite_groups[k], key=lambda s:s.ID):
@@ -337,10 +348,6 @@ class WBP():
 									child.terminal, child.win = True, True
 									break
 
-					# if a==32:
-					# 	print "shot"
-					# 	print child.rle.show(indent=True)
-
 					if child.win:
 						# Get the gameString representation of the RLE at each
 						# timestep in the chosen solution, so as to be able to
@@ -350,7 +357,7 @@ class WBP():
 						node = child
 						gameString_array, object_positions_array = [], []
 						while node is not None:
-							gameString_array.append(node.rle.show())
+							gameString_array.append(node.rle.show(color='green'))
 							object_positions_array.append(node.rle)
 							node = node.parent
 						self.gameString_array = gameString_array[::-1]
@@ -554,6 +561,7 @@ class Node():
 				true_operator = operator_name
 			try:
 				current_resource = rle._game.sprite_groups[avatar[0]][0].resources[precondition.item]
+				## If we satisfy the precondiiton, append to tmp_list, then to killer_types (meaning we are capable of killing stype now)
 				if eval("{}{}{}".format(current_resource, true_operator, num)):
 					tmp_list.append(avatar)
 			except IndexError:
@@ -581,7 +589,7 @@ class Node():
 			distance_to_goal = abs(n_stypes - limit)
 
 		if distance_to_goal!=0:
-			val -= float(mult * first_alpha) / distance_to_goal**2
+			val -= float(mult * first_alpha) / distance_to_goal**2 ## Penalize quadratically for classes for which we'd have to kill many instances.
 		else:
 			val -= mult*first_alpha ## we shouldn't go in here, as if we've actually destroyed the relevant sprite we'll trigger a win condition.
 
@@ -597,7 +605,6 @@ class Node():
 			else:
 				kill_positions = np.array(objs)
 
-			# kill_positions = np.concatenate([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types])
 			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
 			try:
 				# A consequence of the two-way generic interactions in the
@@ -610,12 +617,11 @@ class Node():
 					 for obj in stype_positions]
 
 				distance = min(possiblePairList)
-				# print distance
 			except ValueError:
 				distance = 0
 
 			if possiblePairList:
-				n_sprites = len(possiblePairList)
+				n_sprites = len(possiblePairList) ## TODO: you're normalizing by the number of possible pair sof killer_sprites and target_sprites; you should just normalize by the number of targets
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
 				val += float(mult * second_alpha * distance)/n_sprites**2
@@ -628,9 +634,7 @@ class Node():
 
 			avatars = [self.WBP.findObjectsInRLE(rle, ktype[0]) for ktype in avatar_preconditions]
 
-			# kill_positions = np.concatenate([self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types])
 			resource_names = [list(resource[1])[0].item for resource in avatar_preconditions]
-			# resource_names = []
 
 			try:
 				resource_yielder_names = [[inter.slot2 if (inter.interaction=='changeResource' and inter.args['resource']==res) else res if (inter.interaction=='collectResource' and res==inter.slot1) else None
@@ -789,6 +793,8 @@ class Node():
 				# goals that involve killing fewer objects
 				val += float(mult * second_alpha * distance)/n_sprites
 
+		if n_sprites==0:
+			return val, 10000
 		return val, distance*n_sprites
 
 	def timeout_val(self, theory, term, rle):
@@ -841,24 +847,25 @@ class Node():
 			elif isinstance(term, NoveltyRule):
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
-					first_alpha=5000, second_alpha=500)
-				# if noveltytermination_val !=0:
+					first_alpha=2500, second_alpha=250)
+				# if noveltytermination_val!=0:
 					# print("noveltytermination_val for {} and {} is equal to {}".format(
 						# term.termination.s1, term.termination.s2, noveltytermination_val))
 				if 'avatar' == term.termination.s2:
-					avatarNoveltyVals.append([.5*self.WBP.annealing*noveltytermination_val,
+					avatarNoveltyVals.append([self.WBP.annealing*noveltytermination_val,
 						ranking])
 				else:
-					heuristicVal += .5 * self.WBP.annealing * noveltytermination_val
+					heuristicVal += self.WBP.annealing * noveltytermination_val
 					# Exploit only
 					# heuristicVal += 0 * self.WBP.annealing * noveltytermination_val
 					# Explore only
 					# heuristicVal += 1000 * self.WBP.annealing * noveltytermination_val
 
-		# print "sum:", heuristicVal
 		if avatarNoveltyVals:
 			# print noveltyVals
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
+		# print "sum:", heuristicVal
+
 		return heuristicVal
 
 	def position_score(self, factor=0):

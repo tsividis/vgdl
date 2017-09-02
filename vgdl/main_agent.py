@@ -737,7 +737,7 @@ class Agent:
 		distributionsHaveChanged = spriteInduction(self.rle._game, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 
 		effects = translateEvents(res['effectList'], self.all_objects, self.rle)
-		print colored(self.rle.show(), 'blue')
+		print self.rle.show(color='blue')
 		print self.rle._game.score
 
 		all_effects = [item for sublist in [e['effectList'] for e in self.finalEventList] for item in sublist]
@@ -803,17 +803,19 @@ class Agent:
 
 					hypotheses[0].resource_limits[resource] = limit
 
+					## go through everything that can be killed and add a SpriteCounterRule for it?
+					# spritecounter = SpriteCounterRule(limit=limit,
+											  # stype=resource,
+											  # win=True)
+					# hypotheses[0].terminationSet.append(spritecounter)
+
 				elif agentState[resource]==limit and resource not in self.seen_limits:
 					self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
 					self.fakeInteractionRules = list(set(self.fakeInteractionRules))
 					# resourceColor = self.rle._game.sprite_groups[resource][0].colorName
 					self.seen_limits.append(resource)
 
-					## go through everything that can be killed and add a SpriteCounterRule for it?
-					spritecounter = SpriteCounterRule(limit=limit,
-											  stype=resource,
-											  win=True)
-					hypotheses[0].terminationSet.append(spritecounter)
+
 
 					theory_change_flag = True
 					# print "reached resource limit for", resource

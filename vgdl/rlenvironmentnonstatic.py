@@ -117,7 +117,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # self.colorMapping = colorMapping
         return
 
-    def show(self, indent=False, showArrays=False):
+    def show(self, indent=False, showArrays=False, color='grey'):
         """
         symbolDict = a dict mapping each sprite name to its symbol.
         If there's no sprite overlap, then returns a string. Else returns numpy array.
@@ -135,18 +135,18 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 #     symbol = objectsToSymbol(self, self.getObjectsFromNumber(state[i][j]), self.symbolDict)
                 #     gameString += symbol
                 elif state[i][j] == 1:
-                    gameString += self.symbolDict['avatar']
+                    gameString += colored(self.symbolDict['avatar'], 'red')
                 else:
                     spriteIndex = int(round(math.log(state[i][j],2)))-1
                     if state[i][j]%2 == 1:
-                        gameString += "X"
+                        gameString += colored("X", 'red')
                     elif state[i][j] != 2**(spriteIndex+1):
-                        gameString += "$"
+                        gameString += colored("$", color)
                     else:
                         # spriteOverlap = True
                         # break
                         spriteType = sorted(self._obstypes.keys())[::-1][spriteIndex]
-                        gameString += self.symbolDict[spriteType]
+                        gameString += colored(self.symbolDict[spriteType], color)
 
             gameString += "\n"
             if spriteOverlap:
