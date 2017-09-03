@@ -834,9 +834,9 @@ class Node():
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=5000, second_alpha=500)
-				if spritecounter_val!=0:
-					print("spritecounter_val for {} is equal to {}".format(
-						term.termination.stype, spritecounter_val))
+				# if spritecounter_val!=0:
+					# print("spritecounter_val for {} is equal to {}".format(
+						# term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
@@ -856,9 +856,9 @@ class Node():
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=2500, second_alpha=250)
-				if noveltytermination_val!=0:
-					print("noveltytermination_val for {} and {} is equal to {}".format(
-						term.termination.s1, term.termination.s2, noveltytermination_val))
+				# if noveltytermination_val!=0:
+					# print("noveltytermination_val for {} and {} is equal to {}".format(
+						# term.termination.s1, term.termination.s2, noveltytermination_val))
 				
 				# if self.parent and self.parent.rle._game.score==0 and term.termination.args and term.termination.s1=='c6' and term.termination.s2=='avatar' and noveltytermination_val!=-5000:
 					# ipdb.set_trace()
@@ -875,7 +875,7 @@ class Node():
 		if avatarNoveltyVals:
 			# print noveltyVals
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
-		print "sum:", heuristicVal
+		# print "sum:", heuristicVal
 
 		return heuristicVal
 

@@ -30,7 +30,7 @@ BASEDIRS = [UP, LEFT, DOWN, RIGHT]
 spriteToParams = {'Resource': [], \
                 'ResourcePack': [], \
                 'RandomNPC': ['cooldown', 'speed'], \
-                'Chaser': ['fleeing', 'stype'], \
+                'Chaser': ['cooldown', 'fleeing', 'stype'], \
                 'AStarChaser': ['fleeing', 'speed', 'stype'], \
                 'OrientedSprite': ['orientation'], \
                 'Missile': ['speed', 'orientation', 'cooldown']} ##removed speed from chaser and randomNPC
@@ -76,7 +76,7 @@ class GridPhysics():
         if speed is None:
             speed = 1
 
-        if speed != 0 and hasattr(sprite, 'orientation'):
+        if speed != 0:
             speed = speed * self.gridsize[0]
             if not((sprite.lastmove+1)%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
             # if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
@@ -84,7 +84,7 @@ class GridPhysics():
                 return pos.left, pos.top
             else:
                 return sprite.rect.left, sprite.rect.top
-        else:   # If object has speed = 0 or no 'orientation' attribute
+        else:
             return None
 
     def activeMovement(self, sprite, action, speed=None):
@@ -100,10 +100,11 @@ class GridPhysics():
         """
         Calculate where the sprite would end up in a timestep, without actually updating its position.
         """
+
          ## This is where you could make hypotheses about speed, etc. for the object.
         if action is not None:
             orientation = action
-        if (sprite.lastmove+1)%sprite.cooldown==0 or abs(orientation[0])+abs(orientation[1])!=0:
+        if (sprite.lastmove+1)%sprite.cooldown==0 and abs(orientation[0])+abs(orientation[1])!=0:
 
             if speed is None:
                 if sprite.speed is None:
@@ -288,9 +289,11 @@ class RandomNPC(VGDLSprite):
     is_stochastic = True
 
     def update(self, game):
+        self.lastmove -= 1
         VGDLSprite.update(self, game, random_npc=True)
         self.orientation = random.choice(BASEDIRS) #TODO: Make work with random direction
         self.physics.activeMovement(self, self.orientation)
+        self.lastmove += 1
 
 
 class OrientedSprite(VGDLSprite): ##
@@ -1799,10 +1802,11 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
                     position_options[(left, top)] += 1.0/len(options)
                 else:
                     position_options[(left, top)] = 1.0/len(options)
+
         except AttributeError: # deals with following error: 'Immovable' object has no attribute 'stype'
             # position_options = {}
             position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
-            if current_sprite.colorName == 'ORANGE':
+            if current_sprite.colorName == 'GOLD':
                 print "problem in movementOtions"
                 embed()
         current_sprite.cooldown = realCooldown
@@ -1850,7 +1854,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
     # Random NPC
     elif sprite_type == RandomNPC:
 
-
         realCooldown = int(current_sprite.cooldown)
         speed, cooldown = getSpeed(params), getCooldown(params)
         current_sprite.cooldown = cooldown
@@ -1862,6 +1865,9 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
                 position_options[(left, top)] += 1.0/len(BASEDIRS)
             else:
                 position_options[(left, top)] = 1.0/len(BASEDIRS)
+        if current_sprite.colorName=='GOLD' and speed == 1. and cooldown == 2:
+            print current_sprite.rect
+            print position_options
         # if current_sprite.colorName == 'RED':
             # print "in updateOptions"
             # print current_sprite, params
@@ -2006,60 +2012,6 @@ def initializeDistributionArgs(sprite_type, objectColors):
             paramList.append(initializeCooldown())
 
     return paramList
-    # outList = []
-    # for element in itertools.product(*paramList):
-        # outList.append(sorted(element))
-    # return sorted(list(itertools.product(*paramList)))
-
-
-# def initializeDistributionArgs(sprite_type, objectColors):
-#     """
-#     Given a sprite type, this returns a distribution over the kinds of args (parameters) belonging
-#     to that sprite type.
-#     NOTE - this initializes args for speed, orientation and fleeing. It does not handle cooldown yet.
-#     """
-#     def initializeProperty(args, attribute, values):
-#         # assigns equal probability for all possible values of the attribute.
-#         args[attribute] = {v: 1./len(values) for v in values}
-
-#     def initializeSpeed(args):
-#         speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.,
-#         1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1]
-#         initializeProperty(args, 'speed', speedValues)
-
-#     def initializeOrientation(args):
-#         orientationValues = {LEFT, RIGHT, UP, DOWN}
-#         initializeProperty(args, 'orientation', orientationValues)
-
-#     def initializeFleeing(args):
-#         fleeingValues = {True, False}
-#         initializeProperty(args, 'fleeing', fleeingValues)
-
-#     # print sprite_types
-#     def initializeStype(args):
-#         stypeValues = objectColors
-#         initializeProperty(args, 'stype', stypeValues)
-
-#     def initializeCooldown(args):
-#         stypeValues = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-#         initializeProperty(args, 'cooldown', stypeValues)
-
-#     args = {}
-#     spriteParams = spriteToParams[sprite_type.__name__]
-#     for s in spriteParams:
-#         if s == "speed":
-#             initializeSpeed(args)
-#         elif s == "fleeing":
-#             initializeFleeing(args)
-#         elif s == "orientation":
-#             initializeOrientation(args)
-#         elif s=='stype':
-#             initializeStype(args)
-#         elif s=='cooldown':
-#             initializeCooldown(args)
-
-#     return args
-
 
 
 def distributionInitSetup(game, sprite):
@@ -2095,7 +2047,7 @@ def distributionInitSetup(game, sprite):
 
 def updateDistribution(game, sprite, curr_distribution, movement_options, outcome, specialID=None, missileOrientationClustering=False):
 
-    epsilon_prob = 0.005
+    epsilon_prob = 0.000005
 
     # For computing the new normalized likelihoods, we proceed as follows:
 
@@ -2114,6 +2066,9 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
     #   p(o_t|p_j)
     #   sum_i(p(o_1, .., o_t-1|p_i) * p(o_t|p_i)) / sum_k(p(o_1, .., o_t-1|p_k))
 
+    # if game.all_objects[sprite]['features']['color']=='GOLD':
+    #     print game.all_objects[sprite]['position']
+    #     embed()
     normalization_ratio = 0
     alpha = 1.
     if sprite in curr_distribution.keys():
@@ -2321,11 +2276,14 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         best_param = max(param_product, key=param_product.get)
         best_params[obj_type] = best_param
 
-        # if obj_type=='PINK':
-        #     for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
-        #         print(k, param_product[k])
-        #         if i>10:
-        #             break
+        if obj_type=='GOLD':
+            goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='GOLD']
+            print [g.rect for g in goldobjs[0]]
+            for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
+                print(k, param_product[k])
+                if i>10:
+                    break
+            print ""
 
         sprite_type = best_param[0][1]
 
