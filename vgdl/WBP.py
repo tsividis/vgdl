@@ -54,7 +54,7 @@ class WBP():
 		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
-		self.objectTrackingLimit = 15
+		self.objectTrackingLimit = 25
 		self.max_nodes = max_nodes
 		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random']
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
@@ -563,6 +563,7 @@ class Node():
 				current_resource = rle._game.sprite_groups[avatar[0]][0].resources[precondition.item]
 				## If we satisfy the precondiiton, append to tmp_list, then to killer_types (meaning we are capable of killing stype now)
 				if eval("{}{}{}".format(current_resource, true_operator, num)):
+					print "reached resource limit"
 					tmp_list.append(avatar)
 			except IndexError:
 				pass
@@ -631,81 +632,88 @@ class Node():
 				distance = 100
 				val += float(mult * second_alpha * distance)
 
+			if avatar_preconditions:	
+				avatars = [self.WBP.findObjectsInRLE(rle, ktype[0]) for ktype in avatar_preconditions]
 
-			avatars = [self.WBP.findObjectsInRLE(rle, ktype[0]) for ktype in avatar_preconditions]
+				resource_names = [list(resource[1])[0].item for resource in avatar_preconditions]
 
-			resource_names = [list(resource[1])[0].item for resource in avatar_preconditions]
+				try:
+					resource_yielder_names = [[inter.slot2 if (inter.interaction=='changeResource' and inter.args['resource']==res) else res if (inter.interaction=='collectResource' and res==inter.slot1) else None
+					for inter in theory.interactionSet] for res in resource_names]
+				except:
+					print "failure with resource_yielder_names"
+					embed()
 
-			try:
-				resource_yielder_names = [[inter.slot2 if (inter.interaction=='changeResource' and inter.args['resource']==res) else res if (inter.interaction=='collectResource' and res==inter.slot1) else None
-				for inter in theory.interactionSet] for res in resource_names]
-			except:
-				print "failure with resource_yielder_names"
-				embed()
+				resource_yielder_names = [[r for r in ryn if r] for ryn in resource_yielder_names] ## Remove 'None' yielded by last else condition above
 
-			resource_yielder_names = [[r for r in ryn if r] for ryn in resource_yielder_names] ## Remove 'None' yielded by last else condition above
+				resource_positions = [np.concatenate([self.WBP.findObjectsInRLE(rle, yielder) for yielder in yielders]) for yielders in resource_yielder_names]
 
-			resource_positions = [np.concatenate([self.WBP.findObjectsInRLE(rle, yielder) for yielder in yielders]) for yielders in resource_yielder_names]
+				resource_limits = np.array([list(resource[1])[0].num + 1
+					if list(resource[1])[0].operator_name == '>'
+					else list(resource[1])[0].num
+					for resource in avatar_preconditions])
+				try:
+					avatar_resource_quantities = np.array([rle._game.getAvatars()[0].resources[res] for res in resource_names])
+				except IndexError:
+					avatar_resource_quantities = np.array([0 for res in resource_names])
+				precondition_distances = []
+				try:
+					for (obj1_positions, obj2_positions) in zip(avatars, resource_positions):
+						# A consequence of the two-way generic interactions in the
+						# theory is that minimum-distance object pairs whose interactions
+						# were not yet observed will have their distance penalized twice
+						# as much when none of those objects is an avatar. This implies
+						# that avatar novel interactions will be favored over other ones
+						try:
+							possiblePairList = np.array([manhattanDist(obj1, obj2)
+								for obj1 in obj1_positions
+								for obj2 in obj2_positions])
+						except:
+							print "failure with obj1_positions"
+							embed()
 
-			resource_limits = np.array([list(resource[1])[0].num + 1
-				if list(resource[1])[0].operator_name == '>'
-				else list(resource[1])[0].num
-				for resource in avatar_preconditions])
-			try:
-				avatar_resource_quantities = np.array([rle._game.getAvatars()[0].resources[res] for res in resource_names])
-			except IndexError:
-				avatar_resource_quantities = np.array([0 for res in resource_names])
-			precondition_distances = []
-			try:
-				for (obj1_positions, obj2_positions) in zip(avatars, resource_positions):
-					# A consequence of the two-way generic interactions in the
-					# theory is that minimum-distance object pairs whose interactions
-					# were not yet observed will have their distance penalized twice
-					# as much when none of those objects is an avatar. This implies
-					# that avatar novel interactions will be favored over other ones
-					try:
-						possiblePairList = np.array([manhattanDist(obj1, obj2)
-							for obj1 in obj1_positions
-							for obj2 in obj2_positions])
-					except:
-						print "failure with obj1_positions"
+						precondition_distances.append(min(possiblePairList))
+
+					# effective_distance = min(precondition_distances/(resource_limits-avatar_resource_quantities))
+					physical_distance = min(precondition_distances)
+					sprite_n_distance = abs(resource_limits-avatar_resource_quantities)
+					# Normalize by number of sprites, enforcing a prior that encourages
+					# goals that involve killing fewer objects
+					val += float(mult * second_alpha * (physical_distance / 10.)) - 10000
+					val += float(mult * second_alpha * sprite_n_distance) - 10000
+
+					# print distance
+				except ValueError:
+					if avatar_preconditions and avatars[0]:
+						print "valueError in spritecounter_val"
 						embed()
+					pass
+					# effective_distance = 0
 
-					precondition_distances.append(min(possiblePairList))
+				if not resource_positions:
+					# This helps in cases in which either the stype or the killer_type is not always on the screen
+					# Then, you should not be disincentivized to create it, which can be achieved through this high penalty
+					distance = 100
+					val += float(mult * second_alpha * distance) - 20000
 
-				effective_distance = min(precondition_distances/(resource_limits-avatar_resource_quantities))
 
-				# Normalize by number of sprites, enforcing a prior that encourages
-				# goals that involve killing fewer objects
-				val += float(mult * second_alpha * effective_distance) - 10000
-
-				# print distance
-			except ValueError:
-				effective_distance = 0
-
-			if not resource_positions:
-				# This helps in cases in which either the stype or the killer_type is not always on the screen
-				# Then, you should not be disincentivized to create it, which can be achieved through this high penalty
-				distance = 100
-				val += float(mult * second_alpha * distance)
-
-			if stype == 'avatar':
-				# if the avatar's death depends on a precondition
-				preconditions = [inter.preconditions for inter in theory.interactionSet if ((inter.interaction == 'killSprite') and (not inter.generic) and (inter.slot1 == stype) and (inter.preconditions))]
-				for precondition_set in preconditions:
-					precondition = list(precondition_set)[0]
-					# Give intrinsic reward based on resource distance to kill value
-					if precondition.negated:
-						oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
-						true_operator = oppositeOperatorMap[precondition.operator_name]
-					else:
-						true_operator = precondition.operator_name
-					resource = precondition.item
-					current_val = self.WBP.rle._game.getAvatars()[0].resources[resource]
-					if true_operator in {"<", "<="}:
-						val += mult * second_alpha * (precondition.num-current_val)
-					elif true_operator in {">", ">="}:
-						val += mult * second_alpha * (current_val-precondition.num)
+			# if stype == 'avatar':
+			# 	# if the avatar's death depends on a precondition
+			# 	preconditions = [inter.preconditions for inter in theory.interactionSet if ((inter.interaction == 'killSprite') and (not inter.generic) and (inter.slot1 == stype) and (inter.preconditions))]
+			# 	for precondition_set in preconditions:
+			# 		precondition = list(precondition_set)[0]
+			# 		# Give intrinsic reward based on resource distance to kill value
+			# 		if precondition.negated:
+			# 			oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
+			# 			true_operator = oppositeOperatorMap[precondition.operator_name]
+			# 		else:
+			# 			true_operator = precondition.operator_name
+			# 		resource = precondition.item
+			# 		current_val = self.WBP.rle._game.getAvatars()[0].resources[resource]
+			# 		if true_operator in {"<", "<="}:
+			# 			val += mult * second_alpha * (precondition.num-current_val)
+			# 		elif true_operator in {">", ">="}:
+			# 			val += mult * second_alpha * (current_val-precondition.num)
 
 		return val
 
@@ -791,7 +799,7 @@ class Node():
 				n_sprites = len(possiblePairList)
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
-				val += float(mult * second_alpha * distance)/n_sprites
+				val += (float(mult * second_alpha * distance)/n_sprites**2) + second_alpha * max(self.rle.outdim[0], self.rle.outdim[1])
 
 		if n_sprites==0:
 			return val, 10000
@@ -826,9 +834,9 @@ class Node():
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=5000, second_alpha=500)
-				# if spritecounter_val!=0:
-					# print("spritecounter_val for {} is equal to {}".format(
-						# term.termination.stype, spritecounter_val))
+				if spritecounter_val!=0:
+					print("spritecounter_val for {} is equal to {}".format(
+						term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
@@ -848,9 +856,12 @@ class Node():
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=2500, second_alpha=250)
-				# if noveltytermination_val!=0:
-					# print("noveltytermination_val for {} and {} is equal to {}".format(
-						# term.termination.s1, term.termination.s2, noveltytermination_val))
+				if noveltytermination_val!=0:
+					print("noveltytermination_val for {} and {} is equal to {}".format(
+						term.termination.s1, term.termination.s2, noveltytermination_val))
+				
+				# if self.parent and self.parent.rle._game.score==0 and term.termination.args and term.termination.s1=='c6' and term.termination.s2=='avatar' and noveltytermination_val!=-5000:
+					# ipdb.set_trace()
 				if 'avatar' == term.termination.s2:
 					avatarNoveltyVals.append([self.WBP.annealing*noveltytermination_val,
 						ranking])
@@ -864,7 +875,7 @@ class Node():
 		if avatarNoveltyVals:
 			# print noveltyVals
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
-		# print "sum:", heuristicVal
+		print "sum:", heuristicVal
 
 		return heuristicVal
 

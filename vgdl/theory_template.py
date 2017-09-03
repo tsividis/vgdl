@@ -998,23 +998,29 @@ class Theory(object):
 
 		for rule in self.interactionSet:
 
-			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo']:
+			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'nothing']:
 				if rule.generic and rule.preconditions:
 					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, copy.deepcopy(rule.preconditions))
-				elif rule.generic and not rule.preconditions:
-					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
-				else:
-					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
-				if terminationRule.ruleType=='NoveltyRule':
 					if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
 							for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
 						all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 						all([not terminationRule.__eq__(t) for t in self.falsified])):
 						self.terminationSet.append(terminationRule)
-				elif terminationRule.ruleType=='SpriteCounterRule':
+				elif rule.generic and not rule.preconditions:
+					## Omit noveltytermination for randoms bumping into objects in the game; makes us disrupt plans even though we shouldnt't.
+					if ('Random' not in str(self.classes[rule.slot1][0].vgdlType)) and ('Random' not in str(self.classes[rule.slot2][0].vgdlType)) or rule.asTuple()[0]!='nothing':
+						terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
+						if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
+								for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
+							all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
+							all([not terminationRule.__eq__(t) for t in self.falsified])):
+							self.terminationSet.append(terminationRule)
+				elif rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo']:
+					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
 					if (all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 						all([not terminationRule.__eq__(t) for t in self.falsified])):
 						self.terminationSet.append(terminationRule)
+
 			if rule.slot2 == 'EOS' and rule.generic:
 				terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
 				self.terminationSet.append(terminationRule)
@@ -1799,43 +1805,21 @@ class Game(object):
 			T.classes[nonAvatars[i].className] = [nonAvatars[i]]
 		T.classes['EOS'] = [eos] ##initialize EOS with special name, since it gets such special treatment in VGDL text files.
 
-		## Add generic rule that the avatar kills everything
-		# for obj in nonAvatars:
-		# 	rule = InteractionRule('killSprite', obj.className, avatar.className, {}, set(), generic=True)
-		# 	T.interactionSet.append(rule)
-
 		for (o1, o2) in itertools.product(allSprites, allSprites):
-			if o1.vgdlType not in AvatarTypes:
+			if o1.vgdlType not in AvatarTypes and o2.vgdlType not in AvatarTypes:
+				rule = InteractionRule('nothing', o1.className, o2.className, {}, set(), generic=True)
+				T.interactionSet.append(rule)
+			elif o1.vgdlType not in AvatarTypes:
 				rule = InteractionRule('killSprite', o1.className, o2.className, {}, set(), generic=True)
 				T.interactionSet.append(rule)
-
-		## Add generic rule that all other interactions are stepBack
-		# print "in buildGenericTheory"
-		# embed()
-		# for s1 in nonAvatars:
-		# 	for s2 in nonAvatars:
-		# 		rule = InteractionRule('killSprite', s1.className, s2.className, {}, set(), generic=True)
-		# 		T.interactionSet.append(rule)
 
 		for s1 in nonAvatars + [avatar]:
 			## append EOS rule
 			rule = InteractionRule('stepBack', s1.className, 'EOS', {}, set(), generic=True)
 			T.interactionSet.append(rule)
-			# if s1.color != "BLACK" and s1.color !="GRAY":
-			# 	rule = InteractionRule('stepBack', s1.className, wall.className, {}, set(), generic=True)
-			# 	T.interactionSet.append(rule)
-
-
-		# ## Generic termination rule
-		# for o in nonAvatars:
-		# 	rule = NoveltyRule(o.className, True)
-		# 	T.terminationSet.append(rule)
 
 		rule =  SpriteCounterRule("avatar", 0, False)
 		T.terminationSet.append(rule)
-
-		# rule =  SpriteCounterRule("goal", 0, True)
-		# T.terminationSet.append(rule)
 
 		T.updateTerminations()
 		return T
@@ -1861,9 +1845,9 @@ class Game(object):
 				rule = InteractionRule('stepBack', s.className, 'EOS', {}, set(), generic=True)
 				theory.interactionSet.append(rule)
 				for otherSprite in nonAvatars:
-					rule = InteractionRule('killSprite', s.className, otherSprite.className, {}, set(), generic=True)
+					rule = InteractionRule('nothing', s.className, otherSprite.className, {}, set(), generic=True)
 					theory.interactionSet.append(rule)
-					rule = InteractionRule('killSprite', otherSprite.className, s.className, {}, set(), generic=True)
+					rule = InteractionRule('nothing', otherSprite.className, s.className, {}, set(), generic=True)
 					theory.interactionSet.append(rule)
 				i+=1
 			else:

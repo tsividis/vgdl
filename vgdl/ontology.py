@@ -1134,7 +1134,7 @@ class NoveltyTermination(Termination):
 
         for e in game.effectList:
             id_not_found = False
-            if (e[0]=='killSprite' or e[0] == 'transformTo') and len(e) > 2:
+            if (e[0] in ['killSprite', 'transformTo', 'nothing']) and len(e) > 2:
                 try:
                     name1 = game.all_objects[e[1]]['sprite'].name
                 except KeyError:
@@ -2347,13 +2347,13 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                     # If types are different, distributionsHaveChanged is true
                     if s.vgdlType!=matchingSprite.vgdlType:
                         distributionsHaveChanged = True
-                        print ("Distributions have changed from sprite type {} to {}".format(matchingSprite.vgdlType, s.vgdlType))
+                        print ("Distributions for {} have changed from sprite type {} to {}".format(s.color, matchingSprite.vgdlType, s.vgdlType))
                     # If one of the args is None but not the other,
                     # distributionsHaveChanged is true
                     elif ((s.args==None and matchingSprite.args!=None) or
                         (s.args!=None and matchingSprite.args==None)):
                         distributionsHaveChanged = True
-                        print ("Distributions args have changed from {} to {}".format(s.args, matchingSprite.args))
+                        print ("Distribution args for {} have changed from {} to {}".format(s.color, s.args, matchingSprite.args))
                     elif (s.args and matchingSprite.args) != None:
                         # If args are different, except for the case where only an
                         # orientation is reversed (e.g. turnAround), then
@@ -2364,13 +2364,13 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                                     in ([LEFT, RIGHT] or [UP, DOWN])):
                                     if s.args[key] != matchingSprite.args[key]:
                                         distributionsHaveChanged = True
-                                    print ("Distributions args have changed from {} to {}".format(s.args, matchingSprite.args))
+                                    print ("Distribution args for {} have changed from {} to {}".format(s.color, s.args, matchingSprite.args))
                             except KeyError:
                                 # If the new sprite has an arg that the old one
                                 # doesn't, or vice-versa, then
                                 # distributionsHaveChanged is true
                                 distributionsHaveChanged = True
-                                print ("Distributions args have changed from {} to {}".format(s.args, matchingSprite.args))
+                                print ("Distribution args for {} have changed from {} to {}".format(s.color, s.args, matchingSprite.args))
 
                 else:
                     # print s.color, oldSpriteSet
