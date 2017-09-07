@@ -324,8 +324,8 @@ class WBP():
 					# If there's already a projectile on the screen
 					# and the projectile class is a singleton
 					# and the action chosen is shooting
-					if (self.findObjectsInRLE(self.rle, self.rle._game.getAvatars()[0].stype) and
-						bool(self.theory.classes[self.rle._game.getAvatars()[0].stype][0].args['singleton']) and
+					if (self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
+						bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
 						a == K_SPACE):
 						# Then skip the action
 						skipAction = True
