@@ -2293,14 +2293,14 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         best_params[obj_type] = best_param
 
         ## Use for debugging sprite-type inference.
-        if obj_type=='GOLD':
-            goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='GOLD']
-            print [g.rect for g in goldobjs[0]]
-            for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
-                print(k, param_product[k])
-                if i>10:
-                    break
-            print ""
+        # if obj_type=='GOLD':
+        #     goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='GOLD']
+        #     print [g.rect for g in goldobjs[0]]
+        #     for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
+        #         print(k, param_product[k])
+        #         if i>10:
+        #             break
+        #     print ""
 
         sprite_type = best_param[0][1]
 

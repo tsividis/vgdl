@@ -54,7 +54,8 @@ class WBP():
 		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
-		self.objectTrackingLimit = 25
+		self.objectNumberTrackingLimit = 25
+		self.objectLocationTrackingLimit = 8
 		self.max_nodes = max_nodes
 		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random']
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
@@ -92,14 +93,15 @@ class WBP():
 		for k in rle._game.sprite_groups.keys():
 			if ((k in self.theory.classes.keys() and ('Resource' or 'Immovable') in str(self.theory.classes[k][0].vgdlType) and not \
 			(('bounceForward' or 'pullWithIt') in [rule.interaction for rule in self.theory.interactionSet if k in [rule.slot1, rule.slot2]])) or 
-			len(rle._game.sprite_groups[k])>self.objectTrackingLimit):
+			len(rle._game.sprite_groups[k])>self.objectNumberTrackingLimit):
 				pass# self.objectsToNotTrackInAtomList.append(k)
 			else:
 				self.objectsToTrack.append(k)
 
 			## Don't track (in either way) objects that are very numerous; completely breaks calculateAtoms()
-			if len(rle._game.sprite_groups[k])>self.objectTrackingLimit:
+			if len(rle._game.sprite_groups[k])>self.objectNumberTrackingLimit:
 				self.classesWhosePresenceWeIgnore.append(k)
+			if len(rle._game.sprite_groups[k])>self.objectLocationTrackingLimit:
 				self.classesWhoseLocationsWeIgnore.append(k)
 
 		print "ignoring presences for", self.classesWhosePresenceWeIgnore

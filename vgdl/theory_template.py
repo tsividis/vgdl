@@ -1043,10 +1043,6 @@ class Theory(object):
 					all([not terminationRule.__eq__(t) for t in self.multi_falsified])):
 					self.terminationSet.append(terminationRule)
 
-					if 'c5' in sprite_combination and 'c6' in sprite_combination:
-						print "found c5 c6"
-						embed()
-
 		# if falsified_win_stypes:
 		# 	embed()
 		self.terminationSet = sorted(self.terminationSet, key=lambda t:t.ruleType)
@@ -2403,13 +2399,16 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				except AttributeError:
 					pass
 
-				try:
-					##when we initialized stypes in spriteInduction, we didn't have access to what we would call objects in the theory.
-					colorConvertedToSType = theory.spriteObjects[s.stype].className
-					# embed()
-					argsString += " %s=%s"%("stype", colorConvertedToSType)
-				except AttributeError:
-					pass
+				if hasattr(s, 'stype'):
+					try:
+						##when we initialized stypes in spriteInduction, we didn't have access to what we would call objects in the theory.
+						colorConvertedToSType = theory.spriteObjects[s.stype].className
+						# embed()
+						argsString += " %s=%s"%("stype", colorConvertedToSType)
+					except Keyerror:
+						print "in TheoryToTxt(), search for colorConvertedToSType"
+						embed()
+
 
 
 				if "core" in stype:

@@ -33,7 +33,7 @@ class Agent:
 		self.annealingFactor = 1.
 		self.shortHorizon = True
 		if self.shortHorizon == True:
-			self.starting_max_nodes = 200
+			self.starting_max_nodes = 500
 			self.max_nodes_annealing = 1.05
 		else:
 			self.starting_max_nodes = 10000
@@ -187,8 +187,12 @@ class Agent:
 
 		return gameObject
 
-	def completeHypotheses(self, allObjects):
-		observe(self.rle, 2, self.bestSpriteTypeDict) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
+	def completeHypotheses(self, allObjects, first_time_playing_level):
+		if first_time_playing_level:
+			print "observing for 15 time steps; first time playing the level."
+			observe(self.rle, 15, self.bestSpriteTypeDict) ## observe many steps so that you're not completely clueless about object movements for the new level
+		else:
+			observe(self.rle, 2, self.bestSpriteTypeDict) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
 		spriteTypeHypothesis, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
 		gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 		newHypotheses = []
@@ -219,13 +223,16 @@ class Agent:
 			levelEffectsEncountered = []
 			allStatesEncountered = []
 			t1 = time.time()
+			first_time_playing_level = True
+
 			while not win:
-				gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals)
+				gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
 				episodes.append((n_level, steps, win, score))
 				allStatesEncountered.extend(statesEncountered)
 				levelEffectsEncountered.append(effectsEncountered)
 				VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
 				persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
+				first_time_playing_level = False
 				i += 1
 				print "Finished in ", time.time() - t1
 				# if i >=10:
@@ -338,8 +345,9 @@ class Agent:
 		i=0
 		gameObject = None
 		wins, scores = [], []
+		win = False
 		while i<num_episodes:
-			gameObject, win, score, statesEncountered, _ = self.playEpisode(gameObject)
+			gameObject, win, score, statesEncountered, _ = self.playEpisode(gameObject, flexible_goals=False,first_time_playing_level=False)
 			wins.append(win)
 			scores.append(score)
 			i+=1
@@ -347,29 +355,16 @@ class Agent:
 			persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
 		print "Won {} out of {} episodes.".format(sum(wins), i)
 
-	# def updateMemory(self, rle):
 
-	# 	types = list(set([rle._game.all_objects[k]['type']['color'] for k in rle._game.all_objects.keys()]))
-	# 	for obj_type in types:
-	# 		## find the most-updated object, use that one for the sprite hypothesis.
-	# 		options = [k for k in rle._game.all_objects.keys() if rle._game.all_objects[k]['type']['color'] == obj_type]
-	# 		k = max(options, key=lambda x:rle._game.spriteUpdateDict[x])
-
-	# 		if rle._game.spriteUpdateDict[k] > self.bestSpriteTypeDict[obj_type]['count']:
-	# 			self.bestSpriteTypeDict[obj_type]['ID'] = k
-	# 			self.bestSpriteTypeDict[obj_type]['count'] = copy.deepcopy(rle._game.spriteUpdateDict[k])
-	# 			self.bestSpriteTypeDict[obj_type]['distribution'] = copy.deepcopy(rle._game.spriteDistribution[k])
-	# 	return
-
-	def playEpisodeProfiler(self, gameObject, flexible_goals=False):
+	def playEpisodeProfiler(self, gameObject, flexible_goals=False, first_time_playing_level=False):
 		lp = LineProfiler()
 		lp_wrapper = lp(self.playEpisode)
-		gameObject, win, score, steps, statesEncountered, effectsEncountered = lp_wrapper(gameObject, flexible_goals)
+		gameObject, win, score, steps, statesEncountered, effectsEncountered = lp_wrapper(gameObject, flexible_goals, first_time_playing_level)
 		lp.print_stats()
 		return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
 
-	def playEpisode(self, gameObject, flexible_goals=False):
+	def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False):
 		from vgdl.util import manhattanDist
 
 		## Initialize external environment
@@ -397,7 +392,7 @@ class Agent:
 			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True)
 			print "initializing hypotheses"
 		else:
-			gameObject = self.completeHypotheses(self.all_objects)
+			gameObject = self.completeHypotheses(self.all_objects, first_time_playing_level)
 			print "had hypotheses -- completing them."
 			# If theory is being carried over, falsify termination hypotheses
 			# given new level state
