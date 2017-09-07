@@ -327,7 +327,7 @@ class WBP():
 					if (self.findObjectsInRLE(self.rle, self.rle._game.getAvatars()[0].stype) and
 						bool(self.theory.classes[self.rle._game.getAvatars()[0].stype][0].args['singleton']) and
 						a == K_SPACE):
-					# embed()
+						embed()
 						# Then skip the action
 						skipAction = True
 
