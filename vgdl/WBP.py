@@ -327,11 +327,11 @@ class WBP():
 					if (self.findObjectsInRLE(self.rle, self.rle._game.getAvatars()[0].stype) and
 						bool(self.theory.classes[self.rle._game.getAvatars()[0].stype][0].args['singleton']) and
 						a == K_SPACE):
-						embed()
 						# Then skip the action
 						skipAction = True
 
 				except (IndexError, AttributeError, TypeError) as e:
+					# embed()
 					pass
 
 				if not skipAction:
@@ -464,7 +464,6 @@ class Node():
 			i=0
 			terminal, win = vrle._isDone()
 			print "in rollout"
-			embed()
 			while i<self.rolloutDepth and not terminal:
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
 				# print a
