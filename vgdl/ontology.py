@@ -395,13 +395,13 @@ class ErraticMissile(Missile):
 class Bomber(SpawnPoint, Missile):
     color = ORANGE
     is_static = False
-    lastmove = 0
+    #lastmove = 0
+    cooldown = 3
     def update(self, game):
-        self.cooldown = 3
         self.lastmove -= 1
         Missile.update(self, game)
         SpawnPoint.update(self, game)
-        self.cooldown = 1
+
 
 class Chaser(RandomNPC): ##
     """ Pick an action that will move toward the closest sprite of the provided target type. """
@@ -1783,9 +1783,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         except:
             targets = []
             pass
-        # if current_sprite.colorName=='ORANGE' and 'Chaser' in str(sprite_type):
-        #     print "in updateOptions"
-        #     print current_sprite
+
         options = []
         position_options = {}
 
@@ -1854,10 +1852,17 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
     # Random NPC
     elif sprite_type == RandomNPC:
 
+
+
         realCooldown = int(current_sprite.cooldown)
         speed, cooldown = getSpeed(params), getCooldown(params)
         current_sprite.cooldown = cooldown
         position_options = {}
+
+        # if current_sprite.colorName=='GOLD' and speed==.2:# and 'Random' in str(sprite_type):
+        #     print "in updateOptions"
+        #     print current_sprite
+        #     embed()
 
         for option in BASEDIRS:
             left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed)
@@ -1865,9 +1870,10 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
                 position_options[(left, top)] += 1.0/len(BASEDIRS)
             else:
                 position_options[(left, top)] = 1.0/len(BASEDIRS)
-        if current_sprite.colorName=='GOLD' and speed == 1. and cooldown == 2:
-            print current_sprite.rect
-            print position_options
+        # if current_sprite.colorName=='GOLD' and speed == .2 and cooldown == 3:
+        #     print "Random"
+        #     print current_sprite.rect
+        #     print position_options
         # if current_sprite.colorName == 'RED':
             # print "in updateOptions"
             # print current_sprite, params
@@ -1908,13 +1914,21 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
                 orientation = (orientation[0]*-1, orientation[1]*-1)
 
                 coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
-                clustered_position_options[(coords[0], coords[1])] = .5 - epsilon_prob
+                if (coords[0], coords[1]) in clustered_position_options.keys():
+                    clustered_position_options[(coords[0], coords[1])] += .5 - epsilon_prob
+                else:
+                    clustered_position_options[(coords[0], coords[1])] = .5 - epsilon_prob
 
-            # if current_sprite.colorName=='GOLD' and speed==.8 and cooldown==3:
-                # print "position_options is {}".format(position_options)
-                # print "sprite rect is {}".format(current_sprite.rect)
-                # print "lastmove is {}".format(current_sprite.lastmove)
-                # ipdb.set_trace()
+            # if current_sprite.colorName=='GOLD' and speed==.2 and cooldown==3:
+            #     print "position_options is {}".format(position_options)
+            #     print "sprite rect is {}".format(current_sprite.rect)
+            #     print "lastmove is {}".format(current_sprite.lastmove)
+            #     embed()
+
+            # if current_sprite.colorName=='GOLD' and speed == .2 and cooldown == 3:
+            #     print "Missile"
+            #     print current_sprite.rect
+            #     print position_options
 
             current_sprite.cooldown = realCooldown
             return position_options, clustered_position_options
@@ -2068,6 +2082,8 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
 
     # if game.all_objects[sprite]['features']['color']=='GOLD':
     #     print game.all_objects[sprite]['position']
+    #     print movement_options[sprite][(('vgdlType', RandomNPC), ('cooldown', 3), ('speed', 0.2))]
+    #     print movement_options[sprite][(('vgdlType', Missile), ('cooldown', 3), ('orientation', (1,0)), ('speed', 0.2))]
     #     embed()
     normalization_ratio = 0
     alpha = 1.
@@ -2276,6 +2292,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         best_param = max(param_product, key=param_product.get)
         best_params[obj_type] = best_param
 
+        ## Use for debugging sprite-type inference.
         if obj_type=='GOLD':
             goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='GOLD']
             print [g.rect for g in goldobjs[0]]

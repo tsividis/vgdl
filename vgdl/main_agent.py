@@ -31,9 +31,9 @@ class Agent:
 		self.gameString = None
 		self.levelString = None
 		self.annealingFactor = 1.
-		self.shortHorizon = False
+		self.shortHorizon = True
 		if self.shortHorizon == True:
-			self.starting_max_nodes = 500
+			self.starting_max_nodes = 200
 			self.max_nodes_annealing = 1.05
 		else:
 			self.starting_max_nodes = 10000
@@ -156,7 +156,7 @@ class Agent:
 
 	def initializeHypotheses(self, allObjects, learnSprites=True):
 		if learnSprites:
-			observe(self.rle, 10, self.bestSpriteTypeDict)
+			observe(self.rle, 15, self.bestSpriteTypeDict)
 			spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
 
 			self.rle._game.exceptedObjects = exceptedObjects
@@ -868,7 +868,7 @@ if __name__ == "__main__":
 	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-	gameName = gvggames[1]
+	gameName = gvggames[0]
 
 	gvgname = "../gvgai/training_set_1/{}".format(gameName)
 

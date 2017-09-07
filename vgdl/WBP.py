@@ -60,7 +60,7 @@ class WBP():
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
 		self.classesWhoseLocationsWeIgnore = []
 		self.classesWhosePresenceWeIgnore = []
-		self.allowRollouts = False
+		self.allowRollouts = True
 		self.quitting = False
 		self.gameString_array = []
 		if theory == None:
@@ -327,6 +327,7 @@ class WBP():
 					if (self.findObjectsInRLE(self.rle, self.rle._game.getAvatars()[0].stype) and
 						bool(self.theory.classes[self.rle._game.getAvatars()[0].stype][0].args['singleton']) and
 						a == K_SPACE):
+					# embed()
 						# Then skip the action
 						skipAction = True
 
@@ -463,6 +464,7 @@ class Node():
 			i=0
 			terminal, win = vrle._isDone()
 			print "in rollout"
+			embed()
 			while i<self.rolloutDepth and not terminal:
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
 				# print a
@@ -833,7 +835,7 @@ class Node():
 		for term in theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
-					first_alpha=5000, second_alpha=500)
+					first_alpha=5000, second_alpha=0)
 				# if spritecounter_val!=0:
 					# print("spritecounter_val for {} is equal to {}".format(
 						# term.termination.stype, spritecounter_val))
@@ -841,7 +843,7 @@ class Node():
 
 			elif isinstance(term, MultiSpriteCounterRule):
 				multispritecounter_val = self.multispritecounter_val(theory, term, rle,
-						first_alpha=500, second_alpha=05)
+						first_alpha=500, second_alpha=0)  #500, 5 (normally)
 				# if multispritecounter_val!=0:
 					# print("multispritecounter_val for {} is equal to {}".format(
 						# term.termination.stypes, multispritecounter_val))
@@ -855,7 +857,7 @@ class Node():
 			elif isinstance(term, NoveltyRule):
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
-					first_alpha=2500, second_alpha=250)
+					first_alpha=2500, second_alpha=0)
 				# if noveltytermination_val!=0:
 					# print("noveltytermination_val for {} and {} is equal to {}".format(
 						# term.termination.s1, term.termination.s2, noveltytermination_val))
