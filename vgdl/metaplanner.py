@@ -67,7 +67,7 @@ def translateEvents(events, all_objects, rle):
 
 
 def observe(rle, obsSteps, bestSpriteTypeDict):
-	print "observing"
+	print "observing for {} steps".format(obsSteps)
 	if obsSteps>0:
 		for i in range(obsSteps):
 			# print rle.show()

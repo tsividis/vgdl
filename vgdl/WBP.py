@@ -54,7 +54,7 @@ class WBP():
 		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
-		self.objectNumberTrackingLimit = 25
+		self.objectNumberTrackingLimit = 50
 		self.objectLocationTrackingLimit = 8
 		self.max_nodes = max_nodes
 		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random']
@@ -391,7 +391,6 @@ class WBP():
 		if i>=self.max_nodes:
 			if self.short_horizon:
 				print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
-				# embed()
 				node = max(visited, key=lambda n:n.intrinsic_reward)
 				parentNode = copy.deepcopy(node)
 				self.solution = node.actionSeq

@@ -2405,7 +2405,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 						colorConvertedToSType = theory.spriteObjects[s.stype].className
 						# embed()
 						argsString += " %s=%s"%("stype", colorConvertedToSType)
-					except Keyerror:
+					except KeyError:
 						print "in TheoryToTxt(), search for colorConvertedToSType"
 						embed()
 

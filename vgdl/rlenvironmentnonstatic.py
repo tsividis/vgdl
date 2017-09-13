@@ -393,6 +393,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         for k in self._game.keystate:
             self._game.keystate[k] = False
 
+        # print "reward", reward
         return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
 
 ## the game in the agent's 'head'

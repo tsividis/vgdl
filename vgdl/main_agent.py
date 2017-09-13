@@ -31,9 +31,9 @@ class Agent:
 		self.gameString = None
 		self.levelString = None
 		self.annealingFactor = 1.
-		self.shortHorizon = True
+		self.shortHorizon = False
 		if self.shortHorizon == True:
-			self.starting_max_nodes = 500
+			self.starting_max_nodes = 1000
 			self.max_nodes_annealing = 1.05
 		else:
 			self.starting_max_nodes = 10000
@@ -157,8 +157,8 @@ class Agent:
 	def initializeHypotheses(self, allObjects, learnSprites=True):
 		if learnSprites:
 			observe(self.rle, 15, self.bestSpriteTypeDict)
-			spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
-
+			spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
+				self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
 			self.rle._game.exceptedObjects = exceptedObjects
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 			initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
@@ -189,10 +189,15 @@ class Agent:
 
 	def completeHypotheses(self, allObjects, first_time_playing_level):
 		if first_time_playing_level:
-			print "observing for 15 time steps; first time playing the level."
 			observe(self.rle, 15, self.bestSpriteTypeDict) ## observe many steps so that you're not completely clueless about object movements for the new level
 		else:
 			observe(self.rle, 2, self.bestSpriteTypeDict) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
+		
+		## Make sure any objects that appeared while we were observing are reflected in allObjects
+		for k,v in self.rle._game.getObjects().items():
+			if k not in allObjects:
+				allObjects[k] = v
+
 		spriteTypeHypothesis, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
 		gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 		newHypotheses = []
@@ -417,6 +422,8 @@ class Agent:
 				objectPositionsArray = objectPositionsArray[::-1]
 			else:
 				solution = []
+
+
 
 			if solution and not p.quitting:
 				print "============================================="
