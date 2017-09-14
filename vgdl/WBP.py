@@ -343,13 +343,22 @@ class WBP():
 					if self.firstOrderHorizon:
 						# Return plan if first-order progress was made towards
 						# a win condition
+						foundWin = False
 						for term in self.theory.terminationSet:
 							if isinstance(term, SpriteCounterRule) and term.termination.win==True:
-								stype = term.termination.stype
+								stypes = [term.termination.stype]
+							elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
+								stypes = term.termination.stypes
+							else:
+								stypes = []
+							for stype in stypes:
 								n_stypes = len([0 for sprite in self.findObjectsInRLE(child.rle, stype)])
-								if self.starting_stype_n[stype] > n_stypes:
+								if stype in self.starting_stype_n.keys() and self.starting_stype_n[stype] > n_stypes:
 									child.terminal, child.win = True, True
+									foundWin = True
 									break
+							if foundWin:
+								break
 
 					if child.win:
 						# Get the gameString representation of the RLE at each

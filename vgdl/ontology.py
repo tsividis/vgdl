@@ -396,7 +396,6 @@ class Bomber(SpawnPoint, Missile):
     color = ORANGE
     is_static = False
     #lastmove = 0
-    cooldown = 3
     def update(self, game):
         self.lastmove -= 1
         Missile.update(self, game)
@@ -1368,7 +1367,7 @@ def attractGaze(sprite, partner, game, prob=0.5):
 
 def turnAround(sprite, partner, game):
     sprite.rect = sprite.lastrect
-    sprite.lastmove = sprite.cooldown
+    sprite.lastmove = sprite.cooldown -1 ## Needed because updatePos looks for lastmove+1%cooldown==0
     # sprite.lastmove = 4
     sprite.physics.activeMovement(sprite, DOWN)
     # sprite.lastmove = sprite.cooldown
@@ -1381,7 +1380,7 @@ def turnAround(sprite, partner, game):
 
 def turn(sprite, partner, game):
     sprite.rect = sprite.lastrect
-    sprite.lastmove = sprite.cooldown
+    sprite.lastmove = sprite.cooldown -1 ## Needed because updatePos looks for lastmove+1%cooldown==0
     # sprite.physics.activeMovement(sprite, DOWN)
     # sprite.lastmove = sprite.cooldown
     # sprite.physics.activeMovement(sprite, DOWN)
