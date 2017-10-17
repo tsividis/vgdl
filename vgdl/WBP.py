@@ -1,16 +1,13 @@
 #! /home/eshnich/.conda/envs/planning/bin/python
 
-print "STARTING!"
 import sys
 import os
 sys.path.append('/om/user/eshnich/vgdl/vgdl') 
-print "step1"
 from IPython import embed
 import itertools
 import numpy as np
 from numpy import zeros
 import pygame
-print "step2"
 from ontology import BASEDIRS
 import ontology
 import core
@@ -24,25 +21,17 @@ from threading import Thread
 from threading import Lock
 from collections import defaultdict, deque
 import time
-print "step3"
-#import ipdb
-#import vgdl
 import heapq
 import copy
 from threading import Lock
-print "a"
 from Queue import Queue
 from util import *
-print "b"
 import multiprocessing
-#import ctypes
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
-print "c"
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, \
 NoveltyRule, generateSymbolDict, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryFromGame
 from rlenvironmentnonstatic import createRLInputGame
-print "step4"
 from line_profiler import LineProfiler
 import cPickle
 
@@ -81,7 +70,7 @@ print "FINISHED SETTING VALUES"
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=100, limit=LIMIT, grid_limit=GRID_LIMIT):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=5000, limit=LIMIT, grid_limit=GRID_LIMIT):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -117,11 +106,7 @@ class WBP():
 		i=1
 		for k in rle._game.all_objects.keys():
 			self.objIDs[k] = i * (self.vecDim[0]+self.padding)
-			
-
 			if isinstance(rle._game.all_objects[k]['sprite'],vgdl.core.Avatar):
-				
-				#embed()
 				self.avatar_ID = i * (self.vecDim[0]+self.padding)
 			i+=1
 
@@ -133,7 +118,7 @@ class WBP():
 		self.no_key = defaultdict(lambda:0)
 		self.graph = {}
 
-		self.distances = self.dijkstra() #uncomment if any other game than breakout
+		#self.distances = self.dijkstra() #uncomment if any other game than breakout
 
 		self.num_paths = 1
 		self.all_paths = []
@@ -144,6 +129,8 @@ class WBP():
 
 		self.wait_steps = 0
 
+	#ignore this - we're not using geodesic distance
+	'''
 	def makeGraph(self):
 		graph = {}
 		wallLocs = self.findObjectsInRLE(self.rle,'wall')
@@ -211,6 +198,7 @@ class WBP():
 					queue.add(neighbor)
 		return dist
 
+	'''
 	def grid(self,loc):
 		return (loc[0]/self.square_size[0],loc[1]/self.square_size[1])
 
@@ -297,7 +285,7 @@ class WBP():
 					
 		return dist
 		'''
-
+	'''
 	def loop4d(self):
 		array = []
 		for x1 in [0,1]:
@@ -313,6 +301,7 @@ class WBP():
 			if exp[i]:
 					prod*=var[i]
 		return prod
+	'''
 
 	#------------------------------------------------------
 
@@ -513,6 +502,7 @@ class WBP():
 		badNodes = []
 		for n in QReward:
 			if n.novelty >= 3:
+				#print n.actionSeq
 				badNodes.append(n)
 		for n in badNodes:
 			QReward.remove(n)
@@ -550,18 +540,19 @@ class WBP():
 		found_key = False
 
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
-		
+			#print [j.actionSeq for j in QReward]
 			current = self.rewardSelection(QReward, QNovelty)
-
+			#print [j.actionSeq for j in QReward]
 			if current is None:
 				self.quitting = True
 				#print(i)
 				print("quitting, no novel node found")
 				#embed()
 				break
-				
+			
 			self.statesEncountered.append(current.rle._game.getFullState())
 			current.updateNoveltyDict(QNovelty, QReward)
+			#print [j.actionSeq for j in QReward]
 			visited.append(current)
 			#print current.predict
 			'''
@@ -590,13 +581,17 @@ class WBP():
 			self.getActions(current.rle)
 
 			actions = self.actions
+			#print actions
 			if self.canJump:
 				try:
-					if self.getAliveAvatar(current.rle).jumping:
+					if self.getAliveAvatar(current.rle).jumping and self.gravity:
 						actions = [NONE]
 				except:
 					pass
+			#print actions
 
+			actions = [NONE, K_SPACE, K_LEFT, K_RIGHT,K_UP,K_DOWN]
+			embed()
 			for a in actions:
 
 				child = Node(self.rle, self, current.actionSeq+[a], current)
@@ -636,6 +631,7 @@ class WBP():
 					#if child.isTerminal() and not child.isWin():
 					#	print("LOSE")
 					#else:
+					print child.actionSeq
 					QReward.append(child)
 			i+=1
 
@@ -1007,7 +1003,7 @@ class Node():
 				possiblePairList = [self.WBP.geoDist(obj,pos)
 					 for pos in s2_positions
 					 for obj in s1_positions
-					 if geoDist(obj,pos) != 0]
+					 if self.WBP.geoDist(obj,pos) != 0]
 				
 
 				
@@ -1156,7 +1152,7 @@ class Node():
 				noveltytermination_val = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				print("NOVELTY")
+				#print("NOVELTY")
 				# print("noveltytermination_val for {} and {} is equal to {}".format(
 					# term.termination.s1, term.termination.s2, noveltytermination_val))
 				if 'avatar' == term.termination.s2:
@@ -1406,7 +1402,7 @@ if __name__ == "__main__":
 	#gameFilename = "examples.continuousphysics.montezuma_new"
 	#gameFilename = "examples.continuousphysics.montezuma_3"
 	#gameFilename = "examples.continuousphysics.montezuma_medium"
-	#gameFilename = "examples.continuousphysics.ladder"
+	gameFilename = "examples.continuousphysics.ladder"
 	#gameFilename = "examples.continuousphysics.simple"
 	#gameFilename = "examples.continuousphysics.crossroad"
 	#gameFilename = "examples.continuousphysics.collect_key"
@@ -1419,13 +1415,13 @@ if __name__ == "__main__":
 	#gameFilename = "examples.continuousphysics.ptsp"
 	#gameFilename = "examples.continuousphysics.breakout"
 
-	
+
 	#gameString, levelString = defInputGame(gameFilename, randomize=True)
 
-	#rleCreateFunc = lambda: createRLInputGame(gameFilename)
+	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	
-	gameFilename = "examples.continuousphysics.montezuma_3"
-	rleCreateFunc = lambda: createRLInputGameFromPositions(gameFilename)
+	#gameFilename = "examples.continuousphysics.montezuma_3"
+	#rleCreateFunc = lambda: createRLInputGameFromPositions(gameFilename)
 
 
 	rle = rleCreateFunc()
@@ -1435,11 +1431,12 @@ if __name__ == "__main__":
 	t1 = time.time()
 	p = WBP(rle, gameFilename)
 	
-	last, gameString_array, nodes = p.parallelBFS(1)
+	#last, gameString_array, nodes = p.parallelBFS(1)
+	last, gameString_array, nodes = p.BFS()
 	print p.avatar_locs_disc
 	print last
 	print len(last.actionSeq)
 	#print len(gameString_array)
-	print p.nodes
-	print p.won
+	print nodes
+	#print p.won
 	print time.time()-t1

@@ -39,6 +39,8 @@ BasicGame
         1 > goomba
 """
 
+level_game_pairs = [[game, level]]
+
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     VGDLParser.playGame(game, level)

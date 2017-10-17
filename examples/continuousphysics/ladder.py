@@ -5,23 +5,18 @@ BasicGame
         goal > Immovable color=GREEN
         wall > Immovable color=BLACK
         ladder > Immovable color=YELLOW
-
         avatar > MarioAvatar strength=22 physicstype=GravityPhysics color=WHITE
-        ladderavatar > VerticalAvatar speed=0.3 color=WHITE
+        
 
     TerminationSet
         SpriteCounter stype=goal      win=True
-        MultiSpriteCounter stype1=avatar stype2=ladderavatar win=False
+        SpriteCounter stype=avatar     win=False
 
     InteractionSet
 
         avatar EOS  > killSprite
-        ladderavatar EOS > killSprite
         goal avatar > killSprite
         avatar wall > wallStop
-
-        ladderavatar background > transformTo stype=avatar
-        avatar ladder > transformTo stype=ladderavatar
 
     LevelMapping
         . > background
@@ -29,6 +24,9 @@ BasicGame
         G > background goal
         l > background ladder
 """
+
+#ladderavatar > VerticalAvatar speed=0.3 color=WHITE
+#
 
 level = """
 wwwwwwww
