@@ -29,7 +29,6 @@ game = """
 BasicGame
     SpriteSet 
         avatar > MarioAvatar strength=22 physicstype=GravityPhysics color=WHITE
-        keyavatar > MarioAvatar strength=22 physicstype=GravityPhysics color=WHITE
         goal > Immovable color=GREEN
         wall > Immovable color=BLACK
         key > Resource limit=1 color=GOLD
