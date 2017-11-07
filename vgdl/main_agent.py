@@ -66,12 +66,6 @@ class Agent:
 			self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
 		self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
 		self.rle = self.rleCreateFunc()
-
-		# global WBP
-		# if 'Grid' in str(self.rle._game.sprite_groups['avatar'][0].physicstype):
-		# 	import WBP_grid as WBP
-		# else:
-		# 	import WBP_continuous as WBP
 		self.rle._game.spriteUpdateDict = self.spriteUpdateDict
 		return
 
@@ -840,7 +834,8 @@ if __name__ == "__main__":
 
 	##simpleGame_missile: no support for learning that it can shoot things.
 
-	filename = "examples.gridphysics.expt_antagonist"
+	# filename = "examples.gridphysics.expt_antagonist"
+	filename = "examples.continuousphysics.collect_resource"
 
 	global WBP
 	if 'grid' in filename:
@@ -885,13 +880,13 @@ if __name__ == "__main__":
 			level_game_pairs.append([gameString, level.read()])
 
 	##uncomment this line to run local games
-	# gameName = filename
+	gameName = filename
 
 	agent = Agent('full', gameName)
 
 	##then pass this down for multiple episodes
-	gameObject = None
-	agent.playCurriculum(level_game_pairs=level_game_pairs)
+	# gameObject = None
+	# agent.playCurriculum(level_game_pairs=level_game_pairs)
 
 	##and use this line
-	# agent.playCurriculum(level_game_pairs=None)
+	agent.playCurriculum(level_game_pairs=None)

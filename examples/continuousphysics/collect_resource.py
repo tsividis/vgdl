@@ -56,6 +56,7 @@ BasicGame
 """
 
 
+level_game_pairs = [[game, level]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
