@@ -138,7 +138,7 @@ class WBP():
 				spacebarAvailable = True
 				break
 		if spacebarAvailable:
-			self.actions = [NONE, K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE]
+			self.actions = [NONE, K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
 		else:
 			self.actions = [NONE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
 		if self.addWaitAction:
@@ -451,8 +451,8 @@ class Node():
 		# metabolic_cost = 1./n
 		metabolic_cost = 0
 		# if action==32:
-		if action!=NONE:
-			metabolic_cost += 1./n
+		if action!=NONE or action!=32:
+			metabolic_cost += 20#1./n
 			pass
 		if len(events)>0:
 			# metabolic_cost = .3
@@ -461,7 +461,7 @@ class Node():
 				pass
 			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
 			# 	metabolic_cost += 0.3
-		metabolic_cost = 0
+		# metabolic_cost = 0
 		return metabolic_cost
 
 	def rollout(self, Vrle):
@@ -633,7 +633,7 @@ class Node():
 				distance = 0
 
 			if possiblePairList:
-				n_sprites = len(possiblePairList) ## TODO: you're normalizing by the number of possible pair sof killer_sprites and target_sprites; you should just normalize by the number of targets
+				n_sprites = len(possiblePairList) ## TODO: you're normalizing by the number of possible pairs of killer_sprites and target_sprites; you should just normalize by the number of targets
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
 				val += float(mult * second_alpha * distance)/n_sprites**2

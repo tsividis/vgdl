@@ -392,7 +392,7 @@ class Theory(object):
 				theories.append(self)
 			# Add preconditions
 			elif failCase in [1,2,3]:
-				if failCase ==2 and event[0]=='killIfFromAbove': ## we're forgoing the process of doing proper precondition reasoning here; would be straightforward to do it.
+				if failCase == 2 and event[0]=='killIfFromAbove': ## we're forgoing the process of doing proper precondition reasoning here; would be straightforward to do it.
 					# interpretation = self.interpret(event)
 					theories.extend(self.addRules(event))
 				else:
@@ -2407,7 +2407,9 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 						argsString += " %s=%s"%("stype", colorConvertedToSType)
 					except KeyError:
 						print "in TheoryToTxt(), search for colorConvertedToSType"
-						embed()
+						## TODO: If you, say, hypothesize that a missile is a Chaser and that it chases some random color but you don't have that color in your theory yet,
+						## you can end up here.
+						# embed()
 
 
 

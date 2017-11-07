@@ -150,7 +150,7 @@ BasicGame frame_rate=30
     InteractionSet
         avatar wall > stepBack
         medicine avatar > killSprite
-        avatar poison > killIfHasLess resource=medicine limit=0
+        avatar poison > killIfHasLess resource=medicine limit=1
         avatar poison > changeResource resource=medicine value=-1
         avatar medicine > changeResource resource=medicine value=1
         box avatar > killSprite

@@ -43,7 +43,6 @@ class Agent:
 		self.selective_regrounding = True
 		self.avoid_danger = True
 		self.safeDistance = 6
-		self.max_quits = 3
 		self.emptyPlansLimit = 5
 		self.longHorizonObservationLimit = 2
 		self.hypotheses = []
@@ -55,7 +54,8 @@ class Agent:
 		self.bestSpriteTypeDict = defaultdict(lambda : {})
 		self.spriteUpdateDict = defaultdict(lambda : 0)
 		self.best_params = None
-		# self.bestSpriteTypeDict = defaultdict(lambda: {'count':0, 'distribution':None}) ## To track how many times we have run spriteType updates to each particular object
+		## To track how many times we have run spriteType updates to each particular object
+		# self.bestSpriteTypeDict = defaultdict(lambda: {'count':0, 'distribution':None})
 		self.seen_resources = []
 		self.seen_limits = []
 		self.new_objects = {}
@@ -450,10 +450,6 @@ class Agent:
 			if emptyPlans > self.emptyPlansLimit:
 				observe(self.rle, 5, self.bestSpriteTypeDict)
 
-			# self.quits += p.quitting #1 if p.quitting else 0
-
-			# quitting = self.quits>self.max_quits
-
 			if not quitting:
 				for i, action in enumerate(solution):
 					self.hypotheses[0].dryingPaint = set()
@@ -844,7 +840,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.pick_apples"
 	# filename = "examples.gridphysics.expt_exploration_exploitation_debugging"
 
-	filename = "examples.gridphysics.theorytest"
+	filename = "examples.gridphysics.expt_antagonist"
 
 	level_game_pairs = None
 	# Playing GVG-AI games
@@ -870,7 +866,7 @@ if __name__ == "__main__":
 	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-	gameName = gvggames[0]
+	gameName = gvggames[6]
 
 	gvgname = "../gvgai/training_set_1/{}".format(gameName)
 
@@ -884,7 +880,6 @@ if __name__ == "__main__":
 
 	##uncomment this line to run local games
 	# gameName = filename
-
 
 	agent = Agent('full', gameName)
 
