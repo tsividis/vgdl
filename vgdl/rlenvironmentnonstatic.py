@@ -20,7 +20,8 @@ import math
 import importlib
 from util import factorize, objectsToSymbol
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
-#from line_profiler import LineProfiler
+from line_profiler import LineProfiler
+
 
 OBSERVATION_LOCAL = 'local'
 OBSERVATION_GLOBAL = 'global'
@@ -42,10 +43,21 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     recordingEnabled = False
 
     def __init__(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, actionset=BASEDIRS, positions=None, **kwargs):
+        self.initial(gameDef, levelDef)
+
+    def init_profiler(self,gameDef,levelDef):
+        lp = LineProfiler()
+        lp_wrapper = lp(self.initial)
+        output = lp_wrapper(gameDef,levelDef)
+        lp.print_stats()
+        #return output
+
+    def initial(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, actionset=BASEDIRS, positions=None, **kwargs):
         if positions is not None:
             game = _createVGDLGameFromPos(gameDef,positions)
         else:
             game = _createVGDLGame( gameDef, levelDef )
+            #game = createGame_profiler( gameDef, levelDef )
         StateObsHandlerNonStatic.__init__(self, game, **kwargs)
         self._actionset = actionset
         self.visualize = visualize
@@ -264,6 +276,14 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                         res[i] = int(res[i]) | (2<<s)
         return res
 
+    def actionProfiler(self,action):
+        lp = LineProfiler()
+        lp_wrapper = lp(self._performAction)
+        output = lp_wrapper(action)
+        lp.print_stats()
+
+        return output
+
     def _performAction(self, action=[], onlyavatar=False):
 
         """ Action is an index for the actionset.  """
@@ -314,16 +334,18 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
         # self._gravepoints[(skey, self._rect2pos(s.rect))] = True
 
-
+        '''
         ## Added 5/2, to correct for the fact that some gmaes don't have _gravepoints by default
         if not hasattr(self, '_gravepoints'):
             self._gravepoints = {}
         
         # ### BEGINNING OF CHANGES
+
         for skey in self._other_types:
             ss = self._game.sprite_groups[skey]
             self._obstypes[skey] = [self._sprite2state(sprite, oriented=False)
                                         for sprite in ss]
+
                 ## Added 4/31
         ## Logic (I think) was to make sure everything that could exist was in gravepoints because
         ## getState (defined in stateobsnonstatic) uses it to populate getState, getSensors, etc.
@@ -335,6 +357,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # embed()
         #print("hi")
         #print(self._avatar.rect)
+        '''
         return events
 
         # if self.visualize:
@@ -351,7 +374,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         #     self._previous_state = self._last_state
         #     self._last_state = self.getState()
         #     self._allEvents.append((self._previous_state, action, self._last_state))
-
+    
     def step_profiler(self, action):
         lp = LineProfiler()
         lp_wrapper = lp(self.step)
@@ -369,6 +392,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         pre_step_score = self._game.score
         #print("start action")
         events = self._performAction(action)
+        #events = self.actionProfiler(action)
         #print("end action")
         #observation = self._getSensors()
         observation = 0
@@ -488,11 +512,21 @@ def defInputGame(filename, randomize=False, index=None):
     else:
         return (game_file.game, game_file.level)
 
+def createGame_profiler(gameSpec, levelSpec):
+    lp = LineProfiler()
+    lp_wrapper = lp(_createVGDLGame)
+    output = lp_wrapper(gameSpec,levelSpec)
+    lp.print_stats()
+    return output
+
 def _createVGDLGame( gameSpec, levelSpec ):
+    #can move these imports out, especially if we wanna do this a lot
     import uuid
     from vgdl.core import VGDLParser
     # parse, run and play.
-    game = VGDLParser().parseGame(gameSpec)
+    parser = VGDLParser()
+    game = parser.parseGame(gameSpec)
+    #game = parser.parseProfiler(gameSpec)
     game.buildLevel(levelSpec)
     game.uiud = uuid.uuid4()
     return game
@@ -646,10 +680,11 @@ def createRLInputGameFromPositions(filename, positions=None):
         positions = game_file.positions
     return RLEnvironmentNonStatic(game_file.game, None, positions = positions, observationType= OBSERVATION_GLOBAL)
 
+
 def createRLInputGameFromStrings(game, level):
     return RLEnvironmentNonStatic(game, level, \
             observationType = OBSERVATION_GLOBAL)
-
+    #return init_profiler(game,level)
 
 def testMaze(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
     rle = createRLMaze( obsType )

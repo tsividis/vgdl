@@ -23,6 +23,9 @@ BasicGame
         avatar EOS  > killSprite
         goomba EOS > killSprite
 
+        avatar ladder > onLadder
+
+        avatar rope > onRope
         
         goal avatar > killIfOtherHasMore resource=key
         key avatar > killSprite
@@ -86,7 +89,7 @@ pos['background'] = [(i,j) for i in range(dims[0]) for j in range(dims[1])]
 pos['wall'] = [(i,j) for i in range(dims[0]) for j in range(dims[1]) if i in [0,dims[0]-1] or j in [0,dims[1]-1]]
 pos['avatar'] = [(13,3)]
 #pos['ladder'] = [(12,3.9),(12,4.9),(12,5.9),(2,7.9),(2,8.9),(2,9.9),(22,7.9),(22,8.9),(22,9.9)]
-pos['ladder'] = [(12,3.9),(22,7.9),(2,7.9)]
+pos['ladder'] = [(12,3.75),(22,7.75),(2,7.75)]
 pos['conveyor'] = [(10,8),(11,8),(12,8),(13,8),(14,8)]
 pos['rope'] = [(17.375,i) for i in range(4,8)]
 pos['key'] = [(1.5,5)]

@@ -31,7 +31,7 @@ from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chas
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, \
 NoveltyRule, generateSymbolDict, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryFromGame
-from rlenvironmentnonstatic import createRLInputGame
+from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings
 from line_profiler import LineProfiler
 import cPickle
 
@@ -591,7 +591,7 @@ class WBP():
 			#print actions
 
 			actions = [NONE, K_SPACE, K_LEFT, K_RIGHT,K_UP,K_DOWN]
-			embed()
+			#embed()
 			for a in actions:
 
 				child = Node(self.rle, self, current.actionSeq+[a], current)
@@ -631,7 +631,7 @@ class WBP():
 					#if child.isTerminal() and not child.isWin():
 					#	print("LOSE")
 					#else:
-					print child.actionSeq
+					#print child.actionSeq
 					QReward.append(child)
 			i+=1
 
@@ -1190,6 +1190,7 @@ class Node():
 					a = self.actionSeq[-1]
 
 					res = vrle.step(a)
+					#res = vrle.step_profiler(a)
 					
 					# relevantEvents = [t for t in res['effectList'] if t[0] == 'stepBack']
 					# if relevantEvents:
@@ -1208,6 +1209,7 @@ class Node():
 			while not terminal and len(self.actionSeq)>i:
 				a = self.actionSeq[i]
 				res = vrle.step(a)
+				#res = vrle.step_profiler(a)
 				self.metabolic_cost += self.metabolics(vrle, res['effectList'], a)
 				terminal, win = vrle._isDone()
 				i += 1
@@ -1388,9 +1390,20 @@ def multi_plan():
 
 	print time.time()-t1
 	embed()
+def make_rle_profiler(gameFilename):
+	lp = LineProfiler()
+	lp_wrapper = lp(make_rle)
+	output = lp_wrapper(gameFilename)
+	lp.print_stats()
+	return output
 
-
-
+def make_rle(gameFilename):
+	gameString, levelString = defInputGame(gameFilename, randomize=False)
+	#rleCreateFunc = lambda: createRLInputGame(gameFilename)
+	#embed()
+	rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
+	rle = rleCreateFunc()
+	return rle
 if __name__ == "__main__":
 
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
@@ -1402,11 +1415,11 @@ if __name__ == "__main__":
 	#gameFilename = "examples.continuousphysics.montezuma_new"
 	#gameFilename = "examples.continuousphysics.montezuma_3"
 	#gameFilename = "examples.continuousphysics.montezuma_medium"
-	gameFilename = "examples.continuousphysics.ladder"
+	#gameFilename = "examples.continuousphysics.ladder"
 	#gameFilename = "examples.continuousphysics.simple"
 	#gameFilename = "examples.continuousphysics.crossroad"
 	#gameFilename = "examples.continuousphysics.collect_key"
-	#gameFilename = "examples.continuousphysics.collect_resource"
+	gameFilename = "examples.continuousphysics.collect_resource"
 	#gameFilename = "examples.continuousphysics.rope_test"
 	#gameFilename = "examples.gridphysics.simple_grid"
 	#gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
@@ -1415,8 +1428,8 @@ if __name__ == "__main__":
 	#gameFilename = "examples.continuousphysics.ptsp"
 	#gameFilename = "examples.continuousphysics.breakout"
 
-
-	#gameString, levelString = defInputGame(gameFilename, randomize=True)
+	'''
+	gameString, levelString = defInputGame(gameFilename, randomize=True)
 
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	
@@ -1425,7 +1438,8 @@ if __name__ == "__main__":
 
 
 	rle = rleCreateFunc()
-
+	'''
+	rle = make_rle(gameFilename)
 	times = []
 
 	t1 = time.time()

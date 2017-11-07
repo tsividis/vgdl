@@ -1014,26 +1014,6 @@ class MarioAvatar(InertialAvatar):
 
         from pygame.locals import K_SPACE
 
-        #print self.gravity
-
-        if len(self.rect.collidelistall(game.sprite_groups['ladder'])) >0:
-            self.gravity = False
-            if self.last_gravity:
-                self.speed = 0
-            self.rope = False
-            #self.speed = self.speed *self.orientation[0]
-            #self.orientation = (1,0)
-        elif len(self.rect.collidelistall(game.sprite_groups['rope'])) > 0:
-            self.gravity = False
-            if self.last_gravity:
-                self.speed = 0
-            self.rope = True
-            if not self.last_rope:
-                self.jumping = False
-        else: 
-            self.gravity = True
-            self.rope = False
-
 
         if self.lastrect == self.rect and not self.jumping:
             self.speed = self.speed * self.orientation[0]
@@ -1110,17 +1090,20 @@ class MarioAvatar(InertialAvatar):
         #print (self.orientation[0]*self.speed, self.orientation[1]*self.speed)
 
         # a less precise vy, but this is useful
-        self.last_vy = self.lastrect.y-self.rect.y
-        self.last_gravity = self.gravity
-        self.last_rope = self.rope
+
 
         #two_ago = self.lastrect.y
-        VGDLSprite.update(self, game)
+        
         #if self.rect.y == self.lastrect.y and self.rect.y == two_ago:
         #    self.jumping = False
 
         
-
+        self.last_vy = self.lastrect.y-self.rect.y
+        VGDLSprite.update(self, game)
+        self.last_gravity = self.gravity
+        self.gravity = True
+        self.last_rope = self.rope
+        self.rope = False
 
 
         #print self.orientation
@@ -1774,6 +1757,23 @@ def teleportToExit(sprite, partner, game):
 def killIfTooFast(sprite,partner,game, speed):
     if sprite.speed*sprite.orientation[1] > speed:
         return killSprite(sprite, partner, game)
+
+def onLadder(sprite, partner, game):
+
+    sprite.gravity = False
+    if sprite.last_gravity:
+        sprite.speed = 0
+    return ('onLadder', sprite.ID, partner.ID)
+
+def onRope(sprite, partner, game):
+    sprite.gravity = False
+    if sprite.last_gravity:
+        sprite.speed = 0
+    sprite.rope = True
+    if not sprite.last_rope:
+        sprite.jumping = False
+
+
 
 
 # this allows us to determine whether the game has stochastic elements or not

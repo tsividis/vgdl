@@ -33,6 +33,7 @@ BasicGame
 			enemy > RandomNPC
 				crab > color=RED
 				butterfly > color=PINK
+		wall > Immovable color=BLACK
 	LevelMapping
 		. > dirt
 		E > exitdoor
@@ -40,6 +41,7 @@ BasicGame
 		x > diamond
 		c > crab
 		b > butterfly
+		w > wall
 	InteractionSet
 		dirt avatar > killSprite
 		dirt sword  > killSprite

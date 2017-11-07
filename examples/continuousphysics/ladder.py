@@ -15,6 +15,7 @@ BasicGame
     InteractionSet
 
         avatar EOS  > killSprite
+        avatar ladder > onLadder
         goal avatar > killSprite
         avatar wall > wallStop
 
@@ -31,8 +32,8 @@ BasicGame
 level = """
 wwwwwwww
 w......w
-w.....Gw
-wwwlwwww
+w..G...w
+wwlllwww
 w..l...w
 w..l...w
 w......w
