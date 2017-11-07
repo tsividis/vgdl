@@ -14,7 +14,7 @@ import numpy as np
 import scipy.stats
 from tools import triPoints, unitVector, vectNorm, oncePerStep
 from ai import AStarWorld
-#from IPython import embed
+from IPython import embed
 import core
 import copy
 import ipdb
@@ -959,7 +959,7 @@ class InertialAvatar(OrientedAvatar):
 class MarioAvatar(InertialAvatar):
     physicstype = GravityPhysics
     draw_arrow = False
-    strength = 1
+    strength = 22 #1
     movestrength = sqrt(strength)
     vx_max = 8
     airsteering = False
@@ -1681,7 +1681,7 @@ def wallStop(sprite, partner, game, friction=0): # FLAG
     sprite.speed = vectNorm(sprite.orientation) * sprite.speed
     sprite.orientation = unitVector(sprite.orientation)
     ## TODO: Not printing for now
-    #return ('wallStop' , sprite.ID, partner.ID)
+    return ('wallStop', sprite.ID, partner.ID)
 
 def killIfSlow(sprite, partner, game, limitspeed=1):
     """ Take a decision based on relative speed. """
@@ -1755,6 +1755,7 @@ def killIfHasMore(sprite, partner, game, resource, limit=1):
 
 def killIfOtherHasMore(sprite, partner, game, resource, limit=1):
     """ If 'partner' has more than a limit of the resource type given, sprite dies. """
+    #embed()
     if partner.resources[resource] >= limit:
         return killSprite(sprite, partner, game)
         # return ('killIfOtherHasMore' , sprite.ID, partner.ID)
@@ -2447,7 +2448,6 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
                 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
                     AimedFlakAvatar, InertialAvatar, MarioAvatar
-
             try:
                 ## Add avatar, and add the attached arguments, i.e., what the avatar shoots.
                 sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
@@ -2457,7 +2457,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                 ao_vgdl_type = ao[0]
                 ao_color = colorDict[str(ao[1]['color'])]
                 ao_args = ao[1]
-                # embed()
+                
                 ao_args.update({'singleton': 'True'})
                 sample.append(Sprite(vgdlType=ao_vgdl_type, color=ao_color, className=all_objects[k]['sprite'].stype, args=ao_args))
                 # sample.append(Sprite(vgdlType=Flicker, color='BLUE', className=all_objects[k]['sprite'].stype, args={'singleton':'True'}))
@@ -2466,7 +2466,8 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                 # sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'healthPoints':all_objects[k]['sprite'].healthPoints}))
             except AttributeError:
                 # No args in avatar
-                sample.append(Sprite(vgdlType=MovingAvatar, color=all_objects[k]['type']['color']))
+
+                sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color']))
 
     ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
     types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions)) ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately

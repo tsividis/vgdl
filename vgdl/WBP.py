@@ -459,6 +459,7 @@ class WBP():
 
 		elif isinstance(avatar,vgdl.ontology.MarioAvatar):
 			self.actions = [K_SPACE, K_LEFT, K_RIGHT]
+			print "MARIO"
 			self.canJump = True
 
 		else:

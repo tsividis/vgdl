@@ -395,6 +395,7 @@ class WBP():
 
 		elif isinstance(avatar,vgdl.ontology.MarioAvatar):
 			self.actions = [K_SPACE, K_LEFT, K_RIGHT]
+			#print "MARIO"
 			self.canJump = True
 
 		else:
@@ -579,11 +580,11 @@ class WBP():
 				else:
 					self.no_key[loc] += 1
 				self.avatar_locs_disc[loc] += 1
-				print loc
+				#print loc
 			else:
 				print "NO AVATAR"
 				#embed()
-			print avatar
+			#print avatar
 			if i % 500 == 0:
 				print self.avatar_locs_disc
 				print self.key
@@ -600,7 +601,8 @@ class WBP():
 					pass
 
 			for a in actions:
-
+				#if a == K_SPACE:
+				#	embed()
 				child = Node(self.rle, self, current.actionSeq+[a], current)
 				child.eval()
 
