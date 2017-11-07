@@ -3,10 +3,7 @@ VGDL example: Pong, two-players and a ball
 
 @author: Tom Schaul
 '''
-
-
-
-pong_game = """
+game = """
 BasicGame
     SpriteSet
         goal > Immovable color=GREEN
@@ -34,7 +31,7 @@ BasicGame
         o > ball
 """
 
-pong_level = """
+level = """
 wwwwwwwwwwwwwwwwwwwwww
 w+                  -w
 w+                  -w
@@ -49,4 +46,4 @@ wwwwwwwwwwwwwwwwwwwwww
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(pong_game, pong_level)
+    VGDLParser.playGame(game, level)

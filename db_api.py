@@ -4,7 +4,7 @@ import sys
 import csv
 from collections import defaultdict
 from vgdl import core
-
+from IPython import embed
 
 # Run with db_api.py [exp_id] [game_number] [round_number]
 
@@ -121,7 +121,6 @@ if __name__ == '__main__':
 		generate_csv(cur, sys.argv[2])
 	elif len(sys.argv) == 2 and sys.argv[1] == 'logs':
 		print_logs(cur)
-
 	else:
 		print '--------------------------------------------------------------'
 		print 'python db_api.py [exp_id] [game_num] [level_num] [round_num] \n\t to view an experiment playback'

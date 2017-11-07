@@ -10,7 +10,12 @@ from collections import defaultdict
 import WBP
 import importlib
 import numpy as np
+<<<<<<< HEAD
 import ipdb, time
+=======
+import ipdb
+import os, subprocess, shutil
+>>>>>>> origin/continuous_planning
 import copy
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
@@ -212,11 +217,17 @@ class Agent:
 		if not level_game_pairs:
 			level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
 		episodes = []
+<<<<<<< HEAD
 		allEffectsEncountered = []
 		shutil.rmtree("images/tmp")
 		os.makedirs("images/tmp")
 		j=0
 		flexible_goals = False
+=======
+
+		shutil.rmtree("images/tmp")
+		os.makedirs("images/tmp")
+>>>>>>> origin/continuous_planning
 		for n_level, level_game in enumerate(level_game_pairs):
 
 			print("Playing level {}".format(n_level))

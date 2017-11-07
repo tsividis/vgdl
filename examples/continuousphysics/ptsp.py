@@ -9,16 +9,16 @@ ptsp_game = """
 BasicGame
     SpriteSet    
         pad    > Immovable color=BLUE 
-        inertial > 
-            avatar > InertialAvatar
-            bullet > RandomInertial
+        avatar > InertialAvatar
+        bullet > RandomInertial
             
     TerminationSet
         SpriteCounter stype=pad    win=True     
         SpriteCounter stype=avatar win=False     
            
     InteractionSet
-        inertial wall > wallBounce 
+        avatar wall > wallBounce
+        bullet wall > wallBounce
         avatar bullet > killSprite
         pad avatar    > killSprite
         

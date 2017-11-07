@@ -14,13 +14,13 @@ import datetime
 import uuid
 import subprocess
 import glob
-import ipdb
+#import ipdb
 from copy import deepcopy
 import logging
 import numpy as np
 import sys
 import re
-from IPython import embed
+#from IPython import embed
 import time
 import os
 import uuid
@@ -45,11 +45,13 @@ class VGDLParser(object):
 
 
     @staticmethod
-    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", padding=0):
+    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", padding=0,positions=None):
         """ Parses the game and level map strings, and starts the game. """
         g = VGDLParser().parseGame(game_str)
-
-        g.buildLevel(map_str)
+        if positions is not None:
+            g.buildLevelFromPos(positions)
+        else:
+            g.buildLevel(map_str)
         g.uiud = uuid.uuid4()
         if playback_states:
             g.playback_states = playback_states
@@ -168,7 +170,8 @@ class VGDLParser(object):
             # a char can map to multiple sprites
             keys = [x.strip() for x in val.split(" ") if len(x)>0]
             if self.verbose:
-                print "Mapping", c, keys
+                
+                 "Mapping", c, keys
             self.game.char_mapping[c] = keys
 
     def _parseArgs(self, s,  sclass=None, args=None):
@@ -253,6 +256,11 @@ class BasicGame(object):
         # conditional criteria
         self.conditions = []
         # resource properties
+<<<<<<< HEAD
+=======
+        #self.resources_limits = defaultdict(lambda: 2)
+        #self.resources_colors = defaultdict(lambda: GOLD)
+>>>>>>> origin/continuous_planning
         self.resources_limits = defaultdict(int)
         self.resources_colors = defaultdict(str)
 
@@ -307,6 +315,7 @@ class BasicGame(object):
                 self.sprite_groups[res_type] = []
 
         # create sprites
+        #embed()
         for row, l in enumerate(lines):
             for col, c in enumerate(l):
                 if c in self.char_mapping:
@@ -326,6 +335,45 @@ class BasicGame(object):
         # guarantee that avatar is always visible
         self.sprite_order.remove('avatar')
         self.sprite_order.append('avatar')
+
+    def buildLevelFromPos(self, positions):
+        from ontology import stochastic_effects
+        dims = positions[0]
+        self.width = dims[0]
+        self.height = dims[1]
+
+        pos = positions[1]
+
+        self.block_size = max(2,int(800./max(self.width, self.height)))
+        self.screensize = (self.width*self.block_size, self.height*self.block_size)
+
+        for res_type, (sclass, args, _) in self.sprite_constr.iteritems():
+            if issubclass(sclass, Resource):
+                if 'res_type' in args:
+                    res_type = args['res_type']
+                if 'color' in args:
+                    self.resources_colors[res_type] = args['color']
+                if 'limit' in args:
+                    self.resources_limits[res_type] = args['limit']
+            else:
+                self.sprite_groups[res_type] = []
+
+        for key in pos:
+            for loc in pos[key]:
+                print loc
+                self._createSprite([key],(loc[0]*self.block_size,loc[1]*self.block_size))
+
+        self.kill_list=[]
+
+        for _, _, effect, _ in self.collision_eff:
+            if effect in stochastic_effects:
+                self.is_stochastic = True
+
+        # guarantee that avatar is always visible
+        self.sprite_order.remove('avatar')
+        self.sprite_order.append('avatar')
+
+
 
 
     def emptyBlocks(self):
@@ -494,6 +542,7 @@ class BasicGame(object):
                     ss[str(pos)] = attrs
                 else:
                     ss[pos] = attrs
+
                 for a, val in s.__dict__.iteritems():
                     if a not in ias:
                         attrs[a] = val
@@ -780,11 +829,33 @@ class BasicGame(object):
 
             self._clearAll()
 
+<<<<<<< HEAD
             try:
                 self.setFullState(self.playback_states[self.playback_index])
             except:
                 print "playback is failing"
                 embed()
+=======
+            # For new objects that appear; sprite induction
+            # spriteInduction(self, step=1)
+
+
+
+            # # load/save handling
+            # if self.load_.save_enabled:
+            #     from pygame.locals import K_1, K_2
+            #     if self.keystate[K_2] and self._lastsaved is not None:
+            #         self.setFullState(self._lastsaved)
+            #         self._initScreen(self.screensize,headless)
+            #         pygame.display.flip()
+            #     if self.keystate[K_1]:
+            #         self._lastsaved = self.getFullState()
+            # try:
+            self.setFullState(self.playback_states[self.playback_index])
+            # except:
+            #     print "playback is failing"
+            #     embed()
+>>>>>>> origin/continuous_planning
 
             # Save the event and agent state
             try:
@@ -902,10 +973,14 @@ class BasicGame(object):
         #     self.movement_options[sprite] = {"OTHER":{}}
         #     for sprite_type in sprite_types:
         #         self.movement_options[sprite][sprite_type] = {}
+<<<<<<< HEAD
 
         self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack']
             else (2 if x[2].__name__ in ['killSprite'] else (3 if x[2].__name__ in ['changeResource', 'changeScore'] else 0)), reverse=True)
 
+=======
+        #self.collision_eff.sort(key = lambda x: x[2].__name__ == 'killSprite') # Should make this more modular. alwell.
+>>>>>>> origin/continuous_planning
 
         while not self.ended:
             clock.tick(self.frame_rate)
@@ -1084,7 +1159,7 @@ class BasicGame(object):
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(10)
-        print len(self.actions), win, self.score
+        #print len(self.actions), win, self.score
         return win, self.score
 
 
@@ -1169,6 +1244,8 @@ class VGDLSprite(object):
     mass     = 1
     physicstype=None
     shrinkfactor=0
+    width = 1.0
+    height = 1.0
 
     def __init__(self, pos, size=(10,10), color=None, speed=None, cooldown=None, physicstype=None, **kwargs):
         from ontology import GridPhysics
@@ -1202,27 +1279,66 @@ class VGDLSprite(object):
         self.lastmove = 0
 
         # management of resources contained in the sprite
+<<<<<<< HEAD
         self.resources = defaultdict(int)
+=======
+        #self.resources = defaultdict(lambda: 0)
+        self.resources = defaultdict(bool)
+
+        self.rect.width = self.width*self.rect.width
+        self.rect.height = self.height*self.rect.height
+>>>>>>> origin/continuous_planning
 
     def update(self, game, random_npc=False):
         """ The main place where subclasses differ. """
+        #print("begin")
         self.x = self.rect.x
         self.y = self.rect.y
-        self.lastrect = self.rect
+        self.lastrect = self.rect.copy()
         # no need to redraw if nothing was updated
         self.lastmove += 1
+<<<<<<< HEAD
         # if self.colorName == 'RED':
             # ipdb.set_trace()
         if not self.is_static and not self.only_active and not random_npc:
             self.physics.passiveMovement(self)
+=======
+        #print("middle")
+        if not self.is_static and not self.only_active:
+            #print("PASSIVE MOvEMEnt")
+            #print self.physics
+            self.physics.passiveMovement(self) #something is printed here
+            
+        #print("end")
+>>>>>>> origin/continuous_planning
 
     def _updatePos(self, orientation, speed=None):
         if speed is None:
             speed = self.speed
+<<<<<<< HEAD
         if (self.lastmove+1)%self.cooldown==0 and abs(orientation[0])+abs(orientation[1])!=0:
         # if not( ((self.lastmove+1) % self.cooldown != 0) or abs(orientation[0])+abs(orientation[1])==0): ##used this until 9/14
             self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
             # self.lastmove = 0
+=======
+
+        if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
+            '''
+            print("updating position")
+            print(self.rect)
+            print(speed)
+            print(orientation[0]*speed,orientation[1]*speed)
+            '''
+            #print self.rect
+            #print (orientation[0]*speed, orientation[1]*speed)
+            self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
+            #print self.rect
+            #self.rect = self.rect.move((1,-1))
+            #print(self.rect)
+            self.lastmove = 0
+>>>>>>> origin/continuous_planning
+
+        
 
 
     def _velocity(self):
@@ -1234,11 +1350,13 @@ class VGDLSprite(object):
 
     @property
     def lastdirection(self):
+
         return (self.rect[0]-self.lastrect[0], self.rect[1]-self.lastrect[1])
 
     def _draw(self, game):
         from ontology import LIGHTGREEN
         screen = game.screen
+
         if self.shrinkfactor != 0:
             shrunk = self.rect.inflate(-self.rect.width*self.shrinkfactor,
                                        -self.rect.height*self.shrinkfactor)
@@ -1246,13 +1364,18 @@ class VGDLSprite(object):
             shrunk = self.rect
 
         if self.is_avatar:
+            '''
             rounded = roundedPoints(shrunk)
             pygame.draw.polygon(screen, self.color, rounded)
             pygame.draw.lines(screen, LIGHTGREEN, True, rounded, 2)
+            '''
+            pygame.draw.rect(screen, self.color, shrunk)
+            #pygame.draw.lines(screen, LIGHTGREEN, True, shrunk, 2)
             r = self.rect.copy()
         elif not self.is_static:
-            rounded = roundedPoints(shrunk)
-            pygame.draw.polygon(screen, self.color, rounded)
+            #rounded = roundedPoints(shrunk)
+            #pygame.draw.polygon(screen, self.color, rounded)
+            pygame.draw.rect(screen, self.color, shrunk)
             r = self.rect.copy()
         else:
             r = screen.fill(self.color, shrunk)

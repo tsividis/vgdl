@@ -14,7 +14,7 @@ import numpy as np
 import scipy.stats
 from tools import triPoints, unitVector, vectNorm, oncePerStep
 from ai import AStarWorld
-from IPython import embed
+#from IPython import embed
 import core
 import copy
 import ipdb
@@ -93,6 +93,8 @@ class GridPhysics():
                 speed = 1.0
             else:
                 speed = float(sprite.speed)
+
+        #print speed
         if speed != 0 and action is not None:
             sprite._updatePos(action, speed * self.gridsize[0])
 
@@ -142,13 +144,38 @@ class GridPhysics():
 class ContinuousPhysics(GridPhysics):
     gravity = 0.
     friction = 0.02
+    #friction = 0.
 
     def passiveMovement(self, sprite):
-        if sprite.speed != 0 and hasattr(sprite, 'orientation'):
+        #if isinstance(sprite,Missile) and sprite.speed != 0:
+        #    print 'moving'
+            #embed()
+        #print sprite.speed
+        if (sprite.speed != 0 or hasattr(sprite,'jumping') and sprite.jumping) and hasattr(sprite, 'orientation'):#(why was this 0 to begin with???)
+        #if (sprite.speed != 0) and hasattr(sprite, 'orientation'):
+        #if True:
+            #print("update pos")
+            #print "updating"
             sprite._updatePos(sprite.orientation, sprite.speed)
+            #sprite._updatePos([sprite.orientation[0],0],sprite.speed)
+            #sprite._updatePos([0,sprite.orientation[1]],sprite.speed)
+            
             if self.gravity > 0 and sprite.mass > 0:
+
                 self.activeMovement(sprite, (0, self.gravity * sprite.mass))
+                
             sprite.speed *= (1 - self.friction)
+
+        #print sprite.lastrect
+        #print sprite.rect
+        #print sprite.jumping
+
+        #if sprite.lastrect == sprite.rect and not sprite.jumping:
+            #print "NO MOVMEMVOMT"
+        #    sprite.speed = 0
+           
+
+        
 
     def calculatePassiveMovement(self, sprite):
         if sprite.speed != 0 and hasattr(sprite, 'orientation'):
@@ -162,15 +189,53 @@ class ContinuousPhysics(GridPhysics):
 
 
     def activeMovement(self, sprite, action, speed=None):
-        print self.gridsize
+        # print self.gridsize
         """ Here the assumption is that the controls determine the direction of
         acceleration of the sprite. """
+        #print("active movement")
+
+        #print action
+
         if speed is None:
             speed = sprite.speed
-        v1 = action[0] / float(sprite.mass) + sprite.orientation[0] * speed
+
+        #print "orientation:"
+        #print sprite.orientation
+
+        
+        #v1 = action[0]*100 / float(sprite.mass) + sprite.orientation[0] * speed
+        
+
+        #if sprite.lastrect.y == sprite.rect.y and not sprite.jumping:
+        #    v2 = 0.0
+        #else:
         v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed
+        
+        
+        
+        if sprite.jumping or action[1]:
+            v1 = sprite.orientation[0] * speed
+        else:
+            v1 = action[0]*sprite.vx_max
+
+        if not sprite.jumping:
+            v2 += sprite.speed_bonus[1]
+            v1 += sprite.speed_bonus[0]
+
+        sprite.speed_bonus = [0,0]
+
+        #print(v1,v2)
+        
+        #v2 = action[1]*sprite.strength
         sprite.orientation = unitVector((v1, v2))
+
+        
         sprite.speed = vectNorm((v1, v2)) / vectNorm(sprite.orientation)
+        '''
+        print(sprite.orientation)
+        print(sprite.speed)
+        print("")
+        '''
 
     def calculateActiveMovement(self, sprite, action, speed=None):
         """ Here the assumption is that the controls determine the direction of
@@ -193,7 +258,8 @@ class NoFrictionPhysics(ContinuousPhysics):
     friction = 0
 
 class GravityPhysics(ContinuousPhysics):
-    gravity = 0.8
+    gravity = 2.0
+    friction = 0
 
 
 # ---------------------------------------------------------------------
@@ -321,6 +387,14 @@ class Missile(OrientedSprite): ##
     """ A sprite that constantly moves in the same direction. """
     speed = 1
     color = PURPLE
+
+class BreakoutBall(Missile):
+    def __init__(self, **kwargs):
+        Missile.__init__(self,**kwargs)
+        self.rect.width = 0.5*self.rect.width
+        self.rect.height = 0.5*self.rect.height
+
+
 
 class Switch(VGDLSprite):
     activated = False
@@ -533,9 +607,9 @@ class AStarChaser(VGDLSprite): ##
         # print path
         # print 'in astar', [world.get_sprite_tile_position(p.sprite) for p in path]
         # Uncomment below to draw debug paths.
-        # self._setDebugVariables(world,path)
-        print 'updating'
-        print len(self.path)
+        # # self._setDebugVariables(world,path)
+        # print 'updating'
+        # print len(self.path)
         if self.path:
             # n = min(5, len(self.path)-1)
 
@@ -550,8 +624,8 @@ class AStarChaser(VGDLSprite): ##
             self_x, self_y = self.rect.x, self.rect.y
 
 
-            print next_x, next_y
-            print self_x, self_y
+            # print next_x, next_y
+            # print self_x, self_y
 
             dx = abs(next_x - self_x)
             dy = abs(next_y - self_y)
@@ -564,9 +638,25 @@ class AStarChaser(VGDLSprite): ##
             if dx < error and dy < error:
                 self.last_move = self.next_move
                 self.next_move = None
-            print dx, dy, movement
+            # print dx, dy, movement
 
             self.physics.activeMovement(self, movement)
+
+
+##some montezuma specific objects:
+class ThinImmovable(Immovable):
+    width = 1.0
+    height = 1.0
+    def __init__(self, **kwargs):
+        Immovable.__init__(self, **kwargs)
+        self.rect.width = self.width*self.rect.width
+        self.rect.height = self.height*self.rect.height
+
+class ThinConveyor(Conveyor,ThinImmovable):
+    width = 1.0
+    height = 1.0
+
+
 
 
 
@@ -618,10 +708,16 @@ class MovingAvatar(VGDLSprite, Avatar):
         return res
 
     def update(self, game):
+
         VGDLSprite.update(self, game)
+        
         action = self._readAction(game)
+        #print(action)
         if action:
             self.physics.activeMovement(self, action)
+
+        #VGDLSprite.update(self, game)
+
 
 class HorizontalAvatar(MovingAvatar):
     """ Only horizontal moves.  """
@@ -635,10 +731,43 @@ class HorizontalAvatar(MovingAvatar):
 
 
     def update(self, game):
+        #print self.rect
         VGDLSprite.update(self, game)
         action = self._readAction(game)
         if action in [RIGHT, LEFT]:
             self.physics.activeMovement(self, action)
+
+class BreakoutAvatar(HorizontalAvatar):
+    def __init__(self,**kwargs):
+        HorizontalAvatar.__init__(self,**kwargs)
+        #print self.rect
+        self.rect.width = 2*self.rect.width
+        #print self.rect
+
+
+
+class Paddle(HorizontalAvatar):
+    last_action = None
+    c1 = 0.2 #None, move
+    c2 = 0.1 #move, none
+    c3 = 0.3 #same move
+    c4 = -0.1 #opposite move
+    def update(self, game):
+        VGDLSprite.update(self, game)
+        action = self._readAction(game)
+        if action in [RIGHT,LEFT]:
+            if self.last_action == None:
+                self.speed = self.c1
+            elif self.last_action == action:
+                self.speed = self.c3
+            else: 
+                self.speed = self.c4
+        elif self.last_action in [RIGHT, LEFT]:
+            self.speed = self.c2
+        #print action
+        #print self.last_action
+        self.last_action = action
+        self.physics.activeMovement(self, action)    
 
 class VerticalAvatar(MovingAvatar):
     """ Only vertical moves.  """
@@ -820,21 +949,37 @@ class AimedFlakAvatar(AimedAvatar):
 class InertialAvatar(OrientedAvatar):
     speed = 1
     physicstype = ContinuousPhysics
+
     def update(self, game):
-        MovingAvatar.update(self, game)
+        #MovingAvatar.update(self, game)
+
+        action = MovingAvatar._readAction(self,game)
+        if action:
+            self.physics.activeMovement(self, action)
+        VGDLSprite.update(self, game)
 
 class MarioAvatar(InertialAvatar):
     physicstype = GravityPhysics
     draw_arrow = False
     strength = 1
     movestrength = sqrt(strength)
+<<<<<<< HEAD
     vx_max = 10
+=======
+    vx_max = 8
+>>>>>>> origin/continuous_planning
     airsteering = False
     last_vy = 0
     jumping = False
     wait_step = 0
     airstrength = 1
+<<<<<<< HEAD
     decay = 0 #.5
+=======
+    speed_bonus = [0,0]
+    #decay = .5
+    decay = 0
+>>>>>>> origin/continuous_planning
 
     def declare_possible_actions(self):
         from pygame.locals import K_LEFT, K_RIGHT, K_UP, K_DOWN
@@ -846,6 +991,14 @@ class MarioAvatar(InertialAvatar):
         return actions
 
     def update(self, game):
+        #if self.jumping:
+        #    print "JUMPING"
+        #else:
+        #    print "NO"
+        #print self
+
+        #print("UPDATING")
+
         from pygame.locals import K_SPACE
 
         if self.lastrect == self.rect and not self.jumping:
@@ -860,6 +1013,7 @@ class MarioAvatar(InertialAvatar):
         action[1]=0
         # presumibly, this means the sprite is 'landed'
         self.airstrength *= (1-self.decay)
+
         if self.last_vy == self.lastrect.y - self.rect.y:
             #print "are equal"
             self.wait_step += 1
@@ -882,9 +1036,9 @@ class MarioAvatar(InertialAvatar):
             action[0] = 0
 
         # this is pretty hacky. What if sprite doesn't move very fast?
-        if self.wait_step > 2:
-            self.jumping = False
-
+        if self.wait_step > 1:
+           self.jumping = False
+        
         self.physics.activeMovement(self, action)
         #changes speed
 
@@ -903,7 +1057,57 @@ class MarioAvatar(InertialAvatar):
 
         # a less precise vy, but this is useful
         self.last_vy = self.lastrect.y-self.rect.y
+
+        #two_ago = self.lastrect.y
         VGDLSprite.update(self, game)
+        #if self.rect.y == self.lastrect.y and self.rect.y == two_ago:
+        #    self.jumping = False
+
+        
+
+
+
+        #print self.orientation
+        #print (self.orientation[0]*self.speed, self.orientation[1]*self.speed)
+
+        #print self.orientation[0]*self.speed
+
+class RopeAvatar(InertialAvatar):
+
+    max_speed = 5
+    vx_max = 1
+    jumping = False
+    speed_bonus = [0,0]
+
+    def declare_possible_actions(self):
+        from pygame.locals import K_LEFT, K_RIGHT, K_UP, K_DOWN
+        actions = {}
+        actions["UP"] = K_UP
+        actions["DOWN"] = K_DOWN
+        actions["LEFT"] = K_LEFT
+        actions["RIGHT"] = K_RIGHT
+        return actions
+
+    def update(self,game):
+        action = self._readAction(game)
+        if action==None:
+            action=[0,0]
+        action=list(action)
+        self.speed = 0
+        action = [self.max_speed*action[0],self.max_speed*action[1]]
+        
+        self.physics.activeMovement(self,action)
+        #print(self.rect)
+        VGDLSprite.update(self, game)
+        
+
+'''
+class MontezumaAvatar(MarioAvatar):
+
+    def update(self, game):
+'''
+
+
 
 class ClimbingAvatar(MarioAvatar, MovingAvatar):
     climbing = False
@@ -1016,6 +1220,16 @@ class FrostbiteIgloo(SpawnPoint, Switch):
         if self.detriggered and self.triggers > 0:
             self.triggers -= 1
             self.detriggered = False
+
+class MontezumaAvatar(MarioAvatar):
+    width = 1.0
+    height = 1.0
+    def __init__(self, **kwargs):
+        MarioAvatar.__init__(self, **kwargs)
+        self.rect.width = self.width*self.rect.width
+        self.rect.height = self.height*self.rect.height
+
+
 
 # ---------------------------------------------------------------------
 #     Conditional criteria
@@ -1274,10 +1488,20 @@ def cloneSprite(sprite, partner, game):
 
 def transformTo(sprite, partner, game, stype='wall'):
     newones = game._createSprite([stype], (sprite.rect.left, sprite.rect.top))
+<<<<<<< HEAD
+=======
+    #embed()
+>>>>>>> origin/continuous_planning
     if len(newones) > 0:
         if isinstance(sprite, OrientedSprite) and isinstance(newones[0], OrientedSprite):
+            #print("KEEPING ORIENTATION SPEED")
             newones[0].orientation = sprite.orientation
+<<<<<<< HEAD
             newones[0].resources = sprite.resources
+=======
+            newones[0].speed = sprite.speed
+        newones[0].resources = sprite.resources
+>>>>>>> origin/continuous_planning
         game.kill_list.append(sprite)
         # game.dead.append(sprite)
     args = {'stype':stype}
@@ -1319,6 +1543,7 @@ def undoAll(sprite, partner, game):
 def bounceForward(sprite, partner, game): # FLAG
     """ The partner sprite pushed, so if possible move in the opposite direction. """
     # print "in beginning of bounceForward"
+    # print partner.lastdirection
     sprite.physics.activeMovement(sprite, unitVector(partner.lastdirection))
     game._updateCollisionDict(sprite)
     return ('bounceForward', sprite.ID, partner.ID)
@@ -1328,7 +1553,9 @@ def conveySprite(sprite, partner, game):
     """ Moves the partner in target direction by some step size. """
     tmp = sprite.lastrect
     v = unitVector(partner.orientation)
-    sprite.physics.activeMovement(sprite, v, speed=partner.strength)
+    #print "CONVEYING"
+    #sprite.physics.activeMovement(sprite, v, speed=partner.strength)
+    sprite.speed_bonus = [v[0]*partner.strength,v[1]*partner.strength]
     sprite.lastrect = tmp
     game._updateCollisionDict(sprite)
     # return ('conveySprite', colorDict[str(sprite.color)], colorDict[str(partner.color)])
@@ -1626,6 +1853,11 @@ def teleportToExit(sprite, partner, game):
     sprite.lastmove = 0
     args = {'stype':partner.stype}
     return ('teleportToExit', sprite.ID, partner.ID, args)
+
+def killIfTooFast(sprite,partner,game, speed):
+    if sprite.speed*sprite.orientation[1] > speed:
+        return killSprite(sprite, partner, game)
+
 
 # this allows us to determine whether the game has stochastic elements or not
 stochastic_effects = [teleportToExit, windGust, slipForward, attractGaze, flipDirection]

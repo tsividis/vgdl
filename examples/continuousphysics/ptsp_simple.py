@@ -5,26 +5,26 @@ VGDL example: a simplified version the physical TSP benchmark.
 '''
 
 
-ptsp_game = """
+game = """
 BasicGame
     SpriteSet    
-        pad    > Immovable color=BLUE 
-        inertial > 
-            avatar > InertialAvatar
+        pad    > Immovable color=BLUE
+        avatar > InertialAvatar
             
     TerminationSet
         SpriteCounter stype=pad    win=True     
         SpriteCounter stype=avatar win=False     
            
     InteractionSet
-        inertial wall > wallBounce 
+        avatar wall > wallStop
         pad avatar    > killSprite
         
     LevelMapping
         G > pad
 """
 
-ptsp_level = """
+
+level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwww
 w        w    w    w       w
 w    A    wwww    www      w
@@ -40,7 +40,26 @@ w     wwwwwwwwww           w
 wwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
+
+'''
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwww
+w        w    w    w       w
+w    A    wwww    www      w
+w                   w     ww
+w                   w      w
+w   w                      w
+w    www                w  w
+w      wwwwwww        www  w
+w                    ww    w
+w                     w    w
+w        ww              G w
+w     wwwwwwwwww           w
+wwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+'''
+
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
-    VGDLParser.playGame(ptsp_game, ptsp_level)
+    VGDLParser.playGame(game, level)
         

@@ -21,10 +21,14 @@ import importlib
 from colors import *
 from util import factorize, objectsToSymbol
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
+<<<<<<< HEAD
 from termcolor import colored
 
 import cPickle
 from line_profiler import LineProfiler
+=======
+#from line_profiler import LineProfiler
+>>>>>>> origin/continuous_planning
 
 OBSERVATION_LOCAL = 'local'
 OBSERVATION_GLOBAL = 'global'
@@ -45,8 +49,11 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     # Recording events (in slightly redundant format state-action-nextstate)
     recordingEnabled = False
 
-    def __init__(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, actionset=BASEDIRS, **kwargs):
-        game = _createVGDLGame( gameDef, levelDef )
+    def __init__(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, actionset=BASEDIRS, positions=None, **kwargs):
+        if positions is not None:
+            game = _createVGDLGameFromPos(gameDef,positions)
+        else:
+            game = _createVGDLGame( gameDef, levelDef )
         StateObsHandlerNonStatic.__init__(self, game, **kwargs)
         self._actionset = actionset
         self.visualize = visualize
@@ -77,6 +84,10 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self._game.exceptedObjects = []
         self.makeSymbolDict()
         self._game.ignoreList = [] ## another way to mark objects that shouldn't be processed when doing induction (that is, collision objects)
+<<<<<<< HEAD
+=======
+        #self._game.keystate = defaultdict(lambda:False)
+>>>>>>> origin/continuous_planning
         self._game.keystate = defaultdict(bool)
         self._game.metabolic_score = 0
         self.game_name = None
@@ -125,6 +136,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         gameString = ""
         spriteOverlap = False # represents whether 2 sprites are on same location
         state = np.reshape(self._getSensors(), self.outdim)
+        #print state
         for i in range(self.outdim[0]):
             if indent:
                 gameString += "     "
@@ -231,6 +243,13 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
         return output
 
+    def sensors_profiler(self, state=None):
+        lp = LineProfiler()
+        lp_wrapper = lp(self._getSensors)
+        output = lp_wrapper(state)
+        lp.print_stats()
+        return output
+
     def _getSensors(self, state=None):
         # Get position and orientation
         if state is None:
@@ -271,6 +290,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             # 200002
             # 210002
             # 222222
+            
             ns = self.nsAllCells
             for i, n in enumerate(ns):
                 # check if the avatar is here
@@ -296,26 +316,37 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
         # self._avatar._readMultiActions = lambda *x: [self._actionset[action]] # old
         possible_actions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
-
+        
         if action in possible_actions:
             self._game.keystate[action] = True
 
 
         if self.visualize:
             self._game._clearAll(self.visualize)
-
+        
         # update sprites
         if onlyavatar:
-            if action != 0:
-                self._avatar.update(self._game)
-
+            
+            #if action != 0:
+            #    self._avatar.update(self._game)
+            self._avatar.update(self._game)
+        
         else:
+            
             for s in self._game:
-                if s == self._avatar and action == 0:
-                    continue
+                
+                #if s == self._avatar and action == 0:
+                #    continue
+                
                 if s not in self._game.kill_list:
+                    #print("A")
                     s.update(self._game)
-
+                
+                #if s == self._avatar:
+                    
+                    #print(s.rect)
+                    
+    
         events = self._game._eventHandling()
         ## get events (e.g., (stepBack obj1ID, obj2ID))
 
@@ -325,14 +356,13 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         ## Added 5/2, to correct for the fact that some gmaes don't have _gravepoints by default
         if not hasattr(self, '_gravepoints'):
             self._gravepoints = {}
-
+        
         # ### BEGINNING OF CHANGES
         for skey in self._other_types:
             ss = self._game.sprite_groups[skey]
             self._obstypes[skey] = [self._sprite2state(sprite, oriented=False)
                                         for sprite in ss]
-
-        ## Added 4/31
+                ## Added 4/31
         ## Logic (I think) was to make sure everything that could exist was in gravepoints because
         ## getState (defined in stateobsnonstatic) uses it to populate getState, getSensors, etc.
         for k in self._game.sprite_groups:
@@ -341,6 +371,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                     self._gravepoints[(k, self._rect2pos(sprite.rect))] = True
         # print "after adding gravepoints"
         # embed()
+        #print("hi")
+        #print(self._avatar.rect)
         return events
 
         # if self.visualize:
@@ -367,15 +399,25 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         return output
 
     def step(self, action):
+        #print self._game.sprite_groups['avatar']
+        #print("start step")
         if action == ('space'):
             self._game.keystate[32] = True
             action = (0,0)
         pre_step_score = self._game.score
+        #print("start action")
         events = self._performAction(action)
+<<<<<<< HEAD
         # embed()
         # observation = self._getSensors()
 
         observation = self._getSensors()
+=======
+        #print("end action")
+        #observation = self._getSensors()
+        observation = 0
+        #observation = self.sensors_profiler()
+>>>>>>> origin/continuous_planning
         (ended, won) = self._isDone()
         self._game.time+=1
 
@@ -392,8 +434,12 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             reward = dScore
         for k in self._game.keystate:
             self._game.keystate[k] = False
+<<<<<<< HEAD
 
         # print "reward", reward
+=======
+        #print("end step")
+>>>>>>> origin/continuous_planning
         return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
 
 ## the game in the agent's 'head'
@@ -475,6 +521,7 @@ def natcasecmp(a, b):
 
 def defInputGame(filename, randomize=False, index=None):
     game_file = importlib.import_module(filename)
+    print(game_file)
     levels = [k for k in game_file.__dict__.keys() if 'level' in k]
     levels.sort(natcasecmp)
     # print levels
@@ -497,6 +544,16 @@ def _createVGDLGame( gameSpec, levelSpec ):
     # parse, run and play.
     game = VGDLParser().parseGame(gameSpec)
     game.buildLevel(levelSpec)
+    game.uiud = uuid.uuid4()
+    return game
+
+def _createVGDLGameFromPos(gameSpec, positions):
+    import uuid
+    from vgdl.core import VGDLParser
+    # parse, run and play.
+    game = VGDLParser().parseGame(gameSpec)
+    #game.buildLevel(levelSpec)
+    game.buildLevelFromPos(positions)
     game.uiud = uuid.uuid4()
     return game
 
@@ -619,9 +676,25 @@ def createRLAliens( obsType=OBSERVATION_LOCAL ):
 
 def createRLInputGame(filename, obsType=OBSERVATION_GLOBAL):
     game_file = importlib.import_module(filename)
-    return RLEnvironmentNonStatic(game_file.game, game_file.level, \
+    #embed()
+    try:    
+        return RLEnvironmentNonStatic(game_file.game, game_file.level, \
+                observationType = obsType)
+    except:
+        return RLEnvironmentNonStatic(game_file.game, game_file.level1, \
             observationType = obsType)
 
+def createRLInputGameChangeLevel(filename, level):
+    game_file = importlib.import_module(filename)
+    return RLEnvironmentNonStatic(game_file.game, level, \
+                observationType = OBSERVATION_GLOBAL)
+
+def createRLInputGameFromPositions(filename, positions=None):
+    game_file = importlib.import_module(filename)
+    #embed()
+    if positions is None:
+        positions = game_file.positions
+    return RLEnvironmentNonStatic(game_file.game, None, positions = positions, observationType= OBSERVATION_GLOBAL)
 
 def createRLInputGameFromStrings(game, level):
     return RLEnvironmentNonStatic(game, level, \

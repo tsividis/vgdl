@@ -81,8 +81,13 @@ w       a                      w
 w               a              w
 w         m    A   b           w
 w     a     a            ffffffw
+<<<<<<< HEAD
 w     a   a              f     w
 www                  a   f     w
+=======
+w     a   a              f    fw
+www                  a   ffffffw
+>>>>>>> origin/continuous_planning
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -104,7 +109,14 @@ game = """
 BasicGame frame_rate=30
     SpriteSet
         avatar > MovingAvatar color=DARKBLUE cooldown=0#6
+<<<<<<< HEAD
         chaser > VGDLSprite cooldown=8
+=======
+        box > Passive
+            box1 > color=PINK
+            box2 > color=YELLOW
+        chaser > VGDLSprite cooldown=0
+>>>>>>> origin/continuous_planning
             randomChaser > RandomNPC color=WHITE
             mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=0
             goodChaser > AStarChaser color=RED stype=box2
@@ -144,8 +156,6 @@ BasicGame frame_rate=30
 
 level_game_pairs = [[game, level0], [game, level1], [game, level2],
                     [game, level3]]
-
-# level_game_pairs = [[game, level0], [game, level2]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
