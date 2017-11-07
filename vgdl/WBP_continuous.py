@@ -547,7 +547,7 @@ class WBP():
 		min_path_length = sys.maxint
 		best_path = None
 		best_node = None
-		found_key = False
+		found_key = False #can delete
 
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
 		
