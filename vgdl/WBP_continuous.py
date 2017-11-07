@@ -81,7 +81,7 @@ print "FINISHED SETTING VALUES"
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=100, limit=LIMIT, grid_limit=GRID_LIMIT):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=100, limit=LIMIT, grid_limit=GRID_LIMIT,shortHorizon=False,firstOrderHorizon=False,seen_limits=[]):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -143,6 +143,8 @@ class WBP():
 		self.speed_thresh = SPEED_THRESH
 
 		self.wait_steps = 0
+
+		self.winning_states = []
 
 	def makeGraph(self):
 		graph = {}
@@ -607,55 +609,101 @@ class WBP():
 					# timestep in the chosen solution, so as to be able to
 					# compare it to the agent's RLE at execution time and
 					# correct for stochasticity effects
-					wins += 1
-
-					node = child
-					gameString_array = []
-					while node is not None:
-						gameString_array.append(node.rle.show())
-						node = node.parent
-					self.gameString_array = gameString_array[::-1]
-					child.rle._isDone()
+					#wins += 1
+					self.winning_states.append(child)
+					ended, win, t = child.rle._isDone(getTermination=True)
 					self.solution = child.actionSeq
 					self.statesEncountered.append(child.rle._game.getFullState())
-					print(child.rle.show(indent=True))
+					print "win"
+
+					# node = child
+					# gameString_array = []
+					# object_positions_array = []
+					# while node is not None:
+					# 	gameString_array.append(node.rle.show())
+					# 	object
+					# 	node = node.parent
+					# self.gameString_array = gameString_array[::-1]
+					# child.rle._isDone()
+					# self.solution = child.actionSeq
+					
+					# print(child.rle.show(indent=True))
 					#path.append(child.rle.show(indent=True))
-					print("WIN!")
+					
 
-					if len(gameString_array) < min_path_length:
-						best_path = gameString_array
-						best_node = child
-						min_path_length = len(gameString_array)
+					# if len(gameString_array) < min_path_length:
+					# 	best_path = gameString_array
+					# 	best_node = child
+					# 	min_path_length = len(gameString_array)
 
-					if wins >= self.num_paths:
-						print i
-						print "{} paths found, returning best".format(wins)
-						return best_node, best_path, i
+					# if wins >= self.num_paths:
+					# 	print i
+					# 	print "{} paths found, returning best".format(wins)
+					# 	return best_node, best_path, i
 
 				else:
 					#if child.isTerminal() and not child.isWin():
 					#	print("LOSE")
 					#else:
 					QReward.append(child)
+					#QNovelty.append(child)
 			i+=1
 
-		if return_best:
-			#embed()
-			visited.remove(start)
-			best = min(visited)
-			last = random.choice([n for n in visited if n.__eq__(best)])
-			
-			return last, visited, i
-			#should remove visited later
+			if self.winning_states:
+				print "we have {} winning states".format(len(self.winning_states))
+				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
+				bestNode = bestNodes[0]
+				node = bestNode
+				gameString_array, object_positions_array = [], []
+				while node is not None:
+					gameString_array.append(node.rle.show(color='green'))
+					object_positions_array.append(node.rle)
+					node = node.parent
+				self.gameString_array = gameString_array[::-1]
+				self.object_positions_array = object_positions_array[::-1]
+				# gameString_array.append(bestNode.rle.show())
+				# object_positions_array.append(copy.deepcopy(bestNode.rle))
+				return bestNode, gameString_array, object_positions_array
 
-		self.solution = []
+		self.solution = []#Node(self.rle, self, [], None)
 		if i>=self.max_nodes:
-			self.quitting = True
-			print "Quitting after {} nodes".format(self.max_nodes)
-		else:
-			print "No novel nodes found"
-		print "{} paths found, returning best".format(wins)
-		return best_node, best_path, i
+			if self.short_horizon:
+				print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
+				node = max(visited, key=lambda n:n.intrinsic_reward)
+				parentNode = copy.deepcopy(node)
+				self.solution = node.actionSeq
+				print self.solution
+				gameString_array, object_positions_array = [], []
+				while parentNode is not None:
+					gameString_array.append(parentNode.rle.show())
+					object_positions_array.append(copy.deepcopy(parentNode.rle))
+					parentNode = parentNode.parent
+				self.gameString_array = gameString_array[::-1]
+				self.object_positions_array = object_positions_array[::-1]
+				# print "win"
+				# embed()
+				return node, gameString_array, object_positions_array
+			else:
+				# self.quitting = True
+				print "Got no plan after searching {} nodes".format(self.max_nodes)
+		return None, None, None
+		# if return_best:
+		# 	#embed()
+		# 	visited.remove(start)
+		# 	best = min(visited)
+		# 	last = random.choice([n for n in visited if n.__eq__(best)])
+			
+		# 	return last, visited, i
+		# 	#should remove visited later
+
+		# self.solution = []
+		# if i>=self.max_nodes:
+		# 	self.quitting = True
+		# 	print "Quitting after {} nodes".format(self.max_nodes)
+		# else:
+		# 	print "No novel nodes found"
+		# print "{} paths found, returning best".format(wins)
+		# return best_node, best_path, i
 
 	def node_profiler(self,lock,QReward,QNovelty,visited,p):
 		lp = LineProfiler()
@@ -1007,7 +1055,7 @@ class Node():
 				possiblePairList = [self.WBP.geoDist(obj,pos)
 					 for pos in s2_positions
 					 for obj in s1_positions
-					 if geoDist(obj,pos) != 0]
+					 if self.WBP.geoDist(obj,pos) != 0]
 				
 
 				
@@ -1156,7 +1204,7 @@ class Node():
 				noveltytermination_val = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=first_alpha, second_alpha=second_alpha)
-				print("NOVELTY")
+				#print("NOVELTY")
 				# print("noveltytermination_val for {} and {} is equal to {}".format(
 					# term.termination.s1, term.termination.s2, noveltytermination_val))
 				if 'avatar' == term.termination.s2:

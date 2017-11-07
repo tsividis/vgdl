@@ -3,7 +3,7 @@ level="""
 2     32
 2      2
 2      2
-21  2222
+2 1 2222
 22     2
 2      2
 2  0   2
@@ -12,10 +12,10 @@ level="""
 game = """
 BasicGame
 	SpriteSet
-		c3 > RandomNPC color=GREEN speed=0.6 cooldown=10
-		c2 > RandomNPC color=BLACK speed=0.6 cooldown=10
+		c3 > RandomNPC color=GREEN speed=1.6 cooldown=5
+		c2 > RandomNPC color=BLACK speed=1.6 cooldown=5
 		avatar > MovingAvatar color=WHITE
-		c4 > RandomNPC color=GOLD speed=0.6 cooldown=10
+		c4 > Missile color=GOLD speed=1.3 orientation=DOWN cooldown=9
 	InteractionSet
 		c2 avatar > killSprite
 		c2 c4 > nothing
@@ -37,6 +37,7 @@ BasicGame
 		NoveltyTermination s1=c2 s2=avatar win=True
 		NoveltyTermination s1=c3 s2=avatar win=True
 		NoveltyTermination s1=c4 s2=avatar win=True
+		NoveltyTermination s1=c4 s2=c4 win=True
 		NoveltyTermination s1=c2 s2=EOS win=True
 		NoveltyTermination s1=c3 s2=EOS win=True
 		NoveltyTermination s1=c4 s2=EOS win=True

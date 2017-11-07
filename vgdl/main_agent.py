@@ -864,20 +864,20 @@ if __name__ == "__main__":
 		for color in color_list:
 			yield color
 
-	gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
-		'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
+	# gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
+	# 	'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-	gameName = gvggames[6]
+	# gameName = gvggames[6]
 
-	gvgname = "../gvgai/training_set_1/{}".format(gameName)
+	# gvgname = "../gvgai/training_set_1/{}".format(gameName)
 
-	gameString = read_gvgai_game('{}.txt'.format(gvgname))
+	# gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
 
-	level_game_pairs = []
-	for level_number in range(5):
-		with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
-			level_game_pairs.append([gameString, level.read()])
+	# level_game_pairs = []
+	# for level_number in range(5):
+	# 	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
+	# 		level_game_pairs.append([gameString, level.read()])
 
 	##uncomment this line to run local games
 	gameName = filename

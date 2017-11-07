@@ -366,8 +366,6 @@ class WBP():
 						# correct for stochasticity effects
 						# compare it to the agent's RLE at execution time and
 						self.winning_states.append(child)
-						
-
 						# node = child
 						# gameString_array, object_positions_array = [], []
 						# while node is not None:
@@ -393,6 +391,14 @@ class WBP():
 				print "we have {} winning states".format(len(self.winning_states))
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
 				bestNode = bestNodes[0]
+				node = bestNode
+				gameString_array, object_positions_array = [], []
+				while node is not None:
+					gameString_array.append(node.rle.show(color='green'))
+					object_positions_array.append(node.rle)
+					node = node.parent
+				self.gameString_array = gameString_array[::-1]
+				self.object_positions_array = object_positions_array[::-1]
 				# gameString_array.append(bestNode.rle.show())
 				# object_positions_array.append(copy.deepcopy(bestNode.rle))
 				return bestNode, gameString_array, object_positions_array
