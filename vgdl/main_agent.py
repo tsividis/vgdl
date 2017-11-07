@@ -67,11 +67,11 @@ class Agent:
 		self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
 		self.rle = self.rleCreateFunc()
 
-		global WBP
-		if 'Grid' in str(self.rle._game.sprite_groups['avatar'][0].physicstype):
-			import WBP_grid as WBP
-		else:
-			import WBP_continuous as WBP
+		# global WBP
+		# if 'Grid' in str(self.rle._game.sprite_groups['avatar'][0].physicstype):
+		# 	import WBP_grid as WBP
+		# else:
+		# 	import WBP_continuous as WBP
 		self.rle._game.spriteUpdateDict = self.spriteUpdateDict
 		return
 
@@ -163,7 +163,7 @@ class Agent:
 
 	def initializeHypotheses(self, allObjects, learnSprites=True):
 		if learnSprites:
-			observe(self.rle, 15, self.bestSpriteTypeDict)
+			observe(self.rle, 3, self.bestSpriteTypeDict)
 			spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
 				self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
 			self.rle._game.exceptedObjects = exceptedObjects
@@ -839,16 +839,14 @@ class Agent:
 if __name__ == "__main__":
 
 	##simpleGame_missile: no support for learning that it can shoot things.
-	# filename = "examples.gridphysics.demo_helper"
-
-
-	# filename = "examples.gridphysics.expt_physics_sharpshooter"
-	# filename = "examples.gridphysics.demo_transform_relational"
-	# filename = "examples.gridphysics.simpleGame_push_boulders"
-	# filename = "examples.gridphysics.pick_apples"
-	# filename = "examples.gridphysics.expt_exploration_exploitation_debugging"
 
 	filename = "examples.gridphysics.expt_antagonist"
+
+	global WBP
+	if 'grid' in filename:
+		import WBP_grid as WBP
+	else:
+		import WBP_continuous as WBP
 
 	level_game_pairs = None
 	# Playing GVG-AI games
