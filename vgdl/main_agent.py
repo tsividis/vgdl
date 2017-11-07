@@ -7,15 +7,11 @@ SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheor
 generateTheoryFromGame
 import os, subprocess, shutil
 from collections import defaultdict
-import WBP
+# import WBP_grid, WBP_continuous
 import importlib
 import numpy as np
-<<<<<<< HEAD
 import ipdb, time
-=======
-import ipdb
 import os, subprocess, shutil
->>>>>>> origin/continuous_planning
 import copy
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
@@ -70,6 +66,12 @@ class Agent:
 			self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
 		self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
 		self.rle = self.rleCreateFunc()
+
+		global WBP
+		if 'Grid' in str(self.rle._game.sprite_groups['avatar'][0].physicstype):
+			import WBP_grid as WBP
+		else:
+			import WBP_continuous as WBP
 		self.rle._game.spriteUpdateDict = self.spriteUpdateDict
 		return
 
@@ -217,17 +219,12 @@ class Agent:
 		if not level_game_pairs:
 			level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
 		episodes = []
-<<<<<<< HEAD
 		allEffectsEncountered = []
 		shutil.rmtree("images/tmp")
 		os.makedirs("images/tmp")
 		j=0
 		flexible_goals = False
-=======
 
-		shutil.rmtree("images/tmp")
-		os.makedirs("images/tmp")
->>>>>>> origin/continuous_planning
 		for n_level, level_game in enumerate(level_game_pairs):
 
 			print("Playing level {}".format(n_level))

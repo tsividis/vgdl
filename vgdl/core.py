@@ -256,11 +256,8 @@ class BasicGame(object):
         # conditional criteria
         self.conditions = []
         # resource properties
-<<<<<<< HEAD
-=======
         #self.resources_limits = defaultdict(lambda: 2)
         #self.resources_colors = defaultdict(lambda: GOLD)
->>>>>>> origin/continuous_planning
         self.resources_limits = defaultdict(int)
         self.resources_colors = defaultdict(str)
 
@@ -828,34 +825,11 @@ class BasicGame(object):
             self.time += 1
 
             self._clearAll()
-
-<<<<<<< HEAD
             try:
                 self.setFullState(self.playback_states[self.playback_index])
             except:
                 print "playback is failing"
                 embed()
-=======
-            # For new objects that appear; sprite induction
-            # spriteInduction(self, step=1)
-
-
-
-            # # load/save handling
-            # if self.load_.save_enabled:
-            #     from pygame.locals import K_1, K_2
-            #     if self.keystate[K_2] and self._lastsaved is not None:
-            #         self.setFullState(self._lastsaved)
-            #         self._initScreen(self.screensize,headless)
-            #         pygame.display.flip()
-            #     if self.keystate[K_1]:
-            #         self._lastsaved = self.getFullState()
-            # try:
-            self.setFullState(self.playback_states[self.playback_index])
-            # except:
-            #     print "playback is failing"
-            #     embed()
->>>>>>> origin/continuous_planning
 
             # Save the event and agent state
             try:
@@ -967,20 +941,9 @@ class BasicGame(object):
         self.spriteDistribution = {}
         self.movement_options = {}
         allStates = [self.getFullState()]
-        # spriteInduction(self, step=0)
-        # for sprite in objects:
-        #     self.spriteDistribution[sprite] = initializeDistribution(sprite_types) # Indexed by object ID
-        #     self.movement_options[sprite] = {"OTHER":{}}
-        #     for sprite_type in sprite_types:
-        #         self.movement_options[sprite][sprite_type] = {}
-<<<<<<< HEAD
 
         self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack']
             else (2 if x[2].__name__ in ['killSprite'] else (3 if x[2].__name__ in ['changeResource', 'changeScore'] else 0)), reverse=True)
-
-=======
-        #self.collision_eff.sort(key = lambda x: x[2].__name__ == 'killSprite') # Should make this more modular. alwell.
->>>>>>> origin/continuous_planning
 
         while not self.ended:
             clock.tick(self.frame_rate)
@@ -1277,17 +1240,11 @@ class VGDLSprite(object):
                 print "WARNING: undefined parameter '%s' for sprite '%s'! "%(name, self.__class__.__name__)
         # how many timesteps ago was the last move?
         self.lastmove = 0
-
         # management of resources contained in the sprite
-<<<<<<< HEAD
         self.resources = defaultdict(int)
-=======
-        #self.resources = defaultdict(lambda: 0)
-        self.resources = defaultdict(bool)
-
         self.rect.width = self.width*self.rect.width
         self.rect.height = self.height*self.rect.height
->>>>>>> origin/continuous_planning
+
 
     def update(self, game, random_npc=False):
         """ The main place where subclasses differ. """
@@ -1297,46 +1254,16 @@ class VGDLSprite(object):
         self.lastrect = self.rect.copy()
         # no need to redraw if nothing was updated
         self.lastmove += 1
-<<<<<<< HEAD
-        # if self.colorName == 'RED':
-            # ipdb.set_trace()
         if not self.is_static and not self.only_active and not random_npc:
             self.physics.passiveMovement(self)
-=======
-        #print("middle")
-        if not self.is_static and not self.only_active:
-            #print("PASSIVE MOvEMEnt")
-            #print self.physics
-            self.physics.passiveMovement(self) #something is printed here
-            
-        #print("end")
->>>>>>> origin/continuous_planning
 
     def _updatePos(self, orientation, speed=None):
         if speed is None:
             speed = self.speed
-<<<<<<< HEAD
         if (self.lastmove+1)%self.cooldown==0 and abs(orientation[0])+abs(orientation[1])!=0:
         # if not( ((self.lastmove+1) % self.cooldown != 0) or abs(orientation[0])+abs(orientation[1])==0): ##used this until 9/14
             self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
             # self.lastmove = 0
-=======
-
-        if not(self.cooldown > self.lastmove or abs(orientation[0])+abs(orientation[1])==0):
-            '''
-            print("updating position")
-            print(self.rect)
-            print(speed)
-            print(orientation[0]*speed,orientation[1]*speed)
-            '''
-            #print self.rect
-            #print (orientation[0]*speed, orientation[1]*speed)
-            self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
-            #print self.rect
-            #self.rect = self.rect.move((1,-1))
-            #print(self.rect)
-            self.lastmove = 0
->>>>>>> origin/continuous_planning
 
         
 

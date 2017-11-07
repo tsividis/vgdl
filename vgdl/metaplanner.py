@@ -1,5 +1,5 @@
 from ontology import distributionInitSetup
-from WBP import *
+# from WBP import *
 from mcts import *
 from qlearner import *
 from aStar import *

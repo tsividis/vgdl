@@ -21,14 +21,10 @@ import importlib
 from colors import *
 from util import factorize, objectsToSymbol
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
-<<<<<<< HEAD
 from termcolor import colored
-
 import cPickle
 from line_profiler import LineProfiler
-=======
-#from line_profiler import LineProfiler
->>>>>>> origin/continuous_planning
+
 
 OBSERVATION_LOCAL = 'local'
 OBSERVATION_GLOBAL = 'global'
@@ -84,10 +80,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self._game.exceptedObjects = []
         self.makeSymbolDict()
         self._game.ignoreList = [] ## another way to mark objects that shouldn't be processed when doing induction (that is, collision objects)
-<<<<<<< HEAD
-=======
         #self._game.keystate = defaultdict(lambda:False)
->>>>>>> origin/continuous_planning
         self._game.keystate = defaultdict(bool)
         self._game.metabolic_score = 0
         self.game_name = None
@@ -407,17 +400,10 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         pre_step_score = self._game.score
         #print("start action")
         events = self._performAction(action)
-<<<<<<< HEAD
-        # embed()
-        # observation = self._getSensors()
 
-        observation = self._getSensors()
-=======
-        #print("end action")
-        #observation = self._getSensors()
-        observation = 0
+        observation = self._getSensors() ## Consider commenting this out and not getting an observation.
+        # observation = 0
         #observation = self.sensors_profiler()
->>>>>>> origin/continuous_planning
         (ended, won) = self._isDone()
         self._game.time+=1
 
@@ -434,12 +420,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             reward = dScore
         for k in self._game.keystate:
             self._game.keystate[k] = False
-<<<<<<< HEAD
-
-        # print "reward", reward
-=======
-        #print("end step")
->>>>>>> origin/continuous_planning
         return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
 
 ## the game in the agent's 'head'

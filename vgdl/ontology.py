@@ -744,8 +744,6 @@ class BreakoutAvatar(HorizontalAvatar):
         self.rect.width = 2*self.rect.width
         #print self.rect
 
-
-
 class Paddle(HorizontalAvatar):
     last_action = None
     c1 = 0.2 #None, move
@@ -963,23 +961,15 @@ class MarioAvatar(InertialAvatar):
     draw_arrow = False
     strength = 1
     movestrength = sqrt(strength)
-<<<<<<< HEAD
-    vx_max = 10
-=======
     vx_max = 8
->>>>>>> origin/continuous_planning
     airsteering = False
     last_vy = 0
     jumping = False
     wait_step = 0
     airstrength = 1
-<<<<<<< HEAD
-    decay = 0 #.5
-=======
     speed_bonus = [0,0]
     #decay = .5
     decay = 0
->>>>>>> origin/continuous_planning
 
     def declare_possible_actions(self):
         from pygame.locals import K_LEFT, K_RIGHT, K_UP, K_DOWN
@@ -1488,22 +1478,13 @@ def cloneSprite(sprite, partner, game):
 
 def transformTo(sprite, partner, game, stype='wall'):
     newones = game._createSprite([stype], (sprite.rect.left, sprite.rect.top))
-<<<<<<< HEAD
-=======
-    #embed()
->>>>>>> origin/continuous_planning
     if len(newones) > 0:
         if isinstance(sprite, OrientedSprite) and isinstance(newones[0], OrientedSprite):
             #print("KEEPING ORIENTATION SPEED")
             newones[0].orientation = sprite.orientation
-<<<<<<< HEAD
-            newones[0].resources = sprite.resources
-=======
             newones[0].speed = sprite.speed
         newones[0].resources = sprite.resources
->>>>>>> origin/continuous_planning
         game.kill_list.append(sprite)
-        # game.dead.append(sprite)
     args = {'stype':stype}
     return ("transformTo", sprite.ID, partner.ID, args)
 
