@@ -13,7 +13,7 @@ import pygame
 import numpy as np
 from tools import triPoints, unitVector, vectNorm, oncePerStep
 from ai import AStarWorld
-#from IPython import embed
+from IPython import embed
 import core
 
 
@@ -151,7 +151,7 @@ class ContinuousPhysics(GridPhysics):
             #sprite._updatePos([sprite.orientation[0],0],sprite.speed)
             #sprite._updatePos([0,sprite.orientation[1]],sprite.speed)
             
-            if self.gravity > 0 and sprite.mass > 0:
+            if self.gravity > 0 and sprite.mass > 0 and (sprite.gravity or sprite.jumping):
 
                 self.activeMovement(sprite, (0, self.gravity * sprite.mass))
                 
@@ -169,6 +169,9 @@ class ContinuousPhysics(GridPhysics):
         
 
     def calculatePassiveMovement(self, sprite):
+
+        '''
+        #this was the old thing
         if sprite.speed != 0 and hasattr(sprite, 'orientation'):
             if not(sprite.cooldown > sprite.lastmove+1 or abs(sprite.orientation[0])+abs(sprite.orientation[1])==0):
                 pos = sprite.rect.move((sprite.orientation[0]*sprite.speed, sprite.orientation[1]*sprite.speed))
@@ -177,6 +180,16 @@ class ContinuousPhysics(GridPhysics):
         else:   # If object has speed = 0 or no 'orientation' attribute
             pos = rect
         return pos.left, pos.top
+        '''
+        if (sprite.speed != 0 or hasattr(sprite,'jumping') and sprite.jumping) and hasattr(sprite, 'orientation'):
+            pos = sprite.rect.move((sprite.orientation, sprite.speed))
+            if self.gravity > 0 and sprite.mass > 0:
+                return self.calculateActiveMovement(sprite, (0, self.gravity * sprite.mass))
+        else:
+            pos = rect
+        return pos.left, pos.top
+
+
 
 
     def activeMovement(self, sprite, action, speed=None):
@@ -200,16 +213,20 @@ class ContinuousPhysics(GridPhysics):
         #if sprite.lastrect.y == sprite.rect.y and not sprite.jumping:
         #    v2 = 0.0
         #else:
-        v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed
+        if sprite.gravity or sprite.rope:
+            v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed
+        else:
+            v2 = action[1]*sprite.vy_max
         
         
         
-        if sprite.jumping or action[1]:
+        if ((hasattr(sprite,'jumping') and sprite.jumping) or action[1]) and (sprite.gravity or sprite.rope):
             v1 = sprite.orientation[0] * speed
         else:
             v1 = action[0]*sprite.vx_max
 
-        if not sprite.jumping:
+
+        if not (hasattr(sprite,'jumping') and sprite.jumping):
             v2 += sprite.speed_bonus[1]
             v1 += sprite.speed_bonus[0]
 
@@ -231,10 +248,33 @@ class ContinuousPhysics(GridPhysics):
     def calculateActiveMovement(self, sprite, action, speed=None):
         """ Here the assumption is that the controls determine the direction of
         acceleration of the sprite. """
+
+        """
+        Old thing
         if speed is None:
             speed = sprite.speed
         v1 = action[0] / float(sprite.mass) + sprite.orientation[0] * speed * self.gridsize[0]
         v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed * self.gridsize[1]
+        sprite.orientation = unitVector((v1, v2))
+        sprite.speed = vectNorm((v1, v2)) / vectNorm(sprite.orientation)
+
+        return sprite.rect.left, sprite.rect.top
+        """
+        if speed is None:
+            speed = sprite.speed
+
+        v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed
+        
+        if (hasattr(sprite,'jumping') and sprite.jumping) or action[1]:
+            v1 = sprite.orientation[0] * speed
+        else:
+            v1 = action[0]*sprite.vx_max
+
+        if not (hasattr(sprite,'jumping') and sprite.jumping):
+            v2 += sprite.speed_bonus[1]
+            v1 += sprite.speed_bonus[0]
+
+        sprite.speed_bonus = [0,0]
         sprite.orientation = unitVector((v1, v2))
         sprite.speed = vectNorm((v1, v2)) / vectNorm(sprite.orientation)
 
@@ -687,6 +727,7 @@ class MovingAvatar(VGDLSprite, Avatar):
             elif game.keystate[K_LEFT]:  res += [LEFT]
             if   game.keystate[K_UP]:    res += [UP]
             elif game.keystate[K_DOWN]:  res += [DOWN]
+        #print res
         return res
 
     def update(self, game):
@@ -946,73 +987,90 @@ class MarioAvatar(InertialAvatar):
     strength = 1
     movestrength = sqrt(strength)
     vx_max = 8
+    vy_max = 8
     airsteering = False
     last_vy = 0
     jumping = False
     wait_step = 0
     airstrength = 1
     speed_bonus = [0,0]
+    gravity = True
+    rope = False
+    last_gravity = True
+    last_rope = False
     #decay = .5
     decay = 0
 
     def declare_possible_actions(self):
         from pygame.locals import K_LEFT, K_RIGHT, K_UP, K_DOWN
         actions = {}
-        #actions["UP"] = K_UP
-        #actions["DOWN"] = K_DOWN
+        actions["UP"] = K_UP
+        actions["DOWN"] = K_DOWN
         actions["LEFT"] = K_LEFT
         actions["RIGHT"] = K_RIGHT
         return actions
 
     def update(self, game):
-        #if self.jumping:
-        #    print "JUMPING"
-        #else:
-        #    print "NO"
-        #print self
-
-        #print("UPDATING")
 
         from pygame.locals import K_SPACE
+
 
         if self.lastrect == self.rect and not self.jumping:
             self.speed = self.speed * self.orientation[0]
             self.orientation = (1,0)
 
         action = self._readAction(game)
+        #print "initial action:"
+        #print action
 
         if action == None:
             action = [0, 0]
         action = list(action)
-        action[1]=0
-        # presumibly, this means the sprite is 'landed'
-        self.airstrength *= (1-self.decay)
 
-        if self.last_vy == self.lastrect.y - self.rect.y:
+
+        if self.rope:
+            #print action[0] != 0
+            #print game.keystate[K_SPACE]
+            #print self.jumping
+            if action[0] != 0 and game.keystate[K_SPACE] and not self.jumping:
+                print "JUMP OFF ROPE"
+                action[1] = -self.strength
+                self.jumping = True
+                self.wait_step = 0
+                self.airstrength = 1
+
+        if self.gravity:
+            action[1]=0
+
+        # presumibly, this means the sprite is 'landed'
+            self.airstrength *= (1-self.decay)
+
+            if self.last_vy == self.lastrect.y - self.rect.y:
             #print "are equal"
-            self.wait_step += 1
-            if not self.jumping:
+                self.wait_step += 1
+                if not self.jumping:
                 #print "no"
                 #action[0] = action[0] * self.movestrength
-                action = [action[0] * self.movestrength,0]
-                if game.keystate[K_SPACE] and not self.jumping:
-                    action[1] = -self.strength
-                    self.jumping = True
-                    self.wait_step = 0
-                    self.airstrength = 1
-            else:
+                    action = [action[0] * self.movestrength,0]
+                    if game.keystate[K_SPACE] and not self.jumping:
+                        action[1] = -self.strength
+                        self.jumping = True
+                        self.wait_step = 0
+                        self.airstrength = 1
+                else:
                 #print "yes"
-                action[0] = action[0] * self.movestrength * self.airstrength
+                    action[0] = action[0] * self.movestrength * self.airstrength
                 #action[0] = 0
 
-        else:
-            self.wait_step = 0
-            action[0] = 0
+            else:
+                self.wait_step = 0
+                action[0] = 0
 
         # this is pretty hacky. What if sprite doesn't move very fast?
-        if self.wait_step > 1:
-           self.jumping = False
+            if self.wait_step > 1:
+                self.jumping = False
         
+        #print action
         self.physics.activeMovement(self, action)
         #changes speed
 
@@ -1029,16 +1087,23 @@ class MarioAvatar(InertialAvatar):
             self.orientation = unitVector((vx, vy))
             self.speed = vectNorm((vx, vy))/ vectNorm(self.orientation)
 
+        #print (self.orientation[0]*self.speed, self.orientation[1]*self.speed)
+
         # a less precise vy, but this is useful
-        self.last_vy = self.lastrect.y-self.rect.y
+
 
         #two_ago = self.lastrect.y
-        VGDLSprite.update(self, game)
+        
         #if self.rect.y == self.lastrect.y and self.rect.y == two_ago:
         #    self.jumping = False
 
         
-
+        self.last_vy = self.lastrect.y-self.rect.y
+        VGDLSprite.update(self, game)
+        self.last_gravity = self.gravity
+        self.gravity = True
+        self.last_rope = self.rope
+        self.rope = False
 
 
         #print self.orientation
@@ -1692,6 +1757,23 @@ def teleportToExit(sprite, partner, game):
 def killIfTooFast(sprite,partner,game, speed):
     if sprite.speed*sprite.orientation[1] > speed:
         return killSprite(sprite, partner, game)
+
+def onLadder(sprite, partner, game):
+
+    sprite.gravity = False
+    if sprite.last_gravity:
+        sprite.speed = 0
+    return ('onLadder', sprite.ID, partner.ID)
+
+def onRope(sprite, partner, game):
+    sprite.gravity = False
+    if sprite.last_gravity:
+        sprite.speed = 0
+    sprite.rope = True
+    if not sprite.last_rope:
+        sprite.jumping = False
+
+
 
 
 # this allows us to determine whether the game has stochastic elements or not

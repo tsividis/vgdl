@@ -95,7 +95,9 @@ class Agent:
 	def playCurriculum(self):
 		""" Plays a game level until it wins, then moves to the next one until
 		completion. """
+		#embed()
 		level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
+		
 		episodes = []
 
 		shutil.rmtree("images/tmp")
@@ -371,7 +373,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.demo_helper"
 
 	filename = "examples.gridphysics.expt_antagonist"
-
+	filename = "examples.continuousphysics.collect_resource"
 	# filename = "examples.gridphysics.expt_physics_sharpshooter"
 	# filename = "examples.gridphysics.demo_transform_relational"
 	# filename = "examples.gridphysics.simpleGame_push_boulders"

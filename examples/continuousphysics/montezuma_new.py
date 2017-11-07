@@ -44,6 +44,9 @@ BasicGame
         ladder > Immovable color=YELLOW
         rope > Immovable color=RED
 
+        ladderavatar background > transformTo stype=avatar
+        avatar ladder > transformTo stype=ladderavatar
+
         avatar > MarioAvatar strength=15 physicstype=GravityPhysics color=WHITE
         ladderavatar > VerticalAvatar speed=0.3 color=WHITE
         ropeavatar > RopeAvatar physicstype=ContinuousPhysics color=WHITE
@@ -76,9 +79,6 @@ BasicGame
         avatar conveyor > conveySprite
         avatar conveyor > wallStop
 
-        ladderavatar background > transformTo stype=avatar
-        avatar ladder > transformTo stype=ladderavatar
-
         ropeavatar offrope > transformTo stype=avatar
         avatar rope > transformTo stype=ropeavatar
 
@@ -97,6 +97,8 @@ BasicGame
         W > background wall offrope
 
 """
+
+
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

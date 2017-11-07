@@ -20,9 +20,11 @@ import logging
 import numpy as np
 import sys
 import re
-#from IPython import embed
+from IPython import embed
 import time
 import os
+from line_profiler import LineProfiler
+#from ontology import Immovable, DARKGRAY, MovingAvatar, GOLD
 
 # ---------------------------------------------------------------------
 #     Constants
@@ -328,12 +330,25 @@ class VGDLParser(object):
         except UserTiredException:
             pass
 
+    def parseProfiler(self, tree):
+        lp = LineProfiler()
+        lp_wrapper = lp(self.parseGame)
+        output = lp_wrapper(tree)
+        lp.print_stats()
+        return output        
+
     def parseGame(self, tree):
+        #embed()
         """ Accepts either a string, or a tree. """
         if not isinstance(tree, Node):
             tree = indentTreeParser(tree).children[0]
-        sclass, args = self._parseArgs(tree.content)
-        self.game = sclass(**args)
+        #sclass, args = self._parseArgs(tree.content)
+        #sclass, args = self.args_profiler(tree.content) #is this ever not Basic game?
+        #print sclass, args
+        #self.game = sclass(**args)
+        args = {}
+        self.game = BasicGame(**args)
+        
         for c in tree.children:
             if c.content == "SpriteSet":
                 self.parseSprites(c.children)
@@ -415,14 +430,22 @@ class VGDLParser(object):
                  "Mapping", c, keys
             self.game.char_mapping[c] = keys
 
+    def args_profiler(self,s):
+        lp = LineProfiler()
+        lp_wrapper = lp(self._parseArgs)
+        output = lp_wrapper(s)
+        lp.print_stats()
+        return output    
+
     def _parseArgs(self, s,  sclass=None, args=None):
+        #embed()
         if not args:
             args = {}
         sparts = [x.strip() for x in s.split(" ") if len(x) > 0]
         if len(sparts) == 0:
             return sclass, args
         if not '=' in sparts[0]:
-            sclass = self._eval(sparts[0])
+            sclass = self._eval(sparts[0]) #takes the longest
             sparts = sparts[1:]
         for sp in sparts:
             k, val = sp.split("=")
@@ -448,7 +471,16 @@ class BasicGame(object):
     frame_rate = 20
     load_save_enabled = True
 
+    def init_profiler(self,**kwargs):
+        lp = LineProfiler()
+        lp_wrapper = lp(self.initial)
+        output = lp_wrapper(**kwargs)
+        lp.print_stats()
+
     def __init__(self, **kwargs):
+        self.init_profiler(**kwargs)
+
+    def initial(self, **kwargs):
         from ontology import Immovable, DARKGRAY, MovingAvatar, GOLD
         for name, value in kwargs.iteritems():
             # print "NAME: ", name

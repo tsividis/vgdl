@@ -55,6 +55,7 @@ BasicGame
         k > key
 """
 
+level_game_pairs = [[game, level]]
 
 
 if __name__ == "__main__":
