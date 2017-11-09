@@ -10,34 +10,34 @@
 # wwwwwwwwwwwwwww
 # """
 
-level = """
-wwwwwwwwwwwwwwwwwww
-w     r           w
-w     r           w
-w     r           w
-w A              Gw
-wwww           llww
-w              l  w
-w              l  w
-wwwwwwwwwwwwwwwwwww
-"""
-
 # level = """
 # wwwwwwwwwwwwwwwwwww
-# w                 w
-# w                 w
-# w                 w
-# w  A             Gw
+# w     r           w
+# w     r           w
+# w     r           w
+# w A              Gw
 # wwww           llww
-# w              l  w
-# w              l  w
-# w              l  w
-# w              l  w
-# w              l  w
 # w              l  w
 # w              l  w
 # wwwwwwwwwwwwwwwwwww
 # """
+
+level = """
+wwwwwwwwwwwwwwwwwww
+w                 w
+w                 w
+w                 w
+w  A             Gw
+wwww           llww
+w              l  w
+w              l  w
+w              l  w
+w              l  w
+w              l  w
+w              l  w
+w              l  w
+wwwwwwwwwwwwwwwwwww
+"""
 
 game = """
 BasicGame
@@ -56,7 +56,7 @@ BasicGame
         avatar goomba > killSprite
         avatar EOS  > killSprite
         goal avatar > killSprite
-        # avatar wall > killIfTooFast speed=16
+        avatar wall > killIfTooFast speed=16
         avatar wall > stepBack
         # wall avatar > killSprite
         avatar rope > onRope

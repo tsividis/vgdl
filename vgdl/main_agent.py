@@ -467,9 +467,11 @@ class Agent:
 
 			if not quitting:
 				for i, action in enumerate(solution):
-					
+
 					self.hypotheses[0].dryingPaint = set()
 
+					print "before execute step"
+					print self.rle._isDone()
 					hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
 						run_induction = not flexible_goals)
 
@@ -500,12 +502,16 @@ class Agent:
 
 					effectsEncountered.extend(effects)
 					steps +=1
+
+					ended, win = self.rle._isDone()
+					if ended:
+						print "ended"
+						embed()
+						break
 					if theory_change_flag:
 						self.hypotheses = hypotheses
 						break
-					ended, win = self.rle._isDone()
-					if ended:
-						break
+
 
 					## Make sure you're far enough from unpredictable dangerous objects.
 
@@ -709,11 +715,7 @@ class Agent:
 		except IndexError:
 			agentState = defaultdict(lambda: 0)
 
-		try:
-			res = self.rle.step(action)
-		except:
-			print "in executeStep"
-			embed()
+		res = self.rle.step(action)
 
 		print ""
 		print keyPresses[action]
