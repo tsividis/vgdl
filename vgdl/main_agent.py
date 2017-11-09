@@ -854,9 +854,9 @@ if __name__ == "__main__":
 
 	##simpleGame_missile: no support for learning that it can shoot things.
 
-	# filename = "examples.gridphysics.expt_antagonist"
+	filename = "examples.gridphysics.expt_preconditions"
 	#filename = "examples.continuousphysics.collect_resource"
-	filename = "examples.continuousphysics.rope_test"
+	# filename = "examples.continuousphysics.rope_test"
 
 	global WBP
 	if 'grid' in filename:

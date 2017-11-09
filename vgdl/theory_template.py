@@ -709,7 +709,7 @@ class Theory(object):
 		Creates preconditions based on the agentState that might help to explain the event.
 		Returns a list of theories.
 		"""
-		# embed()
+		embed()
 		newTheories = []
 
 		obj1 = self.spriteObjects[event[1]]
