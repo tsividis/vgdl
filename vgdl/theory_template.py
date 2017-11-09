@@ -709,7 +709,6 @@ class Theory(object):
 		Creates preconditions based on the agentState that might help to explain the event.
 		Returns a list of theories.
 		"""
-		embed()
 		newTheories = []
 
 		obj1 = self.spriteObjects[event[1]]
@@ -727,8 +726,9 @@ class Theory(object):
 		else:
 			# Create possible preconditions
 			concepts = []
+			## (text,item,operator,0)
 			for k in timestep.agentState.keys():
-				concepts.extend(self.generateNumberConcepts(k, timestep.agentState[k])) #TODO: Combine generateNumberConcpets and makePreconditions
+				concepts.extend(self.generateNumberConcepts(k, timestep.agentState[k])) #TODO: Combine generateNumberConcepts and makePreconditions
 			generatedPreconditions = self.makePreconditions(concepts)
 			for p in generatedPreconditions:
 
@@ -1386,6 +1386,16 @@ class Theory(object):
 		"""
 		concepts = []
 
+		## Speed is not a normal backpack item -- for now, simple hack that speed that kills you is 5 greater than your strength.
+		## TODO: Memorize speed of collisions w/ other objects; then adjust proposals as necessary.
+		if item=='speed':
+			num = self.classes['avatar'][0].vgdlType.strength+5
+			text = item+'>'+str(num)
+			operator = '>'
+			concepts.append((text,item,operator,num))
+			return concepts
+
+		## All other items
 		if num<0:
 			text = item+"<"+str(0)
 			operator = '<'
@@ -2246,30 +2256,41 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 		if interactionRule.interaction =='killSprite':
 			oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
 			precondition = list(set(interactionRule.preconditions))[0]
+			# print "in writetheorytotxt"
+			# embed()
 			if precondition:
 				if precondition.negated:
 					true_operator = oppositeOperatorMap[precondition.operator_name]
 				else:
 					true_operator = precondition.operator_name
 
-				if true_operator in {"<", "<="}:
-					newInteractionName = 'killIfHasLess' #example
-					if true_operator == "<":
-						limit = precondition.num - 1
-					else:
-						limit = precondition.num
+				if precondition.item=='speed':
+					newInteractionName = 'killIfTooFast'
+					limit = precondition.num
+					argsString = " speed=%s"%(str(limit))
+				else:
+					if true_operator in {"<", "<="}:
+						newInteractionName = 'killIfHasLess' #example
+						if true_operator == "<":
+							limit = precondition.num - 1
+						else:
+							limit = precondition.num
 
-				elif true_operator in {">", ">="}:
-					newInteractionName = 'killIfOtherHasMore'
-					if true_operator == ">":
-						limit = precondition.num + 1
-					else:
-						limit = precondition.num
+					elif true_operator in {">", ">="}:
+						newInteractionName = 'killIfOtherHasMore'
+						if true_operator == ">":
+							limit = precondition.num + 1
+						else:
+							limit = precondition.num
 
-				argsString = " resource=%s limit=%s"%(precondition.item, str(limit))
+					argsString = " resource=%s limit=%s"%(precondition.item, str(limit))
 		elif interactionRule.interaction=='teleportToExit':
 			argsString = ""
 		elif interactionRule.interaction == 'killIfFromAbove' or interactionRule.interaction == 'killIfFromBelow':
+			argsString = ""
+		elif interactionRule.interaction == 'killIfTooFast':
+			print "killIfTooFast in argstring"
+			embed()
 			argsString = ""
 		else:
 			if interactionRule.args:
@@ -2512,6 +2533,8 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					argsString = ""
 
 					if interactionRule.preconditions or interactionRule.args:
+						# print "above buildargsstring"
+						# embed()
 						args, interactionRule.interaction = buildArgsString(interactionRule)
 						argsString += args
 
