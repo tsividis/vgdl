@@ -572,7 +572,7 @@ class WBP():
 			'''
 			print(i)
 			'''
-			print(current.rle.show())
+			# print(current.rle.show())
 
 			avatar = self.getAliveAvatar(current.rle)
 			if avatar is not None:

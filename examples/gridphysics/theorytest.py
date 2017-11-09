@@ -3,14 +3,9 @@ level="""
 3                 3
 3                 3
 3                 3
-3   2            13
-3333           0033
-3              0  3
-3              0  3
-3              0  3
-3              0  3
-3              0  3
-3              0  3
+3                13
+3              0033
+3   2          0  3
 3              0  3
 3333333333333333333
 """
@@ -30,11 +25,11 @@ BasicGame
 		c2 c2 > nothing
 		c3 c3 > nothing
 		avatar EOS > stepBack
-		avatar c3 > stepBack
-		c4 avatar > killSprite
-		c4 c4 > nothing
 		c3 c4 > nothing
 		c4 c3 > nothing
+		c4 avatar > killSprite
+		c4 c4 > nothing
+		c3 avatar > killSprite
 		c4 EOS > stepBack
 		c2 EOS > stepBack
 		c3 EOS > stepBack
@@ -43,6 +38,7 @@ BasicGame
 		NoveltyTermination s1=c2 s2=c2 win=True
 		NoveltyTermination s1=c2 s2=c3 win=True
 		NoveltyTermination s1=c2 s2=c4 win=True
+		NoveltyTermination s1=c3 s2=avatar win=True
 		NoveltyTermination s1=c3 s2=c3 win=True
 		NoveltyTermination s1=c3 s2=c4 win=True
 		NoveltyTermination s1=c4 s2=avatar win=True

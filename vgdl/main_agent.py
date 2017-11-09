@@ -504,14 +504,13 @@ class Agent:
 					steps +=1
 
 					ended, win = self.rle._isDone()
-					if ended:
-						print "ended"
-						embed()
-						break
+					
 					if theory_change_flag:
 						self.hypotheses = hypotheses
 						break
-
+						
+					if ended:
+						break
 
 					## Make sure you're far enough from unpredictable dangerous objects.
 
@@ -712,6 +711,7 @@ class Agent:
 
 		try:
 			agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+			agentState['speed'] = self.rle._game.getAvatars()[0].speed
 		except IndexError:
 			agentState = defaultdict(lambda: 0)
 
@@ -722,6 +722,7 @@ class Agent:
 
 		try:
 			agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+			agentState['speed'] = self.rle._game.getAvatars()[0].speed
 
 			for e in res['effectList']:
 				if 'changeResource' in e:
@@ -854,9 +855,9 @@ if __name__ == "__main__":
 
 	##simpleGame_missile: no support for learning that it can shoot things.
 
-	filename = "examples.gridphysics.expt_preconditions"
+	# filename = "examples.gridphysics.expt_relational"
 	#filename = "examples.continuousphysics.collect_resource"
-	# filename = "examples.continuousphysics.rope_test"
+	filename = "examples.continuousphysics.rope_test"
 
 	global WBP
 	if 'grid' in filename:

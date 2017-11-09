@@ -27,13 +27,8 @@ wwwwwwwwwwwwwwwwwww
 w                 w
 w                 w
 w                 w
-w  A             Gw
-wwww           llww
-w              l  w
-w              l  w
-w              l  w
-w              l  w
-w              l  w
+w                Gw
+w   A          llww
 w              l  w
 w              l  w
 wwwwwwwwwwwwwwwwwww
@@ -56,7 +51,7 @@ BasicGame
         avatar goomba > killSprite
         avatar EOS  > killSprite
         goal avatar > killSprite
-        avatar wall > killIfTooFast speed=16
+        avatar wall > killIfTooFast speed=2
         avatar wall > stepBack
         # wall avatar > killSprite
         avatar rope > onRope
