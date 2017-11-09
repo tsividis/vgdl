@@ -81,7 +81,7 @@ print "FINISHED SETTING VALUES"
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=100, limit=LIMIT, grid_limit=GRID_LIMIT,shortHorizon=False,firstOrderHorizon=False,seen_limits=[]):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=10000, limit=LIMIT, grid_limit=GRID_LIMIT,shortHorizon=False,firstOrderHorizon=False,seen_limits=[]):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -584,7 +584,7 @@ class WBP():
 			else:
 				print "NO AVATAR"
 				#embed()
-			#print avatar
+			print avatar
 			if i % 500 == 0:
 				print self.avatar_locs_disc
 				print self.key
@@ -1461,7 +1461,7 @@ if __name__ == "__main__":
 	#gameFilename = "examples.continuousphysics.crossroad"
 	#gameFilename = "examples.continuousphysics.collect_key"
 	#gameFilename = "examples.continuousphysics.collect_resource"
-	#gameFilename = "examples.continuousphysics.rope_test"
+	gameFilename = "examples.continuousphysics.rope_test"
 	#gameFilename = "examples.gridphysics.simple_grid"
 	#gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
 	#gameFilename = "examples.gridphysics.expt_exploration_exploitation"
@@ -1470,12 +1470,12 @@ if __name__ == "__main__":
 	#gameFilename = "examples.continuousphysics.breakout"
 
 	
-	#gameString, levelString = defInputGame(gameFilename, randomize=True)
+	gameString, levelString = defInputGame(gameFilename, randomize=True)
 
-	#rleCreateFunc = lambda: createRLInputGame(gameFilename)
+	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	
-	gameFilename = "examples.continuousphysics.montezuma_3"
-	rleCreateFunc = lambda: createRLInputGameFromPositions(gameFilename)
+	#gameFilename = "examples.continuousphysics.montezuma_3"
+	#rleCreateFunc = lambda: createRLInputGameFromPositions(gameFilename)
 
 
 	rle = rleCreateFunc()

@@ -1,10 +1,10 @@
 level = """
 wwwwwwwwwwwww
-w   $ r $   w
-w   $ r $   w
-w   $ r $   w
-wA  $   $  Gw
-wwww$$$$$wwww
+w     r     w
+w     r     w
+w     r     w
+wA         Gw
+wwww     wwww
 w           w
 w           w
 wwwwwwwwwwwww
@@ -14,7 +14,7 @@ game = """
 BasicGame
     SpriteSet
         
-        offrope > Immovable color=LIGHTGRAY
+        
        
         goal > Immovable color=GREEN
 
@@ -24,32 +24,22 @@ BasicGame
 
         avatar > MarioAvatar strength=15 physicstype=GravityPhysics color=WHITE
 
-        ropeavatar > RopeAvatar physicstype=ContinuousPhysics color=WHITE
+        
 
 
 
     TerminationSet
         SpriteCounter stype=goal      win=True
-        MultiSpriteCounter stype1=avatar stype2=ropeavatar win=False
+        SpriteCounter  stype=avatar win=False
 
     InteractionSet
 
         avatar goomba > killSprite
         avatar EOS  > killSprite
-        goomba EOS > killSprite
-        ladderavatar goomba > killSprite
-
-        
         goal avatar > killSprite
         avatar wall > killIfTooFast speed=40
         avatar wall > wallStop
-        ropeavatar wall > wallStop
-        avatar goal > stepBack
-
-
-
-        ropeavatar offrope > transformTo stype=avatar
-        avatar rope > transformTo stype=ropeavatar
+        avatar rope > onRope
 
 
     LevelMapping
@@ -57,10 +47,10 @@ BasicGame
         G > goal
         A > avatar
         r > rope
-        $ > offrope
+        
 
 """
-
+level_game_pairs = [[game, level]]
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     VGDLParser.playGame(game, level)
