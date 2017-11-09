@@ -14,7 +14,7 @@ import numpy as np
 import scipy.stats
 from tools import triPoints, unitVector, vectNorm, oncePerStep
 from ai import AStarWorld
-#from IPython import embed
+from IPython import embed
 import core
 import copy
 import ipdb
@@ -1681,7 +1681,7 @@ def wallStop(sprite, partner, game, friction=0): # FLAG
     sprite.speed = vectNorm(sprite.orientation) * sprite.speed
     sprite.orientation = unitVector(sprite.orientation)
     ## TODO: Not printing for now
-    #return ('wallStop' , sprite.ID, partner.ID)
+    return ('wallStop', sprite.ID, partner.ID)
 
 def killIfSlow(sprite, partner, game, limitspeed=1):
     """ Take a decision based on relative speed. """
@@ -1802,7 +1802,7 @@ def pullWithIt(sprite, partner, game):
         sprite.orientation = partner.lastdirection
     sprite.lastrect = tmp
 
-    return ('pullWithIt' , sprite.ID, partner.ID)
+    return ('pullWithIt', sprite.ID, partner.ID)
 
 def collideFromAbove(sprite, partner, game):
     """ Allows the sprite to pass through the bottom and collide with the top."""
@@ -2449,6 +2449,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                     AimedFlakAvatar, InertialAvatar, MarioAvatar
 
             try:
+
                 ## Add avatar, and add the attached arguments, i.e., what the avatar shoots.
                 sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
 
