@@ -1,66 +1,78 @@
+# level = """
+# wwwwwwwwwwwwwww
+# w     r       w
+# w     r       w
+# w     r       w
+# w A          Gw
+# wwww       llww
+# w          l  w
+# w          l  w
+# wwwwwwwwwwwwwww
+# """
+
 level = """
-wwwwwwwwwwwww
-w   $ r $   w
-w   $ r $   w
-w   $ r $   w
-wA  $   $  Gw
-wwww$$$$$wwww
-w           w
-w           w
-wwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwww
+w     r           w
+w     r           w
+w     r           w
+w A              Gw
+wwww           llww
+w              l  w
+w              l  w
+wwwwwwwwwwwwwwwwwww
 """
+
+# level = """
+# wwwwwwwwwwwwwwwwwww
+# w                 w
+# w                 w
+# w                 w
+# w  A             Gw
+# wwww           llww
+# w              l  w
+# w              l  w
+# w              l  w
+# w              l  w
+# w              l  w
+# w              l  w
+# w              l  w
+# wwwwwwwwwwwwwwwwwww
+# """
 
 game = """
 BasicGame
     SpriteSet
-        
-        offrope > Immovable color=LIGHTGRAY
-       
         goal > Immovable color=GREEN
-
         wall > Immovable color=BLACK
-
         rope > Immovable color=RED
-
+        ladder > Immovable color=BLUE
         avatar > MarioAvatar strength=15 physicstype=GravityPhysics color=WHITE
-
-        ropeavatar > RopeAvatar physicstype=ContinuousPhysics color=WHITE
-
-
 
     TerminationSet
         SpriteCounter stype=goal      win=True
-        MultiSpriteCounter stype1=avatar stype2=ropeavatar win=False
+        SpriteCounter  stype=avatar win=False
 
     InteractionSet
-
         avatar goomba > killSprite
         avatar EOS  > killSprite
-        goomba EOS > killSprite
-        ladderavatar goomba > killSprite
-
-        
         goal avatar > killSprite
-        avatar wall > killIfTooFast speed=40
-        avatar wall > wallStop
-        ropeavatar wall > wallStop
-        avatar goal > stepBack
-
-
-
-        ropeavatar offrope > transformTo stype=avatar
-        avatar rope > transformTo stype=ropeavatar
-
+        # avatar wall > killIfTooFast speed=16
+        avatar wall > stepBack
+        # wall avatar > killSprite
+        avatar rope > onRope
+        avatar ladder > onLadder
 
     LevelMapping
         w > wall
         G > goal
         A > avatar
         r > rope
-        $ > offrope
+        l > ladder
+        x > avatar ladder
+        
 
 """
-
+level_game_pairs = [[game, level]]
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     VGDLParser.playGame(game, level)

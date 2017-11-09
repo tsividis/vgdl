@@ -81,7 +81,7 @@ print "FINISHED SETTING VALUES"
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=100, limit=LIMIT, grid_limit=GRID_LIMIT,shortHorizon=False,firstOrderHorizon=False,seen_limits=[]):
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], annealing=1, max_nodes=10000, limit=LIMIT, grid_limit=GRID_LIMIT,shortHorizon=False,firstOrderHorizon=False,seen_limits=[]):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
@@ -395,6 +395,9 @@ class WBP():
 
 		elif isinstance(avatar,vgdl.ontology.MarioAvatar):
 			self.actions = [K_SPACE, K_LEFT, K_RIGHT]
+			if not avatar.gravity:
+				self.actions.extend([K_UP, K_DOWN])
+			#print "MARIO"
 			self.canJump = True
 
 		else:
@@ -568,8 +571,9 @@ class WBP():
 			#print current.predict
 			'''
 			print(i)
-			print(current.rle.show())
 			'''
+			print(current.rle.show())
+
 			avatar = self.getAliveAvatar(current.rle)
 			if avatar is not None:
 				loc = current.rle._rect2pos(avatar.rect)
@@ -579,14 +583,14 @@ class WBP():
 				else:
 					self.no_key[loc] += 1
 				self.avatar_locs_disc[loc] += 1
-				print loc
+				#print loc
 			else:
 				print "NO AVATAR"
 				#embed()
-			print avatar
-			if i % 500 == 0:
-				print self.avatar_locs_disc
-				print self.key
+			# print avatar
+			# if i % 500 == 0:
+				# print self.avatar_locs_disc
+				# print self.key
 			
 			
 			self.getActions(current.rle)
@@ -600,7 +604,8 @@ class WBP():
 					pass
 
 			for a in actions:
-
+				#if a == K_SPACE:
+				#	embed()
 				child = Node(self.rle, self, current.actionSeq+[a], current)
 				child.eval()
 
@@ -1057,9 +1062,6 @@ class Node():
 					 for obj in s1_positions
 					 if self.WBP.geoDist(obj,pos) != 0]
 				
-
-				
-				
 				distance = min(possiblePairList)
 					 # This is a trick to avoid getting distance 0 for objects
 					 # of same type. If the list turns out to be empty, it will
@@ -1459,7 +1461,7 @@ if __name__ == "__main__":
 	#gameFilename = "examples.continuousphysics.crossroad"
 	#gameFilename = "examples.continuousphysics.collect_key"
 	#gameFilename = "examples.continuousphysics.collect_resource"
-	#gameFilename = "examples.continuousphysics.rope_test"
+	gameFilename = "examples.continuousphysics.rope_test"
 	#gameFilename = "examples.gridphysics.simple_grid"
 	#gameFilename = "examples.gridphysics.boulderdash" #Game is buggy.
 	#gameFilename = "examples.gridphysics.expt_exploration_exploitation"
@@ -1468,12 +1470,12 @@ if __name__ == "__main__":
 	#gameFilename = "examples.continuousphysics.breakout"
 
 	
-	#gameString, levelString = defInputGame(gameFilename, randomize=True)
+	gameString, levelString = defInputGame(gameFilename, randomize=True)
 
-	#rleCreateFunc = lambda: createRLInputGame(gameFilename)
+	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	
-	gameFilename = "examples.continuousphysics.montezuma_3"
-	rleCreateFunc = lambda: createRLInputGameFromPositions(gameFilename)
+	#gameFilename = "examples.continuousphysics.montezuma_3"
+	#rleCreateFunc = lambda: createRLInputGameFromPositions(gameFilename)
 
 
 	rle = rleCreateFunc()

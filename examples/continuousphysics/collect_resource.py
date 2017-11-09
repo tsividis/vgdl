@@ -37,6 +37,18 @@ w      w
 wwwwwwww
 """
 
+level = """
+wwwwwwww
+w      w
+w      w
+w    kGw
+wA  wwww
+wwwwww w
+w      w
+w      w
+wwwwwwww
+"""
+
 game = """
 BasicGame
     SpriteSet 
@@ -54,8 +66,8 @@ BasicGame
         
         avatar EOS  > killSprite
         avatar wall > wallStop
-        key avatar > killSprite
         avatar key > changeResource resource=key value=1
+        key avatar > killSprite
         goal avatar > killIfOtherHasMore resource=key
         
     LevelMapping

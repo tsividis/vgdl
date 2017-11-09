@@ -709,7 +709,7 @@ class Theory(object):
 		Creates preconditions based on the agentState that might help to explain the event.
 		Returns a list of theories.
 		"""
-
+		# embed()
 		newTheories = []
 
 		obj1 = self.spriteObjects[event[1]]
@@ -1889,7 +1889,10 @@ class Game(object):
 			for theory in existingTheories:
 				theory = self.addNewObjectsToTheory(theory, spriteSample)
 			init_hypotheses = existingTheories
-			self.hypothesisSpace = []
+			if timesteps:
+				self.hypothesisSpace = []
+			else:
+				self.hypothesisSpace = init_hypotheses
 
 		# This does DFS induction x times; not sure how to make it more like the behavior we want.
 		for theory in init_hypotheses: 	# each of these theories has depth 1
@@ -1898,8 +1901,9 @@ class Game(object):
 			self.DFSinduction(theory, timesteps, maxNumTheories, override=True, verbose=verbose) ##override anything that was in the original set.
 
 		try:
-			max_likelihood = np.unique([sum([h.likelihood(ts) for ts in timesteps]) for h in self.hypothesisSpace])[-1]
-			self.hypothesisSpace = [h for h in self.hypothesisSpace if sum([h.likelihood(ts) for ts in timesteps]) == max_likelihood]
+			if timesteps:
+				max_likelihood = np.unique([sum([h.likelihood(ts) for ts in timesteps]) for h in self.hypothesisSpace])[-1]
+				self.hypothesisSpace = [h for h in self.hypothesisSpace if sum([h.likelihood(ts) for ts in timesteps]) == max_likelihood]
 		except IndexError:
 			# timesteps is an empty list
 			max_likelihood = 0
