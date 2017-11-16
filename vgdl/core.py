@@ -20,7 +20,7 @@ import logging
 import numpy as np
 import sys
 import re
-#from IPython import embed
+from IPython import embed
 import time
 import os
 import uuid
@@ -702,7 +702,9 @@ class BasicGame(object):
                             continue
 
                         if dim:
-                            sprites = self.getSprites(classprite1)
+                            #embed()
+                            #sprites = self.getSprites(classprite1)
+                            sprites = self.getSprites(class1)
                             spritesFiltered = filter(lambda sprite: sprite.__dict__[dim] == sprite2.__dict__[dim], sprites)
                             for sC in spritesFiltered:
                                 new_effects.append((effect, sprite1, sC, self, kwargs))

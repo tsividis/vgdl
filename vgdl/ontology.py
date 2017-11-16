@@ -154,9 +154,6 @@ class ContinuousPhysics(GridPhysics):
                 self.activeMovement(sprite, (0, self.gravity * sprite.mass))
             sprite.speed *= (1 - self.friction)
 
-           
-
-        
 
     def calculatePassiveMovement(self, sprite):
         '''
@@ -941,7 +938,7 @@ class InertialAvatar(OrientedAvatar):
 class MarioAvatar(InertialAvatar):
     physicstype = GravityPhysics
     draw_arrow = False
-    strength = 22
+    strength = 15
     movestrength = sqrt(strength)
     vx_max = 8
     vy_max = 8
@@ -1151,6 +1148,10 @@ class FrostBiteAvatar(HorizontalAvatar, InertialAvatar):
     speed = .25
     solid = True
     jumping = False
+    gravity = True
+    rope = False
+    vx_max = 10
+    speed_bonus = [0,0]
 
     def update(self, game):
         action = self._readAction(game)
@@ -1802,6 +1803,7 @@ def pullWithIt(sprite, partner, game):
 
     tmp = sprite.lastrect
     v = unitVector(partner.lastdirection)
+    embed()
     sprite._updatePos(v, partner.speed * sprite.physics.gridsize[0])
 
     if isinstance(sprite.physics, ContinuousPhysics):
@@ -1815,7 +1817,8 @@ def collideFromAbove(sprite, partner, game):
     """ Allows the sprite to pass through the bottom and collide with the top."""
     if (sprite.lastrect.top < partner.lastrect.top
         and sprite.lastrect.bottom < partner.lastrect.bottom) and sprite.solid and not sprite.jumping:
-        pullWithIt(sprite, partner, game)
+        #pullWithIt(sprite, partner, game)
+        wallStop(sprite,partner,game)
     elif (sprite.lastrect.bottom > partner.lastrect.bottom or
         sprite.lastrect.right < partner.lastrect.left or
         sprite.lastrect.left > partner.lastrect.right) and not(sprite.solid):

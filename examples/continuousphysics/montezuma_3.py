@@ -92,7 +92,7 @@ pos['floor'].extend([(i,8) for i in [1,3,4,20,21,23]])
 #pos['offrope'] = [(16.625,5),(16.625,6),(16.625,7),(16.625,8),(17.625,8),(17.625,7),(17.625,6),(17.625,5)]
 #pos['goomba'] = [(13,11.3)]
 positions = [dims,pos]
-
+level_game_pairs = [[game, level]]
 if __name__ == "__main__":
 
     from vgdl.core import VGDLParser

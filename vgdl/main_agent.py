@@ -499,7 +499,7 @@ class Agent:
 					# (e.g. stochastic effects)
 					# if self.rle._game.is_stochastic and i>self.regrounding:
 					if (i+1)%self.regrounding==0:
-					# if True:
+					
 						try:
 							rlePositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in self.rle._game.sprite_groups.values() for item in sublist])
 							hypPositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in objectPositionsArray[i+1]._game.sprite_groups.values() for item in sublist])
@@ -836,7 +836,8 @@ if __name__ == "__main__":
 
 	# filename = "examples.gridphysics.expt_antagonist"
 	#filename = "examples.continuousphysics.collect_resource"
-	filename = "examples.continuousphysics.rope_test"
+	#filename = "examples.continuousphysics.rope_test"
+	filename = "examples.continuousphysics.montezuma_3"
 
 	global WBP
 	if 'grid' in filename:

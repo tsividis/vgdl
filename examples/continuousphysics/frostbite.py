@@ -51,6 +51,7 @@ BasicGame
 
         white avatar > triggerOnLanding strigger=igloo
         white avatar > transformToOnLanding stype=blue dim=y
+        avatar white > collideFromAbove
 
         moving avatar > reverseFloeIfActivated dim=y strigger=igloo
         avatar killWater > killSpriteOnLanding

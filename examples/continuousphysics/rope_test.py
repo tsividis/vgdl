@@ -13,20 +13,10 @@ wwwwwwwwwwwww
 game = """
 BasicGame
     SpriteSet
-        
-        
-       
         goal > Immovable color=GREEN
-
         wall > Immovable color=BLACK
-
         rope > Immovable color=RED
-
         avatar > MarioAvatar strength=15 physicstype=GravityPhysics color=WHITE
-
-        
-
-
 
     TerminationSet
         SpriteCounter stype=goal      win=True
@@ -37,7 +27,7 @@ BasicGame
         avatar goomba > killSprite
         avatar EOS  > killSprite
         goal avatar > killSprite
-        avatar wall > killIfTooFast speed=40
+        # avatar wall > killIfTooFast speed=40
         avatar wall > wallStop
         avatar rope > onRope
 

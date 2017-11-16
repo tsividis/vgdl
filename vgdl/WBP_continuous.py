@@ -1060,8 +1060,6 @@ class Node():
 					 if self.WBP.geoDist(obj,pos) != 0]
 				
 
-				
-				
 				distance = min(possiblePairList)
 					 # This is a trick to avoid getting distance 0 for objects
 					 # of same type. If the list turns out to be empty, it will
