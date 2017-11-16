@@ -13,15 +13,27 @@ wwwwwwww
 '''
 
 
+# level = """
+# wwwwwwww
+# w     kw
+# w      w
+# w      w
+# wA  wwww
+# ww     w
+# w      w
+# w  G   w
+# wwwwwwww
+# """
+
 level = """
 wwwwwwww
-w     kw
 w      w
 w      w
+w   k Gw
 wA  wwww
-ww     w
+wwwwwwww
 w      w
-w  G   w
+w      w
 wwwwwwww
 """
 
@@ -57,7 +69,6 @@ BasicGame
         avatar key > changeResource resource=key value=1
         key avatar > killSprite
         goal avatar > killIfOtherHasMore resource=key
-
         
     LevelMapping
         w > wall

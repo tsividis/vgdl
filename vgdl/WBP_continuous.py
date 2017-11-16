@@ -394,7 +394,9 @@ class WBP():
 			self.actions = [K_UP,K_DOWN]
 
 		elif isinstance(avatar,vgdl.ontology.MarioAvatar):
-			self.actions = [K_SPACE, K_LEFT, K_RIGHT]
+			self.actions = [K_LEFT, K_RIGHT, K_SPACE]
+			if not avatar.gravity:
+				self.actions.extend([K_UP, K_DOWN])
 			#print "MARIO"
 			self.canJump = True
 
@@ -550,7 +552,7 @@ class WBP():
 		min_path_length = sys.maxint
 		best_path = None
 		best_node = None
-		found_key = False
+		found_key = False #can delete
 
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
 		
@@ -569,8 +571,9 @@ class WBP():
 			#print current.predict
 			'''
 			print(i)
-			print(current.rle.show())
 			'''
+			# print(current.rle.show())
+
 			avatar = self.getAliveAvatar(current.rle)
 			if avatar is not None:
 				loc = current.rle._rect2pos(avatar.rect)
@@ -584,10 +587,10 @@ class WBP():
 			else:
 				print "NO AVATAR"
 				#embed()
-			print avatar
-			if i % 500 == 0:
-				print self.avatar_locs_disc
-				print self.key
+			# print avatar
+			# if i % 500 == 0:
+				# print self.avatar_locs_disc
+				# print self.key
 			
 			
 			self.getActions(current.rle)
@@ -1058,7 +1061,6 @@ class Node():
 					 for pos in s2_positions
 					 for obj in s1_positions
 					 if self.WBP.geoDist(obj,pos) != 0]
-				
 
 				distance = min(possiblePairList)
 					 # This is a trick to avoid getting distance 0 for objects

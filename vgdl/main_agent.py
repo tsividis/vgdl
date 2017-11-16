@@ -40,7 +40,7 @@ class Agent:
 			self.starting_max_nodes = 10000
 			self.max_nodes_annealing = 10
 		self.firstOrderHorizon = True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
-		self.regrounding = 3
+		self.regrounding = 50
 		self.selective_regrounding = True
 		self.avoid_danger = True
 		self.safeDistance = 6
@@ -125,9 +125,20 @@ class Agent:
 
 		self.setSpritePositions(self.rle, Vrle, hypothesis)
 
+		## Initialize imaginary state to match real state.
 		try:
 			Vrle._game.getAvatars()[0].resources = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
 			Vrle._game.getAvatars()[0].orientation = copy.deepcopy(self.rle._game.getAvatars()[0].orientation)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].jumping)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].wait_step)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].rope)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].gravity)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].last_rope)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].last_gravity)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].last_vy)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].lastrect)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].speed)
+
 		except (IndexError, AttributeError) as e:
 			pass
 		# Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
@@ -377,6 +388,7 @@ class Agent:
 		## Initialize external environment
 		self.initializeEnvironment()
 		print "initializing RLE"
+		# embed()
 		steps = 0
 		self.quits = 0
 		self.longHorizonObservations = 0
@@ -410,7 +422,6 @@ class Agent:
 		while not ended:
 			## initialize one or many VRLEs according to hypothesis-selection method
 			theoryRLEs = self.VrleInitPhase(flexible_goals)
-
 			quitting = False
 
 			p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
@@ -430,8 +441,10 @@ class Agent:
 			if solution and not p.quitting:
 				print "============================================="
 				print "got solution of length", len(solution)
-				for g in p.gameString_array:
+				for i,g in enumerate(p.gameString_array):
 					print colored(g, 'green')
+					if i<len(bestNode.actionSeq):
+						print keyPresses[bestNode.actionSeq[i]]
 				print "============================================="
 
 			if self.shortHorizon:
@@ -454,8 +467,11 @@ class Agent:
 
 			if not quitting:
 				for i, action in enumerate(solution):
+
 					self.hypotheses[0].dryingPaint = set()
 
+					print "before execute step"
+					print self.rle._isDone()
 					hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
 						run_induction = not flexible_goals)
 
@@ -486,10 +502,13 @@ class Agent:
 
 					effectsEncountered.extend(effects)
 					steps +=1
+
+					ended, win = self.rle._isDone()
+					
 					if theory_change_flag:
 						self.hypotheses = hypotheses
 						break
-					ended, win = self.rle._isDone()
+						
 					if ended:
 						break
 
@@ -692,6 +711,7 @@ class Agent:
 
 		try:
 			agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+			agentState['speed'] = self.rle._game.getAvatars()[0].speed
 		except IndexError:
 			agentState = defaultdict(lambda: 0)
 
@@ -702,6 +722,7 @@ class Agent:
 
 		try:
 			agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+			agentState['speed'] = self.rle._game.getAvatars()[0].speed
 
 			for e in res['effectList']:
 				if 'changeResource' in e:
@@ -834,10 +855,10 @@ if __name__ == "__main__":
 
 	##simpleGame_missile: no support for learning that it can shoot things.
 
-	# filename = "examples.gridphysics.expt_antagonist"
+	# filename = "examples.gridphysics.expt_relational"
 	#filename = "examples.continuousphysics.collect_resource"
-	#filename = "examples.continuousphysics.rope_test"
-	filename = "examples.continuousphysics.montezuma_3"
+	filename = "examples.continuousphysics.rope_test"
+	#filename = "examples.continuousphysics.montezuma_3"
 
 	global WBP
 	if 'grid' in filename:

@@ -401,8 +401,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         #print("start action")
         events = self._performAction(action)
 
-        observation = self._getSensors() ## Consider commenting this out and not getting an observation.
-        # observation = 0
+        # observation = self._getSensors() ## Consider commenting this out and not getting an observation.
+        observation = 0
         #observation = self.sensors_profiler()
         (ended, won) = self._isDone()
         self._game.time+=1

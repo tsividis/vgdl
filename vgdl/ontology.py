@@ -1402,7 +1402,8 @@ class NoveltyTermination(Termination):
                         pass
                     print("NoveltyTermination with {} and {}".format(
                         name1, name2))
-                    # if name1=='c7' and name2=='avatar':
+                    # if name1=='c2' and name2=='avatar':
+                        # embed()
                     #     ipdb.set_trace()
 
                     return True, self.win
@@ -1438,7 +1439,8 @@ class NoveltyTermination(Termination):
                         pass
                     print("NoveltyTermination with {} and {}".format(
                         name1, name2))
-                    # if name1=='c7' and name2=='avatar':
+                    # if name1=='c2' and name2=='avatar':
+                        # embed()
                     #     ipdb.set_trace()
                     return True, self.win
         return False, None
@@ -1664,7 +1666,7 @@ def bounceDirection(sprite, partner, game, friction=0): # FLAG
 def wallBounce(sprite, partner, game, friction=0): # FLAG
     """ Bounce off orthogonally to the wall. """
     if not oncePerStep(sprite, game, 'lastbounce'):
-        return
+        return ('wallBounce', sprite.ID, partner.ID)
     sprite.speed *= (1. - friction)
     stepBack(sprite, partner, game)
     if abs(sprite.rect.centerx - partner.rect.centerx) > abs(sprite.rect.centery - partner.rect.centery):
@@ -1679,7 +1681,7 @@ def wallStop(sprite, partner, game, friction=0): # FLAG
     """ Stop just in front of the wall, removing that velocity component,
     but possibly sliding along it. """
     if not oncePerStep(sprite, game, 'laststop'):
-        return
+        return ('wallStop', sprite.ID, partner.ID)
     stepBack(sprite, partner, game)
     if abs(sprite.rect.centerx - partner.rect.centerx) > abs(sprite.rect.centery - partner.rect.centery):
         sprite.orientation = (0, sprite.orientation[1] * (1. - friction))
@@ -1687,7 +1689,6 @@ def wallStop(sprite, partner, game, friction=0): # FLAG
         sprite.orientation = (sprite.orientation[0] * (1. - friction), 0)
     sprite.speed = vectNorm(sprite.orientation) * sprite.speed
     sprite.orientation = unitVector(sprite.orientation)
-    ## TODO: Not printing for now
     return ('wallStop', sprite.ID, partner.ID)
 
 def killIfSlow(sprite, partner, game, limitspeed=1):
@@ -1799,7 +1800,7 @@ def wrapAround(sprite, partner, game, offset=0):
 def pullWithIt(sprite, partner, game):
     """ The partner sprite adds its movement to the sprite's. """
     if not oncePerStep(sprite, game, 'lastpull'):
-        return
+        return ('pullWithIt', sprite.ID, partner.ID)
 
     tmp = sprite.lastrect
     v = unitVector(partner.lastdirection)
@@ -1811,7 +1812,7 @@ def pullWithIt(sprite, partner, game):
         sprite.orientation = partner.lastdirection
     sprite.lastrect = tmp
 
-    return ('pullWithIt' , sprite.ID, partner.ID)
+    return ('pullWithIt', sprite.ID, partner.ID)
 
 def collideFromAbove(sprite, partner, game):
     """ Allows the sprite to pass through the bottom and collide with the top."""
@@ -1846,7 +1847,7 @@ def teleportToExit(sprite, partner, game):
     return ('teleportToExit', sprite.ID, partner.ID, args)
 
 def killIfTooFast(sprite,partner,game, speed):
-    if sprite.speed*sprite.orientation[1] > speed:
+    if abs(sprite.speed*sprite.orientation[1]) > speed:
         return killSprite(sprite, partner, game)
 
 def onLadder(sprite, partner, game):
@@ -2474,6 +2475,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
                     AimedFlakAvatar, InertialAvatar, MarioAvatar
             try:
+
                 ## Add avatar, and add the attached arguments, i.e., what the avatar shoots.
                 sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
 

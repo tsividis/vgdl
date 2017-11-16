@@ -1,21 +1,28 @@
 level="""
-2222222222222
-2     3     2
-2     3     2
-2     3     2
-21         02
-2222     2222
-2           2
-2           2
-2222222222222
+3333333333333333333
+3                 3
+3                 3
+3                 3
+3                13
+3   2          0033
+3  333         0  3
+3              0  3
+3              0  3
+3              0  3
+3              0  3
+3              0  3
+3              0  3
+3              0  3
+3              0  3
+3333333333333333333
 """
 game = """
 BasicGame
 	SpriteSet
 		c3 > ResourcePack color=BLACK
-		c2 > ResourcePack color=GREEN
+		c2 > ResourcePack color=BLUE
 		avatar > MarioAvatar color=WHITE
-		c4 > ResourcePack color=RED
+		c4 > ResourcePack color=GREEN
 	InteractionSet
 		c2 avatar > killSprite
 		c2 c4 > nothing
@@ -25,6 +32,7 @@ BasicGame
 		c2 c2 > nothing
 		c3 c3 > nothing
 		avatar EOS > stepBack
+		avatar c3 > killIfTooFast speed=20
 		avatar c3 > wallStop
 		c4 avatar > killSprite
 		c4 c4 > nothing
@@ -48,10 +56,10 @@ BasicGame
 		NoveltyTermination s1=avatar s2=EOS win=True
 		SpriteCounter stype=avatar limit=0 win=False
 	LevelMapping
-		2 > c3
-		1 > avatar
 		0 > c2
-		3 > c4
+		3 > c3
+		2 > avatar
+		1 > c4
 """
 if __name__ == "__main__":
 	from vgdl.core import VGDLParser

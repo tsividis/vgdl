@@ -631,8 +631,8 @@ class BasicGame(object):
 
 
 
-        self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack']
-            else (2 if x[2].__name__ in ['killSprite'] else (3 if x[2].__name__ in ['changeResource', 'changeScore'] else 0)), reverse=True)
+        self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack', 'wallStop']
+            else (2 if x[2].__name__ in ['killSprite', 'killIfTooFast'] else (3 if x[2].__name__ in ['changeResource', 'changeScore'] else 0)), reverse=True)
         # build the current sprite lists (if not yet available)
         # for class1, class2, effect, kwargs in self.collision_eff:
         while new_collisions:
@@ -651,6 +651,7 @@ class BasicGame(object):
                                     sprite_group.extend(sprite)
                         self.lastcollisions[sprite_class] = (sprite_group[:], len(sprite_group))
 
+
                 # special case for end-of-screen
                 if class2 == "EOS":
                     ss1, l1 = self.lastcollisions[class1]
@@ -664,6 +665,10 @@ class BasicGame(object):
                 sprite_list1 = self.lastcollisions[class1][0][:]
                 sprite_list2 = self.lastcollisions[class2][0][:]
 
+                # if class1=='c2' and class2=='avatar':
+                    # embed()
+                # if class1=='wall' and class2=='avatar':
+                    # embed()
                 # score argument is not passed along to the effect function
                 score = 0
                 if 'scoreChange' in kwargs:
