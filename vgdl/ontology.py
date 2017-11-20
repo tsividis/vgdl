@@ -1543,7 +1543,7 @@ def conveySprite(sprite, partner, game):
     tmp = sprite.lastrect
     v = unitVector(partner.orientation)
     #print "CONVEYING"
-    #sprite.physics.activeMovement(sprite, v, speed=partner.strength)
+    # sprite.physics.activeMovement(sprite, v, speed=partner.strength)
     sprite.speed_bonus = [v[0]*partner.strength,v[1]*partner.strength]
     sprite.lastrect = tmp
     game._updateCollisionDict(sprite)

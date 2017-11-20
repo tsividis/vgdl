@@ -631,8 +631,8 @@ class BasicGame(object):
 
 
 
-        self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack', 'wallStop']
-            else (2 if x[2].__name__ in ['killSprite', 'killIfTooFast'] else (3 if x[2].__name__ in ['changeResource', 'changeScore'] else 0)), reverse=True)
+        self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack','wallStop']
+            else (2 if x[2].__name__ in ['killSprite', 'killIfTooFast'] else (3 if x[2].__name__ in ['changeResource', 'changeScore', 'conveySprite'] else 0)), reverse=True)
         # build the current sprite lists (if not yet available)
         # for class1, class2, effect, kwargs in self.collision_eff:
         while new_collisions:

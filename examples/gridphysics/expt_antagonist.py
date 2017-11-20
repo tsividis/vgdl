@@ -81,13 +81,8 @@ w       a                      w
 w               a              w
 w         m    A   b           w
 w     a     a            ffffffw
-<<<<<<< HEAD
 w     a   a              f     w
 www                  a   f     w
-=======
-w     a   a              f    fw
-www                  a   ffffffw
->>>>>>> origin/continuous_planning
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -109,17 +104,10 @@ game = """
 BasicGame frame_rate=30
     SpriteSet
         avatar > MovingAvatar color=DARKBLUE cooldown=0#6
-<<<<<<< HEAD
-        chaser > VGDLSprite cooldown=8
-=======
-        box > Passive
-            box1 > color=PINK
-            box2 > color=YELLOW
-        chaser > VGDLSprite cooldown=0
->>>>>>> origin/continuous_planning
-            randomChaser > RandomNPC color=WHITE
-            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=0
-            goodChaser > AStarChaser color=RED stype=box2
+        chaser > VGDLSprite cooldown=16
+            # randomChaser > RandomNPC color=WHITE
+            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=10
+            # goodChaser > AStarChaser color=RED stype=box2
         forcefield > Passive color=PURPLE
         box > Passive
             box1 > color=PINK
@@ -130,7 +118,7 @@ BasicGame frame_rate=30
         a > box1
         b > box2
         m > mediumChaser
-        r > randomChaser
+        # r > randomChaser
         s > goodChaser
         f > forcefield
     InteractionSet
@@ -172,7 +160,7 @@ if __name__ == "__main__":
         # index = random.choice(range(len(level_game_pairs)))
         for index, level in enumerate(level_game_pairs):
             wins = 0
-            while wins<2:
+            while wins<1:
                 VGDLParser.playGame(*level)
                 time.sleep(1)
                 data = np.load("temp_data.npy")

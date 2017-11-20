@@ -508,7 +508,7 @@ class Agent:
 					if theory_change_flag:
 						self.hypotheses = hypotheses
 						break
-						
+
 					if ended:
 						break
 
@@ -715,6 +715,7 @@ class Agent:
 		except IndexError:
 			agentState = defaultdict(lambda: 0)
 
+		embed()
 		res = self.rle.step(action)
 
 		print ""
@@ -784,6 +785,13 @@ class Agent:
 
 			sample, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
 
+			if any(['conveySprite'==e[0] for e in event['effectList']]):
+				## start storing avatar position; at next step, take curr_position - prev_position and compare to prev_action*avatar.strength. 
+				## that should be the conveyor's strength.
+				## overwrite sprite object in the sample w/ conveyor, get writeTheoryToTxt args working
+				## and then you need to decide how to not overwrite the sprite type at every step for the conveyor.
+				print "found conveysprite"
+				embed()
 			# for s in sample:
 				# s.display()
 			# embed()
@@ -855,9 +863,9 @@ if __name__ == "__main__":
 
 	##simpleGame_missile: no support for learning that it can shoot things.
 
-	# filename = "examples.gridphysics.expt_relational"
+	filename = "examples.gridphysics.expt_relational"
 	#filename = "examples.continuousphysics.collect_resource"
-	filename = "examples.continuousphysics.rope_test"
+	# filename = "examples.continuousphysics.rope_test"
 
 	global WBP
 	if 'grid' in filename:

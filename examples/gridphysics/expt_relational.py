@@ -83,6 +83,7 @@ BasicGame frame_rate=30
         box box > stepBack
         box wall > stepBack
         probe wall > stepBack
+        # avatar converter > stepBack
         converter wall > stepBack
         probe converter > stepBack
         converter probe > stepBack
@@ -95,7 +96,6 @@ BasicGame frame_rate=30
         converter1 avatar > transformTo stype=fire
         probe fire > killSprite
         fire probe > killSprite
-        avatar converter > stepBack
         avatar poison > killSprite
     TerminationSet  
         SpriteCounter stype=avatar  limit=0 win=False

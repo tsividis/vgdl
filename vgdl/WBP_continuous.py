@@ -394,7 +394,7 @@ class WBP():
 			self.actions = [K_UP,K_DOWN]
 
 		elif isinstance(avatar,vgdl.ontology.MarioAvatar):
-			self.actions = [K_LEFT, K_RIGHT, K_SPACE]
+			self.actions = [K_LEFT, K_RIGHT]#, K_SPACE]
 			if not avatar.gravity:
 				self.actions.extend([K_UP, K_DOWN])
 			#print "MARIO"
