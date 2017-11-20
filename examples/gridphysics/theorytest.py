@@ -14,10 +14,10 @@ game = """
 BasicGame
 	SpriteSet
 		avatar > MovingAvatar color=WHITE
-		c3 > Chaser color=ORANGE fleeing=False cooldown=9
-		c2 > Chaser color=BLUE fleeing=False cooldown=9
-		c5 > Chaser color=YELLOW fleeing=False cooldown=9
-		c4 > Chaser color=BLACK fleeing=False cooldown=9
+		c3 > Chaser color=ORANGE fleeing=True cooldown=4
+		c2 > Chaser color=BLUE fleeing=True cooldown=4
+		c5 > Chaser color=YELLOW fleeing=True cooldown=4
+		c4 > Chaser color=BLACK fleeing=True cooldown=4
 	InteractionSet
 		c2 avatar > killSprite
 		c2 c5 > nothing

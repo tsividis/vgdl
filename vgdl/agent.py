@@ -17,6 +17,9 @@ from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
 from line_profiler import LineProfiler
+from vgdl.util import manhattanDist
+from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
+
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
@@ -82,6 +85,93 @@ class Agent:
 	def findNearestSprite(self, sprite, spriteList):
 		## returns the sprite in spriteList whose location best matches the location of sprite.
 		return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	## TIM
+	def state_distance(self, envA, envB, theory):
+		"""
+		Calculates d_theory(envA, envB): distance between the states of the environments
+		using the ontology of the supplied theory.
+
+		Also returns errorMap, a dict that contains
+		keys: (class1, class2). values: some sort of TBD error signal
+		"""
+		
+		embed()
+
+		errorMap = {}
+
+		total_penalty = 0.
+
+		for k in [key for key in envB._game.sprite_groups.keys() if envB._game.sprite_groups[key]]:
+			## Get vgdlType, according to the theory
+			vgdlType = theory.classes[k][0].vgdlType
+			color = envB._game.sprite_groups[k][0].colorName
+			matchingSpritesInEnvA = self.getSpritesByColor(envA, color)
+			matchingSpritesInEnvB = self.getSpritesByColor(envB, color)
+			for sprite in matchingSpritesInEnvB:
+				matchingSprite = self.findNearestSprite(sprite, matchingSpritesInEnvA)
+				dist = manhattanDist(self.rle._rect2pos(sprite.rect), self.rle._rect2pos(matchingSprite.rect))
+				
+				## TODO: penalize as a function of vgdlType and color
+				## TODO: deal with cases where you don't find objects in one env but you do in the other
+		
+		return dist, errorMap
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	def setSpritePositions(self, rle, Vrle, hypothesis):
 		## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
@@ -382,7 +472,7 @@ class Agent:
 
 
 	def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False):
-		from vgdl.util import manhattanDist
+		# from vgdl.util import manhattanDist
 
 		## Initialize external environment
 		self.initializeEnvironment()
@@ -461,6 +551,29 @@ class Agent:
 
 			if emptyPlans > self.emptyPlansLimit:
 				observe(self.rle, 5, self.bestSpriteTypeDict)
+
+
+
+
+
+
+
+
+
+			## TIM
+
+			envA = self.rle ## the 'real' world
+			envB = theoryRLEs[0] ## the environment in the agent's head
+			theory = self.hypotheses[0] ## the theory from which the agent created envB
+
+			self.state_distance(envA, envB, theory)
+
+
+
+
+
+
+
 
 			if not quitting:
 				for i, action in enumerate(solution):
@@ -886,9 +999,9 @@ if __name__ == "__main__":
 
 	agent = Agent('full', gameName)
 
-	##then pass this down for multiple episodes
+	##For GVGAI games, use this line
 	# gameObject = None
 	# agent.playCurriculum(level_game_pairs=level_game_pairs)
 
-	##and use this line
+	##For local games, use this line
 	agent.playCurriculum(level_game_pairs=None)

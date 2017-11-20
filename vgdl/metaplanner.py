@@ -1,8 +1,8 @@
 from ontology import distributionInitSetup
 # from WBP import *
 from mcts import *
-from qlearner import *
-from aStar import *
+# from qlearner import *
+# from aStar import *
 
 
 def translateEvents(events, all_objects, rle):
