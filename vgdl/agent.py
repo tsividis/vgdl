@@ -114,12 +114,19 @@ class Agent:
 		Also returns errorMap, a dict that contains
 		keys: (class1, class2). values: some sort of TBD error signal
 
+		For now we aren't taking a starting environment into account. This means
+		That we can't make a comparison between, say,
+		random object was at (10, 10), has speed=2
+		so at the next location it can be at (10 +- 2, 10+-2), but not anywhere else.
+		The best we can do without this info is just penalize very little because it's
+		a random object.
+		TODO: Implement the above.
 		"""
 
 		from vgdl.util import manhattanDist
 		from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 		
-		embed()
+		# embed()
 
 		errorMap = {}
 
@@ -244,7 +251,8 @@ class Agent:
 		# if len(self.hypotheses)>1:
 		# 	print "more than one hypothesis"
 
-		for hypothesis in self.hypotheses[0:1]:
+		# for hypothesis in self.hypotheses[0:1]:
+		for hypothesis in self.hypotheses:
 			tempHypothesis = copy.deepcopy(hypothesis)
 			tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
 			tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
@@ -259,7 +267,7 @@ class Agent:
 
 		return VRLEs
 
-	def initializeHypotheses(self, allObjects, learnSprites=True):
+	def initializeHypotheses(self, allObjects, learnSprites=True, num_variants=10):
 		if learnSprites:
 			observe(self.rle, 3, self.bestSpriteTypeDict)
 			spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
@@ -274,23 +282,52 @@ class Agent:
 
 		# Handle wall vs. projectile interaction (hacky)
 		avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
-		"""
-		if 'stype' in avatar.args.keys():
-			# old_rule1 = InteractionRule('killSprite', avatar.args['stype'], 'c4', {}, set(), generic=True)
-			# old_rule2 = InteractionRule('killSprite', avatar.args['stype'], 'avatar', {}, set(), generic=True)
-			# new_rule = InteractionRule('nothing', avatar.args['stype'], 'avatar', {}, set())
-
-			# initialTheory.interactionSet.remove(old_rule1)
-			# initialTheory.interactionSet.remove(old_rule2)
-			# initialTheory.interactionSet.append(new_rule)
-			pass
-		"""
 
 		self.hypotheses = [initialTheory]
-
 		self.symbolDict = generateSymbolDict(self.rle)
 
+
+
+		## For debugging purposes, generating one variant that is off by only one interaction
+		theory = copy.deepcopy(initialTheory)
+		for interactionRule in theory.interactionSet:
+			if interactionRule.interaction == 'killSprite':
+				interactionRule.interaction = 'stepBack'
+				break
+		self.hypotheses.append(theory)
+
+		## Generate variants of the theory
+		## (as a stand-in for a more generic induction/elaboration process)
+		predicate_options = ['nothing', 'stepBack', 'killSprite', 'bounceForward', 'undoAll']
+		for i in range(num_variants):
+			theory = copy.deepcopy(initialTheory)
+			for interactionRule in theory.interactionSet:
+				interactionRule.interaction = random.choice(predicate_options)
+			self.hypotheses.append(theory)
+
 		return gameObject
+
+	# def initializeHypotheses(self, allObjects, learnSprites=True):
+	# 	if learnSprites:
+	# 		observe(self.rle, 3, self.bestSpriteTypeDict)
+	# 		spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
+	# 			self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
+	# 		self.rle._game.exceptedObjects = exceptedObjects
+	# 		gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
+	# 		initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
+
+	# 	else:
+	# 		gameObject = Game(self.gameString)
+	# 		initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
+
+	# 	# Handle wall vs. projectile interaction (hacky)
+	# 	avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
+
+	# 	self.hypotheses = [initialTheory]
+
+	# 	self.symbolDict = generateSymbolDict(self.rle)
+
+	# 	return gameObject
 
 	def completeHypotheses(self, allObjects, first_time_playing_level):
 		if first_time_playing_level:
@@ -501,7 +538,7 @@ class Agent:
 
 		## initialize theory if necessary.
 		if len(self.hypotheses) == 0:
-			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True)
+			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=10)
 			print "initializing hypotheses"
 		else:
 			gameObject = self.completeHypotheses(self.all_objects, first_time_playing_level)
@@ -564,13 +601,57 @@ class Agent:
 
 
 
+
+
+
+
+
 			## TIM
+			from vgdl.util import manhattanDist
+			from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
-			envA = self.rle ## the 'real' world
-			envB = theoryRLEs[0] ## the environment in the agent's head
-			theory = self.hypotheses[0] ## the theory from which the agent created envB
+			
+			actions = [K_RIGHT]
+			for action in actions:
+				self.rle.step(action)
 
-			self.state_distance(envA, envB, theory)
+				newTheories = []
+				for num, env in enumerate(theoryRLEs):
+					env.step(action)
+			
+
+					## Pedro: Outlining rest of functions:
+					# distance, errorMap = self.state_distance(self.rle, env, self.hypotheses[num])
+					# childTheories = expandTheory(self.hypotheses[num], errorMap)
+					# newTheories.extend(childTheories)
+
+				# Pedro: Filter new theories according to whatever scheme
+
+			## Actual world
+			print self.rle.show()
+
+			print "Embedded in inference part"
+			embed()
+
+			## Tim: Predicted worlds under each theory
+			for num, env in enumerate(theoryRLEs):
+				## Tim: uncomment if you want to see the full theory corresponding to each env
+				# self.hypotheses[num].display()  
+				print env.show()
+
+			## Tim: Can run the state-distance function here.
+			# for num, env in enumerate(theoryRLEs):
+				# self.state_distance(self.rle, env, self.hypotheses[num])
+
+
+			## Pedro:
+			## think about whether you want to store the initial state
+			## so that you can make better comparisons
+			## or just to have some ongoing game where you just make more theories and correct
+			## them online and future behavior gets better.
+			## probably the latter is simpler for now.
+
+			#self.state_distance(envA, envB, theory)
 			# I can replace envB by envB.step(K_RIGHT) to generate a different state
 
 
@@ -952,7 +1033,7 @@ if __name__ == "__main__":
 
 	##simpleGame_missile: no support for learning that it can shoot things.
 
-	filename = "examples.gridphysics.expt_relational"
+	filename = "examples.gridphysics.inference_test"
 	#filename = "examples.continuousphysics.collect_resource"
 	# filename = "examples.continuousphysics.rope_test"
 

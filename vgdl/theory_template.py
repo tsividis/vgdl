@@ -2194,6 +2194,16 @@ def generateSymbolDict(rle):
 
 	return inverseMapping
 
+
+predicates = ['killSprite', 'bounceForward', 'nothing', 'stepBack']
+## TODO: check and complete list of predicates
+# predicates = 
+# ['attractGaze','bounceForward', 'bounceDirection', 'changeResource', 
+# 'changeScore', 'killSprite', 'killIfHasMore', 'killIfHasLess', 
+# 'killOtherHasMore', 'killOtherHasLess' 'killIfSlow', 'nothing', 
+# 'spawnIfHasMore', 'transformTo', 'transformToOnLanding', 'triggerOnLanding', 
+# 'slipForward', 'wallBounce', 'wrapAround']
+
 def getKeywordsFromOntology(interactionName):
 	ontologyKeywordDict = \
 	{'changeResource': ['resource', 'value', 'limit'],\
@@ -2221,7 +2231,45 @@ def getKeywordsFromOntology(interactionName):
 	else:
 		return []
 
+def expandTheory(theory, errorMap, linesPerPairOrdering=1):
+	## modifies the theory to propose new interactonRules involving the
+	## given errorMap
 
+	childTheories = []
+
+	## what we need to do is make all the factorized changes, and then combine them
+
+	## make all the n-long predicate combinations (n=linesPerPairOrdering)
+	## for each now for each key in the error map, propose each combination of combinations?
+	## this gets bad very quickly.
+
+	##this is a problem *if* you have a time-step where the error is non-sparse.
+	## usually this won't be the case.
+
+	## you will also have to think about a way to not update/evaluate
+	## all theories at every time step, but still somehow be able
+	## to have some normalized likelihood per theory? that's hard.
+
+	## maybe the best thing is to sample predicates from the prior
+	## so you are most likely to propose the common interactions first. only when they
+	## don't work do you go deeper
+	## and only when they don't work do you propose more lines.
+
+	## Currently limiting this to one predicate per object-ordering per pair.
+	for pair in errorMap.keys():
+		for order in [pair, (pair[1], pair[0])]:
+			newTheory = copy.deepcopy(theory)
+
+			## remove all interactionRules with classes in the same order
+			# newTheory.interactionSet = [rule for rule in ]
+
+			for rule in newTheory.interactionSet:
+				if order==(rule.asTuple()[0], rule.asTuple()[1]):
+					for predicate in predicates:
+						if predicate != rule.interaction:
+							pass
+	# embed()
+	return
 
 def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	"""
