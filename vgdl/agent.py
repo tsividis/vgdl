@@ -114,7 +114,6 @@ class Agent:
 		Also returns errorMap, a dict that contains
 		keys: (class1, class2). values: some sort of TBD error signal
 
-
 		For now we aren't taking a starting environment into account. This means
 		That we can't make a comparison between, say,
 		random object was at (10, 10), has speed=2
@@ -123,6 +122,9 @@ class Agent:
 		a random object.
 		TODO: Implement the above.
 		"""
+
+		from vgdl.util import manhattanDist
+		from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 		
 		# embed()
 
@@ -665,10 +667,8 @@ class Agent:
 			## them online and future behavior gets better.
 			## probably the latter is simpler for now.
 
-
-
-
-
+			#self.state_distance(envA, envB, theory)
+			# I can replace envB by envB.step(K_RIGHT) to generate a different state
 
 
 
