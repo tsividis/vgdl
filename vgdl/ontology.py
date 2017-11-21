@@ -1399,8 +1399,8 @@ class NoveltyTermination(Termination):
                 if name1==self.s1 and name2==self.s2:
                     if id_not_found:
                         pass
-                    print("NoveltyTermination with {} and {}".format(
-                        name1, name2))
+                    # print("NoveltyTermination with {} and {}".format(
+                        # name1, name2))
                     # if name1=='c2' and name2=='avatar':
                         # embed()
                     #     ipdb.set_trace()
@@ -1436,8 +1436,8 @@ class NoveltyTermination(Termination):
                 if name1==self.s1 and name2 in str(self.s2):
                     if id_not_found:
                         pass
-                    print("NoveltyTermination with {} and {}".format(
-                        name1, name2))
+                    # print("NoveltyTermination with {} and {}".format(
+                        # name1, name2))
                     # if name1=='c2' and name2=='avatar':
                         # embed()
                     #     ipdb.set_trace()
