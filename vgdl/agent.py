@@ -599,6 +599,11 @@ class Agent:
 
 
 
+
+
+
+
+
 			## TIM
 			from vgdl.util import manhattanDist
 			from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
@@ -613,13 +618,12 @@ class Agent:
 					env.step(action)
 			
 
-					## Outlining rest of functions:
-
+					## Pedro: Outlining rest of functions:
 					# distance, errorMap = self.state_distance(self.rle, env, self.hypotheses[num])
 					# childTheories = expandTheory(self.hypotheses[num], errorMap)
 					# newTheories.extend(childTheories)
 
-				# Filter new theories according to whatever scheme
+				# Pedro: Filter new theories according to whatever scheme
 
 			## Actual world
 			print self.rle.show()
@@ -627,22 +631,28 @@ class Agent:
 			print "Embedded in inference part"
 			embed()
 
-			## Predicted worlds under each theory
+			## Tim: Predicted worlds under each theory
 			for num, env in enumerate(theoryRLEs):
-				## uncomment if you want to see the full theory corresponding to each env
+				## Tim: uncomment if you want to see the full theory corresponding to each env
 				# self.hypotheses[num].display()  
 				print env.show()
 
-			## Can run the state-distance function here.
+			## Tim: Can run the state-distance function here.
 			# for num, env in enumerate(theoryRLEs):
 				# self.state_distance(self.rle, env, self.hypotheses[num])
 
 
+			## Pedro:
 			## think about whether you want to store the initial state
 			## so that you can make better comparisons
 			## or just to have some ongoing game where you just make more theories and correct
 			## them online and future behavior gets better.
 			## probably the latter is simpler for now.
+
+
+
+
+
 
 
 
