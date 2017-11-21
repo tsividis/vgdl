@@ -113,7 +113,11 @@ class Agent:
 
 		Also returns errorMap, a dict that contains
 		keys: (class1, class2). values: some sort of TBD error signal
+
 		"""
+
+		from vgdl.util import manhattanDist
+		from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 		
 		embed()
 
@@ -567,7 +571,7 @@ class Agent:
 			theory = self.hypotheses[0] ## the theory from which the agent created envB
 
 			self.state_distance(envA, envB, theory)
-
+			# I can replace envB by envB.step(K_RIGHT) to generate a different state
 
 
 
