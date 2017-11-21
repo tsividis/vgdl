@@ -140,7 +140,7 @@ class Agent:
 			matchingSpritesInEnvB = self.getSpritesByColor(envB, color)
 			for sprite in matchingSpritesInEnvB:
 				matchingSprite = self.findNearestSprite(sprite, matchingSpritesInEnvA)
-				dist = manhattanDist(self.rle._rect2pos(sprite.rect), self.rle._rect2pos(matchingSprite.rect))
+				dist = manhattanDist(envA._rect2pos(sprite.rect), envA._rect2pos(matchingSprite.rect))
 				
 				## TODO: penalize as a function of vgdlType and color
 				## TODO: deal with cases where you don't find objects in one env but you do in the other
