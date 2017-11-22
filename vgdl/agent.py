@@ -108,6 +108,9 @@ class Agent:
 	## TIM
 	def state_distance(self, envA, envB, theory):
 		"""
+		envA: hyptothetical environment
+		envB: real environment
+
 		Calculates d_theory(envA, envB): distance between the states of the environments
 		using the ontology of the supplied theory.
 
@@ -128,24 +131,42 @@ class Agent:
 		
 		# embed()
 
-		errorMap = {}
-
+		# Initialization
 		total_penalty = 0.
+		errorMap = {}
+		matched_sprites = [] #tuples of matched sprites: (envA sprite, envB sprite, dist) - helps penalize distance and find missing
+		missing_sprites_envB = [] #envA sprites that have no partner in envB
+		missing_sprites_envA = [] #envB sprites that have no partner in envA
 
-		for k in [key for key in envB._game.sprite_groups.keys() if envB._game.sprite_groups[key]]:
-			## Get vgdlType, according to the theory
+		# Loop over keys in envA
+		for k in [key for key in envA._game.sprite_groups.keys() if envA._game.sprite_groups[key]]:
+			# Get vgdlType, according to the theory
 			vgdlType = theory.classes[k][0].vgdlType
-			color = envB._game.sprite_groups[k][0].colorName
+			# Find matching sprites via color
+			color = envA._game.sprite_groups[k][0].colorName
 			matchingSpritesInEnvA = self.getSpritesByColor(envA, color)
 			matchingSpritesInEnvB = self.getSpritesByColor(envB, color)
-			for sprite in matchingSpritesInEnvB:
-				matchingSprite = self.findNearestSprite(sprite, matchingSpritesInEnvA)
-				dist = manhattanDist(self.rle._rect2pos(sprite.rect), self.rle._rect2pos(matchingSprite.rect))
+			if matchingSpritesInEnvB == None:
+				missing_sprites_envB.append(matchingSpritesInEnvA)
+				continue
+			# Loop over matching sprites in envA and find corresponding sprites in envB
+			for sprite in matchingSpritesInEnvA:
+				corrSprite = self.findNearestSprite(sprite, matchingSpritesInEnvB)
+				dist = manhattanDist(self.rle._rect2pos(sprite.rect), self.rle._rect2pos(corrSprite.rect))
+				matched_sprites.append( (sprite, corrSprite, dist) )
 				
-				## TODO: penalize as a function of vgdlType and color
-				## TODO: deal with cases where you don't find objects in one env but you do in the other
-		
-		return dist, errorMap
+		print '@@@ TEST:', [matched_sprites[i] for i in range(len(matched_sprites)) if matched_sprites[i][2]!=0]
+
+		# Clean up matched_sprites set towards bijective mapping
+
+		# Find sprites that exist in envB but not envA
+
+		# Penalize distance and additional/missing sprites
+
+		## TODO: penalize as a function of vgdlType and color
+		## TODO: deal with cases where you don't find objects in one env but you do in the other
+
+		return total_penalty, errorMap
 
 
 
@@ -606,6 +627,13 @@ class Agent:
 
 
 
+
+
+
+
+
+
+
 			## TIM
 			from vgdl.util import manhattanDist
 			from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
@@ -638,10 +666,12 @@ class Agent:
 				## Tim: uncomment if you want to see the full theory corresponding to each env
 				# self.hypotheses[num].display()  
 				print env.show()
+				break
 
 			## Tim: Can run the state-distance function here.
-			# for num, env in enumerate(theoryRLEs):
-				# self.state_distance(self.rle, env, self.hypotheses[num])
+			for num, env in enumerate(theoryRLEs):
+				self.state_distance(env, self.rle, self.hypotheses[num])
+				break
 
 
 			## Pedro:
@@ -651,8 +681,19 @@ class Agent:
 			## them online and future behavior gets better.
 			## probably the latter is simpler for now.
 
-			#self.state_distance(envA, envB, theory)
+			# Note from Skype
 			# I can replace envB by envB.step(K_RIGHT) to generate a different state
+
+
+
+
+
+
+
+
+
+
+
 
 
 
