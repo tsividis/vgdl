@@ -684,9 +684,12 @@ class Agent:
 
 		try:
 			agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
-			agentState['speed'] = self.rle._game.getAvatars()[0].speed
 		except IndexError:
 			agentState = defaultdict(lambda: 0)
+		try:
+			agentState['speed'] = self.rle._game.getAvatars()[0].speed
+		except AttributeError:
+			agentState['speed'] = None
 
 		embed()
 		res = self.rle.step(action)
@@ -696,7 +699,6 @@ class Agent:
 
 		try:
 			agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
-			agentState['speed'] = self.rle._game.getAvatars()[0].speed
 
 			for e in res['effectList']:
 				if 'changeResource' in e:
@@ -706,7 +708,6 @@ class Agent:
 						# undo one negative change to account for eventhandler ordering
 						agentState[changes['resource']] -= changes['value']
 						break
-			self.rle.agentStatePrev = agentState
 		# If agent is killed before we get agentState
 		except (IndexError, AttributeError) as e:
 			# agentState = defaultdict(lambda:0)
@@ -719,8 +720,13 @@ class Agent:
 					else:
 						agentState[changes['resource']] += 0
 						ignored_negative_change = True
-			self.rle.agentStatePrev = agentState
+		try:
+			agentState['speed'] = self.rle._game.getAvatars()[0].speed
+		except AttributeError:
+			agentState['speed'] = None
 
+		self.rle.agentStatePrev = agentState
+		
 
 		hypotheses = self.manageNewObjects(hypotheses)
 

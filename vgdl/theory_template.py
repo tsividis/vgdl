@@ -2233,18 +2233,52 @@ def getKeywordsFromOntology(interactionName):
 
 ## Note to self: you can now just call this fn
 ## change this to take the predicates as an arg
-## then you can call it on whatever the error map give
+## then you can call it on whatever the error map gives you.
 
 ## now think about how to use a simple error map and call expandLine
 
 ## then think about how to do an iterative scheme.
-def expandLine(theory, classPair, n=1):
+
+## Iterative scheme:
+## if you've already tested predicates 1:N and you now want to consider some new ones,
+## you want to generate combinations of the new ones with each other, and the new ones with
+## the old ones, but not combinations of the old ones, as you've done that before.
+## so, for i=1:maxLines:
+	## generate all i-long combinations of the new set
+	## and then add to those all combinations of length (maxLines-i) of the old set.
+
+## that's a good description of what expandLine should be.
+## and the assumption is that combinations of the old predicates have not worked
+## one thing to consider is that perhaps n-long combinations of the old predicates have not worked
+## but maybe n+1 -long combinations would. So this is one case to consider
+## in addition to just adding more predicates.
+
+## it may be possible that predicates have not worked because of conditional lines
+## in this case we want to add those lines to past predicates,
+## but for those lines we have to generate all the arguments that could work
+## this is a special case. Or is it the main case??
+
+## a reasonable simplification:
+## generate all argument,value combinations for the predicates that take arguments
+## where value \in {1, resource_max}. Don't worry about intermediate values for now
+## but know that if you wanted to worry about those you could just instantiate more theories.
+
+## for speed: keep track of all collisions.
+## say you've seen one death and one survival, at different speeds.
+## propose the avg of the two speeds as the limit. Then do again if you observe
+## a new data point.
+
+## for changeResource and changeScore: just immediately use the avatar state to propose the right rule.
+
+## for bookkeeping, the theory will have to have all objects, incl. resources,
+## in it.
+
+def expandLine(theory, classPair, predicates, n=1):
 	## modifies the theory to propose n new interactonRules involving the
 	## given classPair
 	import itertools, copy
 	from vgdl.theory_template import InteractionRule
 
-	predicates = ['killSprite', 'bounceForward', 'nothing', 'stepBack']
 	childTheories = []
 	predicateGroups = []
 	for i in range(1,n+1):
