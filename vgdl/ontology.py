@@ -1844,7 +1844,7 @@ def teleportToExit(sprite, partner, game):
     args = {'stype':partner.stype}
     return ('teleportToExit', sprite.ID, partner.ID, args)
 
-def killIfTooFast(sprite,partner,game, speed):
+def killIfTooFast(sprite,partner,game,speed):
     if abs(sprite.speed*sprite.orientation[1]) > speed:
         return killSprite(sprite, partner, game)
 

@@ -682,8 +682,15 @@ class Agent:
 			t0 = time.time()
 			from vgdl.theory_template import expandLine
 			n=2
+
+			## assumption: we're only doing killIfTooFast for avatar, not for all objects
+			## can be extended in the same way if we want.
+			resourceObservations = {'speed': [0, 10], 'c5': 5}
+
+
 			newTheories = expandLine(self.hypotheses[1], ('avatar', 'c2'), 
-				predicates = ['killSprite', 'bounceForward', 'nothing', 'stepBack'], n=n)
+				predicates = ['killSprite', 'bounceForward', 'nothing', 'stepBack'], n=n, 
+				resourceObservations=resourceObservations)
 			print "theory expansion time for n={}: {}".format(n, time.time()-t0)
 			t0=time.time()
 			newRLEs = [self.initializeVrle(theory) for theory in newTheories]

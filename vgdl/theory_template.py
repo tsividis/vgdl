@@ -2208,13 +2208,8 @@ def getKeywordsFromOntology(interactionName):
 	{'changeResource': ['resource', 'value', 'limit'],\
 	'changeScore': ['value'],\
 	'transformTo': ['stype'],\
-	'transformToOnLanding': ['stype'],\
-	'triggerOnLanding': ['strigger'],\
 	'slipForward': ['prob'],\
 	'attractGaze': ['prob'],\
-	'reverseFloeIfActivated': ['strigger'],\
-	'trigger': ['strigger'],\
-	'detrigger': ['strigger'],\
 	'bounceDirection': ['friction'],\
 	'wallBounce': ['friction'],\
 	'wallStop': ['friction'],\
@@ -2224,11 +2219,42 @@ def getKeywordsFromOntology(interactionName):
 	'killOtherHasMore': ['resource', 'limit'],\
 	'killIfHasLess': ['resource', 'limit'],\
 	'killOtherHasLess': ['resource', 'limit'],\
-	'wrapAround': ['offset']}
+	'killIfTooFast': ['speed'],\
+	'wrapAround': ['offset']
+	# 'reverseFloeIfActivated': ['strigger'],\
+	# 'trigger': ['strigger'],\
+	# 'detrigger': ['strigger'],\
+	# 'transformToOnLanding': ['stype'],\
+	# 'triggerOnLanding': ['strigger'],\
+	}
 	if interactionName in ontologyKeywordDict.keys():
 		return ontologyKeywordDict[interactionName]
 	else:
 		return []
+
+
+## you need some function to run throughout gameplay
+## that keeps track of resource cahnges, max values, etc.
+## perhaps this is a separate inference procedure
+## do you want to organize by classes? by predicate??
+## in either case. proposeArgs will propose possibilities
+## for all relevant args, using either the knowledge tracked
+## by the resourceObservations function,
+## or using defaults for these resources/predicates.
+# def proposeArgs(theory, predicate, resourceObservations):
+# 	args = getKeywordsFromOntology(predicate)
+# 	argList = []
+# 	if not args:
+# 		return argList
+# 	else:
+# 		if predicate == 'changeResource':
+# 			for c in theory.classes.keys():
+
+# 		for arg in args:
+# 			if arg == 'resource':
+# 				argDict[arg] = theory.classes.keys()
+# 			if arg == value:
+# 				argDict[arg] = 
 
 
 ## Note to self: you can now just call this fn
@@ -2273,7 +2299,9 @@ def getKeywordsFromOntology(interactionName):
 ## for bookkeeping, the theory will have to have all objects, incl. resources,
 ## in it.
 
-def expandLine(theory, classPair, predicates, n=1):
+## pass max resources and died/alive observed speeds
+
+def expandLine(theory, classPair, predicates, n=1, resourceObservations):
 	## modifies the theory to propose n new interactonRules involving the
 	## given classPair
 	import itertools, copy
@@ -2294,7 +2322,13 @@ def expandLine(theory, classPair, predicates, n=1):
 
 	for i,order in enumerate([classPair, (classPair[1], classPair[0])]):
 		for predicateGroup in predicateGroups:
-			predicateRules = [InteractionRule(line, order[0], order[1], args={}) for line in predicateGroup]
+			
+			predicateRules = []
+			for line in predicateGroup:
+				## TODO: if the predicate takes args, propose all arg combinatinos here.
+				## run proposeArgs function, which takes resourceObservations.
+				predicateRules.append(InteractionRule(line, order[0], order[1], args={}))
+
 			bothOrderings[i].append(predicateRules)
 
 	## Now generate combinations from everything we added to each of the orderings
