@@ -4,7 +4,7 @@ from core import colorDict, VGDLParser, sys, keyPresses
 from ontology import *
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
 SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
-generateTheoryFromGame
+generateTheoryFromGame, expandLine
 import os, subprocess, shutil
 from collections import defaultdict
 # import WBP_grid, WBP_continuous
@@ -110,6 +110,7 @@ class Agent:
 		"""
 		envA: hyptothetical environment
 		envB: real environment
+		theory: corresponds to hypothetical
 
 		Calculates d_theory(envA, envB): distance between the states of the environments
 		using the ontology of the supplied theory.
@@ -152,7 +153,7 @@ class Agent:
 			# Loop over matching sprites in envA and find corresponding sprites in envB
 			for sprite in matchingSpritesInEnvA:
 				corrSprite = self.findNearestSprite(sprite, matchingSpritesInEnvB)
-				dist = manhattanDist(self.rle._rect2pos(sprite.rect), self.rle._rect2pos(corrSprite.rect))
+				dist = manhattanDist(envA._rect2pos(sprite.rect), envB._rect2pos(corrSprite.rect))
 				matched_sprites.append( (sprite, corrSprite, dist) )
 				
 		print '@@@ TEST:', [matched_sprites[i] for i in range(len(matched_sprites)) if matched_sprites[i][2]!=0]
@@ -559,7 +560,7 @@ class Agent:
 
 		## initialize theory if necessary.
 		if len(self.hypotheses) == 0:
-			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=10)
+			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=0)
 			print "initializing hypotheses"
 		else:
 			gameObject = self.completeHypotheses(self.all_objects, first_time_playing_level)
@@ -674,6 +675,22 @@ class Agent:
 				break
 
 
+
+			## Pedro
+			## Pretend there was an error with avatar c2
+			import time
+			t0 = time.time()
+			from vgdl.theory_template import expandLine
+			n=2
+			newTheories = expandLine(self.hypotheses[1], ('avatar', 'c2'), n=n)
+			print "theory expansion time for n={}: {}".format(n, time.time()-t0)
+			t0=time.time()
+			newRLEs = [self.initializeVrle(theory) for theory in newTheories]
+			print "Environment initialization for {} environments: {}".format(len(newRLEs), time.time()-t0)
+			t0=time.time()
+			for env in newRLEs:
+				env.step(K_RIGHT)
+			print "Single step time for {} environments: {}".format(len(newRLEs), time.time()-t0)
 			## Pedro:
 			## think about whether you want to store the initial state
 			## so that you can make better comparisons

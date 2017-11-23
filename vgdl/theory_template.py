@@ -2195,7 +2195,6 @@ def generateSymbolDict(rle):
 	return inverseMapping
 
 
-predicates = ['killSprite', 'bounceForward', 'nothing', 'stepBack']
 ## TODO: check and complete list of predicates
 # predicates = 
 # ['attractGaze','bounceForward', 'bounceDirection', 'changeResource', 
@@ -2231,45 +2230,46 @@ def getKeywordsFromOntology(interactionName):
 	else:
 		return []
 
-def expandTheory(theory, errorMap, linesPerPairOrdering=1):
-	## modifies the theory to propose new interactonRules involving the
-	## given errorMap
 
+def expandLine(theory, classPair, n=1):
+	## modifies the theory to propose n new interactonRules involving the
+	## given classPair
+	import itertools, copy
+	from vgdl.theory_template import InteractionRule
+
+	predicates = ['killSprite', 'bounceForward', 'nothing', 'stepBack']
 	childTheories = []
+	predicateGroups = []
+	for i in range(1,n+1):
+		predicateGroups.extend(list(itertools.combinations(predicates, i)))
 
-	## what we need to do is make all the factorized changes, and then combine them
 
-	## make all the n-long predicate combinations (n=linesPerPairOrdering)
-	## for each now for each key in the error map, propose each combination of combinations?
-	## this gets bad very quickly.
+	## remove all interactionRules involving classPair (in either order)
+	interactionSet = [rule for rule in theory.interactionSet if
+		classPair != (rule.asTuple()[0], rule.asTuple()[1]) and 
+		classPair != (rule.asTuple()[1], rule.asTuple()[0]) ]
 
-	##this is a problem *if* you have a time-step where the error is non-sparse.
-	## usually this won't be the case.
+	bothOrderings = [[], []]
 
-	## you will also have to think about a way to not update/evaluate
-	## all theories at every time step, but still somehow be able
-	## to have some normalized likelihood per theory? that's hard.
+	for i,order in enumerate([classPair, (classPair[1], classPair[0])]):
+		for predicateGroup in predicateGroups:
+			predicateRules = [InteractionRule(line, order[0], order[1], args={}) for line in predicateGroup]
+			bothOrderings[i].append(predicateRules)
 
-	## maybe the best thing is to sample predicates from the prior
-	## so you are most likely to propose the common interactions first. only when they
-	## don't work do you go deeper
-	## and only when they don't work do you propose more lines.
+	## Now generate combinations from everything we added to each of the orderings
+	newRuleSets = itertools.product(bothOrderings[0], bothOrderings[1])
 
-	## Currently limiting this to one predicate per object-ordering per pair.
-	for pair in errorMap.keys():
-		for order in [pair, (pair[1], pair[0])]:
-			newTheory = copy.deepcopy(theory)
+	for i,ruleSet in enumerate(list(newRuleSets)):
+		#flatten ruleSet
+		ruleSet = [item for sublist in ruleSet for item in sublist]
 
-			## remove all interactionRules with classes in the same order
-			# newTheory.interactionSet = [rule for rule in ]
+		newTheory = copy.deepcopy(theory)
+		newTheory.interactionSet = copy.deepcopy(interactionSet)
+		newTheory.interactionSet.extend(ruleSet)
 
-			for rule in newTheory.interactionSet:
-				if order==(rule.asTuple()[0], rule.asTuple()[1]):
-					for predicate in predicates:
-						if predicate != rule.interaction:
-							pass
-	# embed()
-	return
+		childTheories.append(newTheory)
+
+	return childTheories	
 
 def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	"""
