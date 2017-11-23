@@ -78,7 +78,7 @@ class Agent:
 			if rle._game.sprite_groups[k] and rle._game.sprite_groups[k][0].colorName==color:
 				outList.extend(rle._game.sprite_groups[k])
 		if outList:
-			return outList
+			return list(set(outList))
 		else:
 			return None
 
@@ -324,7 +324,7 @@ class Agent:
 		for i in range(num_variants):
 			theory = copy.deepcopy(initialTheory)
 			for interactionRule in theory.interactionSet:
-				interactionRule.interaction = random.choice(predicate_options)
+				interactionRule.interaction = predicate_options[i%len(predicate_options)]#random.choice(predicate_options)
 			self.hypotheses.append(theory)
 
 		return gameObject

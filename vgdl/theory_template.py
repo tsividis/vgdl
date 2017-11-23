@@ -2231,6 +2231,13 @@ def getKeywordsFromOntology(interactionName):
 		return []
 
 
+## Note to self: you can now just call this fn
+## change this to take the predicates as an arg
+## then you can call it on whatever the error map give
+
+## now think about how to use a simple error map and call expandLine
+
+## then think about how to do an iterative scheme.
 def expandLine(theory, classPair, n=1):
 	## modifies the theory to propose n new interactonRules involving the
 	## given classPair
