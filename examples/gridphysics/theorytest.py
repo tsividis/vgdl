@@ -8,15 +8,15 @@ level="""
 game = """
 BasicGame
 	SpriteSet
-		c9 > RandomNPC color=RED speed=1.0 cooldown=9
-		c8 > RandomNPC color=BLACK speed=1.0 cooldown=9
+		c9 > RandomNPC color=RED speed=2.0 cooldown=9
+		c8 > RandomNPC color=BLACK speed=2.0 cooldown=9
 		avatar > MovingAvatar color=DARKBLUE
-		c3 > RandomNPC color=BLUE speed=1.0 cooldown=9
-		c2 > RandomNPC color=PINK speed=1.0 cooldown=9
-		c7 > RandomNPC color=ORANGE speed=1.0 cooldown=9
-		c6 > RandomNPC color=GREEN speed=1.0 cooldown=9
-		c5 > RandomNPC color=YELLOW speed=1.0 cooldown=9
-		c4 > RandomNPC color=LIGHTBLUE speed=1.0 cooldown=9
+		c3 > RandomNPC color=LIGHTBLUE speed=2.0 cooldown=9
+		c2 > RandomNPC color=PINK speed=2.0 cooldown=9
+		c7 > RandomNPC color=ORANGE speed=2.0 cooldown=9
+		c6 > RandomNPC color=GREEN speed=2.0 cooldown=9
+		c5 > RandomNPC color=YELLOW speed=2.0 cooldown=9
+		c4 > RandomNPC color=BLUE speed=2.0 cooldown=9
 	InteractionSet
 		c2 avatar > stepBack
 		c6 c7 > nothing
@@ -119,8 +119,8 @@ BasicGame
 		SpriteCounter stype=avatar limit=0 win=False
 	LevelMapping
 		0 > c2
-		1 > c4
-		2 > c3
+		1 > c3
+		2 > c4
 		3 > avatar
 		4 > c5
 		5 > c8
