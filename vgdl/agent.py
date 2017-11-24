@@ -659,8 +659,8 @@ class Agent:
 			## Actual world
 			print self.rle.show()
 
-			print "Embedded in inference part"
-			embed()
+			# print "Embedded in inference part"
+			# embed()
 
 			## Tim: Predicted worlds under each theory
 			for num, env in enumerate(theoryRLEs):
@@ -685,12 +685,20 @@ class Agent:
 
 			## assumption: we're only doing killIfTooFast for avatar, not for all objects
 			## can be extended in the same way if we want.
-			resourceObservations = {'speed': [0, 10], 'c5': 5}
+			resourceObservations = {'speed': [0, 10],\
+									'changeResource': [{'resource':'c2', 'value':1, 'limit':1}]}
 
+			## TODO: Write an error map that goes from simple error signals to proposals.
+			## these can serve as targets for Tim as he writes the distance function.
 
+			## TODO: Think about how you can elaborate on theories if you have to relax the initial
+			## strong assumptions. Think about this first for the case of resources,
+			## where you go from what you were trying to track to the general case (generic=False --> generic=True)
+
+			embed()
 			newTheories = expandLine(self.hypotheses[1], ('avatar', 'c2'), 
-				predicates = ['killSprite', 'bounceForward', 'nothing', 'stepBack'], n=n, 
-				resourceObservations=resourceObservations)
+				predicates = ['changeResource', 'bounceForward'], n=n, 
+				resourceObservations=resourceObservations, generic=True)
 			print "theory expansion time for n={}: {}".format(n, time.time()-t0)
 			t0=time.time()
 			newRLEs = [self.initializeVrle(theory) for theory in newTheories]

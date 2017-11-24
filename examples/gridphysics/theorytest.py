@@ -1,27 +1,24 @@
 level="""
 5555555555555
 5   6    1  5
-5 7  4    3 5
+5 7  4   38 5
 5   2 0   2 5
 5555555555555
 """
 game = """
 BasicGame
 	SpriteSet
-		c9 > RandomNPC color=RED speed=0.7 cooldown=10
-		c8 > RandomNPC color=GREEN speed=0.7 cooldown=10
+		c9 > RandomNPC color=RED speed=1.0 cooldown=9
+		c8 > RandomNPC color=BLACK speed=1.0 cooldown=9
 		avatar > MovingAvatar color=DARKBLUE
-		c3 > RandomNPC color=LIGHTBLUE speed=0.7 cooldown=10
-		c2 > RandomNPC color=BLUE speed=0.7 cooldown=10
-		c7 > RandomNPC color=ORANGE speed=0.7 cooldown=10
-		c6 > RandomNPC color=PINK speed=0.7 cooldown=10
-		c5 > RandomNPC color=BLACK speed=0.7 cooldown=10
-		c4 > RandomNPC color=YELLOW speed=0.7 cooldown=10
+		c3 > RandomNPC color=BLUE speed=1.0 cooldown=9
+		c2 > RandomNPC color=PINK speed=1.0 cooldown=9
+		c7 > RandomNPC color=ORANGE speed=1.0 cooldown=9
+		c6 > RandomNPC color=GREEN speed=1.0 cooldown=9
+		c5 > RandomNPC color=YELLOW speed=1.0 cooldown=9
+		c4 > RandomNPC color=LIGHTBLUE speed=1.0 cooldown=9
 	InteractionSet
 		c2 avatar > stepBack
-		avatar c2 > nothing
-		avatar c2 > stepBack
-		c2 avatar > nothing
 		c6 c7 > nothing
 		c7 c6 > nothing
 		c8 c8 > nothing
@@ -103,7 +100,6 @@ BasicGame
 		c2 EOS > stepBack
 		c4 EOS > stepBack
 	TerminationSet
-		NoveltyTermination s1=c2 s2=avatar win=True
 		NoveltyTermination s1=c3 s2=avatar win=True
 		NoveltyTermination s1=c4 s2=avatar win=True
 		NoveltyTermination s1=c5 s2=avatar win=True
@@ -122,14 +118,14 @@ BasicGame
 		NoveltyTermination s1=avatar s2=EOS win=True
 		SpriteCounter stype=avatar limit=0 win=False
 	LevelMapping
-		0 > c6
-		1 > c3
-		2 > c2
+		0 > c2
+		1 > c4
+		2 > c3
 		3 > avatar
-		4 > c4
-		5 > c5
+		4 > c5
+		5 > c8
 		6 > c7
-		7 > c8
+		7 > c6
 		8 > c9
 """
 if __name__ == "__main__":
