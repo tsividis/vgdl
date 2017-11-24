@@ -2208,13 +2208,8 @@ def getKeywordsFromOntology(interactionName):
 	{'changeResource': ['resource', 'value', 'limit'],\
 	'changeScore': ['value'],\
 	'transformTo': ['stype'],\
-	'transformToOnLanding': ['stype'],\
-	'triggerOnLanding': ['strigger'],\
 	'slipForward': ['prob'],\
 	'attractGaze': ['prob'],\
-	'reverseFloeIfActivated': ['strigger'],\
-	'trigger': ['strigger'],\
-	'detrigger': ['strigger'],\
 	'bounceDirection': ['friction'],\
 	'wallBounce': ['friction'],\
 	'wallStop': ['friction'],\
@@ -2224,20 +2219,121 @@ def getKeywordsFromOntology(interactionName):
 	'killOtherHasMore': ['resource', 'limit'],\
 	'killIfHasLess': ['resource', 'limit'],\
 	'killOtherHasLess': ['resource', 'limit'],\
-	'wrapAround': ['offset']}
+	'killIfTooFast': ['speed'],\
+	'wrapAround': ['offset']
+	# 'reverseFloeIfActivated': ['strigger'],\
+	# 'trigger': ['strigger'],\
+	# 'detrigger': ['strigger'],\
+	# 'transformToOnLanding': ['stype'],\
+	# 'triggerOnLanding': ['strigger'],\
+	}
 	if interactionName in ontologyKeywordDict.keys():
 		return ontologyKeywordDict[interactionName]
 	else:
 		return []
 
 
-def expandLine(theory, classPair, n=1):
-	## modifies the theory to propose n new interactonRules involving the
-	## given classPair
+## Note to self: you can now just call this fn (expandLine)
+## change this to take the predicates as an arg
+## then you can call it on whatever the error map gives you.
+
+## now think about how to use a simple error map and call expandLine
+
+## then think about how to do an iterative scheme.
+
+## Iterative scheme:
+## if you've already tested predicates 1:N and you now want to consider some new ones,
+## you want to generate combinations of the new ones with each other, and the new ones with
+## the old ones, but not combinations of the old ones, as you've done that before.
+## so, for i=1:maxLines:
+	## generate all i-long combinations of the new set
+	## and then add to those all combinations of length (maxLines-i) of the old set.
+
+## that's a good description of what expandLine should be.
+## and the assumption is that combinations of the old predicates have not worked
+## one thing to consider is that perhaps n-long combinations of the old predicates have not worked
+## but maybe n+1 -long combinations would. So this is one case to consider
+## in addition to just adding more predicates.
+
+## it may be possible that predicates have not worked because of conditional lines
+## in this case we want to add those lines to past predicates,
+## but for those lines we have to generate all the arguments that could work
+## this is a special case. Or is it the main case??
+
+## a reasonable simplification:
+## generate all argument,value combinations for the predicates that take arguments
+## where value \in {1, resource_max}. Don't worry about intermediate values for now
+## but know that if you wanted to worry about those you could just instantiate more theories.
+
+## for speed: keep track of all collisions.
+## say you've seen one death and one survival, at different speeds.
+## propose the avg of the two speeds as the limit. Then do again if you observe
+## a new data point.
+
+## for changeResource and changeScore: just immediately use the avatar state to propose the right rule.
+
+## for bookkeeping, the theory will have to have all objects, incl. resources,
+## in it.
+
+## pass max resources and died/alive observed speeds
+
+
+## you need some function to run throughout gameplay
+## that keeps track of resource cahnges, max values, etc.
+## It should be organized by predicate
+## in either case. proposeArgs will propose possibilities
+## for all relevant args, using either the knowledge tracked
+## by the resourceObservations function,
+## or using defaults for these resources/predicates.
+## the defaults will always be worse, as they are a worst-case superset
+## of what's being proposed by the trackResources function.
+
+## How do you go from having tried to use the trackedResources()
+## to the defaults without having to throw out all the old theories?
+## or at least, how do you indicate that old theories didn't work specifically w.r.t.
+## resources, so throw out / expand on that part in particular?
+
+def proposeArgs(theory, predicate, resourceObservations, generic=False):
+
+	## if generic==False, this will propose all args given what's in resourceObservations
+	## which is the result of a function responsible for tracking possible resources, speeds, etc.
+
+	## if generic==True, it will just generate all possible args given some hypothesis space.
+	## For a predicate like changeResource this will result in a large number of args.
+
+	args = getKeywordsFromOntology(predicate)
+	argList = []
+	if not args:
+		return [{}]
+	else:
+		if predicate == 'changeResource':
+			
+			if not generic:
+				argList = resourceObservations['changeResource']
+			else:
+				## args and possibilities for each one.
+				resources = theory.classes.keys()
+				values = [1]
+				limits = [1,3]
+
+				for comb in list(itertools.product(resources, values, limits)):
+					argList.append({'resource':comb[0], 'value':comb[1], 'limit':comb[2]})
+
+		## TODO: Fill in the other resources
+	return argList
+
+## TODO: write the function that maintains resourceObservations, or at least figure out
+## its outputs and integrate with proposeArgs
+
+def expandLine(theory, classPair, predicates, n=1, resourceObservations=None, generic=False):
+	## modifies the theory to propose n new interactonRules involving the given classPair
+	## for predicates that take arguments, proposes all possible combinations of args
+	## unless you call generic=False, in which case it only proposes what's in
+	## resourceObservations
+
 	import itertools, copy
 	from vgdl.theory_template import InteractionRule
 
-	predicates = ['killSprite', 'bounceForward', 'nothing', 'stepBack']
 	childTheories = []
 	predicateGroups = []
 	for i in range(1,n+1):
@@ -2253,16 +2349,21 @@ def expandLine(theory, classPair, n=1):
 
 	for i,order in enumerate([classPair, (classPair[1], classPair[0])]):
 		for predicateGroup in predicateGroups:
-			predicateRules = [InteractionRule(line, order[0], order[1], args={}) for line in predicateGroup]
-			bothOrderings[i].append(predicateRules)
+			
+			predicateRules = []
+			for predicate in predicateGroup:
+				allArgumentCombinations = proposeArgs(theory, predicate, resourceObservations, 
+					generic=generic)
+				predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
+					for comb in allArgumentCombinations])
 
-	## Now generate combinations from everything we added to each of the orderings
+			bothOrderings[i].extend(list(itertools.product(*predicateRules)))
+
+	## Now generate combinations from each expanded predicateGroup that we added to each of the orderings
 	newRuleSets = itertools.product(bothOrderings[0], bothOrderings[1])
 
 	for i,ruleSet in enumerate(list(newRuleSets)):
-		#flatten ruleSet
 		ruleSet = [item for sublist in ruleSet for item in sublist]
-
 		newTheory = copy.deepcopy(theory)
 		newTheory.interactionSet = copy.deepcopy(interactionSet)
 		newTheory.interactionSet.extend(ruleSet)

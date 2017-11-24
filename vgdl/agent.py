@@ -78,7 +78,7 @@ class Agent:
 			if rle._game.sprite_groups[k] and rle._game.sprite_groups[k][0].colorName==color:
 				outList.extend(rle._game.sprite_groups[k])
 		if outList:
-			return outList
+			return list(set(outList))
 		else:
 			return None
 
@@ -325,7 +325,7 @@ class Agent:
 		for i in range(num_variants):
 			theory = copy.deepcopy(initialTheory)
 			for interactionRule in theory.interactionSet:
-				interactionRule.interaction = random.choice(predicate_options)
+				interactionRule.interaction = predicate_options[i%len(predicate_options)]#random.choice(predicate_options)
 			self.hypotheses.append(theory)
 
 		return gameObject
@@ -684,7 +684,23 @@ class Agent:
 			t0 = time.time()
 			from vgdl.theory_template import expandLine
 			n=2
-			newTheories = expandLine(self.hypotheses[1], ('avatar', 'c2'), n=n)
+
+			## assumption: we're only doing killIfTooFast for avatar, not for all objects
+			## can be extended in the same way if we want.
+			resourceObservations = {'speed': [0, 10],\
+									'changeResource': [{'resource':'c2', 'value':1, 'limit':1}]}
+
+			## TODO: Write an error map that goes from simple error signals to proposals.
+			## these can serve as targets for Tim as he writes the distance function.
+
+			## TODO: Think about how you can elaborate on theories if you have to relax the initial
+			## strong assumptions. Think about this first for the case of resources,
+			## where you go from what you were trying to track to the general case (generic=False --> generic=True)
+
+			embed()
+			newTheories = expandLine(self.hypotheses[1], ('avatar', 'c2'), 
+				predicates = ['changeResource', 'bounceForward'], n=n, 
+				resourceObservations=resourceObservations, generic=True)
 			print "theory expansion time for n={}: {}".format(n, time.time()-t0)
 			t0=time.time()
 			newRLEs = [self.initializeVrle(theory) for theory in newTheories]
@@ -942,9 +958,12 @@ class Agent:
 
 		try:
 			agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
-			agentState['speed'] = self.rle._game.getAvatars()[0].speed
 		except IndexError:
 			agentState = defaultdict(lambda: 0)
+		try:
+			agentState['speed'] = self.rle._game.getAvatars()[0].speed
+		except AttributeError:
+			agentState['speed'] = None
 
 		embed()
 		res = self.rle.step(action)
@@ -954,7 +973,6 @@ class Agent:
 
 		try:
 			agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
-			agentState['speed'] = self.rle._game.getAvatars()[0].speed
 
 			for e in res['effectList']:
 				if 'changeResource' in e:
@@ -964,7 +982,6 @@ class Agent:
 						# undo one negative change to account for eventhandler ordering
 						agentState[changes['resource']] -= changes['value']
 						break
-			self.rle.agentStatePrev = agentState
 		# If agent is killed before we get agentState
 		except (IndexError, AttributeError) as e:
 			# agentState = defaultdict(lambda:0)
@@ -977,7 +994,12 @@ class Agent:
 					else:
 						agentState[changes['resource']] += 0
 						ignored_negative_change = True
-			self.rle.agentStatePrev = agentState
+		try:
+			agentState['speed'] = self.rle._game.getAvatars()[0].speed
+		except AttributeError:
+			agentState['speed'] = None
+
+		self.rle.agentStatePrev = agentState
 
 
 		hypotheses = self.manageNewObjects(hypotheses)

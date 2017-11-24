@@ -1504,6 +1504,7 @@ def transformToOnLanding(sprite, partner, game, stype='wall'):
         ##Decide whether it's "fair" to know this was transformToOnLanding as opposed to transform
         return ("transformToOnLanding", sprite.ID, partner.ID, args)
 
+#ignore
 def triggerOnLanding(sprite, partner, game, strigger=None):
     '''triggers a triggerable sprite. triggerable is interesting. should change this?'''
     if partner.speed*partner.orientation[1] == 0 and partner.lastrect.y != partner.rect.y:
@@ -1843,7 +1844,7 @@ def teleportToExit(sprite, partner, game):
     args = {'stype':partner.stype}
     return ('teleportToExit', sprite.ID, partner.ID, args)
 
-def killIfTooFast(sprite,partner,game, speed):
+def killIfTooFast(sprite,partner,game,speed):
     if abs(sprite.speed*sprite.orientation[1]) > speed:
         return killSprite(sprite, partner, game)
 
