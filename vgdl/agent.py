@@ -158,7 +158,8 @@ class Agent:
 				corrSprite = self.findNearestSprite(sprite, matchingSpritesInEnvB)
 				dist = manhattanDist(envA._rect2pos(sprite.rect), envB._rect2pos(corrSprite.rect))
 				matched_sprites.append( (sprite, corrSprite, dist) )
-				
+		
+		#matched_sprites = list(set(matched_sprites)) #remove duplicates	
 		print '@@@ TEST:', [matched_sprites[i] for i in range(len(matched_sprites)) if matched_sprites[i][2]!=0]
 
 		# Clean up matched_sprites set towards bijective mapping
@@ -699,13 +700,12 @@ class Agent:
 			## Actual world
 			print self.rle.show()
 
-			# print "Embedded in inference part"
-			# embed()
+			#embed()
 
 			## Tim: Predicted worlds under each theory
 			for num, env in enumerate(theoryRLEs):
 				## Tim: uncomment if you want to see the full theory corresponding to each env
-				# self.hypotheses[num].display()  
+				self.hypotheses[num].display()  
 				print env.show()
 				break
 
@@ -714,6 +714,8 @@ class Agent:
 				self.state_distance(env, self.rle, self.hypotheses[num])
 				break
 
+			print "Embedded in inference part"
+			embed()
 
 			errorSignal = {('avatar','c2'):['unexpectedOverlap', 'orientationChange']}
 
