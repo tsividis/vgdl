@@ -136,8 +136,8 @@ class Agent:
 		total_penalty = 0.
 		errorMap = {}
 		matched_sprites = [] #tuples of matched sprites: (envA sprite, envB sprite, dist) - helps penalize distance and find missing
-		missing_sprites_envB = [] #envA sprites that have no partner in envB
-		missing_sprites_envA = [] #envB sprites that have no partner in envA
+		lonely_sprites_envA = [] #envA sprites that have no partner in envB
+		lonely_sprites_envB = [] #envB sprites that have no partner in envA
 
 		# Loop over keys in envA
 		for k in [key for key in envA._game.sprite_groups.keys() if envA._game.sprite_groups[key]]:
@@ -148,20 +148,84 @@ class Agent:
 			matchingSpritesInEnvA = self.getSpritesByColor(envA, color)
 			matchingSpritesInEnvB = self.getSpritesByColor(envB, color)
 			if matchingSpritesInEnvB == None:
-				missing_sprites_envB.append(matchingSpritesInEnvA)
+				lonely_sprites_envA.append(matchingSpritesInEnvA)
 				continue
 			# Loop over matching sprites in envA and find corresponding sprites in envB
 			for sprite in matchingSpritesInEnvA:
 				corrSprite = self.findNearestSprite(sprite, matchingSpritesInEnvB)
 				dist = manhattanDist(envA._rect2pos(sprite.rect), envB._rect2pos(corrSprite.rect))
+				#print (sprite, corrSprite, dist)
 				matched_sprites.append( (sprite, corrSprite, dist) )
-		
-		#matched_sprites = list(set(matched_sprites)) #remove duplicates	
-		print '@@@ TEST:', [matched_sprites[i] for i in range(len(matched_sprites)) if matched_sprites[i][2]!=0]
 
 		# Clean up matched_sprites set towards bijective mapping
+		matched_sprites_envB = [matched_sprites[i][1] for i in range(len(matched_sprites))]
+		matched_dist = [matched_sprites[i][2] for i in range(len(matched_sprites))]
+		for sprite in matched_sprites_envB:
+			indices = [i for i,t in enumerate(matched_sprites) if t[1]==sprite]
+			if len(indices)==1: #no multiple mappings to sprite
+				continue
+			else: #remove mappings with largest distances
+				idx_rm = np.argsort(matched_dist)
+				idx_rm = [i for i in idx_rm if any(i==indices)][1:]
+				#print '>>> TEST', i==indices
+				[lonely_sprites_envA.append(matched_sprites[i][0]) for i in idx_rm] #add to-be-removed sprites in envA to lonely list
+				[matched_sprites.pop(i-n) for n,i in enumerate(idx_rm)] #removes entries
 
 		# Find sprites that exist in envB but not envA
+		matched_sprites_envB = [matched_sprites[i][1] for i in range(len(matched_sprites))]
+		for k in [key for key in envB._game.sprite_groups.keys() if envB._game.sprite_groups[key]]:
+			color = envB._game.sprite_groups[k][0].colorName
+			matchingSprites = self.getSpritesByColor(envB, color)
+			for sprite in matchingSprites:
+				if not any([matched_sprites_envB[i]==sprite for i in range(len(matched_sprites_envB))]):
+					lonely_sprites_envB.append(sprite)
+
+		## Test output
+		print '>>> matched_sprites:'
+		for i in range(len(matched_sprites)):
+			if True: #matched_sprites[i][2]!=0:
+				print(matched_sprites[i])
+
+		# Re-match elements of same class that are 'lonely' in both environments
+		# (these could be result of teleporting - to do: add teleportation distance metric here)
+		dist_rematch = []
+		mindist_rematch = []
+		for sprite in lonely_sprites_envA:
+			temp = [manhattanDist(envA._rect2pos(sprite.rect), envB._rect2pos(s.rect)) for s in lonely_sprites_envB if sprite.colorName==s.colorName]
+			#print '>>> temp:', temp
+			if temp==[]: #move on if there are no potential re-matches for class
+				continue
+			mindist_rematch.append(min(temp))
+			dist_rematch.append(temp)
+		break #REMOVE!
+		while dist_rematch!=[] and dist_rematch!=[[]]: #break if no more potential re-matches available
+			print '>>> mindist_rematch', mindist_rematch
+			idx_sprite = np.argmin(mindist_rematch) #first re-match sprite with minimum distance to potential partner
+			idx_match = np.argmin(dist_rematch[idx_sprite]) #re-match to closest potential partner
+			print '>>> idx_sprite', idx_sprite
+			print '>>> idx_match', idx_match
+			# Append (envA sprite, envB sprite, dist) tuple to matched sprites list
+			print 'lonely_sprites_envA', lonely_sprites_envA
+			print 'lonely_sprites_envB', lonely_sprites_envB
+			matched_sprites.append( (lonely_sprites_envA[idx_sprite], lonely_sprites_envB[idx_match], min(mindist_rematch)) )
+			# Delete matched sprites from lists
+			mindist_rematch.pop(idx_sprite);
+			dist_rematch.pop(idx_sprite);
+			lonely_sprites_envA.pop(idx_sprite);
+			lonely_sprites_envB.pop(idx_match);
+
+		#MISSING: update indices after element removal
+		#MISSING: find correct envB sprite - idx_match only takes same color into account
+
+		## Test output
+		print '>>> matched_sprites:'
+		for i in range(len(matched_sprites)):
+			if True: #matched_sprites[i][2]!=0:
+				print(matched_sprites[i])
+		print '>>> lonely_sprites_envA:', [s for s in lonely_sprites_envA] #!!THIS IS FINE IF STUFF HAS MOVED OUT OF SCREEN - ASK PEDRO
+		print '>>> lonely_sprites_envB:', [s for s in lonely_sprites_envB]
+
+
 
 		# Penalize distance and additional/missing sprites
 
@@ -648,6 +712,13 @@ class Agent:
 				newTheories = []
 				for num, env in enumerate(theoryRLEs):
 					env.step(action)
+					env.step(K_UP) #hack to make hypothetical RLEs much different from real
+					env.step(K_LEFT) #hack to make hypothetical RLEs much different from real
+					env.step(K_LEFT)
+					env.step(K_LEFT)
+					env.step(K_LEFT)
+					env.step(K_LEFT)
+					env.step(K_LEFT)
 			
 
 					## Pedro: Outlining rest of functions:
