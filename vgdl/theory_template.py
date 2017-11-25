@@ -2322,6 +2322,73 @@ def proposeArgs(theory, predicate, resourceObservations, generic=False):
 		## TODO: Fill in the other resources
 	return argList
 
+
+def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObservations):
+	## Takes the error signal and proposes the appropriate predicates by looking
+	## at the memory. For now it would only access the memory to make new proposals
+	## that build on previous ones (e.g., incrementing n, or going to conditional kill
+	## events if non-conditional kill events have already been proposed)
+
+	predicates = []
+
+	## List of predicates that are unique to a physics type
+	physicsToPredicateMapping = {
+	'all' : ['killSprite', 'cloneSprite', 'transformTo', 'transformToOnLanding',\
+		'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killOtherHasLess',\
+		'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow',\
+		'undoAll', 'nothing', 'onRope', 'onLadder',\
+		'turn', 'turnAround', 'reverseDirection', 'flipDirection', 'bounceForward',\
+		'changeResource', 'collectResource', 'scoreChange', 'teleportToExit', 'conveySprite'],
+	'gridphysics': [],
+	'continuousphysics': ['transformToOnLanding', 'bounceDirection', 'conveySprite', 'pullWithIt',\
+	'windGust','slipForward', 'wallBounce', 'wallStop']
+	}
+
+	errorSignalToPredicateMapping = {
+
+	## Destruction/appearance/transformation
+	'objectDestruction': ['killSprite'],
+	'newObjectAppeared': ['cloneSprite'],
+	'moreOfOneClassLessOfAnother': ['transformTo', 'transformToOnLanding'],
+	'conditionalKill': ['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killOtherHasLess',\
+		'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
+
+	## Position difference
+	'noMovement': ['undoAll'],
+	'unexpectedOverlap': ['nothing', 'onRope', 'onLadder'],
+	'orientationChange': ['turn', 'turnAround', 'reverseDirection', 'bounceDirection', 'flipDirection'],
+	'unexpectedPosition': ['bounceForward', 'pullWithIt', 'windGust', 'slipForward',\
+		'wallBounce', 'wallStop'],
+
+	## Object state change
+	'stateChange': ['changeResource', 'collectResource', 'scoreChange'],
+
+	## Other
+	## TODO: These don't actually correspond here, but we need to do more work to be able to learn these.
+	'other': ['teleportToExit', 'conveySprite']
+	}
+
+	## If we've proposed killSprite and that has failed, propose conditional rules.
+	if 'objectDestruction' in singlePairErrorSignal.values():
+		if 'killSprite' in proposalMemory[singlePairErrorSignal.values()]:
+			predicates.extend(errorSignalToPredicateMapping['conditionalKill'])
+			singlePairErrorSignal.values().remove('objectDestruction')
+
+	## Propose relevant rules
+	##TODO: right now this just gets the list from a single key
+	for predicate in singlePairErrorSignal.values()[0]:
+		predicates.extend(errorSignalToPredicateMapping[predicate])
+
+	## Filter out rules that aren't consistent with the known physics type
+	predicates = [p for p in predicates if p in physicsToPredicateMapping['all'] or 
+		p in physicsToPredicateMapping[globalObservations['physicsType']]]
+
+
+	## TODO: Fill out the case where you consult the proposalMemory to make more complicated
+	## proposals
+
+	return predicates
+
 ## TODO: write the function that maintains resourceObservations, or at least figure out
 ## its outputs and integrate with proposeArgs
 
@@ -2370,7 +2437,8 @@ def expandLine(theory, classPair, predicates, n=1, resourceObservations=None, ge
 
 		childTheories.append(newTheory)
 
-	return childTheories	
+	print "Created {} new theories".format(len(childTheories))
+	return classPair, childTheories, predicateGroups
 
 def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	"""
