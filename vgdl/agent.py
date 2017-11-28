@@ -109,11 +109,13 @@ class Agent:
 
 
 	## TIM
-	def state_distance(self, envA, envB, theory):
+	def state_distance(self, envA, envB, theory, p_dist=1, p_miss=10):
 		"""
 		envA: hyptothetical environment
 		envB: real environment
 		theory: corresponds to hypothetical
+		p_dist: distance penalty per grid point
+		p_miss: penalty for missing or additional sprite
 
 		Calculates d_theory(envA, envB): distance between the states of the environments
 		using the ontology of the supplied theory.
@@ -134,6 +136,8 @@ class Agent:
 		from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 		
 		# embed()
+
+		print '--- Called state_distance function ---'
 
 		# Initialization
 		total_penalty = 0.
@@ -183,57 +187,89 @@ class Agent:
 				if not any([matched_sprites_envB[i]==sprite for i in range(len(matched_sprites_envB))]):
 					lonely_sprites_envB.append(sprite)
 
-		## Test output
-		print '>>> matched_sprites:'
-		for i in range(len(matched_sprites)):
-			if True: #matched_sprites[i][2]!=0:
-				print(matched_sprites[i])
+		# ## Test output
+		# print '>>> matched_sprites:'
+		# for i in range(len(matched_sprites)):
+		# 	if True: #matched_sprites[i][2]!=0:
+		# 		print matched_sprites[i]
+		# print '>>> lonely_sprites_envA:', [s for s in lonely_sprites_envA]
+		# print '>>> lonely_sprites_envB:', [s for s in lonely_sprites_envB]
 
 		# Re-match elements of same class that are 'lonely' in both environments
 		# (these could be result of teleporting - to do: add teleportation distance metric here)
+		# (Watch out: we could have had a blue block deleted and a different one created somewhere else)
 		dist_rematch = []
 		mindist_rematch = []
-		for sprite in lonely_sprites_envA:
-			temp = [manhattanDist(envA._rect2pos(sprite.rect), envB._rect2pos(s.rect)) for s in lonely_sprites_envB if sprite.colorName==s.colorName]
-			#print '>>> temp:', temp
-			if temp==[]: #move on if there are no potential re-matches for class
-				continue
-			mindist_rematch.append(min(temp))
-			dist_rematch.append(temp)
-		break #REMOVE!
-		while dist_rematch!=[] and dist_rematch!=[[]]: #break if no more potential re-matches available
-			print '>>> mindist_rematch', mindist_rematch
+		sprites_rematchA = [] #re-matched sprites in envA
+		sprites_rematchB = [] #re-matched sprites in envB
+		for sA in lonely_sprites_envA:
+			dist_temp = []
+			for sB in lonely_sprites_envB:
+				if sB.colorName==sA.colorName:
+					dist_temp.append( manhattanDist(envA._rect2pos(sA.rect), envB._rect2pos(sB.rect)) )
+				else:
+					dist_temp.append(2e6)
+				#if all([d==None for d in dist_rematch]): #case where there is no potential re-match
+			dist_rematch.append(dist_temp)
+			#print '>>> dist_rematch', dist_rematch
+			mindist_rematch.append(min([d for d in dist_rematch[-1]]))
+
+		while len(mindist_rematch)>0 and min(mindist_rematch)<1e6: #run as long as potential re-matches available
 			idx_sprite = np.argmin(mindist_rematch) #first re-match sprite with minimum distance to potential partner
 			idx_match = np.argmin(dist_rematch[idx_sprite]) #re-match to closest potential partner
-			print '>>> idx_sprite', idx_sprite
-			print '>>> idx_match', idx_match
+			#print '>>> idx_sprite', idx_sprite
+			#print '>>> idx_match', idx_match
 			# Append (envA sprite, envB sprite, dist) tuple to matched sprites list
-			print 'lonely_sprites_envA', lonely_sprites_envA
-			print 'lonely_sprites_envB', lonely_sprites_envB
 			matched_sprites.append( (lonely_sprites_envA[idx_sprite], lonely_sprites_envB[idx_match], min(mindist_rematch)) )
-			# Delete matched sprites from lists
-			mindist_rematch.pop(idx_sprite);
-			dist_rematch.pop(idx_sprite);
-			lonely_sprites_envA.pop(idx_sprite);
-			lonely_sprites_envB.pop(idx_match);
-
-		#MISSING: update indices after element removal
-		#MISSING: find correct envB sprite - idx_match only takes same color into account
+			# Set distance out of matching range - for both sprite A and B
+			dist_rematch[idx_sprite] = [2e6 for i in range(len(dist_rematch[0]))]
+			for i in range(len(dist_rematch)):
+				#print '>>> dist_rematch[i]', dist_rematch[i][idx_match]
+				dist_rematch[i][idx_match]=2e6
+			# Update minimum distance list
+			mindist_rematch = [ min([d for d in dist_rematch[i]]) for i in range(len(dist_rematch)) ]
+			# Update re-matching lists for both environments
+			sprites_rematchA.append(lonely_sprites_envA[idx_sprite])
+			sprites_rematchB.append(lonely_sprites_envB[idx_match])
+		# Delete re-matched sprites from lonely lists
+		for s in sprites_rematchA:
+			lonely_sprites_envA.remove(s)
+		for s in sprites_rematchB:
+			lonely_sprites_envB.remove(s)
 
 		## Test output
 		print '>>> matched_sprites:'
 		for i in range(len(matched_sprites)):
 			if True: #matched_sprites[i][2]!=0:
-				print(matched_sprites[i])
-		print '>>> lonely_sprites_envA:', [s for s in lonely_sprites_envA] #!!THIS IS FINE IF STUFF HAS MOVED OUT OF SCREEN - ASK PEDRO
+				print matched_sprites[i]
+		print '>>> lonely_sprites_envA:', [s for s in lonely_sprites_envA]
 		print '>>> lonely_sprites_envB:', [s for s in lonely_sprites_envB]
 
 
+		## Penalize distance and additional/missing sprites
+		# Distance penalty
+		for t in matched_sprites:
+			sA = t[0] #sprite in envA
+			dist = t[2] #distance to sprite in envB
+			sA_type = theory.classes[sA.name][0].vgdlType
+			if str(sA_type) == "<class 'vgdl.ontology.RandomNPC'>":
+				sA_speed = theory.classes[sA.name][0].speed
+				if dist>2*sA_speed:
+					total_penalty += p_dist*t[2]
+			else: #all of the other types are deterministic
+				total_penalty += p_dist*t[2]				
+		# Missing/additional penalty
+		total_penalty += p_miss * ( len(lonely_sprites_envA) + len(lonely_sprites_envB) )
 
-		# Penalize distance and additional/missing sprites
+		print '>>> Total penalty:', total_penalty
+
+		# Construct errorMap using previous state
+
 
 		## TODO: penalize as a function of vgdlType and color
 		## TODO: deal with cases where you don't find objects in one env but you do in the other
+
+		## NOTE: Use intializeHypotheses function in this file to build my test theories
 
 		return total_penalty, errorMap
 
@@ -357,6 +393,7 @@ class Agent:
 
 		return VRLEs
 
+	#<< To build own theory: check comments below
 	def initializeHypotheses(self, allObjects, learnSprites=True, num_variants=10):
 		if learnSprites:
 			observe(self.rle, 3, self.bestSpriteTypeDict)
@@ -380,7 +417,9 @@ class Agent:
 
 		## For debugging purposes, generating one variant that is off by only one interaction
 		theory = copy.deepcopy(initialTheory)
-		for interactionRule in theory.interactionSet:
+		for interactionRule in theory.interactionSet: #<< find rule between avatar and e.g. c3
+			#if interactionRule.slot1=='avatar' and interactionRule.slot2 == 'c2':
+				#interactionRule.interaction = 'bounceForward'
 			if interactionRule.interaction == 'killSprite':
 				interactionRule.interaction = 'stepBack'
 				break
