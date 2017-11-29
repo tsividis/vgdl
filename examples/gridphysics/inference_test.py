@@ -31,7 +31,7 @@ wwwwwwwwwwwww
 game0 = """
 BasicGame frame_rate=30
     SpriteSet
-        apple > Immovable color=GREEN
+        apple > Missile color=GREEN speed=.5
         orange > Immovable color=ORANGE
         blueberry > Immovable color=BLUE
         dough > Immovable color=YELLOW

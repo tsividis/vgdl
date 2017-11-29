@@ -4,7 +4,7 @@ from core import colorDict, VGDLParser, sys, keyPresses
 from ontology import *
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
 SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
-generateTheoryFromGame, expandLine
+generateTheoryFromGame, expandLine, expandSprites
 import os, subprocess, shutil
 from collections import defaultdict
 # import WBP_grid, WBP_continuous
@@ -396,10 +396,14 @@ class Agent:
 	#<< To build own theory: check comments below
 	def initializeHypotheses(self, allObjects, learnSprites=True, num_variants=10):
 		if learnSprites:
-			observe(self.rle, 3, self.bestSpriteTypeDict)
+			observe(self.rle, 0, self.bestSpriteTypeDict)
+			## Sample from distribution but actually just set everything to default.
 			spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
-				self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
+				self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, \
+				oldSpriteSet=None, default=True)
 			self.rle._game.exceptedObjects = exceptedObjects
+	
+
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 			initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
 
@@ -472,23 +476,38 @@ class Agent:
 		## filtering to get high-probability ones (or at least ones that reduce that error signal)
 
 		from vgdl.theory_template import expandLine, proposePredicates
-		n=2
+		n=1
 
 		# errorSignal = {('avatar','c2'):['unexpectedOverlap', 'orientationChange']}
 
 
+		## TODO: write sample resourceObservations that correspond to the format
+		## where you can make the argList just reference the appropriate predicate
+		## or at least have proposeArgs modify it slightly.
 		self.resourceObservations = {'speed': [0, 10],\
-								'changeResource': [{'resource':'c2', 'value':1, 'limit':1}]}
+								'changeResource': [{'resource':'c2', 'value':1, 'limit':1}],\
+								'changeScore':{'speed':1}}
 
 		singlePairErrorSignal = {('avatar','c2'):['unexpectedOverlap', 'orientationChange']}
+		# singlePairErrorSignal = {('avatar','c2'):['conditionalKill']}
+
 		globalObservations = {'physicsType':'gridphysics'}
+
+	
+
 		predicates = proposePredicates(singlePairErrorSignal, self.memory, self.proposalMemory, globalObservations)
 		
-		embed()
+		##TODO: Sprite induction step
+		# className, newTheories = expandSprites(self.rle._game, self.hypotheses[1], 'c2', 
+			# self.bestSpriteTypeDict, resourceObservations=self.resourceObservations)
+
+
 		classPair, newTheories, predicateGroups = expandLine(self.hypotheses[1], ('avatar', 'c2'), 
 			predicates = predicates, n=n, 
 			resourceObservations=self.resourceObservations, generic=True)
 
+		print "in conductInference"
+		embed()
 		self.proposalMemory[classPair].extend(predicateGroups)
 
 		## TODO:
@@ -824,13 +843,9 @@ class Agent:
 				self.state_distance(env, self.rle, self.hypotheses[num])
 				break
 
-			print "Embedded in inference part"
-			embed()
-
 			errorSignal = {('avatar','c2'):['unexpectedOverlap', 'orientationChange']}
 
-			# self.conductInference(errorSignal)
-
+			self.conductInference(errorSignal)
 
 			print "theory expansion time for n={}: {}".format(n, time.time()-t0)
 			t0=time.time()

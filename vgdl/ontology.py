@@ -2450,12 +2450,12 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
 
 #     return curr_distribution
 
-def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict, oldSpriteSet = None):
+def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict, oldSpriteSet = None, default=False):
 
     import random
     import numpy as np
     from class_theory_template import Sprite
-
+    from ontology import ResourcePack
     distributionsHaveChanged = False
 
     sample = []
@@ -2596,6 +2596,9 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         param = dict(best_param[1:])
         setSpriteParams(param, s) # set the parameters for sprite s
 
+        if default:
+            # embed()
+            s.vgdlType = ResourcePack
         sample.append(s)
 
     return sample, exceptions, distributionsHaveChanged, best_params
@@ -2652,7 +2655,7 @@ def spriteInductionProfiler(game, step, bestSpriteTypeDict, oldSpriteSet=None, o
     lp.print_stats()
     return distributionsHaveChanged
 
-def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None):
+def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None, specificSpritesToUpdate=[]):
     """
     An explanation of important data structures used in this function:
     game = a BasicGame object
@@ -2722,7 +2725,13 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
 
         # distributionAtT1 = copy.deepcopy(game.spriteDistribution)
 
-        for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:        # Keys are the IDs of the game objects
+        if not specificSpritesToUpdate:
+            ## if we don't pass a list of specific sprites, update all sprites
+            specificSpritesToUpdate = [s for s in game.spriteDistribution.keys() if s in objects.keys()] # Keys are the IDs of the game objects
+        # else:
+            # print "got specificSpritesToUpdate"
+            # embed()
+        for sprite in specificSpritesToUpdate:        
             sprite_obj = objects[sprite]["sprite"]
 
             if all([sprite not in e for e in game.effectList if e[0]!='nothing']) and sprite not in game.ignoreList and sprite_obj.name != 'avatar':

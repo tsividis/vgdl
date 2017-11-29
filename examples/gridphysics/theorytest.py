@@ -8,15 +8,15 @@ level="""
 game = """
 BasicGame
 	SpriteSet
-		c9 > RandomNPC color=RED speed=2.0 cooldown=9
-		c8 > RandomNPC color=BLACK speed=2.0 cooldown=9
+		c9 > ResourcePack color=RED speed=0.3 orientation=RIGHT cooldown=10
+		c8 > ResourcePack color=BLACK speed=0.3 orientation=RIGHT cooldown=10
 		avatar > MovingAvatar color=DARKBLUE
-		c3 > RandomNPC color=LIGHTBLUE speed=2.0 cooldown=9
-		c2 > RandomNPC color=PINK speed=2.0 cooldown=9
-		c7 > RandomNPC color=ORANGE speed=2.0 cooldown=9
-		c6 > RandomNPC color=GREEN speed=2.0 cooldown=9
-		c5 > RandomNPC color=YELLOW speed=2.0 cooldown=9
-		c4 > RandomNPC color=BLUE speed=2.0 cooldown=9
+		c3 > ResourcePack color=BLUE speed=0.3 orientation=RIGHT cooldown=10
+		c2 > ResourcePack color=PINK speed=0.3 orientation=RIGHT cooldown=10
+		c7 > ResourcePack color=ORANGE speed=0.3 orientation=RIGHT cooldown=10
+		c6 > ResourcePack color=GREEN speed=0.3 orientation=RIGHT cooldown=10
+		c5 > ResourcePack color=YELLOW speed=0.3 orientation=RIGHT cooldown=10
+		c4 > ResourcePack color=LIGHTBLUE speed=0.3 orientation=RIGHT cooldown=10
 	InteractionSet
 		c2 avatar > stepBack
 		c6 c7 > nothing
@@ -100,13 +100,49 @@ BasicGame
 		c2 EOS > stepBack
 		c4 EOS > stepBack
 	TerminationSet
+		NoveltyTermination s1=c2 s2=c2 win=True
+		NoveltyTermination s1=c2 s2=c3 win=True
+		NoveltyTermination s1=c2 s2=c4 win=True
+		NoveltyTermination s1=c2 s2=c5 win=True
+		NoveltyTermination s1=c2 s2=c6 win=True
+		NoveltyTermination s1=c2 s2=c7 win=True
+		NoveltyTermination s1=c2 s2=c8 win=True
+		NoveltyTermination s1=c2 s2=c9 win=True
 		NoveltyTermination s1=c3 s2=avatar win=True
+		NoveltyTermination s1=c3 s2=c3 win=True
+		NoveltyTermination s1=c3 s2=c4 win=True
+		NoveltyTermination s1=c3 s2=c5 win=True
+		NoveltyTermination s1=c3 s2=c6 win=True
+		NoveltyTermination s1=c3 s2=c7 win=True
+		NoveltyTermination s1=c3 s2=c8 win=True
+		NoveltyTermination s1=c3 s2=c9 win=True
 		NoveltyTermination s1=c4 s2=avatar win=True
+		NoveltyTermination s1=c4 s2=c4 win=True
+		NoveltyTermination s1=c4 s2=c5 win=True
+		NoveltyTermination s1=c4 s2=c6 win=True
+		NoveltyTermination s1=c4 s2=c7 win=True
+		NoveltyTermination s1=c4 s2=c8 win=True
+		NoveltyTermination s1=c4 s2=c9 win=True
 		NoveltyTermination s1=c5 s2=avatar win=True
+		NoveltyTermination s1=c5 s2=c5 win=True
+		NoveltyTermination s1=c5 s2=c6 win=True
+		NoveltyTermination s1=c5 s2=c7 win=True
+		NoveltyTermination s1=c5 s2=c8 win=True
+		NoveltyTermination s1=c5 s2=c9 win=True
 		NoveltyTermination s1=c6 s2=avatar win=True
+		NoveltyTermination s1=c6 s2=c6 win=True
+		NoveltyTermination s1=c6 s2=c7 win=True
+		NoveltyTermination s1=c6 s2=c8 win=True
+		NoveltyTermination s1=c6 s2=c9 win=True
 		NoveltyTermination s1=c7 s2=avatar win=True
+		NoveltyTermination s1=c7 s2=c7 win=True
+		NoveltyTermination s1=c7 s2=c8 win=True
+		NoveltyTermination s1=c7 s2=c9 win=True
 		NoveltyTermination s1=c8 s2=avatar win=True
+		NoveltyTermination s1=c8 s2=c8 win=True
+		NoveltyTermination s1=c8 s2=c9 win=True
 		NoveltyTermination s1=c9 s2=avatar win=True
+		NoveltyTermination s1=c9 s2=c9 win=True
 		NoveltyTermination s1=c2 s2=EOS win=True
 		NoveltyTermination s1=c3 s2=EOS win=True
 		NoveltyTermination s1=c4 s2=EOS win=True
@@ -119,8 +155,8 @@ BasicGame
 		SpriteCounter stype=avatar limit=0 win=False
 	LevelMapping
 		0 > c2
-		1 > c3
-		2 > c4
+		1 > c4
+		2 > c3
 		3 > avatar
 		4 > c5
 		5 > c8
