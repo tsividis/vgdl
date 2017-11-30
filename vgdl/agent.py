@@ -103,6 +103,24 @@ class Agent:
 		return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	# Function matching environment and determining sprites that couldn't be matched
 	def matchEnvs(self, envA, envB):
 		# Initialization
@@ -306,9 +324,9 @@ class Agent:
 			matched_ts, _, _ = self.matchEnvs(envB, envPrev) #matches real env across timestep
 			dist_ts = [matched_ts[i][2] for i in range(len(matched_ts)) if matched_ts[i][0]==sB][0]
 			sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB][0] #sB in previous step
+			# --------------------------
 			# Step through sub-problems
 			e = errorMapEntry()
-			# Initialize error map entry
 			e.targetClass = sA.name
 			# Find neighbors of target sprite in the previous time step
 			neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
@@ -343,9 +361,37 @@ class Agent:
 			#TODO
 			print e.diagnosis
 			errorMap.append(e)
+
 		# Cover cases where envA sprite should have moved but was erroneously destroyed
 		# For this, we check if lonely envB sprite has match in envPrev (and pass to (2) if not)
-		#TODO!!
+		appeared_sprites_envB = []
+		for sB in lonely_sprites_envB:
+			# Find sprite corresponding to sB in previous time step
+			matched_ts, _, _ = self.matchEnvs(envB, envPrev) #matches real env across timestep
+			dist_ts = [matched_ts[i][2] for i in range(len(matched_ts)) if matched_ts[i][0]==sB][0]
+			sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB] #sB in previous step
+			if sPrev == []: #sB has no match in envPrev
+				appeared_sprites_envB.append(sB)
+				continue 
+			sPrev = sPrev[0]
+			# Find erroneously destroyed sA by finding envA sprite closest to sPrev
+			candidates_in_killList = [s for s in envA._game.kill_list if s.colorName==sPrev.colorName]
+			if candidates_in_killList==[]: #there is no envA sprite where sPrev should have been
+				appeared_sprites_envB.append(sB)
+				continue 
+			sA = self.findNearestSprite(sPrev, candidates_in_killList)
+			if manhattanDist(envA._rect2pos(sA.rect), envPrev._rect2pos(sPrev.rect))!=0: #there is no envA sprite where sPrev should have been
+				appeared_sprites_envB.append(sB)
+				continue
+			# Now we are completely sure that sprite in envA has been erroneously removed
+			# --------------------------
+
+
+
+		embed()
+			
+
+
 
 
 			
@@ -391,6 +437,7 @@ class Agent:
 			#embed()
 
 		# 2.3) Appearance
+		#TODO!!
 
 
 
@@ -412,6 +459,25 @@ class Agent:
 		## NOTE: errorSignal = {('avatar','c2'):['unexpectedOverlap', 'orientationChange']}
 
 		return total_penalty, errorMap
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -936,6 +1002,19 @@ class Agent:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 			## TIM
 			from vgdl.util import manhattanDist
 			from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
@@ -969,7 +1048,7 @@ class Agent:
 				# Pedro: Filter new theories according to whatever scheme
 
 			#TEST
-			#theoryRLEs[1].step(K_LEFT)
+			theoryRLEs[1].step(K_LEFT)
 
 			## Theory before previous step
 			#print '--- Theory 1 world before previous step ---'
@@ -1002,6 +1081,26 @@ class Agent:
 				if num==1:
 					penalty, errorMap = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
 					break
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 			if not quitting:
 				for i, action in enumerate(solution):
@@ -1379,7 +1478,7 @@ if __name__ == "__main__":
 	# agent.playCurriculum(level_game_pairs=level_game_pairs)
 
 	##For local games, use this line
-	# agent.playCurriculum(level_game_pairs=None)
+	agent.playCurriculum(level_game_pairs=None)
 
 	## For testing, use this line
-	agent.testCurriculum(level_game_pairs=None)
+	#agent.testCurriculum(level_game_pairs=None)
