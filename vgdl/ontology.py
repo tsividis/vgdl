@@ -2451,7 +2451,8 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
 
 #     return curr_distribution
 
-def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict, oldSpriteSet = None, default=False):
+def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict, 
+    oldSpriteSet = None, default=False):
 
     import random
     import numpy as np
@@ -2735,9 +2736,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                 s not in e for e in game.effectList if e[0]!='nothing'] # Keys are the IDs of the game objects
             except:
                 pass
-        else:
-            print "got specificSpritesToUpdate"
-            embed()
+
         for sprite in specificSpritesToUpdate:        
             sprite_obj = objects[sprite]["sprite"]
 
@@ -2763,7 +2762,33 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                 embed()
             bestSpriteTypeDict[color][k] = game.spriteDistribution[k]
 
-        sample, exceptions, distributionsHaveChanged, _ = sampleFromDistribution(game, game.spriteDistribution, game.all_objects, game.spriteUpdateDict, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
+        sample, exceptions, distributionsHaveChanged, _ = sampleFromDistribution(game, game.spriteDistribution, \
+            game.all_objects, game.spriteUpdateDict, bestSpriteTypeDict, \
+            oldSpriteSet = oldSpriteSet, default=False)
+
+    elif step==4:
+        ## Update sprite distribution for a particular item
+        objects = game.getObjects()
+        notUpdated = [s for s in objects.keys() if s not in game.spriteDistribution.keys()]
+        for sprite in specificSpritesToUpdate:        
+            sprite_obj = objects[sprite]["sprite"]
+
+            if sprite not in game.ignoreList and sprite_obj.name != 'avatar':
+
+            # if all([sprite not in e for e in game.effectList if e[0]!='nothing']) and sprite not in game.ignoreList and sprite_obj.name != 'avatar':
+                # only update the distribution in this fashion if there are no events for this
+                # time step involving this sprite.
+
+                outcome = objects[sprite]["position"]
+                game.spriteDistribution = updateDistribution(game, sprite, game.spriteDistribution, \
+                                          game.movement_options, outcome, missileOrientationClustering=True)
+                game.object_token_spriteDistribution = updateDistribution(game, sprite, game.object_token_spriteDistribution, \
+                                          game.object_token_movement_options, outcome)
+
+                game.spriteUpdateDict[sprite] += 1
+        reasonableHypotheses = [k for k in game.spriteDistribution[specificSpritesToUpdate[0]].keys() if 
+            game.spriteDistribution[specificSpritesToUpdate[0]][k]>0.1]
+        return reasonableHypotheses
 
     ## Reset ignoreList so that next time around you do inference.
     game.ignoreList = []
