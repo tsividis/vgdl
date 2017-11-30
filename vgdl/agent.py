@@ -257,6 +257,13 @@ class Agent:
 		return neighbors_theoClassNames
 
 
+	def diagnosePosMismatch():
+		"""
+		Returns errorMapEntry object containing the position mismatch error
+		"""
+
+
+
 	## Function generating penalty and error map
 	def errorSignal(self, envA, envB, theory, envPrev, p_dist=1, p_miss=10):
 		"""
@@ -387,12 +394,7 @@ class Agent:
 			# --------------------------
 
 
-
 		embed()
-			
-
-
-
 
 			
 		# 2) Unexpected destruction/appearance/transformation
@@ -569,7 +571,7 @@ class Agent:
 		return VRLEs
 
 	#<< To build own theory: check comments below
-	def initializeHypotheses(self, allObjects, learnSprites=False, num_variants=10):
+	def initializeHypotheses(self, allObjects, learnSprites=True, num_variants=10):
 		if learnSprites:
 			observe(self.rle, 0, self.bestSpriteTypeDict)
 			## Sample from distribution but actually just set everything to default.
@@ -1019,10 +1021,11 @@ class Agent:
 			from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
 			
-			actions = [K_LEFT, K_LEFT, K_LEFT, K_LEFT]
+			actions = [K_RIGHT]
 			if len(actions)==1:
 				envRealPrev = copy.deepcopy(self.rle) #environment at step n-1; deepcopy is expensive
 				envTheoPrev = copy.deepcopy(theoryRLEs[1])
+				hypPrev = copy.deepcopy(self.hypotheses[1])
 			
 			for n,action in enumerate(actions):
 				self.rle.step(action)
@@ -1036,8 +1039,8 @@ class Agent:
 					envTheoPrev = copy.deepcopy(theoryRLEs[1])
 					hypPrev = copy.deepcopy(self.hypotheses[1])
 
-				if n==len(actions)-3:
-					hypPrevprev = copy.deepcopy(self.hypotheses[1])
+				# if n==len(actions)-3:
+				# 	hypPrevprev = copy.deepcopy(self.hypotheses[1])
 
 					## Pedro: Outlining rest of functions:
 					# distance, errorMap = self.state_distance(self.rle, env, self.hypotheses[num])
@@ -1047,7 +1050,7 @@ class Agent:
 				# Pedro: Filter new theories according to whatever scheme
 
 			#TEST
-			theoryRLEs[1].step(K_LEFT)
+			#theoryRLEs[1].step(K_LEFT)
 
 			## Theory before previous step
 			#print '--- Theory 1 world before previous step ---'

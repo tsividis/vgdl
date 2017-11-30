@@ -2729,8 +2729,12 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
         if not specificSpritesToUpdate:
             ## if we don't pass a list of specific sprites, update all sprites
             specificSpritesToUpdate = [s for s in game.spriteDistribution.keys() if 
-                s in objects.keys() and
+                s in objects.keys()]
+            try:
+             specificSpritesToUpdate = [s for s in specificSpritesToUpdate if
                 s not in e for e in game.effectList if e[0]!='nothing'] # Keys are the IDs of the game objects
+            except:
+                pass
         else:
             print "got specificSpritesToUpdate"
             embed()
