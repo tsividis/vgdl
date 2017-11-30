@@ -418,7 +418,6 @@ class Agent:
 		self.symbolDict = generateSymbolDict(self.rle)
 
 
-
 		## For debugging purposes, generating one variant that is off by only one interaction
 		theory = copy.deepcopy(initialTheory)
 		for interactionRule in theory.interactionSet: #<< find rule between avatar and e.g. c3
@@ -487,32 +486,31 @@ class Agent:
 		self.resourceObservations = {'speed': [0, 10],\
 								'changeResource': [{'resource':'c2', 'value':1, 'limit':1}],\
 								'changeScore':{'speed':1}}
-
+		
 		singlePairErrorSignal = {('avatar','c2'):['unexpectedOverlap', 'orientationChange']}
 		# singlePairErrorSignal = {('avatar','c2'):['conditionalKill']}
 
 		globalObservations = {'physicsType':'gridphysics'}
 
 	
-
 		predicates = proposePredicates(singlePairErrorSignal, self.memory, self.proposalMemory, globalObservations)
-		
+		targetClassPair = ('avatar', 'c2')
+
 		##TODO: Sprite induction step
 		# className, newTheories = expandSprites(self.rle._game, self.hypotheses[1], 'c2', 
 			# self.bestSpriteTypeDict, resourceObservations=self.resourceObservations)
 
+		for theory in self.hypotheses:
+			classPair, newTheories, predicateGroups = expandLine(theory, targetClassPair, 
+				predicates = predicates, n=n, 
+				resourceObservations=self.resourceObservations, generic=True)
 
-		classPair, newTheories, predicateGroups = expandLine(self.hypotheses[1], ('avatar', 'c2'), 
-			predicates = predicates, n=n, 
-			resourceObservations=self.resourceObservations, generic=True)
-
-		print "in conductInference"
-		embed()
+		## TODO: think more about this; right now you're keeping around all the predicateGroups
+		## that each theory proposes when you call expandLine on it, so you have mutliple copies
+		## of the same predicateGroups.
 		self.proposalMemory[classPair].extend(predicateGroups)
 
-		## TODO:
-		## Decide what to do with all the new theories. Do you want to replace the existing hypothesis space?
-		return
+		return newTheories
 
 	def completeHypotheses(self, allObjects, first_time_playing_level):
 		if first_time_playing_level:
@@ -531,6 +529,20 @@ class Agent:
 		for hypothesis in self.hypotheses:
 			newHypotheses.append(gameObject.addNewObjectsToTheory(hypothesis, spriteTypeHypothesis))
 		self.hypotheses = newHypotheses
+
+	def testCurriculum(self, level_game_pairs=None):
+		if not level_game_pairs:
+			level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs		
+		
+		for n_level, level_game in enumerate(level_game_pairs):
+
+			print("Playing level {}".format(n_level))
+			(self.gameString, self.levelString) = level_game
+
+			gameObject = None
+
+			gameObject, win, score, steps, statesEncountered, effectsEncountered = self.testEpisode(gameObject)
+		return
 
 
 	def playCurriculum(self, heatmap=False, level_game_pairs=None):
@@ -697,6 +709,48 @@ class Agent:
 		return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
 
+	def testEpisode(self, gameObject):
+
+		actions = [K_RIGHT]
+
+		## Initialize external environment
+		self.initializeEnvironment()
+		print "initializing RLE"
+		self.all_objects= self.rle._game.getObjects()
+
+		## Start storing encountered states.
+		effectsEncountered = []
+		statesEncountered = [self.rle._game.getFullState()]
+		self.statesEncountered.append(self.rle._game.getFullState())
+
+		## Initialize memory of object positions
+		self.rle._game.objectMemoryDict, self.rle._game.previousPositions = {}, {}
+		for k, v in self.rle._game.all_objects.iteritems():
+			self.rle._game.objectMemoryDict[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+			self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+
+		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=0)
+
+		for action in actions:
+			## initialize VRLEs
+			theoryRLEs = self.VrleInitPhase()
+			hypotheses = self.executeStep(action, self.hypotheses, theoryRLEs)
+
+			self.rle._game.nextPositions = {}
+			for k, v in self.rle._game.all_objects.iteritems():
+				self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+				try:
+					if self.rle._game.previousPositions[k] != self.rle._game.nextPositions[k]:
+						self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.rle._game.previousPositions[k])
+				except KeyError:
+					pass
+			self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
+
+			self.hypotheses = hypotheses
+
+		return
+
+
 	def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False):
 		# from vgdl.util import manhattanDist
 
@@ -804,6 +858,8 @@ class Agent:
 
 			
 			actions = [K_RIGHT]
+
+
 			for action in actions:
 				self.rle.step(action)
 
@@ -845,7 +901,7 @@ class Agent:
 
 			errorSignal = {('avatar','c2'):['unexpectedOverlap', 'orientationChange']}
 
-			self.conductInference(errorSignal)
+			newTheories = self.conductInference(errorSignal)
 
 			print "theory expansion time for n={}: {}".format(n, time.time()-t0)
 			t0=time.time()
@@ -856,30 +912,6 @@ class Agent:
 				env.step(K_RIGHT)
 			print "Single step time for {} environments: {}".format(len(newRLEs), time.time()-t0)
 			
-
-			## Pedro:
-			## think about whether you want to store the initial state
-			## so that you can make better comparisons
-			## or just to have some ongoing game where you just make more theories and correct
-			## them online and future behavior gets better.
-			## probably the latter is simpler for now.
-
-			# Note from Skype
-			# I can replace envB by envB.step(K_RIGHT) to generate a different state
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1097,166 +1129,91 @@ class Agent:
 		return hypotheses, theory_change_flag, effects
 
 
-	def executeStep(self, action, hypotheses, statesEncountered, run_induction=True):
+	def resourceManagement(self, pre_step=True, res=None):
+
+		if pre_step:
+			try:
+				agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+			except IndexError:
+				agentState = defaultdict(lambda: 0)
+			try:
+				agentState['speed'] = self.rle._game.getAvatars()[0].speed
+			except AttributeError:
+				agentState['speed'] = None
+		else:
+			try:
+				agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+
+				for e in res['effectList']:
+					if 'changeResource' in e:
+						changes = e[3]
+						if changes['value'] < 0:
+							# ipdb.set_trace()
+							# undo one negative change to account for eventhandler ordering
+							agentState[changes['resource']] -= changes['value']
+							break
+			# If agent is killed before we get agentState
+			except (IndexError, AttributeError) as e:
+				# agentState = defaultdict(lambda:0)
+				ignored_negative_change = False
+				for e in res['effectList']:
+					if 'changeResource' in e:
+						changes = e[3]
+						if changes['value'] > 0 or ignored_negative_change:
+							agentState[changes['resource']] += changes['value']
+						else:
+							agentState[changes['resource']] += 0
+							ignored_negative_change = True
+			try:
+				agentState['speed'] = self.rle._game.getAvatars()[0].speed
+			except AttributeError:
+				agentState['speed'] = None
+		return agentState
+
+	def executeStep(self, action, hypotheses, theoryRLEs):
 
 		theory_change_flag = False
 
 		spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 		spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 
-		try:
-			agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
-		except IndexError:
-			agentState = defaultdict(lambda: 0)
-		try:
-			agentState['speed'] = self.rle._game.getAvatars()[0].speed
-		except AttributeError:
-			agentState['speed'] = None
+		agentState = self.resourceManagement(pre_step=True)
+		
+		## TODO: move these elsewhere.
+		from vgdl.util import manhattanDist
+		from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
-		embed()
-		res = self.rle.step(action)
-
+		self.rle.step(action)
 		print ""
 		print keyPresses[action]
 
-		try:
-			agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+		# agentState = self.resourceManagement(pre_step=False, res)
+		# self.rle.agentStatePrev = agentState
 
-			for e in res['effectList']:
-				if 'changeResource' in e:
-					changes = e[3]
-					if changes['value'] < 0:
-						# ipdb.set_trace()
-						# undo one negative change to account for eventhandler ordering
-						agentState[changes['resource']] -= changes['value']
-						break
-		# If agent is killed before we get agentState
-		except (IndexError, AttributeError) as e:
-			# agentState = defaultdict(lambda:0)
-			ignored_negative_change = False
-			for e in res['effectList']:
-				if 'changeResource' in e:
-					changes = e[3]
-					if changes['value'] > 0 or ignored_negative_change:
-						agentState[changes['resource']] += changes['value']
-					else:
-						agentState[changes['resource']] += 0
-						ignored_negative_change = True
-		try:
-			agentState['speed'] = self.rle._game.getAvatars()[0].speed
-		except AttributeError:
-			agentState['speed'] = None
+		for num, env in enumerate(theoryRLEs):
+			env.step(action)
 
-		self.rle.agentStatePrev = agentState
-
-
-		hypotheses = self.manageNewObjects(hypotheses)
-
-		statesEncountered.append(self.rle._game.getFullState())
-		self.statesEncountered.append(self.rle._game.getFullState())
-		terminal = self.rle._isDone()[0]
-
-		distributionsHaveChanged = spriteInduction(self.rle._game, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
-
-		effects = translateEvents(res['effectList'], self.all_objects, self.rle)
 		print self.rle.show(color='blue')
 		print self.rle._game.score
 
-		all_effects = [item for sublist in [e['effectList'] for e in self.finalEventList] for item in sublist]
+		newTheories = []
 
-		event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, \
-			'gameState': self.rle._game.getFullStateColorized(), 'rle': self.rle}
-		if event['effectList']:
-			self.finalEventList.append(event)
+		# for num, env in enumerate(theoryRLEs):
+		# 	self.state_distance(env, self.rle, self.hypotheses[num])
+		# 	break
 
-		if (event['effectList'] and run_induction) or distributionsHaveChanged:
+		errorSignal = {('avatar','c2'):['unexpectedOverlap', 'orientationChange']}
 
-			print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
-
-			## Delete fake interaction rules for events that were witnessed in this time step.
-			oldFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
-			self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
-				not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
+		newTheories = self.conductInference(errorSignal)
+		embed()
 
 
+		hypotheses = self.manageNewObjects(newTheories)
 
-			if (not all([e in all_effects for e in effects])) or distributionsHaveChanged:
-				theory_change_flag = True
-
-			sample, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
-
-			if any(['conveySprite'==e[0] for e in event['effectList']]):
-				## start storing avatar position; at next step, take curr_position - prev_position and compare to prev_action*avatar.strength. 
-				## that should be the conveyor's strength.
-				## overwrite sprite object in the sample w/ conveyor, get writeTheoryToTxt args working
-				## and then you need to decide how to not overwrite the sprite type at every step for the conveyor.
-				print "found conveysprite"
-				embed()
-			# for s in sample:
-				# s.display()
-			# embed()
-			game_object = Game(spriteInductionResult=sample)
-
-			terminationCondition = {'ended': False, 'win':False, 'time':self.rle._game.time}
-			trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState'], e['rle']) \
-				for e in self.finalEventList], terminationCondition)
-			hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
-			verbose=False, existingTheories=hypotheses))
-
-			if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
-				theory_change_flag = True
-
-			# if len(hypotheses)>1:
-			# 	print "more than one hypothesis"
-
-			#  PRECONDITIONS HANDLING
-			# Current assumptions:
-		 	# - Only one resource can change for each timestep
-			# - The first time a resource changes, it goes from 0 to a positive
-			#   value
-			for change_resource_effect in [e[3] for e in event['effectList'] if 'changeResource' in e]:
-				resource = change_resource_effect['resource']
-				val = change_resource_effect['value']
-				limit = change_resource_effect['limit']
-
-				# print "adding fake rules"
-				# import ipdb; ipdb.set_trace()
-				# ipdb.set_trace()
-
-				if (resource not in self.seen_resources and val>0):
-					self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
-					self.fakeInteractionRules = list(set(self.fakeInteractionRules))
-					# resourceColor = self.rle._game.sprite_groups[resource][0].colorName
-					# Add resource change to seen_resources list
-					self.seen_resources.append(resource)
-
-					hypotheses[0].resource_limits[resource] = limit
-
-					## go through everything that can be killed and add a SpriteCounterRule for it?
-					# spritecounter = SpriteCounterRule(limit=limit,
-											  # stype=resource,
-											  # win=True)
-					# hypotheses[0].terminationSet.append(spritecounter)
-
-				elif agentState[resource]==limit and resource not in self.seen_limits:
-					self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
-					self.fakeInteractionRules = list(set(self.fakeInteractionRules))
-					# resourceColor = self.rle._game.sprite_groups[resource][0].colorName
-					self.seen_limits.append(resource)
+		self.statesEncountered.append(self.rle._game.getFullState())
+		return hypotheses
 
 
-
-					theory_change_flag = True
-					# print "reached resource limit for", resource
-
-		if event['effectList'] and run_induction:
-			[t.updateTerminations(event=event) for t in hypotheses]
-		if theory_change_flag and not distributionsHaveChanged:
-			print "changed theory:"
-			hypotheses[0].display()
-
-
-		return hypotheses, theory_change_flag, effects
 
 
 if __name__ == "__main__":
@@ -1319,4 +1276,7 @@ if __name__ == "__main__":
 	# agent.playCurriculum(level_game_pairs=level_game_pairs)
 
 	##For local games, use this line
-	agent.playCurriculum(level_game_pairs=None)
+	# agent.playCurriculum(level_game_pairs=None)
+
+	## For testing, use this line
+	agent.testCurriculum(level_game_pairs=None)

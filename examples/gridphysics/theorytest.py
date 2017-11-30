@@ -1,22 +1,22 @@
 level="""
 5555555555555
-5   6    1  5
-5 7  4   38 5
+5  36    1  5
+5 7  4    8 5
 5   2 0   2 5
 5555555555555
 """
 game = """
 BasicGame
 	SpriteSet
-		c9 > ResourcePack color=RED speed=0.3 orientation=RIGHT cooldown=10
-		c8 > ResourcePack color=BLACK speed=0.3 orientation=RIGHT cooldown=10
+		c9 > ResourcePack color=RED speed=0.9 cooldown=3
+		c8 > ResourcePack color=GREEN speed=0.9 cooldown=3
 		avatar > MovingAvatar color=DARKBLUE
-		c3 > ResourcePack color=BLUE speed=0.3 orientation=RIGHT cooldown=10
-		c2 > ResourcePack color=PINK speed=0.3 orientation=RIGHT cooldown=10
-		c7 > ResourcePack color=ORANGE speed=0.3 orientation=RIGHT cooldown=10
-		c6 > ResourcePack color=GREEN speed=0.3 orientation=RIGHT cooldown=10
-		c5 > ResourcePack color=YELLOW speed=0.3 orientation=RIGHT cooldown=10
-		c4 > ResourcePack color=LIGHTBLUE speed=0.3 orientation=RIGHT cooldown=10
+		c3 > ResourcePack color=LIGHTBLUE speed=0.9 cooldown=3
+		c2 > ResourcePack color=BLUE speed=0.9 cooldown=3
+		c7 > ResourcePack color=ORANGE speed=0.9 cooldown=3
+		c6 > ResourcePack color=PINK speed=0.9 cooldown=3
+		c5 > ResourcePack color=BLACK speed=0.9 cooldown=3
+		c4 > ResourcePack color=YELLOW speed=0.9 cooldown=3
 	InteractionSet
 		c2 avatar > stepBack
 		c6 c7 > nothing
@@ -154,14 +154,14 @@ BasicGame
 		NoveltyTermination s1=avatar s2=EOS win=True
 		SpriteCounter stype=avatar limit=0 win=False
 	LevelMapping
-		0 > c2
-		1 > c4
-		2 > c3
+		0 > c6
+		1 > c3
+		2 > c2
 		3 > avatar
-		4 > c5
-		5 > c8
+		4 > c4
+		5 > c5
 		6 > c7
-		7 > c6
+		7 > c8
 		8 > c9
 """
 if __name__ == "__main__":

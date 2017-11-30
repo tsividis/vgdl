@@ -15,8 +15,8 @@
 
 level0 = """
 wwwwwwwwwwwww
-w   o    c  w
-w a  d   Af w
+w  Ao    c  w
+w a  d    f w
 w   b e   b w
 wwwwwwwwwwwww
 """
@@ -40,6 +40,7 @@ BasicGame frame_rate=30
         fruit > Immovable color=RED
         avatar > MovingAvatar color=DARKBLUE
         wall > Immovable color=BLACK
+        health > Resource color=PURPLE
     LevelMapping
         w > wall
         a > apple
@@ -59,6 +60,7 @@ BasicGame frame_rate=30
         fruit avatar > killSprite
         apple avatar > killSprite
         orange avatar > killSprite
+        avatar orange > changeResource resource=health value=1
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=blueberry limit=0 win=True

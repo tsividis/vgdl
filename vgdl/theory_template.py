@@ -2249,7 +2249,7 @@ def proposeArgs(theory, predicate, resourceObservations, generic=False):
 		return [{}]
 	else:
 		if not generic:
-			print "Have not implemented resourceObservations version yet."
+			print "Error: Have not implemented non-generic proposeArgs() yet."
 			embed()
 			if predicate=='killIfSlow':
 				import numpy as np
@@ -2261,7 +2261,6 @@ def proposeArgs(theory, predicate, resourceObservations, generic=False):
 				argList = resourceObservations[predicate]
 		else:
 			if predicate=='changeResource':
-				## args and possibilities for each one.
 				resources = [k for k in theory.classes.keys() if k!='EOS']
 				values = [1]
 				limits = [1,3]
@@ -2351,7 +2350,6 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 	## Filter out rules that aren't consistent with the known physics type
 	predicates = [p for p in predicates if p in physicsToPredicateMapping['all'] or 
 		p in physicsToPredicateMapping[globalObservations['physicsType']]]
-
 
 	## TODO: Fill out the case where you consult the proposalMemory to make more complicated
 	## proposals
