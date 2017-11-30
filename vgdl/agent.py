@@ -512,7 +512,6 @@ class Agent:
 				oldSpriteSet=None, default=True)
 			self.rle._game.exceptedObjects = exceptedObjects
 	
-
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 			initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
 
@@ -833,7 +832,6 @@ class Agent:
 			## initialize VRLEs
 			theoryRLEs = self.VrleInitPhase()
 			hypotheses = self.executeStep(action, self.hypotheses, theoryRLEs)
-
 			self.rle._game.nextPositions = {}
 			for k, v in self.rle._game.all_objects.iteritems():
 				self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
@@ -846,6 +844,7 @@ class Agent:
 
 			self.hypotheses = hypotheses
 
+		embed()
 		return
 
 
@@ -1255,6 +1254,12 @@ class Agent:
 			except AttributeError:
 				agentState['speed'] = None
 		return agentState
+	
+	def filterTheories(self, scoreAndTheoryTuples, percentile, max_num):
+		## Returns the max_num theories that are at percentile or greater, given their score.
+		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
+		cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
+		return [s for s in scoreAndTheoryTuples if s[0]<cutoff][0:max_num]
 
 	def executeStep(self, action, hypotheses, theoryRLEs):
 
@@ -1291,8 +1296,8 @@ class Agent:
 			newTheories.extend(theories)
 		print self.rle.show(color='blue')
 
-		print "Just ran expandTheory for all theoryRLEs"
-		embed()
+		# print "Just ran expandTheory for all theoryRLEs"
+		# embed()
 
 		## when you initialize the new theoryRLEs you have to set their state to the previous
 		## rle's state: envPrev.
@@ -1306,11 +1311,14 @@ class Agent:
 			print "Theory {} penalty: {}".format(num, penalty)
 			for e in errorList:
 				e.display()
-
 		print ""
 		print penalties
 
-		hypotheses = self.manageNewObjects(newTheories)
+		## Filter theories
+		scoreAndTheoryTuples = zip(penalties, newTheories)
+		hypotheses = [h[1] for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=5)]
+
+		hypotheses = self.manageNewObjects(hypotheses)
 
 		self.statesEncountered.append(self.rle._game.getFullState())
 		return hypotheses
