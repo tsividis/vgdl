@@ -117,7 +117,7 @@ class SpriteParser(object):
                     elif sclass == resourceType:
                         #print "--> will be converted to ResourcePack"
                         self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args_without_color)
-                        self.sprite_types[key+"_resource"] = Sprite(self._eval('ResourcePack'), color_type+"_resource", args_without_color)
+                        # self.sprite_types[key+"_resource"] = Sprite(self._eval('ResourcePack'), color_type+"_resource", args_without_color)
                     else:
                         #print "--> will be ITSELF"
                         self.sprite_types[key] = Sprite(sclass, color_type, args_without_color)
@@ -141,14 +141,14 @@ class SpriteParser(object):
 
                         if isResourceType:
                             self.sprite_types[key] = Sprite(s, color, args_without_color)
-                            self.sprite_types[key+"_resource"] = Sprite(s, color, args_without_color)
+                            # self.sprite_types[key+"_resource"] = Sprite(s, color, args_without_color)
                         else:
                             self.sprite_types[key] = Sprite(s, color, args_without_color)
 
                     except AttributeError:
                         if isResourceType:
                             self.sprite_types[key] = Sprite(s, None, args_without_color)
-                            self.sprite_types[key+"_resource"] = Sprite(s, None, args_without_color)
+                            # self.sprite_types[key+"_resource"] = Sprite(s, None, args_without_color)
                         else:
                             self.sprite_types[key] = Sprite(s, None, args_without_color)
 
