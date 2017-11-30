@@ -2354,11 +2354,11 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 		'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
 
 	## Position difference
-	'noMovement': ['undoAll'],
-	'unexpectedOverlap': ['nothing', 'onRope', 'onLadder'],
-	'orientationChange': ['turn', 'turnAround', 'reverseDirection', 'bounceDirection', 'flipDirection'],
+	'noMovement': ['undoAll', 'stepBack'],
 	'unexpectedPosition': ['bounceForward', 'pullWithIt', 'windGust', 'slipForward',\
-		'wallBounce', 'wallStop'],
+		'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap
+	'unexpectedOverlap': ['nothing', 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
+	'orientationChange': ['turn', 'turnAround', 'reverseDirection', 'bounceDirection', 'flipDirection'],
 
 	## Object state change
 	'stateChange': ['changeResource', 'collectResource', 'scoreChange'],
