@@ -31,7 +31,8 @@ wwwwwwwwwwwww
 game0 = """
 BasicGame frame_rate=30
     SpriteSet
-        apple > Missile color=GREEN speed=.5
+        # apple > Missile color=GREEN speed=.5
+        apple > Immovable color=GREEN
         orange > Immovable color=ORANGE
         blueberry > Immovable color=BLUE
         dough > Immovable color=YELLOW
@@ -52,15 +53,15 @@ BasicGame frame_rate=30
         f > fruit
     InteractionSet
         avatar wall > stepBack
-        box avatar > bounceForward
         blueberry avatar > killSprite
         avatar cranberry > stepBack
         dough avatar > killSprite
         eel avatar > killSprite
         fruit avatar > killSprite
         apple avatar > killSprite
-        orange avatar > killSprite
-        avatar orange > changeResource resource=health value=1
+        orange avatar > bounceForward
+        # orange avatar > killSprite
+        # avatar orange > changeResource resource=health value=1
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=blueberry limit=0 win=True
