@@ -31,11 +31,13 @@ AimedFlakAvatar, InertialAvatar, MarioAvatar]
 class errorMapEntry:
 	def __init__(self):
 		self.diagnosis = []
+		self.targetToken = None
 		self.targetClass = None
 		self.intPairs = []
 		self.culpritClasses = []
 	def display(self):
 		print "diagnosis: {}".format(self.diagnosis)
+		print "targetToken: {}".format(self.targetToken)
 		print "targetClass: {}".format(self.targetClass)
 		print "intPairs: {}".format(self.intPairs)
 		print "culpritClasses: {}".format(self.culpritClasses)
@@ -101,6 +103,24 @@ class Agent:
 	def findNearestSprite(self, sprite, spriteList):
 		## returns the sprite in spriteList whose location best matches the location of sprite.
 		return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 	# Function matching environment and determining sprites that couldn't be matched
@@ -239,6 +259,65 @@ class Agent:
 		return neighbors_theoClassNames
 
 
+	def find_sPrev(self, sB, envB, envPrev):
+		"""
+		Find sprite in envPrev (previous environment) corresponding to a sprite in
+		envB (current environment), and the distance that the sprite has travelled
+		in the time step
+		"""
+		matched_ts, _, _ = self.matchEnvs(envB, envPrev) #matches real env across timestep
+		dist_ts = [matched_ts[i][2] for i in range(len(matched_ts)) if matched_ts[i][0]==sB][0] #distance that sB has moved over timestep
+		sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB] #sB in previous step
+		if sPrev == []:
+			sPrev = None
+		else:
+			sPrev = sPrev[0]
+		return sPrev, dist_ts
+
+
+	def diagnosePosMismatch(self, sA, sB, sPrev, envA, envB, envPrev, dist_ts):
+		"""
+		Returns errorMapEntry object containing the position mismatch error
+		"""
+		# Step through sub-problems
+		e = errorMapEntry()
+		e.targetToken = sB
+		e.targetClass = sA.name
+		# Find neighbors of target sprite in the previous time step
+		neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
+		# Write potential interaction pairs to error map entry
+		for className in neighbors_prev:
+			e.intPairs.append( (sA.name,className) )
+		# Determine mininum distance to neighbors in current real env -> to distinguish unexpectedPosition and unexpectedOverlap
+		all_sprites_envB = []
+		for g in envB._game.sprite_groups.keys():
+			all_sprites_envB += envB._game.sprite_groups[g]
+		nearest_sprite = self.findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB) and (s not in envB._game.kill_list)])
+		nearest_dist = manhattanDist(envB._rect2pos(sB.rect), envB._rect2pos(nearest_sprite.rect))
+		## Categorize into sub-problem-class
+		# 1.1) noMovement
+		if dist_ts == 0:
+			e.diagnosis.append('noMovement')
+		# 1.2) unexpectedPosition
+		elif dist_ts!=0 and nearest_dist!=0:
+			e.diagnosis.append('unexpectedPosition')
+		# 1.3) unexpectedOverlap
+		elif dist_ts!=0 and nearest_dist==0:
+			e.diagnosis.append('unexpectedOverlap')
+			# find sprite in envA that corresponds to covered sprite in envB
+			color = nearest_sprite.colorName
+			className_envA = ''
+			for k in [key for key in envA._game.sprite_groups.keys() if envA._game.sprite_groups[key]]:
+				if color == envA._game.sprite_groups[k][0].colorName:
+					className_envA = k
+			covered_sprite_envA = self.findNearestSprite(sB,envA._game.sprite_groups[className])
+			e.intPairs = [(sA.name,nearest_sprite.name)] #overwrite interaction pair by the overlapping sprite pair
+		# 1.4) orientationChange
+		#TODO
+		# Return errorMapEntry object
+		return e
+
+
 	## Function generating penalty and error map
 	def errorSignal(self, envA, envB, theory, envPrev, p_dist=1, p_miss=10):
 		"""
@@ -295,6 +374,7 @@ class Agent:
 		### Construct errorMap using previous state ###
 
 		# 1) Position mismatch
+		# Case A: matched sprites have different positions
 		for t in matched_sprites:
 			dist_envs = t[2] #distance between sprites in real and theory environments
 			if dist_envs==0.: #sprites located where expected -> no conflict
@@ -302,53 +382,33 @@ class Agent:
 			sA = t[0]
 			sB = t[1]
 			posCurr = envB._rect2pos(sB.rect) #current position of sprite
-			# Find distance between sB in previous time step and now
-			matched_ts, _, _ = self.matchEnvs(envB, envPrev) #matches real env across timestep
-			dist_ts = [matched_ts[i][2] for i in range(len(matched_ts)) if matched_ts[i][0]==sB][0]
-			sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB][0] #sB in previous step
-			# Step through sub-problems
-			e = errorMapEntry()
-			# Initialize error map entry
-			e.targetClass = sA.name
-			# Find neighbors of target sprite in the previous time step
-			neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
-			# Write potential interaction pairs to error map entry
-			for className in neighbors_prev:
-				e.intPairs.append( (sA.name,className) )
-			# Determine mininum distance to neighbors in current real env -> to distinguish unexpectedPosition and unexpectedOverlap
-			all_sprites_envB = []
-			for g in envB._game.sprite_groups.keys():
-				all_sprites_envB += envB._game.sprite_groups[g]
-			nearest_sprite = self.findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB) and (s not in envB._game.kill_list)])
-			nearest_dist = manhattanDist(envB._rect2pos(sB.rect), envB._rect2pos(nearest_sprite.rect))
-			## Categorize into sub-problem-class
-			# 1.1) noMovement
-			if dist_ts == 0:
-				e.diagnosis.append('noMovement')
-			# 1.2) unexpectedPosition
-			elif dist_ts!=0 and nearest_dist!=0:
-				e.diagnosis.append('unexpectedPosition')
-			# 1.3) unexpectedOverlap
-			elif dist_ts!=0 and nearest_dist==0:
-				e.diagnosis.append('unexpectedOverlap')
-				# find sprite in envA that corresponds to covered sprite in envB
-				color = nearest_sprite.colorName
-				className_envA = ''
-				for k in [key for key in envA._game.sprite_groups.keys() if envA._game.sprite_groups[key]]:
-					if color == envA._game.sprite_groups[k][0].colorName:
-						className_envA = k
-				covered_sprite_envA = self.findNearestSprite(sB,envA._game.sprite_groups[className])
-				e.intPairs = [(sA.name,nearest_sprite.name)] #overwrite interaction pair by the overlapping sprite pair
-			# 1.4) orientationChange
-			#TODO
-			print e.diagnosis
+			# Find sprite corresponding to sB in previous time step
+			sPrev, dist_ts = self.find_sPrev(sB, envB, envPrev)
+			# Determine errorMapEntry object for position mismatch problem
+			e = self.diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
 			errorMap.append(e)
-		# Cover cases where envA sprite should have moved but was erroneously destroyed
+		# Case B: envA sprite should have moved but was erroneously destroyed
 		# For this, we check if lonely envB sprite has match in envPrev (and pass to (2) if not)
-		#TODO!!
-
-
-			
+		appeared_sprites_envB = []
+		for sB in lonely_sprites_envB:
+			# Find sprite corresponding to sB in previous time step
+			sPrev, dist_ts = self.find_sPrev(sB, envB, envPrev)
+			if sPrev == None: #sB has no match in envPrev
+				appeared_sprites_envB.append(sB)
+				continue 
+			# Find erroneously destroyed sA by finding envA sprite closest to sPrev
+			candidates_in_killList = [s for s in envA._game.kill_list if s.colorName==sPrev.colorName]
+			if candidates_in_killList==[]: #there is no envA sprite where sPrev should have been
+				appeared_sprites_envB.append(sB)
+				continue 
+			sA = self.findNearestSprite(sPrev, candidates_in_killList)
+			if manhattanDist(envA._rect2pos(sA.rect), envPrev._rect2pos(sPrev.rect))!=0: #there is no envA sprite where sPrev should have been
+				appeared_sprites_envB.append(sB)
+				continue
+			# Now we are completely sure that sprite in envA has been erroneously removed
+			e = self.diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
+			errorMap.append(e)
+	
 		# 2) Unexpected destruction/appearance/transformation
 		# 2.1) Transformation
 		for iA,sA in enumerate(lonely_sprites_envA):
@@ -356,6 +416,7 @@ class Agent:
 				if manhattanDist(envA._rect2pos(sA.rect), envB._rect2pos(sB.rect))<=2:
 					e = errorMapEntry()
 					e.diagnosis.append('transformation')
+					e.targetToken = sB
 					e.targetClass = sA.name
 					# Find sprite corresponding to sB in previous time step
 					color = sB.colorName
@@ -369,7 +430,6 @@ class Agent:
 					for className in neighbors_prev:
 						e.intPairs.append( (sA.name,className) )
 					errorMap.append(e)
-
 		# 2.2) Destruction
 		for sA in lonely_sprites_envA: #sA should have been destroyed
 			e = errorMapEntry()
@@ -378,6 +438,7 @@ class Agent:
 			# Find the sprite that was destroyed in envB from the kill_list
 			candidates_in_killList = [s for s in envB._game.kill_list if s.colorName==sA.colorName]
 			sB = self.findNearestSprite(sA, candidates_in_killList)
+			e.targetToken = sB
 			# Find neighbors of target sprite in the previous time step
 			sPrev = sB #sprite was destroyed but hasn't moved
 			neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
@@ -386,13 +447,31 @@ class Agent:
 			for className in neighbors_prev:
 				e.intPairs.append( (sA.name,className) )
 			errorMap.append(e)
-
-		
-			#embed()
-
 		# 2.3) Appearance
+		for sB in appeared_sprites_envB:
+			e = errorMapEntry
+			e.diagnosis = 'newObjectAppeared'
+			e.targetToken = sB
+			# Find class of new object by comparing colors, or give 'unknown' if unsuccessful
+			color = sB.colorName
+			all_sprites_envA = []
+			for g in envA._game.sprite_groups.keys():
+				all_sprites_envA += envA._game.sprite_groups[g]
+			sMatch = [s for s in all_sprites_envA if s.colorName==color]
+			if sMatch==[]:
+				e.targetClass = 'unknown'
+			else:
+				e.targetClass = sMatch.name
+			# Find neighbors of target sprite in current time step -> could have caused appearance
+			# Simultaneously find culprit classes - a neighboring sprite could have launched the sprite due to its class
+			neighbors_curr = self.neighborsPrev(envA, envB, sB) #use this function to find neighbors in current state and not previous ("Prev" label is unnecessary)
+			for className in neighbors_curr:
+				e.intPairs.append( (sA.name,className) )
+				# Culprit classes are given by the names of the potential interaction partners
+				e.culpritClasses.append(className)
+			errorMap.append(e)
 
-
+		embed()
 
 
 		# 3) State change (how to tell that a sprite has changed state?)
@@ -412,6 +491,25 @@ class Agent:
 		## NOTE: errorSignal = {('avatar','c2'):['unexpectedOverlap', 'orientationChange']}
 
 		return total_penalty, errorMap
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -527,9 +625,14 @@ class Agent:
 		## For debugging purposes, generating one variant that is off by only one interaction
 		theory = copy.deepcopy(initialTheory)
 		testClass = theory.spriteObjects['YELLOW'].className
+		testClass2 = theory.spriteObjects['ORANGE'].className
 		for interactionRule in theory.interactionSet: #<< find rule between avatar and e.g. c3
-			if interactionRule.slot1==testClass and interactionRule.slot2 == 'avatar': #modified
-				interactionRule.interaction = 'bounceForward' #modified
+			if interactionRule.slot1==testClass2 and interactionRule.slot2 == 'avatar': #modified
+				interactionRule.interaction = 'killSprite' #modified
+			if interactionRule.slot1=='avatar' and interactionRule.slot2 == testClass2: #modified
+				interactionRule.interaction = 'nothing' #modified
+			# if interactionRule.slot1==testClass and interactionRule.slot2 == 'avatar': #modified
+			# 	interactionRule.interaction = 'bounceForward' #modified
 			#if interactionRule.slot1=='c2' and interactionRule.slot2 == 'avatar':
 			#	interactionRule.interaction = 'stepBack'
 				#break
@@ -941,15 +1044,29 @@ class Agent:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 			## TIM
 			from vgdl.util import manhattanDist
 			from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
 			
-			actions = [K_LEFT, K_LEFT, K_LEFT, K_LEFT]
+			actions = [K_LEFT, K_DOWN]
 			if len(actions)==1:
 				envRealPrev = copy.deepcopy(self.rle) #environment at step n-1; deepcopy is expensive
 				envTheoPrev = copy.deepcopy(theoryRLEs[1])
+				hypPrev = copy.deepcopy(self.hypotheses[1])
 			
 			for n,action in enumerate(actions):
 				self.rle.step(action)
@@ -963,8 +1080,8 @@ class Agent:
 					envTheoPrev = copy.deepcopy(theoryRLEs[1])
 					hypPrev = copy.deepcopy(self.hypotheses[1])
 
-				if n==len(actions)-3:
-					hypPrevprev = copy.deepcopy(self.hypotheses[1])
+				# if n==len(actions)-3:
+				# 	hypPrevprev = copy.deepcopy(self.hypotheses[1])
 
 					## Pedro: Outlining rest of functions:
 					# distance, errorMap = self.state_distance(self.rle, env, self.hypotheses[num])
@@ -1007,6 +1124,26 @@ class Agent:
 				if num==1:
 					penalty, errorMap = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
 					break
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 			if not quitting:
 				for i, action in enumerate(solution):
@@ -1401,7 +1538,7 @@ if __name__ == "__main__":
 	# agent.playCurriculum(level_game_pairs=level_game_pairs)
 
 	##For local games, use this line
-	# agent.playCurriculum(level_game_pairs=None)
+	agent.playCurriculum(level_game_pairs=None)
 
 	## For testing, use this line
-	agent.testCurriculum(level_game_pairs=None)
+	#agent.testCurriculum(level_game_pairs=None)

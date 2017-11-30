@@ -2736,7 +2736,6 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                 s not in e for e in game.effectList if e[0]!='nothing'] # Keys are the IDs of the game objects
             except:
                 pass
-
         for sprite in specificSpritesToUpdate:        
             sprite_obj = objects[sprite]["sprite"]
 
