@@ -827,8 +827,8 @@ class Agent:
 			self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
 
 		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=False, num_variants=0)
-		print "initialized Hypotheses"
-		embed()
+		# print "initialized Hypotheses"
+		# embed()
 		for action in actions:
 			## initialize VRLEs
 			theoryRLEs = self.VrleInitPhase()

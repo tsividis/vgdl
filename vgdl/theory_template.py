@@ -283,8 +283,8 @@ class Theory(object):
 		self.resource_limits = defaultdict(lambda:1)
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
-		print "in initializeSpriteSet"
-		embed()
+		# print "in initializeSpriteSet"
+		# embed()
 		if not (vgdlSpriteParse or spriteInductionResult):
 			print "You must provide either a vgdlSpriteParse or the result of having performed sprite induction."
 			return
