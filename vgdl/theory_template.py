@@ -1813,10 +1813,12 @@ class Game(object):
 
 		for (o1, o2) in itertools.product(allSprites, allSprites):
 			if o1.vgdlType not in AvatarTypes and o2.vgdlType not in AvatarTypes:
-				rule = InteractionRule('nothing', o1.className, o2.className, {}, set(), generic=True)
+				# rule = InteractionRule('nothing', o1.className, o2.className, {}, set(), generic=True)
+				rule = InteractionRule('stepBack', o1.className, o2.className, {}, set(), generic=True)
 				T.interactionSet.append(rule)
 			elif o1.vgdlType not in AvatarTypes:
-				rule = InteractionRule('killSprite', o1.className, o2.className, {}, set(), generic=True)
+				# rule = InteractionRule('killSprite', o1.className, o2.className, {}, set(), generic=True)
+				rule = InteractionRule('stepBack', o1.className, o2.className, {}, set(), generic=True)
 				T.interactionSet.append(rule)
 
 		for s1 in nonAvatars + [avatar]:
@@ -2208,19 +2210,21 @@ def getKeywordsFromOntology(interactionName):
 	{'changeResource': ['resource', 'value', 'limit'],\
 	'changeScore': ['value'],\
 	'transformTo': ['stype'],\
-	'slipForward': ['prob'],\
-	'attractGaze': ['prob'],\
-	'bounceDirection': ['friction'],\
-	'wallBounce': ['friction'],\
-	'wallStop': ['friction'],\
 	'killIfSlow': ['limitspeed'],\
-	'spawnIfHasMore': ['resource', 'stype', 'limit'],\
+	'killIfTooFast': ['speed'],\
 	'killIfHasMore': ['resource', 'limit'],\
 	'killOtherHasMore': ['resource', 'limit'],\
 	'killIfHasLess': ['resource', 'limit'],\
 	'killOtherHasLess': ['resource', 'limit'],\
-	'killIfTooFast': ['speed'],\
-	'wrapAround': ['offset']
+
+	 ##TODO: Fill in proposeArgs for the following keywords.
+	'spawnIfHasMore': ['resource', 'stype', 'limit'],\
+	'wallStop': ['friction'],\
+	'wrapAround': ['offset'],\
+	'wallBounce': ['friction'],\
+	'slipForward': ['prob'],\
+	'attractGaze': ['prob'],\
+	'bounceDirection': ['friction']
 	# 'reverseFloeIfActivated': ['strigger'],\
 	# 'trigger': ['strigger'],\
 	# 'detrigger': ['strigger'],\
@@ -2246,19 +2250,44 @@ def proposeArgs(theory, predicate, resourceObservations, generic=False):
 	if not args:
 		return [{}]
 	else:
-		if predicate == 'changeResource':
-			
-			if not generic:
-				argList = resourceObservations['changeResource']
+		if not generic:
+			print "Error: Have not implemented non-generic proposeArgs() yet."
+			embed()
+			if predicate=='killIfSlow':
+				import numpy as np
+				argList = {'limitspeed':np.mean(resourceObservations['speed'])}
+			elif predicate=='killIfTooFast':
+				import numpy as np
+				argList = {'speed':np.mean(resourceObservations['speed'])}
 			else:
-				## args and possibilities for each one.
-				resources = theory.classes.keys()
+				argList = resourceObservations[predicate]
+		else:
+			if predicate=='changeResource':
+				resources = [k for k in theory.classes.keys() if k!='EOS']
 				values = [1]
 				limits = [1,3]
-
 				for comb in list(itertools.product(resources, values, limits)):
 					argList.append({'resource':comb[0], 'value':comb[1], 'limit':comb[2]})
-
+			if predicate == 'changeScore':
+				values = [1]
+				for val in values:
+					argList.append({'value':val})
+			if predicate == 'transformTo':
+				for stype in theory.classes.keys():
+					argList.append({'stype':stype})
+			if predicate == 'killIfSlow':
+				values = [1,2,3]
+				for val in values:
+					argList.append({'limitspeed':val})
+			if predicate == 'killIfTooFast':
+				values = [10,11,12]
+				for val in values:
+					argList.append({'speed':val})
+			if predicate in ['killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']:
+				resources = [k for k in theory.classes.keys() if k!='EOS']
+				limits = [1,2]
+				for comb in list(itertools.product(resources, limits)):
+					argList.append({'resource':comb[0], 'limit':comb[1]})
 		## TODO: Fill in the other resources
 	return argList
 
@@ -2292,7 +2321,7 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 	'newObjectAppeared': ['cloneSprite'],
 	'transformation': ['transformTo', 'transformToOnLanding'],
 	'conditionalKill': ['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killOtherHasLess',\
-		'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
+	'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
 
 	## Position difference
 	'noMovement': ['undoAll', 'stepBack'],
@@ -2310,20 +2339,19 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 	}
 
 	## If we've proposed killSprite and that has failed, propose conditional rules.
-	if 'objectDestruction' in singlePairErrorSignal.values():
-		if 'killSprite' in proposalMemory[singlePairErrorSignal.values()]:
+	if 'objectDestruction' in singlePairErrorSignal:
+		if 'killSprite' in proposalMemory[singlePairErrorSignal]:
 			predicates.extend(errorSignalToPredicateMapping['conditionalKill'])
 			singlePairErrorSignal.values().remove('objectDestruction')
 
 	## Propose relevant rules
 	##TODO: right now this just gets the list from a single key
-	for predicate in singlePairErrorSignal.values()[0]:
+	for predicate in singlePairErrorSignal:
 		predicates.extend(errorSignalToPredicateMapping[predicate])
 
 	## Filter out rules that aren't consistent with the known physics type
 	predicates = [p for p in predicates if p in physicsToPredicateMapping['all'] or 
 		p in physicsToPredicateMapping[globalObservations['physicsType']]]
-
 
 	## TODO: Fill out the case where you consult the proposalMemory to make more complicated
 	## proposals
@@ -2332,6 +2360,11 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 
 ## TODO: write the function that maintains resourceObservations, or at least figure out
 ## its outputs and integrate with proposeArgs
+def expandSprites(game, theory, className, bestSpriteTypeDict, resourceObservations=None):
+	from vgdl.ontology import sampleFromDistribution, spriteInduction, updateDistribution
+	spriteInduction(game, step=3, bestSpriteTypeDict=bestSpriteTypeDict, oldSpriteSet=theory.spriteSet,\
+		specificSpritesToUpdate=className)
+	return
 
 def expandLine(theory, classPair, predicates, n=1, resourceObservations=None, generic=False):
 	## modifies the theory to propose n new interactonRules involving the given classPair
@@ -2344,9 +2377,8 @@ def expandLine(theory, classPair, predicates, n=1, resourceObservations=None, ge
 
 	childTheories = []
 	predicateGroups = []
-	for i in range(1,n+1):
+	for i in range(0,n+1):
 		predicateGroups.extend(list(itertools.combinations(predicates, i)))
-
 
 	## remove all interactionRules involving classPair (in either order)
 	interactionSet = [rule for rule in theory.interactionSet if
@@ -2356,8 +2388,10 @@ def expandLine(theory, classPair, predicates, n=1, resourceObservations=None, ge
 	bothOrderings = [[], []]
 
 	for i,order in enumerate([classPair, (classPair[1], classPair[0])]):
+
 		for predicateGroup in predicateGroups:
-			
+			if len(predicateGroup)==0:
+				pass
 			predicateRules = []
 			for predicate in predicateGroup:
 				allArgumentCombinations = proposeArgs(theory, predicate, resourceObservations, 

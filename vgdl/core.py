@@ -1211,6 +1211,8 @@ class VGDLSprite(object):
     speed    = None
     mass     = 1
     physicstype=None
+    last_gravity=False
+    last_rope=False
     shrinkfactor=0
     width = 1.0
     height = 1.0
