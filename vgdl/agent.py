@@ -315,11 +315,11 @@ class Agent:
 			# Write potential interaction pairs to error map entry
 			for className in neighbors_prev:
 				e.intPairs.append( (sA.name,className) )
-			# Determine mininum distance to neighbors in current env -> to distinguish unexpectedPosition and unexpectedOverlap
+			# Determine mininum distance to neighbors in current real env -> to distinguish unexpectedPosition and unexpectedOverlap
 			all_sprites_envB = []
 			for g in envB._game.sprite_groups.keys():
 				all_sprites_envB += envB._game.sprite_groups[g]
-			nearest_sprite = self.findNearestSprite(sB, [s for s in all_sprites_envB if s!=sB])
+			nearest_sprite = self.findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB) and (s not in envB._game.kill_list)])
 			nearest_dist = manhattanDist(envB._rect2pos(sB.rect), envB._rect2pos(nearest_sprite.rect))
 			## Categorize into sub-problem-class
 			# 1.1) noMovement
@@ -331,20 +331,23 @@ class Agent:
 			# 1.3) unexpectedOverlap
 			elif dist_ts!=0 and nearest_dist==0:
 				e.diagnosis.append('unexpectedOverlap')
-				# find sprite in envA that corresponds to overlapped sprite in envB
-				nearest_sprite_envA = self.findNearestSprite(sB, [s for s in all_sprites_envA if s!=sA])
-				e.intPairs = [(sA.name,nearest_sprite_envA.name)] #overwrite interaction pair by the overlapping sprite pair
+				# find sprite in envA that corresponds to covered sprite in envB
+				color = nearest_sprite.colorName
+				className_envA = ''
+				for k in [key for key in envA._game.sprite_groups.keys() if envA._game.sprite_groups[key]]:
+					if color == envA._game.sprite_groups[k][0].colorName:
+						className_envA = k
+				covered_sprite_envA = self.findNearestSprite(sB,envA._game.sprite_groups[className])
+				e.intPairs = [(sA.name,nearest_sprite.name)] #overwrite interaction pair by the overlapping sprite pair
 			# 1.4) orientationChange
 			#TODO
 			print e.diagnosis
 			errorMap.append(e)
+		# Cover cases where envA sprite should have moved but was erroneously destroyed
+		# For this, we check if lonely envB sprite has match in envPrev (and pass to (2) if not)
+		#TODO!!
 
-		## Is there a lonely sprite in envB
-		## if yes, does it have a match in envPrev?
-		## if yes, it's probably a position mistmatch.
-		## otherwise, pass to part (2)
 
-		# embed()
 			
 		# 2) Unexpected destruction/appearance/transformation
 		# 2.1) Transformation
@@ -352,22 +355,42 @@ class Agent:
 			for iB,sB in enumerate(lonely_sprites_envB):
 				if manhattanDist(envA._rect2pos(sA.rect), envB._rect2pos(sB.rect))<=2:
 					e = errorMapEntry()
-					e.diagnosis.append('Transformation')
+					e.diagnosis.append('transformation')
 					e.targetClass = sA.name
 					# Find sprite corresponding to sB in previous time step
+					color = sB.colorName
 					sB.colorName = sA.colorName
-
 					matched_ts, _, _ = self.matchEnvs(envB, envPrev) #matches real env across timestep
 					sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB][0] #sB in previous step
-
-					#WORK IN PROGRESS 11/29/17 EVENING
-
-					#TODO: find interaction partner!!
-
+					sB.colorName = color
+					# Find neighbors of target sprite in the previous time step
+					neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
+					# Write potential interaction pairs to error map entry
+					for className in neighbors_prev:
+						e.intPairs.append( (sA.name,className) )
+					errorMap.append(e)
 
 		# 2.2) Destruction
 		for sA in lonely_sprites_envA: #sA should have been destroyed
-		 pass
+			e = errorMapEntry()
+			e.targetClass = sA.name
+			e.diagnosis.append('objectDestruction')
+			# Find the sprite that was destroyed in envB from the kill_list
+			candidates_in_killList = [s for s in envB._game.kill_list if s.colorName==sA.colorName]
+			sB = self.findNearestSprite(sA, candidates_in_killList)
+			# Find neighbors of target sprite in the previous time step
+			sPrev = sB #sprite was destroyed but hasn't moved
+			neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
+			neighbors_prev = [c for c in neighbors_prev if c!=sA.name]
+			# Write potential interaction pairs to error map entry
+			for className in neighbors_prev:
+				e.intPairs.append( (sA.name,className) )
+			errorMap.append(e)
+
+		
+			#embed()
+
+		# 2.3) Appearance
 
 
 
@@ -946,7 +969,7 @@ class Agent:
 				# Pedro: Filter new theories according to whatever scheme
 
 			#TEST
-			theoryRLEs[1].step(K_LEFT)
+			#theoryRLEs[1].step(K_LEFT)
 
 			## Theory before previous step
 			#print '--- Theory 1 world before previous step ---'
