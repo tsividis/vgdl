@@ -283,11 +283,13 @@ class Theory(object):
 		self.resource_limits = defaultdict(lambda:1)
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
+		print "in initializeSpriteSet"
+		embed()
 		if not (vgdlSpriteParse or spriteInductionResult):
 			print "You must provide either a vgdlSpriteParse or the result of having performed sprite induction."
 			return
 		if vgdlSpriteParse:
-			self.spriteSet = vgdlSpriteParse
+			self.spriteSet = [s for s in vgdlSpriteParse if s.color is not None]
 		if spriteInductionResult:
 			self.spriteSet = spriteInductionResult
 
@@ -1782,6 +1784,8 @@ class Game(object):
 		else:
 			T.initializeSpriteSet(vgdlSpriteParse = vgdlSpriteParse, spriteInductionResult=False)
 
+		# print "in buildGenericTheory"
+		# embed()
 		# Assign class names
 		avatar = [o for o in T.spriteSet if o.vgdlType in AvatarTypes][0]
 		nonAvatars = [o for o in T.spriteSet if o.vgdlType not in AvatarTypes and o.color!='ENDOFSCREEN']
@@ -2382,8 +2386,8 @@ def expandLine(theory, classPair, predicates, n=1, resourceObservations=None, ge
 
 	## remove all interactionRules involving classPair (in either order)
 	interactionSet = [rule for rule in theory.interactionSet if
-		classPair != (rule.asTuple()[0], rule.asTuple()[1]) and 
-		classPair != (rule.asTuple()[1], rule.asTuple()[0]) ]
+		classPair != (rule.asTuple()[1], rule.asTuple()[2]) and 
+		classPair != (rule.asTuple()[2], rule.asTuple()[1])]
 
 	bothOrderings = [[], []]
 

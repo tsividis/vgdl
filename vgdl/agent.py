@@ -503,7 +503,7 @@ class Agent:
 		return VRLEs
 
 	#<< To build own theory: check comments below
-	def initializeHypotheses(self, allObjects, learnSprites=True, num_variants=10):
+	def initializeHypotheses(self, allObjects, learnSprites=False, num_variants=10):
 		if learnSprites:
 			observe(self.rle, 0, self.bestSpriteTypeDict)
 			## Sample from distribution but actually just set everything to default.
@@ -827,8 +827,7 @@ class Agent:
 			self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
 
 		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=False, num_variants=0)
-
-		print "initialized hypotheses"
+		print "initialized Hypotheses"
 		embed()
 		for action in actions:
 			## initialize VRLEs
@@ -876,7 +875,7 @@ class Agent:
 
 		## initialize theory if necessary.
 		if len(self.hypotheses) == 0:
-			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=0)
+			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=False, num_variants=0)
 			print "initializing hypotheses"
 		else:
 			gameObject = self.completeHypotheses(self.all_objects, first_time_playing_level)
