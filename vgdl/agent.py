@@ -998,6 +998,8 @@ class Agent:
 			for env in newRLEs:
 				env.step(K_RIGHT)
 			print "Single step time for {} environments: {}".format(len(newRLEs), time.time()-t0)
+			
+
 			## Pedro:
 			## think about whether you want to store the initial state
 			## so that you can make better comparisons

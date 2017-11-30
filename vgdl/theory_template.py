@@ -2233,66 +2233,6 @@ def getKeywordsFromOntology(interactionName):
 		return []
 
 
-## Note to self: you can now just call this fn (expandLine)
-## change this to take the predicates as an arg
-## then you can call it on whatever the error map gives you.
-
-## now think about how to use a simple error map and call expandLine
-
-## then think about how to do an iterative scheme.
-
-## Iterative scheme:
-## if you've already tested predicates 1:N and you now want to consider some new ones,
-## you want to generate combinations of the new ones with each other, and the new ones with
-## the old ones, but not combinations of the old ones, as you've done that before.
-## so, for i=1:maxLines:
-	## generate all i-long combinations of the new set
-	## and then add to those all combinations of length (maxLines-i) of the old set.
-
-## that's a good description of what expandLine should be.
-## and the assumption is that combinations of the old predicates have not worked
-## one thing to consider is that perhaps n-long combinations of the old predicates have not worked
-## but maybe n+1 -long combinations would. So this is one case to consider
-## in addition to just adding more predicates.
-
-## it may be possible that predicates have not worked because of conditional lines
-## in this case we want to add those lines to past predicates,
-## but for those lines we have to generate all the arguments that could work
-## this is a special case. Or is it the main case??
-
-## a reasonable simplification:
-## generate all argument,value combinations for the predicates that take arguments
-## where value \in {1, resource_max}. Don't worry about intermediate values for now
-## but know that if you wanted to worry about those you could just instantiate more theories.
-
-## for speed: keep track of all collisions.
-## say you've seen one death and one survival, at different speeds.
-## propose the avg of the two speeds as the limit. Then do again if you observe
-## a new data point.
-
-## for changeResource and changeScore: just immediately use the avatar state to propose the right rule.
-
-## for bookkeeping, the theory will have to have all objects, incl. resources,
-## in it.
-
-## pass max resources and died/alive observed speeds
-
-
-## you need some function to run throughout gameplay
-## that keeps track of resource cahnges, max values, etc.
-## It should be organized by predicate
-## in either case. proposeArgs will propose possibilities
-## for all relevant args, using either the knowledge tracked
-## by the resourceObservations function,
-## or using defaults for these resources/predicates.
-## the defaults will always be worse, as they are a worst-case superset
-## of what's being proposed by the trackResources function.
-
-## How do you go from having tried to use the trackedResources()
-## to the defaults without having to throw out all the old theories?
-## or at least, how do you indicate that old theories didn't work specifically w.r.t.
-## resources, so throw out / expand on that part in particular?
-
 def proposeArgs(theory, predicate, resourceObservations, generic=False):
 
 	## if generic==False, this will propose all args given what's in resourceObservations
@@ -2340,8 +2280,9 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 		'turn', 'turnAround', 'reverseDirection', 'flipDirection', 'bounceForward',\
 		'changeResource', 'collectResource', 'scoreChange', 'teleportToExit', 'conveySprite'],
 	'gridphysics': [],
-	'continuousphysics': ['transformToOnLanding', 'bounceDirection', 'conveySprite', 'pullWithIt',\
-	'windGust','slipForward', 'wallBounce', 'wallStop']
+	'continuousphysics': ['transformToOnLanding', 'killIfTooFast', 'killIfSlow', 'killIfFromAbove',\
+		'killIfFromBelow''bounceDirection', 'conveySprite', 'pullWithIt',\
+		'windGust','slipForward', 'wallBounce', 'wallStop']
 	}
 
 	errorSignalToPredicateMapping = {
