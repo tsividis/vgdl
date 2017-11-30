@@ -1816,14 +1816,18 @@ class Game(object):
 		T.classes['EOS'] = [eos] ##initialize EOS with special name, since it gets such special treatment in VGDL text files.
 
 		for (o1, o2) in itertools.product(allSprites, allSprites):
-			if o1.vgdlType not in AvatarTypes and o2.vgdlType not in AvatarTypes:
-				# rule = InteractionRule('nothing', o1.className, o2.className, {}, set(), generic=True)
-				rule = InteractionRule('stepBack', o1.className, o2.className, {}, set(), generic=True)
-				T.interactionSet.append(rule)
-			elif o1.vgdlType not in AvatarTypes:
-				# rule = InteractionRule('killSprite', o1.className, o2.className, {}, set(), generic=True)
-				rule = InteractionRule('stepBack', o1.className, o2.className, {}, set(), generic=True)
-				T.interactionSet.append(rule)
+
+			## Default hypothesis that avatar can kill everything but that everything else is 'nothing'
+			# if o1.vgdlType not in AvatarTypes and o2.vgdlType not in AvatarTypes:
+			# 	rule = InteractionRule('nothing', o1.className, o2.className, {}, set(), generic=True)
+			# 	T.interactionSet.append(rule)
+			# elif o1.vgdlType not in AvatarTypes:
+			# 	rule = InteractionRule('killSprite', o1.className, o2.className, {}, set(), generic=True)
+			# 	T.interactionSet.append(rule)
+
+			## Default hypothesis that everything is stepBack
+			rule = InteractionRule('stepBack', o1.className, o2.className, {}, set(), generic=True)
+			T.interactionSet.append(rule)
 
 		for s1 in nonAvatars + [avatar]:
 			## append EOS rule
