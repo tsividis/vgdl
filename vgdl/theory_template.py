@@ -2290,7 +2290,7 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 	## Destruction/appearance/transformation
 	'objectDestruction': ['killSprite'],
 	'newObjectAppeared': ['cloneSprite'],
-	'moreOfOneClassLessOfAnother': ['transformTo', 'transformToOnLanding'],
+	'transformation': ['transformTo', 'transformToOnLanding'],
 	'conditionalKill': ['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killOtherHasLess',\
 		'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
 
