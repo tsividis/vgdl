@@ -30,7 +30,7 @@ AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
 class errorMapEntry:
 	def __init__(self):
-		self.diagnosis = 'unknown'
+		self.diagnosis = []
 		self.targetClass = None
 		self.intPairs = []
 		self.culpritClasses = []
@@ -252,21 +252,13 @@ class Agent:
 		using the ontology of the supplied theory.
 
 		Also returns errorMap, a dict that contains
-		keys: (class1, class2). values: some sort of TBD error signal
-
-		For now we aren't taking a starting environment into account. This means
-		That we can't make a comparison between, say,
-		random object was at (10, 10), has speed=2
-		so at the next location it can be at (10 +- 2, 10+-2), but not anywhere else.
-		The best we can do without this info is just penalize very little because it's
-		a random object.
-		TODO: Implement the above.
+		keys: (class1, class2). values: a diagnostic error signal
 		"""
 
 		from vgdl.util import manhattanDist
 		from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
-		print '--- Called errorSignal function ---'
+		# print '--- Called errorSignal function ---'
 
 		# Initialization
 		total_penalty = 0.
@@ -276,12 +268,12 @@ class Agent:
 		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = self.matchEnvs(envA, envB)
 
 		## Test output
-		print '>>> matched_sprites:'
-		for i in range(len(matched_sprites)):
-			if True: #matched_sprites[i][2]!=0:
-				print matched_sprites[i]
-		print '>>> lonely_sprites_envA:', [s for s in lonely_sprites_envA]
-		print '>>> lonely_sprites_envB:', [s for s in lonely_sprites_envB]
+		# print '>>> matched_sprites:'
+		# for i in range(len(matched_sprites)):
+			# if True: #matched_sprites[i][2]!=0:
+				# print matched_sprites[i]
+		# print '>>> lonely_sprites_envA:', [s for s in lonely_sprites_envA]
+		# print '>>> lonely_sprites_envB:', [s for s in lonely_sprites_envB]
 
 		## Penalize distance and additional/missing sprites
 		# Distance penalty
@@ -324,26 +316,33 @@ class Agent:
 			for className in neighbors_prev:
 				e.intPairs.append( (sA.name,className) )
 			# Determine mininum distance to neighbors in current env -> to distinguish unexpectedPosition and unexpectedOverlap
-			all_sprites_envA = []
-			for g in envA._game.sprite_groups.keys():
-				all_sprites_envA += envA._game.sprite_groups[g]
-			nearest_sprite = self.findNearestSprite(sA, [s for s in all_sprites_envA if s!=sA])
-			nearest_dist = manhattanDist(envA._rect2pos(sA.rect), envA._rect2pos(nearest_sprite.rect))
+			all_sprites_envB = []
+			for g in envB._game.sprite_groups.keys():
+				all_sprites_envB += envB._game.sprite_groups[g]
+			nearest_sprite = self.findNearestSprite(sB, [s for s in all_sprites_envB if s!=sB])
+			nearest_dist = manhattanDist(envB._rect2pos(sB.rect), envB._rect2pos(nearest_sprite.rect))
 			## Categorize into sub-problem-class
 			# 1.1) noMovement
 			if dist_ts == 0:
-				e.diagnosis = 'noMovement'
+				e.diagnosis.append('noMovement')
 			# 1.2) unexpectedPosition
 			elif dist_ts!=0 and nearest_dist!=0:
-				e.diagnosis = 'unexpectedPosition'
+				e.diagnosis.append('unexpectedPosition')
 			# 1.3) unexpectedOverlap
 			elif dist_ts!=0 and nearest_dist==0:
-				e.diagnosis = 'unexpectedOverlap'
-				e.intPairs = [(sA.name,nearest_sprite.name)] #overwrite interaction pair by the overlapping sprite pair
+				e.diagnosis.append('unexpectedOverlap')
+				# find sprite in envA that corresponds to overlapped sprite in envB
+				nearest_sprite_envA = self.findNearestSprite(sB, [s for s in all_sprites_envA if s!=sA])
+				e.intPairs = [(sA.name,nearest_sprite_envA.name)] #overwrite interaction pair by the overlapping sprite pair
 			# 1.4) orientationChange
 			#TODO
 			print e.diagnosis
 			errorMap.append(e)
+
+		## Is there a lonely sprite in envB
+		## if yes, does it have a match in envPrev?
+		## if yes, it's probably a position mistmatch.
+		## otherwise, pass to part (2)
 
 		# embed()
 			
@@ -353,7 +352,7 @@ class Agent:
 			for iB,sB in enumerate(lonely_sprites_envB):
 				if manhattanDist(envA._rect2pos(sA.rect), envB._rect2pos(sB.rect))<=2:
 					e = errorMapEntry()
-					e.diagnosis = 'Transformation'
+					e.diagnosis.append('Transformation')
 					e.targetClass = sA.name
 					# Find sprite corresponding to sB in previous time step
 					sB.colorName = sA.colorName
@@ -426,42 +425,46 @@ class Agent:
 		return
 
 
-	def initializeVrle(self, hypothesis):
+	def initializeVrle(self, hypothesis, stateToSet=None):
+		if stateToSet is None:
+			stateToSet = self.rle
 		## World in agent's head given 'hypothesis', including object goal
-		gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
+		gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, self.symbolDict,\
 				 "./examples/gridphysics/theorytest.py")
 		Vrle = createMindEnv(gameString, levelString, output=False)
 
-		self.setSpritePositions(self.rle, Vrle, hypothesis)
+		self.setSpritePositions(stateToSet, Vrle, hypothesis)
 
 		## Initialize imaginary state to match real state.
 		try:
-			Vrle._game.getAvatars()[0].resources = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
-			Vrle._game.getAvatars()[0].orientation = copy.deepcopy(self.rle._game.getAvatars()[0].orientation)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].jumping)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].wait_step)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].rope)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].gravity)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].last_rope)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].last_gravity)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].last_vy)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].lastrect)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(self.rle._game.getAvatars()[0].speed)
+			Vrle._game.getAvatars()[0].resources = copy.deepcopy(stateToSet._game.getAvatars()[0].resources)
+			Vrle._game.getAvatars()[0].orientation = copy.deepcopy(stateToSet._game.getAvatars()[0].orientation)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].jumping)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].wait_step)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].rope)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].gravity)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].last_rope)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].last_gravity)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].last_vy)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].lastrect)
+			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].speed)
 
 		except (IndexError, AttributeError) as e:
 			pass
 		# Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
 		return Vrle
 
-	def VrleInitPhase(self, flexible_goals=False):
-		## Initialize multiple VRLEs, each corresponding to one hypothesis in self.hypotheses
+	def VrleInitPhase(self, theories=[], stateToSet=None, flexible_goals=False):
+		## Initialize multiple VRLEs, each corresponding to one hypothesis in theories
+		## Set their state to that of the provided RLE
 		VRLEs = []
 		# print "in VrleInitPhase.", len(self.hypotheses), "hypotheses"
 		# if len(self.hypotheses)>1:
 		# 	print "more than one hypothesis"
 
-		# for hypothesis in self.hypotheses[0:1]:
-		for hypothesis in self.hypotheses:
+		if not theories:
+			theories = self.hypotheses
+		for hypothesis in theories:
 			tempHypothesis = copy.deepcopy(hypothesis)
 			tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
 			tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
@@ -470,7 +473,7 @@ class Agent:
 			# print "fake hypotheses"
 			# if self.fakeInteractionRules:/
 				# tempHypothesis.display()
-			VRLEs.append(self.initializeVrle(tempHypothesis))
+			VRLEs.append(self.initializeVrle(tempHypothesis, stateToSet=stateToSet))
 		# print("wrote theory to text")
 
 
@@ -861,7 +864,7 @@ class Agent:
 		emptyPlans = 0
 		while not ended:
 			## initialize one or many VRLEs according to hypothesis-selection method
-			theoryRLEs = self.VrleInitPhase(flexible_goals)
+			theoryRLEs = self.VrleInitPhase(flexible_goals=flexible_goals)
 			quitting = False
 
 			p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
@@ -1250,6 +1253,8 @@ class Agent:
 		# agentState = self.resourceManagement(pre_step=False, res)
 		# self.rle.agentStatePrev = agentState
 
+		## Evaluate each theory on this step
+		## Propose new theories
 		newTheories = []
 		for num, env in enumerate(theoryRLEs):
 			env.step(action)
@@ -1262,9 +1267,19 @@ class Agent:
 			newTheories.extend(theories)
 		print self.rle.show(color='blue')
 
-		newTheories = []
-
+		print "Just ran expandTheory for all theoryRLEs"
 		embed()
+
+		## when you initialize the new theoryRLEs you have to set their state to the previous
+		## rle's state: envPrev.
+		theoryRLEs = self.VrleInitPhase(newTheories, envRealPrev)
+		for num, env in enumerate(theoryRLEs):
+			env.step(action)
+			penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev)
+			print ""
+			print "Theory {} penalty: {}".format(num, penalty)
+			for e in errorList:
+				e.display()
 
 
 		hypotheses = self.manageNewObjects(newTheories)

@@ -1813,10 +1813,12 @@ class Game(object):
 
 		for (o1, o2) in itertools.product(allSprites, allSprites):
 			if o1.vgdlType not in AvatarTypes and o2.vgdlType not in AvatarTypes:
-				rule = InteractionRule('nothing', o1.className, o2.className, {}, set(), generic=True)
+				# rule = InteractionRule('nothing', o1.className, o2.className, {}, set(), generic=True)
+				rule = InteractionRule('stepBack', o1.className, o2.className, {}, set(), generic=True)
 				T.interactionSet.append(rule)
 			elif o1.vgdlType not in AvatarTypes:
-				rule = InteractionRule('killSprite', o1.className, o2.className, {}, set(), generic=True)
+				# rule = InteractionRule('killSprite', o1.className, o2.className, {}, set(), generic=True)
+				rule = InteractionRule('stepBack', o1.className, o2.className, {}, set(), generic=True)
 				T.interactionSet.append(rule)
 
 		for s1 in nonAvatars + [avatar]:
@@ -2337,14 +2339,14 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 	}
 
 	## If we've proposed killSprite and that has failed, propose conditional rules.
-	if 'objectDestruction' in singlePairErrorSignal.values():
-		if 'killSprite' in proposalMemory[singlePairErrorSignal.values()]:
+	if 'objectDestruction' in singlePairErrorSignal:
+		if 'killSprite' in proposalMemory[singlePairErrorSignal]:
 			predicates.extend(errorSignalToPredicateMapping['conditionalKill'])
 			singlePairErrorSignal.values().remove('objectDestruction')
 
 	## Propose relevant rules
 	##TODO: right now this just gets the list from a single key
-	for predicate in singlePairErrorSignal.values()[0]:
+	for predicate in singlePairErrorSignal:
 		predicates.extend(errorSignalToPredicateMapping[predicate])
 
 	## Filter out rules that aren't consistent with the known physics type

@@ -654,7 +654,8 @@ class MovingAvatar(VGDLSprite, Avatar):
     speed = 1
     is_avatar = True
     alternate_keys=False
-
+    last_gravity=False
+    last_rope=False
 
     def declare_possible_actions(self):
         from pygame.locals import K_LEFT, K_RIGHT, K_UP, K_DOWN
