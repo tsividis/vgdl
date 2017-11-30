@@ -803,8 +803,10 @@ class Agent:
 			self.rle._game.objectMemoryDict[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
 			self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
 
-		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=0)
+		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=False, num_variants=0)
 
+		print "initialized hypotheses"
+		embed()
 		for action in actions:
 			## initialize VRLEs
 			theoryRLEs = self.VrleInitPhase()
@@ -1273,14 +1275,18 @@ class Agent:
 		## when you initialize the new theoryRLEs you have to set their state to the previous
 		## rle's state: envPrev.
 		theoryRLEs = self.VrleInitPhase(newTheories, envRealPrev)
+		penalties = []
 		for num, env in enumerate(theoryRLEs):
 			env.step(action)
 			penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev)
+			penalties.append(penalty)
 			print ""
 			print "Theory {} penalty: {}".format(num, penalty)
 			for e in errorList:
 				e.display()
 
+		print ""
+		print penalties
 
 		hypotheses = self.manageNewObjects(newTheories)
 
