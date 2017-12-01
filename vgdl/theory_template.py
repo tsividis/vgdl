@@ -285,6 +285,9 @@ class Theory(object):
 		self.errorHistory = []
 		self.cumulativeError = 0.
 
+		self.errorMapHistory = []
+		self.lineage = []
+		
 		self.mark = False ## For convenient marking and finding of hypotheses
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
@@ -2395,6 +2398,8 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 
 	for spriteProposal in spriteProposals:
 		newTheory = copy.deepcopy(theory)
+		newTheory.lineage.append(theory)
+		newTheory.errorMapHistory.append(errorMap)
 		vgdlType = spriteProposal[0][1]
 		args = dict(spriteProposal[1:])
 		color = newTheory.classes[targetClass][0].color
@@ -2410,7 +2415,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	## TODO: what to do with orientation for missiles??
 	return targetClass, childTheories
 
-def expandLine(theory, classPair, predicates, n=1, resourceObservations=None, generic=False):
+def expandLine(theory, errorMap, classPair, predicates, n=1, resourceObservations=None, generic=False):
 	## modifies the theory to propose n new interactonRules involving the given classPair
 	## for predicates that take arguments, proposes all possible combinations of args
 	## unless you call generic=False, in which case it only proposes what's in
@@ -2451,6 +2456,8 @@ def expandLine(theory, classPair, predicates, n=1, resourceObservations=None, ge
 	for i,ruleSet in enumerate(list(newRuleSets)):
 		ruleSet = [item for sublist in ruleSet for item in sublist]
 		newTheory = copy.deepcopy(theory)
+		newTheory.lineage.append(theory)
+		newTheory.errorMapHistory.append(errorMap)
 		newTheory.interactionSet = copy.deepcopy(interactionSet)
 		newTheory.interactionSet.extend(ruleSet)
 

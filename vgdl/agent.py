@@ -525,7 +525,7 @@ class Agent:
 
 
 
-	def setSpritePositions(self, rle, Vrle, hypothesis):
+	def setSpritePositions(self, rle, Vrle, hypothesis, useHypothesis=True):
 		## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
 
 		old_sprite_groups = Vrle._game.sprite_groups
@@ -537,27 +537,33 @@ class Agent:
 					matchingSprite = self.findNearestSprite(sprite, matchingSpritesInRLE)
 					sprite.rect = matchingSprite.rect
 					sprite.lastmove = matchingSprite.lastmove
-					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and self.best_params!=None:
-						try:
-							## Enforce consistency: inferred value for individual orientations has to be consistent with 
-							# what we're saying the horizontal/vertical orientation is of the entire group.
-							# print "setting sprite positions"
+					if useHypothesis:
+						if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and self.best_params!=None:
+							try:
+								## Enforce consistency: inferred value for individual orientations has to be consistent with 
+								# what we're saying the horizontal/vertical orientation is of the entire group.
+								# print "setting sprite positions"
 
 
-							orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - 
-								np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
-							# embed()
-							if orientation == (0,0):
-								# print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
+								orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - 
+									np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
+								# embed()
+								if orientation == (0,0):
+									# print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
+									pass
+
+								else:
+									sprite.orientation = orientation
+
+							except KeyError:
+								print "Failed to get params for Missile in main_agent"
+								# embed()
 								pass
-
-							else:
-								sprite.orientation = orientation
-
-						except KeyError:
-							print "Failed to get params for Missile in main_agent"
-							# embed()
-							pass
+					else:
+						# print "setting sprite positions"
+						if hasattr(matchingSprite, 'orientation'):
+							sprite.orientation = matchingSprite.orientation
+						# embed()
 		return
 
 
@@ -569,12 +575,14 @@ class Agent:
 			## World in agent's mind given 'hypothesis', including object goal
 			gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, self.symbolDict,\
 				 "./examples/gridphysics/theorytest.py")
+			useHypothesis=True
 		else:
 			gameString = self.gameString
 			levelString = self.levelString
+			useHypothesis=False
 		Vrle = createMindEnv(gameString, levelString, output=False)
 
-		self.setSpritePositions(stateToSet, Vrle, hypothesis)
+		self.setSpritePositions(stateToSet, Vrle, hypothesis, useHypothesis=useHypothesis)
 
 		## Initialize imaginary state to match real state.
 		try:
@@ -727,7 +735,7 @@ class Agent:
 			## InteractionSet induction step
 			for targetClassPair in errorMap.intPairs:
 				predicates = proposePredicates(errorMap.diagnosis, self.memory, self.proposalMemory, globalObservations)
-				classPair, theories, predicateGroups = expandLine(theory, targetClassPair, 
+				classPair, theories, predicateGroups = expandLine(theory, errorMap, targetClassPair, 
 					predicates = predicates, n=n, 
 					resourceObservations=self.resourceObservations, generic=True)
 				newTheories.extend(theories)
@@ -1436,11 +1444,15 @@ class Agent:
 
 
 		agentState = self.resourceManagement(pre_step=True)
-		envRealPrev = copy.deepcopy(self.rle)
-
+		
+		# t1=time.time()
+		# envRealPrev = copy.deepcopy(self.rle)
+		# print "deepcopy: {}".format(time.time()-t1)
+		# t2 = time.time()
+		# print "fast-copying rle"
+		envRealPrev = self.initializeVrle(None, stateToSet=self.rle) ## using copy.deepcopy() substitute
+		# print "fastcopy: {}".format(time.time()-t2)
 		# embed()
-		# envRealPrev = self.initializeVrle(None, stateToSet=self.rle)
-
 		self.rle.step(action)
 		print ""
 		print keyPresses[action]
