@@ -16,7 +16,7 @@
 level0 = """
 wwwwwwwwwwwww
 w  Ao    c  w
-w a  d    f w
+w a  d     fw
 w   b e   b w
 wwwwwwwwwwwww
 """
@@ -59,9 +59,10 @@ BasicGame frame_rate=30
         eel avatar > killSprite
         fruit avatar > killSprite
         apple avatar > killSprite
-        orange avatar > bounceForward
-        # orange avatar > killSprite
-        # avatar orange > changeResource resource=health value=1
+        # orange avatar > bounceForward
+        fruit wall > reverseDirection
+        orange avatar > killSprite
+        avatar orange > changeResource resource=health value=5
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=blueberry limit=0 win=True

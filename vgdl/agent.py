@@ -246,7 +246,7 @@ class Agent:
 		for g in envPrev._game.sprite_groups.keys():
 			all_sprites += envPrev._game.sprite_groups[g]
 		# Neighbors of problematic sprite in real world in previous time step
-		neighbors = [s for s in all_sprites if manhattanDist(envPrev._rect2pos(s.rect), envPrev._rect2pos(sPrev.rect))<=1. and s!=sPrev]
+		neighbors = [s for s in all_sprites if manhattanDist(envPrev._rect2pos(s.rect), envPrev._rect2pos(sPrev.rect))<=1. and s!=sPrev and (s not in envPrev._game.kill_list)]
 		# Determine corresponding classes in theory environment
 		neighbors_color = [s.colorName for s in neighbors]
 		neighbors_color = list(set(neighbors_color))
@@ -294,15 +294,25 @@ class Agent:
 			all_sprites_envB += envB._game.sprite_groups[g]
 		nearest_sprite = self.findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB) and (s not in envB._game.kill_list)])
 		nearest_dist = manhattanDist(envB._rect2pos(sB.rect), envB._rect2pos(nearest_sprite.rect))
+		# Determine orientation in current and previous step -> to detect orientation change
+		try:
+			oB = sB.orientation
+			oPrev = sPrev.orientation
+		except:
+			oB,oPrev = None,None
+
 		## Categorize into sub-problem-class
 		# 1.1) noMovement
 		if dist_ts == 0:
 			e.diagnosis.append('noMovement')
-		# 1.2) unexpectedPosition
-		elif dist_ts!=0 and nearest_dist!=0:
+		# 1.2) orientationChange
+		if dist_ts!=0 and oB!=None and oB!=oPrev:
+			e.diagnosis.append('orientationChange')
+		# 1.3) unexpectedPosition
+		elif dist_ts!=0 and nearest_dist>=1:
 			e.diagnosis.append('unexpectedPosition')
-		# 1.3) unexpectedOverlap
-		elif dist_ts!=0 and nearest_dist==0:
+		# 1.4) unexpectedOverlap
+		elif dist_ts!=0 and nearest_dist<1:
 			e.diagnosis.append('unexpectedOverlap')
 			# find sprite in envA that corresponds to covered sprite in envB
 			color = nearest_sprite.colorName
@@ -311,9 +321,8 @@ class Agent:
 				if color == envA._game.sprite_groups[k][0].colorName:
 					className_envA = k
 			covered_sprite_envA = self.findNearestSprite(sB,envA._game.sprite_groups[className])
-			e.intPairs = [(sA.name,nearest_sprite.name)] #overwrite interaction pair by the overlapping sprite pair
-		# 1.4) orientationChange
-		#TODO
+			e.intPairs = [(sA.name,covered_sprite_envA.name)] #overwrite interaction pair by the overlapping sprite pair
+
 		# Return errorMapEntry object
 		return e
 
@@ -361,15 +370,13 @@ class Agent:
 			dist = t[2] #distance to sprite in envB
 			sA_type = theory.classes[sA.name][0].vgdlType
 			if str(sA_type) == "<class 'vgdl.ontology.RandomNPC'>":
-				sA_speed = theory.classes[sA.name][0].speed
+				sA_speed = theory.classes[sA.name][0].args['speed']
 				if dist>2*sA_speed:
 					total_penalty += p_dist*t[2]
 			else: #all of the other types are deterministic
 				total_penalty += p_dist*t[2]				
 		# Missing/additional penalty
 		total_penalty += p_miss * ( len(lonely_sprites_envA) + len(lonely_sprites_envB) )
-
-		print '>>> Total penalty:', total_penalty
 
 		### Construct errorMap using previous state ###
 
@@ -450,7 +457,7 @@ class Agent:
 		# 2.3) Appearance
 		for sB in appeared_sprites_envB:
 			e = errorMapEntry
-			e.diagnosis = 'newObjectAppeared'
+			e.diagnosis.append('newObjectAppeared')
 			e.targetToken = sB
 			# Find class of new object by comparing colors, or give 'unknown' if unsuccessful
 			color = sB.colorName
@@ -471,24 +478,14 @@ class Agent:
 				e.culpritClasses.append(className)
 			errorMap.append(e)
 
-		embed()
-
-
-		# 3) State change (how to tell that a sprite has changed state?)
+		# 3) State change
+		# Call s.resources on all sprites in envA and envB. See which ones have changed
+		# and if that is consistent between envA and envB
 		#TODO
 
 
-		# Case: real-world object has been unexpectedly destroyed
-		# for victim in lonely_sprites_envA:
-			# Find the object that should have destroyed it - now in same location
-			# killer = [s in ]
-
-
-		## TODO: penalize as a function of vgdlType and color
-		## TODO: deal with cases where you don't find objects in one env but you do in the other
-
+		## NOTE: We could extend by penalizing as a function of (most likely) vgdlType and color
 		## NOTE: Use intializeHypotheses function in this file to build my test theories
-		## NOTE: errorSignal = {('avatar','c2'):['unexpectedOverlap', 'orientationChange']}
 
 		return total_penalty, errorMap
 
@@ -958,7 +955,6 @@ class Agent:
 		## Initialize external environment
 		self.initializeEnvironment()
 		print "initializing RLE"
-		# embed()
 		steps = 0
 		self.quits = 0
 		self.longHorizonObservations = 0
@@ -1024,7 +1020,7 @@ class Agent:
 				if (not solution) or p.quitting:
 					if self.longHorizonObservations<self.longHorizonObservationLimit:
 						print "Didn't get solution or decided to quit. Observing, then replanning."
-						observe(self.rle, 5, self.bestSpriteTypeDict)
+						observe(self.rle, 0, self.bestSpriteTypeDict)
 						solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
 						self.longHorizonObservations += 1
 					else:
