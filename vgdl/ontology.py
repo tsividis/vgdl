@@ -49,11 +49,16 @@ class GridPhysics():
         if speed != 0 and hasattr(sprite, 'orientation'):
             sprite._updatePos(sprite.orientation, speed * self.gridsize[0])
 
-    def calculatePassiveMovement(self, sprite):
+    def calculatePassiveMovement(self, sprite, allMovement=False):
         """
         Calculate where the sprite would end up in a timestep, without actually updating its position.
         """
-        ## This is where you could make hypotheses about speed, etc. for the object.
+        
+        if allMovement:
+            lastMove = sprite.lastdisplacement
+        else:
+            lastMove = sprite.lastmove
+
         if sprite.speed is None:
             speed = 1
         else:
@@ -61,24 +66,29 @@ class GridPhysics():
         if speed != 0 and hasattr(sprite, 'orientation'):
             orientation = sprite.orientation
             speed = speed * self.gridsize[0]
-            if not((sprite.lastmove+1)%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
+            if not((lastMove+1)%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
             # if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
                 pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
                 return pos.left, pos.top
         else:   # If object has speed = 0 or no 'orientation' attribute
             return None
 
-    def calculatePassiveMovementGivenParams(self, sprite, speed, orientation):
+    def calculatePassiveMovementGivenParams(self, sprite, speed, orientation, allMovement=False):
         """
         Calculate where the sprite would end up in a timestep, without actually updating its position.
         """
-        ## This is where you could make hypotheses about speed, etc. for the object.
+
+        if allMovement:
+            lastMove = sprite.lastdisplacement
+        else:
+            lastMove = sprite.lastmove
+
         if speed is None:
             speed = 1
 
         if speed != 0:
             speed = speed * self.gridsize[0]
-            if not((sprite.lastmove+1)%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
+            if not((lastMove+1)%sprite.cooldown!=0 or abs(orientation[0])+abs(orientation[1])==0):
             # if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
                 pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
                 return pos.left, pos.top
@@ -94,19 +104,22 @@ class GridPhysics():
             else:
                 speed = float(sprite.speed)
 
-        #print speed
         if speed != 0 and action is not None:
             sprite._updatePos(action, speed * self.gridsize[0])
 
-    def calculateActiveMovement(self, sprite, action, speed=None):
+    def calculateActiveMovement(self, sprite, action, speed=None, allMovement=False):
         """
         Calculate where the sprite would end up in a timestep, without actually updating its position.
         """
 
-         ## This is where you could make hypotheses about speed, etc. for the object.
+        if allMovement:
+            lastMove = sprite.lastdisplacement
+        else:
+            lastMove = sprite.lastmove
+
         if action is not None:
             orientation = action
-        if (sprite.lastmove+1)%sprite.cooldown==0 and abs(orientation[0])+abs(orientation[1])!=0:
+        if (lastMove+1)%sprite.cooldown==0 and abs(orientation[0])+abs(orientation[1])!=0:
 
             if speed is None:
                 if sprite.speed is None:
@@ -158,17 +171,12 @@ class ContinuousPhysics(GridPhysics):
 
         
 
-    def calculatePassiveMovement(self, sprite):
-        '''
-        if sprite.speed != 0 and hasattr(sprite, 'orientation'):
-            if not((sprite.lastmove+1) % sprite.cooldown != 0 or abs(sprite.orientation[0])+abs(sprite.orientation[1])==0):
-                pos = sprite.rect.move((sprite.orientation[0]*sprite.speed, sprite.orientation[1]*sprite.speed))
-            if self.gravity > 0 and sprite.mass > 0:
-                return self.calculateActiveMovement(sprite, (0, self.gravity * sprite.mass))
-        else:   # If object has speed = 0 or no 'orientation' attribute
-            pos = rect
-        return pos.left, pos.top
-        '''
+    def calculatePassiveMovement(self, sprite, allMovement=False):
+        if allMovement:
+            lastMove = sprite.lastdisplacement
+        else:
+            lastMove = sprite.lastmove
+
         if (sprite.speed != 0 or hasattr(sprite,'jumping') and sprite.jumping) and hasattr(sprite, 'orientation'):
             pos = sprite.rect.move((sprite.orientation, sprite.speed))
             if self.gravity > 0 and sprite.mass > 0:
@@ -208,9 +216,15 @@ class ContinuousPhysics(GridPhysics):
         sprite.speed = vectNorm((v1, v2)) / vectNorm(sprite.orientation)
  
 
-    def calculateActiveMovement(self, sprite, action, speed=None):
+    def calculateActiveMovement(self, sprite, action, speed=None, allMovement=False):
         """ Here the assumption is that the controls determine the direction of
         acceleration of the sprite. """
+        
+        if allMovement:
+            lastMove = sprite.lastdisplacement
+        else:
+            lastMove = sprite.lastmove
+
         if speed is None:
             speed = sprite.speed
 
@@ -1983,7 +1997,7 @@ def updateOptionsProfiler(game, sprite_type_tuple, current_sprite, params={}, mi
     lp.print_stats()
     return d1, d2
 
-def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False):
+def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False, allMovement=True):
     """
     This method gets all of the parameter information from the params variable
     instead of directly accessing the parameters in current_sprite.
@@ -1994,6 +2008,9 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
     The default value of params is an empty dictionary - if that's the value passed, then the method will
     assume default values for each attribute.
     """
+    # if current_sprite.colorName=='ORANGE' and 'Missile' in str(sprite_type_tuple[1]) and params['speed']==1:
+        # print "in updateOptions"
+        # embed()
     sprite_type = sprite_type_tuple[1]
 
     # if current_sprite.name!='wall':
@@ -2033,7 +2050,8 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
                 options = BASEDIRS
 
             for option in options:
-                left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed)
+                left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed, 
+                    allMovement=allMovement)
                 if (left, top) in position_options.keys():
                     position_options[(left, top)] += 1.0/len(options)
                 else:
@@ -2084,13 +2102,12 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         else: # Not foolproof, but will catch walls that are surrounded by other walls
             movement = DOWN
 
-        left, top = current_sprite.physics.calculateActiveMovement(current_sprite, movement, speed=speed)
+        left, top = current_sprite.physics.calculateActiveMovement(current_sprite, movement, speed=speed, 
+            allMovement=allMovement)
         return {(left, top): 1.}, {(left, top): 1.}
 
     # Random NPC
     elif sprite_type == RandomNPC:
-
-
 
         realCooldown = int(current_sprite.cooldown)
         speed, cooldown = getSpeed(params), getCooldown(params)
@@ -2103,7 +2120,8 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         #     embed()
 
         for option in BASEDIRS:
-            left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed)
+            left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed, 
+                allMovement=allMovement)
             if (left, top) in position_options.keys():
                 position_options[(left, top)] += 1.0/len(BASEDIRS)
             else:
@@ -2123,53 +2141,54 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
     # Missile or OrientedSprite
     elif sprite_type in [Missile, OrientedSprite]:
 
-    # elif sprite_type == Missile or sprite_type==OrientedSprite:
-        if not current_sprite.is_static and not current_sprite.only_active:
+        # if not current_sprite.is_static and not current_sprite.only_active:
             # NOTE: we might want to consider having is_static and only_active be
             # parameters that we have to infer, rather than things we get for free.
             # (i.e. make these fields in the params variable)
-            speed = getSpeed(params)
-            orientation = getOrientation(params)
-            cooldown = getCooldown(params)
-            realCooldown = int(current_sprite.cooldown)
-            current_sprite.cooldown = cooldown
+        speed = getSpeed(params)
+        orientation = getOrientation(params)
+        cooldown = getCooldown(params)
+        realCooldown = int(current_sprite.cooldown)
+        current_sprite.cooldown = cooldown
 
 
 
-            coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
-            # If object has speed = 0 or no 'orientation' attribute
-            position_options, clustered_position_options = {}, {}
-            if coords == None:
-                return position_options, position_options
+        coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation, 
+            allMovement=allMovement)
+        # If object has speed = 0 or no 'orientation' attribute
+        position_options, clustered_position_options = {}, {}
+        if coords == None:
+            return position_options, position_options
 
-            position_options[(coords[0], coords[1])] = 1.
+        position_options[(coords[0], coords[1])] = 1.
 
-            if missileOrientationClustering:
+        if missileOrientationClustering:
 
-                epsilon_prob = 0.005
-                clustered_position_options[(coords[0], coords[1])] = .5 + epsilon_prob
-                #flip orientation
-                orientation = (orientation[0]*-1, orientation[1]*-1)
+            epsilon_prob = 0.005
+            clustered_position_options[(coords[0], coords[1])] = .5 + epsilon_prob
+            #flip orientation
+            orientation = (orientation[0]*-1, orientation[1]*-1)
 
-                coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
-                if (coords[0], coords[1]) in clustered_position_options.keys():
-                    clustered_position_options[(coords[0], coords[1])] += .5 - epsilon_prob
-                else:
-                    clustered_position_options[(coords[0], coords[1])] = .5 - epsilon_prob
+            coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation,
+                allMovement=allMovement)
+            if (coords[0], coords[1]) in clustered_position_options.keys():
+                clustered_position_options[(coords[0], coords[1])] += .5 - epsilon_prob
+            else:
+                clustered_position_options[(coords[0], coords[1])] = .5 - epsilon_prob
 
-            # if current_sprite.colorName=='GOLD' and speed==.2 and cooldown==3:
-            #     print "position_options is {}".format(position_options)
-            #     print "sprite rect is {}".format(current_sprite.rect)
-            #     print "lastmove is {}".format(current_sprite.lastmove)
-            #     embed()
+        # if current_sprite.colorName=='GOLD' and speed==.2 and cooldown==3:
+        #     print "position_options is {}".format(position_options)
+        #     print "sprite rect is {}".format(current_sprite.rect)
+        #     print "lastmove is {}".format(current_sprite.lastmove)
+        #     embed()
 
-            # if current_sprite.colorName=='GOLD' and speed == .2 and cooldown == 3:
-            #     print "Missile"
-            #     print current_sprite.rect
-            #     print position_options
+        # if current_sprite.colorName=='GOLD' and speed == .2 and cooldown == 3:
+        #     print "Missile"
+        #     print current_sprite.rect
+        #     print position_options
 
-            current_sprite.cooldown = realCooldown
-            return position_options, clustered_position_options
+        current_sprite.cooldown = realCooldown
+        return position_options, clustered_position_options
 
         # Catches objects that can't be Oriented Sprite and Missile types b/c fails the if-statement
         return {}, {}
@@ -2347,109 +2366,6 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
 
     return curr_distribution
 
-# def updateDistribution(game, sprite, curr_distribution, movement_options, outcome, specialID=None, missileOrientationClustering=False):
-#     """
-#     Updates the sprite distribution for a given object in the game.
-
-#     Input:
-#         sprite - the current sprite ID
-#         curr_distribution - the current sprite distribution for all objects
-#         movement_options - possible next locations that the sprite of that sprite type can be in
-#         outcome - the sprite's resulting location after the update
-
-#     Output:
-#         curr_distribution - renormalized updated distribution over sprite types for a given object
-
-#     Here, we update both the distribution over sprite types as well as the distribution over the parameters
-#     belonging to that sprite type.
-#     Now we discuss the mathematical equations used for updating.
-#     Let o = the outcome observed for a particular sprite object.
-#     Let s = the sprite type of a particular sprite object.
-#     Let p_1, ..., p_i, ..., p_k represent the parameters corresponding to
-#     a particular sprite type.
-
-#     The values stored in curr_distribution are p(s) and p(p_1 | s),..., p(p_i | s),..., p(p_k | s)
-#     We would like to update them to their posterior values, i.e. p(s|o) and p(p_i | s, o)
-#     (1) first we find the update equation for p(s|o).
-#     Note that p(s|o) is proportional to
-#     p(o|s)p(s) = p(s) * sum_{all combinations of p_1,..._p_k}{p(o|s,p_1,...,p_k)*p(p_1|s)*...*p(p_k|s)}
-#     (2) Now we find the update equation for p(p_i | s, o):
-#     Note that p(p_i | s, o) is proportional to
-#     p(o|p_i, s)*p(p_i|s) =
-#     p(p_i|s)*sum_{all combinations of values of p_1,...,p_k except p_i}{p(o|s,p_1,...,p_k)*p(p_1|s)*...*p(p_{i-1}|s)*p(p_{i+1}|s)*...*p(p_k|s)}
-#     = sum_{all combinations of values of p_1,...,p_k except p_i}{p(o|s,p_1,...,p_k)*p(p_1|s)*...*p(p_k|s)}
-
-#     The key observation for both of these update equations is that p(o|s,p_1,...,p_k) can be accessed
-#     by using movement_options[sprite][sprite_type][param][outcome] (where param = a choice of p_1,...,p_k,
-#     o = outcome, s = sprite_type, and sprite is the sprite object we are computing the new distribution for).
-#     """
-
-#     if sprite in curr_distribution.keys():
-#         # if sprite in game.all_objects.keys() and game.all_objects[sprite]['sprite'].colorName=='ORANGE':
-#             # ipdb.set_trace()
-#         for sprite_type in curr_distribution[sprite].keys():
-#             # if sprite_type == "OTHER":
-#                 # sprite type is unknown.
-#                 # movement_options[sprite][sprite_type][()] = {outcome: 1.0/5} #up down left right stay
-
-
-#             if curr_distribution[sprite][sprite_type]['prob'] > 0:
-
-#                 spriteTypeLikelihood = 0.
-#                 newParameterLikelihood = {}
-#                 for p in curr_distribution[sprite][sprite_type]['args']:
-#                     newParameterLikelihood[p] = \
-#                     {val: 0 for val in curr_distribution[sprite][sprite_type]['args'][p]}
-
-#                 for param in movement_options[sprite][sprite_type]:
-#                 # If the outcome is an option for the sprite type, update probability
-#                     if outcome in movement_options[sprite][sprite_type][param].keys():
-#                         attributeProduct = 1.
-#                         for p, val in param:
-#                             attributeProduct *= curr_distribution[sprite][sprite_type]['args'][p][val]
-
-#                         spriteTypeLikelihood += movement_options[sprite][sprite_type][param][outcome] * attributeProduct
-
-#                         for p, val in param:
-#                             if 'Missile' in str(sprite_type) and missileOrientationClustering:
-#                                 newParameterLikelihood[p][val] += movement_options[sprite][sprite_type][param][outcome]**2 * attributeProduct
-#                             else:
-#                                 newParameterLikelihood[p][val] += movement_options[sprite][sprite_type][param][outcome]*attributeProduct
-
-#                 curr_distribution[sprite][sprite_type]['prob'] *= spriteTypeLikelihood
-#                 curr_distribution[sprite][sprite_type]['args'] = newParameterLikelihood
-
-#             # ch = [k for k in movement_options[sprite].keys() if 'Chaser' in str(k)][0]
-#             # rp = [k for k in movement_options[sprite].keys() if 'Resource' in str(k)][0]
-
-#             # if sprite==specialID and sprite_type==ch:
-#             #     print specialID
-
-#         epsilon_prob = 0.005
-#         # want to make sure we don't entirely rule out certain sprite types and parameters
-#         # but only place a small probability on them. In order to do that, we add a small positive value
-#         # called epsilon_prob to each one of the probabilities in the distribution. This ensures
-#         # that we don't entirely rule out a sprite type or parameter choice (by making its probability nonzero)
-#         for sprite_type in curr_distribution[sprite].keys():
-#             curr_distribution[sprite][sprite_type]['prob'] += epsilon_prob
-#             for p in curr_distribution[sprite][sprite_type]['args']:
-#                 for pval in curr_distribution[sprite][sprite_type]['args'][p]:
-#                     curr_distribution[sprite][sprite_type]['args'][p][pval] += epsilon_prob
-
-
-#         # Re-normalize the distribution
-#         z = sum([curr_distribution[sprite][sprite_type]['prob'] for sprite_type in curr_distribution[sprite]])
-#         for sprite_type in curr_distribution[sprite].keys():
-#             curr_distribution[sprite][sprite_type]['prob'] /= z
-
-#         for sprite_type in curr_distribution[sprite]:
-#             for p in curr_distribution[sprite][sprite_type]['args']:
-#                 z = sum(curr_distribution[sprite][sprite_type]['args'][p].values())
-#                 if z > 0:
-#                     for val in curr_distribution[sprite][sprite_type]['args'][p]:
-#                         curr_distribution[sprite][sprite_type]['args'][p][val] /= z
-
-#     return curr_distribution
 
 def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict, 
     oldSpriteSet = None, default=False):
@@ -2650,6 +2566,13 @@ def getKL(spriteDistribution1, spriteDistribution2):
     d1, d2 = [v['prob'] for v in spriteDistribution1.values()], [v['prob'] for v in spriteDistribution2.values()]
     return scipy.stats.entropy(d1,d2)
 
+def filterTheories(scoreAndTheoryTuples, percentile, max_num):
+    import numpy as np
+    ## Returns the max_num theories that are at percentile or greater, given their score.
+    scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0], reverse=True)
+    cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
+    return [s for s in scoreAndTheoryTuples if s[0]>=cutoff][0:max_num]
+
 def spriteInductionProfiler(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None):
     lp = LineProfiler()
     lp_wrapper = lp(spriteInduction)
@@ -2657,7 +2580,8 @@ def spriteInductionProfiler(game, step, bestSpriteTypeDict, oldSpriteSet=None, o
     lp.print_stats()
     return distributionsHaveChanged
 
-def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None, specificSpritesToUpdate=[]):
+def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None, specificSpritesToUpdate=[], 
+    allMovement=False):
     """
     An explanation of important data structures used in this function:
     game = a BasicGame object
@@ -2717,8 +2641,11 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                         ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving
                         ## objects
                         game.object_token_movement_options[sprite][param_combination], game.movement_options[sprite][param_combination] = \
-                        updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
+                        updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True, allMovement=allMovement)
 
+                        # if sprite_obj.colorName=='ORANGE':
+                        #     print "calculated options"
+                        #     embed()
 
     elif step==3:
         ## Update sprite distribution based on observations
@@ -2766,11 +2693,18 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
             oldSpriteSet = oldSpriteSet, default=False)
 
     elif step==4:
+        # print "in step4 of spriteInduction"
+        # embed()
         ## Update sprite distribution for a particular item
         objects = game.getObjects()
         notUpdated = [s for s in objects.keys() if s not in game.spriteDistribution.keys()]
         for sprite in specificSpritesToUpdate:        
             sprite_obj = objects[sprite]["sprite"]
+
+            # missiles = [k for k in game.movement_options[sprite].keys() if 'Missile' in str(k[0][1])]
+            # correct_missiles = [m for m in missiles if game.movement_options[sprite][m]]
+            # chasers = [k for k in game.movement_options[sprite].keys() if 'Chaser' in str(k[0][1])]
+            # correct_chasers = [c for c in chasers if game.movement_options[sprite][c]]
 
             if sprite not in game.ignoreList and sprite_obj.name != 'avatar':
 
@@ -2785,8 +2719,12 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                                           game.object_token_movement_options, outcome)
 
                 game.spriteUpdateDict[sprite] += 1
-        reasonableHypotheses = [k for k in game.spriteDistribution[specificSpritesToUpdate[0]].keys() if 
-            game.spriteDistribution[specificSpritesToUpdate[0]][k]>0.1]
+        scoreAndTheoryTuples = [(v, k) for k, v in game.spriteDistribution[sprite].iteritems()]
+
+        reasonableScoreAndTheoryTuples = filterTheories(scoreAndTheoryTuples, percentile=20, max_num=15)
+        reasonableHypotheses = [st[1] for st in reasonableScoreAndTheoryTuples]
+        # reasonableHypotheses = [k for k in game.spriteDistribution[specificSpritesToUpdate[0]].keys() if 
+            # game.spriteDistribution[specificSpritesToUpdate[0]][k]>0.01]
         return reasonableHypotheses
 
     ## Reset ignoreList so that next time around you do inference.

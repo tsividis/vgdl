@@ -693,10 +693,10 @@ class Agent:
 				embed()
 
 			## SpriteSet induction step
-			# if errorMap.targetClass != 'avatar':
-			# 	className, theories = expandSprites(self.rle._game, theory, errorMap, 
-			# 		envRealPrev, envRealCurrent, self.bestSpriteTypeDict, resourceObservations=self.resourceObservations)
-			# 	newTheories.extend(theories)
+			if errorMap.targetClass != 'avatar':
+				className, theories = expandSprites(self.rle._game, theory, errorMap, 
+					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, resourceObservations=self.resourceObservations)
+				newTheories.extend(theories)
 
 			## InteractionSet induction step
 			for targetClassPair in errorMap.intPairs:
@@ -916,7 +916,7 @@ class Agent:
 		## Initialize external environment
 		self.initializeEnvironment()
 		print "initializing RLE"
-		# embed()
+
 		self.all_objects= self.rle._game.getObjects()
 
 		## Start storing encountered states.
@@ -1403,8 +1403,10 @@ class Agent:
 
 		theory_change_flag = False
 
-		spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
-		spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+		spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, 
+			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], allMovement=False)
+		spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, 
+			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], allMovement=False)
 
 		agentState = self.resourceManagement(pre_step=True)
 		
@@ -1465,12 +1467,13 @@ class Agent:
 			## Filter theories
 			scoreAndTheoryTuples = zip(penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
-			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=5)]
+			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=15)]
 			for sh in scoresAndHypotheses:
 				if sh[0]==0:
 					sh[1].display()
-			print ""
 			hypotheses = [sh[1] for sh in scoresAndHypotheses]
+			print "{} survived".format(len(hypotheses))
+			print ""
 		else:
 			print "Got no new theories"
 

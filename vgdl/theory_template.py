@@ -1444,8 +1444,8 @@ class Theory(object):
 		print "Class assignments:"
 		for c in self.classes:
 			class_list = [cl.color for cl in self.classes[c]]
-			print "\t{}: {}: {}".format(c, class_list, self.spriteObjects[cl.color].vgdlType)
-		#print self.classes
+			print "\t{}: {}: {}: {}".format(c, class_list, self.spriteObjects[cl.color].vgdlType, \
+				self.spriteObjects[cl.color].args)
 		print
 
 	def displayTerminationSet(self):
@@ -1456,7 +1456,7 @@ class Theory(object):
 
 	def display(self):
 		print "_______"
-		# self.displayClasses()
+		self.displayClasses()
 		self.displayRules()
 		# self.displayTerminationSet()
 		return
@@ -2382,6 +2382,8 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, oldSpriteSet=theory.spriteSet,\
 		specificSpritesToUpdate=[targetToken.ID])
 
+	# print "in expandSprites"
+	# embed()
 	childTheories = []
 	for spriteProposal in spriteProposals:
 		newTheory = copy.deepcopy(theory)
