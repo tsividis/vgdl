@@ -1436,7 +1436,8 @@ class Theory(object):
 		print ""
 		print "InteractionSet:"
 		for rule in self.interactionSet:
-			rule.display()
+			if rule.interaction != 'stepBack':
+				rule.display()
 
 	def displayClasses(self):
 		print ""
@@ -1455,9 +1456,9 @@ class Theory(object):
 
 	def display(self):
 		print "_______"
-		self.displayRules()
 		self.displayClasses()
-		self.displayTerminationSet() #TODO: Figure out why this isn't printing
+		self.displayRules()
+		self.displayTerminationSet()
 		return
 
 	def __eq__(self, other):
@@ -2368,11 +2369,32 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 
 ## TODO: write the function that maintains resourceObservations, or at least figure out
 ## its outputs and integrate with proposeArgs
-def expandSprites(game, theory, className, bestSpriteTypeDict, resourceObservations=None):
+def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSpriteTypeDict, resourceObservations=None):
 	from vgdl.ontology import sampleFromDistribution, spriteInduction, updateDistribution
-	spriteInduction(game, step=3, bestSpriteTypeDict=bestSpriteTypeDict, oldSpriteSet=theory.spriteSet,\
-		specificSpritesToUpdate=className)
-	return
+
+	targetClass = errorMap.targetClass
+	targetToken = errorMap.targetToken
+
+	spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, oldSpriteSet=theory.spriteSet,\
+		specificSpritesToUpdate=[targetToken.ID])
+
+	childTheories = []
+	for spriteProposal in spriteProposals:
+		newTheory = copy.deepcopy(theory)
+		vgdlType = spriteProposal[0][1]
+		args = dict(spriteProposal[1:])
+		color = newTheory.classes[targetClass][0].color
+		sprite = Sprite(vgdlType, color, className=targetClass, args=args)
+		## Remove old sprite from spriteSet
+		newTheory.spriteSet.remove(newTheory.classes[targetClass][0])
+		## Add new sprite
+		newTheory.spriteSet.append(sprite)
+		newTheory.classes[targetClass] = [sprite]
+		newTheory.spriteObjects[color] = sprite
+		childTheories.append(newTheory)
+
+	## TODO: what to do with orientation for missiles??
+	return targetClass, childTheories
 
 def expandLine(theory, classPair, predicates, n=1, resourceObservations=None, generic=False):
 	## modifies the theory to propose n new interactonRules involving the given classPair
