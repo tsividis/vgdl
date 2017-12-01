@@ -497,7 +497,7 @@ class Agent:
 				# Set interaction pairs to unique pairs
 				e.intPairs = unique_pairs_e
 
-		## TODO: keep all past theory scores and give theory a cumulative score in each step
+		## TODO: change action sequence to 32 in first step, then make game with moving apple
 
 		## NOTE: We could extend by penalizing as a function of (most likely) vgdlType and color
 		## NOTE: Use intializeHypotheses function in this file to build my test theories
@@ -945,7 +945,7 @@ class Agent:
 
 	def testEpisode(self, gameObject):
 
-		actions = [K_DOWN, K_UP, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
+		actions = [32, K_DOWN, K_UP, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
 
 		## Initialize external environment
 		self.initializeEnvironment()
@@ -1446,11 +1446,11 @@ class Agent:
 		agentState = self.resourceManagement(pre_step=True)
 		
 		# t1=time.time()
-		# envRealPrev = copy.deepcopy(self.rle)
+		envRealPrev = copy.deepcopy(self.rle)
 		# print "deepcopy: {}".format(time.time()-t1)
 		# t2 = time.time()
 		# print "fast-copying rle"
-		envRealPrev = self.initializeVrle(None, stateToSet=self.rle) ## using copy.deepcopy() substitute
+		# envRealPrev = self.initializeVrle(None, stateToSet=self.rle) ## using copy.deepcopy() substitute
 		# print "fastcopy: {}".format(time.time()-t2)
 		# embed()
 		self.rle.step(action)
@@ -1480,7 +1480,9 @@ class Agent:
 			theoryRLEs = self.VrleInitPhase(newTheories, envRealPrev)
 
 			penalties = []
+			print "Evaluating proposals",
 			for num, env in enumerate(theoryRLEs):
+				print "#",
 				env.step(action)
 				penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev)
 				newTheories[num].errorHistory.append(penalty)
