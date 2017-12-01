@@ -692,6 +692,10 @@ class Agent:
 		## TODO: Get these from somewhere else
 		globalObservations = {'physicsType':'gridphysics'}
 
+		## Safety check; if we don't actually have an error we should just return the theory, unmodified.
+		if not errorList:
+			return [theory]
+
 		newTheories = []
 
 		## TODO: Add code to do this for each item in the errorList
@@ -1473,17 +1477,23 @@ class Agent:
 				for e in errorList:
 					e.display()
 			print ""
+			print "last-step penalties"
 			print penalties
+			print "cumulative penalties"
+			cumulative_penalties = [h.cumulativeError for h in newTheories]
+			print cumulative_penalties
 			print "proposed {} new theories".format(len(newTheories))
 			print ""
-			embed()
+			# embed()
 			## Filter theories
-			scoreAndTheoryTuples = zip(penalties, newTheories)
+			scoreAndTheoryTuples = zip(cumulative_penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=15)]
-			for sh in scoresAndHypotheses:
-				if sh[0]==0:
-					sh[1].display()
+			for num, sh in enumerate(scoresAndHypotheses):
+				# if sh[0]==0:
+				print "Theory: {} | Error: {}".format(num, sh[0])
+				sh[1].display()
+
 			hypotheses = [sh[1] for sh in scoresAndHypotheses]
 			print "{} survived".format(len(hypotheses))
 			print ""
@@ -1497,7 +1507,7 @@ class Agent:
 		self.statesEncountered.append(self.rle._game.getFullState())
 		return hypotheses
 
-
+## Store all rles. Then you can very easily do experience replay!!!
 
 
 if __name__ == "__main__":

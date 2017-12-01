@@ -285,6 +285,8 @@ class Theory(object):
 		self.errorHistory = []
 		self.cumulativeError = 0.
 
+		self.mark = False ## For convenient marking and finding of hypotheses
+
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
 		# print "in initializeSpriteSet"
 		# embed()
@@ -1458,10 +1460,10 @@ class Theory(object):
 			tc.display()
 
 	def display(self):
-		print "_______"
 		self.displayClasses()
 		self.displayRules()
 		# self.displayTerminationSet()
+		print "_______"
 		return
 
 	def __eq__(self, other):
@@ -2379,15 +2381,18 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSpriteTypeDict, percentile=20, max_num=20, resourceObservations=None):
 	from vgdl.ontology import sampleFromDistribution, spriteInduction, updateDistribution
 
+	childTheories = []
+
 	targetClass = errorMap.targetClass
 	targetToken = errorMap.targetToken
+
+	## Only propose sprites when something moves that we didn't think was going to move.
+	if errorMap.diagnosis[0] not in ['unexpectedPosition', 'unexpectedOverlap']:
+		return targetClass, childTheories
 
 	spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, oldSpriteSet=theory.spriteSet,\
 		specificSpritesToUpdate=[targetToken.ID], percentile=20, max_num=20)
 
-	# print "in expandSprites"
-	# embed()
-	childTheories = []
 	for spriteProposal in spriteProposals:
 		newTheory = copy.deepcopy(theory)
 		vgdlType = spriteProposal[0][1]
