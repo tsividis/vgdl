@@ -311,7 +311,7 @@ class Agent:
 				if color == envA._game.sprite_groups[k][0].colorName:
 					className_envA = k
 			covered_sprite_envA = self.findNearestSprite(sB,envA._game.sprite_groups[className])
-			e.intPairs = [(sA.name,nearest_sprite.name)] #overwrite interaction pair by the overlapping sprite pair
+			e.intPairs = [(sA.name, covered_sprite_envA.name)] #overwrite interaction pair by the overlapping sprite pair
 		# 1.4) orientationChange
 		#TODO
 		# Return errorMapEntry object
@@ -361,7 +361,7 @@ class Agent:
 			dist = t[2] #distance to sprite in envB
 			sA_type = theory.classes[sA.name][0].vgdlType
 			if str(sA_type) == "<class 'vgdl.ontology.RandomNPC'>":
-				sA_speed = theory.classes[sA.name][0].speed
+				sA_speed = theory.classes[sA.name][0].args['speed']
 				if dist>2*sA_speed:
 					total_penalty += p_dist*t[2]
 			else: #all of the other types are deterministic
@@ -471,7 +471,7 @@ class Agent:
 				e.culpritClasses.append(className)
 			errorMap.append(e)
 
-		embed()
+		# embed()
 
 
 		# 3) State change (how to tell that a sprite has changed state?)
@@ -528,10 +528,11 @@ class Agent:
 					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and self.best_params!=None:
 						try:
 							## Enforce consistency: inferred value for individual orientations has to be consistent with what we're saying the horizontal/vertical orientation is of the entire group.
-							# embed()
+							# print "setting sprite positions"
+
 
 							orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
-
+							# embed()
 							if orientation == (0,0):
 								# print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
 								pass
@@ -664,7 +665,7 @@ class Agent:
 		## TODO: when you get an errorMap.culpritClass, this is where you propose
 		## the kinds of things that explain shooting.
 
-		from vgdl.theory_template import expandLine, proposePredicates
+		from vgdl.theory_template import expandLine, expandSprites, proposePredicates
 		n=1
 
 		# errorSignal = {('avatar','c2'):['unexpectedOverlap', 'orientationChange']}
@@ -696,11 +697,11 @@ class Agent:
 		if errorMap.targetClass == 'unknown':
 			print "errorMap gives new class"
 			embed()
-		# print "in expandTheory"
-		# embed()
-		##TODO: SpriteSet induction step
-		className, newTheories = expandSprites(self.rle._game, self.hypotheses[1], errorMap, 
+
+		## SpriteSet induction step
+		className, theories = expandSprites(self.rle._game, theory, errorMap, 
 			envRealPrev, envRealCurrent, self.bestSpriteTypeDict, resourceObservations=self.resourceObservations)
+		newTheories.extend(theories)
 
 		## InteractionSet induction step
 		for targetClassPair in errorMap.intPairs:
@@ -713,8 +714,6 @@ class Agent:
 			## that each theory proposes when you call expandLine on it, so you have mutliple copies
 			## of the same predicateGroups.
 			self.proposalMemory[targetClassPair].extend(predicateGroups)
-		# print "in expandtheory"
-		# embed()
 
 		return newTheories
 
@@ -917,7 +916,7 @@ class Agent:
 
 	def testEpisode(self, gameObject):
 
-		actions = [32]
+		actions = [32, 32]
 
 		## Initialize external environment
 		self.initializeEnvironment()
@@ -1083,12 +1082,6 @@ class Agent:
 				# if n==len(actions)-3:
 				# 	hypPrevprev = copy.deepcopy(self.hypotheses[1])
 
-					## Pedro: Outlining rest of functions:
-					# distance, errorMap = self.state_distance(self.rle, env, self.hypotheses[num])
-					# childTheories = expandTheory(self.hypotheses[num], errorMap)
-					# newTheories.extend(childTheories)
-
-				# Pedro: Filter new theories according to whatever scheme
 
 			#TEST
 			#theoryRLEs[1].step(K_LEFT)
@@ -1438,22 +1431,23 @@ class Agent:
 				e.display()
 			# embed()
 			## temporary: add sprite token in env to errorList
-			color = env._game.sprite_groups[errorList[0].targetClass][0].colorName
-			flatList = [s for sublist in envRealPrev._game.sprite_groups.values() for s in sublist]
-			targetToken = [s for s in flatList if s.colorName==color][0]
-			errorList[0].targetToken = targetToken
+			if errorList:
+				color = env._game.sprite_groups[errorList[0].targetClass][0].colorName
+				flatList = [s for sublist in envRealPrev._game.sprite_groups.values() for s in sublist]
+				targetToken = [s for s in flatList if s.colorName==color][0]
+				errorList[0].targetToken = targetToken
+
 			theories = self.expandTheory(self.hypotheses[num], errorList, envRealPrev, self.rle)
 			newTheories.extend(theories)
 		print self.rle.show(color='blue')
 		print "Proposing {} new theories".format(len(newTheories))
-		
 		if not newTheories:
 			print "Got no new theories"
 			embed()
 		## when you initialize the new theoryRLEs you have to set their state to the previous
 		## rle's state: envPrev.
 		theoryRLEs = self.VrleInitPhase(newTheories, envRealPrev)
-	
+
 		penalties = []
 		for num, env in enumerate(theoryRLEs):
 			env.step(action)
@@ -1466,6 +1460,7 @@ class Agent:
 		print ""
 		print penalties
 
+		embed()
 		## Filter theories
 		scoreAndTheoryTuples = zip(penalties, newTheories)
 		hypotheses = [h[1] for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=5)]
@@ -1538,7 +1533,7 @@ if __name__ == "__main__":
 	# agent.playCurriculum(level_game_pairs=level_game_pairs)
 
 	##For local games, use this line
-	agent.playCurriculum(level_game_pairs=None)
+	# agent.playCurriculum(level_game_pairs=None)
 
 	## For testing, use this line
-	#agent.testCurriculum(level_game_pairs=None)
+	agent.testCurriculum(level_game_pairs=None)

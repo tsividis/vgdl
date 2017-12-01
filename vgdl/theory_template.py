@@ -1436,7 +1436,8 @@ class Theory(object):
 		print ""
 		print "InteractionSet:"
 		for rule in self.interactionSet:
-			rule.display()
+			if rule.interaction != 'stepBack':
+				rule.display()
 
 	def displayClasses(self):
 		print ""
@@ -1455,9 +1456,9 @@ class Theory(object):
 
 	def display(self):
 		print "_______"
-		self.displayRules()
 		self.displayClasses()
-		self.displayTerminationSet() #TODO: Figure out why this isn't printing
+		self.displayRules()
+		self.displayTerminationSet()
 		return
 
 	def __eq__(self, other):
@@ -2391,7 +2392,9 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 		newTheory.classes[targetClass] = [sprite]
 		newTheory.spriteObjects[color] = sprite
 		childTheories.append(newTheory)
-	return
+
+	## TODO: what to do with orientation for missiles??
+	return targetClass, childTheories
 
 def expandLine(theory, classPair, predicates, n=1, resourceObservations=None, generic=False):
 	## modifies the theory to propose n new interactonRules involving the given classPair

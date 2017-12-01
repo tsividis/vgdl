@@ -16,7 +16,7 @@
 level0 = """
 wwwwwwwwwwwww
 w  Ao    c  w
-w a  d    f w
+w  f d    a w
 w   b e   b w
 wwwwwwwwwwwww
 """
@@ -60,6 +60,7 @@ BasicGame frame_rate=30
         fruit avatar > killSprite
         apple avatar > killSprite
         orange avatar > bounceForward
+        apple wall > reverseDirection
         # orange avatar > killSprite
         # avatar orange > changeResource resource=health value=1
     TerminationSet
