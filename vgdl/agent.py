@@ -916,11 +916,12 @@ class Agent:
 
 	def testEpisode(self, gameObject):
 
-		actions = [32, 32]
+		actions = [32, 32, K_RIGHT, K_DOWN, K_LEFT]
 
 		## Initialize external environment
 		self.initializeEnvironment()
 		print "initializing RLE"
+		# embed()
 		self.all_objects= self.rle._game.getObjects()
 
 		## Start storing encountered states.
@@ -1357,6 +1358,8 @@ class Agent:
 			try:
 				agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
 			except IndexError:
+				# print "resourceManagement error"
+				# embed()
 				agentState = defaultdict(lambda: 0)
 			try:
 				agentState['speed'] = self.rle._game.getAvatars()[0].speed
@@ -1416,6 +1419,8 @@ class Agent:
 		print ""
 		print keyPresses[action]
 
+		# print "took step"
+		# embed()
 		# agentState = self.resourceManagement(pre_step=False, res)
 		# self.rle.agentStatePrev = agentState
 
@@ -1441,29 +1446,30 @@ class Agent:
 			newTheories.extend(theories)
 		print self.rle.show(color='blue')
 		print "Proposing {} new theories".format(len(newTheories))
-		if not newTheories:
-			print "Got no new theories"
-			embed()
-		## when you initialize the new theoryRLEs you have to set their state to the previous
-		## rle's state: envPrev.
-		theoryRLEs = self.VrleInitPhase(newTheories, envRealPrev)
 
-		penalties = []
-		for num, env in enumerate(theoryRLEs):
-			env.step(action)
-			penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev)
-			penalties.append(penalty)
+
+		if newTheories:
+			## Initialize RLEs according to each theory and setting state=prevState
+			theoryRLEs = self.VrleInitPhase(newTheories, envRealPrev)
+
+			penalties = []
+			for num, env in enumerate(theoryRLEs):
+				env.step(action)
+				penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev)
+				penalties.append(penalty)
+				print ""
+				print "Theory {} penalty: {}".format(num, penalty)
+				for e in errorList:
+					e.display()
 			print ""
-			print "Theory {} penalty: {}".format(num, penalty)
-			for e in errorList:
-				e.display()
-		print ""
-		print penalties
+			print penalties
+			## Filter theories
+			scoreAndTheoryTuples = zip(penalties, newTheories)
+			hypotheses = [h[1] for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=5)]
+		else:
+			print "Got no new theories"
 
 		embed()
-		## Filter theories
-		scoreAndTheoryTuples = zip(penalties, newTheories)
-		hypotheses = [h[1] for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=5)]
 
 		hypotheses = self.manageNewObjects(hypotheses)
 
