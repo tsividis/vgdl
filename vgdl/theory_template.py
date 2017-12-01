@@ -1456,9 +1456,9 @@ class Theory(object):
 
 	def display(self):
 		print "_______"
-		self.displayClasses()
+		# self.displayClasses()
 		self.displayRules()
-		self.displayTerminationSet()
+		# self.displayTerminationSet()
 		return
 
 	def __eq__(self, other):
@@ -2314,13 +2314,13 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 	'all' : ['killSprite', 'cloneSprite', 'transformTo', 'transformToOnLanding',\
 		'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killOtherHasLess',\
 		'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow',\
-		'undoAll', 'nothing', 'onRope', 'onLadder',\
+		'undoAll', 'nothing',\
 		'turn', 'turnAround', 'reverseDirection', 'flipDirection', 'bounceForward',\
 		'changeResource', 'collectResource', 'scoreChange', 'teleportToExit', 'conveySprite'],
 	'gridphysics': [],
 	'continuousphysics': ['transformToOnLanding', 'killIfTooFast', 'killIfSlow', 'killIfFromAbove',\
 		'killIfFromBelow''bounceDirection', 'conveySprite', 'pullWithIt',\
-		'windGust','slipForward', 'wallBounce', 'wallStop']
+		'windGust','slipForward', 'wallBounce', 'wallStop','onRope', 'onLadder']
 	}
 
 	errorSignalToPredicateMapping = {
@@ -2334,8 +2334,9 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 
 	## Position difference
 	'noMovement': ['undoAll', 'stepBack'],
-	'unexpectedPosition': ['bounceForward', 'pullWithIt', 'windGust', 'slipForward',\
-		'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap
+	'unexpectedPosition': ['bounceForward'],
+	# , 'pullWithIt', 'windGust', 'slipForward',\
+		# 'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap
 	'unexpectedOverlap': ['nothing', 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
 	'orientationChange': ['turn', 'turnAround', 'reverseDirection', 'bounceDirection', 'flipDirection'],
 
@@ -2347,11 +2348,14 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 	'other': ['teleportToExit', 'conveySprite']
 	}
 
+
 	## If we've proposed killSprite and that has failed, propose conditional rules.
-	if 'objectDestruction' in singlePairErrorSignal:
-		if 'killSprite' in proposalMemory[singlePairErrorSignal]:
-			predicates.extend(errorSignalToPredicateMapping['conditionalKill'])
-			singlePairErrorSignal.values().remove('objectDestruction')
+	# if 'objectDestruction' in singlePairErrorSignal:
+	# 	print "objectDestruction"
+	# 	embed()
+	# 	if 'killSprite' in proposalMemory[singlePairErrorSignal]:
+	# 		predicates.extend(errorSignalToPredicateMapping['conditionalKill'])
+	# 		singlePairErrorSignal.values().remove('objectDestruction')
 
 	## Propose relevant rules
 	##TODO: right now this just gets the list from a single key

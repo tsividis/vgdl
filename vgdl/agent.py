@@ -35,6 +35,7 @@ class errorMapEntry:
 		self.targetClass = None
 		self.intPairs = []
 		self.culpritClasses = []
+	
 	def display(self):
 		print ""
 		print "diagnosis: {}".format(self.diagnosis)
@@ -321,7 +322,7 @@ class Agent:
 			for k in [key for key in envA._game.sprite_groups.keys() if envA._game.sprite_groups[key]]:
 				if color == envA._game.sprite_groups[k][0].colorName:
 					className_envA = k
-			covered_sprite_envA = self.findNearestSprite(sB,envA._game.sprite_groups[className])
+			covered_sprite_envA = self.findNearestSprite(sB,envA._game.sprite_groups[className_envA])
 			e.intPairs = [(sA.name, covered_sprite_envA.name)] #overwrite interaction pair by the overlapping sprite pair
 		# Return errorMapEntry object
 		return e
@@ -562,7 +563,7 @@ class Agent:
 	def initializeVrle(self, hypothesis, stateToSet=None):
 		if stateToSet is None:
 			stateToSet = self.rle
-		## World in agent's head given 'hypothesis', including object goal
+		## World in agent's mind given 'hypothesis', including object goal
 		gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, self.symbolDict,\
 				 "./examples/gridphysics/theorytest.py")
 		Vrle = createMindEnv(gameString, levelString, output=False)
@@ -614,7 +615,7 @@ class Agent:
 		return VRLEs
 
 	#<< To build own theory: check comments below
-	def initializeHypotheses(self, allObjects, learnSprites=True, num_variants=10):
+	def initializeHypotheses(self, allObjects, learnSprites=True, num_variants=0):
 		if learnSprites:
 			observe(self.rle, 0, self.bestSpriteTypeDict)
 			## Sample from distribution but actually just set everything to default.
@@ -636,21 +637,21 @@ class Agent:
 		self.symbolDict = generateSymbolDict(self.rle)
 
 		## For debugging purposes, generating one variant that is off by only one interaction
-		theory = copy.deepcopy(initialTheory)
-		testClass = theory.spriteObjects['YELLOW'].className
-		testClass2 = theory.spriteObjects['ORANGE'].className
-		for interactionRule in theory.interactionSet: #<< find rule between avatar and e.g. c3
-			# if interactionRule.slot1==testClass2 and interactionRule.slot2 == 'avatar': #modified
-			# 	interactionRule.interaction = 'bounceForward' #modified
-			# if interactionRule.slot1=='avatar' and interactionRule.slot2 == testClass2: #modified
-			# 	interactionRule.interaction = 'nothing' #modified
-			if interactionRule.slot1==testClass and interactionRule.slot2 == 'avatar': #modified
-				interactionRule.interaction = 'bounceForward' #modified
-			#if interactionRule.slot1=='c2' and interactionRule.slot2 == 'avatar':
-			#	interactionRule.interaction = 'stepBack'
-				#break
-		#theory.interactionSet.append(InteractionRule('bounceForward', 'avatar', testClass, {}))
-		self.hypotheses.append(theory)
+		# theory = copy.deepcopy(initialTheory)
+		# testClass = theory.spriteObjects['YELLOW'].className
+		# testClass2 = theory.spriteObjects['ORANGE'].className
+		# for interactionRule in theory.interactionSet: #<< find rule between avatar and e.g. c3
+		# 	# if interactionRule.slot1==testClass2 and interactionRule.slot2 == 'avatar': #modified
+		# 	# 	interactionRule.interaction = 'bounceForward' #modified
+		# 	# if interactionRule.slot1=='avatar' and interactionRule.slot2 == testClass2: #modified
+		# 	# 	interactionRule.interaction = 'nothing' #modified
+		# 	if interactionRule.slot1==testClass and interactionRule.slot2 == 'avatar': #modified
+		# 		interactionRule.interaction = 'bounceForward' #modified
+		# 	#if interactionRule.slot1=='c2' and interactionRule.slot2 == 'avatar':
+		# 	#	interactionRule.interaction = 'stepBack'
+		# 		#break
+		# #theory.interactionSet.append(InteractionRule('bounceForward', 'avatar', testClass, {}))
+		# self.hypotheses.append(theory)
 
 		## Generate variants of the theory
 		## (as a stand-in for a more generic induction/elaboration process)
@@ -680,18 +681,13 @@ class Agent:
 		from vgdl.theory_template import expandLine, expandSprites, proposePredicates
 		n=1
 
-		# errorSignal = {('avatar','c2'):['unexpectedOverlap', 'orientationChange']}
-
 
 		## TODO: write sample resourceObservations that correspond to the format
 		## where you can make the argList just reference the appropriate predicate
 		## or at least have proposeArgs modify it slightly.
 		self.resourceObservations = {'speed': [0, 10],\
 								'changeResource': [{'resource':'c2', 'value':1, 'limit':1}],\
-								'changeScore':{'speed':1}}
-		
-		# singlePairErrorSignal = {('avatar','c2'):['unexpectedOverlap', 'orientationChange']}
-		# singlePairErrorSignal = {('avatar','c2'):['conditionalKill']}
+								'changeScore':{'speed':1}}		
 
 		## TODO: Get these from somewhere else
 		globalObservations = {'physicsType':'gridphysics'}
@@ -699,33 +695,35 @@ class Agent:
 		newTheories = []
 
 		## TODO: Add code to do this for each item in the errorList
-		try:
-			errorMap = errorList[0]
-		except IndexError:
-			print "got an empty errorList"
-			return newTheories
+		# try:
+		# 	errorMap = errorList[0]
+		# except IndexError:
+		# 	print "got an empty errorList"
+		# 	return newTheories
 
+		for errorMap in errorList:
 
-		if errorMap.targetClass == 'unknown':
-			print "errorMap gives new class"
-			embed()
+			if errorMap.targetClass == 'unknown':
+				print "errorMap gives new class"
+				embed()
 
-		## SpriteSet induction step
-		className, theories = expandSprites(self.rle._game, theory, errorMap, 
-			envRealPrev, envRealCurrent, self.bestSpriteTypeDict, resourceObservations=self.resourceObservations)
-		newTheories.extend(theories)
+			## SpriteSet induction step
+			# if errorMap.targetClass != 'avatar':
+			# 	className, theories = expandSprites(self.rle._game, theory, errorMap, 
+			# 		envRealPrev, envRealCurrent, self.bestSpriteTypeDict, resourceObservations=self.resourceObservations)
+			# 	newTheories.extend(theories)
 
-		## InteractionSet induction step
-		for targetClassPair in errorMap.intPairs:
-			predicates = proposePredicates(errorMap.diagnosis, self.memory, self.proposalMemory, globalObservations)
-			classPair, theories, predicateGroups = expandLine(theory, targetClassPair, 
-				predicates = predicates, n=n, 
-				resourceObservations=self.resourceObservations, generic=True)
-			newTheories.extend(theories)
-			## TODO: think more about this; right now you're keeping around all the predicateGroups
-			## that each theory proposes when you call expandLine on it, so you have mutliple copies
-			## of the same predicateGroups.
-			self.proposalMemory[targetClassPair].extend(predicateGroups)
+			## InteractionSet induction step
+			for targetClassPair in errorMap.intPairs:
+				predicates = proposePredicates(errorMap.diagnosis, self.memory, self.proposalMemory, globalObservations)
+				classPair, theories, predicateGroups = expandLine(theory, targetClassPair, 
+					predicates = predicates, n=n, 
+					resourceObservations=self.resourceObservations, generic=True)
+				newTheories.extend(theories)
+				## TODO: think more about this; right now you're keeping around all the predicateGroups
+				## that each theory proposes when you call expandLine on it, so you have mutliple copies
+				## of the same predicateGroups.
+				self.proposalMemory[targetClassPair].extend(predicateGroups)
 
 		return newTheories
 
@@ -928,7 +926,7 @@ class Agent:
 
 	def testEpisode(self, gameObject):
 
-		actions = [32, 32, K_RIGHT, K_DOWN, K_LEFT]
+		actions = [K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
 
 		## Initialize external environment
 		self.initializeEnvironment()
@@ -947,13 +945,17 @@ class Agent:
 			self.rle._game.objectMemoryDict[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
 			self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
 
-		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=0)
+
+
+		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=False, num_variants=0)
 		# print "initialized Hypotheses"
 		# embed()
 		for action in actions:
 			## initialize VRLEs
 			theoryRLEs = self.VrleInitPhase()
 			hypotheses = self.executeStep(action, self.hypotheses, theoryRLEs)
+
+			## Other stuff we don't have to worry about
 			self.rle._game.nextPositions = {}
 			for k, v in self.rle._game.all_objects.iteritems():
 				self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
@@ -1409,7 +1411,7 @@ class Agent:
 		## Returns the max_num theories that are at percentile or greater, given their score.
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 		cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
-		return [s for s in scoreAndTheoryTuples if s[0]<cutoff][0:max_num]
+		return [s for s in scoreAndTheoryTuples if s[0]<=cutoff][0:max_num]
 
 	def executeStep(self, action, hypotheses, theoryRLEs):
 
@@ -1446,17 +1448,16 @@ class Agent:
 				e.display()
 			# embed()
 			## temporary: add sprite token in env to errorList
-			if errorList:
-				color = env._game.sprite_groups[errorList[0].targetClass][0].colorName
-				flatList = [s for sublist in envRealPrev._game.sprite_groups.values() for s in sublist]
-				targetToken = [s for s in flatList if s.colorName==color][0]
-				errorList[0].targetToken = targetToken
+			# if errorList:
+			# 	color = env._game.sprite_groups[errorList[0].targetClass][0].colorName
+			# 	flatList = [s for sublist in envRealPrev._game.sprite_groups.values() for s in sublist]
+			# 	targetToken = [s for s in flatList if s.colorName==color][0]
+			# 	errorList[0].targetToken = targetToken
 
 			theories = self.expandTheory(self.hypotheses[num], errorList, envRealPrev, self.rle)
 			newTheories.extend(theories)
-		print self.rle.show(color='blue')
-		print "Proposing {} new theories".format(len(newTheories))
 
+		print self.rle.show(color='blue')
 
 		if newTheories:
 			## Initialize RLEs according to each theory and setting state=prevState
@@ -1473,9 +1474,17 @@ class Agent:
 					e.display()
 			print ""
 			print penalties
+			print "proposed {} new theories".format(len(newTheories))
+			print ""
 			## Filter theories
 			scoreAndTheoryTuples = zip(penalties, newTheories)
-			hypotheses = [h[1] for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=5)]
+			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
+			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=5)]
+			for sh in scoresAndHypotheses:
+				if sh[0]==0:
+					sh[1].display()
+			print ""
+			hypotheses = [sh[1] for sh in scoresAndHypotheses]
 		else:
 			print "Got no new theories"
 
