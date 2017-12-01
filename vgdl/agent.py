@@ -500,6 +500,8 @@ class Agent:
 				# Set interaction pairs to unique pairs
 				e.intPairs = unique_pairs_e
 
+		## TODO: keep all past theory scores and give theory a cumulative score in each step
+
 		## NOTE: We could extend by penalizing as a function of (most likely) vgdlType and color
 		## NOTE: Use intializeHypotheses function in this file to build my test theories
 
@@ -747,7 +749,7 @@ class Agent:
 
 	def testCurriculum(self, level_game_pairs=None):
 		if not level_game_pairs:
-			level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs		
+			level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs	
 		
 		for n_level, level_game in enumerate(level_game_pairs):
 
@@ -926,7 +928,7 @@ class Agent:
 
 	def testEpisode(self, gameObject):
 
-		actions = [K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
+		actions = [K_DOWN, K_UP, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
 
 		## Initialize external environment
 		self.initializeEnvironment()
@@ -950,9 +952,11 @@ class Agent:
 		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=False, num_variants=0)
 		# print "initialized Hypotheses"
 		# embed()
+
 		for action in actions:
 			## initialize VRLEs
 			theoryRLEs = self.VrleInitPhase()
+
 			hypotheses = self.executeStep(action, self.hypotheses, theoryRLEs)
 
 			## Other stuff we don't have to worry about
@@ -968,7 +972,8 @@ class Agent:
 
 			self.hypotheses = hypotheses
 
-		#embed()
+		print ">>> Embedded at the end of testEpisode"
+		embed()
 		return
 
 
@@ -1435,7 +1440,6 @@ class Agent:
 		# embed()
 		# agentState = self.resourceManagement(pre_step=False, res)
 		# self.rle.agentStatePrev = agentState
-
 		## Evaluate each theory on this step
 		## Propose new theories
 		newTheories = []
@@ -1468,12 +1472,14 @@ class Agent:
 				env.step(action)
 				penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev)
 				penalties.append(penalty)
-				print ""
+				# print ""
 				print "Theory {} penalty: {}".format(num, penalty)
-				for e in errorList:
-					e.display()
+				# for e in errorList:
+				# 	e.display()
 			print ""
+			print "Penalties:"
 			print penalties
+			print ""
 			print "proposed {} new theories".format(len(newTheories))
 			print ""
 			## Filter theories
@@ -1488,11 +1494,12 @@ class Agent:
 		else:
 			print "Got no new theories"
 
+		#print ">>> Embedded at end of executeStep"
 		#embed()
 
 		hypotheses = self.manageNewObjects(hypotheses)
-
 		self.statesEncountered.append(self.rle._game.getFullState())
+
 		return hypotheses
 
 
@@ -1558,7 +1565,7 @@ if __name__ == "__main__":
 	# agent.playCurriculum(level_game_pairs=level_game_pairs)
 
 	##For local games, use this line
-	agent.playCurriculum(level_game_pairs=None)
+	#agent.playCurriculum(level_game_pairs=None)
 
 	## For testing, use this line
-	# agent.testCurriculum(level_game_pairs=None)
+	agent.testCurriculum(level_game_pairs=None)
