@@ -1247,6 +1247,9 @@ class VGDLSprite(object):
                 print "WARNING: undefined parameter '%s' for sprite '%s'! "%(name, self.__class__.__name__)
         # how many timesteps ago was the last move?
         self.lastmove = 0
+        # how many timesteps ago was the last displacement? We'll use this to track more generic hypotheses,
+        # assuming we can't distinguish between self-caused and other-caused movement.
+        self.lastdisplacement = 0
         # management of resources contained in the sprite
         self.resources = defaultdict(int)
         self.rect.width = self.width*self.rect.width
@@ -1261,6 +1264,8 @@ class VGDLSprite(object):
         self.lastrect = self.rect.copy()
         # no need to redraw if nothing was updated
         self.lastmove += 1
+        self.lastdisplacement += 1
+
         if not self.is_static and not self.only_active and not random_npc:
             self.physics.passiveMovement(self)
 

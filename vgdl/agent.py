@@ -344,9 +344,6 @@ class Agent:
 		keys: (class1, class2). values: a diagnostic error signal
 		"""
 
-		from vgdl.util import manhattanDist
-		from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
-
 		# print '--- Called errorSignal function ---'
 
 		# Initialization
@@ -542,11 +539,13 @@ class Agent:
 					sprite.lastmove = matchingSprite.lastmove
 					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and self.best_params!=None:
 						try:
-							## Enforce consistency: inferred value for individual orientations has to be consistent with what we're saying the horizontal/vertical orientation is of the entire group.
+							## Enforce consistency: inferred value for individual orientations has to be consistent with 
+							# what we're saying the horizontal/vertical orientation is of the entire group.
 							# print "setting sprite positions"
 
 
-							orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
+							orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - 
+								np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
 							# embed()
 							if orientation == (0,0):
 								# print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
@@ -562,12 +561,17 @@ class Agent:
 		return
 
 
-	def initializeVrle(self, hypothesis, stateToSet=None):
+	def initializeVrle(self, hypothesis=None, stateToSet=None):
 		if stateToSet is None:
 			stateToSet = self.rle
-		## World in agent's mind given 'hypothesis', including object goal
-		gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, self.symbolDict,\
+		
+		if hypothesis is not None:
+			## World in agent's mind given 'hypothesis', including object goal
+			gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, self.symbolDict,\
 				 "./examples/gridphysics/theorytest.py")
+		else:
+			gameString = self.gameString
+			levelString = self.levelString
 		Vrle = createMindEnv(gameString, levelString, output=False)
 
 		self.setSpritePositions(stateToSet, Vrle, hypothesis)
@@ -694,6 +698,10 @@ class Agent:
 		## TODO: Get these from somewhere else
 		globalObservations = {'physicsType':'gridphysics'}
 
+		## Safety check; if we don't actually have an error we should just return the theory, unmodified.
+		if not errorList:
+			return [theory]
+
 		newTheories = []
 
 		## TODO: Add code to do this for each item in the errorList
@@ -710,10 +718,11 @@ class Agent:
 				embed()
 
 			## SpriteSet induction step
-			# if errorMap.targetClass != 'avatar':
-			# 	className, theories = expandSprites(self.rle._game, theory, errorMap, 
-			# 		envRealPrev, envRealCurrent, self.bestSpriteTypeDict, resourceObservations=self.resourceObservations)
-			# 	newTheories.extend(theories)
+			if errorMap.targetClass != 'avatar':
+				className, theories = expandSprites(self.rle._game, theory, errorMap, 
+					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=20, max_num=20,
+					resourceObservations=self.resourceObservations)
+				newTheories.extend(theories)
 
 			## InteractionSet induction step
 			for targetClassPair in errorMap.intPairs:
@@ -933,7 +942,7 @@ class Agent:
 		## Initialize external environment
 		self.initializeEnvironment()
 		print "initializing RLE"
-		# embed()
+
 		self.all_objects= self.rle._game.getObjects()
 
 		## Start storing encountered states.
@@ -978,7 +987,6 @@ class Agent:
 
 
 	def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False):
-		# from vgdl.util import manhattanDist
 
 		## Initialize external environment
 		self.initializeEnvironment()
@@ -1075,9 +1083,6 @@ class Agent:
 
 
 
-			## TIM
-			from vgdl.util import manhattanDist
-			from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
 			
 			actions = [K_RIGHT, K_RIGHT]
@@ -1422,22 +1427,24 @@ class Agent:
 
 		theory_change_flag = False
 
-		spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
-		spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+		spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, 
+			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
+			percentile=20, max_num=20, allMovement=False)
+		spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, 
+			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
+			percentile=20, max_num=20, allMovement=False)
+
 
 		agentState = self.resourceManagement(pre_step=True)
-		
-		## TODO: move these elsewhere.
-		from vgdl.util import manhattanDist
-		from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
-
 		envRealPrev = copy.deepcopy(self.rle)
+
+		# embed()
+		# envRealPrev = self.initializeVrle(None, stateToSet=self.rle)
+
 		self.rle.step(action)
 		print ""
 		print keyPresses[action]
 
-		# print "took step"
-		# embed()
 		# agentState = self.resourceManagement(pre_step=False, res)
 		# self.rle.agentStatePrev = agentState
 		## Evaluate each theory on this step
@@ -1450,13 +1457,6 @@ class Agent:
 			print "Theory {} penalty: {}".format(num, penalty)
 			for e in errorList:
 				e.display()
-			# embed()
-			## temporary: add sprite token in env to errorList
-			# if errorList:
-			# 	color = env._game.sprite_groups[errorList[0].targetClass][0].colorName
-			# 	flatList = [s for sublist in envRealPrev._game.sprite_groups.values() for s in sublist]
-			# 	targetToken = [s for s in flatList if s.colorName==color][0]
-			# 	errorList[0].targetToken = targetToken
 
 			theories = self.expandTheory(self.hypotheses[num], errorList, envRealPrev, self.rle)
 			newTheories.extend(theories)
@@ -1471,38 +1471,46 @@ class Agent:
 			for num, env in enumerate(theoryRLEs):
 				env.step(action)
 				penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev)
+				newTheories[num].errorHistory.append(penalty)
+				newTheories[num].cumulativeError = penalty + newTheories[num].cumulativeError/2
 				penalties.append(penalty)
 				# print ""
 				print "Theory {} penalty: {}".format(num, penalty)
 				# for e in errorList:
 				# 	e.display()
 			print ""
-			print "Penalties:"
+			print "last-step penalties"
 			print penalties
-			print ""
+			print "cumulative penalties"
+			cumulative_penalties = [h.cumulativeError for h in newTheories]
+			print cumulative_penalties
 			print "proposed {} new theories".format(len(newTheories))
 			print ""
+			# embed()
 			## Filter theories
-			scoreAndTheoryTuples = zip(penalties, newTheories)
+			scoreAndTheoryTuples = zip(cumulative_penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
-			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=5)]
-			for sh in scoresAndHypotheses:
-				if sh[0]==0:
-					sh[1].display()
-			print ""
+			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=15)]
+			for num, sh in enumerate(scoresAndHypotheses):
+				# if sh[0]==0:
+				print "Theory: {} | Error: {}".format(num, sh[0])
+				sh[1].display()
+
 			hypotheses = [sh[1] for sh in scoresAndHypotheses]
+			print "{} survived".format(len(hypotheses))
+			print ""
 		else:
 			print "Got no new theories"
 
-		#print ">>> Embedded at end of executeStep"
-		#embed()
+		print ">>> Embedded at end of executeStep"
+		embed()
 
 		hypotheses = self.manageNewObjects(hypotheses)
 		self.statesEncountered.append(self.rle._game.getFullState())
 
 		return hypotheses
 
-
+## Store all rles. Then you can very easily do experience replay!!!
 
 
 if __name__ == "__main__":
@@ -1565,7 +1573,7 @@ if __name__ == "__main__":
 	# agent.playCurriculum(level_game_pairs=level_game_pairs)
 
 	##For local games, use this line
-	#agent.playCurriculum(level_game_pairs=None)
+	# agent.playCurriculum(level_game_pairs=None)
 
 	## For testing, use this line
 	agent.testCurriculum(level_game_pairs=None)

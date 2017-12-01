@@ -282,6 +282,11 @@ class Theory(object):
 
 		self.resource_limits = defaultdict(lambda:1)
 
+		self.errorHistory = []
+		self.cumulativeError = 0.
+
+		self.mark = False ## For convenient marking and finding of hypotheses
+
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
 		# print "in initializeSpriteSet"
 		# embed()
@@ -1444,8 +1449,8 @@ class Theory(object):
 		print "Class assignments:"
 		for c in self.classes:
 			class_list = [cl.color for cl in self.classes[c]]
-			print "\t{}: {}: {}".format(c, class_list, self.spriteObjects[cl.color].vgdlType)
-		#print self.classes
+			print "\t{}: {}: {}: {}".format(c, class_list, self.spriteObjects[cl.color].vgdlType, \
+				self.spriteObjects[cl.color].args)
 		print
 
 	def displayTerminationSet(self):
@@ -1455,10 +1460,10 @@ class Theory(object):
 			tc.display()
 
 	def display(self):
-		print "_______"
-		# self.displayClasses()
+		self.displayClasses()
 		self.displayRules()
 		# self.displayTerminationSet()
+		print "_______"
 		return
 
 	def __eq__(self, other):
@@ -2373,16 +2378,21 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 
 ## TODO: write the function that maintains resourceObservations, or at least figure out
 ## its outputs and integrate with proposeArgs
-def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSpriteTypeDict, resourceObservations=None):
+def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSpriteTypeDict, percentile=20, max_num=20, resourceObservations=None):
 	from vgdl.ontology import sampleFromDistribution, spriteInduction, updateDistribution
+
+	childTheories = []
 
 	targetClass = errorMap.targetClass
 	targetToken = errorMap.targetToken
 
-	spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, oldSpriteSet=theory.spriteSet,\
-		specificSpritesToUpdate=[targetToken.ID])
+	## Only propose sprites when something moves that we didn't think was going to move.
+	if errorMap.diagnosis[0] not in ['unexpectedPosition', 'unexpectedOverlap']:
+		return targetClass, childTheories
 
-	childTheories = []
+	spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, oldSpriteSet=theory.spriteSet,\
+		specificSpritesToUpdate=[targetToken.ID], percentile=20, max_num=20)
+
 	for spriteProposal in spriteProposals:
 		newTheory = copy.deepcopy(theory)
 		vgdlType = spriteProposal[0][1]
