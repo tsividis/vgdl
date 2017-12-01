@@ -484,6 +484,21 @@ class Agent:
 		# and if that is consistent between envA and envB
 		#TODO
 
+		## Clean errorMap: delete redundant interaction pairs under same diagnosis (only works if there is just one diagnosis per errorMapEntry)
+		dia_list = [e.diagnosis[0] for e in errorMap]
+		dia_list = list(set(dia_list))
+		for dia in dia_list:
+			errors = [e for e in errorMap if e.diagnosis[0]==dia]
+			for n,e in enumerate(errors):
+				other_pairs = []
+				[other_pairs.extend(errorMap[i].intPairs) for i in range(n+1,len(errorMap)) ]
+				# Permute tuples of other pairs to compare pairs in current error
+				other_pairs = [(p[1],p[0]) for p in other_pairs]
+				# Find unique interaction pairs for current error
+				unique_pairs_e = []
+				[unique_pairs_e.append(p) for p in e.intPairs if (p not in other_pairs)]
+				# Set interaction pairs to unique pairs
+				e.intPairs = unique_pairs_e
 
 		## NOTE: We could extend by penalizing as a function of (most likely) vgdlType and color
 		## NOTE: Use intializeHypotheses function in this file to build my test theories
@@ -548,7 +563,7 @@ class Agent:
 	def initializeVrle(self, hypothesis, stateToSet=None):
 		if stateToSet is None:
 			stateToSet = self.rle
-		## World in agent's head given 'hypothesis', including object goal
+		## World in agent's mind given 'hypothesis', including object goal
 		gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, self.symbolDict,\
 				 "./examples/gridphysics/theorytest.py")
 		Vrle = createMindEnv(gameString, levelString, output=False)
@@ -626,12 +641,12 @@ class Agent:
 		# testClass = theory.spriteObjects['YELLOW'].className
 		# testClass2 = theory.spriteObjects['ORANGE'].className
 		# for interactionRule in theory.interactionSet: #<< find rule between avatar and e.g. c3
-		# 	if interactionRule.slot1==testClass2 and interactionRule.slot2 == 'avatar': #modified
-		# 		interactionRule.interaction = 'killSprite' #modified
-		# 	if interactionRule.slot1=='avatar' and interactionRule.slot2 == testClass2: #modified
-		# 		interactionRule.interaction = 'nothing' #modified
-		# 	# if interactionRule.slot1==testClass and interactionRule.slot2 == 'avatar': #modified
+		# 	# if interactionRule.slot1==testClass2 and interactionRule.slot2 == 'avatar': #modified
 		# 	# 	interactionRule.interaction = 'bounceForward' #modified
+		# 	# if interactionRule.slot1=='avatar' and interactionRule.slot2 == testClass2: #modified
+		# 	# 	interactionRule.interaction = 'nothing' #modified
+		# 	if interactionRule.slot1==testClass and interactionRule.slot2 == 'avatar': #modified
+		# 		interactionRule.interaction = 'bounceForward' #modified
 		# 	#if interactionRule.slot1=='c2' and interactionRule.slot2 == 'avatar':
 		# 	#	interactionRule.interaction = 'stepBack'
 		# 		#break
@@ -953,7 +968,7 @@ class Agent:
 
 			self.hypotheses = hypotheses
 
-		embed()
+		#embed()
 		return
 
 
@@ -1060,7 +1075,7 @@ class Agent:
 			from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
 			
-			actions = [K_LEFT, K_DOWN]
+			actions = [K_RIGHT, K_RIGHT]
 			if len(actions)==1:
 				envRealPrev = copy.deepcopy(self.rle) #environment at step n-1; deepcopy is expensive
 				envTheoPrev = copy.deepcopy(theoryRLEs[1])
@@ -1080,7 +1095,6 @@ class Agent:
 
 				# if n==len(actions)-3:
 				# 	hypPrevprev = copy.deepcopy(self.hypotheses[1])
-
 
 			#TEST
 			#theoryRLEs[1].step(K_LEFT)
@@ -1477,7 +1491,7 @@ class Agent:
 		else:
 			print "Got no new theories"
 
-		embed()
+		#embed()
 
 		hypotheses = self.manageNewObjects(hypotheses)
 
@@ -1547,7 +1561,7 @@ if __name__ == "__main__":
 	# agent.playCurriculum(level_game_pairs=level_game_pairs)
 
 	##For local games, use this line
-	# agent.playCurriculum(level_game_pairs=None)
+	agent.playCurriculum(level_game_pairs=None)
 
 	## For testing, use this line
-	agent.testCurriculum(level_game_pairs=None)
+	# agent.testCurriculum(level_game_pairs=None)
