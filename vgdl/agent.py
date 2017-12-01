@@ -540,12 +540,10 @@ class Agent:
 							try:
 								## Enforce consistency: inferred value for individual orientations has to be consistent with 
 								# what we're saying the horizontal/vertical orientation is of the entire group.
-								# print "setting sprite positions"
-
 
 								orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - 
 									np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
-								# embed()
+
 								if orientation == (0,0):
 									# print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
 									pass
@@ -573,7 +571,7 @@ class Agent:
 			## World in agent's mind given 'hypothesis', including object goal
 			gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, self.symbolDict,\
 				 "./examples/gridphysics/theorytest.py")
-			useHypothesis=True
+			useHypothesis=False ## not dealing with inferring Missile orientation for now.
 		else:
 			gameString = self.gameString
 			levelString = self.levelString
@@ -943,7 +941,7 @@ class Agent:
 
 	def testEpisode(self, gameObject):
 
-		actions = [K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
+		actions = [32]*10#[32, 32, K_DOWN, K_UP, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
 
 		## Initialize external environment
 		self.initializeEnvironment()
@@ -964,7 +962,7 @@ class Agent:
 
 
 
-		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=False, num_variants=0)
+		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=0)
 		# print "initialized Hypotheses"
 		# embed()
 		for action in actions:
@@ -1441,13 +1439,14 @@ class Agent:
 		agentState = self.resourceManagement(pre_step=True)
 		
 		# t1=time.time()
-		# envRealPrev = copy.deepcopy(self.rle)
+		envRealPrev = copy.deepcopy(self.rle)
 		# print "deepcopy: {}".format(time.time()-t1)
 		# t2 = time.time()
 		# print "fast-copying rle"
-		envRealPrev = self.initializeVrle(None, stateToSet=self.rle) ## using copy.deepcopy() substitute
+		# envRealPrev = self.initializeVrle(None, stateToSet=self.rle) ## using copy.deepcopy() substitute
 		# print "fastcopy: {}".format(time.time()-t2)
-		# embed()
+
+
 		self.rle.step(action)
 		print ""
 		print keyPresses[action]
@@ -1457,6 +1456,7 @@ class Agent:
 
 		## Evaluate each theory on this step
 		## Propose new theories
+		print "evaluating old theories and proposing new ones"
 		newTheories = []
 		for num, env in enumerate(theoryRLEs):
 			env.step(action)
@@ -1470,7 +1470,8 @@ class Agent:
 			newTheories.extend(theories)
 
 		print self.rle.show(color='blue')
-
+		# embed()
+		print "evaluating proposals"
 		if newTheories:
 			## Initialize RLEs according to each theory and setting state=prevState
 			theoryRLEs = self.VrleInitPhase(newTheories, envRealPrev)

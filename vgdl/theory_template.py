@@ -2327,7 +2327,7 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 		'changeResource', 'collectResource', 'scoreChange', 'teleportToExit', 'conveySprite'],
 	'gridphysics': [],
 	'continuousphysics': ['transformToOnLanding', 'killIfTooFast', 'killIfSlow', 'killIfFromAbove',\
-		'killIfFromBelow''bounceDirection', 'conveySprite', 'pullWithIt',\
+		'killIfFromBelow', 'bounceDirection', 'flipDirection', 'conveySprite', 'pullWithIt',\
 		'windGust','slipForward', 'wallBounce', 'wallStop','onRope', 'onLadder']
 	}
 
@@ -2346,7 +2346,8 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 	# , 'pullWithIt', 'windGust', 'slipForward',\
 		# 'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap
 	'unexpectedOverlap': ['nothing', 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
-	'orientationChange': ['turn', 'turnAround', 'reverseDirection', 'bounceDirection', 'flipDirection'],
+	'orientationChange': ['reverseDirection', 'bounceDirection', 'flipDirection'],
+	#'turn', 'turnAround', 
 
 	## Object state change
 	'stateChange': ['changeResource', 'collectResource', 'scoreChange'],

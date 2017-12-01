@@ -1216,6 +1216,7 @@ class VGDLSprite(object):
     shrinkfactor=0
     width = 1.0
     height = 1.0
+    orientation = (0,0)
 
     def __init__(self, pos, size=(10,10), color=None, speed=None, cooldown=None, physicstype=None, **kwargs):
         from ontology import GridPhysics
