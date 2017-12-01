@@ -1475,7 +1475,7 @@ class Agent:
 				newTheories[num].cumulativeError = penalty + newTheories[num].cumulativeError/2
 				penalties.append(penalty)
 				# print ""
-				print "Theory {} penalty: {}".format(num, penalty)
+				# print "Theory {} penalty: {}".format(num, penalty)
 				# for e in errorList:
 				# 	e.display()
 			print ""
@@ -1494,7 +1494,7 @@ class Agent:
 			for num, sh in enumerate(scoresAndHypotheses):
 				# if sh[0]==0:
 				print "Theory: {} | Error: {}".format(num, sh[0])
-				sh[1].display()
+				# sh[1].display()
 
 			hypotheses = [sh[1] for sh in scoresAndHypotheses]
 			print "{} survived".format(len(hypotheses))
