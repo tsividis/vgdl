@@ -710,7 +710,8 @@ class Agent:
 			## SpriteSet induction step
 			if errorMap.targetClass != 'avatar':
 				className, theories = expandSprites(self.rle._game, theory, errorMap, 
-					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, resourceObservations=self.resourceObservations)
+					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=20, max_num=20,
+					resourceObservations=self.resourceObservations)
 				newTheories.extend(theories)
 
 			## InteractionSet induction step
@@ -926,7 +927,7 @@ class Agent:
 
 	def testEpisode(self, gameObject):
 
-		actions = [K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
+		actions = [K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
 
 		## Initialize external environment
 		self.initializeEnvironment()
@@ -968,7 +969,7 @@ class Agent:
 
 			self.hypotheses = hypotheses
 
-		#embed()
+		embed()
 		return
 
 
@@ -1418,9 +1419,11 @@ class Agent:
 		theory_change_flag = False
 
 		spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, 
-			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], allMovement=False)
+			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
+			percentile=20, max_num=20, allMovement=False)
 		spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, 
-			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], allMovement=False)
+			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
+			percentile=20, max_num=20, allMovement=False)
 
 		agentState = self.resourceManagement(pre_step=True)
 		
@@ -1448,13 +1451,6 @@ class Agent:
 			print "Theory {} penalty: {}".format(num, penalty)
 			for e in errorList:
 				e.display()
-			# embed()
-			## temporary: add sprite token in env to errorList
-			# if errorList:
-			# 	color = env._game.sprite_groups[errorList[0].targetClass][0].colorName
-			# 	flatList = [s for sublist in envRealPrev._game.sprite_groups.values() for s in sublist]
-			# 	targetToken = [s for s in flatList if s.colorName==color][0]
-			# 	errorList[0].targetToken = targetToken
 
 			theories = self.expandTheory(self.hypotheses[num], errorList, envRealPrev, self.rle)
 			newTheories.extend(theories)
@@ -1469,6 +1465,8 @@ class Agent:
 			for num, env in enumerate(theoryRLEs):
 				env.step(action)
 				penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev)
+				newTheories[num].errorHistory.append(penalty)
+				newTheories[num].cumulativeError = penalty + newTheories[num].cumulativeError/2
 				penalties.append(penalty)
 				print ""
 				print "Theory {} penalty: {}".format(num, penalty)
@@ -1478,6 +1476,7 @@ class Agent:
 			print penalties
 			print "proposed {} new theories".format(len(newTheories))
 			print ""
+			embed()
 			## Filter theories
 			scoreAndTheoryTuples = zip(penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
@@ -1491,7 +1490,7 @@ class Agent:
 		else:
 			print "Got no new theories"
 
-		#embed()
+		embed()
 
 		hypotheses = self.manageNewObjects(hypotheses)
 
@@ -1561,7 +1560,7 @@ if __name__ == "__main__":
 	# agent.playCurriculum(level_game_pairs=level_game_pairs)
 
 	##For local games, use this line
-	agent.playCurriculum(level_game_pairs=None)
+	# agent.playCurriculum(level_game_pairs=None)
 
 	## For testing, use this line
-	# agent.testCurriculum(level_game_pairs=None)
+	agent.testCurriculum(level_game_pairs=None)

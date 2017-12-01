@@ -2581,7 +2581,7 @@ def spriteInductionProfiler(game, step, bestSpriteTypeDict, oldSpriteSet=None, o
     return distributionsHaveChanged
 
 def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None, specificSpritesToUpdate=[], 
-    allMovement=False):
+    percentile=20, max_num=20, allMovement=False):
     """
     An explanation of important data structures used in this function:
     game = a BasicGame object
@@ -2721,7 +2721,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                 game.spriteUpdateDict[sprite] += 1
         scoreAndTheoryTuples = [(v, k) for k, v in game.spriteDistribution[sprite].iteritems()]
 
-        reasonableScoreAndTheoryTuples = filterTheories(scoreAndTheoryTuples, percentile=20, max_num=15)
+        reasonableScoreAndTheoryTuples = filterTheories(scoreAndTheoryTuples, percentile=percentile, max_num=max_num)
         reasonableHypotheses = [st[1] for st in reasonableScoreAndTheoryTuples]
         # reasonableHypotheses = [k for k in game.spriteDistribution[specificSpritesToUpdate[0]].keys() if 
             # game.spriteDistribution[specificSpritesToUpdate[0]][k]>0.01]

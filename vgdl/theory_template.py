@@ -282,6 +282,9 @@ class Theory(object):
 
 		self.resource_limits = defaultdict(lambda:1)
 
+		self.errorHistory = []
+		self.cumulativeError = 0.
+
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
 		# print "in initializeSpriteSet"
 		# embed()
@@ -2373,14 +2376,14 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 
 ## TODO: write the function that maintains resourceObservations, or at least figure out
 ## its outputs and integrate with proposeArgs
-def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSpriteTypeDict, resourceObservations=None):
+def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSpriteTypeDict, percentile=20, max_num=20, resourceObservations=None):
 	from vgdl.ontology import sampleFromDistribution, spriteInduction, updateDistribution
 
 	targetClass = errorMap.targetClass
 	targetToken = errorMap.targetToken
 
 	spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, oldSpriteSet=theory.spriteSet,\
-		specificSpritesToUpdate=[targetToken.ID])
+		specificSpritesToUpdate=[targetToken.ID], percentile=20, max_num=20)
 
 	# print "in expandSprites"
 	# embed()
