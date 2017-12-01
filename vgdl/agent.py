@@ -344,9 +344,6 @@ class Agent:
 		keys: (class1, class2). values: a diagnostic error signal
 		"""
 
-		from vgdl.util import manhattanDist
-		from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
-
 		# print '--- Called errorSignal function ---'
 
 		# Initialization
@@ -540,11 +537,13 @@ class Agent:
 					sprite.lastmove = matchingSprite.lastmove
 					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and self.best_params!=None:
 						try:
-							## Enforce consistency: inferred value for individual orientations has to be consistent with what we're saying the horizontal/vertical orientation is of the entire group.
+							## Enforce consistency: inferred value for individual orientations has to be consistent with 
+							# what we're saying the horizontal/vertical orientation is of the entire group.
 							# print "setting sprite positions"
 
 
-							orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
+							orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - 
+								np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
 							# embed()
 							if orientation == (0,0):
 								# print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
@@ -560,12 +559,17 @@ class Agent:
 		return
 
 
-	def initializeVrle(self, hypothesis, stateToSet=None):
+	def initializeVrle(self, hypothesis=None, stateToSet=None):
 		if stateToSet is None:
 			stateToSet = self.rle
-		## World in agent's mind given 'hypothesis', including object goal
-		gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, self.symbolDict,\
+		
+		if hypothesis is not None:
+			## World in agent's mind given 'hypothesis', including object goal
+			gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, self.symbolDict,\
 				 "./examples/gridphysics/theorytest.py")
+		else:
+			gameString = self.gameString
+			levelString = self.levelString
 		Vrle = createMindEnv(gameString, levelString, output=False)
 
 		self.setSpritePositions(stateToSet, Vrle, hypothesis)
@@ -978,7 +982,6 @@ class Agent:
 
 
 	def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False):
-		# from vgdl.util import manhattanDist
 
 		## Initialize external environment
 		self.initializeEnvironment()
@@ -1075,9 +1078,6 @@ class Agent:
 
 
 
-			## TIM
-			from vgdl.util import manhattanDist
-			from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
 			
 			actions = [K_RIGHT, K_RIGHT]
@@ -1429,19 +1429,17 @@ class Agent:
 			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
 			percentile=20, max_num=20, allMovement=False)
 
-		agentState = self.resourceManagement(pre_step=True)
-		
-		## TODO: move these elsewhere.
-		from vgdl.util import manhattanDist
-		from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
+		agentState = self.resourceManagement(pre_step=True)
 		envRealPrev = copy.deepcopy(self.rle)
+
+		# embed()
+		# envRealPrev = self.initializeVrle(None, stateToSet=self.rle)
+
 		self.rle.step(action)
 		print ""
 		print keyPresses[action]
 
-		# print "took step"
-		# embed()
 		# agentState = self.resourceManagement(pre_step=False, res)
 		# self.rle.agentStatePrev = agentState
 
