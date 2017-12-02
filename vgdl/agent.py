@@ -13,6 +13,7 @@ import numpy as np
 import ipdb, time
 import os, subprocess, shutil
 import copy
+import math
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
@@ -85,6 +86,8 @@ class Agent:
 		self.memory = []
 		self.rleHistory = []
 		self.allTheories = []
+		self._game = None
+
 
 	def initializeEnvironment(self):
 		if self.gameString==None or self.levelString==None:
@@ -745,7 +748,7 @@ class Agent:
 			## SpriteSet induction step
 			if errorMap.targetClass != 'avatar':
 				className, theories = expandSprites(self.rle._game, theory, errorMap, 
-					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=10, max_num=2,
+					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=20, max_num=20,
 					resourceObservations=self.resourceObservations)
 				newTheories.extend(theories)
 
@@ -969,6 +972,9 @@ class Agent:
 		## Initialize external environment
 		self.initializeEnvironment()
 		print "initializing RLE"
+
+
+		self.randomizeState(self.rle)
 
 		self.all_objects= self.rle._game.getObjects()
 
@@ -1443,11 +1449,24 @@ class Agent:
 				agentState['speed'] = None
 		return agentState
 	
-	def filterTheories(self, scoreAndTheoryTuples, percentile, max_num):
+	def filterTheories(self, scoreAndTheoryTuples, percentile, max_num, proportionOfSpriteTheories):
 		## Returns the max_num theories that are at percentile or greater, given their score.
+		## TODO: Improve this. Right now you can return fewer than max_num theories, and will pay more
+		## attention to the proportions than the scores.
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 		cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
-		return [s for s in scoreAndTheoryTuples if s[0]<=cutoff][0:max_num]
+		candidates = [s for s in scoreAndTheoryTuples if s[0]<=cutoff]
+		sprite_candidates = [s for s in candidates if s[1].mostRecentEdit=='spriteInduction']
+		induction_candidates = [s for s in candidates if s[1].mostRecentEdit=='interactionSetInduction']
+
+		if len(sprite_candidates)>int(math.floor(max_num*proportionOfSpriteTheories)):
+			filtered = sprite_candidates[0:min(int(math.floor(max_num*proportionOfSpriteTheories)), len(sprite_candidates))]
+		else:
+			filtered = sprite_candidates
+		remaining = max_num - len(filtered)
+		filtered = filtered + induction_candidates[0:min(remaining, len(induction_candidates))]
+
+		return filtered
 
 	def executeStep(self, action, hypotheses, theoryRLEs):
 
@@ -1530,7 +1549,8 @@ class Agent:
 			## Filter theories
 			scoreAndTheoryTuples = zip(cumulative_penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
-			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=20)]
+			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=20,
+				proportionOfSpriteTheories=.2)]
 			for num, sh in enumerate(scoresAndHypotheses):
 				# if sh[0]==0:
 				print "Theory: {} | Error: {}".format(num, sh[0])
@@ -1549,6 +1569,28 @@ class Agent:
 		self.statesEncountered.append(self.rle._game.getFullState())
 
 		return hypotheses
+
+	def testStep(self, rle, action, hypotheses):
+		## evaluates all the hypotheses on the state of the provided rle, given action.
+		theoryRLEs = self.VrleInitPhase(hypotheses, rle)
+		envRealPrev = copy.deepcopy(rle)
+		rle.step(action)
+		print ""
+		print keyPresses[action]
+		penalties = []
+		for num, env in enumerate(theoryRLEs):
+			env.step(action)
+			penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
+			penalties.append(penalty)
+		return penalties
+
+	def randomizeState(self, rle):
+		rleCopy = copy.deepcopy(rle)
+		embed()
+	# def testHypotheses(self, rle, hypotheses, num_samples=10):
+		# rleCopy = copy.deepcopy(rle)
+
+
 
 ## Store all rles. Then you can very easily do experience replay!!!
 
