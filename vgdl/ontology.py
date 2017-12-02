@@ -2307,13 +2307,6 @@ def distributionInitSetup(game, sprite):
     game.movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
     game.object_token_movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
 
-    # for sprite_type in sprite_types:
-    #     game.movement_options[sprite][sprite_type] = {}
-    #     game.object_token_movement_options[sprite][sprite_type] = {}
-    #     attributeTupleCombinations = getAttributeTupleCombinations(game, sprite, sprite_type)
-    #     for attributeTuple in attributeTupleCombinations:
-    #         game.movement_options[sprite][sprite_type][attributeTuple] = {}
-    #         game.object_token_movement_options[sprite][sprite_type][attributeTuple] = {}
 
 
 def updateDistribution(game, sprite, curr_distribution, movement_options, outcome, specialID=None, missileOrientationClustering=False):

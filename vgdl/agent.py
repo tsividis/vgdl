@@ -86,7 +86,6 @@ class Agent:
 		self.memory = []
 		self.rleHistory = []
 		self.allTheories = []
-		self._game = None
 
 
 	def initializeEnvironment(self):
@@ -96,6 +95,14 @@ class Agent:
 		self.rle = self.rleCreateFunc()
 		self.rle._game.spriteUpdateDict = self.spriteUpdateDict
 		return
+
+	def initializeRLEFromGame(self):
+		gameString, levelString = self.gameString, self.levelString
+		if gameString==None or levelString==None:
+			gameString, levelString = defInputGame(self.gameFilename, randomize=False)
+		rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
+		rle = rleCreateFunc()
+		return rle
 
 	def getSpritesByColor(self, rle, color):
 		outList = []
@@ -974,7 +981,7 @@ class Agent:
 		print "initializing RLE"
 
 
-		self.randomizeState(self.rle)
+		self.testHypotheses(self.hypotheses,10)
 
 		self.all_objects= self.rle._game.getObjects()
 
@@ -1586,9 +1593,13 @@ class Agent:
 
 	def randomizeState(self, rle):
 		rleCopy = copy.deepcopy(rle)
+		print "in randomize state"
 		embed()
-	# def testHypotheses(self, rle, hypotheses, num_samples=10):
-		# rleCopy = copy.deepcopy(rle)
+	
+	def testHypotheses(self, hypotheses, num_samples=10):
+		rle = self.initializeRLEFromGame()
+		self.randomizeState(rle)
+		return
 
 
 
