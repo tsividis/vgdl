@@ -153,8 +153,8 @@ class Agent:
 			matchingSpritesInEnvB = self.getSpritesByColor(envB, color)
 			matchingSpritesInEnvB = [s for s in matchingSpritesInEnvB if s not in envB._game.kill_list]
 			if matchingSpritesInEnvB == []:
-				lonely_sprites_envA.append(matchingSpritesInEnvA)
-				lonely_sprites_envA = [s for sublist in lonely_sprites_envA for s in sublist]
+				lonely_sprites_envA.extend(matchingSpritesInEnvA)
+				#lonely_sprites_envA = [s for sublist in lonely_sprites_envA for s in sublist]
 				continue
 			# Loop over matching sprites in envA and find corresponding sprites in envB
 			for sprite in matchingSpritesInEnvA:
@@ -453,14 +453,18 @@ class Agent:
 					color = sB.colorName
 					sB.colorName = sA.colorName
 					matched_ts, _, _ = self.matchEnvs(envB, envPrev) #matches real env across timestep
-					sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB][0] #sB in previous step
 					sB.colorName = color
-					# Find neighbors of target sprite in the previous time step
-					neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
-					# Write potential interaction pairs to error map entry
-					for className in neighbors_prev:
-						e.intPairs.append( (sA.name,className) )
-					errorMap.append(e)
+					sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB]
+					if sPrev==[]:
+						print "WARNING: no interactionPair found for transformation error"
+					else:
+						sPrev = sPrev[0]
+						# Find neighbors of target sprite in the previous time step
+						neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
+						# Write potential interaction pairs to error map entry
+						for className in neighbors_prev:
+							e.intPairs.append( (sA.name,className) )
+						errorMap.append(e)
 		# 2.2) Destruction
 		for sA in lonely_sprites_envA: #sA should have been destroyed
 			e = errorMapEntry()
@@ -523,7 +527,7 @@ class Agent:
 				# Set interaction pairs to unique pairs
 				e.intPairs = unique_pairs_e
 
-		## TODO: change action sequence to 32 in first step, then make game with moving apple
+		## TODO: penalize randomNPCs more smartly - currently they're kind of a joker, obscuring push events
 
 		## NOTE: We could extend by penalizing as a function of (most likely) vgdlType and color
 		## NOTE: Use intializeHypotheses function in this file to build my test theories
@@ -755,7 +759,7 @@ class Agent:
 			## SpriteSet induction step
 			if errorMap.targetClass != 'avatar':
 				className, theories = expandSprites(self.rle._game, theory, errorMap, 
-					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=20, max_num=20,
+					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=20, max_num=2,
 					resourceObservations=self.resourceObservations)
 				newTheories.extend(theories)
 
@@ -972,12 +976,16 @@ class Agent:
 
 	def testEpisode(self, gameObject):
 
-		# actions = [32, K_DOWN, K_UP, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-		# actions = [K_DOWN, K_UP, K_UP, K_RIGHT, 32, K_RIGHT, 32, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
+
+		# actions = [32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT,\
+		# K_RIGHT, K_DOWN, K_DOWN, K_LEFT, K_LEFT, K_UP, 32, 32, K_RIGHT, K_DOWN, K_LEFT, K_LEFT, \
+		# K_LEFT, K_UP, K_LEFT, K_LEFT, K_LEFT]
+		#actions = [K_DOWN, K_UP, K_UP, K_RIGHT, 32, K_RIGHT, 32, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
+
 		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
 		# actions = [K_RIGHT, K_LEFT]
 		# actions = [K_SPACE, K_SPACE, K_SPACE]
-		actions = [K_RIGHT]*5
+		actions = [K_SPACE, K_SPACE, K_SPACE, K_RIGHT, K_RIGHT, K_RIGHT, K_SPACE]
 		## Initialize external environment
 		self.initializeEnvironment()
 		print "initializing RLE"
@@ -1474,6 +1482,17 @@ class Agent:
 
 		return filtered
 
+	def fastcopy(self, rle):
+		print "in fastcopy"
+		from pygame.locals import K_RIGHT
+		from copy import deepcopy
+		rle.step(K_RIGHT)
+		newRle = self.initializeRLEFromGame()
+		newRle._game.sprite_groups = copy.deepcopy(rle._game.sprite_groups)
+		newRle.symbolDict = copy.deepcopy(rle.symbolDict)
+		embed()
+		return
+
 	def executeStep(self, action, hypotheses, theoryRLEs):
 
 		theory_change_flag = False
@@ -1489,6 +1508,7 @@ class Agent:
 		agentState = self.resourceManagement(pre_step=True)
 		
 		t1=time.time()
+
 		envRealPrev = copy.deepcopy(self.rle)
 
 		self.rleHistory.append(envRealPrev)
@@ -1498,7 +1518,6 @@ class Agent:
 		# print "fast-copying rle"
 		# envRealPrev = self.initializeVrle(None, stateToSet=self.rle) ## using copy.deepcopy() substitute
 		# print "fastcopy: {}".format(time.time()-t2)
-
 
 		self.rle.step(action)
 		print ""
@@ -1513,6 +1532,10 @@ class Agent:
 		for num, env in enumerate(theoryRLEs):
 			env.step(action)
 			penalty, errorList = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
+			for e in errorList:
+				if 'objectDestruction' in e.diagnosis:
+					print "found objectDestruction"
+					embed()
 			# print ""
 			# print "Theory {} penalty: {}".format(num, penalty)
 			# for e in errorList:
@@ -1531,9 +1554,8 @@ class Agent:
 			theoryRLEs = self.VrleInitPhase(newTheories, envRealPrev)
 			print "evaluating {} proposals".format(len(theoryRLEs))
 			penalties = []
-			print "Evaluating proposals",
+			# Evaluate proposals
 			for num, env in enumerate(theoryRLEs):
-				# print "#",
 				env.step(action)
 				penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev)
 				newTheories[num].errorHistory.append(penalty)
@@ -1542,6 +1564,9 @@ class Agent:
 				# print ""
 				# print "Theory {} penalty: {}".format(num, penalty)
 				# for e in errorList:
+				# 	if 'objectDestruction' in e.diagnosis:
+				# 		print "found objectDestruction"
+				# 		embed()
 				# 	e.display()
 			print ""
 			# print "last-step penalties"
@@ -1549,8 +1574,8 @@ class Agent:
 			# print "cumulative penalties"
 			cumulative_penalties = [np.mean(h.errorHistory) for h in newTheories]
 			# print cumulative_penalties
-			# print "proposed {} new theories".format(len(newTheories))
-			# print ""
+			print "proposed {} new theories".format(len(newTheories))
+			print ""
 			# embed()
 			## Filter theories
 			scoreAndTheoryTuples = zip(cumulative_penalties, newTheories)
@@ -1567,11 +1592,11 @@ class Agent:
 			print ""
 		else:
 			print "Got no new theories"
-		embed()
-		self.testHypotheses(hypotheses,10)
-
-		# print ">>> Embedded at end of executeStep"
 		# embed()
+		# self.testHypotheses(hypotheses,10)
+
+		#print ">>> Embedded at end of executeStep"
+		#embed()
 
 		hypotheses = self.manageNewObjects(hypotheses)
 		self.statesEncountered.append(self.rle._game.getFullState())
@@ -1600,8 +1625,11 @@ class Agent:
 			penalties = []
 			envRealPrev = copy.deepcopy(rle)
 			rle.step(action)
+			# print rle.show()
 			for num, env in enumerate(theoryRLEs):
 				env.step(action)
+				# print num
+				# print env.show()
 				penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
 				penalties.append(penalty)
 			cumulative_penalties.append(penalties)
