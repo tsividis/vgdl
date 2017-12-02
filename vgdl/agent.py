@@ -17,7 +17,7 @@ from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
 from line_profiler import LineProfiler
-from vgdl.util import manhattanDist
+from vgdl.util import manhattanDist, manhattanDist2
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
 
@@ -123,10 +123,6 @@ class Agent:
 
 
 
-
-
-
-
 	# Function matching environment and determining sprites that couldn't be matched
 	def matchEnvs(self, envA, envB):
 		# Initialization
@@ -153,7 +149,7 @@ class Agent:
 			# Loop over matching sprites in envA and find corresponding sprites in envB
 			for sprite in matchingSpritesInEnvA:
 				corrSprite = self.findNearestSprite(sprite, matchingSpritesInEnvB)
-				dist = manhattanDist(envA._rect2pos(sprite.rect), envB._rect2pos(corrSprite.rect))
+				dist = manhattanDist2(sprite, corrSprite)
 				#print (sprite, corrSprite, dist)
 				matched_sprites.append( (sprite, corrSprite, dist) )
 
@@ -205,7 +201,7 @@ class Agent:
 				dist_temp = []
 				for sB in lonely_sprites_envB:
 					if sB.colorName==sA.colorName:
-						dist_temp.append( manhattanDist(envA._rect2pos(sA.rect), envB._rect2pos(sB.rect)) )
+						dist_temp.append( manhattanDist2(sA, sB) )
 					else:
 						dist_temp.append(2e6)
 					#if all([d==None for d in dist_rematch]): #case where there is no potential re-match
@@ -250,7 +246,7 @@ class Agent:
 		for g in envPrev._game.sprite_groups.keys():
 			all_sprites += envPrev._game.sprite_groups[g]
 		# Neighbors of problematic sprite in real world in previous time step
-		neighbors = [s for s in all_sprites if manhattanDist(envPrev._rect2pos(s.rect), envPrev._rect2pos(sPrev.rect))<=1. and s!=sPrev and (s not in envPrev._game.kill_list)]
+		neighbors = [s for s in all_sprites if manhattanDist2(s, sPrev)<=1. and s!=sPrev and (s not in envPrev._game.kill_list)]
 		# Determine corresponding classes in theory environment
 		neighbors_color = [s.colorName for s in neighbors]
 		neighbors_color = list(set(neighbors_color))
@@ -297,7 +293,7 @@ class Agent:
 		for g in envB._game.sprite_groups.keys():
 			all_sprites_envB += envB._game.sprite_groups[g]
 		nearest_sprite = self.findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB) and (s not in envB._game.kill_list)])
-		nearest_dist = manhattanDist(envB._rect2pos(sB.rect), envB._rect2pos(nearest_sprite.rect))
+		nearest_dist = manhattanDist2(sB, nearest_sprite)
 		# Determine orientation in current and previous step -> to detect orientation change
 		try:
 			oB = sB.orientation
@@ -331,12 +327,13 @@ class Agent:
 
 
 	## Function generating penalty and error map
-	def errorSignal(self, envA, envB, theory, envPrev, p_dist=1, p_miss=10):
+	def errorSignal(self, envA, envB, theory, envPrev, p_dist=1, p_speed=4, p_miss=10):
 		"""
 		envA: hyptothetical environment
 		envB: real environment
 		theory: corresponds to hypothetical
 		p_dist: distance penalty per grid point
+		p_speed: pentalty for distances arising from wrong speed
 		p_miss: penalty for missing or additional sprite
 
 		Calculates d_theory(envA, envB): distance between the states of the environments
@@ -368,13 +365,30 @@ class Agent:
 		for t in matched_sprites:
 			sA = t[0] #sprite in envA
 			dist = t[2] #distance to sprite in envB
-			sA_type = theory.classes[sA.name][0].vgdlType
-			if str(sA_type) == "<class 'vgdl.ontology.RandomNPC'>":
+			sA_type = theory.classes[sA.name][0].vgdlType			
+			# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
+			if str(sA_type) == "<class 'vgdl.ontology.RandomNPC'>":		
+				sB = t[1]
 				sA_speed = theory.classes[sA.name][0].args['speed']
-				if dist>2*sA_speed:
-					total_penalty += p_dist*t[2]
-			else: #all of the other types are deterministic
-				total_penalty += p_dist*t[2]				
+				sPrev, dist_ts = self.find_sPrev(sB, envB, envPrev) #sA in previous environment
+				d = 30. # grid spacing
+				xB = sB.rect.left/d
+				yB = sB.rect.top/d
+				xPrev = sPrev.rect.left/d
+				yPrev = sPrev.rect.top/d
+				dist_rNPC = [ manhattanDist( (xB,yB), (xPrev,yPrev) ), \
+									 manhattanDist( (xB,yB), (xPrev+sA_speed,yPrev) ), \
+									 manhattanDist( (xB,yB), (xPrev-sA_speed,yPrev) ), \
+									 manhattanDist( (xB,yB), (xPrev,yPrev+sA_speed) ), \
+									 manhattanDist( (xB,yB), (xPrev,yPrev-sA_speed) ), \
+								   ]
+				mindist_rNPC = min(dist_rNPC)
+				total_penalty += p_speed*mindist_rNPC #penalize speed separately to discourage keeping around too many similar theories
+			elif str(sA_type) == "<class 'vgdl.ontology.Missile'>":	
+				total_penalty += p_speed*t[2] #penalize speed separately to discourage keeping around too many similar theories
+			# All of the other types are deterministic
+			else:
+				total_penalty += p_dist*t[2]	
 		# Missing/additional penalty
 		total_penalty += p_miss * ( len(lonely_sprites_envA) + len(lonely_sprites_envB) )
 
@@ -409,7 +423,7 @@ class Agent:
 				appeared_sprites_envB.append(sB)
 				continue 
 			sA = self.findNearestSprite(sPrev, candidates_in_killList)
-			if manhattanDist(envA._rect2pos(sA.rect), envPrev._rect2pos(sPrev.rect))!=0: #there is no envA sprite where sPrev should have been
+			if manhattanDist2(sA, sPrev)<1: #there is no envA sprite where sPrev should have been
 				appeared_sprites_envB.append(sB)
 				continue
 			# Now we are completely sure that sprite in envA has been erroneously removed
@@ -420,7 +434,7 @@ class Agent:
 		# 2.1) Transformation
 		for iA,sA in enumerate(lonely_sprites_envA):
 			for iB,sB in enumerate(lonely_sprites_envB):
-				if manhattanDist(envA._rect2pos(sA.rect), envB._rect2pos(sB.rect))<=2:
+				if manhattanDist2(sA, sB)<=2:
 					e = errorMapEntry()
 					e.diagnosis.append('transformation')
 					e.targetToken = sB
@@ -498,6 +512,8 @@ class Agent:
 				[unique_pairs_e.append(p) for p in e.intPairs if (p not in other_pairs)]
 				# Set interaction pairs to unique pairs
 				e.intPairs = unique_pairs_e
+
+		## TODO: change action sequence to 32 in first step, then make game with moving apple
 
 		## NOTE: We could extend by penalizing as a function of (most likely) vgdlType and color
 		## NOTE: Use intializeHypotheses function in this file to build my test theories
@@ -766,7 +782,7 @@ class Agent:
 
 	def testCurriculum(self, level_game_pairs=None):
 		if not level_game_pairs:
-			level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs		
+			level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs	
 		
 		for n_level, level_game in enumerate(level_game_pairs):
 
@@ -945,8 +961,10 @@ class Agent:
 
 	def testEpisode(self, gameObject):
 
-		actions = [K_DOWN, K_UP, K_UP, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
+		actions = [32, K_DOWN, K_UP, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
+		#actions = [K_DOWN, K_UP, K_UP, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
 		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
+
 		## Initialize external environment
 		self.initializeEnvironment()
 		print "initializing RLE"
@@ -965,13 +983,14 @@ class Agent:
 			self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
 
 
-
 		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=0)
 		# print "initialized Hypotheses"
 		# embed()
+
 		for action in actions:
 			## initialize VRLEs
 			theoryRLEs = self.VrleInitPhase()
+
 			hypotheses = self.executeStep(action, self.hypotheses, theoryRLEs)
 
 			## Other stuff we don't have to worry about
@@ -987,6 +1006,7 @@ class Agent:
 
 			self.hypotheses = hypotheses
 
+		print ">>> Embedded at the end of testEpisode"
 		embed()
 		return
 
@@ -1444,6 +1464,7 @@ class Agent:
 		
 		# t1=time.time()
 		envRealPrev = copy.deepcopy(self.rle)
+
 		self.rleHistory.append(envRealPrev)
 
 		# print "deepcopy: {}".format(time.time()-t1)
@@ -1459,7 +1480,6 @@ class Agent:
 
 		# agentState = self.resourceManagement(pre_step=False, res)
 		# self.rle.agentStatePrev = agentState
-
 		## Evaluate each theory on this step
 		## Propose new theories
 		print "evaluating old theories and proposing new ones"
@@ -1486,8 +1506,9 @@ class Agent:
 			print "evaluating {} proposals".format(len(theoryRLEs))
 			print "initialized"
 			penalties = []
+			print "Evaluating proposals",
 			for num, env in enumerate(theoryRLEs):
-				# print num
+				print "#",
 				env.step(action)
 				penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev)
 				newTheories[num].errorHistory.append(penalty)
@@ -1496,7 +1517,7 @@ class Agent:
 				# print ""
 				# print "Theory {} penalty: {}".format(num, penalty)
 				# for e in errorList:
-					# e.display()
+				# 	e.display()
 			print ""
 			print "last-step penalties"
 			print penalties
@@ -1513,7 +1534,7 @@ class Agent:
 			for num, sh in enumerate(scoresAndHypotheses):
 				# if sh[0]==0:
 				print "Theory: {} | Error: {}".format(num, sh[0])
-				sh[1].display()
+				# sh[1].display()
 
 			hypotheses = [sh[1] for sh in scoresAndHypotheses]
 			print "{} survived".format(len(hypotheses))
@@ -1521,11 +1542,12 @@ class Agent:
 		else:
 			print "Got no new theories"
 
+		# print ">>> Embedded at end of executeStep"
 		# embed()
 
 		hypotheses = self.manageNewObjects(hypotheses)
-
 		self.statesEncountered.append(self.rle._game.getFullState())
+
 		return hypotheses
 
 ## Store all rles. Then you can very easily do experience replay!!!

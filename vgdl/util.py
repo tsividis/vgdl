@@ -22,6 +22,16 @@ def normalize(array):
 def manhattanDist(a, b):
 	return abs(a[0]-b[0])+abs(a[1]-b[1])
 
+def manhattanDist2(s1, s2, d=30):
+	"""
+	Function giving the right decimal Manhattan distance (including non-integer)
+	s1, s2: sprites
+	d: grid spacing
+	"""
+	dist = 1.*abs(s1.rect.left-s2.rect.left)/d + \
+		   1.*abs(s1.rect.top-s2.rect.top)/d
+	return dist
+
 def factorize(rle, n):
 	## Decomposes into a list of numbers that are incides of [avatar, rle._obstypes.keys()]
 	## that correspond to which indices are present in n
