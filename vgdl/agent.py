@@ -1565,7 +1565,7 @@ class Agent:
 			print ""
 		else:
 			print "Got no new theories"
-
+		embed()
 		self.testHypotheses(hypotheses,10)
 
 		# print ">>> Embedded at end of executeStep"
@@ -1598,8 +1598,6 @@ class Agent:
 			penalties = []
 			envRealPrev = copy.deepcopy(rle)
 			rle.step(action)
-			print ""
-			print keyPresses[action]
 			for num, env in enumerate(theoryRLEs):
 				env.step(action)
 				penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
