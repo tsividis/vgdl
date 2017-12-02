@@ -13,6 +13,7 @@ import numpy as np
 import ipdb, time
 import os, subprocess, shutil
 import copy
+import math
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
@@ -85,6 +86,7 @@ class Agent:
 		self.memory = []
 		self.rleHistory = []
 		self.allTheories = []
+		self.actionSet = [K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE]
 
 	def initializeEnvironment(self):
 		if self.gameString==None or self.levelString==None:
@@ -93,6 +95,14 @@ class Agent:
 		self.rle = self.rleCreateFunc()
 		self.rle._game.spriteUpdateDict = self.spriteUpdateDict
 		return
+
+	def initializeRLEFromGame(self):
+		gameString, levelString = self.gameString, self.levelString
+		if gameString==None or levelString==None:
+			gameString, levelString = defInputGame(self.gameFilename, randomize=False)
+		rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
+		rle = rleCreateFunc()
+		return rle
 
 	def getSpritesByColor(self, rle, color):
 		outList = []
@@ -143,8 +153,8 @@ class Agent:
 			matchingSpritesInEnvB = self.getSpritesByColor(envB, color)
 			matchingSpritesInEnvB = [s for s in matchingSpritesInEnvB if s not in envB._game.kill_list]
 			if matchingSpritesInEnvB == []:
-				lonely_sprites_envA.append(matchingSpritesInEnvA)
-				lonely_sprites_envA = [s for sublist in lonely_sprites_envA for s in sublist]
+				lonely_sprites_envA.extend(matchingSpritesInEnvA)
+				#lonely_sprites_envA = [s for sublist in lonely_sprites_envA for s in sublist]
 				continue
 			# Loop over matching sprites in envA and find corresponding sprites in envB
 			for sprite in matchingSpritesInEnvA:
@@ -664,6 +674,7 @@ class Agent:
 		avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
 
 		self.hypotheses = [initialTheory]
+
 		self.symbolDict = generateSymbolDict(self.rle)
 
 		## For debugging purposes, generating one variant that is off by only one interaction
@@ -964,7 +975,7 @@ class Agent:
 		actions = [32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT,\
 		K_RIGHT, K_DOWN, K_DOWN, K_LEFT, K_LEFT, K_UP, 32, 32, K_RIGHT, K_DOWN, K_LEFT, K_LEFT, \
 		K_LEFT, K_UP, K_LEFT, K_LEFT, K_LEFT]
-		#actions = [K_DOWN, K_UP, K_UP, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
+		#actions = [K_DOWN, K_UP, K_UP, K_RIGHT, 32, K_RIGHT, 32, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
 		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
 
 		## Initialize external environment
@@ -1444,11 +1455,24 @@ class Agent:
 				agentState['speed'] = None
 		return agentState
 	
-	def filterTheories(self, scoreAndTheoryTuples, percentile, max_num):
+	def filterTheories(self, scoreAndTheoryTuples, percentile, max_num, proportionOfSpriteTheories):
 		## Returns the max_num theories that are at percentile or greater, given their score.
+		## TODO: Improve this. Right now you can return fewer than max_num theories, and will pay more
+		## attention to the proportions than the scores.
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 		cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
-		return [s for s in scoreAndTheoryTuples if s[0]<=cutoff][0:max_num]
+		candidates = [s for s in scoreAndTheoryTuples if s[0]<=cutoff]
+		sprite_candidates = [s for s in candidates if s[1].mostRecentEdit=='spriteInduction']
+		induction_candidates = [s for s in candidates if s[1].mostRecentEdit=='interactionSetInduction']
+
+		if len(sprite_candidates)>int(math.floor(max_num*proportionOfSpriteTheories)):
+			filtered = sprite_candidates[0:min(int(math.floor(max_num*proportionOfSpriteTheories)), len(sprite_candidates))]
+		else:
+			filtered = sprite_candidates
+		remaining = max_num - len(filtered)
+		filtered = filtered + induction_candidates[0:min(remaining, len(induction_candidates))]
+
+		return filtered
 
 	def executeStep(self, action, hypotheses, theoryRLEs):
 
@@ -1468,7 +1492,7 @@ class Agent:
 		envRealPrev = copy.deepcopy(self.rle)
 
 		self.rleHistory.append(envRealPrev)
-		
+
 		# print "deepcopy: {}".format(time.time()-t1)
 		# t2 = time.time()
 		# print "fast-copying rle"
@@ -1490,9 +1514,9 @@ class Agent:
 			env.step(action)
 			penalty, errorList = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
 			# print ""
-			print "Theory {} penalty: {}".format(num, penalty)
+			# print "Theory {} penalty: {}".format(num, penalty)
 			# for e in errorList:
-			# 	e.display()
+				# e.display()
 
 			theories = self.expandTheory(self.hypotheses[num], errorList, envRealPrev, self.rle)
 			newTheories.extend(theories)
@@ -1506,7 +1530,6 @@ class Agent:
 			print "initializing {} proposals".format(len(newTheories))
 			theoryRLEs = self.VrleInitPhase(newTheories, envRealPrev)
 			print "evaluating {} proposals".format(len(theoryRLEs))
-			print "initialized"
 			penalties = []
 			# Evaluate proposals
 			for num, env in enumerate(theoryRLEs):
@@ -1531,7 +1554,8 @@ class Agent:
 			## Filter theories
 			scoreAndTheoryTuples = zip(cumulative_penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
-			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=10)]
+			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=20,
+				proportionOfSpriteTheories=.2)]
 			for num, sh in enumerate(scoresAndHypotheses):
 				# if sh[0]==0:
 				print "Theory: {} | Error: {}".format(num, sh[0])
@@ -1542,6 +1566,8 @@ class Agent:
 			print ""
 		else:
 			print "Got no new theories"
+		#embed()
+		self.testHypotheses(hypotheses,10)
 
 		#print ">>> Embedded at end of executeStep"
 		#embed()
@@ -1551,8 +1577,74 @@ class Agent:
 
 		return hypotheses
 
+	# def testStep(self, rle, action, hypotheses):
+	# 	## evaluates all the hypotheses on the state of the provided rle, given action.
+	# 	theoryRLEs = self.VrleInitPhase(hypotheses, rle)
+	# 	envRealPrev = copy.deepcopy(rle)
+	# 	rle.step(action)
+	# 	print ""
+	# 	print keyPresses[action]
+	# 	penalties = []
+	# 	for num, env in enumerate(theoryRLEs):
+	# 		env.step(action)
+	# 		penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
+	# 		penalties.append(penalty)
+	# 	return penalties
+
+	def testSteps(self, rle, actions, hypotheses):
+		## evaluates all the hypotheses on the state of the provided rle, given action.
+		theoryRLEs = self.VrleInitPhase(hypotheses, rle)
+		cumulative_penalties = []
+		for action in actions:
+			penalties = []
+			envRealPrev = copy.deepcopy(rle)
+			rle.step(action)
+			for num, env in enumerate(theoryRLEs):
+				env.step(action)
+				penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
+				penalties.append(penalty)
+			cumulative_penalties.append(penalties)
+		cumulative_penalties = np.array(cumulative_penalties)
+		return np.mean(cumulative_penalties, axis=0)
+
+	def randomizeState(self, rle):
+		rleCopy = copy.deepcopy(rle)
+		x_options = range(1, rleCopy._game.width-1)
+		y_options = range(1, rleCopy._game.height-1)
+		pos_options = list(itertools.product(x_options, y_options))
+		nonWallObjects = [s for sp in rleCopy._game.sprite_groups.values() for s in sp if s.name!='wall']
+		for obj in nonWallObjects:
+			newPos = random.choice(pos_options)
+			pos_options.remove(newPos)
+			rleCopy._setRectPos(obj, newPos)
+		rleCopy.step(0)
+		return rleCopy
+	
+	def sampleWithReplacement(self, lst, k):
+		outlist = []
+		for i in range(k):
+			outlist.append(random.choice(lst))
+		return outlist
+
+	def testHypotheses(self, hypotheses, num_samples=10, actions_per_sample=10):
+		rle = self.initializeRLEFromGame()
+		cumulative_penalties = []
+		for sample in range(num_samples):
+			rrle = self.randomizeState(rle)
+			actions = self.sampleWithReplacement(self.actionSet, actions_per_sample)
+			# print rrle.show()
+			penalties = self.testSteps(rle, actions, hypotheses)
+			# print rrle.show()
+			cumulative_penalties.append(penalties)
+		cumulative_penalties = np.array(cumulative_penalties)
+		return np.mean(cumulative_penalties, axis=0)
+
+
 ## Store all rles. Then you can very easily do experience replay!!!
 
+# def experienceReplay(self, theory):
+
+	# for 
 
 if __name__ == "__main__":
 

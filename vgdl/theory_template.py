@@ -2399,6 +2399,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 
 	for spriteProposal in spriteProposals:
 		newTheory = copy.deepcopy(theory)
+		newTheory.mostRecentEdit = 'spriteInduction'
 		# newTheory.lineage.append(theory)
 		newTheory.errorMapHistory.append(errorMap)
 		vgdlType = spriteProposal[0][1]
@@ -2457,6 +2458,7 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, resourceObservation
 	for i,ruleSet in enumerate(list(newRuleSets)):
 		ruleSet = [item for sublist in ruleSet for item in sublist]
 		newTheory = copy.deepcopy(theory)
+		newTheory.mostRecentEdit = 'interactionSetInduction'
 		# newTheory.lineage.append(theory)
 		newTheory.errorMapHistory.append(errorMap)
 		newTheory.interactionSet = copy.deepcopy(interactionSet)
