@@ -513,7 +513,7 @@ class Agent:
 				# Set interaction pairs to unique pairs
 				e.intPairs = unique_pairs_e
 
-		## TODO: change action sequence to 32 in first step, then make game with moving apple
+		## TODO: penalize randomNPCs more smartly - currently they're kind of a joker, obscuring push events
 
 		## NOTE: We could extend by penalizing as a function of (most likely) vgdlType and color
 		## NOTE: Use intializeHypotheses function in this file to build my test theories
@@ -744,7 +744,7 @@ class Agent:
 			## SpriteSet induction step
 			if errorMap.targetClass != 'avatar':
 				className, theories = expandSprites(self.rle._game, theory, errorMap, 
-					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=20, max_num=20,
+					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=20, max_num=2,
 					resourceObservations=self.resourceObservations)
 				newTheories.extend(theories)
 
@@ -961,7 +961,9 @@ class Agent:
 
 	def testEpisode(self, gameObject):
 
-		actions = [32, K_DOWN, K_UP, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
+		actions = [32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT,\
+		K_RIGHT, K_DOWN, K_DOWN, K_LEFT, K_LEFT, K_UP, 32, 32, K_RIGHT, K_DOWN, K_LEFT, K_LEFT, \
+		K_LEFT, K_UP, K_LEFT, K_LEFT, K_LEFT]
 		#actions = [K_DOWN, K_UP, K_UP, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
 		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
 
@@ -1489,8 +1491,8 @@ class Agent:
 			penalty, errorList = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
 			# print ""
 			print "Theory {} penalty: {}".format(num, penalty)
-			for e in errorList:
-				e.display()
+			# for e in errorList:
+			# 	e.display()
 
 			theories = self.expandTheory(self.hypotheses[num], errorList, envRealPrev, self.rle)
 			newTheories.extend(theories)
@@ -1506,9 +1508,8 @@ class Agent:
 			print "evaluating {} proposals".format(len(theoryRLEs))
 			print "initialized"
 			penalties = []
-			print "Evaluating proposals",
+			# Evaluate proposals
 			for num, env in enumerate(theoryRLEs):
-				print "#",
 				env.step(action)
 				penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev)
 				newTheories[num].errorHistory.append(penalty)
@@ -1519,11 +1520,11 @@ class Agent:
 				# for e in errorList:
 				# 	e.display()
 			print ""
-			print "last-step penalties"
-			print penalties
-			print "cumulative penalties"
-			cumulative_penalties = [h.cumulativeError for h in newTheories]
-			print cumulative_penalties
+			# print "last-step penalties"
+			# print penalties
+			# print "cumulative penalties"
+			cumulative_penalties = [np.mean(h.errorHistory) for h in newTheories]
+			# print cumulative_penalties
 			print "proposed {} new theories".format(len(newTheories))
 			print ""
 			# embed()
@@ -1542,8 +1543,8 @@ class Agent:
 		else:
 			print "Got no new theories"
 
-		# print ">>> Embedded at end of executeStep"
-		# embed()
+		#print ">>> Embedded at end of executeStep"
+		#embed()
 
 		hypotheses = self.manageNewObjects(hypotheses)
 		self.statesEncountered.append(self.rle._game.getFullState())
