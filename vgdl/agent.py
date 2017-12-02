@@ -664,7 +664,7 @@ class Agent:
 		avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
 
 		self.hypotheses = [initialTheory]
-		embed()
+
 		self.symbolDict = generateSymbolDict(self.rle)
 
 		## For debugging purposes, generating one variant that is off by only one interaction
@@ -745,7 +745,7 @@ class Agent:
 			## SpriteSet induction step
 			if errorMap.targetClass != 'avatar':
 				className, theories = expandSprites(self.rle._game, theory, errorMap, 
-					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=20, max_num=20,
+					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=10, max_num=2,
 					resourceObservations=self.resourceObservations)
 				newTheories.extend(theories)
 
@@ -1530,7 +1530,7 @@ class Agent:
 			## Filter theories
 			scoreAndTheoryTuples = zip(cumulative_penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
-			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=10)]
+			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=20)]
 			for num, sh in enumerate(scoresAndHypotheses):
 				# if sh[0]==0:
 				print "Theory: {} | Error: {}".format(num, sh[0])
@@ -1542,8 +1542,8 @@ class Agent:
 		else:
 			print "Got no new theories"
 
-		print ">>> Embedded at end of executeStep"
-		embed()
+		# print ">>> Embedded at end of executeStep"
+		# embed()
 
 		hypotheses = self.manageNewObjects(hypotheses)
 		self.statesEncountered.append(self.rle._game.getFullState())
