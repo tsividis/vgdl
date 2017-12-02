@@ -1593,12 +1593,20 @@ class Agent:
 
 	def randomizeState(self, rle):
 		rleCopy = copy.deepcopy(rle)
-		print "in randomize state"
-		embed()
+		x_options = range(1, rleCopy._game.width-1)
+		y_options = range(1, rleCopy._game.height-1)
+		pos_options = list(itertools.product(x_options, y_options))
+		nonWallObjects = [s for sp in rleCopy._game.sprite_groups.values() for s in sp if s.name!='wall']
+		for obj in nonWallObjects:
+			newPos = random.choice(pos_options)
+			pos_options.remove(newPos)
+			rleCopy._setRectPos(obj, newPos)
+		rleCopy.step(0)
+		return rleCopy
 	
 	def testHypotheses(self, hypotheses, num_samples=10):
 		rle = self.initializeRLEFromGame()
-		self.randomizeState(rle)
+		rrle = self.randomizeState(rle)
 		return
 
 
