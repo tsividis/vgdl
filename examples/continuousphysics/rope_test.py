@@ -3,10 +3,10 @@ wwwwwwwwwwwwwww
 w     r       w
 w     r       w
 w     r       w
-w A          Gw
+w            Gw
 wwww       llww
 w          l  w
-w          l  w
+w    A b   l  w
 wwwwwwwwwwwwwww
 """
 
@@ -60,6 +60,7 @@ BasicGame
         goal > Immovable color=GREEN
         wall > Immovable color=BLACK
         rope > Immovable color=RED
+        box > Immovable color=ORANGE
         ladder > Immovable color=BLUE
         avatar > MarioAvatar strength=15 physicstype=GravityPhysics color=WHITE
         conveyor > Conveyor strength=3 color=PINK
@@ -72,6 +73,7 @@ BasicGame
         avatar goomba > killSprite
         avatar EOS  > killSprite
         goal avatar > killSprite
+        box avatar > bounceForward
         # avatar wall > killIfTooFast speed=19
         avatar wall > wallStop
         # wall avatar > killSprite
@@ -90,6 +92,7 @@ BasicGame
         l > ladder
         x > avatar ladder
         c > conveyor
+        b > box
         
 
 """

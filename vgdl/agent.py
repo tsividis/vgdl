@@ -973,9 +973,11 @@ class Agent:
 	def testEpisode(self, gameObject):
 
 		# actions = [32, K_DOWN, K_UP, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-		actions = [K_DOWN, K_UP, K_UP, K_RIGHT, 32, K_RIGHT, 32, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
+		# actions = [K_DOWN, K_UP, K_UP, K_RIGHT, 32, K_RIGHT, 32, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
 		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
-
+		# actions = [K_RIGHT, K_LEFT]
+		# actions = [K_SPACE, K_SPACE, K_SPACE]
+		actions = [K_RIGHT]*5
 		## Initialize external environment
 		self.initializeEnvironment()
 		print "initializing RLE"
@@ -1486,12 +1488,12 @@ class Agent:
 
 		agentState = self.resourceManagement(pre_step=True)
 		
-		# t1=time.time()
+		t1=time.time()
 		envRealPrev = copy.deepcopy(self.rle)
 
 		self.rleHistory.append(envRealPrev)
 
-		# print "deepcopy: {}".format(time.time()-t1)
+		print "deepcopy: {}".format(time.time()-t1)
 		# t2 = time.time()
 		# print "fast-copying rle"
 		# envRealPrev = self.initializeVrle(None, stateToSet=self.rle) ## using copy.deepcopy() substitute
