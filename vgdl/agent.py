@@ -86,7 +86,7 @@ class Agent:
 		self.memory = []
 		self.rleHistory = []
 		self.allTheories = []
-
+		self.actionSet = [K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE]
 
 	def initializeEnvironment(self):
 		if self.gameString==None or self.levelString==None:
@@ -980,9 +980,6 @@ class Agent:
 		self.initializeEnvironment()
 		print "initializing RLE"
 
-
-		self.testHypotheses(self.hypotheses,10)
-
 		self.all_objects= self.rle._game.getObjects()
 
 		## Start storing encountered states.
@@ -1569,6 +1566,8 @@ class Agent:
 		else:
 			print "Got no new theories"
 
+		self.testHypotheses(hypotheses,10)
+
 		# print ">>> Embedded at end of executeStep"
 		# embed()
 
@@ -1577,19 +1576,37 @@ class Agent:
 
 		return hypotheses
 
-	def testStep(self, rle, action, hypotheses):
+	# def testStep(self, rle, action, hypotheses):
+	# 	## evaluates all the hypotheses on the state of the provided rle, given action.
+	# 	theoryRLEs = self.VrleInitPhase(hypotheses, rle)
+	# 	envRealPrev = copy.deepcopy(rle)
+	# 	rle.step(action)
+	# 	print ""
+	# 	print keyPresses[action]
+	# 	penalties = []
+	# 	for num, env in enumerate(theoryRLEs):
+	# 		env.step(action)
+	# 		penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
+	# 		penalties.append(penalty)
+	# 	return penalties
+
+	def testSteps(self, rle, actions, hypotheses):
 		## evaluates all the hypotheses on the state of the provided rle, given action.
 		theoryRLEs = self.VrleInitPhase(hypotheses, rle)
-		envRealPrev = copy.deepcopy(rle)
-		rle.step(action)
-		print ""
-		print keyPresses[action]
-		penalties = []
-		for num, env in enumerate(theoryRLEs):
-			env.step(action)
-			penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
-			penalties.append(penalty)
-		return penalties
+		cumulative_penalties = []
+		for action in actions:
+			penalties = []
+			envRealPrev = copy.deepcopy(rle)
+			rle.step(action)
+			print ""
+			print keyPresses[action]
+			for num, env in enumerate(theoryRLEs):
+				env.step(action)
+				penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
+				penalties.append(penalty)
+			cumulative_penalties.append(penalties)
+		cumulative_penalties = np.array(cumulative_penalties)
+		return np.mean(cumulative_penalties, axis=0)
 
 	def randomizeState(self, rle):
 		rleCopy = copy.deepcopy(rle)
@@ -1604,11 +1621,24 @@ class Agent:
 		rleCopy.step(0)
 		return rleCopy
 	
-	def testHypotheses(self, hypotheses, num_samples=10):
-		rle = self.initializeRLEFromGame()
-		rrle = self.randomizeState(rle)
-		return
+	def sampleWithReplacement(self, lst, k):
+		outlist = []
+		for i in range(k):
+			outlist.append(random.choice(lst))
+		return outlist
 
+	def testHypotheses(self, hypotheses, num_samples=10, actions_per_sample=10):
+		rle = self.initializeRLEFromGame()
+		cumulative_penalties = []
+		for sample in range(num_samples):
+			rrle = self.randomizeState(rle)
+			actions = self.sampleWithReplacement(self.actionSet, actions_per_sample)
+			# print rrle.show()
+			penalties = self.testSteps(rle, actions, hypotheses)
+			# print rrle.show()
+			cumulative_penalties.append(penalties)
+		cumulative_penalties = np.array(cumulative_penalties)
+		return np.mean(cumulative_penalties, axis=0)
 
 
 ## Store all rles. Then you can very easily do experience replay!!!
