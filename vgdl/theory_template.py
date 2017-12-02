@@ -2327,7 +2327,7 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 		'changeResource', 'collectResource', 'scoreChange', 'teleportToExit', 'conveySprite'],
 	'gridphysics': [],
 	'continuousphysics': ['transformToOnLanding', 'killIfTooFast', 'killIfSlow', 'killIfFromAbove',\
-		'killIfFromBelow''bounceDirection', 'conveySprite', 'pullWithIt',\
+		'killIfFromBelow', 'bounceDirection', 'flipDirection', 'conveySprite', 'pullWithIt',\
 		'windGust','slipForward', 'wallBounce', 'wallStop','onRope', 'onLadder']
 	}
 
@@ -2346,7 +2346,8 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 	# , 'pullWithIt', 'windGust', 'slipForward',\
 		# 'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap
 	'unexpectedOverlap': ['nothing', 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
-	'orientationChange': ['turn', 'turnAround', 'reverseDirection', 'bounceDirection', 'flipDirection'],
+	'orientationChange': ['reverseDirection', 'bounceDirection', 'flipDirection'],
+	#'turn', 'turnAround', 
 
 	## Object state change
 	'stateChange': ['changeResource', 'collectResource', 'scoreChange'],
@@ -2398,7 +2399,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 
 	for spriteProposal in spriteProposals:
 		newTheory = copy.deepcopy(theory)
-		newTheory.lineage.append(theory)
+		# newTheory.lineage.append(theory)
 		newTheory.errorMapHistory.append(errorMap)
 		vgdlType = spriteProposal[0][1]
 		args = dict(spriteProposal[1:])
@@ -2456,14 +2457,14 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, resourceObservation
 	for i,ruleSet in enumerate(list(newRuleSets)):
 		ruleSet = [item for sublist in ruleSet for item in sublist]
 		newTheory = copy.deepcopy(theory)
-		newTheory.lineage.append(theory)
+		# newTheory.lineage.append(theory)
 		newTheory.errorMapHistory.append(errorMap)
 		newTheory.interactionSet = copy.deepcopy(interactionSet)
 		newTheory.interactionSet.extend(ruleSet)
 
 		childTheories.append(newTheory)
 
-	print "Created {} new theories".format(len(childTheories))
+	# print "Created {} new theories".format(len(childTheories))
 	return classPair, childTheories, predicateGroups
 
 def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):

@@ -83,6 +83,8 @@ class Agent:
 		self.resourceObservations = {}
 		self.proposalMemory = defaultdict(lambda:[])
 		self.memory = []
+		self.rleHistory = []
+		self.allTheories = []
 
 	def initializeEnvironment(self):
 		if self.gameString==None or self.levelString==None:
@@ -556,12 +558,10 @@ class Agent:
 							try:
 								## Enforce consistency: inferred value for individual orientations has to be consistent with 
 								# what we're saying the horizontal/vertical orientation is of the entire group.
-								# print "setting sprite positions"
-
 
 								orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - 
 									np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
-								# embed()
+
 								if orientation == (0,0):
 									# print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
 									pass
@@ -589,7 +589,7 @@ class Agent:
 			## World in agent's mind given 'hypothesis', including object goal
 			gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, self.symbolDict,\
 				 "./examples/gridphysics/theorytest.py")
-			useHypothesis=True
+			useHypothesis=False ## not dealing with inferring Missile orientation for now.
 		else:
 			gameString = self.gameString
 			levelString = self.levelString
@@ -628,15 +628,17 @@ class Agent:
 		if not theories:
 			theories = self.hypotheses
 		for hypothesis in theories:
-			tempHypothesis = copy.deepcopy(hypothesis)
-			tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
-			tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
-			if not flexible_goals:
-				tempHypothesis.updateTerminations()
+			VRLEs.append(self.initializeVrle(hypothesis, stateToSet=stateToSet))
+
+			# tempHypothesis = copy.deepcopy(hypothesis)
+			# tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
+			# tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
+			# if not flexible_goals:
+				# tempHypothesis.updateTerminations()
 			# print "fake hypotheses"
 			# if self.fakeInteractionRules:/
 				# tempHypothesis.display()
-			VRLEs.append(self.initializeVrle(tempHypothesis, stateToSet=stateToSet))
+			# VRLEs.append(self.initializeVrle(tempHypothesis, stateToSet=stateToSet))
 		# print("wrote theory to text")
 
 
@@ -960,6 +962,8 @@ class Agent:
 	def testEpisode(self, gameObject):
 
 		actions = [32, K_DOWN, K_UP, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
+		#actions = [K_DOWN, K_UP, K_UP, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
+		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
 
 		## Initialize external environment
 		self.initializeEnvironment()
@@ -977,7 +981,6 @@ class Agent:
 		for k, v in self.rle._game.all_objects.iteritems():
 			self.rle._game.objectMemoryDict[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
 			self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
-
 
 
 		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=0)
@@ -1461,12 +1464,16 @@ class Agent:
 		
 		# t1=time.time()
 		envRealPrev = copy.deepcopy(self.rle)
+
+		self.rleHistory.append(envRealPrev)
+		
 		# print "deepcopy: {}".format(time.time()-t1)
 		# t2 = time.time()
 		# print "fast-copying rle"
 		# envRealPrev = self.initializeVrle(None, stateToSet=self.rle) ## using copy.deepcopy() substitute
 		# print "fastcopy: {}".format(time.time()-t2)
-		# embed()
+
+
 		self.rle.step(action)
 		print ""
 		print keyPresses[action]
@@ -1475,11 +1482,12 @@ class Agent:
 		# self.rle.agentStatePrev = agentState
 		## Evaluate each theory on this step
 		## Propose new theories
+		print "evaluating old theories and proposing new ones"
 		newTheories = []
 		for num, env in enumerate(theoryRLEs):
 			env.step(action)
 			penalty, errorList = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
-			print ""
+			# print ""
 			print "Theory {} penalty: {}".format(num, penalty)
 			for e in errorList:
 				e.display()
@@ -1487,12 +1495,16 @@ class Agent:
 			theories = self.expandTheory(self.hypotheses[num], errorList, envRealPrev, self.rle)
 			newTheories.extend(theories)
 
-		print self.rle.show(color='blue')
+		self.allTheories.extend(newTheories)
 
+		print self.rle.show(color='blue')
+		# embed()
 		if newTheories:
 			## Initialize RLEs according to each theory and setting state=prevState
+			print "initializing {} proposals".format(len(newTheories))
 			theoryRLEs = self.VrleInitPhase(newTheories, envRealPrev)
-
+			print "evaluating {} proposals".format(len(theoryRLEs))
+			print "initialized"
 			penalties = []
 			print "Evaluating proposals",
 			for num, env in enumerate(theoryRLEs):
@@ -1518,7 +1530,7 @@ class Agent:
 			## Filter theories
 			scoreAndTheoryTuples = zip(cumulative_penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
-			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=15)]
+			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=10)]
 			for num, sh in enumerate(scoresAndHypotheses):
 				# if sh[0]==0:
 				print "Theory: {} | Error: {}".format(num, sh[0])
@@ -1530,8 +1542,8 @@ class Agent:
 		else:
 			print "Got no new theories"
 
-		print ">>> Embedded at end of executeStep"
-		embed()
+		# print ">>> Embedded at end of executeStep"
+		# embed()
 
 		hypotheses = self.manageNewObjects(hypotheses)
 		self.statesEncountered.append(self.rle._game.getFullState())
