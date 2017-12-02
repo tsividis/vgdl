@@ -664,6 +664,7 @@ class Agent:
 		avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
 
 		self.hypotheses = [initialTheory]
+		embed()
 		self.symbolDict = generateSymbolDict(self.rle)
 
 		## For debugging purposes, generating one variant that is off by only one interaction
@@ -961,8 +962,8 @@ class Agent:
 
 	def testEpisode(self, gameObject):
 
-		actions = [32, K_DOWN, K_UP, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-		#actions = [K_DOWN, K_UP, K_UP, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
+		# actions = [32, K_DOWN, K_UP, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
+		actions = [K_DOWN, K_UP, K_UP, K_RIGHT, 32, K_RIGHT, 32, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
 		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
 
 		## Initialize external environment
@@ -1488,9 +1489,9 @@ class Agent:
 			env.step(action)
 			penalty, errorList = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
 			# print ""
-			print "Theory {} penalty: {}".format(num, penalty)
-			for e in errorList:
-				e.display()
+			# print "Theory {} penalty: {}".format(num, penalty)
+			# for e in errorList:
+				# e.display()
 
 			theories = self.expandTheory(self.hypotheses[num], errorList, envRealPrev, self.rle)
 			newTheories.extend(theories)
@@ -1504,11 +1505,10 @@ class Agent:
 			print "initializing {} proposals".format(len(newTheories))
 			theoryRLEs = self.VrleInitPhase(newTheories, envRealPrev)
 			print "evaluating {} proposals".format(len(theoryRLEs))
-			print "initialized"
 			penalties = []
 			print "Evaluating proposals",
 			for num, env in enumerate(theoryRLEs):
-				print "#",
+				# print "#",
 				env.step(action)
 				penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev)
 				newTheories[num].errorHistory.append(penalty)
@@ -1519,13 +1519,13 @@ class Agent:
 				# for e in errorList:
 				# 	e.display()
 			print ""
-			print "last-step penalties"
-			print penalties
-			print "cumulative penalties"
-			cumulative_penalties = [h.cumulativeError for h in newTheories]
-			print cumulative_penalties
-			print "proposed {} new theories".format(len(newTheories))
-			print ""
+			# print "last-step penalties"
+			# print penalties
+			# print "cumulative penalties"
+			cumulative_penalties = [np.mean(h.errorHistory) for h in newTheories]
+			# print cumulative_penalties
+			# print "proposed {} new theories".format(len(newTheories))
+			# print ""
 			# embed()
 			## Filter theories
 			scoreAndTheoryTuples = zip(cumulative_penalties, newTheories)
@@ -1542,8 +1542,8 @@ class Agent:
 		else:
 			print "Got no new theories"
 
-		# print ">>> Embedded at end of executeStep"
-		# embed()
+		print ">>> Embedded at end of executeStep"
+		embed()
 
 		hypotheses = self.manageNewObjects(hypotheses)
 		self.statesEncountered.append(self.rle._game.getFullState())
