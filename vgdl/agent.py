@@ -1445,7 +1445,7 @@ class Agent:
 		# t1=time.time()
 		envRealPrev = copy.deepcopy(self.rle)
 		self.rleHistory.append(envRealPrev)
-		
+
 		# print "deepcopy: {}".format(time.time()-t1)
 		# t2 = time.time()
 		# print "fast-copying rle"
@@ -1530,6 +1530,9 @@ class Agent:
 
 ## Store all rles. Then you can very easily do experience replay!!!
 
+# def experienceReplay(self, theory):
+
+	# for 
 
 if __name__ == "__main__":
 
