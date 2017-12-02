@@ -14,6 +14,7 @@ import ipdb, time
 import os, subprocess, shutil
 import copy
 import math
+import warnings
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
@@ -276,12 +277,14 @@ class Agent:
 		in the time step
 		"""
 		matched_ts, _, _ = self.matchEnvs(envB, envPrev) #matches real env across timestep
-		dist_ts = [matched_ts[i][2] for i in range(len(matched_ts)) if matched_ts[i][0]==sB][0] #distance that sB has moved over timestep
+		dist_ts = [matched_ts[i][2] for i in range(len(matched_ts)) if matched_ts[i][0]==sB] #distance that sB has moved over timestep
 		sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB] #sB in previous step
 		if sPrev == []:
 			sPrev = None
+			dist_ts = None
 		else:
 			sPrev = sPrev[0]
+			dist_ts = dist_ts[0]
 		return sPrev, dist_ts
 
 
@@ -381,6 +384,9 @@ class Agent:
 				sB = t[1]
 				sA_speed = theory.classes[sA.name][0].args['speed']
 				sPrev, dist_ts = self.find_sPrev(sB, envB, envPrev) #sA in previous environment
+				if sPrev==None:
+					warnings.warn('sPrev not found -> penalty unreliable')
+					continiue
 				d = 30. # grid spacing
 				xB = sB.rect.left/d
 				yB = sB.rect.top/d
@@ -415,6 +421,9 @@ class Agent:
 			posCurr = envB._rect2pos(sB.rect) #current position of sprite
 			# Find sprite corresponding to sB in previous time step
 			sPrev, dist_ts = self.find_sPrev(sB, envB, envPrev)
+			if sPrev==None:
+				warnings.warn('sPrev not found in position mismatch error')
+				continue
 			# Determine errorMapEntry object for position mismatch problem
 			e = self.diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
 			errorMap.append(e)
@@ -443,7 +452,9 @@ class Agent:
 		# 2) Unexpected destruction/appearance/transformation
 		# 2.1) Transformation
 		for iA,sA in enumerate(lonely_sprites_envA):
-			for iB,sB in enumerate(lonely_sprites_envB):
+			for iB,sB in enumerate(appeared_sprites_envB):
+				#print ">>> embed to inspect 'appeared_sprites_envB' ..."
+				#embed()
 				if manhattanDist2(sA, sB)<=2:
 					e = errorMapEntry()
 					e.diagnosis.append('transformation')
@@ -453,14 +464,22 @@ class Agent:
 					color = sB.colorName
 					sB.colorName = sA.colorName
 					matched_ts, _, _ = self.matchEnvs(envB, envPrev) #matches real env across timestep
-					sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB][0] #sB in previous step
 					sB.colorName = color
-					# Find neighbors of target sprite in the previous time step
-					neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
-					# Write potential interaction pairs to error map entry
-					for className in neighbors_prev:
-						e.intPairs.append( (sA.name,className) )
-					errorMap.append(e)
+					sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB]
+					if sPrev==[]: #This was an appearance, pass to (2.3) below
+						continue
+					else: #This was indeed a transformation
+						print "WARNING: Found unexpected transformation"
+						sPrev = sPrev[0]
+						# Find neighbors of target sprite in the previous time step
+						neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
+						# Write potential interaction pairs to error map entry
+						for className in neighbors_prev:
+							e.intPairs.append( (sA.name,className) )
+						errorMap.append(e)
+						# Remove transformed-sprite-pair from respective lists
+						lonely_sprites_envA.pop(iA)
+						appeared_sprites_envB.pop(iB)
 		# 2.2) Destruction
 		for sA in lonely_sprites_envA: #sA should have been destroyed
 			e = errorMapEntry()
@@ -480,6 +499,7 @@ class Agent:
 			errorMap.append(e)
 		# 2.3) Appearance
 		for sB in appeared_sprites_envB:
+			print "WARNING: Found unexpected appearance"
 			e = errorMapEntry()
 			e.diagnosis.append('newObjectAppeared')
 			e.targetToken = sB
@@ -972,11 +992,12 @@ class Agent:
 
 	def testEpisode(self, gameObject):
 
-		actions = [32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT,\
-		K_RIGHT, K_DOWN, K_DOWN, K_LEFT, K_LEFT, K_UP, 32, 32, K_RIGHT, K_DOWN, K_LEFT, K_LEFT, \
-		K_LEFT, K_UP, K_LEFT, K_LEFT, K_LEFT]
+		#actions = [32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT,\
+		#K_RIGHT, K_DOWN, K_DOWN, K_LEFT, K_LEFT, K_UP, 32, 32, K_RIGHT, K_DOWN, K_LEFT, K_LEFT, \
+		#K_LEFT, K_UP, K_LEFT, K_LEFT, K_LEFT]
 		#actions = [K_DOWN, K_UP, K_UP, K_RIGHT, 32, K_RIGHT, 32, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
 		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
+		actions = [32, K_DOWN, 32, K_RIGHT, 32, K_RIGHT, 32, K_DOWN, K_RIGHT]
 
 		## Initialize external environment
 		self.initializeEnvironment()
@@ -1567,7 +1588,7 @@ class Agent:
 		else:
 			print "Got no new theories"
 		#embed()
-		self.testHypotheses(hypotheses,10)
+		#self.testHypotheses(hypotheses,10)
 
 		#print ">>> Embedded at end of executeStep"
 		#embed()
