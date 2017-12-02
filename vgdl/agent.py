@@ -83,6 +83,8 @@ class Agent:
 		self.resourceObservations = {}
 		self.proposalMemory = defaultdict(lambda:[])
 		self.memory = []
+		self.rleHistory = []
+		self.allTheories = []
 
 	def initializeEnvironment(self):
 		if self.gameString==None or self.levelString==None:
@@ -610,15 +612,17 @@ class Agent:
 		if not theories:
 			theories = self.hypotheses
 		for hypothesis in theories:
-			tempHypothesis = copy.deepcopy(hypothesis)
-			tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
-			tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
-			if not flexible_goals:
-				tempHypothesis.updateTerminations()
+			VRLEs.append(self.initializeVrle(hypothesis, stateToSet=stateToSet))
+
+			# tempHypothesis = copy.deepcopy(hypothesis)
+			# tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
+			# tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
+			# if not flexible_goals:
+				# tempHypothesis.updateTerminations()
 			# print "fake hypotheses"
 			# if self.fakeInteractionRules:/
 				# tempHypothesis.display()
-			VRLEs.append(self.initializeVrle(tempHypothesis, stateToSet=stateToSet))
+			# VRLEs.append(self.initializeVrle(tempHypothesis, stateToSet=stateToSet))
 		# print("wrote theory to text")
 
 
@@ -941,8 +945,8 @@ class Agent:
 
 	def testEpisode(self, gameObject):
 
-		actions = [K_DOWN, K_UP, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-
+		actions = [K_DOWN, K_UP, K_UP, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
+		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
 		## Initialize external environment
 		self.initializeEnvironment()
 		print "initializing RLE"
@@ -1440,6 +1444,8 @@ class Agent:
 		
 		# t1=time.time()
 		envRealPrev = copy.deepcopy(self.rle)
+		self.rleHistory.append(envRealPrev)
+		
 		# print "deepcopy: {}".format(time.time()-t1)
 		# t2 = time.time()
 		# print "fast-copying rle"
@@ -1461,7 +1467,7 @@ class Agent:
 		for num, env in enumerate(theoryRLEs):
 			env.step(action)
 			penalty, errorList = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
-			print ""
+			# print ""
 			print "Theory {} penalty: {}".format(num, penalty)
 			for e in errorList:
 				e.display()
@@ -1469,24 +1475,28 @@ class Agent:
 			theories = self.expandTheory(self.hypotheses[num], errorList, envRealPrev, self.rle)
 			newTheories.extend(theories)
 
+		self.allTheories.extend(newTheories)
+
 		print self.rle.show(color='blue')
 		# embed()
-		print "evaluating proposals"
 		if newTheories:
 			## Initialize RLEs according to each theory and setting state=prevState
+			print "initializing {} proposals".format(len(newTheories))
 			theoryRLEs = self.VrleInitPhase(newTheories, envRealPrev)
-
+			print "evaluating {} proposals".format(len(theoryRLEs))
+			print "initialized"
 			penalties = []
 			for num, env in enumerate(theoryRLEs):
+				# print num
 				env.step(action)
 				penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev)
 				newTheories[num].errorHistory.append(penalty)
 				newTheories[num].cumulativeError = penalty + newTheories[num].cumulativeError/2
 				penalties.append(penalty)
-				print ""
-				print "Theory {} penalty: {}".format(num, penalty)
-				for e in errorList:
-					e.display()
+				# print ""
+				# print "Theory {} penalty: {}".format(num, penalty)
+				# for e in errorList:
+					# e.display()
 			print ""
 			print "last-step penalties"
 			print penalties
@@ -1499,7 +1509,7 @@ class Agent:
 			## Filter theories
 			scoreAndTheoryTuples = zip(cumulative_penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
-			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=15)]
+			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=10)]
 			for num, sh in enumerate(scoresAndHypotheses):
 				# if sh[0]==0:
 				print "Theory: {} | Error: {}".format(num, sh[0])
@@ -1511,7 +1521,7 @@ class Agent:
 		else:
 			print "Got no new theories"
 
-		embed()
+		# embed()
 
 		hypotheses = self.manageNewObjects(hypotheses)
 
