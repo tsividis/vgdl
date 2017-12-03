@@ -823,7 +823,7 @@ class Agent:
 
 			gameObject = None
 
-			gameObject, win, score, steps, statesEncountered, effectsEncountered = self.testEpisode(gameObject)
+			self.testEpisode(gameObject)
 		return
 
 
@@ -1046,7 +1046,7 @@ class Agent:
 		scoreAndTheoryTuples = self.testHypotheses(hypotheses)
 		for s in scoreAndTheoryTuples:
 			print s
-		# embed()
+		embed()
 		return
 
 
@@ -1662,7 +1662,7 @@ class Agent:
 			outlist.append(random.choice(lst))
 		return outlist
 
-	def testHypotheses(self, hypotheses, num_samples=5, actions_per_sample=2):
+	def testHypotheses(self, hypotheses, num_samples=5, actions_per_sample=1):
 		rle = self.initializeRLEFromGame()
 		cumulative_penalties = []
 		for sample in range(num_samples):
