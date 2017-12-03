@@ -121,11 +121,13 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # self.colorMapping = colorMapping
         return
 
-    def show(self, indent=False, showArrays=False, color='grey'):
+    def show(self, symbolDict=None, indent=False, showArrays=False, color='grey'):
         """
         symbolDict = a dict mapping each sprite name to its symbol.
         If there's no sprite overlap, then returns a string. Else returns numpy array.
         """
+        if symbolDict is None:
+            symbolDict = self.symbolDict
         gameString = ""
         spriteOverlap = False # represents whether 2 sprites are on same location
         state = np.reshape(self._getSensors(), self.outdim)
@@ -140,7 +142,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 #     symbol = objectsToSymbol(self, self.getObjectsFromNumber(state[i][j]), self.symbolDict)
                 #     gameString += symbol
                 elif state[i][j] == 1:
-                    gameString += colored(self.symbolDict['avatar'], 'red')
+                    gameString += colored(symbolDict['avatar'], 'red')
                 else:
                     spriteIndex = int(round(math.log(state[i][j],2)))-1
                     if state[i][j]%2 == 1:
@@ -151,7 +153,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                         # spriteOverlap = True
                         # break
                         spriteType = sorted(self._obstypes.keys())[::-1][spriteIndex]
-                        gameString += colored(self.symbolDict[spriteType], color)
+                        gameString += colored(symbolDict[spriteType], color)
 
             gameString += "\n"
             if spriteOverlap:
@@ -213,12 +215,12 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             # Breaking convention here
             ended, win = t.isDone(self._game)
             if ended:
-                if t.name=='noveltyTermination':
-                    print t.s1, t.s2
-                elif t.name=='spriteCounter':
-                    print t.stype
-                elif t.name=='multiSpriteCounter':
-                    print t.stypes
+                # if t.name=='noveltyTermination':
+                    # print t.s1, t.s2
+                # elif t.name=='spriteCounter':
+                    # print t.stype
+                # elif t.name=='multiSpriteCounter':
+                    # print t.stypes
                 if getTermination:
                     return ended, win, t
                 else:

@@ -1900,7 +1900,7 @@ def cannotActivateSwitch(sprite, partner, game):
 #     Sprite Induction
 # ---------------------------------------------------------------------
 ## TODO: Make sure you put these other types back when you fix sprite induction!!
-sprite_types = [ResourcePack, RandomNPC, Missile, Chaser] #removed Resource, Immovable, Passive, AStarChaser,
+sprite_types = [ResourcePack, Missile, Chaser] #removed Resource, Immovable, Passive, AStarChaser,
 
 
 def getSpeed(params):

@@ -470,6 +470,7 @@ class Agent:
 					matched_ts, _, _ = self.matchEnvs(envB, envPrev) #matches real env across timestep
 					sB.colorName = color
 					sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB]
+
 					if sPrev==[]: #This was an appearance, pass to (2.3) below
 						continue
 					else: #This was indeed a transformation
@@ -781,7 +782,7 @@ class Agent:
 			## SpriteSet induction step
 			if errorMap.targetClass != 'avatar':
 				className, theories = expandSprites(self.rle._game, theory, errorMap, 
-					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=20, max_num=2,
+					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=10, max_num=2,
 					resourceObservations=self.resourceObservations)
 				newTheories.extend(theories)
 
@@ -1004,8 +1005,6 @@ class Agent:
 		#actions = [K_DOWN, K_UP, K_UP, K_RIGHT, 32, K_RIGHT, 32, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
 		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
 		actions = [32, K_DOWN, K_UP, K_RIGHT, K_RIGHT]
-
-		## Initialize external environment
 		self.initializeEnvironment()
 		print "initializing RLE"
 
@@ -1027,11 +1026,14 @@ class Agent:
 		# print "initialized Hypotheses"
 		# embed()
 
-		for action in actions:
+		for num, action in enumerate(actions):
 			## initialize VRLEs
 			theoryRLEs = self.VrleInitPhase()
 
-			hypotheses = self.executeStep(action, self.hypotheses, theoryRLEs)
+			lastStep=False
+			if num==len(actions)-1:
+				lastStep=True
+			hypotheses = self.executeStep(action, self.hypotheses, theoryRLEs, lastStep)
 
 			## Other stuff we don't have to worry about
 			self.rle._game.nextPositions = {}
@@ -1047,7 +1049,10 @@ class Agent:
 			self.hypotheses = hypotheses
 
 		print ">>> Embedded at the end of testEpisode"
-		embed()
+		scoreAndTheoryTuples = self.testHypotheses(hypotheses)
+		for s in scoreAndTheoryTuples:
+			print s
+		# embed()
 		return
 
 
@@ -1501,31 +1506,42 @@ class Agent:
 
 		return filtered
 
-	def executeStep(self, action, hypotheses, theoryRLEs):
+	def fastcopy(self, rle):
+		print "in fastcopy"
+		from pygame.locals import K_RIGHT
+		from copy import deepcopy
+		rle.step(K_RIGHT)
+		newRle = self.initializeRLEFromGame()
+		newRle._game.sprite_groups = copy.deepcopy(rle._game.sprite_groups)
+		newRle.symbolDict = copy.deepcopy(rle.symbolDict)
+		embed()
+		return
+
+	def executeStep(self, action, hypotheses, theoryRLEs, lastStep=False):
 
 		theory_change_flag = False
 
 		spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, 
 			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
-			percentile=20, max_num=20, allMovement=False)
+			percentile=10, max_num=20, allMovement=False)
 		spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, 
 			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
-			percentile=20, max_num=20, allMovement=False)
+			percentile=10, max_num=20, allMovement=False)
 
 
 		agentState = self.resourceManagement(pre_step=True)
 		
-		# t1=time.time()
+		t1=time.time()
+
 		envRealPrev = copy.deepcopy(self.rle)
 
 		self.rleHistory.append(envRealPrev)
 
-		# print "deepcopy: {}".format(time.time()-t1)
+		print "deepcopy: {}".format(time.time()-t1)
 		# t2 = time.time()
 		# print "fast-copying rle"
 		# envRealPrev = self.initializeVrle(None, stateToSet=self.rle) ## using copy.deepcopy() substitute
 		# print "fastcopy: {}".format(time.time()-t2)
-
 
 		self.rle.step(action)
 		print ""
@@ -1535,19 +1551,22 @@ class Agent:
 		# self.rle.agentStatePrev = agentState
 		## Evaluate each theory on this step
 		## Propose new theories
+		# flag=False
 		print "evaluating old theories and proposing new ones"
 		newTheories = []
 		for num, env in enumerate(theoryRLEs):
 			env.step(action)
 			penalty, errorList = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
-			# print ""
-			# print "Theory {} penalty: {}".format(num, penalty)
 			# for e in errorList:
-				# e.display()
+				# if 'unexpectedPosition' in e.diagnosis and e.targetToken.colorName=='ORANGE':
+					# flag=True
 
 			theories = self.expandTheory(self.hypotheses[num], errorList, envRealPrev, self.rle)
 			newTheories.extend(theories)
 
+		# if flag:
+		# 	print "found unexpectedPosition"
+		# 	embed()
 		self.allTheories.extend(newTheories)
 
 		print self.rle.show(color='blue')
@@ -1568,6 +1587,9 @@ class Agent:
 				# print ""
 				# print "Theory {} penalty: {}".format(num, penalty)
 				# for e in errorList:
+				# 	if 'objectDestruction' in e.diagnosis:
+				# 		print "found objectDestruction"
+				# 		embed()
 				# 	e.display()
 			print ""
 			# print "last-step penalties"
@@ -1581,12 +1603,15 @@ class Agent:
 			## Filter theories
 			scoreAndTheoryTuples = zip(cumulative_penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
-			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=20,
-				proportionOfSpriteTheories=.2)]
+			if not lastStep:
+				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=20,
+					proportionOfSpriteTheories=.2)]
+			else:
+				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=100,
+					proportionOfSpriteTheories=.2)]
+
 			for num, sh in enumerate(scoresAndHypotheses):
-				# if sh[0]==0:
 				print "Theory: {} | Error: {}".format(num, sh[0])
-				# sh[1].display()
 
 			hypotheses = [sh[1] for sh in scoresAndHypotheses]
 			print "{} survived".format(len(hypotheses))
@@ -1605,20 +1630,6 @@ class Agent:
 
 		return hypotheses
 
-	# def testStep(self, rle, action, hypotheses):
-	# 	## evaluates all the hypotheses on the state of the provided rle, given action.
-	# 	theoryRLEs = self.VrleInitPhase(hypotheses, rle)
-	# 	envRealPrev = copy.deepcopy(rle)
-	# 	rle.step(action)
-	# 	print ""
-	# 	print keyPresses[action]
-	# 	penalties = []
-	# 	for num, env in enumerate(theoryRLEs):
-	# 		env.step(action)
-	# 		penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
-	# 		penalties.append(penalty)
-	# 	return penalties
-
 	def testSteps(self, rle, actions, hypotheses):
 		## evaluates all the hypotheses on the state of the provided rle, given action.
 		theoryRLEs = self.VrleInitPhase(hypotheses, rle)
@@ -1630,15 +1641,14 @@ class Agent:
 			print "envRealPrev"
 			print envRealPrev.show()
 			rle.step(action)
-			print "envRealCurrent"
-			print rle.show()
+
 			for num, env in enumerate(theoryRLEs):
 				print num
 				print env.show()
 				env.step(action)
-				print env.show()
-				print "_____"
-				penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev, penalty_only=True)
+				# print num
+				# print env.show()
+				penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
 				penalties.append(penalty)
 			cumulative_penalties.append(penalties)
 		cumulative_penalties = np.array(cumulative_penalties)
@@ -1664,18 +1674,19 @@ class Agent:
 		return outlist
 
 	def testHypotheses(self, hypotheses, num_samples=10, actions_per_sample=1):
+
 		rle = self.initializeRLEFromGame()
 		cumulative_penalties = []
 		for sample in range(num_samples):
 			rrle = self.randomizeState(rle)
 			actions = self.sampleWithReplacement(self.actionSet, actions_per_sample)
-			# print rrle.show()
 			penalties = self.testSteps(rrle, actions, hypotheses)
-			# print rrle.show()
 			cumulative_penalties.append(penalties)
 		cumulative_penalties = np.array(cumulative_penalties)
-		return np.mean(cumulative_penalties, axis=0)
-
+		cumulative_penalties = list(np.mean(cumulative_penalties, axis=0))
+		scoreAndTheoryTuples = zip(cumulative_penalties, hypotheses)
+		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
+		return scoreAndTheoryTuples
 
 ## Store all rles. Then you can very easily do experience replay!!!
 
