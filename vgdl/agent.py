@@ -340,7 +340,7 @@ class Agent:
 
 
 	## Function generating penalty and error map
-	def errorSignal(self, envA, envB, theory, envPrev, p_dist=1, p_speed=4, p_miss=10):
+	def errorSignal(self, envA, envB, theory, envPrev, p_dist=1, p_speed=.5, p_miss=10, penalty_only=False):
 		"""
 		envA: hyptothetical environment
 		envB: real environment
@@ -348,6 +348,7 @@ class Agent:
 		p_dist: distance penalty per grid point
 		p_speed: pentalty for distances arising from wrong speed
 		p_miss: penalty for missing or additional sprite
+		penalty_only: return penalty, [] (empty list instead or errorMap)
 
 		Calculates d_theory(envA, envB): distance between the states of the environments
 		using the ontology of the supplied theory.
@@ -408,6 +409,9 @@ class Agent:
 		# Missing/additional penalty
 		total_penalty += p_miss * ( len(lonely_sprites_envA) + len(lonely_sprites_envB) )
 
+		if penalty_only:
+			return total_penalty, []
+
 		### Construct errorMap using previous state ###
 
 		# 1) Position mismatch
@@ -453,9 +457,9 @@ class Agent:
 		# 2.1) Transformation
 		for iA,sA in enumerate(lonely_sprites_envA):
 			for iB,sB in enumerate(appeared_sprites_envB):
-				#print ">>> embed to inspect 'appeared_sprites_envB' ..."
-				#embed()
 				if manhattanDist2(sA, sB)<=2:
+					print "Embedded in transformation handling"
+					embed()
 					e = errorMapEntry()
 					e.diagnosis.append('transformation')
 					e.targetToken = sB
@@ -521,6 +525,8 @@ class Agent:
 				# Culprit classes are given by the names of the potential interaction partners
 				e.culpritClasses.append(className)
 			errorMap.append(e)
+			print "Embedded in appearance handling"
+			embed()
 
 		# 3) State change
 		# Call s.resources on all sprites in envA and envB. See which ones have changed
@@ -997,7 +1003,7 @@ class Agent:
 		#K_LEFT, K_UP, K_LEFT, K_LEFT, K_LEFT]
 		#actions = [K_DOWN, K_UP, K_UP, K_RIGHT, 32, K_RIGHT, 32, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
 		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
-		actions = [32, K_DOWN, 32, K_RIGHT, 32, K_RIGHT, 32, K_DOWN, K_RIGHT]
+		actions = [32, K_DOWN, K_UP, K_RIGHT, K_RIGHT]
 
 		## Initialize external environment
 		self.initializeEnvironment()
@@ -1555,7 +1561,7 @@ class Agent:
 			# Evaluate proposals
 			for num, env in enumerate(theoryRLEs):
 				env.step(action)
-				penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev)
+				penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev, penalty_only=True)
 				newTheories[num].errorHistory.append(penalty)
 				newTheories[num].cumulativeError = penalty + newTheories[num].cumulativeError/2
 				penalties.append(penalty)
@@ -1587,8 +1593,9 @@ class Agent:
 			print ""
 		else:
 			print "Got no new theories"
-		#embed()
-		#self.testHypotheses(hypotheses,10)
+
+		#print "Score on random game instances:"
+		#print self.testHypotheses(hypotheses,10)
 
 		#print ">>> Embedded at end of executeStep"
 		#embed()
@@ -1619,10 +1626,19 @@ class Agent:
 		for action in actions:
 			penalties = []
 			envRealPrev = copy.deepcopy(rle)
+			print "############"
+			print "envRealPrev"
+			print envRealPrev.show()
 			rle.step(action)
+			print "envRealCurrent"
+			print rle.show()
 			for num, env in enumerate(theoryRLEs):
+				print num
+				print env.show()
 				env.step(action)
-				penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
+				print env.show()
+				print "_____"
+				penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev, penalty_only=True)
 				penalties.append(penalty)
 			cumulative_penalties.append(penalties)
 		cumulative_penalties = np.array(cumulative_penalties)
@@ -1647,14 +1663,14 @@ class Agent:
 			outlist.append(random.choice(lst))
 		return outlist
 
-	def testHypotheses(self, hypotheses, num_samples=10, actions_per_sample=10):
+	def testHypotheses(self, hypotheses, num_samples=10, actions_per_sample=1):
 		rle = self.initializeRLEFromGame()
 		cumulative_penalties = []
 		for sample in range(num_samples):
 			rrle = self.randomizeState(rle)
 			actions = self.sampleWithReplacement(self.actionSet, actions_per_sample)
 			# print rrle.show()
-			penalties = self.testSteps(rle, actions, hypotheses)
+			penalties = self.testSteps(rrle, actions, hypotheses)
 			# print rrle.show()
 			cumulative_penalties.append(penalties)
 		cumulative_penalties = np.array(cumulative_penalties)
