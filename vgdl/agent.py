@@ -1049,6 +1049,8 @@ class Agent:
 			self.hypotheses = hypotheses
 
 		print ">>> Embedded at the end of testEpisode"
+		embed()
+
 		scoreAndTheoryTuples = self.testHypotheses(hypotheses)
 		for s in scoreAndTheoryTuples:
 			print s
@@ -1637,17 +1639,10 @@ class Agent:
 		for action in actions:
 			penalties = []
 			envRealPrev = copy.deepcopy(rle)
-			print "############"
-			print "envRealPrev"
-			print envRealPrev.show()
 			rle.step(action)
 
 			for num, env in enumerate(theoryRLEs):
-				print num
-				print env.show()
 				env.step(action)
-				# print num
-				# print env.show()
 				penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
 				penalties.append(penalty)
 			cumulative_penalties.append(penalties)
