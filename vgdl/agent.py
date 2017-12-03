@@ -21,6 +21,11 @@ from termcolor import colored
 from line_profiler import LineProfiler
 from vgdl.util import manhattanDist, manhattanDist2
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
+# Plotting
+from matplotlib import pyplot as plt
+import seaborn as sns
+sns.set_context('paper', font_scale = 2, rc = {'lines.linewidth': 2})
+sns.set_style("ticks", {'axes.grid': True})
 
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
@@ -87,6 +92,9 @@ class Agent:
 		self.memory = []
 		self.rleHistory = []
 		self.allTheories = []
+		self.theoryScoreHistory = []
+		self.meanErrorHistory = []
+		self.minStepError = []
 		self.actionSet = [K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE]
 
 	def initializeEnvironment(self):
@@ -526,8 +534,8 @@ class Agent:
 				# Culprit classes are given by the names of the potential interaction partners
 				e.culpritClasses.append(className)
 			errorMap.append(e)
-			print "Embedded in appearance handling"
-			embed()
+			#print "Embedded in appearance handling"
+			#embed()
 
 		# 3) State change
 		# Call s.resources on all sprites in envA and envB. See which ones have changed
@@ -999,12 +1007,17 @@ class Agent:
 
 	def testEpisode(self, gameObject):
 
-		#actions = [32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT,\
-		#K_RIGHT, K_DOWN, K_DOWN, K_LEFT, K_LEFT, K_UP, 32, 32, K_RIGHT, K_DOWN, K_LEFT, K_LEFT, \
-		#K_LEFT, K_UP, K_LEFT, K_LEFT, K_LEFT]
+		# actions = [32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT,\
+		# K_RIGHT, K_DOWN, K_DOWN, K_LEFT, K_LEFT, K_UP, 32, 32, K_RIGHT, K_DOWN, K_LEFT, K_LEFT, \
+		# K_LEFT, K_UP, K_LEFT, K_LEFT, K_LEFT]
 		#actions = [K_DOWN, K_UP, K_UP, K_RIGHT, 32, K_RIGHT, 32, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
 		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
-		actions = [32, K_DOWN, K_UP, K_RIGHT, K_RIGHT]
+		# actions = [32, K_RIGHT, K_RIGHT]
+		actions = \
+		[32, 32, 32, 32, K_RIGHT, 32, K_RIGHT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_UP, 32, \
+		K_UP, 32, K_DOWN, K_DOWN, 32, K_LEFT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_LEFT, 32, \
+		K_LEFT, K_UP, 32, K_UP, 32, K_DOWN, 32, 32, K_UP, 32, K_RIGHT, 32, K_DOWN, K_RIGHT, \
+		32, K_RIGHT, K_RIGHT, 32, 32]
 		self.initializeEnvironment()
 		print "initializing RLE"
 
@@ -1026,7 +1039,10 @@ class Agent:
 		# print "initialized Hypotheses"
 		# embed()
 
+		plt.ion() #allow for plot updating
+
 		for num, action in enumerate(actions):
+			print ">>> Step", num+1, "of", len(actions), "<<<"
 			## initialize VRLEs
 			theoryRLEs = self.VrleInitPhase()
 
@@ -1047,6 +1063,11 @@ class Agent:
 			self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
 
 			self.hypotheses = hypotheses
+
+			# Plot scores from random enviroment sampling
+			plt.close('all')
+			self.plotScores()
+			plt.pause(0.01)
 
 		print ">>> Embedded at the end of testEpisode"
 		embed()
@@ -1504,7 +1525,8 @@ class Agent:
 		else:
 			filtered = sprite_candidates
 		remaining = max_num - len(filtered)
-		filtered = filtered + induction_candidates[0:min(remaining, len(induction_candidates))]
+		filtered = induction_candidates[0:min(remaining, len(induction_candidates))] + filtered
+		filtered = sorted(filtered, key=lambda x: x[0])
 
 		return filtered
 
@@ -1605,11 +1627,12 @@ class Agent:
 			## Filter theories
 			scoreAndTheoryTuples = zip(cumulative_penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
+
 			if not lastStep:
-				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=20,
+				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=20,
 					proportionOfSpriteTheories=.2)]
 			else:
-				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=100,
+				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=20,
 					proportionOfSpriteTheories=.2)]
 
 			for num, sh in enumerate(scoresAndHypotheses):
@@ -1621,8 +1644,15 @@ class Agent:
 		else:
 			print "Got no new theories"
 
-		#print "Score on random game instances:"
-		#print self.testHypotheses(hypotheses,10)
+		# Update mean error history
+		self.meanErrorHistory.append( [np.mean(hypotheses[i].errorHistory) for i in range(len(hypotheses))] )
+		# Update minimum step error
+		self.minStepError.append( hypotheses[i].errorHistory[-1] )
+		# Theory scores on random game instances
+		scoreR = self.testHypotheses(hypotheses, num_samples=100)
+		self.theoryScoreHistory.append(scoreR)
+		print "Theory scores on random game instances:"
+		print [scoreR[i][0] for i in range(len(scoreR))]
 
 		#print ">>> Embedded at end of executeStep"
 		#embed()
@@ -1631,6 +1661,11 @@ class Agent:
 		self.statesEncountered.append(self.rle._game.getFullState())
 
 		return hypotheses
+
+
+	#######################################################
+	######## TESTING HYPOTHESES BY RANDOM SAMPLING ########
+	#######################################################
 
 	def testSteps(self, rle, actions, hypotheses):
 		## evaluates all the hypotheses on the state of the provided rle, given action.
@@ -1669,7 +1704,6 @@ class Agent:
 		return outlist
 
 	def testHypotheses(self, hypotheses, num_samples=10, actions_per_sample=1):
-
 		rle = self.initializeRLEFromGame()
 		cumulative_penalties = []
 		for sample in range(num_samples):
@@ -1682,6 +1716,46 @@ class Agent:
 		scoreAndTheoryTuples = zip(cumulative_penalties, hypotheses)
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 		return scoreAndTheoryTuples
+
+	def plotScores(self, save=False, savename='0-vgdl_score_plot'):
+		# Get list of scores for each step
+		scores = []
+		for s in self.theoryScoreHistory:
+			scores.append([s[i][0] for i in range(len(s))])
+		# Plot scores
+		N = len(scores)
+		f = plt.figure(figsize = (6, 7))
+		ax1 = plt.subplot(211)
+		ax2 = plt.subplot(212)
+		f.tight_layout(pad=1.5)
+		# Sampled score - surviving batch
+		for i in range(N):
+			if i==0:
+				ax1.plot( (i+1)*np.ones(len(scores[i])), scores[i], 'r.', ms=10, alpha=.5, label='Sampled score - survived batch' )
+			else:
+				ax1.plot( (i+1)*np.ones(len(scores[i])), scores[i], 'r.', ms=10, alpha=.5 )
+		# Sampled score - best
+		ax1.plot( range(1,N+1), [ min(scores[i]) for i in range(N) ], 'r-', label='Sampled score - best' )
+		# Current step error - best
+		ax1.plot( range(1,N+1), self.minStepError, 'b-', label='Current step error - best'  )
+		# Current step error - best (plot 2)
+		ax2.plot( range(1,N+1), self.minStepError, 'b-', label='Current step error - best'  )
+		# Mean error history - survived batch
+		for i in range(N):
+			if i==0:
+				ax2.plot( (i+1)*np.ones(len(scores[i])), self.meanErrorHistory[i], 'b.', ms=10, alpha=.5, label='Mean error history - survived batch' )
+			else:
+				ax2.plot( (i+1)*np.ones(len(scores[i])), self.meanErrorHistory[i], 'b.', ms=10, alpha=.5 )
+		# Mean error history - best
+		ax2.plot( range(1,N+1), [m[0] for m in self.meanErrorHistory], 'b--', label='Mean error history - best'  )
+		# Plot cosmetics
+		ax1.set_xlabel('Step'), ax2.set_xlabel('Step')
+		ax1.set_ylabel('Score'), ax2.set_ylabel('Score')
+		ax1.legend(loc='upper right', fontsize=8), ax2.legend(loc='upper right', fontsize=8)
+		if save==True:
+			plt.savefig(savename+'.png')
+		else:
+			plt.show()
 
 ## Store all rles. Then you can very easily do experience replay!!!
 
