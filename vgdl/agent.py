@@ -1074,7 +1074,7 @@ class Agent:
 
 		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=10)
 		print "initialized Hypotheses"
-		embed()
+		# embed()
 		# plt.ion() #allow for plot updating
 
 		for num, action in enumerate(actions):
