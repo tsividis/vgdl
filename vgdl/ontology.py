@@ -169,8 +169,6 @@ class ContinuousPhysics(GridPhysics):
 
            
 
-        
-
     def calculatePassiveMovement(self, sprite, allMovement=False):
         if allMovement:
             lastMove = sprite.lastdisplacement
@@ -2361,7 +2359,7 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
 
 
 def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict, 
-    oldSpriteSet = None, default=False):
+    oldSpriteSet = None, default=False, randomType=False):
 
     import random
     import numpy as np
@@ -2438,7 +2436,13 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             except ZeroDivisionError:
                 pass
 
-        best_param = max(param_product, key=param_product.get)
+        print "in sampleFromDistribution"
+        embed()
+
+        if randomType:
+            best_param = random.choice(param_product.keys())
+        else:
+            best_param = max(param_product, key=param_product.get)
         best_params[obj_type] = best_param
 
         ## Use for debugging sprite-type inference.
@@ -2463,56 +2467,60 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
 
         s = Sprite(vgdlType=sprite_type, color=color)
 
+        if randomType:
+            param = dict(best_param[1:])
+            setSpriteParams(param, s)
         if default:
             # embed()
-            s.vgdlType = ResourcePack
+            s.vgdlType = ResourcePack            
         else:
-            ## Find matching object in the existing hypothesis
-            try:
-                if oldSpriteSet:
-                    if s.color in [sprite.color for sprite in oldSpriteSet]:
-                        matchingSprite = [sprite for sprite in oldSpriteSet if s.color==sprite.color][0]
-                        # If types are different, distributionsHaveChanged is true
-                        if s.vgdlType!=matchingSprite.vgdlType:
-                            distributionsHaveChanged = True
-                            print ("Distributions for {} have changed from sprite type {} to {}".format(s.color, matchingSprite.vgdlType, s.vgdlType))
-                        # If one of the args is None but not the other,
-                        # distributionsHaveChanged is true
-                        elif ((s.args==None and matchingSprite.args!=None) or
-                            (s.args!=None and matchingSprite.args==None)):
-                            distributionsHaveChanged = True
-                            print ("Distribution args for {} have changed from {} to {}".format(s.color, s.args, matchingSprite.args))
-                        elif (s.args and matchingSprite.args) != None:
-                            # If args are different, except for the case where only an
-                            # orientation is reversed (e.g. turnAround), then
+            else:
+                ## Find matching object in the existing hypothesis
+                try:
+                    if oldSpriteSet:
+                        if s.color in [sprite.color for sprite in oldSpriteSet]:
+                            matchingSprite = [sprite for sprite in oldSpriteSet if s.color==sprite.color][0]
+                            # If types are different, distributionsHaveChanged is true
+                            if s.vgdlType!=matchingSprite.vgdlType:
+                                distributionsHaveChanged = True
+                                print ("Distributions for {} have changed from sprite type {} to {}".format(s.color, matchingSprite.vgdlType, s.vgdlType))
+                            # If one of the args is None but not the other,
                             # distributionsHaveChanged is true
-                            for key in s.args.keys() + matchingSprite.args.keys():
-                                try:
-                                    if not ((s.args[key] and matchingSprite.args[key])
-                                        in ([LEFT, RIGHT] or [UP, DOWN])):
-                                        if s.args[key] != matchingSprite.args[key]:
-                                            distributionsHaveChanged = True
+                            elif ((s.args==None and matchingSprite.args!=None) or
+                                (s.args!=None and matchingSprite.args==None)):
+                                distributionsHaveChanged = True
+                                print ("Distribution args for {} have changed from {} to {}".format(s.color, s.args, matchingSprite.args))
+                            elif (s.args and matchingSprite.args) != None:
+                                # If args are different, except for the case where only an
+                                # orientation is reversed (e.g. turnAround), then
+                                # distributionsHaveChanged is true
+                                for key in s.args.keys() + matchingSprite.args.keys():
+                                    try:
+                                        if not ((s.args[key] and matchingSprite.args[key])
+                                            in ([LEFT, RIGHT] or [UP, DOWN])):
+                                            if s.args[key] != matchingSprite.args[key]:
+                                                distributionsHaveChanged = True
+                                            print ("Distribution args for {} have changed from {} to {}".format(s.color, s.args, matchingSprite.args))
+                                    except KeyError:
+                                        # If the new sprite has an arg that the old one
+                                        # doesn't, or vice-versa, then
+                                        # distributionsHaveChanged is true
+                                        distributionsHaveChanged = True
                                         print ("Distribution args for {} have changed from {} to {}".format(s.color, s.args, matchingSprite.args))
-                                except KeyError:
-                                    # If the new sprite has an arg that the old one
-                                    # doesn't, or vice-versa, then
-                                    # distributionsHaveChanged is true
-                                    distributionsHaveChanged = True
-                                    print ("Distribution args for {} have changed from {} to {}".format(s.color, s.args, matchingSprite.args))
 
-                    else:
-                        # print s.color, oldSpriteSet
-                        # embed()
-                        distributionsHaveChanged = True
-            except:
-                print "failed to find matching object in sampleFromDistribution"
-                embed()
+                        else:
+                            # print s.color, oldSpriteSet
+                            # embed()
+                            distributionsHaveChanged = True
+                except:
+                    print "failed to find matching object in sampleFromDistribution"
+                    embed()
 
-            param = dict(best_param[1:])
-            setSpriteParams(param, s) # set the parameters for sprite s
+                param = dict(best_param[1:])
+                setSpriteParams(param, s) # set the parameters for sprite s
 
 
-        sample.append(s)
+            sample.append(s)
 
     return sample, exceptions, distributionsHaveChanged, best_params
 

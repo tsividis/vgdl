@@ -340,7 +340,7 @@ class Agent:
 
 
 	## Function generating penalty and error map
-	def errorSignal(self, envA, envB, theory, envPrev, p_dist=1, p_speed=.5, p_miss=10):
+	def errorSignal(self, envA, envB, theory, envPrev, p_dist=1, p_speed=.5, p_miss=10, penalty_only=False):
 		"""
 		envA: hyptothetical environment
 		envB: real environment
@@ -348,6 +348,7 @@ class Agent:
 		p_dist: distance penalty per grid point
 		p_speed: pentalty for distances arising from wrong speed
 		p_miss: penalty for missing or additional sprite
+		penalty_only: return penalty, [] (empty list instead or errorMap)
 
 		Calculates d_theory(envA, envB): distance between the states of the environments
 		using the ontology of the supplied theory.
@@ -408,6 +409,9 @@ class Agent:
 		# Missing/additional penalty
 		total_penalty += p_miss * ( len(lonely_sprites_envA) + len(lonely_sprites_envB) )
 
+		if penalty_only:
+			return total_penalty, []
+
 		### Construct errorMap using previous state ###
 
 		# 1) Position mismatch
@@ -453,9 +457,9 @@ class Agent:
 		# 2.1) Transformation
 		for iA,sA in enumerate(lonely_sprites_envA):
 			for iB,sB in enumerate(appeared_sprites_envB):
-				#print ">>> embed to inspect 'appeared_sprites_envB' ..."
-				#embed()
 				if manhattanDist2(sA, sB)<=2:
+					print "Embedded in transformation handling"
+					embed()
 					e = errorMapEntry()
 					e.diagnosis.append('transformation')
 					e.targetToken = sB
@@ -522,6 +526,8 @@ class Agent:
 				# Culprit classes are given by the names of the potential interaction partners
 				e.culpritClasses.append(className)
 			errorMap.append(e)
+			print "Embedded in appearance handling"
+			embed()
 
 		# 3) State change
 		# Call s.resources on all sprites in envA and envB. See which ones have changed
@@ -721,7 +727,7 @@ class Agent:
 		for i in range(num_variants):
 			theory = copy.deepcopy(initialTheory)
 			for interactionRule in theory.interactionSet:
-				interactionRule.interaction = predicate_options[i%len(predicate_options)]#random.choice(predicate_options)
+				interactionRule.interaction = random.choice(predicate_options)
 			self.hypotheses.append(theory)
 
 		return gameObject
@@ -993,12 +999,12 @@ class Agent:
 
 	def testEpisode(self, gameObject):
 
-
+		#actions = [32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT,\
+		#K_RIGHT, K_DOWN, K_DOWN, K_LEFT, K_LEFT, K_UP, 32, 32, K_RIGHT, K_DOWN, K_LEFT, K_LEFT, \
+		#K_LEFT, K_UP, K_LEFT, K_LEFT, K_LEFT]
+		#actions = [K_DOWN, K_UP, K_UP, K_RIGHT, 32, K_RIGHT, 32, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
 		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
-		# actions = [K_RIGHT, K_LEFT]
-		# actions = [K_SPACE, K_SPACE, K_SPACE]
-		actions = [K_SPACE, K_SPACE, K_SPACE, K_RIGHT, K_RIGHT, K_RIGHT, K_SPACE]
-		## Initialize external environment
+		actions = [32, K_DOWN, K_UP, K_RIGHT, K_RIGHT]
 		self.initializeEnvironment()
 		print "initializing RLE"
 
@@ -1017,8 +1023,8 @@ class Agent:
 
 
 		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=0)
-		# print "initialized Hypotheses"
-		# embed()
+		print "initialized Hypotheses"
+		embed()
 
 		for num, action in enumerate(actions):
 			## initialize VRLEs
@@ -1574,7 +1580,7 @@ class Agent:
 			# Evaluate proposals
 			for num, env in enumerate(theoryRLEs):
 				env.step(action)
-				penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev)
+				penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev, penalty_only=True)
 				newTheories[num].errorHistory.append(penalty)
 				newTheories[num].cumulativeError = penalty + newTheories[num].cumulativeError/2
 				penalties.append(penalty)
@@ -1613,8 +1619,8 @@ class Agent:
 		else:
 			print "Got no new theories"
 
-		# embed()
-		# self.testHypotheses(hypotheses,10)
+		#print "Score on random game instances:"
+		#print self.testHypotheses(hypotheses,10)
 
 		#print ">>> Embedded at end of executeStep"
 		#embed()
@@ -1632,11 +1638,8 @@ class Agent:
 			penalties = []
 			envRealPrev = copy.deepcopy(rle)
 			rle.step(action)
-			# print rle.show()
 			for num, env in enumerate(theoryRLEs):
 				env.step(action)
-				# print num
-				# print env.show()
 				penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
 				penalties.append(penalty)
 			cumulative_penalties.append(penalties)
@@ -1661,6 +1664,7 @@ class Agent:
 		for i in range(k):
 			outlist.append(random.choice(lst))
 		return outlist
+
 
 	def testHypotheses(self, hypotheses, num_samples=5, actions_per_sample=1):
 		rle = self.initializeRLEFromGame()
