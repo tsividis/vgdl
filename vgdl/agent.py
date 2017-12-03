@@ -14,6 +14,7 @@ import ipdb, time
 import os, subprocess, shutil
 import copy
 import math
+import warnings
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
@@ -276,12 +277,14 @@ class Agent:
 		in the time step
 		"""
 		matched_ts, _, _ = self.matchEnvs(envB, envPrev) #matches real env across timestep
-		dist_ts = [matched_ts[i][2] for i in range(len(matched_ts)) if matched_ts[i][0]==sB][0] #distance that sB has moved over timestep
+		dist_ts = [matched_ts[i][2] for i in range(len(matched_ts)) if matched_ts[i][0]==sB] #distance that sB has moved over timestep
 		sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB] #sB in previous step
 		if sPrev == []:
 			sPrev = None
+			dist_ts = None
 		else:
 			sPrev = sPrev[0]
+			dist_ts = dist_ts[0]
 		return sPrev, dist_ts
 
 
@@ -337,7 +340,7 @@ class Agent:
 
 
 	## Function generating penalty and error map
-	def errorSignal(self, envA, envB, theory, envPrev, p_dist=1, p_speed=4, p_miss=10):
+	def errorSignal(self, envA, envB, theory, envPrev, p_dist=1, p_speed=.5, p_miss=10):
 		"""
 		envA: hyptothetical environment
 		envB: real environment
@@ -381,6 +384,9 @@ class Agent:
 				sB = t[1]
 				sA_speed = theory.classes[sA.name][0].args['speed']
 				sPrev, dist_ts = self.find_sPrev(sB, envB, envPrev) #sA in previous environment
+				if sPrev==None:
+					warnings.warn('sPrev not found -> penalty unreliable')
+					continiue
 				d = 30. # grid spacing
 				xB = sB.rect.left/d
 				yB = sB.rect.top/d
@@ -415,6 +421,9 @@ class Agent:
 			posCurr = envB._rect2pos(sB.rect) #current position of sprite
 			# Find sprite corresponding to sB in previous time step
 			sPrev, dist_ts = self.find_sPrev(sB, envB, envPrev)
+			if sPrev==None:
+				warnings.warn('sPrev not found in position mismatch error')
+				continue
 			# Determine errorMapEntry object for position mismatch problem
 			e = self.diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
 			errorMap.append(e)
@@ -443,7 +452,9 @@ class Agent:
 		# 2) Unexpected destruction/appearance/transformation
 		# 2.1) Transformation
 		for iA,sA in enumerate(lonely_sprites_envA):
-			for iB,sB in enumerate(lonely_sprites_envB):
+			for iB,sB in enumerate(appeared_sprites_envB):
+				#print ">>> embed to inspect 'appeared_sprites_envB' ..."
+				#embed()
 				if manhattanDist2(sA, sB)<=2:
 					e = errorMapEntry()
 					e.diagnosis.append('transformation')
@@ -455,9 +466,11 @@ class Agent:
 					matched_ts, _, _ = self.matchEnvs(envB, envPrev) #matches real env across timestep
 					sB.colorName = color
 					sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB]
-					if sPrev==[]:
-						print "WARNING: no interactionPair found for transformation error"
-					else:
+
+					if sPrev==[]: #This was an appearance, pass to (2.3) below
+						continue
+					else: #This was indeed a transformation
+						print "WARNING: Found unexpected transformation"
 						sPrev = sPrev[0]
 						# Find neighbors of target sprite in the previous time step
 						neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
@@ -465,6 +478,9 @@ class Agent:
 						for className in neighbors_prev:
 							e.intPairs.append( (sA.name,className) )
 						errorMap.append(e)
+						# Remove transformed-sprite-pair from respective lists
+						lonely_sprites_envA.pop(iA)
+						appeared_sprites_envB.pop(iB)
 		# 2.2) Destruction
 		for sA in lonely_sprites_envA: #sA should have been destroyed
 			e = errorMapEntry()
@@ -484,6 +500,7 @@ class Agent:
 			errorMap.append(e)
 		# 2.3) Appearance
 		for sB in appeared_sprites_envB:
+			print "WARNING: Found unexpected appearance"
 			e = errorMapEntry()
 			e.diagnosis.append('newObjectAppeared')
 			e.targetToken = sB
@@ -759,7 +776,7 @@ class Agent:
 			## SpriteSet induction step
 			if errorMap.targetClass != 'avatar':
 				className, theories = expandSprites(self.rle._game, theory, errorMap, 
-					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=20, max_num=2,
+					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=10, max_num=2,
 					resourceObservations=self.resourceObservations)
 				newTheories.extend(theories)
 
@@ -977,11 +994,6 @@ class Agent:
 	def testEpisode(self, gameObject):
 
 
-		# actions = [32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT,\
-		# K_RIGHT, K_DOWN, K_DOWN, K_LEFT, K_LEFT, K_UP, 32, 32, K_RIGHT, K_DOWN, K_LEFT, K_LEFT, \
-		# K_LEFT, K_UP, K_LEFT, K_LEFT, K_LEFT]
-		#actions = [K_DOWN, K_UP, K_UP, K_RIGHT, 32, K_RIGHT, 32, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
-
 		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
 		# actions = [K_RIGHT, K_LEFT]
 		# actions = [K_SPACE, K_SPACE, K_SPACE]
@@ -1008,11 +1020,14 @@ class Agent:
 		# print "initialized Hypotheses"
 		# embed()
 
-		for action in actions:
+		for num, action in enumerate(actions):
 			## initialize VRLEs
 			theoryRLEs = self.VrleInitPhase()
 
-			hypotheses = self.executeStep(action, self.hypotheses, theoryRLEs)
+			lastStep=False
+			if num==len(actions)-1:
+				lastStep=True
+			hypotheses = self.executeStep(action, self.hypotheses, theoryRLEs, lastStep)
 
 			## Other stuff we don't have to worry about
 			self.rle._game.nextPositions = {}
@@ -1028,7 +1043,10 @@ class Agent:
 			self.hypotheses = hypotheses
 
 		print ">>> Embedded at the end of testEpisode"
-		embed()
+		scoreAndTheoryTuples = self.testHypotheses(hypotheses)
+		for s in scoreAndTheoryTuples:
+			print s
+		# embed()
 		return
 
 
@@ -1493,16 +1511,16 @@ class Agent:
 		embed()
 		return
 
-	def executeStep(self, action, hypotheses, theoryRLEs):
+	def executeStep(self, action, hypotheses, theoryRLEs, lastStep=False):
 
 		theory_change_flag = False
 
 		spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, 
 			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
-			percentile=20, max_num=20, allMovement=False)
+			percentile=10, max_num=20, allMovement=False)
 		spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, 
 			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
-			percentile=20, max_num=20, allMovement=False)
+			percentile=10, max_num=20, allMovement=False)
 
 
 		agentState = self.resourceManagement(pre_step=True)
@@ -1527,23 +1545,22 @@ class Agent:
 		# self.rle.agentStatePrev = agentState
 		## Evaluate each theory on this step
 		## Propose new theories
+		# flag=False
 		print "evaluating old theories and proposing new ones"
 		newTheories = []
 		for num, env in enumerate(theoryRLEs):
 			env.step(action)
 			penalty, errorList = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
-			for e in errorList:
-				if 'objectDestruction' in e.diagnosis:
-					print "found objectDestruction"
-					embed()
-			# print ""
-			# print "Theory {} penalty: {}".format(num, penalty)
 			# for e in errorList:
-				# e.display()
+				# if 'unexpectedPosition' in e.diagnosis and e.targetToken.colorName=='ORANGE':
+					# flag=True
 
 			theories = self.expandTheory(self.hypotheses[num], errorList, envRealPrev, self.rle)
 			newTheories.extend(theories)
 
+		# if flag:
+		# 	print "found unexpectedPosition"
+		# 	embed()
 		self.allTheories.extend(newTheories)
 
 		print self.rle.show(color='blue')
@@ -1580,18 +1597,22 @@ class Agent:
 			## Filter theories
 			scoreAndTheoryTuples = zip(cumulative_penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
-			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=20,
-				proportionOfSpriteTheories=.2)]
+			if not lastStep:
+				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=20,
+					proportionOfSpriteTheories=.2)]
+			else:
+				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=100,
+					proportionOfSpriteTheories=.2)]
+
 			for num, sh in enumerate(scoresAndHypotheses):
-				# if sh[0]==0:
 				print "Theory: {} | Error: {}".format(num, sh[0])
-				# sh[1].display()
 
 			hypotheses = [sh[1] for sh in scoresAndHypotheses]
 			print "{} survived".format(len(hypotheses))
 			print ""
 		else:
 			print "Got no new theories"
+
 		# embed()
 		# self.testHypotheses(hypotheses,10)
 
@@ -1602,20 +1623,6 @@ class Agent:
 		self.statesEncountered.append(self.rle._game.getFullState())
 
 		return hypotheses
-
-	# def testStep(self, rle, action, hypotheses):
-	# 	## evaluates all the hypotheses on the state of the provided rle, given action.
-	# 	theoryRLEs = self.VrleInitPhase(hypotheses, rle)
-	# 	envRealPrev = copy.deepcopy(rle)
-	# 	rle.step(action)
-	# 	print ""
-	# 	print keyPresses[action]
-	# 	penalties = []
-	# 	for num, env in enumerate(theoryRLEs):
-	# 		env.step(action)
-	# 		penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
-	# 		penalties.append(penalty)
-	# 	return penalties
 
 	def testSteps(self, rle, actions, hypotheses):
 		## evaluates all the hypotheses on the state of the provided rle, given action.
@@ -1655,19 +1662,19 @@ class Agent:
 			outlist.append(random.choice(lst))
 		return outlist
 
-	def testHypotheses(self, hypotheses, num_samples=10, actions_per_sample=10):
+	def testHypotheses(self, hypotheses, num_samples=5, actions_per_sample=2):
 		rle = self.initializeRLEFromGame()
 		cumulative_penalties = []
 		for sample in range(num_samples):
 			rrle = self.randomizeState(rle)
 			actions = self.sampleWithReplacement(self.actionSet, actions_per_sample)
-			# print rrle.show()
-			penalties = self.testSteps(rle, actions, hypotheses)
-			# print rrle.show()
+			penalties = self.testSteps(rrle, actions, hypotheses)
 			cumulative_penalties.append(penalties)
 		cumulative_penalties = np.array(cumulative_penalties)
-		return np.mean(cumulative_penalties, axis=0)
-
+		cumulative_penalties = list(np.mean(cumulative_penalties, axis=0))
+		scoreAndTheoryTuples = zip(cumulative_penalties, hypotheses)
+		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
+		return scoreAndTheoryTuples
 
 ## Store all rles. Then you can very easily do experience replay!!!
 
