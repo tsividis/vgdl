@@ -125,7 +125,11 @@ class Agent:
 
 	def findNearestSprite(self, sprite, spriteList):
 		## returns the sprite in spriteList whose location best matches the location of sprite.
-		return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
+		if spriteList==[]:
+			return None
+		else:
+			return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
+
 
 
 
@@ -466,8 +470,8 @@ class Agent:
 		for iA,sA in enumerate(lonely_sprites_envA):
 			for iB,sB in enumerate(appeared_sprites_envB):
 				if manhattanDist2(sA, sB)<=2:
-					print "Embedded in transformation handling"
-					embed()
+					#print "Embedded in transformation handling"
+					#embed()
 					e = errorMapEntry()
 					e.diagnosis.append('transformation')
 					e.targetToken = sB
@@ -501,6 +505,10 @@ class Agent:
 			# Find the sprite that was destroyed in envB from the kill_list
 			candidates_in_killList = [s for s in envB._game.kill_list if s.colorName==sA.colorName]
 			sB = self.findNearestSprite(sA, candidates_in_killList)
+			if sB==None:
+				print "WARNING: No target and interaction pair found in object destruction"
+				errorMap.append(e)
+				continue
 			e.targetToken = sB
 			# Find neighbors of target sprite in the previous time step
 			sPrev = sB #sprite was destroyed but hasn't moved
@@ -1007,17 +1015,27 @@ class Agent:
 
 	def testEpisode(self, gameObject):
 
+		# ### Testing ###
 		# actions = [32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT,\
 		# K_RIGHT, K_DOWN, K_DOWN, K_LEFT, K_LEFT, K_UP, 32, 32, K_RIGHT, K_DOWN, K_LEFT, K_LEFT, \
 		# K_LEFT, K_UP, K_LEFT, K_LEFT, K_LEFT]
 		#actions = [K_DOWN, K_UP, K_UP, K_RIGHT, 32, K_RIGHT, 32, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
 		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
 		# actions = [32, K_RIGHT, K_RIGHT]
+		
+		# ### For Game A ###
+		# actions = \
+		# [32, 32, 32, 32, K_RIGHT, 32, K_RIGHT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_UP, 32, \
+		# K_UP, 32, K_DOWN, K_DOWN, 32, K_LEFT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_LEFT, 32, \
+		# K_LEFT, K_UP, 32, K_UP, 32, K_DOWN, 32, 32, K_UP, 32, K_RIGHT, 32, K_DOWN, K_RIGHT, \
+		# 32, K_RIGHT, K_RIGHT, 32, 32]
+		
+		# ### For Game B & C ###
 		actions = \
-		[32, 32, 32, 32, K_RIGHT, 32, K_RIGHT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_UP, 32, \
-		K_UP, 32, K_DOWN, K_DOWN, 32, K_LEFT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_LEFT, 32, \
-		K_LEFT, K_UP, 32, K_UP, 32, K_DOWN, 32, 32, K_UP, 32, K_RIGHT, 32, K_DOWN, K_RIGHT, \
-		32, K_RIGHT, K_RIGHT, 32, 32]
+		[32, 32, 32, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_UP, 32, \
+		K_DOWN, K_RIGHT, 32, 32, K_UP, K_UP, 32, 32, K_LEFT, K_DOWN, K_LEFT, K_LEFT, K_LEFT, \
+		K_LEFT, K_LEFT, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
+
 		self.initializeEnvironment()
 		print "initializing RLE"
 
