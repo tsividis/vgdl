@@ -21,6 +21,11 @@ from termcolor import colored
 from line_profiler import LineProfiler
 from vgdl.util import manhattanDist, manhattanDist2
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
+# Plotting
+from matplotlib import pyplot as plt
+import seaborn as sns
+sns.set_context('paper', font_scale = 2, rc = {'lines.linewidth': 2})
+sns.set_style("ticks", {'axes.grid': True})
 
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
@@ -87,7 +92,11 @@ class Agent:
 		self.memory = []
 		self.rleHistory = []
 		self.allTheories = []
+		self.theoryScoreHistory = []
+		self.meanErrorHistory = []
+		self.minStepError = []
 		self.actionSet = [K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE]
+		self.randomTheories = []
 
 	def initializeEnvironment(self):
 		if self.gameString==None or self.levelString==None:
@@ -117,7 +126,11 @@ class Agent:
 
 	def findNearestSprite(self, sprite, spriteList):
 		## returns the sprite in spriteList whose location best matches the location of sprite.
-		return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
+		if spriteList==[]:
+			return None
+		else:
+			return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
+
 
 
 
@@ -383,7 +396,10 @@ class Agent:
 			# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
 			if str(sA_type) == "<class 'vgdl.ontology.RandomNPC'>":		
 				sB = t[1]
-				sA_speed = theory.classes[sA.name][0].args['speed']
+				try:
+					sA_speed = theory.classes[sA.name][0].args['speed']
+				except:
+					sA_speed = theory.classes[sA.name][0].speed
 				sPrev, dist_ts = self.find_sPrev(sB, envB, envPrev) #sA in previous environment
 				if sPrev==None:
 					warnings.warn('sPrev not found -> penalty unreliable')
@@ -458,8 +474,8 @@ class Agent:
 		for iA,sA in enumerate(lonely_sprites_envA):
 			for iB,sB in enumerate(appeared_sprites_envB):
 				if manhattanDist2(sA, sB)<=2:
-					print "Embedded in transformation handling"
-					embed()
+					#print "Embedded in transformation handling"
+					#embed()
 					e = errorMapEntry()
 					e.diagnosis.append('transformation')
 					e.targetToken = sB
@@ -493,6 +509,10 @@ class Agent:
 			# Find the sprite that was destroyed in envB from the kill_list
 			candidates_in_killList = [s for s in envB._game.kill_list if s.colorName==sA.colorName]
 			sB = self.findNearestSprite(sA, candidates_in_killList)
+			if sB==None:
+				print "WARNING: No target and interaction pair found in object destruction"
+				errorMap.append(e)
+				continue
 			e.targetToken = sB
 			# Find neighbors of target sprite in the previous time step
 			sPrev = sB #sprite was destroyed but hasn't moved
@@ -526,8 +546,8 @@ class Agent:
 				# Culprit classes are given by the names of the potential interaction partners
 				e.culpritClasses.append(className)
 			errorMap.append(e)
-			print "Embedded in appearance handling"
-			embed()
+			#print "Embedded in appearance handling"
+			#embed()
 
 		# 3) State change
 		# Call s.resources on all sprites in envA and envB. See which ones have changed
@@ -688,11 +708,12 @@ class Agent:
 			## Sample from distribution but actually just set everything to default.
 			spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
 				self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, \
-				oldSpriteSet=None, default=True)
+				oldSpriteSet=None, mode='default')
 			self.rle._game.exceptedObjects = exceptedObjects
 	
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 			initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
+			initialTheory.terminationSet = [r for r in initialTheory.terminationSet if r.ruleType=='SpriteCounterRule']
 		else:
 			gameObject = Game(self.gameString)
 			initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
@@ -723,12 +744,25 @@ class Agent:
 
 		## Generate variants of the theory
 		## (as a stand-in for a more generic induction/elaboration process)
-		predicate_options = ['nothing', 'stepBack', 'killSprite', 'bounceForward', 'undoAll']
+		predicate_options = ['nothing', 'stepBack', 'killSprite', 'bounceForward', 'undoAll', 'reverseDirection']
 		for i in range(num_variants):
-			theory = copy.deepcopy(initialTheory)
+			spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
+				self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, \
+				oldSpriteSet=None, mode='random')
+			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
+			theory = gameObject.buildGenericTheory(spriteTypeHypothesis)
 			for interactionRule in theory.interactionSet:
-				interactionRule.interaction = random.choice(predicate_options)
-			self.hypotheses.append(theory)
+				if interactionRule.slot1 == 'avatar':
+					interactionRule.interaction = random.choice(['nothing', 'stepBack', 'bounceForward', 'undoAll', 'reverseDirection'])
+				else:
+					interactionRule.interaction = random.choice(predicate_options)
+				if interactionRule.slot2=='EOS' and interactionRule.slot1!='avatar':
+					interactionRule.interaction = random.choice(['stepBack', 'reverseDirection', 'killSprite'])
+
+			theory.terminationSet = [r for r in initialTheory.terminationSet if r.ruleType=='SpriteCounterRule']
+
+			self.randomTheories.append(theory)
+
 
 		return gameObject
 
@@ -811,7 +845,8 @@ class Agent:
 			if k not in allObjects:
 				allObjects[k] = v
 
-		spriteTypeHypothesis, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
+		spriteTypeHypothesis, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, 
+			allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
 		gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 		newHypotheses = []
 		for hypothesis in self.hypotheses:
@@ -999,12 +1034,27 @@ class Agent:
 
 	def testEpisode(self, gameObject):
 
-		#actions = [32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT,\
-		#K_RIGHT, K_DOWN, K_DOWN, K_LEFT, K_LEFT, K_UP, 32, 32, K_RIGHT, K_DOWN, K_LEFT, K_LEFT, \
-		#K_LEFT, K_UP, K_LEFT, K_LEFT, K_LEFT]
+		# ### Testing ###
+		# actions = [32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT,\
+		# K_RIGHT, K_DOWN, K_DOWN, K_LEFT, K_LEFT, K_UP, 32, 32, K_RIGHT, K_DOWN, K_LEFT, K_LEFT, \
+		# K_LEFT, K_UP, K_LEFT, K_LEFT, K_LEFT]
 		#actions = [K_DOWN, K_UP, K_UP, K_RIGHT, 32, K_RIGHT, 32, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
 		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
-		actions = [32, K_DOWN, K_UP, K_RIGHT, K_RIGHT]
+		actions = [32, K_RIGHT, K_RIGHT]
+		
+		# ### For Game A ###
+		# actions = \
+		# [32, 32, 32, 32, K_RIGHT, 32, K_RIGHT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_UP, 32, \
+		# K_UP, 32, K_DOWN, K_DOWN, 32, K_LEFT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_LEFT, 32, \
+		# K_LEFT, K_UP, 32, K_UP, 32, K_DOWN, 32, 32, K_UP, 32, K_RIGHT, 32, K_DOWN, K_RIGHT, \
+		# 32, K_RIGHT, K_RIGHT, 32, 32]
+		
+		# ### For Game B & C ###
+		# actions = \
+		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_UP, 32, \
+		# K_DOWN, K_RIGHT, 32, 32, K_UP, K_UP, 32, 32, K_LEFT, K_DOWN, K_LEFT, K_LEFT, K_LEFT, \
+		# K_LEFT, K_LEFT, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
+
 		self.initializeEnvironment()
 		print "initializing RLE"
 
@@ -1022,11 +1072,13 @@ class Agent:
 			self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
 
 
-		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=0)
+		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=10)
 		print "initialized Hypotheses"
 		embed()
+		# plt.ion() #allow for plot updating
 
 		for num, action in enumerate(actions):
+			print ">>> Step", num+1, "of", len(actions), "<<<"
 			## initialize VRLEs
 			theoryRLEs = self.VrleInitPhase()
 
@@ -1048,7 +1100,14 @@ class Agent:
 
 			self.hypotheses = hypotheses
 
+			# Plot scores from random enviroment sampling
+			# plt.close('all')
+			# self.plotScores()
+			# plt.pause(0.01)
+
 		print ">>> Embedded at the end of testEpisode"
+		embed()
+
 		scoreAndTheoryTuples = self.testHypotheses(hypotheses)
 		for s in scoreAndTheoryTuples:
 			print s
@@ -1502,7 +1561,8 @@ class Agent:
 		else:
 			filtered = sprite_candidates
 		remaining = max_num - len(filtered)
-		filtered = filtered + induction_candidates[0:min(remaining, len(induction_candidates))]
+		filtered = induction_candidates[0:min(remaining, len(induction_candidates))] + filtered
+		filtered = sorted(filtered, key=lambda x: x[0])
 
 		return filtered
 
@@ -1603,11 +1663,12 @@ class Agent:
 			## Filter theories
 			scoreAndTheoryTuples = zip(cumulative_penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
+
 			if not lastStep:
-				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=20,
+				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=20,
 					proportionOfSpriteTheories=.2)]
 			else:
-				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=5, max_num=100,
+				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=20,
 					proportionOfSpriteTheories=.2)]
 
 			for num, sh in enumerate(scoresAndHypotheses):
@@ -1619,8 +1680,15 @@ class Agent:
 		else:
 			print "Got no new theories"
 
-		#print "Score on random game instances:"
-		#print self.testHypotheses(hypotheses,10)
+		# Update mean error history
+		self.meanErrorHistory.append( [np.mean(hypotheses[i].errorHistory) for i in range(len(hypotheses))] )
+		# Update minimum step error
+		self.minStepError.append( hypotheses[i].errorHistory[-1] )
+		# Theory scores on random game instances
+		# scoreR = self.testHypotheses(hypotheses, num_samples=100)
+		# self.theoryScoreHistory.append(scoreR)
+		print "Theory scores on random game instances:"
+		# print [scoreR[i][0] for i in range(len(scoreR))]
 
 		#print ">>> Embedded at end of executeStep"
 		#embed()
@@ -1629,6 +1697,11 @@ class Agent:
 		self.statesEncountered.append(self.rle._game.getFullState())
 
 		return hypotheses
+
+
+	#######################################################
+	######## TESTING HYPOTHESES BY RANDOM SAMPLING ########
+	#######################################################
 
 	def testSteps(self, rle, actions, hypotheses):
 		## evaluates all the hypotheses on the state of the provided rle, given action.
@@ -1665,8 +1738,7 @@ class Agent:
 			outlist.append(random.choice(lst))
 		return outlist
 
-
-	def testHypotheses(self, hypotheses, num_samples=5, actions_per_sample=1):
+	def testHypotheses(self, hypotheses, num_samples=10, actions_per_sample=1):
 		rle = self.initializeRLEFromGame()
 		cumulative_penalties = []
 		for sample in range(num_samples):
@@ -1680,11 +1752,48 @@ class Agent:
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 		return scoreAndTheoryTuples
 
+	def plotScores(self, save=False, savename='0-vgdl_score_plot'):
+		# Get list of scores for each step
+		scores = []
+		for s in self.theoryScoreHistory:
+			scores.append([s[i][0] for i in range(len(s))])
+		# Plot scores
+		N = len(scores)
+		f = plt.figure(figsize = (6, 7))
+		ax1 = plt.subplot(211)
+		ax2 = plt.subplot(212)
+		f.tight_layout(pad=1.5)
+		# Sampled score - surviving batch
+		for i in range(N):
+			if i==0:
+				ax1.plot( (i+1)*np.ones(len(scores[i])), scores[i], 'r.', ms=10, alpha=.5, label='Sampled score - survived batch' )
+			else:
+				ax1.plot( (i+1)*np.ones(len(scores[i])), scores[i], 'r.', ms=10, alpha=.5 )
+		# Sampled score - best
+		ax1.plot( range(1,N+1), [ min(scores[i]) for i in range(N) ], 'r-', label='Sampled score - best' )
+		# Current step error - best
+		ax1.plot( range(1,N+1), self.minStepError, 'b-', label='Current step error - best'  )
+		# Current step error - best (plot 2)
+		ax2.plot( range(1,N+1), self.minStepError, 'b-', label='Current step error - best'  )
+		# Mean error history - survived batch
+		for i in range(N):
+			if i==0:
+				ax2.plot( (i+1)*np.ones(len(scores[i])), self.meanErrorHistory[i], 'b.', ms=10, alpha=.5, label='Mean error history - survived batch' )
+			else:
+				ax2.plot( (i+1)*np.ones(len(scores[i])), self.meanErrorHistory[i], 'b.', ms=10, alpha=.5 )
+		# Mean error history - best
+		ax2.plot( range(1,N+1), [m[0] for m in self.meanErrorHistory], 'b--', label='Mean error history - best'  )
+		# Plot cosmetics
+		ax1.set_xlabel('Step'), ax2.set_xlabel('Step')
+		ax1.set_ylabel('Score'), ax2.set_ylabel('Score')
+		ax1.legend(loc='upper right', fontsize=8), ax2.legend(loc='upper right', fontsize=8)
+		if save==True:
+			plt.savefig(savename+'.png')
+		else:
+			plt.show()
+
 ## Store all rles. Then you can very easily do experience replay!!!
 
-# def experienceReplay(self, theory):
-
-	# for 
 
 if __name__ == "__main__":
 
