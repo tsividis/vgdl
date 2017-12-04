@@ -169,8 +169,6 @@ class ContinuousPhysics(GridPhysics):
 
            
 
-        
-
     def calculatePassiveMovement(self, sprite, allMovement=False):
         if allMovement:
             lastMove = sprite.lastdisplacement
@@ -2361,7 +2359,7 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
 
 
 def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict, 
-    oldSpriteSet = None, default=False):
+    oldSpriteSet = None, mode='standard'):
 
     import random
     import numpy as np
@@ -2438,7 +2436,21 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             except ZeroDivisionError:
                 pass
 
-        best_param = max(param_product, key=param_product.get)
+
+        if mode=='random':
+            if obj_type=='BLACK':
+                # embed()
+                spriteType=ResourcePack
+                best_param = [('vgdlType', spriteType)]
+            else:
+                spriteType = random.choice([ResourcePack, Missile, RandomNPC])
+                best_param = [('vgdlType', spriteType)]
+                for arg in initializeDistributionArgs(spriteType, types):
+                    best_param.append(random.choice(arg))
+        else:
+            best_param = max(param_product, key=param_product.get)
+        
+
         best_params[obj_type] = best_param
 
         ## Use for debugging sprite-type inference.
@@ -2456,16 +2468,17 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         color = obj_type
 
         if sprite_type=='OTHER':
-            # from ontology import RandomNPC
-            # sprite_type = RandomNPC
             from ontology import ResourcePack
             sprite_type = ResourcePack
 
         s = Sprite(vgdlType=sprite_type, color=color)
 
-        if default:
+        if mode=='random':
+            param = dict(best_param[1:])
+            setSpriteParams(param, s)
+        elif mode=='default':
             # embed()
-            s.vgdlType = ResourcePack
+            s.vgdlType = ResourcePack            
         else:
             ## Find matching object in the existing hypothesis
             try:
@@ -2510,7 +2523,6 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
 
             param = dict(best_param[1:])
             setSpriteParams(param, s) # set the parameters for sprite s
-
 
         sample.append(s)
 
