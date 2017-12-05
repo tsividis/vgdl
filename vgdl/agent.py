@@ -97,6 +97,7 @@ class Agent:
 		self.minStepError = []
 		self.actionSet = [K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE]
 		self.randomTheories = []
+		self.benchmarkHistory = []
 
 	def initializeEnvironment(self):
 		if self.gameString==None or self.levelString==None:
@@ -390,7 +391,7 @@ class Agent:
 		## Penalize distance and additional/missing sprites
 		# Distance penalty
 		for t in matched_sprites:
-			sA = t[0] #sprite in envA
+			sA = t[0] #sprite in envA			
 			dist = t[2] #distance to sprite in envB
 			sA_type = theory.classes[sA.name][0].vgdlType			
 			# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
@@ -578,6 +579,77 @@ class Agent:
 		return total_penalty, errorMap
 
 
+	def IDmatch(self, envA, envB):
+		"""
+		Returns: dictionary with entries -> sB ID: matched sA ID
+		"""
+		d = {}
+		# Match environments by position and color
+		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = self.matchEnvs(envA, envB)
+		# Warn if there are unmatched or not accurately matched sprites
+		if len(lonely_sprites_envA)!=0 or len(lonely_sprites_envB)!=0:
+			print "WARNING: Unmatched sprites in IDmatch -> truPenalty potentially flawed"
+		if any( [m[2]!=0 for m in matched_sprites] ) == True:
+			#print "WARNING: Non-zero distance between matched sprites (in IDmatch)"
+			pass
+		# Assign IDs
+		for m in matched_sprites:
+			sA, sB = m[0], m[1]
+			d[sB.ID.urn] = sA.ID.urn
+		return d
+
+
+	def truPenalty(self, envA, envB, IDmatch, p_dist=1, p_speed=.5, p_miss=10):
+		penalty = 0
+		# List all sprites and IDs in both environments
+		all_sprites_envA = []
+		all_sprites_envB = []
+		all_IDs_envA = []
+		all_IDs_envB = []
+		for g in envA._game.sprite_groups.keys():
+			all_sprites_envA.extend( envA._game.sprite_groups[g] )
+		for g in envB._game.sprite_groups.keys():
+			all_sprites_envB.extend( envB._game.sprite_groups[g] )
+		if len(all_sprites_envA)!=len(all_sprites_envB):
+			# At least one sprite has already been killed at beginning
+			penalty += p_miss * abs( len(all_sprites_envA) - len(all_sprites_envB) )
+			#print "WARNING: Different numbers of sprites in enviroments (in truPenalty)"
+		all_IDs_envA = [s.ID.urn for s in all_sprites_envA]
+		all_IDs_envB = [s.ID.urn for s in all_sprites_envB]
+		# Re-match all sprites using IDmatch dict
+		rematched_sprites = []
+		for sB in all_sprites_envB:
+			try:
+				sA = [ s for s in all_sprites_envA if s.ID.urn==IDmatch[sB.ID.urn] ]
+			except:
+				# At least one sprite has already been killed at beginning - handled above
+				continue
+			if len(sA)!=1:
+				print "WARNING: Unmatched sprites in (truPenalty)"
+			else:
+				sA = sA[0]
+				rematched_sprites.append([sA, sB])
+		# Step through all sprite pairs
+		for sA, sB in rematched_sprites:
+			# Check if one or both sprites have been killed and penalize mismatch (heavily)
+			if sB in envB._game.kill_list:
+				if sA in envA._game.kill_list:
+					pass
+				else:
+					penalty += p_miss
+			elif sA in envA._game.kill_list:
+				penalty += p_miss
+			# Penalize distance mismatch
+			dist = manhattanDist2(sA, sB)
+			penalty += dist*p_dist
+
+			## TODO: punish randomNPCs only if they have ventured out of possible range
+			
+
+		#print ">>> in truPenalty"
+		#embed()
+
+		return penalty
 
 
 
@@ -811,7 +883,7 @@ class Agent:
 
 			if errorMap.targetClass == 'unknown':
 				print "errorMap gives new class"
-				embed()
+				#embed()
 
 			## SpriteSet induction step
 			if errorMap.targetClass != 'avatar':
@@ -1040,20 +1112,20 @@ class Agent:
 		# K_LEFT, K_UP, K_LEFT, K_LEFT, K_LEFT]
 		#actions = [K_DOWN, K_UP, K_UP, K_RIGHT, 32, K_RIGHT, 32, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
 		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
-		actions = [32, K_RIGHT, K_RIGHT]
+		# actions = [32, K_RIGHT]
 		
 		# ### For Game A ###
-		# actions = \
-		# [32, 32, 32, 32, K_RIGHT, 32, K_RIGHT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_UP, 32, \
-		# K_UP, 32, K_DOWN, K_DOWN, 32, K_LEFT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_LEFT, 32, \
-		# K_LEFT, K_UP, 32, K_UP, 32, K_DOWN, 32, 32, K_UP, 32, K_RIGHT, 32, K_DOWN, K_RIGHT, \
-		# 32, K_RIGHT, K_RIGHT, 32, 32]
+		actions = \
+		[32, 32, 32, 32, K_RIGHT, 32, K_RIGHT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_UP, 32, \
+		K_UP, 32, K_DOWN, K_DOWN, 32, K_LEFT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_LEFT, 32, \
+		K_LEFT, K_UP, 32, K_UP, 32, K_DOWN, 32, 32, K_UP, 32, K_RIGHT, 32, K_DOWN, K_RIGHT, \
+		32, K_RIGHT, K_RIGHT, 32, 32]
 		
-		# ### For Game B & C ###
+		### For Game B & C ###
 		# actions = \
 		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_UP, 32, \
 		# K_DOWN, K_RIGHT, 32, 32, K_UP, K_UP, 32, 32, K_LEFT, K_DOWN, K_LEFT, K_LEFT, K_LEFT, \
-		# K_LEFT, K_LEFT, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
+		# K_LEFT, K_LEFT, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_LEFT, K_LEFT, 32]
 
 		self.initializeEnvironment()
 		print "initializing RLE"
@@ -1072,10 +1144,10 @@ class Agent:
 			self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
 
 
-		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=10)
+		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=20)
 		print "initialized Hypotheses"
 		# embed()
-		# plt.ion() #allow for plot updating
+		plt.ion() #allow for plot updating
 
 		for num, action in enumerate(actions):
 			print ">>> Step", num+1, "of", len(actions), "<<<"
@@ -1100,10 +1172,10 @@ class Agent:
 
 			self.hypotheses = hypotheses
 
-			# Plot scores from random enviroment sampling
-			# plt.close('all')
-			# self.plotScores()
-			# plt.pause(0.01)
+			##Plot scores from random enviroment sampling
+			plt.close('all')
+			self.plotScores()
+			plt.pause(0.01)
 
 		print ">>> Embedded at the end of testEpisode"
 		embed()
@@ -1683,12 +1755,16 @@ class Agent:
 		# Update mean error history
 		self.meanErrorHistory.append( [np.mean(hypotheses[i].errorHistory) for i in range(len(hypotheses))] )
 		# Update minimum step error
-		self.minStepError.append( hypotheses[i].errorHistory[-1] )
-		# Theory scores on random game instances
-		# scoreR = self.testHypotheses(hypotheses, num_samples=100)
-		# self.theoryScoreHistory.append(scoreR)
-		print "Theory scores on random game instances:"
-		# print [scoreR[i][0] for i in range(len(scoreR))]
+		self.minStepError.append( hypotheses[0].errorHistory[-1] )
+		# Theory scores on sampled game instances
+		scoreR = self.testHypotheses(hypotheses, num_samples=10, actions_per_sample=10)
+		self.theoryScoreHistory.append(scoreR)
+		# Benchmark: Mean scores of random theories on sampled game instances
+		scoreB = self.testHypotheses(self.randomTheories, num_samples=10, actions_per_sample=10)
+		self.benchmarkHistory.append(scoreB)
+
+		print "Theory scores on sampled game instances:"
+		print [scoreR[i][0] for i in range(len(scoreR))]
 
 		#print ">>> Embedded at end of executeStep"
 		#embed()
@@ -1723,8 +1799,13 @@ class Agent:
 	#######################################################
 
 	def testSteps(self, rle, actions, hypotheses):
-		## evaluates all the hypotheses on the state of the provided rle, given action.
+		# Evaluates all the hypotheses on the state of the provided rle, given action.
 		theoryRLEs = self.VrleInitPhase(hypotheses, rle)
+		# Match IDs between real and theory RLEs
+		ID_dictlist = []
+		for tR in theoryRLEs:
+			ID_dictlist.append( self.IDmatch(tR, rle) )
+		# Calculate penalties
 		cumulative_penalties = []
 		for action in actions:
 			penalties = []
@@ -1732,10 +1813,13 @@ class Agent:
 			rle.step(action)
 			for num, env in enumerate(theoryRLEs):
 				env.step(action)
-				penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
+				penalty = self.truPenalty(env, rle, ID_dictlist[num])
+				# penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
 				penalties.append(penalty)
 			cumulative_penalties.append(penalties)
 		cumulative_penalties = np.array(cumulative_penalties)
+		# print ">>> Embedded in testSteps"
+		# embed()
 		return np.mean(cumulative_penalties, axis=0)
 
 	def randomizeState(self, rle):
@@ -1757,7 +1841,7 @@ class Agent:
 			outlist.append(random.choice(lst))
 		return outlist
 
-	def testHypotheses(self, hypotheses, num_samples=10, actions_per_sample=1):
+	def testHypotheses(self, hypotheses, num_samples=10, actions_per_sample=10):
 		rle = self.initializeRLEFromGame()
 		cumulative_penalties = []
 		for sample in range(num_samples):
@@ -1768,46 +1852,70 @@ class Agent:
 		cumulative_penalties = np.array(cumulative_penalties)
 		cumulative_penalties = list(np.mean(cumulative_penalties, axis=0))
 		scoreAndTheoryTuples = zip(cumulative_penalties, hypotheses)
-		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
+		#scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 		return scoreAndTheoryTuples
 
 	def plotScores(self, save=False, savename='0-vgdl_score_plot'):
+		print "Plotting results..."
 		# Get list of scores for each step
 		scores = []
 		for s in self.theoryScoreHistory:
 			scores.append([s[i][0] for i in range(len(s))])
+		# Get list of benchmark theory scores for each step
+		benchmarks = []
+		for s in self.benchmarkHistory:
+			benchmarks.append([s[i][0] for i in range(len(s))])
 		# Plot scores
 		N = len(scores)
-		f = plt.figure(figsize = (6, 7))
-		ax1 = plt.subplot(211)
-		ax2 = plt.subplot(212)
+		f = plt.figure(figsize = (11, 4))
+		ax1 = plt.subplot(111)
+		# ax2 = plt.subplot(212)
 		f.tight_layout(pad=1.5)
+		c = sns.color_palette('deep')
+
 		# Sampled score - surviving batch
 		for i in range(N):
 			if i==0:
-				ax1.plot( (i+1)*np.ones(len(scores[i])), scores[i], 'r.', ms=10, alpha=.5, label='Sampled score - survived batch' )
+				ax1.plot( (i+1)*np.ones(len(scores[i])), scores[i], '.', c=c[2], ms=7, alpha=.5, label=r"Sampled score for $\{ \theta_s^{(i)} \}$" )
 			else:
-				ax1.plot( (i+1)*np.ones(len(scores[i])), scores[i], 'r.', ms=10, alpha=.5 )
-		# Sampled score - best
-		ax1.plot( range(1,N+1), [ min(scores[i]) for i in range(N) ], 'r-', label='Sampled score - best' )
-		# Current step error - best
-		ax1.plot( range(1,N+1), self.minStepError, 'b-', label='Current step error - best'  )
-		# Current step error - best (plot 2)
-		ax2.plot( range(1,N+1), self.minStepError, 'b-', label='Current step error - best'  )
-		# Mean error history - survived batch
+				ax1.plot( (i+1)*np.ones(len(scores[i])), scores[i], '.', c=c[2], ms=7, alpha=.5 )
+		# Sampled score for theory that we considered best in training
+		ax1.plot( range(1,N+1), [ scores[i][0] for i in range(N) ], c=c[2], label=r"Sampled score for $\theta_s^*$" )
+		
+		# Mean error history - all
 		for i in range(N):
 			if i==0:
-				ax2.plot( (i+1)*np.ones(len(scores[i])), self.meanErrorHistory[i], 'b.', ms=10, alpha=.5, label='Mean error history - survived batch' )
+				ax1.plot( (i+1)*np.ones(len(self.meanErrorHistory[i])), self.meanErrorHistory[i], '.', c=c[0], ms=7, alpha=.5, label=r"Mean penalty for $\{ \theta_s^{(i)} \}$" )
 			else:
-				ax2.plot( (i+1)*np.ones(len(scores[i])), self.meanErrorHistory[i], 'b.', ms=10, alpha=.5 )
+				ax1.plot( (i+1)*np.ones(len(self.meanErrorHistory[i])), self.meanErrorHistory[i], '.', c=c[0], ms=7, alpha=.5 )
 		# Mean error history - best
-		ax2.plot( range(1,N+1), [m[0] for m in self.meanErrorHistory], 'b--', label='Mean error history - best'  )
+		ax1.plot( range(1,N+1), [m[0] for m in self.meanErrorHistory], '-', c=c[0], label=r'Mean penalty for $\theta_s^*$'  )
+		
+		# Current step error - best
+		ax1.plot( range(1,N+1), self.minStepError, ':', c=c[0], label=r'Current penalty for $\theta_s^*$'  )
+
+		# # Benchmarks - all
+		# for i in range(N):
+		# 	if i==0:
+		# 		ax1.plot( (i+1)*np.ones(len(benchmarks[i])), benchmarks[i], '.', c=c[1], ms=7, alpha=.5, label=r"Benchmark set" )
+		# 	else:
+		# 		ax1.plot( (i+1)*np.ones(len(benchmarks[i])), benchmarks[i], '.', c=c[1], ms=7, alpha=.5 )
+		# Benchmark - best
+		ax1.plot( range(1,N+1), [ min(benchmarks[i]) for i in range(N) ], c=c[1], label=r"Benchmark score" )
+
+		# print ">>> Embedded in plot"
+		# embed()
+
 		# Plot cosmetics
-		ax1.set_xlabel('Step'), ax2.set_xlabel('Step')
-		ax1.set_ylabel('Score'), ax2.set_ylabel('Score')
-		ax1.legend(loc='upper right', fontsize=8), ax2.legend(loc='upper right', fontsize=8)
+		ax1.set_xlabel('Step'), ax1.set_ylabel('Score')
+		# ax2.set_xlabel('Step'), ax2.set_ylabel('Score')
+		#ax1.legend(loc='upper right', fontsize=8)
+		box = ax1.get_position()
+		ax1.set_position([box.x0, box.y0, box.width * 0.7, box.height])
+		ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+		# ax2.legend(loc='upper right', fontsize=8)
 		if save==True:
-			plt.savefig(savename+'.png')
+			plt.savefig(savename+'.pdf')
 		else:
 			plt.show()
 
