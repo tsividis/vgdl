@@ -148,10 +148,15 @@ class ContinuousPhysics(GridPhysics):
 
     def passiveMovement(self, sprite):
 
-        if (sprite.speed != 0 or hasattr(sprite,'jumping') and sprite.jumping) and hasattr(sprite, 'orientation'):#(why was this 0 to begin with???)
+        #if (sprite.speed != 0 or hasattr(sprite,'jumping') and sprite.jumping) and hasattr(sprite, 'orientation'):#(why was this 0 to begin with???)
+        if hasattr(sprite, 'orientation'):#(why was this 0 to begin with???)
             sprite._updatePos(sprite.orientation, sprite.speed)
             if self.gravity > 0 and sprite.mass > 0 and (sprite.gravity or sprite.jumping):
+                #print 'GRAVITY'
+                print (0, self.gravity * sprite.mass)
+
                 self.activeMovement(sprite, (0, self.gravity * sprite.mass))
+
             sprite.speed *= (1 - self.friction)
 
 
@@ -176,13 +181,15 @@ class ContinuousPhysics(GridPhysics):
 
 
     def activeMovement(self, sprite, action, speed=None):
-
+        #embed()
         if speed is None:
             speed = sprite.speed
 
 
         if sprite.gravity or sprite.rope:
             v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed
+            #print v2
+            #print action
         else:
             v2 = action[1]*sprite.vy_max
         
@@ -967,9 +974,14 @@ class MarioAvatar(InertialAvatar):
     def update(self, game):
 
         from pygame.locals import K_SPACE
-
-
-        if self.lastrect == self.rect and not self.jumping:
+        # print self.speed*self.orientation[1]
+        #print self.rect
+        #print 'start'
+        #print self.speed
+        # if self.lastrect == self.rect and not self.jumping:
+        #     self.speed = self.speed * self.orientation[0]
+        #     self.orientation = (1,0)
+        if self.wait_step > 20 and self.lastrect == self.rect and not self.jumping:
             self.speed = self.speed * self.orientation[0]
             self.orientation = (1,0)
 
@@ -1000,13 +1012,14 @@ class MarioAvatar(InertialAvatar):
             self.airstrength *= (1-self.decay)
 
             if self.last_vy == self.lastrect.y - self.rect.y:
-            #print "are equal"
+                print "are equal"
                 self.wait_step += 1
                 if not self.jumping:
                 #print "no"
                 #action[0] = action[0] * self.movestrength
                     action = [action[0] * self.movestrength,0]
                     if game.keystate[K_SPACE] and not self.jumping:
+                        print 'SPACE'
                         action[1] = -self.strength
                         self.jumping = True
                         self.wait_step = 0
@@ -1021,7 +1034,7 @@ class MarioAvatar(InertialAvatar):
                 action[0] = 0
 
         # this is pretty hacky. What if sprite doesn't move very fast?
-            if self.wait_step > 1:
+            if self.wait_step > 3:
                 self.jumping = False
         
         #print action
@@ -1059,6 +1072,8 @@ class MarioAvatar(InertialAvatar):
         self.last_rope = self.rope
         self.rope = False
 
+        #print 'final speed'
+        #print self.speed
 
         #print self.orientation
         #print (self.orientation[0]*self.speed, self.orientation[1]*self.speed)
@@ -1152,6 +1167,7 @@ class FrostBiteAvatar(HorizontalAvatar, InertialAvatar):
     rope = False
     vx_max = 10
     speed_bonus = [0,0]
+    solid = True
 
     def update(self, game):
         action = self._readAction(game)
@@ -1471,6 +1487,7 @@ def killSprite(sprite, partner, game):
     """ Kill command """
     game.kill_list.append(sprite)
     if not None in {sprite, partner}:
+        #print partner
         return ("killSprite", sprite.ID, partner.ID) # partner = agent, sprite = what's being killed
 
 def cloneSprite(sprite, partner, game):
@@ -1763,7 +1780,6 @@ def killIfHasMore(sprite, partner, game, resource, limit=1):
 
 def killIfOtherHasMore(sprite, partner, game, resource, limit=1):
     """ If 'partner' has more than a limit of the resource type given, sprite dies. """
-    #embed()
     if partner.resources[resource] >= limit:
         return killSprite(sprite, partner, game)
         # return ('killIfOtherHasMore' , sprite.ID, partner.ID)
@@ -1799,12 +1815,13 @@ def wrapAround(sprite, partner, game, offset=0):
 
 def pullWithIt(sprite, partner, game):
     """ The partner sprite adds its movement to the sprite's. """
+    #print partner
     if not oncePerStep(sprite, game, 'lastpull'):
         return ('pullWithIt', sprite.ID, partner.ID)
 
     tmp = sprite.lastrect
     v = unitVector(partner.lastdirection)
-    embed()
+    #embed()
     sprite._updatePos(v, partner.speed * sprite.physics.gridsize[0])
 
     if isinstance(sprite.physics, ContinuousPhysics):
@@ -1816,10 +1833,12 @@ def pullWithIt(sprite, partner, game):
 
 def collideFromAbove(sprite, partner, game):
     """ Allows the sprite to pass through the bottom and collide with the top."""
+    #if partner.name == 'white':
+    #    embed()
     if (sprite.lastrect.top < partner.lastrect.top
         and sprite.lastrect.bottom < partner.lastrect.bottom) and sprite.solid and not sprite.jumping:
-        #pullWithIt(sprite, partner, game)
-        wallStop(sprite,partner,game)
+        pullWithIt(sprite, partner, game)
+        #wallStop(sprite,partner,game)
     elif (sprite.lastrect.bottom > partner.lastrect.bottom or
         sprite.lastrect.right < partner.lastrect.left or
         sprite.lastrect.left > partner.lastrect.right) and not(sprite.solid):
@@ -1865,6 +1884,21 @@ def onRope(sprite, partner, game):
     if not sprite.last_rope:
         sprite.jumping = False
     return ('onRope', sprite.ID, partner.ID)
+
+def platformInteraction(sprite, partner, game):
+    #print "sprite", sprite.rect.x
+    #print "block", partner.rect.x + partner.rect.width
+    #print sprite.rect
+    #print partner.rect
+    #delta = partner.speed * sprite.physics.gridsize[0]
+    delta = 0
+    if sprite.rect.y < partner.rect.y and not (sprite.rect.x + sprite.rect.width<= partner.rect.x + delta or sprite.rect.x >= partner.rect.x + partner.rect.width-delta):
+        #print 'PULL"'
+        pullWithIt(sprite,partner,game)
+    else:
+        #print "STOP"
+        wallStop(sprite,partner,game)
+    return ('platformInteraction',sprite.ID,partner.ID)
 
 
 # this allows us to determine whether the game has stochastic elements or not

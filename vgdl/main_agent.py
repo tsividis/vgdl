@@ -4,7 +4,7 @@ from core import colorDict, VGDLParser, sys, keyPresses
 from ontology import *
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
 SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
-generateTheoryFromGame
+generateTheoryFromGame, PreconditionInduction
 import os, subprocess, shutil
 from collections import defaultdict
 # import WBP_grid, WBP_continuous
@@ -60,6 +60,10 @@ class Agent:
 		self.seen_resources = []
 		self.seen_limits = []
 		self.new_objects = {}
+		self.resourceObservations = {'speed':{}, 'changeResource':[]}
+		self.observed_resources = set()
+		self.distributions = PreconditionInduction()
+		self.lastObjectState = {}
 
 	def initializeEnvironment(self):
 		if self.gameString==None or self.levelString==None:
@@ -72,12 +76,31 @@ class Agent:
 	def getSpritesByColor(self, rle, color):
 		outList = []
 		for k in rle._game.sprite_groups.keys():
+			#don't return sprites that have been killed
 			if rle._game.sprite_groups[k] and rle._game.sprite_groups[k][0].colorName==color:
-				outList.extend(rle._game.sprite_groups[k])
+				outList.extend([i for i in rle._game.sprite_groups[k] if i not in rle._game.kill_list])
 		if outList:
 			return outList
 		else:
 			return None
+
+	def getStateByColor(self, rle):
+		state = {}
+		#embed()
+		for k in rle._game.sprite_groups.keys():
+			if len(rle._game.sprite_groups[k]) > 0:
+				color = rle._game.sprite_groups[k][0].colorName
+				sprite_list = []
+				for sprite in rle._game.sprite_groups[k]:
+					if sprite not in rle._game.kill_list:
+						if hasattr(sprite, 'orientation'):
+							o = sprite.orientation 
+						else:
+							o = (0,0)
+
+						sprite_list.append({'speed':sprite.speed, 'orientation':o, 'position':(sprite.rect.x,sprite.rect.y)})
+				state[color] = sprite_list
+		return state
 
 	def findNearestSprite(self, sprite, spriteList):
 		## returns the sprite in spriteList whose location best matches the location of sprite.
@@ -393,6 +416,8 @@ class Agent:
 		self.quits = 0
 		self.longHorizonObservations = 0
 		self.all_objects= self.rle._game.getObjects()
+		print 'in playEpisode'
+
 		ended, win = self.rle._isDone()
 		annealing = 1
 		## Start storing encountered states.
@@ -417,7 +442,7 @@ class Agent:
 			# given new level state
 			if not flexible_goals:
 				[t.updateTerminations(rle=self.rle) for t in self.hypotheses]
-
+		#embed()
 		emptyPlans = 0
 		while not ended:
 			## initialize one or many VRLEs according to hypothesis-selection method
@@ -712,6 +737,7 @@ class Agent:
 		try:
 			agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
 			agentState['speed'] = self.rle._game.getAvatars()[0].speed
+			agentState['orientation'] = self.rle._game.getAvatars()[0].orientation
 		except IndexError:
 			agentState = defaultdict(lambda: 0)
 
@@ -723,6 +749,7 @@ class Agent:
 		try:
 			agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
 			agentState['speed'] = self.rle._game.getAvatars()[0].speed
+			agentState['orientation'] = self.rle._game.getAvatars()[0].orientation
 
 			for e in res['effectList']:
 				if 'changeResource' in e:
@@ -772,6 +799,7 @@ class Agent:
 
 			print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
 
+
 			## Delete fake interaction rules for events that were witnessed in this time step.
 			oldFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
 			self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
@@ -792,12 +820,122 @@ class Agent:
 			terminationCondition = {'ended': False, 'win':False, 'time':self.rle._game.time}
 			trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState'], e['rle']) \
 				for e in self.finalEventList], terminationCondition)
+			
+			##KILL IF TOO FAST HANDLING: keep track of speeds at which collisions happen
+			#TODO: downwards speed in precondition check
+			# for e in event['effectList']:
+				
+			# 	if e[1]=='WHITE': #this is effect happening to avatar
+			# 		speed_vals = [None,None]
+			# 		if e[2] in self.resourceObservations['speed']:
+			# 			speed_vals = self.resourceObservations['speed'][e[2]]
+
+			# 		if e[0] == 'killSprite' and (speed_vals[1] is None or (speed_vals[1] is not None and event['agentState']['speed'] < speed_vals[1])):
+			# 			speed_vals[1] = event['agentState']['speed']*event['agentState']['orientation'][1]
+
+			# 		if e[0] != 'killSprite' and ('killSprite',e[1],e[2]) not in event['effectList']: 
+			# 			if speed_vals[0] is None or (speed_vals[0] is not None and event['agentState']['speed'] > speed_vals[0]):
+			# 				speed_vals[0] = event['agentState']['speed']*event['agentState']['orientation'][1]
+						
+			# 		self.resourceObservations['speed'][e[2]] = speed_vals
+
+			print agentState
+
+			
+			#OBJECT TRACKING
+			#where we think the object is going to be at this timestep
+			avatar_is_dead = (self.getSpritesByColor(self.rle,'WHITE') is None)
+			self.predictions = {}
+			for key in self.lastObjectState.keys():
+				if key == 'WHITE' and not avatar_is_dead:
+					#predicting avatar location needs to be done properly
+					speed = agentState['speed']
+					orientation = self.lastObjectState[key][0]['orientation']
+					pos = self.lastObjectState[key][0]['position']
+					expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
+					positions = [expected_pos]
+				else:
+					positions = []
+					for i in self.lastObjectState[key]:
+						speed = i['speed']
+						orientation = i['orientation']
+						pos = i['position']
+						#embed()
+						if speed is None:
+							expected_pos = pos
+						else:
+							expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
+						positions.append(expected_pos)
+				self.predictions[key] = positions
+			
+			candidates = []
+			locs = {}
+			current_state = self.getStateByColor(self.rle)
+			if len(current_state['WHITE']) > 0:
+				avatar = current_state['WHITE'][0]['position']
+			elif 'WHITE' in self.predictions.keys():
+				avatar = self.predictions['WHITE'][0]
+			for key in self.predictions.keys():
+				if key is not 'WHITE':
+					for i in self.predictions[key]:
+						if self.intersect(i,avatar):
+							candidates.append(key)
+							locs[key] = i
+							break
+			print 'CANDIDATES'
+			print candidates
+
+			#update our distributions
+			resourceObservations = {'speed':{},'resource':{}}
+
+			if avatar_is_dead:
+				for sprite in candidates:
+					resourceObservations['speed'][sprite] = (None,event['agentState']['speed'])
+			else:
+				for sprite in candidates:
+					resourceObservations['speed'][sprite] = (event['agentState']['speed'],None)
+			
+
+			for key in agentState.keys():
+				if key not in ['orientation','speed']:
+					self.observed_resources.add(key)
+			
+			THRESHHOLD = 0.5*self.rle._game.block_size
+			for sprite in candidates:
+				#we must determine if the sprite has dissapeared
+				sprite_gone = True
+				if len(current_state[sprite]) == len(self.lastObjectState[sprite]):
+					sprite_gone = False
+				else:
+					#match closest sprite
+					#locs[sprite] is where we expect the sprite to be
+					for i in current_state[sprite]:
+						#embed()
+						pos = i['position']
+						if abs(pos[0] - locs[sprite][0]) + abs(pos[1] - locs[sprite][1]) < THRESHHOLD:
+							sprite_gone = False
+				#if sprite == 'GOLD':
+				#	embed()
+			 	resourceObservations['resource'][sprite] = {}
+			 	for res in self.observed_resources:
+			 		val = agentState[res]
+			 		resourceObservations['resource'][sprite][res] = (val,not avatar_is_dead,not sprite_gone)
+				
+			self.distributions.updateDist(resourceObservations)
+			print self.distributions.distr
+
+			self.lastObjectState = current_state
+
+
+
 			hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
 			verbose=False, existingTheories=hypotheses))
 
 			if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
 				theory_change_flag = True
 
+			#if event['effectList']:
+			#	embed()	
 			# if len(hypotheses)>1:
 			# 	print "more than one hypothesis"
 
@@ -807,6 +945,7 @@ class Agent:
 			# - The first time a resource changes, it goes from 0 to a positive
 			#   value
 			for change_resource_effect in [e[3] for e in event['effectList'] if 'changeResource' in e]:
+				#embed()
 				resource = change_resource_effect['resource']
 				val = change_resource_effect['value']
 				limit = change_resource_effect['limit']
@@ -830,12 +969,18 @@ class Agent:
 											  # win=True)
 					# hypotheses[0].terminationSet.append(spritecounter)
 
+					#Modifying resourceObservations
+					resourceColor = self.rle._game.sprite_groups[resource][0].colorName
+					classNameTheory = hypotheses[0].spriteObjects[resourceColor].className
+					#self.resourceObservations['changeResource'].append({'resource':classNameTheory,'value':val,'limit':limit})
+					
+
 				elif agentState[resource]==limit and resource not in self.seen_limits:
 					self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
 					self.fakeInteractionRules = list(set(self.fakeInteractionRules))
 					# resourceColor = self.rle._game.sprite_groups[resource][0].colorName
 					self.seen_limits.append(resource)
-
+					
 
 
 					theory_change_flag = True
@@ -850,12 +995,15 @@ class Agent:
 
 		return hypotheses, theory_change_flag, effects
 
+	def intersect(self, p1, p2):
+		return (abs(p1[0] - p2[0]) <= self.rle._game.block_size and abs(p1[1] - p2[1]) <= self.rle._game.block_size)
+
 
 if __name__ == "__main__":
 
 	##simpleGame_missile: no support for learning that it can shoot things.
 
-	# filename = "examples.gridphysics.expt_relational"
+	#filename = "examples.gridphysics.expt_relational"
 	#filename = "examples.continuousphysics.collect_resource"
 	filename = "examples.continuousphysics.rope_test"
 	#filename = "examples.continuousphysics.montezuma_3"

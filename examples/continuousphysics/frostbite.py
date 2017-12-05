@@ -54,7 +54,7 @@ BasicGame
         avatar white > collideFromAbove
 
         moving avatar > reverseFloeIfActivated dim=y strigger=igloo
-        avatar killWater > killSpriteOnLanding
+        # avatar killWater > killSpriteOnLanding
 
 
         opened avatar > killSprite

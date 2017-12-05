@@ -21,7 +21,7 @@ BasicGame
         avatar ladder > onLadder
         avatar rope > onRope
         
-        goal avatar > killIfOtherHasMore resource=key
+        goal avatar > killIfOtherHasMore resource=key limit=1
         key avatar > killSprite
         avatar key > changeResource resource=key value=1
         avatar wall > killIfTooFast speed=23

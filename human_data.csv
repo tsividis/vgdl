@@ -3,3 +3,10 @@ human,no_score,expt_preconditions,1,20.0,1.0,4.9385888576507568
 human,no_score,expt_preconditions,2,14.0,1.0,3.0761721134185791
 human,no_score,expt_preconditions,2,15.0,-1.0,3.4409699440002441
 human,no_score,expt_preconditions,2,12.0,-1.0,3.5039811134338379
+human,no_score,expt_relational,1,104.0,1.0,27.867228984832764
+human,no_score,expt_preconditions,1,22.0,1.0,4.6559581756591797
+human,no_score,expt_preconditions,2,20.0,1.0,4.1934809684753418
+human,no_score,expt_preconditions,2,17.0,-1.0,4.7553200721740723
+human,no_score,expt_preconditions,2,10.0,-1.0,2.6330149173736572
+human,no_score,expt_preconditions,2,19.0,-1.0,4.5913281440734863
+human,no_score,expt_preconditions,2,7.0,-1.0,1.7571828365325928
