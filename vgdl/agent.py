@@ -1080,8 +1080,8 @@ class Agent:
 		for num, action in enumerate(actions):
 			print ">>> Step", num+1, "of", len(actions), "<<<"
 			## initialize VRLEs
-			theoryRLEs = self.VrleInitPhase()
-
+			theoryRLEs = self.VrleInitPhase()#stateToSet=self.rle
+			embed()
 			lastStep=False
 			if num==len(actions)-1:
 				lastStep=True
@@ -1698,6 +1698,25 @@ class Agent:
 
 		return hypotheses
 
+
+	def planWithTheory(self, rle, theory):
+
+		## First you have to pretend the theory has learned the rule corresponding to the goal; otherwise
+		## this is ill-posed.
+		## Add real goal to terminationSet
+		terminationRule = SpriteCounterRule('c4', 0, True)
+		theory.terminationSet.append(terminationRule)
+		for rule in theory.interactionSet:
+			if rule.slot1=='c4' and rule.slot2=='avatar':
+				rule.interaction = 'killSprite'
+		## add killSprite rule to terminationSet
+
+		p = WBP(rle, self.gameFilename, theory=theory, fakeInteractionRules = [],
+			seen_limits = self.seen_limits, annealing=1, max_nodes=500, shortHorizon=False,
+			firstOrderHorizon=self.firstOrderHorizon)
+		bestNode, gameStringArray, objectPositionsArray = p.BFS()
+		embed()
+		return
 
 	#######################################################
 	######## TESTING HYPOTHESES BY RANDOM SAMPLING ########
