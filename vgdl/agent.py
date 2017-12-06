@@ -1115,17 +1115,23 @@ class Agent:
 		# actions = [32, K_RIGHT]
 		
 		# ### For Game A ###
-		actions = \
-		[32, 32, 32, 32, K_RIGHT, 32, K_RIGHT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_UP, 32, \
-		K_UP, 32, K_DOWN, K_DOWN, 32, K_LEFT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_LEFT, 32, \
-		K_LEFT, K_UP, 32, K_UP, 32, K_DOWN, 32, 32, K_UP, 32, K_RIGHT, 32, K_DOWN, K_RIGHT, \
-		32, K_RIGHT, K_RIGHT, 32, 32]
+		# actions = \
+		# [32, 32, 32, 32, K_RIGHT, 32, K_RIGHT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_UP, 32, \
+		# K_UP, 32, K_DOWN, K_DOWN, 32, K_LEFT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_LEFT, 32, \
+		# K_LEFT, K_UP, 32, K_UP, 32, K_DOWN, 32, 32, K_UP, 32, K_RIGHT, 32, K_DOWN, K_RIGHT, \
+		# 32, K_RIGHT, K_RIGHT, 32, 32]
 		
 		### For Game B & C ###
 		# actions = \
 		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_UP, 32, \
 		# K_DOWN, K_RIGHT, 32, 32, K_UP, K_UP, 32, 32, K_LEFT, K_DOWN, K_LEFT, K_LEFT, K_LEFT, \
 		# K_LEFT, K_LEFT, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_LEFT, K_LEFT, 32]
+
+		# ### For Game C
+		actions = \
+		[32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
+		K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
+
 
 		self.initializeEnvironment()
 		print "initializing RLE"
@@ -1172,18 +1178,14 @@ class Agent:
 
 			self.hypotheses = hypotheses
 
-			##Plot scores from random enviroment sampling
-			plt.close('all')
-			self.plotScores()
-			plt.pause(0.01)
+			# ##Plot scores from random enviroment sampling
+			# plt.close('all')
+			# self.plotScores()
+			# plt.pause(0.01)
 
 		print ">>> Embedded at the end of testEpisode"
 		embed()
 
-		scoreAndTheoryTuples = self.testHypotheses(hypotheses)
-		for s in scoreAndTheoryTuples:
-			print s
-		embed()
 		return
 
 
@@ -1752,22 +1754,35 @@ class Agent:
 		else:
 			print "Got no new theories"
 
+		### Store one-step penalties ###
 		# Update mean error history
 		self.meanErrorHistory.append( [np.mean(hypotheses[i].errorHistory) for i in range(len(hypotheses))] )
 		# Update minimum step error
 		self.minStepError.append( hypotheses[0].errorHistory[-1] )
-		# Theory scores on sampled game instances
-		scoreR = self.testHypotheses(hypotheses, num_samples=10, actions_per_sample=10)
-		self.theoryScoreHistory.append(scoreR)
-		# Benchmark: Mean scores of random theories on sampled game instances
-		scoreB = self.testHypotheses(self.randomTheories, num_samples=10, actions_per_sample=10)
-		self.benchmarkHistory.append(scoreB)
 
-		print "Theory scores on sampled game instances:"
-		print [scoreR[i][0] for i in range(len(scoreR))]
+		# ### Store sampled scores ###
+		# num_samples=20
+		# # Random game instances for scoring
+		# rle = self.initializeRLEFromGame()
+		# rrle = []
+		# for sample in range(num_samples):
+		# 	rrle.append(self.randomizeState(rle))
+		# # Theory scores on sampled game instances
+		# tt = time.time()
+		# print ">>> Theory scores"
+		# scoreR = self.testHypotheses(hypotheses, rrle=rrle, num_samples=num_samples, actions_per_sample=20, last_only=True)
+		# self.theoryScoreHistory.append(scoreR)
+		# # Benchmark: Mean scores of random theories on sampled game instances
+		# print ">>> Benchmark scores"
+		# scoreB = self.testHypotheses(self.randomTheories, rrle=rrle, num_samples=num_samples, actions_per_sample=20, last_only=True)
+		# self.benchmarkHistory.append(scoreB)
+		# # Test output
+		# print ">>> TIME", time.time()-tt
+		# print "Theory scores on sampled game instances:"
+		# print [scoreR[i][0] for i in range(len(scoreR))]
 
-		#print ">>> Embedded at end of executeStep"
-		#embed()
+		# print ">>> Embedded at end of executeStep"
+		# embed()
 
 		hypotheses = self.manageNewObjects(hypotheses)
 		self.statesEncountered.append(self.rle._game.getFullState())
@@ -1798,7 +1813,7 @@ class Agent:
 	######## TESTING HYPOTHESES BY RANDOM SAMPLING ########
 	#######################################################
 
-	def testSteps(self, rle, actions, hypotheses):
+	def testSteps(self, rle, actions, hypotheses, last_only=False, check=False):
 		# Evaluates all the hypotheses on the state of the provided rle, given action.
 		theoryRLEs = self.VrleInitPhase(hypotheses, rle)
 		# Match IDs between real and theory RLEs
@@ -1807,16 +1822,19 @@ class Agent:
 			ID_dictlist.append( self.IDmatch(tR, rle) )
 		# Calculate penalties
 		cumulative_penalties = []
-		for action in actions:
+		for n,action in enumerate(actions):
 			penalties = []
-			envRealPrev = copy.deepcopy(rle)
+			if last_only==False or n==len(actions)-1:
+				envRealPrev = copy.deepcopy(rle)
 			rle.step(action)
 			for num, env in enumerate(theoryRLEs):
 				env.step(action)
-				penalty = self.truPenalty(env, rle, ID_dictlist[num])
-				# penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
-				penalties.append(penalty)
-			cumulative_penalties.append(penalties)
+				if last_only==False or n==len(actions)-1:
+					penalty = self.truPenalty(env, rle, ID_dictlist[num])
+					# penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
+					penalties.append(penalty)
+			if last_only==False or n==len(actions)-1:
+				cumulative_penalties.append(penalties)
 		cumulative_penalties = np.array(cumulative_penalties)
 		# print ">>> Embedded in testSteps"
 		# embed()
@@ -1841,18 +1859,23 @@ class Agent:
 			outlist.append(random.choice(lst))
 		return outlist
 
-	def testHypotheses(self, hypotheses, num_samples=10, actions_per_sample=10):
-		rle = self.initializeRLEFromGame()
+	def testHypotheses(self, hypotheses, rrle=[], num_samples=10, actions_per_sample=10, last_only=False, check=False):
+		if rrle==[]:
+			rle = self.initializeRLEFromGame()
+			rrle = []
+			for sample in range(num_samples):
+				rrle.append(self.randomizeState(rle))
 		cumulative_penalties = []
 		for sample in range(num_samples):
-			rrle = self.randomizeState(rle)
 			actions = self.sampleWithReplacement(self.actionSet, actions_per_sample)
-			penalties = self.testSteps(rrle, actions, hypotheses)
+			penalties = self.testSteps(rrle[sample], actions, hypotheses, last_only=last_only, check=False)
 			cumulative_penalties.append(penalties)
 		cumulative_penalties = np.array(cumulative_penalties)
 		cumulative_penalties = list(np.mean(cumulative_penalties, axis=0))
 		scoreAndTheoryTuples = zip(cumulative_penalties, hypotheses)
 		#scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
+		# print ">>> Embeeded in testHypotheses"
+		# embed()
 		return scoreAndTheoryTuples
 
 	def plotScores(self, save=False, savename='0-vgdl_score_plot'):
@@ -1867,7 +1890,7 @@ class Agent:
 			benchmarks.append([s[i][0] for i in range(len(s))])
 		# Plot scores
 		N = len(scores)
-		f = plt.figure(figsize = (11, 4))
+		f = plt.figure(figsize = (11, 5))
 		ax1 = plt.subplot(111)
 		# ax2 = plt.subplot(212)
 		f.tight_layout(pad=1.5)
@@ -1889,10 +1912,10 @@ class Agent:
 			else:
 				ax1.plot( (i+1)*np.ones(len(self.meanErrorHistory[i])), self.meanErrorHistory[i], '.', c=c[0], ms=7, alpha=.5 )
 		# Mean error history - best
-		ax1.plot( range(1,N+1), [m[0] for m in self.meanErrorHistory], '-', c=c[0], label=r'Mean penalty for $\theta_s^*$'  )
+		ax1.plot( range(1,N+1), [10*m[0] for m in self.meanErrorHistory], '-', c=c[0], label=r'Mean penalty for $\theta_s^*$ $\times 10$'  )
 		
 		# Current step error - best
-		ax1.plot( range(1,N+1), self.minStepError, ':', c=c[0], label=r'Current penalty for $\theta_s^*$'  )
+		ax1.plot( range(1,N+1), 10*np.array(self.minStepError), ':', c=c[0], label=r'Current penalty for $\theta_s^*$ $\times 10$'  )
 
 		# # Benchmarks - all
 		# for i in range(N):
@@ -1902,6 +1925,7 @@ class Agent:
 		# 		ax1.plot( (i+1)*np.ones(len(benchmarks[i])), benchmarks[i], '.', c=c[1], ms=7, alpha=.5 )
 		# Benchmark - best
 		ax1.plot( range(1,N+1), [ min(benchmarks[i]) for i in range(N) ], c=c[1], label=r"Benchmark score" )
+		ax1.plot( range(1,N+1), [ min(benchmarks[i]) for i in range(N) ], '.', ms=7, c=c[1] )
 
 		# print ">>> Embedded in plot"
 		# embed()
@@ -1911,7 +1935,7 @@ class Agent:
 		# ax2.set_xlabel('Step'), ax2.set_ylabel('Score')
 		#ax1.legend(loc='upper right', fontsize=8)
 		box = ax1.get_position()
-		ax1.set_position([box.x0, box.y0, box.width * 0.7, box.height])
+		ax1.set_position([box.x0, box.y0, box.width * 0.65, box.height])
 		ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 		# ax2.legend(loc='upper right', fontsize=8)
 		if save==True:
