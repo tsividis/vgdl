@@ -936,7 +936,8 @@ class Agent:
 
 			gameObject = None
 
-			self.testEpisode(gameObject)
+			for epoch in range(5):
+				self.testEpisode(gameObject,epoch=epoch)
 		return
 
 
@@ -1104,7 +1105,7 @@ class Agent:
 		return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
 
-	def testEpisode(self, gameObject):
+	def testEpisode(self, gameObject, epoch=0):
 
 		# ### Testing ###
 		# actions = [32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT,\
@@ -1128,20 +1129,20 @@ class Agent:
 		# K_LEFT, K_LEFT, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_LEFT, K_LEFT, 32]
 
 		# ### For Game C
-		actions = \
-		[32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
-		K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
+		# actions = \
+		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
+		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
 
+		actions = [32,32, 32, 32, K_RIGHT, K_RIGHT]
 
 		self.initializeEnvironment()
-		print "initializing RLE"
+		print "initializing RLE. Epoch={}".format(epoch)
+
 
 		self.all_objects= self.rle._game.getObjects()
 
-		## Start storing encountered states.
-		effectsEncountered = []
-		statesEncountered = [self.rle._game.getFullState()]
-		self.statesEncountered.append(self.rle._game.getFullState())
+		if epoch==0:
+			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=20)
 
 		## Initialize memory of object positions
 		self.rle._game.objectMemoryDict, self.rle._game.previousPositions = {}, {}
@@ -1150,16 +1151,17 @@ class Agent:
 			self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
 
 
-		gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=20)
-		print "initialized Hypotheses"
-		# embed()
+		## Start storing encountered states.
+		effectsEncountered = []
+		statesEncountered = [self.rle._game.getFullState()]
+		self.statesEncountered.append(self.rle._game.getFullState())
+
 		plt.ion() #allow for plot updating
 
 		for num, action in enumerate(actions):
 			print ">>> Step", num+1, "of", len(actions), "<<<"
 			## initialize VRLEs
 			theoryRLEs = self.VrleInitPhase()#stateToSet=self.rle
-			embed()
 			lastStep=False
 			if num==len(actions)-1:
 				lastStep=True
