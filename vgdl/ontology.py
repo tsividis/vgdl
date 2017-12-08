@@ -185,6 +185,7 @@ class ContinuousPhysics(GridPhysics):
         if speed is None:
             speed = sprite.speed
 
+        print action
 
         if sprite.gravity or sprite.rope:
             v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed
@@ -195,7 +196,7 @@ class ContinuousPhysics(GridPhysics):
         
         
         
-        if ((hasattr(sprite,'jumping') and sprite.jumping) or action[1]) and (sprite.gravity or sprite.rope):
+        if ((hasattr(sprite,'jumping') and sprite.jumping and not sprite.airsteering) or action[1]) and (sprite.gravity or sprite.rope):
             v1 = sprite.orientation[0] * speed
         else:
             v1 = action[0]*sprite.vx_max
@@ -949,7 +950,7 @@ class MarioAvatar(InertialAvatar):
     movestrength = sqrt(strength)
     vx_max = 8
     vy_max = 8
-    airsteering = False
+    airsteering = True
     last_vy = 0
     jumping = False
     wait_step = 0
@@ -977,7 +978,7 @@ class MarioAvatar(InertialAvatar):
         # print self.speed*self.orientation[1]
         #print self.rect
         #print 'start'
-        print self.speed
+        #print self.speed
         # if self.lastrect == self.rect and not self.jumping:
         #     self.speed = self.speed * self.orientation[0]
         #     self.orientation = (1,0)
@@ -993,7 +994,6 @@ class MarioAvatar(InertialAvatar):
             action = [0, 0]
         action = list(action)
 
-
         if self.rope:
             #print action[0] != 0
             #print game.keystate[K_SPACE]
@@ -1008,7 +1008,7 @@ class MarioAvatar(InertialAvatar):
         if self.gravity:
             action[1]=0
 
-        # presumibly, this means the sprite is 'landed'
+            # presumibly, this means the sprite is 'landed'
             self.airstrength *= (1-self.decay)
 
             if self.last_vy == self.lastrect.y - self.rect.y:
@@ -1031,13 +1031,13 @@ class MarioAvatar(InertialAvatar):
 
             else:
                 self.wait_step = 0
-                action[0] = 0
+                if not self.airsteering:
+                    action[0] = 0
 
         # this is pretty hacky. What if sprite doesn't move very fast?
             if self.wait_step > 3:
                 self.jumping = False
-        
-        #print action
+
         self.physics.activeMovement(self, action)
         #changes speed
 
