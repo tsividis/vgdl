@@ -1331,7 +1331,10 @@ class VGDLSprite(object):
                 prop = max(1,min(1,self.resources[r]))
             filled = pygame.Rect(rect.left+wiggle/2, offset, prop*(rect.width-wiggle), barheight)
             rest   = pygame.Rect(rect.left+wiggle/2+prop*(rect.width-wiggle), offset, (1-prop)*(rect.width-wiggle), barheight)
+            #try:
             screen.fill(game.resources_colors[r], filled)
+            #except:
+                #embed()
             screen.fill(BLACK, rest)
             offset += barheight
 
@@ -1361,6 +1364,8 @@ class Resource(VGDLSprite):
     value=1
     limit=2
     res_type = None
+    orientation = [1,0]
+    speed = 0.0
 
     @property
     def resourceType(self):

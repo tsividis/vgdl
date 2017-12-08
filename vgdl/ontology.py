@@ -977,7 +977,7 @@ class MarioAvatar(InertialAvatar):
         # print self.speed*self.orientation[1]
         #print self.rect
         #print 'start'
-        #print self.speed
+        print self.speed
         # if self.lastrect == self.rect and not self.jumping:
         #     self.speed = self.speed * self.orientation[0]
         #     self.orientation = (1,0)
@@ -1819,6 +1819,8 @@ def pullWithIt(sprite, partner, game):
     if not oncePerStep(sprite, game, 'lastpull'):
         return ('pullWithIt', sprite.ID, partner.ID)
 
+    #embed()
+
     tmp = sprite.lastrect
     v = unitVector(partner.lastdirection)
     #embed()
@@ -1827,6 +1829,8 @@ def pullWithIt(sprite, partner, game):
     if isinstance(sprite.physics, ContinuousPhysics):
         sprite.speed = partner.speed
         sprite.orientation = partner.lastdirection
+    elif isinstance(sprite, Resource):
+        sprite.orientation = partner.orientation
     sprite.lastrect = tmp
 
     return ('pullWithIt', sprite.ID, partner.ID)

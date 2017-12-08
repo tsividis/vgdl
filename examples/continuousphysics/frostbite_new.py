@@ -7,7 +7,7 @@ BasicGame
     	lplatform > Missile orientation=LEFT color=GRAY speed=0.1 width=2.0
     	rbplatform > Missile orientation=RIGHT color=BLACK speed=0.1
     	lbplatform > Missile orientation=LEFT color=GRAY speed=0.1
-    	gold > Resource limit=2 color=GOLD height=1.1
+    	gold > Resource limit=9 color=GOLD height=1.1
     	igloo > Immovable color=GREEN
     	water > Immovable color=BLUE
 
@@ -19,20 +19,19 @@ BasicGame
     InteractionSet
         rplatform EOS > wrapAround
         lplatform EOS > wrapAround
-        # gold EOS > wrapAround
-        # avatar rplatform > wallStop
-        # avatar water > killSprite
-        avatar water > wallStop
-        igloo avatar > killIfOtherHasMore resource=key
-        # igloo avatar > killSprite
+        gold EOS > wrapAround
+        # avatar EOS > killSprite
+        avatar water > killSprite
+        igloo avatar > killIfOtherHasMore resource=gold limit=9
         avatar gold > changeResource resource=gold value=1
         gold avatar > killSprite
         gold rplatform > pullWithIt
         gold lplatform > pullWithIt
         avatar rplatform > platformInteraction
         avatar lplatform > platformInteraction
-        # avatar rplatform > bounceForward
-        # avatar lplatform > bounceForward
+        avatar rplatform > killIfTooFast speed=40
+        avatar lplatform > killIfTooFast speed=40
+
     LevelMapping
 		r > rplatform
 		l > lplatform
@@ -44,10 +43,10 @@ BasicGame
 """
 
 level = """
-    A                   I   
-                    wwwwwwww
+               I            
                             
                             
+     A                      
      g         g         g  
      r         r         r  
                             

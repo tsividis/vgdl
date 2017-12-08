@@ -730,7 +730,7 @@ class Theory(object):
 			for k in timestep.agentState.keys():
 				#embed()
 				concepts.extend(self.generateNumberConcepts(k, timestep.agentState[k])) #TODO: Combine generateNumberConcepts and makePreconditions
-				#embed()
+				#(change this here to pick correct possible preconditions)
 			generatedPreconditions = self.makePreconditions(concepts)
 			for p in generatedPreconditions:
 
