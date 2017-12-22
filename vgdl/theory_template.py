@@ -12,6 +12,7 @@ import operator
 import time, math
 from util import factorize, objectsToSymbol
 from rlenvironmentnonstatic import createMindEnv
+import numpy
 
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
@@ -318,7 +319,7 @@ class Theory(object):
 		return negBin(k,5,.5)
 
 
-	def explainTimeStep(self, timestep, fullTimestep, timesteps, currTheories=False, override=False):
+	def explainTimeStep(self, timestep, fullTimestep, timesteps, currTheories=False, override=False,distrib=None):
 		"""
 		Recursive function. Explains first event, then calls itself to explain the next events
 		contingent on current explanations.
@@ -333,14 +334,14 @@ class Theory(object):
 
 		# If we haven't provided theories that explain part of the time step, just explain the first event in the timestep
 		if not currTheories:
-			theories.extend(self.explainEvent(timestep.events[0], fullTimestep, timesteps, override=override))
+			theories.extend(self.explainEvent(timestep.events[0], fullTimestep, timesteps, override=override,distrib=distrib))
 
 		# Otherwise, you're now being passed the remainder of the timestep,
 		# so timestep.events[0] is actually the first as-of-yet unexplained event.
 		# Generate theories based on hypothetical theories (aka, currTheories)
 		else:
 			for theory in currTheories:
-				newTheory = theory.explainEvent(timestep.events[0], fullTimestep, timesteps, override=override)
+				newTheory = theory.explainEvent(timestep.events[0], fullTimestep, timesteps, override=override,distrib=distrib)
 				theories.extend(newTheory)
 
 
@@ -363,9 +364,9 @@ class Theory(object):
 			# Create new timestep that consist of remaining unexpplained eventsl pass to the same function
 			# print "in recursive case"
 			updatedTimeStep = TimeStep(timestep.agentAction, timestep.agentState, timestep.events[1:], timestep.gameState, timestep.rle)
-			return self.explainTimeStep(updatedTimeStep, fullTimestep, timesteps, currTheories=theories, override=override)
+			return self.explainTimeStep(updatedTimeStep, fullTimestep, timesteps, currTheories=theories, override=override,distrib=distrib)
 
-	def explainEvent(self, event, timestep, timesteps, override=False):
+	def explainEvent(self, event, timestep, timesteps, override=False,distrib=None):
 		"""
 		Returns theories based on 'self' that explain the event, which is a tuple like:
 			(bounceForward, BLUE, ORANGE)
@@ -396,7 +397,7 @@ class Theory(object):
 					# interpretation = self.interpret(event)
 					theories.extend(self.addRules(event))
 				else:
-					theories.extend(self.addPreconditions(event, timestep, timesteps))
+					theories.extend(self.addPreconditions(event, timestep, timesteps,distrib=distrib))
 			# Add new rule
 			elif failCase == 4:
 				theories.extend(self.addRules(event))
@@ -704,7 +705,7 @@ class Theory(object):
 		# print "adding {} theories with new assignments".format(len(newTheories))
 		return newTheories
 
-	def addPreconditions(self, event, timestep, timesteps):
+	def addPreconditions(self, event, timestep, timesteps,distrib=None):
 		"""
 		Creates preconditions based on the agentState that might help to explain the event.
 		Returns a list of theories.
@@ -729,9 +730,10 @@ class Theory(object):
 			## (text,item,operator,0)
 			for k in timestep.agentState.keys():
 				#embed()
-				concepts.extend(self.generateNumberConcepts(k, timestep.agentState[k])) #TODO: Combine generateNumberConcepts and makePreconditions
+				concepts.extend(self.generateNumberConcepts(k, timestep.agentState[k],distrib=distrib)) #TODO: Combine generateNumberConcepts and makePreconditions
 				#(change this here to pick correct possible preconditions)
 			generatedPreconditions = self.makePreconditions(concepts)
+
 			for p in generatedPreconditions:
 
 				tmp_theory = copy.deepcopy(self)
@@ -1378,7 +1380,7 @@ class Theory(object):
 		ruleSimilarity = self.ruleSimilarity(cx,cy)
 		return beta*treeSimilarity + (1-beta)*ruleSimilarity
 
-	def generateNumberConcepts(self, item, num): # TODO: Make this set of preconditions smaller
+	def generateNumberConcepts(self, item, num,distrib=None): # TODO: Make this set of preconditions smaller
 		"""
 		Preconditions can be drawn from a pre-defined set of number concepts:
 		n >= 0  --> any numbers from 0 to inf (having this amount of health is fine)
@@ -1387,18 +1389,24 @@ class Theory(object):
 		n < 1 --> any numbers from -inf to 0  (having this amount of medicine and touching poison = death)
 		"""
 		concepts = []
+		num_speed_concepts = 1
+
+		embed()
 
 		## Speed is not a normal backpack item -- for now, simple hack that speed that kills you is 5 greater than your strength.
 		## TODO: Memorize speed of collisions w/ other objects; then adjust proposals as necessary.
 		if item=='speed':
-
 			#embed()
-			num = self.classes['avatar'][0].vgdlType.strength+5
-			#num = int(num)
-			text = item+'>'+str(num)
-			operator = '>'
-			concepts.append((text,item,operator,num))
-			return concepts
+			for i in range(num_speed_concepts):
+				num = numpy.random.choice(range(len(distrib.distr['speed']['BLACK'])),p=distrib.distr['speed']['BLACK'])
+				text = item+'>'+str(num)
+				operator = '>'
+				concepts.append((text,item,operator,num))
+			# #num = int(num)
+			# text = item+'>'+str(num)
+			# operator = '>'
+			# concepts.append((text,item,operator,num))
+			# return concepts
 
 		## All other items
 		if num<0:
@@ -1681,7 +1689,7 @@ class Game(object):
 		return zip(predicates, sums)
 
 
-	def DFSinduction(self, theory, timesteps, maxNumTheories, override=False, verbose=False):
+	def DFSinduction(self, theory, timesteps, maxNumTheories, override=False, verbose=False,distrib=None):
 		"""
 		DFS implementation of induction function to deal with very long induction time.
 		"""
@@ -1705,7 +1713,7 @@ class Game(object):
 
 
 			# Explain current timestep
-			newTheories = theory.explainTimeStep(timesteps[ts_index], timesteps[ts_index], timesteps, override=override)
+			newTheories = theory.explainTimeStep(timesteps[ts_index], timesteps[ts_index], timesteps, override=override,distrib=distrib)
 
 			self.nodes_generated += len(newTheories)
 			if verbose:
@@ -1873,7 +1881,7 @@ class Game(object):
 
 		## decide how we're falsifying termination conditions, and tracking ones that weren't falsified.
 
-	def runInduction(self, spriteSample, trace, maxNumTheories, verbose=False, existingTheories=False):
+	def runInduction(self, spriteSample, trace, maxNumTheories, distrib=None,verbose=False, existingTheories=False):
 		# spriteSample: a particular assignment of sprite types. You can decide how you get this when you generate the sample, in getToSubgoal
 		## Builds a generic theory and then overwrites it as it sees events in 'trace'.
 
@@ -1913,7 +1921,7 @@ class Game(object):
 		for theory in init_hypotheses: 	# each of these theories has depth 1
 			if verbose:
 				theory.display()
-			self.DFSinduction(theory, timesteps, maxNumTheories, override=True, verbose=verbose) ##override anything that was in the original set.
+			self.DFSinduction(theory, timesteps, maxNumTheories, override=True, verbose=verbose,distrib=distrib) ##override anything that was in the original set.
 
 		try:
 			if timesteps:
@@ -2692,13 +2700,16 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	theoryString = theoryString[theoryString.find('"""')+3:-4]
 	return theoryString, levelString, symbolDict#, immovables, killerObjects
 
+#class which stores the distribution over killIf__ parameters
 class PreconditionInduction():
 
 	def __init__ (self):
 		self.distr = {'speed':{},'resource':{}}
+		#maximum speed, maximum 
 		self.speed_n = 100
 		self.res_n = 10
 
+	#normalize distribution
 	def normalize(self, array):
 		tot = sum(array)
 		if tot != 0:
@@ -2706,7 +2717,7 @@ class PreconditionInduction():
 		return array
 
 	def updateDist(self,observations):
-		#handle speed
+		#update speed distribution
 		for key in observations['speed'].keys():
 			if key not in self.distr['speed']:
 				self.distr['speed'][key] = [1.0/self.speed_n for i in range(self.speed_n)]
@@ -2720,7 +2731,7 @@ class PreconditionInduction():
 			#assuming that our likelihood function is uniform
 			self.distr['speed'][key] = self.normalize(self.distr['speed'][key])
 
-		#handle resources
+		#update resource distribution
 		for key in observations['resource'].keys():
 			for res in observations['resource'][key]:
 				if key not in self.distr['resource']:
@@ -2735,12 +2746,15 @@ class PreconditionInduction():
 					#killIfHasLess
 					if (i > val and avatar) or (i <= val and not avatar):
 						self.distr['resource'][key][res][0][i] = 0.0	
+
 					#killIfHasMore
 					if (i <= val and avatar) or (i > val and not avatar):
 						self.distr['resource'][key][res][1][i] = 0.0
+
 					#killIfOtherHasLess
 					if (i > val and sprite) or (i <= val and not sprite):
 						self.distr['resource'][key][res][2][i] = 0.0
+						
 					#killIfOtherHasMore
 					if (i <= val and sprite) or (i > val and not sprite):
 						self.distr['resource'][key][res][3][i] = 0.0

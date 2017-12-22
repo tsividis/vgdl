@@ -41,8 +41,8 @@ w                 w
 w                 w
 w                 w
 w                 w
-w                 w
-w          A k k Gw
+w       P         w
+w   k  AP G       w
 wwwwwwwwwwwwwwwwwww
 """
 
@@ -66,29 +66,30 @@ wwwwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwwwww
 # """
 
-level = """
-wwwwwwwwwwwwwwwwwww
-w                 w
-w                 w
-w                 w
-w                Gw
-w     A        llww
-w    www       l  w
-w                 w
-w                 w
-w                 w
-wwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwww
+# w                 w
+# w                 w
+# w                 w
+# w                Gw
+# w     A        llww
+# w    www       l  w
+# w                 w
+# w                 w
+# w                 w
+# wwwwwwwwwwwwwwwwwww
+# """
 
 game = """
 BasicGame
     SpriteSet
         goal > Immovable color=GREEN
         wall > Immovable color=BLACK
-        rope > Immovable color=RED
+        poison > Immovable color=RED
+        # rope > Immovable color=RED
         ladder > Immovable color=BLUE
         avatar > MarioAvatar strength=15 physicstype=GravityPhysics color=WHITE
-        key > Resource limit=2 color=GOLD
+        key > Resource limit=1 color=GOLD
 
     TerminationSet
         SpriteCounter stype=goal      win=True
@@ -100,10 +101,11 @@ BasicGame
         goal avatar > killSprite
         avatar wall > killIfTooFast speed=21
         avatar wall > wallStop
+        avatar poison > killIfHasLess resource=key limit=0
         # wall avatar > killSprite
         # avatar rope > onRope
         # avatar ladder > onLadder
-        # goal avatar > killIfOtherHasMore resource=key limit=2
+        # goal avatar > killIfOtherHasMore resource=key limit=1
         key avatar > killSprite
         avatar key > changeResource resource=key value=1
     LevelMapping
@@ -114,7 +116,7 @@ BasicGame
         l > ladder
         x > avatar ladder
         k > key
-        
+        P > poison
 
 """
 level_game_pairs = [[game, level]]

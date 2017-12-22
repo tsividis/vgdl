@@ -185,7 +185,7 @@ class ContinuousPhysics(GridPhysics):
         if speed is None:
             speed = sprite.speed
 
-        print action
+        #print action
 
         if sprite.gravity or sprite.rope:
             v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed
@@ -950,7 +950,7 @@ class MarioAvatar(InertialAvatar):
     movestrength = sqrt(strength)
     vx_max = 8
     vy_max = 8
-    airsteering = True
+    airsteering = False
     last_vy = 0
     jumping = False
     wait_step = 0
@@ -1012,7 +1012,7 @@ class MarioAvatar(InertialAvatar):
             self.airstrength *= (1-self.decay)
 
             if self.last_vy == self.lastrect.y - self.rect.y:
-                print "are equal"
+                #print "are equal"
                 self.wait_step += 1
                 if not self.jumping:
                 #print "no"

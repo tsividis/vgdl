@@ -821,115 +821,20 @@ class Agent:
 			trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState'], e['rle']) \
 				for e in self.finalEventList], terminationCondition)
 			
-			##KILL IF TOO FAST HANDLING: keep track of speeds at which collisions happen
-			#TODO: downwards speed in precondition check
-			# for e in event['effectList']:
-				
-			# 	if e[1]=='WHITE': #this is effect happening to avatar
-			# 		speed_vals = [None,None]
-			# 		if e[2] in self.resourceObservations['speed']:
-			# 			speed_vals = self.resourceObservations['speed'][e[2]]
-
-			# 		if e[0] == 'killSprite' and (speed_vals[1] is None or (speed_vals[1] is not None and event['agentState']['speed'] < speed_vals[1])):
-			# 			speed_vals[1] = event['agentState']['speed']*event['agentState']['orientation'][1]
-
-			# 		if e[0] != 'killSprite' and ('killSprite',e[1],e[2]) not in event['effectList']: 
-			# 			if speed_vals[0] is None or (speed_vals[0] is not None and event['agentState']['speed'] > speed_vals[0]):
-			# 				speed_vals[0] = event['agentState']['speed']*event['agentState']['orientation'][1]
-						
-			# 		self.resourceObservations['speed'][e[2]] = speed_vals
 
 			print agentState
 
 			
 			#OBJECT TRACKING
-			#where we think the object is going to be at this timestep
-			avatar_is_dead = (self.getSpritesByColor(self.rle,'WHITE') is None)
-			self.predictions = {}
-			for key in self.lastObjectState.keys():
-				if key == 'WHITE' and not avatar_is_dead:
-					#predicting avatar location needs to be done properly
-					speed = agentState['speed']
-					orientation = self.lastObjectState[key][0]['orientation']
-					pos = self.lastObjectState[key][0]['position']
-					expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
-					positions = [expected_pos]
-				else:
-					positions = []
-					for i in self.lastObjectState[key]:
-						speed = i['speed']
-						orientation = i['orientation']
-						pos = i['position']
-						#embed()
-						if speed is None:
-							expected_pos = pos
-						else:
-							expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
-						positions.append(expected_pos)
-				self.predictions[key] = positions
-			
-			candidates = []
-			locs = {}
-			current_state = self.getStateByColor(self.rle)
-			if len(current_state['WHITE']) > 0:
-				avatar = current_state['WHITE'][0]['position']
-			elif 'WHITE' in self.predictions.keys():
-				avatar = self.predictions['WHITE'][0]
-			for key in self.predictions.keys():
-				if key is not 'WHITE':
-					for i in self.predictions[key]:
-						if self.intersect(i,avatar):
-							candidates.append(key)
-							locs[key] = i
-							break
-			print 'CANDIDATES'
-			print candidates
+			resourceObservations = self.getObservations(agentState)
 
-			#update our distributions
-			resourceObservations = {'speed':{},'resource':{}}
-
-			if avatar_is_dead:
-				for sprite in candidates:
-					resourceObservations['speed'][sprite] = (None,event['agentState']['speed'])
-			else:
-				for sprite in candidates:
-					resourceObservations['speed'][sprite] = (event['agentState']['speed'],None)
-			
-
-			for key in agentState.keys():
-				if key not in ['orientation','speed']:
-					self.observed_resources.add(key)
-			
-			THRESHHOLD = 0.5*self.rle._game.block_size
-			for sprite in candidates:
-				#we must determine if the sprite has dissapeared
-				sprite_gone = True
-				if len(current_state[sprite]) == len(self.lastObjectState[sprite]):
-					sprite_gone = False
-				else:
-					#match closest sprite
-					#locs[sprite] is where we expect the sprite to be
-					for i in current_state[sprite]:
-						#embed()
-						pos = i['position']
-						if abs(pos[0] - locs[sprite][0]) + abs(pos[1] - locs[sprite][1]) < THRESHHOLD:
-							sprite_gone = False
-				#if sprite == 'GOLD':
-				#	embed()
-			 	resourceObservations['resource'][sprite] = {}
-			 	for res in self.observed_resources:
-			 		val = agentState[res]
-			 		resourceObservations['resource'][sprite][res] = (val,not avatar_is_dead,not sprite_gone)
-				
+			#updates the distributions
 			self.distributions.updateDist(resourceObservations)
 			print self.distributions.distr
 
-			self.lastObjectState = current_state
-
-
 
 			hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
-			verbose=False, existingTheories=hypotheses))
+			verbose=False, existingTheories=hypotheses,distrib=self.distributions))
 
 			if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
 				theory_change_flag = True
@@ -994,6 +899,93 @@ class Agent:
 
 
 		return hypotheses, theory_change_flag, effects
+
+	def getObservations(self, agentState):
+		#whether the avatar is still alive
+		avatar_is_dead = (self.getSpritesByColor(self.rle,'WHITE') is None)
+
+		#using the previous state, we predict where the objects are going to be
+		self.predictions = {}
+		for key in self.lastObjectState.keys():
+			#predictions done a little differently for avatar
+			if key == 'WHITE' and not avatar_is_dead:
+				#predicting avatar location needs to be done properly
+				try:
+					speed = agentState['speed']
+					orientation = self.lastObjectState[key][0]['orientation']
+					pos = self.lastObjectState[key][0]['position']
+					expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
+					positions = [expected_pos]
+				except:
+					pass
+			else:
+				positions = []
+				for i in self.lastObjectState[key]:
+					speed = i['speed']
+					orientation = i['orientation']
+					if speed is None:
+						expected_pos = pos
+					else:
+						expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
+					positions.append(expected_pos)
+			self.predictions[key] = positions
+		
+		#get list of possible objects which could have collided with avatar
+		candidates = []
+		locs = {}
+		current_state = self.getStateByColor(self.rle)
+		if len(current_state['WHITE']) > 0:
+			avatar = current_state['WHITE'][0]['position']
+		elif 'WHITE' in self.predictions.keys():
+			avatar = self.predictions['WHITE'][0]
+		for key in self.predictions.keys():
+			if key is not 'WHITE':
+				for i in self.predictions[key]:
+					#see what objects interseced with our avatar
+					if self.intersect(i,avatar):
+						candidates.append(key)
+						locs[key] = i
+						break
+		print 'CANDIDATES'
+		print candidates
+
+		#build our dictionary of observations
+		resourceObservations = {'speed':{},'resource':{}}
+
+		#two cases - whether this collision killed the avatar or not
+		if avatar_is_dead:
+			for sprite in candidates:
+				resourceObservations['speed'][sprite] = (None,agentState['speed'])
+		else:
+			for sprite in candidates:
+				resourceObservations['speed'][sprite] = (agentState['speed'],None)
+		
+
+		for key in agentState.keys():
+			if key not in ['orientation','speed']:
+				self.observed_resources.add(key)
+		
+		THRESHHOLD = 0.5*self.rle._game.block_size
+		for sprite in candidates:
+			#we must determine if the sprite has dissapeared
+			sprite_gone = True
+			if len(current_state[sprite]) == len(self.lastObjectState[sprite]):
+				sprite_gone = False
+			else:
+				#match closest sprite
+				#locs[sprite] is where we expect the sprite to be
+				for i in current_state[sprite]:
+					#embed()
+					pos = i['position']
+					if abs(pos[0] - locs[sprite][0]) + abs(pos[1] - locs[sprite][1]) < THRESHHOLD:
+		 	resourceObservations['resource'][sprite] = {}
+		 	for res in self.observed_resources:
+		 		val = agentState[res]
+		 		#return whether this collision killed the sprite or the avatar - this format is used when updating distributions
+		 		resourceObservations['resource'][sprite][res] = (val,not avatar_is_dead,not sprite_gone)
+
+		self.lastObjectState = current_state
+		return resourceObservations
 
 	def intersect(self, p1, p2):
 		return (abs(p1[0] - p2[0]) <= self.rle._game.block_size and abs(p1[1] - p2[1]) <= self.rle._game.block_size)
