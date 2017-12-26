@@ -98,6 +98,7 @@ class Agent:
 		self.actionSet = [K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE]
 		self.randomTheories = []
 		self.benchmarkHistory = []
+		self.subsamplePercentage = .5 # e.g., .5 = 50%.
 
 	def initializeEnvironment(self):
 		if self.gameString==None or self.levelString==None:
@@ -131,21 +132,6 @@ class Agent:
 			return None
 		else:
 			return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 	# Function matching environment and determining sprites that couldn't be matched
@@ -652,24 +638,6 @@ class Agent:
 		return penalty
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	def setSpritePositions(self, rle, Vrle, hypothesis, useHypothesis=True):
 		## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
 
@@ -1129,11 +1097,11 @@ class Agent:
 		# K_LEFT, K_LEFT, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_LEFT, K_LEFT, 32]
 
 		# ### For Game C
-		# actions = \
-		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
-		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
+		actions = \
+		[32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
+		K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
 
-		actions = [32,32, 32, 32, K_RIGHT, K_RIGHT]
+		# actions = [32,32, 32, 32, K_RIGHT, K_RIGHT]
 
 		self.initializeEnvironment()
 		print "initializing RLE. Epoch={}".format(epoch)
@@ -1811,12 +1779,69 @@ class Agent:
 		embed()
 		return
 
-	#######################################################
-	######## TESTING HYPOTHESES BY RANDOM SAMPLING ########
-	#######################################################
+	########################################################################
+	######## TESTING HYPOTHESES BY RANDOM SAMPLING OR OTHER METHODS ########
+	########################################################################
+
+	def subSampleStates(self, rleHistory):
+		## Returns a random subsample of inidces in the rleHistory to test,
+		## as well as how many actions per index to test
+
+		## Note to self: it may happen that you sample: 
+		## indices = [0,2,10], actionsPerIndex=5, 
+		## in which case you'll double-penalize states 2,3,4.
+
+		numStatesToSample = int(math.floor(self.subsamplePercentage*len(rleHistory)))
+		indices = list(np.random.choice(len(rleHistory)-1, numStatesToSample, replace=False))
+		actionsPerIndex = self.actionsPerIndex
+
+		return indices, actionsPerIndex
+
+	def getSalientStates(self, rleHistory):
+		## make sure you don't sample the last state
+		## get actionsPerIndex
+
+		pass
+
+
+	def experienceReplay(self, hypotheses, rleHistory, actionHistory, method='all'):
+
+		if method=='all':
+			indices = [0]
+			actionsPerIndex = len(actionHistory)-1
+		elif method=='subsample':
+			indices, actionsPerIndex = self.subSampleStates(rleHistory)
+		elif method=='salient':
+			indices, actionsPerIndex = self.getSalientStates(rleHistory)
+
+		cumulative_penalties = []
+
+		for idx in indices:
+			## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
+			theoryRLEs = self.VrleInitPhase(hypotheses, rleHistory[idx]) 
+			ID_dictlist = []
+			for tR in theoryRLEs:
+				ID_dictlist.append( self.IDmatch(tR, rleHistory[idx]) )	
+
+			## Take a predetermined number of actions starting from idx
+			end = min(idx+actionsPerIndex, len(actionHistory)-1)
+			for n, action in enumerate(actionHistory[idx:end]):
+				print action
+				penalties = []
+				for num, env in enumerate(theoryRLEs):
+					env.step(action)
+					penalty, errorList = self.errorSignal(env, rleHistory[idx+n+1], hypotheses[num], rleHistory[idx+n], penalty_only=True)
+					penalties.append(penalty)
+				cumulative_penalties.append(penalties)
+		
+		cumulative_penalties = np.array(cumulative_penalties)
+		return np.mean(cumulative_penalties, axis=0)
+
 
 	def testSteps(self, rle, actions, hypotheses, last_only=False, check=False):
-		# Evaluates all the hypotheses on the state of the provided rle, given action.
+		## Evaluates all the hypotheses on the state of the provided rle, given actions.
+		## last_only: will take all actions and only *then* evaluate the distance between real and imagined states
+		
 		theoryRLEs = self.VrleInitPhase(hypotheses, rle)
 		# Match IDs between real and theory RLEs
 		ID_dictlist = []
