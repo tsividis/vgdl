@@ -91,6 +91,7 @@ class Agent:
 		self.proposalMemory = defaultdict(lambda:[])
 		self.memory = []
 		self.rleHistory = []
+		self.actionHistory = []
 		self.allTheories = []
 		self.theoryScoreHistory = []
 		self.meanErrorHistory = []
@@ -99,6 +100,7 @@ class Agent:
 		self.randomTheories = []
 		self.benchmarkHistory = []
 		self.subsamplePercentage = .5 # e.g., .5 = 50%.
+		self.actionsPerIndex = 3
 
 	def initializeEnvironment(self):
 		if self.gameString==None or self.levelString==None:
@@ -1123,6 +1125,8 @@ class Agent:
 		effectsEncountered = []
 		statesEncountered = [self.rle._game.getFullState()]
 		self.statesEncountered.append(self.rle._game.getFullState())
+		envReal = copy.deepcopy(self.rle)
+		self.rleHistory.append(envReal)
 
 		plt.ion() #allow for plot updating
 
@@ -1639,8 +1643,8 @@ class Agent:
 
 		envRealPrev = copy.deepcopy(self.rle)
 
-		self.rleHistory.append(envRealPrev)
-
+		# self.rleHistory.append(envRealPrev)
+		self.actionHistory.append(action)
 		print "deepcopy: {}".format(time.time()-t1)
 		# t2 = time.time()
 		# print "fast-copying rle"
@@ -1648,6 +1652,8 @@ class Agent:
 		# print "fastcopy: {}".format(time.time()-t2)
 
 		self.rle.step(action)
+		envReal = copy.deepcopy(self.rle)
+		self.rleHistory.append(envReal)
 		print ""
 		print keyPresses[action]
 
@@ -1674,45 +1680,51 @@ class Agent:
 		self.allTheories.extend(newTheories)
 
 		print self.rle.show(color='blue')
-		# embed()
 		if newTheories:
-			## Initialize RLEs according to each theory and setting state=prevState
-			print "initializing {} proposals".format(len(newTheories))
-			theoryRLEs = self.VrleInitPhase(newTheories, envRealPrev)
-			print "evaluating {} proposals".format(len(theoryRLEs))
-			penalties = []
-			# Evaluate proposals
-			for num, env in enumerate(theoryRLEs):
-				env.step(action)
-				penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev, penalty_only=True)
-				newTheories[num].errorHistory.append(penalty)
-				newTheories[num].cumulativeError = penalty + newTheories[num].cumulativeError/2
-				penalties.append(penalty)
-				# print ""
-				# print "Theory {} penalty: {}".format(num, penalty)
-				# for e in errorList:
-				# 	if 'objectDestruction' in e.diagnosis:
-				# 		print "found objectDestruction"
-				# 		embed()
-				# 	e.display()
-			print ""
-			# print "last-step penalties"
-			# print penalties
-			# print "cumulative penalties"
-			cumulative_penalties = [np.mean(h.errorHistory) for h in newTheories]
-			# print cumulative_penalties
-			print "proposed {} new theories".format(len(newTheories))
-			print ""
 			# embed()
-			## Filter theories
-			scoreAndTheoryTuples = zip(cumulative_penalties, newTheories)
+
+			penalties, cumulative_penalties = self.experienceReplay(newTheories, self.rleHistory, self.actionHistory, method='subsample')
+			scoreAndTheoryTuples = zip(penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
+			
+
+			# ## Initialize RLEs according to each theory and setting state=prevState
+			# print "initializing {} proposals".format(len(newTheories))
+			# theoryRLEs = self.VrleInitPhase(newTheories, envRealPrev)
+			# print "evaluating {} proposals".format(len(theoryRLEs))
+			# penalties = []
+			# # Evaluate proposals
+			# for num, env in enumerate(theoryRLEs):
+			# 	env.step(action)
+			# 	penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev, penalty_only=True)
+			# 	newTheories[num].errorHistory.append(penalty)
+			# 	newTheories[num].cumulativeError = penalty + newTheories[num].cumulativeError/2
+			# 	penalties.append(penalty)
+			# 	# print ""
+			# 	# print "Theory {} penalty: {}".format(num, penalty)
+			# 	# for e in errorList:
+			# 	# 	if 'objectDestruction' in e.diagnosis:
+			# 	# 		print "found objectDestruction"
+			# 	# 		embed()
+			# 	# 	e.display()
+			# print ""
+			# # print "last-step penalties"
+			# # print penalties
+			# # print "cumulative penalties"
+			# cumulative_penalties = [np.mean(h.errorHistory) for h in newTheories]
+			# # print cumulative_penalties
+			# print "proposed {} new theories".format(len(newTheories))
+			# print ""
+			# # embed()
+			# ## Filter theories
+			# scoreAndTheoryTuples = zip(cumulative_penalties, newTheories)
+			# scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 
 			if not lastStep:
-				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=20,
+				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=80, max_num=10,
 					proportionOfSpriteTheories=.2)]
 			else:
-				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=50, max_num=20,
+				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=80, max_num=10,
 					proportionOfSpriteTheories=.2)]
 
 			for num, sh in enumerate(scoresAndHypotheses):
@@ -1726,9 +1738,9 @@ class Agent:
 
 		### Store one-step penalties ###
 		# Update mean error history
-		self.meanErrorHistory.append( [np.mean(hypotheses[i].errorHistory) for i in range(len(hypotheses))] )
+		# self.meanErrorHistory.append( [np.mean(hypotheses[i].errorHistory) for i in range(len(hypotheses))] )
 		# Update minimum step error
-		self.minStepError.append( hypotheses[0].errorHistory[-1] )
+		# self.minStepError.append( hypotheses[0].errorHistory[-1] )
 
 		# ### Store sampled scores ###
 		# num_samples=20
@@ -1804,7 +1816,9 @@ class Agent:
 		pass
 
 
-	def experienceReplay(self, hypotheses, rleHistory, actionHistory, method='all'):
+	def experienceReplay(self, hypotheses, rleHistory, actionHistory, method='all', displayStates=False):
+
+		import numpy as np
 
 		if method=='all':
 			indices = [0]
@@ -1824,19 +1838,32 @@ class Agent:
 				ID_dictlist.append( self.IDmatch(tR, rleHistory[idx]) )	
 
 			## Take a predetermined number of actions starting from idx
-			end = min(idx+actionsPerIndex, len(actionHistory)-1)
+			end = min(idx+actionsPerIndex, len(actionHistory))
+
+			if displayStates:
+				print "index: {}".format(idx)
+				print rleHistory[idx].show()
+				for env in theoryRLEs:
+					print env.show(color='blue')
+
 			for n, action in enumerate(actionHistory[idx:end]):
-				print action
 				penalties = []
+				if displayStates:
+					print action
+					print rleHistory[idx+n+1].show(color='green')
 				for num, env in enumerate(theoryRLEs):
 					env.step(action)
 					penalty, errorList = self.errorSignal(env, rleHistory[idx+n+1], hypotheses[num], rleHistory[idx+n], penalty_only=True)
+					if displayStates:
+						print penalty
+						print env.show(color='blue')
 					penalties.append(penalty)
 				cumulative_penalties.append(penalties)
 		
 		cumulative_penalties = np.array(cumulative_penalties)
-		return np.mean(cumulative_penalties, axis=0)
+		return np.mean(cumulative_penalties, axis=0), cumulative_penalties
 
+	# penalties, cum_penalties = self.experienceReplay(self.hypotheses, self.rleHistory, self.actionHistory, method='subsample')
 
 	def testSteps(self, rle, actions, hypotheses, last_only=False, check=False):
 		## Evaluates all the hypotheses on the state of the provided rle, given actions.
