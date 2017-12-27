@@ -1705,16 +1705,10 @@ class Agent:
 		for num, env in enumerate(theoryRLEs):
 			env.step(action)
 			penalty, errorList = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
-			# for e in errorList:
-				# if 'unexpectedPosition' in e.diagnosis and e.targetToken.colorName=='ORANGE':
-					# flag=True
 
 			theories = self.expandTheory(self.hypotheses[num], errorList, envRealPrev, self.rle)
 			newTheories.extend(theories)
 
-		# if flag:
-		# 	print "found unexpectedPosition"
-		# 	embed()
 		self.allTheories.extend(newTheories)
 
 		print self.rle.show(color='blue')
@@ -1725,39 +1719,6 @@ class Agent:
 			scoreAndTheoryTuples = zip(penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 			
-
-			# ## Initialize RLEs according to each theory and setting state=prevState
-			# print "initializing {} proposals".format(len(newTheories))
-			# theoryRLEs = self.VrleInitPhase(newTheories, envRealPrev)
-			# print "evaluating {} proposals".format(len(theoryRLEs))
-			# penalties = []
-			# # Evaluate proposals
-			# for num, env in enumerate(theoryRLEs):
-			# 	env.step(action)
-			# 	penalty, errorList = self.errorSignal(env, self.rle, newTheories[num], envRealPrev, penalty_only=True)
-			# 	newTheories[num].errorHistory.append(penalty)
-			# 	newTheories[num].cumulativeError = penalty + newTheories[num].cumulativeError/2
-			# 	penalties.append(penalty)
-			# 	# print ""
-			# 	# print "Theory {} penalty: {}".format(num, penalty)
-			# 	# for e in errorList:
-			# 	# 	if 'objectDestruction' in e.diagnosis:
-			# 	# 		print "found objectDestruction"
-			# 	# 		embed()
-			# 	# 	e.display()
-			# print ""
-			# # print "last-step penalties"
-			# # print penalties
-			# # print "cumulative penalties"
-			# cumulative_penalties = [np.mean(h.errorHistory) for h in newTheories]
-			# # print cumulative_penalties
-			# print "proposed {} new theories".format(len(newTheories))
-			# print ""
-			# # embed()
-			# ## Filter theories
-			# scoreAndTheoryTuples = zip(cumulative_penalties, newTheories)
-			# scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
-
 			if not lastStep:
 				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=80, max_num=10,
 					proportionOfSpriteTheories=.2)]
