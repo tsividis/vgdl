@@ -12,6 +12,8 @@ import operator
 import time, math
 from util import factorize, objectsToSymbol
 from rlenvironmentnonstatic import createMindEnv
+from line_profiler import LineProfiler
+
 
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
@@ -2417,6 +2419,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	## TODO: what to do with orientation for missiles??
 	return targetClass, childTheories
 
+
 def expandLine(theory, errorMap, classPair, predicates, n=1, resourceObservations=None, generic=False):
 	## modifies the theory to propose n new interactonRules involving the given classPair
 	## for predicates that take arguments, proposes all possible combinations of args
@@ -2759,8 +2762,9 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 	sortedInteractions += nonAvatarStepBackInteractions
 
+	# embed()
 	for interactionRule in sortedInteractions:
-		if all([not interactionRule.__eq__(r) for r in added_rules]): ## don't duplicate rules.
+		if True:  #all([not interactionRule.__eq__(r) for r in added_rules]): ## don't duplicate rules.
 
 			c1 = interactionRule.slot1
 			c2 = interactionRule.slot2

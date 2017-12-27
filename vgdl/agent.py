@@ -680,10 +680,25 @@ class Agent:
 		return
 
 
+	def initializeVrleProfiler(self, hypothesis=None, stateToSet=None):
+		lp = LineProfiler()
+		lp_wrapper = lp(self.initializeVrle)
+		Vrle = lp_wrapper(hypothesis, stateToSet)
+		lp.print_stats()
+		return Vrle
+
 	def initializeVrle(self, hypothesis=None, stateToSet=None):
 		if stateToSet is None:
 			stateToSet = self.rle
-		
+
+		def writeTheoryToTxtProfiler(rle, theory, symbolDict, txtFile, goalLoc = None):
+			lp = LineProfiler()
+			lp_wrapper = lp(writeTheoryToTxt)
+			theoryString, levelString, symbolDict = lp_wrapper(rle, theory, symbolDict, txtFile, goalLoc)
+			lp.print_stats()
+			return theoryString, levelString, symbolDict
+
+
 		if hypothesis is not None:
 			## World in agent's mind given 'hypothesis', including object goal
 			gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, self.symbolDict,\
@@ -808,6 +823,15 @@ class Agent:
 
 		return gameObject
 
+
+	def expandTheoryProfiler(self, theory, errorList, envRealPrev, envRealCurrent):
+		lp = LineProfiler()
+		lp_wrapper = lp(self.expandTheory)
+		newTheories = lp_wrapper(theory, errorList, envRealPrev, envRealCurrent)
+		lp.print_stats()
+		return newTheories
+
+
 	def expandTheory(self, theory, errorList, envRealPrev, envRealCurrent):
 
 		## TODO:
@@ -824,6 +848,18 @@ class Agent:
 
 		from vgdl.theory_template import expandLine, expandSprites, proposePredicates
 		n=1
+
+		def expandLineProfiler(theory, errorMap, targetClassPair, 
+						predicates, n, 
+						resourceObservations, generic):
+			lp = LineProfiler()
+			lp_wrapper = lp(expandLine)
+			classPair, theories, predicateGroups = lp_wrapper(theory, errorMap, targetClassPair, 
+														predicates, n, 
+														resourceObservations, generic)
+			lp.print_stats()
+			return classPair, theories, predicateGroups
+
 
 
 		## TODO: write sample resourceObservations that correspond to the format
@@ -1075,6 +1111,8 @@ class Agent:
 		return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
 
+
+
 	def testEpisode(self, gameObject, epoch=0):
 
 		# ### Testing ###
@@ -1103,7 +1141,7 @@ class Agent:
 		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
 		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
 
-		actions = [32,32, 32, 32, K_RIGHT, K_RIGHT]
+		actions = [32,32, 32, 32, K_RIGHT, K_RIGHT, 32, 32]
 
 		self.initializeEnvironment()
 		print "initializing RLE. Epoch={}".format(epoch)
@@ -1643,27 +1681,12 @@ class Agent:
 			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
 			percentile=10, max_num=20, allMovement=False)
 
-
 		agentState = self.resourceManagement(pre_step=True)
-		
 
 		# envRealPrev = copy.deepcopy(self.rle)
 		envRealPrev = self.fastcopy(self.rle)
 		# self.rleHistory.append(envRealPrev)
 		self.actionHistory.append(action)
-
-		# actions = [32,32,32,32,274,273]
-		# for action in actions:
-		# 	self.rle.step(action)
-		# 	t1=time.time()
-		# 	envReal = copy.deepcopy(self.rle)
-		# 	print "deepcopy: {}".format(time.time()-t1)
-		# 	t2 = time.time()
-		# 	envRealFast = self.fastcopy(self.rle)
-		# 	print "fastcopy: {}".format(time.time()-t2)
-		# # envRealVrle = self.initializeVrle(None, stateToSet=self.rle) ## using copy.deepcopy() substitute
-		# embed()
-
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
 		# envReal = copy.deepcopy(self.rle)

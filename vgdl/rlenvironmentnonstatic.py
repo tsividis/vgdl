@@ -29,7 +29,7 @@ from line_profiler import LineProfiler
 OBSERVATION_LOCAL = 'local'
 OBSERVATION_GLOBAL = 'global'
 
-class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
+class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
     """ Wrapping a VGDL game with a generic interface suitable for reinforcement learning.
     """
 
