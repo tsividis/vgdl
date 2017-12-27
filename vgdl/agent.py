@@ -906,7 +906,7 @@ class Agent:
 
 			gameObject = None
 
-			for epoch in range(5):
+			for epoch in range(1):
 				self.testEpisode(gameObject,epoch=epoch)
 		return
 
@@ -1099,11 +1099,11 @@ class Agent:
 		# K_LEFT, K_LEFT, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_LEFT, K_LEFT, 32]
 
 		# ### For Game C
-		actions = \
-		[32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
-		K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
+		# actions = \
+		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
+		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
 
-		# actions = [32,32, 32, 32, K_RIGHT, K_RIGHT]
+		actions = [32,32, 32, 32, K_RIGHT, K_RIGHT]
 
 		self.initializeEnvironment()
 		print "initializing RLE. Epoch={}".format(epoch)
@@ -1125,7 +1125,8 @@ class Agent:
 		effectsEncountered = []
 		statesEncountered = [self.rle._game.getFullState()]
 		self.statesEncountered.append(self.rle._game.getFullState())
-		envReal = copy.deepcopy(self.rle)
+		envReal = self.fastcopy(self.rle)
+		# envReal = copy.deepcopy(self.rle)
 		self.rleHistory.append(envReal)
 
 		plt.ion() #allow for plot updating
@@ -1543,12 +1544,7 @@ class Agent:
 
 		return hypotheses
 
-	def executeStepProfiler(self, action, hypotheses, statesEncountered, run_induction=True):
-		lp = LineProfiler()
-		lp_wrapper = lp(self.executeStep)
-		hypotheses, theory_change_flag, effects = lp_wrapper(action, hypotheses, statesEncountered, run_induction)
-		lp.print_stats()
-		return hypotheses, theory_change_flag, effects
+
 
 
 	def resourceManagement(self, pre_step=True, res=None):
@@ -1615,15 +1611,26 @@ class Agent:
 		return filtered
 
 	def fastcopy(self, rle):
-		print "in fastcopy"
-		from pygame.locals import K_RIGHT
-		from copy import deepcopy
-		rle.step(K_RIGHT)
+		# print "in fastcopy"
+		# from pygame.locals import K_RIGHT
+		# from copy import deepcopy
+		# rle.step(K_RIGHT)
 		newRle = self.initializeRLEFromGame()
+		newRle._obstypes = copy.deepcopy(rle._obstypes)
+		newRle._gravepoints = copy.deepcopy(rle._gravepoints)
 		newRle._game.sprite_groups = copy.deepcopy(rle._game.sprite_groups)
+		newRle._game.kill_list = copy.deepcopy(rle._game.kill_list)
 		newRle.symbolDict = copy.deepcopy(rle.symbolDict)
-		embed()
-		return
+		newRle._game.getAvatars()[0].resources = copy.deepcopy(rle._game.getAvatars()[0].resources)
+		# embed()
+		return newRle
+
+	def executeStepProfiler(self, action, hypotheses, theoryRLEs, lastStep=False):
+		lp = LineProfiler()
+		lp_wrapper = lp(self.executeStep)
+		hypotheses = lp_wrapper(action, hypotheses, theoryRLEs, lastStep)
+		lp.print_stats()
+		return hypotheses
 
 	def executeStep(self, action, hypotheses, theoryRLEs, lastStep=False):
 
@@ -1639,20 +1646,28 @@ class Agent:
 
 		agentState = self.resourceManagement(pre_step=True)
 		
-		t1=time.time()
 
-		envRealPrev = copy.deepcopy(self.rle)
-
+		# envRealPrev = copy.deepcopy(self.rle)
+		envRealPrev = self.fastcopy(self.rle)
 		# self.rleHistory.append(envRealPrev)
 		self.actionHistory.append(action)
-		print "deepcopy: {}".format(time.time()-t1)
-		# t2 = time.time()
-		# print "fast-copying rle"
-		# envRealPrev = self.initializeVrle(None, stateToSet=self.rle) ## using copy.deepcopy() substitute
-		# print "fastcopy: {}".format(time.time()-t2)
+
+		# actions = [32,32,32,32,274,273]
+		# for action in actions:
+		# 	self.rle.step(action)
+		# 	t1=time.time()
+		# 	envReal = copy.deepcopy(self.rle)
+		# 	print "deepcopy: {}".format(time.time()-t1)
+		# 	t2 = time.time()
+		# 	envRealFast = self.fastcopy(self.rle)
+		# 	print "fastcopy: {}".format(time.time()-t2)
+		# # envRealVrle = self.initializeVrle(None, stateToSet=self.rle) ## using copy.deepcopy() substitute
+		# embed()
 
 		self.rle.step(action)
-		envReal = copy.deepcopy(self.rle)
+		envReal = self.fastcopy(self.rle)
+		# envReal = copy.deepcopy(self.rle)
+
 		self.rleHistory.append(envReal)
 		print ""
 		print keyPresses[action]
@@ -1815,6 +1830,13 @@ class Agent:
 
 		pass
 
+	def experienceReplayProfiler(self, hypotheses, rleHistory, actionHistory, method='all', displayStates=False):
+		lp = LineProfiler()
+		lp_wrapper = lp(self.experienceReplay)
+		mean_penalties, cumulative_penalties = lp_wrapper(hypotheses, rleHistory, actionHistory, method, displayStates)
+		lp.print_stats()
+		return mean_penalties, cumulative_penalties
+
 
 	def experienceReplay(self, hypotheses, rleHistory, actionHistory, method='all', displayStates=False):
 
@@ -1861,7 +1883,8 @@ class Agent:
 				cumulative_penalties.append(penalties)
 		
 		cumulative_penalties = np.array(cumulative_penalties)
-		return np.mean(cumulative_penalties, axis=0), cumulative_penalties
+		mean_penalties = np.mean(cumulative_penalties, axis=0)
+		return mean_penalties, cumulative_penalties
 
 	# penalties, cum_penalties = self.experienceReplay(self.hypotheses, self.rleHistory, self.actionHistory, method='subsample')
 
@@ -1879,7 +1902,8 @@ class Agent:
 		for n,action in enumerate(actions):
 			penalties = []
 			if last_only==False or n==len(actions)-1:
-				envRealPrev = copy.deepcopy(rle)
+				envRealPrev = self.fastcopy(rle)
+				# envRealPrev = copy.deepcopy(rle)
 			rle.step(action)
 			for num, env in enumerate(theoryRLEs):
 				env.step(action)
@@ -1895,7 +1919,8 @@ class Agent:
 		return np.mean(cumulative_penalties, axis=0)
 
 	def randomizeState(self, rle):
-		rleCopy = copy.deepcopy(rle)
+		rleCopy = self.fastcopy(rle)
+		# rleCopy = copy.deepcopy(rle)
 		x_options = range(1, rleCopy._game.width-1)
 		y_options = range(1, rleCopy._game.height-1)
 		pos_options = list(itertools.product(x_options, y_options))
