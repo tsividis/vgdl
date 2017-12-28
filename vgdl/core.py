@@ -1218,6 +1218,19 @@ class VGDLSprite(object):
     height = 1.0
     orientation = (0,0)
 
+    def __eq__(self, other):
+        """Overrides the default implementation
+            so that copies of an instance are considered equal"""
+        if isinstance(self, other.__class__):
+            return self.ID == other.ID
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return hash(self.ID)
+
     def __init__(self, pos, size=(10,10), color=None, speed=None, cooldown=None, physicstype=None, **kwargs):
         from ontology import GridPhysics
         self.rect = pygame.Rect(pos, size)
