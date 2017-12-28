@@ -1114,14 +1114,6 @@ class Agent:
 
 
 	def testEpisode(self, gameObject, epoch=0):
-
-		# ### Testing ###
-		# actions = [32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT,\
-		# K_RIGHT, K_DOWN, K_DOWN, K_LEFT, K_LEFT, K_UP, 32, 32, K_RIGHT, K_DOWN, K_LEFT, K_LEFT, \
-		# K_LEFT, K_UP, K_LEFT, K_LEFT, K_LEFT]
-		#actions = [K_DOWN, K_UP, K_UP, K_RIGHT, 32, K_RIGHT, 32, K_RIGHT]#, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, \
-		# K_DOWN, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
-		# actions = [32, K_RIGHT]
 		
 		# ### For Game A ###
 		# actions = \
@@ -1141,7 +1133,9 @@ class Agent:
 		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
 		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
 
-		actions = [32,32, 32, 32, K_RIGHT, K_RIGHT, 32, 32]
+		# actions = [32,32, 32, 32, K_RIGHT, K_RIGHT, 32, 32]
+
+		actions = [K_RIGHT, 32, K_RIGHT]
 
 		self.initializeEnvironment()
 		print "initializing RLE. Epoch={}".format(epoch)
@@ -1653,13 +1647,20 @@ class Agent:
 		# from pygame.locals import K_RIGHT
 		# from copy import deepcopy
 		# rle.step(K_RIGHT)
+
 		newRle = self.initializeRLEFromGame()
 		newRle._obstypes = copy.deepcopy(rle._obstypes)
 		newRle._gravepoints = copy.deepcopy(rle._gravepoints)
 		newRle._game.sprite_groups = copy.deepcopy(rle._game.sprite_groups)
 		newRle._game.kill_list = copy.deepcopy(rle._game.kill_list)
+		newRle._game.lastcollisions = copy.deepcopy(rle._game.lastcollisions)
+		newRle._game.time = copy.deepcopy(rle._game.time)
+		newRle._game.score = copy.deepcopy(rle._game.score)
+		newRle._game.keystate = copy.deepcopy(rle._game.keystate)
 		newRle.symbolDict = copy.deepcopy(rle.symbolDict)
 		newRle._game.getAvatars()[0].resources = copy.deepcopy(rle._game.getAvatars()[0].resources)
+		if rle._game.kill_list:
+			embed()
 		# embed()
 		return newRle
 
@@ -1689,6 +1690,7 @@ class Agent:
 		self.actionHistory.append(action)
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
+		# self.fastcopy(self.rle)
 		# envReal = copy.deepcopy(self.rle)
 
 		self.rleHistory.append(envReal)
