@@ -775,6 +775,7 @@ class Agent:
 			gameObject = Game(self.gameString)
 			initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
 
+		initialTheory.mostRecentEdit = 'none'
 		# Handle wall vs. projectile interaction (hacky)
 		avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
 
@@ -1133,9 +1134,9 @@ class Agent:
 		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
 		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
 
-		# actions = [32,32, 32, 32, K_RIGHT, K_RIGHT, 32, 32]
+		actions = [32,32, 32, 32, K_RIGHT, K_RIGHT, 32, 32]
 
-		actions = [K_RIGHT, 32, K_RIGHT]
+		# actions = [K_RIGHT, 32, K_RIGHT]
 
 		self.initializeEnvironment()
 		print "initializing RLE. Epoch={}".format(epoch)
@@ -1147,10 +1148,10 @@ class Agent:
 			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=20)
 
 		## Initialize memory of object positions
-		self.rle._game.objectMemoryDict, self.rle._game.previousPositions = {}, {}
-		for k, v in self.rle._game.all_objects.iteritems():
-			self.rle._game.objectMemoryDict[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
-			self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+		# self.rle._game.objectMemoryDict, self.rle._game.previousPositions = {}, {}
+		# for k, v in self.rle._game.all_objects.iteritems():
+		# 	self.rle._game.objectMemoryDict[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+		# 	self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
 
 
 		## Start storing encountered states.
@@ -1173,15 +1174,15 @@ class Agent:
 			hypotheses = self.executeStep(action, self.hypotheses, theoryRLEs, lastStep)
 
 			## Other stuff we don't have to worry about
-			self.rle._game.nextPositions = {}
-			for k, v in self.rle._game.all_objects.iteritems():
-				self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
-				try:
-					if self.rle._game.previousPositions[k] != self.rle._game.nextPositions[k]:
-						self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.rle._game.previousPositions[k])
-				except KeyError:
-					pass
-			self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
+			# self.rle._game.nextPositions = {}
+			# for k, v in self.rle._game.all_objects.iteritems():
+			# 	self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+			# 	try:
+			# 		if self.rle._game.previousPositions[k] != self.rle._game.nextPositions[k]:
+			# 			self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.rle._game.previousPositions[k])
+			# 	except KeyError:
+			# 		pass
+			# self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
 
 			self.hypotheses = hypotheses
 
@@ -1631,22 +1632,18 @@ class Agent:
 		candidates = [s for s in scoreAndTheoryTuples if s[0]<=cutoff]
 		sprite_candidates = [s for s in candidates if s[1].mostRecentEdit=='spriteInduction']
 		induction_candidates = [s for s in candidates if s[1].mostRecentEdit=='interactionSetInduction']
-
+		no_edit_candidates = [s for s in candidates if s[1].mostRecentEdit=='none']
 		if len(sprite_candidates)>int(math.floor(max_num*proportionOfSpriteTheories)):
 			filtered = sprite_candidates[0:min(int(math.floor(max_num*proportionOfSpriteTheories)), len(sprite_candidates))]
 		else:
 			filtered = sprite_candidates
 		remaining = max_num - len(filtered)
-		filtered = induction_candidates[0:min(remaining, len(induction_candidates))] + filtered
+		filtered = induction_candidates[0:min(remaining, len(induction_candidates))] + filtered + no_edit_candidates
 		filtered = sorted(filtered, key=lambda x: x[0])
 
 		return filtered
 
 	def fastcopy(self, rle):
-		# print "in fastcopy"
-		# from pygame.locals import K_RIGHT
-		# from copy import deepcopy
-		# rle.step(K_RIGHT)
 
 		newRle = self.initializeRLEFromGame()
 		newRle._obstypes = copy.deepcopy(rle._obstypes)
@@ -1659,9 +1656,6 @@ class Agent:
 		newRle._game.keystate = copy.deepcopy(rle._game.keystate)
 		newRle.symbolDict = copy.deepcopy(rle.symbolDict)
 		newRle._game.getAvatars()[0].resources = copy.deepcopy(rle._game.getAvatars()[0].resources)
-		if rle._game.kill_list:
-			embed()
-		# embed()
 		return newRle
 
 	def executeStepProfiler(self, action, hypotheses, theoryRLEs, lastStep=False):
@@ -1690,7 +1684,6 @@ class Agent:
 		self.actionHistory.append(action)
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
-		# self.fastcopy(self.rle)
 		# envReal = copy.deepcopy(self.rle)
 
 		self.rleHistory.append(envReal)
@@ -1734,6 +1727,9 @@ class Agent:
 			hypotheses = [sh[1] for sh in scoresAndHypotheses]
 			print "{} survived".format(len(hypotheses))
 			print ""
+			if len(hypotheses)==0:
+				print "0 hypotheses survived filter"
+				embed()
 		else:
 			print "Got no new theories"
 
