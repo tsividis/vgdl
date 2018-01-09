@@ -466,21 +466,25 @@ class Agent:
 			## by the sprite matching. But since it's imperfect given our limited knowledge, we're
 			## being more thorough.
 
-			if candidates_in_killList==[]:# and not sPrev: #there is no envA sprite where sPrev should have been
-				print "empty killList in A, meaning the matching is wrong"
-				embed()
-				#appeared_sprites_envB.append(sB)
-				continue
-			sA = self.findNearestSprite(sPrev, candidates_in_killList)
-			if manhattanDist2(sA, sPrev)>1 and not sPrev: #there is no envA sprite where sPrev should have been
-				## if there was a kill event and an appearance event somewhere far, we should really see this as
-				## an appearance
-				## Really, you should look at sprite matching better.
+			if candidates_in_killList==[]:
+				if not sPrev: #there is no envA sprite where sPrev should have been
+					print "empty killList in A, meaning the matching is wrong"
+					## You need to figure out what to pass to diagnosePosMismatch for sA, since it
+					## doesn't exist.
+					embed()
+					#appeared_sprites_envB.append(sB)
+					continue
+			else:
+				sA = self.findNearestSprite(sPrev, candidates_in_killList)
+				if manhattanDist2(sA, sPrev)>1 and not sPrev: #there is no envA sprite where sPrev should have been
+					## if there was a kill event and an appearance event somewhere far, we should really see this as
+					## an appearance
+					## Really, you should look at sprite matching better.
 
-				print "manhattanDist2 > 1"
-				embed()
-				appeared_sprites_envB.append(sB)
-				continue
+					print "manhattanDist2 > 1"
+					embed()
+					appeared_sprites_envB.append(sB)
+					continue
 			# Now we are completely sure that sprite in envA has been erroneously removed
 			e = self.diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
 			errorMap.append(e)
@@ -1175,7 +1179,7 @@ class Agent:
 		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
 		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
 
-		actions = [32,32, 32, 32, K_RIGHT, K_RIGHT, 32, 32]
+		actions = [32,32, 32, 32]#, K_RIGHT, K_RIGHT, 32, 32]
 
 		# actions = [K_RIGHT, 32, K_RIGHT]
 
@@ -1724,14 +1728,28 @@ class Agent:
 		print "evaluating old theories and proposing new ones"
 		newTheories = []
 
-		# real_sprites = [self.rle._game.sprite_groups[k] for k in self.rle._game.sprite_groups.keys()]
-		# real_colors = set([s[0].colorName for s in real_sprites if s])
+		prev_real_sprites = [s for k in envRealPrev._game.sprite_groups.keys() for s in envRealPrev._game.sprite_groups[k] if s not in envRealPrev._game.kill_list]
+		prev_real_colors = set([s.colorName for s in prev_real_sprites if s])
+
+		real_sprites = [s for k in self.rle._game.sprite_groups.keys() for s in self.rle._game.sprite_groups[k] if s not in self.rle._game.kill_list]
+		real_colors = set([s.colorName for s in real_sprites if s])
 
 		for num, env in enumerate(theoryRLEs):
+			env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
+			env_colors = set([s.colorName for s in env_sprites if s])
+			# if prev_real_colors != env_colors:
+			# 	print "Mismatch BEFORE step"
+			# 	print "theory kill_list"
+			# 	print env._game.kill_list
+			# 	print "real kill list"
+			# 	print envRealPrev._game.kill_list
+			# 	print "object mismatch"
+			# 	embed()
 			env.step(action)
-			# env_sprites = [env._game.sprite_groups[k] for k in env._game.sprite_groups.keys()]
-			# env_colors = set([s[0].colorName for s in env_sprites if s])
+			env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
+			env_colors = set([s.colorName for s in env_sprites if s])
 			# if real_colors != env_colors:
+			# 	print "Mismatch AFTER step"
 			# 	print "theory kill_list"
 			# 	print env._game.kill_list
 			# 	print "real kill list"
