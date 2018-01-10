@@ -2393,7 +2393,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	targetToken = errorMap.targetToken
 
 	## Only propose sprites when something moves that we didn't think was going to move.
-	if errorMap.diagnosis[0] not in ['unexpectedPosition', 'unexpectedOverlap']:
+	if all([diagnosis not in ['unexpectedPosition', 'unexpectedOverlap'] for diagnosis in errorMap.diagnosis]):
 		return targetClass, childTheories
 
 	spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, oldSpriteSet=theory.spriteSet,\
