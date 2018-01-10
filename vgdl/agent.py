@@ -300,12 +300,16 @@ class Agent:
 		"""
 		Returns errorMapEntry object containing the position mismatch error
 		"""
+
 		# Step through sub-problems
 		e = errorMapEntry()
 		e.targetToken = sB
 		e.targetClass = sA.name
 		# Find neighbors of target sprite in the previous time step
 		neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
+
+
+
 		# Write potential interaction pairs to error map entry
 		for className in neighbors_prev:
 			e.intPairs.append( (sA.name,className) )
@@ -322,6 +326,9 @@ class Agent:
 		except:
 			oB,oPrev = None,None
 
+		# if sA.colorName=='PINK':
+			# print "in diagnosePosMismatch"
+			# embed()
 		## Categorize into sub-problem-class
 		# 1.1) noMovement
 		if dist_ts == 0:
@@ -330,10 +337,10 @@ class Agent:
 		if dist_ts!=0 and oB!=None and oB!=oPrev:
 			e.diagnosis.append('orientationChange')
 		# 1.3) unexpectedPosition
-		elif dist_ts!=0 and nearest_dist>=1:
+		if dist_ts!=0 and nearest_dist>=1:
 			e.diagnosis.append('unexpectedPosition')
 		# 1.4) unexpectedOverlap
-		elif dist_ts!=0 and nearest_dist<1:
+		if dist_ts!=0 and nearest_dist<1:
 			e.diagnosis.append('unexpectedOverlap')
 			# find sprite in envA that corresponds to covered sprite in envB
 			color = nearest_sprite.colorName
@@ -364,8 +371,6 @@ class Agent:
 		Also returns errorMap, a dict that contains
 		keys: (class1, class2). values: a diagnostic error signal
 		"""
-
-		# print '--- Called errorSignal function ---'
 
 		# Initialization
 		total_penalty = 0.
@@ -404,14 +409,17 @@ class Agent:
 				yB = sB.rect.top/d
 				xPrev = sPrev.rect.left/d
 				yPrev = sPrev.rect.top/d
-				dist_rNPC = [ manhattanDist( (xB,yB), (xPrev,yPrev) ), \
-									 manhattanDist( (xB,yB), (xPrev+sA_speed,yPrev) ), \
-									 manhattanDist( (xB,yB), (xPrev-sA_speed,yPrev) ), \
-									 manhattanDist( (xB,yB), (xPrev,yPrev+sA_speed) ), \
-									 manhattanDist( (xB,yB), (xPrev,yPrev-sA_speed) ), \
-								   ]
-				mindist_rNPC = min(dist_rNPC)
-				total_penalty += p_speed*mindist_rNPC #penalize speed separately to discourage keeping around too many similar theories
+
+				dist_rNPC = manhattanDist((xB,yB), (xPrev, yPrev))
+				# dist_rNPC = [ manhattanDist( (xB,yB), (xPrev,yPrev) ), \
+				# 					 manhattanDist( (xB,yB), (xPrev+sA_speed,yPrev) ), \
+				# 					 manhattanDist( (xB,yB), (xPrev-sA_speed,yPrev) ), \
+				# 					 manhattanDist( (xB,yB), (xPrev,yPrev+sA_speed) ), \
+				# 					 manhattanDist( (xB,yB), (xPrev,yPrev-sA_speed) ), \
+				# 				   ]
+				# mindist_rNPC = min(dist_rNPC)
+				# total_penalty += p_speed*mindist_rNPC #penalize speed separately to discourage keeping around too many similar theories
+				total_penalty += p_speed*dist_rNPC
 			elif 'Missile' in str(sA_type): # == "<class 'vgdl.ontology.Missile'>":	
 				total_penalty += p_speed*t[2] #penalize speed separately to discourage keeping around too many similar theories
 			# All of the other types are deterministic
@@ -784,8 +792,8 @@ class Agent:
 
 		if not theories:
 			theories = self.hypotheses
-		else:
-			print "Initializing {} theories in VRLEInitPHase".format(len(theories))
+		# else:
+			# print "Initializing {} theories in VRLEInitPHase".format(len(theories))
 		for hypothesis in theories:
 			VRLEs.append(self.initializeVrle(hypothesis, stateToSet=stateToSet))
 
@@ -940,7 +948,7 @@ class Agent:
 			## SpriteSet induction step
 			if errorMap.targetClass != 'avatar':
 				className, theories = expandSprites(self.rle._game, theory, errorMap, 
-					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=10, max_num=2,
+					envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=20, max_num=10,
 					resourceObservations=self.resourceObservations)
 				newTheories.extend(theories)
 
@@ -1179,7 +1187,7 @@ class Agent:
 		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
 		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
 
-		actions = [32,32, 32, 32]#, K_RIGHT, K_RIGHT, 32, 32]
+		actions = [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, 32]
 
 		# actions = [K_RIGHT, 32, K_RIGHT]
 
@@ -1737,27 +1745,17 @@ class Agent:
 		for num, env in enumerate(theoryRLEs):
 			env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
 			env_colors = set([s.colorName for s in env_sprites if s])
-			# if prev_real_colors != env_colors:
-			# 	print "Mismatch BEFORE step"
-			# 	print "theory kill_list"
-			# 	print env._game.kill_list
-			# 	print "real kill list"
-			# 	print envRealPrev._game.kill_list
-			# 	print "object mismatch"
-			# 	embed()
+
 			env.step(action)
 			env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
 			env_colors = set([s.colorName for s in env_sprites if s])
-			# if real_colors != env_colors:
-			# 	print "Mismatch AFTER step"
-			# 	print "theory kill_list"
-			# 	print env._game.kill_list
-			# 	print "real kill list"
-			# 	print self.rle._game.kill_list
-			# 	print "object mismatch"
-			# 	embed()
+
 			penalty, errorList = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
 
+			# for e in errorList:
+			# 	if e.targetToken.colorName=='GREEN':
+			# 		e.display()
+			# 		embed()
 			theories = self.expandTheory(self.hypotheses[num], errorList, envRealPrev, self.rle)
 			newTheories.extend(theories)
 
@@ -1798,10 +1796,10 @@ class Agent:
 				# embed()
 
 			if not lastStep:
-				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=80, max_num=10,
+				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=80, max_num=20,
 					proportionOfSpriteTheories=.2)]
 			else:
-				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=80, max_num=10,
+				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=80, max_num=20,
 					proportionOfSpriteTheories=.2)]
 
 			print "Experience replay complete."
