@@ -1298,7 +1298,6 @@ class SpriteCounter(Termination):
 
     def isDone(self, game):
         if game.numSprites(self.stype) <= self.limit:
-            print self.name, self.stype, self.limit
             return True, self.win
         else:
             return False, None
