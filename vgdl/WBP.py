@@ -36,9 +36,10 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
-		firstOrderHorizon=False):
+		firstOrderHorizon=False, hyperparameters={}):
 		self.rle = rle
 		self.gameFilename = gameFilename
+		self.hyperparameters = hyperparameters
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
 		self.vecDim = [rle.outdim[0]*rle.outdim[1], 2, self.T]
 		self.trueAtoms = defaultdict(lambda:0) #set() ## set of atoms that have been true at some point thus far in the planner.
@@ -92,7 +93,7 @@ class WBP():
 		self.objectsToTrack = []
 		for k in rle._game.sprite_groups.keys():
 			if ((k in self.theory.classes.keys() and ('Resource' or 'Immovable') in str(self.theory.classes[k][0].vgdlType) and not \
-			(('bounceForward' or 'pullWithIt') in [rule.interaction for rule in self.theory.interactionSet if k in [rule.slot1, rule.slot2]])) or 
+			(('bounceForward' or 'pullWithIt') in [rule.interaction for rule in self.theory.interactionSet if k in [rule.slot1, rule.slot2]])) or
 			len(rle._game.sprite_groups[k])>self.objectNumberTrackingLimit):
 				pass# self.objectsToNotTrackInAtomList.append(k)
 			else:
@@ -469,7 +470,7 @@ class Node():
 		j=0
 		while not successfulRollout:
 			vrle = copy.deepcopy(Vrle)
-			prevHeuristicVal = self.heuristics(vrle)
+			prevHeuristicVal = self.heuristics(vrle, **self.WBP.hyperparameters)
 			rolloutArray = []
 			i=0
 			terminal, win = vrle._isDone()
@@ -479,7 +480,7 @@ class Node():
 				# print a
 				vrle.step(a)
 				print vrle.show(indent=True)
-				currHeuristicVal = self.heuristics(vrle)
+				currHeuristicVal = self.heuristics(vrle, **self.WBP.hyperparameters)
 				heuristicVal = currHeuristicVal-prevHeuristicVal
 				rolloutArray.append(heuristicVal)
 				prevHeuristicVal = currHeuristicVal
@@ -513,7 +514,7 @@ class Node():
 		return rolloutArray
 
 	def spritecounter_val(self, theory, term, stype, rle, first_alpha=10000.,
-						  second_alpha=100):
+						  second_alpha=100, negative_mult=.1):
 
 		# First order: progress in terms of number of sprites remaining.
 		# Second order: distance to the closest instance of a target sprite type.
@@ -526,7 +527,7 @@ class Node():
 			mult = -1
 		else:
 			compute_second_order = False
-			mult = .1
+			mult = negative_mult
 
 		# Get all types that kill or transform stype (the target)
 		killer_types = [
@@ -643,7 +644,7 @@ class Node():
 				distance = 100
 				val += float(mult * second_alpha * distance)
 
-			if avatar_preconditions:	
+			if avatar_preconditions:
 				avatars = [self.WBP.findObjectsInRLE(rle, ktype[0]) for ktype in avatar_preconditions]
 
 				resource_names = [list(resource[1])[0].item for resource in avatar_preconditions]
@@ -833,8 +834,10 @@ class Node():
 
 		return val
 
-	def heuristics(self, rle=None, first_alpha=1000., second_alpha=1,
-				   time_alpha=10):
+	def heuristics(self, rle=None, sprite_first_alpha=10000.,
+		sprite_second_alpha=100, sprite_negative_mult=.1,
+		multisprite_first_alpha=10000, multisprite_second_alpha=100,
+		novelty_first_alpha=1000, novelty_second_alpha=10, time_alpha=10):
 		if rle==None:
 			rle = self.rle
 
@@ -844,7 +847,8 @@ class Node():
 		for term in theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
-					first_alpha=5000, second_alpha=0)
+					first_alpha=sprite_first_alpha, second_alpha=sprite_second_alpha,
+					negative_mult=sprite_negative_mult)
 				# if spritecounter_val!=0:
 					# print("spritecounter_val for {} is equal to {}".format(
 						# term.termination.stype, spritecounter_val))
@@ -852,7 +856,7 @@ class Node():
 
 			elif isinstance(term, MultiSpriteCounterRule):
 				multispritecounter_val = self.multispritecounter_val(theory, term, rle,
-						first_alpha=500, second_alpha=0)  #500, 5 (normally)
+						first_alpha=multisprite_first_alpha, second_alpha=multisprite_second_alpha)  #500, 5 (normally)
 				# if multispritecounter_val!=0:
 					# print("multispritecounter_val for {} is equal to {}".format(
 						# term.termination.stypes, multispritecounter_val))
@@ -866,11 +870,11 @@ class Node():
 			elif isinstance(term, NoveltyRule):
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
-					first_alpha=2500, second_alpha=0)
+					first_alpha=novelty_first_alpha, second_alpha=novelty_second_alpha)
 				# if noveltytermination_val!=0:
 					# print("noveltytermination_val for {} and {} is equal to {}".format(
 						# term.termination.s1, term.termination.s2, noveltytermination_val))
-				
+
 				# if self.parent and self.parent.rle._game.score==0 and term.termination.args and term.termination.s1=='c6' and term.termination.s2=='avatar' and noveltytermination_val!=-5000:
 					# ipdb.set_trace()
 				if 'avatar' == term.termination.s2:
@@ -981,7 +985,7 @@ class Node():
 			# print self.rolloutArray
 			# print "in rollout"
 
-		self.heuristicVal = self.heuristics()
+		self.heuristicVal = self.heuristics(**self.WBP.hyperparameters)
 
 		# print self.rle._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost, self.position_score()
 

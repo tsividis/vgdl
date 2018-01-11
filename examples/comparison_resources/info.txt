@@ -1,0 +1,6 @@
+All games (except for Frogs and Aliens!) are padded to:
+
+32 x  13
+
+Note about Frogs and Aliens: we need to come up with a good way of changing dimensions
+without altering the game, or alter it and rerun experiments

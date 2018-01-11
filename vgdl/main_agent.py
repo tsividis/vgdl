@@ -25,11 +25,12 @@ AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
 
 class Agent:
-	def __init__(self, modelType, gameFilename):
+	def __init__(self, modelType, gameFilename, hyperparameters={}):
 		self.modelType = modelType
 		self.gameFilename = gameFilename
 		self.gameString = None
 		self.levelString = None
+		self.hyperparameters = hyperparameters
 		self.annealingFactor = 1.
 		self.shortHorizon = False
 		if self.shortHorizon == True:
@@ -192,7 +193,7 @@ class Agent:
 			observe(self.rle, 15, self.bestSpriteTypeDict) ## observe many steps so that you're not completely clueless about object movements for the new level
 		else:
 			observe(self.rle, 15, self.bestSpriteTypeDict) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
-		
+
 		## Make sure any objects that appeared while we were observing are reflected in allObjects
 		for k,v in self.rle._game.getObjects().items():
 			if k not in allObjects:
@@ -244,8 +245,8 @@ class Agent:
 					# break
 			if heatmap:
 				self.makeHeatmap(allStatesEncountered, '{}_{}_level{}_heatmap.pdf'.format(
-					# self.gameFilename[self.gameFilename.find('expt'):],
-					gvgname[gvgname.find('set_1/')+6:],
+					self.gameFilename[self.gameFilename.find('expt'):],
+					# gvgname[gvgname.find('set_1/')+6:],
 					self.modelType, n_level))
 
 			allEffectsEncountered.append(levelEffectsEncountered)
@@ -264,13 +265,13 @@ class Agent:
 
 
 		output = {'modelType':self.modelType,
-					# 'gameName': self.gameFilename[self.gameFilename.find('expt'):],
-					'gameName': gvgname[gvgname.find('set_1/')+6:],
+					'gameName': self.gameFilename[self.gameFilename.find('expt'):],
+					# 'gameName': gvgname[gvgname.find('set_1/')+6:],
 					'condition': 'normal',
 					'episodes' : episodes}
 
-		write_to_csv('pilotModelRuns_'+gvgname[gvgname.find('set_1/')+6:]+'.csv', output)
-		self.makeMovie()
+		# write_to_csv('pilotModelRuns_'+gvgname[gvgname.find('set_1/')+6:]+'.csv', output)
+		# self.makeMovie()
 
 	def makeHeatmap(self, statesEncountered, filename):
 		from vgdl.plotting import featurePlot
@@ -413,9 +414,9 @@ class Agent:
 
 			p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
 				seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-				firstOrderHorizon=self.firstOrderHorizon)
+				firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameters)
 			bestNode, gameStringArray, objectPositionsArray = p.BFS()
-			
+
 			if bestNode is not None:
 				solution = p.solution
 				gameString_array = p.gameString_array
@@ -510,7 +511,7 @@ class Agent:
 								if not regroundingFlag and (objPos[0], objPos[1]) not in rlePositionsTuples:
 									# print "found object position difference", colored(objPos, 'white', 'on_magenta')
 									# print 'regrounding because of', objPos[2].colorName, objPos[2], "position:", self.rle._rect2pos(objPos[2].rect)
-									# try: 
+									# try:
 										# print "orientation:", objPos[2].orientation
 									# except AttributeError:
 										# pass
@@ -875,7 +876,7 @@ if __name__ == "__main__":
 
 	level_game_pairs = []
 	for level_number in range(5):
-		with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
+		with open('{}_lvl{}.txt'.format(	gvgname, level_number), 'r') as level:
 			level_game_pairs.append([gameString, level.read()])
 
 	##uncomment this line to run local games
