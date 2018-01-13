@@ -224,7 +224,8 @@ class StateObsHandlerNonStatic(object):
             return pos
 
     def _rect2pos(self, r):
-        return (round(float(r.left) / self._game.block_size), round(float(r.top) / self._game.block_size))
+        # return (round(float(r.left) / self._game.block_size), round(float(r.top) / self._game.block_size))
+        return float(r.left) / self._game.block_size, float(r.top) / self._game.block_size
 
     def _rect2posFlipCoords(self, r):
         x, y = self._rect2pos(r)

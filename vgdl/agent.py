@@ -356,7 +356,7 @@ class Agent:
 
 
 	## Function generating penalty and error map
-	def errorSignal(self, envA, envB, theory, envPrev, p_dist=1, p_speed=.5, p_miss=10, targetClass=None, penalty_only=False):
+	def errorSignal(self, envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, targetClass=None, penalty_only=False):
 		"""
 		envA: hypothetical environment
 		envB: real environment
@@ -406,7 +406,8 @@ class Agent:
 		for t in matched_sprites:
 			sA = t[0] #sprite in envA			
 			dist = t[2] #distance to sprite in envB
-			sA_type = theory.classes[sA.name][0].vgdlType			
+			sA_type = theory.classes[sA.name][0].vgdlType
+
 			# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
 			if 'Random' in str(sA_type): # == "<class 'vgdl.ontology.RandomNPC'>":		
 				sB = t[1]
@@ -913,7 +914,7 @@ class Agent:
 				newTheories.extend(self.expandTheoryForOneErrorMap(theory, errorList[0], envRealPrev, envRealCurrent))
 			
 			# print "would pass {} theories to the next step w/o filter".format(len(newTheories))
-			penalties, cumulative_penalties = self.experienceReplay(newTheories, self.rleHistory, self.actionHistory, 
+			penalties, cumulative_penalties, _ = self.experienceReplay(newTheories, self.rleHistory, self.actionHistory, 
 				method='all', targetClass = errorList[0].targetClass)
 
 			# penalties, cumulative_penalties = self.experienceReplay(newTheories, [envRealPrev, envRealCurrent], [prevAction], 
@@ -928,9 +929,11 @@ class Agent:
 			scoreAndTheoryTuples = zip(penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 
-			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=60, max_num=20,
-					proportionOfSpriteTheories=.9)]
 
+			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=60, max_num=20,
+					proportionOfSpriteTheories=None)]
+			print "in expandTheories"
+			embed()
 			newTheories = [s[1] for s in scoresAndHypotheses]
 			# scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 			print "produced {} new theories".format(len(newTheories))
@@ -1001,7 +1004,7 @@ class Agent:
 		## SpriteSet induction step
 		if errorMap.targetClass != 'avatar':
 			className, theories = expandSprites(self.rle._game, theory, errorMap, 
-				envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=20, max_num=10,
+				envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=20, max_num=None,
 				resourceObservations=self.resourceObservations)
 			newTheories.extend(theories)
 
@@ -1722,6 +1725,11 @@ class Agent:
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 		cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
 		candidates = [s for s in scoreAndTheoryTuples if s[0]<=cutoff]
+
+		if proportionOfSpriteTheories is None:
+			candidates = sorted(candidates, key=lambda x:x[0])
+			return candidates[0:max_num]
+
 		sprite_candidates = [s for s in candidates if s[1].mostRecentEdit=='spriteInduction']
 		induction_candidates = [s for s in candidates if s[1].mostRecentEdit=='interactionSetInduction']
 		no_edit_candidates = [s for s in candidates if s[1].mostRecentEdit=='none']
@@ -1814,13 +1822,15 @@ class Agent:
 			penalty, errorList = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
 			
 			print "theory {} had {} errors".format(num, len(errorList))
-			self.hypotheses[num].display()
-			for e in errorList:
-				e.display()
-			print ""
+			if errorList:
+				self.hypotheses[num].display()
+				for e in errorList:
+					e.display()
+				print ""
 			theories = self.expandTheories([self.hypotheses[num]], errorList, envRealPrev, self.rle, action)
 			# theories = self.expandTheoryForOneErrorMap(self.hypotheses[num], errorList[0], envRealPrev, self.rle)
-			print "theory {} produced {} compound children".format(num, len(theories))
+			if errorList:
+				print "theory {} produced {} compound children".format(num, len(theories))
 			# embed()
 			newTheories.extend(theories)
 
@@ -1845,17 +1855,18 @@ class Agent:
 
 
 			## Now pass those on to do experience replay for more steps
-			penalties, cumulative_penalties = self.experienceReplay(newTheories, self.rleHistory, self.actionHistory, method='all')
-			scoreAndTheoryTuples = zip(penalties, newTheories)
+			penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay(newTheories, self.rleHistory, self.actionHistory, method='all')
+
+			scoreAndTheoryTuples = zip(penalties, newTheories, experienceReplayRLEs)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 			
 
 			if not lastStep:
 				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=80, max_num=20,
-					proportionOfSpriteTheories=.2)]
+					proportionOfSpriteTheories=None)]
 			else:
 				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=80, max_num=20,
-					proportionOfSpriteTheories=.2)]
+					proportionOfSpriteTheories=None)]
 
 			print "Experience replay complete."
 			for num, sh in enumerate(scoresAndHypotheses):
@@ -1865,6 +1876,8 @@ class Agent:
 				print "Theory: {} | Error: {}".format(num, sh[0])
 				sh[1].display()
 			print ""
+			embed()
+
 			hypotheses = [sh[1] for sh in scoresAndHypotheses]
 			print "{} survived".format(len(hypotheses))
 			print ""
@@ -2004,11 +2017,20 @@ class Agent:
 				if displayStates:
 					print action
 					print rleHistory[idx+n+1].show(color='green')
-				for num, env in enumerate(theoryRLEs):
+				for num, env in enumerate(theoryRLEs):						
 					env.step(action)
 					try:
 						penalty, errorList = self.errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
 							rleHistory[idx+n], targetClass=targetClass, penalty_only=True)
+						# if penalty and 'Missile' in str(hypotheses[num].spriteObjects['GREEN'].vgdlType):
+						# 	print hypotheses[num].spriteObjects['GREEN'].args
+						# 	print "action num", n
+						# 	print "penalty", penalty
+						# 	print "true pos", rleHistory[idx+n+1]._rect2pos(rleHistory[idx+n+1]._game.sprite_groups['apple'][0].rect)
+						# 	print "hyp pos", env._rect2pos(env._game.sprite_groups[hypotheses[num].spriteObjects['GREEN'].className][0].rect)
+						# 	print rleHistory[idx+n+1].show(color='green')
+						# 	print env.show()
+
 					except:
 						print "in experienceReplay"
 						embed()
@@ -2025,7 +2047,7 @@ class Agent:
 
 		cumulative_penalties = np.array(cumulative_penalties)
 		mean_penalties = np.mean(cumulative_penalties, axis=0)
-		return mean_penalties, cumulative_penalties
+		return mean_penalties, cumulative_penalties, theoryRLEs
 
 
 	def testSteps(self, rle, actions, hypotheses, last_only=False, check=False):

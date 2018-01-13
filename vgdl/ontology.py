@@ -2714,10 +2714,6 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
 
             if sprite not in game.ignoreList and sprite_obj.name != 'avatar':
 
-            # if all([sprite not in e for e in game.effectList if e[0]!='nothing']) and sprite not in game.ignoreList and sprite_obj.name != 'avatar':
-                # only update the distribution in this fashion if there are no events for this
-                # time step involving this sprite.
-
                 outcome = objects[sprite]["position"]
                 game.spriteDistribution = updateDistribution(game, sprite, game.spriteDistribution, \
                                           game.movement_options, outcome, missileOrientationClustering=True)
@@ -2726,11 +2722,9 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
 
                 game.spriteUpdateDict[sprite] += 1
         scoreAndTheoryTuples = [(v, k) for k, v in game.spriteDistribution[sprite].iteritems()]
-
         reasonableScoreAndTheoryTuples = filterTheories(scoreAndTheoryTuples, percentile=percentile, max_num=max_num)
         reasonableHypotheses = [st[1] for st in reasonableScoreAndTheoryTuples]
-        # reasonableHypotheses = [k for k in game.spriteDistribution[specificSpritesToUpdate[0]].keys() if 
-            # game.spriteDistribution[specificSpritesToUpdate[0]][k]>0.01]
+
         return reasonableHypotheses
 
     ## Reset ignoreList so that next time around you do inference.
