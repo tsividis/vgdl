@@ -913,18 +913,30 @@ class Agent:
 				newTheories.extend(self.expandTheoryForOneErrorMap(theory, errorList[0], envRealPrev, envRealCurrent))
 			
 			# print "would pass {} theories to the next step w/o filter".format(len(newTheories))
-			penalties, cumulative_penalties = self.experienceReplay(newTheories, [envRealPrev, envRealCurrent], [prevAction], 
+			penalties, cumulative_penalties = self.experienceReplay(newTheories, self.rleHistory, self.actionHistory, 
 				method='all', targetClass = errorList[0].targetClass)
+
+			# penalties, cumulative_penalties = self.experienceReplay(newTheories, [envRealPrev, envRealCurrent], [prevAction], 
+				# method='all', targetClass = errorList[0].targetClass)
+
 			# print "min penalty with targetClass filter: {}".format(min(penalties))
 			# print "Will filter {} theories".format(len([p for p in penalties if p==min(penalties)]))
 
+			# if errorList[0].targetToken.colorName=='PINK':
+			# 	print "fixing PINK"
+			# 	embed()
 			scoreAndTheoryTuples = zip(penalties, newTheories)
-			scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if s[0]==min(penalties)]
-			newTheories = [s[1] for s in scoreAndTheoryTuples]
+			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
+
+			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=60, max_num=20,
+					proportionOfSpriteTheories=.9)]
+
+			newTheories = [s[1] for s in scoresAndHypotheses]
 			# scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 			print "produced {} new theories".format(len(newTheories))
 			for t in newTheories:
 				t.display()
+
 		else:
 			tmpTheories = self.expandTheories(theories, [errorList[0]], envRealPrev, envRealCurrent, prevAction)
 			newTheories = self.expandTheories(tmpTheories, errorList[1:], envRealPrev, envRealCurrent, prevAction)
@@ -1230,8 +1242,8 @@ class Agent:
 		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
 		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
 
-		actions = [32, K_DOWN, 32, 32, K_RIGHT, K_RIGHT, 32, 32]
-
+		# actions = [32, K_DOWN, 32, 32, K_RIGHT, K_RIGHT, 32, 32]
+		actions = [32,32,32,32,32,32]
 		# actions = [K_RIGHT, 32, K_RIGHT]
 
 		self.initializeEnvironment()
@@ -1706,8 +1718,6 @@ class Agent:
 	
 	def filterTheories(self, scoreAndTheoryTuples, percentile, max_num, proportionOfSpriteTheories):
 		## Returns the max_num theories that are at percentile or greater, given their score.
-		## TODO: Improve this. Right now you can return fewer than max_num theories, and will pay more
-		## attention to the proportions than the scores.
 
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 		cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
@@ -1891,8 +1901,8 @@ class Agent:
 		# print "Theory scores on sampled game instances:"
 		# print [scoreR[i][0] for i in range(len(scoreR))]
 
-		print ">>> Embedded at end of executeStep"
-		embed()
+		# print ">>> Embedded at end of executeStep"
+		# embed()
 
 		hypotheses = self.manageNewObjects(hypotheses)
 		self.statesEncountered.append(self.rle._game.getFullState())
