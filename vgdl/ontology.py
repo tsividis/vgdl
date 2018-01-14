@@ -517,8 +517,8 @@ class Chaser(RandomNPC): ##
         for target in self._closestTargets(game):
             options.extend(self._movesToward(game, target))
         if len(options) == 0:
-            options = BASEDIRS
-
+            # options = BASEDIRS
+            options = [(0,0)]
         self.physics.activeMovement(self, random.choice(options))
 
 
