@@ -21,6 +21,7 @@ from termcolor import colored
 from line_profiler import LineProfiler
 from vgdl.util import manhattanDist, manhattanDist2
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
+from colors import colorDict
 # Plotting
 from matplotlib import pyplot as plt
 import seaborn as sns
@@ -404,13 +405,13 @@ class Agent:
 		## Penalize distance and additional/missing sprites
 		# Distance penalty
 		for t in matched_sprites:
-			sA = t[0] #sprite in envA			
+			sA, sB = t[0], t[1] #sprites in envA, envB		
 			dist = t[2] #distance to sprite in envB
 			sA_type = theory.classes[sA.name][0].vgdlType
+			d = 30. # grid spacing
 
 			# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
 			if 'Random' in str(sA_type): # == "<class 'vgdl.ontology.RandomNPC'>":		
-				sB = t[1]
 				try:
 					sA_speed = theory.classes[sA.name][0].args['speed']
 				except:
@@ -419,7 +420,6 @@ class Agent:
 				if sPrev==None:
 					warnings.warn('sPrev not found -> penalty unreliable')
 					continue
-				d = 30. # grid spacing
 				xB = sB.rect.left/d
 				yB = sB.rect.top/d
 				xPrev = sPrev.rect.left/d
@@ -437,6 +437,22 @@ class Agent:
 				total_penalty += p_speed*min(dist,1.)
 			elif 'Missile' in str(sA_type): # == "<class 'vgdl.ontology.Missile'>":	
 				total_penalty += p_speed*t[2] #penalize speed separately to discourage keeping around too many similar theories
+			elif 'Chaser' in str(sA_type):
+				# print "found chaser"
+
+				# if colorDict[str(sA.stype)]=='BLUE':
+				# 	print "found blue chaser"
+				# 	sPrev, _ = self.find_sPrev(sB, envB, envPrev)
+				# 	print "prev position:", sPrev.rect.left/30., sPrev.rect.top/30.
+				# 	embed()
+				
+				sPrev, _ = self.find_sPrev(sB, envB, envPrev)
+				xA = sA.rect.left/d
+				yA = sA.rect.top/d
+				closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
+				chaser_penalty = 0. if (xA,yA) in closestTargets else 2.
+
+				total_penalty += p_speed*chaser_penalty
 			# All of the other types are deterministic
 			else:
 				total_penalty += p_dist*t[2]	
@@ -1245,8 +1261,8 @@ class Agent:
 		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
 		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
 
-		actions = [32, K_DOWN, 32, 32, K_RIGHT, K_RIGHT, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32]
-		# actions = [32,32,32,32,32,32]
+		# actions = [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32]
+		actions = [32,32,32,32,32,32, 32, 32, 32]
 		# actions = [K_RIGHT, 32, K_RIGHT]
 
 		self.initializeEnvironment()
@@ -1875,7 +1891,8 @@ class Agent:
 			for num, sh in enumerate(scoresAndHypotheses):
 				print "Theory: {} | Error: {}".format(num, sh[0])
 				sh[1].display()
-			# print ""
+			print ""
+			# print "in executeStep"
 			# embed()
 
 			hypotheses = [sh[1] for sh in scoresAndHypotheses]
@@ -2018,19 +2035,31 @@ class Agent:
 					print action
 					print rleHistory[idx+n+1].show(color='green')
 				for num, env in enumerate(theoryRLEs):						
+
+					# if 'Chaser' in str(hypotheses[num].spriteObjects['YELLOW'].vgdlType):
+					# 	print hypotheses[num].spriteObjects['YELLOW'].args
+					# 	print "action num", n
+					# 	# print "penalty", penalty
+					# 	print "true pos", rleHistory[idx+n]._rect2pos(rleHistory[idx+n]._game.sprite_groups['dough'][0].rect)
+					# 	print "hyp pos", env._rect2pos(env._game.sprite_groups[hypotheses[num].spriteObjects['YELLOW'].className][0].rect)
+					# 	print rleHistory[idx+n].show(color='green')
+					# 	print env.show()
+					# 	embed()
+
 					env.step(action)
 					try:
 						penalty, errorList = self.errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
 							rleHistory[idx+n], targetClass=targetClass, penalty_only=True)
-						# if penalty and 'Missile' in str(hypotheses[num].spriteObjects['GREEN'].vgdlType):
-						# 	print hypotheses[num].spriteObjects['GREEN'].args
-						# 	print "action num", n
-						# 	print "penalty", penalty
-						# 	print "true pos", rleHistory[idx+n+1]._rect2pos(rleHistory[idx+n+1]._game.sprite_groups['apple'][0].rect)
-						# 	print "hyp pos", env._rect2pos(env._game.sprite_groups[hypotheses[num].spriteObjects['GREEN'].className][0].rect)
-						# 	print rleHistory[idx+n+1].show(color='green')
-						# 	print env.show()
 
+					# if penalty and 'Chaser' in str(hypotheses[num].spriteObjects['YELLOW'].vgdlType):
+					# 	print hypotheses[num].spriteObjects['YELLOW'].args
+					# 	print "action num", n
+					# 	# print "penalty", penalty
+					# 	print "true pos", rleHistory[idx+n+1]._rect2pos(rleHistory[idx+n+1]._game.sprite_groups['dough'][0].rect)
+					# 	print "hyp pos", env._rect2pos(env._game.sprite_groups[hypotheses[num].spriteObjects['YELLOW'].className][0].rect)
+					# 	print rleHistory[idx+n+1].show(color='green')
+					# 	print env.show()
+					# 	embed()
 					except:
 						print "in experienceReplay"
 						embed()

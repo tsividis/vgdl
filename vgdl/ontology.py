@@ -479,14 +479,17 @@ class Chaser(RandomNPC): ##
     def _closestTargets(self, game):
         bestd = 1e100
         res = []
-        for target in game.getSprites(self.stype):
+        if type(self.stype)==tuple:
+            targets = getSpritesByColor(colorDict[str(self.stype)], game)
+        else:
+            targets = game.getSprites(self.stype)
+        for target in targets:
             d = self.physics.distance(self.rect, target.rect)
             if d < bestd:
                 bestd = d
                 res = [target]
             elif d == bestd:
                 res.append(target)
-
         return res
 
     def _movesToward(self, game, target):
@@ -515,7 +518,6 @@ class Chaser(RandomNPC): ##
             options.extend(self._movesToward(game, target))
         if len(options) == 0:
             options = BASEDIRS
-        # self.physics.activeMovement(self, options[0])
 
         self.physics.activeMovement(self, random.choice(options))
 
@@ -1943,10 +1945,18 @@ def getCooldown(params):
     else:
         return 1
 
+def getSpritesByColor(color, game):
+    unflattened = [s for s in game.sprite_groups.values() if s and s[0].colorName==color]
+    return [item for sublist in unflattened for item in sublist]
+
 def chaserClosestTargets(sprite, game):
+    if type(sprite.stype)==tuple:
+        targets = getSpritesByColor(colorDict[str(sprite.stype)], game)
+    else:
+        targets = game.getSprites(sprite.stype)
     bestd = 1e100
     res = []
-    for target in game.getSprites(sprite.stype):
+    for target in targets:
         d = sprite.physics.distance(sprite.rect, target.rect)
         if d < bestd:
             bestd = d
@@ -1969,6 +1979,26 @@ def chaserMovesToward(sprite, game, target, fleeing):
         if not fleeing and basedist > newdist:
             res.append(a)
     return res
+
+def findChaserClosestTargets(sprite, spritePrev, game):
+    targets = getSpritesByColor(colorDict[str(sprite.stype)], game)
+    bestd = 1e100
+    res = []
+    for target in targets:
+        d = spritePrev.physics.distance(spritePrev.rect, target.rect)
+        if d < bestd:
+            bestd = d
+            res = [target]
+        elif d == bestd:
+            res.append(target)
+    return res
+
+def findChaserOptions(sprite, spritePrev, game, fleeing=True):
+    options = []
+    for target in findChaserClosestTargets(sprite, spritePrev, game):
+        options.extend(chaserMovesToward(spritePrev, game, target, fleeing))
+    options = [(spritePrev.rect.left/30.+o[0], spritePrev.rect.top/30.+o[1]) for o in options]
+    return options
 
 def setSpriteParams(param, sprite):
     """
@@ -2708,6 +2738,8 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
             print "Error: you passed more than one specific sprite to update"
             embed()
         sprite = specificSpritesToUpdate[0]
+
+
         # for sprite in specificSpritesToUpdate:        
         #     sprite_obj = objects[sprite]["sprite"]
 
@@ -2731,6 +2763,9 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
             if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k].keys():
                 scoreAndTheoryTuples.append((0,k))
 
+        # if sprite.colorName=='YELLOW':
+        #     print "in spriteINduction"
+        #     embed()
             # for opt in game.movement_options[sprite.ID][k].keys():
                 # v = min( sprite.rect.left-)
         
