@@ -434,7 +434,7 @@ class Agent:
 				# 				   ]
 				# mindist_rNPC = min(dist_rNPC)
 				# total_penalty += p_speed*mindist_rNPC #penalize speed separately to discourage keeping around too many similar theories
-				total_penalty += p_speed #*dist_rNPC
+				total_penalty += p_speed*min(dist,1.)
 			elif 'Missile' in str(sA_type): # == "<class 'vgdl.ontology.Missile'>":	
 				total_penalty += p_speed*t[2] #penalize speed separately to discourage keeping around too many similar theories
 			# All of the other types are deterministic
