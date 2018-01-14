@@ -287,6 +287,7 @@ class Theory(object):
 		self.errorHistory = []
 		self.cumulativeError = 0.
 
+		self.expandedSprites = []
 		self.errorMapHistory = []
 		self.lineage = []
 		
@@ -2394,13 +2395,14 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	targetClass = errorMap.targetClass
 	targetToken = errorMap.targetToken
 
+	theory.expandedSprites.append(targetClass)
 	## Only propose sprites when something moves that we didn't think was going to move.
 	if all([diagnosis not in ['unexpectedPosition', 'unexpectedOverlap', 
 		'orientationChange', 'unexpectedOverlap', 'noMovement'] for diagnosis in errorMap.diagnosis]):
 		return targetClass, childTheories
 
 	spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, oldSpriteSet=theory.spriteSet,\
-		specificSpritesToUpdate=[targetToken.ID], percentile=percentile, max_num=max_num)
+		specificSpritesToUpdate=[targetToken], percentile=percentile, max_num=max_num)
 
 	for spriteProposal in spriteProposals:
 		newTheory = copy.deepcopy(theory)

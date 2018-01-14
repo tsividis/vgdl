@@ -932,8 +932,8 @@ class Agent:
 
 			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=60, max_num=20,
 					proportionOfSpriteTheories=None)]
-			print "in expandTheories"
-			embed()
+			# print "in expandTheories"
+			# embed()
 			newTheories = [s[1] for s in scoresAndHypotheses]
 			# scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 			print "produced {} new theories".format(len(newTheories))
@@ -1002,7 +1002,7 @@ class Agent:
 			embed()
 
 		## SpriteSet induction step
-		if errorMap.targetClass != 'avatar':
+		if errorMap.targetClass != 'avatar' and errorMap.targetClass not in theory.expandedSprites:
 			className, theories = expandSprites(self.rle._game, theory, errorMap, 
 				envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=20, max_num=None,
 				resourceObservations=self.resourceObservations)
@@ -1245,8 +1245,8 @@ class Agent:
 		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
 		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
 
-		# actions = [32, K_DOWN, 32, 32, K_RIGHT, K_RIGHT, 32, 32]
-		actions = [32,32,32,32,32,32]
+		actions = [32, K_DOWN, 32, 32, K_RIGHT, K_RIGHT, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32]
+		# actions = [32,32,32,32,32,32]
 		# actions = [K_RIGHT, 32, K_RIGHT]
 
 		self.initializeEnvironment()
@@ -1875,8 +1875,8 @@ class Agent:
 			for num, sh in enumerate(scoresAndHypotheses):
 				print "Theory: {} | Error: {}".format(num, sh[0])
 				sh[1].display()
-			print ""
-			embed()
+			# print ""
+			# embed()
 
 			hypotheses = [sh[1] for sh in scoresAndHypotheses]
 			print "{} survived".format(len(hypotheses))

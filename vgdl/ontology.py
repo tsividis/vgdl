@@ -2005,9 +2005,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
     The default value of params is an empty dictionary - if that's the value passed, then the method will
     assume default values for each attribute.
     """
-    # if current_sprite.colorName=='ORANGE' and 'Missile' in str(sprite_type_tuple[1]) and params['speed']==1:
-        # print "in updateOptions"
-        # embed()
     sprite_type = sprite_type_tuple[1]
 
     # if current_sprite.name!='wall':
@@ -2148,7 +2145,10 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         realCooldown = int(current_sprite.cooldown)
         current_sprite.cooldown = cooldown
 
-
+        # if current_sprite.colorName=='GREEN' and 'Missile' in str(sprite_type_tuple[1]) and params['speed']==1 and \
+        #     params['cooldown']==3:
+        #         print "in updateOptions"
+        #         embed()
 
         coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation, 
             allMovement=allMovement)
@@ -2704,27 +2704,40 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
         ## Update sprite distribution for a particular item
         objects = game.getObjects()
         notUpdated = [s for s in objects.keys() if s not in game.spriteDistribution.keys()]
-        for sprite in specificSpritesToUpdate:        
-            sprite_obj = objects[sprite]["sprite"]
+        if len(specificSpritesToUpdate)>1:
+            print "Error: you passed more than one specific sprite to update"
+            embed()
+        sprite = specificSpritesToUpdate[0]
+        # for sprite in specificSpritesToUpdate:        
+        #     sprite_obj = objects[sprite]["sprite"]
 
-            # missiles = [k for k in game.movement_options[sprite].keys() if 'Missile' in str(k[0][1])]
-            # correct_missiles = [m for m in missiles if game.movement_options[sprite][m]]
-            # chasers = [k for k in game.movement_options[sprite].keys() if 'Chaser' in str(k[0][1])]
-            # correct_chasers = [c for c in chasers if game.movement_options[sprite][c]]
+        #     # missiles = [k for k in game.movement_options[sprite].keys() if 'Missile' in str(k[0][1])]
+        #     # correct_missiles = [m for m in missiles if game.movement_options[sprite][m]]
+        #     # chasers = [k for k in game.movement_options[sprite].keys() if 'Chaser' in str(k[0][1])]
+        #     # correct_chasers = [c for c in chasers if game.movement_options[sprite][c]]
 
-            if sprite not in game.ignoreList and sprite_obj.name != 'avatar':
+        #     if sprite not in game.ignoreList and sprite_obj.name != 'avatar':
 
-                outcome = objects[sprite]["position"]
-                game.spriteDistribution = updateDistribution(game, sprite, game.spriteDistribution, \
-                                          game.movement_options, outcome, missileOrientationClustering=True)
-                game.object_token_spriteDistribution = updateDistribution(game, sprite, game.object_token_spriteDistribution, \
-                                          game.object_token_movement_options, outcome)
+        #         outcome = objects[sprite]["position"]
+        #         game.spriteDistribution = updateDistribution(game, sprite, game.spriteDistribution, \
+        #                                   game.movement_options, outcome, missileOrientationClustering=True)
+        #         game.object_token_spriteDistribution = updateDistribution(game, sprite, game.object_token_spriteDistribution, \
+        #                                   game.object_token_movement_options, outcome)
 
-                game.spriteUpdateDict[sprite] += 1
-        scoreAndTheoryTuples = [(v, k) for k, v in game.spriteDistribution[sprite].iteritems()]
-        reasonableScoreAndTheoryTuples = filterTheories(scoreAndTheoryTuples, percentile=percentile, max_num=max_num)
-        reasonableHypotheses = [st[1] for st in reasonableScoreAndTheoryTuples]
+        #         ## game.spriteUpdateDict[sprite] += 1
 
+        scoreAndTheoryTuples = []
+        for k in game.movement_options[sprite.ID].keys():
+            if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k].keys():
+                scoreAndTheoryTuples.append((0,k))
+
+            # for opt in game.movement_options[sprite.ID][k].keys():
+                # v = min( sprite.rect.left-)
+        
+        # scoreAndTheoryTuples = [(v, k) for k, v in game.spriteDistribution[sprite].iteritems()]
+        # reasonableScoreAndTheoryTuples = filterTheories(scoreAndTheoryTuples, percentile=percentile, max_num=max_num)
+        # reasonableHypotheses = [st[1] for st in reasonableScoreAndTheoryTuples]
+        reasonableHypotheses = [s[1] for s in scoreAndTheoryTuples]
         return reasonableHypotheses
 
     ## Reset ignoreList so that next time around you do inference.
