@@ -7,7 +7,9 @@ import time
 # as of 01/2018: it is best to install directly from the github repo with
 # the command 'pip install git+https://github.com/hyperopt/hyperopt'
 
-def play_trainset(hyperparameters):
+game_number = 3
+
+def play_trainset(hyperparameters, n=game_number):
     start_time = time.time()
     filename = "examples.gridphysics_2.expt_exploration_exploitation"
 
@@ -35,7 +37,7 @@ def play_trainset(hyperparameters):
     gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
     	'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-    gameName = gvggames[3]
+    gameName = gvggames[game_number]
 
     gvgname = "../gvgai/training_set_1/{}".format(gameName)
 
@@ -78,9 +80,15 @@ space = {
     'novelty_second_alpha': hp.loguniform('space_novelty_second_alpha_first_alpha', 1, 10)
 }
 
+gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
+    	'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
+
+gameName = gvggames[game_number]
 
 best = fmin(fn=play_trainset,
     space=space,
     algo=tpe.suggest,
     max_evals=2)
-print best
+
+with open('{}.txt'.format(gameName), 'w') as f:
+    print(str(best), file=f)
