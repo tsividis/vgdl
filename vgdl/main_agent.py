@@ -23,6 +23,15 @@ AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
 # orientationPairs = {(0, 1):(0, -1), DOWN:UP, LEFT:RIGHT, RIGHT:LEFT}
 
+def playCurriculum(agent, level_game_pairs):
+    # Necessary to define a top-level function for playCurriculum so that
+    # hyperopt.mongoexpt can correctly pickle the objective function
+    start_time = time()
+    agent.playCurriculum(level_game_pairs)
+    end_time = time() - start_time
+
+    return end_time
+
 
 class Agent:
 	def __init__(self, modelType, gameFilename, hyperparameters={}):
@@ -60,6 +69,11 @@ class Agent:
 		self.seen_resources = []
 		self.seen_limits = []
 		self.new_objects = {}
+
+		# Hyperopt output
+		self.total_game_steps = 0
+		self.total_planner_steps = 0
+		self.game_won = False
 
 	def initializeEnvironment(self):
 		if self.gameString==None or self.levelString==None:
@@ -233,6 +247,7 @@ class Agent:
 
 			while not win:
 				gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
+				self.total_game_steps += steps
 				episodes.append((n_level, steps, win, score))
 				allStatesEncountered.extend(statesEncountered)
 				levelEffectsEncountered.append(effectsEncountered)
@@ -245,8 +260,8 @@ class Agent:
 					# break
 			if heatmap:
 				self.makeHeatmap(allStatesEncountered, '{}_{}_level{}_heatmap.pdf'.format(
-					self.gameFilename[self.gameFilename.find('expt'):],
-					# gvgname[gvgname.find('set_1/')+6:],
+					# self.gameFilename[self.gameFilename.find('expt'):],
+					gvgname[gvgname.find('set_1/')+6:],
 					self.modelType, n_level))
 
 			allEffectsEncountered.append(levelEffectsEncountered)
@@ -265,8 +280,8 @@ class Agent:
 
 
 		output = {'modelType':self.modelType,
-					'gameName': self.gameFilename[self.gameFilename.find('expt'):],
-					# 'gameName': gvgname[gvgname.find('set_1/')+6:],
+					# 'gameName': self.gameFilename[self.gameFilename.find('expt'):],
+					'gameName': gvgname[gvgname.find('set_1/')+6:],
 					'condition': 'normal',
 					'episodes' : episodes}
 
@@ -416,6 +431,7 @@ class Agent:
 				seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
 				firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameters)
 			bestNode, gameStringArray, objectPositionsArray = p.BFS()
+			self.total_planner_steps = p.total_nodes
 
 			if bestNode is not None:
 				solution = p.solution

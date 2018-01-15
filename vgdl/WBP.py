@@ -88,6 +88,7 @@ class WBP():
 		self.short_horizon = shortHorizon
 		self.winning_states = []
 		self.trueAtomsIW1 = []
+		self.total_nodes = 0
 
 		## Ignore objects we don't want to track (i.e., non-moving immovables.)
 		self.objectsToTrack = []
@@ -387,6 +388,7 @@ class WBP():
 						QNovelty.append(child)
 						QReward.append(child)
 			i+=1
+			self.WBP.total_nodes = i
 
 			if self.winning_states:
 				print "we have {} winning states".format(len(self.winning_states))
