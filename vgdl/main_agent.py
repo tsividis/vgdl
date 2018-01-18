@@ -73,7 +73,7 @@ class Agent:
 		# Hyperopt output
 		self.total_game_steps = 0
 		self.total_planner_steps = 0
-		self.game_won = False
+		self.levels_won = 0
 
 	def initializeEnvironment(self):
 		if self.gameString==None or self.levelString==None:
@@ -245,7 +245,7 @@ class Agent:
 			t1 = time.time()
 			first_time_playing_level = True
 
-			while not win:
+			while not win and i<10:
 				gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
 				self.total_game_steps += steps
 				episodes.append((n_level, steps, win, score))
@@ -256,8 +256,12 @@ class Agent:
 				first_time_playing_level = False
 				i += 1
 				print "Finished in ", time.time() - t1
-				# if i >=10:
-					# break
+
+			if i >=10:
+				return
+
+			self.levels_won += 1
+
 			if heatmap:
 				self.makeHeatmap(allStatesEncountered, '{}_{}_level{}_heatmap.pdf'.format(
 					# self.gameFilename[self.gameFilename.find('expt'):],

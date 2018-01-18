@@ -1,15 +1,18 @@
 from hyperopt import fmin, tpe, hp
+from pathos.multiprocessing import ProcessingPool
 from main_agent import Agent
 import time
+import dill
 
 
 # NOTE: fmin seems to fail with the hyperopt version installed by default
 # as of 01/2018: it is best to install directly from the github repo with
 # the command 'pip install git+https://github.com/hyperopt/hyperopt'
 
-game_number = 3
+gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
+        	'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-def play_trainset(hyperparameters, n=game_number):
+def play_trainset(hyperparameters, game_number):
     start_time = time.time()
     filename = "examples.gridphysics_2.expt_exploration_exploitation"
 
@@ -33,9 +36,6 @@ def play_trainset(hyperparameters, n=game_number):
     	color_list = [c for c in color_list if c not in ['UUWSWF']]
     	for color in color_list:
     		yield color
-
-    gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
-    	'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
     gameName = gvggames[game_number]
 
@@ -65,8 +65,9 @@ def play_trainset(hyperparameters, n=game_number):
 
 
     # Compute hyperopt loss
-    alpha = 1000
-    loss = (alpha * agent.total_game_steps) + agent.total_planner_steps
+    alpha = 1e3
+    beta = -1e6
+    loss = (beta * agent.levels_won) + (alpha * agent.total_game_steps) + agent.total_planner_steps
 
     return loss
 
@@ -80,15 +81,18 @@ space = {
     'novelty_second_alpha': hp.loguniform('space_novelty_second_alpha_first_alpha', 1, 10)
 }
 
-gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
-    	'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
+def optimize_game(game_number):
+    def play_game(hyperparameters):
+        return play_trainset(hyperparameters=hyperparameters,
+                             game_number=game_number)
+    best = fmin(fn=play_game,
+        space=space,
+        algo=tpe.suggest,
+        max_evals=2)
 
-gameName = gvggames[game_number]
+    gameName = gvggames[game_number]
+    with open('{}.txt'.format(gameName), 'w') as f:
+        f.write(str(best))
 
-best = fmin(fn=play_trainset,
-    space=space,
-    algo=tpe.suggest,
-    max_evals=2)
-
-with open('{}.txt'.format(gameName), 'w') as f:
-    print(str(best), file=f)
+pool = ProcessingPool(nodes=10)
+pool.map(optimize_game, range(10))

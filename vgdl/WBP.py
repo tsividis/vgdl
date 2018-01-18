@@ -388,7 +388,7 @@ class WBP():
 						QNovelty.append(child)
 						QReward.append(child)
 			i+=1
-			self.WBP.total_nodes = i
+			self.total_nodes = i
 
 			if self.winning_states:
 				print "we have {} winning states".format(len(self.winning_states))
