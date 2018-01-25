@@ -1960,7 +1960,6 @@ class Agent:
 		# p.join()
 		# print "Parallel tested and expanded {} theories in {} seconds".format(len(theoryRLEs), time.time()-t1)
 
-
 		self.allTheories.extend(newTheories)
 		print self.rle.show(color='blue')
 		print "evaluation complete. Now running experienceReplay on {} theories".format(len(newTheories))
