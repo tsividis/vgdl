@@ -1,6 +1,9 @@
 from random import choice
 import itertools, copy, scipy.misc
 import numpy as np
+import dill
+import tempfile
+import json
 from sampleVGDLString import *
 from class_theory_template import *
 from taxonomy import *
@@ -10,7 +13,7 @@ from collections import defaultdict
 import ipdb
 import operator
 import time, math
-from util import factorize, objectsToSymbol
+from util import factorize, objectsToSymbol, ccopy
 from rlenvironmentnonstatic import createMindEnv
 from line_profiler import LineProfiler
 
@@ -292,6 +295,16 @@ class Theory(object):
 		self.lineage = []
 		
 		self.mark = False ## For convenient marking and finding of hypotheses
+
+	def copy(self):
+		newTheory = Theory(self.game)
+		newTheory.classes = ccopy(self.classes)# cPickle.loads(cPickle.dumps(self.classes))
+		newTheory.expandedSprites = ccopy(self.expandedSprites) # cPickle.loads(cPickle.dumps(self.expandedSprites))
+		newTheory.interactionSet = ccopy(self.interactionSet) #cPickle.loads(cPickle.dumps(self.interactionSet))
+		newTheory.spriteObjects = ccopy(self.spriteObjects) #cPickle.loads(cPickle.dumps(self.spriteObjects))
+		newTheory.spriteSet = ccopy(self.spriteSet) #cPickle.loads(cPickle.dumps(self.spriteSet))
+		newTheory.terminationSet = ccopy(self.terminationSet) #cPickle.loads(cPickle.dumps(self.terminationSet))
+		return newTheory
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
 		# print "in initializeSpriteSet"
@@ -2118,6 +2131,8 @@ def generateTheoryFromGame(rle, alterGoal=True):
 	"""
 	theory = Theory(rle._game)
 
+	# print "in generateTheoryFromGame"
+	# embed()
 	inverseClasses = dict()
 	for i,s in enumerate(rle._game.sprite_constr):
 		(vgdlType, settings, _) = rle._game.sprite_constr[s]
@@ -2134,11 +2149,15 @@ def generateTheoryFromGame(rle, alterGoal=True):
 						# 'goal' is the only name that means something to all RLEs, so we're making sure to change this one.
 		sprite = Sprite(vgdlType, color, className=s, args=settings) #classname was i
 		theory.classes[s] = [sprite]
+		theory.spriteObjects[sprite.color] = sprite
+		theory.spriteSet.append(sprite)
 		inverseClasses[s] = i
 
 	## Add EOS as a class, too.
 	eos = Sprite(core.VGDLSprite, 'ENDOFSCREEN', None, None)
 	theory.classes['EOS'] = [eos]
+	theory.spriteObjects[eos.color] = eos
+	theory.spriteSet.append(eos)
 
 	for g1, g2, effect, kwargs in rle._game.collision_eff:
 		if alterGoal:
@@ -2405,7 +2424,8 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 		specificSpritesToUpdate=[targetToken], percentile=percentile, max_num=max_num)
 
 	for spriteProposal in spriteProposals:
-		newTheory = copy.deepcopy(theory)
+
+		newTheory = theory.copy()
 		newTheory.mostRecentEdit = 'spriteInduction'
 		# newTheory.lineage.append(theory)
 		newTheory.errorMapHistory.append(errorMap)
@@ -2431,7 +2451,7 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, resourceObservation
 	## unless you call generic=False, in which case it only proposes what's in
 	## resourceObservations
 
-	import itertools, copy
+	import itertools
 	from vgdl.theory_template import InteractionRule
 
 	childTheories = []
@@ -2465,13 +2485,12 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, resourceObservation
 
 	for i,ruleSet in enumerate(list(newRuleSets)):
 		ruleSet = [item for sublist in ruleSet for item in sublist]
-		newTheory = copy.deepcopy(theory)
+		newTheory = theory.copy()
 		newTheory.mostRecentEdit = 'interactionSetInduction'
 		# newTheory.lineage.append(theory)
 		newTheory.errorMapHistory.append(errorMap)
-		newTheory.interactionSet = copy.deepcopy(interactionSet)
+		newTheory.interactionSet = ccopy(interactionSet)
 		newTheory.interactionSet.extend(ruleSet)
-
 		childTheories.append(newTheory)
 
 	# print "Created {} new theories".format(len(childTheories))

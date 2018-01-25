@@ -1981,7 +1981,10 @@ def chaserMovesToward(sprite, game, target, fleeing):
     return res
 
 def findChaserClosestTargets(sprite, spritePrev, game):
-    targets = getSpritesByColor(colorDict[str(sprite.stype)], game)
+    if type(sprite.stype)==tuple:
+        targets = getSpritesByColor(colorDict[str(sprite.stype)], game)
+    else:
+        targets = game.sprite_groups[sprite.stype]
     bestd = 1e100
     res = []
     for target in targets:
@@ -2037,11 +2040,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
     """
     sprite_type = sprite_type_tuple[1]
 
-    # if current_sprite.name!='wall':
-    #     embed()
-    # Immovable, Passive, ResourcePack
     if sprite_type in [Immovable, Passive, ResourcePack, Resource, 'OTHER']:
-    # if (sprite_type == Immovable) or (sprite_type == Passive) or (sprite_type == ResourcePack) or (sprite_type == Resource) or (sprite_type=='OTHER'):
         return {(current_sprite.rect.left, current_sprite.rect.top): 1.}, {(current_sprite.rect.left, current_sprite.rect.top): 1.} ##object stays in position
 
     # Chaser
@@ -2050,7 +2049,12 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         fleeing = getFleeing(params)
         targetColor = getStype(params)
         cooldown = getCooldown(params)
-
+        realLastmove = int(current_sprite.lastmove)
+        current_sprite.lastmove +=1 ## to account for the fact that the normal update() function for a sprite runs before the calculateActiveMovement fn
+        # if current_sprite.colorName=='YELLOW' and fleeing==False and cooldown==3 and targetColor=='BLUE':
+        #     print "in chaser cooldown=3 updateOptions"
+        #     print current_sprite.lastmove
+        #     embed()
         realCooldown = int(current_sprite.cooldown)
         current_sprite.cooldown = cooldown
         # if current_sprite.colorName=='LIGHTORANGE':
@@ -2061,14 +2065,13 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
             targets = game.sprite_groups[targetName]
         except:
             targets = []
-            pass
+            # pass
 
         options = []
         position_options = {}
 
         try:
-            for target in targets:#chaserClosestTargets(current_sprite, game):
-                # print target
+            for target in targets:
                 options.extend(chaserMovesToward(current_sprite, game, target, fleeing))
             if len(options) == 0:
                 options = BASEDIRS
@@ -2082,12 +2085,14 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
                     position_options[(left, top)] = 1.0/len(options)
 
         except AttributeError: # deals with following error: 'Immovable' object has no attribute 'stype'
-            # position_options = {}
+            print "Got attribute error in updateOptions"
+            embed()
             position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
             if current_sprite.colorName == 'GOLD':
                 print "problem in movementOtions"
                 embed()
         current_sprite.cooldown = realCooldown
+        current_sprite.lastmove = realLastmove
         return position_options, position_options
 
     # AStarChaser
@@ -2763,9 +2768,9 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
             if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k].keys():
                 scoreAndTheoryTuples.append((0,k))
 
-        # if sprite.colorName=='YELLOW':
-        #     print "in spriteINduction"
-        #     embed()
+        # if sprite.colorName=='RED':
+            # print "in spriteINduction"
+            # embed()
             # for opt in game.movement_options[sprite.ID][k].keys():
                 # v = min( sprite.rect.left-)
         

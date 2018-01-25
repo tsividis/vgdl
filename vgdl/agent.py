@@ -1,4 +1,10 @@
 # from IPython import embed
+# from multiprocessing import Pool
+import pathos.pools as pp
+import multiprocessing
+from multiprocessing.pool import ThreadPool
+from functools import partial
+import threading
 from util import *
 from core import colorDict, VGDLParser, sys, keyPresses
 from ontology import *
@@ -27,7 +33,8 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 sns.set_context('paper', font_scale = 2, rc = {'lines.linewidth': 2})
 sns.set_style("ticks", {'axes.grid': True})
-
+import copy_reg
+import types
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
@@ -35,6 +42,9 @@ AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
 # orientationPairs = {(0, 1):(0, -1), DOWN:UP, LEFT:RIGHT, RIGHT:LEFT}
 
+
+def picklecopy(obj):
+	return 
 
 class errorMapEntry:
 	def __init__(self):
@@ -790,17 +800,17 @@ class Agent:
 
 		## Initialize imaginary state to match real state.
 		try:
-			Vrle._game.getAvatars()[0].resources = copy.deepcopy(stateToSet._game.getAvatars()[0].resources)
-			Vrle._game.getAvatars()[0].orientation = copy.deepcopy(stateToSet._game.getAvatars()[0].orientation)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].jumping)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].wait_step)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].rope)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].gravity)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].last_rope)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].last_gravity)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].last_vy)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].lastrect)
-			Vrle._game.getAvatars()[0].jumping = copy.deepcopy(stateToSet._game.getAvatars()[0].speed)
+			Vrle._game.getAvatars()[0].resources = ccopy(stateToSet._game.getAvatars()[0].resources)
+			Vrle._game.getAvatars()[0].orientation = ccopy(stateToSet._game.getAvatars()[0].orientation)
+			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].jumping)
+			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].wait_step)
+			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].rope)
+			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].gravity)
+			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].last_rope)
+			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].last_gravity)
+			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].last_vy)
+			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].lastrect)
+			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].speed)
 
 		except (IndexError, AttributeError) as e:
 			pass
@@ -918,24 +928,29 @@ class Agent:
 		lp.print_stats()
 		return newTheories
 
+	# def expandTheories(self, theories, errorList, envRealPrev, envRealCurrent, prevAction):
+	# 	func = partial(self.expandTheory, errorList, envRealPrev, envRealCurrent, prevAction, theory)
+	# 	p = ThreadPool(processes=20)
+	# 	results = p.map(func, [[h] for h in hypotheses])
+	# 	p.close()
+	# 	p.join()
 
 	def expandTheories(self, theories, errorList, envRealPrev, envRealCurrent, prevAction):
-		# print "errorList length: {}".format(len(errorList))
+		print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
 		if len(errorList)==0:
 			return theories
 		if len(errorList)==1:
-			print "correcting error for {} for {} theories".format(errorList[0].targetClass, len(theories))
+			# print "In base case. Correcting error for {} for {} theories".format(errorList[0].targetClass, len(theories))
 			newTheories = []
+
 			for theory in theories:
-				newTheories.extend(self.expandTheoryForOneErrorMap(theory, errorList[0], envRealPrev, envRealCurrent))
-			
+				newTheories.extend(self.expandTheoryForOneErrorMap(errorList[0], envRealPrev, envRealCurrent, theory))
+
 			# print "would pass {} theories to the next step w/o filter".format(len(newTheories))
 			penalties, cumulative_penalties, _ = self.experienceReplay(newTheories, self.rleHistory, self.actionHistory, 
 				method='all', targetClass = errorList[0].targetClass)
 
-			# penalties, cumulative_penalties = self.experienceReplay(newTheories, [envRealPrev, envRealCurrent], [prevAction], 
-				# method='all', targetClass = errorList[0].targetClass)
-
+			# penalties, cumulative_penalties, _ = self.experienceReplay((newTheories, self.rleHistory, self.actionHistory, 'all', errorList[0].targetClass, False))
 			# print "min penalty with targetClass filter: {}".format(min(penalties))
 			# print "Will filter {} theories".format(len([p for p in penalties if p==min(penalties)]))
 
@@ -945,16 +960,16 @@ class Agent:
 			scoreAndTheoryTuples = zip(penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 
-
-			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=60, max_num=20,
+			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=60, max_num=40,
 					proportionOfSpriteTheories=None)]
 			# print "in expandTheories"
 			# embed()
 			newTheories = [s[1] for s in scoresAndHypotheses]
-			# scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
-			print "produced {} new theories".format(len(newTheories))
-			for t in newTheories:
-				t.display()
+
+			print "In expandTheory () base case. Produced {} new theories".format(len(newTheories))
+			# for s in scoresAndHypotheses:
+			# 	print "error: {}".format(s[0])
+			# 	s[1].display()
 
 		else:
 			tmpTheories = self.expandTheories(theories, [errorList[0]], envRealPrev, envRealCurrent, prevAction)
@@ -963,7 +978,7 @@ class Agent:
 		return newTheories
 
 
-	def expandTheoryForOneErrorMap(self, theory, errorMap, envRealPrev, envRealCurrent):
+	def expandTheoryForOneErrorMap(self, errorMap, envRealPrev, envRealCurrent, theory):
 
 		## This fixes the problems generated by a single errorMap entry.
 
@@ -1020,7 +1035,7 @@ class Agent:
 		## SpriteSet induction step
 		if errorMap.targetClass != 'avatar' and errorMap.targetClass not in theory.expandedSprites:
 			className, theories = expandSprites(self.rle._game, theory, errorMap, 
-				envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=20, max_num=None,
+				envRealPrev, envRealCurrent, self.bestSpriteTypeDict, percentile=20, max_num=30,
 				resourceObservations=self.resourceObservations)
 			newTheories.extend(theories)
 
@@ -1035,9 +1050,10 @@ class Agent:
 			## that each theory proposes when you call expandLine on it, so you have mutliple copies
 			## of the same predicateGroups.
 			self.proposalMemory[targetClassPair].extend(predicateGroups)
+
 		if not newTheories:
 			newTheories = [theory]
-			print "got no new theories in expandTheoryForOneErrorMap"
+			# print "got no new theories in expandTheoryForOneErrorMap"
 			# embed()
 		return newTheories
 
@@ -1266,8 +1282,13 @@ class Agent:
 		# actions = [K_RIGHT, 32, K_RIGHT]
 
 		self.initializeEnvironment()
+		self.trueTheory = generateTheoryFromGame(self.rle)
+		self.trueTheory.trueTheory = True
 		print "initializing RLE. Epoch={}".format(epoch)
-
+		num_cores = multiprocessing.cpu_count()
+		print "num cores: {}".format(num_cores) 
+		if num_cores<40:
+			print "WARNING: running on < 40 cores."
 
 		self.all_objects= self.rle._game.getObjects()
 
@@ -1279,11 +1300,12 @@ class Agent:
 		statesEncountered = [self.rle._game.getFullState()]
 		self.statesEncountered.append(self.rle._game.getFullState())
 		envReal = self.fastcopy(self.rle)
-		# envReal = copy.deepcopy(self.rle)
 		self.rleHistory.append(envReal)
+
 
 		plt.ion() #allow for plot updating
 
+		t1 = time.time()
 		for num, action in enumerate(actions):
 			print ">>> Step", num+1, "of", len(actions), "<<<"
 			## initialize VRLEs
@@ -1291,8 +1313,11 @@ class Agent:
 			lastStep=False
 			if num==len(actions)-1:
 				lastStep=True
+			t2 = time.time()
 			hypotheses = self.executeStep(action, self.hypotheses, theoryRLEs, lastStep)
-
+			print ""
+			print "executed step in {} seconds".format(time.time()-t2)
+			print ""
 			self.hypotheses = hypotheses
 
 			# ##Plot scores from random enviroment sampling
@@ -1300,6 +1325,7 @@ class Agent:
 			# self.plotScores()
 			# plt.pause(0.01)
 
+		print "{} time-steps took {} seconds".format(len(actions), time.time()-t1)
 		print ">>> Embedded at the end of testEpisode"
 		embed()
 
@@ -1499,10 +1525,10 @@ class Agent:
 						self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
 						try:
 							if self.rle._game.previousPositions[k] != self.rle._game.nextPositions[k]:
-								self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.rle._game.previousPositions[k])
+								self.rle._game.objectMemoryDict[k] = ccopy(self.rle._game.previousPositions[k])
 						except KeyError:
 							pass
-					self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
+					self.rle._game.previousPositions = ccopy(self.rle._game.nextPositions)
 
 
 					# pinkID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['features']['color']=='PINK'][0]
@@ -1696,7 +1722,7 @@ class Agent:
 
 		if pre_step:
 			try:
-				agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+				agentState = ccopy(self.rle._game.getAvatars()[0].resources)
 			except IndexError:
 				# print "resourceManagement error"
 				# embed()
@@ -1707,7 +1733,7 @@ class Agent:
 				agentState['speed'] = None
 		else:
 			try:
-				agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+				agentState = ccopy(self.rle._game.getAvatars()[0].resources)
 
 				for e in res['effectList']:
 					if 'changeResource' in e:
@@ -1742,6 +1768,8 @@ class Agent:
 		cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
 		candidates = [s for s in scoreAndTheoryTuples if s[0]<=cutoff]
 
+		if max_num is None:
+			max_num = len(candidates)+1
 		if proportionOfSpriteTheories is None:
 			candidates = sorted(candidates, key=lambda x:x[0])
 			return candidates[0:max_num]
@@ -1769,16 +1797,16 @@ class Agent:
 	def fastcopy(self, rle):
 
 		newRle = self.initializeRLEFromGame()
-		newRle._obstypes = copy.deepcopy(rle._obstypes)
-		newRle._gravepoints = copy.deepcopy(rle._gravepoints)
-		newRle._game.sprite_groups = copy.deepcopy(rle._game.sprite_groups)
-		newRle._game.kill_list = copy.deepcopy(rle._game.kill_list)
-		newRle._game.lastcollisions = copy.deepcopy(rle._game.lastcollisions)
-		newRle._game.time = copy.deepcopy(rle._game.time)
-		newRle._game.score = copy.deepcopy(rle._game.score)
-		newRle._game.keystate = copy.deepcopy(rle._game.keystate)
-		newRle.symbolDict = copy.deepcopy(rle.symbolDict)
-		newRle._game.getAvatars()[0].resources = copy.deepcopy(rle._game.getAvatars()[0].resources)
+		newRle._obstypes = ccopy(rle._obstypes)
+		newRle._gravepoints = ccopy(rle._gravepoints)
+		newRle._game.sprite_groups = ccopy(rle._game.sprite_groups)
+		newRle._game.kill_list = ccopy(rle._game.kill_list)
+		newRle._game.lastcollisions = ccopy(rle._game.lastcollisions)
+		newRle._game.time = ccopy(rle._game.time)
+		newRle._game.score = ccopy(rle._game.score)
+		newRle._game.keystate = ccopy(rle._game.keystate)
+		newRle.symbolDict = ccopy(rle.symbolDict)
+		newRle._game.getAvatars()[0].resources = ccopy(rle._game.getAvatars()[0].resources)
 		return newRle
 
 	def executeStepProfiler(self, action, hypotheses, theoryRLEs, lastStep=False):
@@ -1787,6 +1815,28 @@ class Agent:
 		hypotheses = lp_wrapper(action, hypotheses, theoryRLEs, lastStep)
 		lp.print_stats()
 		return hypotheses
+
+	def testAndExpand(self, theoryRLEs, hypotheses, action, envRealPrev, index):
+		num = index
+		env = theoryRLEs[num]
+		hypothesis = hypotheses[num]
+		env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
+		env_colors = set([s.colorName for s in env_sprites if s])
+
+		env.step(action)
+		env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
+		env_colors = set([s.colorName for s in env_sprites if s])
+
+		penalty, errorList = self.errorSignal(env, self.rle, hypothesis, envRealPrev)
+		
+		if errorList:
+			hypothesis.display()
+			for e in errorList:
+				e.display()
+			print ""
+		print "expanding theories"
+		theories = self.expandTheories([hypothesis], errorList, envRealPrev, self.rle, action)
+		return theories
 
 	def executeStep(self, action, hypotheses, theoryRLEs, lastStep=False):
 
@@ -1801,13 +1851,10 @@ class Agent:
 
 		agentState = self.resourceManagement(pre_step=True)
 
-		# envRealPrev = copy.deepcopy(self.rle)
 		envRealPrev = self.fastcopy(self.rle)
-		# self.rleHistory.append(envRealPrev)
 		self.actionHistory.append(action)
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
-		# envReal = copy.deepcopy(self.rle)
 
 		self.rleHistory.append(envReal)
 		print ""
@@ -1827,6 +1874,25 @@ class Agent:
 		real_sprites = [s for k in self.rle._game.sprite_groups.keys() for s in self.rle._game.sprite_groups[k] if s not in self.rle._game.kill_list]
 		real_colors = set([s.colorName for s in real_sprites if s])
 
+
+		## Serial compact version
+		# t1 = time.time()
+		# for num, env in enumerate(theoryRLEs):
+		# 	theories = self.testAndExpand(theoryRLEs, self.hypotheses, action, envRealPrev, num)
+		# 	newTheories.extend(theories)
+		# print "Serially tested and expanded {} theories in {} seconds".format(len(theoryRLEs), time.time()-t1)
+
+		## Parallel version
+		# t1 = time.time()
+		# func = partial(self.testAndExpand, theoryRLEs, self.hypotheses, action, envRealPrev)
+		# p = ThreadPool(processes=40)
+		# results = p.map(func, range(len(theoryRLEs)))
+		# newTheories = [item for sublist in results for item in sublist]
+		# p.close()
+		# p.join()
+		# print "Parallel tested and expanded {} theories in {} seconds".format(len(theoryRLEs), time.time()-t1)
+
+		## Original version
 		for num, env in enumerate(theoryRLEs):
 			env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
 			env_colors = set([s.colorName for s in env_sprites if s])
@@ -1837,18 +1903,21 @@ class Agent:
 
 			penalty, errorList = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
 			
-			print "theory {} had {} errors".format(num, len(errorList))
+			# print "theory {} had {} errors".format(num, len(errorList))
 			if errorList:
 				self.hypotheses[num].display()
 				for e in errorList:
 					e.display()
 				print ""
+			print "expanding theories"
 			theories = self.expandTheories([self.hypotheses[num]], errorList, envRealPrev, self.rle, action)
-			# theories = self.expandTheoryForOneErrorMap(self.hypotheses[num], errorList[0], envRealPrev, self.rle)
+
 			if errorList:
 				print "theory {} produced {} compound children".format(num, len(theories))
-			# embed()
+
 			newTheories.extend(theories)
+
+		embed()
 
 		self.allTheories.extend(newTheories)
 		print self.rle.show(color='blue')
@@ -1871,27 +1940,57 @@ class Agent:
 
 
 			## Now pass those on to do experience replay for more steps
-			penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay(newTheories, self.rleHistory, self.actionHistory, method='all')
+			# penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay([self.trueTheory]+newTheories, self.rleHistory, self.actionHistory, method='all')
 
-			scoreAndTheoryTuples = zip(penalties, newTheories, experienceReplayRLEs)
+			## Now pass those on to do experience replay for more steps
+
+			# if len(self.rleHistory)<2:
+			# 	for i in range(50):
+			# 		self.rleHistory.append(ccopy(self.rleHistory[0]))
+			# 		self.actionHistory.append(32)
+			# t1 = time.time()
+
+			penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay([self.trueTheory]+newTheories, self.rleHistory, self.actionHistory, method='all')
+
+			# penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay((newTheories, self.rleHistory, self.actionHistory, 'all', None, False))
+			# for t in newTheories:
+				# r = threading.Thread(target=self.experienceReplay, args=(([t], self.rleHistory, self.actionHistory, 'all', None, False ),))
+				# r.start()
+			# p = pp.ProcessPool(processes=8)
+			# output = p.map(self.experienceReplay, [([t], self.rleHistory, self.actionHistory, 'all', None, False) for t in newTheories])
+			# p.close()
+			# p.join()
+			# map(self.experienceReplay, [([t], self.rleHistory, self.actionHistory, 'all', None, False) for t in newTheories[0:5]])
+			# print "ended in {} seconds".format(time.time()-t1)
+			# embed()
+
+			scoreAndTheoryTuples = zip(penalties, [self.trueTheory]+newTheories, experienceReplayRLEs)
+
+			# scoreAndTheoryTuples = zip(penalties, newTheories, experienceReplayRLEs)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
-			
+
+			for num, sh in enumerate(scoreAndTheoryTuples):
+				print "Theory: {} | Error: {}".format(num, sh[0])
+				sh[1].display()
+			print ""
+
+			scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if hasattr(s[1],'trueTheory')]		
 
 			if not lastStep:
-				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=80, max_num=20,
+				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=80, max_num=30,
 					proportionOfSpriteTheories=None)]
 			else:
-				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=80, max_num=20,
+				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=80, max_num=30,
 					proportionOfSpriteTheories=None)]
 
 			print "Experience replay complete."
 			for num, sh in enumerate(scoresAndHypotheses):
 				print "Theory: {} | Error: {}".format(num, sh[0])
 			print ""
-			for num, sh in enumerate(scoresAndHypotheses):
-				print "Theory: {} | Error: {}".format(num, sh[0])
-				sh[1].display()
-			print ""
+			# for num, sh in enumerate(scoresAndHypotheses):
+			# 	print "Theory: {} | Error: {}".format(num, sh[0])
+			# 	sh[1].display()
+			# print ""
 			# print "in executeStep"
 			# embed()
 
@@ -1992,7 +2091,30 @@ class Agent:
 
 
 	def experienceReplay(self, hypotheses, rleHistory, actionHistory, method='all', targetClass=None, displayStates=False):
+		# results = []
+		# for h in hypotheses:
+			# results.append(self.singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetClass, displayStates, [h]))
+		# 	r = threading.Thread(target=self.singleTheoryExperienceReplay, args=((self.rleHistory, self.actionHistory, 'all', None, False, [h]),))
+		# 	r.start()
 
+		print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
+		# t1 = time.time()
+		func = partial(self.singleTheoryExperienceReplay, rleHistory, actionHistory, method, targetClass, displayStates)
+		p = ThreadPool(processes=40)
+		results = p.map(func, [[h] for h in hypotheses])
+		p.close()
+		p.join()
+		mean_penalties = [r[0][0] for r in results]
+		cumulative_penalties = [r[1][0][0] for r in results]
+		theoryRLEs = [r[2][0] for r in results]
+
+		# print "ran experience replay on {} theories and {} time-steps in {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
+		return mean_penalties, cumulative_penalties, theoryRLEs
+
+	def singleTheoryExperienceReplay(self, rleHistory, actionHistory, method, targetClass, displayStates, hypotheses):
+	# def singleTheoryExperienceReplay(self, args):
+	# def experienceReplay(self, args):
+		# rleHistory, actionHistory, method, targetClass, displayStates, hypotheses = args[0], args[1], args[2], args[3], args[4], args[5]
 		import numpy as np
 
 		if method=='all':
@@ -2094,11 +2216,11 @@ class Agent:
 			ID_dictlist.append( match)
 		# Calculate penalties
 		cumulative_penalties = []
+
 		for n,action in enumerate(actions):
 			penalties = []
 			if last_only==False or n==len(actions)-1:
 				envRealPrev = self.fastcopy(rle)
-				# envRealPrev = copy.deepcopy(rle)
 			rle.step(action)
 			for num, env in enumerate(theoryRLEs):
 				env.step(action)
@@ -2108,6 +2230,7 @@ class Agent:
 					penalties.append(penalty)
 			if last_only==False or n==len(actions)-1:
 				cumulative_penalties.append(penalties)
+
 		cumulative_penalties = np.array(cumulative_penalties)
 		# print ">>> Embedded in testSteps"
 		# embed()
@@ -2115,7 +2238,6 @@ class Agent:
 
 	def randomizeState(self, rle):
 		rleCopy = self.fastcopy(rle)
-		# rleCopy = copy.deepcopy(rle)
 		x_options = range(1, rleCopy._game.width-1)
 		y_options = range(1, rleCopy._game.height-1)
 		pos_options = list(itertools.product(x_options, y_options))
