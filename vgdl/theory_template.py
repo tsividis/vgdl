@@ -298,12 +298,17 @@ class Theory(object):
 
 	def copy(self):
 		newTheory = Theory(self.game)
-		newTheory.classes = ccopy(self.classes)# cPickle.loads(cPickle.dumps(self.classes))
-		newTheory.expandedSprites = ccopy(self.expandedSprites) # cPickle.loads(cPickle.dumps(self.expandedSprites))
-		newTheory.interactionSet = ccopy(self.interactionSet) #cPickle.loads(cPickle.dumps(self.interactionSet))
-		newTheory.spriteObjects = ccopy(self.spriteObjects) #cPickle.loads(cPickle.dumps(self.spriteObjects))
-		newTheory.spriteSet = ccopy(self.spriteSet) #cPickle.loads(cPickle.dumps(self.spriteSet))
-		newTheory.terminationSet = ccopy(self.terminationSet) #cPickle.loads(cPickle.dumps(self.terminationSet))
+		newTheory.classes = ccopy(self.classes)
+		newTheory.expandedSprites = ccopy(self.expandedSprites)
+		newTheory.interactionSet = ccopy(self.interactionSet)
+		newTheory.spriteObjects = ccopy(self.spriteObjects)
+		newTheory.spriteSet = ccopy(self.spriteSet)
+		newTheory.terminationSet = ccopy(self.terminationSet)
+		try:
+			newTheory.errorMapHistory = [e.copy() for e in self.errorMapHistory]
+		except:
+			print "attribute error with errorMapHistory"
+			embed()
 		return newTheory
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
@@ -1493,17 +1498,19 @@ class Theory(object):
 
 			return all([
 				self.spriteSet == other.spriteSet,
-				self.levelMapping == other.levelMapping,
+				# self.levelMapping == other.levelMapping,
 				interactionSetEqual, # TODO: Check if this uses InteractionRule overloaded __eq__
 				self.classes == other.classes,
 				self.terminationSet == other.terminationSet #may want to delete this
-				]) # TODO: Add in termination set later
+				])
 		else:
 			return False
 
 	def __ne__(self, other):
 		return not self.__eq__(other)
-
+	
+	def __hash__(self):
+		return 0 ## this is a terrible idea! You're just doing this hoping that the equality operation is good enough for set() to work well.
 
 def normalize(array):
 	z = float(sum(array))

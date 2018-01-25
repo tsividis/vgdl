@@ -63,6 +63,21 @@ class errorMapEntry:
 		print "intPairs: {}".format(self.intPairs)
 		print "culpritClasses: {}".format(self.culpritClasses)
 
+	def copy(self):
+		e 					= errorMapEntry()
+		e.diagnosis 		= self.diagnosis
+		e.targetToken 		= ccopy(self.targetToken)
+		e.targetClass 		= self.targetClass
+		e.intPairs 			= self.intPairs
+		e.culpritClasss 	= self.culpritClasses
+		
+		return e
+
+	def __eq__(self, other):
+		if self.diagnosis==other.diagnosis and self.intPairs==other.intPairs and self.culpritClasses==other.culpritClasses:
+			return True
+		else:
+			return False
 
 class Agent:
 	def __init__(self, modelType, gameFilename):
@@ -936,7 +951,7 @@ class Agent:
 	# 	p.join()
 
 	def expandTheories(self, theories, errorList, envRealPrev, envRealCurrent, prevAction):
-		print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
+		# print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
 		if len(errorList)==0:
 			return theories
 		if len(errorList)==1:
@@ -946,6 +961,15 @@ class Agent:
 			for theory in theories:
 				newTheories.extend(self.expandTheoryForOneErrorMap(errorList[0], envRealPrev, envRealCurrent, theory))
 
+			len_before_set = len(newTheories)
+			newTheories = list(set(newTheories))
+			len_after_set = len(newTheories)
+			# if len_before_set != len_after_set:
+				# print "In expandTheories. before set: {}. after set: {}.".format(len_before_set, len_after_set)
+			
+			# if len(newTheories)>100:
+				# print "produced > 100 new theories"
+				# embed()
 			# print "would pass {} theories to the next step w/o filter".format(len(newTheories))
 			penalties, cumulative_penalties, _ = self.experienceReplay(newTheories, self.rleHistory, self.actionHistory, 
 				method='all', targetClass = errorList[0].targetClass)
@@ -966,7 +990,7 @@ class Agent:
 			# embed()
 			newTheories = [s[1] for s in scoresAndHypotheses]
 
-			print "In expandTheory () base case. Produced {} new theories".format(len(newTheories))
+			# print "In expandTheory () base case. Produced {} new theories".format(len(newTheories))
 			# for s in scoresAndHypotheses:
 			# 	print "error: {}".format(s[0])
 			# 	s[1].display()
@@ -1020,13 +1044,17 @@ class Agent:
 		## TODO: Get these from somewhere else
 		globalObservations = {'physicsType':'gridphysics'}
 
-		## Safety check; if we don't actually have an error we should just return the theory, unmodified.
-		# if not errorList:
-		# 	return [theory]
+		## If we were about to make modifications we've made already, don't waste the time.
+		if any([errorMap==e for e in theory.errorMapHistory]):
+			newTheories = [theory]
+			return newTheories
 
 		newTheories = []
 
-		# for errorMap in errorList:
+		## For debugging. Don't make children of the true theory.
+		if hasattr(theory, 'trueTheory'):
+			newTheories = [theory]
+			return newTheories
 
 		if errorMap.targetClass == 'unknown':
 			print "errorMap gives new class"
@@ -1051,6 +1079,12 @@ class Agent:
 			## of the same predicateGroups.
 			self.proposalMemory[targetClassPair].extend(predicateGroups)
 
+		len_before_set = len(newTheories)
+		newTheories = [t for t in newTheories if t not in self.allTheories]
+		len_after_set = len(newTheories)
+		if len_before_set!=len_after_set:
+			print "originally proposed {} theories but ended up with {} after filtering".format(len_before_set,len_after_set)
+		self.allTheories.extend(newTheories)
 		if not newTheories:
 			newTheories = [theory]
 			# print "got no new theories in expandTheoryForOneErrorMap"
@@ -1829,12 +1863,12 @@ class Agent:
 
 		penalty, errorList = self.errorSignal(env, self.rle, hypothesis, envRealPrev)
 		
-		if errorList:
-			hypothesis.display()
-			for e in errorList:
-				e.display()
-			print ""
-		print "expanding theories"
+		# if errorList:
+		# 	hypothesis.display()
+		# 	for e in errorList:
+		# 		e.display()
+		# 	print ""
+		# print "expanding theories"
 		theories = self.expandTheories([hypothesis], errorList, envRealPrev, self.rle, action)
 		return theories
 
@@ -1865,7 +1899,7 @@ class Agent:
 		## Evaluate each theory on this step
 		## Propose new theories
 		# flag=False
-		print "evaluating old theories and proposing new ones"
+		print "evaluating {} old theories and proposing new ones".format(len(theoryRLEs))
 		newTheories = []
 
 		prev_real_sprites = [s for k in envRealPrev._game.sprite_groups.keys() for s in envRealPrev._game.sprite_groups[k] if s not in envRealPrev._game.kill_list]
@@ -1874,12 +1908,46 @@ class Agent:
 		real_sprites = [s for k in self.rle._game.sprite_groups.keys() for s in self.rle._game.sprite_groups[k] if s not in self.rle._game.kill_list]
 		real_colors = set([s.colorName for s in real_sprites if s])
 
+		## DEBUG code. delete soon
+		# if len(self.rleHistory)<3:
+		# 	for i in range(20):
+		# 		self.rleHistory.append(ccopy(self.rleHistory[0]))
+		# 		self.actionHistory.append(32)
+	
+		## Original version
+		# t1 = time.time()
+		# for num, env in enumerate(theoryRLEs):
+		# 	env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
+		# 	env_colors = set([s.colorName for s in env_sprites if s])
+
+		# 	env.step(action)
+		# 	env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
+		# 	env_colors = set([s.colorName for s in env_sprites if s])
+
+		# 	penalty, errorList = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
+			
+		# 	# print "theory {} had {} errors".format(num, len(errorList))
+		# 	# if errorList:
+		# 	# 	self.hypotheses[num].display()
+		# 	# 	for e in errorList:
+		# 	# 		e.display()
+		# 	# 	print ""
+		# 	# print "expanding theories"
+		# 	theories = self.expandTheories([self.hypotheses[num]], errorList, envRealPrev, self.rle, action)
+
+		# 	# if errorList:
+		# 	# 	print "theory {} produced {} compound children".format(num, len(theories))
+		# 	# 	print ""
+
+		# 	newTheories.extend(theories)
+		# print "Normal version tested and expanded {} theories in {} seconds".format(len(theoryRLEs), time.time()-t1)
+
 
 		## Serial compact version
 		# t1 = time.time()
-		# for num, env in enumerate(theoryRLEs):
-		# 	theories = self.testAndExpand(theoryRLEs, self.hypotheses, action, envRealPrev, num)
-		# 	newTheories.extend(theories)
+		for num, env in enumerate(theoryRLEs):
+			theories = self.testAndExpand(theoryRLEs, self.hypotheses, action, envRealPrev, num)
+			newTheories.extend(theories)
 		# print "Serially tested and expanded {} theories in {} seconds".format(len(theoryRLEs), time.time()-t1)
 
 		## Parallel version
@@ -1892,32 +1960,6 @@ class Agent:
 		# p.join()
 		# print "Parallel tested and expanded {} theories in {} seconds".format(len(theoryRLEs), time.time()-t1)
 
-		## Original version
-		for num, env in enumerate(theoryRLEs):
-			env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
-			env_colors = set([s.colorName for s in env_sprites if s])
-
-			env.step(action)
-			env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
-			env_colors = set([s.colorName for s in env_sprites if s])
-
-			penalty, errorList = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
-			
-			# print "theory {} had {} errors".format(num, len(errorList))
-			if errorList:
-				self.hypotheses[num].display()
-				for e in errorList:
-					e.display()
-				print ""
-			print "expanding theories"
-			theories = self.expandTheories([self.hypotheses[num]], errorList, envRealPrev, self.rle, action)
-
-			if errorList:
-				print "theory {} produced {} compound children".format(num, len(theories))
-
-			newTheories.extend(theories)
-
-		embed()
 
 		self.allTheories.extend(newTheories)
 		print self.rle.show(color='blue')
@@ -1925,6 +1967,7 @@ class Agent:
 
 		if newTheories:
 
+			########
 			## Attempt at pre-filtering of theories before running full experience replay
 			# print "{} theories before screening".format(len(newTheories))
 			## Screen for theories that explain the most recent timestep
@@ -1937,18 +1980,22 @@ class Agent:
 				# screenedTheories = newTheories
 			# print "{} theories after screening".format(len(screenedTheories))
 
-
-
 			## Now pass those on to do experience replay for more steps
 			# penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay([self.trueTheory]+newTheories, self.rleHistory, self.actionHistory, method='all')
 
-			## Now pass those on to do experience replay for more steps
+			#########3
 
-			# if len(self.rleHistory)<2:
-			# 	for i in range(50):
-			# 		self.rleHistory.append(ccopy(self.rleHistory[0]))
-			# 		self.actionHistory.append(32)
 			# t1 = time.time()
+
+			len_before_set = len(newTheories)
+			newTheories = list(set(newTheories))
+			len_after_set = len(newTheories)
+			if len_before_set != len_after_set:
+				print "before set: {}. after set: {}.".format(len_before_set, len_after_set)
+			## DEBUG: remove soon!
+			if len(newTheories)>20:
+				print "DEBUG change. Filtering theories 0:20"
+				newTheories = newTheories[0:20]
 
 			penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay([self.trueTheory]+newTheories, self.rleHistory, self.actionHistory, method='all')
 
@@ -1974,7 +2021,7 @@ class Agent:
 				sh[1].display()
 			print ""
 
-			scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if hasattr(s[1],'trueTheory')]		
+			# scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if hasattr(s[1],'trueTheory')]		
 
 			if not lastStep:
 				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=80, max_num=30,
@@ -2091,23 +2138,34 @@ class Agent:
 
 
 	def experienceReplay(self, hypotheses, rleHistory, actionHistory, method='all', targetClass=None, displayStates=False):
-		# results = []
-		# for h in hypotheses:
-			# results.append(self.singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetClass, displayStates, [h]))
-		# 	r = threading.Thread(target=self.singleTheoryExperienceReplay, args=((self.rleHistory, self.actionHistory, 'all', None, False, [h]),))
-		# 	r.start()
+		# print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
 
-		print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
+		t1 = time.time()
+		results = []
+		for h in hypotheses:
+			results.append(self.singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetClass, displayStates, [h]))
+		print "Serial experienceReplay for {} hypotheses took {} seconds".format(len(hypotheses), time.time()-t1)
+		
 		# t1 = time.time()
-		func = partial(self.singleTheoryExperienceReplay, rleHistory, actionHistory, method, targetClass, displayStates)
-		p = ThreadPool(processes=40)
-		results = p.map(func, [[h] for h in hypotheses])
-		p.close()
-		p.join()
+		# # resultList = [0]*len(hypotheses)
+		# for num, h in enumerate(hypotheses):
+		# 	r = threading.Thread(target=self.singleTheoryExperienceReplay, args=(self.rleHistory, self.actionHistory, 'all',
+		# 	None, False, [h]))
+		# 	r.start()
+		# print "Threaded experienceReplay for {} hypotheses took {} seconds".format(len(hypotheses), time.time()-t1)
+
+		# t1 = time.time()
+		# func = partial(self.singleTheoryExperienceReplay, rleHistory, actionHistory, method, targetClass, displayStates)
+		# p = ThreadPool(processes=48)
+		# results = p.map(func, [[h] for h in hypotheses])
+		# p.close()
+		# p.join()
+
 		mean_penalties = [r[0][0] for r in results]
 		cumulative_penalties = [r[1][0][0] for r in results]
 		theoryRLEs = [r[2][0] for r in results]
 
+		# print "Parallel experience replay on {} hypotheses took {} seconds".format(len(hypotheses),time.time()-t1)
 		# print "ran experience replay on {} theories and {} time-steps in {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 		return mean_penalties, cumulative_penalties, theoryRLEs
 
