@@ -2022,7 +2022,7 @@ class Agent:
 		envRealPrev = self.fastcopy(self.rle)
 		self.actionHistory.append(action)
 		self.rle.step(action)
-		# agentState = self.resourceManagement(pre_step=False)
+		agentState = self.resourceManagement(pre_step=False)
 		envReal = self.fastcopy(self.rle)
 
 		self.rleHistory.append(envReal)
