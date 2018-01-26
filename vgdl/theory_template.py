@@ -2354,13 +2354,14 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 	'unexpectedOverlap': ['nothing', 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
 	'orientationChange': ['reverseDirection', 'bounceDirection', 'flipDirection'],
 	#'turn', 'turnAround', 
+	'teleport': ['teleportToExit'],
 
 	## Object state change
 	'stateChange': ['changeResource', 'collectResource', 'scoreChange'],
 
 	## Other
 	## TODO: These don't actually correspond here, but we need to do more work to be able to learn these.
-	'other': ['teleportToExit', 'conveySprite']
+	'other' : ['conveySprite']
 	}
 
 
@@ -2990,4 +2991,3 @@ class PreconditionInduction():
 				
 				for i in range(len(self.distr['resource'][key][res])):
 					self.distr['resource'][key][res][i] = self.normalize(self.distr['resource'][key][res][i])
-					

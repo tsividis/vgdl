@@ -391,6 +391,7 @@ class Agent:
 			e.diagnosis.append('unexpectedPosition')
 		# 1.4) unexpectedOverlap
 		if dist_ts!=0 and nearest_dist<1:
+
 			e.diagnosis.append('unexpectedOverlap')
 			# find sprite in envA that corresponds to covered sprite in envB
 			color = nearest_sprite.colorName
@@ -400,6 +401,9 @@ class Agent:
 					className_envA = k
 			covered_sprite_envA = self.findNearestSprite(sB,envA._game.sprite_groups[className_envA])
 			e.intPairs = [(sA.name, covered_sprite_envA.name)] #overwrite interaction pair by the overlapping sprite pair
+		if dist_ts>2:
+			e.diagnosis.append('teleport')
+			e.intPairs.extend([(sA.name, n) for n in neighbors_prev])
 		# Return errorMapEntry object
 		return e
 
@@ -1336,7 +1340,7 @@ class Agent:
 		# actions = [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32]
 		# actions = [32,32,32,32,32,32, 32, 32, 32]
 		# actions = [K_RIGHT, 32, K_RIGHT]
-		actions = [K_RIGHT, K_LEFT, K_LEFT]
+		actions = [K_DOWN, K_RIGHT, K_RIGHT]
 		self.initializeEnvironment()
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True

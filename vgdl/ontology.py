@@ -1847,13 +1847,14 @@ def killSpriteOnLanding(sprite, partner, game):
 def teleportToExit(sprite, partner, game):
     try:
         e = random.choice(game.sprite_groups[partner.stype])
+        args = {'stype':partner.stype}
     except:
-        ## if the above fails, it's because the theory has specified the partner.stype as the goal
-        ## and so there is no game.sprite_groups[partner.stype]. send avatar to the goal.
-        e = random.choice(game.sprite_groups['goal'])
+        ## If partner doesn't have stype (the teleport exits) just don't move. Teleport to self.
+        e = sprite
+        embed()
+        args = {'stype':sprite.name}
     sprite.rect = e.rect
     sprite.lastmove = 0
-    args = {'stype':partner.stype}
     return ('teleportToExit', sprite.ID, partner.ID, args)
 
 def killIfTooFast(sprite,partner,game,speed):
