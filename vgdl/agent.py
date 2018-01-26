@@ -955,9 +955,17 @@ class Agent:
 		if len(errorList)==0:
 			return theories
 		if len(errorList)==1:
-			print "In base case. Correcting error for {} for {} theories".format(errorList[0].targetClass, len(theories))
-			newTheories = []
 
+			## Skip this whole step if you've already made changes for this theory. Just pass it on and you'll
+			## evaluate it on the whole dataset in the outer loop.
+			if len(theories)==1 and any([errorList[0]==e for e in theories[0].errorMapHistory]):
+				newTheories = [theories[0]]
+				return newTheories
+
+			print "In base case. Correcting error for {} for {} theories".format(errorList[0].targetClass, len(theories))
+			# if len(theories)==1:
+				# embed()
+			newTheories = []
 			for theory in theories:
 				newTheories.extend(self.expandTheoryForOneErrorMap(errorList[0], envRealPrev, envRealCurrent, theory))
 			
@@ -1077,6 +1085,7 @@ class Agent:
 
 		if not newTheories:
 			newTheories = [theory]
+			theory.errorMapHistory.append(errorMap)
 			# print "got no new theories in expandTheoryForOneErrorMap"
 			# embed()
 		return newTheories
@@ -1985,7 +1994,7 @@ class Agent:
 				sh[1].display()
 			print ""
 
-			# scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if hasattr(s[1],'trueTheory')]		
+			scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]		
 
 			if not lastStep:
 				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=80, max_num=30,
@@ -1998,16 +2007,10 @@ class Agent:
 			for num, sh in enumerate(scoresAndHypotheses):
 				print "Theory: {} | Error: {}".format(num, sh[0])
 			print ""
-			# for num, sh in enumerate(scoresAndHypotheses):
-			# 	print "Theory: {} | Error: {}".format(num, sh[0])
-			# 	sh[1].display()
-			# print ""
-			# print "in executeStep"
-			# embed()
-
 			hypotheses = [sh[1] for sh in scoresAndHypotheses]
 			print "{} survived".format(len(hypotheses))
 			print ""
+
 			if len(hypotheses)==0:
 				print "0 hypotheses survived filter"
 				embed()

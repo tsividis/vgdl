@@ -2494,7 +2494,6 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, resourceObservation
 		ruleSet = [item for sublist in ruleSet for item in sublist]
 		newTheory = theory.copy()
 		newTheory.mostRecentEdit = 'interactionSetInduction'
-		# newTheory.lineage.append(theory)
 		newTheory.errorMapHistory.append(errorMap)
 		newTheory.interactionSet = ccopy(interactionSet)
 		newTheory.interactionSet.extend(ruleSet)
