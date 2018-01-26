@@ -114,7 +114,6 @@ class Agent:
 		self.seen_resources = []
 		self.seen_limits = []
 		self.new_objects = {}
-		self.resourceObservations = {}
 		self.proposalMemory = defaultdict(lambda:[])
 		self.memory = []
 		self.rleHistory = []
@@ -128,6 +127,8 @@ class Agent:
 		self.benchmarkHistory = []
 		self.subsamplePercentage = .2 # e.g., .5 = 50%.
 		self.actionsPerIndex = 2
+		self.resourceObservations = {'speed':[], 'changeResource':[]}
+		self.observed_resources = set()
 		self.distributions = PreconditionInduction()
 		self.lastObjectState = {}
 
@@ -1335,7 +1336,7 @@ class Agent:
 		# actions = [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32]
 		# actions = [32,32,32,32,32,32, 32, 32, 32]
 		# actions = [K_RIGHT, 32, K_RIGHT]
-		actions = [K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT]
+		actions = [K_RIGHT, K_LEFT, K_LEFT]
 		self.initializeEnvironment()
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
@@ -1357,6 +1358,13 @@ class Agent:
 		envReal = self.fastcopy(self.rle)
 		self.rleHistory.append(envReal)
 
+		agentState = self.resourceManagement(pre_step=True)
+
+		#OBJECT TRACKING
+		# resourceObservations = self.getObservations(agentState, self.rle, self.rle)
+
+		#updates the distributions
+		# self.distributions.updateDist(resourceObservations)
 
 		plt.ion() #allow for plot updating
 
@@ -1779,46 +1787,55 @@ class Agent:
 			try:
 				agentState = ccopy(self.rle._game.getAvatars()[0].resources)
 			except IndexError:
-				# print "resourceManagement error"
-				# embed()
 				agentState = defaultdict(lambda: 0)
 			try:
 				agentState['speed'] = self.rle._game.getAvatars()[0].speed
 			except AttributeError:
-				agentState['speed'] = None
+				agentState['speed'] = 0
+			try:
+				agentState['orientation'] = self.rle._game.getAvatars()[0].orientation
+			except:
+				agentState['orientation'] = (0,0)
 		else:
 			try:
 				agentState = ccopy(self.rle._game.getAvatars()[0].resources)
 
-				for e in res['effectList']:
-					if 'changeResource' in e:
-						changes = e[3]
-						if changes['value'] < 0:
-							# ipdb.set_trace()
-							# undo one negative change to account for eventhandler ordering
-							agentState[changes['resource']] -= changes['value']
-							break
+				# for e in res['effectList']:
+				# 	if 'changeResource' in e:
+				# 		changes = e[3]
+				# 		if changes['value'] < 0:
+				# 			# ipdb.set_trace()
+				# 			# undo one negative change to account for eventhandler ordering
+				# 			agentState[changes['resource']] -= changes['value']
+				# 			break
 			# If agent is killed before we get agentState
 			except (IndexError, AttributeError) as e:
 				# agentState = defaultdict(lambda:0)
-				ignored_negative_change = False
-				for e in res['effectList']:
-					if 'changeResource' in e:
-						changes = e[3]
-						if changes['value'] > 0 or ignored_negative_change:
-							agentState[changes['resource']] += changes['value']
-						else:
-							agentState[changes['resource']] += 0
-							ignored_negative_change = True
+				print "error with post-step resourceManagement"
+				embed()
+				# ignored_negative_change = False
+				# for e in res['effectList']:
+				# 	if 'changeResource' in e:
+				# 		changes = e[3]
+				# 		if changes['value'] > 0 or ignored_negative_change:
+				# 			agentState[changes['resource']] += changes['value']
+				# 		else:
+				# 			agentState[changes['resource']] += 0
+				# 			ignored_negative_change = True
 			try:
 				agentState['speed'] = self.rle._game.getAvatars()[0].speed
 			except AttributeError:
-				agentState['speed'] = None
+				agentState['speed'] = 0
+			try:
+				agentState['orientation'] = self.rle._game.getAvatars()[0].orientation
+			except:
+				agentState['orientation'] = (0,0)
+
 		return agentState
 
-	def getObservations(self, agentState):
+	def getObservations(self, agentState, envReal, envRealPrev):
 		#whether the avatar is still alive
-		avatar_is_dead = (self.getSpritesByColor(self.rle,'DARKBLUE') is None)
+		avatar_is_dead = (self.getSpritesByColor(envReal,'DARKBLUE') is None)
 
 		#using the previous state, we predict where the objects are going to be
 		self.predictions = {}
@@ -1833,13 +1850,16 @@ class Agent:
 					expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
 					positions = [expected_pos]
 				except:
+					print "in getObservations try/except"
+					embed()
 					pass
 			else:
 				positions = []
 				for i in self.lastObjectState[key]:
 					speed = i['speed']
 					orientation = i['orientation']
-					if speed is None:
+					pos = i['position']
+					if speed == None:
 						expected_pos = pos
 					else:
 						expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
@@ -1849,7 +1869,7 @@ class Agent:
 		#get list of possible objects which could have collided with avatar
 		candidates = []
 		locs = {}
-		current_state = self.getStateByColor(self.rle)
+		current_state = self.getStateByColor(envRealPrev)
 		if len(current_state['DARKBLUE']) > 0:
 			avatar = current_state['DARKBLUE'][0]['position']
 		elif 'DARKBLUE' in self.predictions.keys():
@@ -1857,7 +1877,7 @@ class Agent:
 		for key in self.predictions.keys():
 			if key is not 'DARKBLUE':
 				for i in self.predictions[key]:
-					#see what objects interseced with our avatar
+					#see what objects intersected with our avatar
 					if self.intersect(i,avatar):
 						candidates.append(key)
 						locs[key] = i
@@ -1866,7 +1886,7 @@ class Agent:
 		print candidates
 
 		#build our dictionary of observations
-		resourceObservations = {'speed':{},'resource':{}}
+		resourceObservations = {'speed':{},'resource':defaultdict(lambda:{})}
 
 		#two cases - whether this collision killed the avatar or not
 		if avatar_is_dead:
@@ -1876,7 +1896,6 @@ class Agent:
 			for sprite in candidates:
 				resourceObservations['speed'][sprite] = (agentState['speed'],None)
 		
-
 		for key in agentState.keys():
 			if key not in ['orientation','speed']:
 				self.observed_resources.add(key)
@@ -1999,24 +2018,23 @@ class Agent:
 			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
 			percentile=10, max_num=20, allMovement=False)
 
-		agentState = self.resourceManagement(pre_step=True)
-
+		agentStatePrev = self.resourceManagement(pre_step=True)
 		envRealPrev = self.fastcopy(self.rle)
 		self.actionHistory.append(action)
 		self.rle.step(action)
+		# agentState = self.resourceManagement(pre_step=False)
 		envReal = self.fastcopy(self.rle)
 
 		self.rleHistory.append(envReal)
 		
 		#OBJECT TRACKING
-		resourceObservations = self.getObservations(agentState)
+		# resourceObservations = self.getObservations(agentState, envReal, envRealPrev)
 
 		#updates the distributions
-		self.distributions.updateDist(resourceObservations)
-		print self.distributions.distr
-		print "updated distributions. You'll have to access this when you expand theories."
-		embed()
-
+		# self.distributions.updateDist(resourceObservations)
+		# print self.distributions.distr
+		# print "updated distributions. You'll have to access this when you expand theories."
+		# embed()
 		print ""
 		print keyPresses[action]
 
@@ -2505,7 +2523,7 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 
 	filename = "examples.gridphysics.inference_test"
-	filename = "examples.gridphysics.collect_resource"
+	# filename = "examples.gridphysics.collect_resource"
 
 	#filename = "examples.continuousphysics.collect_resource"
 	# filename = "examples.continuousphysics.rope_test"
