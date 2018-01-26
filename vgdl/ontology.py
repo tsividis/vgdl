@@ -1851,7 +1851,6 @@ def teleportToExit(sprite, partner, game):
     except:
         ## If partner doesn't have stype (the teleport exits) just don't move. Teleport to self.
         e = sprite
-        embed()
         args = {'stype':sprite.name}
     sprite.rect = e.rect
     sprite.lastmove = 0
