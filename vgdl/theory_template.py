@@ -2928,3 +2928,66 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	levelString = levelString[levelString.find('"""')+3:-4]
 	theoryString = theoryString[theoryString.find('"""')+3:-4]
 	return theoryString, levelString, symbolDict#, immovables, killerObjects
+
+#class which stores the distribution over killIf__ parameters
+class PreconditionInduction():
+
+	def __init__ (self):
+		self.distr = {'speed':{},'resource':{}}
+		#maximum speed, maximum 
+		self.speed_n = 100
+		self.res_n = 10
+
+	#normalize distribution
+	def normalize(self, array):
+		tot = sum(array)
+		if tot != 0:
+			array = [i/tot for i in array]
+		return array
+
+	def updateDist(self,observations):
+		#update speed distribution
+		for key in observations['speed'].keys():
+			if key not in self.distr['speed']:
+				self.distr['speed'][key] = [1.0/self.speed_n for i in range(self.speed_n)]
+			for i in range(len(self.distr['speed'][key])):
+				if observations['speed'][key][0] is not None:
+					if i <= int(observations['speed'][key][0]):
+						self.distr['speed'][key][i] = 0
+				elif observations['speed'][key][1] is not None:
+					if i > int(observations['speed'][key][1]):
+						self.distr['speed'][key][i] = 0
+			#assuming that our likelihood function is uniform
+			self.distr['speed'][key] = self.normalize(self.distr['speed'][key])
+
+		#update resource distribution
+		for key in observations['resource'].keys():
+			for res in observations['resource'][key]:
+				if key not in self.distr['resource']:
+					self.distr['resource'][key] = {}
+				if res not in self.distr['resource'][key].keys():
+					self.distr['resource'][key][res] = [[1.0/self.res_n for i in range(self.res_n)] for i in range(4)]
+				
+				#4 cases:  killIfHasLess, killIfHasMore, killIfOtherHasLess, killIfOtherHasMore
+				val, avatar, sprite = observations['resource'][key][res]
+				
+				for i in range(len(self.distr['resource'][key][res][0])):
+					#killIfHasLess
+					if (i > val and avatar) or (i <= val and not avatar):
+						self.distr['resource'][key][res][0][i] = 0.0	
+
+					#killIfHasMore
+					if (i <= val and avatar) or (i > val and not avatar):
+						self.distr['resource'][key][res][1][i] = 0.0
+
+					#killIfOtherHasLess
+					if (i > val and sprite) or (i <= val and not sprite):
+						self.distr['resource'][key][res][2][i] = 0.0
+						
+					#killIfOtherHasMore
+					if (i <= val and sprite) or (i > val and not sprite):
+						self.distr['resource'][key][res][3][i] = 0.0
+				
+				for i in range(len(self.distr['resource'][key][res])):
+					self.distr['resource'][key][res][i] = self.normalize(self.distr['resource'][key][res][i])
+					

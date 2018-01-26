@@ -10,7 +10,7 @@ from core import colorDict, VGDLParser, sys, keyPresses
 from ontology import *
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
 SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
-generateTheoryFromGame, expandLine, expandSprites
+generateTheoryFromGame, expandLine, expandSprites, PreconditionInduction
 import os, subprocess, shutil
 from collections import defaultdict
 # import WBP_grid, WBP_continuous
@@ -128,6 +128,7 @@ class Agent:
 		self.benchmarkHistory = []
 		self.subsamplePercentage = .2 # e.g., .5 = 50%.
 		self.actionsPerIndex = 2
+		self.distributions = PreconditionInduction()
 
 	def initializeEnvironment(self):
 		if self.gameString==None or self.levelString==None:
@@ -1795,6 +1796,99 @@ class Agent:
 			except AttributeError:
 				agentState['speed'] = None
 		return agentState
+
+	def getObservations(self, agentState):
+		#whether the avatar is still alive
+		avatar_is_dead = (self.getSpritesByColor(self.rle,'WHITE') is None)
+
+		#using the previous state, we predict where the objects are going to be
+		self.predictions = {}
+		for key in self.lastObjectState.keys():
+			#predictions done a little differently for avatar
+			if key == 'WHITE' and not avatar_is_dead:
+				#predicting avatar location needs to be done properly
+				try:
+					speed = agentState['speed']
+					orientation = self.lastObjectState[key][0]['orientation']
+					pos = self.lastObjectState[key][0]['position']
+					expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
+					positions = [expected_pos]
+				except:
+					pass
+			else:
+				positions = []
+				for i in self.lastObjectState[key]:
+					speed = i['speed']
+					orientation = i['orientation']
+					if speed is None:
+						expected_pos = pos
+					else:
+						expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
+					positions.append(expected_pos)
+			self.predictions[key] = positions
+		
+		#get list of possible objects which could have collided with avatar
+		candidates = []
+		locs = {}
+		current_state = self.getStateByColor(self.rle)
+		if len(current_state['WHITE']) > 0:
+			avatar = current_state['WHITE'][0]['position']
+		elif 'WHITE' in self.predictions.keys():
+			avatar = self.predictions['WHITE'][0]
+		for key in self.predictions.keys():
+			if key is not 'WHITE':
+				for i in self.predictions[key]:
+					#see what objects interseced with our avatar
+					if self.intersect(i,avatar):
+						candidates.append(key)
+						locs[key] = i
+						break
+		print 'CANDIDATES'
+		print candidates
+
+		#build our dictionary of observations
+		resourceObservations = {'speed':{},'resource':{}}
+
+		#two cases - whether this collision killed the avatar or not
+		if avatar_is_dead:
+			for sprite in candidates:
+				resourceObservations['speed'][sprite] = (None,agentState['speed'])
+		else:
+			for sprite in candidates:
+				resourceObservations['speed'][sprite] = (agentState['speed'],None)
+		
+
+		for key in agentState.keys():
+			if key not in ['orientation','speed']:
+				self.observed_resources.add(key)
+		
+		THRESHHOLD = 0.5*self.rle._game.block_size
+		for sprite in candidates:
+			#we must determine if the sprite has dissapeared
+			sprite_gone = True
+			if len(current_state[sprite]) == len(self.lastObjectState[sprite]):
+				sprite_gone = False
+			else:
+				#match closest sprite
+				#locs[sprite] is where we expect the sprite to be
+				for i in current_state[sprite]:
+					#embed()
+					pos = i['position']
+					if abs(pos[0] - locs[sprite][0]) + abs(pos[1] - locs[sprite][1]) < THRESHHOLD:
+		 	resourceObservations['resource'][sprite] = {}
+		 	for res in self.observed_resources:
+		 		val = agentState[res]
+		 		#return whether this collision killed the sprite or the avatar - this format is used when updating distributions
+		 		resourceObservations['resource'][sprite][res] = (val,not avatar_is_dead,not sprite_gone)
+
+		self.lastObjectState = current_state
+		return resourceObservations
+
+	def intersect(self, p1, p2):
+		return (abs(p1[0] - p2[0]) <= self.rle._game.block_size and abs(p1[1] - p2[1]) <= self.rle._game.block_size)
+
+
+
 	
 	def filterTheories(self, scoreAndTheoryTuples, percentile, max_num, proportionOfSpriteTheories):
 		## Returns the max_num theories that are at percentile or greater, given their score.
@@ -1892,6 +1986,17 @@ class Agent:
 		envReal = self.fastcopy(self.rle)
 
 		self.rleHistory.append(envReal)
+		
+		#OBJECT TRACKING
+		resourceObservations = self.getObservations(agentState)
+
+		#updates the distributions
+		self.distributions.updateDist(resourceObservations)
+		print self.distributions.distr
+		print "updated distributions. You'll have to access this hwen you expand theories."
+		embed()
+
+
 		print ""
 		print keyPresses[action]
 
