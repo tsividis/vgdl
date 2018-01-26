@@ -955,23 +955,18 @@ class Agent:
 		if len(errorList)==0:
 			return theories
 		if len(errorList)==1:
-			# print "In base case. Correcting error for {} for {} theories".format(errorList[0].targetClass, len(theories))
+			print "In base case. Correcting error for {} for {} theories".format(errorList[0].targetClass, len(theories))
 			newTheories = []
 
 			for theory in theories:
 				newTheories.extend(self.expandTheoryForOneErrorMap(errorList[0], envRealPrev, envRealCurrent, theory))
-
-			len_before_set = len(newTheories)
-			newTheories = list(set(newTheories))
-			len_after_set = len(newTheories)
-			# if len_before_set != len_after_set:
-				# print "In expandTheories. before set: {}. after set: {}.".format(len_before_set, len_after_set)
 			
 			# if len(newTheories)>100:
 				# print "produced > 100 new theories"
 				# embed()
 			# print "would pass {} theories to the next step w/o filter".format(len(newTheories))
-			penalties, cumulative_penalties, _ = self.experienceReplay(newTheories, self.rleHistory, self.actionHistory, 
+
+			penalties, cumulative_penalties, _ = self.experienceReplay(newTheories, self.rleHistory[-2:], self.actionHistory[-1:], 
 				method='all', targetClass = errorList[0].targetClass)
 
 			# penalties, cumulative_penalties, _ = self.experienceReplay((newTheories, self.rleHistory, self.actionHistory, 'all', errorList[0].targetClass, False))
@@ -986,6 +981,7 @@ class Agent:
 
 			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=60, max_num=40,
 					proportionOfSpriteTheories=None)]
+
 			# print "in expandTheories"
 			# embed()
 			newTheories = [s[1] for s in scoresAndHypotheses]
@@ -1079,12 +1075,6 @@ class Agent:
 			## of the same predicateGroups.
 			self.proposalMemory[targetClassPair].extend(predicateGroups)
 
-		len_before_set = len(newTheories)
-		newTheories = [t for t in newTheories if t not in self.allTheories]
-		len_after_set = len(newTheories)
-		if len_before_set!=len_after_set:
-			print "originally proposed {} theories but ended up with {} after filtering".format(len_before_set,len_after_set)
-		self.allTheories.extend(newTheories)
 		if not newTheories:
 			newTheories = [theory]
 			# print "got no new theories in expandTheoryForOneErrorMap"
@@ -1966,35 +1956,10 @@ class Agent:
 
 		if newTheories:
 
-			########
-			## Attempt at pre-filtering of theories before running full experience replay
-			# print "{} theories before screening".format(len(newTheories))
-			## Screen for theories that explain the most recent timestep
-			# if len(self.rleHistory)>=2:
-				# penalties, cumulative_penalties = self.experienceReplay(newTheories, self.rleHistory[-2:], self.actionHistory[-2:], method='all')
-				# scoreAndTheoryTuples = zip(penalties, newTheories)
-				# embed()
-				# screenedTheories = [h[1] for h in scoreAndTheoryTuples if h[0]<3]
-			# else:
-				# screenedTheories = newTheories
-			# print "{} theories after screening".format(len(screenedTheories))
-
-			## Now pass those on to do experience replay for more steps
-			# penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay([self.trueTheory]+newTheories, self.rleHistory, self.actionHistory, method='all')
-
-			#########3
-
-			# t1 = time.time()
-
-			len_before_set = len(newTheories)
-			newTheories = list(set(newTheories))
-			len_after_set = len(newTheories)
-			if len_before_set != len_after_set:
-				print "before set: {}. after set: {}.".format(len_before_set, len_after_set)
 			## DEBUG: remove soon!
-			if len(newTheories)>20:
-				print "DEBUG change. Filtering theories 0:20"
-				newTheories = newTheories[0:20]
+			# if len(newTheories)>20:
+			# 	print "DEBUG change. Filtering theories 0:20"
+			# 	newTheories = newTheories[0:20]
 
 			penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay([self.trueTheory]+newTheories, self.rleHistory, self.actionHistory, method='all')
 
@@ -2138,12 +2103,11 @@ class Agent:
 
 	def experienceReplay(self, hypotheses, rleHistory, actionHistory, method='all', targetClass=None, displayStates=False):
 		# print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
-
 		t1 = time.time()
 		results = []
 		for h in hypotheses:
 			results.append(self.singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetClass, displayStates, [h]))
-		print "Serial experienceReplay for {} hypotheses took {} seconds".format(len(hypotheses), time.time()-t1)
+		print "Serial experienceReplay for {} hypotheses and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 		
 		# t1 = time.time()
 		# # resultList = [0]*len(hypotheses)
@@ -2178,9 +2142,14 @@ class Agent:
 			indices = [0]
 			actionsPerIndex = len(actionHistory)
 		elif method=='screenLastStep':# and len(rleHistory)>=2:
-			indices = [-1]
-			actionsPerIndex = 1
-			# mean_penalties, cumulative_penalties = self.experienceReplay(hypotheses, rleHistory[-2:], actionHistory[-2:], method='all')
+			## Can't screen last step with fewer than two RLEs in history.
+			if len(rleHistory)<2:
+				actionsPerIndex = 0
+				indices = [0]
+				print "got screenLastStep on short sequence"
+			else:
+				indices = [-2]
+				actionsPerIndex = 1
 		elif method=='subsample':
 			indices, actionsPerIndex = self.subSampleStates(rleHistory)
 		elif method=='salient':
@@ -2190,7 +2159,9 @@ class Agent:
 
 		for idx in indices:
 			## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
+			t1 = time.time()
 			theoryRLEs = self.VrleInitPhase(hypotheses, rleHistory[idx]) 
+
 			ID_dictlist = []
 			for tR in theoryRLEs:
 				match, warning = self.IDmatch(tR, rleHistory[idx])
@@ -2250,7 +2221,7 @@ class Agent:
 		
 		if not cumulative_penalties:
 			print "Warning: did not run experience replay."
-			embed()
+			# embed()
 			cumulative_penalties = [[0]*len(hypotheses)]
 
 		cumulative_penalties = np.array(cumulative_penalties)
