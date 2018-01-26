@@ -314,7 +314,7 @@ class Agent:
 		sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB] #sB in previous step
 		if sPrev == []:
 			print "no sPrev"
-			embed()
+			# embed()
 			sPrev = None
 			dist_ts = None
 		else:
@@ -562,7 +562,7 @@ class Agent:
 					#embed()
 					e = errorMapEntry()
 					e.diagnosis.append('transformation')
-					e.targetToken = sB
+					e.targetToken = sA
 					e.targetClass = sA.name
 					# Find sprite corresponding to sB in previous time step
 					color = sB.colorName
@@ -580,7 +580,7 @@ class Agent:
 						neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
 						# Write potential interaction pairs to error map entry
 						for className in neighbors_prev:
-							e.intPairs.append( (sA.name,className) )
+							e.intPairs.append( (theory.spriteObjects[sPrev.colorName].className,className) )
 						errorMap.append(e)
 						# Remove transformed-sprite-pair from respective lists
 						lonely_sprites_envA.pop(iA)
@@ -952,6 +952,7 @@ class Agent:
 
 	def expandTheories(self, theories, errorList, envRealPrev, envRealCurrent, prevAction):
 		# print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
+		print [e.diagnosis for e in errorList]
 		if len(errorList)==0:
 			return theories
 		if len(errorList)==1:
@@ -977,17 +978,13 @@ class Agent:
 			penalties, cumulative_penalties, _ = self.experienceReplay(newTheories, self.rleHistory[-2:], self.actionHistory[-1:], 
 				method='all', targetClass = errorList[0].targetClass)
 
-			# penalties, cumulative_penalties, _ = self.experienceReplay((newTheories, self.rleHistory, self.actionHistory, 'all', errorList[0].targetClass, False))
-			# print "min penalty with targetClass filter: {}".format(min(penalties))
-			# print "Will filter {} theories".format(len([p for p in penalties if p==min(penalties)]))
-
 			# if errorList[0].targetToken.colorName=='PINK':
 			# 	print "fixing PINK"
 			# 	embed()
 			scoreAndTheoryTuples = zip(penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 
-			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=60, max_num=40,
+			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=0, max_num=None,
 					proportionOfSpriteTheories=None)]
 
 			# print "in expandTheories"
@@ -1071,6 +1068,9 @@ class Agent:
 				resourceObservations=self.resourceObservations)
 			newTheories.extend(theories)
 
+		# if errorMap.targetToken.colorName=='LIGHTBLUE':
+			# print "in expandTheoryForOneErrorMap"
+			# embed()
 		## InteractionSet induction step
 		for targetClassPair in errorMap.intPairs:
 			predicates = proposePredicates(errorMap.diagnosis, self.memory, self.proposalMemory, globalObservations)
@@ -1311,9 +1311,9 @@ class Agent:
 		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
 
 		# actions = [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32]
-		actions = [32,32,32,32,32,32, 32, 32, 32]
+		# actions = [32,32,32,32,32,32, 32, 32, 32]
 		# actions = [K_RIGHT, 32, K_RIGHT]
-
+		actions = [K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT]
 		self.initializeEnvironment()
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True

@@ -399,7 +399,9 @@ class BasicGame(object):
             if self.num_sprites > self.MAX_SPRITES:
                 print "Sprite limit reached."
                 return
+
             sclass, args, stypes = self.sprite_constr[key]
+
             # verify the singleton condition
             anyother = False
             for pk in stypes[::-1]:
@@ -1208,7 +1210,7 @@ class VGDLSprite(object):
     color    = None
     cooldown = 1
     # cooldown = 0 # pause ticks in-between two moves
-    speed    = None
+    speed    = 0
     mass     = 1
     physicstype=None
     last_gravity=False

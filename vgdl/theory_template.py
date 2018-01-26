@@ -1816,18 +1816,11 @@ class Game(object):
 		else:
 			T.initializeSpriteSet(vgdlSpriteParse = vgdlSpriteParse, spriteInductionResult=False)
 
-		# print "in buildGenericTheory"
-		# embed()
 		# Assign class names
 		avatar = [o for o in T.spriteSet if o.vgdlType in AvatarTypes][0]
 		nonAvatars = [o for o in T.spriteSet if o.vgdlType not in AvatarTypes and o.color!='ENDOFSCREEN']
-		# wall = [o for o in T.spriteSet if o.color == "BLACK" or o.color=="GRAY"][0]
-		# embed()
 		allSprites = [avatar]+nonAvatars
 		eos = [o for o in T.spriteSet if o.color=='ENDOFSCREEN'][0]
-
-		# print "buildgenerictheory"
-		# embed()
 		avatar.className = 'avatar'
 		T.classes[avatar.className] = [avatar]
 
@@ -2138,8 +2131,6 @@ def generateTheoryFromGame(rle, alterGoal=True):
 	"""
 	theory = Theory(rle._game)
 
-	# print "in generateTheoryFromGame"
-	# embed()
 	inverseClasses = dict()
 	for i,s in enumerate(rle._game.sprite_constr):
 		(vgdlType, settings, _) = rle._game.sprite_constr[s]
@@ -2173,21 +2164,7 @@ def generateTheoryFromGame(rle, alterGoal=True):
 			if g2=='goal':
 				g2 = g2[::-1]
 		interaction = InteractionRule(effect.__name__, g1, g2, kwargs)
-		# if not kwargs:
-			# interaction = InteractionRule(effect.__name__, g1, g2, None, None)
-		# 	interaction = InteractionRule(effect.__name__, g1, g2, None, None)
-		# elif len(kwargs)==2:
-		# 	interaction = InteractionRule(effect.__name__, g1, g2, kwargs.values()[0], kwargs.values()[1])
-		# else:
-		# 	print "Trying to generate theory from RLE. Got more args for collision than we can handle as of yet."
-		# 	print "Embedding in generateTheoryFromGame()"
-		# 	embed()
-
-
-		# interaction = InteractionRule(effect.__name__, inverseClasses[g1], inverseClasses[g2], None, None)
 		theory.interactionSet.append(interaction)
-
-    # def __init__(self, limit=0, win=True, stypes = []):
 
 	# Add termnation set
 	for termination in rle._game.terminations:
@@ -2319,7 +2296,7 @@ def proposeArgs(theory, predicate, resourceObservations, generic=False):
 				for val in values:
 					argList.append({'value':val})
 			if predicate == 'transformTo':
-				for stype in theory.classes.keys():
+				for stype in [k for k in theory.classes.keys() if k!='EOS']:
 					argList.append({'stype':stype})
 			if predicate == 'killIfSlow':
 				values = [1,2,3]
@@ -2535,8 +2512,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 		if interactionRule.interaction =='killSprite':
 			oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
 			precondition = list(set(interactionRule.preconditions))[0]
-			# print "in writetheorytotxt"
-			# embed()
 			if precondition:
 				if precondition.negated:
 					true_operator = oppositeOperatorMap[precondition.operator_name]
@@ -2586,9 +2561,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 		return argsString, newInteractionName
 
-	# print "in initialize rle"
-	# embed()
-
 	DIRECTION_MAP = {(0,-1):'UP', (0,1):'DOWN', (1,0):'RIGHT', (-1,0):'LEFT'}
 
 	_obstypes = rle._obstypes
@@ -2618,8 +2590,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	## what is in the interactionRules.
 	if theory.interactionSet[0].args is not None:
 		if any([len(i.args.keys()) for i in theory.interactionSet]):
-			# print "found args in interactionRule"
-			# embed()
 			for interactionRule in theory.interactionSet:
 				if interactionRule.interaction == 'teleportToExit':
 					## second element in teleport tuple is the entrance; stype is the exit
@@ -2657,7 +2627,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 		if c == 'EOS':
 			pass
 		else:
-			# embed()
 			for s in sprites:
 				unfilteredType = str(s.vgdlType)
 				stype = unfilteredType[unfilteredType.find("vgdl.ontology.")+len("vgdl.ontology."): unfilteredType.find(">")-1]
@@ -2684,8 +2653,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				try:
 					argsString += " %s=%s"%("speed", str(s.speed))
 				except AttributeError:
-					# print "couldn't find speed"
-					# embed()
 					pass
 
 				try:
@@ -2707,14 +2674,11 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					try:
 						##when we initialized stypes in spriteInduction, we didn't have access to what we would call objects in the theory.
 						colorConvertedToSType = theory.spriteObjects[s.stype].className
-						# embed()
 						argsString += " %s=%s"%("stype", colorConvertedToSType)
 					except KeyError:
 						print "in TheoryToTxt(), search for colorConvertedToSType"
 						## TODO: If you, say, hypothesize that a missile is a Chaser and that it chases some random color but you don't have that color in your theory yet,
 						## you can end up here.
-						# embed()
-
 
 
 				if "core" in stype:
@@ -2792,7 +2756,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 	sortedInteractions += nonAvatarStepBackInteractions
 
-	# embed()
 	for interactionRule in sortedInteractions:
 		if True:  #all([not interactionRule.__eq__(r) for r in added_rules]): ## don't duplicate rules.
 
@@ -2808,13 +2771,12 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 			for s1 in theory.classes[c1]:
 				if c2 not in theory.classes.keys():
+					print "c2 not in theory.classes.keys() in theory template"
 					embed()
 				for s2 in theory.classes[c2]:
 					argsString = ""
 
 					if interactionRule.preconditions or interactionRule.args:
-						# print "above buildargsstring"
-						# embed()
 						args, interactionRule.interaction = buildArgsString(interactionRule)
 						argsString += args
 
