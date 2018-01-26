@@ -331,6 +331,23 @@ class Theory(object):
 		for s in self.spriteSet:
 			self.spriteObjects[s.color] = s
 		# embed()
+
+	def reconcileInteractionsAndSprites(self):
+		## VGDL contains some exceptions to the independence between interactionSet and spriteSet:
+		## e.g., teleportation targets are specified in the spriteSet even though teleportation is an interaction.
+		## resolve such exceptions here, by passing info from one part to the other as needed.
+		for interactionRule in self.interactionSet:
+			if 'teleportToExit' in interactionRule.interaction:
+				# embed()
+				color = self.classes[interactionRule.slot2][0].color
+				self.classes[interactionRule.slot2][0].args = ccopy(interactionRule.args)
+				self.spriteObjects[color].args = ccopy(interactionRule.args)
+				for s in self.spriteSet:
+					if s.color==color:
+						s.args = ccopy(interactionRule.args)
+				interactionRule.args = {}
+
+
 	"""Main functions"""
 
 	def prior(self):
@@ -2233,6 +2250,7 @@ def getKeywordsFromOntology(interactionName):
 	{'changeResource': ['resource', 'value', 'limit'],\
 	'changeScore': ['value'],\
 	'transformTo': ['stype'],\
+	'teleportToExit': ['stype'],\
 	'killIfSlow': ['limitspeed'],\
 	'killIfTooFast': ['speed'],\
 	'killIfHasMore': ['resource', 'limit'],\
@@ -2296,6 +2314,9 @@ def proposeArgs(theory, predicate, resourceObservations, generic=False):
 				for val in values:
 					argList.append({'value':val})
 			if predicate == 'transformTo':
+				for stype in [k for k in theory.classes.keys() if k!='EOS']:
+					argList.append({'stype':stype})
+			if predicate == 'teleportToExit':
 				for stype in [k for k in theory.classes.keys() if k!='EOS']:
 					argList.append({'stype':stype})
 			if predicate == 'killIfSlow':
@@ -2462,7 +2483,6 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, resourceObservation
 					generic=generic)
 				predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
 					for comb in allArgumentCombinations])
-
 			bothOrderings[i].extend(list(itertools.product(*predicateRules)))
 
 	## Now generate combinations from each expanded predicateGroup that we added to each of the orderings
@@ -2474,9 +2494,13 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, resourceObservation
 		newTheory.mostRecentEdit = 'interactionSetInduction'
 		newTheory.errorMapHistory.append(errorMap)
 		newTheory.interactionSet = ccopy(interactionSet)
-		newTheory.interactionSet.extend(ruleSet)
+		newTheory.interactionSet.extend(ccopy(ruleSet))
+		newTheory.reconcileInteractionsAndSprites()
 		childTheories.append(newTheory)
 
+	if 'teleportToExit' in predicates:
+		print "found teleporttoexit"
+		embed()
 	# print "Created {} new theories".format(len(childTheories))
 	return classPair, childTheories, predicateGroups
 

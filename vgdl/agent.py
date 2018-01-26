@@ -353,6 +353,8 @@ class Agent:
 		e = errorMapEntry()
 		e.targetToken = sB
 		e.targetClass = sA.name
+
+		errorMaps = [e]
 		# Find neighbors of target sprite in the previous time step
 		neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
 
@@ -402,10 +404,14 @@ class Agent:
 			covered_sprite_envA = self.findNearestSprite(sB,envA._game.sprite_groups[className_envA])
 			e.intPairs = [(sA.name, covered_sprite_envA.name)] #overwrite interaction pair by the overlapping sprite pair
 		if dist_ts>2:
-			e.diagnosis.append('teleport')
-			e.intPairs.extend([(sA.name, n) for n in neighbors_prev])
-		# Return errorMapEntry object
-		return e
+			e2 = errorMapEntry()
+			e2.targetToken = e.targetToken
+			e2.targetClass = e.targetClass
+			e2.diagnosis.append('teleport')
+			e2.intPairs = [(sA.name, n) for n in neighbors_prev]
+			errorMaps.append(e2)
+		# Return list of errorMapEntry objects
+		return errorMaps
 
 
 	## Function generating penalty and error map
@@ -533,8 +539,8 @@ class Agent:
 				warnings.warn('sPrev not found in position mismatch error')
 				continue
 			# Determine errorMapEntry object for position mismatch problem
-			e = self.diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
-			errorMap.append(e)
+			errs = self.diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
+			errorMap.extend(errs)
 
 		# Case B: Sprite moved in real environment, but we predicted a destruction
 		# For this, we check if lonely envB sprite has match in envPrev (and pass to (2) if not)
@@ -577,8 +583,8 @@ class Agent:
 					appeared_sprites_envB.append(sB)
 					continue
 			# Now we are completely sure that sprite in envA has been erroneously removed
-			e = self.diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
-			errorMap.append(e)
+			errs = self.diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
+			errorMap.extend(errs)
 	
 		# 2) Unexpected destruction/appearance/transformation
 		# 2.1) Transformation
@@ -1095,7 +1101,7 @@ class Agent:
 				resourceObservations=self.resourceObservations)
 			newTheories.extend(theories)
 
-		# if errorMap.targetToken.colorName=='LIGHTBLUE':
+		# if errorMap.targetToken.colorName=='DARKBLUE':
 			# print "in expandTheoryForOneErrorMap"
 			# embed()
 		## InteractionSet induction step
