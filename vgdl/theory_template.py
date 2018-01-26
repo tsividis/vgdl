@@ -2347,7 +2347,7 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 	'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
 
 	## Position difference
-	'noMovement': ['undoAll', 'stepBack'],
+	'noMovement': ['undoAll'], #stepBack
 	'unexpectedPosition': ['bounceForward'],
 	# , 'pullWithIt', 'windGust', 'slipForward',\
 		# 'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap

@@ -1512,13 +1512,11 @@ def transformTo(sprite, partner, game, stype='wall'):
 
 def transformToOnLanding(sprite, partner, game, stype='wall'):
     """sprite will be transformed to stype when partner (avatar) lands on it from above"""
-
     if partner.speed*partner.orientation[1] == 0 and partner.lastrect.y != partner.rect.y:
         transformTo(sprite, partner, game, stype)
 
     return ("transformToOnLanding", sprite.ID, partner.ID)
 
-#ignore
 def triggerOnLanding(sprite, partner, game, strigger=None):
     '''triggers a triggerable sprite. triggerable is interesting. should change this?'''
     if partner.speed*partner.orientation[1] == 0 and partner.lastrect.y != partner.rect.y:

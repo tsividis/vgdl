@@ -360,6 +360,8 @@ class Agent:
 		# 1.1) noMovement
 		if dist_ts == 0:
 			e.diagnosis.append('noMovement')
+			## Form all possible pairs of classes and propose these.
+			e.intPairs = list(itertools.combinations([k for k in envA._game.sprite_groups.keys() if envA._game.sprite_groups[k]],2))
 		# 1.2) orientationChange
 		if dist_ts!=0 and oB!=None and oB!=oPrev:
 			e.diagnosis.append('orientationChange')
