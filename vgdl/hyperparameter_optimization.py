@@ -61,15 +61,15 @@ def play_trainset(hyperparameters, game_number):
     #and use this line
     # agent.playCurriculum(level_game_pairs=None)
 
-    end_time = time.time() - start_time
+    total_time = time.time() - start_time
 
 
     # Compute hyperopt loss
-    alpha = 1e3
-    beta = -1e6
-    loss = (beta * agent.levels_won) + (alpha * agent.total_game_steps) + agent.total_planner_steps
+    # alpha = 1e3
+    # beta = -1e6
+    # loss = (beta * agent.levels_won) + (alpha * agent.total_game_steps) + agent.total_planner_steps
 
-    return loss
+    return total_time
 
 space = {
     'sprite_first_alpha': hp.loguniform('space_sprite_first_alpha', 1, 10),
