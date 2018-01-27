@@ -25,7 +25,7 @@ from theory_template import TimeStep, Precondition, InteractionRule, Termination
 NoveltyRule, generateSymbolDict, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryFromGame
 from rlenvironmentnonstatic import createRLInputGame
 
-from line_profiler import LineProfiler
+# from line_profiler import LineProfiler
 import cPickle
 
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
@@ -261,12 +261,13 @@ class WBP():
 		# self.trueAtomsIW1.append(current.stateIW1)
 		return current
 
+	"""
 	def BFS_profiler(self):
 		lp = LineProfiler()
 		lp_wrapper = lp(self.BFS)
 		lp_wrapper()
 		lp.print_stats()
-
+	"""
 
 	def BFS(self):
 		QNovelty, QReward = [], []
@@ -905,13 +906,14 @@ class Node():
 		except IndexError:
 			print "index error in position score"
 			return 0
-
+	"""
 	def getTo_profiler(self):
 		lp = LineProfiler()
 		lp_wrapper = lp(self.getToCurrentState)
 		output = lp_wrapper()
 		lp.print_stats()
 		return output
+	"""
 
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
@@ -945,11 +947,13 @@ class Node():
 				i += 1
 		return vrle, self.win
 
+	"""
 	def eval_profiler(self):
 		lp = LineProfiler()
 		lp_wrapper = lp(self.eval)
 		lp_wrapper()
 		lp.print_stats()
+	"""
 
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)

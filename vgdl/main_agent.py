@@ -15,7 +15,7 @@ import copy
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
-from line_profiler import LineProfiler
+# from line_profiler import LineProfiler
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
@@ -380,13 +380,14 @@ class Agent:
 			persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
 		print "Won {} out of {} episodes.".format(sum(wins), i)
 
-
+    """
 	def playEpisodeProfiler(self, gameObject, flexible_goals=False, first_time_playing_level=False):
 		lp = LineProfiler()
 		lp_wrapper = lp(self.playEpisode)
 		gameObject, win, score, steps, statesEncountered, effectsEncountered = lp_wrapper(gameObject, flexible_goals, first_time_playing_level)
 		lp.print_stats()
 		return gameObject, win, score, steps, statesEncountered, effectsEncountered
+    """
 
 
 	def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False):
@@ -694,12 +695,14 @@ class Agent:
 		# [self.new_objects.pop(k, None) for k in self.new_objects.keys() if self.new_objects[k]>5] ## don't track items once we've updated the theory
 		return hypotheses
 
+    """
 	def executeStepProfiler(self, action, hypotheses, statesEncountered, run_induction=True):
 		lp = LineProfiler()
 		lp_wrapper = lp(self.executeStep)
 		hypotheses, theory_change_flag, effects = lp_wrapper(action, hypotheses, statesEncountered, run_induction)
 		lp.print_stats()
 		return hypotheses, theory_change_flag, effects
+    """
 
 
 	def executeStep(self, action, hypotheses, statesEncountered, run_induction=True):

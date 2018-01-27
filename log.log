@@ -1093,3 +1093,705 @@
 2018-01-18T22:40:45.446+0100 [clientcursormon] mem (MB) res:38 virt:542
 2018-01-18T22:40:45.446+0100 [clientcursormon]  mapped (incl journal view):320
 2018-01-18T22:40:45.447+0100 [clientcursormon]  connections:0
+2018-01-18T22:45:45.462+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-18T22:45:45.462+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-18T22:45:45.462+0100 [clientcursormon]  connections:0
+2018-01-18T22:50:45.475+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-18T22:50:45.475+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-18T22:50:45.475+0100 [clientcursormon]  connections:0
+2018-01-18T22:55:45.488+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-18T22:55:45.488+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-18T22:55:45.488+0100 [clientcursormon]  connections:0
+2018-01-18T23:00:45.502+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-18T23:00:45.502+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-18T23:00:45.502+0100 [clientcursormon]  connections:0
+2018-01-18T23:05:45.515+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-18T23:05:45.515+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-18T23:05:45.516+0100 [clientcursormon]  connections:0
+2018-01-18T23:10:45.529+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-18T23:10:45.529+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-18T23:10:45.529+0100 [clientcursormon]  connections:0
+2018-01-18T23:15:45.543+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-18T23:15:45.543+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-18T23:15:45.543+0100 [clientcursormon]  connections:0
+2018-01-18T23:20:45.556+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-18T23:20:45.556+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-18T23:20:45.556+0100 [clientcursormon]  connections:0
+2018-01-18T23:25:45.569+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-18T23:25:45.569+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-18T23:25:45.569+0100 [clientcursormon]  connections:0
+2018-01-18T23:30:45.582+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-18T23:30:45.582+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-18T23:30:45.582+0100 [clientcursormon]  connections:0
+2018-01-18T23:35:45.595+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-18T23:35:45.595+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-18T23:35:45.595+0100 [clientcursormon]  connections:0
+2018-01-18T23:40:45.608+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-18T23:40:45.608+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-18T23:40:45.608+0100 [clientcursormon]  connections:0
+2018-01-18T23:45:45.622+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-18T23:45:45.622+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-18T23:45:45.622+0100 [clientcursormon]  connections:0
+2018-01-18T23:50:45.636+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-18T23:50:45.636+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-18T23:50:45.636+0100 [clientcursormon]  connections:0
+2018-01-18T23:55:45.650+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-18T23:55:45.650+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-18T23:55:45.650+0100 [clientcursormon]  connections:0
+2018-01-19T00:00:45.663+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T00:00:45.663+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T00:00:45.663+0100 [clientcursormon]  connections:0
+2018-01-19T00:05:45.675+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T00:05:45.675+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T00:05:45.675+0100 [clientcursormon]  connections:0
+2018-01-19T00:10:45.687+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T00:10:45.687+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T00:10:45.687+0100 [clientcursormon]  connections:0
+2018-01-19T00:15:45.701+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T00:15:45.701+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T00:15:45.701+0100 [clientcursormon]  connections:0
+2018-01-19T00:20:45.712+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T00:20:45.712+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T00:20:45.712+0100 [clientcursormon]  connections:0
+2018-01-19T00:25:45.725+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T00:25:45.725+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T00:25:45.725+0100 [clientcursormon]  connections:0
+2018-01-19T00:30:45.738+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T00:30:45.738+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T00:30:45.738+0100 [clientcursormon]  connections:0
+2018-01-19T00:35:45.752+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T00:35:45.752+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T00:35:45.752+0100 [clientcursormon]  connections:0
+2018-01-19T00:40:45.764+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T00:40:45.764+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T00:40:45.764+0100 [clientcursormon]  connections:0
+2018-01-19T00:45:45.777+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T00:45:45.777+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T00:45:45.777+0100 [clientcursormon]  connections:0
+2018-01-19T00:50:45.790+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T00:50:45.790+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T00:50:45.790+0100 [clientcursormon]  connections:0
+2018-01-19T00:55:45.804+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T00:55:45.804+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T00:55:45.804+0100 [clientcursormon]  connections:0
+2018-01-19T01:00:45.816+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T01:00:45.817+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T01:00:45.817+0100 [clientcursormon]  connections:0
+2018-01-19T01:05:45.830+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T01:05:45.830+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T01:05:45.830+0100 [clientcursormon]  connections:0
+2018-01-19T01:10:45.843+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T01:10:45.843+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T01:10:45.843+0100 [clientcursormon]  connections:0
+2018-01-19T01:15:45.856+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T01:15:45.856+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T01:15:45.856+0100 [clientcursormon]  connections:0
+2018-01-19T01:20:45.868+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T01:20:45.868+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T01:20:45.868+0100 [clientcursormon]  connections:0
+2018-01-19T01:25:45.881+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T01:25:45.881+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T01:25:45.881+0100 [clientcursormon]  connections:0
+2018-01-19T01:30:45.894+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T01:30:45.894+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T01:30:45.894+0100 [clientcursormon]  connections:0
+2018-01-19T01:35:45.907+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T01:35:45.907+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T01:35:45.907+0100 [clientcursormon]  connections:0
+2018-01-19T01:40:45.919+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T01:40:45.919+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T01:40:45.919+0100 [clientcursormon]  connections:0
+2018-01-19T01:45:45.931+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T01:45:45.931+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T01:45:45.931+0100 [clientcursormon]  connections:0
+2018-01-19T01:50:45.944+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T01:50:45.944+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T01:50:45.944+0100 [clientcursormon]  connections:0
+2018-01-19T01:55:45.957+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T01:55:45.958+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T01:55:45.958+0100 [clientcursormon]  connections:0
+2018-01-19T02:00:45.970+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T02:00:45.971+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T02:00:45.971+0100 [clientcursormon]  connections:0
+2018-01-19T02:05:45.983+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T02:05:45.983+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T02:05:45.983+0100 [clientcursormon]  connections:0
+2018-01-19T02:10:45.996+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T02:10:45.996+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T02:10:45.996+0100 [clientcursormon]  connections:0
+2018-01-19T02:15:46.009+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T02:15:46.009+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T02:15:46.009+0100 [clientcursormon]  connections:0
+2018-01-19T02:20:46.021+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T02:20:46.022+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T02:20:46.022+0100 [clientcursormon]  connections:0
+2018-01-19T02:25:46.034+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T02:25:46.034+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T02:25:46.034+0100 [clientcursormon]  connections:0
+2018-01-19T02:30:46.047+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T02:30:46.048+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T02:30:46.048+0100 [clientcursormon]  connections:0
+2018-01-19T02:35:46.060+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T02:35:46.060+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T02:35:46.060+0100 [clientcursormon]  connections:0
+2018-01-19T02:40:46.073+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T02:40:46.073+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T02:40:46.073+0100 [clientcursormon]  connections:0
+2018-01-19T02:45:46.086+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T02:45:46.086+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T02:45:46.086+0100 [clientcursormon]  connections:0
+2018-01-19T02:50:46.099+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T02:50:46.099+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T02:50:46.099+0100 [clientcursormon]  connections:0
+2018-01-19T02:55:46.112+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T02:55:46.112+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T02:55:46.112+0100 [clientcursormon]  connections:0
+2018-01-19T14:47:39.163+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T14:47:39.164+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T14:47:39.164+0100 [clientcursormon]  connections:0
+2018-01-19T14:52:39.177+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T14:52:39.177+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T14:52:39.177+0100 [clientcursormon]  connections:0
+2018-01-19T14:57:39.190+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T14:57:39.190+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T14:57:39.190+0100 [clientcursormon]  connections:0
+2018-01-19T15:02:39.203+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T15:02:39.204+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T15:02:39.204+0100 [clientcursormon]  connections:0
+2018-01-19T15:07:39.217+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T15:07:39.217+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T15:07:39.217+0100 [clientcursormon]  connections:0
+2018-01-19T15:12:39.231+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T15:12:39.231+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T15:12:39.231+0100 [clientcursormon]  connections:0
+2018-01-19T15:17:39.244+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T15:17:39.244+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T15:17:39.244+0100 [clientcursormon]  connections:0
+2018-01-19T15:22:39.255+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T15:22:39.255+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T15:22:39.255+0100 [clientcursormon]  connections:0
+2018-01-19T15:27:39.268+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T15:27:39.268+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T15:27:39.268+0100 [clientcursormon]  connections:0
+2018-01-19T15:32:39.281+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T15:32:39.281+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T15:32:39.281+0100 [clientcursormon]  connections:0
+2018-01-19T15:37:39.294+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T15:37:39.294+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T15:37:39.294+0100 [clientcursormon]  connections:0
+2018-01-19T15:42:39.306+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T15:42:39.306+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T15:42:39.306+0100 [clientcursormon]  connections:0
+2018-01-19T15:47:39.319+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T15:47:39.319+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T15:47:39.319+0100 [clientcursormon]  connections:0
+2018-01-19T15:52:39.333+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T15:52:39.333+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T15:52:39.333+0100 [clientcursormon]  connections:0
+2018-01-19T15:57:39.347+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T15:57:39.347+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T15:57:39.347+0100 [clientcursormon]  connections:0
+2018-01-19T16:02:39.360+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T16:02:39.360+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T16:02:39.360+0100 [clientcursormon]  connections:0
+2018-01-19T16:07:39.373+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T16:07:39.373+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T16:07:39.373+0100 [clientcursormon]  connections:0
+2018-01-19T16:12:39.386+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T16:12:39.386+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T16:12:39.386+0100 [clientcursormon]  connections:0
+2018-01-19T16:17:39.399+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T16:17:39.399+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T16:17:39.399+0100 [clientcursormon]  connections:0
+2018-01-19T16:22:39.412+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T16:22:39.412+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T16:22:39.412+0100 [clientcursormon]  connections:0
+2018-01-19T16:27:39.425+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T16:27:39.425+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T16:27:39.425+0100 [clientcursormon]  connections:0
+2018-01-19T16:32:39.438+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T16:32:39.438+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T16:32:39.438+0100 [clientcursormon]  connections:0
+2018-01-19T16:37:39.450+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T16:37:39.450+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T16:37:39.450+0100 [clientcursormon]  connections:0
+2018-01-19T16:42:39.463+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T16:42:39.463+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T16:42:39.463+0100 [clientcursormon]  connections:0
+2018-01-19T16:47:39.475+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T16:47:39.475+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T16:47:39.475+0100 [clientcursormon]  connections:0
+2018-01-19T16:52:39.488+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T16:52:39.488+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T16:52:39.488+0100 [clientcursormon]  connections:0
+2018-01-19T16:57:39.500+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T16:57:39.500+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T16:57:39.500+0100 [clientcursormon]  connections:0
+2018-01-19T17:02:39.512+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T17:02:39.512+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T17:02:39.513+0100 [clientcursormon]  connections:0
+2018-01-19T17:07:39.525+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T17:07:39.525+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T17:07:39.525+0100 [clientcursormon]  connections:0
+2018-01-19T17:12:39.538+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T17:12:39.538+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T17:12:39.538+0100 [clientcursormon]  connections:0
+2018-01-19T17:17:39.551+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T17:17:39.551+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T17:17:39.551+0100 [clientcursormon]  connections:0
+2018-01-19T17:22:39.563+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T17:22:39.563+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T17:22:39.563+0100 [clientcursormon]  connections:0
+2018-01-19T17:27:39.576+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T17:27:39.576+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T17:27:39.576+0100 [clientcursormon]  connections:0
+2018-01-19T17:32:39.588+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T17:32:39.588+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T17:32:39.588+0100 [clientcursormon]  connections:0
+2018-01-19T17:37:39.600+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T17:37:39.600+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T17:37:39.600+0100 [clientcursormon]  connections:0
+2018-01-19T17:42:39.613+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T17:42:39.613+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T17:42:39.613+0100 [clientcursormon]  connections:0
+2018-01-19T17:47:39.626+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T17:47:39.626+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T17:47:39.626+0100 [clientcursormon]  connections:0
+2018-01-19T17:52:39.638+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T17:52:39.638+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T17:52:39.638+0100 [clientcursormon]  connections:0
+2018-01-19T17:57:39.651+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T17:57:39.651+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T17:57:39.651+0100 [clientcursormon]  connections:0
+2018-01-19T18:02:39.665+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T18:02:39.665+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T18:02:39.665+0100 [clientcursormon]  connections:0
+2018-01-19T18:07:39.678+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T18:07:39.678+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T18:07:39.678+0100 [clientcursormon]  connections:0
+2018-01-19T18:12:39.691+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T18:12:39.691+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T18:12:39.691+0100 [clientcursormon]  connections:0
+2018-01-19T18:17:39.703+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T18:17:39.703+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T18:17:39.703+0100 [clientcursormon]  connections:0
+2018-01-19T19:12:16.338+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T19:12:16.338+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T19:12:16.338+0100 [clientcursormon]  connections:0
+2018-01-19T19:17:16.351+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T19:17:16.351+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T19:17:16.351+0100 [clientcursormon]  connections:0
+2018-01-19T19:22:16.367+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T19:22:16.367+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T19:22:16.367+0100 [clientcursormon]  connections:0
+2018-01-19T19:27:16.380+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T19:27:16.380+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T19:27:16.380+0100 [clientcursormon]  connections:0
+2018-01-19T19:32:16.394+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T19:32:16.394+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T19:32:16.394+0100 [clientcursormon]  connections:0
+2018-01-19T19:37:16.408+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T19:37:16.408+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T19:37:16.408+0100 [clientcursormon]  connections:0
+2018-01-19T19:42:16.422+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T19:42:16.422+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T19:42:16.422+0100 [clientcursormon]  connections:0
+2018-01-19T19:47:16.941+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T19:47:16.941+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T19:47:16.941+0100 [clientcursormon]  connections:0
+2018-01-19T19:52:16.955+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T19:52:16.955+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T19:52:16.955+0100 [clientcursormon]  connections:0
+2018-01-19T19:57:16.970+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T19:57:16.970+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T19:57:16.970+0100 [clientcursormon]  connections:0
+2018-01-19T20:02:16.985+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T20:02:16.985+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T20:02:16.985+0100 [clientcursormon]  connections:0
+2018-01-19T20:07:16.998+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T20:07:16.998+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T20:07:16.999+0100 [clientcursormon]  connections:0
+2018-01-19T20:12:17.013+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T20:12:17.013+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T20:12:17.013+0100 [clientcursormon]  connections:0
+2018-01-19T20:17:17.027+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T20:17:17.027+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T20:17:17.027+0100 [clientcursormon]  connections:0
+2018-01-19T20:22:17.041+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T20:22:17.041+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T20:22:17.041+0100 [clientcursormon]  connections:0
+2018-01-19T20:27:17.055+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T20:27:17.055+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T20:27:17.055+0100 [clientcursormon]  connections:0
+2018-01-19T20:32:17.067+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T20:32:17.067+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T20:32:17.067+0100 [clientcursormon]  connections:0
+2018-01-19T20:37:17.083+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T20:37:17.083+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T20:37:17.083+0100 [clientcursormon]  connections:0
+2018-01-19T20:42:17.095+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T20:42:17.095+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T20:42:17.095+0100 [clientcursormon]  connections:0
+2018-01-19T20:47:17.108+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T20:47:17.108+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T20:47:17.108+0100 [clientcursormon]  connections:0
+2018-01-19T20:52:17.121+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T20:52:17.121+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T20:52:17.121+0100 [clientcursormon]  connections:0
+2018-01-19T20:57:17.134+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T20:57:17.135+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T20:57:17.135+0100 [clientcursormon]  connections:0
+2018-01-19T21:02:17.148+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T21:02:17.148+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T21:02:17.149+0100 [clientcursormon]  connections:0
+2018-01-19T21:07:17.162+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T21:07:17.162+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T21:07:17.162+0100 [clientcursormon]  connections:0
+2018-01-19T21:12:17.174+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T21:12:17.174+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T21:12:17.174+0100 [clientcursormon]  connections:0
+2018-01-19T21:17:17.187+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T21:17:17.187+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T21:17:17.187+0100 [clientcursormon]  connections:0
+2018-01-19T21:22:17.202+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T21:22:17.202+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T21:22:17.202+0100 [clientcursormon]  connections:0
+2018-01-19T21:27:17.216+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T21:27:17.216+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T21:27:17.216+0100 [clientcursormon]  connections:0
+2018-01-19T21:32:17.231+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T21:32:17.231+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T21:32:17.231+0100 [clientcursormon]  connections:0
+2018-01-19T21:37:17.243+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T21:37:17.243+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T21:37:17.243+0100 [clientcursormon]  connections:0
+2018-01-19T21:42:17.257+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T21:42:17.257+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T21:42:17.257+0100 [clientcursormon]  connections:0
+2018-01-19T21:47:17.270+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T21:47:17.270+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T21:47:17.270+0100 [clientcursormon]  connections:0
+2018-01-19T21:52:17.283+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-19T21:52:17.283+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-19T21:52:17.283+0100 [clientcursormon]  connections:0
+2018-01-20T15:18:40.161+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T15:18:40.161+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T15:18:40.161+0100 [clientcursormon]  connections:0
+2018-01-20T15:23:40.173+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T15:23:40.174+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T15:23:40.174+0100 [clientcursormon]  connections:0
+2018-01-20T15:28:40.186+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T15:28:40.186+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T15:28:40.186+0100 [clientcursormon]  connections:0
+2018-01-20T15:33:40.198+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T15:33:40.199+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T15:33:40.199+0100 [clientcursormon]  connections:0
+2018-01-20T15:38:40.211+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T15:38:40.211+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T15:38:40.211+0100 [clientcursormon]  connections:0
+2018-01-20T15:43:40.224+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T15:43:40.225+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T15:43:40.225+0100 [clientcursormon]  connections:0
+2018-01-20T15:48:40.237+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T15:48:40.237+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T15:48:40.237+0100 [clientcursormon]  connections:0
+2018-01-20T15:53:40.971+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T15:53:40.971+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T15:53:40.971+0100 [clientcursormon]  connections:0
+2018-01-20T15:58:40.986+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T15:58:40.986+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T15:58:40.986+0100 [clientcursormon]  connections:0
+2018-01-20T16:03:40.998+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T16:03:40.998+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T16:03:40.998+0100 [clientcursormon]  connections:0
+2018-01-20T16:08:41.011+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T16:08:41.011+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T16:08:41.011+0100 [clientcursormon]  connections:0
+2018-01-20T16:13:41.025+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T16:13:41.025+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T16:13:41.025+0100 [clientcursormon]  connections:0
+2018-01-20T16:18:41.037+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T16:18:41.037+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T16:18:41.037+0100 [clientcursormon]  connections:0
+2018-01-20T16:23:41.051+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T16:23:41.051+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T16:23:41.051+0100 [clientcursormon]  connections:0
+2018-01-20T16:28:41.064+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T16:28:41.064+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T16:28:41.064+0100 [clientcursormon]  connections:0
+2018-01-20T16:33:41.078+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T16:33:41.078+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T16:33:41.078+0100 [clientcursormon]  connections:0
+2018-01-20T16:38:41.094+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T16:38:41.094+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T16:38:41.094+0100 [clientcursormon]  connections:0
+2018-01-20T16:43:41.108+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T16:43:41.108+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T16:43:41.108+0100 [clientcursormon]  connections:0
+2018-01-20T16:48:41.124+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T16:48:41.124+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T16:48:41.124+0100 [clientcursormon]  connections:0
+2018-01-20T16:53:41.138+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T16:53:41.138+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T16:53:41.138+0100 [clientcursormon]  connections:0
+2018-01-20T16:58:41.154+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T16:58:41.154+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T16:58:41.154+0100 [clientcursormon]  connections:0
+2018-01-20T17:03:41.169+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T17:03:41.169+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T17:03:41.169+0100 [clientcursormon]  connections:0
+2018-01-20T17:08:41.183+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T17:08:41.183+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T17:08:41.183+0100 [clientcursormon]  connections:0
+2018-01-20T17:13:41.196+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T17:13:41.196+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T17:13:41.196+0100 [clientcursormon]  connections:0
+2018-01-20T17:18:41.212+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T17:18:41.212+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T17:18:41.212+0100 [clientcursormon]  connections:0
+2018-01-20T17:23:41.228+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T17:23:41.228+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T17:23:41.228+0100 [clientcursormon]  connections:0
+2018-01-20T17:28:41.244+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T17:28:41.245+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T17:28:41.245+0100 [clientcursormon]  connections:0
+2018-01-20T17:33:41.260+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T17:33:41.260+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T17:33:41.260+0100 [clientcursormon]  connections:0
+2018-01-20T17:38:41.275+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T17:38:41.275+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T17:38:41.275+0100 [clientcursormon]  connections:0
+2018-01-20T17:43:41.290+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T17:43:41.290+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T17:43:41.290+0100 [clientcursormon]  connections:0
+2018-01-20T17:48:41.303+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T17:48:41.303+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T17:48:41.303+0100 [clientcursormon]  connections:0
+2018-01-20T17:53:41.317+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T17:53:41.317+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T17:53:41.317+0100 [clientcursormon]  connections:0
+2018-01-20T17:58:41.332+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T17:58:41.332+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T17:58:41.332+0100 [clientcursormon]  connections:0
+2018-01-20T18:03:41.345+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T18:03:41.345+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T18:03:41.345+0100 [clientcursormon]  connections:0
+2018-01-20T18:08:41.358+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T18:08:41.358+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T18:08:41.358+0100 [clientcursormon]  connections:0
+2018-01-20T18:13:41.371+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T18:13:41.371+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T18:13:41.371+0100 [clientcursormon]  connections:0
+2018-01-20T18:18:41.384+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T18:18:41.384+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T18:18:41.384+0100 [clientcursormon]  connections:0
+2018-01-20T18:23:41.397+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T18:23:41.397+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T18:23:41.397+0100 [clientcursormon]  connections:0
+2018-01-20T18:28:41.411+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T18:28:41.411+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T18:28:41.411+0100 [clientcursormon]  connections:0
+2018-01-20T18:33:41.424+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T18:33:41.424+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T18:33:41.424+0100 [clientcursormon]  connections:0
+2018-01-20T18:38:41.437+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T18:38:41.437+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T18:38:41.437+0100 [clientcursormon]  connections:0
+2018-01-20T18:43:41.450+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T18:43:41.450+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T18:43:41.450+0100 [clientcursormon]  connections:0
+2018-01-20T18:48:41.463+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T18:48:41.463+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T18:48:41.463+0100 [clientcursormon]  connections:0
+2018-01-20T18:53:41.477+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T18:53:41.477+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T18:53:41.477+0100 [clientcursormon]  connections:0
+2018-01-20T18:58:41.490+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T18:58:41.491+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T18:58:41.491+0100 [clientcursormon]  connections:0
+2018-01-20T19:03:41.505+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T19:03:41.505+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T19:03:41.505+0100 [clientcursormon]  connections:0
+2018-01-20T19:08:41.519+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T19:08:41.519+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T19:08:41.519+0100 [clientcursormon]  connections:0
+2018-01-20T19:13:41.534+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T19:13:41.534+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T19:13:41.534+0100 [clientcursormon]  connections:0
+2018-01-20T19:18:41.550+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T19:18:41.550+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T19:18:41.550+0100 [clientcursormon]  connections:0
+2018-01-20T19:23:41.566+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T19:23:41.566+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T19:23:41.566+0100 [clientcursormon]  connections:0
+2018-01-20T19:28:41.579+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T19:28:41.579+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T19:28:41.579+0100 [clientcursormon]  connections:0
+2018-01-20T19:33:41.591+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T19:33:41.591+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T19:33:41.591+0100 [clientcursormon]  connections:0
+2018-01-20T19:38:41.605+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T19:38:41.605+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T19:38:41.605+0100 [clientcursormon]  connections:0
+2018-01-20T19:43:41.617+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T19:43:41.617+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T19:43:41.617+0100 [clientcursormon]  connections:0
+2018-01-20T19:48:41.630+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T19:48:41.630+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T19:48:41.630+0100 [clientcursormon]  connections:0
+2018-01-20T19:53:41.645+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T19:53:41.645+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T19:53:41.645+0100 [clientcursormon]  connections:0
+2018-01-20T19:58:41.660+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T19:58:41.660+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T19:58:41.660+0100 [clientcursormon]  connections:0
+2018-01-20T20:03:41.675+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T20:03:41.675+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T20:03:41.675+0100 [clientcursormon]  connections:0
+2018-01-20T20:08:41.690+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T20:08:41.690+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T20:08:41.690+0100 [clientcursormon]  connections:0
+2018-01-20T20:13:41.706+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T20:13:41.706+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T20:13:41.706+0100 [clientcursormon]  connections:0
+2018-01-20T20:18:41.721+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T20:18:41.721+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T20:18:41.721+0100 [clientcursormon]  connections:0
+2018-01-20T20:23:41.736+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T20:23:41.736+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T20:23:41.736+0100 [clientcursormon]  connections:0
+2018-01-20T20:28:41.751+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T20:28:41.751+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T20:28:41.751+0100 [clientcursormon]  connections:0
+2018-01-20T20:33:41.764+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T20:33:41.764+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T20:33:41.764+0100 [clientcursormon]  connections:0
+2018-01-20T20:38:41.777+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T20:38:41.777+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T20:38:41.777+0100 [clientcursormon]  connections:0
+2018-01-20T20:43:41.792+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T20:43:41.792+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T20:43:41.792+0100 [clientcursormon]  connections:0
+2018-01-20T20:48:41.808+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T20:48:41.808+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T20:48:41.808+0100 [clientcursormon]  connections:0
+2018-01-20T20:53:41.825+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T20:53:41.825+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T20:53:41.825+0100 [clientcursormon]  connections:0
+2018-01-20T20:58:41.841+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T20:58:41.841+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T20:58:41.841+0100 [clientcursormon]  connections:0
+2018-01-20T21:03:41.857+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T21:03:41.858+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T21:03:41.858+0100 [clientcursormon]  connections:0
+2018-01-20T21:08:41.874+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T21:08:41.874+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T21:08:41.874+0100 [clientcursormon]  connections:0
+2018-01-20T21:13:41.890+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T21:13:41.890+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T21:13:41.890+0100 [clientcursormon]  connections:0
+2018-01-20T21:18:41.904+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T21:18:41.904+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T21:18:41.904+0100 [clientcursormon]  connections:0
+2018-01-20T21:23:41.919+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T21:23:41.919+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T21:23:41.919+0100 [clientcursormon]  connections:0
+2018-01-20T21:28:41.934+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T21:28:41.934+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T21:28:41.934+0100 [clientcursormon]  connections:0
+2018-01-20T21:33:41.950+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T21:33:41.950+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T21:33:41.950+0100 [clientcursormon]  connections:0
+2018-01-20T21:38:41.965+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T21:38:41.965+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T21:38:41.965+0100 [clientcursormon]  connections:0
+2018-01-20T21:43:41.981+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T21:43:41.981+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T21:43:41.981+0100 [clientcursormon]  connections:0
+2018-01-20T21:48:41.997+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T21:48:41.997+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T21:48:41.997+0100 [clientcursormon]  connections:0
+2018-01-20T21:53:42.013+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T21:53:42.013+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T21:53:42.013+0100 [clientcursormon]  connections:0
+2018-01-20T21:58:42.028+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T21:58:42.028+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T21:58:42.028+0100 [clientcursormon]  connections:0
+2018-01-20T22:03:42.044+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T22:03:42.044+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T22:03:42.044+0100 [clientcursormon]  connections:0
+2018-01-20T22:08:42.060+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T22:08:42.060+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T22:08:42.060+0100 [clientcursormon]  connections:0
+2018-01-20T22:13:42.076+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T22:13:42.076+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T22:13:42.076+0100 [clientcursormon]  connections:0
+2018-01-20T22:18:42.091+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T22:18:42.091+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T22:18:42.091+0100 [clientcursormon]  connections:0
+2018-01-20T22:23:42.106+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T22:23:42.106+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T22:23:42.106+0100 [clientcursormon]  connections:0
+2018-01-20T22:28:42.120+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T22:28:42.120+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T22:28:42.120+0100 [clientcursormon]  connections:0
+2018-01-20T22:33:42.134+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T22:33:42.134+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T22:33:42.134+0100 [clientcursormon]  connections:0
+2018-01-20T22:38:42.147+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T22:38:42.147+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T22:38:42.147+0100 [clientcursormon]  connections:0
+2018-01-20T22:43:42.160+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T22:43:42.160+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T22:43:42.160+0100 [clientcursormon]  connections:0
+2018-01-20T22:48:42.176+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T22:48:42.176+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T22:48:42.176+0100 [clientcursormon]  connections:0
+2018-01-20T22:53:42.189+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T22:53:42.189+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T22:53:42.189+0100 [clientcursormon]  connections:0
+2018-01-20T22:58:42.201+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T22:58:42.201+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T22:58:42.201+0100 [clientcursormon]  connections:0
+2018-01-20T23:03:42.213+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T23:03:42.213+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T23:03:42.213+0100 [clientcursormon]  connections:0
+2018-01-20T23:08:42.229+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T23:08:42.229+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T23:08:42.229+0100 [clientcursormon]  connections:0
+2018-01-20T23:13:42.243+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T23:13:42.243+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T23:13:42.243+0100 [clientcursormon]  connections:0
+2018-01-20T23:18:42.257+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T23:18:42.257+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T23:18:42.257+0100 [clientcursormon]  connections:0
+2018-01-20T23:23:42.273+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T23:23:42.273+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T23:23:42.273+0100 [clientcursormon]  connections:0
+2018-01-20T23:28:42.289+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T23:28:42.289+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T23:28:42.289+0100 [clientcursormon]  connections:0
+2018-01-20T23:33:42.305+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T23:33:42.305+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T23:33:42.305+0100 [clientcursormon]  connections:0
+2018-01-20T23:38:42.322+0100 [clientcursormon] mem (MB) res:38 virt:542
+2018-01-20T23:38:42.322+0100 [clientcursormon]  mapped (incl journal view):320
+2018-01-20T23:38:42.322+0100 [clientcursormon]  connections:0
+2018-01-20T23:38:48.787+0100 [signalProcessingThread] got signal 1 (Hangup), will terminate after current cmd ends
+2018-01-20T23:38:48.787+0100 [signalProcessingThread] now exiting
+2018-01-20T23:38:48.787+0100 [signalProcessingThread] dbexit: 
+2018-01-20T23:38:48.787+0100 [signalProcessingThread] shutdown: going to close listening sockets...
+2018-01-20T23:38:48.787+0100 [signalProcessingThread] closing listening socket: 8
+2018-01-20T23:38:48.787+0100 [signalProcessingThread] closing listening socket: 9
+2018-01-20T23:38:48.787+0100 [signalProcessingThread] removing socket file: /tmp/mongodb-1234.sock
+2018-01-20T23:38:48.787+0100 [signalProcessingThread] shutdown: going to flush diaglog...
+2018-01-20T23:38:48.787+0100 [signalProcessingThread] shutdown: going to close sockets...
+2018-01-20T23:38:48.787+0100 [signalProcessingThread] shutdown: waiting for fs preallocator...
+2018-01-20T23:38:48.787+0100 [signalProcessingThread] shutdown: lock for final commit...
+2018-01-20T23:38:48.787+0100 [signalProcessingThread] shutdown: final commit...
+2018-01-20T23:38:48.794+0100 [signalProcessingThread] shutdown: closing all files...
+2018-01-20T23:38:48.794+0100 [signalProcessingThread] closeAllFiles() finished
+2018-01-20T23:38:48.794+0100 [signalProcessingThread] journalCleanup...
+2018-01-20T23:38:48.794+0100 [signalProcessingThread] removeJournalFiles
+2018-01-20T23:38:48.799+0100 [signalProcessingThread] shutdown: removing fs lock...
+2018-01-20T23:38:48.799+0100 [signalProcessingThread] dbexit: really exiting now
