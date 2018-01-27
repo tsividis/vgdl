@@ -269,6 +269,7 @@ class BasicGame(object):
         self.object_token_spriteDistribution = {}
         self.spriteUpdateDict = defaultdict(int) ## track how many times we have run spriteType updates to each particular object
         self.movement_options = {}
+        self.sprite_appearance_predictions = {}
         self.object_token_movement_options = {}
         self.all_objects = None
 
@@ -824,6 +825,7 @@ class BasicGame(object):
         objects = self.getObjects()
         self.spriteDistribution = {}
         self.movement_options = {}
+        self.sprite_appearance_predictions = {}
         allStates = [self.getFullState()]
 
 
@@ -947,6 +949,7 @@ class BasicGame(object):
         objects = self.getObjects()
         self.spriteDistribution = {}
         self.movement_options = {}
+        self.sprite_appearance_predictions = {}
         allStates = [self.getFullState()]
 
         self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack']
