@@ -271,6 +271,7 @@ class BasicGame(object):
         self.movement_options = {}
         self.sprite_appearance_predictions = {}
         self.object_token_movement_options = {}
+        self.sprite_appearances = [] ## New sprites that appear at any given step. This gets cleared at the end of each time-step.
         self.all_objects = None
 
         self.EOS = EOS((-1, -1))

@@ -2386,53 +2386,56 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
 
 
 def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict, 
-    oldSpriteSet = None, mode='standard'):
+    oldSpriteSet = None, mode='standard', learnAvatar=True):
 
     import random
     import numpy as np
     from class_theory_template import Sprite
     from ontology import ResourcePack
     distributionsHaveChanged = False
-
-    sample = []
+    
     exceptions = []
+    sample = []
 
-    ##remove avatar. For now let's just assume we know which one it is.
-    ##TODO: You need to do avatarInduction, unless there's a generic type that can cover all types.
-    non_avatar_keys = []
+    if learnAvatar:
+        ##remove avatar. For now let's just assume we know which one it is.
+        ##TODO: You need to do avatarInduction, unless there's a generic type that can cover all types.
+        non_avatar_keys = []
 
-    for k in all_objects.keys():
-        if all_objects[k]['sprite'].name != 'avatar':
-            non_avatar_keys.append(k)
-        else:
-            from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
-                RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
-                    AimedFlakAvatar, InertialAvatar, MarioAvatar
-            try:
+        for k in all_objects.keys():
+            if all_objects[k]['sprite'].name != 'avatar':
+                non_avatar_keys.append(k)
+            else:
+                from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
+                    RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
+                        AimedFlakAvatar, InertialAvatar, MarioAvatar
+                try:
 
-                ## Add avatar, and add the attached arguments, i.e., what the avatar shoots.
-                sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
+                    ## Add avatar, and add the attached arguments, i.e., what the avatar shoots.
+                    sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
 
-                ## Get the object the Avatar shoots, add that.
-                ao = game.sprite_constr[all_objects[k]['sprite'].stype]
-                ao_vgdl_type = ao[0]
-                ao_color = colorDict[str(ao[1]['color'])]
-                ao_args = ao[1]
-                
-                ao_args.update({'singleton': 'True'})
-                sample.append(Sprite(vgdlType=ao_vgdl_type, color=ao_color, className=all_objects[k]['sprite'].stype, args=ao_args))
-                # sample.append(Sprite(vgdlType=Flicker, color='BLUE', className=all_objects[k]['sprite'].stype, args={'singleton':'True'}))
+                    ## Get the object the Avatar shoots, add that.
+                    ao = game.sprite_constr[all_objects[k]['sprite'].stype]
+                    ao_vgdl_type = ao[0]
+                    ao_color = colorDict[str(ao[1]['color'])]
+                    ao_args = ao[1]
+                    
+                    ao_args.update({'singleton': 'True'})
+                    sample.append(Sprite(vgdlType=ao_vgdl_type, color=ao_color, className=all_objects[k]['sprite'].stype, args=ao_args))
+                    # sample.append(Sprite(vgdlType=Flicker, color='BLUE', className=all_objects[k]['sprite'].stype, args={'singleton':'True'}))
 
-                exceptions.append(ao_color)
-                # sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'healthPoints':all_objects[k]['sprite'].healthPoints}))
-            except AttributeError:
-                # No args in avatar
+                    exceptions.append(ao_color)
+                    # sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'healthPoints':all_objects[k]['sprite'].healthPoints}))
+                except AttributeError:
+                    # No args in avatar
 
-                sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color']))
+                    sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color']))
 
-    ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
-    types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions)) ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately
-                                                                                                    ## and not doing inference about it.
+        ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
+        types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions)) ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately
+                                                                                                        ## and not doing inference about it.
+    else:
+        types = list(set([all_objects[k]['type']['color'] for k in all_objects.keys()]))
     best_params = {}
     for obj_type in types:
         ## Integrate evidence across all episodes; pick best hypothesis.
@@ -2743,9 +2746,14 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
         for k in game.movement_options[sprite.ID].keys():
             if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k].keys():
                 scoreAndTheoryTuples.append((0,k))
+        print "in updateDistribution"
+        embed()
         for appearance in game.sprite_appearance_predictions[sprite.ID]:
+            print "sprite appearances", game.sprite_appearances
             if appearance in game.sprite_appearances:
                 scoreAndTheoryTuples.append((0,k))
+                print "found sprite appearance"
+                embed()
 
         reasonableHypotheses = [s[1] for s in scoreAndTheoryTuples]
         return reasonableHypotheses
@@ -2762,7 +2770,7 @@ def getSpritesByColor(game, color):
     if outList:
         return list(set(outList))
     else:
-        return None
+        return []
 
 def softmax(w, t = 1.0):
     e = np.exp(np.array(w) / t)

@@ -1824,7 +1824,7 @@ class Game(object):
 				[self.DFSinduction(t, timesteps, maxNumTheories, override=override, verbose=verbose) for t in newTheories]
 
 
-	def buildGenericTheory(self, spriteSample=True, vgdlSpriteParse=False):
+	def buildGenericTheory(self, spriteSample=True, vgdlSpriteParse=False, learnAvatar=False):
 
 		T = Theory(self)
 
@@ -1834,27 +1834,37 @@ class Game(object):
 			T.initializeSpriteSet(vgdlSpriteParse = vgdlSpriteParse, spriteInductionResult=False)
 
 		# Assign class names
-		avatar = [o for o in T.spriteSet if o.vgdlType in AvatarTypes][0]
+		avatars = [o for o in T.spriteSet if o.vgdlType in AvatarTypes]
 		nonAvatars = [o for o in T.spriteSet if o.vgdlType not in AvatarTypes and o.color!='ENDOFSCREEN']
-		allSprites = [avatar]+nonAvatars
+		allSprites = avatars+nonAvatars
 		eos = [o for o in T.spriteSet if o.color=='ENDOFSCREEN'][0]
-		avatar.className = 'avatar'
-		T.classes[avatar.className] = [avatar]
+		
+		if learnAvatar:
+			avatar.className = 'avatar'
+			T.classes[avatar.className] = [avatar]
 
-		projectileName = ''
-		try:
-			projectileName = avatar.args['stype']
-		except (TypeError, KeyError) as e:
-			pass
+			projectileName = ''
+			try:
+				projectileName = avatar.args['stype']
+			except (TypeError, KeyError) as e:
+				pass
 
-		projectileTypes = [Flicker, OrientedFlicker, Missile]
-		for i in range(len(nonAvatars)):
-			if projectileName == nonAvatars[i].className:
-				nonAvatars[i].className = projectileName
-			else:
-				nonAvatars[i].className = 'c'+str(i+2)
+			projectileTypes = [Flicker, OrientedFlicker, Missile]
+			for i in range(len(nonAvatars)):
+				if projectileName == nonAvatars[i].className:
+					nonAvatars[i].className = projectileName
+				else:
+					nonAvatars[i].className = 'c'+str(i+2)
 
-			T.classes[nonAvatars[i].className] = [nonAvatars[i]]
+				T.classes[nonAvatars[i].className] = [nonAvatars[i]]
+		else:
+			for i in range(len(allSprites)):
+				if allSprites[i].color=='DARKBLUE':
+					allSprites[i].className = 'avatar'
+				else:
+					allSprites[i].className = 'c'+str(i+2)
+				T.classes[allSprites[i].className] = [allSprites[i]]
+
 		T.classes['EOS'] = [eos] ##initialize EOS with special name, since it gets such special treatment in VGDL text files.
 
 		for (o1, o2) in itertools.product(allSprites, allSprites):
@@ -1871,7 +1881,7 @@ class Game(object):
 			rule = InteractionRule('stepBack', o1.className, o2.className, {}, set(), generic=True)
 			T.interactionSet.append(rule)
 
-		for s1 in nonAvatars + [avatar]:
+		for s1 in nonAvatars + avatars:
 			## append EOS rule
 			rule = InteractionRule('stepBack', s1.className, 'EOS', {}, set(), generic=True)
 			T.interactionSet.append(rule)

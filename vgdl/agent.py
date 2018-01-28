@@ -439,7 +439,8 @@ class Agent:
 
 		# Match sprites in environments and get sprites that couldn't be matched
 		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = self.matchEnvs(envA, envB)
-		
+		print "in errorSignal"
+		embed()
 		if targetClass:
 			try:
 				matched_sprites = [m for m in matched_sprites if m[0].name==targetClass]
@@ -907,11 +908,10 @@ class Agent:
 	def initializeHypotheses(self, allObjects, learnSprites=True, num_variants=0):
 		if learnSprites:
 			observe(self.rle, 0, self.bestSpriteTypeDict)
-			embed()
 			## Sample from distribution but actually just set everything to default.
 			spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
 				self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, \
-				oldSpriteSet=None, mode='default')
+				oldSpriteSet=None, mode='default', learnAvatar=False)
 			self.rle._game.exceptedObjects = exceptedObjects
 	
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
@@ -923,30 +923,14 @@ class Agent:
 
 		initialTheory.mostRecentEdit = 'none'
 		# Handle wall vs. projectile interaction (hacky)
-		avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
+		# avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
 
 		self.hypotheses = [initialTheory]
 
 		self.symbolDict = generateSymbolDict(self.rle)
 
-		## For debugging purposes, generating one variant that is off by only one interaction
-		# theory = copy.deepcopy(initialTheory)
-		# testClass = theory.spriteObjects['YELLOW'].className
-		# testClass2 = theory.spriteObjects['ORANGE'].className
-		# for interactionRule in theory.interactionSet: #<< find rule between avatar and e.g. c3
-		#   # if interactionRule.slot1==testClass2 and interactionRule.slot2 == 'avatar': #modified
-		#   #   interactionRule.interaction = 'bounceForward' #modified
-		#   # if interactionRule.slot1=='avatar' and interactionRule.slot2 == testClass2: #modified
-		#   #   interactionRule.interaction = 'nothing' #modified
-		#   if interactionRule.slot1==testClass and interactionRule.slot2 == 'avatar': #modified
-		#       interactionRule.interaction = 'bounceForward' #modified
-		#   #if interactionRule.slot1=='c2' and interactionRule.slot2 == 'avatar':
-		#   #   interactionRule.interaction = 'stepBack'
-		#       #break
-		# #theory.interactionSet.append(InteractionRule('bounceForward', 'avatar', testClass, {}))
-		# self.hypotheses.append(theory)
 
-		## Generate variants of the theory
+		## For debugging purposes: generate variants of the theory
 		## (as a stand-in for a more generic induction/elaboration process)
 		predicate_options = ['nothing', 'stepBack', 'killSprite', 'bounceForward', 'undoAll', 'reverseDirection']
 		for i in range(num_variants):
@@ -1348,7 +1332,7 @@ class Agent:
 		# actions = [0,0,0,0,0, K_RIGHT, K_RIGHT,0,0,0,0,0,0,0,0,0,0,0]
 		# actions = [0,0,0,0,0,0,0,0,0,0,0]
 		# actions = [K_RIGHT, 0, K_RIGHT]
-		actions = [K_DOWN, K_RIGHT, K_RIGHT]
+		actions = [32, 32, 0]
 		self.initializeEnvironment()
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
@@ -1847,7 +1831,7 @@ class Agent:
 
 	def getObservations(self, agentState, envReal, envRealPrev):
 		#whether the avatar is still alive
-		avatar_is_dead = (getSpritesByColor(envReal._game,'DARKBLUE') is None)
+		avatar_is_dead = len(getSpritesByColor(envReal._game,'DARKBLUE'))==0
 
 		#using the previous state, we predict where the objects are going to be
 		self.predictions = {}
@@ -1922,7 +1906,6 @@ class Agent:
 				#match closest sprite
 				#locs[sprite] is where we expect the sprite to be
 				for i in current_state[sprite]:
-					#embed()
 					pos = i['position']
 					if abs(pos[0] - locs[sprite][0]) + abs(pos[1] - locs[sprite][1]) < THRESHHOLD:
 						resourceObservations['resource'][sprite] = {}
@@ -1931,8 +1914,9 @@ class Agent:
 				#return whether this collision killed the sprite or the avatar - this format is used when updating distributions
 				resourceObservations['resource'][sprite][res] = (val,not avatar_is_dead,not sprite_gone)
 
+		_, new_sprites, _ = self.matchEnvs(envReal, envRealPrev)
 		self.lastObjectState = current_state
-		return resourceObservations
+		return resourceObservations, new_sprites
 
 	def intersect(self, p1, p2):
 		return (abs(p1[0] - p2[0]) <= self.rle._game.block_size and abs(p1[1] - p2[1]) <= self.rle._game.block_size)
@@ -2010,11 +1994,11 @@ class Agent:
 
 		penalty, errorList = self.errorSignal(env, self.rle, hypothesis, envRealPrev)
 		
-		# if errorList:
-		#   hypothesis.display()
-		#   for e in errorList:
-		#       e.display()
-		#   print ""
+		if errorList:
+		  hypothesis.display()
+		  for e in errorList:
+		      e.display()
+		  print ""
 		# print "expanding theories"
 		theories = self.expandTheories([hypothesis], errorList, envRealPrev, self.rle, action)
 		return theories
@@ -2040,13 +2024,14 @@ class Agent:
 		self.rleHistory.append(envReal)
 		
 		#OBJECT TRACKING
-		# resourceObservations = self.getObservations(agentState, envReal, envRealPrev)
-
+		resourceObservations, new_sprites = self.getObservations(agentState, envReal, envRealPrev)
+		self.rle._game.sprite_appearances = new_sprites
+		print "new sprites", new_sprites
 		#updates the distributions
 		# self.distributions.updateDist(resourceObservations)
 		# print self.distributions.distr
 		# print "updated distributions. You'll have to access this when you expand theories."
-		# embed()
+
 		print ""
 		print keyPresses[action]
 
@@ -2207,7 +2192,7 @@ class Agent:
 
 		hypotheses = self.manageNewObjects(hypotheses)
 		self.statesEncountered.append(self.rle._game.getFullState())
-
+		self.rle._game.sprite_appearances = []
 		return hypotheses
 
 
@@ -2388,7 +2373,6 @@ class Agent:
 
 		cumulative_penalties = np.array(cumulative_penalties)
 		mean_penalties = np.mean(cumulative_penalties, axis=0)
-		res[num] = cumulative_penalties[0]
 		return mean_penalties, cumulative_penalties, theoryRLEs
 
 
