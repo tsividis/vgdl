@@ -1824,7 +1824,7 @@ class Game(object):
 				[self.DFSinduction(t, timesteps, maxNumTheories, override=override, verbose=verbose) for t in newTheories]
 
 
-	def buildGenericTheory(self, spriteSample=True, vgdlSpriteParse=False, learnAvatar=False):
+	def buildGenericTheory(self, spriteSample=True, vgdlSpriteParse=False, learnAvatar=True):
 
 		T = Theory(self)
 
@@ -1838,8 +1838,8 @@ class Game(object):
 		nonAvatars = [o for o in T.spriteSet if o.vgdlType not in AvatarTypes and o.color!='ENDOFSCREEN']
 		allSprites = avatars+nonAvatars
 		eos = [o for o in T.spriteSet if o.color=='ENDOFSCREEN'][0]
-		
-		if learnAvatar:
+
+		if not learnAvatar:
 			avatar.className = 'avatar'
 			T.classes[avatar.className] = [avatar]
 
@@ -1859,10 +1859,10 @@ class Game(object):
 				T.classes[nonAvatars[i].className] = [nonAvatars[i]]
 		else:
 			for i in range(len(allSprites)):
-				if allSprites[i].color=='DARKBLUE':
-					allSprites[i].className = 'avatar'
-				else:
-					allSprites[i].className = 'c'+str(i+2)
+				# if allSprites[i].color=='DARKBLUE':
+					# allSprites[i].className = 'avatar'
+				# else:
+				allSprites[i].className = 'c'+str(i+2)
 				T.classes[allSprites[i].className] = [allSprites[i]]
 
 		T.classes['EOS'] = [eos] ##initialize EOS with special name, since it gets such special treatment in VGDL text files.
@@ -2234,6 +2234,7 @@ def generateSymbolDict(rle):
 	except:
 		print "problem with generateSymbolDict"
 		embed()
+	## Note: this is not privileged info about the avatar; it's just grabbing the possible visible colors in the game.
 	try:
 		colors.append(colorDict[str(rle._game.sprite_constr['avatar'][1]['color'])])
 	except:

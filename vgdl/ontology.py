@@ -2397,7 +2397,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
     exceptions = []
     sample = []
 
-    if learnAvatar:
+    if not learnAvatar:
         ##remove avatar. For now let's just assume we know which one it is.
         ##TODO: You need to do avatarInduction, unless there's a generic type that can cover all types.
         non_avatar_keys = []

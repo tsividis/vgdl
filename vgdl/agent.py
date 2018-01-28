@@ -270,6 +270,7 @@ class Agent:
 						dist_temp.append( manhattanDist2(sA, sB) )
 					else:
 						dist_temp.append(2e6)
+						lonely_sprites_envA.remove(s) ## If there is no rematch for this sprite, take it off the lonely list.
 					#if all([d==None for d in dist_rematch]): #case where there is no potential re-match
 				dist_rematch.append(dist_temp)
 				#print '>>> dist_rematch', dist_rematch
@@ -297,12 +298,12 @@ class Agent:
 		for s in sprites_rematchB:
 			lonely_sprites_envB.remove(s)
 
-		print "envA", lonely_sprites_envA
-		print envA.show()
-		print "envB", lonely_sprites_envB
-		print envB.show()
-		print ""
-		embed()
+		# print "envA", lonely_sprites_envA
+		# print envA.show()
+		# print "envB", lonely_sprites_envB
+		# print envB.show()
+		# print ""
+		# embed()
 		return matched_sprites, lonely_sprites_envA, lonely_sprites_envB
 
 
@@ -850,8 +851,13 @@ class Agent:
 			gameString = self.gameString
 			levelString = self.levelString
 			useHypothesis=False
-		Vrle = createMindEnv(gameString, levelString, output=False)
 
+		print levelString
+		print gameString
+		Vrle = createMindEnv(gameString, levelString, output=False)
+		if len(Vrle._game.sprite_groups['avatar'])>1:
+			print "in initializeVrle. Got more than one avatar"
+			embed()
 		self.setSpritePositions(stateToSet, Vrle, hypothesis, useHypothesis=useHypothesis)
 
 		## Initialize imaginary state to match real state.
@@ -917,9 +923,8 @@ class Agent:
 			## Sample from distribution but actually just set everything to default.
 			spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
 				self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, \
-				oldSpriteSet=None, mode='default', learnAvatar=False)
+				oldSpriteSet=None, mode='default', learnAvatar=True)
 			self.rle._game.exceptedObjects = exceptedObjects
-	
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 			initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
 			initialTheory.terminationSet = [r for r in initialTheory.terminationSet if r.ruleType=='SpriteCounterRule']
@@ -931,10 +936,30 @@ class Agent:
 		# Handle wall vs. projectile interaction (hacky)
 		# avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
 
-		self.hypotheses = [initialTheory]
+		# self.hypotheses = [0]
+		## Instantiate a hypothesis that each singleton class might be the avatar
+		# print "in initializeHypotheses"
+		# embed()
 
 		self.symbolDict = generateSymbolDict(self.rle)
+		self.hypotheses = []
+		## Grab all singleton classes and instantiate hypotheses that they are the avatar.
+		for color in self.symbolDict.keys():
+			if len(getSpritesByColor(self.rle._game, color))==1:
+				newTheory = copy.deepcopy(initialTheory)
+				oldClassName = newTheory.spriteObjects[color].className
+				del newTheory.classes[oldClassName]
+				newTheory.spriteObjects[color].className = 'avatar'
+				newTheory.spriteObjects[color].vgdlType = MovingAvatar
+				newTheory.classes['avatar'] = [newTheory.spriteObjects[color]]
+				for rule in newTheory.interactionSet:
+					if rule.slot1==oldClassName:
+						rule.slot1='avatar'
+					if rule.slot2==oldClassName:
+						rule.slot2='avatar'
+				self.hypotheses.append(newTheory)
 
+		# self.hypotheses = [initialTheory]
 
 		## For debugging purposes: generate variants of the theory
 		## (as a stand-in for a more generic induction/elaboration process)
@@ -1374,7 +1399,7 @@ class Agent:
 		for num, action in enumerate(actions):
 			print ">>> Step", num+1, "of", len(actions), "<<<"
 			## initialize VRLEs
-			theoryRLEs = self.VrleInitPhase()#stateToSet=self.rle
+			theoryRLEs = self.VrleInitPhase()
 			lastStep=False
 			if num==len(actions)-1:
 				lastStep=True
@@ -2530,7 +2555,7 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 
 	filename = "examples.gridphysics.avatar_inference"
-	# filename = "examples.gridphysics.collect_resource"
+	# filename = "examples.gridphysics.inference_test"
 
 	#filename = "examples.continuousphysics.collect_resource"
 	# filename = "examples.continuousphysics.breakout_new"
