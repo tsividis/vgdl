@@ -493,7 +493,7 @@ class Chaser(RandomNPC): ##
         bestd = 1e100
         res = []
         if type(self.stype)==tuple:
-            targets = getSpritesByColor(colorDict[str(self.stype)], game)
+            targets = getSpritesByColor(game, colorDict[str(self.stype)])
         else:
             targets = game.getSprites(self.stype)
         for target in targets:
@@ -1961,13 +1961,13 @@ def getCooldown(params):
     else:
         return 1
 
-def getSpritesByColor(color, game):
+def getSpritesByColor(game, color):
     unflattened = [s for s in game.sprite_groups.values() if s and s[0].colorName==color]
     return [item for sublist in unflattened for item in sublist]
 
 def chaserClosestTargets(sprite, game):
     if type(sprite.stype)==tuple:
-        targets = getSpritesByColor(colorDict[str(sprite.stype)], game)
+        targets = getSpritesByColor(game, colorDict[str(sprite.stype)])
     else:
         targets = game.getSprites(sprite.stype)
     bestd = 1e100
@@ -1998,7 +1998,7 @@ def chaserMovesToward(sprite, game, target, fleeing):
 
 def findChaserClosestTargets(sprite, spritePrev, game):
     if type(sprite.stype)==tuple:
-        targets = getSpritesByColor(colorDict[str(sprite.stype)], game)
+        targets = getSpritesByColor(game, colorDict[str(sprite.stype)])
     else:
         targets = game.sprite_groups[sprite.stype]
     bestd = 1e100
@@ -2231,15 +2231,17 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
             dx,dy = (0,0)
 
         next_pos = current_sprite.rect.left + current_sprite.speed*dx*game.block_size, current_sprite.rect.top + current_sprite.speed*dy*game.block_size
-        position_options = {next_pos: 1.}, {next_pos: 1.}
+        position_options = {next_pos: 1.}
         
         if sprite_type in [FlakAvatar, ShootAvatar]:
             stype = getStype(params)
             new_object_location = (current_sprite.rect.left, current_sprite.rect.right)
             appearance_predictions[stype] = [new_object_location]
-            return position_options, new_object_location, appearance_predictions
+            return position_options, position_options, appearance_predictions
             ## get type of sprite that should appear and its location; return that as the third dict.
             ## then get the return val of this one and add it to the game.sprite_appearance_predictions
+        else:
+            return position_options, position_options, {}
 
 
         # Catches objects that can't be Oriented Sprite and Missile types b/c fails the if-statement
@@ -2746,10 +2748,8 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
         for k in game.movement_options[sprite.ID].keys():
             if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k].keys():
                 scoreAndTheoryTuples.append((0,k))
-        print "in updateDistribution"
-        embed()
+
         for appearance in game.sprite_appearance_predictions[sprite.ID]:
-            print "sprite appearances", game.sprite_appearances
             if appearance in game.sprite_appearances:
                 scoreAndTheoryTuples.append((0,k))
                 print "found sprite appearance"
@@ -2762,15 +2762,15 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
     game.ignoreList = []
     return distributionsHaveChanged
 
-def getSpritesByColor(game, color):
-    outList = []
-    for k in game.sprite_groups.keys():
-        if game.sprite_groups[k] and game.sprite_groups[k][0].colorName==color:
-            outList.extend(game.sprite_groups[k])
-    if outList:
-        return list(set(outList))
-    else:
-        return []
+# def getSpritesByColor(game, color):
+#     outList = []
+#     for k in game.sprite_groups.keys():
+#         if game.sprite_groups[k] and game.sprite_groups[k][0].colorName==color:
+#             outList.extend(game.sprite_groups[k])
+#     if outList:
+#         return list(set(outList))
+#     else:
+#         return []
 
 def softmax(w, t = 1.0):
     e = np.exp(np.array(w) / t)

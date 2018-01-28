@@ -2449,13 +2449,40 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 		vgdlType = spriteProposal[0][1]
 		args = dict(spriteProposal[1:])
 		color = newTheory.classes[targetClass][0].color
-		sprite = Sprite(vgdlType, color, className=targetClass, args=args)
-		## Remove old sprite from spriteSet
-		newTheory.spriteSet.remove(newTheory.classes[targetClass][0])
-		## Add new sprite
-		newTheory.spriteSet.append(sprite)
-		newTheory.classes[targetClass] = [sprite]
-		newTheory.spriteObjects[color] = sprite
+		## If you're proposing an avatar change you need to do some bookkeeping to ensure only one avatar class in the description.
+		if 'Avatar' in str(vgdlType):
+			sprite = Sprite(vgdlType, color, className='avatar', args=args)
+			tmpType = newTheory.classes[targetClass][0].vgdlType
+			tmpSprite = newTheory.classes['avatar'][0]
+			tmpSprite.vgdlType = tmpType
+			tmpSprite.className=targetClass
+			newTheory.classes[targetClass] = [tmpSprite]
+			newTheory.classes['avatar'] = [sprite]
+			newTheory.spriteObjects[sprite.color] = sprite
+			newTheory.spriteObjects[tmpSprite.color] = tmpSprite
+			newTheory.spriteSet = [item for sublist in newTheory.classes.values() for item in sublist]
+			for rule in newTheory.interactionSet:
+				if rule.slot1==targetClass:
+					rule.slot1='tmp'
+				if rule.slot2==targetClass:
+					rule.slot2='tmp'
+				if rule.slot1=='avatar':
+					rule.slot1=targetClass
+				if rule.slot2=='avatar':
+					rule.slot2=targetClass
+				if rule.slot1=='tmp':
+					rule.slot1='avatar'
+				if rule.slot2=='tmp':
+					rule.slot2='avatar'
+		else:
+			sprite = Sprite(vgdlType, color, className=targetClass, args=args)
+			## Remove old sprite from spriteSet
+			newTheory.spriteSet.remove(newTheory.classes[targetClass][0])
+			## Add new sprite
+			newTheory.spriteSet.append(sprite)
+			newTheory.classes[targetClass] = [sprite]
+			newTheory.spriteObjects[color] = sprite
+		
 		childTheories.append(newTheory)
 
 	## TODO: what to do with orientation for missiles??

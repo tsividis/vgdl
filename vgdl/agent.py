@@ -149,16 +149,6 @@ class Agent:
 		rle = rleCreateFunc()
 		return rle
 
-	# def getSpritesByColor(self, game, color):
-	# 	outList = []
-	# 	for k in game.sprite_groups.keys():
-	# 		if game.sprite_groups[k] and game.sprite_groups[k][0].colorName==color:
-	# 			outList.extend(game.sprite_groups[k])
-	# 	if outList:
-	# 		return list(set(outList))
-	# 	else:
-	# 		return None
-
 	def getStateByColor(self, rle):
 		state = {}
 		#embed()
@@ -187,7 +177,6 @@ class Agent:
 
 	# Function matching environment and determining sprites that couldn't be matched
 	def matchEnvs(self, envA, envB):
-		print "in matchEnvs"
 		# Initialization
 		matched_sprites = [] #tuples of matched sprites: (envA sprite, envB sprite, dist) - helps penalize distance and find missing
 		lonely_sprites_envA = [] #envA sprites that have no partner in envB
@@ -852,12 +841,15 @@ class Agent:
 			levelString = self.levelString
 			useHypothesis=False
 
-		print levelString
-		print gameString
-		Vrle = createMindEnv(gameString, levelString, output=False)
-		if len(Vrle._game.sprite_groups['avatar'])>1:
-			print "in initializeVrle. Got more than one avatar"
+		try:
+			Vrle = createMindEnv(gameString, levelString, output=False)
+		except:
+			print "in initializeVrle"
 			embed()
+		if len(Vrle._game.sprite_groups['avatar'])>1:
+			print "Warning. In initializeVrle. Got more than one avatar"
+			embed()
+		
 		self.setSpritePositions(stateToSet, Vrle, hypothesis, useHypothesis=useHypothesis)
 
 		## Initialize imaginary state to match real state.
@@ -959,7 +951,6 @@ class Agent:
 						rule.slot2='avatar'
 				self.hypotheses.append(newTheory)
 
-		# self.hypotheses = [initialTheory]
 
 		## For debugging purposes: generate variants of the theory
 		## (as a stand-in for a more generic induction/elaboration process)
@@ -1363,7 +1354,7 @@ class Agent:
 		# actions = [0,0,0,0,0, K_RIGHT, K_RIGHT,0,0,0,0,0,0,0,0,0,0,0]
 		# actions = [0,0,0,0,0,0,0,0,0,0,0]
 		# actions = [K_RIGHT, 0, K_RIGHT]
-		actions = [32, 32, 0]
+		actions = [K_LEFT, K_UP, 0]
 		self.initializeEnvironment()
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
@@ -2019,8 +2010,8 @@ class Agent:
 		env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
 		env_colors = set([s.colorName for s in env_sprites if s])
 
-		print "in testAndExpand"
-		embed()
+		# print "in testAndExpand"
+		# embed()
 		env.step(action)
 		env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
 		env_colors = set([s.colorName for s in env_sprites if s])
@@ -2294,7 +2285,7 @@ class Agent:
 		#   r = threading.Thread(target=self.singleTheoryExperienceReplay, args=(self.rleHistory, self.actionHistory, 'all',
 		#   None, False, [h], num, res))
 		#   r.start()
-		print "Threaded experienceReplay for {} hypotheses took {} seconds".format(len(hypotheses), time.time()-t1)
+		# print "Threaded experienceReplay for {} hypotheses took {} seconds".format(len(hypotheses), time.time()-t1)
 
 		# t1 = time.time()
 		# func = partial(self.singleTheoryExperienceReplay, rleHistory, actionHistory, method, targetClass, displayStates)
@@ -2307,7 +2298,7 @@ class Agent:
 		cumulative_penalties = [r[1][0][0] for r in results]
 		theoryRLEs = [r[2][0] for r in results]
 
-		print "Parallel experience replay on {} hypotheses took {} seconds".format(len(hypotheses),time.time()-t1)
+		# print "Parallel experience replay on {} hypotheses took {} seconds".format(len(hypotheses),time.time()-t1)
 
 		# print "ran experience replay on {} theories and {} time-steps in {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 		return mean_penalties, cumulative_penalties, theoryRLEs
