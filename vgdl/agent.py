@@ -187,15 +187,15 @@ class Agent:
 
 	# Function matching environment and determining sprites that couldn't be matched
 	def matchEnvs(self, envA, envB):
+		print "in matchEnvs"
 		# Initialization
 		matched_sprites = [] #tuples of matched sprites: (envA sprite, envB sprite, dist) - helps penalize distance and find missing
 		lonely_sprites_envA = [] #envA sprites that have no partner in envB
 		lonely_sprites_envB = [] #envB sprites that have no partner in envA
-
+		# print "in matchEnvs"
+		# embed()
 		# Loop over keys in envA
 		for k in [key for key in envA._game.sprite_groups.keys() if envA._game.sprite_groups[key]]:
-			# Get vgdlType, according to the theory
-			#vgdlType = theory.classes[k][0].vgdlType
 			# Find matching sprites via color
 			color = envA._game.sprite_groups[k][0].colorName
 			matchingSpritesInEnvA = getSpritesByColor(envA._game, color)
@@ -297,6 +297,12 @@ class Agent:
 		for s in sprites_rematchB:
 			lonely_sprites_envB.remove(s)
 
+		print "envA", lonely_sprites_envA
+		print envA.show()
+		print "envB", lonely_sprites_envB
+		print envB.show()
+		print ""
+		embed()
 		return matched_sprites, lonely_sprites_envA, lonely_sprites_envB
 
 
@@ -439,8 +445,8 @@ class Agent:
 
 		# Match sprites in environments and get sprites that couldn't be matched
 		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = self.matchEnvs(envA, envB)
-		print "in errorSignal"
-		embed()
+		# print "in errorSignal"
+		# embed()
 		if targetClass:
 			try:
 				matched_sprites = [m for m in matched_sprites if m[0].name==targetClass]
@@ -1988,6 +1994,8 @@ class Agent:
 		env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
 		env_colors = set([s.colorName for s in env_sprites if s])
 
+		print "in testAndExpand"
+		embed()
 		env.step(action)
 		env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
 		env_colors = set([s.colorName for s in env_sprites if s])
