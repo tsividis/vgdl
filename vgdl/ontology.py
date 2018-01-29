@@ -2749,7 +2749,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
         scoreAndTheoryTuples = []
         for k in game.movement_options[sprite.ID].keys():
             if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k].keys():
-                if k not in game.sprite_appearance_predictions.keys() or 
+                if k not in game.sprite_appearance_predictions.keys() or \
                     any([appearance in game.sprite_appearance_predictions[sprite.ID][k] for appearance in game.sprite_appearances]):
                         scoreAndTheoryTuples.append((0,k))
 
