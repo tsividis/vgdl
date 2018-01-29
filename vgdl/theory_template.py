@@ -347,7 +347,19 @@ class Theory(object):
 						s.args = ccopy(interactionRule.args)
 				interactionRule.args = {}
 
-
+	def addSpriteToTheory(self, newSpriteName, color, vgdlType='default'):
+		if vgdlType=='default':
+			vgdlType = ResourcePack
+		sprite = Sprite(vgdlType, color, className=newSpriteName, args=None)
+		for (o1,o2) in itertools.product([newSpriteName], self.classes.keys()):
+			rule1 = InteractionRule('stepBack', o1, o2, {}, set(), generic=True)
+			rule2 = InteractionRule('stepBack', o1, o2, {}, set(), generic=True)
+			self.interactionSet.append(rule1)
+			self.interactionSet.append(rule2)
+		self.classes[newSpriteName] = [sprite]
+		self.spriteSet.append(sprite)
+		self.spriteObjects[color] = sprite
+		return
 	"""Main functions"""
 
 	def prior(self):
@@ -1824,6 +1836,8 @@ class Game(object):
 				[self.DFSinduction(t, timesteps, maxNumTheories, override=override, verbose=verbose) for t in newTheories]
 
 
+
+
 	def buildGenericTheory(self, spriteSample=True, vgdlSpriteParse=False, learnAvatar=True):
 
 		T = Theory(self)
@@ -2429,12 +2443,35 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	childTheories = []
 
 	targetClass = errorMap.targetClass
-	targetToken = errorMap.targetToken
 
-	theory.expandedSprites.append(targetClass)
+	# if 'newObjectAppeared' in errorMap.diagnosis:
+	# 	if errorMap not in theory.deferredErrorMaps:
+	# 		print "new object appeared in expandSprites"
+	# 		embed()
+	# 		theory.deferredErrorMaps.append(errorMap)
+	# 		childTheories = [theory]
+	# 		return targetClass, childTheories
+	# 	else:
+	# 		print "In defferred step in expandSprites; removing errorMap from deferred list"
+	# 		embed()
+	# 		theory.deferredErrorMaps.remove(errorMap)
+
+	if 'newObjectAppeared' in errorMap.diagnosis:
+		# embed()
+		## Find closest sprite that is not self, use that as targetToken, run induction for that.
+		overlappingSprite = [item for sublist in game.sprite_groups.values() for item in sublist if item.rect==errorMap.targetToken.rect 
+			and item.colorName!=errorMap.targetToken.colorName][0]
+		targetToken = overlappingSprite
+		print "got new object in expandSprites. Running sprite induction for overlapping sprite: {}".format(targetToken.colorName)
+		## you're not updating the type for this particular sprite, here.
+	else:
+		targetToken = errorMap.targetToken
+		theory.expandedSprites.append(targetClass)
+	
+
 	## Only propose sprites when something moves that we didn't think was going to move.
 	if all([diagnosis not in ['unexpectedPosition', 'unexpectedOverlap', 
-		'orientationChange', 'unexpectedOverlap', 'noMovement'] for diagnosis in errorMap.diagnosis]):
+		'orientationChange', 'unexpectedOverlap', 'noMovement', 'newObjectAppeared'] for diagnosis in errorMap.diagnosis]):
 		return targetClass, childTheories
 
 	spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, action=action, oldSpriteSet=theory.spriteSet,\

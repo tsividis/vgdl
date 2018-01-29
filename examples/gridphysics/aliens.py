@@ -21,12 +21,12 @@ game="""
 BasicGame
     SpriteSet
         base    > Immovable    color=WHITE
-        avatar  > FlakAvatar stype=sam
+        avatar  > FlakAvatar stype=sam color=DARKBLUE
         missile > Missile
             sam  > orientation=UP    color=BLUE singleton=True
             bomb > orientation=DOWN  color=RED  speed=0.5
-        alien   > Bomber       stype=bomb   prob=0  cooldown=3 speed=0.75
-        portal  > SpawnPoint   stype=alien  cooldown=10   total=3
+        alien   > Bomber       stype=bomb   prob=0  cooldown=3 speed=0.75 color=ORANGE
+        portal  > SpawnPoint   stype=alien  cooldown=10   total=3 color=YELLOW
 
     LevelMapping
         0 > base
@@ -48,7 +48,7 @@ BasicGame
         MultiSpriteCounter stype1=portal stype2=alien limit=0 win=True
 """
 
-
+level_game_pairs = [[game, level]]
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     # parse, run and play.

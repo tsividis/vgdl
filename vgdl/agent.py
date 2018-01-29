@@ -651,20 +651,25 @@ class Agent:
 			sMatch = [s for s in all_sprites_envA if s.colorName==color]
 			if sMatch==[]:
 				e.targetClass = 'unknown'
-				print "got unknown class"
-				# embed()
 			else:
 				e.targetClass = sMatch[0].name
+
 			# Find neighbors of target sprite in current time step -> could have caused appearance
-			# Simultaneously find culprit classes - a neighboring sprite could have launched the sprite due to its class
+			# Simultaneously find culprit classes - an overlapping sprite could have launched the sprite due to its class
 			neighbors_curr = self.neighborsPrev(envA, envB, sB) #use this function to find neighbors in current state and not previous ("Prev" label is unnecessary)
-			for className in neighbors_curr:
-				e.intPairs.append( (sA.name,className) )
-				# Culprit classes are given by the names of the potential interaction partners
-				e.culpritClasses.append(className)
+			nearestSprite = self.findNearestSprite(sB, [item for sublist in envA._game.sprite_groups.values() for item in sublist])
+			if nearestSprite.name in neighbors_curr:
+				e.intPairs.append((e.targetClass, nearestSprite.name))
+				e.culpritClasses.append(nearestSprite.name)
+			else:
+				print "got new sprite class but nearest prev-step sprite isn't a current neighbor"
+				embed()
+			# for className in neighbors_curr:
+			# 	e.intPairs.append( (sA.name,className) )
+			# 	# Culprit classes are given by the names of the potential interaction partners
+			# 	e.culpritClasses.append(className)
 			errorMap.append(e)
-			#print "Embedded in appearance handling"
-			#embed()
+
 
 		# 3) State change
 		# Call s.resources on all sprites in envA and envB. See which ones have changed
@@ -1096,8 +1101,16 @@ class Agent:
 			return newTheories
 
 		if errorMap.targetClass == 'unknown':
-			print "errorMap gives new class"
-			embed()
+			## assign new class here so you can use it for both expandSprites() and expandLine()
+			class_num = len([k for k in theory.classes.keys() if k!='EOS']) + 1
+			errorMap.targetClass = 'c'+str(class_num)
+			newPairs = []
+			for num,pair in enumerate(errorMap.intPairs):
+				newPair = tuple([p if p!='unknown' else errorMap.targetClass for p in list(pair)])
+				newPairs.append(newPair)
+			errorMap.intPairs = newPairs
+			print "Got unknown targetclass for {}. Added generic sprite to spriteSet and interactionSet".format(errorMap.targetToken.colorName)
+			theory.addSpriteToTheory(errorMap.targetClass, errorMap.targetToken.colorName)
 
 		## SpriteSet induction step
 		if errorMap.targetClass != 'avatar' and errorMap.targetClass not in theory.expandedSprites:
@@ -1351,8 +1364,9 @@ class Agent:
 		# actions = [0,0,0,0,0, K_RIGHT, K_RIGHT,0,0,0,0,0,0,0,0,0,0,0]
 		# actions = [0,0,0,0,0,0,0,0,0,0,0]
 		# actions = [K_RIGHT, 0, K_RIGHT]
-		actions = [K_LEFT, K_UP, 0]
+		actions = [32, K_LEFT, 0]
 		self.initializeEnvironment()
+
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
 		print "initializing RLE. Epoch={}".format(epoch)
@@ -1779,17 +1793,18 @@ class Agent:
 			return False
 
 	def manageNewObjects(self, hypotheses):
+
 		## Add newly-seen objects.
 		current_objects = self.rle._game.getObjects()
 		for k in current_objects.keys():
-			spriteName = current_objects[k]['sprite'].name
-			if spriteName not in [self.all_objects[key]['sprite'].name for key in self.all_objects.keys()]:
-				print "new object", spriteName
+			colorName = current_objects[k]['sprite'].colorName
+			if colorName not in [self.all_objects[key]['sprite'].colorName for key in self.all_objects.keys()]:
+				print "new object", colorName
 				self.all_objects[k] = current_objects[k]
 				distributionInitSetup(self.rle._game, k)
 				## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep.
 				self.rle._game.ignoreList.append(k)
-				self.new_objects[spriteName] = 0
+				self.new_objects[colorName] = 0
 
 		return hypotheses
 
@@ -1934,6 +1949,7 @@ class Agent:
 				resourceObservations['resource'][sprite][res] = (val,not avatar_is_dead,not sprite_gone)
 
 		_, new_sprites, _ = self.matchEnvs(envReal, envRealPrev)
+		new_sprites = [(s.colorName, s.rect.left, s.rect.top) for s in new_sprites]
 		self.lastObjectState = current_state
 		return resourceObservations, new_sprites
 
@@ -2041,6 +2057,10 @@ class Agent:
 		self.rle.step(action)
 		agentState = self.resourceManagement(pre_step=False)
 		envReal = self.fastcopy(self.rle)
+
+
+		hypotheses = self.manageNewObjects(hypotheses)
+
 
 		self.rleHistory.append(envReal)
 		
@@ -2211,7 +2231,6 @@ class Agent:
 		# print ">>> Embedded at end of executeStep"
 		# embed()
 
-		hypotheses = self.manageNewObjects(hypotheses)
 		self.statesEncountered.append(self.rle._game.getFullState())
 		self.rle._game.sprite_appearances = []
 		return hypotheses
@@ -2541,6 +2560,7 @@ class Agent:
 if __name__ == "__main__":
 
 	##simpleGame_missile: no support for learning that it can shoot things.
+	# filename = "examples.gridphysics.aliens"
 
 	filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.inference_test"

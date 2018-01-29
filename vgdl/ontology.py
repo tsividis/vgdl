@@ -2235,13 +2235,14 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         
         if sprite_type in [FlakAvatar, ShootAvatar]:
             stype = getStype(params)
-            new_object_location = (current_sprite.rect.left, current_sprite.rect.right)
-            appearance_predictions[stype] = [new_object_location]
+            # new_object_location = (current_sprite.rect.left, current_sprite.rect.right)
+            # appearance_predictions[stype] = [new_object_location]
+            appearance_predictions = [(stype, current_sprite.rect.left, current_sprite.rect.top)]
             return position_options, position_options, appearance_predictions
             ## get type of sprite that should appear and its location; return that as the third dict.
             ## then get the return val of this one and add it to the game.sprite_appearance_predictions
         else:
-            return position_options, position_options, {}
+            return position_options, position_options, []
 
 
         # Catches objects that can't be Oriented Sprite and Missile types b/c fails the if-statement
@@ -2317,23 +2318,21 @@ def initializeDistributionArgs(sprite_type, objectColors):
     return paramList
 
 
-def distributionInitSetup(game, sprite):
+def distributionInitSetup(game, spriteID):
     """
     Does setup for initializing distribution
-    'sprite' is an object ID
     """
     objectColors = [colorDict[str(game.sprite_constr[k][1]['color'])] for k in game.sprite_constr.keys() if game.sprite_constr[k] and
         colorDict[str(game.sprite_constr[k][1]['color'])] not in ['BLACK', 'DARKGRAY']]
     objectColors = list(set(objectColors))
-    game.spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
-    game.object_token_spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
-    if sprite not in game.all_objects.keys():
-        game.all_objects[sprite] = game.getObjects()[sprite]
+    game.spriteDistribution[spriteID] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
+    game.object_token_spriteDistribution[spriteID] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
+    if spriteID not in game.all_objects.keys():
+        game.all_objects[spriteID] = game.getObjects()[spriteID]
 
-    game.movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
-    game.object_token_movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
-    game.sprite_appearance_predictions[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys() if 'Avatar' in str(k[0][1])}
-
+    game.movement_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys()}
+    game.object_token_movement_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys()}
+    game.sprite_appearance_predictions[spriteID] = {k:[] for k in game.spriteDistribution[spriteID].keys() if 'Avatar' in str(k[0][1])}
 
 
 def updateDistribution(game, sprite, curr_distribution, movement_options, outcome, specialID=None, missileOrientationClustering=False):
@@ -2686,7 +2685,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
                     updateOptions(game, sprite_type, sprite_obj, action=action, params=attributeDict, missileOrientationClustering=True, allMovement=allMovement)
  
                     if param_combination in game.sprite_appearance_predictions[sprite].keys():
-                        game.sprite_appearance_predictions[sprite][param_combination] = appearance_prediction
+                        game.sprite_appearance_predictions[sprite][param_combination].extend(appearance_prediction)
 
     elif step==3:
         ## Update sprite distribution based on observations
@@ -2744,16 +2743,22 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
             embed()
         sprite = specificSpritesToUpdate[0]
 
+        if game.sprite_appearances:
+            print "in spriteInduction"
+            embed()
         scoreAndTheoryTuples = []
         for k in game.movement_options[sprite.ID].keys():
             if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k].keys():
-                scoreAndTheoryTuples.append((0,k))
+                if k not in game.sprite_appearance_predictions.keys() or \
+                    any([appearance in game.sprite_appearance_predictions[sprite.ID][k] for appearance in game.sprite_appearances]):
+                        scoreAndTheoryTuples.append((0,k))
 
-        for appearance in game.sprite_appearance_predictions[sprite.ID]:
-            if appearance in game.sprite_appearances:
+
+        for k,v in game.sprite_appearance_predictions[sprite.ID].items():
+            if any([appearance in v for appearance in game.sprite_appearances]):
                 scoreAndTheoryTuples.append((0,k))
                 print "found sprite appearance"
-                embed()
+                # embed()
 
         reasonableHypotheses = [s[1] for s in scoreAndTheoryTuples]
         return reasonableHypotheses
