@@ -909,13 +909,13 @@ class Agent:
 		return VRLEs
 
 	#<< To build own theory: check comments below
-	def initializeHypotheses(self, allObjects, learnSprites=True, num_variants=0):
+	def initializeHypotheses(self, allObjects, learnSprites=True, learnAvatar=True, num_variants=0):
 		if learnSprites:
 			observe(self.rle, 0, self.bestSpriteTypeDict)
 			## Sample from distribution but actually just set everything to default.
 			spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
 				self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, \
-				oldSpriteSet=None, mode='default', learnAvatar=True)
+				oldSpriteSet=None, mode='default', learnAvatar=learnAvatar)
 			self.rle._game.exceptedObjects = exceptedObjects
 			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
 			initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
@@ -925,32 +925,29 @@ class Agent:
 			initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
 
 		initialTheory.mostRecentEdit = 'none'
-		# Handle wall vs. projectile interaction (hacky)
-		# avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
-
-		# self.hypotheses = [0]
-		## Instantiate a hypothesis that each singleton class might be the avatar
-		# print "in initializeHypotheses"
-		# embed()
 
 		self.symbolDict = generateSymbolDict(self.rle)
-		self.hypotheses = []
-		## Grab all singleton classes and instantiate hypotheses that they are the avatar.
-		for color in self.symbolDict.keys():
-			if len(getSpritesByColor(self.rle._game, color))==1:
-				newTheory = copy.deepcopy(initialTheory)
-				oldClassName = newTheory.spriteObjects[color].className
-				del newTheory.classes[oldClassName]
-				newTheory.spriteObjects[color].className = 'avatar'
-				newTheory.spriteObjects[color].vgdlType = MovingAvatar
-				newTheory.classes['avatar'] = [newTheory.spriteObjects[color]]
-				for rule in newTheory.interactionSet:
-					if rule.slot1==oldClassName:
-						rule.slot1='avatar'
-					if rule.slot2==oldClassName:
-						rule.slot2='avatar'
-				self.hypotheses.append(newTheory)
 
+		if learnAvatar:
+			## Instantiate a hypothesis that each singleton class might be the avatar
+			self.hypotheses = []
+			## Grab all singleton classes and instantiate hypotheses that they are the avatar.
+			for color in self.symbolDict.keys():
+				if len(getSpritesByColor(self.rle._game, color))==1:
+					newTheory = copy.deepcopy(initialTheory)
+					oldClassName = newTheory.spriteObjects[color].className
+					del newTheory.classes[oldClassName]
+					newTheory.spriteObjects[color].className = 'avatar'
+					newTheory.spriteObjects[color].vgdlType = MovingAvatar
+					newTheory.classes['avatar'] = [newTheory.spriteObjects[color]]
+					for rule in newTheory.interactionSet:
+						if rule.slot1==oldClassName:
+							rule.slot1='avatar'
+						if rule.slot2==oldClassName:
+							rule.slot2='avatar'
+					self.hypotheses.append(newTheory)
+		else:
+			self.hypotheses = [initialTheory]
 
 		## For debugging purposes: generate variants of the theory
 		## (as a stand-in for a more generic induction/elaboration process)
@@ -1367,7 +1364,7 @@ class Agent:
 		self.all_objects= self.rle._game.getObjects()
 
 		if epoch==0:
-			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, num_variants=20)
+			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, learnAvatar=True, num_variants=0)
 
 		## Start storing encountered states.
 		effectsEncountered = []
@@ -1440,7 +1437,7 @@ class Agent:
 
 		## initialize theory if necessary.
 		if len(self.hypotheses) == 0:
-			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=False, num_variants=0)
+			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, learnAvatar=True, num_variants=0)
 			print "initializing hypotheses"
 		else:
 			gameObject = self.completeHypotheses(self.all_objects, first_time_playing_level)
