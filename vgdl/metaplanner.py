@@ -71,8 +71,8 @@ def observe(rle, obsSteps, bestSpriteTypeDict):
 	if obsSteps>0:
 		for i in range(obsSteps):
 			# print rle.show()
-			spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
-			spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
+			spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict, action=None)
+			spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict, action=None)
 
 			rle.step((0,0))
 
@@ -93,8 +93,8 @@ def observe(rle, obsSteps, bestSpriteTypeDict):
 
 			spriteInduction(rle._game, step=3, bestSpriteTypeDict=bestSpriteTypeDict)
 	else:
-		spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
-		spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
+		spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict, action=None)
+		spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict, action=None)
 		# spriteInduction(rle._game, step=3)
 	return
 
