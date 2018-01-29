@@ -19,13 +19,21 @@ import core
 import copy
 import ipdb
 from line_profiler import LineProfiler
+from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
+
 
 UP = (0, -1)
 DOWN = (0, 1)
 LEFT = (-1, 0)
 RIGHT = (1, 0)
+NONE = (0,0)
 
 BASEDIRS = [UP, LEFT, DOWN, RIGHT]
+
+actionToDir = {K_UP:UP, K_DOWN:DOWN, K_LEFT:LEFT, K_RIGHT:RIGHT, K_SPACE:NONE, NONE:NONE}
+
+
+keyPressToAction = {273: K_UP, 274: K_DOWN, 276: K_LEFT, 275: K_RIGHT, 32: K_SPACE, 0:NONE}
 
 spriteToParams = {'Resource': [], \
                 'ResourcePack': [], \
@@ -33,7 +41,14 @@ spriteToParams = {'Resource': [], \
                 'Chaser': ['cooldown', 'fleeing', 'stype'], \
                 'AStarChaser': ['fleeing', 'speed', 'stype'], \
                 'OrientedSprite': ['orientation'], \
-                'Missile': ['speed', 'orientation', 'cooldown']} ##removed speed from chaser and randomNPC
+                'Missile': ['speed', 'orientation', 'cooldown'],\
+                'MovingAvatar': [],\
+                'ShootAvatar': ['stype'],\
+                'FlakAvatar': ['stype']} ##removed speed from chaser
+
+avatarActions = {'MovingAvatar': [K_UP, K_DOWN, K_LEFT, K_RIGHT],\
+                'FlakAvatar': [K_SPACE, K_LEFT, K_RIGHT],\
+                'ShootAvatar': [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]}
 
 # ---------------------------------------------------------------------
 #     Types of physics
@@ -194,8 +209,6 @@ class ContinuousPhysics(GridPhysics):
             v2 = action[1] / float(sprite.mass) + sprite.orientation[1] * speed
         else:
             v2 = action[1]*sprite.vy_max
-        
-        
         
         if ((hasattr(sprite,'jumping') and sprite.jumping) or action[1]) and (sprite.gravity or sprite.rope):
             v1 = sprite.orientation[0] * speed
@@ -480,7 +493,7 @@ class Chaser(RandomNPC): ##
         bestd = 1e100
         res = []
         if type(self.stype)==tuple:
-            targets = getSpritesByColor(colorDict[str(self.stype)], game)
+            targets = getSpritesByColor(game, colorDict[str(self.stype)])
         else:
             targets = game.getSprites(self.stype)
         for target in targets:
@@ -670,6 +683,7 @@ class MovingAvatar(VGDLSprite, Avatar):
     alternate_keys=False
     last_gravity=False
     last_rope=False
+    availableActions = [K_UP, K_DOWN, K_LEFT, K_RIGHT]
 
     def declare_possible_actions(self):
         from pygame.locals import K_LEFT, K_RIGHT, K_UP, K_DOWN
@@ -718,7 +732,7 @@ class MovingAvatar(VGDLSprite, Avatar):
 
 class HorizontalAvatar(MovingAvatar):
     """ Only horizontal moves.  """
-
+    availableActions = [K_LEFT, K_RIGHT]
     def declare_possible_actions(self):
         from pygame.locals import K_LEFT, K_RIGHT
         actions = {}
@@ -767,6 +781,7 @@ class Paddle(HorizontalAvatar):
 class VerticalAvatar(MovingAvatar):
     """ Only vertical moves.  """
 
+    availableActions = [K_UP, K_DOWN]
     def declare_possible_actions(self):
         from pygame.locals import K_UP, K_DOWN
         actions = {}
@@ -783,7 +798,7 @@ class VerticalAvatar(MovingAvatar):
 class FlakAvatar(HorizontalAvatar, SpriteProducer):
     """ Hitting the space button creates a sprite of the
     specified type at its location. """
-
+    availableActions = [K_SPACE, K_LEFT, K_RIGHT]
     def declare_possible_actions(self):
         from pygame.locals import K_SPACE
         actions = HorizontalAvatar.declare_possible_actions(self)
@@ -875,7 +890,7 @@ class NoisyRotatingFlippingAvatar(RotatingFlippingAvatar):
 class ShootAvatar(OrientedAvatar, SpriteProducer):
     """ Produces a sprite in front of it (e.g., Link using his sword). """
     ammo=None
-
+    availableActions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
     def __init__(self, stype=None, **kwargs):
         self.stype = stype
         OrientedSprite.__init__(self, **kwargs)
@@ -1514,11 +1529,9 @@ def transformToOnLanding(sprite, partner, game, stype='wall'):
     """sprite will be transformed to stype when partner (avatar) lands on it from above"""
     if partner.speed*partner.orientation[1] == 0 and partner.lastrect.y != partner.rect.y:
         transformTo(sprite, partner, game, stype)
-        args = {'stype':stype}
-        ##Decide whether it's "fair" to know this was transformToOnLanding as opposed to transform
-        return ("transformToOnLanding", sprite.ID, partner.ID, args)
 
-#ignore
+    return ("transformToOnLanding", sprite.ID, partner.ID)
+
 def triggerOnLanding(sprite, partner, game, strigger=None):
     '''triggers a triggerable sprite. triggerable is interesting. should change this?'''
     if partner.speed*partner.orientation[1] == 0 and partner.lastrect.y != partner.rect.y:
@@ -1849,13 +1862,13 @@ def killSpriteOnLanding(sprite, partner, game):
 def teleportToExit(sprite, partner, game):
     try:
         e = random.choice(game.sprite_groups[partner.stype])
+        args = {'stype':partner.stype}
     except:
-        ## if the above fails, it's because the theory has specified the partner.stype as the goal
-        ## and so there is no game.sprite_groups[partner.stype]. send avatar to the goal.
-        e = random.choice(game.sprite_groups['goal'])
+        ## If partner doesn't have stype (the teleport exits) just don't move. Teleport to self.
+        e = sprite
+        args = {'stype':sprite.name}
     sprite.rect = e.rect
     sprite.lastmove = 0
-    args = {'stype':partner.stype}
     return ('teleportToExit', sprite.ID, partner.ID, args)
 
 def killIfTooFast(sprite,partner,game,speed):
@@ -1899,8 +1912,11 @@ def cannotActivateSwitch(sprite, partner, game):
 #     Sprite Induction
 # ---------------------------------------------------------------------
 ## TODO: Make sure you put these other types back when you fix sprite induction!!
-sprite_types = [ResourcePack, Missile, Chaser, RandomNPC] #removed Resource, Immovable, Passive, AStarChaser,
+sprite_types = [ResourcePack, Missile, Chaser, RandomNPC, FlakAvatar] #removed Resource, Immovable, Passive, AStarChaser,
 
+# MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
+#                 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
+#                     AimedFlakAvatar, InertialAvatar, MarioAvatar
 
 def getSpeed(params):
     """
@@ -1945,13 +1961,13 @@ def getCooldown(params):
     else:
         return 1
 
-def getSpritesByColor(color, game):
+def getSpritesByColor(game, color):
     unflattened = [s for s in game.sprite_groups.values() if s and s[0].colorName==color]
     return [item for sublist in unflattened for item in sublist]
 
 def chaserClosestTargets(sprite, game):
     if type(sprite.stype)==tuple:
-        targets = getSpritesByColor(colorDict[str(sprite.stype)], game)
+        targets = getSpritesByColor(game, colorDict[str(sprite.stype)])
     else:
         targets = game.getSprites(sprite.stype)
     bestd = 1e100
@@ -1981,7 +1997,10 @@ def chaserMovesToward(sprite, game, target, fleeing):
     return res
 
 def findChaserClosestTargets(sprite, spritePrev, game):
-    targets = getSpritesByColor(colorDict[str(sprite.stype)], game)
+    if type(sprite.stype)==tuple:
+        targets = getSpritesByColor(game, colorDict[str(sprite.stype)])
+    else:
+        targets = game.sprite_groups[sprite.stype]
     bestd = 1e100
     res = []
     for target in targets:
@@ -2017,14 +2036,14 @@ def setSpriteParams(param, sprite):
         elif p == "cooldown":
             sprite.cooldown = param[p]
 
-def updateOptionsProfiler(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False):
+def updateOptionsProfiler(game, sprite_type_tuple, current_sprite, action=None, params={}, missileOrientationClustering=False):
     lp = LineProfiler()
     lp_wrapper = lp(updateOptions)
-    d1, d2 = lp_wrapper(game, sprite_type_tuple, current_sprite, params, missileOrientationClustering)
+    d1, d2 = lp_wrapper(game, sprite_type_tuple, current_sprite, action, params, missileOrientationClustering)
     lp.print_stats()
     return d1, d2
 
-def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False, allMovement=True):
+def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={}, missileOrientationClustering=False, allMovement=True):
     """
     This method gets all of the parameter information from the params variable
     instead of directly accessing the parameters in current_sprite.
@@ -2035,14 +2054,13 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
     The default value of params is an empty dictionary - if that's the value passed, then the method will
     assume default values for each attribute.
     """
+    appearance_predictions = {}
     sprite_type = sprite_type_tuple[1]
+    if action==None:
+        action=0
 
-    # if current_sprite.name!='wall':
-    #     embed()
-    # Immovable, Passive, ResourcePack
     if sprite_type in [Immovable, Passive, ResourcePack, Resource, 'OTHER']:
-    # if (sprite_type == Immovable) or (sprite_type == Passive) or (sprite_type == ResourcePack) or (sprite_type == Resource) or (sprite_type=='OTHER'):
-        return {(current_sprite.rect.left, current_sprite.rect.top): 1.}, {(current_sprite.rect.left, current_sprite.rect.top): 1.} ##object stays in position
+        return {(current_sprite.rect.left, current_sprite.rect.top): 1.}, {(current_sprite.rect.left, current_sprite.rect.top): 1.}, appearance_predictions ##object stays in position
 
     # Chaser
     elif sprite_type == Chaser:
@@ -2050,7 +2068,12 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         fleeing = getFleeing(params)
         targetColor = getStype(params)
         cooldown = getCooldown(params)
-
+        realLastmove = int(current_sprite.lastmove)
+        current_sprite.lastmove +=1 ## to account for the fact that the normal update() function for a sprite runs before the calculateActiveMovement fn
+        # if current_sprite.colorName=='YELLOW' and fleeing==False and cooldown==3 and targetColor=='BLUE':
+        #     print "in chaser cooldown=3 updateOptions"
+        #     print current_sprite.lastmove
+        #     embed()
         realCooldown = int(current_sprite.cooldown)
         current_sprite.cooldown = cooldown
         # if current_sprite.colorName=='LIGHTORANGE':
@@ -2061,14 +2084,13 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
             targets = game.sprite_groups[targetName]
         except:
             targets = []
-            pass
+            # pass
 
         options = []
         position_options = {}
 
         try:
-            for target in targets:#chaserClosestTargets(current_sprite, game):
-                # print target
+            for target in targets:
                 options.extend(chaserMovesToward(current_sprite, game, target, fleeing))
             if len(options) == 0:
                 options = BASEDIRS
@@ -2082,13 +2104,11 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
                     position_options[(left, top)] = 1.0/len(options)
 
         except AttributeError: # deals with following error: 'Immovable' object has no attribute 'stype'
-            # position_options = {}
             position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
-            if current_sprite.colorName == 'GOLD':
-                print "problem in movementOtions"
-                embed()
+
         current_sprite.cooldown = realCooldown
-        return position_options, position_options
+        current_sprite.lastmove = realLastmove
+        return position_options, position_options, appearance_predictions
 
     # AStarChaser
     elif sprite_type == AStarChaser:
@@ -2128,7 +2148,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
 
         left, top = current_sprite.physics.calculateActiveMovement(current_sprite, movement, speed=speed, 
             allMovement=allMovement)
-        return {(left, top): 1.}, {(left, top): 1.}
+        return {(left, top): 1.}, {(left, top): 1.}, appearance_predictions
 
     # Random NPC
     elif sprite_type == RandomNPC:
@@ -2138,11 +2158,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         current_sprite.cooldown = cooldown
         position_options = {}
 
-        # if current_sprite.colorName=='GOLD' and speed==.2:# and 'Random' in str(sprite_type):
-        #     print "in updateOptions"
-        #     print current_sprite
-        #     embed()
-
         for option in BASEDIRS:
             left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed, 
                 allMovement=allMovement)
@@ -2150,17 +2165,9 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
                 position_options[(left, top)] += 1.0/len(BASEDIRS)
             else:
                 position_options[(left, top)] = 1.0/len(BASEDIRS)
-        # if current_sprite.colorName=='GOLD' and speed == .2 and cooldown == 3:
-        #     print "Random"
-        #     print current_sprite.rect
-        #     print position_options
-        # if current_sprite.colorName == 'RED':
-            # print "in updateOptions"
-            # print current_sprite, params
-            # print position_options
-            # embed()
+
         current_sprite.cooldown = realCooldown
-        return position_options, position_options
+        return position_options, position_options, appearance_predictions
 
     # Missile or OrientedSprite
     elif sprite_type in [Missile, OrientedSprite]:
@@ -2185,7 +2192,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         # If object has speed = 0 or no 'orientation' attribute
         position_options, clustered_position_options = {}, {}
         if coords == None:
-            return position_options, position_options
+            return position_options, position_options, appearance_predictions
 
         position_options[(coords[0], coords[1])] = 1.
 
@@ -2215,32 +2222,31 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         #     print position_options
 
         current_sprite.cooldown = realCooldown
-        return position_options, clustered_position_options
+        return position_options, clustered_position_options, appearance_predictions
+
+    elif sprite_type in [MovingAvatar, FlakAvatar, ShootAvatar]:
+        if action in sprite_type.availableActions:
+            dx,dy = actionToDir[keyPressToAction[action]]
+        else:
+            dx,dy = (0,0)
+
+        next_pos = current_sprite.rect.left + current_sprite.speed*dx*game.block_size, current_sprite.rect.top + current_sprite.speed*dy*game.block_size
+        position_options = {next_pos: 1.}
+        
+        if sprite_type in [FlakAvatar, ShootAvatar]:
+            stype = getStype(params)
+            # new_object_location = (current_sprite.rect.left, current_sprite.rect.right)
+            # appearance_predictions[stype] = [new_object_location]
+            appearance_predictions = [(stype, current_sprite.rect.left, current_sprite.rect.top)]
+            return position_options, position_options, appearance_predictions
+            ## get type of sprite that should appear and its location; return that as the third dict.
+            ## then get the return val of this one and add it to the game.sprite_appearance_predictions
+        else:
+            return position_options, position_options, []
+
 
         # Catches objects that can't be Oriented Sprite and Missile types b/c fails the if-statement
-        return {}, {}
-
-# def getAttributeTupleCombinations(game, sprite, sprite_type):
-#     """
-#     game = game object
-#     sprite = a vgdl sprite
-#     sprite_type = a proposed VGDL sprite type for this sprite
-
-#     Returns all possible combinations of parameters for a given sprite type and sprite.
-#     An attribute tuple is a tuple of form
-#      ((attribute1, value1), (attribute2, value2), ...). Each element in the attribute tuple
-#     is itself a tuple. The first element of the tuple is the attribute name (e.g. "speed")
-#     and the second is a possible value of that attribute (e.g. 0.5).
-#     """
-#     attributeValueList = []
-#     for arg in game.spriteDistribution[sprite][sprite_type]['args']:
-#         attributeValueList.append([])
-#         for value in game.spriteDistribution[sprite][sprite_type]['args'][arg]:
-#             attributeValueList[-1].append((arg, value))
-#             # if arg == 'stype' and value not in ['BLACK', 'ORANGE', 'WHITE', 'DARKBLUE']:
-#             #     print "in getattributetuple.."
-#     attributeTupleCombinations = list(itertools.product(*attributeValueList))
-#     return attributeTupleCombinations
+        return {}, {}, {}
 
 
 def initializeDistribution(sprite_types, objectColors):
@@ -2312,28 +2318,21 @@ def initializeDistributionArgs(sprite_type, objectColors):
     return paramList
 
 
-def distributionInitSetup(game, sprite):
+def distributionInitSetup(game, spriteID):
     """
     Does setup for initializing distribution
-    'sprite' is an object ID
     """
     objectColors = [colorDict[str(game.sprite_constr[k][1]['color'])] for k in game.sprite_constr.keys() if game.sprite_constr[k] and
         colorDict[str(game.sprite_constr[k][1]['color'])] not in ['BLACK', 'DARKGRAY']]
     objectColors = list(set(objectColors))
-    # for k in game.sprite_constr.keys():
-        # if colorDict[str(game.sprite_constr[k][1]['color'])] not in objectColors:
+    game.spriteDistribution[spriteID] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
+    game.object_token_spriteDistribution[spriteID] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
+    if spriteID not in game.all_objects.keys():
+        game.all_objects[spriteID] = game.getObjects()[spriteID]
 
-    #if 'RED' not in objectColors:
-    #    print "No red found in objectColors!"
-    #    embed()
-    game.spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
-    game.object_token_spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
-    if sprite not in game.all_objects.keys():
-        game.all_objects[sprite] = game.getObjects()[sprite]
-
-    game.movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
-    game.object_token_movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
-
+    game.movement_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys()}
+    game.object_token_movement_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys()}
+    game.sprite_appearance_predictions[spriteID] = {k:[] for k in game.spriteDistribution[spriteID].keys() if 'Avatar' in str(k[0][1])}
 
 
 def updateDistribution(game, sprite, curr_distribution, movement_options, outcome, specialID=None, missileOrientationClustering=False):
@@ -2388,53 +2387,56 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
 
 
 def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict, 
-    oldSpriteSet = None, mode='standard'):
+    oldSpriteSet = None, mode='standard', learnAvatar=True):
 
     import random
     import numpy as np
     from class_theory_template import Sprite
     from ontology import ResourcePack
     distributionsHaveChanged = False
-
-    sample = []
+    
     exceptions = []
+    sample = []
 
-    ##remove avatar. For now let's just assume we know which one it is.
-    ##TODO: You need to do avatarInduction, unless there's a generic type that can cover all types.
-    non_avatar_keys = []
+    if not learnAvatar:
+        ##remove avatar. For now let's just assume we know which one it is.
+        ##TODO: You need to do avatarInduction, unless there's a generic type that can cover all types.
+        non_avatar_keys = []
 
-    for k in all_objects.keys():
-        if all_objects[k]['sprite'].name != 'avatar':
-            non_avatar_keys.append(k)
-        else:
-            from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
-                RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
-                    AimedFlakAvatar, InertialAvatar, MarioAvatar
-            try:
+        for k in all_objects.keys():
+            if all_objects[k]['sprite'].name != 'avatar':
+                non_avatar_keys.append(k)
+            else:
+                from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
+                    RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
+                        AimedFlakAvatar, InertialAvatar, MarioAvatar
+                try:
 
-                ## Add avatar, and add the attached arguments, i.e., what the avatar shoots.
-                sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
+                    ## Add avatar, and add the attached arguments, i.e., what the avatar shoots.
+                    sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
 
-                ## Get the object the Avatar shoots, add that.
-                ao = game.sprite_constr[all_objects[k]['sprite'].stype]
-                ao_vgdl_type = ao[0]
-                ao_color = colorDict[str(ao[1]['color'])]
-                ao_args = ao[1]
-                
-                ao_args.update({'singleton': 'True'})
-                sample.append(Sprite(vgdlType=ao_vgdl_type, color=ao_color, className=all_objects[k]['sprite'].stype, args=ao_args))
-                # sample.append(Sprite(vgdlType=Flicker, color='BLUE', className=all_objects[k]['sprite'].stype, args={'singleton':'True'}))
+                    ## Get the object the Avatar shoots, add that.
+                    ao = game.sprite_constr[all_objects[k]['sprite'].stype]
+                    ao_vgdl_type = ao[0]
+                    ao_color = colorDict[str(ao[1]['color'])]
+                    ao_args = ao[1]
+                    
+                    ao_args.update({'singleton': 'True'})
+                    sample.append(Sprite(vgdlType=ao_vgdl_type, color=ao_color, className=all_objects[k]['sprite'].stype, args=ao_args))
+                    # sample.append(Sprite(vgdlType=Flicker, color='BLUE', className=all_objects[k]['sprite'].stype, args={'singleton':'True'}))
 
-                exceptions.append(ao_color)
-                # sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'healthPoints':all_objects[k]['sprite'].healthPoints}))
-            except AttributeError:
-                # No args in avatar
+                    exceptions.append(ao_color)
+                    # sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'healthPoints':all_objects[k]['sprite'].healthPoints}))
+                except AttributeError:
+                    # No args in avatar
 
-                sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color']))
+                    sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color']))
 
-    ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
-    types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions)) ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately
-                                                                                                    ## and not doing inference about it.
+        ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
+        types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions)) ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately
+                                                                                                        ## and not doing inference about it.
+    else:
+        types = list(set([all_objects[k]['type']['color'] for k in all_objects.keys()]))
     best_params = {}
     for obj_type in types:
         ## Integrate evidence across all episodes; pick best hypothesis.
@@ -2616,7 +2618,7 @@ def spriteInductionProfiler(game, step, bestSpriteTypeDict, oldSpriteSet=None, o
     lp.print_stats()
     return distributionsHaveChanged
 
-def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None, specificSpritesToUpdate=[], 
+def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=None, old_outcome=None, specificSpritesToUpdate=[], 
     percentile=20, max_num=20, allMovement=False):
     """
     An explanation of important data structures used in this function:
@@ -2633,6 +2635,8 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
     setting of its attributes (e.g. specific values for speed, orientation, etc.) and also given sprite type.
     """
     distributionsHaveChanged = False
+    if action==None:
+        action = 0
     if step==0:
     ## Prep for sprite induction
         for sprite in game.getObjects():
@@ -2649,7 +2653,6 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
             if sprite not in game.spriteDistribution:
                 game.all_objects[sprite] = objects[sprite]
                 distributionInitSetup(game, sprite)
-
     elif step == 2:
         ## See the update options for each sprite type the sprite could be
         objects = game.getObjects()
@@ -2668,20 +2671,21 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                     attributeDict = {k:v for k,v in param_combination[1:]}
 
                     # Get potential next positions for sprite if it were that sprite type
-                    if sprite_obj.name != 'avatar':
-                        ##we are sprite_obj, and we are updating the options for where it could be next contingent on its being 'sprite_type'
-                        # given a set of potential attribute values, update the movement options
-                        # for this attribute tuple (i.e. candidate set of parameters)
+                    # if sprite_obj.name != 'avatar':
+                    ##we are sprite_obj, and we are updating the options for where it could be next contingent on its being 'sprite_type'
+                    # given a set of potential attribute values, update the movement options
+                    # for this attribute tuple (i.e. candidate set of parameters)
 
-                        ## missileOrientationClustering: considers left/right and up/down to be equivalent options in the likelihood
-                        ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving
-                        ## objects
-                        game.object_token_movement_options[sprite][param_combination], game.movement_options[sprite][param_combination] = \
-                        updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True, allMovement=allMovement)
-
-                        # if sprite_obj.colorName=='ORANGE':
-                        #     print "calculated options"
-                        #     embed()
+                    ## missileOrientationClustering: considers left/right and up/down to be equivalent options in the likelihood
+                    ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving
+                    ## objects
+                    game.object_token_movement_options[sprite][param_combination], \
+                    game.movement_options[sprite][param_combination], \
+                    appearance_prediction = \
+                    updateOptions(game, sprite_type, sprite_obj, action=action, params=attributeDict, missileOrientationClustering=True, allMovement=allMovement)
+ 
+                    if param_combination in game.sprite_appearance_predictions[sprite].keys():
+                        game.sprite_appearance_predictions[sprite][param_combination].extend(appearance_prediction)
 
     elif step==3:
         ## Update sprite distribution based on observations
@@ -2739,39 +2743,23 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
             embed()
         sprite = specificSpritesToUpdate[0]
 
-
-        # for sprite in specificSpritesToUpdate:        
-        #     sprite_obj = objects[sprite]["sprite"]
-
-        #     # missiles = [k for k in game.movement_options[sprite].keys() if 'Missile' in str(k[0][1])]
-        #     # correct_missiles = [m for m in missiles if game.movement_options[sprite][m]]
-        #     # chasers = [k for k in game.movement_options[sprite].keys() if 'Chaser' in str(k[0][1])]
-        #     # correct_chasers = [c for c in chasers if game.movement_options[sprite][c]]
-
-        #     if sprite not in game.ignoreList and sprite_obj.name != 'avatar':
-
-        #         outcome = objects[sprite]["position"]
-        #         game.spriteDistribution = updateDistribution(game, sprite, game.spriteDistribution, \
-        #                                   game.movement_options, outcome, missileOrientationClustering=True)
-        #         game.object_token_spriteDistribution = updateDistribution(game, sprite, game.object_token_spriteDistribution, \
-        #                                   game.object_token_movement_options, outcome)
-
-        #         ## game.spriteUpdateDict[sprite] += 1
-
+        if game.sprite_appearances:
+            print "in spriteInduction"
+            embed()
         scoreAndTheoryTuples = []
         for k in game.movement_options[sprite.ID].keys():
             if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k].keys():
-                scoreAndTheoryTuples.append((0,k))
+                if k not in game.sprite_appearance_predictions.keys() or 
+                    any([appearance in game.sprite_appearance_predictions[sprite.ID][k] for appearance in game.sprite_appearances]):
+                        scoreAndTheoryTuples.append((0,k))
 
-        # if sprite.colorName=='YELLOW':
-        #     print "in spriteINduction"
-        #     embed()
-            # for opt in game.movement_options[sprite.ID][k].keys():
-                # v = min( sprite.rect.left-)
-        
-        # scoreAndTheoryTuples = [(v, k) for k, v in game.spriteDistribution[sprite].iteritems()]
-        # reasonableScoreAndTheoryTuples = filterTheories(scoreAndTheoryTuples, percentile=percentile, max_num=max_num)
-        # reasonableHypotheses = [st[1] for st in reasonableScoreAndTheoryTuples]
+
+        for k,v in game.sprite_appearance_predictions[sprite.ID].items():
+            if any([appearance in v for appearance in game.sprite_appearances]):
+                scoreAndTheoryTuples.append((0,k))
+                print "found sprite appearance"
+                # embed()
+
         reasonableHypotheses = [s[1] for s in scoreAndTheoryTuples]
         return reasonableHypotheses
 
@@ -2779,7 +2767,15 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
     game.ignoreList = []
     return distributionsHaveChanged
 
-
+# def getSpritesByColor(game, color):
+#     outList = []
+#     for k in game.sprite_groups.keys():
+#         if game.sprite_groups[k] and game.sprite_groups[k][0].colorName==color:
+#             outList.extend(game.sprite_groups[k])
+#     if outList:
+#         return list(set(outList))
+#     else:
+#         return []
 
 def softmax(w, t = 1.0):
     e = np.exp(np.array(w) / t)

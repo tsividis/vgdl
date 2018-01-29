@@ -269,7 +269,9 @@ class BasicGame(object):
         self.object_token_spriteDistribution = {}
         self.spriteUpdateDict = defaultdict(int) ## track how many times we have run spriteType updates to each particular object
         self.movement_options = {}
+        self.sprite_appearance_predictions = {}
         self.object_token_movement_options = {}
+        self.sprite_appearances = [] ## New sprites that appear at any given step. This gets cleared at the end of each time-step.
         self.all_objects = None
 
         self.EOS = EOS((-1, -1))
@@ -399,7 +401,9 @@ class BasicGame(object):
             if self.num_sprites > self.MAX_SPRITES:
                 print "Sprite limit reached."
                 return
+
             sclass, args, stypes = self.sprite_constr[key]
+
             # verify the singleton condition
             anyother = False
             for pk in stypes[::-1]:
@@ -822,6 +826,7 @@ class BasicGame(object):
         objects = self.getObjects()
         self.spriteDistribution = {}
         self.movement_options = {}
+        self.sprite_appearance_predictions = {}
         allStates = [self.getFullState()]
 
 
@@ -945,6 +950,7 @@ class BasicGame(object):
         objects = self.getObjects()
         self.spriteDistribution = {}
         self.movement_options = {}
+        self.sprite_appearance_predictions = {}
         allStates = [self.getFullState()]
 
         self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack']
@@ -1208,7 +1214,7 @@ class VGDLSprite(object):
     color    = None
     cooldown = 1
     # cooldown = 0 # pause ticks in-between two moves
-    speed    = None
+    speed    = 0
     mass     = 1
     physicstype=None
     last_gravity=False
@@ -1286,7 +1292,10 @@ class VGDLSprite(object):
     def _updatePos(self, orientation, speed=None):
         if speed is None:
             speed = self.speed
+        # if self.colorName=='YELLOW':
+        #     print "lastMove", self.lastmove
         if (self.lastmove+1)%self.cooldown==0 and abs(orientation[0])+abs(orientation[1])!=0:
+            # print "MOVING"
         # if not( ((self.lastmove+1) % self.cooldown != 0) or abs(orientation[0])+abs(orientation[1])==0): ##used this until 9/14
             self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
             # self.lastmove = 0

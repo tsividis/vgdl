@@ -150,7 +150,7 @@ BasicGame frame_rate=30
     InteractionSet
         avatar wall > stepBack
         medicine avatar > killSprite
-        avatar poison > killIfHasLess resource=medicine limit=1
+        avatar poison > killIfHasLess resource=medicine limit=-1
         avatar poison > changeResource resource=medicine value=-1
         avatar medicine > changeResource resource=medicine value=1
         box avatar > killSprite
@@ -164,7 +164,7 @@ BasicGame frame_rate=30
         SpriteCounter stype=goal limit=0 win=True
 """
 
-level_game_pairs = [[game, level0], [game, level1], [game, level2], [game, level3]]
+level_game_pairs = [[game, level1], [game, level2], [game, level3]] #[game, level0], 
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

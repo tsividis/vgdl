@@ -2,6 +2,7 @@ from IPython import embed
 import itertools
 import random
 import csv
+import cPickle
 
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
 CHARS = 'bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM'
@@ -106,3 +107,6 @@ def write_to_csv(filename, game):
 			score = None
 		writer.writerow((game['modelType'], game['condition'], game['gameName'], levels_won, steps, score))
 	f.close()
+
+def ccopy(obj):
+	return cPickle.loads(cPickle.dumps(obj))

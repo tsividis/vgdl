@@ -1,6 +1,9 @@
 from random import choice
 import itertools, copy, scipy.misc
 import numpy as np
+import dill
+import tempfile
+import json
 from sampleVGDLString import *
 from class_theory_template import *
 from taxonomy import *
@@ -10,7 +13,7 @@ from collections import defaultdict
 import ipdb
 import operator
 import time, math
-from util import factorize, objectsToSymbol
+from util import factorize, objectsToSymbol, ccopy
 from rlenvironmentnonstatic import createMindEnv
 from line_profiler import LineProfiler
 
@@ -293,6 +296,21 @@ class Theory(object):
 		
 		self.mark = False ## For convenient marking and finding of hypotheses
 
+	def copy(self):
+		newTheory = Theory(self.game)
+		newTheory.classes = ccopy(self.classes)
+		newTheory.expandedSprites = ccopy(self.expandedSprites)
+		newTheory.interactionSet = ccopy(self.interactionSet)
+		newTheory.spriteObjects = ccopy(self.spriteObjects)
+		newTheory.spriteSet = ccopy(self.spriteSet)
+		newTheory.terminationSet = ccopy(self.terminationSet)
+		try:
+			newTheory.errorMapHistory = [e.copy() for e in self.errorMapHistory]
+		except:
+			print "attribute error with errorMapHistory"
+			embed()
+		return newTheory
+
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
 		# print "in initializeSpriteSet"
 		# embed()
@@ -313,6 +331,35 @@ class Theory(object):
 		for s in self.spriteSet:
 			self.spriteObjects[s.color] = s
 		# embed()
+
+	def reconcileInteractionsAndSprites(self):
+		## VGDL contains some exceptions to the independence between interactionSet and spriteSet:
+		## e.g., teleportation targets are specified in the spriteSet even though teleportation is an interaction.
+		## resolve such exceptions here, by passing info from one part to the other as needed.
+		for interactionRule in self.interactionSet:
+			if 'teleportToExit' in interactionRule.interaction:
+				# embed()
+				color = self.classes[interactionRule.slot2][0].color
+				self.classes[interactionRule.slot2][0].args = ccopy(interactionRule.args)
+				self.spriteObjects[color].args = ccopy(interactionRule.args)
+				for s in self.spriteSet:
+					if s.color==color:
+						s.args = ccopy(interactionRule.args)
+				interactionRule.args = {}
+
+	def addSpriteToTheory(self, newSpriteName, color, vgdlType='default'):
+		if vgdlType=='default':
+			vgdlType = ResourcePack
+		sprite = Sprite(vgdlType, color, className=newSpriteName, args=None)
+		for (o1,o2) in itertools.product([newSpriteName], self.classes.keys()):
+			rule1 = InteractionRule('stepBack', o1, o2, {}, set(), generic=True)
+			rule2 = InteractionRule('stepBack', o1, o2, {}, set(), generic=True)
+			self.interactionSet.append(rule1)
+			self.interactionSet.append(rule2)
+		self.classes[newSpriteName] = [sprite]
+		self.spriteSet.append(sprite)
+		self.spriteObjects[color] = sprite
+		return
 	"""Main functions"""
 
 	def prior(self):
@@ -1480,17 +1527,19 @@ class Theory(object):
 
 			return all([
 				self.spriteSet == other.spriteSet,
-				self.levelMapping == other.levelMapping,
+				# self.levelMapping == other.levelMapping,
 				interactionSetEqual, # TODO: Check if this uses InteractionRule overloaded __eq__
 				self.classes == other.classes,
 				self.terminationSet == other.terminationSet #may want to delete this
-				]) # TODO: Add in termination set later
+				])
 		else:
 			return False
 
 	def __ne__(self, other):
 		return not self.__eq__(other)
-
+	
+	def __hash__(self):
+		return 0 ## this is a terrible idea! You're just doing this hoping that the equality operation is good enough for set() to work well.
 
 def normalize(array):
 	z = float(sum(array))
@@ -1787,7 +1836,9 @@ class Game(object):
 				[self.DFSinduction(t, timesteps, maxNumTheories, override=override, verbose=verbose) for t in newTheories]
 
 
-	def buildGenericTheory(self, spriteSample=True, vgdlSpriteParse=False):
+
+
+	def buildGenericTheory(self, spriteSample=True, vgdlSpriteParse=False, learnAvatar=True):
 
 		T = Theory(self)
 
@@ -1796,35 +1847,38 @@ class Game(object):
 		else:
 			T.initializeSpriteSet(vgdlSpriteParse = vgdlSpriteParse, spriteInductionResult=False)
 
-		# print "in buildGenericTheory"
-		# embed()
 		# Assign class names
-		avatar = [o for o in T.spriteSet if o.vgdlType in AvatarTypes][0]
+		avatars = [o for o in T.spriteSet if o.vgdlType in AvatarTypes]
 		nonAvatars = [o for o in T.spriteSet if o.vgdlType not in AvatarTypes and o.color!='ENDOFSCREEN']
-		# wall = [o for o in T.spriteSet if o.color == "BLACK" or o.color=="GRAY"][0]
-		# embed()
-		allSprites = [avatar]+nonAvatars
+		allSprites = avatars+nonAvatars
 		eos = [o for o in T.spriteSet if o.color=='ENDOFSCREEN'][0]
 
-		# print "buildgenerictheory"
-		# embed()
-		avatar.className = 'avatar'
-		T.classes[avatar.className] = [avatar]
+		if not learnAvatar:
+			avatar.className = 'avatar'
+			T.classes[avatar.className] = [avatar]
 
-		projectileName = ''
-		try:
-			projectileName = avatar.args['stype']
-		except (TypeError, KeyError) as e:
-			pass
+			projectileName = ''
+			try:
+				projectileName = avatar.args['stype']
+			except (TypeError, KeyError) as e:
+				pass
 
-		projectileTypes = [Flicker, OrientedFlicker, Missile]
-		for i in range(len(nonAvatars)):
-			if projectileName == nonAvatars[i].className:
-				nonAvatars[i].className = projectileName
-			else:
-				nonAvatars[i].className = 'c'+str(i+2)
+			projectileTypes = [Flicker, OrientedFlicker, Missile]
+			for i in range(len(nonAvatars)):
+				if projectileName == nonAvatars[i].className:
+					nonAvatars[i].className = projectileName
+				else:
+					nonAvatars[i].className = 'c'+str(i+2)
 
-			T.classes[nonAvatars[i].className] = [nonAvatars[i]]
+				T.classes[nonAvatars[i].className] = [nonAvatars[i]]
+		else:
+			for i in range(len(allSprites)):
+				# if allSprites[i].color=='DARKBLUE':
+					# allSprites[i].className = 'avatar'
+				# else:
+				allSprites[i].className = 'c'+str(i+2)
+				T.classes[allSprites[i].className] = [allSprites[i]]
+
 		T.classes['EOS'] = [eos] ##initialize EOS with special name, since it gets such special treatment in VGDL text files.
 
 		for (o1, o2) in itertools.product(allSprites, allSprites):
@@ -1841,7 +1895,7 @@ class Game(object):
 			rule = InteractionRule('stepBack', o1.className, o2.className, {}, set(), generic=True)
 			T.interactionSet.append(rule)
 
-		for s1 in nonAvatars + [avatar]:
+		for s1 in nonAvatars + avatars:
 			## append EOS rule
 			rule = InteractionRule('stepBack', s1.className, 'EOS', {}, set(), generic=True)
 			T.interactionSet.append(rule)
@@ -2134,11 +2188,15 @@ def generateTheoryFromGame(rle, alterGoal=True):
 						# 'goal' is the only name that means something to all RLEs, so we're making sure to change this one.
 		sprite = Sprite(vgdlType, color, className=s, args=settings) #classname was i
 		theory.classes[s] = [sprite]
+		theory.spriteObjects[sprite.color] = sprite
+		theory.spriteSet.append(sprite)
 		inverseClasses[s] = i
 
 	## Add EOS as a class, too.
 	eos = Sprite(core.VGDLSprite, 'ENDOFSCREEN', None, None)
 	theory.classes['EOS'] = [eos]
+	theory.spriteObjects[eos.color] = eos
+	theory.spriteSet.append(eos)
 
 	for g1, g2, effect, kwargs in rle._game.collision_eff:
 		if alterGoal:
@@ -2147,21 +2205,7 @@ def generateTheoryFromGame(rle, alterGoal=True):
 			if g2=='goal':
 				g2 = g2[::-1]
 		interaction = InteractionRule(effect.__name__, g1, g2, kwargs)
-		# if not kwargs:
-			# interaction = InteractionRule(effect.__name__, g1, g2, None, None)
-		# 	interaction = InteractionRule(effect.__name__, g1, g2, None, None)
-		# elif len(kwargs)==2:
-		# 	interaction = InteractionRule(effect.__name__, g1, g2, kwargs.values()[0], kwargs.values()[1])
-		# else:
-		# 	print "Trying to generate theory from RLE. Got more args for collision than we can handle as of yet."
-		# 	print "Embedding in generateTheoryFromGame()"
-		# 	embed()
-
-
-		# interaction = InteractionRule(effect.__name__, inverseClasses[g1], inverseClasses[g2], None, None)
 		theory.interactionSet.append(interaction)
-
-    # def __init__(self, limit=0, win=True, stypes = []):
 
 	# Add termnation set
 	for termination in rle._game.terminations:
@@ -2204,6 +2248,7 @@ def generateSymbolDict(rle):
 	except:
 		print "problem with generateSymbolDict"
 		embed()
+	## Note: this is not privileged info about the avatar; it's just grabbing the possible visible colors in the game.
 	try:
 		colors.append(colorDict[str(rle._game.sprite_constr['avatar'][1]['color'])])
 	except:
@@ -2230,6 +2275,7 @@ def getKeywordsFromOntology(interactionName):
 	{'changeResource': ['resource', 'value', 'limit'],\
 	'changeScore': ['value'],\
 	'transformTo': ['stype'],\
+	'teleportToExit': ['stype'],\
 	'killIfSlow': ['limitspeed'],\
 	'killIfTooFast': ['speed'],\
 	'killIfHasMore': ['resource', 'limit'],\
@@ -2293,7 +2339,10 @@ def proposeArgs(theory, predicate, resourceObservations, generic=False):
 				for val in values:
 					argList.append({'value':val})
 			if predicate == 'transformTo':
-				for stype in theory.classes.keys():
+				for stype in [k for k in theory.classes.keys() if k!='EOS']:
+					argList.append({'stype':stype})
+			if predicate == 'teleportToExit':
+				for stype in [k for k in theory.classes.keys() if k!='EOS']:
 					argList.append({'stype':stype})
 			if predicate == 'killIfSlow':
 				values = [1,2,3]
@@ -2344,20 +2393,21 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 	'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
 
 	## Position difference
-	'noMovement': ['undoAll', 'stepBack'],
+	'noMovement': ['undoAll'], #stepBack
 	'unexpectedPosition': ['bounceForward'],
 	# , 'pullWithIt', 'windGust', 'slipForward',\
 		# 'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap
 	'unexpectedOverlap': ['nothing', 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
 	'orientationChange': ['reverseDirection', 'bounceDirection', 'flipDirection'],
 	#'turn', 'turnAround', 
+	'teleport': ['teleportToExit'],
 
 	## Object state change
 	'stateChange': ['changeResource', 'collectResource', 'scoreChange'],
 
 	## Other
 	## TODO: These don't actually correspond here, but we need to do more work to be able to learn these.
-	'other': ['teleportToExit', 'conveySprite']
+	'other' : ['conveySprite']
 	}
 
 
@@ -2385,7 +2435,7 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 
 ## TODO: write the function that maintains resourceObservations, or at least figure out
 ## its outputs and integrate with proposeArgs
-def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSpriteTypeDict, percentile=20, max_num=20, resourceObservations=None):
+def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSpriteTypeDict, action=None, percentile=20, max_num=20, resourceObservations=None):
 	from vgdl.ontology import sampleFromDistribution, spriteInduction, updateDistribution
 
 	if max_num is None:
@@ -2393,32 +2443,83 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	childTheories = []
 
 	targetClass = errorMap.targetClass
-	targetToken = errorMap.targetToken
 
-	theory.expandedSprites.append(targetClass)
+	# if 'newObjectAppeared' in errorMap.diagnosis:
+	# 	if errorMap not in theory.deferredErrorMaps:
+	# 		print "new object appeared in expandSprites"
+	# 		embed()
+	# 		theory.deferredErrorMaps.append(errorMap)
+	# 		childTheories = [theory]
+	# 		return targetClass, childTheories
+	# 	else:
+	# 		print "In defferred step in expandSprites; removing errorMap from deferred list"
+	# 		embed()
+	# 		theory.deferredErrorMaps.remove(errorMap)
+
+	if 'newObjectAppeared' in errorMap.diagnosis:
+		# embed()
+		## Find closest sprite that is not self, use that as targetToken, run induction for that.
+		overlappingSprite = [item for sublist in game.sprite_groups.values() for item in sublist if item.rect==errorMap.targetToken.rect 
+			and item.colorName!=errorMap.targetToken.colorName][0]
+		targetToken = overlappingSprite
+		print "got new object in expandSprites. Running sprite induction for overlapping sprite: {}".format(targetToken.colorName)
+		## you're not updating the type for this particular sprite, here.
+	else:
+		targetToken = errorMap.targetToken
+		theory.expandedSprites.append(targetClass)
+	
+
 	## Only propose sprites when something moves that we didn't think was going to move.
 	if all([diagnosis not in ['unexpectedPosition', 'unexpectedOverlap', 
-		'orientationChange', 'unexpectedOverlap', 'noMovement'] for diagnosis in errorMap.diagnosis]):
+		'orientationChange', 'unexpectedOverlap', 'noMovement', 'newObjectAppeared'] for diagnosis in errorMap.diagnosis]):
 		return targetClass, childTheories
 
-	spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, oldSpriteSet=theory.spriteSet,\
+	spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, action=action, oldSpriteSet=theory.spriteSet,\
 		specificSpritesToUpdate=[targetToken], percentile=percentile, max_num=max_num)
 
 	for spriteProposal in spriteProposals:
-		newTheory = copy.deepcopy(theory)
+
+		newTheory = theory.copy()
 		newTheory.mostRecentEdit = 'spriteInduction'
 		# newTheory.lineage.append(theory)
 		newTheory.errorMapHistory.append(errorMap)
 		vgdlType = spriteProposal[0][1]
 		args = dict(spriteProposal[1:])
 		color = newTheory.classes[targetClass][0].color
-		sprite = Sprite(vgdlType, color, className=targetClass, args=args)
-		## Remove old sprite from spriteSet
-		newTheory.spriteSet.remove(newTheory.classes[targetClass][0])
-		## Add new sprite
-		newTheory.spriteSet.append(sprite)
-		newTheory.classes[targetClass] = [sprite]
-		newTheory.spriteObjects[color] = sprite
+		## If you're proposing an avatar change you need to do some bookkeeping to ensure only one avatar class in the description.
+		if 'Avatar' in str(vgdlType):
+			sprite = Sprite(vgdlType, color, className='avatar', args=args)
+			tmpType = newTheory.classes[targetClass][0].vgdlType
+			tmpSprite = newTheory.classes['avatar'][0]
+			tmpSprite.vgdlType = tmpType
+			tmpSprite.className=targetClass
+			newTheory.classes[targetClass] = [tmpSprite]
+			newTheory.classes['avatar'] = [sprite]
+			newTheory.spriteObjects[sprite.color] = sprite
+			newTheory.spriteObjects[tmpSprite.color] = tmpSprite
+			newTheory.spriteSet = [item for sublist in newTheory.classes.values() for item in sublist]
+			for rule in newTheory.interactionSet:
+				if rule.slot1==targetClass:
+					rule.slot1='tmp'
+				if rule.slot2==targetClass:
+					rule.slot2='tmp'
+				if rule.slot1=='avatar':
+					rule.slot1=targetClass
+				if rule.slot2=='avatar':
+					rule.slot2=targetClass
+				if rule.slot1=='tmp':
+					rule.slot1='avatar'
+				if rule.slot2=='tmp':
+					rule.slot2='avatar'
+		else:
+			sprite = Sprite(vgdlType, color, className=targetClass, args=args)
+			## Remove old sprite from spriteSet
+			newTheory.spriteSet.remove(newTheory.classes[targetClass][0])
+			## Add new sprite
+			newTheory.spriteSet.append(sprite)
+			newTheory.classes[targetClass] = [sprite]
+			newTheory.spriteObjects[color] = sprite
+		
 		childTheories.append(newTheory)
 
 	## TODO: what to do with orientation for missiles??
@@ -2431,7 +2532,7 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, resourceObservation
 	## unless you call generic=False, in which case it only proposes what's in
 	## resourceObservations
 
-	import itertools, copy
+	import itertools
 	from vgdl.theory_template import InteractionRule
 
 	childTheories = []
@@ -2457,7 +2558,6 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, resourceObservation
 					generic=generic)
 				predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
 					for comb in allArgumentCombinations])
-
 			bothOrderings[i].extend(list(itertools.product(*predicateRules)))
 
 	## Now generate combinations from each expanded predicateGroup that we added to each of the orderings
@@ -2465,15 +2565,17 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, resourceObservation
 
 	for i,ruleSet in enumerate(list(newRuleSets)):
 		ruleSet = [item for sublist in ruleSet for item in sublist]
-		newTheory = copy.deepcopy(theory)
+		newTheory = theory.copy()
 		newTheory.mostRecentEdit = 'interactionSetInduction'
-		# newTheory.lineage.append(theory)
 		newTheory.errorMapHistory.append(errorMap)
-		newTheory.interactionSet = copy.deepcopy(interactionSet)
-		newTheory.interactionSet.extend(ruleSet)
-
+		newTheory.interactionSet = ccopy(interactionSet)
+		newTheory.interactionSet.extend(ccopy(ruleSet))
+		newTheory.reconcileInteractionsAndSprites()
 		childTheories.append(newTheory)
 
+	if 'teleportToExit' in predicates:
+		print "found teleporttoexit"
+		embed()
 	# print "Created {} new theories".format(len(childTheories))
 	return classPair, childTheories, predicateGroups
 
@@ -2510,8 +2612,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 		if interactionRule.interaction =='killSprite':
 			oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
 			precondition = list(set(interactionRule.preconditions))[0]
-			# print "in writetheorytotxt"
-			# embed()
 			if precondition:
 				if precondition.negated:
 					true_operator = oppositeOperatorMap[precondition.operator_name]
@@ -2561,9 +2661,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 		return argsString, newInteractionName
 
-	# print "in initialize rle"
-	# embed()
-
 	DIRECTION_MAP = {(0,-1):'UP', (0,1):'DOWN', (1,0):'RIGHT', (-1,0):'LEFT'}
 
 	_obstypes = rle._obstypes
@@ -2593,8 +2690,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	## what is in the interactionRules.
 	if theory.interactionSet[0].args is not None:
 		if any([len(i.args.keys()) for i in theory.interactionSet]):
-			# print "found args in interactionRule"
-			# embed()
 			for interactionRule in theory.interactionSet:
 				if interactionRule.interaction == 'teleportToExit':
 					## second element in teleport tuple is the entrance; stype is the exit
@@ -2632,7 +2727,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 		if c == 'EOS':
 			pass
 		else:
-			# embed()
 			for s in sprites:
 				unfilteredType = str(s.vgdlType)
 				stype = unfilteredType[unfilteredType.find("vgdl.ontology.")+len("vgdl.ontology."): unfilteredType.find(">")-1]
@@ -2659,8 +2753,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				try:
 					argsString += " %s=%s"%("speed", str(s.speed))
 				except AttributeError:
-					# print "couldn't find speed"
-					# embed()
 					pass
 
 				try:
@@ -2682,14 +2774,11 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					try:
 						##when we initialized stypes in spriteInduction, we didn't have access to what we would call objects in the theory.
 						colorConvertedToSType = theory.spriteObjects[s.stype].className
-						# embed()
 						argsString += " %s=%s"%("stype", colorConvertedToSType)
 					except KeyError:
 						print "in TheoryToTxt(), search for colorConvertedToSType"
 						## TODO: If you, say, hypothesize that a missile is a Chaser and that it chases some random color but you don't have that color in your theory yet,
 						## you can end up here.
-						# embed()
-
 
 
 				if "core" in stype:
@@ -2767,7 +2856,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 	sortedInteractions += nonAvatarStepBackInteractions
 
-	# embed()
 	for interactionRule in sortedInteractions:
 		if True:  #all([not interactionRule.__eq__(r) for r in added_rules]): ## don't duplicate rules.
 
@@ -2783,13 +2871,12 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 			for s1 in theory.classes[c1]:
 				if c2 not in theory.classes.keys():
+					print "c2 not in theory.classes.keys() in theory template"
 					embed()
 				for s2 in theory.classes[c2]:
 					argsString = ""
 
 					if interactionRule.preconditions or interactionRule.args:
-						# print "above buildargsstring"
-						# embed()
 						args, interactionRule.interaction = buildArgsString(interactionRule)
 						argsString += args
 
@@ -2941,3 +3028,65 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	levelString = levelString[levelString.find('"""')+3:-4]
 	theoryString = theoryString[theoryString.find('"""')+3:-4]
 	return theoryString, levelString, symbolDict#, immovables, killerObjects
+
+#class which stores the distribution over killIf__ parameters
+class PreconditionInduction():
+
+	def __init__ (self):
+		self.distr = {'speed':{},'resource':{}}
+		#maximum speed, maximum 
+		self.speed_n = 100
+		self.res_n = 10
+
+	#normalize distribution
+	def normalize(self, array):
+		tot = sum(array)
+		if tot != 0:
+			array = [i/tot for i in array]
+		return array
+
+	def updateDist(self,observations):
+		#update speed distribution
+		for key in observations['speed'].keys():
+			if key not in self.distr['speed']:
+				self.distr['speed'][key] = [1.0/self.speed_n for i in range(self.speed_n)]
+			for i in range(len(self.distr['speed'][key])):
+				if observations['speed'][key][0] is not None:
+					if i <= int(observations['speed'][key][0]):
+						self.distr['speed'][key][i] = 0
+				elif observations['speed'][key][1] is not None:
+					if i > int(observations['speed'][key][1]):
+						self.distr['speed'][key][i] = 0
+			#assuming that our likelihood function is uniform
+			self.distr['speed'][key] = self.normalize(self.distr['speed'][key])
+
+		#update resource distribution
+		for key in observations['resource'].keys():
+			for res in observations['resource'][key]:
+				if key not in self.distr['resource']:
+					self.distr['resource'][key] = {}
+				if res not in self.distr['resource'][key].keys():
+					self.distr['resource'][key][res] = [[1.0/self.res_n for i in range(self.res_n)] for i in range(4)]
+				
+				#4 cases:  killIfHasLess, killIfHasMore, killIfOtherHasLess, killIfOtherHasMore
+				val, avatar, sprite = observations['resource'][key][res]
+				
+				for i in range(len(self.distr['resource'][key][res][0])):
+					#killIfHasLess
+					if (i > val and avatar) or (i <= val and not avatar):
+						self.distr['resource'][key][res][0][i] = 0.0	
+
+					#killIfHasMore
+					if (i <= val and avatar) or (i > val and not avatar):
+						self.distr['resource'][key][res][1][i] = 0.0
+
+					#killIfOtherHasLess
+					if (i > val and sprite) or (i <= val and not sprite):
+						self.distr['resource'][key][res][2][i] = 0.0
+						
+					#killIfOtherHasMore
+					if (i <= val and sprite) or (i > val and not sprite):
+						self.distr['resource'][key][res][3][i] = 0.0
+				
+				for i in range(len(self.distr['resource'][key][res])):
+					self.distr['resource'][key][res][i] = self.normalize(self.distr['resource'][key][res][i])
