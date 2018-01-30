@@ -60,7 +60,8 @@ class errorMapEntry:
 		print "diagnosis: {}".format(self.diagnosis)
 		print "targetToken: {}".format(self.targetToken)
 		print "targetClass: {}".format(self.targetClass)
-		print "targetColor: {}".format(self.targetToken.colorName)
+		if self.targetToken is not None:
+			print "targetColor: {}".format(self.targetToken.colorName)
 		print "intPairs: {}".format(self.intPairs)
 		print "culpritClasses: {}".format(self.culpritClasses)
 
@@ -176,13 +177,14 @@ class Agent:
 
 
 	# Function matching environment and determining sprites that couldn't be matched
-	def matchEnvs(self, envA, envB):
+	def matchEnvs(self, envA, envB, debug=False):
 		# Initialization
 		matched_sprites = [] #tuples of matched sprites: (envA sprite, envB sprite, dist) - helps penalize distance and find missing
 		lonely_sprites_envA = [] #envA sprites that have no partner in envB
 		lonely_sprites_envB = [] #envB sprites that have no partner in envA
-		# print "in matchEnvs"
-		# embed()
+		if debug:
+			print "in matchEnvs"
+			embed()
 		# Loop over keys in envA
 		for k in [key for key in envA._game.sprite_groups.keys() if envA._game.sprite_groups[key]]:
 			# Find matching sprites via color
@@ -620,17 +622,21 @@ class Agent:
 		for sA in lonely_sprites_envA: #sA should have been destroyed
 			e = errorMapEntry()
 			e.targetClass = sA.name
-			e.diagnosis.append('objectDestruction')
-			# Find the sprite that was destroyed in envB from the kill_list
 			candidates_in_killList = [s for s in envB._game.kill_list if s.colorName==sA.colorName]
 			sB = self.findNearestSprite(sA, candidates_in_killList)
 			if sB==None:
-				print "WARNING: No target and interaction pair found in object destruction"
+				print "WARNING: No target and interaction pair found in object destruction. You have not implemented this diagnosis."
+				e.diagnosis.append('objectDidNotAppear')
+				e.targetToken = None
+				e.intPairs = []
 				errorMap.append(e)
 				continue
-			e.targetToken = sB
-			# Find neighbors of target sprite in the previous time step
-			sPrev = sB #sprite was destroyed but hasn't moved
+			else:
+				e.diagnosis.append('objectDestruction')
+				e.targetToken = sB
+				# Find the sprite that was destroyed in envB from the kill_list
+				# Find neighbors of target sprite in the previous time step
+				sPrev = sB #sprite was destroyed but hasn't moved
 			neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
 			neighbors_prev = [c for c in neighbors_prev if c!=sA.name]
 			# Write potential interaction pairs to error map entry
@@ -947,11 +953,27 @@ class Agent:
 					newTheory.spriteObjects[color].className = 'avatar'
 					newTheory.spriteObjects[color].vgdlType = MovingAvatar
 					newTheory.classes['avatar'] = [newTheory.spriteObjects[color]]
+
 					for rule in newTheory.interactionSet:
 						if rule.slot1==oldClassName:
 							rule.slot1='avatar'
 						if rule.slot2==oldClassName:
 							rule.slot2='avatar'
+
+					## Rename classes to ensure canonical ordering: c2, c3, ...
+					if min([int(k[1:]) for k in newTheory.classes.keys() if 'c' in k])>2:
+						for s in newTheory.spriteSet:
+							if s.className is not None and 'c' in s.className:
+								tmpClassName = s.className
+								del newTheory.classes[tmpClassName]
+								s.className = 'c'+str(int(s.className[1:])-1)
+								newTheory.classes[s.className] = [s]
+						for rule in newTheory.interactionSet:
+							if 'c' in rule.slot1:
+								rule.slot1 = 'c'+str(int(rule.slot1[1:])-1)
+							if 'c' in rule.slot2:
+								rule.slot2 = 'c'+str(int(rule.slot2[1:])-1)
+
 					self.hypotheses.append(newTheory)
 		else:
 			self.hypotheses = [initialTheory]
@@ -997,7 +1019,7 @@ class Agent:
 
 	def expandTheories(self, theories, errorList, envRealPrev, envRealCurrent, prevAction):
 		# print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
-		print [e.diagnosis for e in errorList]
+		# print [e.diagnosis for e in errorList]
 		if len(errorList)==0:
 			return theories
 		if len(errorList)==1:
@@ -1015,10 +1037,6 @@ class Agent:
 			for theory in theories:
 				newTheories.extend(self.expandTheoryForOneErrorMap(errorList[0], envRealPrev, envRealCurrent, prevAction, theory))
 			
-			# if len(newTheories)>100:
-				# print "produced > 100 new theories"
-				# embed()
-			# print "would pass {} theories to the next step w/o filter".format(len(newTheories))
 
 			penalties, cumulative_penalties, _ = self.experienceReplay(newTheories, self.rleHistory[-2:], self.actionHistory[-1:], 
 				method='all', targetClass = errorList[0].targetClass)
@@ -2155,7 +2173,7 @@ class Agent:
 			#   print "DEBUG change. Filtering theories 0:20"
 			#   newTheories = newTheories[0:20]
 
-			penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay([self.trueTheory]+newTheories, self.rleHistory, self.actionHistory, method='all')
+			penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay([self.trueTheory]+newTheories, self.rleHistory, self.actionHistory, method='all', displayTheories=True)
 
 			# penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay((newTheories, self.rleHistory, self.actionHistory, 'all', None, False))
 			# for t in newTheories:
@@ -2289,11 +2307,14 @@ class Agent:
 		return mean_penalties, cumulative_penalties
 
 
-	def experienceReplay(self, hypotheses, rleHistory, actionHistory, method='all', targetClass=None, displayStates=False):
+	def experienceReplay(self, hypotheses, rleHistory, actionHistory, method='all', targetClass=None, displayStates=False, displayTheories=False):
 		# print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
 		t1 = time.time()
 		results = []
-		for h in hypotheses:
+		for num, h in enumerate(hypotheses):
+			if displayTheories:
+				print "running experienceReplay on {}:".format(num)
+				h.display()
 			results.append(self.singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetClass, displayStates, [h]))
 		print "Serial experienceReplay for {} hypotheses and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 		# embed()
@@ -2350,7 +2371,6 @@ class Agent:
 			## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
 			t1 = time.time()
 			theoryRLEs = self.VrleInitPhase(hypotheses, rleHistory[idx]) 
-
 			ID_dictlist = []
 			for tR in theoryRLEs:
 				match, warning = self.IDmatch(tR, rleHistory[idx])

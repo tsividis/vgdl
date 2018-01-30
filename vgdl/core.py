@@ -400,7 +400,7 @@ class BasicGame(object):
         for key in keys:
             if self.num_sprites > self.MAX_SPRITES:
                 print "Sprite limit reached."
-                return
+                return res
 
             sclass, args, stypes = self.sprite_constr[key]
 
