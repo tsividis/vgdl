@@ -2443,7 +2443,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	childTheories = []
 
 	targetClass = errorMap.targetClass
-
+	targetToken = errorMap.targetToken
 	# if 'newObjectAppeared' in errorMap.diagnosis:
 	# 	if errorMap not in theory.deferredErrorMaps:
 	# 		print "new object appeared in expandSprites"
@@ -2456,19 +2456,17 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	# 		embed()
 	# 		theory.deferredErrorMaps.remove(errorMap)
 
-	if 'newObjectAppeared' in errorMap.diagnosis:
-		# embed()
-		## Find closest sprite that is not self, use that as targetToken, run induction for that.
-		overlappingSprite = [item for sublist in game.sprite_groups.values() for item in sublist if item.rect==errorMap.targetToken.rect 
-			and item.colorName!=errorMap.targetToken.colorName][0]
-		targetToken = overlappingSprite
-		print "got new object in expandSprites. Running sprite induction for overlapping sprite: {}".format(targetToken.colorName)
-		## you're not updating the type for this particular sprite, here.
-	else:
-		targetToken = errorMap.targetToken
-		theory.expandedSprites.append(targetClass)
-	
+	# if 'newObjectAppeared' in errorMap.diagnosis:
+	# 	# embed()
+	# 	## Find closest sprite that is not self, use that as targetToken, run induction for that.
+	# 	overlappingSprite = [item for sublist in game.sprite_groups.values() for item in sublist if item.rect==errorMap.targetToken.rect 
+	# 		and item.colorName!=errorMap.targetToken.colorName][0]
+	# 	targetToken = overlappingSprite
+	# 	print "got new object in expandSprites. Running sprite induction for overlapping sprite: {}".format(targetToken.colorName)
+	# 	## you're not updating the type for this particular sprite, here.
 
+	theory.expandedSprites.append(targetClass)
+	
 	## Only propose sprites when something moves that we didn't think was going to move.
 	if all([diagnosis not in ['unexpectedPosition', 'unexpectedOverlap', 
 		'orientationChange', 'unexpectedOverlap', 'noMovement', 'newObjectAppeared'] for diagnosis in errorMap.diagnosis]):
@@ -2485,6 +2483,9 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 		newTheory.errorMapHistory.append(errorMap)
 		vgdlType = spriteProposal[0][1]
 		args = dict(spriteProposal[1:])
+		## Proposal specified args in terms of color; convert to class name for the actual theory.
+		if 'stype' in args.keys():
+			args['stype'] = newTheory.spriteObjects[args['stype']].className
 		color = newTheory.classes[targetClass][0].color
 		## If you're proposing an avatar change you need to do some bookkeeping to ensure only one avatar class in the description.
 		if 'Avatar' in str(vgdlType):

@@ -259,7 +259,7 @@ class Agent:
 						dist_temp.append( manhattanDist2(sA, sB) )
 					else:
 						dist_temp.append(2e6)
-						lonely_sprites_envA.remove(s) ## If there is no rematch for this sprite, take it off the lonely list.
+						lonely_sprites_envA.remove(sA) ## If there is no rematch for this sprite, take it off the lonely list.
 					#if all([d==None for d in dist_rematch]): #case where there is no potential re-match
 				dist_rematch.append(dist_temp)
 				#print '>>> dist_rematch', dist_rematch
@@ -787,6 +787,8 @@ class Agent:
 				matchingSpritesInRLE = getSpritesByColor(rle._game, color)
 				for sprite in old_sprite_groups[k]:
 					matchingSprite = self.findNearestSprite(sprite, matchingSpritesInRLE)
+					if matchingSprite is None:
+						continue
 					sprite.rect = matchingSprite.rect
 					sprite.lastmove = matchingSprite.lastmove
 					if useHypothesis:
@@ -1111,17 +1113,23 @@ class Agent:
 			errorMap.intPairs = newPairs
 			print "Got unknown targetclass for {}. Added generic sprite to spriteSet and interactionSet".format(errorMap.targetToken.colorName)
 			theory.addSpriteToTheory(errorMap.targetClass, errorMap.targetToken.colorName)
+			## now get overlapping class and reassign the target class to the shooter/spawnpoint/etc. If we've done inference on that, don't do it again.
+			overlapping_item = [item for sublist in envRealCurrent._game.sprite_groups.values() for item in sublist if 
+				item.rect==errorMap.targetToken.rect and item.colorName!=errorMap.targetToken.colorName][0]
+			errorMap.targetToken = overlapping_item
+			errorMap.targetClass = theory.spriteObjects[overlapping_item.colorName].className
 
 		## SpriteSet induction step
-		if errorMap.targetClass != 'avatar' and errorMap.targetClass not in theory.expandedSprites:
+		# if errorMap.targetClass != 'avatar' and 
+		if errorMap.targetClass not in theory.expandedSprites:
 			className, theories = expandSprites(self.rle._game, theory, errorMap, 
 				envRealPrev, envRealCurrent, self.bestSpriteTypeDict, action, percentile=20, max_num=30,
 				resourceObservations=self.resourceObservations)
 			newTheories.extend(theories)
 
-		# if errorMap.targetToken.colorName=='DARKBLUE':
-			# print "in expandTheoryForOneErrorMap"
-			# embed()
+		# print "after expandingSprites"
+		# embed()
+
 		## InteractionSet induction step
 		for targetClassPair in errorMap.intPairs:
 			predicates = proposePredicates(errorMap.diagnosis, self.memory, self.proposalMemory, globalObservations)
@@ -1364,9 +1372,8 @@ class Agent:
 		# actions = [0,0,0,0,0, K_RIGHT, K_RIGHT,0,0,0,0,0,0,0,0,0,0,0]
 		# actions = [0,0,0,0,0,0,0,0,0,0,0]
 		# actions = [K_RIGHT, 0, K_RIGHT]
-		actions = [32, K_LEFT, 0]
+		actions = [32, K_RIGHT, 0]
 		self.initializeEnvironment()
-
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
 		print "initializing RLE. Epoch={}".format(epoch)
@@ -1955,11 +1962,6 @@ class Agent:
 
 	def intersect(self, p1, p2):
 		return (abs(p1[0] - p2[0]) <= self.rle._game.block_size and abs(p1[1] - p2[1]) <= self.rle._game.block_size)
-
-
-
-
-
 	
 	def filterTheories(self, scoreAndTheoryTuples, percentile, max_num, proportionOfSpriteTheories):
 		## Returns the max_num theories that are at percentile or greater, given their score.

@@ -2743,22 +2743,18 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
             embed()
         sprite = specificSpritesToUpdate[0]
 
-        if game.sprite_appearances:
-            print "in spriteInduction"
-            embed()
         scoreAndTheoryTuples = []
-        for k in game.movement_options[sprite.ID].keys():
-            if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k].keys():
-                if k not in game.sprite_appearance_predictions.keys() or \
-                    any([appearance in game.sprite_appearance_predictions[sprite.ID][k] for appearance in game.sprite_appearances]):
-                        scoreAndTheoryTuples.append((0,k))
 
-
-        for k,v in game.sprite_appearance_predictions[sprite.ID].items():
-            if any([appearance in v for appearance in game.sprite_appearances]):
-                scoreAndTheoryTuples.append((0,k))
-                print "found sprite appearance"
-                # embed()
+        if game.sprite_appearances and any([(s[1], s[2])==(sprite.rect.left, sprite.rect.top) for s in game.sprite_appearances]):
+            ## Weird case of a new object appearing in the same position as another one. Update hypotheses related to shooters, spawnpoints, etc.
+            for k,v in game.sprite_appearance_predictions[sprite.ID].items():
+                if any([appearance in v for appearance in game.sprite_appearances]):
+                    scoreAndTheoryTuples.append((0,k))
+        else:
+            ## Normal case. Update hypotheses related to movement types.
+            for k in game.movement_options[sprite.ID].keys():
+                if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k].keys():
+                    scoreAndTheoryTuples.append((0,k))
 
         reasonableHypotheses = [s[1] for s in scoreAndTheoryTuples]
         return reasonableHypotheses
