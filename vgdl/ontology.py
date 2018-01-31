@@ -2268,7 +2268,6 @@ def initializeDistributionArgs(sprite_type, objectColors):
     """
     Given a sprite type, this returns a distribution over the kinds of args (parameters) belonging
     to that sprite type.
-    NOTE - this initializes args for speed, orientation and fleeing. It does not handle cooldown yet.
     """
 
     def initializeSpeed():
@@ -2314,7 +2313,7 @@ def initializeDistributionArgs(sprite_type, objectColors):
             paramList.append(initializeCooldown())
         elif s=='singleton':
             paramList.append(initializeSingleton())
-            
+
     return paramList
 
 

@@ -835,7 +835,7 @@ class Agent:
 		lp.print_stats()
 		return Vrle
 
-	def initializeVrle(self, hypothesis=None, stateToSet=None):
+	def initializeVrle(self, hypothesis=None, stateToSet=None, debug=False):
 		if stateToSet is None:
 			stateToSet = self.rle
 
@@ -850,7 +850,7 @@ class Agent:
 		if hypothesis is not None:
 			## World in agent's mind given 'hypothesis', including object goal
 			gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, self.symbolDict,\
-				 "./examples/gridphysics/theorytest.py")
+				 "./examples/gridphysics/theorytest.py", debug=debug)
 			useHypothesis=False ## not dealing with inferring Missile orientation for now.
 		else:
 			gameString = self.gameString

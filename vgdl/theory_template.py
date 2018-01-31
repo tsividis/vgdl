@@ -2507,10 +2507,11 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 			tmpSprite = newTheory.classes['avatar'][0]
 			tmpSprite.vgdlType = tmpType
 			tmpSprite.className=targetClass
+			## If the old class was also an avatar we want to use the new sprite for everything, so doing that step second, always.
 			newTheory.classes[targetClass] = [tmpSprite]
 			newTheory.classes['avatar'] = [sprite]
-			newTheory.spriteObjects[sprite.color] = sprite
 			newTheory.spriteObjects[tmpSprite.color] = tmpSprite
+			newTheory.spriteObjects[sprite.color] = sprite
 			newTheory.spriteSet = [item for sublist in newTheory.classes.values() for item in sublist]
 			for rule in newTheory.interactionSet:
 				if rule.slot1==targetClass:
@@ -2598,7 +2599,7 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, resourceObservation
 	# print "Created {} new theories".format(len(childTheories))
 	return classPair, childTheories, predicateGroups
 
-def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
+def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = None):
 	"""
 	-need to be able to take an optional argument that tells you the location of the goal, and put that into the level string
 	-assume that the goal sprite is getting killed
@@ -2812,7 +2813,9 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					if goalLoc and newGoalType != 'blank_space' and s.color==newGoalColor:
 						sname = colorToSprite[s.color]
 						theoryString += "\t\t%s > %s color=%s%s\n"%("goal", stype, s.color, argsString)
-
+	if debug==True:
+		print "in writeTheoryToTxt debug"
+		embed()
 	for resource in resourcesToAdd:
 		theoryString += "\t\t%s > Resource color=RESOURCETOADD limit=%s\n"%(resource, theory.resource_limits[resource])
 
