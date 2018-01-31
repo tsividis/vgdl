@@ -32,23 +32,40 @@ BASEDIRS = [UP, LEFT, DOWN, RIGHT]
 
 actionToDir = {K_UP:UP, K_DOWN:DOWN, K_LEFT:LEFT, K_RIGHT:RIGHT, K_SPACE:NONE, NONE:NONE}
 
-
 keyPressToAction = {273: K_UP, 274: K_DOWN, 276: K_LEFT, 275: K_RIGHT, 32: K_SPACE, 0:NONE}
 
-spriteToParams = {'Resource': [], \
-                'ResourcePack': [], \
-                'RandomNPC': ['cooldown', 'speed'], \
-                'Chaser': ['cooldown', 'fleeing', 'stype'], \
-                'AStarChaser': ['fleeing', 'speed', 'stype'], \
-                'OrientedSprite': ['orientation'], \
-                'Missile': ['speed', 'orientation', 'cooldown'],\
-                'MovingAvatar': [],\
-                'ShootAvatar': ['stype'],\
-                'FlakAvatar': ['stype']} ##removed speed from chaser
 
-avatarActions = {'MovingAvatar': [K_UP, K_DOWN, K_LEFT, K_RIGHT],\
-                'FlakAvatar': [K_SPACE, K_LEFT, K_RIGHT],\
-                'ShootAvatar': [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]}
+spriteToParams = {
+                ## Any sprite not in this dict has params=[]
+                'RandomNPC':         ['cooldown', 'speed'], \
+                'Chaser':            ['cooldown', 'fleeing', 'stype'],\
+                'AStarChaser':       ['fleeing', 'speed', 'stype'], \
+                'SpawnPoint':        ['spawnCooldown', 'stype'],\
+                'Bomber':            ['cooldown', 'spawnCooldown', 'stype', 'speed'],\
+                'OrientedSprite':    ['orientation'], \
+                'Conveyor':          ['strength'],\
+                'Missile':           ['speed', 'orientation', 'cooldown'],\
+                'FlakAvatar':        ['stype'],\
+                'AimedAvatar':       ['stype'],\
+                'AimedFlakAvatar':   ['stype', 'angle_diff'],\
+                'ShootAvatar':       ['stype'],\
+                }
+
+avatarActions = {
+                'HorizontalAvatar':              [K_LEFT, K_RIGHT],\
+                'VerticalAvatar':                [K_UP, K_DOWN],\
+                'MovingAvatar':                  [K_UP, K_DOWN, K_LEFT, K_RIGHT],\
+                'OrientedAvatar':                [K_UP, K_DOWN, K_LEFT, K_RIGHT],\
+                'RotatingAvatar':                [K_UP, K_DOWN, K_LEFT, K_RIGHT],\
+                'RotatingFlippingAvatar':        [K_UP, K_DOWN, K_LEFT, K_RIGHT],\
+                'NoisyRotatingFlippingAvatar':   [K_UP, K_DOWN, K_LEFT, K_RIGHT],\
+                'IntertialAvatar':               [K_UP, K_DOWN, K_LEFT, K_RIGHT],\
+                'FlakAvatar':                    [K_SPACE, K_LEFT, K_RIGHT],\
+                'AimedAvatar':                   [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT],\
+                'AimedFlakAvatar':               [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT],\
+                'ShootAvatar':                   [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT],\
+                }
+
 
 # ---------------------------------------------------------------------
 #     Types of physics
@@ -1127,14 +1144,6 @@ class RopeAvatar(InertialAvatar):
         VGDLSprite.update(self, game)
         
 
-'''
-class MontezumaAvatar(MarioAvatar):
-
-    def update(self, game):
-'''
-
-
-
 class ClimbingAvatar(MarioAvatar, MovingAvatar):
     climbing = False
     saved_gravity = GravityPhysics.gravity
@@ -1911,8 +1920,9 @@ def cannotActivateSwitch(sprite, partner, game):
 # ---------------------------------------------------------------------
 #     Sprite Induction
 # ---------------------------------------------------------------------
-## TODO: Make sure you put these other types back when you fix sprite induction!!
-sprite_types = [ResourcePack, Missile, Chaser, RandomNPC, FlakAvatar] #removed Resource, Immovable, Passive, AStarChaser,
+
+sprite_types = [ResourcePack, Missile, Chaser, RandomNPC, \
+                HorizontalAvatar, VerticalAvatar, FlakAvatar, ShootAvatar] #removed Resource, Immovable, Passive, AStarChaser,
 
 # MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
 #                 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
@@ -2182,11 +2192,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         realCooldown = int(current_sprite.cooldown)
         current_sprite.cooldown = cooldown
 
-        # if current_sprite.colorName=='GREEN' and 'Missile' in str(sprite_type_tuple[1]) and params['speed']==1 and \
-        #     params['cooldown']==3:
-        #         print "in updateOptions"
-        #         embed()
-
         coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation, 
             allMovement=allMovement)
         # If object has speed = 0 or no 'orientation' attribute
@@ -2210,21 +2215,10 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
             else:
                 clustered_position_options[(coords[0], coords[1])] = .5 - epsilon_prob
 
-        # if current_sprite.colorName=='GOLD' and speed==.2 and cooldown==3:
-        #     print "position_options is {}".format(position_options)
-        #     print "sprite rect is {}".format(current_sprite.rect)
-        #     print "lastmove is {}".format(current_sprite.lastmove)
-        #     embed()
-
-        # if current_sprite.colorName=='GOLD' and speed == .2 and cooldown == 3:
-        #     print "Missile"
-        #     print current_sprite.rect
-        #     print position_options
-
         current_sprite.cooldown = realCooldown
         return position_options, clustered_position_options, appearance_predictions
 
-    elif sprite_type in [MovingAvatar, FlakAvatar, ShootAvatar]:
+    elif sprite_type in [MovingAvatar, FlakAvatar, ShootAvatar, HorizontalAvatar, VerticalAvatar]:
         if action in sprite_type.availableActions:
             dx,dy = actionToDir[keyPressToAction[action]]
         else:
@@ -2233,14 +2227,19 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         next_pos = current_sprite.rect.left + current_sprite.speed*dx*game.block_size, current_sprite.rect.top + current_sprite.speed*dy*game.block_size
         position_options = {next_pos: 1.}
         
-        if sprite_type in [FlakAvatar, ShootAvatar]:
+        if sprite_type in [FlakAvatar]:
             stype = getStype(params)
-            # new_object_location = (current_sprite.rect.left, current_sprite.rect.right)
-            # appearance_predictions[stype] = [new_object_location]
-            appearance_predictions = [(stype, current_sprite.rect.left, current_sprite.rect.top)]
-            return position_options, position_options, appearance_predictions
             ## get type of sprite that should appear and its location; return that as the third dict.
             ## then get the return val of this one and add it to the game.sprite_appearance_predictions
+            appearance_predictions = [(stype, current_sprite.rect.left, current_sprite.rect.top)]
+            return position_options, position_options, appearance_predictions
+        elif sprite_type in [ShootAvatar]:
+            stype = getStype(params)
+            u = unitVector(current_sprite.orientation)
+            left, top = current_sprite.lastrect.left+u[0]*current_sprite.lastrect.size[0], current_sprite.lastrect.top+u[1]*current_sprite.lastrect.size[1]
+            appearance_predictions = [(stype, left, top)]
+            return position_options, position_options, appearance_predictions
+
         else:
             return position_options, position_options, []
 
@@ -2301,7 +2300,10 @@ def initializeDistributionArgs(sprite_type, objectColors):
         # initializeProperty(args, 'cooldown', stypeValues)
 
     paramList = []
-    spriteParams = spriteToParams[sprite_type.__name__]
+    if sprite_type.__name__ in spriteToParams.keys():
+        spriteParams = spriteToParams[sprite_type.__name__]
+    else:
+        spriteParams = []
 
     for s in spriteParams:
         if s == "speed":
@@ -2752,8 +2754,11 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
 
         scoreAndTheoryTuples = []
 
-        if game.sprite_appearances and any([(s[1], s[2])==(sprite.rect.left, sprite.rect.top) for s in game.sprite_appearances]):
-            ## Weird case of a new object appearing in the same position as another one. Update hypotheses related to shooters, spawnpoints, etc.
+        left, top = sprite.rect.left, sprite.rect.top
+        neighbors = [(left, top), (left-30, top), (left+30, top), (left, top-30), (left, top+30)]
+        if game.sprite_appearances and any([(s[1], s[2]) in neighbors for s in game.sprite_appearances]):
+                # and any([(s[1], s[2])==(sprite.rect.left, sprite.rect.top) for s in game.sprite_appearances]):
+                ## Weird case of a new object appearing in the same position as another one. Update hypotheses related to shooters, spawnpoints, etc.
             for k,v in game.sprite_appearance_predictions[sprite.ID].items():
                 if any([appearance in v for appearance in game.sprite_appearances]):
                     scoreAndTheoryTuples.append((0,k))

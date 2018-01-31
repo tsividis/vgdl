@@ -661,7 +661,7 @@ class Agent:
 			else:
 				e.targetClass = sMatch[0].name
 
-			# Find neighbors of target sprite in current time step -> could have caused appearance
+			# Find neighbors of target sprite in the real environment (envB) in the current time step -> could have caused appearance
 			# Simultaneously find culprit classes - an overlapping sprite could have launched the sprite due to its class
 			neighbors_curr = self.neighborsPrev(envA, envB, sB) #use this function to find neighbors in current state and not previous ("Prev" label is unnecessary)
 			nearestSprite = self.findNearestSprite(sB, [item for sublist in envA._game.sprite_groups.values() for item in sublist])
@@ -670,7 +670,6 @@ class Agent:
 				e.culpritClasses.append(nearestSprite.name)
 			else:
 				print "got new sprite class but nearest prev-step sprite isn't a current neighbor"
-				embed()
 			# for className in neighbors_curr:
 			# 	e.intPairs.append( (sA.name,className) )
 			# 	# Culprit classes are given by the names of the potential interaction partners
@@ -1127,12 +1126,21 @@ class Agent:
 			errorMap.intPairs = newPairs
 			print "Got unknown targetclass for {}. Added generic sprite to spriteSet and interactionSet".format(errorMap.targetToken.colorName)
 			theory.addSpriteToTheory(errorMap.targetClass, errorMap.targetToken.colorName)
-			## now get overlapping class and reassign the target class to the shooter/spawnpoint/etc. If we've done inference on that, don't do it again.
-			overlapping_item = [item for sublist in envRealCurrent._game.sprite_groups.values() for item in sublist if 
-				item.rect==errorMap.targetToken.rect and item.colorName!=errorMap.targetToken.colorName][0]
+
+			## now get overlapping/nearby classes and reassign the target class to the shooter/spawnpoint/etc. 
+			## the next step will take care of not doing inference on these if we've done it already.
+			## NOTE: errorMap takes a unique targe class, and there are cases where you might have multiple singleton neighbors.
+			## For now you're taking just a random choice between those.
+			neighbors = self.neighborsPrev(envRealCurrent, envRealCurrent, errorMap.targetToken)
+			options = [item for sublist in [envRealCurrent._game.sprite_groups[k] for k in neighbors if len(envRealCurrent._game.sprite_groups[k])==1] for item in sublist]
+			if len(options)>1:
+				print "Warning: More than one singleton neighbor of a newly-spawned sprite. Randomly picking one as agent"
+			print options
+			overlapping_item = random.choice(options)
+			# overlapping_item = [item for sublist in envRealCurrent._game.sprite_groups.values() for item in sublist if 
+				# item.rect==errorMap.targetToken.rect and item.colorName!=errorMap.targetToken.colorName][0]
 			errorMap.targetToken = overlapping_item
 			errorMap.targetClass = theory.spriteObjects[overlapping_item.colorName].className
-
 		## SpriteSet induction step
 		# if errorMap.targetClass != 'avatar' and 
 		if errorMap.targetClass not in theory.expandedSprites:
@@ -1141,8 +1149,6 @@ class Agent:
 				resourceObservations=self.resourceObservations)
 			newTheories.extend(theories)
 
-		# print "after expandingSprites"
-		# embed()
 
 		## InteractionSet induction step
 		for targetClassPair in errorMap.intPairs:
@@ -1386,7 +1392,7 @@ class Agent:
 		# actions = [0,0,0,0,0, K_RIGHT, K_RIGHT,0,0,0,0,0,0,0,0,0,0,0]
 		# actions = [0,0,0,0,0,0,0,0,0,0,0]
 		# actions = [K_RIGHT, 0, K_RIGHT]
-		actions = [0, K_RIGHT, 0]
+		actions = [32, 0, 32]
 		self.initializeEnvironment()
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True

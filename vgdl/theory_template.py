@@ -2501,7 +2501,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 		if 'Avatar' in str(vgdlType):
 
 			## Avatar can't shoot avatar.
-			if args['stype'] == 'avatar':
+			if 'stype' in args.keys() and args['stype'] == 'avatar':
 				continue
 			sprite = Sprite(vgdlType, color, className='avatar', args=args)
 			tmpType = newTheory.classes[targetClass][0].vgdlType
