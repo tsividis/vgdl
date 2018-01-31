@@ -2321,10 +2321,12 @@ def initializeDistributionArgs(sprite_type, objectColors):
 def distributionInitSetup(game, spriteID):
     """
     Does setup for initializing distribution
-    """
-    objectColors = [colorDict[str(game.sprite_constr[k][1]['color'])] for k in game.sprite_constr.keys() if game.sprite_constr[k] and
-        colorDict[str(game.sprite_constr[k][1]['color'])] not in ['BLACK', 'DARKGRAY']]
-    objectColors = list(set(objectColors))
+    """ 
+    # objectColors = [colorDict[str(game.sprite_constr[k][1]['color'])] for k in game.sprite_constr.keys() if game.sprite_constr[k] and
+    #     colorDict[str(game.sprite_constr[k][1]['color'])] not in ['BLACK', 'DARKGRAY']]
+    # objectColors = []
+    # objectColors = list(set(objectColors))
+    objectColors = list(set([s.colorName for sublist in game.sprite_groups.values() for s in sublist])) ## all visible colors
     game.spriteDistribution[spriteID] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
     game.object_token_spriteDistribution[spriteID] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
     if spriteID not in game.all_objects.keys():
@@ -2649,10 +2651,15 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
 
         # print "step1"
         # print objects.keys()
+        newSprites = []
         for sprite in objects:
             if sprite not in game.spriteDistribution:
+                newSprites.append(sprite)
                 game.all_objects[sprite] = objects[sprite]
                 distributionInitSetup(game, sprite)
+        # if newSprites:
+            # print "found new sprite"
+            # embed()       
     elif step == 2:
         ## See the update options for each sprite type the sprite could be
         objects = game.getObjects()

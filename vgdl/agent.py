@@ -102,6 +102,7 @@ class Agent:
 		self.safeDistance = 6
 		self.emptyPlansLimit = 5
 		self.longHorizonObservationLimit = 2
+		self.learnAvatar = True
 		self.hypotheses = []
 		self.symbolDict = None
 		self.finalEventList = []
@@ -1390,7 +1391,7 @@ class Agent:
 		# actions = [0,0,0,0,0, K_RIGHT, K_RIGHT,0,0,0,0,0,0,0,0,0,0,0]
 		# actions = [0,0,0,0,0,0,0,0,0,0,0]
 		# actions = [K_RIGHT, 0, K_RIGHT]
-		actions = [32, K_RIGHT, 0]
+		actions = [K_RIGHT, 32, 0]
 		self.initializeEnvironment()
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
@@ -1403,7 +1404,7 @@ class Agent:
 		self.all_objects= self.rle._game.getObjects()
 
 		if epoch==0:
-			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, learnAvatar=True, num_variants=0)
+			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, learnAvatar=self.learnAvatar, num_variants=0)
 
 		## Start storing encountered states.
 		effectsEncountered = []
@@ -1817,19 +1818,34 @@ class Agent:
 		else:
 			return False
 
-	def manageNewObjects(self, hypotheses):
+	def manageNewObjects(self, hypotheses, envRealPrev, action, learnAvatar=True):
 
 		## Add newly-seen objects.
 		current_objects = self.rle._game.getObjects()
-		for k in current_objects.keys():
-			colorName = current_objects[k]['sprite'].colorName
-			if colorName not in [self.all_objects[key]['sprite'].colorName for key in self.all_objects.keys()]:
-				print "new object", colorName
-				self.all_objects[k] = current_objects[k]
-				distributionInitSetup(self.rle._game, k)
-				## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep.
-				self.rle._game.ignoreList.append(k)
-				self.new_objects[colorName] = 0
+		if learnAvatar:
+			if any([current_objects[k]['sprite'].colorName not in [self.all_objects[key]['sprite'].colorName for key in self.all_objects.keys()] for k in current_objects.keys()]):
+				for k in current_objects.keys():
+					distributionInitSetup(self.rle._game, k)
+					if k not in self.all_objects.keys():
+						self.all_objects[k] = current_objects[k]
+				spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, action=action,
+					oldSpriteSet=self.hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
+					percentile=10, max_num=20, allMovement=False)
+				spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, action=action,
+					oldSpriteSet=self.hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
+					percentile=10, max_num=20, allMovement=False)
+
+				# print "found new object"
+				# embed()
+		else:
+			for k in current_objects.keys():
+				colorName = current_objects[k]['sprite'].colorName
+				if colorName not in [self.all_objects[key]['sprite'].colorName for key in self.all_objects.keys()]:
+					self.all_objects[k] = current_objects[k]
+					distributionInitSetup(self.rle._game, k)
+					## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep.
+					self.rle._game.ignoreList.append(k)
+					self.new_objects[colorName] = 0
 
 		return hypotheses
 
@@ -2079,7 +2095,7 @@ class Agent:
 		envReal = self.fastcopy(self.rle)
 
 
-		hypotheses = self.manageNewObjects(hypotheses)
+		hypotheses = self.manageNewObjects(hypotheses, envRealPrev, action, learnAvatar=self.learnAvatar)
 
 
 		self.rleHistory.append(envReal)
@@ -2173,7 +2189,8 @@ class Agent:
 			#   print "DEBUG change. Filtering theories 0:20"
 			#   newTheories = newTheories[0:20]
 
-			penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay([self.trueTheory]+newTheories, self.rleHistory, self.actionHistory, method='all', displayTheories=True)
+			penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay([self.trueTheory]+newTheories, self.rleHistory, self.actionHistory,
+				method='all', displayTheories=False)
 
 			# penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay((newTheories, self.rleHistory, self.actionHistory, 'all', None, False))
 			# for t in newTheories:

@@ -2444,6 +2444,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 
 	targetClass = errorMap.targetClass
 	targetToken = errorMap.targetToken
+	
 	# if 'newObjectAppeared' in errorMap.diagnosis:
 	# 	if errorMap not in theory.deferredErrorMaps:
 	# 		print "new object appeared in expandSprites"
@@ -2474,6 +2475,10 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 
 	spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, action=action, oldSpriteSet=theory.spriteSet,\
 		specificSpritesToUpdate=[targetToken], percentile=percentile, max_num=max_num)
+
+	if 'newObjectAppeared' in errorMap.diagnosis:
+		print "in expandSprites, newObject"
+		embed()
 
 	## Don't instantiate non-avatar proposals for the 'avatar' class.
 	if targetClass=='avatar':
