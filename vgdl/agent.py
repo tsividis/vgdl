@@ -804,11 +804,12 @@ class Agent:
 								## Enforce consistency: inferred value for individual orientations has to be consistent with 
 								# what we're saying the horizontal/vertical orientation is of the entire group.
 
+
 								orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - 
 									np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
 
 								if orientation == (0,0):
-									# print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
+									print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
 									pass
 
 								else:
@@ -1042,17 +1043,11 @@ class Agent:
 			penalties, cumulative_penalties, _ = self.experienceReplay(newTheories, self.rleHistory[-2:], self.actionHistory[-1:], 
 				method='all', targetClass = errorList[0].targetClass)
 
-			# if errorList[0].targetToken.colorName=='PINK':
-			#   print "fixing PINK"
-			#   embed()
 			scoreAndTheoryTuples = zip(penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
-
 			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=0, max_num=None,
 					proportionOfSpriteTheories=None)]
 
-			# print "in expandTheories"
-			# embed()
 			newTheories = [s[1] for s in scoresAndHypotheses]
 
 			# print "In expandTheory () base case. Produced {} new theories".format(len(newTheories))
@@ -1391,7 +1386,7 @@ class Agent:
 		# actions = [0,0,0,0,0, K_RIGHT, K_RIGHT,0,0,0,0,0,0,0,0,0,0,0]
 		# actions = [0,0,0,0,0,0,0,0,0,0,0]
 		# actions = [K_RIGHT, 0, K_RIGHT]
-		actions = [K_RIGHT, 32, 0]
+		actions = [0, K_RIGHT, 0]
 		self.initializeEnvironment()
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
@@ -2072,6 +2067,9 @@ class Agent:
 		  for e in errorList:
 		      e.display()
 		  print ""
+		else:
+			print "No error"
+			# embed()
 		# print "expanding theories"
 		theories = self.expandTheories([hypothesis], errorList, envRealPrev, self.rle, action)
 		return theories
@@ -2159,7 +2157,6 @@ class Agent:
 
 		#   newTheories.extend(theories)
 		# print "Normal version tested and expanded {} theories in {} seconds".format(len(theoryRLEs), time.time()-t1)
-
 
 		## Serial compact version
 		# t1 = time.time()
