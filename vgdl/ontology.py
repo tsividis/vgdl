@@ -44,7 +44,7 @@ spriteToParams = {
                 'Bomber':            ['cooldown', 'spawnCooldown', 'stype', 'speed'],\
                 'OrientedSprite':    ['orientation'], \
                 'Conveyor':          ['strength'],\
-                'Missile':           ['speed', 'orientation', 'cooldown'],\
+                'Missile':           ['speed', 'orientation', 'cooldown', 'singleton'],\
                 'FlakAvatar':        ['stype'],\
                 'AimedAvatar':       ['stype'],\
                 'AimedFlakAvatar':   ['stype', 'angle_diff'],\
@@ -2275,29 +2275,25 @@ def initializeDistributionArgs(sprite_type, objectColors):
         speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.,
         1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1]
         return [('speed', v) for v in speedValues]
-        # initializeProperty(args, 'speed', speedValues)
 
     def initializeOrientation():
         orientationValues = [LEFT, RIGHT, UP, DOWN]
         return [('orientation', v) for v in orientationValues]
 
-        # initializeProperty(args, 'orientation', orientationValues)
-
     def initializeFleeing():
         fleeingValues = [True, False]
         return [('fleeing', v) for v in fleeingValues]
-        # initializeProperty(args, 'fleeing', fleeingValues)
 
-    # print sprite_types
     def initializeStype():
         stypeValues = objectColors
         return [('stype', v) for v in stypeValues]
-        # initializeProperty(args, 'stype', stypeValues)
 
     def initializeCooldown():
         stypeValues = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         return [('cooldown', v) for v in stypeValues]
-        # initializeProperty(args, 'cooldown', stypeValues)
+
+    def initializeSingleton():
+        return [('singleton', v) for v in [True, False]]
 
     paramList = []
     if sprite_type.__name__ in spriteToParams.keys():
@@ -2316,7 +2312,9 @@ def initializeDistributionArgs(sprite_type, objectColors):
             paramList.append(initializeStype())
         elif s=='cooldown':
             paramList.append(initializeCooldown())
-
+        elif s=='singleton':
+            paramList.append(initializeSingleton())
+            
     return paramList
 
 

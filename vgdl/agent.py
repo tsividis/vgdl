@@ -703,6 +703,8 @@ class Agent:
 		## NOTE: We could extend by penalizing as a function of (most likely) vgdlType and color
 		## NOTE: Use intializeHypotheses function in this file to build my test theories
 
+		## Sort so that you fix errors involving any new classes first.
+		errorMap = sorted(errorMap, key=lambda x: x.targetClass!='unknown')
 		return total_penalty, errorMap
 
 

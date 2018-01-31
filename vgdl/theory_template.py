@@ -2495,7 +2495,6 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 		## Proposal specified args in terms of color; convert to class name for the actual theory.
 		if 'stype' in args.keys():
 			args['stype'] = newTheory.spriteObjects[args['stype']].className
-
 		color = newTheory.classes[targetClass][0].color
 		## If you're proposing an avatar change you need to do some bookkeeping to ensure only one avatar class in the description.
 		if 'Avatar' in str(vgdlType):
