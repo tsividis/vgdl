@@ -46,9 +46,9 @@ spriteToParams = {
                 'Conveyor':          ['strength'],\
                 'Missile':           ['speed', 'orientation', 'cooldown', 'singleton'],\
                 'FlakAvatar':        ['stype'],\
-                'AimedAvatar':       ['stype'],\
+                'AimedAvatar':       ['stype', 'angle_diff'],\
                 'AimedFlakAvatar':   ['stype', 'angle_diff'],\
-                'ShootAvatar':       ['stype'],\
+                'ShootAvatar':       ['stype'],
                 }
 
 avatarActions = {
@@ -855,6 +855,7 @@ class RotatingAvatar(OrientedSprite, MovingAvatar):
     relative to that. """
     draw_arrow = True
     speed = 0
+    availableActions = [K_UP, K_DOWN, K_LEFT, K_RIGHT]
     def update(self, game):
         actions = self._readMultiActions(game)
         if UP in actions:
@@ -946,6 +947,7 @@ class AimedAvatar(ShootAvatar):
     """ Can change the direction of firing, but not move. """
     speed=0
     angle_diff=0.05
+    availableActions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
     def update(self, game):
         VGDLSprite.update(self, game)
         self._aim(game)
@@ -965,7 +967,8 @@ class AimedAvatar(ShootAvatar):
 class AimedFlakAvatar(AimedAvatar):
     """ Can move left and right """
     only_active=True
-    speed=None
+    speed=1
+    availableActions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
 
     def update(self, game):
         AimedAvatar.update(self, game)
@@ -1922,11 +1925,12 @@ def cannotActivateSwitch(sprite, partner, game):
 # ---------------------------------------------------------------------
 
 sprite_types = [ResourcePack, Missile, Chaser, RandomNPC, \
-                HorizontalAvatar, VerticalAvatar, FlakAvatar, ShootAvatar] #removed Resource, Immovable, Passive, AStarChaser,
+                HorizontalAvatar, VerticalAvatar, FlakAvatar, ShootAvatar, AimedAvatar,
+                AimedFlakAvatar, RotatingAvatar] #removed Resource, Immovable, Passive, AStarChaser,
 
-# MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
-#                 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
-#                     AimedFlakAvatar, InertialAvatar, MarioAvatar
+#       OrientedAvatar, \
+#                RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, \
+#                     InertialAvatar, MarioAvatar
 
 def getSpeed(params):
     """
@@ -1964,6 +1968,10 @@ def getStype(params):
     """
     if 'stype' in params:
         return params['stype']
+
+def getAngle(params):
+    if 'angle_diff' in params:
+        return params['angle_diff']
 
 def getCooldown(params):
     if 'cooldown' in params:
@@ -2064,13 +2072,17 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
     The default value of params is an empty dictionary - if that's the value passed, then the method will
     assume default values for each attribute.
     """
-    appearance_predictions = {}
+    appearance_predictions = []
+    orientation_options = {(0, 0): 1}
     sprite_type = sprite_type_tuple[1]
     if action==None:
         action=0
 
     if sprite_type in [Immovable, Passive, ResourcePack, Resource, 'OTHER']:
-        return {(current_sprite.rect.left, current_sprite.rect.top): 1.}, {(current_sprite.rect.left, current_sprite.rect.top): 1.}, appearance_predictions ##object stays in position
+        return ({(current_sprite.rect.left, current_sprite.rect.top): 1.}, 
+               {(current_sprite.rect.left, current_sprite.rect.top): 1.}, 
+               orientation_options,
+               appearance_predictions) ##object stays in position
 
     # Chaser
     elif sprite_type == Chaser:
@@ -2118,7 +2130,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
 
         current_sprite.cooldown = realCooldown
         current_sprite.lastmove = realLastmove
-        return position_options, position_options, appearance_predictions
+        return position_options, position_options, orientation_options, appearance_predictions
 
     # AStarChaser
     elif sprite_type == AStarChaser:
@@ -2128,7 +2140,10 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         # If nothing to chase, then will stay in place
         killed = [s.name for s in game.kill_list]
         if 'avatar' in killed:
-            return {(current_sprite.rect.left, current_sprite.rect.top): 1.}, {(current_sprite.rect.left, current_sprite.rect.top): 1.}
+            return ({(current_sprite.rect.left, current_sprite.rect.top): 1.}, 
+                   {(current_sprite.rect.left, current_sprite.rect.top): 1.}, 
+                   orientation_options, 
+                   appearance_predictions)
 
         path = world.getMoveFor(current_sprite)
         if len(path)>1:
@@ -2158,7 +2173,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
 
         left, top = current_sprite.physics.calculateActiveMovement(current_sprite, movement, speed=speed, 
             allMovement=allMovement)
-        return {(left, top): 1.}, {(left, top): 1.}, appearance_predictions
+        return {(left, top): 1.}, {(left, top): 1.}, orientation_options, appearance_predictions
 
     # Random NPC
     elif sprite_type == RandomNPC:
@@ -2177,7 +2192,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
                 position_options[(left, top)] = 1.0/len(BASEDIRS)
 
         current_sprite.cooldown = realCooldown
-        return position_options, position_options, appearance_predictions
+        return position_options, position_options, orientation_options, appearance_predictions
 
     # Missile or OrientedSprite
     elif sprite_type in [Missile, OrientedSprite]:
@@ -2197,7 +2212,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         # If object has speed = 0 or no 'orientation' attribute
         position_options, clustered_position_options = {}, {}
         if coords == None:
-            return position_options, position_options, appearance_predictions
+            return position_options, position_options, orientation_options, appearance_predictions
 
         position_options[(coords[0], coords[1])] = 1.
 
@@ -2216,7 +2231,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
                 clustered_position_options[(coords[0], coords[1])] = .5 - epsilon_prob
 
         current_sprite.cooldown = realCooldown
-        return position_options, clustered_position_options, appearance_predictions
+        return position_options, clustered_position_options, orientation_options, appearance_predictions
 
     elif sprite_type in [MovingAvatar, FlakAvatar, ShootAvatar, HorizontalAvatar, VerticalAvatar]:
         if action in sprite_type.availableActions:
@@ -2232,20 +2247,102 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
             ## get type of sprite that should appear and its location; return that as the third dict.
             ## then get the return val of this one and add it to the game.sprite_appearance_predictions
             appearance_predictions = [(stype, current_sprite.rect.left, current_sprite.rect.top)]
-            return position_options, position_options, appearance_predictions
+            return position_options, position_options, orientation_options, appearance_predictions
         elif sprite_type in [ShootAvatar]:
             stype = getStype(params)
             u = unitVector(current_sprite.orientation)
             left, top = current_sprite.lastrect.left+u[0]*current_sprite.lastrect.size[0], current_sprite.lastrect.top+u[1]*current_sprite.lastrect.size[1]
             appearance_predictions = [(stype, left, top)]
-            return position_options, position_options, appearance_predictions
+            return position_options, position_options, orientation_options, appearance_predictions
 
         else:
-            return position_options, position_options, []
+            return position_options, position_options, orientation_options, []
+    elif sprite_type == AimedAvatar:
+        stype = getStype(params)
+        angle_diff = getAngle(params)
+        action = actionToDir[keyPressToAction[action]]
+        if action in [UP, DOWN]:
+            if action == UP:
+                angle = -angle_diff
+            elif action == DOWN:
+                angle = angle_diff
 
+            from math import cos, sin
 
-        # Catches objects that can't be Oriented Sprite and Missile types b/c fails the if-statement
-        return {}, {}, {}
+            orientation = unitVector((current_sprite.orientation[0]*cos(angle)-current_sprite.orientation[1]*sin(angle),
+                                      current_sprite.orientation[0]*sin(angle)+current_sprite.orientation[1]*cos(angle)))
+        else:
+            orientation = current_sprite.orientation
+
+        orientation_options = {orientation: 1.0}
+        position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.0}
+        
+        u = unitVector(orientation)
+        left, top = current_sprite.lastrect.left+u[0]*current_sprite.lastrect.size[0], current_sprite.lastrect.top+u[1]*current_sprite.lastrect.size[1]
+        appearance_predictions = [(stype, left, top)]
+        return position_options, position_options, orientation_options, appearance_predictions
+
+    elif sprite_type == AimedFlakAvatar:
+        stype = getStype(params)
+        angle_diff = getAngle(params)
+
+        direction = actionToDir[keyPressToAction[action]]
+        
+        if direction in [LEFT, RIGHT]:
+            dx, dy = direction
+        else:
+            dx, dy = (0, 0)
+
+        if direction in [UP, DOWN]:
+            if direction == UP:
+                angle = -angle_diff
+            elif direction == DOWN:
+                angle = angle_diff
+
+            from math import cos, sin
+
+            orientation = unitVector((current_sprite.orientation[0]*cos(angle)-current_sprite.orientation[1]*sin(angle),
+                                      current_sprite.orientation[0]*sin(angle)+current_sprite.orientation[1]*cos(angle)))
+        else:
+            orientation = current_sprite.orientation
+
+        orientation_options = {orientation: 1.0}
+
+        next_pos = (current_sprite.rect.left + current_sprite.speed*dx*game.block_size, 
+                        current_sprite.rect.top + current_sprite.speed*dy*game.block_size)
+        position_options = {next_pos: 1.}
+
+        u = unitVector(orientation)
+        left, top = current_sprite.lastrect.left+u[0]*current_sprite.lastrect.size[0], current_sprite.lastrect.top+u[1]*current_sprite.lastrect.size[1]
+        appearance_predictions = [(stype, left, top)]
+        return position_options, position_options, orientation_options, appearance_predictions
+    elif sprite_type == RotatingAvatar:
+        direction = actionToDir[keyPressToAction[action]]
+        speed = 0
+        if direction == UP:
+            speed = 1
+        if direction == DOWN:
+            speed = -1
+
+        orientation = current_sprite.orientation
+        if orientation != (0, 0):
+            if direction == LEFT:
+                i = BASEDIRS.index(orientation)
+                orientation = BASEDIRS[(i + 1) % len(BASEDIRS)]
+            if direction == RIGHT:
+                i = BASEDIRS.index(orientation)
+                orientation = BASEDIRS[(i - 1) % len(BASEDIRS)] 
+            orientation_options = {orientation: 1.0}
+
+        next_pos = (current_sprite.rect.left+orientation[0]*speed*game.block_size, 
+                        current_sprite.rect.top+orientation[1]*speed*game.block_size)
+        position_options = {next_pos: 1.0}
+        
+        appearance_predictions = []
+
+        return position_options, position_options, orientation_options, appearance_predictions
+    # Catches objects that can't be Oriented Sprite and Missile types b/c fails the if-statement
+    return {}, {}, {}, []
 
 
 def initializeDistribution(sprite_types, objectColors):
@@ -2278,7 +2375,6 @@ def initializeDistributionArgs(sprite_type, objectColors):
     def initializeOrientation():
         orientationValues = [LEFT, RIGHT, UP, DOWN]
         return [('orientation', v) for v in orientationValues]
-
     def initializeFleeing():
         fleeingValues = [True, False]
         return [('fleeing', v) for v in fleeingValues]
@@ -2293,6 +2389,9 @@ def initializeDistributionArgs(sprite_type, objectColors):
 
     def initializeSingleton():
         return [('singleton', v) for v in [True, False]]
+
+    def initializeAngle():
+        return [('angle_diff', v) for v in [0.05, 0.707]]
 
     paramList = []
     if sprite_type.__name__ in spriteToParams.keys():
@@ -2313,6 +2412,8 @@ def initializeDistributionArgs(sprite_type, objectColors):
             paramList.append(initializeCooldown())
         elif s=='singleton':
             paramList.append(initializeSingleton())
+        elif s=='angle_diff':
+            paramList.append(initializeAngle())
 
     return paramList
 
@@ -2334,7 +2435,7 @@ def distributionInitSetup(game, spriteID):
     game.movement_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys()}
     game.object_token_movement_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys()}
     game.sprite_appearance_predictions[spriteID] = {k:[] for k in game.spriteDistribution[spriteID].keys() if 'Avatar' in str(k[0][1])}
-
+    game.orientation_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys() if 'Avatar' in str(k[0][1])}
 
 def updateDistribution(game, sprite, curr_distribution, movement_options, outcome, specialID=None, missileOrientationClustering=False):
 
@@ -2687,9 +2788,12 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
                     ## objects
                     game.object_token_movement_options[sprite][param_combination], \
                     game.movement_options[sprite][param_combination], \
+                    orientation_options, \
                     appearance_prediction = \
                     updateOptions(game, sprite_type, sprite_obj, action=action, params=attributeDict, missileOrientationClustering=True, allMovement=allMovement)
- 
+                    if param_combination in game.orientation_options[sprite].keys():
+                        game.orientation_options[sprite][param_combination] = orientation_options
+
                     if param_combination in game.sprite_appearance_predictions[sprite].keys():
                         game.sprite_appearance_predictions[sprite][param_combination].extend(appearance_prediction)
 
@@ -2761,9 +2865,14 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
                     scoreAndTheoryTuples.append((0,k))
         else:
             ## Normal case. Update hypotheses related to movement types.
-            for k in game.movement_options[sprite.ID].keys():
-                if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k].keys():
-                    scoreAndTheoryTuples.append((0,k))
+            for k in game.movement_options[sprite.ID]:
+                if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k]: 
+                    if k in game.orientation_options[sprite.ID]:
+                        if sprite.orientation in game.orientation_options[sprite.ID][k]:
+                            scoreAndTheoryTuples.append((0,k))
+                    else:
+                        scoreAndTheoryTuples.append((0,k))
+                    
 
         reasonableHypotheses = [s[1] for s in scoreAndTheoryTuples]
         return reasonableHypotheses

@@ -269,6 +269,7 @@ class BasicGame(object):
         self.object_token_spriteDistribution = {}
         self.spriteUpdateDict = defaultdict(int) ## track how many times we have run spriteType updates to each particular object
         self.movement_options = {}
+        self.orientation_options = {}
         self.sprite_appearance_predictions = {}
         self.object_token_movement_options = {}
         self.sprite_appearances = [] ## New sprites that appear at any given step. This gets cleared at the end of each time-step.

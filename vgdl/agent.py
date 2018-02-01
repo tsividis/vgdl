@@ -311,7 +311,7 @@ class Agent:
 		for g in envPrev._game.sprite_groups.keys():
 			all_sprites += envPrev._game.sprite_groups[g]
 		# Neighbors of problematic sprite in real world in previous time step
-		neighbors = [s for s in all_sprites if manhattanDist2(s, sPrev)<=1. and s!=sPrev and (s not in envPrev._game.kill_list)]
+		neighbors = [s for s in all_sprites if manhattanDist2(s, sPrev)<=np.sqrt(2) and s!=sPrev and (s not in envPrev._game.kill_list)]
 		# Determine corresponding classes in theory environment
 		neighbors_color = [s.colorName for s in neighbors]
 		neighbors_color = list(set(neighbors_color))
@@ -1400,7 +1400,7 @@ class Agent:
 		# actions = [K_RIGHT, 0, K_RIGHT]
 		# actions = [K_RIGHT,K_UP,K_SPACE, 0, 0, 0]
 		# actions = [K_SPACE, 0, K_SPACE]
-		actions = [0]*6
+		actions = [K_UP, K_LEFT, K_SPACE]
 		self.initializeEnvironment()
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
