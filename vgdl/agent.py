@@ -1040,7 +1040,7 @@ class Agent:
 			for theory in theories:
 				newTheories.extend(self.expandTheoryForOneErrorMap(errorList[0], envRealPrev, envRealCurrent, prevAction, theory))
 			
-
+			print "Now running experience replay on {} theories".format(len(newTheories))
 			penalties, cumulative_penalties, _ = self.experienceReplay(newTheories, self.rleHistory[-2:], self.actionHistory[-1:], 
 				method='all', targetClass = errorList[0].targetClass)
 
@@ -1143,8 +1143,12 @@ class Agent:
 				# item.rect==errorMap.targetToken.rect and item.colorName!=errorMap.targetToken.colorName][0]
 			errorMap.targetToken = overlapping_item
 			errorMap.targetClass = theory.spriteObjects[overlapping_item.colorName].className
+
+			## Redo induction for this type, even if you've done it before.
+			if errorMap.targetClass in theory.expandedSprites:
+				theory.expandedSprites.remove(errorMap.targetClass)
+		
 		## SpriteSet induction step
-		# if errorMap.targetClass != 'avatar' and 
 		if errorMap.targetClass not in theory.expandedSprites:
 			className, theories = expandSprites(self.rle._game, theory, errorMap, 
 				envRealPrev, envRealCurrent, self.bestSpriteTypeDict, action, percentile=20, max_num=30,
@@ -1394,7 +1398,9 @@ class Agent:
 		# actions = [0,0,0,0,0, K_RIGHT, K_RIGHT,0,0,0,0,0,0,0,0,0,0,0]
 		# actions = [0,0,0,0,0,0,0,0,0,0,0]
 		# actions = [K_RIGHT, 0, K_RIGHT]
-		actions = [32, 0, 32]
+		# actions = [K_RIGHT,K_UP,K_SPACE, 0, 0, 0]
+		# actions = [K_SPACE, 0, K_SPACE]
+		actions = [0]*6
 		self.initializeEnvironment()
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
@@ -2108,6 +2114,7 @@ class Agent:
 		
 		#OBJECT TRACKING
 		resourceObservations, new_sprites = self.getObservations(agentState, envReal, envRealPrev)
+		print resourceObservations
 		self.rle._game.sprite_appearances = new_sprites
 		print "new sprites", new_sprites
 		#updates the distributions
