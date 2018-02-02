@@ -5,3 +5,4 @@
 /videos
 .spyderproject
 venv
+.DS_Store
