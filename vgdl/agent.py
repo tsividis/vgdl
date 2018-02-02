@@ -383,8 +383,11 @@ class Agent:
 		# 1.1) noMovement
 		if dist_ts == 0:
 			e.diagnosis.append('noMovement')
-			## Form all possible pairs of classes and propose these.
+			## Form all possible pairs of classes and propose these. This is because undoAll could cause this, so it's literally any classes combining.
 			e.intPairs = list(itertools.combinations([k for k in envA._game.sprite_groups.keys() if envA._game.sprite_groups[k]],2))
+			for k in envA._game.sprite_groups.keys():
+				if len(envA._game.sprite_groups[k])>1:
+					e.intPairs.append((k,k))
 		# 1.2) orientationChange
 		if dist_ts!=0 and oB!=None and oB!=oPrev:
 			e.diagnosis.append('orientationChange')
@@ -805,7 +808,6 @@ class Agent:
 								## Enforce consistency: inferred value for individual orientations has to be consistent with 
 								# what we're saying the horizontal/vertical orientation is of the entire group.
 
-
 								orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - 
 									np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
 
@@ -820,10 +822,10 @@ class Agent:
 								print "Failed to get params for Missile in main_agent"
 								# embed()
 								pass
-					else:
+					# else:
 						# print "setting sprite positions"
-						if hasattr(matchingSprite, 'orientation'):
-							sprite.orientation = matchingSprite.orientation
+						# if hasattr(matchingSprite, 'orientation'):
+							# sprite.orientation = matchingSprite.orientation
 						# embed()
 		return
 
@@ -866,24 +868,31 @@ class Agent:
 			print "Warning. In initializeVrle. Got more than one avatar"
 			embed()
 		
+		## Initialize imaginary state to match real state.
 		self.setSpritePositions(stateToSet, Vrle, hypothesis, useHypothesis=useHypothesis)
 
-		## Initialize imaginary state to match real state.
-		try:
-			Vrle._game.getAvatars()[0].resources = ccopy(stateToSet._game.getAvatars()[0].resources)
-			Vrle._game.getAvatars()[0].orientation = ccopy(stateToSet._game.getAvatars()[0].orientation)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].jumping)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].wait_step)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].rope)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].gravity)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].last_rope)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].last_gravity)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].last_vy)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].lastrect)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].speed)
+		## TODO: imaginary state should not match real state; it should match the inferred state of that particular object.
+		avatar = Vrle._game.getAvatars()[0]
+		# embed()
+		if any([k in str(hypothesis.spriteObjects[avatar.colorName]) for k in ['Oriented', 'Rotating']]):
+			matchingSprite = [s for s in getSpritesByColor(stateToSet._game, avatar.colorName) if s.rect==avatar.rect][0]
+			try:
+				Vrle._game.getAvatars()[0].lastmove = ccopy(matchingSprite.lastmove)
+				Vrle._game.getAvatars()[0].resources = ccopy(matchingSprite.resources)
+				Vrle._game.getAvatars()[0].orientation = ccopy(matchingSprite.orientation)
+				Vrle._game.getAvatars()[0].jumping = ccopy(matchingSprite.jumping)
+				Vrle._game.getAvatars()[0].wait_step = ccopy(matchingSprite.wait_step)
+				Vrle._game.getAvatars()[0].rope = ccopy(matchingSprite.rope)
+				Vrle._game.getAvatars()[0].gravity = ccopy(matchingSprite.gravity)
+				Vrle._game.getAvatars()[0].last_rope = ccopy(matchingSprite.last_rope)
+				Vrle._game.getAvatars()[0].last_gravity = ccopy(matchingSprite.last_gravity)
+				Vrle._game.getAvatars()[0].last_vy = ccopy(matchingSprite.last_vy)
+				Vrle._game.getAvatars()[0].lastrect = ccopy(matchingSprite.lastrect)
+				Vrle._game.getAvatars()[0].speed = ccopy(matchingSprite.speed)
 
-		except (IndexError, AttributeError) as e:
-			pass
+			except (IndexError, AttributeError) as e:
+				pass
+
 		# Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
 		return Vrle
 
@@ -1400,8 +1409,7 @@ class Agent:
 		# actions = [K_RIGHT, 0, K_RIGHT]
 		# actions = [K_RIGHT,K_UP,K_SPACE, 0, 0, 0]
 		# actions = [K_SPACE, 0, K_SPACE]
-		actions = [K_UP, K_LEFT, K_RIGHT, 0, K_UP, K_DOWN]
-		# actions = [0]*6
+		actions = [0,0,0,0,0]
 		self.initializeEnvironment()
 		# embed()
 		self.trueTheory = generateTheoryFromGame(self.rle)
@@ -1432,7 +1440,7 @@ class Agent:
 		#updates the distributions
 		# self.distributions.updateDist(resourceObservations)
 
-		plt.ion() #allow for plot updating
+		# plt.ion() #allow for plot updating
 
 		t1 = time.time()
 		for num, action in enumerate(actions):
@@ -1916,7 +1924,11 @@ class Agent:
 		return agentState
 
 	def getObservations(self, agentState, envReal, envRealPrev):
-		#whether the avatar is still alive
+		
+		##TODO: generalize. this might have to be theory-specific, since different theories 
+		## might predict hypotherize different avatars
+		
+		#whether the avatar is still alive 
 		avatar_is_dead = len(getSpritesByColor(envReal._game,'DARKBLUE'))==0
 
 		#using the previous state, we predict where the objects are going to be
@@ -1948,6 +1960,10 @@ class Agent:
 					positions.append(expected_pos)
 			self.predictions[key] = positions
 		
+		## TODO: This doesn't look like it's rolling forward all predictions at the same time
+		## and using that to make a prediction. What you need is a theory-based prediction (as in, a step forward)
+		## in the simulator, and then knowledge about the intersections given each theory.
+
 		#get list of possible objects which could have collided with avatar
 		candidates = []
 		locs = {}
@@ -1973,7 +1989,7 @@ class Agent:
 		#two cases - whether this collision killed the avatar or not
 		if avatar_is_dead:
 			for sprite in candidates:
-				resourceObservations['speed'][sprite] = (None,agentState['speed'])
+				resourceObservations['speed'][sprite] = (None,agentState['speed']) # <--- Why are we switching order here and in the line 3 below?
 		else:
 			for sprite in candidates:
 				resourceObservations['speed'][sprite] = (agentState['speed'],None)
@@ -1998,7 +2014,7 @@ class Agent:
 			for res in self.observed_resources:
 				val = agentState[res]
 				#return whether this collision killed the sprite or the avatar - this format is used when updating distributions
-				resourceObservations['resource'][sprite][res] = (val,not avatar_is_dead,not sprite_gone)
+				resourceObservations['resource'][sprite][res] = (val, not avatar_is_dead, not sprite_gone)
 
 		_, new_sprites, _ = self.matchEnvs(envReal, envRealPrev)
 		new_sprites = [(s.colorName, s.rect.left, s.rect.top) for s in new_sprites]
@@ -2071,8 +2087,8 @@ class Agent:
 		env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
 		env_colors = set([s.colorName for s in env_sprites if s])
 
-		# print "in testAndExpand"
-		# embed()
+		print "in testAndExpand"
+		embed()
 		env.step(action)
 		env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
 		env_colors = set([s.colorName for s in env_sprites if s])
@@ -2084,6 +2100,7 @@ class Agent:
 		  for e in errorList:
 		      e.display()
 		  print ""
+		  embed()
 		else:
 			print "No error"
 			# embed()
@@ -2095,12 +2112,14 @@ class Agent:
 
 		theory_change_flag = False
 
+		t1=time.time()
 		spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, action=action,
 			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
 			percentile=10, max_num=20, allMovement=False)
 		spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, action=action,
 			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
 			percentile=10, max_num=20, allMovement=False)
+		print "spriteInduction prep took {} seconds".format(time.time()-t1)
 
 		agentStatePrev = self.resourceManagement(pre_step=True)
 		envRealPrev = self.fastcopy(self.rle)

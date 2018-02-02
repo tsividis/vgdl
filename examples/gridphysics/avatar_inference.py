@@ -5,6 +5,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
 w                              w
+w     1                        w
 w                              w
 w                              w
 w             A1               w
@@ -14,8 +15,9 @@ w             A1               w
 game="""
 BasicGame
     SpriteSet
-        box    > Resource    color=WHITE 
-        avatar  > MovingAvatar color=DARKBLUE # stype=sam
+        box    > Missile color=WHITE orientation=LEFT cooldown=3
+        random > RandomNPC color=PURPLE cooldown=1
+        avatar  > RotatingAvatar color=DARKBLUE stype=sam
         cannon > SpawnPoint color=RED stype=box spawnCooldown=5
         missile > Missile
             sam  > orientation=UP color=BLUE singleton=True
@@ -24,6 +26,7 @@ BasicGame
     LevelMapping
         0 > base
         1 > box
+        2 > random
         w > wall
         c > cannon
         s > sam
