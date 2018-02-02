@@ -945,7 +945,7 @@ class ShootAvatar(OrientedAvatar, SpriteProducer):
 class AimedAvatar(ShootAvatar):
     """ Can change the direction of firing, but not move. """
     speed=0
-    angle_diff=0.05
+    angle_diff=.707
     def update(self, game):
         VGDLSprite.update(self, game)
         self._aim(game)
@@ -965,7 +965,7 @@ class AimedAvatar(ShootAvatar):
 class AimedFlakAvatar(AimedAvatar):
     """ Can move left and right """
     only_active=True
-    speed=None
+    speed=1
 
     def update(self, game):
         AimedAvatar.update(self, game)

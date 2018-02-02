@@ -1402,6 +1402,7 @@ class Agent:
 		# actions = [K_SPACE, 0, K_SPACE]
 		actions = [0]*6
 		self.initializeEnvironment()
+		embed()
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
 		print "initializing RLE. Epoch={}".format(epoch)
