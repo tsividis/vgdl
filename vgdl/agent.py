@@ -808,7 +808,6 @@ class Agent:
 								## Enforce consistency: inferred value for individual orientations has to be consistent with 
 								# what we're saying the horizontal/vertical orientation is of the entire group.
 
-
 								orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - 
 									np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
 
@@ -823,10 +822,10 @@ class Agent:
 								print "Failed to get params for Missile in main_agent"
 								# embed()
 								pass
-					else:
+					# else:
 						# print "setting sprite positions"
-						if hasattr(matchingSprite, 'orientation'):
-							sprite.orientation = matchingSprite.orientation
+						# if hasattr(matchingSprite, 'orientation'):
+							# sprite.orientation = matchingSprite.orientation
 						# embed()
 		return
 
@@ -869,24 +868,31 @@ class Agent:
 			print "Warning. In initializeVrle. Got more than one avatar"
 			embed()
 		
+		## Initialize imaginary state to match real state.
 		self.setSpritePositions(stateToSet, Vrle, hypothesis, useHypothesis=useHypothesis)
 
-		## Initialize imaginary state to match real state.
-		try:
-			Vrle._game.getAvatars()[0].resources = ccopy(stateToSet._game.getAvatars()[0].resources)
-			Vrle._game.getAvatars()[0].orientation = ccopy(stateToSet._game.getAvatars()[0].orientation)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].jumping)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].wait_step)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].rope)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].gravity)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].last_rope)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].last_gravity)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].last_vy)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].lastrect)
-			Vrle._game.getAvatars()[0].jumping = ccopy(stateToSet._game.getAvatars()[0].speed)
+		## TODO: imaginary state should not match real state; it should match the inferred state of that particular object.
+		avatar = Vrle._game.getAvatars()[0]
+		# embed()
+		if any([k in str(hypothesis.spriteObjects[avatar.colorName]) for k in ['Oriented', 'Rotating']]):
+			matchingSprite = [s for s in getSpritesByColor(stateToSet._game, avatar.colorName) if s.rect==avatar.rect][0]
+			try:
+				Vrle._game.getAvatars()[0].lastmove = ccopy(matchingSprite.lastmove)
+				Vrle._game.getAvatars()[0].resources = ccopy(matchingSprite.resources)
+				Vrle._game.getAvatars()[0].orientation = ccopy(matchingSprite.orientation)
+				Vrle._game.getAvatars()[0].jumping = ccopy(matchingSprite.jumping)
+				Vrle._game.getAvatars()[0].wait_step = ccopy(matchingSprite.wait_step)
+				Vrle._game.getAvatars()[0].rope = ccopy(matchingSprite.rope)
+				Vrle._game.getAvatars()[0].gravity = ccopy(matchingSprite.gravity)
+				Vrle._game.getAvatars()[0].last_rope = ccopy(matchingSprite.last_rope)
+				Vrle._game.getAvatars()[0].last_gravity = ccopy(matchingSprite.last_gravity)
+				Vrle._game.getAvatars()[0].last_vy = ccopy(matchingSprite.last_vy)
+				Vrle._game.getAvatars()[0].lastrect = ccopy(matchingSprite.lastrect)
+				Vrle._game.getAvatars()[0].speed = ccopy(matchingSprite.speed)
 
-		except (IndexError, AttributeError) as e:
-			pass
+			except (IndexError, AttributeError) as e:
+				pass
+
 		# Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
 		return Vrle
 
@@ -1433,7 +1439,7 @@ class Agent:
 		#updates the distributions
 		# self.distributions.updateDist(resourceObservations)
 
-		plt.ion() #allow for plot updating
+		# plt.ion() #allow for plot updating
 
 		t1 = time.time()
 		for num, action in enumerate(actions):
@@ -2079,8 +2085,8 @@ class Agent:
 		env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
 		env_colors = set([s.colorName for s in env_sprites if s])
 
-		# print "in testAndExpand"
-		# embed()
+		print "in testAndExpand"
+		embed()
 		env.step(action)
 		env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
 		env_colors = set([s.colorName for s in env_sprites if s])

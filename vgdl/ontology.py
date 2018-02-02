@@ -740,11 +740,8 @@ class MovingAvatar(VGDLSprite, Avatar):
         VGDLSprite.update(self, game)
         
         action = self._readAction(game)
-        #print(action)
         if action:
             self.physics.activeMovement(self, action)
-
-        #VGDLSprite.update(self, game)
 
 
 class HorizontalAvatar(MovingAvatar):

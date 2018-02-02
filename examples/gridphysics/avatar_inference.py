@@ -14,7 +14,8 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 game="""
 BasicGame
     SpriteSet
-        box    > Missile color=WHITE orientation=RIGHT cooldown=3
+        box    > Missile color=WHITE orientation=LEFT cooldown=3
+        random > RandomNPC color=PURPLE cooldown=1
         avatar  > RotatingAvatar color=DARKBLUE stype=sam
         cannon > SpawnPoint color=RED stype=box spawnCooldown=5
         missile > Missile
@@ -24,6 +25,7 @@ BasicGame
     LevelMapping
         0 > base
         1 > box
+        2 > random
         w > wall
         c > cannon
         s > sam
