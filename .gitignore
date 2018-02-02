@@ -6,3 +6,4 @@
 .spyderproject
 venv
 .DS_Store
+/avatar_inference.py

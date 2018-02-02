@@ -1155,7 +1155,6 @@ class Agent:
 				resourceObservations=self.resourceObservations)
 			newTheories.extend(theories)
 
-
 		## InteractionSet induction step
 		for targetClassPair in errorMap.intPairs:
 			predicates = proposePredicates(errorMap.diagnosis, self.memory, self.proposalMemory, globalObservations)
@@ -1167,6 +1166,7 @@ class Agent:
 			## that each theory proposes when you call expandLine on it, so you have mutliple copies
 			## of the same predicateGroups.
 			self.proposalMemory[targetClassPair].extend(predicateGroups)
+
 
 		if not newTheories:
 			newTheories = [theory]
@@ -1400,8 +1400,10 @@ class Agent:
 		# actions = [K_RIGHT, 0, K_RIGHT]
 		# actions = [K_RIGHT,K_UP,K_SPACE, 0, 0, 0]
 		# actions = [K_SPACE, 0, K_SPACE]
-		actions = [K_UP, K_LEFT, K_SPACE]
+		actions = [K_UP, K_LEFT, K_RIGHT, 0, K_UP, K_DOWN]
+		# actions = [0]*6
 		self.initializeEnvironment()
+		# embed()
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
 		print "initializing RLE. Epoch={}".format(epoch)
@@ -2043,7 +2045,8 @@ class Agent:
 
 		newRle = self.initializeRLEFromGame()
 		newRle._obstypes = ccopy(rle._obstypes)
-		newRle._gravepoints = ccopy(rle._gravepoints)
+ 		if hasattr(rle, '_gravepoints'):
+			newRle._gravepoints = ccopy(rle._gravepoints)
 		newRle._game.sprite_groups = ccopy(rle._game.sprite_groups)
 		newRle._game.kill_list = ccopy(rle._game.kill_list)
 		newRle._game.lastcollisions = ccopy(rle._game.lastcollisions)

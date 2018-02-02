@@ -2470,10 +2470,13 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	
 	## Only propose sprites when something moves that we didn't think was going to move.
 	if all([diagnosis not in ['unexpectedPosition', 'unexpectedOverlap', 
-		'orientationChange', 'unexpectedOverlap', 'noMovement', 'newObjectAppeared'] for diagnosis in errorMap.diagnosis]):
+		'orientationChange', 'unexpectedOverlap', 'noMovement', 'newObjectAppeared', 'objectDestruction'] for diagnosis in errorMap.diagnosis]):
 		return targetClass, childTheories
 
-	spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, action=action, oldSpriteSet=theory.spriteSet,\
+	if 'objectDestruction' in errorMap.diagnosis:
+		spriteProposals = [k for k in game.spriteDistribution[targetToken.ID].keys() if 'Flicker' in str(k[0][1])]
+	else:
+		spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, action=action, oldSpriteSet=theory.spriteSet,\
 		specificSpritesToUpdate=[targetToken], percentile=percentile, max_num=max_num)
 
 	# if 'unexpectedPosition' in errorMap.diagnosis:
@@ -2511,6 +2514,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 			tmpSprite = newTheory.classes['avatar'][0]
 			tmpSprite.vgdlType = tmpType
 			tmpSprite.className=targetClass
+			tmpSprite.args = {}
 			## If the old class was also an avatar we want to use the new sprite for everything, so doing that step second, always.
 			newTheory.classes[targetClass] = [tmpSprite]
 			newTheory.classes['avatar'] = [sprite]
@@ -3042,8 +3046,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 	# embed()
 	# theoryString += "\t\tG > goal\n"
 	theoryString += '"""\n'
-
-
+	
 	parserString = 'if __name__ == "__main__":\n\tfrom vgdl.core import VGDLParser\n\tVGDLParser.playGame(game, level)\n'
 
 	gameString = levelString + theoryString + parserString

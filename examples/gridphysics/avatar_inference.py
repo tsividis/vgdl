@@ -6,15 +6,16 @@ w                              w
 w                              w
 w                              w
 w                              w
-w             A                w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w             A1               w
+
 """
 
 game="""
 BasicGame
     SpriteSet
-        box    > Missile    color=WHITE orientation=RIGHT cooldown=2
-        avatar  > RotatingAvatar color=DARKBLUE stype=sam
+        box    > Resource    color=WHITE 
+        avatar  > MovingAvatar color=DARKBLUE # stype=sam
         cannon > SpawnPoint color=RED stype=box spawnCooldown=5
         missile > Missile
             sam  > orientation=UP color=BLUE singleton=True
@@ -28,13 +29,10 @@ BasicGame
         s > sam
         A > avatar
     InteractionSet
-        avatar  EOS  > stepBack
-        sam EOS  > killSprite
-        sam box > killSprite
-        box sam > killSprite
-        box wall > killSprite
+        box avatar > cloneSprite
+        avatar box > stepBack
     TerminationSet
-        SpriteCounter      stype=avatar               limit=0 win=False
+        # SpriteCounter stype=box limit=10 win=False
         # Termination
 
 """
