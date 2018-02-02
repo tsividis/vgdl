@@ -2476,9 +2476,9 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, action=action, oldSpriteSet=theory.spriteSet,\
 		specificSpritesToUpdate=[targetToken], percentile=percentile, max_num=max_num)
 
-	# if 'unexpectedPosition' in errorMap.diagnosis:
-		# print "in expandSprites, unexpectedPosition"
-		# embed()
+	if 'unexpectedPosition' in errorMap.diagnosis:
+		print "in expandSprites, unexpectedPosition"
+		embed()
 
 	## Don't instantiate non-avatar proposals for the 'avatar' class.
 	if targetClass=='avatar':
@@ -3092,6 +3092,7 @@ class PreconditionInduction():
 				if key not in self.distr['resource']:
 					self.distr['resource'][key] = {}
 				if res not in self.distr['resource'][key].keys():
+					## range(4) corresponds to each of the 4 cases.
 					self.distr['resource'][key][res] = [[1.0/self.res_n for i in range(self.res_n)] for i in range(4)]
 				
 				#4 cases:  killIfHasLess, killIfHasMore, killIfOtherHasLess, killIfOtherHasMore

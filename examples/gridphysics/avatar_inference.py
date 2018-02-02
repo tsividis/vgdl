@@ -4,6 +4,7 @@ level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
+w                              w
 w     1                        w
 w                              w
 w             A                w
@@ -13,7 +14,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 game="""
 BasicGame
     SpriteSet
-        box    > Missile color=WHITE orientation=RIGHT cooldown=2
+        box    > Missile color=WHITE orientation=RIGHT cooldown=3
         avatar  > RotatingAvatar color=DARKBLUE stype=sam
         cannon > SpawnPoint color=RED stype=box spawnCooldown=5
         missile > Missile
@@ -35,6 +36,7 @@ BasicGame
         box wall > killSprite
     TerminationSet
         SpriteCounter      stype=avatar               limit=0 win=False
+        # Termination
 
 """
 level_game_pairs = [[game, level]]
