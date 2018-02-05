@@ -49,6 +49,9 @@ spriteToParams = {
                 'AimedAvatar':       ['stype', 'angle_diff'],\
                 'AimedFlakAvatar':   ['stype', 'angle_diff'],\
                 'ShootAvatar':       ['stype'],
+                'RotatingFlippingAvatar':      ['noiseLevel'],\
+                'NoisyRotatingFlippingAvatar': ['noiseLevel'],\
+                'Flicker':           ['timeout']
                 }
 
 avatarActions = {
@@ -310,14 +313,14 @@ class ResourcePack(Resource):
 class Flicker(VGDLSprite):
     """ A square that persists just a few timesteps. """
     color = RED
-    limit = 20
+    timeout = 20
     def __init__(self, **kwargs):
         self._age = 0
         VGDLSprite.__init__(self, **kwargs)
 
     def update(self, game):
         VGDLSprite.update(self, game)
-        if self._age >= self.limit:
+        if self._age >= self.timeout:
             game.kill_list.append(self)
             # killSprite(self, None, game)
         else:
@@ -396,7 +399,8 @@ class OrientedSprite(VGDLSprite): ##
         VGDLSprite._draw(self, game)
         if self.draw_arrow:
             col = (self.color[0], 255 - self.color[1], self.color[2])
-            pygame.draw.polygon(game.screen, col, triPoints(self.rect, unitVector(self.orientation)))
+            pygame.draw.polygon(game.screen, col, 
+                                triPoints(self.rect, unitVector(self.orientation)))
 
 
 class Conveyor(OrientedSprite):
@@ -833,6 +837,7 @@ class FlakAvatar(HorizontalAvatar, SpriteProducer):
 class OrientedAvatar(OrientedSprite, MovingAvatar):
     """ Avatar retains its orientation, but moves in cardinal directions. """
     draw_arrow = True
+    availableActions = [K_UP, K_DOWN, K_LEFT, K_RIGHT]
     def update(self, game):
         tmp = self.orientation
         self.orientation = (0, 0)
@@ -859,12 +864,13 @@ class RotatingAvatar(OrientedSprite, MovingAvatar):
             self.speed = 1
         elif DOWN in actions:
             self.speed = -1
-        if LEFT in actions:
-            i = BASEDIRS.index(self.orientation)
-            self.orientation = BASEDIRS[(i + 1) % len(BASEDIRS)]
-        elif RIGHT in actions:
-            i = BASEDIRS.index(self.orientation)
-            self.orientation = BASEDIRS[(i - 1) % len(BASEDIRS)]
+        if self.orientation in BASEDIRS:
+            if LEFT in actions:
+                i = BASEDIRS.index(self.orientation)
+                self.orientation = BASEDIRS[(i + 1) % len(BASEDIRS)]
+            elif RIGHT in actions:
+                i = BASEDIRS.index(self.orientation)
+                self.orientation = BASEDIRS[(i - 1) % len(BASEDIRS)]
         VGDLSprite.update(self, game)
         self.speed = 0
 
@@ -874,6 +880,7 @@ class RotatingFlippingAvatar(RotatingAvatar):
     """
 
     noiseLevel = 0
+    availableActions = [K_UP, K_DOWN, K_LEFT, K_RIGHT]
 
     def update(self, game):
         actions = self._readMultiActions(game)
@@ -883,15 +890,16 @@ class RotatingFlippingAvatar(RotatingAvatar):
                 actions = [random.choice([UP, LEFT, DOWN, RIGHT])]
         if UP in actions:
             self.speed = 1
-        elif DOWN in actions:
-            i = BASEDIRS.index(self.orientation)
-            self.orientation = BASEDIRS[(i + 2) % len(BASEDIRS)]
-        elif LEFT in actions:
-            i = BASEDIRS.index(self.orientation)
-            self.orientation = BASEDIRS[(i + 1) % len(BASEDIRS)]
-        elif RIGHT in actions:
-            i = BASEDIRS.index(self.orientation)
-            self.orientation = BASEDIRS[(i - 1) % len(BASEDIRS)]
+        if self.orientation in BASEDIRS:
+            if DOWN in actions:
+                i = BASEDIRS.index(self.orientation)
+                self.orientation = BASEDIRS[(i + 2) % len(BASEDIRS)]
+            elif LEFT in actions:
+                i = BASEDIRS.index(self.orientation)
+                self.orientation = BASEDIRS[(i + 1) % len(BASEDIRS)]
+            elif RIGHT in actions:
+                i = BASEDIRS.index(self.orientation)
+                self.orientation = BASEDIRS[(i - 1) % len(BASEDIRS)]
         VGDLSprite.update(self, game)
         self.speed = 0
 
@@ -976,6 +984,7 @@ class AimedFlakAvatar(AimedAvatar):
 class InertialAvatar(OrientedAvatar):
     speed = 1
     physicstype = ContinuousPhysics
+    availableActions = [K_UP, K_DOWN, K_LEFT, K_RIGHT]
 
     def update(self, game):
         #MovingAvatar.update(self, game)
@@ -1303,13 +1312,13 @@ class OnStart(Conditional):
 Termination = core.Termination
 
 class Timeout(Termination):
-    def __init__(self, limit=0, win=False):
-        self.limit = limit
+    def __init__(self, timeout=0, win=False):
+        self.timeout = timeout
         self.win = win
         self.name = 'Timeout'
 
     def isDone(self, game):
-        if game.time >= self.limit:
+        if game.time >= self.timeout:
             return True, self.win
         else:
             return False, None
@@ -1921,13 +1930,14 @@ def cannotActivateSwitch(sprite, partner, game):
 #     Sprite Induction
 # ---------------------------------------------------------------------
 
-sprite_types = [ResourcePack, Missile, Chaser, RandomNPC, \
+sprite_types = [ResourcePack, Missile, Chaser, RandomNPC, Flicker, \
                 HorizontalAvatar, VerticalAvatar, FlakAvatar, ShootAvatar, AimedAvatar,
-                AimedFlakAvatar, RotatingAvatar] #removed Resource, Immovable, Passive, AStarChaser,
+                AimedFlakAvatar, RotatingAvatar, OrientedAvatar, RotatingFlippingAvatar, 
+                NoisyRotatingFlippingAvatar, ] #removed Resource, Immovable, Passive, AStarChaser,
 
-#       OrientedAvatar, \
-#                RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, \
-#                     InertialAvatar, MarioAvatar
+#       , \
+#                , , \
+#                InertialAvatar, MarioAvatar
 
 def getSpeed(params):
     """
@@ -1975,6 +1985,16 @@ def getCooldown(params):
         return params['cooldown']
     else:
         return 1
+
+def getNoiseLevel(params):
+    if 'noiseLevel' in params:
+        return params['noiseLevel']
+    return 0
+
+def getTimeOut(params):
+    if 'timeout' in params:
+        return params['timeout']
+    return float('inf')
 
 def getSpritesByColor(game, color):
     unflattened = [s for s in game.sprite_groups.values() if s and s[0].colorName==color]
@@ -2070,7 +2090,8 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
     assume default values for each attribute.
     """
     appearance_predictions = []
-    orientation_options = {(0, 0): 1}
+    orientation_options = {(0, 0): 1.0}
+    position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.0}
     sprite_type = sprite_type_tuple[1]
     if action==None:
         action=0
@@ -2080,6 +2101,12 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
                {(current_sprite.rect.left, current_sprite.rect.top): 1.}, 
                orientation_options,
                appearance_predictions) ##object stays in position
+
+    elif sprite_type == Flicker:
+        timeout = getTimeOut(params)
+        if game.time >= timeout:
+            return {}, {}, {}, []
+        return position_options, position_options, orientation_options, appearance_predictions
 
     # Chaser
     elif sprite_type == Chaser:
@@ -2313,6 +2340,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         left, top = current_sprite.lastrect.left+u[0]*current_sprite.lastrect.size[0], current_sprite.lastrect.top+u[1]*current_sprite.lastrect.size[1]
         appearance_predictions = [(stype, left, top)]
         return position_options, position_options, orientation_options, appearance_predictions
+    
     elif sprite_type == RotatingAvatar:
         direction = actionToDir[keyPressToAction[action]]
         speed = 0
@@ -2322,7 +2350,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
             speed = -1
 
         orientation = current_sprite.orientation
-        if orientation != (0, 0):
+        if orientation in BASEDIRS:
             if direction == LEFT:
                 i = BASEDIRS.index(orientation)
                 orientation = BASEDIRS[(i + 1) % len(BASEDIRS)]
@@ -2335,6 +2363,50 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
                         current_sprite.rect.top+orientation[1]*speed*game.block_size)
         position_options = {next_pos: 1.0}
         
+        appearance_predictions = []
+
+        return position_options, position_options, orientation_options, appearance_predictions
+
+    elif sprite_type in [RotatingFlippingAvatar, NoisyRotatingFlippingAvatar]:
+        noiseLevel = getNoiseLevel(params)
+        direction = actionToDir[keyPressToAction[action]]
+        speed = 0
+        if direction == UP:
+            speed = 1
+
+        orientation = current_sprite.orientation
+        if orientation in BASEDIRS:
+            if direction == LEFT:
+                i = BASEDIRS.index(orientation)
+                orientation = BASEDIRS[(i + 1) % len(BASEDIRS)]
+            elif direction == RIGHT:
+                i = BASEDIRS.index(orientation)
+                orientation = BASEDIRS[(i - 1) % len(BASEDIRS)] 
+            elif direction == DOWN:
+                i = BASEDIRS.index(orientation)
+                orientation = BASEDIRS[(i + 2) % len(BASEDIRS)]  
+            orientation_options = {d : noiseLevel for d in [UP, DOWN, LEFT, RIGHT]}
+            orientation_options[orientation] += 1-noiseLevel
+
+        curr_pos = (current_sprite.rect.left, current_sprite.rect.top)
+        next_pos = (current_sprite.rect.left+orientation[0]*speed*game.block_size, 
+                        current_sprite.rect.top+orientation[1]*speed*game.block_size)
+        position_options = {curr_pos: 3*noiseLevel/4., next_pos: noiseLevel/4.}
+        position_options[next_pos] += 1-noiseLevel
+        
+        appearance_predictions = []
+
+        return position_options, position_options, orientation_options, appearance_predictions
+
+    elif sprite_type == OrientedSprite:
+        orientation = current_sprite.orientation
+        next_pos = current_sprite.rect.left, current_sprite.rect.top
+        if action:
+            orientation = actionToDir[keyPressToAction[action]]
+            next_pos = (current_sprite.rect.left+orientation[0]*speed*game.block_size, 
+                            current_sprite.rect.top+orientation[1]*speed*game.block_size)
+        orientation_options = {orientation: 1.0}
+        position_options = {next_pos: 1.0}
         appearance_predictions = []
 
         return position_options, position_options, orientation_options, appearance_predictions
@@ -2390,6 +2462,12 @@ def initializeDistributionArgs(sprite_type, objectColors):
     def initializeAngle():
         return [('angle_diff', v) for v in [0.05, 0.707]]
 
+    def initializeNoiseLevel():
+        return [('noiseLevel', v) for v in [0.0, 0.1]]
+
+    def initializeTimeOut():
+        return [('timeout', v) for v in [1, 5, 10, 15, 20, 25]]
+
     paramList = []
     if sprite_type.__name__ in spriteToParams.keys():
         spriteParams = spriteToParams[sprite_type.__name__]
@@ -2411,6 +2489,10 @@ def initializeDistributionArgs(sprite_type, objectColors):
             paramList.append(initializeSingleton())
         elif s=='angle_diff':
             paramList.append(initializeAngle())
+        elif s=='noiseLevel':
+            paramList.append(initializeNoiseLevel())
+        elif s=='timeout':
+            paramList.append(initializeTimeOut())
 
     return paramList
 

@@ -1164,7 +1164,6 @@ class Agent:
 				resourceObservations=self.resourceObservations)
 			newTheories.extend(theories)
 
-
 		## InteractionSet induction step
 		for targetClassPair in errorMap.intPairs:
 			predicates = proposePredicates(errorMap.diagnosis, self.memory, self.proposalMemory, globalObservations)
@@ -1176,6 +1175,7 @@ class Agent:
 			## that each theory proposes when you call expandLine on it, so you have mutliple copies
 			## of the same predicateGroups.
 			self.proposalMemory[targetClassPair].extend(predicateGroups)
+
 
 		if not newTheories:
 			newTheories = [theory]
@@ -1409,7 +1409,10 @@ class Agent:
 		actions = [K_RIGHT, K_LEFT, K_LEFT]
 		# actions = [K_RIGHT,K_UP,K_SPACE, 0, 0, 0]
 		# actions = [K_SPACE, 0, K_SPACE]
+		actions = [0, 0, 0, 0, 0, 0]
+		
 		self.initializeEnvironment()
+		# embed()
 
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
@@ -2061,6 +2064,7 @@ class Agent:
 
 		newRle = self.initializeRLEFromGame()
 		newRle._obstypes = ccopy(rle._obstypes)
+ 		if hasattr(rle, '_gravepoints'):
 		newRle._gravepoints = ccopy(rle._gravepoints)
 		newRle._game.sprite_groups = ccopy(rle._game.sprite_groups)
 		newRle._game.kill_list = ccopy(rle._game.kill_list)
@@ -2092,14 +2096,14 @@ class Agent:
 
 		penalty, errorList = self.errorSignal(env, self.rle, hypothesis, envRealPrev)
 		
-		if errorList:
-		  hypothesis.display()
-		  for e in errorList:
-		      e.display()
-		  print ""
-		  # embed()
-		else:
-			print "No error"
+		# if errorList:
+		#   hypothesis.display()
+		#   for e in errorList:
+		#       e.display()
+		#   print ""
+		#   embed()
+		# else:
+		# 	print "No error"
 			# embed()
 		# print "expanding theories"
 		theories = self.expandTheories([hypothesis], errorList, envRealPrev, self.rle, action)
@@ -2459,6 +2463,7 @@ class Agent:
 					try:
 						penalty, errorList = self.errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
 							rleHistory[idx+n], targetClass=targetClass, penalty_only=True)
+						penalties.append(penalty)
 
 					# if penalty and 'Chaser' in str(hypotheses[num].spriteObjects['YELLOW'].vgdlType):
 					#   print hypotheses[num].spriteObjects['YELLOW'].args
@@ -2472,10 +2477,10 @@ class Agent:
 					except:
 						print "in experienceReplay"
 						embed()
-					if displayStates:
-						print penalty
-						print env.show(color='blue')
-					penalties.append(penalty)
+					# if displayStates:
+					# 	print penalty
+					# 	print env.show(color='blue')
+					
 				cumulative_penalties.append(penalties)
 		
 		if not cumulative_penalties:
