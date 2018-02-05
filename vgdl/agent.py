@@ -175,24 +175,24 @@ class Agent:
 		else:
 			return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
 
-	def matchEnvs2(self, envA, envB, debug=False):
-		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = [],[],[]
-		for k in [key for key in envA._game.sprite_groups.keys() if envA._game.sprite_groups[key]]:
-			# Find matching sprites via color
-			color = envA._game.sprite_groups[k][0].colorName
-			matchingSpritesInEnvA = [s for s in getSpritesByColor(envA._game, color) if s not in envA._game.kill_list]
-			matchingSpritesInEnvB = [s for s in getSpritesByColor(envB._game, color) if s not in envB._game.kill_list]
+	# def matchEnvs2(self, envA, envB, debug=False):
+	# 	matched_sprites, lonely_sprites_envA, lonely_sprites_envB = [],[],[]
+	# 	for k in [key for key in envA._game.sprite_groups.keys() if envA._game.sprite_groups[key]]:
+	# 		# Find matching sprites via color
+	# 		color = envA._game.sprite_groups[k][0].colorName
+	# 		matchingSpritesInEnvA = [s for s in getSpritesByColor(envA._game, color) if s not in envA._game.kill_list]
+	# 		matchingSpritesInEnvB = [s for s in getSpritesByColor(envB._game, color) if s not in envB._game.kill_list]
 			
-			## Remove unique overlapping sprites
-			to_remove_from_A, to_remove_from_B = [], []
-			for s in matchingSpritesInEnvA:
-				matchingSprite = findNearestSprite(s, matchingSpritesInEnvB)
-				dist = manhattanDist2(s, matchingSprite)
-				if dist==0:
-					to_remove_from_A.append(s)
-					to_remove_from_B.append(matchingSprite)
+	# 		## Remove unique overlapping sprites
+	# 		to_remove_from_A, to_remove_from_B = [], []
+	# 		for s in matchingSpritesInEnvA:
+	# 			matchingSprite = findNearestSprite(s, matchingSpritesInEnvB)
+	# 			dist = manhattanDist2(s, matchingSprite)
+	# 			if dist==0:
+	# 				to_remove_from_A.append(s)
+	# 				to_remove_from_B.append(matchingSprite)
 
-			
+
 
 
 	# Function matching environment and determining sprites that couldn't be matched
@@ -1437,10 +1437,10 @@ class Agent:
 		actions = [K_RIGHT, K_LEFT, K_LEFT]
 		# actions = [K_RIGHT,K_UP,K_SPACE, 0, 0, 0]
 		# actions = [K_SPACE, 0, K_SPACE]
-		actions = [0, 0, 0, 0, 0, 0]
+		# actions = [0, 0, 0, 0, 0, 0]
 		
 		self.initializeEnvironment()
-		# embed()
+
 
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
@@ -1463,7 +1463,7 @@ class Agent:
 		self.rleHistory.append(envReal)
 
 		agentState = self.resourceManagement(pre_step=True)
-
+		embed()
 		#OBJECT TRACKING
 		resourceObservations = self.getObservations(agentState, self.rle, self.rle)
 
@@ -2020,9 +2020,11 @@ class Agent:
 		#two cases - whether this collision killed the avatar or not
 		if avatar_is_dead:
 			for sprite in candidates:
+				## (None: no speed observation (here) where avatar didn't die. second item: speed where it did die)
 				resourceObservations['speed'][sprite] = (None,agentState['speed']) # <--- Why are we switching order here and in the line 3 below?
 		else:
 			for sprite in candidates:
+				## (speed where it didn't die. None: no speed observation where it did die.)
 				resourceObservations['speed'][sprite] = (agentState['speed'],None)
 		
 		for key in agentState.keys():
@@ -2041,7 +2043,8 @@ class Agent:
 				for i in current_state[sprite]:
 					pos = i['position']
 					if abs(pos[0] - locs[sprite][0]) + abs(pos[1] - locs[sprite][1]) < THRESHHOLD:
-						resourceObservations['resource'][sprite] = {}
+						sprite_gone = False
+			resourceObservations['resource'][sprite] = {}
 			for res in self.observed_resources:
 				val = agentState[res]
 				#return whether this collision killed the sprite or the avatar - this format is used when updating distributions
@@ -2166,8 +2169,8 @@ class Agent:
 		#OBJECT TRACKING
 		resourceObservations, new_sprites = self.getObservations(agentState, envReal, envRealPrev)
 		print resourceObservations
-		# print "got resource observations"
-		# embed()
+		print "got resource observations"
+		embed()
 		self.rle._game.sprite_appearances = new_sprites
 		print "new sprites", new_sprites
 		#updates the distributions
