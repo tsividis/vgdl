@@ -1409,7 +1409,7 @@ class Agent:
 		# actions = [K_RIGHT, 0, K_RIGHT]
 		# actions = [K_RIGHT,K_UP,K_SPACE, 0, 0, 0]
 		# actions = [K_SPACE, 0, K_SPACE]
-		actions = [0,0,0,0,0]
+		actions = [0, 0, 0, 0, 0, 0]
 		self.initializeEnvironment()
 		# embed()
 		self.trueTheory = generateTheoryFromGame(self.rle)
@@ -2062,7 +2062,7 @@ class Agent:
 		newRle = self.initializeRLEFromGame()
 		newRle._obstypes = ccopy(rle._obstypes)
  		if hasattr(rle, '_gravepoints'):
-			newRle._gravepoints = ccopy(rle._gravepoints)
+		newRle._gravepoints = ccopy(rle._gravepoints)
 		newRle._game.sprite_groups = ccopy(rle._game.sprite_groups)
 		newRle._game.kill_list = ccopy(rle._game.kill_list)
 		newRle._game.lastcollisions = ccopy(rle._game.lastcollisions)
@@ -2087,22 +2087,22 @@ class Agent:
 		env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
 		env_colors = set([s.colorName for s in env_sprites if s])
 
-		print "in testAndExpand"
-		embed()
+		# print "in testAndExpand"
+		# embed()
 		env.step(action)
 		env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
 		env_colors = set([s.colorName for s in env_sprites if s])
 
 		penalty, errorList = self.errorSignal(env, self.rle, hypothesis, envRealPrev)
 		
-		if errorList:
-		  hypothesis.display()
-		  for e in errorList:
-		      e.display()
-		  print ""
-		  embed()
-		else:
-			print "No error"
+		# if errorList:
+		#   hypothesis.display()
+		#   for e in errorList:
+		#       e.display()
+		#   print ""
+		#   embed()
+		# else:
+		# 	print "No error"
 			# embed()
 		# print "expanding theories"
 		theories = self.expandTheories([hypothesis], errorList, envRealPrev, self.rle, action)
@@ -2460,6 +2460,7 @@ class Agent:
 					try:
 						penalty, errorList = self.errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
 							rleHistory[idx+n], targetClass=targetClass, penalty_only=True)
+						penalties.append(penalty)
 
 					# if penalty and 'Chaser' in str(hypotheses[num].spriteObjects['YELLOW'].vgdlType):
 					#   print hypotheses[num].spriteObjects['YELLOW'].args
@@ -2473,10 +2474,10 @@ class Agent:
 					except:
 						print "in experienceReplay"
 						embed()
-					if displayStates:
-						print penalty
-						print env.show(color='blue')
-					penalties.append(penalty)
+					# if displayStates:
+					# 	print penalty
+					# 	print env.show(color='blue')
+					
 				cumulative_penalties.append(penalties)
 		
 		if not cumulative_penalties:
