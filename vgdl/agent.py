@@ -153,7 +153,6 @@ class Agent:
 
 	def getStateByColor(self, rle):
 		state = {}
-		#embed()
 		for k in rle._game.sprite_groups.keys():
 			if len(rle._game.sprite_groups[k]) > 0:
 				color = rle._game.sprite_groups[k][0].colorName
@@ -874,24 +873,25 @@ class Agent:
 		## TODO: imaginary state should not match real state; it should match the inferred state of that particular object.
 		avatar = Vrle._game.getAvatars()[0]
 		# embed()
-		if any([k in str(hypothesis.spriteObjects[avatar.colorName]) for k in ['Oriented', 'Rotating']]):
-			matchingSprite = [s for s in getSpritesByColor(stateToSet._game, avatar.colorName) if s.rect==avatar.rect][0]
-			try:
-				Vrle._game.getAvatars()[0].lastmove = ccopy(matchingSprite.lastmove)
-				Vrle._game.getAvatars()[0].resources = ccopy(matchingSprite.resources)
-				Vrle._game.getAvatars()[0].orientation = ccopy(matchingSprite.orientation)
-				Vrle._game.getAvatars()[0].jumping = ccopy(matchingSprite.jumping)
-				Vrle._game.getAvatars()[0].wait_step = ccopy(matchingSprite.wait_step)
-				Vrle._game.getAvatars()[0].rope = ccopy(matchingSprite.rope)
-				Vrle._game.getAvatars()[0].gravity = ccopy(matchingSprite.gravity)
-				Vrle._game.getAvatars()[0].last_rope = ccopy(matchingSprite.last_rope)
-				Vrle._game.getAvatars()[0].last_gravity = ccopy(matchingSprite.last_gravity)
-				Vrle._game.getAvatars()[0].last_vy = ccopy(matchingSprite.last_vy)
-				Vrle._game.getAvatars()[0].lastrect = ccopy(matchingSprite.lastrect)
-				Vrle._game.getAvatars()[0].speed = ccopy(matchingSprite.speed)
+		matchingSprite = [s for s in getSpritesByColor(stateToSet._game, avatar.colorName) if s.rect==avatar.rect][0]
+		# Vrle._game.getAvatars()[0].lastmove = ccopy(matchingSprite.lastmove)
 
-			except (IndexError, AttributeError) as e:
-				pass
+		if any([k in str(hypothesis.spriteObjects[avatar.colorName]) for k in ['Oriented', 'Rotating']]):
+			Vrle._game.getAvatars()[0].orientation = ccopy(matchingSprite.orientation)
+		try:
+			Vrle._game.getAvatars()[0].resources = ccopy(matchingSprite.resources)
+			Vrle._game.getAvatars()[0].jumping = ccopy(matchingSprite.jumping)
+			Vrle._game.getAvatars()[0].wait_step = ccopy(matchingSprite.wait_step)
+			Vrle._game.getAvatars()[0].rope = ccopy(matchingSprite.rope)
+			Vrle._game.getAvatars()[0].gravity = ccopy(matchingSprite.gravity)
+			Vrle._game.getAvatars()[0].last_rope = ccopy(matchingSprite.last_rope)
+			Vrle._game.getAvatars()[0].last_gravity = ccopy(matchingSprite.last_gravity)
+			Vrle._game.getAvatars()[0].last_vy = ccopy(matchingSprite.last_vy)
+			Vrle._game.getAvatars()[0].lastrect = ccopy(matchingSprite.lastrect)
+			Vrle._game.getAvatars()[0].speed = ccopy(matchingSprite.speed)
+
+		except (IndexError, AttributeError) as e:
+			pass
 
 		# Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
 		return Vrle
@@ -1406,11 +1406,11 @@ class Agent:
 
 		# actions = [0,0,0,0,0, K_RIGHT, K_RIGHT,0,0,0,0,0,0,0,0,0,0,0]
 		# actions = [0,0,0,0,0,0,0,0,0,0,0]
-		# actions = [K_RIGHT, 0, K_RIGHT]
+		actions = [K_RIGHT, K_LEFT, K_LEFT]
 		# actions = [K_RIGHT,K_UP,K_SPACE, 0, 0, 0]
 		# actions = [K_SPACE, 0, K_SPACE]
-		actions = [0,0,0,0,0]
 		self.initializeEnvironment()
+
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
 		print "initializing RLE. Epoch={}".format(epoch)
@@ -1434,7 +1434,7 @@ class Agent:
 		agentState = self.resourceManagement(pre_step=True)
 
 		#OBJECT TRACKING
-		# resourceObservations = self.getObservations(agentState, self.rle, self.rle)
+		resourceObservations = self.getObservations(agentState, self.rle, self.rle)
 
 		#updates the distributions
 		# self.distributions.updateDist(resourceObservations)
@@ -1925,7 +1925,7 @@ class Agent:
 	def getObservations(self, agentState, envReal, envRealPrev):
 		
 		##TODO: generalize. this might have to be theory-specific, since different theories 
-		## might predict hypotherize different avatars
+		## might hypothesize different avatars
 		
 		#whether the avatar is still alive 
 		avatar_is_dead = len(getSpritesByColor(envReal._game,'DARKBLUE'))==0
@@ -1967,6 +1967,7 @@ class Agent:
 		candidates = []
 		locs = {}
 		current_state = self.getStateByColor(envRealPrev)
+
 		if len(current_state['DARKBLUE']) > 0:
 			avatar = current_state['DARKBLUE'][0]['position']
 		elif 'DARKBLUE' in self.predictions.keys():
@@ -2085,8 +2086,6 @@ class Agent:
 		env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
 		env_colors = set([s.colorName for s in env_sprites if s])
 
-		print "in testAndExpand"
-		embed()
 		env.step(action)
 		env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
 		env_colors = set([s.colorName for s in env_sprites if s])
@@ -2098,7 +2097,7 @@ class Agent:
 		  for e in errorList:
 		      e.display()
 		  print ""
-		  embed()
+		  # embed()
 		else:
 			print "No error"
 			# embed()
@@ -2135,6 +2134,8 @@ class Agent:
 		#OBJECT TRACKING
 		resourceObservations, new_sprites = self.getObservations(agentState, envReal, envRealPrev)
 		print resourceObservations
+		# print "got resource observations"
+		# embed()
 		self.rle._game.sprite_appearances = new_sprites
 		print "new sprites", new_sprites
 		#updates the distributions
@@ -2636,7 +2637,7 @@ if __name__ == "__main__":
 	filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.inference_test"
 
-	#filename = "examples.continuousphysics.collect_resource"
+	# filename = "examples.gridphysics.collect_resource"
 	# filename = "examples.continuousphysics.breakout_new"
 
 	global WBP
