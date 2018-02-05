@@ -1,21 +1,33 @@
 
 
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                              w
+# w                              w
+# w                              w
+# w              2               w
+# w             111              w
+# w             1A1              w
+
+# """
+
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
 w                              w
+w             1         A      w
 w                              w
-w              2               w
-w             111              w
-w             1A1              w
+w                              w
+w             1 1              w
 
 """
 
 game="""
 BasicGame
     SpriteSet
-        box    > Immovable color=WHITE # orientation=LEFT cooldown=2
+        box    > Missile color=WHITE orientation=LEFT cooldown=2
         flicker > Flicker timeout=5 color=GREEN
         random > Chaser color=PURPLE cooldown=1 stype=avatar
         avatar  > MovingAvatar color=DARKBLUE stype=sam
