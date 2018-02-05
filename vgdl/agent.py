@@ -175,6 +175,25 @@ class Agent:
 		else:
 			return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
 
+	def matchEnvs2(self, envA, envB, debug=False):
+		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = [],[],[]
+		for k in [key for key in envA._game.sprite_groups.keys() if envA._game.sprite_groups[key]]:
+			# Find matching sprites via color
+			color = envA._game.sprite_groups[k][0].colorName
+			matchingSpritesInEnvA = [s for s in getSpritesByColor(envA._game, color) if s not in envA._game.kill_list]
+			matchingSpritesInEnvB = [s for s in getSpritesByColor(envB._game, color) if s not in envB._game.kill_list]
+			
+			## Remove unique overlapping sprites
+			to_remove_from_A, to_remove_from_B = [], []
+			for s in matchingSpritesInEnvA:
+				matchingSprite = findNearestSprite(s, matchingSpritesInEnvB)
+				dist = manhattanDist2(s, matchingSprite)
+				if dist==0:
+					to_remove_from_A.append(s)
+					to_remove_from_B.append(matchingSprite)
+
+			
+
 
 	# Function matching environment and determining sprites that couldn't be matched
 	def matchEnvs(self, envA, envB, debug=False):
@@ -254,6 +273,7 @@ class Agent:
 		sprites_rematchA = [] #re-matched sprites in envA
 		sprites_rematchB = [] #re-matched sprites in envB
 		if lonely_sprites_envB != []:
+			to_remove = []
 			for sA in lonely_sprites_envA:
 				dist_temp = []
 				for sB in lonely_sprites_envB:
@@ -261,18 +281,23 @@ class Agent:
 						dist_temp.append( manhattanDist2(sA, sB) )
 					else:
 						dist_temp.append(2e6)
-						lonely_sprites_envA.remove(sA) ## If there is no rematch for this sprite, take it off the lonely list.
-					#if all([d==None for d in dist_rematch]): #case where there is no potential re-match
+						to_remove.append(sA) ## If there is no rematch for this sprite, take it off the lonely list.
 				dist_rematch.append(dist_temp)
-				#print '>>> dist_rematch', dist_rematch
-				mindist_rematch.append(min([d for d in dist_rematch[-1]]))
+				mindist_rematch.append(min(dist_temp))
+			lonely_sprites_envA = [s for s in lonely_sprites_envA if s not in to_remove]
+			if len(dist_rematch)>1:
+				embed()
 		while len(mindist_rematch)>0 and min(mindist_rematch)<1e6: #run as long as potential re-matches available
 			idx_sprite = np.argmin(mindist_rematch) #first re-match sprite with minimum distance to potential partner
 			idx_match = np.argmin(dist_rematch[idx_sprite]) #re-match to closest potential partner
 			#print '>>> idx_sprite', idx_sprite
 			#print '>>> idx_match', idx_match
 			# Append (envA sprite, envB sprite, dist) tuple to matched sprites list
-			matched_sprites.append( (lonely_sprites_envA[idx_sprite], lonely_sprites_envB[idx_match], min(mindist_rematch)) )
+			try:
+				matched_sprites.append( (lonely_sprites_envA[idx_sprite], lonely_sprites_envB[idx_match], min(mindist_rematch)) )
+			except:
+				print "idx_sprite / idx_match problem"
+				embed()
 			# Set distance out of matching range - for both sprite A and B
 			dist_rematch[idx_sprite] = [2e6 for i in range(len(dist_rematch[0]))]
 			for i in range(len(dist_rematch)):
@@ -478,9 +503,10 @@ class Agent:
 				except:
 					sA_speed = theory.classes[sA.name][0].speed
 				sPrev, dist_ts = self.find_sPrev(sB, envB, envPrev) #sA in previous environment
-				if sPrev==None:
-					warnings.warn('sPrev not found -> penalty unreliable')
+				if sPrev is None:
+					print 'sPrev not found -> penalty unreliable'
 					continue
+					# embed()
 				xB = sB.rect.left/d
 				yB = sB.rect.top/d
 				xPrev = sPrev.rect.left/d
@@ -510,6 +536,8 @@ class Agent:
 				sPrev, _ = self.find_sPrev(sB, envB, envPrev)
 				xA = sA.rect.left/d
 				yA = sA.rect.top/d
+				if sPrev is None:
+					continue
 				closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
 				chaser_penalty = 0. if (xA,yA) in closestTargets else 2.
 
@@ -724,7 +752,7 @@ class Agent:
 			print "WARNING: Unmatched sprites in IDmatch -> truPenalty potentially flawed"
 			## this is called only when you're setting two environments. So by definition, the environments should
 			## be identical.
-			embed()
+			# embed()
 		if any( [m[2]!=0 for m in matched_sprites] ) == True:
 			#print "WARNING: Non-zero distance between matched sprites (in IDmatch)"
 			pass
@@ -2065,7 +2093,7 @@ class Agent:
 		newRle = self.initializeRLEFromGame()
 		newRle._obstypes = ccopy(rle._obstypes)
  		if hasattr(rle, '_gravepoints'):
-		newRle._gravepoints = ccopy(rle._gravepoints)
+			newRle._gravepoints = ccopy(rle._gravepoints)
 		newRle._game.sprite_groups = ccopy(rle._game.sprite_groups)
 		newRle._game.kill_list = ccopy(rle._game.kill_list)
 		newRle._game.lastcollisions = ccopy(rle._game.lastcollisions)
@@ -2425,13 +2453,13 @@ class Agent:
 			## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
 			t1 = time.time()
 			theoryRLEs = self.VrleInitPhase(hypotheses, rleHistory[idx]) 
-			ID_dictlist = []
-			for tR in theoryRLEs:
-				match, warning = self.IDmatch(tR, rleHistory[idx])
-				if warning:
-					print "ID match gave a warning. Environments should have all same objects but they don't."
-					embed()
-				ID_dictlist.append( match ) 
+			# ID_dictlist = []
+			# for tR in theoryRLEs:
+			# 	match, warning = self.IDmatch(tR, rleHistory[idx])
+			# 	if warning:
+			# 		print "ID match gave a warning. Environments should have all same objects but they don't."
+			# 		embed()
+				# ID_dictlist.append( match ) 
 
 			## Take a predetermined number of actions starting from idx
 			end = min(idx+actionsPerIndex, len(actionHistory))
