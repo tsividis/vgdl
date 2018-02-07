@@ -208,7 +208,7 @@ class Agent:
 
 		'''
 		## For classes that have more than enumeration_limit instances, default to greedy version.
-		enumeration_limit = 15
+		enumeration_limit = 10
 
 		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = [],[],[]
 
@@ -435,7 +435,7 @@ class Agent:
 		dist_ts = [matched_ts[i][2] for i in range(len(matched_ts)) if matched_ts[i][0]==sB] #distance that sB has moved over timestep
 		sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB] #sB in previous step
 		if sPrev == []:
-			print "no sPrev"
+			# print "no sPrev"
 			# embed()
 			sPrev = None
 			dist_ts = None
@@ -540,6 +540,18 @@ class Agent:
 		total_penalty = 0.
 		errorMap = []
 
+		## Check for an ungrammatical theory.
+		if envA is None:
+			print "Warning: got ungrammatical theory"
+			e = errorMapEntry()
+			e.diagnosis.append('ungrammatical theory')
+			e.targetToken = None
+			e.targetClass = None
+			errorMap.append(e)
+			total_penalty = 1e6
+			# embed()
+			return total_penalty, errorMap
+
 		# Match sprites in environments and get sprites that couldn't be matched
 		# t1 = time.time()
 		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = self.matchEnvs(envA, envB)
@@ -600,13 +612,17 @@ class Agent:
 
 			# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
 			if 'Random' in str(sA_type): # == "<class 'vgdl.ontology.RandomNPC'>":      
-				try:
+				if 'speed' in theory.classes[sA.name][0].args.keys():
 					sA_speed = theory.classes[sA.name][0].args['speed']
-				except:
+				elif 'speed' in theory.classes[sA.name][0].__dict__.keys():
 					sA_speed = theory.classes[sA.name][0].speed
+				else:
+					## this only happens when you initialize the real theory for testing but haven't explicitly set the speed
+					## in the VGDL description
+					sA_speed = 1
 				sPrev, dist_ts = self.find_sPrev(sB, envB, envPrev) #sA in previous environment
 				if sPrev is None:
-					print 'sPrev not found -> penalty unreliable'
+					# print 'sPrev not found -> penalty unreliable'
 					continue
 					# embed()
 				xB = sB.rect.left/d
@@ -782,6 +798,7 @@ class Agent:
 			e = errorMapEntry()
 			e.diagnosis.append('newObjectAppeared')
 			e.targetToken = sB
+
 			# Find class of new object by comparing colors, or give 'unknown' if unsuccessful
 			color = sB.colorName
 			all_sprites_envA = []
@@ -794,41 +811,65 @@ class Agent:
 				e.targetClass = sMatch[0].name
 
 			# Find neighbors of target sprite in the real environment (envB) in the current time step -> could have caused appearance
+			# And also in the previous time-step.
 			# Simultaneously find culprit classes - an overlapping sprite could have launched the sprite due to its class
-			neighbors_curr = self.neighborsPrev(envA, envB, sB) #use this function to find neighbors in current state and not previous ("Prev" label is unnecessary)
+			
+			neighbors_curr_and_prev = self.neighborsPrev(envA, envB, sB) + self.neighborsPrev(envA, envPrev, sB)
 			nearestSprite = self.findNearestSprite(sB, [item for sublist in envA._game.sprite_groups.values() for item in sublist])
-			if nearestSprite.name in neighbors_curr:
+			if nearestSprite.name in neighbors_curr_and_prev:
 				e.intPairs.append((e.targetClass, nearestSprite.name))
 				e.culpritClasses.append(nearestSprite.name)
 			else:
 				print "got new sprite class but nearest prev-step sprite isn't a current neighbor"
+				embed()
 			# for className in neighbors_curr:
 			# 	e.intPairs.append( (sA.name,className) )
 			# 	# Culprit classes are given by the names of the potential interaction partners
 			# 	e.culpritClasses.append(className)
 			errorMap.append(e)
+			# embed()
 
 
 		# 3) State change
 		# Call s.resources on all sprites in envA and envB. See which ones have changed
 		# and if that is consistent between envA and envB
 		#TODO
+		# if len([e for e in errorMap if e.diagnosis[0]=='unexpectedPosition'])>1:
+		# 	print "in errorSignal"
+		# 	embed()
+		if len(errorMap)>1:
+			embed()
+		diagnosis_class_pairs = list(set([(e.diagnosis[0], e.targetClass) for e in errorMap]))
+		for dcp in diagnosis_class_pairs:
+			int_pairs = [item for sublist in [e.intPairs for e in errorMap if e.diagnosis[0]==dcp[0] and e.targetClass==dcp[1]] for item in sublist]
+			int_pairs = list(set(int_pairs))
+			## give int_pairs to each matching errorMap item.
+			for e in errorMap:
+				if e.diagnosis[0]==dcp[0] and e.targetClass==dcp[1]:
+					e.intPairs = int_pairs
+
+		lst = [errorMap[0]]
+		for e in errorMap[1:]:
+			if [not(e.diagnosis==l.diagnosis and e.targetClass==l.targetClass and e.targetToken==l.targetToken) for l in lst]:
+				lst.append(e)
+
+		errorMap = lst
 
 		## Clean errorMap: delete redundant interaction pairs under same diagnosis (only works if there is just one diagnosis per errorMapEntry)
-		dia_list = [e.diagnosis[0] for e in errorMap]
-		dia_list = list(set(dia_list))
-		for dia in dia_list:
-			errors = [e for e in errorMap if e.diagnosis[0]==dia]
-			for n,e in enumerate(errors):
-				other_pairs = []
-				[other_pairs.extend(errorMap[i].intPairs) for i in range(n+1,len(errorMap)) ]
-				# Permute tuples of other pairs to compare pairs in current error
-				other_pairs = [(p[1],p[0]) for p in other_pairs]
-				# Find unique interaction pairs for current error
-				unique_pairs_e = []
-				[unique_pairs_e.append(p) for p in e.intPairs if (p not in other_pairs)]
-				# Set interaction pairs to unique pairs
-				e.intPairs = unique_pairs_e
+		# dia_list = [e.diagnosis[0] for e in errorMap]
+		# dia_list = list(set(dia_list))
+		# for dia in dia_list:
+		# 	errors = [e for e in errorMap if e.diagnosis[0]==dia]
+		# 	for n,e in enumerate(errors):
+		# 		other_pairs = []
+		# 		[other_pairs.extend(errorMap[i].intPairs) for i in range(n+1,len(errorMap)) ]
+		# 		# Permute tuples of other pairs to compare pairs in current error
+		# 		other_pairs = [(p[1],p[0]) for p in other_pairs]
+		# 		# Find unique interaction pairs for current error
+		# 		unique_pairs_e = []
+		# 		[unique_pairs_e.append(p) for p in e.intPairs if (p not in other_pairs)]
+		# 		# Set interaction pairs to unique pairs
+		# 		e.intPairs = unique_pairs_e
 
 		## TODO: penalize randomNPCs more smartly - currently they're kind of a joker, obscuring push events
 
@@ -994,8 +1035,9 @@ class Agent:
 			print "in initializeVrle"
 			embed()
 		if len(Vrle._game.sprite_groups['avatar'])>1:
-			print "Warning. In initializeVrle. Got more than one avatar"
-			embed()
+			print "Warning. In initializeVrle. Got more than one avatar. Returning None as Vrle."
+			Vrle = None
+			return Vrle
 		
 		## Initialize imaginary state to match real state.
 		self.setSpritePositions(stateToSet, Vrle, hypothesis, useHypothesis=useHypothesis)
@@ -1172,14 +1214,17 @@ class Agent:
 				newTheories = [theories[0]]
 				return newTheories
 
-			print "In base case. Correcting error for {} for {} theories".format(errorList[0].targetClass, len(theories))
+			# print "In base case. Correcting error for {} for {} theories".format(errorList[0].targetClass, len(theories))
 			# if len(theories)==1:
 				# embed()
 			newTheories = []
 			for theory in theories:
 				newTheories.extend(self.expandTheoryForOneErrorMap(errorList[0], envRealPrev, envRealCurrent, prevAction, theory))
 			
-			print "Now running experience replay on {} theories".format(len(newTheories))
+			# if len(newTheories)>1000:
+			# 	print "more than 1K theories!"
+			# 	embed()
+			# print "Now running experience replay on {} theories".format(len(newTheories))
 			penalties, cumulative_penalties, _ = self.experienceReplay(newTheories, self.rleHistory[-2:], self.actionHistory[-1:], 
 				method='all', targetClass = errorList[0].targetClass)
 
@@ -1256,6 +1301,11 @@ class Agent:
 			newTheories = [theory]
 			return newTheories
 
+		
+		# if 'newObjectAppeared' in errorMap.diagnosis:
+		# 	print "got new object"
+		# 	embed()
+
 		if errorMap.targetClass == 'unknown':
 			## assign new class here so you can use it for both expandSprites() and expandLine()
 			class_num = len([k for k in theory.classes.keys() if k!='EOS']) + 1
@@ -1286,7 +1336,7 @@ class Agent:
 			## Redo induction for this type, even if you've done it before.
 			if errorMap.targetClass in theory.expandedSprites:
 				theory.expandedSprites.remove(errorMap.targetClass)
-		
+
 		## SpriteSet induction step
 		if errorMap.targetClass not in theory.expandedSprites:
 			className, theories = expandSprites(self.rle._game, theory, errorMap, 
@@ -1513,6 +1563,16 @@ class Agent:
 
 
 
+	def buildTracker(self, gameObject):
+		actions = [K_LEFT, K_LEFT, K_LEFT]
+
+		self.initializeEnvironment()
+
+		## initialize tracker
+		for action in actions:
+			self.rle.step(action)
+			## update tracker
+		return
 
 	def testEpisode(self, gameObject, epoch=0):
 		
@@ -1534,13 +1594,9 @@ class Agent:
 		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
 		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
 
-		# actions = [0,0,0,0,0, K_RIGHT, K_RIGHT,0,0,0,0,0,0,0,0,0,0,0]
-		# actions = [0,0,0,0,0,0,0,0,0,0,0]
-		actions = [K_RIGHT, K_LEFT, K_LEFT]
-		# actions = [K_RIGHT,K_UP,K_SPACE, 0, 0, 0]
-		# actions = [K_SPACE, 0, K_SPACE]
-		# actions = [0, 0, 0, 0, 0, 0]
-		
+		actions = [K_LEFT, K_LEFT, K_LEFT]
+		# actions = [0, 0, 0, 0, 0]
+
 		self.initializeEnvironment()
 
 
@@ -2239,6 +2295,10 @@ class Agent:
 			# embed()
 		# print "expanding theories"
 		theories = self.expandTheories([hypothesis], errorList, envRealPrev, self.rle, action)
+		# print [item for sublist in [e.diagnosis for e in errorList] for item in sublist]
+		# if 'newObjectAppeared' in [item for sublist in [e.diagnosis for e in errorList] for item in sublist]:
+			# print "in testandexpand"
+			# embed()
 		return theories
 
 	def executeStep(self, action, hypotheses, theoryRLEs, lastStep=False):
@@ -2353,11 +2413,6 @@ class Agent:
 
 		if newTheories:
 
-			## DEBUG: remove soon!
-			# if len(newTheories)>20:
-			#   print "DEBUG change. Filtering theories 0:20"
-			#   newTheories = newTheories[0:20]
-
 			penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay([self.trueTheory]+newTheories, self.rleHistory, self.actionHistory,
 				method='all', displayTheories=False)
 
@@ -2382,8 +2437,8 @@ class Agent:
 			for num, sh in enumerate(scoreAndTheoryTuples):
 				print "Theory: {} | Error: {}".format(num, sh[0])
 				sh[1].display()
-			print ""
-
+			# print ""
+			# embed()
 			scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
 
 			if not lastStep:
@@ -2590,8 +2645,8 @@ class Agent:
 					#   print rleHistory[idx+n].show(color='green')
 					#   print env.show()
 					#   embed()
-
-					env.step(action)
+					if env is not None:
+						env.step(action)
 					try:
 						penalty, errorList = self.errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
 							rleHistory[idx+n], targetClass=targetClass, penalty_only=True)
