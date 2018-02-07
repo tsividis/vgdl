@@ -2310,6 +2310,10 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         stype = getStype(params)
         angle_diff = getAngle(params)
 
+        speed = current_sprite.speed
+        if speed is None:
+            speed = 0
+
         direction = actionToDir[keyPressToAction[action]]
         
         if direction in [LEFT, RIGHT]:
@@ -2332,8 +2336,8 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
 
         orientation_options = {orientation: 1.0}
 
-        next_pos = (current_sprite.rect.left + current_sprite.speed*dx*game.block_size, 
-                        current_sprite.rect.top + current_sprite.speed*dy*game.block_size)
+        next_pos = (current_sprite.rect.left + speed*dx*game.block_size, 
+                        current_sprite.rect.top + speed*dy*game.block_size)
         position_options = {next_pos: 1.}
 
         u = unitVector(orientation)
@@ -2398,9 +2402,13 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
 
         return position_options, position_options, orientation_options, appearance_predictions
 
-    elif sprite_type == OrientedSprite:
+    elif sprite_type == OrientedAvatar:
         orientation = current_sprite.orientation
         next_pos = current_sprite.rect.left, current_sprite.rect.top
+        speed = current_sprite.speed
+        if speed is None:
+            speed = 0
+            
         if action:
             orientation = actionToDir[keyPressToAction[action]]
             next_pos = (current_sprite.rect.left+orientation[0]*speed*game.block_size, 
