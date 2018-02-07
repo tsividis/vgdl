@@ -212,14 +212,30 @@ class Agent:
 
 		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = [],[],[]
 
-		for k in [key for key in envA._game.sprite_groups if len(envA._game.sprite_groups[key])>0]:
+		color_groupsA = defaultdict(lambda : [])
+		color_groupsB = defaultdict(lambda : [])
+		colors = set()
+
+		for name, sprites in envA._game.sprite_groups.iteritems():
+			if sprites:
+				color = sprites[0].colorName
+				color_groupsA[color] = sprites
+				colors.add(color)
+
+		for name, sprites in envB._game.sprite_groups.iteritems():
+			if sprites:
+				color = sprites[0].colorName
+				color_groupsB[color] = sprites
+				colors.add(color)
+
+		for color in colors:
 			# Find matching sprites via color
-			color = envA._game.sprite_groups[k][0].colorName
+			# color = sprite_group_color[k][0].colorName
 			matchingSpritesInEnvA = [s for s in getSpritesByColor(envA._game, color) if s not in envA._game.kill_list]
 			matchingSpritesInEnvB = [s for s in getSpritesByColor(envB._game, color) if s not in envB._game.kill_list]
 
 			## If it is manageable to enumerate all possible pairings
-			if len(envA._game.sprite_groups[k])<enumeration_limit:
+			if len(matchingSpritesInEnvA)<enumeration_limit:
 				while len(matchingSpritesInEnvA)<len(matchingSpritesInEnvB):
 					matchingSpritesInEnvA.append(None)
 				while len(matchingSpritesInEnvB)<len(matchingSpritesInEnvA):
@@ -269,7 +285,6 @@ class Agent:
 						matchingSpritesInEnvA.append(sA)
 				lonely_sprites_envA.extend(matchingSpritesInEnvA)
 				lonely_sprites_envB.extend(matchingSpritesInEnvB)
-
 
 		return matched_sprites, lonely_sprites_envA, lonely_sprites_envB
 
@@ -836,21 +851,22 @@ class Agent:
 		#TODO
 
 		## Share information across errorMap items and make a unique list
-		diagnosis_class_pairs = list(set([(e.diagnosis[0], e.targetClass) for e in errorMap]))
-		for dcp in diagnosis_class_pairs:
-			int_pairs = [item for sublist in [e.intPairs for e in errorMap if e.diagnosis[0]==dcp[0] and e.targetClass==dcp[1]] for item in sublist]
-			int_pairs = list(set(int_pairs))
-			## give int_pairs to each matching errorMap item.
-			for e in errorMap:
-				if e.diagnosis[0]==dcp[0] and e.targetClass==dcp[1]:
-					e.intPairs = int_pairs
+		if len(errorMap) > 1:
+			diagnosis_class_pairs = list(set([(e.diagnosis[0], e.targetClass) for e in errorMap]))
+			for dcp in diagnosis_class_pairs:
+				int_pairs = [item for sublist in [e.intPairs for e in errorMap if e.diagnosis[0]==dcp[0] and e.targetClass==dcp[1]] for item in sublist]
+				int_pairs = list(set(int_pairs))
+				## give int_pairs to each matching errorMap item.
+				for e in errorMap:
+					if e.diagnosis[0]==dcp[0] and e.targetClass==dcp[1]:
+						e.intPairs = int_pairs
 
-		lst = [errorMap[0]]
-		for e in errorMap[1:]:
-			if [not(e.diagnosis==l.diagnosis and e.targetClass==l.targetClass and e.targetToken==l.targetToken) for l in lst]:
-				lst.append(e)
+			lst = [errorMap[0]]
+			for e in errorMap[1:]:
+				if [not(e.diagnosis==l.diagnosis and e.targetClass==l.targetClass and e.targetToken==l.targetToken) for l in lst]:
+					lst.append(e)
 
-		errorMap = lst
+			errorMap = lst
 
 		## Clean errorMap: delete redundant interaction pairs under same diagnosis (only works if there is just one diagnosis per errorMapEntry)
 		# dia_list = [e.diagnosis[0] for e in errorMap]
@@ -875,6 +891,7 @@ class Agent:
 
 		## Sort so that you fix errors involving any new classes first.
 		errorMap = sorted(errorMap, key=lambda x: x.targetClass!='unknown')
+
 		return total_penalty, errorMap
 
 
@@ -1591,8 +1608,8 @@ class Agent:
 		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
 		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
 
-		actions = [K_LEFT, K_LEFT, K_LEFT]
-		# actions = [0, 0, 0, 0, 0]
+		# actions = [32, 0, 0]
+		actions = [0]*25
 
 		self.initializeEnvironment()
 
@@ -2282,11 +2299,11 @@ class Agent:
 		penalty, errorList = self.errorSignal(env, self.rle, hypothesis, envRealPrev)
 		
 		# if errorList:
-		#   hypothesis.display()
-		#   for e in errorList:
-		#       e.display()
-		#   print ""
-		#   embed()
+		  # hypothesis.display()
+		  # for e in errorList:
+		      # e.display()
+		  # print ""
+		  # embed()
 		# else:
 		# 	print "No error"
 			# embed()
