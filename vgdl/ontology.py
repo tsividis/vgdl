@@ -352,6 +352,7 @@ class SpawnPoint(SpriteProducer):
     color = BLACK
     spawnCooldown = None
     is_static = True
+    
     def __init__(self, spawnCooldown=1, prob=1, total=None, **kwargs):
         SpriteProducer.__init__(self, **kwargs)
         if prob:
@@ -1945,8 +1946,7 @@ def getSpeed(params):
     sprite = the VGDL sprite.
     """
     if 'speed' in params:
-        speed = params['speed']
-        return speed if speed is not None else 0
+        return params['speed']
     else:
         return 1
         # default speed value
@@ -2220,7 +2220,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         return position_options, position_options, orientation_options, appearance_predictions
 
     # Missile or OrientedSprite
-    elif sprite_type in [Missile, OrientedSprite]:
+    elif sprite_type == Missile:
 
         # if not current_sprite.is_static and not current_sprite.only_active:
             # NOTE: we might want to consider having is_static and only_active be
@@ -2231,6 +2231,9 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         cooldown = getCooldown(params)
         realCooldown = int(current_sprite.cooldown)
         current_sprite.cooldown = cooldown
+
+        realLastmove = int(current_sprite.lastmove)
+        current_sprite.lastmove +=1
 
         coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation, 
             allMovement=allMovement)
@@ -2255,7 +2258,8 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
             else:
                 clustered_position_options[(coords[0], coords[1])] = .5 - epsilon_prob
 
-        current_sprite.cooldown = realCooldown
+        current_sprite.cooldown = realCooldown        
+        current_sprite.lastmove = realLastmove
         return position_options, clustered_position_options, orientation_options, appearance_predictions
 
     elif sprite_type in [MovingAvatar, FlakAvatar, ShootAvatar, HorizontalAvatar, VerticalAvatar]:
@@ -2264,7 +2268,10 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         else:
             dx,dy = (0,0)
 
-        speed = getSpeed(params)
+        if current_sprite.speed is not None:
+            speed = current_sprite.speed
+        else:
+            speed = 0
 
         next_pos = current_sprite.rect.left + speed*dx*game.block_size, current_sprite.rect.top + speed*dy*game.block_size
         position_options = {next_pos: 1.}
@@ -2313,7 +2320,10 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
     elif sprite_type == AimedFlakAvatar:
         stype = getStype(params)
         angle_diff = getAngle(params)
-        speed = getSpeed(params)
+
+        speed = current_sprite.speed
+        if speed is None:
+            speed = 0
 
         direction = actionToDir[keyPressToAction[action]]
         
@@ -2373,7 +2383,11 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         return position_options, position_options, orientation_options, appearance_predictions
 
     elif sprite_type in [RotatingFlippingAvatar, NoisyRotatingFlippingAvatar]:
-        noiseLevel = getNoiseLevel(params)
+        noiseLevel = 0
+
+        if sprite_type == NoisyRotatingFlippingAvatar:
+            noiseLevel = getNoiseLevel(params)
+
         direction = actionToDir[keyPressToAction[action]]
         speed = 0
         if direction == UP:
@@ -2406,7 +2420,9 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
     elif sprite_type == OrientedAvatar:
         orientation = current_sprite.orientation
         next_pos = current_sprite.rect.left, current_sprite.rect.top
-        speed = getSpeed(params)
+        speed = current_sprite.speed
+        if speed is None:
+            speed = 0
             
         if action:
             orientation = actionToDir[keyPressToAction[action]]
