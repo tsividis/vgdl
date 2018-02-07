@@ -2369,6 +2369,9 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         
         appearance_predictions = []
 
+    ## If you add any more types, check when their self.lastmove is incremented and copy that logic here.
+    ## See Chaser update for an example.
+    
         return position_options, position_options, orientation_options, appearance_predictions
 
     elif sprite_type in [RotatingFlippingAvatar, NoisyRotatingFlippingAvatar]:
@@ -2408,7 +2411,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         speed = current_sprite.speed
         if speed is None:
             speed = 0
-            
+
         if action:
             orientation = actionToDir[keyPressToAction[action]]
             next_pos = (current_sprite.rect.left+orientation[0]*speed*game.block_size, 
