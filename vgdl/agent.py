@@ -128,8 +128,6 @@ class Agent:
 		self.actionSet = [K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE]
 		self.randomTheories = []
 		self.benchmarkHistory = []
-		self.subsamplePercentage = .2 # e.g., .5 = 50%.
-		self.actionsPerIndex = 2
 		self.resourceObservations = {'speed':[], 'changeResource':[]}
 		self.observed_resources = set()
 		self.distributions = PreconditionInduction()
@@ -986,6 +984,7 @@ class Agent:
 						continue
 					sprite.rect = matchingSprite.rect
 					sprite.lastmove = matchingSprite.lastmove
+
 					if useHypothesis:
 						if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and self.best_params!=None:
 							try:
@@ -994,6 +993,7 @@ class Agent:
 
 								orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - 
 									np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
+								
 
 								if orientation == (0,0):
 									print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
@@ -1094,32 +1094,16 @@ class Agent:
 		## Initialize multiple VRLEs, each corresponding to one hypothesis in theories
 		## Set their state to that of the provided RLE
 		VRLEs = []
-		# print "in VrleInitPhase.", len(self.hypotheses), "hypotheses"
-		# if len(self.hypotheses)>1:
-		#   print "more than one hypothesis"
 
 		if not theories:
 			theories = self.hypotheses
-		# else:
-			# print "Initializing {} theories in VRLEInitPHase".format(len(theories))
+
 		for hypothesis in theories:
 			VRLEs.append(self.initializeVrle(hypothesis, stateToSet=stateToSet))
 
-			# tempHypothesis = copy.deepcopy(hypothesis)
-			# tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
-			# tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
-			# if not flexible_goals:
-				# tempHypothesis.updateTerminations()
-			# print "fake hypotheses"
-			# if self.fakeInteractionRules:/
-				# tempHypothesis.display()
-			# VRLEs.append(self.initializeVrle(tempHypothesis, stateToSet=stateToSet))
-		# print("wrote theory to text")
-
-
 		return VRLEs
 
-	#<< To build own theory: check comments below
+
 	def initializeHypotheses(self, allObjects, learnSprites=True, learnAvatar=True, num_variants=0):
 		if learnSprites:
 			observe(self.rle, 0, self.bestSpriteTypeDict)
@@ -1609,7 +1593,7 @@ class Agent:
 		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
 
 		# actions = [32, 0, 0]
-		actions = [0]*25
+		actions = [0]*5
 
 		self.initializeEnvironment()
 
@@ -2534,19 +2518,7 @@ class Agent:
 	######## TESTING HYPOTHESES BY RANDOM SAMPLING OR OTHER METHODS ########
 	########################################################################
 
-	def subSampleStates(self, rleHistory):
-		## Returns a random subsample of inidces in the rleHistory to test,
-		## as well as how many actions per index to test
 
-		## Note to self: it may happen that you sample: 
-		## indices = [0,2,10], actionsPerIndex=5, 
-		## in which case you'll double-penalize states 2,3,4.
-
-		numStatesToSample = int(math.ceil(self.subsamplePercentage*len(rleHistory)))
-		indices = list(np.random.choice(len(rleHistory)-1, numStatesToSample, replace=False))
-		actionsPerIndex = self.actionsPerIndex
-
-		return indices, actionsPerIndex
 
 	def getSalientStates(self, rleHistory):
 		## make sure you don't sample the last state
@@ -2603,6 +2575,9 @@ class Agent:
 		# rleHistory, actionHistory, method, targetClass, displayStates, hypotheses = args[0], args[1], args[2], args[3], args[4], args[5]
 		import numpy as np
 
+		subsamplePercentage = .2
+		actionsPerIndex = 2
+
 		if method=='all':
 			indices = [0]
 			actionsPerIndex = len(actionHistory)
@@ -2615,10 +2590,11 @@ class Agent:
 			else:
 				indices = [-2]
 				actionsPerIndex = 1
+
 		elif method=='subsample':
-			indices, actionsPerIndex = self.subSampleStates(rleHistory)
+			indices, actionsPerIndex = subSampleStates(subsamplePercentage, actionsPerIndex, rleHistory)
 		elif method=='salient':
-			indices, actionsPerIndex = self.getSalientStates(rleHistory)
+			indices, actionsPerIndex = getSalientStates(subsamplePercentage, actionsPerIndex, rleHistory)
 
 		cumulative_penalties = []
 
@@ -2832,8 +2808,19 @@ class Agent:
 		else:
 			plt.show()
 
-## Store all rles. Then you can very easily do experience replay!!!
+def subSampleStates(subsamplePercentage, actionsPerIndex, rleHistory):
+	## Returns a random subsample of inidces in the rleHistory to test,
+	## as well as how many actions per index to test
 
+	## Note to self: it may happen that you sample: 
+	## indices = [0,2,10], actionsPerIndex=5, 
+	## in which case you'll double-penalize states 2,3,4.
+
+	numStatesToSample = int(math.ceil(subsamplePercentage*len(rleHistory)))
+	indices = list(np.random.choice(len(rleHistory)-1, numStatesToSample, replace=False))
+	actionsPerIndex = actionsPerIndex
+
+	return indices, actionsPerIndex
 
 if __name__ == "__main__":
 

@@ -57,7 +57,7 @@ BasicGame
         cloner > Immovable color=GREEN
         box    > Missile color=WHITE orientation=RIGHT cooldown=3
         flicker > Flicker timeout=1 color=ORANGE
-        random > RandomNPC color=PURPLE speed=1 cooldown=1
+        random > Missile orientation=RIGHT color=PURPLE speed=1 cooldown=1
 
         chaser > Chaser color=BLACK speed=1 cooldown=3 stype=avatar
         avatar  > FlakAvatar color=DARKBLUE stype=sam
