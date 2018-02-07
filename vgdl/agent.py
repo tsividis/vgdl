@@ -834,11 +834,7 @@ class Agent:
 		# Call s.resources on all sprites in envA and envB. See which ones have changed
 		# and if that is consistent between envA and envB
 		#TODO
-		# if len([e for e in errorMap if e.diagnosis[0]=='unexpectedPosition'])>1:
-		# 	print "in errorSignal"
-		# 	embed()
-		if len(errorMap)>1:
-			embed()
+
 		diagnosis_class_pairs = list(set([(e.diagnosis[0], e.targetClass) for e in errorMap]))
 		for dcp in diagnosis_class_pairs:
 			int_pairs = [item for sublist in [e.intPairs for e in errorMap if e.diagnosis[0]==dcp[0] and e.targetClass==dcp[1]] for item in sublist]
