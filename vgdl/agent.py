@@ -1608,8 +1608,8 @@ class Agent:
 		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
 		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
 
-		actions = [32, 0, 0]
-		# actions = [0, 0, 0, 0, 0]
+		# actions = [32, 0, 0]
+		actions = [0]*25
 
 		self.initializeEnvironment()
 
