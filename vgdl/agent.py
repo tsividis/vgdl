@@ -835,6 +835,7 @@ class Agent:
 		# and if that is consistent between envA and envB
 		#TODO
 
+		## Share information across errorMap items and make a unique list
 		diagnosis_class_pairs = list(set([(e.diagnosis[0], e.targetClass) for e in errorMap]))
 		for dcp in diagnosis_class_pairs:
 			int_pairs = [item for sublist in [e.intPairs for e in errorMap if e.diagnosis[0]==dcp[0] and e.targetClass==dcp[1]] for item in sublist]
