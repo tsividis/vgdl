@@ -1945,7 +1945,8 @@ def getSpeed(params):
     sprite = the VGDL sprite.
     """
     if 'speed' in params:
-        return params['speed']
+        speed = params['speed']
+        return speed if speed is not None else 0
     else:
         return 1
         # default speed value
@@ -2263,7 +2264,9 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         else:
             dx,dy = (0,0)
 
-        next_pos = current_sprite.rect.left + current_sprite.speed*dx*game.block_size, current_sprite.rect.top + current_sprite.speed*dy*game.block_size
+        speed = getSpeed(params)
+
+        next_pos = current_sprite.rect.left + speed*dx*game.block_size, current_sprite.rect.top + speed*dy*game.block_size
         position_options = {next_pos: 1.}
         
         if sprite_type in [FlakAvatar]:
@@ -2281,6 +2284,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
 
         else:
             return position_options, position_options, orientation_options, []
+
     elif sprite_type == AimedAvatar:
         stype = getStype(params)
         angle_diff = getAngle(params)
@@ -2309,10 +2313,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
     elif sprite_type == AimedFlakAvatar:
         stype = getStype(params)
         angle_diff = getAngle(params)
-
-        speed = current_sprite.speed
-        if speed is None:
-            speed = 0
+        speed = getSpeed(params)
 
         direction = actionToDir[keyPressToAction[action]]
         
@@ -2405,9 +2406,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
     elif sprite_type == OrientedAvatar:
         orientation = current_sprite.orientation
         next_pos = current_sprite.rect.left, current_sprite.rect.top
-        speed = current_sprite.speed
-        if speed is None:
-            speed = 0
+        speed = getSpeed(params)
             
         if action:
             orientation = actionToDir[keyPressToAction[action]]
