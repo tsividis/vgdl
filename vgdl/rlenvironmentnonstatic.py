@@ -615,8 +615,11 @@ def createMindEnv(game, level, output=False, obsType=OBSERVATION_GLOBAL ):
     if output:
         print game
         print level
-    return RLEnvironmentNonStatic( game, level, observationType=obsType )
-
+    try:
+        return RLEnvironmentNonStatic( game, level, observationType=obsType )
+    except:
+        return None
+        
 def createRLVirtualGame( obsType=OBSERVATION_GLOBAL ):
     return RLEnvironmentNonStatic( *defVirtualGame(), observationType=obsType )
 
