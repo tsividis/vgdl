@@ -1216,7 +1216,7 @@ class VGDLSprite(object):
     color    = None
     cooldown = 1
     # cooldown = 0 # pause ticks in-between two moves
-    speed    = 0
+    speed    = None
     mass     = 1
     physicstype=None
     last_gravity=False

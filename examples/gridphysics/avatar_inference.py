@@ -16,9 +16,9 @@
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
-w             A                w
+w               C A            w
 w                              w
-w             1 C              w
+w             1                w
 w                              w
 w                              w
 w             1 1              w
@@ -79,8 +79,9 @@ BasicGame
         box avatar > killSprite
         random wall > stepBack
         random box > stepBack
-        box cloner > cloneSprite
-        cloner box > killSprite
+        avatar cloner > bounceForward
+        # box cloner > cloneSprite
+        # cloner box > killSprite
 
         random avatar > killSprite
 
