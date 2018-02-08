@@ -17,6 +17,7 @@ from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
 from line_profiler import LineProfiler
+from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
@@ -64,6 +65,7 @@ class Agent:
 		self.observed_resources = set()
 		self.distributions = PreconditionInduction()
 		self.lastObjectState = {}
+		self.history = {}
 
 	def initializeEnvironment(self):
 		if self.gameString==None or self.levelString==None:
@@ -737,7 +739,8 @@ class Agent:
 		try:
 			agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
 			agentState['speed'] = self.rle._game.getAvatars()[0].speed
-			agentState['orientation'] = self.rle._game.getAvatars()[0].orientation
+			if hasattr(self.rle._game.getAvatars()[0],'orientation'):
+				agentState['orientation'] = self.rle._game.getAvatars()[0].orientation
 		except IndexError:
 			agentState = defaultdict(lambda: 0)
 
@@ -749,7 +752,8 @@ class Agent:
 		try:
 			agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
 			agentState['speed'] = self.rle._game.getAvatars()[0].speed
-			agentState['orientation'] = self.rle._game.getAvatars()[0].orientation
+			if hasattr(self.rle._game.getAvatars()[0],'orientation'):
+				agentState['orientation'] = self.rle._game.getAvatars()[0].orientation
 
 			for e in res['effectList']:
 				if 'changeResource' in e:
@@ -826,11 +830,12 @@ class Agent:
 
 			
 			#OBJECT TRACKING
-			resourceObservations = self.getObservations(agentState)
+			resourceObservations = self.getObservations(agentState,action)
 
 			#updates the distributions
+			embed()
 			self.distributions.updateDist(resourceObservations)
-			print self.distributions.distr
+			print self.distributions.distr['resource']
 
 
 			hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
@@ -900,36 +905,42 @@ class Agent:
 
 		return hypotheses, theory_change_flag, effects
 
-	def getObservations(self, agentState):
+	def getObservations(self, agentState,action):
 		#whether the avatar is still alive
 		avatar_is_dead = (self.getSpritesByColor(self.rle,'WHITE') is None)
-
+		actionDict = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0)}
 		#using the previous state, we predict where the objects are going to be
 		self.predictions = {}
+		
+		#take in key press in grid physics games
 		for key in self.lastObjectState.keys():
 			#predictions done a little differently for avatar
 			if key == 'WHITE' and not avatar_is_dead:
 				#predicting avatar location needs to be done properly
-				try:
-					speed = agentState['speed']
-					orientation = self.lastObjectState[key][0]['orientation']
-					pos = self.lastObjectState[key][0]['position']
-					expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
-					positions = [expected_pos]
-				except:
-					pass
+					try:
+						speed = agentState['speed']
+						orientation = self.lastObjectState[key][0]['orientation']
+						pos = self.lastObjectState[key][0]['position']
+						expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
+						positions = [expected_pos]
+					except:
+						pass
 			else:
 				positions = []
 				for i in self.lastObjectState[key]:
 					speed = i['speed']
-					orientation = i['orientation']
+					if key == 'WHITE' and i['orientation'] == (0,0):
+						orientation = actionDict[action]
+						speed*=self.rle._game.block_size
+					else:
+						orientation = i['orientation']
+					pos = i['position']
 					if speed is None:
 						expected_pos = pos
 					else:
 						expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
 					positions.append(expected_pos)
 			self.predictions[key] = positions
-		
 		#get list of possible objects which could have collided with avatar
 		candidates = []
 		locs = {}
@@ -960,10 +971,20 @@ class Agent:
 			for sprite in candidates:
 				resourceObservations['speed'][sprite] = (agentState['speed'],None)
 		
-
+		new_resources = set()
 		for key in agentState.keys():
 			if key not in ['orientation','speed']:
+				if key not in self.observed_resources:
+					new_resources.add(key)
 				self.observed_resources.add(key)
+
+		#when finding a new resource, update our distribution
+		for res in new_resources:
+			for sprite in self.history.keys():
+				for pair in self.history[sprite]:
+					new_observation = {'speed':{},'resource':{sprite:{res:(0,pair[0],pair[1])}}}
+					self.distributions.updateDist(new_observation)
+
 		
 		THRESHHOLD = 0.5*self.rle._game.block_size
 		for sprite in candidates:
@@ -978,17 +999,24 @@ class Agent:
 					#embed()
 					pos = i['position']
 					if abs(pos[0] - locs[sprite][0]) + abs(pos[1] - locs[sprite][1]) < THRESHHOLD:
+						sprite_gone = False
+
 		 	resourceObservations['resource'][sprite] = {}
 		 	for res in self.observed_resources:
+		 		#agentState is a default dict, so if res is not in agentState then val is 0
 		 		val = agentState[res]
 		 		#return whether this collision killed the sprite or the avatar - this format is used when updating distributions
 		 		resourceObservations['resource'][sprite][res] = (val,not avatar_is_dead,not sprite_gone)
+
+	 		if sprite not in self.history:
+	 			self.history[sprite] = []
+	 		self.history[sprite].append((not avatar_is_dead, not sprite_gone))
 
 		self.lastObjectState = current_state
 		return resourceObservations
 
 	def intersect(self, p1, p2):
-		return (abs(p1[0] - p2[0]) <= self.rle._game.block_size and abs(p1[1] - p2[1]) <= self.rle._game.block_size)
+		return (abs(p1[0] - p2[0]) < self.rle._game.block_size and abs(p1[1] - p2[1]) < self.rle._game.block_size)
 
 
 if __name__ == "__main__":
@@ -997,7 +1025,7 @@ if __name__ == "__main__":
 
 	#filename = "examples.gridphysics.expt_relational"
 	#filename = "examples.continuousphysics.collect_resource"
-	filename = "examples.continuousphysics.rope_test"
+	filename = "examples.gridphysics.grid_test"
 	#filename = "examples.continuousphysics.montezuma_3"
 
 	global WBP

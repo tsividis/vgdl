@@ -42,7 +42,7 @@ w                 w
 w                 w
 w                 w
 w       P         w
-w   k  AP G       w
+w    k AP G       w
 wwwwwwwwwwwwwwwwwww
 """
 
