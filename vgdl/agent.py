@@ -624,7 +624,9 @@ class Agent:
 			d = 30. # grid spacing
 
 			# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
-			if 'Random' in str(sA_type): # == "<class 'vgdl.ontology.RandomNPC'>":      
+			if 'Random' in str(sA_type):   
+
+ 
 				if 'speed' in theory.classes[sA.name][0].args.keys():
 					sA_speed = theory.classes[sA.name][0].args['speed']
 				elif 'speed' in theory.classes[sA.name][0].__dict__.keys():
@@ -635,9 +637,7 @@ class Agent:
 					sA_speed = 1
 				sPrev, dist_ts = self.find_sPrev(sB, envB, envPrev) #sA in previous environment
 				if sPrev is None:
-					# print 'sPrev not found -> penalty unreliable'
 					continue
-					# embed()
 				xB = sB.rect.left/d
 				yB = sB.rect.top/d
 				xPrev = sPrev.rect.left/d
@@ -652,17 +652,13 @@ class Agent:
 				#                  ]
 				# mindist_rNPC = min(dist_rNPC)
 				# total_penalty += p_speed*mindist_rNPC #penalize speed separately to discourage keeping around too many similar theories
+				
+				# if sA.colorName=='PURPLE':
+				# 	embed() 
 				total_penalty += p_speed*min(dist,1.)
-			elif 'Missile' in str(sA_type): # == "<class 'vgdl.ontology.Missile'>": 
+			elif 'Missile' in str(sA_type):
 				total_penalty += p_speed*t[2] #penalize speed separately to discourage keeping around too many similar theories
 			elif 'Chaser' in str(sA_type):
-				# print "found chaser"
-
-				# if colorDict[str(sA.stype)]=='BLUE':
-				#   print "found blue chaser"
-				#   sPrev, _ = self.find_sPrev(sB, envB, envPrev)
-				#   print "prev position:", sPrev.rect.left/30., sPrev.rect.top/30.
-				#   embed()
 				
 				sPrev, _ = self.find_sPrev(sB, envB, envPrev)
 				xA = sA.rect.left/d
@@ -670,7 +666,9 @@ class Agent:
 				if sPrev is None:
 					continue
 				closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
-				chaser_penalty = 0. if (xA,yA) in closestTargets else 2.
+				## this should be arbitrarily high, actually. If you want this to be a surrogate likelihood function,
+				## the prob that a chaser moves away from what it's chasing is 0.
+				chaser_penalty = 0. if (xA,yA) in closestTargets else 100.
 
 				total_penalty += p_speed*chaser_penalty
 			# All of the other types are deterministic
@@ -1228,12 +1226,14 @@ class Agent:
 
 			scoreAndTheoryTuples = zip(penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
+
 			scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=0, max_num=None,
 					proportionOfSpriteTheories=None)]
 
 			newTheories = [s[1] for s in scoresAndHypotheses]
 
 			# print "In expandTheory () base case. Produced {} new theories".format(len(newTheories))
+
 			# for s in scoresAndHypotheses:
 			#   print "error: {}".format(s[0])
 			#   s[1].display()
@@ -2216,6 +2216,7 @@ class Agent:
 	def filterTheories(self, scoreAndTheoryTuples, percentile, max_num, proportionOfSpriteTheories):
 		## Returns the max_num theories that are at percentile or greater, given their score.
 
+		percentile = 100.-percentile
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 		cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
 		candidates = [s for s in scoreAndTheoryTuples if s[0]<=cutoff]
@@ -2411,7 +2412,7 @@ class Agent:
 
 		if newTheories:
 
-			penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay([self.trueTheory]+newTheories, self.rleHistory, self.actionHistory,
+			penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay(newTheories, self.rleHistory, self.actionHistory,
 				method='all', displayTheories=False)
 
 			# penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay((newTheories, self.rleHistory, self.actionHistory, 'all', None, False))
@@ -2427,7 +2428,7 @@ class Agent:
 			# print "ended in {} seconds".format(time.time()-t1)
 			# embed()
 
-			scoreAndTheoryTuples = zip(penalties, [self.trueTheory]+newTheories, experienceReplayRLEs)
+			scoreAndTheoryTuples = zip(penalties, newTheories, experienceReplayRLEs)
 
 			# scoreAndTheoryTuples = zip(penalties, newTheories, experienceReplayRLEs)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
@@ -2440,10 +2441,10 @@ class Agent:
 			scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
 
 			if not lastStep:
-				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=80, max_num=30,
+				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
 					proportionOfSpriteTheories=None)]
 			else:
-				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=80, max_num=30,
+				scoresAndHypotheses = [(h[0],h[1]) for h in self.filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
 					proportionOfSpriteTheories=None)]
 
 			print "Experience replay complete."
@@ -2543,7 +2544,7 @@ class Agent:
 				print "running experienceReplay on {}:".format(num)
 				h.display()
 			results.append(self.singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetClass, displayStates, [h]))
-		print "Serial experienceReplay for {} hypotheses and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
+		# print "Serial experienceReplay for {} hypotheses and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 		# embed()
 		# t1 = time.time()
 		# res = [0]*len(hypotheses)

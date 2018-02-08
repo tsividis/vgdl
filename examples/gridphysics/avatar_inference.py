@@ -17,10 +17,10 @@ level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
+w                   2          w
+w       1                      w
 w                              w
-w       2                      w
-w                              w
-w                              w
+w                       3      w
 w               A              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
@@ -55,10 +55,10 @@ game="""
 BasicGame
     SpriteSet
         cloner > Immovable color=GREEN
-        box    > Missile color=WHITE orientation=RIGHT cooldown=3
+        box    > Missile color=WHITE orientation=RIGHT cooldown=1
         flicker > Flicker timeout=1 color=ORANGE
         random > RandomNPC color=PURPLE speed=1 cooldown=1
-        chaser > Chaser color=BLACK speed=1 cooldown=3 stype=avatar
+        chaser > Chaser color=BLACK speed=1 cooldown=1 stype=avatar
         avatar  > FlakAvatar color=DARKBLUE stype=sam
         cannon > SpawnPoint color=RED stype=box spawnCooldown=5
         missile > Missile

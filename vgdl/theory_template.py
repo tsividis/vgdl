@@ -2479,8 +2479,8 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 		specificSpritesToUpdate=[targetToken], percentile=percentile, max_num=max_num)
 
 	# if 'unexpectedPosition' in errorMap.diagnosis:
-		# print "in expandSprites, unexpectedPosition"
-		# embed()
+	# 	print "in expandSprites, unexpectedPosition"
+	# 	embed()
 
 	## Don't instantiate non-avatar proposals for the 'avatar' class.
 	if targetClass=='avatar':
