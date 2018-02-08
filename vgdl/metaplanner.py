@@ -1,4 +1,4 @@
-from ontology import distributionInitSetup
+from ontology import distributionInitSetup, spriteInduction
 
 def translateEvents(events, all_objects, rle):
 	if events is None:
