@@ -3,6 +3,7 @@ import itertools
 import random
 import csv
 import cPickle
+from math import sqrt
 
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
 CHARS = 'bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM'
@@ -20,6 +21,10 @@ def normalize(array):
 	else:
 		return [a/z for a in array]
 
+def normalizeVec(v):
+	mag = sqrt(sum([x*x for x in v]))
+	return tuple([x*1.0 / mag for x in v])
+
 def manhattanDist(a, b):
 	return abs(a[0]-b[0])+abs(a[1]-b[1])
 
@@ -32,6 +37,9 @@ def manhattanDist2(s1, s2, d=30):
 	dist = 1.*abs(s1.rect.left-s2.rect.left)/d + \
 		   1.*abs(s1.rect.top-s2.rect.top)/d
 	return dist
+
+def euclideanDist(a, b):
+	return sqrt(abs(a[0]-b[0]) + abs(a[1]-b[1]))
 
 def factorize(rle, n):
 	## Decomposes into a list of numbers that are incides of [avatar, rle._obstypes.keys()]

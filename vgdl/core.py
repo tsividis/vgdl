@@ -1216,7 +1216,7 @@ class VGDLSprite(object):
     color    = None
     cooldown = 1
     # cooldown = 0 # pause ticks in-between two moves
-    speed    = 0
+    speed    = None
     mass     = 1
     physicstype=None
     last_gravity=False
@@ -1277,6 +1277,7 @@ class VGDLSprite(object):
         self.rect.width = self.width*self.rect.width
         self.rect.height = self.height*self.rect.height
 
+        self.inventory = dict() # color: (num_things, max_capacity) # pulled from progress bars on avatar
 
     def update(self, game, random_npc=False):
         """ The main place where subclasses differ. """

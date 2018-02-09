@@ -31,9 +31,9 @@ from colors import colorDict
 from pprint import pprint
 # Plotting
 from matplotlib import pyplot as plt
-import seaborn as sns
-sns.set_context('paper', font_scale = 2, rc = {'lines.linewidth': 2})
-sns.set_style("ticks", {'axes.grid': True})
+# import seaborn as sns
+# sns.set_context('paper', font_scale = 2, rc = {'lines.linewidth': 2})
+# sns.set_style("ticks", {'axes.grid': True})
 import copy_reg
 import types
 
@@ -1292,7 +1292,8 @@ class Agent:
 			gameObject = None
 
 			for epoch in range(1):
-				self.testEpisode(gameObject,epoch=epoch)
+				self.buildTracker(gameObject)
+				# self.testEpisode(gameObject,epoch=epoch)
 		return
 
 	def playCurriculum(self, heatmap=False, level_game_pairs=None):
@@ -1458,8 +1459,125 @@ class Agent:
 		lp.print_stats()
 		return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
+	def copySpriteStingy(self, sprite):
+		# copies all the data from sprite that we could reasonably get from
+		#	a real CV system into a new sprite, then returns it
+		newSprite = VGDLSprite([sprite.x, sprite.y], color=sprite.color) # automatically does colorName
+		newSprite.ID = ccopy(sprite.ID) # not sure if we need this
+		newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
+		newSprite.lastmove = sprite.lastmove
+		newSprite.inventory = ccopy(sprite.inventory) if sprite.inventory else dict()
+		newSprite.rect = ccopy(sprite.rect)
+		if sprite.name == None:
+			newSprite.speed = sprite.speed
+			newSprite.cooldown = sprite.cooldown
+		else:
+			# this sprite came directly from the game, not the tracker
+			newSprite.cooldown = None
 
+		return newSprite
 
+	def processFrame(self, memory, gameObject):
+		# eventual goal is to process the frame, not the gameObject...
+		# creates a COPY of memory and returns updated copy
+		newMemory = defaultdict(list)
+		newTrackedObjects = defaultdict(list)
+		newMemory['isGrid'] = memory['isGrid']
+		spriteIDDict = {sprite.ID: sprite for lst in memory['trackedObjects'].values() for sprite in lst}
+
+		for key in gameObject.sprite_groups.keys():
+			if gameObject.sprite_groups[key]:
+				for sprite in gameObject.sprite_groups[key]:
+					if not sprite.color in newTrackedObjects:
+						newTrackedObjects[sprite.color] = []
+					if sprite.ID in spriteIDDict:
+						# not a new object
+						newSprite = self.copySpriteStingy(spriteIDDict[sprite.ID])
+						newSprite.lastmove += 1
+						if sprite.x != newSprite.x or sprite.y != newSprite.y:
+							# first check if this is actually continuous (default assumes grid)
+							if memory['isGrid'] and sprite.x != newSprite.x and sprite.y != newSprite.y and abs(sprite.x - newSprite.x) != abs(sprite.y - newSprite.y):
+								newMemory['isGrid'] = False
+							# it moved since last sighting!
+							if newMemory['isGrid']:
+								newSprite.speed = max(abs(sprite.x - newSprite.x), abs(sprite.y - newSprite.y)) * 1.0 / sprite.rect.width # TODO: don't depend on width
+								newSprite.orientation = (np.sign(sprite.x - newSprite.x), np.sign(sprite.y - newSprite.y))
+							else:
+								print 'here' , [sprite.x, sprite.y], [newSprite.x, newSprite.y]
+								newSprite.speed = euclideanDist([sprite.x, sprite.y], [newSprite.x, newSprite.y])
+								newSprite.orientation = normalizeVec([sprite.x - newSprite.x, sprite.y - newSprite.y])
+							# update cooldown if moved faster than we've seen before
+							# newSprite.cooldown = min(newSprite.cooldown, gameObject.time - newSprite.lastmove) if newSprite.cooldown else gameObject.time - newSprite.lastmove
+							newSprite.x , newSprite.y = sprite.x , sprite.y
+							newSprite.rect.move_ip(sprite.rect.x - newSprite.rect.x, sprite.rect.y - newSprite.rect.y)
+					else:
+						# new, unseen object
+						newSprite = self.copySpriteStingy(sprite)
+
+					if newSprite == gameObject.sprite_groups['avatar'][0]: # this is inelegant
+						# update inventory
+						# not by color right now, but should be in real CV system
+						# TODO: no way to tell max capacity from gameObject (assume current inventory for now)
+						newSprite.inventory = {key: (sprite.resources[key], sprite.resources[key]) for key in sprite.resources}
+					newTrackedObjects[sprite.color].append(newSprite)
+		newMemory['trackedObjects'] = newTrackedObjects
+		return newMemory
+
+	def buildTracker(self, gameObject):
+	
+		actions = [K_LEFT,K_RIGHT, K_RIGHT,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,K_LEFT]#[K_LEFT, K_LEFT]	
+
+		self.initializeEnvironment()
+		embed()
+
+		if not gameObject:
+			gameObject = self.rle._game
+
+		## initialize tracker
+		# for now, take data from gameObject. eventually have 'real' CV system
+		memory = defaultdict(list)
+		trackedObjects = defaultdict(list) # color: list_of_sprites # not sure why list arg, just copied from elsewhere
+		memory['isGrid'] = True
+		for group in gameObject.sprite_groups.keys():
+			for sprite in gameObject.sprite_groups[group]:
+				if not sprite.color in trackedObjects:
+					trackedObjects[sprite.color] = []
+				# copy data over
+				trackedObjects[sprite.color].append(self.copySpriteStingy(sprite))
+		memory['trackedObjects'] = trackedObjects
+
+		##### test if we need to ccopy tuples
+		# newthing = dict()
+		# sprite = memory['trackedObjects'].values()[0][0]
+		# newthing['or'] = sprite.orientation
+		# newthing['or'] = (5,5555)
+		# print sprite.orientation
+		# print memory['trackedObjects'].values()[0][0].orientation
+		##### end test
+
+		## TODO: 1. a function called processFrame(gameObject, memory) that returns: new memory that's been updated (btw gameObject comes from rle elsewhere)
+		## keys: colors, values: list of sprites, whose fields contain all the 'kosher' info:
+		## 	ID, position, colorName, velocity (because it's easy), decomposed into: orientation, speed (step size), cooldown.
+		## 	lastmove: when the last move was.
+		## 	inventory: {color: tuple(num=0, max=1)}
+		## make a new funct called spriteCopy, goes throught what we want and ccopies those
+
+		for lst in memory['trackedObjects'].values():
+			for sprite in lst:
+				if sprite.colorName in ['WHITE', 'ORANGE']:
+					print sprite.colorName , sprite.x , sprite.y , sprite.speed, sprite.orientation
+		for action in actions:
+			self.rle.step(action)
+			print 'step'
+			print self.rle.show()
+			## update tracker
+			memory = self.processFrame(memory, gameObject)
+			for lst in memory['trackedObjects'].values():
+				for sprite in lst:
+					if sprite.colorName in ['WHITE', 'ORANGE']:
+						print memory['isGrid'], sprite.colorName , sprite.x , sprite.y , sprite.speed, sprite.inventory, sprite.orientation
+
+		return
 
 	def testEpisode(self, gameObject, epoch=0):
 		
@@ -1487,7 +1605,7 @@ class Agent:
 		# actions = [K_RIGHT,K_UP,K_SPACE, 0, 0, 0]
 		# actions = [K_SPACE, 0, K_SPACE]
 		# actions = [0, 0, 0, 0, 0, 0]
-		
+
 		self.initializeEnvironment()
 		# embed()
 
@@ -2659,7 +2777,7 @@ class Agent:
 		ax1 = plt.subplot(111)
 		# ax2 = plt.subplot(212)
 		f.tight_layout(pad=1.5)
-		c = sns.color_palette('deep')
+		# c = sns.color_palette('deep')
 
 		# Sampled score - surviving batch
 		for i in range(N):
