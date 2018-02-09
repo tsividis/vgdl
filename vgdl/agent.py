@@ -490,9 +490,6 @@ class Agent:
 		except:
 			oB,oPrev = None,None
 
-		# if sA.colorName=='PINK':
-			# print "in diagnosePosMismatch"
-			# embed()
 		## Categorize into sub-problem-class
 		# 1.1) noMovement
 		if dist_ts == 0:
@@ -2412,6 +2409,7 @@ class Agent:
 
 		if newTheories:
 
+			embed()
 			penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay(newTheories, self.rleHistory, self.actionHistory,
 				method='all', displayTheories=False)
 
@@ -2521,11 +2519,6 @@ class Agent:
 
 
 
-	def getSalientStates(self, rleHistory):
-		## make sure you don't sample the last state
-		## get actionsPerIndex
-
-		pass
 
 	def experienceReplayProfiler(self, hypotheses, rleHistory, actionHistory, method='all', displayStates=False):
 		lp = LineProfiler()
@@ -2822,6 +2815,12 @@ def subSampleStates(subsamplePercentage, actionsPerIndex, rleHistory):
 	actionsPerIndex = actionsPerIndex
 
 	return indices, actionsPerIndex
+
+def getSalientStates(rleHistory):
+	## make sure you don't sample the last state
+	## get actionsPerIndex
+
+	pass
 
 if __name__ == "__main__":
 
