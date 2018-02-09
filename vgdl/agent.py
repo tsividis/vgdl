@@ -545,8 +545,8 @@ class Agent:
 			gameObject = None
 
 			for epoch in range(1):
-				self.testTracker(gameObject)
-				# self.testEpisode(gameObject,epoch=epoch)
+				# self.testTracker(gameObject)
+				self.testEpisode(gameObject,epoch=epoch)
 		return
 
 	def playCurriculum(self, heatmap=False, level_game_pairs=None):
@@ -2590,21 +2590,21 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, best_par
 
 	print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 
-	t1 = time.time()
-	numHypotheses = len(hypotheses)
-	results = PROCESS_POOL.map(
-		singleTheoryExperienceReplay,
-		[rleHistory] * numHypotheses,
-		[actionHistory] * numHypotheses,
-		[method] * numHypotheses,
-		[targetClass] * numHypotheses,
-		[displayStates] * numHypotheses,
-		[[h] for h in hypotheses],
-		[symbolDict] * numHypotheses,
-		[best_params] * numHypotheses,
-		chunksize=50
-	)
-	print "Parallel experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
+	# t1 = time.time()
+	# numHypotheses = len(hypotheses)
+	# results = PROCESS_POOL.map(
+	# 	singleTheoryExperienceReplay,
+	# 	[rleHistory] * numHypotheses,
+	# 	[actionHistory] * numHypotheses,
+	# 	[method] * numHypotheses,
+	# 	[targetClass] * numHypotheses,
+	# 	[displayStates] * numHypotheses,
+	# 	[[h] for h in hypotheses],
+	# 	[symbolDict] * numHypotheses,
+	# 	[best_params] * numHypotheses,
+	# 	chunksize=50
+	# )
+	# print "Parallel experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 	
 	mean_penalties = [r[0][0] for r in results]
 	cumulative_penalties = [r[1][0][0] for r in results]
