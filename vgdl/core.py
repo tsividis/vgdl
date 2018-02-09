@@ -1402,15 +1402,19 @@ class Resource(VGDLSprite):
 
 class Termination(object):
     """ Base class for all termination criteria. """
-    # def __init__(self):
-    #     self.name = 'Generic'
+    def __init__(self):
+        self.name = 'Generic'
     def isDone(self, game):
         """ returns whether the game is over, with a win/lose flag """
         from pygame.locals import K_ESCAPE, QUIT
-        if game.keystate[K_ESCAPE] or pygame.event.peek(QUIT):
+        if game.keystate[K_ESCAPE]:
             return True, False
-        else:
-            return False, None
+        try:
+            if pygame.event.peek(QUIT):
+                return True, False
+        except:
+            pass
+        return False, None
 
 class Conditional(object):
     """ Base class for all conditional criteria"""

@@ -4,7 +4,6 @@ import numpy as np
 import dill
 import tempfile
 import json
-from sampleVGDLString import *
 from class_theory_template import *
 from taxonomy import *
 from IPython import embed
@@ -2397,7 +2396,7 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 	'unexpectedPosition': ['bounceForward'],
 	# , 'pullWithIt', 'windGust', 'slipForward',\
 		# 'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap
-	'unexpectedOverlap': ['nothing', 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
+	'unexpectedOverlap': ['nothing'],#, 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
 	'orientationChange': ['reverseDirection', 'bounceDirection', 'flipDirection'],
 	#'turn', 'turnAround', 
 	'teleport': ['teleportToExit'],
@@ -2568,10 +2567,13 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, resourceObservation
 	for i in range(0,n+1):
 		predicateGroups.extend(list(itertools.combinations(predicates, i)))
 
-	## remove all interactionRules involving classPair (in either order)
+	# print "in expandLine"
+	# embed()
+	
+	## remove all generic interactionRules involving classPair (in either order)
 	interactionSet = [rule for rule in theory.interactionSet if
-		classPair != (rule.asTuple()[1], rule.asTuple()[2]) and 
-		classPair != (rule.asTuple()[2], rule.asTuple()[1])]
+		( classPair != (rule.asTuple()[1], rule.asTuple()[2]) and classPair != (rule.asTuple()[2], rule.asTuple()[1]) ) or
+		rule.generic==False]
 
 	bothOrderings = [[], []]
 

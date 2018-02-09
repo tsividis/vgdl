@@ -1,38 +1,65 @@
 
 
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w  C     C              1     Cw
+# w             C         1      w
+# w1111111111    C        1111111w
+# w         1   C2C  C        2  w
+# w         1  C C         C     w
+# w    C         A               w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+
+# """
+
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
-w  C     C              1     Cw
-w             C         1      w
-w1111111111    C        1111111w
-w         1   C2C  C           w
-w         1  C C         C     w
-w    C         A               w
+w                              w
+w                   2          w
+w       1                      w
+w                              w
+w                       3      w
+w               A              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-
 """
+
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                       1      w
+# w                       1      w
+# w1111111111    C        1111111w
+# w         1   C2C           2  w
+# w         1    C               w
+# w              A               w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
 # w                              w
 # w                              w
-# w             1         A      w
 # w                              w
+# w            1 C               w
 # w                              w
-# w             1 1              w
-
+# w                      A       w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
+
+
 
 game="""
 BasicGame
     SpriteSet
         cloner > Immovable color=GREEN
-        box    > Immovable color=WHITE  #orientation=LEFT cooldown=2
-        flicker > Flicker timeout=5 color=GREEN
-        random > RandomNPC color=PURPLE
-        avatar  > MovingAvatar color=DARKBLUE stype=sam
+        box    > Missile color=WHITE orientation=RIGHT cooldown=1
+        flicker > Flicker timeout=1 color=ORANGE
+        random > RandomNPC color=PURPLE speed=1 cooldown=1
+        chaser > Chaser color=BLACK speed=1 cooldown=1 stype=avatar
+        avatar  > FlakAvatar color=DARKBLUE stype=sam
         cannon > SpawnPoint color=RED stype=box spawnCooldown=5
         missile > Missile
             sam  > orientation=UP color=BLUE singleton=True
@@ -44,24 +71,26 @@ BasicGame
         0 > base
         1 > box
         2 > random
+        3 > chaser
         w > wall
         c > cannon
         s > sam
         A > avatar
     InteractionSet
         avatar wall > stepBack
-        avatar box > stepBack
+        box avatar > killSprite
         random wall > stepBack
         random box > stepBack
-
-        random cloner > cloneSprite
-        cloner random > killSprite
+        avatar cloner > bounceForward
+        # box cloner > cloneSprite
+        # cloner box > killSprite
 
         random avatar > killSprite
 
     TerminationSet
-        SpriteCounter stype=box limit=0 win=False
+        # SpriteCounter stype=box limit=0 win=False
         # Termination
+
 
 """
 level_game_pairs = [[game, level]]
