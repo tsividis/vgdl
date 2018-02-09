@@ -31,9 +31,9 @@ from colors import colorDict
 from pprint import pprint
 # Plotting
 from matplotlib import pyplot as plt
-import seaborn as sns
-sns.set_context('paper', font_scale = 2, rc = {'lines.linewidth': 2})
-sns.set_style("ticks", {'axes.grid': True})
+# import seaborn as sns
+# sns.set_context('paper', font_scale = 2, rc = {'lines.linewidth': 2})
+# sns.set_style("ticks", {'axes.grid': True})
 import copy_reg
 import types
 
@@ -188,8 +188,7 @@ class Agent:
 		Compares environment A to environment B, mapping sprites from A to sprites from B 1 to 1 (if it can)
 		by comparing the positions of sprites in A to positions of sprites in B of the same color. 
 
-		Returns mapping that minimizes sum-squared distance between matching sprites.
-		In the case of a color that has too many instances, defaults to a greedy version.
+		Returns mapping that minimizes distance between matching sprites (hopefully?)
 
 		returns:
 
@@ -269,20 +268,29 @@ class Agent:
 							to_remove.append(sA)
 							break
 
-				for r in to_remove:
-					matchingSpritesInEnvA.remove(r)
-				
-				while matchingSpritesInEnvA and matchingSpritesInEnvB:
-					sA = matchingSpritesInEnvA.pop(0)
-					sB = self.findNearestSprite(sA, matchingSpritesInEnvB)
-					if sB:
-						dist = manhattanDist2(sA, sB)
-						matched_sprites.append((sA, sB, dist))
-						matchingSpritesInEnvB.remove(sB)
-					else:
-						matchingSpritesInEnvA.append(sA)
-				lonely_sprites_envA.extend(matchingSpritesInEnvA)
-				lonely_sprites_envB.extend(matchingSpritesInEnvB)
+			# to_remove = []
+			# for sA in matchingSpritesInEnvA:
+			# 	for sB in matchingSpritesInEnvB:
+			# 		if manhattanDist2(sA, sB) == 0:
+			# 			matched_sprites.append((sA, sB, 0.0))
+			# 			matchingSpritesInEnvB.remove(sB)
+			# 			to_remove.append(sA)
+			# 			break
+
+			# for r in to_remove:
+			# 	matchingSpritesInEnvA.remove(r)
+			
+			# while matchingSpritesInEnvA and matchingSpritesInEnvB:
+			# 	sA = matchingSpritesInEnvA.pop(0)
+			# 	sB = self.findNearestSprite(sA, matchingSpritesInEnvB)
+			# 	if sB:
+			# 		dist = manhattanDist2(sA, sB)
+			# 		matched_sprites.append((sA, sB, dist))
+			# 		matchingSpritesInEnvB.remove(sB)
+			# 	else:
+			# 		matchingSpritesInEnvA.append(sA)
+			# lonely_sprites_envA.extend(matchingSpritesInEnvA)
+			# lonely_sprites_envB.extend(matchingSpritesInEnvB)
 
 		return matched_sprites, lonely_sprites_envA, lonely_sprites_envB
 
@@ -563,34 +571,9 @@ class Agent:
 			return total_penalty, errorMap
 
 		# Match sprites in environments and get sprites that couldn't be matched
-		# t1 = time.time()
 		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = self.matchEnvs(envA, envB)
-		# print "new matching took {} seconds".format(time.time()-t1)
-		# t2 = time.time()
-		# matched_sprites2, lonely_sprites_envA2, lonely_sprites_envB2 = self.matchEnvsDep(envA, envB)
-		# print "old matching took {} seconds".format(time.time()-t2)
-		# print ""
-		# print 'COMPARING SETS!!!'
-		# if set(matched_sprites) != set(matched_sprites2):
-		# 	print 'matched sprites wrong'
-		# 	print matched_sprites
-		# 	print matched_sprites2
-
-		# if set(lonely_sprites_envA) != set(lonely_sprites_envA2):
-		# 	print 'lonely sprites A wrong'
-		# 	print lonely_sprites_envA
-		# 	print lonely_sprites_envA2
-
-		# if set(lonely_sprites_envB) != set(lonely_sprites_envB2):
-		# 	print 'lonely sprites B wrong'
-		# 	print lonely_sprites_envB
-		# 	print lonely_sprites_envB2
-		# print '====================='
-
-		# in_string = raw_input()
-		# if in_string == 'embed':
-		# 	embed()
-
+		print "in errorSignal"
+		# embed()
 		if targetClass:
 			try:
 				matched_sprites = [m for m in matched_sprites if m[0].name==targetClass]
@@ -1390,7 +1373,8 @@ class Agent:
 			gameObject = None
 
 			for epoch in range(1):
-				self.testEpisode(gameObject,epoch=epoch)
+				self.buildTracker(gameObject)
+				# self.testEpisode(gameObject,epoch=epoch)
 		return
 
 	def playCurriculum(self, heatmap=False, level_game_pairs=None):
@@ -1556,18 +1540,123 @@ class Agent:
 		lp.print_stats()
 		return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
+	def copySpriteStingy(self, sprite):
+		# copies all the data from sprite that we could reasonably get from
+		#	a real CV system into a new sprite, then returns it
+		newSprite = VGDLSprite([sprite.x, sprite.y], color=sprite.color) # automatically does colorName
+		newSprite.ID = ccopy(sprite.ID) # not sure if we need this
+		newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
+		newSprite.lastmove = sprite.lastmove
+		newSprite.inventory = ccopy(sprite.inventory) if sprite.inventory else dict()
+		newSprite.rect = ccopy(sprite.rect)
+		if sprite.name == None:
+			newSprite.speed = sprite.speed
+			newSprite.cooldown = sprite.cooldown
+		else:
+			# this sprite came directly from the game, not the tracker
+			newSprite.cooldown = None
 
+		return newSprite
+
+	def processFrame(self, memory, gameObject):
+		# eventual goal is to process the frame, not the gameObject...
+		# creates a COPY of memory and returns updated copy
+		newMemory = defaultdict(list)
+		newTrackedObjects = defaultdict(list)
+		newMemory['isGrid'] = memory['isGrid']
+		spriteIDDict = {sprite.ID: sprite for lst in memory['trackedObjects'].values() for sprite in lst}
+
+		for key in gameObject.sprite_groups.keys():
+			if gameObject.sprite_groups[key]:
+				for sprite in gameObject.sprite_groups[key]:
+					if not sprite.color in newTrackedObjects:
+						newTrackedObjects[sprite.color] = []
+					if sprite.ID in spriteIDDict:
+						# not a new object
+						newSprite = self.copySpriteStingy(spriteIDDict[sprite.ID])
+						newSprite.lastmove += 1
+						if sprite.x != newSprite.x or sprite.y != newSprite.y:
+							# first check if this is actually continuous (default assumes grid)
+							if memory['isGrid'] and sprite.x != newSprite.x and sprite.y != newSprite.y and abs(sprite.x - newSprite.x) != abs(sprite.y - newSprite.y):
+								newMemory['isGrid'] = False
+							# it moved since last sighting!
+							if newMemory['isGrid']:
+								newSprite.speed = max(abs(sprite.x - newSprite.x), abs(sprite.y - newSprite.y)) * 1.0 / sprite.rect.width # TODO: don't depend on width
+								newSprite.orientation = (np.sign(sprite.x - newSprite.x), np.sign(sprite.y - newSprite.y))
+							else:
+								print 'here' , [sprite.x, sprite.y], [newSprite.x, newSprite.y]
+								newSprite.speed = euclideanDist([sprite.x, sprite.y], [newSprite.x, newSprite.y])
+								newSprite.orientation = normalizeVec([sprite.x - newSprite.x, sprite.y - newSprite.y])
+							# update cooldown if moved faster than we've seen before
+							# newSprite.cooldown = min(newSprite.cooldown, gameObject.time - newSprite.lastmove) if newSprite.cooldown else gameObject.time - newSprite.lastmove
+							newSprite.x , newSprite.y = sprite.x , sprite.y
+							newSprite.rect.move_ip(sprite.rect.x - newSprite.rect.x, sprite.rect.y - newSprite.rect.y)
+					else:
+						# new, unseen object
+						newSprite = self.copySpriteStingy(sprite)
+
+					if newSprite == gameObject.sprite_groups['avatar'][0]: # this is inelegant
+						# update inventory
+						# not by color right now, but should be in real CV system
+						# TODO: no way to tell max capacity from gameObject (assume current inventory for now)
+						newSprite.inventory = {key: (sprite.resources[key], sprite.resources[key]) for key in sprite.resources}
+					newTrackedObjects[sprite.color].append(newSprite)
+		newMemory['trackedObjects'] = newTrackedObjects
+		return newMemory
 
 	def buildTracker(self, gameObject):
-		actions = [K_LEFT, K_LEFT, K_LEFT]
+	
+		actions = [K_LEFT,K_RIGHT, K_RIGHT,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,K_LEFT]#[K_LEFT, K_LEFT]	
 
 		self.initializeEnvironment()
+		embed()
+
+		if not gameObject:
+			gameObject = self.rle._game
 
 		## initialize tracker
+		# for now, take data from gameObject. eventually have 'real' CV system
+		memory = defaultdict(list)
+		trackedObjects = defaultdict(list) # color: list_of_sprites # not sure why list arg, just copied from elsewhere
+		memory['isGrid'] = True
+		for group in gameObject.sprite_groups.keys():
+			for sprite in gameObject.sprite_groups[group]:
+				if not sprite.color in trackedObjects:
+					trackedObjects[sprite.color] = []
+				# copy data over
+				trackedObjects[sprite.color].append(self.copySpriteStingy(sprite))
+		memory['trackedObjects'] = trackedObjects
+
+		##### test if we need to ccopy tuples
+		# newthing = dict()
+		# sprite = memory['trackedObjects'].values()[0][0]
+		# newthing['or'] = sprite.orientation
+		# newthing['or'] = (5,5555)
+		# print sprite.orientation
+		# print memory['trackedObjects'].values()[0][0].orientation
+		##### end test
+
+		## TODO: 1. a function called processFrame(gameObject, memory) that returns: new memory that's been updated (btw gameObject comes from rle elsewhere)
+		## keys: colors, values: list of sprites, whose fields contain all the 'kosher' info:
+		## 	ID, position, colorName, velocity (because it's easy), decomposed into: orientation, speed (step size), cooldown.
+		## 	lastmove: when the last move was.
+		## 	inventory: {color: tuple(num=0, max=1)}
+		## make a new funct called spriteCopy, goes throught what we want and ccopies those
+
+		for lst in memory['trackedObjects'].values():
+			for sprite in lst:
+				if sprite.colorName in ['WHITE', 'ORANGE']:
+					print sprite.colorName , sprite.x , sprite.y , sprite.speed, sprite.orientation
 		for action in actions:
 			self.rle.step(action)
+			print 'step'
+			print self.rle.show()
 			## update tracker
-		return
+			memory = self.processFrame(memory, gameObject)
+			for lst in memory['trackedObjects'].values():
+				for sprite in lst:
+					if sprite.colorName in ['WHITE', 'ORANGE']:
+						print memory['isGrid'], sprite.colorName , sprite.x , sprite.y , sprite.speed, sprite.inventory, sprite.orientation
 
 	def testEpisode(self, gameObject, epoch=0):
 		
@@ -1589,11 +1678,17 @@ class Agent:
 		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
 		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
 
+		# actions = [0,0,0,0,0, K_RIGHT, K_RIGHT,0,0,0,0,0,0,0,0,0,0,0]
+		# actions = [0,0,0,0,0,0,0,0,0,0,0]
+		# actions = [K_RIGHT, K_LEFT, K_LEFT, K_UP, K_DOWN]
+		# actions = [K_RIGHT,K_UP,K_SPACE, 0, 0, 0]
+		# actions = [K_SPACE, 0, K_SPACE]
+		# actions = [0, 0, 0, 0, 0, 0]
 		# actions = [32, 0, 0]
 		actions = [0]*10
 
 		self.initializeEnvironment()
-
+		# embed()
 
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
@@ -1616,6 +1711,7 @@ class Agent:
 		self.rleHistory.append(envReal)
 
 		agentState = self.resourceManagement(pre_step=True)
+
 		#OBJECT TRACKING
 		resourceObservations = self.getObservations(agentState, self.rle, self.rle)
 
@@ -2172,11 +2268,9 @@ class Agent:
 		#two cases - whether this collision killed the avatar or not
 		if avatar_is_dead:
 			for sprite in candidates:
-				## (None: no speed observation (here) where avatar didn't die. second item: speed where it did die)
 				resourceObservations['speed'][sprite] = (None,agentState['speed']) # <--- Why are we switching order here and in the line 3 below?
 		else:
 			for sprite in candidates:
-				## (speed where it didn't die. None: no speed observation where it did die.)
 				resourceObservations['speed'][sprite] = (agentState['speed'],None)
 		
 		for key in agentState.keys():
@@ -2195,8 +2289,7 @@ class Agent:
 				for i in current_state[sprite]:
 					pos = i['position']
 					if abs(pos[0] - locs[sprite][0]) + abs(pos[1] - locs[sprite][1]) < THRESHHOLD:
-						sprite_gone = False
-			resourceObservations['resource'][sprite] = {}
+						resourceObservations['resource'][sprite] = {}
 			for res in self.observed_resources:
 				val = agentState[res]
 				#return whether this collision killed the sprite or the avatar - this format is used when updating distributions
@@ -2325,7 +2418,7 @@ class Agent:
 		
 		#OBJECT TRACKING
 		resourceObservations, new_sprites = self.getObservations(agentState, envReal, envRealPrev)
-		# print resourceObservations
+		print resourceObservations
 		# print "got resource observations"
 		# embed()
 		self.rle._game.sprite_appearances = new_sprites
@@ -2753,7 +2846,7 @@ class Agent:
 		ax1 = plt.subplot(111)
 		# ax2 = plt.subplot(212)
 		f.tight_layout(pad=1.5)
-		c = sns.color_palette('deep')
+		# c = sns.color_palette('deep')
 
 		# Sampled score - surviving batch
 		for i in range(N):
