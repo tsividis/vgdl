@@ -1,5 +1,3 @@
-# from IPython import embed
-# from multiprocessing import Pool
 import pathos.pools as pp
 import multiprocessing
 from multiprocessing.pool import ThreadPool
@@ -40,8 +38,6 @@ import types
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
-
-# orientationPairs = {(0, 1):(0, -1), DOWN:UP, LEFT:RIGHT, RIGHT:LEFT}
 
 
 def picklecopy(obj):
@@ -176,117 +172,6 @@ class Agent:
 				neighbors.append((sprite, s, dist))
 
 		return sorted(neighbors, key=lambda x: x[1])[:max_neighbors]
-
-	def matchEnvs(self, envA, envB, debug=False):
-		'''
-		Compares environment A to environment B, mapping sprites from A to sprites from B 1 to 1 (if it can)
-		by comparing the positions of sprites in A to positions of sprites in B of the same color. 
-
-		Returns mapping that minimizes distance between matching sprites (hopefully?)
-
-		returns:
-
-			the matched sprites as a list of tuples of sprites from A and sprites from B 
-		and the manhatten distance between their positions: 
-			[(s_A1, s_B1, d), (s_A2, s_A3, d), ...]
-	
-			the list of "lonely sprites" in A that don't map to any sprites in A: 
-				[s_A5, s_A6, ..]
-
-			the list of "lonely sprites" in B that don't map to any sprites in B: 
-				[s_A7, s_A8, ..]
-
-
-		'''
-		## For classes that have more than enumeration_limit instances, default to greedy version.
-		enumeration_limit = 10
-
-		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = [],[],[]
-
-		color_groupsA = defaultdict(lambda : [])
-		color_groupsB = defaultdict(lambda : [])
-		colors = set()
-
-		for name, sprites in envA._game.sprite_groups.iteritems():
-			if sprites:
-				color = sprites[0].colorName
-				color_groupsA[color] = sprites
-				colors.add(color)
-
-		for name, sprites in envB._game.sprite_groups.iteritems():
-			if sprites:
-				color = sprites[0].colorName
-				color_groupsB[color] = sprites
-				colors.add(color)
-
-		for color in colors:
-			# Find matching sprites via color
-			# color = sprite_group_color[k][0].colorName
-			matchingSpritesInEnvA = [s for s in getSpritesByColor(envA._game, color) if s not in envA._game.kill_list]
-			matchingSpritesInEnvB = [s for s in getSpritesByColor(envB._game, color) if s not in envB._game.kill_list]
-
-			## If it is manageable to enumerate all possible pairings
-			if len(matchingSpritesInEnvA)<enumeration_limit:
-				while len(matchingSpritesInEnvA)<len(matchingSpritesInEnvB):
-					matchingSpritesInEnvA.append(None)
-				while len(matchingSpritesInEnvB)<len(matchingSpritesInEnvA):
-					matchingSpritesInEnvB.append(None)
-
-				assignment_options = []
-				for p in itertools.permutations(matchingSpritesInEnvA):
-					assignment_options.append(zip(p, matchingSpritesInEnvB))
-
-				min_sum = 1e6
-				best_assignments = None
-				for assignments in assignment_options:
-					curr_sum = sum([manhattanDist2(p[0], p[1])**2 for p in assignments if None not in p])
-					if curr_sum<min_sum:
-						min_sum = curr_sum
-						best_assignments = assignments
-				
-				for pair in best_assignments:
-					if None not in pair:
-						matched_sprites.append((pair[0], pair[1], manhattanDist2(pair[0], pair[1])))
-					if pair[1] is None:
-						lonely_sprites_envA.append(pair[0])
-					if pair[0] is None:
-						lonely_sprites_envB.append(pair[1])
-			else:	
-			## Otherwise default to a greedy version
-				to_remove = []
-				for sA in matchingSpritesInEnvA:
-					for sB in matchingSpritesInEnvB:
-						if manhattanDist2(sA, sB) == 0:
-							matched_sprites.append((sA, sB, 0.0))
-							matchingSpritesInEnvB.remove(sB)
-							to_remove.append(sA)
-							break
-
-			# to_remove = []
-			# for sA in matchingSpritesInEnvA:
-			# 	for sB in matchingSpritesInEnvB:
-			# 		if manhattanDist2(sA, sB) == 0:
-			# 			matched_sprites.append((sA, sB, 0.0))
-			# 			matchingSpritesInEnvB.remove(sB)
-			# 			to_remove.append(sA)
-			# 			break
-
-			# for r in to_remove:
-			# 	matchingSpritesInEnvA.remove(r)
-			
-			# while matchingSpritesInEnvA and matchingSpritesInEnvB:
-			# 	sA = matchingSpritesInEnvA.pop(0)
-			# 	sB = findNearestSprite(sA, matchingSpritesInEnvB)
-			# 	if sB:
-			# 		dist = manhattanDist2(sA, sB)
-			# 		matched_sprites.append((sA, sB, dist))
-			# 		matchingSpritesInEnvB.remove(sB)
-			# 	else:
-			# 		matchingSpritesInEnvA.append(sA)
-			# lonely_sprites_envA.extend(matchingSpritesInEnvA)
-			# lonely_sprites_envB.extend(matchingSpritesInEnvB)
-
-		return matched_sprites, lonely_sprites_envA, lonely_sprites_envB
 
 
 	# Function matching environment and determining sprites that couldn't be matched
@@ -446,7 +331,7 @@ class Agent:
 		envB (current environment), and the distance that the sprite has traveled
 		in the time step
 		"""
-		matched_ts, _, _ = self.matchEnvs(envB, envPrev) #matches real env across timestep
+		matched_ts, _, _ = matchEnvs(envB, envPrev) #matches real env across timestep
 		dist_ts = [matched_ts[i][2] for i in range(len(matched_ts)) if matched_ts[i][0]==sB] #distance that sB has moved over timestep
 		sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB] #sB in previous step
 		if sPrev == []:
@@ -565,7 +450,7 @@ class Agent:
 			return total_penalty, errorMap
 
 		# Match sprites in environments and get sprites that couldn't be matched
-		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = self.matchEnvs(envA, envB)
+		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = matchEnvs(envA, envB)
 		# embed()
 		if targetClass:
 			try:
@@ -733,7 +618,7 @@ class Agent:
 					# Find sprite corresponding to sB in previous time step
 					color = sB.colorName
 					sB.colorName = sA.colorName
-					matched_ts, _, _ = self.matchEnvs(envB, envPrev) #matches real env across timestep
+					matched_ts, _, _ = matchEnvs(envB, envPrev) #matches real env across timestep
 					sB.colorName = color
 					sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB]
 
@@ -871,7 +756,7 @@ class Agent:
 		warning = False
 		d = {}
 		# Match environments by position and color
-		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = self.matchEnvs(envA, envB)
+		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = matchEnvs(envA, envB)
 		# Warn if there are unmatched or not accurately matched sprites
 		if len(lonely_sprites_envA)!=0 or len(lonely_sprites_envB)!=0:
 			warning = True
@@ -2159,7 +2044,7 @@ class Agent:
 				#return whether this collision killed the sprite or the avatar - this format is used when updating distributions
 				resourceObservations['resource'][sprite][res] = (val, not avatar_is_dead, not sprite_gone)
 
-		_, new_sprites, _ = self.matchEnvs(envReal, envRealPrev)
+		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
 		new_sprites = [(s.colorName, s.rect.left, s.rect.top) for s in new_sprites]
 		self.lastObjectState = current_state
 		return resourceObservations, new_sprites
@@ -2907,6 +2792,94 @@ def getSalientStates(rleHistory):
 	## get actionsPerIndex
 
 	pass
+
+def matchEnvs(envA, envB, debug=False):
+	'''
+	Compares environment A to environment B, mapping sprites from A to sprites from B 1 to 1 (if it can)
+	by comparing the positions of sprites in A to positions of sprites in B of the same color. 
+
+	Returns mapping that minimizes distance between matching sprites (hopefully?)
+
+	returns:
+
+		the matched sprites as a list of tuples of sprites from A and sprites from B 
+	and the manhatten distance between their positions: 
+		[(s_A1, s_B1, d), (s_A2, s_A3, d), ...]
+
+		the list of "lonely sprites" in A that don't map to any sprites in A: 
+			[s_A5, s_A6, ..]
+
+		the list of "lonely sprites" in B that don't map to any sprites in B: 
+			[s_A7, s_A8, ..]
+
+
+	'''
+	## For classes that have more than enumeration_limit instances, default to greedy version.
+	enumeration_limit = 10
+
+	matched_sprites, lonely_sprites_envA, lonely_sprites_envB = [],[],[]
+
+	color_groupsA = defaultdict(lambda : [])
+	color_groupsB = defaultdict(lambda : [])
+	colors = set()
+
+	for name, sprites in envA._game.sprite_groups.iteritems():
+		if sprites:
+			color = sprites[0].colorName
+			color_groupsA[color] = sprites
+			colors.add(color)
+
+	for name, sprites in envB._game.sprite_groups.iteritems():
+		if sprites:
+			color = sprites[0].colorName
+			color_groupsB[color] = sprites
+			colors.add(color)
+
+	for color in colors:
+		# Find matching sprites via color
+		# color = sprite_group_color[k][0].colorName
+		matchingSpritesInEnvA = [s for s in getSpritesByColor(envA._game, color) if s not in envA._game.kill_list]
+		matchingSpritesInEnvB = [s for s in getSpritesByColor(envB._game, color) if s not in envB._game.kill_list]
+
+		## If it is manageable to enumerate all possible pairings
+		if len(matchingSpritesInEnvA)<enumeration_limit:
+			while len(matchingSpritesInEnvA)<len(matchingSpritesInEnvB):
+				matchingSpritesInEnvA.append(None)
+			while len(matchingSpritesInEnvB)<len(matchingSpritesInEnvA):
+				matchingSpritesInEnvB.append(None)
+
+			assignment_options = []
+			for p in itertools.permutations(matchingSpritesInEnvA):
+				assignment_options.append(zip(p, matchingSpritesInEnvB))
+
+			min_sum = 1e6
+			best_assignments = None
+			for assignments in assignment_options:
+				curr_sum = sum([manhattanDist2(p[0], p[1])**2 for p in assignments if None not in p])
+				if curr_sum<min_sum:
+					min_sum = curr_sum
+					best_assignments = assignments
+			
+			for pair in best_assignments:
+				if None not in pair:
+					matched_sprites.append((pair[0], pair[1], manhattanDist2(pair[0], pair[1])))
+				if pair[1] is None:
+					lonely_sprites_envA.append(pair[0])
+				if pair[0] is None:
+					lonely_sprites_envB.append(pair[1])
+		else:	
+		## Otherwise default to a greedy version
+			to_remove = []
+			for sA in matchingSpritesInEnvA:
+				for sB in matchingSpritesInEnvB:
+					if manhattanDist2(sA, sB) == 0:
+						matched_sprites.append((sA, sB, 0.0))
+						matchingSpritesInEnvB.remove(sB)
+						to_remove.append(sA)
+						break
+
+	return matched_sprites, lonely_sprites_envA, lonely_sprites_envB
+
 
 if __name__ == "__main__":
 
