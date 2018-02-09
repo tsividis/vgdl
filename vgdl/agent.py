@@ -166,12 +166,6 @@ class Agent:
 				state[color] = sprite_list
 		return state
 
-	def findNearestSprite(self, sprite, spriteList):
-		## returns the sprite in spriteList whose location best matches the location of sprite.
-		if spriteList==[]:
-			return None
-		else:
-			return sorted(spriteList, key=lambda x:abs(x.rect.x-sprite.rect.x)+abs(x.rect.y-sprite.rect.y))[0]
 
 
 	def findNeighbors(self, sprite, spriteList, max_dist, max_neighbors):
@@ -282,7 +276,7 @@ class Agent:
 			
 			# while matchingSpritesInEnvA and matchingSpritesInEnvB:
 			# 	sA = matchingSpritesInEnvA.pop(0)
-			# 	sB = self.findNearestSprite(sA, matchingSpritesInEnvB)
+			# 	sB = findNearestSprite(sA, matchingSpritesInEnvB)
 			# 	if sB:
 			# 		dist = manhattanDist2(sA, sB)
 			# 		matched_sprites.append((sA, sB, dist))
@@ -322,7 +316,7 @@ class Agent:
 			# Loop over matching sprites in envA and find corresponding sprites in envB
 			## this line is key
 			for sprite in matchingSpritesInEnvA:
-				corrSprite = self.findNearestSprite(sprite, matchingSpritesInEnvB)
+				corrSprite = findNearestSprite(sprite, matchingSpritesInEnvB)
 				dist = manhattanDist2(sprite, corrSprite)
 				#print (sprite, corrSprite, dist)
 				matched_sprites.append( (sprite, corrSprite, dist) )
@@ -489,7 +483,7 @@ class Agent:
 		all_sprites_envB = []
 		for g in envB._game.sprite_groups.keys():
 			all_sprites_envB += envB._game.sprite_groups[g]
-		nearest_sprite = self.findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB) and (s not in envB._game.kill_list)])
+		nearest_sprite = findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB) and (s not in envB._game.kill_list)])
 		nearest_dist = manhattanDist2(sB, nearest_sprite)
 		# Determine orientation in current and previous step -> to detect orientation change
 		try:
@@ -523,7 +517,7 @@ class Agent:
 			for k in [key for key in envA._game.sprite_groups.keys() if envA._game.sprite_groups[key]]:
 				if color == envA._game.sprite_groups[k][0].colorName:
 					className_envA = k
-			covered_sprite_envA = self.findNearestSprite(sB,envA._game.sprite_groups[className_envA])
+			covered_sprite_envA = findNearestSprite(sB,envA._game.sprite_groups[className_envA])
 			e.intPairs = [(sA.name, covered_sprite_envA.name)] #overwrite interaction pair by the overlapping sprite pair
 		if dist_ts>2:
 			e2 = errorMapEntry()
@@ -572,7 +566,6 @@ class Agent:
 
 		# Match sprites in environments and get sprites that couldn't be matched
 		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = self.matchEnvs(envA, envB)
-		print "in errorSignal"
 		# embed()
 		if targetClass:
 			try:
@@ -712,7 +705,7 @@ class Agent:
 					#appeared_sprites_envB.append(sB)
 					continue
 			else:
-				sA = self.findNearestSprite(sPrev, candidates_in_killList)
+				sA = findNearestSprite(sPrev, candidates_in_killList)
 				if manhattanDist2(sA, sPrev)>1 and not sPrev: #there is no envA sprite where sPrev should have been
 					## if there was a kill event and an appearance event somewhere far, we should really see this as
 					## an appearance
@@ -763,7 +756,7 @@ class Agent:
 			e = errorMapEntry()
 			e.targetClass = sA.name
 			candidates_in_killList = [s for s in envB._game.kill_list if s.colorName==sA.colorName]
-			sB = self.findNearestSprite(sA, candidates_in_killList)
+			sB = findNearestSprite(sA, candidates_in_killList)
 			if sB==None:
 				print "WARNING: No target and interaction pair found in object destruction. You have not implemented this diagnosis."
 				e.diagnosis.append('objectDidNotAppear')
@@ -806,7 +799,7 @@ class Agent:
 			# Simultaneously find culprit classes - an overlapping sprite could have launched the sprite due to its class
 			
 			neighbors_curr_and_prev = self.neighborsPrev(envA, envB, sB) + self.neighborsPrev(envA, envPrev, sB)
-			nearestSprite = self.findNearestSprite(sB, [item for sublist in envA._game.sprite_groups.values() for item in sublist])
+			nearestSprite = findNearestSprite(sB, [item for sublist in envA._game.sprite_groups.values() for item in sublist])
 			if nearestSprite.name in neighbors_curr_and_prev:
 				e.intPairs.append((e.targetClass, nearestSprite.name))
 				e.culpritClasses.append(nearestSprite.name)
@@ -948,138 +941,9 @@ class Agent:
 		return penalty
 
 
-	def setSpritePositions(self, rle, Vrle, hypothesis, useHypothesis=True):
-		## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
-
-		old_sprite_groups = Vrle._game.sprite_groups
-		for k in old_sprite_groups.keys():
-			if old_sprite_groups[k]:
-				color = Vrle._game.sprite_groups[k][0].colorName
-				matchingSpritesInRLE = getSpritesByColor(rle._game, color)
-				for sprite in old_sprite_groups[k]:
-					matchingSprite = self.findNearestSprite(sprite, matchingSpritesInRLE)
-					if matchingSprite is None:
-						continue
-					sprite.rect = matchingSprite.rect
-					sprite.lastmove = matchingSprite.lastmove
-
-					if useHypothesis:
-						if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and self.best_params!=None:
-							try:
-								## Enforce consistency: inferred value for individual orientations has to be consistent with 
-								# what we're saying the horizontal/vertical orientation is of the entire group.
-
-								orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - 
-									np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
-								
-
-								if orientation == (0,0):
-									print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
-									pass
-
-								else:
-									sprite.orientation = orientation
-
-							except KeyError:
-								print "Failed to get params for Missile in main_agent"
-								# embed()
-								pass
-					# else:
-						# print "setting sprite positions"
-						# if hasattr(matchingSprite, 'orientation'):
-							# sprite.orientation = matchingSprite.orientation
-						# embed()
-		return
 
 
-	def initializeVrleProfiler(self, hypothesis=None, stateToSet=None):
-		lp = LineProfiler()
-		lp_wrapper = lp(self.initializeVrle)
-		Vrle = lp_wrapper(hypothesis, stateToSet)
-		lp.print_stats()
-		return Vrle
 
-	def initializeVrle(self, hypothesis=None, stateToSet=None, debug=False):
-		if stateToSet is None:
-			stateToSet = self.rle
-
-		def writeTheoryToTxtProfiler(rle, theory, symbolDict, txtFile, goalLoc = None):
-			lp = LineProfiler()
-			lp_wrapper = lp(writeTheoryToTxt)
-			theoryString, levelString, symbolDict = lp_wrapper(rle, theory, symbolDict, txtFile, goalLoc)
-			lp.print_stats()
-			return theoryString, levelString, symbolDict
-
-
-		if hypothesis is not None:
-			## World in agent's mind given 'hypothesis', including object goal
-			gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, self.symbolDict,\
-				 "./examples/gridphysics/theorytest.py", debug=debug)
-			useHypothesis=False ## not dealing with inferring Missile orientation for now.
-		else:
-			gameString = self.gameString
-			levelString = self.levelString
-			useHypothesis=False
-
-		try:
-			Vrle = createMindEnv(gameString, levelString, output=False)
-		except:
-			print "in initializeVrle"
-			embed()
-		if len(Vrle._game.sprite_groups['avatar'])>1:
-			print "Warning. In initializeVrle. Got more than one avatar. Returning None as Vrle."
-			Vrle = None
-			return Vrle
-		
-		## Initialize imaginary state to match real state.
-		self.setSpritePositions(stateToSet, Vrle, hypothesis, useHypothesis=useHypothesis)
-
-		## TODO: imaginary state should not match real state; it should match the inferred state of that particular object.
-		avatar = Vrle._game.getAvatars()[0]
-		# embed()
-		matchingSprite = [s for s in getSpritesByColor(stateToSet._game, avatar.colorName) if s.rect==avatar.rect][0]
-		# Vrle._game.getAvatars()[0].lastmove = ccopy(matchingSprite.lastmove)
-
-		if any([k in str(hypothesis.spriteObjects[avatar.colorName]) for k in ['Oriented', 'Rotating']]):
-			Vrle._game.getAvatars()[0].orientation = ccopy(matchingSprite.orientation)
-		try:
-			Vrle._game.getAvatars()[0].resources = ccopy(matchingSprite.resources)
-			Vrle._game.getAvatars()[0].jumping = ccopy(matchingSprite.jumping)
-			Vrle._game.getAvatars()[0].wait_step = ccopy(matchingSprite.wait_step)
-			Vrle._game.getAvatars()[0].rope = ccopy(matchingSprite.rope)
-			Vrle._game.getAvatars()[0].gravity = ccopy(matchingSprite.gravity)
-			Vrle._game.getAvatars()[0].last_rope = ccopy(matchingSprite.last_rope)
-			Vrle._game.getAvatars()[0].last_gravity = ccopy(matchingSprite.last_gravity)
-			Vrle._game.getAvatars()[0].last_vy = ccopy(matchingSprite.last_vy)
-			Vrle._game.getAvatars()[0].lastrect = ccopy(matchingSprite.lastrect)
-			Vrle._game.getAvatars()[0].speed = ccopy(matchingSprite.speed)
-
-		except (IndexError, AttributeError) as e:
-			pass
-
-		# Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
-		return Vrle
-
-
-	def VrleInitPhaseProfiler(self, theories=[], stateToSet=None, flexible_goals=False):
-		lp = LineProfiler()
-		lp_wrapper = lp(self.VrleInitPhase)
-		VRLEs = lp_wrapper(theories, stateToSet, flexible_goals)
-		lp.print_stats()
-		return VRLEs
-
-	def VrleInitPhase(self, theories=[], stateToSet=None, flexible_goals=False):
-		## Initialize multiple VRLEs, each corresponding to one hypothesis in theories
-		## Set their state to that of the provided RLE
-		VRLEs = []
-
-		if not theories:
-			theories = self.hypotheses
-
-		for hypothesis in theories:
-			VRLEs.append(self.initializeVrle(hypothesis, stateToSet=stateToSet))
-
-		return VRLEs
 
 
 	def initializeHypotheses(self, allObjects, learnSprites=True, learnAvatar=True, num_variants=0):
@@ -1373,8 +1237,8 @@ class Agent:
 			gameObject = None
 
 			for epoch in range(1):
-				self.buildTracker(gameObject)
-				# self.testEpisode(gameObject,epoch=epoch)
+				# self.buildTracker(gameObject)
+				self.testEpisode(gameObject,epoch=epoch)
 		return
 
 	def playCurriculum(self, heatmap=False, level_game_pairs=None):
@@ -1724,7 +1588,7 @@ class Agent:
 		for num, action in enumerate(actions):
 			print ">>> Step", num+1, "of", len(actions), "<<<"
 			## initialize VRLEs
-			theoryRLEs = self.VrleInitPhase()
+			theoryRLEs = VrleInitPhase(self.hypotheses, self.rle, self.symbolDict, self.best_params)
 			lastStep=False
 			if num==len(actions)-1:
 				lastStep=True
@@ -1787,7 +1651,7 @@ class Agent:
 		emptyPlans = 0
 		while not ended:
 			## initialize one or many VRLEs according to hypothesis-selection method
-			theoryRLEs = self.VrleInitPhase(flexible_goals=flexible_goals)
+			theoryRLEs = VrleInitPhase(self.hypotheses, self.rle, self.symbolDict, self.best_params, flexible_goals=flexible_goals)
 			quitting = False
 
 			p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
@@ -1995,7 +1859,7 @@ class Agent:
 										# print "orientation:", objPos[2].orientation
 									# except AttributeError:
 										# pass
-									nearest = self.findNearestSprite(objPos[2], [h[2] for h in rlePositions])
+									nearest = findNearestSprite(objPos[2], [h[2] for h in rlePositions])
 									# print "Nearest sprite:", nearest.colorName, nearest, "position:", self.rle._rect2pos(nearest.rect)
 									# try:
 										# print "orientation:", nearest.orientation
@@ -2502,7 +2366,6 @@ class Agent:
 
 		if newTheories:
 
-			embed()
 			penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay(newTheories, self.rleHistory, self.actionHistory,
 				method='all', displayTheories=False)
 
@@ -2688,7 +2551,7 @@ class Agent:
 		for idx in indices:
 			## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
 			t1 = time.time()
-			theoryRLEs = self.VrleInitPhase(hypotheses, rleHistory[idx]) 
+			theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], self.symbolDict, self.best_params) 
 			# ID_dictlist = []
 			# for tR in theoryRLEs:
 			# 	match, warning = self.IDmatch(tR, rleHistory[idx])
@@ -2761,7 +2624,7 @@ class Agent:
 		## Evaluates all the hypotheses on the state of the provided rle, given actions.
 		## last_only: will take all actions and only *then* evaluate the distance between real and imagined states
 		
-		theoryRLEs = self.VrleInitPhase(hypotheses, rle)
+		theoryRLEs = VrleInitPhase(hypotheses, rle, self.symbolDict, self.best_params)
 		# Match IDs between real and theory RLEs
 		ID_dictlist = []
 		for tR in theoryRLEs:
@@ -2894,6 +2757,136 @@ class Agent:
 			plt.savefig(savename+'.pdf')
 		else:
 			plt.show()
+
+def setSpritePositions(rle, Vrle, hypothesis, best_params, useHypothesis=True):
+	## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
+
+	old_sprite_groups = Vrle._game.sprite_groups
+	for k in old_sprite_groups.keys():
+		if old_sprite_groups[k]:
+			color = Vrle._game.sprite_groups[k][0].colorName
+			matchingSpritesInRLE = getSpritesByColor(rle._game, color)
+			for sprite in old_sprite_groups[k]:
+				matchingSprite = findNearestSprite(sprite, matchingSpritesInRLE)
+				if matchingSprite is None:
+					continue
+				sprite.rect = matchingSprite.rect
+				sprite.lastmove = matchingSprite.lastmove
+
+				if useHypothesis:
+					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and best_params!=None:
+						try:
+							## Enforce consistency: inferred value for individual orientations has to be consistent with 
+							# what we're saying the horizontal/vertical orientation is of the entire group.
+
+							orientation = tuple(np.sign(np.array(rle._game.previousPositions[matchingSprite.ID]) - 
+								np.array(rle._game.objectMemoryDict[matchingSprite.ID])))
+							
+
+							if orientation == (0,0):
+								print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
+								pass
+
+							else:
+								sprite.orientation = orientation
+
+						except KeyError:
+							print "Failed to get params for Missile in main_agent"
+							# embed()
+							pass
+				# else:
+					# print "setting sprite positions"
+					# if hasattr(matchingSprite, 'orientation'):
+						# sprite.orientation = matchingSprite.orientation
+					# embed()
+	return
+
+
+def initializeVrleProfiler(hypothesis, stateToSet, symbolDict, best_params):
+	lp = LineProfiler()
+	lp_wrapper = lp(initializeVrle)
+	Vrle = lp_wrapper(hypothesis, stateToSet, symbolDict)
+	lp.print_stats()
+	return Vrle
+
+def initializeVrle(hypothesis, stateToSet, symbolDict, best_params, debug=False):
+
+	def writeTheoryToTxtProfiler(rle, theory, symbolDict, txtFile, goalLoc = None):
+		lp = LineProfiler()
+		lp_wrapper = lp(writeTheoryToTxt)
+		theoryString, levelString, symbolDict = lp_wrapper(rle, theory, symbolDict, txtFile, goalLoc)
+		lp.print_stats()
+		return theoryString, levelString, symbolDict
+
+
+	## World in agent's mind given 'hypothesis', including object goal
+	gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, symbolDict,\
+		 "./examples/gridphysics/theorytest.py", debug=debug)
+	useHypothesis=False ## not dealing with inferring Missile orientation for now.
+
+	try:
+		Vrle = createMindEnv(gameString, levelString, output=False)
+	except:
+		print "in initializeVrle"
+		embed()
+	if len(Vrle._game.sprite_groups['avatar'])>1:
+		print "Warning. In initializeVrle. Got more than one avatar. Returning None as Vrle."
+		Vrle = None
+		return Vrle
+	
+	## Initialize imaginary state to match real state.
+	setSpritePositions(stateToSet, Vrle, hypothesis, best_params, useHypothesis=useHypothesis)
+
+	## TODO: imaginary state should not match real state; it should match the inferred state of that particular object.
+	avatar = Vrle._game.getAvatars()[0]
+	# embed()
+	matchingSprite = [s for s in getSpritesByColor(stateToSet._game, avatar.colorName) if s.rect==avatar.rect][0]
+	# Vrle._game.getAvatars()[0].lastmove = ccopy(matchingSprite.lastmove)
+
+	if any([k in str(hypothesis.spriteObjects[avatar.colorName]) for k in ['Oriented', 'Rotating']]):
+		Vrle._game.getAvatars()[0].orientation = ccopy(matchingSprite.orientation)
+	try:
+		Vrle._game.getAvatars()[0].resources = ccopy(matchingSprite.resources)
+		Vrle._game.getAvatars()[0].jumping = ccopy(matchingSprite.jumping)
+		Vrle._game.getAvatars()[0].wait_step = ccopy(matchingSprite.wait_step)
+		Vrle._game.getAvatars()[0].rope = ccopy(matchingSprite.rope)
+		Vrle._game.getAvatars()[0].gravity = ccopy(matchingSprite.gravity)
+		Vrle._game.getAvatars()[0].last_rope = ccopy(matchingSprite.last_rope)
+		Vrle._game.getAvatars()[0].last_gravity = ccopy(matchingSprite.last_gravity)
+		Vrle._game.getAvatars()[0].last_vy = ccopy(matchingSprite.last_vy)
+		Vrle._game.getAvatars()[0].lastrect = ccopy(matchingSprite.lastrect)
+		Vrle._game.getAvatars()[0].speed = ccopy(matchingSprite.speed)
+
+	except (IndexError, AttributeError) as e:
+		pass
+
+	# Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
+	return Vrle
+
+
+def VrleInitPhaseProfiler(hypotheses, stateToSet, symbolDict, best_params, flexible_goals=False):
+	lp = LineProfiler()
+	lp_wrapper = lp(VrleInitPhase)
+	VRLEs = lp_wrapper(hypotheses, stateToSet, symbolDict, best_params, flexible_goals)
+	lp.print_stats()
+	return VRLEs
+
+def VrleInitPhase(hypotheses, stateToSet, symbolDict, best_params, flexible_goals=False):
+	## Initialize multiple VRLEs, each corresponding to one hypothesis in theories
+	## Set their state to that of the provided RLE
+	VRLEs = []
+
+	for hypothesis in hypotheses:
+		VRLEs.append(initializeVrle(hypothesis, stateToSet, symbolDict, best_params))
+
+	return VRLEs
+
+def findNearestSprite(sprite, spriteList):
+	## returns the sprite in spriteList whose location best matches the location of sprite.
+	if spriteList==[]:
+		return None
+	else:
+		return sorted(spriteList, key=lambda x:abs(x.rect.x-sprite.rect.x)+abs(x.rect.y-sprite.rect.y))[0]
 
 def subSampleStates(subsamplePercentage, actionsPerIndex, rleHistory):
 	## Returns a random subsample of inidces in the rleHistory to test,

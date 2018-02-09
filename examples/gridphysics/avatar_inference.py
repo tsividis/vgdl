@@ -17,10 +17,10 @@ level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
-w                   2          w
+w                              w
 w       1                      w
 w                              w
-w                       3      w
+w                              w
 w               A              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """

@@ -20,8 +20,8 @@ level = """
 wwwwwwwwwwwwwwwwwwwwwwwww
 w.......................w
 w.......................w
-wG...........A..........w
-wwwwwwww...wlw...wwwwwwww
+wG.........A............w
+wwwwwwww...wl....wwwwwwww
 wk..........l..$.r.$....w
 w..............$.r.$....w
 w..............$.r.$....w

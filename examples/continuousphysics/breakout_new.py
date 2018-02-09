@@ -9,7 +9,7 @@ BasicGame
         lost > Immovable color=BLACK
         obstacle > Immovable color=BLACK
 
-    TerminationSet # from the perspective of player 1 (on the left)
+    TerminationSet
         MultiSpriteCounter stype1=goal1 stype2=goal2 stype3=goal3 limit=0 win=True
         SpriteCounter stype=ball limit=0 win=False
 
