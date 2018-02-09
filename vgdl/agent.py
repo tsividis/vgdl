@@ -510,8 +510,8 @@ class Agent:
 			# 	print "more than 1K theories!"
 			# 	embed()
 			# print "Now running experience replay on {} theories".format(len(newTheories))
-			penalties, cumulative_penalties, _ = self.experienceReplay(newTheories, self.rleHistory[-2:], self.actionHistory[-1:], 
-				method='all', targetClass = errorList[0].targetClass)
+			penalties, cumulative_penalties, _ = experienceReplay(newTheories, self.rleHistory[-2:], self.actionHistory[-1:], 
+				self.symbolDict, self.best_params, method='all', targetClass = errorList[0].targetClass)
 
 			scoreAndTheoryTuples = zip(penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
@@ -1811,21 +1811,8 @@ class Agent:
 
 		if newTheories:
 
-			penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay(newTheories, self.rleHistory, self.actionHistory,
-				method='all', displayTheories=False)
-
-			# penalties, cumulative_penalties, experienceReplayRLEs = self.experienceReplay((newTheories, self.rleHistory, self.actionHistory, 'all', None, False))
-			# for t in newTheories:
-				# r = threading.Thread(target=self.experienceReplay, args=(([t], self.rleHistory, self.actionHistory, 'all', None, False ),))
-				# r.start()
-
-			# p = pp.ProcessPool(processes=8)
-			# output = p.map(self.experienceReplay, [([t], self.rleHistory, self.actionHistory, 'all', None, False) for t in newTheories])
-			# p.close()
-			# p.join()
-			# map(self.experienceReplay, [([t], self.rleHistory, self.actionHistory, 'all', None, False) for t in newTheories[0:5]])
-			# print "ended in {} seconds".format(time.time()-t1)
-			# embed()
+			penalties, cumulative_penalties, experienceReplayRLEs = experienceReplay(newTheories, self.rleHistory, self.actionHistory,
+				self.symbolDict, self.best_params, method='all', displayTheories=False)
 
 			scoreAndTheoryTuples = zip(penalties, newTheories, experienceReplayRLEs)
 
@@ -1921,144 +1908,9 @@ class Agent:
 
 
 
-	def experienceReplayProfiler(self, hypotheses, rleHistory, actionHistory, method='all', displayStates=False):
-		lp = LineProfiler()
-		lp_wrapper = lp(self.experienceReplay)
-		mean_penalties, cumulative_penalties = lp_wrapper(hypotheses, rleHistory, actionHistory, method, displayStates)
-		lp.print_stats()
-		return mean_penalties, cumulative_penalties
 
 
-	def experienceReplay(self, hypotheses, rleHistory, actionHistory, method='all', targetClass=None, displayStates=False, displayTheories=False):
-		# print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
-		t1 = time.time()
-		results = []
-		for num, h in enumerate(hypotheses):
-			if displayTheories:
-				print "running experienceReplay on {}:".format(num)
-				h.display()
-			results.append(self.singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetClass, displayStates, [h]))
-		# print "Serial experienceReplay for {} hypotheses and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
-		# embed()
-		# t1 = time.time()
-		# res = [0]*len(hypotheses)
-		# for num, h in enumerate(hypotheses):
-		#   r = threading.Thread(target=self.singleTheoryExperienceReplay, args=(self.rleHistory, self.actionHistory, 'all',
-		#   None, False, [h], num, res))
-		#   r.start()
-		# print "Threaded experienceReplay for {} hypotheses took {} seconds".format(len(hypotheses), time.time()-t1)
 
-		# t1 = time.time()
-		# func = partial(self.singleTheoryExperienceReplay, rleHistory, actionHistory, method, targetClass, displayStates)
-		# p = ThreadPool(processes=48)
-		# results = p.map(func, [[h] for h in hypotheses])
-		# p.close()
-		# p.join()
-
-		mean_penalties = [r[0][0] for r in results]
-		cumulative_penalties = [r[1][0][0] for r in results]
-		theoryRLEs = [r[2][0] for r in results]
-
-		# print "Parallel experience replay on {} hypotheses took {} seconds".format(len(hypotheses),time.time()-t1)
-
-		# print "ran experience replay on {} theories and {} time-steps in {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
-		return mean_penalties, cumulative_penalties, theoryRLEs
-
-	def singleTheoryExperienceReplay(self, rleHistory, actionHistory, method, targetClass, displayStates, hypotheses):
-
-		subsamplePercentage = .2
-		actionsPerIndex = 2
-
-		if method=='all':
-			indices = [0]
-			actionsPerIndex = len(actionHistory)
-		elif method=='screenLastStep':# and len(rleHistory)>=2:
-			## Can't screen last step with fewer than two RLEs in history.
-			if len(rleHistory)<2:
-				actionsPerIndex = 0
-				indices = [0]
-				print "got screenLastStep on short sequence"
-			else:
-				indices = [-2]
-				actionsPerIndex = 1
-
-		elif method=='subsample':
-			indices, actionsPerIndex = subSampleStates(subsamplePercentage, actionsPerIndex, rleHistory)
-		elif method=='salient':
-			indices, actionsPerIndex = getSalientStates(subsamplePercentage, actionsPerIndex, rleHistory)
-
-		cumulative_penalties = []
-
-		for idx in indices:
-			## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
-			t1 = time.time()
-			theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], self.symbolDict, self.best_params) 
-			# ID_dictlist = []
-			# for tR in theoryRLEs:
-			# 	match, warning = self.IDmatch(tR, rleHistory[idx])
-			# 	if warning:
-			# 		print "ID match gave a warning. Environments should have all same objects but they don't."
-			# 		embed()
-				# ID_dictlist.append( match ) 
-
-			## Take a predetermined number of actions starting from idx
-			end = min(idx+actionsPerIndex, len(actionHistory))
-
-			if displayStates:
-				print "index: {}".format(idx)
-				print rleHistory[idx].show()
-				for env in theoryRLEs:
-					print env.show(color='blue')
-
-			for n, action in enumerate(actionHistory[idx:end]):
-				penalties = []
-				if displayStates:
-					print action
-					print rleHistory[idx+n+1].show(color='green')
-				for num, env in enumerate(theoryRLEs):                      
-
-					# if 'Chaser' in str(hypotheses[num].spriteObjects['YELLOW'].vgdlType):
-					#   print hypotheses[num].spriteObjects['YELLOW'].args
-					#   print "action num", n
-					#   # print "penalty", penalty
-					#   print "true pos", rleHistory[idx+n]._rect2pos(rleHistory[idx+n]._game.sprite_groups['dough'][0].rect)
-					#   print "hyp pos", env._rect2pos(env._game.sprite_groups[hypotheses[num].spriteObjects['YELLOW'].className][0].rect)
-					#   print rleHistory[idx+n].show(color='green')
-					#   print env.show()
-					#   embed()
-					if env is not None:
-						env.step(action)
-					try:
-						penalty, errorList = errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
-							rleHistory[idx+n], targetClass=targetClass, penalty_only=True)
-						penalties.append(penalty)
-
-					# if penalty and 'Chaser' in str(hypotheses[num].spriteObjects['YELLOW'].vgdlType):
-					#   print hypotheses[num].spriteObjects['YELLOW'].args
-					#   print "action num", n
-					#   # print "penalty", penalty
-					#   print "true pos", rleHistory[idx+n+1]._rect2pos(rleHistory[idx+n+1]._game.sprite_groups['dough'][0].rect)
-					#   print "hyp pos", env._rect2pos(env._game.sprite_groups[hypotheses[num].spriteObjects['YELLOW'].className][0].rect)
-					#   print rleHistory[idx+n+1].show(color='green')
-					#   print env.show()
-					#   embed()
-					except:
-						print "in experienceReplay"
-						embed()
-					# if displayStates:
-					# 	print penalty
-					# 	print env.show(color='blue')
-					
-				cumulative_penalties.append(penalties)
-		
-		if not cumulative_penalties:
-			print "Warning: did not run experience replay."
-			# embed()
-			cumulative_penalties = [[0]*len(hypotheses)]
-
-		cumulative_penalties = np.array(cumulative_penalties)
-		mean_penalties = np.mean(cumulative_penalties, axis=0)
-		return mean_penalties, cumulative_penalties, theoryRLEs
 
 
 	def testSteps(self, rle, actions, hypotheses, last_only=False, check=False):
@@ -2199,6 +2051,12 @@ class Agent:
 		else:
 			plt.show()
 
+
+########################################################################
+######## RLE INITIALIZATION AND STATE-SETTING METHODS 			########
+########################################################################
+
+
 def setSpritePositions(rle, Vrle, hypothesis, best_params, useHypothesis=True):
 	## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
 
@@ -2329,6 +2187,11 @@ def findNearestSprite(sprite, spriteList):
 	else:
 		return sorted(spriteList, key=lambda x:abs(x.rect.x-sprite.rect.x)+abs(x.rect.y-sprite.rect.y))[0]
 
+
+
+
+### Experience replay ###
+
 def subSampleStates(subsamplePercentage, actionsPerIndex, rleHistory):
 	## Returns a random subsample of inidces in the rleHistory to test,
 	## as well as how many actions per index to test
@@ -2346,11 +2209,133 @@ def subSampleStates(subsamplePercentage, actionsPerIndex, rleHistory):
 def getSalientStates(rleHistory):
 	## make sure you don't sample the last state
 	## get actionsPerIndex
-
 	pass
 
+def experienceReplayProfiler(hypotheses, rleHistory, actionHistory, symbolDict, best_params, method='all', displayStates=False):
+	lp = LineProfiler()
+	lp_wrapper = lp(experienceReplay)
+	mean_penalties, cumulative_penalties = lp_wrapper(hypotheses, rleHistory, actionHistory, symbolDict, best_params, method, displayStates)
+	lp.print_stats()
+	return mean_penalties, cumulative_penalties
 
 
+def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, best_params, method='all', targetClass=None, displayStates=False, displayTheories=False):
+	# print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
+	t1 = time.time()
+	results = []
+	for num, h in enumerate(hypotheses):
+		if displayTheories:
+			print "running experienceReplay on {}:".format(num)
+			h.display()
+		results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetClass, displayStates, [h], symbolDict, best_params))
+
+	mean_penalties = [r[0][0] for r in results]
+	cumulative_penalties = [r[1][0][0] for r in results]
+	theoryRLEs = [r[2][0] for r in results]
+
+	# print "ran experience replay on {} theories and {} time-steps in {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
+	return mean_penalties, cumulative_penalties, theoryRLEs
+
+def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetClass, displayStates, hypotheses, symbolDict, best_params):
+
+	subsamplePercentage = .2
+	actionsPerIndex = 2
+
+	if method=='all':
+		indices = [0]
+		actionsPerIndex = len(actionHistory)
+	elif method=='screenLastStep':# and len(rleHistory)>=2:
+		## Can't screen last step with fewer than two RLEs in history.
+		if len(rleHistory)<2:
+			actionsPerIndex = 0
+			indices = [0]
+			print "got screenLastStep on short sequence"
+		else:
+			indices = [-2]
+			actionsPerIndex = 1
+
+	elif method=='subsample':
+		indices, actionsPerIndex = subSampleStates(subsamplePercentage, actionsPerIndex, rleHistory)
+	elif method=='salient':
+		indices, actionsPerIndex = getSalientStates(subsamplePercentage, actionsPerIndex, rleHistory)
+
+	cumulative_penalties = []
+
+	for idx in indices:
+		## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
+		t1 = time.time()
+		theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], symbolDict, best_params) 
+		# ID_dictlist = []
+		# for tR in theoryRLEs:
+		# 	match, warning = self.IDmatch(tR, rleHistory[idx])
+		# 	if warning:
+		# 		print "ID match gave a warning. Environments should have all same objects but they don't."
+		# 		embed()
+			# ID_dictlist.append( match ) 
+
+		## Take a predetermined number of actions starting from idx
+		end = min(idx+actionsPerIndex, len(actionHistory))
+
+		if displayStates:
+			print "index: {}".format(idx)
+			print rleHistory[idx].show()
+			for env in theoryRLEs:
+				print env.show(color='blue')
+
+		for n, action in enumerate(actionHistory[idx:end]):
+			penalties = []
+			if displayStates:
+				print action
+				print rleHistory[idx+n+1].show(color='green')
+			for num, env in enumerate(theoryRLEs):                      
+
+				# if 'Chaser' in str(hypotheses[num].spriteObjects['YELLOW'].vgdlType):
+				#   print hypotheses[num].spriteObjects['YELLOW'].args
+				#   print "action num", n
+				#   # print "penalty", penalty
+				#   print "true pos", rleHistory[idx+n]._rect2pos(rleHistory[idx+n]._game.sprite_groups['dough'][0].rect)
+				#   print "hyp pos", env._rect2pos(env._game.sprite_groups[hypotheses[num].spriteObjects['YELLOW'].className][0].rect)
+				#   print rleHistory[idx+n].show(color='green')
+				#   print env.show()
+				#   embed()
+				if env is not None:
+					env.step(action)
+				try:
+					penalty, errorList = errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
+						rleHistory[idx+n], targetClass=targetClass, penalty_only=True)
+					penalties.append(penalty)
+
+				# if penalty and 'Chaser' in str(hypotheses[num].spriteObjects['YELLOW'].vgdlType):
+				#   print hypotheses[num].spriteObjects['YELLOW'].args
+				#   print "action num", n
+				#   # print "penalty", penalty
+				#   print "true pos", rleHistory[idx+n+1]._rect2pos(rleHistory[idx+n+1]._game.sprite_groups['dough'][0].rect)
+				#   print "hyp pos", env._rect2pos(env._game.sprite_groups[hypotheses[num].spriteObjects['YELLOW'].className][0].rect)
+				#   print rleHistory[idx+n+1].show(color='green')
+				#   print env.show()
+				#   embed()
+				except:
+					print "in experienceReplay"
+					embed()
+				# if displayStates:
+				# 	print penalty
+				# 	print env.show(color='blue')
+				
+			cumulative_penalties.append(penalties)
+	
+	if not cumulative_penalties:
+		print "Warning: did not run experience replay."
+		# embed()
+		cumulative_penalties = [[0]*len(hypotheses)]
+
+	cumulative_penalties = np.array(cumulative_penalties)
+	mean_penalties = np.mean(cumulative_penalties, axis=0)
+	return mean_penalties, cumulative_penalties, theoryRLEs
+
+
+########################################################################
+######## ERROR SIGNAL AND STATE-COMPARISON METHODS 				########
+########################################################################
 
 
 ## Function generating penalty and error map
