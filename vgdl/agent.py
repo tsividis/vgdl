@@ -300,453 +300,13 @@ class Agent:
 		return matched_sprites, lonely_sprites_envA, lonely_sprites_envB
 
 
-	def neighborsPrev(self, envA, envPrev, sPrev):
-		"""
-		Function to find neighbors of target sprite in the previous time step
-		envA: hypothetical environment, current step
-		envPrev: real environment, previous step
-		sPrev: target sprite in envPrev
-		"""
-		# Find potential interaction partners: neighboring sprites in previous step
-		all_sprites = []
-		for g in envPrev._game.sprite_groups.keys():
-			all_sprites += envPrev._game.sprite_groups[g]
-		# Neighbors of problematic sprite in real world in previous time step
-		neighbors = [s for s in all_sprites if manhattanDist2(s, sPrev)<=np.sqrt(2) and s!=sPrev and (s not in envPrev._game.kill_list)]
-		# Determine corresponding classes in theory environment
-		neighbors_color = [s.colorName for s in neighbors]
-		neighbors_color = list(set(neighbors_color))
-		neighbors_theoClassNames = []
-		for color in neighbors_color:
-			for className in envA._game.sprite_groups.keys():
-				if envA._game.sprite_groups[className]!=[] and  envA._game.sprite_groups[className][0].colorName==color:
-					neighbors_theoClassNames.append(className)
-		neighbors_theoClassNames = list(set(neighbors_theoClassNames)) #delete double entries
-		return neighbors_theoClassNames
-
-
-	def find_sPrev(self, sB, envB, envPrev):
-		"""
-		Find sprite in envPrev (previous environment) corresponding to a sprite in
-		envB (current environment), and the distance that the sprite has traveled
-		in the time step
-		"""
-		matched_ts, _, _ = matchEnvs(envB, envPrev) #matches real env across timestep
-		dist_ts = [matched_ts[i][2] for i in range(len(matched_ts)) if matched_ts[i][0]==sB] #distance that sB has moved over timestep
-		sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB] #sB in previous step
-		if sPrev == []:
-			# print "no sPrev"
-			# embed()
-			sPrev = None
-			dist_ts = None
-		else:
-			sPrev = sPrev[0]
-			dist_ts = dist_ts[0]
-		return sPrev, dist_ts
-
-
-	def diagnosePosMismatch(self, sA, sB, sPrev, envA, envB, envPrev, dist_ts):
-		"""
-		Returns errorMapEntry object containing the position mismatch error
-		"""
-
-		# Step through sub-problems
-		e = errorMapEntry()
-		e.targetToken = sB
-		e.targetClass = sA.name
-
-		errorMaps = [e]
-		# Find neighbors of target sprite in the previous time step
-		neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
 
 
 
-		# Write potential interaction pairs to error map entry
-		for className in neighbors_prev:
-			e.intPairs.append( (sA.name,className) )
-		# Determine mininum distance to neighbors in current real env -> to distinguish unexpectedPosition and unexpectedOverlap
-		all_sprites_envB = []
-		for g in envB._game.sprite_groups.keys():
-			all_sprites_envB += envB._game.sprite_groups[g]
-		nearest_sprite = findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB) and (s not in envB._game.kill_list)])
-		nearest_dist = manhattanDist2(sB, nearest_sprite)
-		# Determine orientation in current and previous step -> to detect orientation change
-		try:
-			oB = sB.orientation
-			oPrev = sPrev.orientation
-		except:
-			oB,oPrev = None,None
-
-		## Categorize into sub-problem-class
-		# 1.1) noMovement
-		if dist_ts == 0:
-			e.diagnosis.append('noMovement')
-			## Form all possible pairs of classes and propose these. This is because undoAll could cause this, so it's literally any classes combining.
-			e.intPairs = list(itertools.combinations([k for k in envA._game.sprite_groups.keys() if envA._game.sprite_groups[k]],2))
-			for k in envA._game.sprite_groups.keys():
-				if len(envA._game.sprite_groups[k])>1:
-					e.intPairs.append((k,k))
-		# 1.2) orientationChange
-		if dist_ts!=0 and oB!=None and oB!=oPrev:
-			e.diagnosis.append('orientationChange')
-		# 1.3) unexpectedPosition
-		if dist_ts!=0 and nearest_dist>=1:
-			e.diagnosis.append('unexpectedPosition')
-		# 1.4) unexpectedOverlap
-		if dist_ts!=0 and nearest_dist<1:
-
-			e.diagnosis.append('unexpectedOverlap')
-			# find sprite in envA that corresponds to covered sprite in envB
-			color = nearest_sprite.colorName
-			className_envA = ''
-			for k in [key for key in envA._game.sprite_groups.keys() if envA._game.sprite_groups[key]]:
-				if color == envA._game.sprite_groups[k][0].colorName:
-					className_envA = k
-			covered_sprite_envA = findNearestSprite(sB,envA._game.sprite_groups[className_envA])
-			e.intPairs = [(sA.name, covered_sprite_envA.name)] #overwrite interaction pair by the overlapping sprite pair
-		if dist_ts>2:
-			e2 = errorMapEntry()
-			e2.targetToken = e.targetToken
-			e2.targetClass = e.targetClass
-			e2.diagnosis.append('teleport')
-			e2.intPairs = [(sA.name, n) for n in neighbors_prev]
-			errorMaps.append(e2)
-		# Return list of errorMapEntry objects
-		return errorMaps
 
 
-	## Function generating penalty and error map
-	def errorSignal(self, envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, targetClass=None, penalty_only=False):
-		"""
-		envA: hypothetical environment
-		envB: real environment
-		theory: corresponds to hypothetical
-		p_dist: distance penalty per grid point
-		p_speed: pentalty for distances arising from wrong speed
-		p_miss: penalty for missing or additional sprite
-		penalty_only: return penalty, [] (empty list instead or errorMap)
-
-		Calculates d_theory(envA, envB): distance between the states of the environments
-		using the ontology of the supplied theory.
-
-		Also returns errorMap, a dict that contains
-		keys: (class1, class2). values: a diagnostic error signal
-		"""
-
-		# Initialization
-		total_penalty = 0.
-		errorMap = []
-
-		## Check for an ungrammatical theory.
-		if envA is None:
-			print "Warning: got ungrammatical theory"
-			e = errorMapEntry()
-			e.diagnosis.append('ungrammatical theory')
-			e.targetToken = None
-			e.targetClass = None
-			errorMap.append(e)
-			total_penalty = 1e6
-			# embed()
-			return total_penalty, errorMap
-
-		# Match sprites in environments and get sprites that couldn't be matched
-		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = matchEnvs(envA, envB)
-		# embed()
-		if targetClass:
-			try:
-				matched_sprites = [m for m in matched_sprites if m[0].name==targetClass]
-				if matched_sprites:
-					targetColor = matched_sprites[0][0].colorName
-					lonely_sprites_envA = [s for s in lonely_sprites_envA if s.name==targetClass]
-					lonely_sprites_envB = [s for s in lonely_sprites_envB if s.colorName==targetColor]
-				else:
-					lonely_sprites_envA = []
-					lonely_sprites_envB = []
-			except:
-				print "targetClass filter in errorSignal failed"
-				embed()
-		## Test output
-		# print '>>> matched_sprites:'
-		# for i in range(len(matched_sprites)):
-			# if True: #matched_sprites[i][2]!=0:
-				# print matched_sprites[i]
-		# print '>>> lonely_sprites_envA:', [s for s in lonely_sprites_envA]
-		# print '>>> lonely_sprites_envB:', [s for s in lonely_sprites_envB]
-
-		## Penalize distance and additional/missing sprites
-		# Distance penalty
-		for t in matched_sprites:
-			sA, sB = t[0], t[1] #sprites in envA, envB      
-			dist = t[2] #distance to sprite in envB
-			sA_type = theory.classes[sA.name][0].vgdlType
-			d = 30. # grid spacing
-
-			# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
-			if 'Random' in str(sA_type):   
-
- 
-				if 'speed' in theory.classes[sA.name][0].args.keys():
-					sA_speed = theory.classes[sA.name][0].args['speed']
-				elif 'speed' in theory.classes[sA.name][0].__dict__.keys():
-					sA_speed = theory.classes[sA.name][0].speed
-				else:
-					## this only happens when you initialize the real theory for testing but haven't explicitly set the speed
-					## in the VGDL description
-					sA_speed = 1
-				sPrev, dist_ts = self.find_sPrev(sB, envB, envPrev) #sA in previous environment
-				if sPrev is None:
-					continue
-				xB = sB.rect.left/d
-				yB = sB.rect.top/d
-				xPrev = sPrev.rect.left/d
-				yPrev = sPrev.rect.top/d
-
-				dist_rNPC = manhattanDist((xB,yB), (xPrev, yPrev))
-				# dist_rNPC = [ manhattanDist( (xB,yB), (xPrev,yPrev) ), \
-				#                    manhattanDist( (xB,yB), (xPrev+sA_speed,yPrev) ), \
-				#                    manhattanDist( (xB,yB), (xPrev-sA_speed,yPrev) ), \
-				#                    manhattanDist( (xB,yB), (xPrev,yPrev+sA_speed) ), \
-				#                    manhattanDist( (xB,yB), (xPrev,yPrev-sA_speed) ), \
-				#                  ]
-				# mindist_rNPC = min(dist_rNPC)
-				# total_penalty += p_speed*mindist_rNPC #penalize speed separately to discourage keeping around too many similar theories
-				
-				# if sA.colorName=='PURPLE':
-				# 	embed() 
-				total_penalty += p_speed*min(dist,1.)
-			elif 'Missile' in str(sA_type):
-				total_penalty += p_speed*t[2] #penalize speed separately to discourage keeping around too many similar theories
-			elif 'Chaser' in str(sA_type):
-				
-				sPrev, _ = self.find_sPrev(sB, envB, envPrev)
-				xA = sA.rect.left/d
-				yA = sA.rect.top/d
-				if sPrev is None:
-					continue
-				closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
-				## this should be arbitrarily high, actually. If you want this to be a surrogate likelihood function,
-				## the prob that a chaser moves away from what it's chasing is 0.
-				chaser_penalty = 0. if (xA,yA) in closestTargets else 100.
-
-				total_penalty += p_speed*chaser_penalty
-			# All of the other types are deterministic
-			else:
-				total_penalty += p_dist*t[2]    
-
-		# Missing/additional/transformation penalty
-		total_penalty += p_miss * ( len(lonely_sprites_envA) + len(lonely_sprites_envB) )
-
-		if penalty_only:
-			return total_penalty, []
-
-		### Construct errorMap using previous state ###
-
-		# 1) Position mismatch: Things have moved.
-
-		# Case A: matched sprites have different positions from what predicted
-		for t in matched_sprites:
-			dist_envs = t[2] #distance between sprites in real and theory environments
-			if dist_envs==0.: #sprites located where expected -> no conflict
-				continue
-			sA = t[0]
-			sB = t[1]
-			posCurr = envB._rect2pos(sB.rect) #current position of sprite
-			# Find sprite corresponding to sB in previous time step
-			sPrev, dist_ts = self.find_sPrev(sB, envB, envPrev)
-			if sPrev==None:
-				warnings.warn('sPrev not found in position mismatch error')
-				continue
-			# Determine errorMapEntry object for position mismatch problem
-			errs = self.diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
-			errorMap.extend(errs)
-
-		# Case B: Sprite moved in real environment, but we predicted a destruction
-		# For this, we check if lonely envB sprite has match in envPrev (and pass to (2) if not)
-		appeared_sprites_envB = []
-		for sB in lonely_sprites_envB:
-			# Find sprite corresponding to sB in previous time step
-			sPrev, dist_ts = self.find_sPrev(sB, envB, envPrev)
-			if sPrev == None: #sB has no match in envPrev
-				appeared_sprites_envB.append(sB)
-				continue 
-
-			### Tim says if we're not finding anything in the kill list but did have sPrev, something is wrong.
-			### As in, this should be a problem with matchEnvs and sPrev. Look at their outputs
 
 
-			# Find erroneously destroyed sA by finding envA sprite closest to sPrev
-			candidates_in_killList = [s for s in envA._game.kill_list if s.colorName==sPrev.colorName]
-			
-			## These are both double-checking things that should have been taken care of better
-			## by the sprite matching. But since it's imperfect given our limited knowledge, we're
-			## being more thorough.
-
-			if candidates_in_killList==[]:
-				if not sPrev: #there is no envA sprite where sPrev should have been
-					print "empty killList in A, meaning the matching is wrong"
-					## You need to figure out what to pass to diagnosePosMismatch for sA, since it
-					## doesn't exist.
-					embed()
-					#appeared_sprites_envB.append(sB)
-					continue
-			else:
-				sA = findNearestSprite(sPrev, candidates_in_killList)
-				if manhattanDist2(sA, sPrev)>1 and not sPrev: #there is no envA sprite where sPrev should have been
-					## if there was a kill event and an appearance event somewhere far, we should really see this as
-					## an appearance
-					## Really, you should look at sprite matching better.
-
-					print "manhattanDist2 > 1"
-					embed()
-					appeared_sprites_envB.append(sB)
-					continue
-			# Now we are completely sure that sprite in envA has been erroneously removed
-			errs = self.diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
-			errorMap.extend(errs)
-	
-		# 2) Unexpected destruction/appearance/transformation
-		# 2.1) Transformation
-		for iA,sA in enumerate(lonely_sprites_envA):
-			for iB,sB in enumerate(appeared_sprites_envB):
-				if manhattanDist2(sA, sB)<=2:
-					#print "Embedded in transformation handling"
-					#embed()
-					e = errorMapEntry()
-					e.diagnosis.append('transformation')
-					e.targetToken = sA
-					e.targetClass = sA.name
-					# Find sprite corresponding to sB in previous time step
-					color = sB.colorName
-					sB.colorName = sA.colorName
-					matched_ts, _, _ = matchEnvs(envB, envPrev) #matches real env across timestep
-					sB.colorName = color
-					sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB]
-
-					if sPrev==[]: #This was an appearance, pass to (2.3) below
-						continue
-					else: #This was indeed a transformation
-						print "WARNING: Found unexpected transformation"
-						sPrev = sPrev[0]
-						# Find neighbors of target sprite in the previous time step
-						neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
-						# Write potential interaction pairs to error map entry
-						for className in neighbors_prev:
-							e.intPairs.append( (theory.spriteObjects[sPrev.colorName].className,className) )
-						errorMap.append(e)
-						# Remove transformed-sprite-pair from respective lists
-						lonely_sprites_envA.pop(iA)
-						appeared_sprites_envB.pop(iB)
-		# 2.2) Destruction
-		for sA in lonely_sprites_envA: #sA should have been destroyed
-			e = errorMapEntry()
-			e.targetClass = sA.name
-			candidates_in_killList = [s for s in envB._game.kill_list if s.colorName==sA.colorName]
-			sB = findNearestSprite(sA, candidates_in_killList)
-			if sB==None:
-				print "WARNING: No target and interaction pair found in object destruction. You have not implemented this diagnosis."
-				e.diagnosis.append('objectDidNotAppear')
-				e.targetToken = None
-				e.intPairs = []
-				errorMap.append(e)
-				continue
-			else:
-				e.diagnosis.append('objectDestruction')
-				e.targetToken = sB
-				# Find the sprite that was destroyed in envB from the kill_list
-				# Find neighbors of target sprite in the previous time step
-				sPrev = sB #sprite was destroyed but hasn't moved
-			neighbors_prev = self.neighborsPrev(envA, envPrev, sPrev)
-			neighbors_prev = [c for c in neighbors_prev if c!=sA.name]
-			# Write potential interaction pairs to error map entry
-			for className in neighbors_prev:
-				e.intPairs.append( (sA.name,className) )
-			errorMap.append(e)
-		# 2.3) Appearance
-		for sB in appeared_sprites_envB:
-			print "WARNING: Found unexpected appearance"
-			e = errorMapEntry()
-			e.diagnosis.append('newObjectAppeared')
-			e.targetToken = sB
-
-			# Find class of new object by comparing colors, or give 'unknown' if unsuccessful
-			color = sB.colorName
-			all_sprites_envA = []
-			for g in envA._game.sprite_groups.keys():
-				all_sprites_envA += envA._game.sprite_groups[g]
-			sMatch = [s for s in all_sprites_envA if s.colorName==color]
-			if sMatch==[]:
-				e.targetClass = 'unknown'
-			else:
-				e.targetClass = sMatch[0].name
-
-			# Find neighbors of target sprite in the real environment (envB) in the current time step -> could have caused appearance
-			# And also in the previous time-step.
-			# Simultaneously find culprit classes - an overlapping sprite could have launched the sprite due to its class
-			
-			neighbors_curr_and_prev = self.neighborsPrev(envA, envB, sB) + self.neighborsPrev(envA, envPrev, sB)
-			nearestSprite = findNearestSprite(sB, [item for sublist in envA._game.sprite_groups.values() for item in sublist])
-			if nearestSprite.name in neighbors_curr_and_prev:
-				e.intPairs.append((e.targetClass, nearestSprite.name))
-				e.culpritClasses.append(nearestSprite.name)
-			else:
-				print "got new sprite class but nearest prev-step sprite isn't a current neighbor"
-				embed()
-			# for className in neighbors_curr:
-			# 	e.intPairs.append( (sA.name,className) )
-			# 	# Culprit classes are given by the names of the potential interaction partners
-			# 	e.culpritClasses.append(className)
-			errorMap.append(e)
-			# embed()
-
-
-		# 3) State change
-		# Call s.resources on all sprites in envA and envB. See which ones have changed
-		# and if that is consistent between envA and envB
-		#TODO
-
-		## Share information across errorMap items and make a unique list
-		if len(errorMap) > 1:
-			diagnosis_class_pairs = list(set([(e.diagnosis[0], e.targetClass) for e in errorMap]))
-			for dcp in diagnosis_class_pairs:
-				int_pairs = [item for sublist in [e.intPairs for e in errorMap if e.diagnosis[0]==dcp[0] and e.targetClass==dcp[1]] for item in sublist]
-				int_pairs = list(set(int_pairs))
-				## give int_pairs to each matching errorMap item.
-				for e in errorMap:
-					if e.diagnosis[0]==dcp[0] and e.targetClass==dcp[1]:
-						e.intPairs = int_pairs
-
-			lst = [errorMap[0]]
-			for e in errorMap[1:]:
-				if [not(e.diagnosis==l.diagnosis and e.targetClass==l.targetClass and e.targetToken==l.targetToken) for l in lst]:
-					lst.append(e)
-
-			errorMap = lst
-
-		## Clean errorMap: delete redundant interaction pairs under same diagnosis (only works if there is just one diagnosis per errorMapEntry)
-		# dia_list = [e.diagnosis[0] for e in errorMap]
-		# dia_list = list(set(dia_list))
-		# for dia in dia_list:
-		# 	errors = [e for e in errorMap if e.diagnosis[0]==dia]
-		# 	for n,e in enumerate(errors):
-		# 		other_pairs = []
-		# 		[other_pairs.extend(errorMap[i].intPairs) for i in range(n+1,len(errorMap)) ]
-		# 		# Permute tuples of other pairs to compare pairs in current error
-		# 		other_pairs = [(p[1],p[0]) for p in other_pairs]
-		# 		# Find unique interaction pairs for current error
-		# 		unique_pairs_e = []
-		# 		[unique_pairs_e.append(p) for p in e.intPairs if (p not in other_pairs)]
-		# 		# Set interaction pairs to unique pairs
-		# 		e.intPairs = unique_pairs_e
-
-		## TODO: penalize randomNPCs more smartly - currently they're kind of a joker, obscuring push events
-
-		## NOTE: We could extend by penalizing as a function of (most likely) vgdlType and color
-		## NOTE: Use intializeHypotheses function in this file to build my test theories
-
-		## Sort so that you fix errors involving any new classes first.
-		errorMap = sorted(errorMap, key=lambda x: x.targetClass!='unknown')
-
-		return total_penalty, errorMap
 
 
 	def IDmatch(self, envA, envB):
@@ -1049,7 +609,7 @@ class Agent:
 			## the next step will take care of not doing inference on these if we've done it already.
 			## NOTE: errorMap takes a unique targe class, and there are cases where you might have multiple singleton neighbors.
 			## For now you're taking just a random choice between those.
-			neighbors = self.neighborsPrev(envRealCurrent, envRealCurrent, errorMap.targetToken)
+			neighbors = neighborsPrev(envRealCurrent, envRealCurrent, errorMap.targetToken)
 			options = [item for sublist in [envRealCurrent._game.sprite_groups[k] for k in neighbors if len(envRealCurrent._game.sprite_groups[k])==1] for item in sublist]
 			if len(options)>1:
 				print "Warning: More than one singleton neighbor of a newly-spawned sprite. Randomly picking one as agent"
@@ -1651,7 +1211,7 @@ class Agent:
 			## Tim: Can run the state-distance function here.
 			for num, env in enumerate(theoryRLEs):
 				if num==1:
-					penalty, errorMap = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
+					penalty, errorMap = errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
 					break
 
 
@@ -2120,7 +1680,7 @@ class Agent:
 		env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
 		env_colors = set([s.colorName for s in env_sprites if s])
 
-		penalty, errorList = self.errorSignal(env, self.rle, hypothesis, envRealPrev)
+		penalty, errorList = errorSignal(env, self.rle, hypothesis, envRealPrev)
 		
 		# if errorList:
 		  # hypothesis.display()
@@ -2210,7 +1770,7 @@ class Agent:
 		#   env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
 		#   env_colors = set([s.colorName for s in env_sprites if s])
 
-		#   penalty, errorList = self.errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
+		#   penalty, errorList = errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
 			
 		#   # print "theory {} had {} errors".format(num, len(errorList))
 		#   # if errorList:
@@ -2405,10 +1965,6 @@ class Agent:
 		return mean_penalties, cumulative_penalties, theoryRLEs
 
 	def singleTheoryExperienceReplay(self, rleHistory, actionHistory, method, targetClass, displayStates, hypotheses):
-	# def singleTheoryExperienceReplay(self, args):
-	# def experienceReplay(self, args):
-		# rleHistory, actionHistory, method, targetClass, displayStates, hypotheses = args[0], args[1], args[2], args[3], args[4], args[5]
-		import numpy as np
 
 		subsamplePercentage = .2
 		actionsPerIndex = 2
@@ -2473,7 +2029,7 @@ class Agent:
 					if env is not None:
 						env.step(action)
 					try:
-						penalty, errorList = self.errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
+						penalty, errorList = errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
 							rleHistory[idx+n], targetClass=targetClass, penalty_only=True)
 						penalties.append(penalty)
 
@@ -2530,7 +2086,7 @@ class Agent:
 				env.step(action)
 				if last_only==False or n==len(actions)-1:
 					penalty = self.truPenalty(env, rle, ID_dictlist[num])
-					# penalty, errorList = self.errorSignal(env, rle, hypotheses[num], envRealPrev)
+					# penalty, errorList = errorSignal(env, rle, hypotheses[num], envRealPrev)
 					penalties.append(penalty)
 			if last_only==False or n==len(actions)-1:
 				cumulative_penalties.append(penalties)
@@ -2792,6 +2348,429 @@ def getSalientStates(rleHistory):
 	## get actionsPerIndex
 
 	pass
+
+
+
+
+
+## Function generating penalty and error map
+def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, targetClass=None, penalty_only=False):
+	"""
+	envA: hypothetical environment
+	envB: real environment
+	theory: corresponds to hypothetical
+	p_dist: distance penalty per grid point
+	p_speed: pentalty for distances arising from wrong speed
+	p_miss: penalty for missing or additional sprite
+	penalty_only: return penalty, [] (empty list instead or errorMap)
+
+	Calculates d_theory(envA, envB): distance between the states of the environments
+	using the ontology of the supplied theory.
+
+	Also returns errorMap, a dict that contains
+	keys: (class1, class2). values: a diagnostic error signal
+	"""
+
+	# Initialization
+	total_penalty = 0.
+	errorMap = []
+
+	## Check for an ungrammatical theory.
+	if envA is None:
+		print "Warning: got ungrammatical theory"
+		e = errorMapEntry()
+		e.diagnosis.append('ungrammatical theory')
+		e.targetToken = None
+		e.targetClass = None
+		errorMap.append(e)
+		total_penalty = 1e6
+		# embed()
+		return total_penalty, errorMap
+
+	# Match sprites in environments and get sprites that couldn't be matched
+	matched_sprites, lonely_sprites_envA, lonely_sprites_envB = matchEnvs(envA, envB)
+	# embed()
+	if targetClass:
+		try:
+			matched_sprites = [m for m in matched_sprites if m[0].name==targetClass]
+			if matched_sprites:
+				targetColor = matched_sprites[0][0].colorName
+				lonely_sprites_envA = [s for s in lonely_sprites_envA if s.name==targetClass]
+				lonely_sprites_envB = [s for s in lonely_sprites_envB if s.colorName==targetColor]
+			else:
+				lonely_sprites_envA = []
+				lonely_sprites_envB = []
+		except:
+			print "targetClass filter in errorSignal failed"
+			embed()
+	## Test output
+	# print '>>> matched_sprites:'
+	# for i in range(len(matched_sprites)):
+		# if True: #matched_sprites[i][2]!=0:
+			# print matched_sprites[i]
+	# print '>>> lonely_sprites_envA:', [s for s in lonely_sprites_envA]
+	# print '>>> lonely_sprites_envB:', [s for s in lonely_sprites_envB]
+
+	## Penalize distance and additional/missing sprites
+	# Distance penalty
+	for t in matched_sprites:
+		sA, sB = t[0], t[1] #sprites in envA, envB      
+		dist = t[2] #distance to sprite in envB
+		sA_type = theory.classes[sA.name][0].vgdlType
+		d = 30. # grid spacing
+
+		# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
+		if 'Random' in str(sA_type):   
+
+
+			if 'speed' in theory.classes[sA.name][0].args.keys():
+				sA_speed = theory.classes[sA.name][0].args['speed']
+			elif 'speed' in theory.classes[sA.name][0].__dict__.keys():
+				sA_speed = theory.classes[sA.name][0].speed
+			else:
+				## this only happens when you initialize the real theory for testing but haven't explicitly set the speed
+				## in the VGDL description
+				sA_speed = 1
+			sPrev, dist_ts = find_sPrev(sB, envB, envPrev) #sA in previous environment
+			if sPrev is None:
+				continue
+			xB = sB.rect.left/d
+			yB = sB.rect.top/d
+			xPrev = sPrev.rect.left/d
+			yPrev = sPrev.rect.top/d
+
+			dist_rNPC = manhattanDist((xB,yB), (xPrev, yPrev))
+			# dist_rNPC = [ manhattanDist( (xB,yB), (xPrev,yPrev) ), \
+			#                    manhattanDist( (xB,yB), (xPrev+sA_speed,yPrev) ), \
+			#                    manhattanDist( (xB,yB), (xPrev-sA_speed,yPrev) ), \
+			#                    manhattanDist( (xB,yB), (xPrev,yPrev+sA_speed) ), \
+			#                    manhattanDist( (xB,yB), (xPrev,yPrev-sA_speed) ), \
+			#                  ]
+			# mindist_rNPC = min(dist_rNPC)
+			# total_penalty += p_speed*mindist_rNPC #penalize speed separately to discourage keeping around too many similar theories
+			
+			# if sA.colorName=='PURPLE':
+			# 	embed() 
+			total_penalty += p_speed*min(dist,1.)
+		elif 'Missile' in str(sA_type):
+			total_penalty += p_speed*t[2] #penalize speed separately to discourage keeping around too many similar theories
+		elif 'Chaser' in str(sA_type):
+			
+			sPrev, _ = find_sPrev(sB, envB, envPrev)
+			xA = sA.rect.left/d
+			yA = sA.rect.top/d
+			if sPrev is None:
+				continue
+			closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
+			## this should be arbitrarily high, actually. If you want this to be a surrogate likelihood function,
+			## the prob that a chaser moves away from what it's chasing is 0.
+			chaser_penalty = 0. if (xA,yA) in closestTargets else 100.
+
+			total_penalty += p_speed*chaser_penalty
+		# All of the other types are deterministic
+		else:
+			total_penalty += p_dist*t[2]    
+
+	# Missing/additional/transformation penalty
+	total_penalty += p_miss * ( len(lonely_sprites_envA) + len(lonely_sprites_envB) )
+
+	if penalty_only:
+		return total_penalty, []
+
+	### Construct errorMap using previous state ###
+
+	# 1) Position mismatch: Things have moved.
+
+	# Case A: matched sprites have different positions from what predicted
+	for t in matched_sprites:
+		dist_envs = t[2] #distance between sprites in real and theory environments
+		if dist_envs==0.: #sprites located where expected -> no conflict
+			continue
+		sA = t[0]
+		sB = t[1]
+		posCurr = envB._rect2pos(sB.rect) #current position of sprite
+		# Find sprite corresponding to sB in previous time step
+		sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
+		if sPrev==None:
+			warnings.warn('sPrev not found in position mismatch error')
+			continue
+		# Determine errorMapEntry object for position mismatch problem
+		errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
+		errorMap.extend(errs)
+
+	# Case B: Sprite moved in real environment, but we predicted a destruction
+	# For this, we check if lonely envB sprite has match in envPrev (and pass to (2) if not)
+	appeared_sprites_envB = []
+	for sB in lonely_sprites_envB:
+		# Find sprite corresponding to sB in previous time step
+		sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
+		if sPrev == None: #sB has no match in envPrev
+			appeared_sprites_envB.append(sB)
+			continue 
+
+		# Find erroneously destroyed sA by finding envA sprite closest to sPrev
+		candidates_in_killList = [s for s in envA._game.kill_list if s.colorName==sPrev.colorName]
+		
+		## These are both double-checking things that should have been taken care of better
+		## by the sprite matching. But since it's imperfect given our limited knowledge, we're
+		## being more thorough.
+
+		if candidates_in_killList==[]:
+			if not sPrev: #there is no envA sprite where sPrev should have been
+				print "empty killList in A, meaning the matching is wrong"
+				## You need to figure out what to pass to diagnosePosMismatch for sA, since it
+				## doesn't exist.
+				embed()
+				#appeared_sprites_envB.append(sB)
+				continue
+		else:
+			sA = findNearestSprite(sPrev, candidates_in_killList)
+			if manhattanDist2(sA, sPrev)>1 and not sPrev: #there is no envA sprite where sPrev should have been
+				## if there was a kill event and an appearance event somewhere far, we should really see this as
+				## an appearance
+				## Really, you should look at sprite matching better.
+
+				print "manhattanDist2 > 1"
+				embed()
+				appeared_sprites_envB.append(sB)
+				continue
+		# Now we are completely sure that sprite in envA has been erroneously removed
+		errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
+		errorMap.extend(errs)
+
+	# 2) Unexpected destruction/appearance/transformation
+	# 2.1) Transformation
+	for iA,sA in enumerate(lonely_sprites_envA):
+		for iB,sB in enumerate(appeared_sprites_envB):
+			if manhattanDist2(sA, sB)<=2:
+				#print "Embedded in transformation handling"
+				#embed()
+				e = errorMapEntry()
+				e.diagnosis.append('transformation')
+				e.targetToken = sA
+				e.targetClass = sA.name
+				# Find sprite corresponding to sB in previous time step
+				color = sB.colorName
+				sB.colorName = sA.colorName
+				matched_ts, _, _ = matchEnvs(envB, envPrev) #matches real env across timestep
+				sB.colorName = color
+				sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB]
+
+				if sPrev==[]: #This was an appearance, pass to (2.3) below
+					continue
+				else: #This was indeed a transformation
+					print "WARNING: Found unexpected transformation"
+					sPrev = sPrev[0]
+					# Find neighbors of target sprite in the previous time step
+					neighbors_prev = neighborsPrev(envA, envPrev, sPrev)
+					# Write potential interaction pairs to error map entry
+					for className in neighbors_prev:
+						e.intPairs.append( (theory.spriteObjects[sPrev.colorName].className,className) )
+					errorMap.append(e)
+					# Remove transformed-sprite-pair from respective lists
+					lonely_sprites_envA.pop(iA)
+					appeared_sprites_envB.pop(iB)
+	# 2.2) Destruction
+	for sA in lonely_sprites_envA: #sA should have been destroyed
+		e = errorMapEntry()
+		e.targetClass = sA.name
+		candidates_in_killList = [s for s in envB._game.kill_list if s.colorName==sA.colorName]
+		sB = findNearestSprite(sA, candidates_in_killList)
+		if sB==None:
+			print "WARNING: No target and interaction pair found in object destruction. You have not implemented this diagnosis."
+			e.diagnosis.append('objectDidNotAppear')
+			e.targetToken = None
+			e.intPairs = []
+			errorMap.append(e)
+			continue
+		else:
+			e.diagnosis.append('objectDestruction')
+			e.targetToken = sB
+			# Find the sprite that was destroyed in envB from the kill_list
+			# Find neighbors of target sprite in the previous time step
+			sPrev = sB #sprite was destroyed but hasn't moved
+		neighbors_prev = neighborsPrev(envA, envPrev, sPrev)
+		neighbors_prev = [c for c in neighbors_prev if c!=sA.name]
+		# Write potential interaction pairs to error map entry
+		for className in neighbors_prev:
+			e.intPairs.append( (sA.name,className) )
+		errorMap.append(e)
+	# 2.3) Appearance
+	for sB in appeared_sprites_envB:
+		print "WARNING: Found unexpected appearance"
+		e = errorMapEntry()
+		e.diagnosis.append('newObjectAppeared')
+		e.targetToken = sB
+
+		# Find class of new object by comparing colors, or give 'unknown' if unsuccessful
+		color = sB.colorName
+		all_sprites_envA = []
+		for g in envA._game.sprite_groups.keys():
+			all_sprites_envA += envA._game.sprite_groups[g]
+		sMatch = [s for s in all_sprites_envA if s.colorName==color]
+		if sMatch==[]:
+			e.targetClass = 'unknown'
+		else:
+			e.targetClass = sMatch[0].name
+
+		# Find neighbors of target sprite in the real environment (envB) in the current time step -> could have caused appearance
+		# And also in the previous time-step.
+		# Simultaneously find culprit classes - an overlapping sprite could have launched the sprite due to its class
+		
+		neighbors_curr_and_prev = neighborsPrev(envA, envB, sB) + neighborsPrev(envA, envPrev, sB)
+		nearestSprite = findNearestSprite(sB, [item for sublist in envA._game.sprite_groups.values() for item in sublist])
+		if nearestSprite.name in neighbors_curr_and_prev:
+			e.intPairs.append((e.targetClass, nearestSprite.name))
+			e.culpritClasses.append(nearestSprite.name)
+		else:
+			print "got new sprite class but nearest prev-step sprite isn't a current neighbor"
+			embed()
+		errorMap.append(e)
+
+	# 3) State change
+	# Call s.resources on all sprites in envA and envB. See which ones have changed
+	# and if that is consistent between envA and envB
+	#TODO
+
+	## Share information across errorMap items and make a unique list
+	if len(errorMap) > 1:
+		diagnosis_class_pairs = list(set([(e.diagnosis[0], e.targetClass) for e in errorMap]))
+		for dcp in diagnosis_class_pairs:
+			int_pairs = [item for sublist in [e.intPairs for e in errorMap if e.diagnosis[0]==dcp[0] and e.targetClass==dcp[1]] for item in sublist]
+			int_pairs = list(set(int_pairs))
+			## give int_pairs to each matching errorMap item.
+			for e in errorMap:
+				if e.diagnosis[0]==dcp[0] and e.targetClass==dcp[1]:
+					e.intPairs = int_pairs
+
+		lst = [errorMap[0]]
+		for e in errorMap[1:]:
+			if [not(e.diagnosis==l.diagnosis and e.targetClass==l.targetClass and e.targetToken==l.targetToken) for l in lst]:
+				lst.append(e)
+
+		errorMap = lst
+
+	## TODO: penalize randomNPCs more smartly - currently they're kind of a joker, obscuring push events
+
+	## NOTE: We could extend by penalizing as a function of (most likely) vgdlType and color
+	## NOTE: Use intializeHypotheses function in this file to build my test theories
+
+	## Sort so that you fix errors involving any new classes first.
+	errorMap = sorted(errorMap, key=lambda x: x.targetClass!='unknown')
+
+	return total_penalty, errorMap
+
+def neighborsPrev(envA, envPrev, sPrev):
+	"""
+	Function to find neighbors of target sprite in the previous time step
+	envA: hypothetical environment, current step
+	envPrev: real environment, previous step
+	sPrev: target sprite in envPrev
+	"""
+	# Find potential interaction partners: neighboring sprites in previous step
+	all_sprites = []
+	for g in envPrev._game.sprite_groups.keys():
+		all_sprites += envPrev._game.sprite_groups[g]
+	# Neighbors of problematic sprite in real world in previous time step
+	neighbors = [s for s in all_sprites if manhattanDist2(s, sPrev)<=np.sqrt(2) and s!=sPrev and (s not in envPrev._game.kill_list)]
+	# Determine corresponding classes in theory environment
+	neighbors_color = [s.colorName for s in neighbors]
+	neighbors_color = list(set(neighbors_color))
+	neighbors_theoClassNames = []
+	for color in neighbors_color:
+		for className in envA._game.sprite_groups.keys():
+			if envA._game.sprite_groups[className]!=[] and  envA._game.sprite_groups[className][0].colorName==color:
+				neighbors_theoClassNames.append(className)
+	neighbors_theoClassNames = list(set(neighbors_theoClassNames)) #delete double entries
+	return neighbors_theoClassNames
+
+def find_sPrev(sB, envB, envPrev):
+	"""
+	Find sprite in envPrev (previous environment) corresponding to a sprite in
+	envB (current environment), and the distance that the sprite has traveled
+	in the time step
+	"""
+	matched_ts, _, _ = matchEnvs(envB, envPrev) #matches real env across timestep
+	dist_ts = [matched_ts[i][2] for i in range(len(matched_ts)) if matched_ts[i][0]==sB] #distance that sB has moved over timestep
+	sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB] #sB in previous step
+	if sPrev == []:
+		# print "no sPrev"
+		# embed()
+		sPrev = None
+		dist_ts = None
+	else:
+		sPrev = sPrev[0]
+		dist_ts = dist_ts[0]
+	return sPrev, dist_ts
+
+def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
+	"""
+	Returns errorMapEntry object containing the position mismatch error
+	"""
+
+	# Step through sub-problems
+	e = errorMapEntry()
+	e.targetToken = sB
+	e.targetClass = sA.name
+
+	errorMaps = [e]
+	# Find neighbors of target sprite in the previous time step
+	neighbors_prev = neighborsPrev(envA, envPrev, sPrev)
+
+
+	# Write potential interaction pairs to error map entry
+	for className in neighbors_prev:
+		e.intPairs.append( (sA.name,className) )
+	# Determine mininum distance to neighbors in current real env -> to distinguish unexpectedPosition and unexpectedOverlap
+	all_sprites_envB = []
+	for g in envB._game.sprite_groups.keys():
+		all_sprites_envB += envB._game.sprite_groups[g]
+	nearest_sprite = findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB) and (s not in envB._game.kill_list)])
+	nearest_dist = manhattanDist2(sB, nearest_sprite)
+	# Determine orientation in current and previous step -> to detect orientation change
+	try:
+		oB = sB.orientation
+		oPrev = sPrev.orientation
+	except:
+		oB,oPrev = None,None
+
+	## Categorize into sub-problem-class
+	# 1.1) noMovement
+	if dist_ts == 0:
+		e.diagnosis.append('noMovement')
+		## Form all possible pairs of classes and propose these. This is because undoAll could cause this, so it's literally any classes combining.
+		e.intPairs = list(itertools.combinations([k for k in envA._game.sprite_groups.keys() if envA._game.sprite_groups[k]],2))
+		for k in envA._game.sprite_groups.keys():
+			if len(envA._game.sprite_groups[k])>1:
+				e.intPairs.append((k,k))
+	# 1.2) orientationChange
+	if dist_ts!=0 and oB!=None and oB!=oPrev:
+		e.diagnosis.append('orientationChange')
+	# 1.3) unexpectedPosition
+	if dist_ts!=0 and nearest_dist>=1:
+		e.diagnosis.append('unexpectedPosition')
+	# 1.4) unexpectedOverlap
+	if dist_ts!=0 and nearest_dist<1:
+
+		e.diagnosis.append('unexpectedOverlap')
+		# find sprite in envA that corresponds to covered sprite in envB
+		color = nearest_sprite.colorName
+		className_envA = ''
+		for k in [key for key in envA._game.sprite_groups.keys() if envA._game.sprite_groups[key]]:
+			if color == envA._game.sprite_groups[k][0].colorName:
+				className_envA = k
+		covered_sprite_envA = findNearestSprite(sB,envA._game.sprite_groups[className_envA])
+		e.intPairs = [(sA.name, covered_sprite_envA.name)] #overwrite interaction pair by the overlapping sprite pair
+	if dist_ts>2:
+		e2 = errorMapEntry()
+		e2.targetToken = e.targetToken
+		e2.targetClass = e.targetClass
+		e2.diagnosis.append('teleport')
+		e2.intPairs = [(sA.name, n) for n in neighbors_prev]
+		errorMaps.append(e2)
+	# Return list of errorMapEntry objects
+	return errorMaps
+
 
 def matchEnvs(envA, envB, debug=False):
 	'''
