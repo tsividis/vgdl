@@ -1,0 +1,858 @@
+]0;IPython: vgdl2/vgdladded self, <class 'vgdl.ontology.Immovable'>
+added self, <class 'vgdl.ontology.Passive'>
+added self, <class 'vgdl.core.Resource'>
+added parent, <class 'vgdl.core.Resource'>
+added self, <class 'vgdl.ontology.ResourcePack'>
+added self, <class 'vgdl.ontology.Flicker'>
+added self, <class 'vgdl.ontology.Spreader'>
+added self, <class 'vgdl.ontology.SpriteProducer'>
+added self, <class 'vgdl.ontology.Portal'>
+added self, <class 'vgdl.ontology.SpawnPoint'>
+added self, <class 'vgdl.ontology.RandomNPC'>
+added self, <class 'vgdl.ontology.OrientedSprite'>
+added self, <class 'vgdl.ontology.Conveyor'>
+added self, <class 'vgdl.ontology.Missile'>
+added self, <class 'vgdl.ontology.OrientedFlicker'>
+added self, <class 'vgdl.ontology.Walker'>
+added self, <class 'vgdl.ontology.WalkJumper'>
+added self, <class 'vgdl.ontology.RandomInertial'>
+added self, <class 'vgdl.ontology.RandomMissile'>
+added self, <class 'vgdl.ontology.ErraticMissile'>
+added self, <class 'vgdl.ontology.Bomber'>
+added self, <class 'vgdl.ontology.Chaser'>
+added self, <class 'vgdl.ontology.Fleeing'>
+added self, <class 'vgdl.ontology.AStarChaser'>
+added self, <class 'vgdl.ontology.MovingAvatar'>
+added self, <class 'vgdl.ontology.HorizontalAvatar'>
+added self, <class 'vgdl.ontology.VerticalAvatar'>
+added self, <class 'vgdl.ontology.FlakAvatar'>
+added self, <class 'vgdl.ontology.OrientedAvatar'>
+added parent, <class 'vgdl.ontology.OrientedAvatar'>
+added self, <class 'vgdl.ontology.ShootAvatar'>
+added parent, <class 'vgdl.ontology.ShootAvatar'>
+added self, <class 'vgdl.ontology.AimedAvatar'>
+added parent, <class 'vgdl.ontology.AimedAvatar'>
+added self, <class 'vgdl.ontology.AimedFlakAvatar'>
+<class 'vgdl.ontology.OrientedAvatar'> already in tree.
+added self, <class 'vgdl.ontology.RotatingAvatar'>
+added self, <class 'vgdl.ontology.RotatingFlippingAvatar'>
+added self, <class 'vgdl.ontology.NoisyRotatingFlippingAvatar'>
+<class 'vgdl.ontology.ShootAvatar'> already in tree.
+<class 'vgdl.ontology.AimedAvatar'> already in tree.
+<class 'vgdl.ontology.AimedFlakAvatar'> already in tree.
+added self, <class 'vgdl.ontology.InertialAvatar'>
+added self, <class 'vgdl.ontology.MarioAvatar'>
+Playing level 0
+initializing RLE. Epoch=0
+num cores: 8
+WARNING: running on < 40 cores.
+observing for 0 steps
+CANDIDATES
+[]
+>>> Step 1 of 3 <<<
+spriteInduction prep took 4.53891015053 seconds
+CANDIDATES
+['DARKGRAY']
+{'resource': defaultdict(<function <lambda> at 0x111592410>, {}), 'speed': {'DARKGRAY': (1, None)}}
+new sprites []
+
+none
+evaluating 2 old theories and proposing new ones
+Serial experience replay on 19 theories and 2 time-steps took 0.346002817154 seconds
+Serial experience replay on 1 theories and 2 time-steps took 0.0174689292908 seconds
+[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m
+[34m3[0m                              [34m3[0m
+[34m3[0m                              [34m3[0m
+[34m3[0m                              [34m3[0m
+[34m3[0m        [34m0[0m                     [34m3[0m
+[34m3[0m                              [34m3[0m
+[34m3[0m                              [34m3[0m
+[34m3[0m               [31mA[0m              [34m3[0m
+[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m
+
+evaluation complete. Now running experienceReplay on 20 theories
+Serial experience replay on 20 theories and 2 time-steps took 0.38038611412 seconds
+Theory: 0 | Error: 0.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': True, 'cooldown': 2, 'speed': 1.0, 'orientation': (1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 1 | Error: 0.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': False, 'cooldown': 1, 'speed': 1.0, 'orientation': (1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 2 | Error: 0.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': False, 'cooldown': 2, 'speed': 1.0, 'orientation': (1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 3 | Error: 0.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 1, 'stype': 'avatar', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 4 | Error: 0.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': True, 'cooldown': 1, 'speed': 1.0, 'orientation': (1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 5 | Error: 0.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 2, 'stype': 'avatar', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 6 | Error: 1.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.RandomNPC'>: {'cooldown': 1, 'speed': 1.0}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 7 | Error: 1.0
+
+Class assignments:
+	c3: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	c2: ['DARKBLUE']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['WHITE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 8 | Error: 2.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': False, 'cooldown': 2, 'speed': 1.0, 'orientation': (-1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 9 | Error: 2.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': True, 'cooldown': 1, 'speed': 1.0, 'orientation': (-1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 10 | Error: 2.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': False, 'cooldown': 1, 'speed': 1.0, 'orientation': (-1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 11 | Error: 2.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': True, 'cooldown': 2, 'speed': 1.0, 'orientation': (-1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 12 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 2, 'stype': 'c2', 'fleeing': True}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 13 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 1, 'stype': 'c3', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 14 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 1, 'stype': 'c2', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 15 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 1, 'stype': 'c2', 'fleeing': True}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 16 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 2, 'stype': 'c3', 'fleeing': True}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 17 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 1, 'stype': 'c3', 'fleeing': True}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 18 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 2, 'stype': 'c2', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 19 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 2, 'stype': 'c3', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Experience replay complete.
+Theory: 0 | Error: 0.0
+Theory: 1 | Error: 0.0
+Theory: 2 | Error: 0.0
+Theory: 3 | Error: 0.0
+Theory: 4 | Error: 0.0
+Theory: 5 | Error: 0.0
+Theory: 6 | Error: 1.0
+Theory: 7 | Error: 1.0
+Theory: 8 | Error: 2.0
+Theory: 9 | Error: 2.0
+Theory: 10 | Error: 2.0
+Theory: 11 | Error: 2.0
+Theory: 12 | Error: 100.0
+Theory: 13 | Error: 100.0
+Theory: 14 | Error: 100.0
+Theory: 15 | Error: 100.0
+Theory: 16 | Error: 100.0
+Theory: 17 | Error: 100.0
+Theory: 18 | Error: 100.0
+Theory: 19 | Error: 100.0
+
+20 survived
+
+
+executed step in 5.86865997314 seconds
+
+>>> Step 2 of 3 <<<
+spriteInduction prep took 4.73305892944 seconds
+CANDIDATES
+['DARKBLUE', 'DARKGRAY']
+{'resource': defaultdict(<function <lambda> at 0x111592410>, {}), 'speed': {'DARKBLUE': (1, None), 'DARKGRAY': (1, None)}}
+new sprites []
+
+none
+evaluating 20 old theories and proposing new ones
+[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m
+[34m3[0m                              [34m3[0m
+[34m3[0m                              [34m3[0m
+[34m3[0m                              [34m3[0m
+[34m3[0m         [34m0[0m                    [34m3[0m
+[34m3[0m                              [34m3[0m
+[34m3[0m                              [34m3[0m
+[34m3[0m               [31mA[0m              [34m3[0m
+[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m
+
+evaluation complete. Now running experienceReplay on 20 theories
+Serial experience replay on 20 theories and 3 time-steps took 0.404819965363 seconds
+Theory: 0 | Error: 0.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': False, 'cooldown': 1, 'speed': 1.0, 'orientation': (1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 1 | Error: 0.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 1, 'stype': 'avatar', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 2 | Error: 0.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': True, 'cooldown': 1, 'speed': 1.0, 'orientation': (1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 3 | Error: 0.5
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': True, 'cooldown': 2, 'speed': 1.0, 'orientation': (1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 4 | Error: 0.5
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': False, 'cooldown': 2, 'speed': 1.0, 'orientation': (1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 5 | Error: 1.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.RandomNPC'>: {'cooldown': 1, 'speed': 1.0}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 6 | Error: 1.5
+
+Class assignments:
+	c3: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	c2: ['DARKBLUE']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['WHITE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 7 | Error: 2.5
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': False, 'cooldown': 2, 'speed': 1.0, 'orientation': (-1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 8 | Error: 2.5
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': True, 'cooldown': 2, 'speed': 1.0, 'orientation': (-1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 9 | Error: 3.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': True, 'cooldown': 1, 'speed': 1.0, 'orientation': (-1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 10 | Error: 3.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': False, 'cooldown': 1, 'speed': 1.0, 'orientation': (-1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 11 | Error: 50.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 2, 'stype': 'avatar', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 12 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 2, 'stype': 'c2', 'fleeing': True}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 13 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 1, 'stype': 'c3', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 14 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 1, 'stype': 'c2', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 15 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 1, 'stype': 'c2', 'fleeing': True}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 16 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 2, 'stype': 'c3', 'fleeing': True}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 17 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 1, 'stype': 'c3', 'fleeing': True}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 18 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 2, 'stype': 'c2', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 19 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 2, 'stype': 'c3', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Experience replay complete.
+Theory: 0 | Error: 0.0
+Theory: 1 | Error: 0.0
+Theory: 2 | Error: 0.0
+Theory: 3 | Error: 0.5
+Theory: 4 | Error: 0.5
+Theory: 5 | Error: 1.0
+Theory: 6 | Error: 1.5
+Theory: 7 | Error: 2.5
+Theory: 8 | Error: 2.5
+Theory: 9 | Error: 3.0
+Theory: 10 | Error: 3.0
+Theory: 11 | Error: 50.0
+Theory: 12 | Error: 100.0
+Theory: 13 | Error: 100.0
+Theory: 14 | Error: 100.0
+Theory: 15 | Error: 100.0
+Theory: 16 | Error: 100.0
+Theory: 17 | Error: 100.0
+Theory: 18 | Error: 100.0
+Theory: 19 | Error: 100.0
+
+20 survived
+
+
+executed step in 5.3037071228 seconds
+
+>>> Step 3 of 3 <<<
+spriteInduction prep took 4.61191320419 seconds
+CANDIDATES
+['DARKBLUE', 'DARKGRAY']
+{'resource': defaultdict(<function <lambda> at 0x111592578>, {}), 'speed': {'DARKBLUE': (1, None), 'DARKGRAY': (1, None)}}
+new sprites []
+
+none
+evaluating 20 old theories and proposing new ones
+[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m
+[34m3[0m                              [34m3[0m
+[34m3[0m                              [34m3[0m
+[34m3[0m                              [34m3[0m
+[34m3[0m          [34m0[0m                   [34m3[0m
+[34m3[0m                              [34m3[0m
+[34m3[0m                              [34m3[0m
+[34m3[0m               [31mA[0m              [34m3[0m
+[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m[34m3[0m
+
+evaluation complete. Now running experienceReplay on 20 theories
+Serial experience replay on 20 theories and 4 time-steps took 0.503422021866 seconds
+Theory: 0 | Error: 0.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': False, 'cooldown': 1, 'speed': 1.0, 'orientation': (1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 1 | Error: 0.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 1, 'stype': 'avatar', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 2 | Error: 0.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': True, 'cooldown': 1, 'speed': 1.0, 'orientation': (1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 3 | Error: 0.666666666667
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': True, 'cooldown': 2, 'speed': 1.0, 'orientation': (1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 4 | Error: 0.666666666667
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': False, 'cooldown': 2, 'speed': 1.0, 'orientation': (1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 5 | Error: 1.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.RandomNPC'>: {'cooldown': 1, 'speed': 1.0}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 6 | Error: 2.0
+
+Class assignments:
+	c3: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	c2: ['DARKBLUE']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['WHITE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 7 | Error: 3.33333333333
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': False, 'cooldown': 2, 'speed': 1.0, 'orientation': (-1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 8 | Error: 3.33333333333
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': True, 'cooldown': 2, 'speed': 1.0, 'orientation': (-1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 9 | Error: 4.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': True, 'cooldown': 1, 'speed': 1.0, 'orientation': (-1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 10 | Error: 4.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Missile'>: {'singleton': False, 'cooldown': 1, 'speed': 1.0, 'orientation': (-1, 0)}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 11 | Error: 66.6666666667
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 2, 'stype': 'avatar', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 12 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 2, 'stype': 'c2', 'fleeing': True}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 13 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 1, 'stype': 'c3', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 14 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 1, 'stype': 'c2', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 15 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 1, 'stype': 'c2', 'fleeing': True}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 16 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 2, 'stype': 'c3', 'fleeing': True}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 17 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 1, 'stype': 'c3', 'fleeing': True}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 18 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 2, 'stype': 'c2', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Theory: 19 | Error: 100.0
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.Chaser'>: {'cooldown': 2, 'stype': 'c3', 'fleeing': False}
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: None
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: None
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: None
+
+
+InteractionSet:
+_______
+Experience replay complete.
+Theory: 0 | Error: 0.0
+Theory: 1 | Error: 0.0
+Theory: 2 | Error: 0.0
+Theory: 3 | Error: 0.666666666667
+Theory: 4 | Error: 0.666666666667
+Theory: 5 | Error: 1.0
+Theory: 6 | Error: 2.0
+Theory: 7 | Error: 3.33333333333
+Theory: 8 | Error: 3.33333333333
+Theory: 9 | Error: 4.0
+Theory: 10 | Error: 4.0
+Theory: 11 | Error: 66.6666666667
+Theory: 12 | Error: 100.0
+Theory: 13 | Error: 100.0
+Theory: 14 | Error: 100.0
+Theory: 15 | Error: 100.0
+Theory: 16 | Error: 100.0
+Theory: 17 | Error: 100.0
+Theory: 18 | Error: 100.0
+Theory: 19 | Error: 100.0
+
+20 survived
+
+
+executed step in 5.63621687889 seconds
+
+3 time-steps took 17.7888348103 seconds
