@@ -1,5 +1,7 @@
-import multiprocessing
-from multiprocessing.pool import ThreadPool
+import dill
+import pathos.pools as pp
+import multiprocessing as mp
+# from multiprocessing.pool import ThreadPool
 from functools import partial
 import threading
 from util import *
@@ -38,8 +40,10 @@ AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, Aimed
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
-def picklecopy(obj):
-	return 
+dill.settings['recurse'] = True
+
+# PROCESS_POOL = pp.ProcessPool(2)
+mpp = mp.Pool(4)
 
 class errorMapEntry:
 	def __init__(self):
@@ -185,7 +189,6 @@ class Agent:
 			print "WARNING: Unmatched sprites in IDmatch -> truPenalty potentially flawed"
 			## this is called only when you're setting two environments. So by definition, the environments should
 			## be identical.
-			# embed()
 		if any( [m[2]!=0 for m in matched_sprites] ) == True:
 			#print "WARNING: Non-zero distance between matched sprites (in IDmatch)"
 			pass
@@ -241,9 +244,6 @@ class Agent:
 			penalty += dist*p_dist
 
 			## TODO: punish randomNPCs only if they have ventured out of possible range
-
-		#print ">>> in truPenalty"
-		#embed()
 
 		return penalty
 
@@ -373,8 +373,6 @@ class Agent:
 			# print "Now running experience replay on {} theories".format(len(newTheories))
 			penalties, cumulative_penalties, _ = experienceReplay(newTheories, self.rleHistory[-2:], self.actionHistory[-1:], 
 				self.symbolDict, self.best_params, method='all', targetClass = errorList[0].targetClass)
-
-			embed()
 
 			scoreAndTheoryTuples = zip(penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
@@ -846,42 +844,17 @@ class Agent:
 		embed()
 	def testEpisode(self, gameObject, epoch=0):
 		
-		# ### For Game A ###
-		# actions = \
-		# [32, 32, 32, 32, K_RIGHT, 32, K_RIGHT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_UP, 32, \
-		# K_UP, 32, K_DOWN, K_DOWN, 32, K_LEFT, K_LEFT, 32, K_LEFT, K_LEFT, 32, K_LEFT, 32, \
-		# K_LEFT, K_UP, 32, K_UP, 32, K_DOWN, 32, 32, K_UP, 32, K_RIGHT, 32, K_DOWN, K_RIGHT, \
-		# 32, K_RIGHT, K_RIGHT, 32, 32]
-		
-		### For Game B & C ###
-		# actions = \
-		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, 32, K_UP, 32, \
-		# K_DOWN, K_RIGHT, 32, 32, K_UP, K_UP, 32, 32, K_LEFT, K_DOWN, K_LEFT, K_LEFT, K_LEFT, \
-		# K_LEFT, K_LEFT, K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_LEFT, K_LEFT, 32]
-
-		# ### For Game C
-		# actions = \
-		# [32, 32, 32, 32, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_RIGHT, K_RIGHT, 32, K_RIGHT, K_UP, \
-		# K_UP, 32, 32, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, 32, 32]
-
-		# actions = [0,0,0,0,0, K_RIGHT, K_RIGHT,0,0,0,0,0,0,0,0,0,0,0]
-		# actions = [0,0,0,0,0,0,0,0,0,0,0]
-		# actions = [K_RIGHT, K_LEFT, K_LEFT, K_UP, K_DOWN]
-		# actions = [K_RIGHT,K_UP,K_SPACE, 0, 0, 0]
-		# actions = [K_SPACE, 0, K_SPACE]
-		# actions = [0, 0, 0, 0, 0, 0]
-		# actions = [32, 0, 0]
 		actions = [0]*10
 
 		self.initializeEnvironment()
 		
-		# self.memory = self.buildTracker()
+		self.memory = self.buildTracker()
 		# embed()
 
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
 		print "initializing RLE. Epoch={}".format(epoch)
-		num_cores = multiprocessing.cpu_count()
+		num_cores = mp.cpu_count()
 		print "num cores: {}".format(num_cores) 
 		if num_cores<40:
 			print "WARNING: running on < 40 cores."
@@ -1541,6 +1514,27 @@ class Agent:
 		newRle._game.getAvatars()[0].resources = ccopy(rle._game.getAvatars()[0].resources)
 		return newRle
 
+	def ultrafastcopy(self, rle):
+
+		newRle = self.initializeRLEFromGame()
+
+		for k in newRle._game.__dict__.keys():
+			newRle._game.k = None
+
+		newRle._obstypes = ccopy(rle._obstypes)
+ 		if hasattr(rle, '_gravepoints'):
+			newRle._gravepoints = ccopy(rle._gravepoints)
+		newRle._game.sprite_groups = ccopy(rle._game.sprite_groups)
+		newRle._game.kill_list = ccopy(rle._game.kill_list)
+		newRle._game.lastcollisions = ccopy(rle._game.lastcollisions)
+		newRle._game.time = ccopy(rle._game.time)
+		newRle._game.score = ccopy(rle._game.score)
+		newRle._game.keystate = ccopy(rle._game.keystate)
+
+		newRle.symbolDict = ccopy(rle.symbolDict)
+		newRle._game.getAvatars()[0].resources = ccopy(rle._game.getAvatars()[0].resources)
+		return newRle
+
 	def executeStepProfiler(self, action, hypotheses, theoryRLEs, lastStep=False):
 		lp = LineProfiler()
 		lp_wrapper = lp(self.executeStep)
@@ -1596,7 +1590,7 @@ class Agent:
 		self.actionHistory.append(action)
 		self.rle.step(action)
 
-		# newMemory = self.processFrame(self.memory, self.rle._game)
+		newMemory = self.processFrame(self.memory, self.rle._game)
 		# embed()
 		agentState = self.resourceManagement(pre_step=False)
 		envReal = self.fastcopy(self.rle)
@@ -1605,7 +1599,8 @@ class Agent:
 		hypotheses = self.manageNewObjects(hypotheses, envRealPrev, action, learnAvatar=self.learnAvatar)
 
 
-		self.rleHistory.append(envReal)
+		historyRLE = self.ultrafastcopy(self.rle)
+		self.rleHistory.append(historyRLE)
 		
 		#OBJECT TRACKING
 		resourceObservations, new_sprites = self.getObservations(agentState, envReal, envRealPrev)
@@ -1792,8 +1787,6 @@ class Agent:
 				cumulative_penalties.append(penalties)
 
 		cumulative_penalties = np.array(cumulative_penalties)
-		# print ">>> Embedded in testSteps"
-		# embed()
 		return np.mean(cumulative_penalties, axis=0)
 
 	def randomizeState(self, rle):
@@ -1829,9 +1822,6 @@ class Agent:
 		cumulative_penalties = np.array(cumulative_penalties)
 		cumulative_penalties = list(np.mean(cumulative_penalties, axis=0))
 		scoreAndTheoryTuples = zip(cumulative_penalties, hypotheses)
-		#scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
-		# print ">>> Embeeded in testHypotheses"
-		# embed()
 		return scoreAndTheoryTuples
 
 	def plotScores(self, save=False, savename='0-vgdl_score_plot'):
@@ -1882,9 +1872,6 @@ class Agent:
 		# Benchmark - best
 		ax1.plot( range(1,N+1), [ min(benchmarks[i]) for i in range(N) ], c=c[1], label=r"Benchmark score" )
 		ax1.plot( range(1,N+1), [ min(benchmarks[i]) for i in range(N) ], '.', ms=7, c=c[1] )
-
-		# print ">>> Embedded in plot"
-		# embed()
 
 		# Plot cosmetics
 		ax1.set_xlabel('Step'), ax1.set_ylabel('Score')
@@ -1939,13 +1926,11 @@ def setSpritePositions(rle, Vrle, hypothesis, best_params, useHypothesis=True):
 
 						except KeyError:
 							print "Failed to get params for Missile in main_agent"
-							# embed()
 							pass
 				# else:
 					# print "setting sprite positions"
 					# if hasattr(matchingSprite, 'orientation'):
 						# sprite.orientation = matchingSprite.orientation
-					# embed()
 	return
 
 
@@ -1986,7 +1971,6 @@ def initializeVrle(hypothesis, stateToSet, symbolDict, best_params, debug=False)
 
 	## TODO: imaginary state should not match real state; it should match the inferred state of that particular object.
 	avatar = Vrle._game.getAvatars()[0]
-	# embed()
 	matchingSprite = [s for s in getSpritesByColor(stateToSet._game, avatar.colorName) if s.rect==avatar.rect][0]
 	# Vrle._game.getAvatars()[0].lastmove = ccopy(matchingSprite.lastmove)
 
@@ -2074,12 +2058,10 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 		e.targetClass = None
 		errorMap.append(e)
 		total_penalty = 1e6
-		# embed()
 		return total_penalty, errorMap
 
 	# Match sprites in environments and get sprites that couldn't be matched
 	matched_sprites, lonely_sprites_envA, lonely_sprites_envB = matchEnvs(envA, envB)
-	# embed()
 	if targetClass:
 		try:
 			matched_sprites = [m for m in matched_sprites if m[0].name==targetClass]
@@ -2139,8 +2121,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 			# mindist_rNPC = min(dist_rNPC)
 			# total_penalty += p_speed*mindist_rNPC #penalize speed separately to discourage keeping around too many similar theories
 			
-			# if sA.colorName=='PURPLE':
-			# 	embed() 
 			total_penalty += p_speed*min(dist,1.)
 		elif 'Missile' in str(sA_type):
 			total_penalty += p_speed*t[2] #penalize speed separately to discourage keeping around too many similar theories
@@ -2233,8 +2213,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 	for iA,sA in enumerate(lonely_sprites_envA):
 		for iB,sB in enumerate(appeared_sprites_envB):
 			if manhattanDist2(sA, sB)<=2:
-				#print "Embedded in transformation handling"
-				#embed()
 				e = errorMapEntry()
 				e.diagnosis.append('transformation')
 				e.targetToken = sA
@@ -2384,8 +2362,6 @@ def find_sPrev(sB, envB, envPrev):
 	dist_ts = [matched_ts[i][2] for i in range(len(matched_ts)) if matched_ts[i][0]==sB] #distance that sB has moved over timestep
 	sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0]==sB] #sB in previous step
 	if sPrev == []:
-		# print "no sPrev"
-		# embed()
 		sPrev = None
 		dist_ts = None
 	else:
@@ -2548,7 +2524,13 @@ def matchEnvs(envA, envB, debug=False):
 						break
 
 	return matched_sprites, lonely_sprites_envA, lonely_sprites_envB
-### Experience replay ###
+
+
+
+########################################################################
+######## EXPERIENCE REPLAY 										########
+########################################################################
+
 
 def subSampleStates(subsamplePercentage, actionsPerIndex, rleHistory):
 	## Returns a random subsample of inidces in the rleHistory to test,
@@ -2576,7 +2558,6 @@ def experienceReplayProfiler(hypotheses, rleHistory, actionHistory, symbolDict, 
 	lp.print_stats()
 	return mean_penalties, cumulative_penalties
 
-
 def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, best_params, method='all', targetClass=None, displayStates=False, displayTheories=False):
 	# print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
 
@@ -2588,7 +2569,28 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, best_par
 			h.display()
 		results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetClass, displayStates, [h], symbolDict, best_params))
 
+
 	print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
+
+
+
+
+	# # import time
+	# # import dill
+	# # dill.stettings['recurse'] = True
+	# t1 = time.time()
+	# dill.loads(dill.dumps(hypotheses))
+	# print "{} hypotheses took {} seconds.".format(len(hypotheses), time.time()-t1)
+
+	# t1 = time.time()
+	# dill.loads(dill.dumps(rleHistory))
+	# print "rleHistory of len {} took {} seconds.".format(len(rleHistory), time.time()-t1)
+	
+	# t1 = time.time()
+	# dill.loads(dill.dumps(symbolDict))
+	# print "symbolDict took {} seconds.".format(time.time()-t1)
+	
+
 
 	# t1 = time.time()
 	# numHypotheses = len(hypotheses)
@@ -2602,15 +2604,30 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, best_par
 	# 	[[h] for h in hypotheses],
 	# 	[symbolDict] * numHypotheses,
 	# 	[best_params] * numHypotheses,
-	# 	chunksize=50
+	# 	chunksize=2
 	# )
-	# print "Parallel experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
+
+
+	# t1 = time.time()
+
+	# mpp.map(singleTheoryExperienceReplay, [[rleHistory, actionHistory, method, targetClass, displayStates, [h], symbolDict, best_params] for h in hypotheses])
 	
+
+	# results = PROCESS_POOL.map(
+	# foo,
+	# [5] * numHypotheses,
+	# chunksize=2)
+
+
+	# print "Parallel experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
+
 	mean_penalties = [r[0][0] for r in results]
 	cumulative_penalties = [r[1][0][0] for r in results]
 	theoryRLEs = [r[2][0] for r in results]
 
 	return mean_penalties, cumulative_penalties, theoryRLEs
+
+
 
 def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetClass, displayStates, hypotheses, symbolDict, best_params):
 
@@ -2640,13 +2657,6 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetClass,
 		## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
 		t1 = time.time()
 		theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], symbolDict, best_params) 
-		# ID_dictlist = []
-		# for tR in theoryRLEs:
-		# 	match, warning = self.IDmatch(tR, rleHistory[idx])
-		# 	if warning:
-		# 		print "ID match gave a warning. Environments should have all same objects but they don't."
-		# 		embed()
-			# ID_dictlist.append( match ) 
 
 		## Take a predetermined number of actions starting from idx
 		end = min(idx+actionsPerIndex, len(actionHistory))
@@ -2664,15 +2674,6 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetClass,
 				print rleHistory[idx+n+1].show(color='green')
 			for num, env in enumerate(theoryRLEs):                      
 
-				# if 'Chaser' in str(hypotheses[num].spriteObjects['YELLOW'].vgdlType):
-				#   print hypotheses[num].spriteObjects['YELLOW'].args
-				#   print "action num", n
-				#   # print "penalty", penalty
-				#   print "true pos", rleHistory[idx+n]._rect2pos(rleHistory[idx+n]._game.sprite_groups['dough'][0].rect)
-				#   print "hyp pos", env._rect2pos(env._game.sprite_groups[hypotheses[num].spriteObjects['YELLOW'].className][0].rect)
-				#   print rleHistory[idx+n].show(color='green')
-				#   print env.show()
-				#   embed()
 				if env is not None:
 					env.step(action)
 				try:
@@ -2680,35 +2681,25 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetClass,
 						rleHistory[idx+n], targetClass=targetClass, penalty_only=True)
 					penalties.append(penalty)
 
-				# if penalty and 'Chaser' in str(hypotheses[num].spriteObjects['YELLOW'].vgdlType):
-				#   print hypotheses[num].spriteObjects['YELLOW'].args
-				#   print "action num", n
-				#   # print "penalty", penalty
-				#   print "true pos", rleHistory[idx+n+1]._rect2pos(rleHistory[idx+n+1]._game.sprite_groups['dough'][0].rect)
-				#   print "hyp pos", env._rect2pos(env._game.sprite_groups[hypotheses[num].spriteObjects['YELLOW'].className][0].rect)
-				#   print rleHistory[idx+n+1].show(color='green')
-				#   print env.show()
-				#   embed()
 				except:
 					print "in experienceReplay"
 					embed()
-				# if displayStates:
-				# 	print penalty
-				# 	print env.show(color='blue')
+				if displayStates:
+					print penalty
+					print env.show(color='blue')
 				
 			cumulative_penalties.append(penalties)
 	
 	if not cumulative_penalties:
 		print "Warning: did not run experience replay."
-		# embed()
 		cumulative_penalties = [[0]*len(hypotheses)]
 
 	cumulative_penalties = np.array(cumulative_penalties)
 	mean_penalties = np.mean(cumulative_penalties, axis=0)
 	return mean_penalties, cumulative_penalties, theoryRLEs
 
-import pathos.pools as pp
-PROCESS_POOL = pp.ProcessPool(4)
+
+
 
 if __name__ == "__main__":
 
