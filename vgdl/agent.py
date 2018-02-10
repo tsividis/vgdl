@@ -791,7 +791,7 @@ class Agent:
 
 	def testTracker(self, gameObject):
 	
-		actions = [K_LEFT,K_RIGHT, K_RIGHT,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,K_LEFT]#[K_LEFT, K_LEFT]	
+		actions = [K_RIGHT,K_LEFT]#,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,K_LEFT]#[K_LEFT, K_LEFT]	
 
 		self.initializeEnvironment()
 
@@ -844,8 +844,8 @@ class Agent:
 		embed()
 	def testEpisode(self, gameObject, epoch=0):
 		
-		actions = [0]*10
-
+		# actions = [K_RIGHT, K_LEFT, K_LEFT]
+		actions = [0]*3
 		self.initializeEnvironment()
 		
 		self.memory = self.buildTracker()
@@ -1591,7 +1591,7 @@ class Agent:
 		self.rle.step(action)
 
 		newMemory = self.processFrame(self.memory, self.rle._game)
-		# embed()
+		embed()
 		agentState = self.resourceManagement(pre_step=False)
 		envReal = self.fastcopy(self.rle)
 
