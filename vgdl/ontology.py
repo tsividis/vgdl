@@ -573,55 +573,6 @@ class AStarChaser(VGDLSprite): ##
     next_move = None
     last_move = None
 
-    # def _movesToward(self, game, target):
-    #     print target
-    #     """ Find the canonical direction(s) which move toward
-    #         the target. """
-    #     res = []
-    #     basedist = self.physics.distance(self.rect, target.rect)
-    #     for a in BASEDIRS:
-    #         r = self.rect.copy()
-    #         r = r.move(a)
-    #         newdist = self.physics.distance(r, target.rect)
-    #         if self.fleeing and basedist < newdist:
-    #             res.append(a)
-    #         if not self.fleeing and basedist > newdist:
-    #             res.append(a)
-    #     return res
-
-    # def _draw(self, game):
-    #     """ With a triangle that shows the orientation. """
-    #     RandomNPC._draw(self, game)
-
-    #     if self.walkableTiles:
-    #         col = pygame.Color(0, 0, 255, 100)
-    #         for sprite in self.walkableTiles:
-    #             pygame.draw.rect(game.screen, col, sprite.rect)
-
-    #     if self.neighborNodes:
-    #         #logToFile("len(neighborNodes)=%s" %len(self.neighborNodes))
-    #         col = pygame.Color(0, 255, 255, 80)
-    #         for node in self.neighborNodes:
-    #             pygame.draw.rect(game.screen, col, node.sprite.rect)
-
-    #     if self.drawpath:
-    #         col = pygame.Color(0, 255, 0, 120)
-    #         for sprite in self.drawpath[1:-1]:
-    #             pygame.draw.rect(game.screen, col, sprite.rect)
-
-    # def _setDebugVariables(self, world, path):
-    #     '''
-    #         Sets the variables required for debug drawing of the paths
-    #         resulting from the A-Star search.
-    #         '''
-
-    #     path_sprites = [node.sprite for node in path]
-
-    #     self.walkableTiles = world.get_walkable_tiles()
-    #     self.neighborNodes = world.neighbor_nodes_of_sprite(self)
-    #     self.drawpath = path_sprites
-
-
     def update(self, game):
         VGDLSprite.update(self, game)
         world = AStarWorld(game)
@@ -1594,7 +1545,6 @@ def conveySprite(sprite, partner, game):
     sprite.speed_bonus = [v[0]*partner.strength,v[1]*partner.strength]
     sprite.lastrect = tmp
     game._updateCollisionDict(sprite)
-    # return ('conveySprite', colorDict[str(sprite.color)], colorDict[str(partner.color)])
     return ('conveySprite', sprite.ID, partner.ID)
 
 def windGust(sprite, partner, game):
@@ -1607,7 +1557,6 @@ def windGust(sprite, partner, game):
         sprite.physics.activeMovement(sprite, v, speed=s)
         sprite.lastrect = tmp
         game._updateCollisionDict(sprite)
-        # return ("windGust", colorDict[str(sprite.color)], colorDict[str(partner.color)])
         return ('windGust', sprite.ID, partner.ID)
 
 def slipForward(sprite, partner, game, prob=0.5):
@@ -1618,14 +1567,12 @@ def slipForward(sprite, partner, game, prob=0.5):
         sprite.physics.activeMovement(sprite, v, speed=1)
         sprite.lastrect = tmp
         game._updateCollisionDict(sprite)
-        # return ("slipForward" , colorDict[str(sprite.color)], colorDict[str(partner.color)])
         return ('slipForward', sprite.ID, partner.ID)
 
 def attractGaze(sprite, partner, game, prob=0.5):
     """ Turn the orientation to the value given by the partner. """
     if prob > random.random():
         sprite.orientation = partner.orientation
-        # return ("attractGaze" , colorDict[str(sprite.color)], colorDict[str(partner.color)])
         return ('attractGaze', sprite.ID, partner.ID)
 
 def turnAround(sprite, partner, game):
@@ -1644,9 +1591,6 @@ def turnAround(sprite, partner, game):
 def turn(sprite, partner, game):
     sprite.rect = sprite.lastrect
     sprite.lastmove = sprite.cooldown -1 ## Needed because updatePos looks for lastmove+1%cooldown==0
-    # sprite.physics.activeMovement(sprite, DOWN)
-    # sprite.lastmove = sprite.cooldown
-    # sprite.physics.activeMovement(sprite, DOWN)
     reverseDirection(sprite, partner, game)
     game._updateCollisionDict(sprite)
     if partner == None:
@@ -1719,8 +1663,6 @@ def wallBounce(sprite, partner, game, friction=0): # FLAG
         sprite.orientation = (-sprite.orientation[0], sprite.orientation[1])
     else:
         sprite.orientation = (sprite.orientation[0], -sprite.orientation[1])
-    # return ('wallBounce', colorDict[str(partner.color)], colorDict[str(sprite.color)])
-    ## TODO: Not printing for now
     return ('wallBounce', sprite.ID, partner.ID)
 
 def wallStop(sprite, partner, game, friction=0): # FLAG
@@ -1748,8 +1690,6 @@ def killIfSlow(sprite, partner, game, limitspeed=1):
                              sprite._velocity()[1] - partner._velocity()[1]))
     if relspeed < limitspeed:
         return killSprite(sprite, partner, game)
-        # return ('killIfSlow' , sprite.ID, partner.ID)
-
 
 def killIfFromAbove(sprite, partner, game):
     """ Kills the sprite, only if the other one is higher and moving down. """
@@ -1758,24 +1698,19 @@ def killIfFromAbove(sprite, partner, game):
 
         game.kill_list.append(sprite)
         if not None in {sprite, partner}:
-         # sprite_info = colorDict[str(sprite.color)]
             return ('killIfFromAbove', sprite.ID, partner.ID)
 
 def killIfAlive(sprite, partner, game):
     """ Perform the killing action, only if no previous collision effect has removed the partner. """
     if partner not in game.kill_list:
         return killSprite(sprite, partner, game)
-        # return ('killIfAlive' , sprite.ID, partner.ID)
 
 def collectResource(sprite, partner, game): # FLAG
     """ Adds/increments the resource type of sprite in partner """
     assert isinstance(sprite, Resource)
     r = sprite.resourceType
     partner.resources[r] = max(-1, min(partner.resources[r]+sprite.value, game.resources_limits[r]))
-    # game.kill_list.append(sprite)
     killSprite(sprite, partner, game)
-    #print 'Collected ', colorDict[str(sprite.color)]#partner.resources[r]
-    # return ('collectResource', colorDict[str(partner.color)], colorDict[str(sprite.color)])
     return ('collectResource' , sprite.ID, partner.ID)
 
 def changeResource(sprite, partner, resourceColor, game, resource, value=1, limit=None):
@@ -1784,7 +1719,6 @@ def changeResource(sprite, partner, resourceColor, game, resource, value=1, limi
     sprite.resources[resource] = max(-1, min(sprite.resources[resource]+value, game.resources_limits[resource]))
     # NOTE: partner is the color of the resource (see _eventHandling() in core.py)
     args = {'resource':resource, 'value':value, 'limit':game.resources_limits[resource]}
-    # print args
     return ('changeResource', sprite.ID, partner.ID, args)
 
 def changeScore(sprite, partner, game, value):
@@ -1805,27 +1739,22 @@ def killIfHasMore(sprite, partner, game, resource, limit=1):
     """ If 'sprite' has more than a limit of the resource type given, it dies. """
     if sprite.resources[resource] >= limit:
         return killSprite(sprite, partner, game)
-        # return ('killIfHasMore' , sprite.ID, partner.ID)
 
 def killIfOtherHasMore(sprite, partner, game, resource, limit=1):
     """ If 'partner' has more than a limit of the resource type given, sprite dies. """
-    #embed()
     if partner.resources[resource] >= limit:
         return killSprite(sprite, partner, game)
-        # return ('killIfOtherHasMore' , sprite.ID, partner.ID)
 
 def killIfHasLess(sprite, partner, game, resource, limit=1):
     """ If 'sprite' has less than a limit of the resource type given, it dies. """
     # print sprite.resources[resource], limit
     if sprite.resources[resource] <= limit:
         return killSprite(sprite, partner, game)
-        # return ('killIfHasLess' , sprite.ID, partner.ID)
 
 def killIfOtherHasLess(sprite, partner, game, resource, limit=1):
     """ If 'partner' has less than a limit of the resource type given, sprite dies. """
     if partner.resources[resource] <= limit:
         return killSprite(sprite, partner, game)
-        # return ('killIfOtherHasLess' , sprite.ID, partner.ID)
 
 def wrapAround(sprite, partner, game, offset=0):
     """ Move to the edge of the screen in the direction the sprite is coming from.
@@ -1840,7 +1769,6 @@ def wrapAround(sprite, partner, game, offset=0):
         sprite.rect.top = game.screensize[1] - sprite.rect.size[1] * (1 + offset)
     sprite.lastmove = 0
     args = {'offset':offset}
-    # print ('wrapAround', sprite.colorName, partner.colorName, args)
     return ('wrapAround', sprite.ID, partner.ID, args)
 
 def pullWithIt(sprite, partner, game):
@@ -1999,6 +1927,14 @@ def getTimeOut(params):
 
 def getSpritesByColor(game, color):
     unflattened = [s for s in game.sprite_groups.values() if s and s[0].colorName==color]
+    return [item for sublist in unflattened for item in sublist]
+
+def getObservedSpritesByColor(game, color):
+    try:
+        unflattened = [s for s in game.observation['trackedObjects'].values() if s and s[0].colorName==color]
+    except:
+        print "in getObservedSpritesByColor"
+        embed()
     return [item for sublist in unflattened for item in sublist]
 
 def chaserClosestTargets(sprite, game):
@@ -2688,18 +2624,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         else:
             best_param = max(param_product, key=param_product.get)
         
-
         best_params[obj_type] = best_param
-
-        ## Use for debugging sprite-type inference.
-        # if obj_type=='GOLD':
-        #     goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='GOLD']
-        #     print [g.rect for g in goldobjs[0]]
-        #     for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
-        #         print(k, param_product[k])
-        #         if i>10:
-        #             break
-        #     print ""
 
         sprite_type = best_param[0][1]
 
@@ -2709,30 +2634,29 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             from ontology import ResourcePack
             sprite_type = ResourcePack
 
-        s = Sprite(vgdlType=sprite_type, color=color)
+        s = Sprite(vgdlType=sprite_type, colorName=color)
 
         if mode=='random':
             param = dict(best_param[1:])
             setSpriteParams(param, s)
         elif mode=='default':
-            # embed()
             s.vgdlType = ResourcePack            
         else:
             ## Find matching object in the existing hypothesis
             try:
                 if oldSpriteSet:
-                    if s.color in [sprite.color for sprite in oldSpriteSet]:
-                        matchingSprite = [sprite for sprite in oldSpriteSet if s.color==sprite.color][0]
+                    if s.colorName in [sprite.colorName for sprite in oldSpriteSet]:
+                        matchingSprite = [sprite for sprite in oldSpriteSet if s.colorName==sprite.colorName][0]
                         # If types are different, distributionsHaveChanged is true
                         if s.vgdlType!=matchingSprite.vgdlType:
                             distributionsHaveChanged = True
-                            print ("Distributions for {} have changed from sprite type {} to {}".format(s.color, matchingSprite.vgdlType, s.vgdlType))
+                            print ("Distributions for {} have changed from sprite type {} to {}".format(s.colorName, matchingSprite.vgdlType, s.vgdlType))
                         # If one of the args is None but not the other,
                         # distributionsHaveChanged is true
                         elif ((s.args==None and matchingSprite.args!=None) or
                             (s.args!=None and matchingSprite.args==None)):
                             distributionsHaveChanged = True
-                            print ("Distribution args for {} have changed from {} to {}".format(s.color, s.args, matchingSprite.args))
+                            print ("Distribution args for {} have changed from {} to {}".format(s.colorName, s.args, matchingSprite.args))
                         elif (s.args and matchingSprite.args) != None:
                             # If args are different, except for the case where only an
                             # orientation is reversed (e.g. turnAround), then
@@ -2743,17 +2667,15 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                                         in ([LEFT, RIGHT] or [UP, DOWN])):
                                         if s.args[key] != matchingSprite.args[key]:
                                             distributionsHaveChanged = True
-                                        print ("Distribution args for {} have changed from {} to {}".format(s.color, s.args, matchingSprite.args))
+                                        print ("Distribution args for {} have changed from {} to {}".format(s.colorName, s.args, matchingSprite.args))
                                 except KeyError:
                                     # If the new sprite has an arg that the old one
                                     # doesn't, or vice-versa, then
                                     # distributionsHaveChanged is true
                                     distributionsHaveChanged = True
-                                    print ("Distribution args for {} have changed from {} to {}".format(s.color, s.args, matchingSprite.args))
+                                    print ("Distribution args for {} have changed from {} to {}".format(s.colorName, s.args, matchingSprite.args))
 
                     else:
-                        # print s.color, oldSpriteSet
-                        # embed()
                         distributionsHaveChanged = True
             except:
                 print "failed to find matching object in sampleFromDistribution"
@@ -2985,16 +2907,6 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
     ## Reset ignoreList so that next time around you do inference.
     game.ignoreList = []
     return distributionsHaveChanged
-
-# def getSpritesByColor(game, color):
-#     outList = []
-#     for k in game.sprite_groups.keys():
-#         if game.sprite_groups[k] and game.sprite_groups[k][0].colorName==color:
-#             outList.extend(game.sprite_groups[k])
-#     if outList:
-#         return list(set(outList))
-#     else:
-#         return []
 
 def softmax(w, t = 1.0):
     e = np.exp(np.array(w) / t)

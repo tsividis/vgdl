@@ -24,6 +24,7 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from termcolor import colored
 import cPickle
 from line_profiler import LineProfiler
+from stateobsnonstatic import processFrame
 
 
 OBSERVATION_LOCAL = 'local'
@@ -422,6 +423,8 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
             reward = dScore
         for k in self._game.keystate:
             self._game.keystate[k] = False
+
+        self._game.observation = processFrame(self._game.observation, self._game)
         return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
 
 ## the game in the agent's 'head'

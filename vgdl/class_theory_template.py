@@ -21,20 +21,20 @@ class Sprite(object):
     """
     TODO: Incorporate properties into theory induction loop.
     """
-    def __init__(self, vgdlType, color, className=None, args=None):
+    def __init__(self, vgdlType, colorName, className=None, args=None):
         self.vgdlType = vgdlType
-        self.color = color
+        self.colorName= colorName
         self.className = className
         self.args = args
 
     # TODO: Should enforce proper syntax for properties
     def display(self):
-        print (self.vgdlType, self.color, self.className, self.args)
+        print (self.vgdlType, self.colorName, self.className, self.args)
 
     def __eq__(self, other):
         return all([
             self.vgdlType==other.vgdlType,
-            self.color==other.color,
+            self.colorName==other.colorName,
             self.className==other.className,
             self.args==other.args
             ])
@@ -135,9 +135,10 @@ class SpriteParser(object):
 
                     try:
 
-                        color = str(s.color)
-                        if color in colorDict:
-                            color = colorDict[color]
+                        # color = str(s.color)
+                        # if color in colorDict:
+                        #     color = colorDict[color]
+                        color = s.colorName
 
                         if isResourceType:
                             self.sprite_types[key] = Sprite(s, color, args_without_color)

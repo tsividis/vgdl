@@ -317,7 +317,7 @@ class Theory(object):
 			print "You must provide either a vgdlSpriteParse or the result of having performed sprite induction."
 			return
 		if vgdlSpriteParse:
-			self.spriteSet = [s for s in vgdlSpriteParse if s.color is not None]
+			self.spriteSet = [s for s in vgdlSpriteParse if s.colorName is not None]
 		if spriteInductionResult:
 			self.spriteSet = spriteInductionResult
 
@@ -328,7 +328,7 @@ class Theory(object):
 
 		# Get mapping from sprite color to Sprite object
 		for s in self.spriteSet:
-			self.spriteObjects[s.color] = s
+			self.spriteObjects[s.colorName] = s
 		# embed()
 
 	def reconcileInteractionsAndSprites(self):
@@ -338,11 +338,11 @@ class Theory(object):
 		for interactionRule in self.interactionSet:
 			if 'teleportToExit' in interactionRule.interaction:
 				# embed()
-				color = self.classes[interactionRule.slot2][0].color
+				color = self.classes[interactionRule.slot2][0].colorName
 				self.classes[interactionRule.slot2][0].args = ccopy(interactionRule.args)
 				self.spriteObjects[color].args = ccopy(interactionRule.args)
 				for s in self.spriteSet:
-					if s.color==color:
+					if s.colorName==color:
 						s.args = ccopy(interactionRule.args)
 				interactionRule.args = {}
 
@@ -465,7 +465,7 @@ class Theory(object):
 	def colorToClassMapper(self,color):
 		for c in self.classes:
 			for c_class in self.classes[c]:
-				if c_class.color == color:
+				if c_class.colorName == color:
 					return c
 
 		raise Exception("No corresponding class found for color")
@@ -474,8 +474,8 @@ class Theory(object):
 		classGameState = {k: 0 for k in self.classes.keys()}
 		for c in self.classes:
 			for s in self.classes[c]:
-				if s.color in gameState:
-					classGameState[c] += len(gameState[s.color])
+				if s.colorName in gameState:
+					classGameState[c] += len(gameState[s.colorName])
 
 		return classGameState
 
@@ -547,7 +547,7 @@ class Theory(object):
 
 		# Add new generic rules for the avatar with preconditions
 		newInteractionRules = []
-		nonAvatars = [o for o in self.spriteSet if o.vgdlType not in AvatarTypes and o.color!='ENDOFSCREEN']
+		nonAvatars = [o for o in self.spriteSet if o.vgdlType not in AvatarTypes and o.colorName!='ENDOFSCREEN']
 		for o in nonAvatars:
 			rule = InteractionRule('killSprite', o.className, 'avatar', {}, set([new_precond]), generic=True)
 			newInteractionRules.append(rule)
@@ -1035,7 +1035,7 @@ class Theory(object):
 
 
 		if rle and not rle._isDone()[0]:
-			knownColors = [sprite[0].color for sprite in self.classes.values()]
+			knownColors = [sprite[0].colorName for sprite in self.classes.values()]
 			presentColors = [rle._game.sprite_groups[o][0].colorName for o in rle._game.sprite_groups
 							 if (len(rle._game.sprite_groups[o]) >
 							 	len([dead_sprite for dead_sprite in rle._game.kill_list if dead_sprite.name==o])) and
@@ -1485,7 +1485,7 @@ class Theory(object):
 
 	def getClassFromColor(self, color):
 		for c in self.classes:
-			if color in [cl.color for cl in self.classes[c]]:
+			if color in [cl.colorName for cl in self.classes[c]]:
 				return c
 		return False
 
@@ -1500,9 +1500,9 @@ class Theory(object):
 		print ""
 		print "Class assignments:"
 		for c in self.classes:
-			class_list = [cl.color for cl in self.classes[c]]
-			print "\t{}: {}: {}: {}".format(c, class_list, self.spriteObjects[cl.color].vgdlType, \
-				self.spriteObjects[cl.color].args)
+			class_list = [cl.colorName for cl in self.classes[c]]
+			print "\t{}: {}: {}: {}".format(c, class_list, self.spriteObjects[cl.colorName].vgdlType, \
+				self.spriteObjects[cl.colorName].args)
 		print
 
 	def displayTerminationSet(self):
@@ -1848,9 +1848,9 @@ class Game(object):
 
 		# Assign class names
 		avatars = [o for o in T.spriteSet if o.vgdlType in AvatarTypes]
-		nonAvatars = [o for o in T.spriteSet if o.vgdlType not in AvatarTypes and o.color!='ENDOFSCREEN']
+		nonAvatars = [o for o in T.spriteSet if o.vgdlType not in AvatarTypes and o.colorName!='ENDOFSCREEN']
 		allSprites = avatars+nonAvatars
-		eos = [o for o in T.spriteSet if o.color=='ENDOFSCREEN'][0]
+		eos = [o for o in T.spriteSet if o.colorName=='ENDOFSCREEN'][0]
 
 		if not learnAvatar:
 			avatar.className = 'avatar'
@@ -1872,7 +1872,7 @@ class Game(object):
 				T.classes[nonAvatars[i].className] = [nonAvatars[i]]
 		else:
 			for i in range(len(allSprites)):
-				# if allSprites[i].color=='DARKBLUE':
+				# if allSprites[i].colorName=='DARKBLUE':
 					# allSprites[i].className = 'avatar'
 				# else:
 				allSprites[i].className = 'c'+str(i+2)
@@ -1908,18 +1908,18 @@ class Game(object):
 	def addNewObjectsToTheory(self, theory, spriteSample):
 		# Get the important objects in the theory names
 		avatar = [o for o in theory.spriteSet if o.vgdlType in AvatarTypes][0]
-		nonAvatars = [o for o in theory.spriteSet if o.vgdlType not in AvatarTypes and o.color!='ENDOFSCREEN']
-		eos = [o for o in theory.spriteSet if o.color=='ENDOFSCREEN'][0]
+		nonAvatars = [o for o in theory.spriteSet if o.vgdlType not in AvatarTypes and o.colorName!='ENDOFSCREEN']
+		eos = [o for o in theory.spriteSet if o.colorName=='ENDOFSCREEN'][0]
 
 		i = len(theory.classes)
-		knownColors = [item.color for sublist in theory.classes.values() for item in sublist]
+		knownColors = [item.colorName for sublist in theory.classes.values() for item in sublist]
 		for s in spriteSample:
 			## If it's a sprite that's not in our theory, add it to the theory's classes
 			## And intiialize all the generic rules.
-			if s.color not in knownColors:
+			if s.colorName not in knownColors:
 				s.className = 'c'+str(i)
 				theory.classes[s.className] = [s]
-				theory.spriteObjects[s.color] = s
+				theory.spriteObjects[s.colorName] = s
 				theory.spriteSet.append(s)
 				rule = InteractionRule('killSprite', s.className, avatar.className, {}, set(), generic=True)
 				theory.interactionSet.append(rule)
@@ -1933,10 +1933,10 @@ class Game(object):
 				i+=1
 			else:
 				## Since we're taking care of sprite property inference separately, update sprite info in the theory every time
-				matchingSprite = [sprite for sprite in theory.spriteSet if sprite.color==s.color][0]
+				matchingSprite = [sprite for sprite in theory.spriteSet if sprite.colorName==s.colorName][0]
 				s.className = matchingSprite.className
 				theory.classes[s.className] = [s]
-				theory.spriteObjects[s.color] = s
+				theory.spriteObjects[s.colorName] = s
 				theory.spriteSet.remove(matchingSprite)
 				theory.spriteSet.append(s)
 		return theory
@@ -2187,14 +2187,14 @@ def generateTheoryFromGame(rle, alterGoal=True):
 						# 'goal' is the only name that means something to all RLEs, so we're making sure to change this one.
 		sprite = Sprite(vgdlType, color, className=s, args=settings) #classname was i
 		theory.classes[s] = [sprite]
-		theory.spriteObjects[sprite.color] = sprite
+		theory.spriteObjects[sprite.colorName] = sprite
 		theory.spriteSet.append(sprite)
 		inverseClasses[s] = i
 
 	## Add EOS as a class, too.
 	eos = Sprite(core.VGDLSprite, 'ENDOFSCREEN', None, None)
 	theory.classes['EOS'] = [eos]
-	theory.spriteObjects[eos.color] = eos
+	theory.spriteObjects[eos.colorName] = eos
 	theory.spriteSet.append(eos)
 
 	for g1, g2, effect, kwargs in rle._game.collision_eff:
@@ -2501,7 +2501,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 			except:
 				print "got new stype as an arg but the theory doesn't have the object. In expandSprites()"
 				embed()
-		color = newTheory.classes[targetClass][0].color
+		color = newTheory.classes[targetClass][0].colorName
 		## If you're proposing an avatar change you need to do some bookkeeping to ensure only one avatar class in the description.
 		if 'Avatar' in str(vgdlType):
 
@@ -2517,8 +2517,8 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 			## If the old class was also an avatar we want to use the new sprite for everything, so doing that step second, always.
 			newTheory.classes[targetClass] = [tmpSprite]
 			newTheory.classes['avatar'] = [sprite]
-			newTheory.spriteObjects[tmpSprite.color] = tmpSprite
-			newTheory.spriteObjects[sprite.color] = sprite
+			newTheory.spriteObjects[tmpSprite.colorName] = tmpSprite
+			newTheory.spriteObjects[sprite.colorName] = sprite
 			newTheory.spriteSet = [item for sublist in newTheory.classes.values() for item in sublist]
 			for rule in newTheory.interactionSet:
 				if rule.slot1==targetClass:
@@ -2621,7 +2621,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 		if len(rle._game.sprite_groups[spriteName])>0:
 			col = colorDict[str(rle._game.sprite_groups[spriteName][0].color)]
 			try:
-				className = [k for k in theory.classes.keys() if col in [c.color for c in theory.classes[k]]][0]
+				className = [k for k in theory.classes.keys() if col in [c.colorName for c in theory.classes[k]]][0]
 			except:
 				print "couldn't find className"
 				embed()
@@ -2815,14 +2815,14 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 					stype = stype[stype.find("core.")+len("core."):]
 
 				if "avatar".lower() in stype.lower():
-					theoryString += "\t\t%s > %s color=%s%s\n"%("avatar", stype, s.color, argsString)
+					theoryString += "\t\t%s > %s color=%s%s\n"%("avatar", stype, s.colorName, argsString)
 				else:
 
 					sname = c
-					theoryString += "\t\t%s > %s color=%s%s\n"%(sname, stype, s.color, argsString)
-					if goalLoc and newGoalType != 'blank_space' and s.color==newGoalColor:
-						sname = colorToSprite[s.color]
-						theoryString += "\t\t%s > %s color=%s%s\n"%("goal", stype, s.color, argsString)
+					theoryString += "\t\t%s > %s color=%s%s\n"%(sname, stype, s.colorName, argsString)
+					if goalLoc and newGoalType != 'blank_space' and s.colorName==newGoalColor:
+						sname = colorToSprite[s.colorName]
+						theoryString += "\t\t%s > %s color=%s%s\n"%("goal", stype, s.colorName, argsString)
 	if debug==True:
 		print "in writeTheoryToTxt debug"
 		embed()
@@ -2912,10 +2912,10 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 						args, interactionRule.interaction = buildArgsString(interactionRule)
 						argsString += args
 
-					if s1.color==newGoalColor:
+					if s1.colorName==newGoalColor:
 						if not 'avatar' in str(s2.className): #only add actual goal object rule if it's not interacting with the avatar.
 							theoryString += "\t\t%s %s > %s%s\n"%('goal', c2, interactionRule.interaction, argsString)
-					elif s2.color==newGoalColor:
+					elif s2.colorName==newGoalColor:
 						if not 'avatar' in str(s1.className):#only add actual goal object rule if it's not interacting with the avatar.
 							theoryString += "\t\t%s %s > %s%s\n"%(c1, 'goal', interactionRule.interaction, argsString)
 					else:

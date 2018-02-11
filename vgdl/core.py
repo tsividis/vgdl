@@ -275,6 +275,8 @@ class BasicGame(object):
         self.sprite_appearances = [] ## New sprites that appear at any given step. This gets cleared at the end of each time-step.
         self.all_objects = None
 
+        self.observation = None
+
         self.EOS = EOS((-1, -1))
 
         self.reset()
@@ -1202,8 +1204,6 @@ class BasicGame(object):
         return None, None
 
 
-
-
 class VGDLSprite(object):
     """ Base class for all sprite types. """
     name = None
@@ -1257,9 +1257,10 @@ class VGDLSprite(object):
         self.color = color or self.color or PURPLE#(140, 20, 140)
         if self.color == ENDOFSCREEN:
             self.ID = 'ENDOFSCREEN'
-        self.colorName = colorDict[str(self.color)]
-        # print 'color', self.color
-
+        if str(self.color) in colorDict.keys():
+            self.colorName = colorDict[str(self.color)]
+        else:
+            self.colorName = str(self.color)
 
         #self.color = color or self.color or (choice(self.COLOR_DISC), choice(self.COLOR_DISC), choice(self.COLOR_DISC))
         for name, value in kwargs.iteritems():
@@ -1276,8 +1277,6 @@ class VGDLSprite(object):
         self.resources = defaultdict(int)
         self.rect.width = self.width*self.rect.width
         self.rect.height = self.height*self.rect.height
-
-        self.inventory = dict() # color: (num_things, max_capacity) # pulled from progress bars on avatar
 
     def update(self, game, random_npc=False):
         """ The main place where subclasses differ. """

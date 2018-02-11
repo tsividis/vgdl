@@ -8,13 +8,16 @@ Managing states and observations, for different types of games
 
 import pygame
 from pybrain.utilities import setAllArgs
-
 from ontology import RotatingAvatar, BASEDIRS, GridPhysics, ShootAvatar, kill_effects
-from core import Avatar
+from core import VGDLSprite, Avatar
 from tools import listRotate
 from IPython import embed
-
+from util import *
+import numpy as np
 from collections import defaultdict
+import uuid
+from colors import *
+
 
 
 
@@ -256,3 +259,109 @@ class StateObsHandlerNonStatic(object):
             return ns
         else:
             return ns
+
+
+class TrackedSprite(object):
+    """ Data structure for storing info about tracked sprites, given by perception module. """
+
+    def __eq__(self, other):
+        """Overrides the default implementation
+            so that copies of an instance are considered equal"""
+        if isinstance(self, other.__class__):
+            return self.ID == other.ID
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return hash(self.ID)
+
+    def __init__(self, pos, color=None, size=(10,10)):
+        from ontology import GridPhysics
+        self.name = None
+        self.color = color
+        self.rect = pygame.Rect(pos, size)
+        self.lastrect = self.rect
+        self.x = pos[0]
+        self.y = pos[1]
+        self.orientation = (0,0)
+        self.speed = None
+        self.ID = uuid.uuid1()
+        self.color = color or self.color or PURPLE
+        if self.color == ENDOFSCREEN:
+            self.ID = 'ENDOFSCREEN'
+        if str(self.color) in colorDict.keys():
+            self.colorName = colorDict[str(self.color)]
+        else:
+            self.colorName = str(self.color)
+        self.lastmove = 0
+        self.inventory = dict() # color: (num_things, max_capacity) # pulled from progress bars on avatar
+        self.name = self.colorName
+    
+    def __repr__(self):
+        return str(self.name)+" at (%s,%s)"%(self.rect.left, self.rect.top)
+
+def copySpriteStingy(sprite):
+    # copies all the data from sprite that we could reasonably get from
+    #   a real CV system into a new sprite, then returns it
+    newSprite = TrackedSprite([sprite.x, sprite.y], color=sprite.color) # automatically does colorName
+    newSprite.ID = ccopy(sprite.ID) # not sure if we need this
+    newSprite.name = newSprite.colorName
+    newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
+    newSprite.lastmove = sprite.lastmove
+    newSprite.rect = ccopy(sprite.rect)
+    newSprite.lastrect = ccopy(sprite.lastrect)
+
+    if type(sprite) == TrackedSprite:
+        newSprite.speed = sprite.speed
+        newSprite.inventory = ccopy(sprite.inventory) if sprite.inventory else dict()
+
+    return newSprite
+
+def processFrame(memory, gameObject):
+    # eventual goal is to process the frame, not the gameObject...
+    # creates a COPY of memory and returns updated copy
+    newMemory = defaultdict(list)
+    newTrackedObjects = defaultdict(list)
+    embed()
+    newMemory['isGrid'] = memory['isGrid']
+    spriteIDDict = {sprite.ID: sprite for lst in memory['trackedObjects'].values() for sprite in lst}
+
+    for key in gameObject.sprite_groups.keys():
+        if gameObject.sprite_groups[key]:
+            for sprite in gameObject.sprite_groups[key]:
+                if not sprite.colorName in newTrackedObjects:
+                    newTrackedObjects[sprite.colorName] = []
+                if sprite.ID in spriteIDDict:
+                    # not a new object
+                    newSprite = copySpriteStingy(spriteIDDict[sprite.ID])
+                    newSprite.lastmove += 1
+                    if sprite.x != newSprite.x or sprite.y != newSprite.y:
+                        # first check if this is actually continuous (default assumes grid)
+                        if memory['isGrid'] and sprite.x != newSprite.x and sprite.y != newSprite.y and abs(sprite.x - newSprite.x) != abs(sprite.y - newSprite.y):
+                            newMemory['isGrid'] = False
+                        # it moved since last sighting!
+                        if newMemory['isGrid']:
+                            newSprite.speed = max(abs(sprite.x - newSprite.x), abs(sprite.y - newSprite.y)) * 1.0 / sprite.rect.width # TODO: don't depend on width
+                            newSprite.orientation = (np.sign(sprite.x - newSprite.x), np.sign(sprite.y - newSprite.y))
+                        else:
+                            print 'here' , [sprite.x, sprite.y], [newSprite.x, newSprite.y]
+                            newSprite.speed = euclideanDist([sprite.x, sprite.y], [newSprite.x, newSprite.y])
+                            newSprite.orientation = normalizeVec([sprite.x - newSprite.x, sprite.y - newSprite.y])
+                        newSprite.x , newSprite.y = sprite.x , sprite.y
+                        newSprite.lastrect = ccopy(sprite.rect)
+                        newSprite.rect.move_ip(sprite.rect.x - newSprite.rect.x, sprite.rect.y - newSprite.rect.y)
+                else:
+                    # new, unseen object
+                    newSprite = copySpriteStingy(sprite)
+                # update inventory
+                # TODO: no way to tell max capacity from gameObject (assume current inventory for now)
+                if sprite.resources:
+                    newSprite.inventory = {key: (sprite.resources[key], sprite.resources[key]) for key in sprite.resources}
+                else:
+                    newSprite.inventory = defaultdict(int)
+                newTrackedObjects[sprite.colorName].append(newSprite)
+    newMemory['trackedObjects'] = newTrackedObjects
+    return newMemory
+

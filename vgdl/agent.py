@@ -22,6 +22,7 @@ import math
 import warnings
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
+from stateobsnonstatic import copySpriteStingy, processFrame
 from termcolor import colored
 from line_profiler import LineProfiler
 from vgdl.util import manhattanDist, manhattanDist2
@@ -137,6 +138,7 @@ class Agent:
 		self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
 		self.rle = self.rleCreateFunc()
 		self.rle._game.spriteUpdateDict = self.spriteUpdateDict
+		self.rle._game.observation = self.buildTracker()
 		return
 
 	def initializeRLEFromGame(self):
@@ -250,9 +252,6 @@ class Agent:
 
 
 
-
-
-
 	def initializeHypotheses(self, allObjects, learnSprites=True, learnAvatar=True, num_variants=0):
 		if learnSprites:
 			observe(self.rle, 0, self.bestSpriteTypeDict)
@@ -277,7 +276,7 @@ class Agent:
 			self.hypotheses = []
 			## Grab all singleton classes and instantiate hypotheses that they are the avatar.
 			for color in self.symbolDict.keys():
-				if len(getSpritesByColor(self.rle._game, color))==1:
+				if len(getObservedSpritesByColor(self.rle._game, color))==1:
 					newTheory = copy.deepcopy(initialTheory)
 					oldClassName = newTheory.spriteObjects[color].className
 					del newTheory.classes[oldClassName]
@@ -655,7 +654,7 @@ class Agent:
 		import importlib
 
 		mod = importlib('vgdl.colors')
-		colors = [cl[0].color for cl in self.hypotheses[0].classes.values()]
+		colors = [cl[0].colorName for cl in self.hypotheses[0].classes.values()]
 		for color in colors:
 			times_touched_per_level = []
 			for level in allEffectsEncountered:
@@ -710,70 +709,6 @@ class Agent:
 		lp.print_stats()
 		return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
-	def copySpriteStingy(self, sprite):
-		# copies all the data from sprite that we could reasonably get from
-		#	a real CV system into a new sprite, then returns it
-		newSprite = VGDLSprite([sprite.x, sprite.y], color=sprite.color) # automatically does colorName
-		newSprite.ID = ccopy(sprite.ID) # not sure if we need this
-		newSprite.name = newSprite.colorName
-		newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
-		newSprite.lastmove = sprite.lastmove
-		newSprite.inventory = ccopy(sprite.inventory) if sprite.inventory else dict()
-		newSprite.rect = ccopy(sprite.rect)
-		if sprite.name == None:
-			newSprite.speed = sprite.speed
-			newSprite.cooldown = sprite.cooldown
-		else:
-			# this sprite came directly from the game, not the tracker
-			newSprite.cooldown = None
-
-		return newSprite
-
-	def processFrame(self, memory, gameObject):
-		# eventual goal is to process the frame, not the gameObject...
-		# creates a COPY of memory and returns updated copy
-		newMemory = defaultdict(list)
-		newTrackedObjects = defaultdict(list)
-		newMemory['isGrid'] = memory['isGrid']
-		spriteIDDict = {sprite.ID: sprite for lst in memory['trackedObjects'].values() for sprite in lst}
-
-		for key in gameObject.sprite_groups.keys():
-			if gameObject.sprite_groups[key]:
-				for sprite in gameObject.sprite_groups[key]:
-					if not sprite.colorName in newTrackedObjects:
-						newTrackedObjects[sprite.colorName] = []
-					if sprite.ID in spriteIDDict:
-						# not a new object
-						newSprite = self.copySpriteStingy(spriteIDDict[sprite.ID])
-						newSprite.lastmove += 1
-						if sprite.x != newSprite.x or sprite.y != newSprite.y:
-							# first check if this is actually continuous (default assumes grid)
-							if memory['isGrid'] and sprite.x != newSprite.x and sprite.y != newSprite.y and abs(sprite.x - newSprite.x) != abs(sprite.y - newSprite.y):
-								newMemory['isGrid'] = False
-							# it moved since last sighting!
-							if newMemory['isGrid']:
-								newSprite.speed = max(abs(sprite.x - newSprite.x), abs(sprite.y - newSprite.y)) * 1.0 / sprite.rect.width # TODO: don't depend on width
-								newSprite.orientation = (np.sign(sprite.x - newSprite.x), np.sign(sprite.y - newSprite.y))
-							else:
-								print 'here' , [sprite.x, sprite.y], [newSprite.x, newSprite.y]
-								newSprite.speed = euclideanDist([sprite.x, sprite.y], [newSprite.x, newSprite.y])
-								newSprite.orientation = normalizeVec([sprite.x - newSprite.x, sprite.y - newSprite.y])
-							# update cooldown if moved faster than we've seen before
-							# newSprite.cooldown = min(newSprite.cooldown, gameObject.time - newSprite.lastmove) if newSprite.cooldown else gameObject.time - newSprite.lastmove
-							newSprite.x , newSprite.y = sprite.x , sprite.y
-							newSprite.rect.move_ip(sprite.rect.x - newSprite.rect.x, sprite.rect.y - newSprite.rect.y)
-					else:
-						# new, unseen object
-						newSprite = self.copySpriteStingy(sprite)
-
-					if newSprite == gameObject.sprite_groups['avatar'][0]: # this is inelegant
-						# update inventory
-						# not by color right now, but should be in real CV system
-						# TODO: no way to tell max capacity from gameObject (assume current inventory for now)
-						newSprite.inventory = {key: (sprite.resources[key], sprite.resources[key]) for key in sprite.resources}
-					newTrackedObjects[sprite.colorName].append(newSprite)
-		newMemory['trackedObjects'] = newTrackedObjects
-		return newMemory
 
 	def buildTracker(self):
 		gameObject = self.rle._game
@@ -785,7 +720,7 @@ class Agent:
 				if not sprite.colorName in trackedObjects:
 					trackedObjects[sprite.colorName] = []
 				# copy data over
-				trackedObjects[sprite.colorName].append(self.copySpriteStingy(sprite))
+				trackedObjects[sprite.colorName].append(copySpriteStingy(sprite))
 		memory['trackedObjects'] = trackedObjects
 		return memory
 
@@ -808,7 +743,7 @@ class Agent:
 				if not sprite.colorName in trackedObjects:
 					trackedObjects[sprite.colorName] = []
 				# copy data over
-				trackedObjects[sprite.colorName].append(self.copySpriteStingy(sprite))
+				trackedObjects[sprite.colorName].append(copySpriteStingy(sprite))
 		memory['trackedObjects'] = trackedObjects
 
 		##### test if we need to ccopy tuples
@@ -836,7 +771,7 @@ class Agent:
 			print 'step'
 			print self.rle.show()
 			## update tracker
-			memory = self.processFrame(memory, gameObject)
+			memory = processFrame(memory, gameObject)
 			for lst in memory['trackedObjects'].values():
 				for sprite in lst:
 					if sprite.colorName in ['WHITE', 'ORANGE']:
@@ -845,11 +780,8 @@ class Agent:
 	def testEpisode(self, gameObject, epoch=0):
 		
 		# actions = [K_RIGHT, K_LEFT, K_LEFT]
-		actions = [0]*3
+		actions = [0]*4
 		self.initializeEnvironment()
-		
-		self.memory = self.buildTracker()
-		# embed()
 
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
@@ -902,8 +834,8 @@ class Agent:
 			# plt.pause(0.01)
 
 		print "{} time-steps took {} seconds".format(len(actions), time.time()-t1)
-		print ">>> Embedded at the end of testEpisode"
-		embed()
+		# print ">>> Embedded at the end of testEpisode"
+		# embed()
 
 		return
 
@@ -1196,7 +1128,7 @@ class Agent:
 
 					if self.avoid_danger: ## this is just exercising caution when near random objects, irrespective of whether they kill us or not
 						try:
-							random_npc_colors = [self.hypotheses[0].classes[k][0].color for k in self.hypotheses[0].classes.keys() if self.hypotheses[0].classes[k] and 'Random' in str(self.hypotheses[0].classes[k][0].vgdlType)]
+							random_npc_colors = [self.hypotheses[0].classes[k][0].colorName for k in self.hypotheses[0].classes.keys() if self.hypotheses[0].classes[k] and 'Random' in str(self.hypotheses[0].classes[k][0].vgdlType)]
 							random_npc_classes = [k for k in self.rle._game.sprite_groups.keys() if self.rle._game.sprite_groups[k] and self.rle._game.sprite_groups[k][0].colorName in random_npc_colors]
 							random_npc_positions = []
 
@@ -1368,7 +1300,7 @@ class Agent:
 		## might hypothesize different avatars
 		
 		#whether the avatar is still alive 
-		avatar_is_dead = len(getSpritesByColor(envReal._game,'DARKBLUE'))==0
+		avatar_is_dead = len(getObservedSpritesByColor(envReal._game,'DARKBLUE'))==0
 
 		#using the previous state, we predict where the objects are going to be
 		self.predictions = {}
@@ -1590,8 +1522,8 @@ class Agent:
 		self.actionHistory.append(action)
 		self.rle.step(action)
 
-		newMemory = self.processFrame(self.memory, self.rle._game)
-		embed()
+		# newMemory = processFrame(self.memory, self.rle._game)
+		# embed()
 		agentState = self.resourceManagement(pre_step=False)
 		envReal = self.fastcopy(self.rle)
 
@@ -1892,47 +1824,37 @@ class Agent:
 ########################################################################
 
 
-def setSpritePositions(rle, Vrle, hypothesis, best_params, useHypothesis=True):
+def setSpritePositions(rle, Vrle, hypothesis, best_params):
 	## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
 
-	old_sprite_groups = Vrle._game.sprite_groups
-	for k in old_sprite_groups.keys():
-		if old_sprite_groups[k]:
+	avatar = hypothesis.classes['avatar'][0]
+	spriteGroupsToUpdate = Vrle._game.sprite_groups
+	for k in spriteGroupsToUpdate.keys():
+		if spriteGroupsToUpdate[k]:
 			color = Vrle._game.sprite_groups[k][0].colorName
-			matchingSpritesInRLE = getSpritesByColor(rle._game, color)
-			for sprite in old_sprite_groups[k]:
+			matchingSpritesInRLE = getObservedSpritesByColor(rle._game, color)
+			for sprite in spriteGroupsToUpdate[k]:
 				matchingSprite = findNearestSprite(sprite, matchingSpritesInRLE)
 				if matchingSprite is None:
 					continue
-				sprite.rect = matchingSprite.rect
-				sprite.lastmove = matchingSprite.lastmove
+				sprite.rect 		= ccopy(matchingSprite.rect)
+				sprite.lastrect 	= ccopy(matchingSprite.lastrect)
+				sprite.lastmove 	= ccopy(matchingSprite.lastmove)
+				sprite.resources = {key: matchingSprite.inventory[key][0] for key in matchingSprite.inventory.keys()}
+				sprite.orientation 	= ccopy(matchingSprite.orientation) # consider copying only for avatar?
 
-				if useHypothesis:
-					if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and best_params!=None:
-						try:
-							## Enforce consistency: inferred value for individual orientations has to be consistent with 
-							# what we're saying the horizontal/vertical orientation is of the entire group.
 
-							orientation = tuple(np.sign(np.array(rle._game.previousPositions[matchingSprite.ID]) - 
-								np.array(rle._game.objectMemoryDict[matchingSprite.ID])))
-							
-
-							if orientation == (0,0):
-								print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
-								pass
-
-							else:
-								sprite.orientation = orientation
-
-						except KeyError:
-							print "Failed to get params for Missile in main_agent"
-							pass
-				# else:
-					# print "setting sprite positions"
-					# if hasattr(matchingSprite, 'orientation'):
-						# sprite.orientation = matchingSprite.orientation
+				## Other aspects of state to potentially transfer
+				# sprite.jumping = ccopy(matchingSprite.jumping)
+				# sprite.wait_step = ccopy(matchingSprite.wait_step)
+				# sprite.rope = ccopy(matchingSprite.rope)
+				# sprite.gravity = ccopy(matchingSprite.gravity)
+				# sprite.last_rope = ccopy(matchingSprite.last_rope)
+				# sprite.last_gravity = ccopy(matchingSprite.last_gravity)
+				# sprite.last_vy = ccopy(matchingSprite.last_vy)
+				# sprite.speed = ccopy(matchingSprite.speed)
+	embed()
 	return
-
 
 def initializeVrleProfiler(hypothesis, stateToSet, symbolDict, best_params):
 	lp = LineProfiler()
@@ -1954,25 +1876,25 @@ def initializeVrle(hypothesis, stateToSet, symbolDict, best_params, debug=False)
 	## World in agent's mind given 'hypothesis', including object goal
 	gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, symbolDict,\
 		 "./examples/gridphysics/theorytest.py", debug=debug)
-	useHypothesis=False ## not dealing with inferring Missile orientation for now.
 
 	try:
 		Vrle = createMindEnv(gameString, levelString, output=False)
 	except:
 		print "in initializeVrle"
 		embed()
-	if len(Vrle._game.sprite_groups['avatar'])>1:
+
+	## Don't do any of the rest if we have an ungrammatical hypothesis caused by num(avatars)>1.
+	if len(stateToSet._game.observation['trackedObjects'][hypothesis.classes['avatar'][0].colorName])>1:
 		print "Warning. In initializeVrle. Got more than one avatar. Returning None as Vrle."
 		Vrle = None
 		return Vrle
 	
 	## Initialize imaginary state to match real state.
-	setSpritePositions(stateToSet, Vrle, hypothesis, best_params, useHypothesis=useHypothesis)
+	setSpritePositions(stateToSet, Vrle, hypothesis, best_params)
 
 	## TODO: imaginary state should not match real state; it should match the inferred state of that particular object.
 	avatar = Vrle._game.getAvatars()[0]
-	matchingSprite = [s for s in getSpritesByColor(stateToSet._game, avatar.colorName) if s.rect==avatar.rect][0]
-	# Vrle._game.getAvatars()[0].lastmove = ccopy(matchingSprite.lastmove)
+	matchingSprite = [s for s in getObservedSpritesByColor(stateToSet._game, avatar.colorName) if s.rect==avatar.rect][0]
 
 	if any([k in str(hypothesis.spriteObjects[avatar.colorName]) for k in ['Oriented', 'Rotating']]):
 		Vrle._game.getAvatars()[0].orientation = ccopy(matchingSprite.orientation)
@@ -2483,8 +2405,8 @@ def matchEnvs(envA, envB, debug=False):
 	for color in colors:
 		# Find matching sprites via color
 		# color = sprite_group_color[k][0].colorName
-		matchingSpritesInEnvA = [s for s in getSpritesByColor(envA._game, color) if s not in envA._game.kill_list]
-		matchingSpritesInEnvB = [s for s in getSpritesByColor(envB._game, color) if s not in envB._game.kill_list]
+		matchingSpritesInEnvA = [s for s in getObservedSpritesByColor(envA._game, color) if s not in envA._game.kill_list]
+		matchingSpritesInEnvB = [s for s in getObservedSpritesByColor(envB._game, color) if s not in envB._game.kill_list]
 
 		## If it is manageable to enumerate all possible pairings
 		if len(matchingSpritesInEnvA)<enumeration_limit:
