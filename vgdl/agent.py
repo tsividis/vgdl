@@ -22,7 +22,7 @@ import math
 import warnings
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
-from stateobsnonstatic import copySpriteStingy, processFrame
+from stateobsnonstatic import copySpriteStingy, processFrame, buildTracker
 from termcolor import colored
 from line_profiler import LineProfiler
 from vgdl.util import manhattanDist, manhattanDist2
@@ -138,7 +138,7 @@ class Agent:
 		self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
 		self.rle = self.rleCreateFunc()
 		self.rle._game.spriteUpdateDict = self.spriteUpdateDict
-		self.rle._game.observation = self.buildTracker()
+		self.rle._game.observation = buildTracker(self.rle)
 		return
 
 	def initializeRLEFromGame(self):
@@ -276,7 +276,7 @@ class Agent:
 			self.hypotheses = []
 			## Grab all singleton classes and instantiate hypotheses that they are the avatar.
 			for color in self.symbolDict.keys():
-				if len(getObservedSpritesByColor(self.rle._game, color))==1:
+				if len(getSpritesByColor(self.rle._game, color))==1:
 					newTheory = copy.deepcopy(initialTheory)
 					oldClassName = newTheory.spriteObjects[color].className
 					del newTheory.classes[oldClassName]
@@ -709,20 +709,6 @@ class Agent:
 		lp.print_stats()
 		return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
-
-	def buildTracker(self):
-		gameObject = self.rle._game
-		memory = defaultdict(list)
-		trackedObjects = defaultdict(list) # color: list_of_sprites # not sure why list arg, just copied from elsewhere
-		memory['isGrid'] = True
-		for group in gameObject.sprite_groups.keys():
-			for sprite in gameObject.sprite_groups[group]:
-				if not sprite.colorName in trackedObjects:
-					trackedObjects[sprite.colorName] = []
-				# copy data over
-				trackedObjects[sprite.colorName].append(copySpriteStingy(sprite))
-		memory['trackedObjects'] = trackedObjects
-		return memory
 
 	def testTracker(self, gameObject):
 	
@@ -1434,7 +1420,7 @@ class Agent:
 
 		newRle = self.initializeRLEFromGame()
 		newRle._obstypes = ccopy(rle._obstypes)
- 		if hasattr(rle, '_gravepoints'):
+		if hasattr(rle, '_gravepoints'):
 			newRle._gravepoints = ccopy(rle._gravepoints)
 		newRle._game.sprite_groups = ccopy(rle._game.sprite_groups)
 		newRle._game.kill_list = ccopy(rle._game.kill_list)
@@ -1442,30 +1428,11 @@ class Agent:
 		newRle._game.time = ccopy(rle._game.time)
 		newRle._game.score = ccopy(rle._game.score)
 		newRle._game.keystate = ccopy(rle._game.keystate)
+		newRle._game.observation = ccopy(rle._game.observation)
 		newRle.symbolDict = ccopy(rle.symbolDict)
 		newRle._game.getAvatars()[0].resources = ccopy(rle._game.getAvatars()[0].resources)
 		return newRle
 
-	def ultrafastcopy(self, rle):
-
-		newRle = self.initializeRLEFromGame()
-
-		for k in newRle._game.__dict__.keys():
-			newRle._game.k = None
-
-		newRle._obstypes = ccopy(rle._obstypes)
- 		if hasattr(rle, '_gravepoints'):
-			newRle._gravepoints = ccopy(rle._gravepoints)
-		newRle._game.sprite_groups = ccopy(rle._game.sprite_groups)
-		newRle._game.kill_list = ccopy(rle._game.kill_list)
-		newRle._game.lastcollisions = ccopy(rle._game.lastcollisions)
-		newRle._game.time = ccopy(rle._game.time)
-		newRle._game.score = ccopy(rle._game.score)
-		newRle._game.keystate = ccopy(rle._game.keystate)
-
-		newRle.symbolDict = ccopy(rle.symbolDict)
-		newRle._game.getAvatars()[0].resources = ccopy(rle._game.getAvatars()[0].resources)
-		return newRle
 
 	def executeStepProfiler(self, action, hypotheses, theoryRLEs, lastStep=False):
 		lp = LineProfiler()
@@ -1487,12 +1454,12 @@ class Agent:
 
 		penalty, errorList = errorSignal(env, self.rle, hypothesis, envRealPrev)
 		
-		# if errorList:
-		  # hypothesis.display()
-		  # for e in errorList:
-		      # e.display()
-		  # print ""
-		  # embed()
+		if errorList:
+			hypothesis.display()
+			for e in errorList:
+				e.display()
+				print ""
+			embed()
 		# else:
 		# 	print "No error"
 			# embed()
@@ -1522,17 +1489,16 @@ class Agent:
 		self.actionHistory.append(action)
 		self.rle.step(action)
 
-		# newMemory = processFrame(self.memory, self.rle._game)
-		# embed()
+		## Should you put real RLEs or percepts in RLEHistory? The latter makes sense,
+		## but even if you added the former you'd be just as prone to perceptual error.
+
 		agentState = self.resourceManagement(pre_step=False)
 		envReal = self.fastcopy(self.rle)
 
 
 		hypotheses = self.manageNewObjects(hypotheses, envRealPrev, action, learnAvatar=self.learnAvatar)
 
-
-		historyRLE = self.ultrafastcopy(self.rle)
-		self.rleHistory.append(historyRLE)
+		self.rleHistory.append(envReal)
 		
 		#OBJECT TRACKING
 		resourceObservations, new_sprites = self.getObservations(agentState, envReal, envRealPrev)
@@ -1555,6 +1521,9 @@ class Agent:
 		## Propose new theories
 		# flag=False
 		print "evaluating {} old theories and proposing new ones".format(len(theoryRLEs))
+
+		for t in theoryRLEs:
+			print t._game.observation
 		newTheories = []
 
 		prev_real_sprites = [s for k in envRealPrev._game.sprite_groups.keys() for s in envRealPrev._game.sprite_groups[k] if s not in envRealPrev._game.kill_list]
@@ -1827,6 +1796,9 @@ class Agent:
 def setSpritePositions(rle, Vrle, hypothesis, best_params):
 	## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
 
+	from vgdl.ontology import getObservedSpritesByColor
+	from vgdl.agent import findNearestSprite
+
 	avatar = hypothesis.classes['avatar'][0]
 	spriteGroupsToUpdate = Vrle._game.sprite_groups
 	for k in spriteGroupsToUpdate.keys():
@@ -1853,7 +1825,7 @@ def setSpritePositions(rle, Vrle, hypothesis, best_params):
 				# sprite.last_gravity = ccopy(matchingSprite.last_gravity)
 				# sprite.last_vy = ccopy(matchingSprite.last_vy)
 				# sprite.speed = ccopy(matchingSprite.speed)
-	embed()
+	Vrle._game.observation = buildTracker(Vrle)
 	return
 
 def initializeVrleProfiler(hypothesis, stateToSet, symbolDict, best_params):
@@ -1892,26 +1864,26 @@ def initializeVrle(hypothesis, stateToSet, symbolDict, best_params, debug=False)
 	## Initialize imaginary state to match real state.
 	setSpritePositions(stateToSet, Vrle, hypothesis, best_params)
 
-	## TODO: imaginary state should not match real state; it should match the inferred state of that particular object.
-	avatar = Vrle._game.getAvatars()[0]
-	matchingSprite = [s for s in getObservedSpritesByColor(stateToSet._game, avatar.colorName) if s.rect==avatar.rect][0]
+	# ## TODO: imaginary state should not match real state; it should match the inferred state of that particular object.
+	# avatar = Vrle._game.getAvatars()[0]
+	# matchingSprite = [s for s in getObservedSpritesByColor(stateToSet._game, avatar.colorName) if s.rect==avatar.rect][0]
 
-	if any([k in str(hypothesis.spriteObjects[avatar.colorName]) for k in ['Oriented', 'Rotating']]):
-		Vrle._game.getAvatars()[0].orientation = ccopy(matchingSprite.orientation)
-	try:
-		Vrle._game.getAvatars()[0].resources = ccopy(matchingSprite.resources)
-		Vrle._game.getAvatars()[0].jumping = ccopy(matchingSprite.jumping)
-		Vrle._game.getAvatars()[0].wait_step = ccopy(matchingSprite.wait_step)
-		Vrle._game.getAvatars()[0].rope = ccopy(matchingSprite.rope)
-		Vrle._game.getAvatars()[0].gravity = ccopy(matchingSprite.gravity)
-		Vrle._game.getAvatars()[0].last_rope = ccopy(matchingSprite.last_rope)
-		Vrle._game.getAvatars()[0].last_gravity = ccopy(matchingSprite.last_gravity)
-		Vrle._game.getAvatars()[0].last_vy = ccopy(matchingSprite.last_vy)
-		Vrle._game.getAvatars()[0].lastrect = ccopy(matchingSprite.lastrect)
-		Vrle._game.getAvatars()[0].speed = ccopy(matchingSprite.speed)
+	# if any([k in str(hypothesis.spriteObjects[avatar.colorName]) for k in ['Oriented', 'Rotating']]):
+	# 	Vrle._game.getAvatars()[0].orientation = ccopy(matchingSprite.orientation)
+	# try:
+	# 	Vrle._game.getAvatars()[0].resources = ccopy(matchingSprite.resources)
+	# 	Vrle._game.getAvatars()[0].jumping = ccopy(matchingSprite.jumping)
+	# 	Vrle._game.getAvatars()[0].wait_step = ccopy(matchingSprite.wait_step)
+	# 	Vrle._game.getAvatars()[0].rope = ccopy(matchingSprite.rope)
+	# 	Vrle._game.getAvatars()[0].gravity = ccopy(matchingSprite.gravity)
+	# 	Vrle._game.getAvatars()[0].last_rope = ccopy(matchingSprite.last_rope)
+	# 	Vrle._game.getAvatars()[0].last_gravity = ccopy(matchingSprite.last_gravity)
+	# 	Vrle._game.getAvatars()[0].last_vy = ccopy(matchingSprite.last_vy)
+	# 	Vrle._game.getAvatars()[0].lastrect = ccopy(matchingSprite.lastrect)
+	# 	Vrle._game.getAvatars()[0].speed = ccopy(matchingSprite.speed)
 
-	except (IndexError, AttributeError) as e:
-		pass
+	# except (IndexError, AttributeError) as e:
+	# 	pass
 
 	# Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
 	return Vrle
@@ -1967,6 +1939,9 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 	keys: (class1, class2). values: a diagnostic error signal
 	"""
 
+	# print "in errorSignal"
+	# embed()
+
 	# Initialization
 	total_penalty = 0.
 	errorMap = []
@@ -2010,17 +1985,17 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 	for t in matched_sprites:
 		sA, sB = t[0], t[1] #sprites in envA, envB      
 		dist = t[2] #distance to sprite in envB
-		sA_type = theory.classes[sA.name][0].vgdlType
+		sA_type = theory.spriteObjects[sA.name].vgdlType
 		d = 30. # grid spacing
 
 		# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
 		if 'Random' in str(sA_type):   
 
 
-			if 'speed' in theory.classes[sA.name][0].args.keys():
-				sA_speed = theory.classes[sA.name][0].args['speed']
-			elif 'speed' in theory.classes[sA.name][0].__dict__.keys():
-				sA_speed = theory.classes[sA.name][0].speed
+			if 'speed' in theory.spriteObjects[sA.name].args.keys():
+				sA_speed = theory.spriteObjects[sA.name].args['speed']
+			elif 'speed' in theory.spriteObjects[sA.name].__dict__.keys():
+				sA_speed = theory.spriteObjects[sA.name].speed
 			else:
 				## this only happens when you initialize the real theory for testing but haven't explicitly set the speed
 				## in the VGDL description

@@ -302,6 +302,20 @@ class TrackedSprite(object):
     def __repr__(self):
         return str(self.name)+" at (%s,%s)"%(self.rect.left, self.rect.top)
 
+def buildTracker(rle):
+    gameObject = rle._game
+    memory = defaultdict(list)
+    trackedObjects = defaultdict(list) # color: list_of_sprites # not sure why list arg, just copied from elsewhere
+    memory['isGrid'] = True
+    for group in gameObject.sprite_groups.keys():
+        for sprite in gameObject.sprite_groups[group]:
+            if not sprite.colorName in trackedObjects:
+                trackedObjects[sprite.colorName] = []
+            # copy data over
+            trackedObjects[sprite.colorName].append(copySpriteStingy(sprite))
+    memory['trackedObjects'] = trackedObjects
+    return memory
+
 def copySpriteStingy(sprite):
     # copies all the data from sprite that we could reasonably get from
     #   a real CV system into a new sprite, then returns it
@@ -324,7 +338,6 @@ def processFrame(memory, gameObject):
     # creates a COPY of memory and returns updated copy
     newMemory = defaultdict(list)
     newTrackedObjects = defaultdict(list)
-    embed()
     newMemory['isGrid'] = memory['isGrid']
     spriteIDDict = {sprite.ID: sprite for lst in memory['trackedObjects'].values() for sprite in lst}
 
