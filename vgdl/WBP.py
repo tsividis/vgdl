@@ -18,7 +18,7 @@ import copy
 from threading import Lock
 from Queue import Queue
 from util import *
-import multiprocessing
+# import multiprocessing
 from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, \
@@ -844,6 +844,10 @@ class Node():
 		if rle==None:
 			rle = self.rle
 
+		if sprite_first_alpha==10:
+			print("PASSED HERE")
+			import ipdb; ipdb.set_trace()
+
 		theory = self.WBP.theory
 		heuristicVal = 0
 		avatarNoveltyVals = []
@@ -995,9 +999,12 @@ class Node():
 
 		# print self.rle._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost, self.position_score()
 
-		self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
-		sum(self.rolloutArray) - self.metabolic_cost + self.position_score(-250)
+		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
+		# sum(self.rolloutArray) - self.metabolic_cost + self.position_score(-250)
+		self.intrinsic_reward = self.heuristicVal
 
+		print("heuristicVal {}".format(self.heuristicVal))
+		print("intrinsic_reward {}".format(self.intrinsic_reward))
 		try:
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
 			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):

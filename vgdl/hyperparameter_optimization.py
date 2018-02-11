@@ -88,7 +88,7 @@ def optimize_game(game_number):
     best = fmin(fn=play_game,
         space=space,
         algo=tpe.suggest,
-        max_evals=2)
+        max_evals=10)
 
     gameName = gvggames[game_number]
     with open('{}.txt'.format(gameName), 'w') as f:
