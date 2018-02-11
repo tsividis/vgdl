@@ -24,7 +24,7 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from termcolor import colored
 
 import cPickle
-from line_profiler import LineProfiler
+# from line_profiler import LineProfiler
 
 OBSERVATION_LOCAL = 'local'
 OBSERVATION_GLOBAL = 'global'
@@ -223,6 +223,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         else:
             return False, False
 
+    """
     def sensors_profiler(self, state=None):
         lp = LineProfiler()
         lp_wrapper = lp(self._getSensors)
@@ -230,6 +231,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         lp.print_stats()
 
         return output
+    """
 
     def _getSensors(self, state=None):
         # Get position and orientation
@@ -358,6 +360,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         #     self._last_state = self.getState()
         #     self._allEvents.append((self._previous_state, action, self._last_state))
 
+    """
     def step_profiler(self, action):
         lp = LineProfiler()
         lp_wrapper = lp(self.step)
@@ -365,6 +368,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         lp.print_stats()
 
         return output
+    """
 
     def step(self, action):
         if action == ('space'):

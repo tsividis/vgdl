@@ -18,7 +18,7 @@ from IPython import embed
 import core
 import copy
 import ipdb
-from line_profiler import LineProfiler
+# from line_profiler import LineProfiler
 
 UP = (0, -1)
 DOWN = (0, 1)
@@ -1737,12 +1737,14 @@ def setSpriteParams(param, sprite):
         elif p == "cooldown":
             sprite.cooldown = param[p]
 
+"""
 def updateOptionsProfiler(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False):
     lp = LineProfiler()
     lp_wrapper = lp(updateOptions)
     d1, d2 = lp_wrapper(game, sprite_type_tuple, current_sprite, params, missileOrientationClustering)
     lp.print_stats()
     return d1, d2
+"""
 
 def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False):
     """
@@ -2406,12 +2408,14 @@ def getKL(spriteDistribution1, spriteDistribution2):
     d1, d2 = [v['prob'] for v in spriteDistribution1.values()], [v['prob'] for v in spriteDistribution2.values()]
     return scipy.stats.entropy(d1,d2)
 
+"""
 def spriteInductionProfiler(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None):
     lp = LineProfiler()
     lp_wrapper = lp(spriteInduction)
     distributionsHaveChanged = lp_wrapper(game, step, bestSpriteTypeDict, oldSpriteSet, old_outcome)
     lp.print_stats()
     return distributionsHaveChanged
+"""
 
 def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None):
     """
