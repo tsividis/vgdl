@@ -1783,7 +1783,7 @@ class Agent:
 ########################################################################
 
 
-def setSpritePositions(rle, Vrle, hypothesis, best_params):
+def setVrleState(rle, Vrle, hypothesis, best_params):
 	## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
 
 	from vgdl.ontology import getObservedSpritesByColor
@@ -1852,7 +1852,7 @@ def initializeVrle(hypothesis, stateToSet, symbolDict, best_params, debug=False)
 		return Vrle
 	
 	## Initialize imaginary state to match real state.
-	setSpritePositions(stateToSet, Vrle, hypothesis, best_params)
+	setVrleState(stateToSet, Vrle, hypothesis, best_params)
 
 	# ## TODO: imaginary state should not match real state; it should match the inferred state of that particular object.
 	# avatar = Vrle._game.getAvatars()[0]
