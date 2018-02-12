@@ -2444,26 +2444,6 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	targetClass = errorMap.targetClass
 	targetToken = errorMap.targetToken
 
-	# if 'newObjectAppeared' in errorMap.diagnosis:
-	# 	if errorMap not in theory.deferredErrorMaps:
-	# 		print "new object appeared in expandSprites"
-	# 		embed()
-	# 		theory.deferredErrorMaps.append(errorMap)
-	# 		childTheories = [theory]
-	# 		return targetClass, childTheories
-	# 	else:
-	# 		print "In defferred step in expandSprites; removing errorMap from deferred list"
-	# 		embed()
-	# 		theory.deferredErrorMaps.remove(errorMap)
-
-	# if 'newObjectAppeared' in errorMap.diagnosis:
-	# 	# embed()
-	# 	## Find closest sprite that is not self, use that as targetToken, run induction for that.
-	# 	overlappingSprite = [item for sublist in game.sprite_groups.values() for item in sublist if item.rect==errorMap.targetToken.rect 
-	# 		and item.colorName!=errorMap.targetToken.colorName][0]
-	# 	targetToken = overlappingSprite
-	# 	print "got new object in expandSprites. Running sprite induction for overlapping sprite: {}".format(targetToken.colorName)
-	# 	## you're not updating the type for this particular sprite, here.
 
 	theory.expandedSprites.append(targetClass)
 	
