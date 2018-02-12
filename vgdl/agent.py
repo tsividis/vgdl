@@ -1442,12 +1442,8 @@ class Agent:
 		num = index
 		env = theoryRLEs[num]
 		hypothesis = hypotheses[num]
-		env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
-		env_colors = set([s.colorName for s in env_sprites if s])
 
 		env.step(action)
-		env_sprites = [s for k in env._game.sprite_groups.keys() for s in env._game.sprite_groups[k] if s not in env._game.kill_list]
-		env_colors = set([s.colorName for s in env_sprites if s])
 
 		penalty, errorList = errorSignal(env, self.rle, hypothesis, envRealPrev)
 		
