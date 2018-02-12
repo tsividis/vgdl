@@ -2283,11 +2283,11 @@ class Agent:
 		penalty, errorList = self.errorSignal(env, self.rle, hypothesis, envRealPrev)
 		
 		# if errorList:
-		  # hypothesis.display()
-		  # for e in errorList:
-		      # e.display()
-		  # print ""
-		  # embed()
+		#   hypothesis.display()
+		#   for e in errorList:
+		#       e.display()
+		#   print ""
+		#   embed()
 		# else:
 		# 	print "No error"
 			# embed()

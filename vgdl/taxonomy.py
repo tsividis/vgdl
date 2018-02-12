@@ -1,6 +1,5 @@
 # from theory_template_071416 import *
 from ontology import *
-from sampleVGDLString import *
 # import pygraphviz as PG
 
 '''

@@ -4,7 +4,6 @@ import numpy as np
 import dill
 import tempfile
 import json
-from sampleVGDLString import *
 from class_theory_template import *
 from taxonomy import *
 from IPython import embed

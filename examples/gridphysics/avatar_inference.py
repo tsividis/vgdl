@@ -16,9 +16,9 @@
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
+w            1                 w
 w                              w
-w                              w
-w       2                      w
+w       1                      w
 w                              w
 w                              w
 w               A              w
@@ -55,7 +55,7 @@ game="""
 BasicGame
     SpriteSet
         cloner > Immovable color=GREEN
-        box    > Missile color=WHITE orientation=RIGHT cooldown=3
+        box    > Missile color=WHITE orientation=RIGHT cooldown=1
         flicker > Flicker timeout=1 color=ORANGE
         random > Missile orientation=RIGHT color=PURPLE speed=1 cooldown=1
 
