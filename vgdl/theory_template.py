@@ -2470,7 +2470,6 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 
 		newTheory = theory.copy()
 		newTheory.mostRecentEdit = 'spriteInduction'
-		# newTheory.lineage.append(theory)
 		newTheory.errorMapHistory.append(errorMap)
 		vgdlType = spriteProposal[0][1]
 		args = dict(spriteProposal[1:])
@@ -2546,9 +2545,6 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, resourceObservation
 	predicateGroups = []
 	for i in range(0,n+1):
 		predicateGroups.extend(list(itertools.combinations(predicates, i)))
-
-	# print "in expandLine"
-	# embed()
 	
 	## remove all generic interactionRules involving classPair (in either order)
 	interactionSet = [rule for rule in theory.interactionSet if

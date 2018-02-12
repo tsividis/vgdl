@@ -449,8 +449,6 @@ class Agent:
 			return newTheories
 
 		if errorMap.targetClass not in theory.classes.keys():
-			print "in new class handling in expandTheoryForOneErrorMap"
-			embed()
 			## assign new class here so you can use it for both expandSprites() and expandLine()
 			class_num = len([k for k in theory.classes.keys() if k!='EOS']) + 1
 			errorMap.targetClass = 'c'+str(class_num)
@@ -467,7 +465,9 @@ class Agent:
 			## NOTE: errorMap takes a unique targe class, and there are cases where you might have multiple singleton neighbors.
 			## For now you're taking just a random choice between those.
 			neighbors = neighborsPrev(envRealCurrent, envRealCurrent, errorMap.targetToken)
-			options = [item for sublist in [envRealCurrent._game.sprite_groups[k] for k in neighbors if len(envRealCurrent._game.sprite_groups[k])==1] for item in sublist]
+			# options = [item for sublist in [envRealCurrent._game.sprite_groups[k] for k in neighbors if len(envRealCurrent._game.sprite_groups[k])==1] for item in sublist]
+			options = [item for sublist in [envRealCurrent._game.observation['trackedObjects'][k] for k in neighbors if len(envRealCurrent._game.observation['trackedObjects'][k])==1] for item in sublist]
+
 			if len(options)>1:
 				print "Warning: More than one singleton neighbor of a newly-spawned sprite. Randomly picking one as agent"
 			print options
@@ -763,7 +763,7 @@ class Agent:
 	def testEpisode(self, gameObject, epoch=0):
 		
 		# actions = [K_RIGHT, K_LEFT, K_LEFT]
-		actions = [0, 0, K_LEFT, K_LEFT, K_LEFT]
+		actions = [K_SPACE, 0]
 		self.initializeEnvironment()
 
 		self.trueTheory = generateTheoryFromGame(self.rle)
@@ -2020,11 +2020,20 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 			yA = sA.rect.top/d
 			if sPrev is None:
 				continue
+
+			#new 2/12
+			sA.stype = theory.spriteObjects[sA.colorName].args['stype']
+			sA.fleeing = theory.spriteObjects[sA.colorName].args['fleeing']
 			try:
 				closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
 			except:
 				print "tried to find chaseroptions in errorSignal"
 				embed()
+
+			#New 2/12
+			del sA.stype
+			del sA.fleeing
+
 			## this should be arbitrarily high, actually. If you want this to be a surrogate likelihood function,
 			## the prob that a chaser moves away from what it's chasing is 0.
 			chaser_penalty = 0. if (xA,yA) in closestTargets else 100.
@@ -2179,7 +2188,9 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 		# Simultaneously find culprit classes - an overlapping sprite could have launched the sprite due to its class
 		
 		neighbors_curr_and_prev = neighborsPrev(envA, envB, sB) + neighborsPrev(envA, envPrev, sB)
-		nearestSprite = findNearestSprite(sB, [item for sublist in envA._game.sprite_groups.values() for item in sublist])
+		# nearestSprite = findNearestSprite(sB, [item for sublist in envA._game.sprite_groups.values() for item in sublist])
+		nearestSprite = findNearestSprite(sB, [item for sublist in envA._game.observation['trackedObjects'].values() for item in sublist])
+
 		if nearestSprite.name in neighbors_curr_and_prev:
 			e.intPairs.append((e.targetClass, nearestSprite.name))
 			e.culpritClasses.append(nearestSprite.name)
@@ -2211,18 +2222,22 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 
 		errorMap = lst
 
-	## NOTE: We could extend by penalizing as a function of (most likely) vgdlType and color
-	## NOTE: Use intializeHypotheses function in this file to build my test theories
-
-	## Sort so that you fix errors involving any new classes first.
+	## Sort so that you fix errors involving any new classes first when you build theories.
 	errorMap = sorted(errorMap, key=lambda x: x.targetClass!='unknown')
 
-	## convert color names in targetClass to theory class names:
+	## convert color names in targetClass and intPairs to theory class names:
 	for e in errorMap:
-		if e.targetClass in theory.spriteObjects.keys():
-			e.targetClass = theory.spriteObjects[e.targetClass].className
-		else:
-			e.targetClass = 'unknown'
+		e.targetClass = theory.spriteObjects[e.targetClass].className if e.targetClass in theory.spriteObjects.keys() else 'unknown'
+
+		if e.intPairs:
+			newIntPairs = []
+			for pair in e.intPairs:
+				p0 = theory.spriteObjects[pair[0]].className if pair[0] in theory.spriteObjects.keys() else 'unknown'
+				p1 = theory.spriteObjects[pair[1]].className if pair[1] in theory.spriteObjects.keys() else 'unknown'
+				pair = (p0, p1)
+				newIntPairs.append(pair)
+			e.intPairs = newIntPairs
+
 	return total_penalty, errorMap
 
 def neighborsPrev(envA, envPrev, sPrev):

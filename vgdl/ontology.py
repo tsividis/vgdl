@@ -188,6 +188,10 @@ class GridPhysics():
     #     return (abs(r1.top - r2.top)
     #             + abs(r1.left - r2.left))
 
+def distance(r1, r2):
+    """Euclidean distances. """
+    return sqrt((r1.top - r2.top) ** 2
+                + (r1.left - r2.left) ** 2)
 
 class ContinuousPhysics(GridPhysics):
     gravity = 0.
@@ -1957,11 +1961,11 @@ def chaserMovesToward(sprite, game, target, fleeing):
     """ Find the canonical direction(s) which move toward
     the target. """
     res = []
-    basedist = sprite.physics.distance(sprite.rect, target.rect)
+    basedist = distance(sprite.rect, target.rect)
     for a in BASEDIRS:
         r = sprite.rect.copy()
         r = r.move(a)
-        newdist = sprite.physics.distance(r, target.rect)
+        newdist = distance(r, target.rect)
         if fleeing and basedist < newdist:
             res.append(a)
         if not fleeing and basedist > newdist:
@@ -1976,7 +1980,7 @@ def findChaserClosestTargets(sprite, spritePrev, game):
     bestd = 1e100
     res = []
     for target in targets:
-        d = spritePrev.physics.distance(spritePrev.rect, target.rect)
+        d = distance(spritePrev.rect, target.rect)
         if d < bestd:
             bestd = d
             res = [target]
