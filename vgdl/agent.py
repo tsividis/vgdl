@@ -448,12 +448,7 @@ class Agent:
 			newTheories = [theory]
 			return newTheories
 
-		
-		# if 'newObjectAppeared' in errorMap.diagnosis:
-		# 	print "got new object"
-		# 	embed()
-
-		if errorMap.targetClass not in theory.spriteObjects.keys():
+		if errorMap.targetClass not in theory.classes.keys():
 			print "in new class handling in expandTheoryForOneErrorMap"
 			embed()
 			## assign new class here so you can use it for both expandSprites() and expandLine()
@@ -1939,9 +1934,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 	keys: (class1, class2). values: a diagnostic error signal
 	"""
 
-	# print "in errorSignal"
-	# embed()
-
 	# Initialization
 	total_penalty = 0.
 	errorMap = []
@@ -2028,7 +2020,11 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 			yA = sA.rect.top/d
 			if sPrev is None:
 				continue
-			closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
+			try:
+				closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
+			except:
+				print "tried to find chaseroptions in errorSignal"
+				embed()
 			## this should be arbitrarily high, actually. If you want this to be a surrogate likelihood function,
 			## the prob that a chaser moves away from what it's chasing is 0.
 			chaser_penalty = 0. if (xA,yA) in closestTargets else 100.
@@ -2065,8 +2061,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 		errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
 		errorMap.extend(errs)
 
-	print "in errorSignal"
-	embed()
 	# Case B: Sprite moved in real environment, but we predicted a destruction
 	# For this, we check if lonely envB sprite has match in envPrev (and pass to (2) if not)
 	appeared_sprites_envB = []
@@ -2217,19 +2211,24 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 
 		errorMap = lst
 
-	## TODO: penalize randomNPCs more smartly - currently they're kind of a joker, obscuring push events
-
 	## NOTE: We could extend by penalizing as a function of (most likely) vgdlType and color
 	## NOTE: Use intializeHypotheses function in this file to build my test theories
 
 	## Sort so that you fix errors involving any new classes first.
 	errorMap = sorted(errorMap, key=lambda x: x.targetClass!='unknown')
 
+	## convert color names in targetClass to theory class names:
+	for e in errorMap:
+		if e.targetClass in theory.spriteObjects.keys():
+			e.targetClass = theory.spriteObjects[e.targetClass].className
+		else:
+			e.targetClass = 'unknown'
 	return total_penalty, errorMap
 
 def neighborsPrev(envA, envPrev, sPrev):
 	"""
 	Function to find neighbors of target sprite in the previous time step
+	Usually the arguments correspond to the following:
 	envA: hypothetical environment, current step
 	envPrev: real environment, previous step
 	sPrev: target sprite in envPrev
@@ -2248,7 +2247,7 @@ def neighborsPrev(envA, envPrev, sPrev):
 	neighbors_theoClassNames = []
 	for color in neighbors_color:
 		for className in envA._game.observation['trackedObjects'].keys():
-			if envA._game.observation['trackedObjects'][className]!=[] and  envA._game.observation['trackedObjects'][className][0].colorName==color:
+			if envA._game.observation['trackedObjects'][className]!=[] and envA._game.observation['trackedObjects'][className][0].colorName==color:
 				neighbors_theoClassNames.append(className)
 	neighbors_theoClassNames = list(set(neighbors_theoClassNames)) #delete double entries
 	return neighbors_theoClassNames
