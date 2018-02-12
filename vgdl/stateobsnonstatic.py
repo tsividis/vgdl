@@ -346,6 +346,8 @@ def processFrame(memory, gameObject):
             for sprite in gameObject.sprite_groups[key]:
                 if not sprite.colorName in newTrackedObjects:
                     newTrackedObjects[sprite.colorName] = []
+                if sprite in gameObject.kill_list:
+                    continue
                 if sprite.ID in spriteIDDict:
                     # not a new object
                     newSprite = copySpriteStingy(spriteIDDict[sprite.ID])
