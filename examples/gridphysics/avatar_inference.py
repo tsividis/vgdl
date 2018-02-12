@@ -16,12 +16,12 @@
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
-w           1                  w
 w                              w
-w        1                     w
+w           1                  w
+w                1             w
 w                          5   w
 w    4                         w
-w           5 4 A              w
+w           5 4A               w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -61,7 +61,7 @@ BasicGame
         flicker > Flicker timeout=1 color=ORANGE
         random > RandomNPC color=PURPLE speed=1 cooldown=1
         chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
-        avatar  > FlakAvatar color=DARKBLUE stype=sam
+        avatar  > MovingAvatar color=DARKBLUE #stype=sam
         cannon > SpawnPoint color=RED stype=box spawnCooldown=5
         missile > Missile
             sam  > orientation=UP color=BLUE singleton=True
