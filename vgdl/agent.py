@@ -202,6 +202,9 @@ class Agent:
 
 
 	def truPenalty(self, envA, envB, IDmatch, p_dist=1, p_speed=.5, p_miss=10):
+		
+		print "you haven't gone through references to sprite_groups and kill_list in truPenalty(). Do that now"
+		embed()
 		penalty = 0
 		# List all sprites and IDs in both environments
 		all_sprites_envA = []
@@ -1482,18 +1485,14 @@ class Agent:
 		self.actionHistory.append(action)
 		self.rle.step(action)
 
-		## Should you put real RLEs or percepts in RLEHistory? The latter makes sense,
-		## but even if you added the former you'd be just as prone to perceptual error.
-
 		agentState = self.resourceManagement(pre_step=False)
 		envReal = self.fastcopy(self.rle)
 
-
 		hypotheses = self.manageNewObjects(hypotheses, envRealPrev, action, learnAvatar=self.learnAvatar)
 
+		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
 		self.rleHistory.append(envReal)
 		
-		#OBJECT TRACKING
 		resourceObservations, new_sprites = self.getObservations(agentState, envReal, envRealPrev)
 		print resourceObservations
 		# print "got resource observations"
@@ -1517,11 +1516,11 @@ class Agent:
 
 		newTheories = []
 
-		prev_real_sprites = [s for k in envRealPrev._game.sprite_groups.keys() for s in envRealPrev._game.sprite_groups[k] if s not in envRealPrev._game.kill_list]
-		prev_real_colors = set([s.colorName for s in prev_real_sprites if s])
+		# prev_real_sprites = [s for k in envRealPrev._game.sprite_groups.keys() for s in envRealPrev._game.sprite_groups[k] if s not in envRealPrev._game.kill_list]
+		# prev_real_colors = set([s.colorName for s in prev_real_sprites if s])
 
-		real_sprites = [s for k in self.rle._game.sprite_groups.keys() for s in self.rle._game.sprite_groups[k] if s not in self.rle._game.kill_list]
-		real_colors = set([s.colorName for s in real_sprites if s])
+		# real_sprites = [s for k in self.rle._game.sprite_groups.keys() for s in self.rle._game.sprite_groups[k] if s not in self.rle._game.kill_list]
+		# real_colors = set([s.colorName for s in real_sprites if s])
 
 		## DEBUG code. delete soon
 		# if len(self.rleHistory)<3:
@@ -1903,7 +1902,6 @@ def findNearestSprite(sprite, spriteList):
 		return None
 	else:
 		return sorted(spriteList, key=lambda x:abs(x.rect.x-sprite.rect.x)+abs(x.rect.y-sprite.rect.y))[0]
-
 
 
 
@@ -2414,8 +2412,11 @@ def matchEnvs(envA, envB, debug=False):
 	for color in colors:
 		# Find matching sprites via color
 		# color = sprite_group_color[k][0].colorName
-		matchingSpritesInEnvA = [s for s in getObservedSpritesByColor(envA._game, color) if s not in envA._game.kill_list]
-		matchingSpritesInEnvB = [s for s in getObservedSpritesByColor(envB._game, color) if s not in envB._game.kill_list]
+		# matchingSpritesInEnvA = [s for s in getSpritesByColor(envA._game, color) if s not in envA._game.kill_list]
+		# matchingSpritesInEnvB = [s for s in getSpritesByColor(envB._game, color) if s not in envB._game.kill_list]
+
+		matchingSpritesInEnvA = [s for s in getObservedSpritesByColor(envA._game, color)]
+		matchingSpritesInEnvB = [s for s in getObservedSpritesByColor(envB._game, color)]
 
 		## If it is manageable to enumerate all possible pairings
 		if len(matchingSpritesInEnvA)<enumeration_limit:
