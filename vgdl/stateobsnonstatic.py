@@ -371,9 +371,12 @@ def processFrame(memory, gameObject):
                     # new, unseen object
                     newSprite = copySpriteStingy(sprite)
                 # update inventory
-                # TODO: no way to tell max capacity from gameObject (assume current inventory for now)
                 if sprite.resources:
-                    newSprite.inventory = {key: (sprite.resources[key], sprite.resources[key]) for key in sprite.resources}
+                    newSprite.inventory = {}
+                    for key in sprite.resources:
+                        color = gameObject.sprite_groups[key][0].colorName
+                        limit = gameObject.sprite_groups[key][0].limit
+                        newSprite.inventory[color] = (sprite.resources[key], limit)
                 else:
                     newSprite.inventory = defaultdict(int)
                 newTrackedObjects[sprite.colorName].append(newSprite)
