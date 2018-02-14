@@ -319,7 +319,7 @@ def buildTracker(rle):
 def copySpriteStingy(sprite):
     # copies all the data from sprite that we could reasonably get from
     #   a real CV system into a new sprite, then returns it
-    newSprite = TrackedSprite([sprite.x, sprite.y], color=sprite.color) # automatically does colorName
+    newSprite = TrackedSprite([sprite.rect.left, sprite.rect.top], color=sprite.color) # automatically does colorName
     newSprite.ID = ccopy(sprite.ID) # not sure if we need this
     newSprite.name = newSprite.colorName
     newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
@@ -341,32 +341,36 @@ def processFrame(memory, gameObject):
     newMemory['isGrid'] = memory['isGrid']
     spriteIDDict = {sprite.ID: sprite for lst in memory['trackedObjects'].values() for sprite in lst}
 
+    # print "in processFrame"
+    # embed()
     for key in gameObject.sprite_groups.keys():
         if gameObject.sprite_groups[key]:
             for sprite in gameObject.sprite_groups[key]:
-                if not sprite.colorName in newTrackedObjects:
-                    newTrackedObjects[sprite.colorName] = []
                 if sprite in gameObject.kill_list:
                     continue
+                if not sprite.colorName in newTrackedObjects:
+                    newTrackedObjects[sprite.colorName] = []
                 if sprite.ID in spriteIDDict:
                     # not a new object
                     newSprite = copySpriteStingy(spriteIDDict[sprite.ID])
                     newSprite.lastmove += 1
-                    if sprite.x != newSprite.x or sprite.y != newSprite.y:
+                    if sprite.rect.left != newSprite.rect.left or sprite.rect.top != newSprite.rect.top:
                         # first check if this is actually continuous (default assumes grid)
-                        if memory['isGrid'] and sprite.x != newSprite.x and sprite.y != newSprite.y and abs(sprite.x - newSprite.x) != abs(sprite.y - newSprite.y):
+                        if memory['isGrid'] and sprite.rect.left  != newSprite.rect.left  and sprite.rect.top != newSprite.rect.top and abs(sprite.rect.left  - newSprite.rect.left ) != abs(sprite.rect.top - newSprite.rect.top):
                             newMemory['isGrid'] = False
                         # it moved since last sighting!
                         if newMemory['isGrid']:
-                            newSprite.speed = max(abs(sprite.x - newSprite.x), abs(sprite.y - newSprite.y)) * 1.0 / sprite.rect.width # TODO: don't depend on width
-                            newSprite.orientation = (np.sign(sprite.x - newSprite.x), np.sign(sprite.y - newSprite.y))
+                            newSprite.speed = max(abs(sprite.rect.left - newSprite.rect.left), abs(sprite.rect.top - newSprite.rect.top)) * 1.0 / sprite.rect.width # TODO: don't depend on width
+                            newSprite.orientation = (np.sign(sprite.rect.left - newSprite.rect.left), np.sign(sprite.rect.top - newSprite.rect.top))
                         else:
-                            print 'here' , [sprite.x, sprite.y], [newSprite.x, newSprite.y]
-                            newSprite.speed = euclideanDist([sprite.x, sprite.y], [newSprite.x, newSprite.y])
-                            newSprite.orientation = normalizeVec([sprite.x - newSprite.x, sprite.y - newSprite.y])
-                        newSprite.x , newSprite.y = sprite.x , sprite.y
-                        newSprite.lastrect = ccopy(sprite.rect)
-                        newSprite.rect.move_ip(sprite.rect.x - newSprite.rect.x, sprite.rect.y - newSprite.rect.y)
+                            print 'here' , [sprite.rect.left, sprite.rect.top], [newSprite.rect.left, newSprite.rect.top]
+                            newSprite.speed = euclideanDist([sprite.rect.left, sprite.rect.top], [newSprite.rect.left, newSprite.rect.top])
+                            newSprite.orientation = normalizeVec([sprite.rect.left - newSprite.rect.left, sprite.rect.top - newSprite.rect.top])
+                        newSprite.rect.left , newSprite.rect.top = sprite.rect.left , sprite.rect.top
+                        newSprite.lastrect = ccopy(newSprite.rect)
+                        newSprite.rect = ccopy(sprite.rect)
+
+                        # newSprite.rect.move_ip(sprite.rect.rect.left - newSprite.rect.x, sprite.rect.y - newSprite.rect.y)
                 else:
                     # new, unseen object
                     newSprite = copySpriteStingy(sprite)
@@ -378,7 +382,7 @@ def processFrame(memory, gameObject):
                         limit = gameObject.sprite_groups[key][0].limit
                         newSprite.inventory[color] = (sprite.resources[key], limit)
                 else:
-                    newSprite.inventory = defaultdict(int)
+                    newSprite.inventory = dict()
                 newTrackedObjects[sprite.colorName].append(newSprite)
     newMemory['trackedObjects'] = newTrackedObjects
     return newMemory

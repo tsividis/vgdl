@@ -1698,7 +1698,6 @@ class Agent:
 		hypothesis = hypotheses[num]
 
 		env.step(action)
-
 		penalty, errorList = errorSignal(env, self.rle, hypothesis, envRealPrev)
 		
 		if errorList:
@@ -1746,7 +1745,6 @@ class Agent:
 		
 		self.rle._game.sprite_appearances = self.manageResourcesAndNewSprites(envReal, envRealPrev)
 
-		embed()
 		# self.updateResourceDistributions(hypotheses, envReal, envRealPrev, action)
 
 		# resourceObservations = self.getObservations(hypotheses, envReal, envRealPrev, action)
@@ -2188,8 +2186,9 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 	# print '>>> lonely_sprites_envB:', [s for s in lonely_sprites_envB]
 
 	## Penalize distance and additional/missing sprites
-	# Distance penalty
+
 	for t in matched_sprites:
+		## Distance penalty
 		sA, sB = t[0], t[1] #sprites in envA, envB      
 		dist = t[2] #distance to sprite in envB
 		sA_type = theory.spriteObjects[sA.name].vgdlType
@@ -2256,10 +2255,21 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 			total_penalty += p_speed*chaser_penalty
 		# All of the other types are deterministic
 		else:
-			total_penalty += p_dist*t[2]    
+			total_penalty += p_dist*t[2] 
+
+		inventory_penalty = 0
+		keys = list(set(t[0].inventory.keys()+t[1].inventory.keys()))
+		for k in keys:
+			t0_k = t[0].inventory[k] if k in t[0].inventory.keys() else (0,0)
+			t1_k = t[1].inventory[k] if k in t[1].inventory.keys() else (0,0)
+			inventory_penalty += abs(t0_k[0]-t1_k[0])
+
+
+		total_penalty += inventory_penalty
 
 	# Missing/additional/transformation penalty
 	total_penalty += p_miss * ( len(lonely_sprites_envA) + len(lonely_sprites_envB) )
+
 
 	if penalty_only:
 		return total_penalty, []
@@ -2414,11 +2424,25 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 			embed()
 		errorMap.append(e)
 
-	# 3) State change
-	# Call s.resources on all sprites in envA and envB. See which ones have changed
-	# and if that is consistent between envA and envB
-	#TODO
+	# 3) Inventory change
+	for t in matched_sprites:
+		inventory_penalty = 0
+		keys = list(set(t[0].inventory.keys()+t[1].inventory.keys()))
+		for k in keys:
+			t0_k = t[0].inventory[k] if k in t[0].inventory.keys() else (0,0)
+			t1_k = t[1].inventory[k] if k in t[1].inventory.keys() else (0,0)
+			inventory_penalty += abs(t0_k[0]-t1_k[0])
 
+		if inventory_penalty > 0:
+			e = errorMapEntry()
+			e.diagnosis.append('inventoryChange')
+			sA, sB = t[0], t[1]
+			e.targetToken = sA
+			e.targetClass = sA.name
+			sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
+			neighbors_prev = neighborsPrev(envB, envPrev, sPrev)
+			e.intPairs.extend([(e.targetClass, n) for n in neighbors_prev])
+			errorMap.append(e)
 	## Share information across errorMap items and make a unique list
 	if len(errorMap) > 1:
 		diagnosis_class_pairs = list(set([(e.diagnosis[0], e.targetClass) for e in errorMap]))
@@ -2472,15 +2496,17 @@ def neighborsPrev(envA, envPrev, sPrev):
 	neighbors = [s for s in all_sprites if manhattanDist2(s, sPrev)<=np.sqrt(2) and s!=sPrev]
 
 	# Determine corresponding classes in theory environment
-	neighbors_color = [s.colorName for s in neighbors]
-	neighbors_color = list(set(neighbors_color))
-	neighbors_theoClassNames = []
-	for color in neighbors_color:
-		for className in envA._game.observation['trackedObjects'].keys():
-			if envA._game.observation['trackedObjects'][className]!=[] and envA._game.observation['trackedObjects'][className][0].colorName==color:
-				neighbors_theoClassNames.append(className)
-	neighbors_theoClassNames = list(set(neighbors_theoClassNames)) #delete double entries
-	return neighbors_theoClassNames
+	# neighbors_color = [s.colorName for s in neighbors]
+	# neighbors_color = list(set(neighbors_color))
+	# neighbors_theoClassNames = []
+	# for color in neighbors_color:
+	# 	for className in envA._game.observation['trackedObjects'].keys():
+	# 		if envA._game.observation['trackedObjects'][className]!=[] and envA._game.observation['trackedObjects'][className][0].colorName==color:
+	# 			neighbors_theoClassNames.append(className)
+	# neighbors_theoClassNames = list(set(neighbors_theoClassNames)) #delete double entries
+
+	neighbors = list(set([n.colorName for n in neighbors]))	
+	return neighbors
 
 def find_sPrev(sB, envB, envPrev):
 	"""
