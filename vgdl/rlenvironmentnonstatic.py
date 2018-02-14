@@ -427,6 +427,9 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         self._game.observation = processFrame(self._game.observation, self._game)
         return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
 
+    def __repr__(self):
+        return self.show()
+
 ## the game in the agent's 'head'
 def defTheoryTest():
     from examples.gridphysics.theorytest import game, level
