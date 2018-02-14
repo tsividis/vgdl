@@ -43,6 +43,9 @@ AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
 dill.settings['recurse'] = True
 
+ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPACE: (0,0), 0: (0,0)}
+
+
 # PROCESS_POOL = pp.ProcessPool(2)
 mpp = mp.Pool(4)
 
@@ -129,7 +132,8 @@ class Agent:
 		self.benchmarkHistory = []
 		self.resourceObservations = {'speed':[], 'changeResource':[]}
 		self.observed_resources = set()
-		self.distributions = PreconditionInduction()
+		self.distributions = {}
+		self.history = {}
 		self.lastObjectState = {}
 
 	def initializeEnvironment(self):
@@ -165,17 +169,6 @@ class Agent:
 						sprite_list.append({'speed':sprite.speed, 'orientation':o, 'position':(sprite.rect.x,sprite.rect.y)})
 				state[color] = sprite_list
 		return state
-
-
-
-
-
-
-
-
-
-
-
 
 	def IDmatch(self, envA, envB):
 		"""
@@ -308,6 +301,8 @@ class Agent:
 								rule.slot2 = 'c'+str(int(rule.slot2[1:])-1)
 
 					self.hypotheses.append(newTheory)
+					self.distributions[color] = PreconditionInduction()
+					self.history[color] = {}
 		else:
 			self.hypotheses = [initialTheory]
 
@@ -766,10 +761,12 @@ class Agent:
 	def testEpisode(self, gameObject, epoch=0):
 		
 		actions = [K_RIGHT, K_LEFT, K_LEFT]
+
 		self.initializeEnvironment()
 
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
+
 		print "initializing RLE. Epoch={}".format(epoch)
 		num_cores = mp.cpu_count()
 		print "num cores: {}".format(num_cores) 
@@ -790,8 +787,12 @@ class Agent:
 
 		agentState = self.resourceManagement(pre_step=True)
 
+		# print "WARNING: TAKING K_RIGHT STEP THAT'S NOT IN ACTIONS. REMOVE ASAP."
+		# self.rle.step(K_RIGHT)
+
+
 		#OBJECT TRACKING
-		resourceObservations = self.getObservations(agentState, self.rle, self.rle)
+		# resourceObservations = self.getObservations(self.hypotheses, agentState, self.rle, self.rle)
 
 		#updates the distributions
 		# self.distributions.updateDist(resourceObservations)
@@ -1279,104 +1280,355 @@ class Agent:
 
 		return agentState
 
-	def getObservations(self, agentState, envReal, envRealPrev):
-		
-		##TODO: generalize. this might have to be theory-specific, since different theories 
-		## might hypothesize different avatars
-		
-		#whether the avatar is still alive 
-		avatar_is_dead = len(getObservedSpritesByColor(envReal._game,'DARKBLUE'))==0
+	def predictCollisionsBasedOnTheory(self, theory, envReal, envRealPrev, action):
+		avatar_color = theory.classes['avatar'][0].colorName
+		observation = envRealPrev._game.observation['trackedObjects']
+		avatar_is_dead = len(envReal._game.observation['trackedObjects'][avatar_color])==0
 
-		#using the previous state, we predict where the objects are going to be
-		self.predictions = {}
-		for key in self.lastObjectState.keys():
-			#predictions done a little differently for avatar
-			if key == 'DARKBLUE' and not avatar_is_dead:
-				#predicting avatar location needs to be done properly
-				try:
-					speed = agentState['speed']
-					orientation = self.lastObjectState[key][0]['orientation']
-					pos = self.lastObjectState[key][0]['position']
-					expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
-					positions = [expected_pos]
-				except:
-					print "in getObservations try/except"
-					embed()
-					pass
-			else:
-				positions = []
-				for i in self.lastObjectState[key]:
-					speed = i['speed']
-					orientation = i['orientation']
-					pos = i['position']
-					if speed == None:
-						expected_pos = pos
-					else:
-						expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
-					positions.append(expected_pos)
-			self.predictions[key] = positions
+		predictions = {k:[] for k,v in observation.iteritems() if len(v)>0}
+		trackedSprites = [item for sublist in observation.values() for item in sublist]
 		
-		## TODO: This doesn't look like it's rolling forward all predictions at the same time
-		## and using that to make a prediction. What you need is a theory-based prediction (as in, a step forward)
-		## in the simulator, and then knowledge about the intersections given each theory.
+		## Generate predictions for each sprite. We do this rather than running an RLE forward because
+		## an RLE about a hypothetical theory won't necessarily make the right collisions happen.
+		## That is, we need to know what collisions might potentially occur and know the involved items.
+		for trackedSprite in trackedSprites:
+			try:
+				speed = trackedSprite.speed
+				if speed is None:
+					speed = 1.
+				if trackedSprite.colorName==avatar_color and not \
+				any([k in str(theory.classes['avatar'][0].vgdlType) for k in ['Aimed', 'Rotating', 'Oriented']]):
+					orientation = ACTIONDICT[action]
+				else:
+					orientation = trackedSprite.orientation
+				pos = (trackedSprite.rect.left, trackedSprite.rect.top)
+				expected_pos = [pos[0]+orientation[0]*speed*trackedSprite.rect.width, \
+								pos[1]+orientation[1]*speed*trackedSprite.rect.width]
+				predictions[trackedSprite.colorName].extend([expected_pos])
+			except:
+				print "had trouble with avatar prediction in getTheoryLadenPrediction"
+				embed()
 
-		#get list of possible objects which could have collided with avatar
+		if avatar_is_dead:
+			avatar_loc = predictions[avatar_color][0]
+		else:
+			avatar_loc = envReal._game.observation['trackedObjects'][avatar_color][0].rect.left, \
+						 envReal._game.observation['trackedObjects'][avatar_color][0].rect.top
+
 		candidates = []
 		locs = {}
-		current_state = self.getStateByColor(envRealPrev)
+		for key in predictions:
+			for location in predictions[key]:
+				if self.intersect(location, avatar_loc):
+					candidates.append(key)
+					locs[key] = location
+					break
+		return candidates, locs
 
-		if len(current_state['DARKBLUE']) > 0:
-			avatar = current_state['DARKBLUE'][0]['position']
-		elif 'DARKBLUE' in self.predictions.keys():
-			avatar = self.predictions['DARKBLUE'][0]
-		for key in self.predictions.keys():
-			if key is not 'DARKBLUE':
-				for i in self.predictions[key]:
-					#see what objects intersected with our avatar
-					if self.intersect(i,avatar):
-						candidates.append(key)
-						locs[key] = i
-						break
-		print 'CANDIDATES'
-		print candidates
+
+	def manageResourcesAndNewSprites(self, envReal, envRealPrev):
+
+		for color in self.distributions.keys():
+			avatar_color = color
+			avatar_is_dead = len(envReal._game.observation['trackedObjects'][avatar_color])
+			avatar = envRealPrev._game.observation['trackedObjects'][avatar_color][0]
+			avatar_speed = avatar.speed
+			if avatar_speed is None:
+				avatar_speed = 1.
+
+			new_resources = set()
+			for key in avatar.inventory.keys():
+				if key not in ['orientation','speed']:
+					if key not in self.observed_resources:
+						new_resources.add(key)
+					self.observed_resources[color].add(key)
+
+			#when finding a new resource, update our distribution
+			for res in new_resources:
+				for pair in self.history[color]:
+					new_observation = {'speed':{},'resource':{color:{res:(0,pair[0],pair[1])}}}
+					self.distributions[color].updateDist(new_observation)
+
+		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
+		new_sprites = [(s.colorName, s.rect.left, s.rect.top) for s in new_sprites]
+
+		return new_sprites
+
+	def getResourceObservationsBasedOnTheory(self, theory, envReal, envRealPrev, action):
+		candidates, locs = self.predictCollisionsBasedOnTheory(theory, envReal, envRealPrev, action)
+		
+		avatar_color = theory.classes['avatar'][0].colorName
+		avatar_is_dead = len(envReal._game.observation['trackedObjects'][avatar_color])==0
+		avatar = envRealPrev._game.observation['trackedObjects'][avatar_color][0]
+		avatar_speed = avatar.speed
+		if avatar_speed is None:
+			avatar_speed = 1.
+		for color in self.distributions.keys():
+			avatar_color = color
+			avatar_is_dead = len(envReal._game.observation['trackedObjects'][avatar_color])
+			avatar = envRealPrev._game.observation['trackedObjects'][avatar_color][0]
+			avatar_speed = avatar.speed
+			if avatar_speed is None:
+				avatar_speed = 1.
+
 
 		#build our dictionary of observations
-		resourceObservations = {'speed':{},'resource':defaultdict(lambda:{})}
+		resourceObservations = {'speed':{},'resource':{}}
 
 		#two cases - whether this collision killed the avatar or not
 		if avatar_is_dead:
 			for sprite in candidates:
-				resourceObservations['speed'][sprite] = (None,agentState['speed']) # <--- Why are we switching order here and in the line 3 below?
+				resourceObservations['speed'][sprite] = (None, avatar_speed)
 		else:
 			for sprite in candidates:
-				resourceObservations['speed'][sprite] = (agentState['speed'],None)
+				resourceObservations['speed'][sprite] = (avatar_speed, None)
 		
-		for key in agentState.keys():
-			if key not in ['orientation','speed']:
-				self.observed_resources.add(key)
-		
-		THRESHHOLD = 0.5*self.rle._game.block_size
-		for sprite in candidates:
+		THRESHHOLD = 0.5*envReal._game.block_size
+		for spriteColor in candidates:
 			#we must determine if the sprite has dissapeared
 			sprite_gone = True
-			if len(current_state[sprite]) == len(self.lastObjectState[sprite]):
+			if len(envReal._game.observation['trackedObjects'][spriteColor]) == len(envRealPrev._game.observation['trackedObjects'][spriteColor]):
 				sprite_gone = False
 			else:
 				#match closest sprite
 				#locs[sprite] is where we expect the sprite to be
-				for i in current_state[sprite]:
+				for i in envReal._game.observation['trackedObjects'][spriteColor]:
+					#embed()
 					pos = i['position']
-					if abs(pos[0] - locs[sprite][0]) + abs(pos[1] - locs[sprite][1]) < THRESHHOLD:
-						resourceObservations['resource'][sprite] = {}
-			for res in self.observed_resources:
-				val = agentState[res]
-				#return whether this collision killed the sprite or the avatar - this format is used when updating distributions
-				resourceObservations['resource'][sprite][res] = (val, not avatar_is_dead, not sprite_gone)
+					if abs(pos[0] - locs[spriteColor][0]) + abs(pos[1] - locs[spriteColor][1]) < THRESHHOLD:
+						sprite_gone = False
 
-		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
-		new_sprites = [(s.colorName, s.rect.left, s.rect.top) for s in new_sprites]
-		self.lastObjectState = current_state
-		return resourceObservations, new_sprites
+		 	resourceObservations['resource'][spriteColor] = {}
+		 	for res in self.observed_resources:
+		 		#agentState is a default dict, so if res is not in agentState then val is 0
+		 		val = agentState[res]
+		 		#return whether this collision killed the sprite or the avatar - this format is used when updating distributions
+		 		resourceObservations['resource'][spriteColor][res] = (val,not avatar_is_dead,not sprite_gone)
+
+	 		if spriteColor not in self.history[avatar_color]:
+	 			self.history[avatar_color][spriteColor] = []
+	 		self.history[avatar_color][spriteColor].append((not avatar_is_dead, not sprite_gone))
+
+		return resourceObservations
+
+	# def updateResourceDistributions(self, hypotheses, envReal, envRealPrev, action):
+		# for theory in hypotheses:
+			# resourceObservations = self.getResourceObservationsBasedOnTheory(theory, envReal, envRealPrev, action)
+
+
+	# def getObservations(self, hypotheses, agentState, envReal, envRealPrev, action):
+		
+	# 	#whether the avatar is still alive
+	# 	avatar_is_dead = (self.getSpritesByColor(self.rle,'WHITE') is None)
+	# 	#using the previous state, we predict where the objects are going to be
+	# 	self.predictions = {}
+		
+	# 	#take in key press in grid physics games
+	# 	for key in self.lastObjectState.keys():
+	# 		#predictions done a little differently for avatar
+	# 		if key == 'WHITE' and not avatar_is_dead:
+	# 			#predicting avatar location needs to be done properly
+	# 				try:
+	# 					speed = agentState['speed']
+	# 					orientation = self.lastObjectState[key][0]['orientation']
+	# 					pos = self.lastObjectState[key][0]['position']
+	# 					expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
+	# 					positions = [expected_pos]
+	# 				except:
+	# 					pass
+	# 		else:
+	# 			positions = []
+	# 			for i in self.lastObjectState[key]:
+	# 				speed = i['speed']
+	# 				if key == 'WHITE' and i['orientation'] == (0,0):
+	# 					orientation = actionDict[action]
+	# 					speed*=self.rle._game.block_size
+	# 				else:
+	# 					orientation = i['orientation']
+	# 				pos = i['position']
+	# 				if speed is None:
+	# 					expected_pos = pos
+	# 				else:
+	# 					expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
+	# 				positions.append(expected_pos)
+	# 		self.predictions[key] = positions
+	# 	#get list of possible objects which could have collided with avatar
+	# 	candidates = []
+	# 	locs = {}
+	# 	current_state = self.getStateByColor(self.rle)
+	# 	if len(current_state['WHITE']) > 0:
+	# 		avatar = current_state['WHITE'][0]['position']
+	# 	elif 'WHITE' in self.predictions.keys():
+	# 		avatar = self.predictions['WHITE'][0]
+	# 	for key in self.predictions.keys():
+	# 		if key is not 'WHITE':
+	# 			for i in self.predictions[key]:
+	# 				#see what objects intersected with our avatar
+	# 				if self.intersect(i,avatar):
+	# 					candidates.append(key)
+	# 					locs[key] = i
+	# 					break
+	# 	print 'CANDIDATES'
+	# 	print candidates
+
+	# 	#build our dictionary of observations
+	# 	resourceObservations = {'speed':{},'resource':{}}
+
+	# 	#two cases - whether this collision killed the avatar or not
+	# 	if avatar_is_dead:
+	# 		for sprite in candidates:
+	# 			resourceObservations['speed'][sprite] = (None,agentState['speed'])
+	# 	else:
+	# 		for sprite in candidates:
+	# 			resourceObservations['speed'][sprite] = (agentState['speed'],None)
+		
+	# 	new_resources = set()
+	# 	for key in agentState.keys():
+	# 		if key not in ['orientation','speed']:
+	# 			if key not in self.observed_resources:
+	# 				new_resources.add(key)
+	# 			self.observed_resources.add(key)
+
+	# 	#when finding a new resource, update our distribution
+	# 	for res in new_resources:
+	# 		for sprite in self.history.keys():
+	# 			for pair in self.history[sprite]:
+	# 				new_observation = {'speed':{},'resource':{sprite:{res:(0,pair[0],pair[1])}}}
+	# 				self.distributions.updateDist(new_observation)
+
+		
+	# 	THRESHHOLD = 0.5*self.rle._game.block_size
+	# 	for sprite in candidates:
+	# 		#we must determine if the sprite has dissapeared
+	# 		sprite_gone = True
+	# 		if len(current_state[sprite]) == len(self.lastObjectState[sprite]):
+	# 			sprite_gone = False
+	# 		else:
+	# 			#match closest sprite
+	# 			#locs[sprite] is where we expect the sprite to be
+	# 			for i in current_state[sprite]:
+	# 				#embed()
+	# 				pos = i['position']
+	# 				if abs(pos[0] - locs[sprite][0]) + abs(pos[1] - locs[sprite][1]) < THRESHHOLD:
+	# 					sprite_gone = False
+
+	# 	 	resourceObservations['resource'][sprite] = {}
+	# 	 	for res in self.observed_resources:
+	# 	 		#agentState is a default dict, so if res is not in agentState then val is 0
+	# 	 		val = agentState[res]
+	# 	 		#return whether this collision killed the sprite or the avatar - this format is used when updating distributions
+	# 	 		resourceObservations['resource'][sprite][res] = (val,not avatar_is_dead,not sprite_gone)
+
+	#  		if sprite not in self.history:
+	#  			self.history[sprite] = []
+	#  		self.history[sprite].append((not avatar_is_dead, not sprite_gone))
+
+	# 	self.lastObjectState = current_state
+	# 	_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
+	# 	new_sprites = [(s.colorName, s.rect.left, s.rect.top) for s in new_sprites]
+	# 	return resourceObservations, new_sprites
+
+
+
+	# def getObservations(self, hypotheses, agentState, envReal, envRealPrev):
+		
+	# 	##TODO: generalize. this might have to be theory-specific, since different theories 
+	# 	## might hypothesize different avatars
+	# 	print "in getObservations"
+	# 	embed()
+	# 	#whether the avatar is still alive 
+	# 	avatar_is_dead = len(getObservedSpritesByColor(envReal._game,'DARKBLUE'))==0
+
+	# 	#using the previous state, we predict where the objects are going to be
+	# 	self.predictions = {}
+	# 	for key in self.lastObjectState.keys():
+	# 		#predictions done a little differently for avatar
+	# 		if key == 'DARKBLUE' and not avatar_is_dead:
+	# 			#predicting avatar location needs to be done properly
+	# 			try:
+	# 				speed = agentState['speed']
+	# 				orientation = self.lastObjectState[key][0]['orientation']
+	# 				pos = self.lastObjectState[key][0]['position']
+	# 				expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
+	# 				positions = [expected_pos]
+	# 			except:
+	# 				print "in getObservations try/except"
+	# 				embed()
+	# 				pass
+	# 		else:
+	# 			positions = []
+	# 			for i in self.lastObjectState[key]:
+	# 				speed = i['speed']
+	# 				orientation = i['orientation']
+	# 				pos = i['position']
+	# 				if speed == None:
+	# 					expected_pos = pos
+	# 				else:
+	# 					expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
+	# 				positions.append(expected_pos)
+	# 		self.predictions[key] = positions
+		
+	# 	## TODO: This doesn't look like it's rolling forward all predictions at the same time
+	# 	## and using that to make a prediction. What you need is a theory-based prediction (as in, a step forward)
+	# 	## in the simulator, and then knowledge about the intersections given each theory.
+
+	# 	#get list of possible objects which could have collided with avatar
+	# 	candidates = []
+	# 	locs = {}
+	# 	current_state = self.getStateByColor(envRealPrev)
+
+	# 	if len(current_state['DARKBLUE']) > 0:
+	# 		avatar = current_state['DARKBLUE'][0]['position']
+	# 	elif 'DARKBLUE' in self.predictions.keys():
+	# 		avatar = self.predictions['DARKBLUE'][0]
+	# 	for key in self.predictions.keys():
+	# 		if key is not 'DARKBLUE':
+	# 			for i in self.predictions[key]:
+	# 				#see what objects intersected with our avatar
+	# 				if self.intersect(i,avatar):
+	# 					candidates.append(key)
+	# 					locs[key] = i
+	# 					break
+	# 	print 'CANDIDATES'
+	# 	print candidates
+
+	# 	#build our dictionary of observations
+	# 	resourceObservations = {'speed':{},'resource':defaultdict(lambda:{})}
+
+	# 	#two cases - whether this collision killed the avatar or not
+	# 	if avatar_is_dead:
+	# 		for sprite in candidates:
+	# 			resourceObservations['speed'][sprite] = (None,agentState['speed']) # <--- Why are we switching order here and in the line 3 below?
+	# 	else:
+	# 		for sprite in candidates:
+	# 			resourceObservations['speed'][sprite] = (agentState['speed'],None)
+		
+	# 	for key in agentState.keys():
+	# 		if key not in ['orientation','speed']:
+	# 			self.observed_resources.add(key)
+		
+	# 	THRESHHOLD = 0.5*self.rle._game.block_size
+	# 	for sprite in candidates:
+	# 		#we must determine if the sprite has dissapeared
+	# 		sprite_gone = True
+	# 		if len(current_state[sprite]) == len(self.lastObjectState[sprite]):
+	# 			sprite_gone = False
+	# 		else:
+	# 			#match closest sprite
+	# 			#locs[sprite] is where we expect the sprite to be
+	# 			for i in current_state[sprite]:
+	# 				pos = i['position']
+	# 				if abs(pos[0] - locs[sprite][0]) + abs(pos[1] - locs[sprite][1]) < THRESHHOLD:
+	# 					resourceObservations['resource'][sprite] = {}
+	# 		for res in self.observed_resources:
+	# 			val = agentState[res]
+	# 			#return whether this collision killed the sprite or the avatar - this format is used when updating distributions
+	# 			resourceObservations['resource'][sprite][res] = (val, not avatar_is_dead, not sprite_gone)
+
+	# 	_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
+	# 	new_sprites = [(s.colorName, s.rect.left, s.rect.top) for s in new_sprites]
+	# 	self.lastObjectState = current_state
+	# 	return resourceObservations, new_sprites
 
 	def intersect(self, p1, p2):
 		return (abs(p1[0] - p2[0]) <= self.rle._game.block_size and abs(p1[1] - p2[1]) <= self.rle._game.block_size)
@@ -1492,12 +1744,15 @@ class Agent:
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
 		self.rleHistory.append(envReal)
 		
-		resourceObservations, new_sprites = self.getObservations(agentState, envReal, envRealPrev)
-		print resourceObservations
+		self.rle._game.sprite_appearances = self.manageResourcesAndNewSprites(envReal, envRealPrev)
+
+		embed()
+		# self.updateResourceDistributions(hypotheses, envReal, envRealPrev, action)
+
+		# resourceObservations = self.getObservations(hypotheses, envReal, envRealPrev, action)
+		# print resourceObservations
 		# print "got resource observations"
 		# embed()
-		self.rle._game.sprite_appearances = new_sprites
-		print "new sprites", new_sprites
 		#updates the distributions
 		# self.distributions.updateDist(resourceObservations)
 		# print self.distributions.distr
@@ -1508,9 +1763,6 @@ class Agent:
 
 		# agentState = self.resourceManagement(pre_step=False, res)
 		# self.rle.agentStatePrev = agentState
-		## Evaluate each theory on this step
-		## Propose new theories
-		# flag=False
 		print "evaluating {} old theories and proposing new ones".format(len(theoryRLEs))
 
 		newTheories = []
@@ -1585,36 +1837,6 @@ class Agent:
 				embed()
 		else:
 			print "Got no new theories"
-
-		### Store one-step penalties ###
-		# Update mean error history
-		# self.meanErrorHistory.append( [np.mean(hypotheses[i].errorHistory) for i in range(len(hypotheses))] )
-		# Update minimum step error
-		# self.minStepError.append( hypotheses[0].errorHistory[-1] )
-
-		# ### Store sampled scores ###
-		# num_samples=20
-		# # Random game instances for scoring
-		# rle = self.initializeRLEFromGame()
-		# rrle = []
-		# for sample in range(num_samples):
-		#   rrle.append(self.randomizeState(rle))
-		# # Theory scores on sampled game instances
-		# tt = time.time()
-		# print ">>> Theory scores"
-		# scoreR = self.testHypotheses(hypotheses, rrle=rrle, num_samples=num_samples, actions_per_sample=20, last_only=True)
-		# self.theoryScoreHistory.append(scoreR)
-		# # Benchmark: Mean scores of random theories on sampled game instances
-		# print ">>> Benchmark scores"
-		# scoreB = self.testHypotheses(self.randomTheories, rrle=rrle, num_samples=num_samples, actions_per_sample=20, last_only=True)
-		# self.benchmarkHistory.append(scoreB)
-		# # Test output
-		# print ">>> TIME", time.time()-tt
-		# print "Theory scores on sampled game instances:"
-		# print [scoreR[i][0] for i in range(len(scoreR))]
-
-		# print ">>> Embedded at end of executeStep"
-		# embed()
 
 		self.statesEncountered.append(self.rle._game.getFullState())
 		self.rle._game.sprite_appearances = []
