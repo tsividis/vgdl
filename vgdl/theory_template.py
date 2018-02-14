@@ -2370,44 +2370,44 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 
 	## List of predicates that are unique to a physics type
 	physicsToPredicateMapping = {
-	'all' : ['killSprite', 'cloneSprite', 'transformTo', 'transformToOnLanding',\
-		'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killOtherHasLess',\
-		'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow',\
-		'undoAll', 'nothing',\
-		'turn', 'turnAround', 'reverseDirection', 'flipDirection', 'bounceForward',\
-		'changeResource', 'collectResource', 'scoreChange', 'teleportToExit', 'conveySprite'],
+	'all' : 					['killSprite', 'cloneSprite', 'transformTo', 'transformToOnLanding',\
+								'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killOtherHasLess',\
+								'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow',\
+								'undoAll', 'nothing',\
+								'turn', 'turnAround', 'reverseDirection', 'flipDirection', 'bounceForward',\
+								'changeResource', 'collectResource', 'scoreChange', 'teleportToExit', 'conveySprite'],
 	'gridphysics': [],
-	'continuousphysics': ['transformToOnLanding', 'killIfTooFast', 'killIfSlow', 'killIfFromAbove',\
-		'killIfFromBelow', 'bounceDirection', 'flipDirection', 'conveySprite', 'pullWithIt',\
-		'windGust','slipForward', 'wallBounce', 'wallStop','onRope', 'onLadder']
-	}
+	'continuousphysics': 		['transformToOnLanding', 'killIfTooFast', 'killIfSlow', 'killIfFromAbove',\
+								'killIfFromBelow', 'bounceDirection', 'flipDirection', 'conveySprite', 'pullWithIt',\
+								'windGust','slipForward', 'wallBounce', 'wallStop','onRope', 'onLadder']
+								}
 
 	errorSignalToPredicateMapping = {
 
 	## Destruction/appearance/transformation
-	'objectDestruction': ['killSprite'],
-	'newObjectAppeared': ['cloneSprite'],
-	'transformation': ['transformTo', 'transformToOnLanding'],
-	'conditionalKill': ['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killOtherHasLess',\
-	'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
+	'objectDestruction': 		['killSprite'],
+	'newObjectAppeared': 		['cloneSprite'],
+	'transformation': 			['transformTo', 'transformToOnLanding'],
+	'conditionalKill': 			['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killOtherHasLess',\
+								 'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
 
 	## Position difference
-	'noMovement': ['undoAll'], #stepBack
-	'unexpectedPosition': ['bounceForward'],
-	# , 'pullWithIt', 'windGust', 'slipForward',\
-		# 'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap
-	'unexpectedOverlap': ['nothing'],#, 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
-	'orientationChange': ['reverseDirection', 'bounceDirection', 'flipDirection'],
-	#'turn', 'turnAround', 
-	'teleport': ['teleportToExit'],
+	'noMovement': 				['undoAll'], #stepBack
+	'unexpectedPosition': 		['bounceForward'],
+									# , 'pullWithIt', 'windGust', 'slipForward',\
+									# 'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap
+	'unexpectedOverlap':		['nothing'],#, 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
+	'orientationChange': 		['reverseDirection', 'bounceDirection', 'flipDirection'],
+									#'turn', 'turnAround', 
+	'teleport': 				['teleportToExit'],
 
 	## Object state change
-	'stateChange': ['changeResource', 'collectResource', 'scoreChange'],
+	'stateChange': 				['changeResource', 'collectResource', 'scoreChange'],
 
 	## Other
-	## TODO: These don't actually correspond here, but we need to do more work to be able to learn these.
-	'other' : ['conveySprite']
-	}
+	## TODO: These don't actually belong here, but we need to do more work to be able to learn these.
+	'other' : 					['conveySprite']
+								}
 
 
 	## If we've proposed killSprite and that has failed, propose conditional rules.
