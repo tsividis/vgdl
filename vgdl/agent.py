@@ -345,7 +345,7 @@ class Agent:
 	#   p.join()
 
 	def expandTheories(self, theories, errorList, envRealPrev, envRealCurrent, prevAction):
-		# print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
+		print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
 		# print [e.diagnosis for e in errorList]
 		if len(errorList)==0:
 			return theories
@@ -357,7 +357,7 @@ class Agent:
 				newTheories = [theories[0]]
 				return newTheories
 
-			# print "In base case. Correcting error for {} for {} theories".format(errorList[0].targetClass, len(theories))
+			print "In base case. Correcting error for {} for {} theories".format(errorList[0].targetClass, len(theories))
 			# if len(theories)==1:
 				# embed()
 			newTheories = []
@@ -367,7 +367,7 @@ class Agent:
 			# if len(newTheories)>1000:
 			# 	print "more than 1K theories!"
 			# 	embed()
-			# print "Now running experience replay on {} theories".format(len(newTheories))
+			print "Now running experience replay on {} theories".format(len(newTheories))
 			penalties, cumulative_penalties, _ = experienceReplay(newTheories, self.rleHistory[-2:], self.actionHistory[-1:], 
 				self.symbolDict, self.best_params, method='all', targetClass = errorList[0].targetClass)
 
@@ -423,16 +423,19 @@ class Agent:
 			return classPair, theories, predicateGroups
 
 
+		# if errorMap.diagnosis[0] == 'inventoryChange':
+		# 	print "in expandTheoryForOneErrorMap"
+		# 	embed()
 
-		## TODO: write sample resourceObservations that correspond to the format
-		## where you can make the argList just reference the appropriate predicate
-		## or at least have proposeArgs modify it slightly.
-		self.resourceObservations = {'speed': [0, 10],\
-								'changeResource': [{'resource':'c2', 'value':1, 'limit':1}],\
-								'changeScore':{'speed':1}}      
+		# ## TODO: write sample resourceObservations that correspond to the format
+		# ## where you can make the argList just reference the appropriate predicate
+		# ## or at least have proposeArgs modify it slightly.
+		# self.resourceObservations = {'speed': [0, 10],\
+		# 						'changeResource': [{'resource':'c2', 'value':1, 'limit':1}],\
+		# 						'changeScore':{'speed':1}}      
 
-		## TODO: Get these from somewhere else
-		globalObservations = {'physicsType':'continuousphysics'}
+		# ## TODO: Get these from somewhere else
+		# globalObservations = {'physicsType':'continuousphysics'}
 
 		## If we were about to make modifications we've made already, don't waste the time.
 		if any([errorMap==e for e in theory.errorMapHistory]):
@@ -482,16 +485,15 @@ class Agent:
 		## SpriteSet induction step
 		if errorMap.targetClass not in theory.expandedSprites:
 			className, theories = expandSprites(self.rle._game, theory, errorMap, 
-				envRealPrev, envRealCurrent, self.bestSpriteTypeDict, action, percentile=20, max_num=30,
-				resourceObservations=self.resourceObservations)
+				envRealPrev, envRealCurrent, self.bestSpriteTypeDict, action, percentile=20, max_num=30)
 			newTheories.extend(theories)
 
 		## InteractionSet induction step
 		for targetClassPair in errorMap.intPairs:
-			predicates = proposePredicates(errorMap.diagnosis, self.memory, self.proposalMemory, globalObservations)
+			predicates = proposePredicates(errorMap.diagnosis, self.memory, self.proposalMemory, envRealCurrent._game.observation)
 			classPair, theories, predicateGroups = expandLine(theory, errorMap, targetClassPair, 
 				predicates = predicates, n=n, 
-				resourceObservations=self.resourceObservations, generic=True)
+				trackedObjects=envRealCurrent._game.observation['trackedObjects'], generic=False)
 			newTheories.extend(theories)
 			## TODO: think more about this; right now you're keeping around all the predicateGroups
 			## that each theory proposes when you call expandLine on it, so you have mutliple copies
@@ -760,7 +762,7 @@ class Agent:
 		embed()
 	def testEpisode(self, gameObject, epoch=0):
 		
-		actions = [K_RIGHT, K_LEFT, K_LEFT]
+		actions = [K_RIGHT, K_RIGHT, K_LEFT, K_LEFT, K_LEFT]
 
 		self.initializeEnvironment()
 
@@ -786,9 +788,6 @@ class Agent:
 		self.rleHistory.append(envReal)
 
 		agentState = self.resourceManagement(pre_step=True)
-
-		# print "WARNING: TAKING K_RIGHT STEP THAT'S NOT IN ACTIONS. REMOVE ASAP."
-		# self.rle.step(K_RIGHT)
 
 
 		#OBJECT TRACKING
@@ -1705,7 +1704,6 @@ class Agent:
 			for e in errorList:
 				e.display()
 				print ""
-			# embed()
 		# else:
 		# 	print "No error"
 			# embed()
@@ -1755,6 +1753,9 @@ class Agent:
 		# self.distributions.updateDist(resourceObservations)
 		# print self.distributions.distr
 		# print "updated distributions. You'll have to access this when you expand theories."
+
+		# print "in executeStep"
+		# embed()
 
 		print ""
 		print keyPresses[action]
@@ -2130,7 +2131,7 @@ def findNearestSprite(sprite, spriteList):
 
 
 ## Function generating penalty and error map
-def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, targetClass=None, penalty_only=False):
+def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_score=1, targetClass=None, penalty_only=False):
 	"""
 	envA: hypothetical environment
 	envB: real environment
@@ -2138,6 +2139,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 	p_dist: distance penalty per grid point
 	p_speed: pentalty for distances arising from wrong speed
 	p_miss: penalty for missing or additional sprite
+	p_score: penalty for getting the score wrong
 	penalty_only: return penalty, [] (empty list instead or errorMap)
 
 	Calculates d_theory(envA, envB): distance between the states of the environments
@@ -2186,7 +2188,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 	# print '>>> lonely_sprites_envB:', [s for s in lonely_sprites_envB]
 
 	## Penalize distance and additional/missing sprites
-
 	for t in matched_sprites:
 		## Distance penalty
 		sA, sB = t[0], t[1] #sprites in envA, envB      
@@ -2270,7 +2271,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 	# Missing/additional/transformation penalty
 	total_penalty += p_miss * ( len(lonely_sprites_envA) + len(lonely_sprites_envB) )
 
-
+	if envA._game.score != envB._game.score:
+		total_penalty += p_score*abs(envA._game.score-envB._game.score)
 	if penalty_only:
 		return total_penalty, []
 
@@ -2443,6 +2445,21 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, tar
 			neighbors_prev = neighborsPrev(envB, envPrev, sPrev)
 			e.intPairs.extend([(e.targetClass, n) for n in neighbors_prev])
 			errorMap.append(e)
+
+	# 4) Score change
+	if envA._game.score != envB._game.score:
+		e = errorMapEntry()
+		e.diagnosis.append('scoreChange')
+		avatar_color = theory.classes['avatar'][0].colorName
+		sA = envA._game.observation['trackedObjects'][avatar_color][0]
+		sB = envB._game.observation['trackedObjects'][avatar_color][0]
+		e.targetToken = sA
+		e.targetClass = sA.name
+		sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
+		neighbors_prev = neighborsPrev(envB, envPrev, sPrev)
+		e.intPairs.extend([(e.targetClass, n) for n in neighbors_prev])
+		errorMap.append(e)
+
 	## Share information across errorMap items and make a unique list
 	if len(errorMap) > 1:
 		diagnosis_class_pairs = list(set([(e.diagnosis[0], e.targetClass) for e in errorMap]))
@@ -2738,7 +2755,7 @@ def experienceReplayProfiler(hypotheses, rleHistory, actionHistory, symbolDict, 
 	return mean_penalties, cumulative_penalties
 
 def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, best_params, method='all', targetClass=None, displayStates=False, displayTheories=False):
-	# print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
+	print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
 
 	t1 = time.time()
 	results = []

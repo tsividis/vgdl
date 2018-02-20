@@ -2302,7 +2302,7 @@ def getKeywordsFromOntology(interactionName):
 		return []
 
 
-def proposeArgs(theory, predicate, resourceObservations, generic=False):
+def proposeArgs(theory, predicate, errorMap, trackedObjects, generic=False):
 
 	## if generic==False, this will propose all args given what's in resourceObservations
 	## which is the result of a function responsible for tracking possible resources, speeds, etc.
@@ -2316,16 +2316,23 @@ def proposeArgs(theory, predicate, resourceObservations, generic=False):
 		return [{}]
 	else:
 		if not generic:
-			print "Error: Have not implemented non-generic proposeArgs() yet."
-			embed()
-			if predicate=='killIfSlow':
-				import numpy as np
-				argList = {'limitspeed':np.mean(resourceObservations['speed'])}
-			elif predicate=='killIfTooFast':
-				import numpy as np
-				argList = {'speed':np.mean(resourceObservations['speed'])}
+			if predicate == 'changeResource':
+				resources = trackedObjects[errorMap.targetToken.colorName][0].inventory
+				for resource, val in resources.items():
+					resourceClass = theory.spriteObjects[resource].className
+					argList.append({'resource':resourceClass, 'value': val[0], 'limit':val[1]})
 			else:
-				argList = resourceObservations[predicate]
+				print "Error: Have not implemented non-generic proposeArgs() yet."
+				embed()
+
+			# if predicate=='killIfSlow':
+			# 	import numpy as np
+			# 	argList = {'limitspeed':np.mean(resourceObservations['speed'])}
+			# elif predicate=='killIfTooFast':
+			# 	import numpy as np
+			# 	argList = {'speed':np.mean(resourceObservations['speed'])}
+			# else:
+			# 	argList = resourceObservations[predicate]
 		else:
 			if predicate=='changeResource':
 				resources = [k for k in theory.classes.keys() if k!='EOS']
@@ -2360,7 +2367,7 @@ def proposeArgs(theory, predicate, resourceObservations, generic=False):
 	return argList
 
 
-def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObservations):
+def proposePredicates(singlePairErrorSignal, memory, proposalMemory, observations):
 	## Takes the error signal and proposes the appropriate predicates by looking
 	## at the memory. For now it would only access the memory to make new proposals
 	## that build on previous ones (e.g., incrementing n, or going to conditional kill
@@ -2368,6 +2375,7 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 
 	predicates = []
 
+	physicsType = 'gridphysics' if observations['isGrid'] else 'continuousphysics'
 	## List of predicates that are unique to a physics type
 	physicsToPredicateMapping = {
 	'all' : 					['killSprite', 'cloneSprite', 'transformTo', 'transformToOnLanding',\
@@ -2402,7 +2410,7 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 	'teleport': 				['teleportToExit'],
 
 	## Object state change
-	'stateChange': 				['changeResource', 'collectResource', 'scoreChange'],
+	'inventoryChange': 				['changeResource', 'scoreChange'], #collectResource
 
 	## Other
 	## TODO: These don't actually belong here, but we need to do more work to be able to learn these.
@@ -2425,7 +2433,7 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 
 	## Filter out rules that aren't consistent with the known physics type
 	predicates = [p for p in predicates if p in physicsToPredicateMapping['all'] or 
-		p in physicsToPredicateMapping[globalObservations['physicsType']]]
+		p in physicsToPredicateMapping['physicsType']]
 
 	## TODO: Fill out the case where you consult the proposalMemory to make more complicated
 	## proposals
@@ -2434,7 +2442,7 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, globalObser
 
 ## TODO: write the function that maintains resourceObservations, or at least figure out
 ## its outputs and integrate with proposeArgs
-def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSpriteTypeDict, action=None, percentile=20, max_num=20, resourceObservations=None):
+def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSpriteTypeDict, action=None, percentile=20, max_num=20):
 	from vgdl.ontology import sampleFromDistribution, spriteInduction, updateDistribution
 
 	if max_num is None:
@@ -2532,7 +2540,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	return targetClass, childTheories
 
 
-def expandLine(theory, errorMap, classPair, predicates, n=1, resourceObservations=None, generic=False):
+def expandLine(theory, errorMap, classPair, predicates, n=1, trackedObjects=None, generic=False):
 	## modifies the theory to propose n new interactonRules involving the given classPair
 	## for predicates that take arguments, proposes all possible combinations of args
 	## unless you call generic=False, in which case it only proposes what's in
@@ -2560,7 +2568,7 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, resourceObservation
 				pass
 			predicateRules = []
 			for predicate in predicateGroup:
-				allArgumentCombinations = proposeArgs(theory, predicate, resourceObservations, 
+				allArgumentCombinations = proposeArgs(theory, predicate, errorMap, trackedObjects, 
 					generic=generic)
 				predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
 					for comb in allArgumentCombinations])

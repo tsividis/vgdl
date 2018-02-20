@@ -1264,7 +1264,7 @@ class OnStart(Conditional):
 # ---------------------------------------------------------------------
 #     Termination criteria
 # ---------------------------------------------------------------------
-# from core import Termination
+
 Termination = core.Termination
 
 class Timeout(Termination):
@@ -1719,7 +1719,6 @@ def collectResource(sprite, partner, game): # FLAG
 
 def changeResource(sprite, partner, resourceColor, game, resource, value=1, limit=None):
     """ Increments a specific resource type in sprite """
-
     sprite.resources[resource] = max(-1, min(sprite.resources[resource]+value, game.resources_limits[resource]))
     # NOTE: partner is the color of the resource (see _eventHandling() in core.py)
     args = {'resource':resource, 'value':value, 'limit':game.resources_limits[resource]}
