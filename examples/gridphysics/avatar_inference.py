@@ -17,11 +17,11 @@ level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
-w           1                  w
-w                1             w
-w      4                   5   w
-w    4                         w
-w             5A         5     w
+w                              w
+w                              w
+w              5               w
+w              5               w
+w              A               w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -55,7 +55,7 @@ game="""
 BasicGame
     SpriteSet
         cloner > Immovable color=GREEN
-        box    > Missile color=WHITE orientation=RIGHT cooldown=1
+        box    > Immovable color=WHITE # orientation=RIGHT cooldown=1
         box2 > Immovable color=GREEN
         box3 > Immovable color=YELLOW
         flicker > Flicker timeout=1 color=ORANGE
@@ -83,18 +83,12 @@ BasicGame
     InteractionSet
         avatar wall > stepBack
         box avatar > killSprite
-        random wall > stepBack
-        random box > stepBack
-        box2 avatar > bounceForward
+        box2 avatar > killSprite
         box3 avatar > killSprite
 
-        # box cloner > cloneSprite
-        # cloner box > killSprite
-
-        random avatar > killSprite
-
     TerminationSet
-        # SpriteCounter stype=box limit=0 win=False
+        SpriteCounter stype=box2 limit=0 win=True
+        SpriteCounter stype=box3 limit=0 win=False
         # Termination
 
 

@@ -765,7 +765,7 @@ class Agent:
 		embed()
 	def testEpisode(self, gameObject, epoch=0):
 		
-		actions = [K_RIGHT, K_RIGHT, K_LEFT, K_LEFT, K_LEFT]
+		actions = [K_UP, K_UP, K_UP, K_UP]	
 
 		self.initializeEnvironment()
 		self.trueTheory = generateTheoryFromGame(self.rle)
@@ -862,7 +862,8 @@ class Agent:
 			# If theory is being carried over, falsify termination hypotheses
 			# given new level state
 			if not flexible_goals:
-				[t.updateTerminations(rle=self.rle) for t in self.hypotheses]
+				# [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
+				updateTerminations(self.rle, self.hypotheses)
 
 		emptyPlans = 0
 		while not ended:
@@ -1751,6 +1752,7 @@ class Agent:
 		self.rle._game.sprite_appearances = new_sprites
 		# self.rle._game.sprite_appearances = self.manageResourcesAndNewSprites(envReal, envRealPrev)
 
+		updateTerminations(self.rle, hypotheses)
 		# self.updateResourceDistributions(hypotheses, envReal, envRealPrev, action)
 
 		# resourceObservations = self.getObservations(hypotheses, envReal, envRealPrev, action)
@@ -2047,6 +2049,17 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 	Vrle._game.score = ccopy(rle._game.score)
 	Vrle._game.observation = buildTracker(Vrle)
 	Vrle._game.observation['lastscore'] = rle._game.observation['lastscore']
+	return
+
+def updateTerminations(rle, hypotheses):
+
+	terminationSet, falsified, multi_falsified = hypotheses[0].updateTerminations(rle)
+
+	for h in hypotheses:
+		h.terminationSet = terminationSet
+		h.falsified = falsified
+		h.multi_falsified = multi_falsified
+
 	return
 
 def initializeVrleProfiler(hypothesis, stateToSet, symbolDict, best_params):
@@ -2913,10 +2926,10 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.aliens"
 
-	# filename = "examples.gridphysics.avatar_inference"
+	filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.inference_test"
 
-	filename = "examples.gridphysics.collect_resource"
+	# filename = "examples.gridphysics.collect_resource"
 	# filename = "examples.continuousphysics.breakout_new"
 
 	global WBP
