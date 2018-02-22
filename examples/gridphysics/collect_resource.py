@@ -13,9 +13,9 @@ wwwwwwwwwwwwwwwwww
 """
 level1 = """
 wwwwwwwwwwwwwwwwww
-w b p   w pAm    w
+w g p   w pA m   w
 w   p   w    wwwww
-w g p            w
+w g p         m  w
 wwwwwwwwwwwwwwwwww
 """
 
@@ -153,6 +153,8 @@ BasicGame frame_rate=30
         avatar poison > killIfHasLess resource=medicine limit=-1
         avatar poison > changeResource resource=medicine value=-1
         avatar medicine > changeResource resource=medicine value=1
+        # avatar medicine > changeScore value=5
+        # medicine avatar > collectResource
         box avatar > killSprite
         poison avatar > killSprite
         box wall    > undoAll

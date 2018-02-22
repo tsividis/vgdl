@@ -2302,7 +2302,7 @@ def getKeywordsFromOntology(interactionName):
 		return []
 
 
-def proposeArgs(theory, predicate, errorMap, trackedObjects, generic=False):
+def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 
 	## if generic==False, this will propose all args given what's in resourceObservations
 	## which is the result of a function responsible for tracking possible resources, speeds, etc.
@@ -2317,10 +2317,19 @@ def proposeArgs(theory, predicate, errorMap, trackedObjects, generic=False):
 	else:
 		if not generic:
 			if predicate == 'changeResource':
-				resources = trackedObjects[errorMap.targetToken.colorName][0].inventory
+				resources = observations['trackedObjects'][errorMap.targetToken.colorName][0].inventory
 				for resource, val in resources.items():
+					if resource in resources.keys():
+						limit = resources[resource][1]
+					else:
+						limit = observations['trackedObjects'][errorMap.targetToken.colorName][0].lastinventory[resource][1]
 					resourceClass = theory.spriteObjects[resource].className
-					argList.append({'resource':resourceClass, 'value': val[0], 'limit':val[1]})
+					argList.append({'resource':resourceClass, 'value': val[0], 'limit':limit})
+			elif predicate == 'changeScore':
+				if observations['score']<observations['lastscore']:
+					print "got negative score in proposeArgs()"
+					embed()
+				argList.append({'value':observations['score']-observations['lastscore']})
 			else:
 				print "Error: Have not implemented non-generic proposeArgs() yet."
 				embed()
@@ -2383,7 +2392,7 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, observation
 								'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow',\
 								'undoAll', 'nothing',\
 								'turn', 'turnAround', 'reverseDirection', 'flipDirection', 'bounceForward',\
-								'changeResource', 'collectResource', 'scoreChange', 'teleportToExit', 'conveySprite'],
+								'changeResource', 'collectResource', 'changeScore', 'teleportToExit', 'conveySprite'],
 	'gridphysics': [],
 	'continuousphysics': 		['transformToOnLanding', 'killIfTooFast', 'killIfSlow', 'killIfFromAbove',\
 								'killIfFromBelow', 'bounceDirection', 'flipDirection', 'conveySprite', 'pullWithIt',\
@@ -2410,8 +2419,8 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, observation
 	'teleport': 				['teleportToExit'],
 
 	## Object state change
-	'inventoryChange': 				['changeResource', 'scoreChange'], #collectResource
-
+	'inventoryChange': 			['changeResource'], #collectResource
+	'scoreChange':				['changeScore'],
 	## Other
 	## TODO: These don't actually belong here, but we need to do more work to be able to learn these.
 	'other' : 					['conveySprite']
@@ -2433,7 +2442,7 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, observation
 
 	## Filter out rules that aren't consistent with the known physics type
 	predicates = [p for p in predicates if p in physicsToPredicateMapping['all'] or 
-		p in physicsToPredicateMapping['physicsType']]
+		p in physicsToPredicateMapping[physicsType]]
 
 	## TODO: Fill out the case where you consult the proposalMemory to make more complicated
 	## proposals
@@ -2540,7 +2549,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	return targetClass, childTheories
 
 
-def expandLine(theory, errorMap, classPair, predicates, n=1, trackedObjects=None, generic=False):
+def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, generic=False):
 	## modifies the theory to propose n new interactonRules involving the given classPair
 	## for predicates that take arguments, proposes all possible combinations of args
 	## unless you call generic=False, in which case it only proposes what's in
@@ -2568,7 +2577,7 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, trackedObjects=None
 				pass
 			predicateRules = []
 			for predicate in predicateGroup:
-				allArgumentCombinations = proposeArgs(theory, predicate, errorMap, trackedObjects, 
+				allArgumentCombinations = proposeArgs(theory, predicate, errorMap, observations, 
 					generic=generic)
 				predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
 					for comb in allArgumentCombinations])

@@ -47,7 +47,7 @@ ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPAC
 
 
 # PROCESS_POOL = pp.ProcessPool(2)
-mpp = mp.Pool(4)
+# mpp = mp.Pool(4)
 
 class errorMapEntry:
 	def __init__(self):
@@ -493,7 +493,10 @@ class Agent:
 			predicates = proposePredicates(errorMap.diagnosis, self.memory, self.proposalMemory, envRealCurrent._game.observation)
 			classPair, theories, predicateGroups = expandLine(theory, errorMap, targetClassPair, 
 				predicates = predicates, n=n, 
-				trackedObjects=envRealCurrent._game.observation['trackedObjects'], generic=False)
+				observations=envRealCurrent._game.observation, generic=False)
+			# if 'changeResource' in predicates:
+				# print "made changeresource predicate"
+				# embed()
 			newTheories.extend(theories)
 			## TODO: think more about this; right now you're keeping around all the predicateGroups
 			## that each theory proposes when you call expandLine on it, so you have mutliple copies
@@ -765,7 +768,6 @@ class Agent:
 		actions = [K_RIGHT, K_RIGHT, K_LEFT, K_LEFT, K_LEFT]
 
 		self.initializeEnvironment()
-
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
 
@@ -1340,7 +1342,11 @@ class Agent:
 				if key not in ['orientation','speed']:
 					if key not in self.observed_resources:
 						new_resources.add(key)
-					self.observed_resources[color].add(key)
+					try:
+						self.observed_resources[color].add(key)
+					except:
+						print "in manageResourcesAndNewSprites"
+						embed()
 
 			#when finding a new resource, update our distribution
 			for res in new_resources:
@@ -1741,7 +1747,9 @@ class Agent:
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
 		self.rleHistory.append(envReal)
 		
-		self.rle._game.sprite_appearances = self.manageResourcesAndNewSprites(envReal, envRealPrev)
+		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
+		self.rle._game.sprite_appearances = new_sprites
+		# self.rle._game.sprite_appearances = self.manageResourcesAndNewSprites(envReal, envRealPrev)
 
 		# self.updateResourceDistributions(hypotheses, envReal, envRealPrev, action)
 
@@ -1800,7 +1808,6 @@ class Agent:
 		print "evaluation complete. Now running experienceReplay on {} theories".format(len(newTheories))
 
 		if newTheories:
-
 			penalties, cumulative_penalties, experienceReplayRLEs = experienceReplay(newTheories, self.rleHistory, self.actionHistory,
 				self.symbolDict, self.best_params, method='all', displayTheories=False)
 
@@ -2022,7 +2029,9 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 				sprite.rect 		= ccopy(matchingSprite.rect)
 				sprite.lastrect 	= ccopy(matchingSprite.lastrect)
 				sprite.lastmove 	= ccopy(matchingSprite.lastmove)
-				sprite.resources = {key: matchingSprite.inventory[key][0] for key in matchingSprite.inventory.keys()}
+				sprite.resources    = defaultdict(lambda : 0)
+				for key in matchingSprite.inventory.keys():
+					sprite.resources = matchingSprite.inventory[key][0]
 				sprite.orientation 	= ccopy(matchingSprite.orientation) # consider copying only for avatar?
 
 
@@ -2035,7 +2044,9 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 				# sprite.last_gravity = ccopy(matchingSprite.last_gravity)
 				# sprite.last_vy = ccopy(matchingSprite.last_vy)
 				# sprite.speed = ccopy(matchingSprite.speed)
+	Vrle._game.score = ccopy(rle._game.score)
 	Vrle._game.observation = buildTracker(Vrle)
+	Vrle._game.observation['lastscore'] = rle._game.observation['lastscore']
 	return
 
 def initializeVrleProfiler(hypothesis, stateToSet, symbolDict, best_params):
@@ -2271,8 +2282,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 	# Missing/additional/transformation penalty
 	total_penalty += p_miss * ( len(lonely_sprites_envA) + len(lonely_sprites_envB) )
 
-	if envA._game.score != envB._game.score:
-		total_penalty += p_score*abs(envA._game.score-envB._game.score)
+	if envA._game.observation['score'] != envB._game.observation['score']:
+		total_penalty += p_score*abs(envA._game.observation['score']-envB._game.observation['score'])
 	if penalty_only:
 		return total_penalty, []
 
@@ -2447,7 +2458,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			errorMap.append(e)
 
 	# 4) Score change
-	if envA._game.score != envB._game.score:
+	if envA._game.observation['score'] != envB._game.observation['score']:
 		e = errorMapEntry()
 		e.diagnosis.append('scoreChange')
 		avatar_color = theory.classes['avatar'][0].colorName

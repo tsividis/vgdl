@@ -297,16 +297,30 @@ class TrackedSprite(object):
             self.colorName = str(self.color)
         self.lastmove = 0
         self.inventory = dict() # color: (num_things, max_capacity) # pulled from progress bars on avatar
+        self.lastinventory = dict()
         self.name = self.colorName
     
     def __repr__(self):
         return str(self.name)+" at (%s,%s)"%(self.rect.left, self.rect.top)
 
+    def inventoryDiff(self):
+        diff = dict()
+        for key in self.inventory:
+            if not key in self.lastinventory:
+                diff[key] = self.inventory[key][0]
+            else:
+                diff[key] = self.inventory[key][0] - self.lastinventory[key][0]
+        for key in set(self.lastinventory.keys()) - set(self.inventory.keys()):
+            diff[key] = -self.lastinventory[key][0]
+        return diff
+
 def buildTracker(rle):
     gameObject = rle._game
-    memory = defaultdict(list)
+    memory = dict()
     trackedObjects = defaultdict(list) # color: list_of_sprites # not sure why list arg, just copied from elsewhere
     memory['isGrid'] = True
+    memory['score'] = rle._game.score
+    memory['lastscore'] = rle._game.score
     for group in gameObject.sprite_groups.keys():
         for sprite in gameObject.sprite_groups[group]:
             if not sprite.colorName in trackedObjects:
@@ -330,19 +344,22 @@ def copySpriteStingy(sprite):
     if type(sprite) == TrackedSprite:
         newSprite.speed = sprite.speed
         newSprite.inventory = ccopy(sprite.inventory) if sprite.inventory else dict()
+        newSprite.lastinventory = ccopy(sprite.lastinventory)
 
     return newSprite
 
 def processFrame(memory, gameObject):
     # eventual goal is to process the frame, not the gameObject...
     # creates a COPY of memory and returns updated copy
-    newMemory = defaultdict(list)
+    newMemory = dict()
     newTrackedObjects = defaultdict(list)
     newMemory['isGrid'] = memory['isGrid']
     spriteIDDict = {sprite.ID: sprite for lst in memory['trackedObjects'].values() for sprite in lst}
 
     # print "in processFrame"
     # embed()
+    newMemory['lastscore'] = memory['score']
+    newMemory['score'] = gameObject.score
     for key in gameObject.sprite_groups.keys():
         if gameObject.sprite_groups[key]:
             for sprite in gameObject.sprite_groups[key]:
@@ -374,15 +391,23 @@ def processFrame(memory, gameObject):
                 else:
                     # new, unseen object
                     newSprite = copySpriteStingy(sprite)
-                # update inventory
+                
+                # update inventory and inventory history
+                newSprite.lastinventory = ccopy(newSprite.inventory) if newSprite.inventory else dict()
+
                 if sprite.resources:
                     newSprite.inventory = {}
-                    for key in sprite.resources:
-                        color = gameObject.sprite_groups[key][0].colorName
-                        limit = gameObject.sprite_groups[key][0].limit
-                        newSprite.inventory[color] = (sprite.resources[key], limit)
+                    try:
+                        for key in sprite.resources:
+                            color = gameObject.sprite_groups[key][0].colorName
+                            limit = gameObject.sprite_groups[key][0].limit
+                            newSprite.inventory[color] = (sprite.resources[key], limit)
+                    except:
+                        print "in processFrame"
+                        embed()
                 else:
                     newSprite.inventory = dict()
+
                 newTrackedObjects[sprite.colorName].append(newSprite)
     newMemory['trackedObjects'] = newTrackedObjects
     return newMemory
