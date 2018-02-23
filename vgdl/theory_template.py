@@ -2318,13 +2318,14 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 		if not generic:
 			if predicate == 'changeResource':
 				resources = observations['trackedObjects'][errorMap.targetToken.colorName][0].inventory
-				for resource, val in resources.items():
+				diffs =  observations['trackedObjects'][errorMap.targetToken.colorName][0].inventoryDiff()
+				for resource, val in diffs.items():
 					if resource in resources.keys():
 						limit = resources[resource][1]
 					else:
 						limit = observations['trackedObjects'][errorMap.targetToken.colorName][0].lastinventory[resource][1]
 					resourceClass = theory.spriteObjects[resource].className
-					argList.append({'resource':resourceClass, 'value': val[0], 'limit':limit})
+					argList.append({'resource':resourceClass, 'value': val, 'limit':limit})
 			elif predicate == 'changeScore':
 				if observations['score']<observations['lastscore']:
 					print "got negative score in proposeArgs()"
