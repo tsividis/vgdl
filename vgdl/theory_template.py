@@ -346,10 +346,10 @@ class Theory(object):
 						s.args = ccopy(interactionRule.args)
 				interactionRule.args = {}
 
-	def addSpriteToTheory(self, newSpriteName, color, vgdlType='default'):
+	def addSpriteToTheory(self, newSpriteName, color, vgdlType='default', args=None):
 		if vgdlType=='default':
 			vgdlType = ResourcePack
-		sprite = Sprite(vgdlType, color, className=newSpriteName, args=None)
+		sprite = Sprite(vgdlType, color, className=newSpriteName, args=args)
 		for (o1,o2) in itertools.product([newSpriteName], self.classes.keys()):
 			rule1 = InteractionRule('stepBack', o1, o2, {}, set(), generic=True)
 			rule2 = InteractionRule('stepBack', o1, o2, {}, set(), generic=True)
@@ -2164,7 +2164,7 @@ class Game(object):
 		# print "Done cleanHypothesisSpace...\n"
 		return
 
-def generateTheoryFromGame(rle, alterGoal=True):
+def generateTheoryFromGame(rle, alterGoal=False):
 	"""
 	Given an rle, returns a very barebones theory object.
 	This object has only 2 fields set: the interaction set, and the classes.
@@ -2669,6 +2669,9 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 			print "killIfTooFast in argstring"
 			embed()
 			argsString = ""
+		elif interactionRule.interaction == 'changeResource':
+			argsString = ""
+			argsString += " resource=%s value=%s"%(interactionRule.args['resource'], interactionRule.args['value'])
 		else:
 			if interactionRule.args:
 				argsString = ""
@@ -2729,12 +2732,12 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 
 
 	## TODO: Change.
-	resourcesToAdd = set()
-	for i in theory.interactionSet:
-		if i.args is not None:
-			for k,v in i.args.items():
-				if k=='resource':
-					resourcesToAdd.add(v)
+	# resourcesToAdd = set()
+	# for i in theory.interactionSet:
+	# 	if i.args is not None:
+	# 		for k,v in i.args.items():
+	# 			if k=='resource':
+	# 				resourcesToAdd.add(v)
 			# if "resource" in i.args.keys():
 			# 	resourcesToAdd.add(i.args["resource"])
 
@@ -2819,8 +2822,8 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 	if debug==True:
 		print "in writeTheoryToTxt debug"
 		embed()
-	for resource in resourcesToAdd:
-		theoryString += "\t\t%s > Resource color=RESOURCETOADD limit=%s\n"%(resource, theory.resource_limits[resource])
+	# for resource in resourcesToAdd:
+		# theoryString += "\t\t%s > Resource color=RESOURCETOADD limit=%s\n"%(resource, theory.resource_limits[resource])
 
 	if goalLoc:
 		if newGoalType == 'blank_space':

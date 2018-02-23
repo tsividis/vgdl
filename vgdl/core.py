@@ -226,7 +226,6 @@ class BasicGame(object):
     def __init__(self, **kwargs):
         from ontology import Immovable, DARKGRAY, BLACK, MovingAvatar, GOLD
         for name, value in kwargs.iteritems():
-            # print "NAME: ", name
             if hasattr(self, name):
                 self.__dict__[name] = value
             else:
@@ -241,7 +240,7 @@ class BasicGame(object):
                               'avatar',
                               ]
         # contains instance lists
-        self.sprite_groups = defaultdict(list)
+        self.sprite_groups = dict() #defaultdict(list)
         # which sprite types (abstract or not) are singletons?
         self.singletons = []
         # collision effects (ordered by execution order)
@@ -418,7 +417,10 @@ class BasicGame(object):
                 continue
             s = sclass(pos=pos, size=(self.block_size, self.block_size), name=key, **args)
             s.stypes = stypes
-            self.sprite_groups[key].append(s)
+            if key in self.sprite_groups:
+                self.sprite_groups[key].append(s)
+            else:
+                self.sprite_groups[key] = [s]
             self.num_sprites += 1
             if s.is_stochastic:
                 self.is_stochastic = True
@@ -431,7 +433,10 @@ class BasicGame(object):
         sclass, args, stypes = self.sprite_constr[key]
         s = sclass(pos=pos, size=(self.block_size, self.block_size), name=key, **args)
         s.stypes = stypes
-        self.sprite_groups[key].append(s)
+        if key in self.sprite_groups:
+            self.sprite_groups[key].append(s)
+        else:
+            self.sprite_groups[key] = [s]
         self.num_sprites += 1
         return s
 

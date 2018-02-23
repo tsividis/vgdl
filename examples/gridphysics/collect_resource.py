@@ -136,6 +136,7 @@ BasicGame frame_rate=30
         goal > Passive color=GOLD
         box > Passive color=ORANGE
         medicine > Resource limit=4 color=WHITE
+        invisiblemedicine > Resource limit=4 color=PURPLE
         poison > Resource limit=3 color=PINK
         suit > Resource limit=1 color=GREEN
         wall > Immovable color=BLACK
@@ -152,6 +153,7 @@ BasicGame frame_rate=30
         medicine avatar > killSprite
         avatar poison > killIfHasLess resource=medicine limit=-1
         avatar poison > changeResource resource=medicine value=-1
+        # avatar medicine > changeResource resource=invisiblemedicine value=1
         avatar medicine > changeResource resource=medicine value=1
         # avatar medicine > changeScore value=5
         # medicine avatar > collectResource
