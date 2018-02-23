@@ -2390,7 +2390,7 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, observation
 	physicsToPredicateMapping = {
 	'all' : 					['killSprite', 'cloneSprite', 'transformTo', 'transformToOnLanding',\
 								'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killOtherHasLess',\
-								'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow',\
+								'killIfTooFast', 'KillIfSlow',\
 								'undoAll', 'nothing',\
 								'turn', 'turnAround', 'reverseDirection', 'flipDirection', 'bounceForward',\
 								'changeResource', 'collectResource', 'changeScore', 'teleportToExit', 'conveySprite'],
