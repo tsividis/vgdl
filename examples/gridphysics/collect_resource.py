@@ -11,11 +11,20 @@ w                w
 w             g  w
 wwwwwwwwwwwwwwwwww
 """
+
+# level1 = """
+# wwwwwwwwwwwwwwwwww
+# w g p     pA mm  w
+# w   p   w    wwwww
+# w g p         m  w
+# wwwwwwwwwwwwwwwwww
+# """
+
 level1 = """
 wwwwwwwwwwwwwwwwww
-w g p   w pA m   w
-w   p   w    wwwww
-w g p         m  w
+w g p   w p A    w
+w   p   w m  wwwww
+w g p     mp  m  w
 wwwwwwwwwwwwwwwwww
 """
 
@@ -151,14 +160,10 @@ BasicGame frame_rate=30
     InteractionSet
         avatar wall > stepBack
         medicine avatar > killSprite
-        avatar poison > killIfHasLess resource=medicine limit=-1
         avatar poison > changeResource resource=medicine value=-1
-        # avatar medicine > changeResource resource=invisiblemedicine value=1
         avatar medicine > changeResource resource=medicine value=1
-        # avatar medicine > changeScore value=5
-        # medicine avatar > collectResource
+        poison avatar > killIfOtherHasMore resource=medicine limit=0
         box avatar > killSprite
-        poison avatar > killSprite
         box wall    > undoAll
         box poison > undoAll
         box medicine > undoAll

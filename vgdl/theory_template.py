@@ -303,6 +303,7 @@ class Theory(object):
 		newTheory.spriteObjects = ccopy(self.spriteObjects)
 		newTheory.spriteSet = ccopy(self.spriteSet)
 		newTheory.terminationSet = ccopy(self.terminationSet)
+		newTheory.dryingPaint = ccopy(self.dryingPaint)
 		try:
 			newTheory.errorMapHistory = [e.copy() for e in self.errorMapHistory]
 		except:
@@ -2278,9 +2279,9 @@ def getKeywordsFromOntology(interactionName):
 	'killIfSlow': ['limitspeed'],\
 	'killIfTooFast': ['speed'],\
 	'killIfHasMore': ['resource', 'limit'],\
-	'killOtherHasMore': ['resource', 'limit'],\
+	'killIfOtherHasMore': ['resource', 'limit'],\
 	'killIfHasLess': ['resource', 'limit'],\
-	'killOtherHasLess': ['resource', 'limit'],\
+	'killIfOtherHasLess': ['resource', 'limit'],\
 
 	 ##TODO: Fill in proposeArgs for the following keywords.
 	'spawnIfHasMore': ['resource', 'stype', 'limit'],\
@@ -2331,6 +2332,19 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 					print "got negative score in proposeArgs()"
 					embed()
 				argList.append({'value':observations['score']-observations['lastscore']})
+			elif predicate == 'killIfSlow':
+				values = [1,2,3]
+				for val in values:
+					argList.append({'limitspeed':val})
+			elif predicate == 'killIfTooFast':
+				values = [10,11,12]
+				for val in values:
+					argList.append({'speed':val})
+			elif predicate in ['killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']:
+				resources = [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]
+				limits = [1,2]
+				for comb in list(itertools.product(resources, limits)):
+					argList.append({'resource':comb[0], 'limit':comb[1]})
 			else:
 				print "Error: Have not implemented non-generic proposeArgs() yet."
 				embed()
@@ -2345,7 +2359,7 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 			# 	argList = resourceObservations[predicate]
 		else:
 			if predicate=='changeResource':
-				resources = [k for k in theory.classes.keys() if k!='EOS']
+				resources = [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]
 				values = [1]
 				limits = [1,3]
 				for comb in list(itertools.product(resources, values, limits)):
@@ -2355,10 +2369,10 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 				for val in values:
 					argList.append({'value':val})
 			if predicate == 'transformTo':
-				for stype in [k for k in theory.classes.keys() if k!='EOS']:
+				for stype in [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]:
 					argList.append({'stype':stype})
 			if predicate == 'teleportToExit':
-				for stype in [k for k in theory.classes.keys() if k!='EOS']:
+				for stype in [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]:
 					argList.append({'stype':stype})
 			if predicate == 'killIfSlow':
 				values = [1,2,3]
@@ -2369,7 +2383,7 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 				for val in values:
 					argList.append({'speed':val})
 			if predicate in ['killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']:
-				resources = [k for k in theory.classes.keys() if k!='EOS']
+				resources = [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]
 				limits = [1,2]
 				for comb in list(itertools.product(resources, limits)):
 					argList.append({'resource':comb[0], 'limit':comb[1]})
@@ -2389,7 +2403,7 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, observation
 	## List of predicates that are unique to a physics type
 	physicsToPredicateMapping = {
 	'all' : 					['killSprite', 'cloneSprite', 'transformTo', 'transformToOnLanding',\
-								'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killOtherHasLess',\
+								'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasLess',\
 								'killIfTooFast', 'KillIfSlow',\
 								'undoAll', 'nothing',\
 								'turn', 'turnAround', 'reverseDirection', 'flipDirection', 'bounceForward',\
@@ -2406,7 +2420,7 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, observation
 	'objectDestruction': 		['killSprite'],
 	'newObjectAppeared': 		['cloneSprite'],
 	'transformation': 			['transformTo', 'transformToOnLanding'],
-	'conditionalKill': 			['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killOtherHasLess',\
+	'conditionalKill': 			['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasLess',\
 								 'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
 
 	## Position difference
@@ -2569,6 +2583,15 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 		( classPair != (rule.asTuple()[1], rule.asTuple()[2]) and classPair != (rule.asTuple()[2], rule.asTuple()[1]) ) or
 		rule.generic==False]
 
+	## If we're in a precondition case, remove interactionRules that predict the targetClass
+	## gets killed so you can replace with conditionals.
+	if 'killIfHasLess' in predicates:
+		toRemove = [rule for rule in theory.interactionSet if rule.asTuple()[1]==errorMap.targetClass and rule.asTuple()[0]=='killSprite']
+		if len(toRemove)>0:
+			print "actually removing kill rules in expandLine"
+			embed()
+		theory.interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
+
 	bothOrderings = [[], []]
 
 	for i,order in enumerate([classPair, (classPair[1], classPair[0])]):
@@ -2582,6 +2605,7 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 					generic=generic)
 				predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
 					for comb in allArgumentCombinations])
+
 			bothOrderings[i].extend(list(itertools.product(*predicateRules)))
 
 	## Now generate combinations from each expanded predicateGroup that we added to each of the orderings
@@ -2593,7 +2617,9 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 		newTheory.mostRecentEdit = 'interactionSetInduction'
 		newTheory.errorMapHistory.append(errorMap)
 		newTheory.interactionSet = ccopy(interactionSet)
-		newTheory.interactionSet.extend(ccopy(ruleSet))
+		newTheory.interactionSet.extend(ruleSet)
+		for rule in ruleSet:
+			newTheory.dryingPaint.add(rule)
 		newTheory.reconcileInteractionsAndSprites()
 		childTheories.append(newTheory)
 
@@ -2637,6 +2663,9 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 			oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
 			precondition = list(set(interactionRule.preconditions))[0]
 			if precondition:
+				print "in precondition in buildArgsString"
+				## We should never be here; this is deprecated.
+				embed()
 				if precondition.negated:
 					true_operator = oppositeOperatorMap[precondition.operator_name]
 				else:
@@ -2663,13 +2692,16 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 
 					argsString = " resource=%s limit=%s"%(precondition.item, str(limit))
 		elif interactionRule.interaction=='teleportToExit':
-			argsString = ""
-		elif interactionRule.interaction == 'killIfFromAbove' or interactionRule.interaction == 'killIfFromBelow':
-			argsString = ""
-		elif interactionRule.interaction == 'killIfTooFast':
-			print "killIfTooFast in argstring"
+			print "implement teleportToExit argsstring"
 			embed()
 			argsString = ""
+		elif interactionRule.interaction in ['killIfFromAbove', 'killIfFromBelow']:
+			print "implement killIfFromAbove argsstring"
+			embed()
+			argsString = ""
+		elif interactionRule.interaction == 'killIfTooFast':
+			argsString = ""
+			argsString += " speed=%s"%(interactionRule.args['speed'])
 		elif interactionRule.interaction == 'changeResource':
 			argsString = ""
 			argsString += " resource=%s value=%s"%(interactionRule.args['resource'], interactionRule.args['value'])
@@ -2681,7 +2713,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 						argsString += " %s=%s"%(k, getClassNameFromSpriteString(v))
 					else:
 						argsString += " %s=%s"%(k, v)
-
 			else:
 				print "buildArgsString got called but no precondition"
 				embed()

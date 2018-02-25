@@ -366,10 +366,7 @@ class Agent:
 			newTheories = []
 			for theory in theories:
 				newTheories.extend(self.expandTheoryForOneErrorMap(errorList[0], envRealPrev, envRealCurrent, prevAction, theory))
-			
-			# if len(newTheories)>1000:
-			# 	print "more than 1K theories!"
-			# 	embed()
+
 			print "Now running experience replay on {} theories".format(len(newTheories))
 			penalties, cumulative_penalties, _ = experienceReplay(newTheories, self.rleHistory[-2:], self.actionHistory[-1:], 
 				self.symbolDict, self.best_params, method='all', targetColor = errorList[0].targetColor)
@@ -433,7 +430,7 @@ class Agent:
 					color = k
 					existing_classes = [key for key in theory.classes if key[0]=='c']
 					max_num = max([int(c[1:]) for c in existing_classes])
-					class_num = max_num+1 #len([k for k in theory.classes.keys() if k!='EOS']) + 1
+					class_num = max_num+1
 					newClassName = 'c'+str(class_num)
 					theory.addSpriteToTheory(newClassName, color, vgdlType=Resource, args={'limit':errorMap.targetToken.inventory[k][1]})
 
@@ -479,15 +476,12 @@ class Agent:
 				envRealPrev, envRealCurrent, self.bestSpriteTypeDict, action, percentile=20, max_num=30)
 			newTheories.extend(theories)
 
-		if 'objectDestruction' in errorMap.diagnosis:
-			print "in expandTheory"
-			embed()
 		## InteractionSet induction step
 		for targetClassPair in errorMap.intPairs:
 
 			## If we have non-generic rules for this pair in the theory, then this has to involve some kind of precondition
-			matchingRules = [rule for rule in theory.interactionSet if 
-				targetClassPair==(rule.slot1, rule.slot2) or targetClassPair==(rule.slot2, rule.slot1)]
+			matchingRules = [rule for rule in theory.interactionSet if (rule not in list(theory.dryingPaint)) and 
+				( targetClassPair==(rule.slot1, rule.slot2) or targetClassPair==(rule.slot2, rule.slot1) )]
 			if any([not rule.generic for rule in matchingRules]):
 				errorMap.diagnosis[0] = 'conditionalKill'
 
@@ -501,6 +495,7 @@ class Agent:
 				observations=envRealCurrent._game.observation, generic=False)
 
 			newTheories.extend(theories)
+
 			## TODO: think more about this; right now you're keeping around all the predicateGroups
 			## that each theory proposes when you call expandLine on it, so you have mutliple copies
 			## of the same predicateGroups.
@@ -768,7 +763,7 @@ class Agent:
 		embed()
 	def testEpisode(self, gameObject, epoch=0):
 		
-		actions = [K_RIGHT, K_RIGHT, K_LEFT, K_LEFT, K_LEFT, K_LEFT]
+		actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT]
 
 		self.initializeEnvironment()
 		# embed()
@@ -1741,11 +1736,11 @@ class Agent:
 		envRealPrev = self.fastcopy(self.rle)
 		self.actionHistory.append(action)
 		
-		print "pre-step in executeStep"
+		# print "pre-step in executeStep"
 		# from vgdl.agent import VrleInitPhase, matchEnvs
 		## self.hypotheses[0].interactionSet = self.hypotheses[0].interactionSet[0:-1]
 		# theoryRLEs = VrleInitPhase(self.hypotheses, self.rle, self.symbolDict, self.best_params)
-		embed()
+		# embed()
 
 		self.rle.step(action)
 
@@ -1860,6 +1855,9 @@ class Agent:
 
 		self.statesEncountered.append(self.rle._game.getFullState())
 		self.rle._game.sprite_appearances = []
+
+		for h in hypotheses:
+			h.dryingPaint = set()
 		return hypotheses
 
 
@@ -2266,11 +2264,13 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			if sPrev is None:
 				continue
 
-			#new 2/12
-			sA.stype = theory.spriteObjects[sA.colorName].args['stype']
+			## TODO: This will break if things don't exist in the game at this point that match stype
+			# stype = theory.spriteObjects[sA.colorName].args['stype']
+
+			sA.stype = getSpritesByColor(envPrev._game, sA.colorName)[0].name
 			sA.fleeing = theory.spriteObjects[sA.colorName].args['fleeing']
 			try:
-				closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
+				closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing) ##TODO: Don't use envPrev._game.
 			except:
 				print "tried to find chaseroptions in errorSignal"
 				embed()
