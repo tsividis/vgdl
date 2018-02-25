@@ -2404,7 +2404,7 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, observation
 	physicsToPredicateMapping = {
 	'all' : 					['killSprite', 'cloneSprite', 'transformTo', 'transformToOnLanding',\
 								'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasLess',\
-								'killIfTooFast', 'KillIfSlow',\
+								'killIfTooFast', 'killIfSlow',\
 								'undoAll', 'nothing',\
 								'turn', 'turnAround', 'reverseDirection', 'flipDirection', 'bounceForward',\
 								'changeResource', 'collectResource', 'changeScore', 'teleportToExit', 'conveySprite'],
@@ -2563,6 +2563,42 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	## TODO: what to do with orientation for missiles??
 	return targetClass, childTheories
 
+predicateToOrderingMapping = {
+	'killSprite':			(0,),
+	'killIfHasLess': 		(0,), 
+	'killIfHasMore': 		(0,),
+	'killIfOtherHasLess': 	(0,), 
+	'killIfOtherHasLess':	(0,),
+	'killIfTooFast':		(0,),
+	'killIfSlow':			(0,),
+	'killIfFromAbove':		(0,),
+	'killIfFromBelow':		(0,),
+	'changeResource':		(0,),
+	'collectResource':		(0,),
+	'cloneSprite':	 		(0,1),	#TODO: check all below here.
+	'transformTo':	 		(0,1),
+	'transformToOnLanding': (0,1),
+	'undoAll':				(0,1),
+	'nothing':				(0,1),
+	'turn':					(0,1),
+	'turnAround':			(0,1),
+	'reverseDirection':		(0,1),
+	'flipDirection':		(0,1),
+	'bounceForward':		(0,1),
+ 	'changeScore':			(0,1),
+ 	'teleportToExit':		(0,1),
+ 	'conveySprite':			(0,1),
+	'bounceDirection':		(0,1), 
+	'flipDirection':		(0,1),
+	'conveySprite':			(0,1),
+	'pullWithIt':			(0,1),
+	'windGust':				(0,1),
+	'slipForward':			(0,1),
+	'wallBounce':			(0,1),
+	'wallStop':				(0,1),
+	'onRope':				(0,1),
+	'onLadder':				(0,1)}
+
 
 def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, generic=False):
 	## modifies the theory to propose n new interactonRules involving the given classPair
@@ -2594,6 +2630,8 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 
 	bothOrderings = [[], []]
 
+	# if 'killSprite' in predicates:
+		# embed()
 	for i,order in enumerate([classPair, (classPair[1], classPair[0])]):
 
 		for predicateGroup in predicateGroups:
@@ -2601,10 +2639,12 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 				pass
 			predicateRules = []
 			for predicate in predicateGroup:
-				allArgumentCombinations = proposeArgs(theory, predicate, errorMap, observations, 
-					generic=generic)
-				predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
-					for comb in allArgumentCombinations])
+				
+				if i in predicateToOrderingMapping[predicate]:
+					allArgumentCombinations = proposeArgs(theory, predicate, errorMap, observations, 
+						generic=generic)
+					predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
+						for comb in allArgumentCombinations])
 
 			bothOrderings[i].extend(list(itertools.product(*predicateRules)))
 
@@ -2623,6 +2663,8 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 		newTheory.reconcileInteractionsAndSprites()
 		childTheories.append(newTheory)
 
+	for t in childTheories:
+		t.display()
 	if 'teleportToExit' in predicates:
 		print "found teleporttoexit"
 		embed()
