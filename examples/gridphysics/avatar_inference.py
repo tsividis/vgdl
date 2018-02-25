@@ -17,8 +17,8 @@ level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
-w                              w
-w                              w
+w              4               w
+w              4               w
 w              5               w
 w              5               w
 w              A               w
@@ -88,7 +88,7 @@ BasicGame
 
     TerminationSet
         SpriteCounter stype=box2 limit=0 win=True
-        SpriteCounter stype=box3 limit=0 win=False
+        # SpriteCounter stype=box3 limit=0 win=False
         # Termination
 
 

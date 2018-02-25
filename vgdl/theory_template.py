@@ -1049,7 +1049,7 @@ class Theory(object):
 							if new_rule not in self.falsified:
 								self.falsified.append(new_rule)
 						else:
-							print 'game is lost - falsifying wine theory'
+							print 'game is lost - falsifying win theory'
 							## If you lost, you can't win based on this class being 0
 							new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, True)
 							print new_rule
@@ -1066,17 +1066,22 @@ class Theory(object):
 			for n in range(2, len(absentColors) + 1):
 					for color_combination in itertools.combinations(absentColors, n):
 						class_combination = [self.colorToClassMapper(color) for color in color_combination]
+						
+						## If the game didn't end, falsify multiSpriteCounter rules for this state.
 						if not rle._isDone()[0]:
 							new_rule1 = MultiSpriteCounterRule(stypes=class_combination, win=True)
 							new_rule2 = MultiSpriteCounterRule(stypes=class_combination, win=False)
 							if new_rule1 not in self.multi_falsified:
 								self.multi_falsified.append(new_rule1)
 								self.multi_falsified.append(new_rule2)
+						## If the game did end
 						else:
+							## If we won, falsify loss based on this state.
 							if rle._isDone()[1]:
 								new_rule = MultiSpriteCounterRule(stypes=class_combination, win=False)
 								if new_rule not in self.multi_falsified:
 									self.multi_falsified.append(new_rule)
+							## If we lost, falsify win based on this state.
 							else:
 								new_rule = MultiSpriteCounterRule(stypes=class_combination, win=True)
 								if new_rule not in self.multi_falsified:
@@ -1119,14 +1124,12 @@ class Theory(object):
 		falsified_win_stypes = set([sprite_rule.termination.stype for sprite_rule in self.falsified
 			if (sprite_rule.termination.win and sprite_rule.termination.stype != 'EOS' and sprite_rule.termination.stype !='avatar')])
 		
+		## ?
 		try:
 			falsified_win_stypes.remove(self.classes['avatar'][0].args['stype'])
 		except:
 			pass
-		# if self.classes['avatar'][0].args and 'stype' in self.classes['avatar'][0].args.keys():
-		# 	if sel
-		# if any([rule.termination.stype=='explosion' for rule in self.falsified]):
-		# 	embed()
+
 		for n in range(2, len(falsified_win_stypes) + 1):
 			for sprite_combination in itertools.combinations(falsified_win_stypes, n):
 				terminationRule = MultiSpriteCounterRule(stypes=sprite_combination)
