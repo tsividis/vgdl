@@ -1523,9 +1523,13 @@ class Theory(object):
 		if isinstance(other, self.__class__):
 
 			# Must check interactionSet in this way, to use overloaded equality of InteractionRules
-			interactionSetEqual = all(any(i1==i2 for i2 in other.interactionSet) for i1 in self.interactionSet)
-			spriteSetEqual = all(any(s1==s2 for s2 in other.spriteSet) for s1 in self.spriteSet)
-			terminationSetEqual = all(any(t1==t2 for t2 in other.terminationSet) for t1 in self.terminationSet)
+			# interactionSetEqual = all(any(i1==i2 for i2 in other.interactionSet) for i1 in self.interactionSet)
+			# spriteSetEqual = all(any(s1==s2 for s2 in other.spriteSet) for s1 in self.spriteSet)
+			# terminationSetEqual = all(any(t1==t2 for t2 in other.terminationSet) for t1 in self.terminationSet)
+
+			interactionSetEqual = equalLists(self.interactionSet, other.interactionSet)
+			spriteSetEqual = equalLists(self.spriteSet, other.spriteSet)
+			terminationSetEqual = equalLists(self.terminationSet, other.terminationSet)
 
 			return all([
 				spriteSetEqual,
@@ -2659,8 +2663,8 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 			theory.interactionSet[i].generic and classPair==(theory.interactionSet[i].asTuple()[2], theory.interactionSet[i].asTuple()[1])])
 
 	for i in sorted(toRemove, reverse=True):
+		# theory.interactionSet[i].display()
 		theory.interactionSet.pop(i)
-
 
 	## Now generate combinations from each expanded predicateGroup that we added to each of the orderings
 	newRuleSets = itertools.product(bothOrderings[0], bothOrderings[1])
@@ -2675,10 +2679,15 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 		for rule in ruleSet:
 			newTheory.dryingPaint.add(rule)
 		newTheory.reconcileInteractionsAndSprites()
-		childTheories.append(newTheory)
+		if newTheory not in childTheories:
+			childTheories.append(newTheory)
 
-	# for t in childTheories:
-		# t.display()
+	# if classPair == ('c2', 'c4') or classPair == ('c4', 'c2'):
+	# 	for t in childTheories:
+	# 		t.display()
+	# 	print "in expandLine"
+	# 	embed()
+
 	if 'teleportToExit' in predicates:
 		print "found teleporttoexit"
 		embed()

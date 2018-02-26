@@ -2732,7 +2732,10 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		for t in newTheories:
 			if t not in newLst:
 				newLst.append(t)
+
 		print "filtering took {} seconds".format(time.time()-t1)
+		for t in newLst:
+			t.display()
 		print "After filtering for duplicates, have {} theories".format(len(newLst))
 		# embed()
 
