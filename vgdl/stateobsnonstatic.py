@@ -380,7 +380,6 @@ def processFrame(memory, gameObject):
                             newSprite.speed = max(abs(sprite.rect.left - newSprite.rect.left), abs(sprite.rect.top - newSprite.rect.top)) * 1.0 / sprite.rect.width # TODO: don't depend on width
                             newSprite.orientation = (np.sign(sprite.rect.left - newSprite.rect.left), np.sign(sprite.rect.top - newSprite.rect.top))
                         else:
-                            print 'here' , [sprite.rect.left, sprite.rect.top], [newSprite.rect.left, newSprite.rect.top]
                             newSprite.speed = euclideanDist([sprite.rect.left, sprite.rect.top], [newSprite.rect.left, newSprite.rect.top])
                             newSprite.orientation = normalizeVec([sprite.rect.left - newSprite.rect.left, sprite.rect.top - newSprite.rect.top])
                         newSprite.rect.left , newSprite.rect.top = sprite.rect.left , sprite.rect.top
