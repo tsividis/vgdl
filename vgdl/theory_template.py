@@ -1524,13 +1524,15 @@ class Theory(object):
 
 			# Must check interactionSet in this way, to use overloaded equality of InteractionRules
 			interactionSetEqual = all(any(i1==i2 for i2 in other.interactionSet) for i1 in self.interactionSet)
+			spriteSetEqual = all(any(s1==s2 for s2 in other.spriteSet) for s1 in self.spriteSet)
+			terminationSetEqual = all(any(t1==t2 for t2 in other.terminationSet) for t1 in self.terminationSet)
 
 			return all([
-				self.spriteSet == other.spriteSet,
-				# self.levelMapping == other.levelMapping,
+				spriteSetEqual,
 				interactionSetEqual, # TODO: Check if this uses InteractionRule overloaded __eq__
+				terminationSetEqual,
 				self.classes == other.classes,
-				self.terminationSet == other.terminationSet #may want to delete this
+				# self.terminationSet == other.terminationSet #may want to delete this
 				])
 		else:
 			return False
@@ -1540,6 +1542,14 @@ class Theory(object):
 	
 	def __hash__(self):
 		return 0 ## this is a terrible idea! You're just doing this hoping that the equality operation is good enough for set() to work well.
+
+def equalLists(lst1, lst2):
+	l1 = [r for r in lst1 if r not in lst2]
+	l2 = [r for r in lst2 if r not in lst1]
+	if len(l1)+len(l2)==0:
+		return True
+	else:
+		return False
 
 def normalize(array):
 	z = float(sum(array))
@@ -2575,6 +2585,7 @@ predicateToOrderingMapping = {
 	'killIfFromBelow':		(0,),
 	'changeResource':		(0,),
 	'collectResource':		(0,),
+	'stepBack':				(0,),
 	'cloneSprite':	 		(0,1),	#TODO: check all below here.
 	'transformTo':	 		(0,1),
 	'transformToOnLanding': (0,1),
@@ -2615,13 +2626,12 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 		predicateGroups.extend(list(itertools.combinations(predicates, i)))
 	
 	## remove all generic interactionRules involving classPair (in either order)
-	interactionSet = [rule for rule in theory.interactionSet if
-		( classPair != (rule.asTuple()[1], rule.asTuple()[2]) and classPair != (rule.asTuple()[2], rule.asTuple()[1]) ) or
-		rule.generic==False]
+	# interactionSet = [rule for rule in theory.interactionSet if
+	# 	( classPair != (rule.asTuple()[1], rule.asTuple()[2]) and classPair != (rule.asTuple()[2], rule.asTuple()[1]) ) or
+	# 	rule.generic==False]
 
-	## If we're in a precondition case, remove interactionRules that predict the targetClass
-	## gets killed so you can replace with conditionals.
-	if 'killIfHasLess' in predicates:
+	## Conditionals can only replace kill rules. Remove the existing kill rules and replace them with conditionals.
+	if 'conditionalKill' in errorMap.diagnosis:
 		toRemove = [rule for rule in theory.interactionSet if rule.asTuple()[1]==errorMap.targetClass and rule.asTuple()[0]=='killSprite']
 		if len(toRemove)>0:
 			print "actually removing kill rules in expandLine"
@@ -2629,9 +2639,7 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 		theory.interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
 
 	bothOrderings = [[], []]
-
-	# if 'killSprite' in predicates:
-		# embed()
+	alteredPairs = set()
 	for i,order in enumerate([classPair, (classPair[1], classPair[0])]):
 
 		for predicateGroup in predicateGroups:
@@ -2640,13 +2648,28 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 			predicateRules = []
 			for predicate in predicateGroup:
 				
+				## orderings are (targetClass, neighbor). If the ordering we're proposing is consistent with the semantics
+				## of the predicate we're proposing, add this potential rule.
 				if i in predicateToOrderingMapping[predicate]:
+					alteredPairs.add(i)
 					allArgumentCombinations = proposeArgs(theory, predicate, errorMap, observations, 
 						generic=generic)
 					predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
 						for comb in allArgumentCombinations])
 
 			bothOrderings[i].extend(list(itertools.product(*predicateRules)))
+
+	toRemove = set()
+	if 0 in alteredPairs:
+		toRemove |= set([i for i in range(len(theory.interactionSet)) if 
+			theory.interactionSet[i].generic and classPair==(theory.interactionSet[i].asTuple()[1], theory.interactionSet[i].asTuple()[2])])
+	if 1 in alteredPairs:
+		toRemove |= set([i for i in range(len(theory.interactionSet)) if 
+			theory.interactionSet[i].generic and classPair==(theory.interactionSet[i].asTuple()[2], theory.interactionSet[i].asTuple()[1])])
+
+	for i in sorted(toRemove, reverse=True):
+		interactionSet.pop(i)
+	# interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
 
 	## Now generate combinations from each expanded predicateGroup that we added to each of the orderings
 	newRuleSets = itertools.product(bothOrderings[0], bothOrderings[1])
@@ -2663,8 +2686,8 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 		newTheory.reconcileInteractionsAndSprites()
 		childTheories.append(newTheory)
 
-	for t in childTheories:
-		t.display()
+	# for t in childTheories:
+		# t.display()
 	if 'teleportToExit' in predicates:
 		print "found teleporttoexit"
 		embed()

@@ -367,6 +367,16 @@ class Agent:
 			for theory in theories:
 				newTheories.extend(self.expandTheoryForOneErrorMap(errorList[0], envRealPrev, envRealCurrent, prevAction, theory))
 
+			print "Have {} new theories".format(len(newTheories))
+			t1 = time.time()
+			newLst = []
+			for t in newTheories:
+				if t not in newLst:
+					newLst.append(t)
+			print "filtering took {} seconds".format(time.time()-t1)
+			print "After filtering for duplicates, have {} theories".format(len(newLst))
+			# embed()
+
 			print "Now running experience replay on {} theories".format(len(newTheories))
 			penalties, cumulative_penalties, _ = experienceReplay(newTheories, self.rleHistory[-2:], self.actionHistory[-1:], 
 				self.symbolDict, self.best_params, method='all', targetColor = errorList[0].targetColor)
@@ -494,8 +504,14 @@ class Agent:
 				predicates = predicates, n=n, 
 				observations=envRealCurrent._game.observation, generic=False)
 
-			newTheories.extend(theories)
-
+			len_new_theories = len(newTheories)
+			print "Currently have {} theories. Maybe adding {}.".format(len_new_theories, len(theories))
+			for t in theories:
+				if t not in newTheories:
+					newTheories.append(t)
+			print "Ended up adding {}".format(len(newTheories)-len_new_theories)
+			# newTheories.extend(theories)
+			# embed()
 			## TODO: think more about this; right now you're keeping around all the predicateGroups
 			## that each theory proposes when you call expandLine on it, so you have mutliple copies
 			## of the same predicateGroups.
@@ -1703,11 +1719,11 @@ class Agent:
 		env.step(action)
 		penalty, errorList = errorSignal(env, self.rle, hypothesis, envRealPrev)
 		
-		if errorList:
-			hypothesis.display()
-			for e in errorList:
-				e.display()
-				print ""
+		# if errorList:
+			# hypothesis.display()
+			# for e in errorList:
+				# e.display()
+				# print ""
 		# else:
 		# 	print "No error"
 			# embed()
@@ -1796,6 +1812,19 @@ class Agent:
 		for num, env in enumerate(theoryRLEs):
 			theories = self.testAndExpand(theoryRLEs, self.hypotheses, action, envRealPrev, num)
 			newTheories.extend(theories)
+
+		print "Have {} new theories".format(len(newTheories))
+		t1 = time.time()
+		newLst = []
+		for t in newTheories:
+			if t not in newLst:
+				newLst.append(t)
+		print "filtering took {} seconds".format(time.time()-t1)
+		print "After filtering for duplicates, have {} theories".format(len(newLst))
+
+		embed()
+		newTheories = newLst
+
 
 		# print "Serially tested and expanded {} theories in {} seconds".format(len(theoryRLEs), time.time()-t1)
 

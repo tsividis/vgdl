@@ -87,7 +87,7 @@ BasicGame
         random box > stepBack
         box2 avatar > bounceForward
         box3 avatar > killSprite
-
+        # avatar box3 > stepBack
         # box cloner > cloneSprite
         # cloner box > killSprite
 
