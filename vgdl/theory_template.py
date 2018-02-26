@@ -1002,58 +1002,41 @@ class Theory(object):
 		return (addedRule or addedClass)
 
 	def updateTerminations(self, rle=None):
-
-		print '~ ~ ~ ~ UPDATING TERMINATON CONDITIONS ~ ~ ~ ~'
 		self.terminationSet = [t for t in self.terminationSet
 							   if t.ruleType=='SpriteCounterRule' and
 							   not t.termination.win and all([not f.__eq__(t) for f in self.falsified])]
 
 		colors = [tt[0].colorName for tt in self.classes.values() if tt[0].colorName != 'ENDOFSCREEN']
-		print colors
-		raw_input('>>')
 		
 		if rle:
 			objects = rle._game.observation['trackedObjects']
 			absentColors = []
-			print [color for color in rle._game.observation['trackedObjects']]
-			raw_input('>>')
 			for color in colors:
 				sprites = objects[color] if color in objects else []
 
 				count = len(sprites)
-				print color, count
-				raw_input('>>')
 				if count == 0:
-					print '~ ~ ~ ~ Tracking object color:', color, '~ ~ ~ ~'
-					raw_input('>>')
 					absentColors.append(color)
 					## If the game didn't end, you can't win or lose based on this particular class being 0
 					if not rle._isDone()[0]:
-						print 'game is not over - falisfying theories'
 						new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, True)
 						new_rule2 = SpriteCounterRule(self.colorToClassMapper(color), 0, False)
-						print new_rule
-						print new_rule2
-						embed()
+						# print new_rule
+						# print new_rule2
+						# embed()
 						if new_rule not in self.falsified:
 							self.falsified.append(new_rule)
 							self.falsified.append(new_rule2)
 					else:
-						print 'game is over - falsifying potential theories'
 						if rle._isDone()[1]:
-							print 'game is won - falsifying lose theory'
 							new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, False)
-							print new_rule
 							## If you won, you can't lose based on this class being 0
-							embed()
+							# embed()
 							if new_rule not in self.falsified:
 								self.falsified.append(new_rule)
 						else:
-							print 'game is lost - falsifying wine theory'
 							## If you lost, you can't win based on this class being 0
 							new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, True)
-							print new_rule
-							embed()
 							if new_rule not in self.falsified:
 								self.falsified.append(new_rule)
 
@@ -1083,8 +1066,7 @@ class Theory(object):
 									self.multi_falsified.append(new_rule)
 
 								loss_terminationRule = MultiSpriteCounterRule(stypes=class_combination, win=False)
-								if (all([not loss_terminationRule.__eq__(t) for t in self.terminationSet]) and
-									all([not loss_terminationRule.__eq__(t) for t in self.falsified])):
+								if loss_terminationRule not in self.terminationSet and loss_terminationRule not in self.falsified:
 										self.terminationSet.append(loss_terminationRule)
 
 		for rule in self.interactionSet:
@@ -1108,8 +1090,7 @@ class Theory(object):
 							self.terminationSet.append(terminationRule)
 				elif rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo']:
 					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
-					if (all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
-						all([not terminationRule.__eq__(t) for t in self.falsified])):
+					if terminationRule not in self.terminationSet and terminationRule not in self.falsified:
 						self.terminationSet.append(terminationRule)
 
 			if rule.slot2 == 'EOS' and rule.generic:

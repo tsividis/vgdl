@@ -19,9 +19,9 @@ w                              w
 w                              w
 w                              w
 w                              w
-w              5               w
-w              5               w
-w              A               w
+w              3               w
+w              3               w
+w              A22             w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -72,10 +72,8 @@ BasicGame
         F > flicker
         0 > base
         1 > box
-        2 > random
-        3 > chaser
-        4 > box2
-        5 > box3
+        2 > box2
+        3 > box3
         w > wall
         c > cannon
         s > sam
