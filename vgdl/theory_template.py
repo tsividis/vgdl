@@ -2401,7 +2401,7 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 	return argList
 
 
-def proposePredicates(singlePairErrorSignal, memory, proposalMemory, observations):
+def proposePredicates(singlePairErrorSignal, observations):
 	## Takes the error signal and proposes the appropriate predicates by looking
 	## at the memory. For now it would only access the memory to make new proposals
 	## that build on previous ones (e.g., incrementing n, or going to conditional kill
@@ -2450,15 +2450,6 @@ def proposePredicates(singlePairErrorSignal, memory, proposalMemory, observation
 	## TODO: These don't actually belong here, but we need to do more work to be able to learn these.
 	'other' : 					['conveySprite']
 								}
-
-
-	## If we've proposed killSprite and that has failed, propose conditional rules.
-	# if 'objectDestruction' in singlePairErrorSignal:
-	# 	print "objectDestruction"
-	# 	embed()
-	# 	if 'killSprite' in proposalMemory[singlePairErrorSignal]:
-	# 		predicates.extend(errorSignalToPredicateMapping['conditionalKill'])
-	# 		singlePairErrorSignal.values().remove('objectDestruction')
 
 	## Propose relevant rules
 	##TODO: right now this just gets the list from a single key
@@ -2668,8 +2659,8 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 			theory.interactionSet[i].generic and classPair==(theory.interactionSet[i].asTuple()[2], theory.interactionSet[i].asTuple()[1])])
 
 	for i in sorted(toRemove, reverse=True):
-		interactionSet.pop(i)
-	# interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
+		theory.interactionSet.pop(i)
+
 
 	## Now generate combinations from each expanded predicateGroup that we added to each of the orderings
 	newRuleSets = itertools.product(bothOrderings[0], bothOrderings[1])
@@ -2679,7 +2670,7 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 		newTheory = theory.copy()
 		newTheory.mostRecentEdit = 'interactionSetInduction'
 		newTheory.errorMapHistory.append(errorMap)
-		newTheory.interactionSet = ccopy(interactionSet)
+		newTheory.interactionSet = ccopy(theory.interactionSet)
 		newTheory.interactionSet.extend(ruleSet)
 		for rule in ruleSet:
 			newTheory.dryingPaint.add(rule)
