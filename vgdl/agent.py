@@ -764,8 +764,8 @@ class Agent:
 						print memory['isGrid'], sprite.colorName , sprite.x , sprite.y , sprite.speed, sprite.inventory, sprite.orientation
 		embed()
 	def testEpisode(self, gameObject, epoch=0):
-		
-		actions = [K_UP, K_UP, K_UP, K_UP]	
+		from pygame.locals import K_UP
+		actions = [K_RIGHT, K_RIGHT]
 
 		self.initializeEnvironment()
 		self.trueTheory = generateTheoryFromGame(self.rle)
@@ -790,7 +790,14 @@ class Agent:
 		self.rleHistory.append(envReal)
 
 		agentState = self.resourceManagement(pre_step=True)
+		# print self.hypotheses[0]
+		# for rule in self.hypotheses[0].interactionSet:
+		# 	if rule.slot1=='c3' and rule.slot2=='avatar':
+		# 		rule.interaction = 'killSprite'
+		# 	if rule.slot1=='c4' and rule.slot2=='avatar':
+		# 		rule.interaction = 'killSprite'
 
+		# embed()
 
 		#OBJECT TRACKING
 		# resourceObservations = self.getObservations(self.hypotheses, agentState, self.rle, self.rle)
