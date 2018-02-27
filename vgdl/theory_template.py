@@ -1029,32 +1029,32 @@ class Theory(object):
 									self.terminationSet.append(loss_terminationRule)
 
 			for n in range(2, len(absentColors) + 1):
-					for color_combination in itertools.combinations(absentColors, n):
-						class_combination = [self.colorToClassMapper(color) for color in color_combination]
-						
-						## If the game didn't end, falsify multiSpriteCounter rules for this state.
-						if not rle._isDone()[0]:
-							new_rule1 = MultiSpriteCounterRule(stypes=class_combination, win=True)
-							new_rule2 = MultiSpriteCounterRule(stypes=class_combination, win=False)
-							if new_rule1 not in self.multi_falsified:
-								self.multi_falsified.append(new_rule1)
-								self.multi_falsified.append(new_rule2)
-						## If the game did end
+				for color_combination in itertools.combinations(absentColors, n):
+					class_combination = [self.colorToClassMapper(color) for color in color_combination]
+					
+					## If the game didn't end, falsify multiSpriteCounter rules for this state.
+					if not rle._isDone()[0]:
+						new_rule1 = MultiSpriteCounterRule(stypes=class_combination, win=True)
+						new_rule2 = MultiSpriteCounterRule(stypes=class_combination, win=False)
+						if new_rule1 not in self.multi_falsified:
+							self.multi_falsified.append(new_rule1)
+							self.multi_falsified.append(new_rule2)
+					## If the game did end
+					else:
+						## If we won, falsify loss based on this state.
+						if rle._isDone()[1]:
+							new_rule = MultiSpriteCounterRule(stypes=class_combination, win=False)
+							if new_rule not in self.multi_falsified:
+								self.multi_falsified.append(new_rule)
+						## If we lost, falsify win based on this state.
 						else:
-							## If we won, falsify loss based on this state.
-							if rle._isDone()[1]:
-								new_rule = MultiSpriteCounterRule(stypes=class_combination, win=False)
-								if new_rule not in self.multi_falsified:
-									self.multi_falsified.append(new_rule)
-							## If we lost, falsify win based on this state.
-							else:
-								new_rule = MultiSpriteCounterRule(stypes=class_combination, win=True)
-								if new_rule not in self.multi_falsified:
-									self.multi_falsified.append(new_rule)
+							new_rule = MultiSpriteCounterRule(stypes=class_combination, win=True)
+							if new_rule not in self.multi_falsified:
+								self.multi_falsified.append(new_rule)
 
-								loss_terminationRule = MultiSpriteCounterRule(stypes=class_combination, win=False)
-								if loss_terminationRule not in self.terminationSet and loss_terminationRule not in self.falsified:
-										self.terminationSet.append(loss_terminationRule)
+							loss_terminationRule = MultiSpriteCounterRule(stypes=class_combination, win=False)
+							if loss_terminationRule not in self.terminationSet and loss_terminationRule not in self.falsified:
+									self.terminationSet.append(loss_terminationRule)
 
 		for rule in self.interactionSet:
 

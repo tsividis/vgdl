@@ -277,7 +277,7 @@ class Agent:
 
 	def testEpisode(self, gameObject, epoch=0):
 		from pygame.locals import K_UP
-		actions = [K_RIGHT, K_RIGHT]
+		actions = [K_RIGHT]*2 + [K_LEFT]*4 + [K_RIGHT]*2 + [K_UP]*2
 
 		self.initializeEnvironment()
 		# embed()

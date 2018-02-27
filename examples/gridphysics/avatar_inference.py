@@ -21,7 +21,7 @@ w                              w
 w                              w
 w              3               w
 w              3               w
-w              A22             w
+w            11A22             w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -85,8 +85,9 @@ BasicGame
         box3 avatar > killSprite
 
     TerminationSet
-        SpriteCounter stype=box2 limit=0 win=True
-        SpriteCounter stype=box3 limit=0 win=False
+        # SpriteCounter stype=box2 limit=0 win=True
+        # SpriteCounter stype=box3 limit=0 win=False
+        MultiSpriteCounter stype1=box2 stype2=box3 win=True
         # Termination
 
 
