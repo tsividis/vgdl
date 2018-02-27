@@ -1487,6 +1487,17 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, best_par
 ######## THEORY MODIFICATION 									########
 ########################################################################
 
+def updateTerminations(rle, hypotheses):
+
+	terminationSet, falsified, multi_falsified = hypotheses[0].updateTerminations(rle)
+
+	for h in hypotheses:
+		h.terminationSet = terminationSet
+		h.falsified = falsified
+		h.multi_falsified = multi_falsified
+
+	return
+	
 def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSpriteTheories):
 	## Returns the max_num theories that are at percentile or greater, given their score.
 

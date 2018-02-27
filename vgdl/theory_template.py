@@ -983,59 +983,80 @@ class Theory(object):
 
 		return (addedRule or addedClass)
 
-	def updateTerminations(self, event=False, rle=None):
+	def updateTerminations(self, rle=None):
 		self.terminationSet = [t for t in self.terminationSet
 							   if t.ruleType=='SpriteCounterRule' and
 							   not t.termination.win and all([not f.__eq__(t) for f in self.falsified])]
 
-		if event:
-			relevantEvents = [t for t in event['effectList'] if t[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo']]
-			# if relevantEvents:
-				# ipdb.set_trace()
-			rle = event['rle']
-			for event in relevantEvents:
-				candidateSpriteType = [o for o in rle._game.sprite_groups if len(rle._game.sprite_groups[o])>0 and rle._game.sprite_groups[o][0].colorName == event[1]][0]
-				if len([o for o in rle._game.sprite_groups[candidateSpriteType] if o not in rle._game.kill_list]) == 0:
+		colors = [tt[0].colorName for tt in self.classes.values() if tt[0].colorName != 'ENDOFSCREEN']
+		
+		if rle:
+			objects = rle._game.observation['trackedObjects']
+			absentColors = []
+			for color in colors:
+				sprites = objects[color] if color in objects else []
 
+				count = len(sprites)
+				if count == 0:
+					absentColors.append(color)
 					## If the game didn't end, you can't win or lose based on this particular class being 0
 					if not rle._isDone()[0]:
-						self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, True))
-						self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, False))
+						new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, True)
+						new_rule2 = SpriteCounterRule(self.colorToClassMapper(color), 0, False)
+						# print new_rule
+						# print new_rule2
+						# embed()
+						if new_rule not in self.falsified:
+							self.falsified.append(new_rule)
+							self.falsified.append(new_rule2)
 					else:
-						## If you won, you can't lose based on this class being 0
 						if rle._isDone()[1]:
-							self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, False))
+							new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, False)
+							## If you won, you can't lose based on this class being 0
+							# embed()
+							if new_rule not in self.falsified:
+								self.falsified.append(new_rule)
 						else:
-						## If you lost, you can't win based on this class being 0
-							self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, True))
+							## If you lost, you can't win based on this class being 0
+							new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, True)
+							if new_rule not in self.falsified:
+								self.falsified.append(new_rule)
 
-						## If you lost, maybe you lost because this class was 0. Check whether we'd already falsified this rule.
-							loss_terminationRule = SpriteCounterRule(self.colorToClassMapper(event[1]), 0, False)
+							## If you lost, maybe you lost because this class was 0. Check whether we'd already falsified this rule.
+							loss_terminationRule = SpriteCounterRule(self.colorToClassMapper(color), 0, False)
 							if (all([not loss_terminationRule.__eq__(t) for t in self.terminationSet]) and
 								all([not loss_terminationRule.__eq__(t) for t in self.falsified])):
 									self.terminationSet.append(loss_terminationRule)
-
-
-		if rle and not rle._isDone()[0]:
-			knownColors = [sprite[0].colorName for sprite in self.classes.values()]
-			presentColors = [rle._game.sprite_groups[o][0].colorName for o in rle._game.sprite_groups
-							 if (len(rle._game.sprite_groups[o]) >
-							 	len([dead_sprite for dead_sprite in rle._game.kill_list if dead_sprite.name==o])) and
-							 rle._game.sprite_groups[o][0].colorName in knownColors]
-			absentColors = [color for color in knownColors
-							if color not in presentColors]
-
-			for color in absentColors:
-				## If the class is not at all present in this level,
-				## you can't win or lose based on this particular class being 0
-				self.falsified.append(SpriteCounterRule(self.colorToClassMapper(color), 0, True))
-				self.falsified.append(SpriteCounterRule(self.colorToClassMapper(color), 0, False))
+							print "in loss condition"
+							embed()
 
 			for n in range(2, len(absentColors) + 1):
-				for color_combination in itertools.combinations(absentColors, n):
-					class_combination = [self.colorToClassMapper(color)
-						for color in color_combination]
-					self.multi_falsified.append(MultiSpriteCounterRule(stypes=class_combination))
+					for color_combination in itertools.combinations(absentColors, n):
+						class_combination = [self.colorToClassMapper(color) for color in color_combination]
+						
+						## If the game didn't end, falsify multiSpriteCounter rules for this state.
+						if not rle._isDone()[0]:
+							new_rule1 = MultiSpriteCounterRule(stypes=class_combination, win=True)
+							new_rule2 = MultiSpriteCounterRule(stypes=class_combination, win=False)
+							if new_rule1 not in self.multi_falsified:
+								self.multi_falsified.append(new_rule1)
+								self.multi_falsified.append(new_rule2)
+						## If the game did end
+						else:
+							## If we won, falsify loss based on this state.
+							if rle._isDone()[1]:
+								new_rule = MultiSpriteCounterRule(stypes=class_combination, win=False)
+								if new_rule not in self.multi_falsified:
+									self.multi_falsified.append(new_rule)
+							## If we lost, falsify win based on this state.
+							else:
+								new_rule = MultiSpriteCounterRule(stypes=class_combination, win=True)
+								if new_rule not in self.multi_falsified:
+									self.multi_falsified.append(new_rule)
+
+								loss_terminationRule = MultiSpriteCounterRule(stypes=class_combination, win=False)
+								if loss_terminationRule not in self.terminationSet and loss_terminationRule not in self.falsified:
+										self.terminationSet.append(loss_terminationRule)
 
 		for rule in self.interactionSet:
 
@@ -1058,8 +1079,7 @@ class Theory(object):
 							self.terminationSet.append(terminationRule)
 				elif rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo']:
 					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
-					if (all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
-						all([not terminationRule.__eq__(t) for t in self.falsified])):
+					if terminationRule not in self.terminationSet and terminationRule not in self.falsified:
 						self.terminationSet.append(terminationRule)
 
 			if rule.slot2 == 'EOS' and rule.generic:
@@ -1069,10 +1089,12 @@ class Theory(object):
 		falsified_win_stypes = set([sprite_rule.termination.stype for sprite_rule in self.falsified
 			if (sprite_rule.termination.win and sprite_rule.termination.stype != 'EOS' and sprite_rule.termination.stype !='avatar')])
 		
+		## ?
 		try:
 			falsified_win_stypes.remove(self.classes['avatar'][0].args['stype'])
 		except:
 			pass
+
 		for n in range(2, len(falsified_win_stypes) + 1):
 			for sprite_combination in itertools.combinations(falsified_win_stypes, n):
 				terminationRule = MultiSpriteCounterRule(stypes=sprite_combination)
@@ -1080,15 +1102,9 @@ class Theory(object):
 					all([not terminationRule.__eq__(t) for t in self.multi_falsified])):
 					self.terminationSet.append(terminationRule)
 
-		# if falsified_win_stypes:
-		# 	embed()
 		self.terminationSet = sorted(self.terminationSet, key=lambda t:t.ruleType)
 
-		# if any([t.ruleType=='NoveltyRule' and t.termination.s1=='c7' and t.termination.s2=='avatar' and not t.termination.args for t in self.terminationSet]):
-		# 	print "found c7 avatar w/o args"
-		# 	embed()
-
-		return
+		return self.terminationSet, self.falsified, self.multi_falsified
 
 	def findRule(self, rule, lst):
 		"""
