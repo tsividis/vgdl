@@ -2606,7 +2606,6 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 	import itertools
 	from vgdl.theory_template import InteractionRule
 
-
 	print "in expandLine for predicates: {}".format(predicates)
 	childTheories = []
 	predicateGroups = []
@@ -2672,7 +2671,7 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 			for rule in ruleSet:
 				newTheory.dryingPaint.add(rule)
 			newTheory.reconcileInteractionsAndSprites()
-			
+			childTheories.append(newTheory)
 			## This takes 97% of the run time of the function!
 			# if newTheory not in childTheories:
 				# childTheories.append(newTheory)
