@@ -472,8 +472,11 @@ class Agent:
 
 		print ""
 		print keyPresses[action]
-		print "evaluating {} old theories and proposing new ones".format(len(theoryRLEs))
+		print self.rle.show(color='blue')
 
+
+		print "evaluating {} old theories and proposing new ones".format(len(theoryRLEs))
+		updateTerminations(self.rle, hypotheses)
 		newTheories = []
 	
 		for num, env in enumerate(theoryRLEs):
@@ -493,7 +496,6 @@ class Agent:
 		newTheories = newLst
 
 		self.allTheories.extend(newTheories)
-		print self.rle.show(color='blue')
 		print "evaluation complete. Now running experienceReplay on {} theories".format(len(newTheories))
 
 		if newTheories:
@@ -1711,8 +1713,8 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.aliens"
 
-	# filename = "examples.gridphysics.avatar_inference"
-	filename = "examples.gridphysics.collect_resource"
+	filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.collect_resource"
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
