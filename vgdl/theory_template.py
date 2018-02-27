@@ -26,25 +26,6 @@ AimedFlakAvatar, InertialAvatar, MarioAvatar]
 Theory induction on VGDL Games
 """
 
-'''
-TODO 8/2:
-- Implement tree viz of hypothesis generation --> save children of each node
-- More informative printing for debugging/monitoring progress *
-- When DFSinduction returns before the full tree is built, return in a way that let's us save the state of the function, and continue running to get more theories --> queue
-- Run on more minimal example *
-- Make DFSinduction more efficient *
-	- fix the backward checks in likelihood (should you just check the most recently changed rules (anything in drying paint) against the past events?)
-	- check that redundant events don't cost much extra
-	- likelihood: check changed rules against all timesteps, check new timestep against all rules) --> calling checkRules / checkPredictions more targeted manner
-
-NOTES:
-Current assumptions:
-	no grammar over preconditions
-	preconditions limited to claims about a SINGLE object
-	preconditions limited to simple comparison operators.
-	Events that take place at same timestep can only be because of the same preconditions.
-
-'''
 
 class TimeStep:
 	"""
@@ -1092,10 +1073,6 @@ class Theory(object):
 			falsified_win_stypes.remove(self.classes['avatar'][0].args['stype'])
 		except:
 			pass
-		# if self.classes['avatar'][0].args and 'stype' in self.classes['avatar'][0].args.keys():
-		# 	if sel
-		# if any([rule.termination.stype=='explosion' for rule in self.falsified]):
-		# 	embed()
 		for n in range(2, len(falsified_win_stypes) + 1):
 			for sprite_combination in itertools.combinations(falsified_win_stypes, n):
 				terminationRule = MultiSpriteCounterRule(stypes=sprite_combination)
@@ -2615,6 +2592,8 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 	import itertools
 	from vgdl.theory_template import InteractionRule
 
+
+	print "in expandLine for predicates: {}".format(predicates)
 	childTheories = []
 	predicateGroups = []
 	for i in range(0,n+1):
@@ -2663,7 +2642,6 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 			theory.interactionSet[i].generic and classPair==(theory.interactionSet[i].asTuple()[2], theory.interactionSet[i].asTuple()[1])])
 
 	for i in sorted(toRemove, reverse=True):
-		# theory.interactionSet[i].display()
 		theory.interactionSet.pop(i)
 
 	## Now generate combinations from each expanded predicateGroup that we added to each of the orderings
@@ -2671,22 +2649,17 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 
 	for i,ruleSet in enumerate(list(newRuleSets)):
 		ruleSet = [item for sublist in ruleSet for item in sublist]
-		newTheory = theory.copy()
-		newTheory.mostRecentEdit = 'interactionSetInduction'
-		newTheory.errorMapHistory.append(errorMap)
-		newTheory.interactionSet = ccopy(theory.interactionSet)
-		newTheory.interactionSet.extend(ruleSet)
-		for rule in ruleSet:
-			newTheory.dryingPaint.add(rule)
-		newTheory.reconcileInteractionsAndSprites()
-		if newTheory not in childTheories:
-			childTheories.append(newTheory)
-
-	# if classPair == ('c2', 'c4') or classPair == ('c4', 'c2'):
-	# 	for t in childTheories:
-	# 		t.display()
-	# 	print "in expandLine"
-	# 	embed()
+		if len(ruleSet)>0:
+			newTheory = theory.copy()
+			newTheory.mostRecentEdit = 'interactionSetInduction'
+			newTheory.errorMapHistory.append(errorMap)
+			newTheory.interactionSet = ccopy(theory.interactionSet)
+			newTheory.interactionSet.extend(ruleSet)
+			for rule in ruleSet:
+				newTheory.dryingPaint.add(rule)
+			newTheory.reconcileInteractionsAndSprites()
+			if newTheory not in childTheories:
+				childTheories.append(newTheory)
 
 	if 'teleportToExit' in predicates:
 		print "found teleporttoexit"
