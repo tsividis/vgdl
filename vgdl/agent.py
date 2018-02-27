@@ -765,7 +765,7 @@ class Agent:
 		embed()
 	def testEpisode(self, gameObject, epoch=0):
 		from pygame.locals import K_UP
-		actions = [K_RIGHT, K_RIGHT]
+		actions = [K_UP, K_UP]
 
 		self.initializeEnvironment()
 		self.trueTheory = generateTheoryFromGame(self.rle)
@@ -1759,13 +1759,11 @@ class Agent:
 		self.rle._game.sprite_appearances = new_sprites
 		# self.rle._game.sprite_appearances = self.manageResourcesAndNewSprites(envReal, envRealPrev)
 
-		updateTerminations(self.rle, hypotheses)
 		# self.updateResourceDistributions(hypotheses, envReal, envRealPrev, action)
 
 		# resourceObservations = self.getObservations(hypotheses, envReal, envRealPrev, action)
 		# print resourceObservations
 		# print "got resource observations"
-		# embed()
 		#updates the distributions
 		# self.distributions.updateDist(resourceObservations)
 		# print self.distributions.distr
@@ -1776,6 +1774,9 @@ class Agent:
 
 		print ""
 		print keyPresses[action]
+		print self.rle.show(color='blue')
+
+		updateTerminations(self.rle, hypotheses)
 
 		# agentState = self.resourceManagement(pre_step=False, res)
 		# self.rle.agentStatePrev = agentState
@@ -1813,7 +1814,6 @@ class Agent:
 		# print "Parallel tested and expanded {} theories in {} seconds".format(len(theoryRLEs), time.time()-t1)
 
 		self.allTheories.extend(newTheories)
-		print self.rle.show(color='blue')
 		print "evaluation complete. Now running experienceReplay on {} theories".format(len(newTheories))
 
 		if newTheories:
