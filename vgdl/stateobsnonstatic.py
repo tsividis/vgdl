@@ -8,7 +8,7 @@ Managing states and observations, for different types of games
 
 import pygame
 from pybrain.utilities import setAllArgs
-from ontology import RotatingAvatar, BASEDIRS, GridPhysics, ShootAvatar, kill_effects
+from ontology import RotatingAvatar, BASEDIRS, GridPhysics, ShootAvatar, kill_effects, getSpritesByColor
 from core import VGDLSprite, Avatar
 from tools import listRotate
 from IPython import embed
@@ -398,8 +398,29 @@ def processFrame(memory, gameObject):
                     newSprite.inventory = {}
                     try:
                         for key in sprite.resources:
-                            color = gameObject.sprite_groups[key][0].colorName
-                            limit = gameObject.sprite_groups[key][0].limit
+                            try:
+                                if str(eval(key)) in colorDict:
+                                    color = key
+                            except:
+                                try:
+                                    ## Color and fraction of progress bar displayed from sprite are in principle calculable from pixels
+                                    color = colorDict[str(gameObject.resources_colors[key])]
+                                except:
+                                    color = gameObject.sprite_groups[key][0].colorName
+                            
+                            limit = gameObject.resources_limits[key]
+                            # print "found resource change in processFrame"
+                            # embed()
+                            # if key in gameObject.sprite_groups.keys():
+                            #     color = gameObject.sprite_groups[key][0].colorName
+                            # else:
+                            #     color = key #getSpritesByColor(gameObject, key)[0].colorName
+                            # try:
+                            #     limit = gameObject.sprite_groups[getSpritesByColor(gameObject, color)[0].name][0].limit
+                            # except:
+                            #     ## This happens only in the case where we've initialized a Vrle that no longer contains some item
+                            #     ## so we can't query its sprite_groups (in our head) for its limits. Instead we query the gameObject that's in our head.
+                            #     limit = gameObject.resources_limits[gameObject.colorToClassDict[key]]
                             newSprite.inventory[color] = (sprite.resources[key], limit)
                     except:
                         print "in processFrame"

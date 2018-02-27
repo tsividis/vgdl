@@ -1746,11 +1746,11 @@ def killIfHasMore(sprite, partner, game, resource, limit=1):
 def killIfOtherHasMore(sprite, partner, game, resource, limit=1):
     """ If 'partner' has more than a limit of the resource type given, sprite dies. """
     if partner.resources[resource] >= limit:
+        # print "should kill sprite"
         return killSprite(sprite, partner, game)
 
 def killIfHasLess(sprite, partner, game, resource, limit=1):
     """ If 'sprite' has less than a limit of the resource type given, it dies. """
-    # print sprite.resources[resource], limit
     if sprite.resources[resource] <= limit:
         return killSprite(sprite, partner, game)
 
@@ -1822,8 +1822,11 @@ def teleportToExit(sprite, partner, game):
     return ('teleportToExit', sprite.ID, partner.ID, args)
 
 def killIfTooFast(sprite,partner,game,speed):
-    if abs(sprite.speed*sprite.orientation[1]) > speed:
-        return killSprite(sprite, partner, game)
+    if sprite.speed is not None:
+        if abs(sprite.speed*sprite.orientation[1]) > speed:
+            return killSprite(sprite, partner, game)
+    else:
+        return
 
 def onLadder(sprite, partner, game):
 
