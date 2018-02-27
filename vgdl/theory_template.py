@@ -2658,8 +2658,10 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 			for rule in ruleSet:
 				newTheory.dryingPaint.add(rule)
 			newTheory.reconcileInteractionsAndSprites()
-			if newTheory not in childTheories:
-				childTheories.append(newTheory)
+			
+			## This takes 97% of the run time of the function!
+			# if newTheory not in childTheories:
+				# childTheories.append(newTheory)
 
 	if 'teleportToExit' in predicates:
 		print "found teleporttoexit"
