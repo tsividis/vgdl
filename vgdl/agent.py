@@ -1,9 +1,5 @@
-import dill
-import pathos.pools as pp
 import multiprocessing as mp
-# from multiprocessing.pool import ThreadPool
 from functools import partial
-import threading
 from util import *
 from core import colorDict, VGDLParser, sys, keyPresses
 from ontology import *
@@ -12,7 +8,6 @@ SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheor
 generateTheoryFromGame, expandLine, expandSprites, PreconditionInduction, proposePredicates
 import os, subprocess, shutil
 from collections import defaultdict
-# import WBP_grid, WBP_continuous
 import importlib
 import numpy as np
 import ipdb, time
@@ -28,12 +23,6 @@ from line_profiler import LineProfiler
 from vgdl.util import manhattanDist, manhattanDist2
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from colors import colorDict
-from pprint import pprint
-# Plotting
-from matplotlib import pyplot as plt
-# import seaborn as sns
-# sns.set_context('paper', font_scale = 2, rc = {'lines.linewidth': 2})
-# sns.set_style("ticks", {'axes.grid': True})
 import copy_reg
 import types
 
@@ -41,13 +30,7 @@ AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, Aimed
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
-dill.settings['recurse'] = True
-
 ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPACE: (0,0), 0: (0,0)}
-
-
-# PROCESS_POOL = pp.ProcessPool(2)
-# mpp = mp.Pool(4)
 
 class errorMapEntry:
 	def __init__(self):
@@ -195,61 +178,6 @@ class Agent:
 			d[sB.ID.urn] = sA.ID.urn
 		return d, warning
 
-
-	def truPenalty(self, envA, envB, IDmatch, p_dist=1, p_speed=.5, p_miss=10):
-		
-		print "you haven't gone through references to sprite_groups and kill_list in truPenalty(). Do that now"
-		embed()
-		penalty = 0
-		# List all sprites and IDs in both environments
-		all_sprites_envA = []
-		all_sprites_envB = []
-		all_IDs_envA = []
-		all_IDs_envB = []
-		for g in envA._game.sprite_groups.keys():
-			all_sprites_envA.extend( envA._game.sprite_groups[g] )
-		for g in envB._game.sprite_groups.keys():
-			all_sprites_envB.extend( envB._game.sprite_groups[g] )
-		if len(all_sprites_envA)!=len(all_sprites_envB):
-			# At least one sprite has already been killed at beginning
-			penalty += p_miss * abs( len(all_sprites_envA) - len(all_sprites_envB) )
-			#print "WARNING: Different numbers of sprites in enviroments (in truPenalty)"
-		all_IDs_envA = [s.ID.urn for s in all_sprites_envA]
-		all_IDs_envB = [s.ID.urn for s in all_sprites_envB]
-		# Re-match all sprites using IDmatch dict
-		rematched_sprites = []
-		for sB in all_sprites_envB:
-			try:
-				sA = [ s for s in all_sprites_envA if s.ID.urn==IDmatch[sB.ID.urn] ]
-			except:
-				# At least one sprite has already been killed at beginning - handled above
-				continue
-			if len(sA)!=1:
-				print "WARNING: Unmatched sprites in (truPenalty)"
-			else:
-				sA = sA[0]
-				rematched_sprites.append([sA, sB])
-		# Step through all sprite pairs
-		for sA, sB in rematched_sprites:
-			# Check if one or both sprites have been killed and penalize mismatch (heavily)
-			if sB in envB._game.kill_list:
-				if sA in envA._game.kill_list:
-					pass
-				else:
-					penalty += p_miss
-			elif sA in envA._game.kill_list:
-				penalty += p_miss
-			# Penalize distance mismatch
-			dist = manhattanDist2(sA, sB)
-			penalty += dist*p_dist
-
-			## TODO: punish randomNPCs only if they have ventured out of possible range
-
-		return penalty
-
-
-
-
 	def initializeHypotheses(self, allObjects, learnSprites=True, learnAvatar=True, num_variants=0):
 		if learnSprites:
 			observe(self.rle, 0, self.bestSpriteTypeDict)
@@ -331,27 +259,6 @@ class Agent:
 
 		return gameObject
 
-
-
-	def completeHypotheses(self, allObjects, first_time_playing_level):
-		if first_time_playing_level:
-			observe(self.rle, 15, self.bestSpriteTypeDict) ## observe many steps so that you're not completely clueless about object movements for the new level
-		else:
-			observe(self.rle, 15, self.bestSpriteTypeDict) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
-		
-		## Make sure any objects that appeared while we were observing are reflected in allObjects
-		for k,v in self.rle._game.getObjects().items():
-			if k not in allObjects:
-				allObjects[k] = v
-
-		spriteTypeHypothesis, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, 
-			allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
-		gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
-		newHypotheses = []
-		for hypothesis in self.hypotheses:
-			newHypotheses.append(gameObject.addNewObjectsToTheory(hypothesis, spriteTypeHypothesis))
-		self.hypotheses = newHypotheses
-
 	def testCurriculum(self, level_game_pairs=None):
 		if not level_game_pairs:
 			level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs  
@@ -368,223 +275,6 @@ class Agent:
 				self.testEpisode(gameObject,epoch=epoch)
 		return
 
-	def playCurriculum(self, heatmap=False, level_game_pairs=None):
-		""" Plays a game level until it wins, then moves to the next one until
-		completion. """
-		if not level_game_pairs:
-			level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
-		episodes = []
-		allEffectsEncountered = []
-		shutil.rmtree("images/tmp")
-		os.makedirs("images/tmp")
-		j=0
-		flexible_goals = False
-
-		for n_level, level_game in enumerate(level_game_pairs):
-
-			print("Playing level {}".format(n_level))
-			(self.gameString, self.levelString) = level_game
-			self.max_nodes = self.starting_max_nodes
-			win = False
-			gameObject = None
-			i=0
-			levelEffectsEncountered = []
-			allStatesEncountered = []
-			t1 = time.time()
-			first_time_playing_level = True
-
-			while not win:
-				gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
-				episodes.append((n_level, steps, win, score))
-				allStatesEncountered.extend(statesEncountered)
-				levelEffectsEncountered.append(effectsEncountered)
-				VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
-				persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
-				first_time_playing_level = False
-				i += 1
-				print "Finished in ", time.time() - t1
-				# if i >=10:
-					# break
-			if heatmap:
-				self.makeHeatmap(allStatesEncountered, '{}_{}_level{}_heatmap.pdf'.format(
-					# self.gameFilename[self.gameFilename.find('expt'):],
-					gvgname[gvgname.find('set_1/')+6:],
-					self.modelType, n_level))
-
-			allEffectsEncountered.append(levelEffectsEncountered)
-
-			## Uncomment if you want to run flexible goals version.
-			# j+=1
-			# if j>0:
-			#   flexible_goals=True
-
-			if flexible_goals:
-				## When you embed, you can manually input changes in theory. See flexible_goals.py for an example.
-				print "in main_agent; playing with flexible_goals"
-				embed()
-
-		# self.makeMovie()
-
-
-		output = {'modelType':self.modelType,
-					# 'gameName': self.gameFilename[self.gameFilename.find('expt'):],
-					'gameName': gvgname[gvgname.find('set_1/')+6:],
-					'condition': 'normal',
-					'episodes' : episodes}
-
-		write_to_csv('pilotModelRuns_'+gvgname[gvgname.find('set_1/')+6:]+'.csv', output)
-		self.makeMovie()
-
-	def makeHeatmap(self, statesEncountered, filename):
-		from vgdl.plotting import featurePlot
-		import matplotlib.pyplot as plt
-		from matplotlib.ticker import NullLocator
-		import numpy as np
-
-		states = [s['objects']['avatar'].keys()[0] for s in statesEncountered
-				  if s['objects']['avatar'].keys()]
-		width, height = self.rle._game.width, self.rle._game.height
-		correction_factor = self.rle._game.screensize[0]/width
-		corrected_states = [(s[0]/correction_factor, s[1]/correction_factor) for s in states]
-
-		m = np.zeros((width, height))
-		Xs, Ys = [],[]
-		im = plt.imread('flexible_goals.png')
-		implot = plt.imshow(im)
-		w, h = implot.get_extent()[1], implot.get_extent()[2]
-		block_size = w/width
-
-		for s in corrected_states:
-			x = s[0]
-			y = s[1]
-			m[x, y] += 1
-			Xs.append(x*block_size+block_size/2.)
-			Ys.append(y*block_size+block_size/2.)
-		plt.scatter(x=Xs, y=Ys, alpha=.5, edgecolor='')
-		# plt.imshow(m.T, cmap='viridis')
-		plt.gca().set_axis_off()
-		plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
-			hspace = 0, wspace = 0)
-		plt.margins(0, 0)
-		plt.gca().xaxis.set_major_locator(NullLocator())
-		plt.gca().yaxis.set_major_locator(NullLocator())
-		plt.savefig(filename, bbox_inches='tight', pad_inches=0)
-		plt.close()
-
-	def makeSummaryPlot(self, allEffectsEncountered):
-		import matplotlib.pyplot as plt
-		import importlib
-
-		mod = importlib('vgdl.colors')
-		colors = [cl[0].colorName for cl in self.hypotheses[0].classes.values()]
-		for color in colors:
-			times_touched_per_level = []
-			for level in allEffectsEncountered:
-				times_touched = len([effect
-					for attempt in level
-					for effect in attempt
-					if ((effect[1]==color and effect[2]=='DARKBLUE')
-						or (effect[2]==color and effect[1]=='DARKBLUE'))])
-				times_touched_per_level.append(times_touched)
-			color_to_plot = [float(value)/255 for value in getattr(mod, color)]
-			plt.plot(times_touched_per_level, color=color_to_plot)
-		plt.show()
-
-
-	def makeMovie(self):
-		print "Creating Movie"
-		movie_dir = "videos/"+self.gameFilename
-
-		if not os.path.exists(movie_dir):
-			print movie_dir, "didn't exist. making new dir"
-			os.makedirs(movie_dir)
-		round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store'])
-		video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
-		images_dir = "images/tmp/%09d.png"
-		com = "ffmpeg -i " +images_dir+ " -pix_fmt yuv420p -filter:v 'setpts=4.0*PTS' "+ video_dirname
-		command = "{}".format(com)
-		subprocess.call(command, shell=True)
-		# empty image directory
-		shutil.rmtree("images/tmp")
-		os.makedirs("images/tmp")
-		return
-
-	def playMultipleEpisodes(self, num_episodes):
-		i=0
-		gameObject = None
-		wins, scores = [], []
-		win = False
-		while i<num_episodes:
-			gameObject, win, score, statesEncountered, _ = self.playEpisode(gameObject, flexible_goals=False,first_time_playing_level=False)
-			wins.append(win)
-			scores.append(score)
-			i+=1
-		VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
-			persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
-		print "Won {} out of {} episodes.".format(sum(wins), i)
-
-
-	def playEpisodeProfiler(self, gameObject, flexible_goals=False, first_time_playing_level=False):
-		lp = LineProfiler()
-		lp_wrapper = lp(self.playEpisode)
-		gameObject, win, score, steps, statesEncountered, effectsEncountered = lp_wrapper(gameObject, flexible_goals, first_time_playing_level)
-		lp.print_stats()
-		return gameObject, win, score, steps, statesEncountered, effectsEncountered
-
-
-	def testTracker(self, gameObject):
-	
-		actions = [K_RIGHT,K_LEFT]#,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,K_LEFT]#[K_LEFT, K_LEFT]	
-
-		self.initializeEnvironment()
-
-		if not gameObject:
-			gameObject = self.rle._game
-
-		## initialize tracker
-		# for now, take data from gameObject. eventually have 'real' CV system
-		memory = defaultdict(list)
-		trackedObjects = defaultdict(list) # color: list_of_sprites # not sure why list arg, just copied from elsewhere
-		memory['isGrid'] = True
-		for group in gameObject.sprite_groups.keys():
-			for sprite in gameObject.sprite_groups[group]:
-				if not sprite.colorName in trackedObjects:
-					trackedObjects[sprite.colorName] = []
-				# copy data over
-				trackedObjects[sprite.colorName].append(copySpriteStingy(sprite))
-		memory['trackedObjects'] = trackedObjects
-
-		##### test if we need to ccopy tuples
-		# newthing = dict()
-		# sprite = memory['trackedObjects'].values()[0][0]
-		# newthing['or'] = sprite.orientation
-		# newthing['or'] = (5,5555)
-		# print sprite.orientation
-		# print memory['trackedObjects'].values()[0][0].orientation
-		##### end test
-
-		## TODO: 1. a function called processFrame(gameObject, memory) that returns: new memory that's been updated (btw gameObject comes from rle elsewhere)
-		## keys: colors, values: list of sprites, whose fields contain all the 'kosher' info:
-		## 	ID, position, colorName, velocity (because it's easy), decomposed into: orientation, speed (step size), cooldown.
-		## 	lastmove: when the last move was.
-		## 	inventory: {color: tuple(num=0, max=1)}
-		## make a new funct called spriteCopy, goes throught what we want and ccopies those
-
-		for lst in memory['trackedObjects'].values():
-			for sprite in lst:
-				if sprite.colorName in ['WHITE', 'ORANGE']:
-					print sprite.colorName , sprite.x , sprite.y , sprite.speed, sprite.orientation
-		for action in actions:
-			self.rle.step(action)
-			print 'step'
-			print self.rle.show()
-			## update tracker
-			memory = processFrame(memory, gameObject)
-			for lst in memory['trackedObjects'].values():
-				for sprite in lst:
-					if sprite.colorName in ['WHITE', 'ORANGE']:
-						print memory['isGrid'], sprite.colorName , sprite.x , sprite.y , sprite.speed, sprite.inventory, sprite.orientation
-		embed()
 	def testEpisode(self, gameObject, epoch=0):
 		
 		actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT]
@@ -613,7 +303,7 @@ class Agent:
 		envReal = self.fastcopy(self.rle)
 		self.rleHistory.append(envReal)
 
-		agentState = self.resourceManagement(pre_step=True)
+		# agentState = self.resourceManagement(pre_step=True)
 
 
 		#OBJECT TRACKING
@@ -648,375 +338,6 @@ class Agent:
 
 		return
 
-
-	def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False):
-
-		## TODO: When you start using this function with the new induction,
-		## Take out objectMemoryDict() stuff.
-
-		## Initialize external environment
-		self.initializeEnvironment()
-		print "initializing RLE"
-		steps = 0
-		self.quits = 0
-		self.longHorizonObservations = 0
-		self.all_objects= self.rle._game.getObjects()
-		ended, win = self.rle._isDone()
-		annealing = 1
-		## Start storing encountered states.
-		effectsEncountered = []
-		statesEncountered = [self.rle._game.getFullState()]
-		self.statesEncountered.append(self.rle._game.getFullState())
-
-		## Initialize memory of object positions
-		self.rle._game.objectMemoryDict, self.rle._game.previousPositions = {}, {}
-		for k, v in self.rle._game.all_objects.iteritems():
-			self.rle._game.objectMemoryDict[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
-			self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
-
-		## initialize theory if necessary.
-		if len(self.hypotheses) == 0:
-			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, learnAvatar=True, num_variants=0)
-			print "initializing hypotheses"
-		else:
-			gameObject = self.completeHypotheses(self.all_objects, first_time_playing_level)
-			print "had hypotheses -- completing them."
-			# If theory is being carried over, falsify termination hypotheses
-			# given new level state
-			if not flexible_goals:
-				[t.updateTerminations(rle=self.rle) for t in self.hypotheses]
-
-		emptyPlans = 0
-		while not ended:
-			## initialize one or many VRLEs according to hypothesis-selection method
-			theoryRLEs = VrleInitPhase(self.hypotheses, self.rle, self.symbolDict, self.best_params, flexible_goals=flexible_goals)
-			quitting = False
-
-			p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
-				seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-				firstOrderHorizon=self.firstOrderHorizon)
-			bestNode, gameStringArray, objectPositionsArray = p.BFS()
-			
-			if bestNode is not None:
-				solution = p.solution
-				gameString_array = p.gameString_array
-				objectPositionsArray = objectPositionsArray[::-1]
-			else:
-				solution = []
-
-			if solution and not p.quitting:
-				print "============================================="
-				print "got solution of length", len(solution)
-				for i,g in enumerate(p.gameString_array):
-					print colored(g, 'green')
-					if i<len(bestNode.actionSeq):
-						print keyPresses[bestNode.actionSeq[i]]
-				print "============================================="
-
-			if self.shortHorizon:
-				if not solution:
-					emptyPlans +=1
-				else:
-					emptyPlans = 0
-			else:
-				if (not solution) or p.quitting:
-					if self.longHorizonObservations<self.longHorizonObservationLimit:
-						print "Didn't get solution or decided to quit. Observing, then replanning."
-						observe(self.rle, 0, self.bestSpriteTypeDict)
-						solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
-						self.longHorizonObservations += 1
-					else:
-						quitting = True
-
-			if emptyPlans > self.emptyPlansLimit:
-				observe(self.rle, 5, self.bestSpriteTypeDict)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-			
-			actions = [K_RIGHT, K_RIGHT]
-			if len(actions)==1:
-				envRealPrev = copy.deepcopy(self.rle) #environment at step n-1; deepcopy is expensive
-				envTheoPrev = copy.deepcopy(theoryRLEs[1])
-				hypPrev = copy.deepcopy(self.hypotheses[1])
-			
-			for n,action in enumerate(actions):
-				self.rle.step(action)
-
-				newTheories = []
-				for num, env in enumerate(theoryRLEs):
-					env.step(action)
-
-				if n==len(actions)-2:
-					envRealPrev = copy.deepcopy(self.rle) #deepcopy is expensive
-					envTheoPrev = copy.deepcopy(theoryRLEs[1])
-					hypPrev = copy.deepcopy(self.hypotheses[1])
-
-				# if n==len(actions)-3:
-				#   hypPrevprev = copy.deepcopy(self.hypotheses[1])
-
-			#TEST
-			#theoryRLEs[1].step(K_LEFT)
-
-			## Theory before previous step
-			#print '--- Theory 1 world before previous step ---'
-			#print hypPrevprev.display()
-
-			## Actual world - previous step
-			print '--- Actual world after previous step ---'
-			print envRealPrev.show()
-
-			## Theory world - previous step
-			print '--- Theory 1 world after previous step ---'
-			print envTheoPrev.show() 
-			print hypPrev.display()
-
-			## Actual world - current step
-			print '--- Actual world after current step ---'
-			print self.rle.show()
-
-			## Theory world - current step
-			for num, env in enumerate(theoryRLEs):
-				## Tim: uncomment if you want to see the full theory corresponding to each env
-				if num==1:
-					print '--- Theory 1 world after current step ---'
-					print env.show()
-					self.hypotheses[num].display()  
-					break
-
-			## Tim: Can run the state-distance function here.
-			for num, env in enumerate(theoryRLEs):
-				if num==1:
-					penalty, errorMap = errorSignal(env, self.rle, self.hypotheses[num], envRealPrev)
-					break
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-			if not quitting:
-				for i, action in enumerate(solution):
-
-					self.hypotheses[0].dryingPaint = set()
-
-					print "before execute step"
-					print self.rle._isDone()
-					hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
-						run_induction = not flexible_goals)
-
-					self.rle._game.nextPositions = {}
-					for k, v in self.rle._game.all_objects.iteritems():
-						self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
-						try:
-							if self.rle._game.previousPositions[k] != self.rle._game.nextPositions[k]:
-								self.rle._game.objectMemoryDict[k] = ccopy(self.rle._game.previousPositions[k])
-						except KeyError:
-							pass
-					self.rle._game.previousPositions = ccopy(self.rle._game.nextPositions)
-
-
-					# pinkID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['features']['color']=='PINK'][0]
-					# print "prev position", self.rle._game.previousPositions[pinkID]
-					# print "memoryDict", self.rle._game.objectMemoryDict[pinkID]
-					# print "curr position", self.rle._game.all_objects[pinkID]['sprite'].rect
-
-
-					ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
-
-					# for k,v in self.best_params.items():
-						# print k,v
-
-					# print "theory_change_flag", theory_change_flag
-					# if theory_change_flag:
-
-					effectsEncountered.extend(effects)
-					steps +=1
-
-					ended, win = self.rle._isDone()
-					
-					if theory_change_flag:
-						self.hypotheses = hypotheses
-						break
-
-					if ended:
-						break
-
-					## Make sure you're far enough from unpredictable dangerous objects.
-
-					# Check for disparities between plan and reality
-					# (e.g. stochastic effects)
-					# if self.rle._game.is_stochastic and i>self.regrounding:
-					if (i+1)%self.regrounding==0:
-					# if True:
-						try:
-							rlePositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in self.rle._game.sprite_groups.values() for item in sublist])
-							hypPositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in objectPositionsArray[i+1]._game.sprite_groups.values() for item in sublist])
-							rlePositionsTuples, hypPositionsTuples = [(p[0], p[1]) for p in rlePositions], [(p[0], p[1]) for p in hypPositions]
-
-							killer_types = [inter.slot2 for inter in hypotheses[0].interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
-							# print "killer types", killer_types
-							regroundingFlag = False
-							for objPos in hypPositions:
-								if not regroundingFlag and (objPos[0], objPos[1]) not in rlePositionsTuples:
-									# print "found object position difference", colored(objPos, 'white', 'on_magenta')
-									# print 'regrounding because of', objPos[2].colorName, objPos[2], "position:", self.rle._rect2pos(objPos[2].rect)
-									# try: 
-										# print "orientation:", objPos[2].orientation
-									# except AttributeError:
-										# pass
-									nearest = findNearestSprite(objPos[2], [h[2] for h in rlePositions])
-									# print "Nearest sprite:", nearest.colorName, nearest, "position:", self.rle._rect2pos(nearest.rect)
-									# try:
-										# print "orientation:", nearest.orientation
-									# except AttributeError:
-										# pass
-									# print ""
-									# embed()
-									if self.selective_regrounding:
-										if ((objPos[2].name=='avatar') or
-											(objPos[2].name in killer_types and manhattanDist(self.rle._rect2pos(objPos[2].rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance)):
-
-											# if objPos[2].name=='avatar':
-												# embed()
-											regroundingFlag = True
-											# embed()
-											break
-									else:
-										regroundingFlag = True
-										break
-
-							if regroundingFlag:
-								print "regrounding"
-								break
-							# if tuple(rlePositions) != tuple(hypPositions):
-							# # if any(np.where(list(gameString_array[i+1]))[0] !=
-							# #        np.where(list(self.rle.show()))[0]):
-							#   print 'regrounding'
-							#   embed()
-							#   # embed()
-							#   break
-						except:
-							# Mismatch in gamestring lengths
-							print ""
-							print 'regrounding problem'
-							embed()
-							break
-
-					if self.avoid_danger: ## this is just exercising caution when near random objects, irrespective of whether they kill us or not
-						try:
-							random_npc_colors = [self.hypotheses[0].classes[k][0].colorName for k in self.hypotheses[0].classes.keys() if self.hypotheses[0].classes[k] and 'Random' in str(self.hypotheses[0].classes[k][0].vgdlType)]
-							random_npc_classes = [k for k in self.rle._game.sprite_groups.keys() if self.rle._game.sprite_groups[k] and self.rle._game.sprite_groups[k][0].colorName in random_npc_colors]
-							random_npc_positions = []
-
-							for c in random_npc_classes:
-								for element in self.rle._game.sprite_groups[c]:
-									if element not in self.rle._game.kill_list:
-										random_npc_positions.append(self.rle._rect2pos(element.rect))
-
-							avatar_positions = [self.rle._rect2pos(avatar.rect)
-								for avatar in self.rle._game.getAvatars()]
-
-							possiblePairList = [manhattanDist(avatar, random)
-								for avatar in avatar_positions
-								for random in random_npc_positions]
-
-							if min(possiblePairList) <= self.safeDistance:
-								print("Close to RandomNPC, regrounding")
-								break
-
-						except ValueError:
-							# print("error in avoid_danger: is the avatar dead?")
-							pass
-
-
-				if self.shortHorizon:
-					self.max_nodes *= self.max_nodes_annealing
-			else:
-				## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
-				## Search more deeply next time.
-				self.max_nodes *= self.max_nodes_annealing
-				# self.updateMemory(self.rle)
-
-				return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered
-
-
-			annealing *= self.annealingFactor
-			ended, win = self.rle._isDone()
-			# if ended and not win:
-			#   print "lost game. embedding"
-			#   embed()
-
-
-		## Update global memory of updates
-		# for k in game.spriteUpdateDict:
-			# self.spriteUpdateDict[k] = game.spriteUpdateDict[k]
-
-		score = self.rle._game.score
-		# self.updateMemory(self.rle)
-
-		output = "ended episode. Win={}                 ".format(win)
-		if win:
-			print colored('________________________________________________________________', 'white', 'on_green')
-			print colored('________________________________________________________________', 'white', 'on_green')
-
-			print colored(output, 'white', 'on_green')
-			print colored('________________________________________________________________', 'white', 'on_green')
-		else:
-			print colored('________________________________________________________________', 'white', 'on_red')
-			print colored(output, 'white', 'on_red')
-			print colored('________________________________________________________________', 'white', 'on_red')
-		return gameObject, win, score, steps, statesEncountered, effectsEncountered
-
-	def matchEventToRuleByIDAndSpriteName(self, event, rule):
-		# Check if the two objects involved in the
-		# event are the same as those in the novelty
-		# termination rule (invariant by order)
-		hypSlot1 = self.hypotheses[0].spriteObjects[event[1]].className
-		hypSlot2 = self.hypotheses[0].spriteObjects[event[2]].className
-		if set([hypSlot1, hypSlot2]) == set([rule.slot1, rule.slot2]):
-			if not rule.preconditions:
-				return True
-			else:
-				if not all([p.check(self.rle.agentStatePrev) for p in list(rule.preconditions)]):
-					return False
-				else:
-					return True
-		else:
-			return False
-
 	def manageNewObjects(self, hypotheses, envRealPrev, action, learnAvatar=True):
 
 		## Add newly-seen objects.
@@ -1033,9 +354,6 @@ class Agent:
 				spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, action=action,
 					oldSpriteSet=self.hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
 					percentile=10, max_num=20, allMovement=False)
-
-				# print "found new object"
-				# embed()
 		else:
 			for k in current_objects.keys():
 				colorName = current_objects[k]['sprite'].colorName
@@ -1047,61 +365,6 @@ class Agent:
 					self.new_objects[colorName] = 0
 
 		return hypotheses
-
-
-
-
-	def resourceManagement(self, pre_step=True, res=None):
-
-		if pre_step:
-			try:
-				agentState = ccopy(self.rle._game.getAvatars()[0].resources)
-			except IndexError:
-				agentState = defaultdict(lambda: 0)
-			try:
-				agentState['speed'] = self.rle._game.getAvatars()[0].speed
-			except AttributeError:
-				agentState['speed'] = 0
-			try:
-				agentState['orientation'] = self.rle._game.getAvatars()[0].orientation
-			except:
-				agentState['orientation'] = (0,0)
-		else:
-			try:
-				agentState = ccopy(self.rle._game.getAvatars()[0].resources)
-
-				# for e in res['effectList']:
-				# 	if 'changeResource' in e:
-				# 		changes = e[3]
-				# 		if changes['value'] < 0:
-				# 			# ipdb.set_trace()
-				# 			# undo one negative change to account for eventhandler ordering
-				# 			agentState[changes['resource']] -= changes['value']
-				# 			break
-			# If agent is killed before we get agentState
-			except (IndexError, AttributeError) as e:
-				# agentState = defaultdict(lambda:0)
-				print "error with post-step resourceManagement"
-				embed()
-				# ignored_negative_change = False
-				# for e in res['effectList']:
-				# 	if 'changeResource' in e:
-				# 		changes = e[3]
-				# 		if changes['value'] > 0 or ignored_negative_change:
-				# 			agentState[changes['resource']] += changes['value']
-				# 		else:
-				# 			agentState[changes['resource']] += 0
-				# 			ignored_negative_change = True
-			try:
-				agentState['speed'] = self.rle._game.getAvatars()[0].speed
-			except AttributeError:
-				agentState['speed'] = 0
-			try:
-				agentState['orientation'] = self.rle._game.getAvatars()[0].orientation
-			except:
-				agentState['orientation'] = (0,0)
-
-		return agentState
 
 	def predictCollisionsBasedOnTheory(self, theory, envReal, envRealPrev, action):
 		avatar_color = theory.classes['avatar'][0].colorName
@@ -1148,315 +411,6 @@ class Agent:
 					break
 		return candidates, locs
 
-
-	def manageResourcesAndNewSprites(self, envReal, envRealPrev):
-
-		for color in self.distributions.keys():
-			avatar_color = color
-			avatar_is_dead = len(envReal._game.observation['trackedObjects'][avatar_color])
-			avatar = envRealPrev._game.observation['trackedObjects'][avatar_color][0]
-			avatar_speed = avatar.speed
-			if avatar_speed is None:
-				avatar_speed = 1.
-
-			new_resources = set()
-			for key in avatar.inventory.keys():
-				if key not in ['orientation','speed']:
-					if key not in self.observed_resources:
-						new_resources.add(key)
-					try:
-						self.observed_resources[color].add(key)
-					except:
-						print "in manageResourcesAndNewSprites"
-						embed()
-
-			#when finding a new resource, update our distribution
-			for res in new_resources:
-				for pair in self.history[color]:
-					new_observation = {'speed':{},'resource':{color:{res:(0,pair[0],pair[1])}}}
-					self.distributions[color].updateDist(new_observation)
-
-		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
-		new_sprites = [(s.colorName, s.rect.left, s.rect.top) for s in new_sprites]
-
-		return new_sprites
-
-	def getResourceObservationsBasedOnTheory(self, theory, envReal, envRealPrev, action):
-		candidates, locs = self.predictCollisionsBasedOnTheory(theory, envReal, envRealPrev, action)
-		
-		avatar_color = theory.classes['avatar'][0].colorName
-		avatar_is_dead = len(envReal._game.observation['trackedObjects'][avatar_color])==0
-		avatar = envRealPrev._game.observation['trackedObjects'][avatar_color][0]
-		avatar_speed = avatar.speed
-		if avatar_speed is None:
-			avatar_speed = 1.
-		for color in self.distributions.keys():
-			avatar_color = color
-			avatar_is_dead = len(envReal._game.observation['trackedObjects'][avatar_color])
-			avatar = envRealPrev._game.observation['trackedObjects'][avatar_color][0]
-			avatar_speed = avatar.speed
-			if avatar_speed is None:
-				avatar_speed = 1.
-
-
-		#build our dictionary of observations
-		resourceObservations = {'speed':{},'resource':{}}
-
-		#two cases - whether this collision killed the avatar or not
-		if avatar_is_dead:
-			for sprite in candidates:
-				resourceObservations['speed'][sprite] = (None, avatar_speed)
-		else:
-			for sprite in candidates:
-				resourceObservations['speed'][sprite] = (avatar_speed, None)
-		
-		THRESHHOLD = 0.5*envReal._game.block_size
-		for spriteColor in candidates:
-			#we must determine if the sprite has dissapeared
-			sprite_gone = True
-			if len(envReal._game.observation['trackedObjects'][spriteColor]) == len(envRealPrev._game.observation['trackedObjects'][spriteColor]):
-				sprite_gone = False
-			else:
-				#match closest sprite
-				#locs[sprite] is where we expect the sprite to be
-				for i in envReal._game.observation['trackedObjects'][spriteColor]:
-					#embed()
-					pos = i['position']
-					if abs(pos[0] - locs[spriteColor][0]) + abs(pos[1] - locs[spriteColor][1]) < THRESHHOLD:
-						sprite_gone = False
-
-		 	resourceObservations['resource'][spriteColor] = {}
-		 	for res in self.observed_resources:
-		 		#agentState is a default dict, so if res is not in agentState then val is 0
-		 		val = agentState[res]
-		 		#return whether this collision killed the sprite or the avatar - this format is used when updating distributions
-		 		resourceObservations['resource'][spriteColor][res] = (val,not avatar_is_dead,not sprite_gone)
-
-	 		if spriteColor not in self.history[avatar_color]:
-	 			self.history[avatar_color][spriteColor] = []
-	 		self.history[avatar_color][spriteColor].append((not avatar_is_dead, not sprite_gone))
-
-		return resourceObservations
-
-	# def updateResourceDistributions(self, hypotheses, envReal, envRealPrev, action):
-		# for theory in hypotheses:
-			# resourceObservations = self.getResourceObservationsBasedOnTheory(theory, envReal, envRealPrev, action)
-
-
-	# def getObservations(self, hypotheses, agentState, envReal, envRealPrev, action):
-		
-	# 	#whether the avatar is still alive
-	# 	avatar_is_dead = (self.getSpritesByColor(self.rle,'WHITE') is None)
-	# 	#using the previous state, we predict where the objects are going to be
-	# 	self.predictions = {}
-		
-	# 	#take in key press in grid physics games
-	# 	for key in self.lastObjectState.keys():
-	# 		#predictions done a little differently for avatar
-	# 		if key == 'WHITE' and not avatar_is_dead:
-	# 			#predicting avatar location needs to be done properly
-	# 				try:
-	# 					speed = agentState['speed']
-	# 					orientation = self.lastObjectState[key][0]['orientation']
-	# 					pos = self.lastObjectState[key][0]['position']
-	# 					expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
-	# 					positions = [expected_pos]
-	# 				except:
-	# 					pass
-	# 		else:
-	# 			positions = []
-	# 			for i in self.lastObjectState[key]:
-	# 				speed = i['speed']
-	# 				if key == 'WHITE' and i['orientation'] == (0,0):
-	# 					orientation = actionDict[action]
-	# 					speed*=self.rle._game.block_size
-	# 				else:
-	# 					orientation = i['orientation']
-	# 				pos = i['position']
-	# 				if speed is None:
-	# 					expected_pos = pos
-	# 				else:
-	# 					expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
-	# 				positions.append(expected_pos)
-	# 		self.predictions[key] = positions
-	# 	#get list of possible objects which could have collided with avatar
-	# 	candidates = []
-	# 	locs = {}
-	# 	current_state = self.getStateByColor(self.rle)
-	# 	if len(current_state['WHITE']) > 0:
-	# 		avatar = current_state['WHITE'][0]['position']
-	# 	elif 'WHITE' in self.predictions.keys():
-	# 		avatar = self.predictions['WHITE'][0]
-	# 	for key in self.predictions.keys():
-	# 		if key is not 'WHITE':
-	# 			for i in self.predictions[key]:
-	# 				#see what objects intersected with our avatar
-	# 				if self.intersect(i,avatar):
-	# 					candidates.append(key)
-	# 					locs[key] = i
-	# 					break
-	# 	print 'CANDIDATES'
-	# 	print candidates
-
-	# 	#build our dictionary of observations
-	# 	resourceObservations = {'speed':{},'resource':{}}
-
-	# 	#two cases - whether this collision killed the avatar or not
-	# 	if avatar_is_dead:
-	# 		for sprite in candidates:
-	# 			resourceObservations['speed'][sprite] = (None,agentState['speed'])
-	# 	else:
-	# 		for sprite in candidates:
-	# 			resourceObservations['speed'][sprite] = (agentState['speed'],None)
-		
-	# 	new_resources = set()
-	# 	for key in agentState.keys():
-	# 		if key not in ['orientation','speed']:
-	# 			if key not in self.observed_resources:
-	# 				new_resources.add(key)
-	# 			self.observed_resources.add(key)
-
-	# 	#when finding a new resource, update our distribution
-	# 	for res in new_resources:
-	# 		for sprite in self.history.keys():
-	# 			for pair in self.history[sprite]:
-	# 				new_observation = {'speed':{},'resource':{sprite:{res:(0,pair[0],pair[1])}}}
-	# 				self.distributions.updateDist(new_observation)
-
-		
-	# 	THRESHHOLD = 0.5*self.rle._game.block_size
-	# 	for sprite in candidates:
-	# 		#we must determine if the sprite has dissapeared
-	# 		sprite_gone = True
-	# 		if len(current_state[sprite]) == len(self.lastObjectState[sprite]):
-	# 			sprite_gone = False
-	# 		else:
-	# 			#match closest sprite
-	# 			#locs[sprite] is where we expect the sprite to be
-	# 			for i in current_state[sprite]:
-	# 				#embed()
-	# 				pos = i['position']
-	# 				if abs(pos[0] - locs[sprite][0]) + abs(pos[1] - locs[sprite][1]) < THRESHHOLD:
-	# 					sprite_gone = False
-
-	# 	 	resourceObservations['resource'][sprite] = {}
-	# 	 	for res in self.observed_resources:
-	# 	 		#agentState is a default dict, so if res is not in agentState then val is 0
-	# 	 		val = agentState[res]
-	# 	 		#return whether this collision killed the sprite or the avatar - this format is used when updating distributions
-	# 	 		resourceObservations['resource'][sprite][res] = (val,not avatar_is_dead,not sprite_gone)
-
-	#  		if sprite not in self.history:
-	#  			self.history[sprite] = []
-	#  		self.history[sprite].append((not avatar_is_dead, not sprite_gone))
-
-	# 	self.lastObjectState = current_state
-	# 	_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
-	# 	new_sprites = [(s.colorName, s.rect.left, s.rect.top) for s in new_sprites]
-	# 	return resourceObservations, new_sprites
-
-
-
-	# def getObservations(self, hypotheses, agentState, envReal, envRealPrev):
-		
-	# 	##TODO: generalize. this might have to be theory-specific, since different theories 
-	# 	## might hypothesize different avatars
-	# 	print "in getObservations"
-	# 	embed()
-	# 	#whether the avatar is still alive 
-	# 	avatar_is_dead = len(getObservedSpritesByColor(envReal._game,'DARKBLUE'))==0
-
-	# 	#using the previous state, we predict where the objects are going to be
-	# 	self.predictions = {}
-	# 	for key in self.lastObjectState.keys():
-	# 		#predictions done a little differently for avatar
-	# 		if key == 'DARKBLUE' and not avatar_is_dead:
-	# 			#predicting avatar location needs to be done properly
-	# 			try:
-	# 				speed = agentState['speed']
-	# 				orientation = self.lastObjectState[key][0]['orientation']
-	# 				pos = self.lastObjectState[key][0]['position']
-	# 				expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
-	# 				positions = [expected_pos]
-	# 			except:
-	# 				print "in getObservations try/except"
-	# 				embed()
-	# 				pass
-	# 		else:
-	# 			positions = []
-	# 			for i in self.lastObjectState[key]:
-	# 				speed = i['speed']
-	# 				orientation = i['orientation']
-	# 				pos = i['position']
-	# 				if speed == None:
-	# 					expected_pos = pos
-	# 				else:
-	# 					expected_pos = [pos[0] + orientation[0]*speed, pos[1] + orientation[1]*speed]
-	# 				positions.append(expected_pos)
-	# 		self.predictions[key] = positions
-		
-	# 	## TODO: This doesn't look like it's rolling forward all predictions at the same time
-	# 	## and using that to make a prediction. What you need is a theory-based prediction (as in, a step forward)
-	# 	## in the simulator, and then knowledge about the intersections given each theory.
-
-	# 	#get list of possible objects which could have collided with avatar
-	# 	candidates = []
-	# 	locs = {}
-	# 	current_state = self.getStateByColor(envRealPrev)
-
-	# 	if len(current_state['DARKBLUE']) > 0:
-	# 		avatar = current_state['DARKBLUE'][0]['position']
-	# 	elif 'DARKBLUE' in self.predictions.keys():
-	# 		avatar = self.predictions['DARKBLUE'][0]
-	# 	for key in self.predictions.keys():
-	# 		if key is not 'DARKBLUE':
-	# 			for i in self.predictions[key]:
-	# 				#see what objects intersected with our avatar
-	# 				if self.intersect(i,avatar):
-	# 					candidates.append(key)
-	# 					locs[key] = i
-	# 					break
-	# 	print 'CANDIDATES'
-	# 	print candidates
-
-	# 	#build our dictionary of observations
-	# 	resourceObservations = {'speed':{},'resource':defaultdict(lambda:{})}
-
-	# 	#two cases - whether this collision killed the avatar or not
-	# 	if avatar_is_dead:
-	# 		for sprite in candidates:
-	# 			resourceObservations['speed'][sprite] = (None,agentState['speed']) # <--- Why are we switching order here and in the line 3 below?
-	# 	else:
-	# 		for sprite in candidates:
-	# 			resourceObservations['speed'][sprite] = (agentState['speed'],None)
-		
-	# 	for key in agentState.keys():
-	# 		if key not in ['orientation','speed']:
-	# 			self.observed_resources.add(key)
-		
-	# 	THRESHHOLD = 0.5*self.rle._game.block_size
-	# 	for sprite in candidates:
-	# 		#we must determine if the sprite has dissapeared
-	# 		sprite_gone = True
-	# 		if len(current_state[sprite]) == len(self.lastObjectState[sprite]):
-	# 			sprite_gone = False
-	# 		else:
-	# 			#match closest sprite
-	# 			#locs[sprite] is where we expect the sprite to be
-	# 			for i in current_state[sprite]:
-	# 				pos = i['position']
-	# 				if abs(pos[0] - locs[sprite][0]) + abs(pos[1] - locs[sprite][1]) < THRESHHOLD:
-	# 					resourceObservations['resource'][sprite] = {}
-	# 		for res in self.observed_resources:
-	# 			val = agentState[res]
-	# 			#return whether this collision killed the sprite or the avatar - this format is used when updating distributions
-	# 			resourceObservations['resource'][sprite][res] = (val, not avatar_is_dead, not sprite_gone)
-
-	# 	_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
-	# 	new_sprites = [(s.colorName, s.rect.left, s.rect.top) for s in new_sprites]
-	# 	self.lastObjectState = current_state
-	# 	return resourceObservations, new_sprites
-
 	def intersect(self, p1, p2):
 		return (abs(p1[0] - p2[0]) <= self.rle._game.block_size and abs(p1[1] - p2[1]) <= self.rle._game.block_size)
 	
@@ -1477,14 +431,12 @@ class Agent:
 		newRle._game.sprite_groups['avatar'][0].resources = ccopy(rle._game.sprite_groups['avatar'][0].resources)
 		return newRle
 
-
 	def executeStepProfiler(self, action, hypotheses, theoryRLEs, lastStep=False):
 		lp = LineProfiler()
 		lp_wrapper = lp(self.executeStep)
 		hypotheses = lp_wrapper(action, hypotheses, theoryRLEs, lastStep)
 		lp.print_stats()
 		return hypotheses
-
 
 	def executeStep(self, action, hypotheses, theoryRLEs, lastStep=False):
 
@@ -1499,7 +451,6 @@ class Agent:
 			percentile=10, max_num=20, allMovement=False)
 		print "spriteInduction prep took {} seconds".format(time.time()-t1)
 
-		# agentStatePrev = self.resourceManagement(pre_step=True)
 		envRealPrev = self.fastcopy(self.rle)
 		self.actionHistory.append(action)
 		
@@ -1510,10 +461,7 @@ class Agent:
 		# embed()
 
 		self.rle.step(action)
-
-		# agentState = self.resourceManagement(pre_step=False)
 		envReal = self.fastcopy(self.rle)
-
 		hypotheses = self.manageNewObjects(hypotheses, envRealPrev, action, learnAvatar=self.learnAvatar)
 
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
@@ -1521,45 +469,13 @@ class Agent:
 		
 		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
 		self.rle._game.sprite_appearances = new_sprites
-		# self.rle._game.sprite_appearances = self.manageResourcesAndNewSprites(envReal, envRealPrev)
-
-		# self.updateResourceDistributions(hypotheses, envReal, envRealPrev, action)
-
-		# resourceObservations = self.getObservations(hypotheses, envReal, envRealPrev, action)
-		# print resourceObservations
-		# print "got resource observations"
-		# embed()
-		#updates the distributions
-		# self.distributions.updateDist(resourceObservations)
-		# print self.distributions.distr
-		# print "updated distributions. You'll have to access this when you expand theories."
-
-		# print "in executeStep"
-		# embed()
 
 		print ""
 		print keyPresses[action]
-
-		# agentState = self.resourceManagement(pre_step=False, res)
-		# self.rle.agentStatePrev = agentState
 		print "evaluating {} old theories and proposing new ones".format(len(theoryRLEs))
 
 		newTheories = []
-
-		# prev_real_sprites = [s for k in envRealPrev._game.sprite_groups.keys() for s in envRealPrev._game.sprite_groups[k] if s not in envRealPrev._game.kill_list]
-		# prev_real_colors = set([s.colorName for s in prev_real_sprites if s])
-
-		# real_sprites = [s for k in self.rle._game.sprite_groups.keys() for s in self.rle._game.sprite_groups[k] if s not in self.rle._game.kill_list]
-		# real_colors = set([s.colorName for s in real_sprites if s])
-
-		## DEBUG code. delete soon
-		# if len(self.rleHistory)<3:
-		#   for i in range(20):
-		#       self.rleHistory.append(ccopy(self.rleHistory[0]))
-		#       self.actionHistory.append(0)
 	
-		## Serial compact version
-		# t1 = time.time()
 		for num, env in enumerate(theoryRLEs):
 			theories = testAndExpand(theoryRLEs, self.hypotheses, action, self.rle, envRealPrev, num, \
 				self.rleHistory, self.actionHistory, self.symbolDict, self.best_params, self.bestSpriteTypeDict)
@@ -1574,21 +490,7 @@ class Agent:
 		print "filtering took {} seconds".format(time.time()-t1)
 		print "After filtering for duplicates, have {} theories".format(len(newLst))
 
-		# embed()
 		newTheories = newLst
-
-
-		# print "Serially tested and expanded {} theories in {} seconds".format(len(theoryRLEs), time.time()-t1)
-
-		## Parallel version
-		# t1 = time.time()
-		# func = partial(self.testAndExpand, theoryRLEs, self.hypotheses, action, envRealPrev)
-		# p = ThreadPool(processes=40)
-		# results = p.map(func, range(len(theoryRLEs)))
-		# newTheories = [item for sublist in results for item in sublist]
-		# p.close()
-		# p.join()
-		# print "Parallel tested and expanded {} theories in {} seconds".format(len(theoryRLEs), time.time()-t1)
 
 		self.allTheories.extend(newTheories)
 		print self.rle.show(color='blue')
@@ -1599,15 +501,11 @@ class Agent:
 				self.symbolDict, self.best_params, method='all', displayTheories=False)
 
 			scoreAndTheoryTuples = zip(penalties, newTheories, experienceReplayRLEs)
-
-			# scoreAndTheoryTuples = zip(penalties, newTheories, experienceReplayRLEs)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 
 			for num, sh in enumerate(scoreAndTheoryTuples):
 				print "Theory: {} | Error: {}".format(num, sh[0])
 				sh[1].display()
-			# print ""
-			# embed()
 			scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
 
 			if not lastStep:
@@ -1642,29 +540,9 @@ class Agent:
 		return hypotheses
 
 
-	def planWithTheory(self, rle, theory):
-
-		## First you have to pretend the theory has learned the rule corresponding to the goal; otherwise
-		## this is ill-posed.
-		## Add real goal to terminationSet
-		terminationRule = SpriteCounterRule('c4', 0, True)
-		theory.terminationSet.append(terminationRule)
-		for rule in theory.interactionSet:
-			if rule.slot1=='c4' and rule.slot2=='avatar':
-				rule.interaction = 'killSprite'
-		## add killSprite rule to terminationSet
-
-		p = WBP(rle, self.gameFilename, theory=theory, fakeInteractionRules = [],
-			seen_limits = self.seen_limits, annealing=1, max_nodes=500, shortHorizon=False,
-			firstOrderHorizon=self.firstOrderHorizon)
-		bestNode, gameStringArray, objectPositionsArray = p.BFS()
-		embed()
-		return
-
 	########################################################################
 	######## TESTING HYPOTHESES BY RANDOM SAMPLING OR OTHER METHODS ########
 	########################################################################
-
 
 
 	def testSteps(self, rle, actions, hypotheses, last_only=False, check=False):
@@ -1734,69 +612,6 @@ class Agent:
 		cumulative_penalties = list(np.mean(cumulative_penalties, axis=0))
 		scoreAndTheoryTuples = zip(cumulative_penalties, hypotheses)
 		return scoreAndTheoryTuples
-
-	def plotScores(self, save=False, savename='0-vgdl_score_plot'):
-		print "Plotting results..."
-		# Get list of scores for each step
-		scores = []
-		for s in self.theoryScoreHistory:
-			scores.append([s[i][0] for i in range(len(s))])
-		# Get list of benchmark theory scores for each step
-		benchmarks = []
-		for s in self.benchmarkHistory:
-			benchmarks.append([s[i][0] for i in range(len(s))])
-		# Plot scores
-		N = len(scores)
-		f = plt.figure(figsize = (11, 5))
-		ax1 = plt.subplot(111)
-		# ax2 = plt.subplot(212)
-		f.tight_layout(pad=1.5)
-		# c = sns.color_palette('deep')
-
-		# Sampled score - surviving batch
-		for i in range(N):
-			if i==0:
-				ax1.plot( (i+1)*np.ones(len(scores[i])), scores[i], '.', c=c[2], ms=7, alpha=.5, label=r"Sampled score for $\{ \theta_s^{(i)} \}$" )
-			else:
-				ax1.plot( (i+1)*np.ones(len(scores[i])), scores[i], '.', c=c[2], ms=7, alpha=.5 )
-		# Sampled score for theory that we considered best in training
-		ax1.plot( range(1,N+1), [ scores[i][0] for i in range(N) ], c=c[2], label=r"Sampled score for $\theta_s^*$" )
-		
-		# Mean error history - all
-		for i in range(N):
-			if i==0:
-				ax1.plot( (i+1)*np.ones(len(self.meanErrorHistory[i])), self.meanErrorHistory[i], '.', c=c[0], ms=7, alpha=.5, label=r"Mean penalty for $\{ \theta_s^{(i)} \}$" )
-			else:
-				ax1.plot( (i+1)*np.ones(len(self.meanErrorHistory[i])), self.meanErrorHistory[i], '.', c=c[0], ms=7, alpha=.5 )
-		# Mean error history - best
-		ax1.plot( range(1,N+1), [10*m[0] for m in self.meanErrorHistory], '-', c=c[0], label=r'Mean penalty for $\theta_s^*$ $\times 10$'  )
-		
-		# Current step error - best
-		ax1.plot( range(1,N+1), 10*np.array(self.minStepError), ':', c=c[0], label=r'Current penalty for $\theta_s^*$ $\times 10$'  )
-
-		# # Benchmarks - all
-		# for i in range(N):
-		#   if i==0:
-		#       ax1.plot( (i+1)*np.ones(len(benchmarks[i])), benchmarks[i], '.', c=c[1], ms=7, alpha=.5, label=r"Benchmark set" )
-		#   else:
-		#       ax1.plot( (i+1)*np.ones(len(benchmarks[i])), benchmarks[i], '.', c=c[1], ms=7, alpha=.5 )
-		# Benchmark - best
-		ax1.plot( range(1,N+1), [ min(benchmarks[i]) for i in range(N) ], c=c[1], label=r"Benchmark score" )
-		ax1.plot( range(1,N+1), [ min(benchmarks[i]) for i in range(N) ], '.', ms=7, c=c[1] )
-
-		# Plot cosmetics
-		ax1.set_xlabel('Step'), ax1.set_ylabel('Score')
-		# ax2.set_xlabel('Step'), ax2.set_ylabel('Score')
-		#ax1.legend(loc='upper right', fontsize=8)
-		box = ax1.get_position()
-		ax1.set_position([box.x0, box.y0, box.width * 0.65, box.height])
-		ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-		# ax2.legend(loc='upper right', fontsize=8)
-		if save==True:
-			plt.savefig(savename+'.pdf')
-		else:
-			plt.show()
-
 
 ########################################################################
 ######## RLE INITIALIZATION AND STATE-SETTING METHODS 			########
@@ -2660,7 +1475,7 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, best_par
 			h.display()
 		results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h], symbolDict, best_params))
 
-	print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
+	# print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 
 	mean_penalties = [r[0][0] for r in results]
 	cumulative_penalties = [r[1][0][0] for r in results]
@@ -2726,18 +1541,13 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		for theory in theories:
 			newTheories.extend(expandTheoryForOneErrorMap(errorList[0], envRealPrev, envRealCurrent, prevAction, theory, bestSpriteTypeDict))
 
-		print "Have {} new theories".format(len(newTheories))
+		print "filtering for duplicates"
 		t1 = time.time()
 		newLst = []
 		for t in newTheories:
 			if t not in newLst:
 				newLst.append(t)
-
 		print "filtering took {} seconds".format(time.time()-t1)
-		for t in newLst:
-			t.display()
-		print "After filtering for duplicates, have {} theories".format(len(newLst))
-		# embed()
 
 		print "Now running experience replay on {} theories".format(len(newTheories))
 		penalties, cumulative_penalties, _ = experienceReplay(newTheories, rleHistory[-2:], actionHistory[-1:], 
@@ -2752,16 +1562,10 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 
 		newTheories = [s[1] for s in scoresAndHypotheses]
 
-		# print "In expandTheory () base case. Produced {} new theories".format(len(newTheories))
-
-		# for s in scoresAndHypotheses:
-		#   print "error: {}".format(s[0])
-		#   s[1].display()
-
 	else:
 		tmpTheories = expandTheories(theories, [errorList[0]], envRealPrev, envRealCurrent, prevAction, rleHistory, actionHistory, symbolDict, best_params, bestSpriteTypeDict)
 		newTheories = expandTheories(tmpTheories, errorList[1:], envRealPrev, envRealCurrent, prevAction, rleHistory, actionHistory, symbolDict, best_params, bestSpriteTypeDict)
-	# print "{} new theories".format(len(newTheories))
+
 	return newTheories
 
 
@@ -2867,17 +1671,13 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 			observations=envRealCurrent._game.observation, generic=False)
 
 		len_new_theories = len(newTheories)
-		print "Currently have {} theories. Maybe adding {}.".format(len_new_theories, len(theories))
 		for t in theories:
 			if t not in newTheories:
 				newTheories.append(t)
-		print "Ended up adding {}".format(len(newTheories)-len_new_theories)
 
 	if not newTheories:
 		newTheories = [theory]
 		theory.errorMapHistory.append(errorMap)
-		# print "got no new theories in expandTheoryForOneErrorMap"
-		# embed()
 	return newTheories
 
 
@@ -2889,13 +1689,13 @@ def testAndExpand(theoryRLEs, hypotheses, action, envReal, envRealPrev, index, r
 	env.step(action)
 	penalty, errorList = errorSignal(env, envReal, hypothesis, envRealPrev)
 	
-	# if errorList:
+	if errorList:
 		# hypothesis.display()
-		# for e in errorList:
-			# e.display()
-			# print ""
+		for e in errorList:
+			e.display()
+			print ""
 	# else:
-	# 	print "No error"
+		# print "No error"
 		# embed()
 	# print "expanding theories"
 	theories = expandTheories([hypothesis], errorList, envRealPrev, envReal, action, rleHistory, actionHistory, symbolDict, best_params, bestSpriteTypeDict)
@@ -2916,8 +1716,8 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.aliens"
 
-	filename = "examples.gridphysics.avatar_inference"
-	# filename = "examples.gridphysics.collect_resource"
+	# filename = "examples.gridphysics.avatar_inference"
+	filename = "examples.gridphysics.collect_resource"
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
