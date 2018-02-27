@@ -277,8 +277,8 @@ class Agent:
 
 	def testEpisode(self, gameObject, epoch=0):
 		
-		actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT]
-
+		# actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT]
+		actions = [K_UP, K_UP]
 		self.initializeEnvironment()
 		# embed()
 
@@ -523,8 +523,8 @@ class Agent:
 			print ""
 			hypotheses = [sh[1] for sh in scoresAndHypotheses]
 			print "{} survived".format(len(hypotheses))
-			print ""
-			embed()
+			# print ""
+			# embed()
 			if len(hypotheses)==0:
 				print "0 hypotheses survived filter"
 				embed()

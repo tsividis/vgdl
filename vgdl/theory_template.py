@@ -1027,8 +1027,6 @@ class Theory(object):
 							if (all([not loss_terminationRule.__eq__(t) for t in self.terminationSet]) and
 								all([not loss_terminationRule.__eq__(t) for t in self.falsified])):
 									self.terminationSet.append(loss_terminationRule)
-							print "in loss condition"
-							embed()
 
 			for n in range(2, len(absentColors) + 1):
 					for color_combination in itertools.combinations(absentColors, n):
@@ -1508,7 +1506,7 @@ class Theory(object):
 	def display(self):
 		self.displayClasses()
 		self.displayRules()
-		# self.displayTerminationSet()
+		self.displayTerminationSet()
 		print "_______"
 		return
 
