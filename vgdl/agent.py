@@ -276,11 +276,9 @@ class Agent:
 		return
 
 	def testEpisode(self, gameObject, epoch=0):
-		from pygame.locals import K_UP
-		actions = [K_RIGHT]*2 + [K_LEFT]*4 + [K_RIGHT]*2 + [K_UP]*2
 
+		actions = [K_UP]*6
 		self.initializeEnvironment()
-		# embed()
 
 		self.trueTheory = generateTheoryFromGame(self.rle)
 		self.trueTheory.trueTheory = True
@@ -303,18 +301,8 @@ class Agent:
 		envReal = self.fastcopy(self.rle)
 		self.rleHistory.append(envReal)
 
-
-		agentState = self.resourceManagement(pre_step=True)
-		# print self.hypotheses[0]
-		# for rule in self.hypotheses[0].interactionSet:
-		# 	if rule.slot1=='c3' and rule.slot2=='avatar':
-		# 		rule.interaction = 'killSprite'
-		# 	if rule.slot1=='c4' and rule.slot2=='avatar':
-		# 		rule.interaction = 'killSprite'
 		# agentState = self.resourceManagement(pre_step=True)
 
-
-		# embed()
 
 		#OBJECT TRACKING
 		# resourceObservations = self.getObservations(self.hypotheses, agentState, self.rle, self.rle)
@@ -323,6 +311,11 @@ class Agent:
 		# self.distributions.updateDist(resourceObservations)
 
 		# plt.ion() #allow for plot updating
+		for rule in self.hypotheses[0].interactionSet:
+			for c in ['c3', 'c4', 'c5']:
+				if rule.slot1 == c and rule.slot2 == 'avatar':
+					rule.interaction = 'killSprite'
+		embed()
 
 		t1 = time.time()
 		for num, action in enumerate(actions):
@@ -479,9 +472,6 @@ class Agent:
 		
 		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
 		self.rle._game.sprite_appearances = new_sprites
-
-		updateTerminations(self.rle, hypotheses)
-
 
 		print ""
 		print keyPresses[action]
@@ -670,17 +660,6 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 	Vrle._game.score = ccopy(rle._game.score)
 	Vrle._game.observation = buildTracker(Vrle)
 	Vrle._game.observation['lastscore'] = rle._game.observation['lastscore']
-
-	return
-
-def updateTerminations(rle, hypotheses):
-
-	terminationSet, falsified, multi_falsified = hypotheses[0].updateTerminations(rle)
-
-	for h in hypotheses:
-		h.terminationSet = terminationSet
-		h.falsified = falsified
-		h.multi_falsified = multi_falsified
 
 	return
 
@@ -1738,6 +1717,10 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.aliens"
 
 	filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.collect_resource"
+
+	# filename = "examples.gridphysics.theorytest"
+	# filename = "examples.continuousphysics.breakout_new"
 
 	global WBP
 	if 'grid' in filename:

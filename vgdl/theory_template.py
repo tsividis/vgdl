@@ -989,6 +989,23 @@ class Theory(object):
 							   not t.termination.win and all([not f.__eq__(t) for f in self.falsified])]
 
 		colors = [tt[0].colorName for tt in self.classes.values() if tt[0].colorName != 'ENDOFSCREEN']
+		print ' ~ ~ ~ Updating Terminations ~ ~ ~'
+		print 'TerminationSet:'
+		print '---'
+		for t in self.terminationSet:
+			t.display()
+		print
+		print 'Falsified:'
+		print '---'
+		for t in self.falsified:
+			t.display()
+		print
+		print 'Multi Falsified'
+		print '---'
+		for t in self.multi_falsified:
+			t.display()
+		print
+
 		
 		if rle:
 			objects = rle._game.observation['trackedObjects']
@@ -1001,63 +1018,63 @@ class Theory(object):
 					absentColors.append(color)
 					## If the game didn't end, you can't win or lose based on this particular class being 0
 					if not rle._isDone()[0]:
-						new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, True)
-						new_rule2 = SpriteCounterRule(self.colorToClassMapper(color), 0, False)
-						# print new_rule
-						# print new_rule2
+						for win in [True, False]:
+							new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, win)
+							if new_rule not in self.falsified:
+								self.falsified.append(new_rule)
+					else:
+						win = rle._isDone()[1]
+						new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, not win)
+						## If you won, you can't lose based on this class being 0
 						# embed()
 						if new_rule not in self.falsified:
 							self.falsified.append(new_rule)
-							self.falsified.append(new_rule2)
-					else:
-						if rle._isDone()[1]:
-							new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, False)
-							## If you won, you can't lose based on this class being 0
-							# embed()
-							if new_rule not in self.falsified:
-								self.falsified.append(new_rule)
-						else:
-							## If you lost, you can't win based on this class being 0
-							new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, True)
-							if new_rule not in self.falsified:
-								self.falsified.append(new_rule)
 
+						if not win:
 							## If you lost, maybe you lost because this class was 0. Check whether we'd already falsified this rule.
 							loss_terminationRule = SpriteCounterRule(self.colorToClassMapper(color), 0, False)
-							if (all([not loss_terminationRule.__eq__(t) for t in self.terminationSet]) and
-								all([not loss_terminationRule.__eq__(t) for t in self.falsified])):
-									self.terminationSet.append(loss_terminationRule)
+							if loss_terminationRule not in self.terminationSet and loss_terminationRule not in self.falsified:
+								self.terminationSet.append(loss_terminationRule)
 
 			for n in range(2, len(absentColors) + 1):
+				print ' ~ ~ ~ Multiple Sprites Gone ~ ~ ~'
 				for color_combination in itertools.combinations(absentColors, n):
+
 					class_combination = [self.colorToClassMapper(color) for color in color_combination]
-					
+					print 'checking combo', color_combination, class_combination
 					## If the game didn't end, falsify multiSpriteCounter rules for this state.
 					if not rle._isDone()[0]:
-						new_rule1 = MultiSpriteCounterRule(stypes=class_combination, win=True)
-						new_rule2 = MultiSpriteCounterRule(stypes=class_combination, win=False)
-						if new_rule1 not in self.multi_falsified:
-							self.multi_falsified.append(new_rule1)
-							self.multi_falsified.append(new_rule2)
+						print 'game is not done - falsifying theories'
+						for win in [True, False]:
+							new_rule = MultiSpriteCounterRule(stypes=class_combination, win=win)
+							new_rule.display()
+							raw_input('Press Enter to continue ...')
+							if new_rule not in self.multi_falsified:
+								self.multi_falsified.append(new_rule)
 					## If the game did end
 					else:
 						## If we won, falsify loss based on this state.
-						if rle._isDone()[1]:
-							new_rule = MultiSpriteCounterRule(stypes=class_combination, win=False)
-							if new_rule not in self.multi_falsified:
-								self.multi_falsified.append(new_rule)
-						## If we lost, falsify win based on this state.
-						else:
-							new_rule = MultiSpriteCounterRule(stypes=class_combination, win=True)
-							if new_rule not in self.multi_falsified:
-								self.multi_falsified.append(new_rule)
+						print 'game is done'
+						win = rle._isDone()[1]
+						print_state = ['lost', 'won'][win]
 
-							loss_terminationRule = MultiSpriteCounterRule(stypes=class_combination, win=False)
-							if loss_terminationRule not in self.terminationSet and loss_terminationRule not in self.falsified:
-									self.terminationSet.append(loss_terminationRule)
+						print 'game is %s - hypothesizing theory' % print_state
+						new_rule = MultiSpriteCounterRule(stypes=class_combination, win=win)
+						new_rule.display()
+						
+						if new_rule not in self.multi_falsified and new_rule not in self.terminationSet:
+							self.terminationSet.append(new_rule)
+						else:
+							print 'already falsified/added - not adding'
+
+						print 'falsifying theory'
+						false_rule = MultiSpriteCounterRule(stypes=class_combination, win=not win)
+						false_rule.display()
+						if false_rule not in self.multi_falsified:
+							self.multi_falsified.append(false_rule)
+						raw_input('Press Enter to continue ...')
 
 		for rule in self.interactionSet:
-
 			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'nothing']:
 				if rule.generic and rule.preconditions:
 					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, copy.deepcopy(rule.preconditions))
@@ -2606,7 +2623,7 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 	import itertools
 	from vgdl.theory_template import InteractionRule
 
-	print "in expandLine for predicates: {}".format(predicates)
+	# print "in expandLine for predicates: {}".format(predicates)
 	childTheories = []
 	predicateGroups = []
 	for i in range(0,n+1):
@@ -2622,7 +2639,7 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 		toRemove = [rule for rule in theory.interactionSet if rule.asTuple()[1]==errorMap.targetClass and rule.asTuple()[0]=='killSprite']
 		if len(toRemove)>0:
 			print "actually removing kill rules in expandLine"
-			embed()
+			# embed()
 		theory.interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
 
 	bothOrderings = [[], []]
