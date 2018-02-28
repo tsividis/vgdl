@@ -137,7 +137,7 @@ class InteractionRule(object):
 		return all([p.check(agentState) for p in self.preconditions])
 
 	def __hash__(self):
-		return self._hash
+		return self._hash #+hash(time.time())
 
 	def __eq__(self, other):
 		if isinstance(other, self.__class__):
@@ -1526,15 +1526,15 @@ class Theory(object):
 			# spriteSetEqual = all(any(s1==s2 for s2 in other.spriteSet) for s1 in self.spriteSet)
 			# terminationSetEqual = all(any(t1==t2 for t2 in other.terminationSet) for t1 in self.terminationSet)
 
-			interactionSetEqual = equalLists(self.interactionSet, other.interactionSet)
-			spriteSetEqual = equalLists(self.spriteSet, other.spriteSet)
-			terminationSetEqual = equalLists(self.terminationSet, other.terminationSet)
+			interactionSetEqual = set(self.interactionSet) == set(other.interactionSet)
+			spriteSetEqual = set(self.spriteSet) == set(other.spriteSet)
+			# terminationSetEqual = equalLists(self.terminationSet, other.terminationSet)
 
 			return all([
 				spriteSetEqual,
 				interactionSetEqual, # TODO: Check if this uses InteractionRule overloaded __eq__
-				terminationSetEqual,
-				self.classes == other.classes,
+				# terminationSetEqual,
+				# self.classes == other.classes,
 				# self.terminationSet == other.terminationSet #may want to delete this
 				])
 		else:
@@ -2684,6 +2684,7 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 		# print "conditional kill in expandLine"
 		# embed()
 	# print "done."
+	childTheories = list(set(childTheories))
 	if 'teleportToExit' in predicates:
 		print "found teleporttoexit"
 		embed()

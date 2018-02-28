@@ -473,17 +473,12 @@ class Agent:
 				self.rleHistory, self.actionHistory, self.symbolDict, self.best_params, self.bestSpriteTypeDict)
 			newTheories.extend(theories)
 
-		# print "Have {} new theories".format(len(newTheories))
+		# print "Have {} new theories in outer loop".format(len(newTheories))
 		# t1 = time.time()
-		# newLst = []
-		# for t in newTheories:
-		# 	if t not in newLst:
-		# 		newLst.append(t)
+		newTheories = list(set(newTheories))
 		# print "filtering took {} seconds".format(time.time()-t1)
-		# print "After filtering for duplicates, have {} theories".format(len(newLst))
-		# # embed()
-		# newTheories = newLst
-
+		# print "After filtering for duplicates, have {} theories".format(len(newTheories))
+		# embed()
 		self.allTheories.extend(newTheories)
 		print "evaluation complete. Now running experienceReplay on {} theories".format(len(newTheories))
 
@@ -1539,7 +1534,6 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		newTheories = []
 		for theory in theories:
 			newTheories.extend(expandTheoryForOneErrorMap(errorList[0], envRealPrev, envRealCurrent, prevAction, theory, bestSpriteTypeDict))
-
 
 		# print "filtering for duplicates"
 		print "new theories length: {}".format(len(newTheories))
