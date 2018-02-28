@@ -1546,12 +1546,8 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		t1 = time.time()
 		newTheories = list(set(newTheories))
 		print "filtered theories length: {}. Took {} seconds.".format(len(newTheories), time.time()-t1)
-		# embed()
-		# newLst = []
-		# for t in newTheories:
-		# 	if t not in newLst:
-		# 		newLst.append(t)
-		# print "filtering took {} seconds".format(time.time()-t1)
+		# if len(newTheories)==67:
+			# embed()
 
 		print "Now running experience replay on {} theories".format(len(newTheories))
 		penalties, cumulative_penalties, _ = experienceReplay(newTheories, rleHistory[-2:], actionHistory[-1:], 

@@ -386,8 +386,6 @@ def processFrame(memory, gameObject):
                         newSprite.rect.left , newSprite.rect.top = sprite.rect.left , sprite.rect.top
                         newSprite.lastrect = ccopy(newSprite.rect)
                         newSprite.rect = ccopy(sprite.rect)
-
-                        # newSprite.rect.move_ip(sprite.rect.rect.left - newSprite.rect.x, sprite.rect.y - newSprite.rect.y)
                 else:
                     # new, unseen object
                     newSprite = copySpriteStingy(sprite)

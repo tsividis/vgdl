@@ -109,7 +109,7 @@ class InteractionRule(object):
 		self.args = args
 		self.preconditions = preconditions
 		self.generic = generic ## if generic, this interaction rule belongs to the generic prior that is meant to be overriden.
-
+		self._hash = hash((self.interaction, self.slot1, self.slot2, tuple(sorted(self.args.iteritems()))))
 
 	def display(self):
 		if not self.preconditions:
@@ -119,7 +119,7 @@ class InteractionRule(object):
 		return
 
 	def asTuple(self):
-		return (self.interaction, self.slot1, self.slot2, self.args) #TODO: Check that adding the value here doesn't mess up equality checks elsewhere
+		return (self.interaction, self.slot1, self.slot2, self.args)
 
 	def addPrecondition(self, precondition):
 		"""
@@ -135,6 +135,9 @@ class InteractionRule(object):
 
 	def checkPreconditions(self, agentState):
 		return all([p.check(agentState) for p in self.preconditions])
+
+	def __hash__(self):
+		return self._hash
 
 	def __eq__(self, other):
 		if isinstance(other, self.__class__):
@@ -276,14 +279,10 @@ class Theory(object):
 		
 		self.mark = False ## For convenient marking and finding of hypotheses
 
-
+	## We don't want this to be precomputed because our way of generating child theories
+	## is to copy a theory and then change its interactionSet and spriteSet.
 	def __hash__(self):
-		return hash ( sum([ hash(r.interaction[0]+r.interaction[-1]+r.slot1[1]) for r in self.interactionSet]) + time.time())
-		# return hash( sum([ len(r.interaction) ^ 3*hash(r.interaction[0]) ^ 5*hash(r.interaction[-1]) ^ 7*hash(r.slot1[1]) ^ 9*hash(r.slot2[1]) for r in self.interactionSet if r.interaction != 'stepBack']) + 
-			# 17*sum([len(str(s.vgdlType)) for s in self.spriteSet]) ) 
-		# return hash(hash( tuple((tuple(sorted([(s.colorName, s.className, s.vgdlType) for s in self.spriteSet])),
-				# tuple(sorted([elt.asTuple()[0:3] for elt in self.interactionSet if elt.asTuple()[0]!='stepBack'])),
-				# tuple(sorted([elt.asTuple() for elt in self.terminationSet]))) ) ) + time.time())
+		return hash(sum([r.__hash__() for r in self.interactionSet]) + sum([s.__hash__() for s in self.spriteSet]))
 
 	def copy(self):
 		newTheory = Theory(self.game)
