@@ -278,6 +278,7 @@ class Agent:
 	def testEpisode(self, gameObject, epoch=0):
 
 		actions = [K_UP]*6
+
 		self.initializeEnvironment()
 
 		self.trueTheory = generateTheoryFromGame(self.rle)
@@ -316,6 +317,7 @@ class Agent:
 				if rule.slot1 == c and rule.slot2 == 'avatar':
 					rule.interaction = 'killSprite'
 		embed()
+
 
 		t1 = time.time()
 		for num, action in enumerate(actions):
@@ -487,20 +489,21 @@ class Agent:
 				self.rleHistory, self.actionHistory, self.symbolDict, self.best_params, self.bestSpriteTypeDict)
 			newTheories.extend(theories)
 
-		print "Have {} new theories".format(len(newTheories))
-		t1 = time.time()
-		newLst = []
-		for t in newTheories:
-			if t not in newLst:
-				newLst.append(t)
-		print "filtering took {} seconds".format(time.time()-t1)
-		print "After filtering for duplicates, have {} theories".format(len(newLst))
-
-		newTheories = newLst
+		# print "Have {} new theories".format(len(newTheories))
+		# t1 = time.time()
+		# newLst = []
+		# for t in newTheories:
+		# 	if t not in newLst:
+		# 		newLst.append(t)
+		# print "filtering took {} seconds".format(time.time()-t1)
+		# print "After filtering for duplicates, have {} theories".format(len(newLst))
+		# # embed()
+		# newTheories = newLst
 
 		self.allTheories.extend(newTheories)
 		print "evaluation complete. Now running experienceReplay on {} theories".format(len(newTheories))
 
+		# embed()
 		if newTheories:
 			penalties, cumulative_penalties, experienceReplayRLEs = experienceReplay(newTheories, self.rleHistory, self.actionHistory,
 				self.symbolDict, self.best_params, method='all', displayTheories=False)
@@ -1089,8 +1092,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
 			neighbors_prev = neighborsPrev(envB, envPrev, sPrev)
 			e.intPairs.extend([(e.targetClass, n) for n in neighbors_prev])
-			# print "in errorSignal inventory change"
-			# embed()
 			errorMap.append(e)
 
 	# 4) Score change
@@ -1551,19 +1552,22 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 			return newTheories
 
 		print "In base case. Correcting error for {} for {} theories".format(errorList[0].targetClass, len(theories))
-		# if len(theories)==1:
-			# embed()
 		newTheories = []
 		for theory in theories:
 			newTheories.extend(expandTheoryForOneErrorMap(errorList[0], envRealPrev, envRealCurrent, prevAction, theory, bestSpriteTypeDict))
 
-		print "filtering for duplicates"
+
+		# print "filtering for duplicates"
+		print "new theories length: {}".format(len(newTheories))
 		t1 = time.time()
-		newLst = []
-		for t in newTheories:
-			if t not in newLst:
-				newLst.append(t)
-		print "filtering took {} seconds".format(time.time()-t1)
+		newTheories = list(set(newTheories))
+		print "filtered theories length: {}. Took {} seconds.".format(len(newTheories), time.time()-t1)
+		# embed()
+		# newLst = []
+		# for t in newTheories:
+		# 	if t not in newLst:
+		# 		newLst.append(t)
+		# print "filtering took {} seconds".format(time.time()-t1)
 
 		print "Now running experience replay on {} theories".format(len(newTheories))
 		penalties, cumulative_penalties, _ = experienceReplay(newTheories, rleHistory[-2:], actionHistory[-1:], 
@@ -1662,22 +1666,28 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 		matchingRules = [rule for rule in theory.interactionSet if (rule not in list(theory.dryingPaint)) and 
 			( targetClassPair==(rule.slot1, rule.slot2) or targetClassPair==(rule.slot2, rule.slot1) )]
 		if any([not rule.generic for rule in matchingRules]):
-			errorMap.diagnosis[0] = 'conditionalKill'
+			# print "got conditional kill"
+			# embed()
+			errorMap.diagnosis.append('conditionalKill')
+			# errorMap.diagnosis[0] = 'conditionalKill'
 
+		# print "proposing predicates"
 		## Modify theory before the last step, then embed here to continue work
 		## if the diagnosis involves objectDestruction and the targetClassPair has non-generic rules,
 		## change the diagnosis here to conditionalKill such that you can propose preconditions in proposePredicates
 		predicates = proposePredicates(errorMap.diagnosis, envRealCurrent._game.observation)
-
+		# print "expanding line for predicates: {}".format(predicates)
 		classPair, theories, predicateGroups = expandLine(theory, errorMap, targetClassPair, 
 			predicates = predicates, n=n, 
 			observations=envRealCurrent._game.observation, generic=False)
-
-		len_new_theories = len(newTheories)
-		for t in theories:
-			if t not in newTheories:
-				newTheories.append(t)
-
+		# print "done expanding line"
+		# print "creating list of unique theories"
+		# len_new_theories = len(newTheories)
+		# for t in theories:
+			# if t not in newTheories:
+				# newTheories.append(t)
+		# print "created list of unique theories"
+		newTheories = theories
 	if not newTheories:
 		newTheories = [theory]
 		theory.errorMapHistory.append(errorMap)

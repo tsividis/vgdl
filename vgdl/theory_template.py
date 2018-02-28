@@ -276,6 +276,15 @@ class Theory(object):
 		
 		self.mark = False ## For convenient marking and finding of hypotheses
 
+
+	def __hash__(self):
+		return hash ( sum([ hash(r.interaction[0]+r.interaction[-1]+r.slot1[1]) for r in self.interactionSet]) + time.time())
+		# return hash( sum([ len(r.interaction) ^ 3*hash(r.interaction[0]) ^ 5*hash(r.interaction[-1]) ^ 7*hash(r.slot1[1]) ^ 9*hash(r.slot2[1]) for r in self.interactionSet if r.interaction != 'stepBack']) + 
+			# 17*sum([len(str(s.vgdlType)) for s in self.spriteSet]) ) 
+		# return hash(hash( tuple((tuple(sorted([(s.colorName, s.className, s.vgdlType) for s in self.spriteSet])),
+				# tuple(sorted([elt.asTuple()[0:3] for elt in self.interactionSet if elt.asTuple()[0]!='stepBack'])),
+				# tuple(sorted([elt.asTuple() for elt in self.terminationSet]))) ) ) + time.time())
+
 	def copy(self):
 		newTheory = Theory(self.game)
 		newTheory.classes = ccopy(self.classes)
@@ -1017,18 +1026,22 @@ class Theory(object):
 				if count == 0:
 					absentColors.append(color)
 					## If the game didn't end, you can't win or lose based on this particular class being 0
-					if not rle._isDone()[0]:
+					done, win = rle._isDone()
+					if not done:
 						for win in [True, False]:
-							new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, win)
-							if new_rule not in self.falsified:
-								self.falsified.append(new_rule)
+							false_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, win)
+							if false_rule not in self.falsified:
+								self.falsified.append(false_rule)
 					else:
-						win = rle._isDone()[1]
-						new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, not win)
-						## If you won, you can't lose based on this class being 0
-						# embed()
-						if new_rule not in self.falsified:
-							self.falsified.append(new_rule)
+						# game is done. Hypothesize new theory. Code seems to work without doing this.
+						# new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, win)
+						# if new_rule not in self.falsified and new_rule not in self.terminationSet:
+						# 	self.terminationSet.append(new_rule)
+
+						## If you won/lost, you can't lose/win based on this class being 0
+						false_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, not win)
+						if false_rule not in self.falsified:
+							self.falsified.append(false_rule)
 
 						if not win:
 							## If you lost, maybe you lost because this class was 0. Check whether we'd already falsified this rule.
@@ -1037,42 +1050,24 @@ class Theory(object):
 								self.terminationSet.append(loss_terminationRule)
 
 			for n in range(2, len(absentColors) + 1):
-				print ' ~ ~ ~ Multiple Sprites Gone ~ ~ ~'
 				for color_combination in itertools.combinations(absentColors, n):
 
 					class_combination = [self.colorToClassMapper(color) for color in color_combination]
-					print 'checking combo', color_combination, class_combination
 					## If the game didn't end, falsify multiSpriteCounter rules for this state.
-					if not rle._isDone()[0]:
-						print 'game is not done - falsifying theories'
+					done, win = rle._isDone()
+					if not done:
 						for win in [True, False]:
 							new_rule = MultiSpriteCounterRule(stypes=class_combination, win=win)
-							new_rule.display()
-							raw_input('Press Enter to continue ...')
 							if new_rule not in self.multi_falsified:
 								self.multi_falsified.append(new_rule)
-					## If the game did end
-					else:
-						## If we won, falsify loss based on this state.
-						print 'game is done'
-						win = rle._isDone()[1]
-						print_state = ['lost', 'won'][win]
-
-						print 'game is %s - hypothesizing theory' % print_state
-						new_rule = MultiSpriteCounterRule(stypes=class_combination, win=win)
-						new_rule.display()
-						
+					else: # game ended
+						new_rule = MultiSpriteCounter(stypes=class_combination, win=win)
 						if new_rule not in self.multi_falsified and new_rule not in self.terminationSet:
 							self.terminationSet.append(new_rule)
-						else:
-							print 'already falsified/added - not adding'
 
-						print 'falsifying theory'
 						false_rule = MultiSpriteCounterRule(stypes=class_combination, win=not win)
-						false_rule.display()
 						if false_rule not in self.multi_falsified:
 							self.multi_falsified.append(false_rule)
-						raw_input('Press Enter to continue ...')
 
 		for rule in self.interactionSet:
 			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'nothing']:
@@ -1551,9 +1546,6 @@ class Theory(object):
 
 	def __ne__(self, other):
 		return not self.__eq__(other)
-	
-	def __hash__(self):
-		return 0 ## this is a terrible idea! You're just doing this hoping that the equality operation is good enough for set() to work well.
 
 def equalLists(lst1, lst2):
 	l1 = [r for r in lst1 if r not in lst2]
@@ -2475,7 +2467,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 	## TODO: Fill out the case where you consult the proposalMemory to make more complicated
 	## proposals
 
-	return predicates
+	return list(set(predicates))
 
 ## TODO: write the function that maintains resourceObservations, or at least figure out
 ## its outputs and integrate with proposeArgs
@@ -2589,29 +2581,28 @@ predicateToOrderingMapping = {
 	'changeResource':		(0,),
 	'collectResource':		(0,),
 	'stepBack':				(0,),
-	'cloneSprite':	 		(0,1),	#TODO: check all below here.
-	'transformTo':	 		(0,1),
-	'transformToOnLanding': (0,1),
-	'undoAll':				(0,1),
-	'nothing':				(0,1),
-	'turn':					(0,1),
-	'turnAround':			(0,1),
-	'reverseDirection':		(0,1),
-	'flipDirection':		(0,1),
+	'cloneSprite':	 		(0,),
+	'transformTo':	 		(0,),
+	'transformToOnLanding': (0,),
+	'turn':					(0,),
+	'turnAround':			(0,),
+	'reverseDirection':		(0,),
+	'flipDirection':		(0,),
+ 	'teleportToExit':		(0,),
+ 	'conveySprite':			(0,),
+	'windGust':				(0,),
+	'bounceDirection':		(0,), 
+	'pullWithIt':			(0,),
+	'slipForward':			(0,),
+	'attractGaze':			(0,),
+	'wallBounce':			(0,),
+	'wallStop':				(0,),
+	'onRope':				(0,),
+	'onLadder':				(0,),
 	'bounceForward':		(0,1),
  	'changeScore':			(0,1),
- 	'teleportToExit':		(0,1),
- 	'conveySprite':			(0,1),
-	'bounceDirection':		(0,1), 
-	'flipDirection':		(0,1),
-	'conveySprite':			(0,1),
-	'pullWithIt':			(0,1),
-	'windGust':				(0,1),
-	'slipForward':			(0,1),
-	'wallBounce':			(0,1),
-	'wallStop':				(0,1),
-	'onRope':				(0,1),
-	'onLadder':				(0,1)}
+	'nothing':				(0,1),
+	'undoAll':				(0,1)}
 
 
 def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, generic=False):
@@ -2623,7 +2614,6 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 	import itertools
 	from vgdl.theory_template import InteractionRule
 
-	# print "in expandLine for predicates: {}".format(predicates)
 	childTheories = []
 	predicateGroups = []
 	for i in range(0,n+1):
@@ -2642,7 +2632,8 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 			# embed()
 		theory.interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
 
-	bothOrderings = [[], []]
+	# print "creating orderings"
+	bothOrderings = [[()], [()]]
 	alteredPairs = set()
 	for i,order in enumerate([classPair, (classPair[1], classPair[0])]):
 
@@ -2660,9 +2651,10 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 						generic=generic)
 					predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
 						for comb in allArgumentCombinations])
-
-			bothOrderings[i].extend(list(itertools.product(*predicateRules)))
-
+			if predicateRules:
+				bothOrderings[i].extend(list(itertools.product(*predicateRules)))
+	# print "done. Finding rules to remove"
+	
 	toRemove = set()
 	if 0 in alteredPairs:
 		toRemove |= set([i for i in range(len(theory.interactionSet)) if 
@@ -2673,7 +2665,7 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 
 	for i in sorted(toRemove, reverse=True):
 		theory.interactionSet.pop(i)
-
+	# print "done. Adding rules"
 	## Now generate combinations from each expanded predicateGroup that we added to each of the orderings
 	newRuleSets = itertools.product(bothOrderings[0], bothOrderings[1])
 
@@ -2692,7 +2684,10 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 			## This takes 97% of the run time of the function!
 			# if newTheory not in childTheories:
 				# childTheories.append(newTheory)
-
+	# if 'conditionalKill' in errorMap.diagnosis:
+		# print "conditional kill in expandLine"
+		# embed()
+	# print "done."
 	if 'teleportToExit' in predicates:
 		print "found teleporttoexit"
 		embed()
