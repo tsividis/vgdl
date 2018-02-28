@@ -286,18 +286,16 @@ class Theory(object):
 
 	def copy(self):
 		newTheory = Theory(self.game)
-		newTheory.classes = ccopy(self.classes)
+		newTheory.spriteSet = ccopy(self.spriteSet)
+		newTheory.classes = {s.className if s.className else 'EOS':[s] for s in newTheory.spriteSet}
+		newTheory.spriteObjects = {s.colorName:s for s in newTheory.spriteSet}
+		# newTheory.classes = ccopy(self.classes)
 		newTheory.expandedSprites = ccopy(self.expandedSprites)
 		newTheory.interactionSet = ccopy(self.interactionSet)
-		newTheory.spriteObjects = ccopy(self.spriteObjects)
-		newTheory.spriteSet = ccopy(self.spriteSet)
+		# newTheory.spriteObjects = ccopy(self.spriteObjects)
 		newTheory.terminationSet = ccopy(self.terminationSet)
 		newTheory.dryingPaint = ccopy(self.dryingPaint)
-		try:
-			newTheory.errorMapHistory = [e.copy() for e in self.errorMapHistory]
-		except:
-			print "attribute error with errorMapHistory"
-			embed()
+		# newTheory.errorMapHistory = list(self.errorMapHistory) # currently unused but useful for debugging.
 		return newTheory
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
@@ -1520,22 +1518,13 @@ class Theory(object):
 
 	def __eq__(self, other):
 		if isinstance(other, self.__class__):
-
-			# Must check interactionSet in this way, to use overloaded equality of InteractionRules
-			# interactionSetEqual = all(any(i1==i2 for i2 in other.interactionSet) for i1 in self.interactionSet)
-			# spriteSetEqual = all(any(s1==s2 for s2 in other.spriteSet) for s1 in self.spriteSet)
-			# terminationSetEqual = all(any(t1==t2 for t2 in other.terminationSet) for t1 in self.terminationSet)
-
 			interactionSetEqual = set(self.interactionSet) == set(other.interactionSet)
 			spriteSetEqual = set(self.spriteSet) == set(other.spriteSet)
 			# terminationSetEqual = equalLists(self.terminationSet, other.terminationSet)
-
 			return all([
 				spriteSetEqual,
 				interactionSetEqual, # TODO: Check if this uses InteractionRule overloaded __eq__
 				# terminationSetEqual,
-				# self.classes == other.classes,
-				# self.terminationSet == other.terminationSet #may want to delete this
 				])
 		else:
 			return False
@@ -2600,25 +2589,50 @@ predicateToOrderingMapping = {
 	'nothing':				(0,1),
 	'undoAll':				(0,1)}
 
+def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n):
 
-def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, generic=False):
+	key = (classPair, tuple(sorted(predicates)))
+	# print key
+	if key not in classPairPlusPredicateToRuleSets:
+
+		predicateGroups = []
+		for i in range(0,n+1):
+			predicateGroups.extend(list(itertools.combinations(predicates, i)))
+
+		bothOrderings = [[()], [()]]
+		alteredPairs = set()
+		for i,order in enumerate([classPair, (classPair[1], classPair[0])]):
+
+			for predicateGroup in predicateGroups:
+				if len(predicateGroup)==0:
+					pass
+				predicateRules = []
+				for predicate in predicateGroup:
+					
+					## orderings are (targetClass, neighbor). If the ordering we're proposing is consistent with the semantics
+					## of the predicate we're proposing, add this potential rule.
+					if i in predicateToOrderingMapping[predicate]:
+						alteredPairs.add(i)
+						allArgumentCombinations = proposeArgs(theory, predicate, errorMap, observations, 
+							generic=False)
+						predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
+							for comb in allArgumentCombinations])
+				if predicateRules:
+					bothOrderings[i].extend(list(itertools.product(*predicateRules)))
+		## Now generate combinations from each expanded predicateGroup that we added to each of the orderings
+		newRuleSets = list(itertools.product(bothOrderings[0], bothOrderings[1]))
+		newRuleSets = [[item for sublist in ruleSet for item in sublist] for ruleSet in newRuleSets]
+		classPairPlusPredicateToRuleSets[key] = (alteredPairs, newRuleSets)
+	
+	return classPairPlusPredicateToRuleSets[key]
+
+def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateToRuleSets, n=1, observations=None, generic=False):
 	## modifies the theory to propose n new interactonRules involving the given classPair
 	## for predicates that take arguments, proposes all possible combinations of args
 	## unless you call generic=False, in which case it only proposes what's in
 	## resourceObservations
 
-	import itertools
-	from vgdl.theory_template import InteractionRule
-
 	childTheories = []
-	predicateGroups = []
-	for i in range(0,n+1):
-		predicateGroups.extend(list(itertools.combinations(predicates, i)))
-	
-	## remove all generic interactionRules involving classPair (in either order)
-	# interactionSet = [rule for rule in theory.interactionSet if
-	# 	( classPair != (rule.asTuple()[1], rule.asTuple()[2]) and classPair != (rule.asTuple()[2], rule.asTuple()[1]) ) or
-	# 	rule.generic==False]
 
 	## Conditionals can only replace kill rules. Remove the existing kill rules and replace them with conditionals.
 	if 'conditionalKill' in errorMap.diagnosis:
@@ -2627,29 +2641,8 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 			print "actually removing kill rules in expandLine"
 			embed()
 		theory.interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
-
-	# print "creating orderings"
-	bothOrderings = [[()], [()]]
-	alteredPairs = set()
-	for i,order in enumerate([classPair, (classPair[1], classPair[0])]):
-
-		for predicateGroup in predicateGroups:
-			if len(predicateGroup)==0:
-				pass
-			predicateRules = []
-			for predicate in predicateGroup:
-				
-				## orderings are (targetClass, neighbor). If the ordering we're proposing is consistent with the semantics
-				## of the predicate we're proposing, add this potential rule.
-				if i in predicateToOrderingMapping[predicate]:
-					alteredPairs.add(i)
-					allArgumentCombinations = proposeArgs(theory, predicate, errorMap, observations, 
-						generic=generic)
-					predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
-						for comb in allArgumentCombinations])
-			if predicateRules:
-				bothOrderings[i].extend(list(itertools.product(*predicateRules)))
-	# print "done. Finding rules to remove"
+	
+	alteredPairs, newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
 	
 	toRemove = set()
 	if 0 in alteredPairs:
@@ -2661,35 +2654,23 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 
 	for i in sorted(toRemove, reverse=True):
 		theory.interactionSet.pop(i)
-	# print "done. Adding rules"
-	## Now generate combinations from each expanded predicateGroup that we added to each of the orderings
-	newRuleSets = itertools.product(bothOrderings[0], bothOrderings[1])
 
-	for i,ruleSet in enumerate(list(newRuleSets)):
-		ruleSet = [item for sublist in ruleSet for item in sublist]
+	for i,ruleSet in enumerate(newRuleSets):
 		if len(ruleSet)>0:
 			newTheory = theory.copy()
 			newTheory.mostRecentEdit = 'interactionSetInduction'
 			newTheory.errorMapHistory.append(errorMap)
-			newTheory.interactionSet = ccopy(theory.interactionSet)
 			newTheory.interactionSet.extend(ruleSet)
 			for rule in ruleSet:
 				newTheory.dryingPaint.add(rule)
 			newTheory.reconcileInteractionsAndSprites()
 			childTheories.append(newTheory)
-			## This takes 97% of the run time of the function!
-			# if newTheory not in childTheories:
-				# childTheories.append(newTheory)
-	# if 'conditionalKill' in errorMap.diagnosis:
-		# print "conditional kill in expandLine"
-		# embed()
-	# print "done."
+
 	childTheories = list(set(childTheories))
 	if 'teleportToExit' in predicates:
 		print "found teleporttoexit"
 		embed()
-	# print "Created {} new theories".format(len(childTheories))
-	return classPair, childTheories, predicateGroups
+	return classPair, childTheories
 
 def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = None):
 	"""
@@ -2993,7 +2974,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 
 			for s1 in theory.classes[c1]:
 				if c2 not in theory.classes.keys():
-					print "c2 not in theory.classes.keys() in theory template"
+					print "c2 not in theory.classes.keys() in theory template. c2={}".format(c2)
 					embed()
 				for s2 in theory.classes[c2]:
 					argsString = ""
