@@ -27,10 +27,11 @@ class Sprite(object):
         args = args if args else {}
         self._hash = hash((self.className, self.colorName, str(self.vgdlType), tuple(sorted(args.iteritems()))))
 
-
-    # TODO: Should enforce proper syntax for properties
     def display(self):
         print (self.vgdlType, self.colorName, self.className, self.args)
+
+    def copy(self):
+        return Sprite(self.vgdlType, self.colorName, self.className, dict(self.args) if self.args else None)
 
     def __hash__(self):
         return self._hash

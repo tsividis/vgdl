@@ -277,8 +277,8 @@ class Agent:
 
 	def testEpisode(self, gameObject, epoch=0):
 		
-		# actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT]
-		actions = [K_UP, K_LEFT, K_LEFT]
+		actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT]
+		# actions = [K_UP, K_LEFT, K_LEFT]
 		self.initializeEnvironment()
 		# embed()
 
@@ -604,6 +604,13 @@ class Agent:
 ######## RLE INITIALIZATION AND STATE-SETTING METHODS 			########
 ########################################################################
 
+def setVrleStateProfiler(rle, Vrle, hypothesis, best_params):
+	lp = LineProfiler()
+	lp_wrapper = lp(setVrleState)
+	hypotheses = lp_wrapper(rle, Vrle, hypothesis, best_params)
+	lp.print_stats()
+	return
+
 
 def setVrleState(rle, Vrle, hypothesis, best_params):
 	## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
@@ -619,8 +626,8 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 				# embed()
 				if matchingSprite is None:
 					continue
-				sprite.rect 		= ccopy(matchingSprite.rect)
-				sprite.lastrect 	= ccopy(matchingSprite.lastrect)
+				sprite.rect 		= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
+				sprite.lastrect 	= pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
 				sprite.lastmove 	= int(matchingSprite.lastmove)
 				sprite.resources    = defaultdict(int)
 				for key in matchingSprite.inventory.keys():
@@ -702,7 +709,8 @@ def findNearestSprite(sprite, spriteList):
 	if spriteList == []:
 		return None
 	else:
-		return sorted(spriteList, key=lambda x:abs(x.rect.x-sprite.rect.x)+abs(x.rect.y-sprite.rect.y))[0]
+		distList = [abs(x.rect.x-sprite.rect.x)+abs(x.rect.y-sprite.rect.y) for x in spriteList]
+		return spriteList[distList.index(min(distList))]
 
 
 
@@ -1354,6 +1362,13 @@ def experienceReplayProfiler(hypotheses, rleHistory, actionHistory, symbolDict, 
 	lp.print_stats()
 	return mean_penalties, cumulative_penalties
 
+def singleTheoryExperienceReplayProfiler(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict, best_params):
+	lp = LineProfiler()
+	lp_wrapper = lp(singleTheoryExperienceReplay)
+	mean_penalties, cumulative_penalties, theoryRLEs= lp_wrapper(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict, best_params)
+	lp.print_stats()
+	return mean_penalties, cumulative_penalties, theoryRLEs
+
 def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict, best_params):
 
 	subsamplePercentage = .2
@@ -1440,7 +1455,7 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, best_par
 		else:
 			results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h], symbolDict, best_params))
 
-	# print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
+	print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 
 	mean_penalties = [r[0][0] for r in results]
 	cumulative_penalties = [r[1][0][0] for r in results]
@@ -1519,12 +1534,9 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 			newTheories.extend(expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, prevAction, theory,
 					bestSpriteTypeDict, classPairPlusPredicateToRuleSets))
 		print "{} theories took {} seconds".format(len(theories), time.time()-t1)
-		print "new theories length: {}".format(len(newTheories))
+
 		t1 = time.time()
 		newTheories = list(set(newTheories))
-		print "filtered theories length: {}. Took {} seconds.".format(len(newTheories), time.time()-t1)
-		# if len(newTheories) == 67:
-			# embed()
 
 		print "Now running experience replay on {} theories".format(len(newTheories))
 		penalties, cumulative_penalties, _ = experienceReplay(newTheories, rleHistory[-2:], actionHistory[-1:], 
@@ -1713,8 +1725,8 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.aliens"
 
-	filename = "examples.gridphysics.avatar_inference"
-	# filename = "examples.gridphysics.collect_resource"
+	# filename = "examples.gridphysics.avatar_inference"
+	filename = "examples.gridphysics.collect_resource"
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"

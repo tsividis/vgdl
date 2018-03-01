@@ -18,10 +18,10 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
 w                              w
+w                   4          w
 w                              w
-w              3               w
-w              3               w
-w              A22             w
+w                              w
+w              A               w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -74,6 +74,7 @@ BasicGame
         1 > box
         2 > box2
         3 > box3
+        4 > random
         w > wall
         c > cannon
         s > sam
@@ -85,8 +86,8 @@ BasicGame
         box3 avatar > killSprite
 
     TerminationSet
-        SpriteCounter stype=box2 limit=0 win=True
-        SpriteCounter stype=box3 limit=0 win=False
+        # SpriteCounter stype=box2 limit=0 win=True
+        # SpriteCounter stype=box3 limit=0 win=False
         # Termination
 
 
