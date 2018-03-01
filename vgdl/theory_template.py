@@ -286,21 +286,17 @@ class Theory(object):
 
 	def copy(self):
 		newTheory = Theory(self.game)
-		newTheory.spriteSet = ccopy(self.spriteSet)
+		newTheory.spriteSet = list(self.spriteSet)
 		newTheory.classes = {s.className if s.className else 'EOS':[s] for s in newTheory.spriteSet}
 		newTheory.spriteObjects = {s.colorName:s for s in newTheory.spriteSet}
-		# newTheory.classes = ccopy(self.classes)
-		newTheory.expandedSprites = ccopy(self.expandedSprites)
-		newTheory.interactionSet = ccopy(self.interactionSet)
-		# newTheory.spriteObjects = ccopy(self.spriteObjects)
-		newTheory.terminationSet = ccopy(self.terminationSet)
-		newTheory.dryingPaint = ccopy(self.dryingPaint)
+		newTheory.expandedSprites = list(self.expandedSprites)
+		newTheory.interactionSet = list(self.interactionSet)
+		newTheory.terminationSet = list(self.terminationSet)
+		newTheory.dryingPaint = set(self.dryingPaint)
 		# newTheory.errorMapHistory = list(self.errorMapHistory) # currently unused but useful for debugging.
 		return newTheory
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
-		# print "in initializeSpriteSet"
-		# embed()
 		if not (vgdlSpriteParse or spriteInductionResult):
 			print "You must provide either a vgdlSpriteParse or the result of having performed sprite induction."
 			return
@@ -310,14 +306,12 @@ class Theory(object):
 			self.spriteSet = spriteInductionResult
 
 		# End of screen is a special object. Initialize it here.
-		# eos = Sprite(core.VGDLSprite, 'ENDOFSCREEN', None, None)
 		eos = Sprite(core.EOS, 'ENDOFSCREEN', None, None)
 		self.spriteSet.append(eos)
 
 		# Get mapping from sprite color to Sprite object
 		for s in self.spriteSet:
 			self.spriteObjects[s.colorName] = s
-		# embed()
 
 	def reconcileInteractionsAndSprites(self):
 		## VGDL contains some exceptions to the independence between interactionSet and spriteSet:
@@ -2765,7 +2759,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 	DIRECTION_MAP = {(0,-1):'UP', (0,1):'DOWN', (1,0):'RIGHT', (-1,0):'LEFT'}
 
 	_obstypes = rle._obstypes
-	state = np.reshape(rle._getSensors(), rle.outdim)
+	# state = np.reshape(rle._getSensors(), rle.outdim)
 	newGoalType, newGoalColor= None, None
 
 	colorToSprite = {}
@@ -2804,18 +2798,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 						theory.classes[portalEntry][0].args['stype'] = portalExit
 
 					theory.classes[portalExit][0].vgdlType = Portal
-
-
-	## TODO: Change.
-	# resourcesToAdd = set()
-	# for i in theory.interactionSet:
-	# 	if i.args is not None:
-	# 		for k,v in i.args.items():
-	# 			if k=='resource':
-	# 				resourcesToAdd.add(v)
-			# if "resource" in i.args.keys():
-			# 	resourcesToAdd.add(i.args["resource"])
-
 
 	########### generating theory string
 	theoryString = 'game = """\n'
@@ -2897,15 +2879,11 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 	if debug==True:
 		print "in writeTheoryToTxt debug"
 		embed()
-	# for resource in resourcesToAdd:
-		# theoryString += "\t\t%s > Resource color=RESOURCETOADD limit=%s\n"%(resource, theory.resource_limits[resource])
 
 	if goalLoc:
 		if newGoalType == 'blank_space':
 			# we've selected an empty square to be the goal.
 			theoryString += "\t\tgoal > Passive color=LIGHTRED\n"
-
-
 
 	immovable_predicates = ['stepBack', 'undoAll']
 	kill_predicates = ['killSprite']
@@ -3068,33 +3046,53 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 		# embed()
 		theoryString += "\t\tSpriteCounter stype=goal limit=0 win=True\n"
 
-	# # fourth phase: the level mapping
+	## fourth phase: the level mapping
 
-	mappedState = []
-	for i in range(rle.outdim[0]):
-		newEntry = []
-		for j in range(rle.outdim[1]):
-			newEntry.append(" ")
+	locs = defaultdict(lambda:[])
+	mappedState = [[' ' for x in range(rle.outdim[1])] for y in range(rle.outdim[0])] 
+	for lst in rle._game.observation['trackedObjects'].values():
+		for sprite in lst:
+			y,x = sprite.rect.top/30, sprite.rect.left/30
+			locs[(y,x)].append(sprite)
+			# mappedState1[y][x] = symbolDict[sprite.colorName]
+	for k,v in locs.iteritems():
+		try:
+			symbol = objectsToSymbol(rle, v, symbolDict)
 
-		mappedState.append(newEntry)
+			mappedState[k[0]][k[1]] = symbol#symbolDict[tuple(sorted(v))] if len(v)>1 else symbolDict[v[0]]
+		except:
+			print "v not in keys"
+			embed()
+	
+	# mappedState = []
+	# for i in range(rle.outdim[0]):
+	# 	newEntry = []
+	# 	for j in range(rle.outdim[1]):
+	# 		newEntry.append(" ")
 
-	for r in range(rle.outdim[0]):
-		for c in range(rle.outdim[1]):
-			if state[r][c] > 0:
-				try:
-					symbol = objectsToSymbol(rle, rle.getObjectsFromNumber(state[r][c]), symbolDict)
-					mappedState[r][c] = symbol
-				except:
-					print "in map"
-					embed()
+	# 	mappedState.append(newEntry)
 
-			try:
-				if mappedState[r][c] == " " and goalLoc == (r,c):
-					# an empty square has been selected as the goal
-					mappedState[r][c] = "G"
-			except:
-				print "mappedState problem2"
-				embed()
+	# for r in range(rle.outdim[0]):
+	# 	for c in range(rle.outdim[1]):
+	# 		if state[r][c] > 0:
+	# 			try:
+	# 				symbol = objectsToSymbol(rle, rle.getObjectsFromNumber(state[r][c]), symbolDict)
+	# 				mappedState[r][c] = symbol
+	# 			except:
+	# 				print "in map"
+	# 				embed()
+
+	# 		try:
+	# 			if mappedState[r][c] == " " and goalLoc == (r,c):
+	# 				# an empty square has been selected as the goal
+	# 				mappedState[r][c] = "G"
+	# 		except:
+	# 			print "mappedState problem2"
+	# 			embed()
+
+	# if mappedState1!=mappedState:
+	# 	print "unequal states"
+	# 	embed()
 
 	levelString = 'level="""\n'
 	for mappedRow in mappedState:

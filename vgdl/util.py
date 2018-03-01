@@ -62,7 +62,10 @@ def factorize(rle, n):
 	return decomposition
 
 def objectsToSymbol(rle, objects, symbolDict):
-	objects = [rle._game.sprite_groups[o][0].colorName for o in objects]
+	if type(objects[0]) == str:
+		objects = [rle._game.sprite_groups[o][0].colorName for o in objects]
+	else:
+		objects = [o.colorName for o in objects]
 	try:
 		if len(objects)==1:
 			if objects[0] not in symbolDict.keys():
@@ -79,7 +82,6 @@ def objectsToSymbol(rle, objects, symbolDict):
 			symbolDict[tuple(objects)] = ALNUM[idx]
 			return ALNUM[idx]
 	except:
-		import ipdb; ipdb.set_trace()
 		print "objectsToSymbol problem."
 		embed()
 

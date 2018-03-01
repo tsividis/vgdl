@@ -648,7 +648,7 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 def initializeVrleProfiler(hypothesis, stateToSet, symbolDict, best_params):
 	lp = LineProfiler()
 	lp_wrapper = lp(initializeVrle)
-	Vrle = lp_wrapper(hypothesis, stateToSet, symbolDict)
+	Vrle = lp_wrapper(hypothesis, stateToSet, symbolDict, best_params)
 	lp.print_stats()
 	return Vrle
 
@@ -661,10 +661,9 @@ def initializeVrle(hypothesis, stateToSet, symbolDict, best_params, debug=False)
 		lp.print_stats()
 		return theoryString, levelString, symbolDict
 
-
 	## World in agent's mind given 'hypothesis', including object goal
 	gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, symbolDict,\
-		 "./examples/gridphysics/theorytest.py", debug=debug)
+		 "./examples/gridphysics/theorytest.py")
 
 	try:
 		Vrle = createMindEnv(gameString, levelString, output=False)
@@ -681,39 +680,16 @@ def initializeVrle(hypothesis, stateToSet, symbolDict, best_params, debug=False)
 	## Initialize imaginary state to match real state.
 	setVrleState(stateToSet, Vrle, hypothesis, best_params)
 
-	# ## TODO: imaginary state should not match real state; it should match the inferred state of that particular object.
-	# avatar = Vrle._game.getAvatars()[0]
-	# matchingSprite = [s for s in getObservedSpritesByColor(stateToSet._game, avatar.colorName) if s.rect == avatar.rect][0]
-
-	# if any([k in str(hypothesis.spriteObjects[avatar.colorName]) for k in ['Oriented', 'Rotating']]):
-	# 	Vrle._game.getAvatars()[0].orientation = ccopy(matchingSprite.orientation)
-	# try:
-	# 	Vrle._game.getAvatars()[0].resources = ccopy(matchingSprite.resources)
-	# 	Vrle._game.getAvatars()[0].jumping = ccopy(matchingSprite.jumping)
-	# 	Vrle._game.getAvatars()[0].wait_step = ccopy(matchingSprite.wait_step)
-	# 	Vrle._game.getAvatars()[0].rope = ccopy(matchingSprite.rope)
-	# 	Vrle._game.getAvatars()[0].gravity = ccopy(matchingSprite.gravity)
-	# 	Vrle._game.getAvatars()[0].last_rope = ccopy(matchingSprite.last_rope)
-	# 	Vrle._game.getAvatars()[0].last_gravity = ccopy(matchingSprite.last_gravity)
-	# 	Vrle._game.getAvatars()[0].last_vy = ccopy(matchingSprite.last_vy)
-	# 	Vrle._game.getAvatars()[0].lastrect = ccopy(matchingSprite.lastrect)
-	# 	Vrle._game.getAvatars()[0].speed = ccopy(matchingSprite.speed)
-
-	# except (IndexError, AttributeError) as e:
-	# 	pass
-
-	# Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
 	return Vrle
 
-
-def VrleInitPhaseProfiler(hypotheses, stateToSet, symbolDict, best_params, flexible_goals=False):
+def VrleInitPhaseProfiler(hypotheses, stateToSet, symbolDict, best_params):
 	lp = LineProfiler()
 	lp_wrapper = lp(VrleInitPhase)
-	VRLEs = lp_wrapper(hypotheses, stateToSet, symbolDict, best_params, flexible_goals)
+	VRLEs = lp_wrapper(hypotheses, stateToSet, symbolDict, best_params)
 	lp.print_stats()
 	return VRLEs
 
-def VrleInitPhase(hypotheses, stateToSet, symbolDict, best_params, flexible_goals=False):
+def VrleInitPhase(hypotheses, stateToSet, symbolDict, best_params):
 	## Initialize multiple VRLEs, each corresponding to one hypothesis in theories
 	## Set their state to that of the provided RLE
 	VRLEs = []
