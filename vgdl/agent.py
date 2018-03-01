@@ -277,7 +277,7 @@ class Agent:
 
 	def testEpisode(self, gameObject, epoch=0):
 
-		actions = [K_UP]*6
+		actions = [K_UP]*2
 
 		self.initializeEnvironment()
 

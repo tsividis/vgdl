@@ -15,10 +15,10 @@
 
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w              3               w
-w              3               w
-w              2               w
-w              2               w
+w                              w
+w                              w
+w                              w
+w                              w
 w              1               w
 w              1               w
 w              A               w
@@ -89,10 +89,10 @@ BasicGame
         box3 avatar > killSprite
 
     TerminationSet
-        # SpriteCounter stype=box2 limit=0 win=True
+        SpriteCounter stype=box limit=0 win=True
         # SpriteCounter stype=box3 limit=0 win=False
-        MultiSpriteCounter stype1=box2 stype2=box3 win=False
-        # Termination
+        # MultiSpriteCounter stype1=box2 stype2=box3 win=False
+        Termination
 
 
 """
