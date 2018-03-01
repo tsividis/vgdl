@@ -619,7 +619,7 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 			matchingSpritesInRLE = getObservedSpritesByColor(rle._game, color)
 			for sprite in spriteGroupsToUpdate[k]:
 				matchingSprite = findNearestSprite(sprite, matchingSpritesInRLE)
-				embed()
+				# embed()
 				if matchingSprite is None:
 					continue
 				sprite.rect 		= ccopy(matchingSprite.rect)
