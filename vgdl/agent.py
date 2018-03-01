@@ -312,11 +312,11 @@ class Agent:
 		# self.distributions.updateDist(resourceObservations)
 
 		# plt.ion() #allow for plot updating
-		for rule in self.hypotheses[0].interactionSet:
-			for c in ['c3', 'c4', 'c5']:
-				if rule.slot1 == c and rule.slot2 == 'avatar':
-					rule.interaction = 'killSprite'
-		embed()
+		# for rule in self.hypotheses[0].interactionSet:
+		# 	for c in ['c3', 'c4', 'c5']:
+		# 		if rule.slot1 == c and rule.slot2 == 'avatar':
+		# 			rule.interaction = 'killSprite'
+		# embed()
 
 
 		t1 = time.time()
@@ -1540,6 +1540,10 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 
 def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction, rleHistory, actionHistory, symbolDict, best_params, bestSpriteTypeDict):
 	print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
+
+	if len(theories) > 10000:
+		print 'trying to evaluate too many theories'
+		embed()
 	# print [e.diagnosis for e in errorList]
 	if len(errorList)==0:
 		return theories
@@ -1708,8 +1712,8 @@ def testAndExpand(theoryRLEs, hypotheses, action, envReal, envRealPrev, index, r
 			e.display()
 			print ""
 	# else:
-		# print "No error"
-		# embed()
+	# 	print "No error"
+	# 	embed()
 	# print "expanding theories"
 	theories = expandTheories([hypothesis], errorList, envRealPrev, envReal, action, rleHistory, actionHistory, symbolDict, best_params, bestSpriteTypeDict)
 
