@@ -3054,15 +3054,11 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 		for sprite in lst:
 			y,x = sprite.rect.top/30, sprite.rect.left/30
 			locs[(y,x)].append(sprite)
-			# mappedState1[y][x] = symbolDict[sprite.colorName]
-	for k,v in locs.iteritems():
-		try:
-			symbol = objectsToSymbol(rle, v, symbolDict)
 
-			mappedState[k[0]][k[1]] = symbol#symbolDict[tuple(sorted(v))] if len(v)>1 else symbolDict[v[0]]
-		except:
-			print "v not in keys"
-			embed()
+	for k,v in locs.iteritems():
+		symbol = objectsToSymbol(rle, v, symbolDict)
+		mappedState[k[0]][k[1]] = symbol
+
 	
 	# mappedState = []
 	# for i in range(rle.outdim[0]):
@@ -3113,9 +3109,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 			c = theory.spriteObjects[colors].className
 			theoryString += "\t\t%s > %s\n"%(symbol, c)
 
-	# print "in writeTheory"
-	# embed()
-	# theoryString += "\t\tG > goal\n"
 	theoryString += '"""\n'
 	
 	parserString = 'if __name__ == "__main__":\n\tfrom vgdl.core import VGDLParser\n\tVGDLParser.playGame(game, level)\n'
@@ -3127,7 +3120,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 
 	levelString = levelString[levelString.find('"""')+3:-4]
 	theoryString = theoryString[theoryString.find('"""')+3:-4]
-	return theoryString, levelString, symbolDict#, immovables, killerObjects
+	return theoryString, levelString, symbolDict
 
 #class which stores the distribution over killIf__ parameters
 class PreconditionInduction():

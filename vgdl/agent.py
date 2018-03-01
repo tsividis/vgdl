@@ -695,7 +695,7 @@ def VrleInitPhase(hypotheses, stateToSet, symbolDict, best_params):
 	VRLEs = []
 
 	for hypothesis in hypotheses:
-		VRLEs.append(initializeVrle(hypothesis, stateToSet, symbolDict, best_params))
+		VRLEs.append(initializeVrleProfiler(hypothesis, stateToSet, symbolDict, best_params))
 
 	return VRLEs
 
