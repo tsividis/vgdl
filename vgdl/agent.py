@@ -277,8 +277,8 @@ class Agent:
 
 	def testEpisode(self, gameObject, epoch=0):
 		
-		actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT]
-		# actions = [K_UP, K_UP]
+		# actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT]
+		actions = [K_UP, K_LEFT, K_LEFT]
 		self.initializeEnvironment()
 		# embed()
 
@@ -608,9 +608,6 @@ class Agent:
 def setVrleState(rle, Vrle, hypothesis, best_params):
 	## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
 
-	from vgdl.ontology import getObservedSpritesByColor
-	from vgdl.agent import findNearestSprite
-
 	avatar = hypothesis.classes['avatar'][0]
 	spriteGroupsToUpdate = Vrle._game.sprite_groups
 	for k in spriteGroupsToUpdate.keys():
@@ -619,12 +616,12 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 			matchingSpritesInRLE = getObservedSpritesByColor(rle._game, color)
 			for sprite in spriteGroupsToUpdate[k]:
 				matchingSprite = findNearestSprite(sprite, matchingSpritesInRLE)
-				embed()
+				# embed()
 				if matchingSprite is None:
 					continue
 				sprite.rect 		= ccopy(matchingSprite.rect)
 				sprite.lastrect 	= ccopy(matchingSprite.lastrect)
-				sprite.lastmove 	= ccopy(matchingSprite.lastmove)
+				sprite.lastmove 	= int(matchingSprite.lastmove)
 				sprite.resources    = defaultdict(int)
 				for key in matchingSprite.inventory.keys():
 					sprite.resources[key] = matchingSprite.inventory[key][0]
@@ -696,7 +693,7 @@ def VrleInitPhase(hypotheses, stateToSet, symbolDict, best_params):
 	VRLEs = []
 
 	for hypothesis in hypotheses:
-		VRLEs.append(initializeVrleProfiler(hypothesis, stateToSet, symbolDict, best_params))
+		VRLEs.append(initializeVrle(hypothesis, stateToSet, symbolDict, best_params))
 
 	return VRLEs
 
@@ -1362,7 +1359,10 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	subsamplePercentage = .2
 	actionsPerIndex = 2
 
-	if method == 'all':
+	if method == 'newMethod':
+		indices = range(len(rleHistory))
+		actionsPerIndex = 1
+	elif method == 'all':
 		indices = [0]
 		actionsPerIndex = len(actionHistory)
 	elif method == 'screenLastStep':# and len(rleHistory)>=2:
@@ -1384,8 +1384,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	for idx in indices:
 		## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
 		t1 = time.time()
-		theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], symbolDict, best_params) 
-
+		theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], symbolDict, best_params)
 		## Take a predetermined number of actions starting from idx
 		end = min(idx+actionsPerIndex, len(actionHistory))
 
@@ -1435,7 +1434,11 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, best_par
 		if displayTheories:
 			print "running experienceReplay on {}:".format(num)
 			h.display()
-		results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h], symbolDict, best_params))
+		if method == 'newMethod':
+			multipleHypotheses = [h]*num_samples_per_hypothesis
+			results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, multipleHypotheses, symbolDict, best_params))
+		else:
+			results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h], symbolDict, best_params))
 
 	# print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 
@@ -1710,8 +1713,8 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.aliens"
 
-	# filename = "examples.gridphysics.avatar_inference"
-	filename = "examples.gridphysics.collect_resource"
+	filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.collect_resource"
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
