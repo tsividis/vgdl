@@ -286,13 +286,13 @@ class Theory(object):
 
 	def copy(self):
 		newTheory = Theory(self.game)
-		newTheory.spriteSet = list(self.spriteSet)
+		newTheory.spriteSet = ccopy(self.spriteSet)
 		newTheory.classes = {s.className if s.className else 'EOS':[s] for s in newTheory.spriteSet}
 		newTheory.spriteObjects = {s.colorName:s for s in newTheory.spriteSet}
-		newTheory.expandedSprites = list(self.expandedSprites)
-		newTheory.interactionSet = list(self.interactionSet)
-		newTheory.terminationSet = list(self.terminationSet)
-		newTheory.dryingPaint = set(self.dryingPaint)
+		newTheory.expandedSprites = ccopy(self.expandedSprites)
+		newTheory.interactionSet = ccopy(self.interactionSet)
+		newTheory.terminationSet = ccopy(self.terminationSet)
+		newTheory.dryingPaint = ccopy(self.dryingPaint)
 		# newTheory.errorMapHistory = list(self.errorMapHistory) # currently unused but useful for debugging.
 		return newTheory
 
@@ -2451,6 +2451,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 ## TODO: write the function that maintains resourceObservations, or at least figure out
 ## its outputs and integrate with proposeArgs
 def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSpriteTypeDict, action=None, percentile=20, max_num=20):
+	print 'IN EXPAND SPRITES'
 	from vgdl.ontology import sampleFromDistribution, spriteInduction, updateDistribution
 
 	if max_num is None:
@@ -2459,7 +2460,6 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 
 	targetClass = errorMap.targetClass
 	targetToken = errorMap.targetToken
-
 
 	theory.expandedSprites.append(targetClass)
 	
@@ -2474,23 +2474,19 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 		spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, action=action, oldSpriteSet=theory.spriteSet,\
 		specificSpritesToUpdate=[targetToken], percentile=percentile, max_num=max_num)
 
-	# if 'unexpectedPosition' in errorMap.diagnosis:
-	# 	print "in expandSprites, unexpectedPosition"
-	# 	embed()
-
 	## Don't instantiate non-avatar proposals for the 'avatar' class.
 	if targetClass=='avatar':
 		spriteProposals = [s for s in spriteProposals if 'Avatar' in str(s[0][1])]
 	
 	for spriteProposal in spriteProposals:
-
 		newTheory = theory.copy()
 		newTheory.mostRecentEdit = 'spriteInduction'
 		newTheory.errorMapHistory.append(errorMap)
 		vgdlType = spriteProposal[0][1]
 		args = dict(spriteProposal[1:])
+
 		## Proposal specified args in terms of color; convert to class name for the actual theory.
-		if 'stype' in args.keys():
+		if 'stype' in args:
 			try:
 				args['stype'] = newTheory.spriteObjects[args['stype']].className
 			except:
@@ -2499,7 +2495,6 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 		color = newTheory.classes[targetClass][0].colorName
 		## If you're proposing an avatar change you need to do some bookkeeping to ensure only one avatar class in the description.
 		if 'Avatar' in str(vgdlType):
-
 			## Avatar can't shoot avatar.
 			if 'stype' in args.keys() and args['stype'] == 'avatar':
 				continue
@@ -2515,6 +2510,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 			newTheory.spriteObjects[tmpSprite.colorName] = tmpSprite
 			newTheory.spriteObjects[sprite.colorName] = sprite
 			newTheory.spriteSet = [item for sublist in newTheory.classes.values() for item in sublist]
+
 			for rule in newTheory.interactionSet:
 				if rule.slot1==targetClass:
 					rule.slot1='tmp'
@@ -2529,11 +2525,11 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 				if rule.slot2=='tmp':
 					rule.slot2='avatar'
 		else:
-			## Don't propos non-avatar types for the thing you're calling 'avatar'.
+			## Don't propose non-avatar types for the thing you're calling 'avatar'.
 			if targetClass=='avatar':
 				print "proposing non-avatar type for avatar"
-				# embed()
 				continue
+
 			sprite = Sprite(vgdlType, color, className=targetClass, args=args)
 			## Remove old sprite from spriteSet
 			newTheory.spriteSet.remove(newTheory.classes[targetClass][0])
@@ -2543,7 +2539,6 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 			newTheory.spriteObjects[color] = sprite
 		
 		childTheories.append(newTheory)
-
 	## TODO: what to do with orientation for missiles??
 	return targetClass, childTheories
 
@@ -2954,6 +2949,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 				if c2 not in theory.classes.keys():
 					print "c2 not in theory.classes.keys() in theory template. c2={}".format(c2)
 					embed()
+
 				for s2 in theory.classes[c2]:
 					argsString = ""
 

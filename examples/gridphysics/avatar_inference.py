@@ -18,10 +18,10 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
 w                              w
+w              3               w
 w                              w
-w              3               w
-w              3               w
-w              A22             w
+w                              w
+w              A               w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -68,6 +68,7 @@ BasicGame
         # sam > Flicker limit=5
         wall > Immovable color=DARKGRAY
     LevelMapping
+        R > random
         C > cloner
         F > flicker
         0 > base
@@ -80,14 +81,10 @@ BasicGame
         A > avatar
     InteractionSet
         avatar wall > stepBack
-        box avatar > killSprite
-        box2 avatar > killSprite
-        box3 avatar > killSprite
+        random wall > stepBack
 
     TerminationSet
-        SpriteCounter stype=box2 limit=0 win=True
-        SpriteCounter stype=box3 limit=0 win=False
-        # Termination
+        Termination
 
 
 """
