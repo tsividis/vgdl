@@ -278,7 +278,6 @@ class TrackedSprite(object):
         return hash(self.ID)
 
     def __init__(self, pos, color=None, size=(10,10)):
-        from ontology import GridPhysics
         self.name = None
         self.color = color
         self.rect = pygame.Rect(pos, size)
@@ -322,10 +321,9 @@ def buildTracker(rle):
     memory['score'] = rle._game.score
     memory['lastscore'] = rle._game.score
     for group in gameObject.sprite_groups.keys():
+        if gameObject.sprite_groups[group] and gameObject.sprite_groups[group][0].colorName not in trackedObjects:
+            trackedObjects[gameObject.sprite_groups[group][0].colorName] = []
         for sprite in gameObject.sprite_groups[group]:
-            if not sprite.colorName in trackedObjects:
-                trackedObjects[sprite.colorName] = []
-            # copy data over
             trackedObjects[sprite.colorName].append(copySpriteStingy(sprite))
     memory['trackedObjects'] = trackedObjects
     return memory
@@ -338,13 +336,13 @@ def copySpriteStingy(sprite):
     newSprite.name = newSprite.colorName
     newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
     newSprite.lastmove = sprite.lastmove
-    newSprite.rect = ccopy(sprite.rect)
-    newSprite.lastrect = ccopy(sprite.lastrect)
+    newSprite.rect = pygame.Rect(sprite.rect.left, sprite.rect.top, sprite.rect.width, sprite.rect.height)
+    newSprite.lastrect = pygame.Rect(sprite.lastrect.left, sprite.lastrect.top, sprite.lastrect.width, sprite.lastrect.height)
 
     if type(sprite) == TrackedSprite:
         newSprite.speed = sprite.speed
-        newSprite.inventory = ccopy(sprite.inventory) if sprite.inventory else dict()
-        newSprite.lastinventory = ccopy(sprite.lastinventory)
+        newSprite.inventory = dict(sprite.inventory) if sprite.inventory else dict()
+        newSprite.lastinventory = dict(sprite.lastinventory)
 
     return newSprite
 
@@ -384,14 +382,15 @@ def processFrame(memory, gameObject):
                             newSprite.speed = euclideanDist([sprite.rect.left, sprite.rect.top], [newSprite.rect.left, newSprite.rect.top])
                             newSprite.orientation = normalizeVec([sprite.rect.left - newSprite.rect.left, sprite.rect.top - newSprite.rect.top])
                         newSprite.rect.left , newSprite.rect.top = sprite.rect.left , sprite.rect.top
-                        newSprite.lastrect = ccopy(newSprite.rect)
-                        newSprite.rect = ccopy(sprite.rect)
+                        
+                        newSprite.lastrect = pygame.Rect(newSprite.lastrect.left, newSprite.lastrect.top, newSprite.lastrect.width, newSprite.lastrect.height)
+                        newSprite.rect = pygame.Rect(sprite.rect.left, sprite.rect.top, sprite.rect.width, sprite.rect.height)
                 else:
                     # new, unseen object
                     newSprite = copySpriteStingy(sprite)
                 
                 # update inventory and inventory history
-                newSprite.lastinventory = ccopy(newSprite.inventory) if newSprite.inventory else dict()
+                newSprite.lastinventory = dict(newSprite.inventory) if newSprite.inventory else dict()
 
                 if sprite.resources:
                     newSprite.inventory = {}
@@ -408,18 +407,6 @@ def processFrame(memory, gameObject):
                                     color = gameObject.sprite_groups[key][0].colorName
                             
                             limit = gameObject.resources_limits[key]
-                            # print "found resource change in processFrame"
-                            # embed()
-                            # if key in gameObject.sprite_groups.keys():
-                            #     color = gameObject.sprite_groups[key][0].colorName
-                            # else:
-                            #     color = key #getSpritesByColor(gameObject, key)[0].colorName
-                            # try:
-                            #     limit = gameObject.sprite_groups[getSpritesByColor(gameObject, color)[0].name][0].limit
-                            # except:
-                            #     ## This happens only in the case where we've initialized a Vrle that no longer contains some item
-                            #     ## so we can't query its sprite_groups (in our head) for its limits. Instead we query the gameObject that's in our head.
-                            #     limit = gameObject.resources_limits[gameObject.colorToClassDict[key]]
                             newSprite.inventory[color] = (sprite.resources[key], limit)
                     except:
                         print "in processFrame"
