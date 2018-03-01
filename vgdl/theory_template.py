@@ -55,12 +55,15 @@ class Precondition(object):
 	"""
 	Appended to InteractionRules if conflicting effects occur from the same interaction, due to changed resources.
 	"""
-	def __init__(self, text, item, operator_name, num):
+	def __init__(self, text, item, operator_name, num, negated=False):
 		self.text = text
 		self.item = item
 		self.operator_name = operator_name
 		self.num = num
-		self.negated = False
+		self.negated = negated
+
+	def copy(self):
+		return Precondition(self.text, self.item, self.operator_name, self.num, self.negated)
 
 	def check(self, dictionary):
 		if self.item not in dictionary.keys():
@@ -118,6 +121,10 @@ class InteractionRule(object):
 			print self.interaction, self.slot1, self.slot2, self.args, [p.text for p in self.preconditions]
 		return
 
+	def copy(self):
+		return InteractionRule(self.interaction, self.slot1, self.slot2, dict(self.args) if self.args else {},
+				set([p.copy() for p in self.preconditions]), self.generic)
+	
 	def asTuple(self):
 		return (self.interaction, self.slot1, self.slot2, self.args)
 
@@ -158,6 +165,9 @@ class TerminationRule:
 	"""
 	def isDone(self, game):
 		return self.termination.isDone()
+
+	def copy(self):
+		return ccopy(self)
 
 	def __eq__(self,other):
 		return self.asTuple() == other.asTuple()
@@ -286,13 +296,14 @@ class Theory(object):
 
 	def copy(self):
 		newTheory = Theory(self.game)
-		newTheory.spriteSet = ccopy(self.spriteSet)
+		newTheory.spriteSet = [s.copy() for s in self.spriteSet]
 		newTheory.classes = {s.className if s.className else 'EOS':[s] for s in newTheory.spriteSet}
 		newTheory.spriteObjects = {s.colorName:s for s in newTheory.spriteSet}
-		newTheory.expandedSprites = ccopy(self.expandedSprites)
-		newTheory.interactionSet = ccopy(self.interactionSet)
+		newTheory.expandedSprites = list(self.expandedSprites)
+		newTheory.interactionSet = [r.copy() for r in self.interactionSet]
 		newTheory.terminationSet = ccopy(self.terminationSet)
-		newTheory.dryingPaint = ccopy(self.dryingPaint)
+		newTheory.dryingPaint = set(self.dryingPaint)
+
 		# newTheory.errorMapHistory = list(self.errorMapHistory) # currently unused but useful for debugging.
 		return newTheory
 
@@ -2626,9 +2637,9 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 	## Conditionals can only replace kill rules. Remove the existing kill rules and replace them with conditionals.
 	if 'conditionalKill' in errorMap.diagnosis:
 		toRemove = [rule for rule in theory.interactionSet if rule.asTuple()[1]==errorMap.targetClass and rule.asTuple()[0]=='killSprite']
-		if len(toRemove)>0:
-			print "actually removing kill rules in expandLine"
-			embed()
+		# if len(toRemove)>0:
+			# print "actually removing kill rules in expandLine"
+			# embed()
 		theory.interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
 	
 	alteredPairs, newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
@@ -2933,14 +2944,11 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 	sortedInteractions += nonAvatarStepBackInteractions
 
 	for interactionRule in sortedInteractions:
-		if True:  #all([not interactionRule.__eq__(r) for r in added_rules]): ## don't duplicate rules.
+		if True:
 
 			c1 = interactionRule.slot1
 			c2 = interactionRule.slot2
 
-
-			# if c2=='EOS' or c1=='EOS': ## 'EOS stepBack' is always being written at the end. Don't handle it here.
-			# 	continue
 			if (c1=='laog' and len(theory.classes[c1])==0) or (c2=='laog' and len(theory.classes[c2])==0):
 				print "found laog"
 				embed()

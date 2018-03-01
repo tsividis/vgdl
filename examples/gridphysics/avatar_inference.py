@@ -75,6 +75,7 @@ BasicGame
         1 > box
         2 > box2
         3 > box3
+        4 > random
         w > wall
         c > cannon
         s > sam
@@ -85,7 +86,9 @@ BasicGame
 
     TerminationSet
         Termination
-
+        # SpriteCounter stype=box2 limit=0 win=True
+        # SpriteCounter stype=box3 limit=0 win=False
+        # Termination
 
 """
 level_game_pairs = [[game, level]]
