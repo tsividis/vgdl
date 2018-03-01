@@ -619,7 +619,7 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 			matchingSpritesInRLE = getObservedSpritesByColor(rle._game, color)
 			for sprite in spriteGroupsToUpdate[k]:
 				matchingSprite = findNearestSprite(sprite, matchingSpritesInRLE)
-				# embed()
+				embed()
 				if matchingSprite is None:
 					continue
 				sprite.rect 		= ccopy(matchingSprite.rect)
@@ -628,7 +628,7 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 				sprite.resources    = defaultdict(int)
 				for key in matchingSprite.inventory.keys():
 					sprite.resources[key] = matchingSprite.inventory[key][0]
-				sprite.orientation 	= ccopy(matchingSprite.orientation) # consider copying only for avatar?
+				sprite.orientation 	= tuple(matchingSprite.orientation) # consider copying only for avatar?
 
 
 				## Other aspects of state to potentially transfer
@@ -640,7 +640,7 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 				# sprite.last_gravity = ccopy(matchingSprite.last_gravity)
 				# sprite.last_vy = ccopy(matchingSprite.last_vy)
 				# sprite.speed = ccopy(matchingSprite.speed)
-	Vrle._game.score = ccopy(rle._game.score)
+	Vrle._game.score = int(rle._game.score)
 	Vrle._game.observation = buildTracker(Vrle)
 	Vrle._game.observation['lastscore'] = rle._game.observation['lastscore']
 

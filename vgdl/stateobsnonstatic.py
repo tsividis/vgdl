@@ -334,7 +334,7 @@ def copySpriteStingy(sprite):
     # copies all the data from sprite that we could reasonably get from
     #   a real CV system into a new sprite, then returns it
     newSprite = TrackedSprite([sprite.rect.left, sprite.rect.top], color=sprite.color) # automatically does colorName
-    newSprite.ID = ccopy(sprite.ID) # not sure if we need this
+    newSprite.ID = sprite.ID # not sure if we need this
     newSprite.name = newSprite.colorName
     newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
     newSprite.lastmove = sprite.lastmove
