@@ -1641,7 +1641,10 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 		## If we have non-generic rules for this pair in the theory, then this has to involve some kind of precondition
 		matchingRules = [rule for rule in theory.interactionSet if (rule not in list(theory.dryingPaint)) and 
 			( targetClassPair == (rule.slot1, rule.slot2) or targetClassPair == (rule.slot2, rule.slot1) )]
-		if 'objectDestruction' in errorMap.diagnosis \
+		# print 'hererererere'
+		# embed()
+		if ('objectDestruction' in errorMap.diagnosis
+					or any('objectDestruction' in e.diagnosis for e in theory.errorMapHistory) ) \
 				and any([not rule.generic for rule in matchingRules]):
 			errorMap.diagnosis.append('conditionalKill')
 			# print 'added conditionalKill'
