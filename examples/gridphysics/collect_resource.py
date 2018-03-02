@@ -20,13 +20,24 @@ wwwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwwww
 # """
 
+# level1 = """
+# wwwwwwwwwwwwwwwwww
+# w g p   w p A    w
+# w   p   w m  wwwww
+# w g p     mp  m  w
+# wwwwwwwwwwwwwwwwww
+# """
+
 level1 = """
 wwwwwwwwwwwwwwwwww
-w g p   w p A    w
-w   p   w m  wwwww
-w g p     mp  m  w
+w                w
+w g p     p A    w
+w                w
+w   p     mm p   w
+w g p            w
 wwwwwwwwwwwwwwwwww
 """
+
 
 # level1 = """
 # wwwwwwwwwwwwwwwwww
