@@ -1104,9 +1104,9 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				newIntPairs.append(pair)
 			e.intPairs = newIntPairs
 
-		if 'conditionalKill' in e.diagnosis:
-			print 'evidence of conditionalKill?'
-			embed()
+		# if 'conditionalKill' in e.diagnosis:
+		# 	print 'evidence of conditionalKill?'
+		# 	embed()
 
 	return total_penalty, errorMap
 
@@ -1559,8 +1559,9 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 
 		theories = newTheories
 
-	# print 'bottom of expandTheories'
-	# embed()
+	if any(['conditionalKill' in e.diagnosis for e in errorList]):
+		print 'bottom of expandTheories'
+		embed()
 
 	return theories
 
@@ -1641,12 +1642,20 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 		## If we have non-generic rules for this pair in the theory, then this has to involve some kind of precondition
 		matchingRules = [rule for rule in theory.interactionSet if (rule not in list(theory.dryingPaint)) and 
 			( targetClassPair == (rule.slot1, rule.slot2) or targetClassPair == (rule.slot2, rule.slot1) )]
-		# print 'hererererere'
-		# embed()
-		if ('objectDestruction' in errorMap.diagnosis
-					or any('objectDestruction' in e.diagnosis for e in theory.errorMapHistory) ) \
+
+		# if ('objectDestruction' in errorMap.diagnosis
+		# 			or any('objectDestruction' in e.diagnosis for e in theory.errorMapHistory) ) \
+		# 		and any([not rule.generic for rule in matchingRules]):
+		if not 'conditionalKill' in errorMap.diagnosis \
 				and any([not rule.generic for rule in matchingRules]):
-			errorMap.diagnosis.append('conditionalKill')
+			print "*******this happened"
+			if ('objectDestruction' in errorMap.diagnosis
+						or any('objectDestruction' in e.diagnosis for e in theory.errorMapHistory) ):
+				print "*******inner one happened"
+				embed()
+				errorMap.diagnosis.append('conditionalKill')
+				# bug alert: this adds conditionalKill a lot and affects every targetClassPair
+				# 	even if that particular pair doesn't trigger the conditions
 			# print 'added conditionalKill'
 			# embed()
 		## Modify theory before the last step, then embed here to continue work
