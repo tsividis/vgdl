@@ -1386,13 +1386,16 @@ def singleTheoryExperienceReplayProfiler(rleHistory, actionHistory, method, targ
 	return mean_penalties, cumulative_penalties, theoryRLEs
 
 def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict, best_params):
-
 	subsamplePercentage = .2
 	actionsPerIndex = 2
 
 	if method == 'sample_avg':
 		indices = range(len(rleHistory))
 		actionsPerIndex = 1
+		# l = len(hypotheses)
+		# print 'running sample avg on theory'
+		# print 'Taking %i samples of hypothesis' % l
+		# print 'will take ~%ix longer' % l
 	elif method == 'all':
 		indices = [0]
 		actionsPerIndex = len(actionHistory)
@@ -1427,13 +1430,15 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 
 		for n, action in enumerate(actionHistory[idx:end]):
 			penalties = []
+
 			if displayStates:
 				print action
 				print rleHistory[idx+n+1].show(color='green')
-			for num, env in enumerate(theoryRLEs):                      
 
+			for num, env in enumerate(theoryRLEs):                      
 				if env is not None:
 					env.step(action)
+
 				try:
 					penalty, errorList = errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
 						rleHistory[idx+n], targetColor=targetColor, penalty_only=True)
@@ -1463,15 +1468,13 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, best_par
 		embed()
 	t1 = time.time()
 	results = []
+	num_samples_per_hypothesis = 50
 	for num, h in enumerate(hypotheses):
 		if displayTheories:
 			print "running experienceReplay on {}:".format(num)
 			h.display()
-		if method == 'sample_avg':
-			multipleHypotheses = [h]*num_samples_per_hypothesis
-			results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, multipleHypotheses, symbolDict, best_params))
-		else:
-			results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h], symbolDict, best_params))
+		h = [h]*num_samples_per_hypothesis if method == 'sample_avg' else [h]
+		results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, h, symbolDict, best_params))
 
 	print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 

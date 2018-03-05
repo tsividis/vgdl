@@ -15,12 +15,12 @@
 
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w              1               w
-w              1               w
-w              3               w
-w              3               w
-w              2               w
-w              2               w
+w                              w
+w                              w
+w              R               w
+w                              w
+w                              w
+w                              w
 w              A               w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
@@ -62,7 +62,7 @@ BasicGame
 
         flicker > Flicker timeout=1 color=ORANGE
         random > RandomNPC color=PURPLE speed=1 cooldown=1
-        chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
+        chaser > Chaser color=BLACK speed=1 cooldown=1 stype=avatar
 
         avatar  > MovingAvatar color=DARKBLUE #stype=sam
 
@@ -86,12 +86,13 @@ BasicGame
         A > avatar
     InteractionSet
         avatar wall > stepBack
+        random wall > stepBack
         box avatar > killSprite
         box2 avatar > killSprite
         box3 avatar > killSprite
 
     TerminationSet
-        SpriteCounter stype=box limit=0 win=True
+        # SpriteCounter stype=box limit=0 win=True
         # SpriteCounter stype=box3 limit=0 win=False
         # MultiSpriteCounter stype1=box2 stype2=box3 win=False
         Termination
