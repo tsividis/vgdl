@@ -1932,11 +1932,7 @@ def getSpritesByColor(game, color):
     return [item for sublist in unflattened for item in sublist]
 
 def getObservedSpritesByColor(game, color):
-    try:
-        unflattened = [s for s in game.observation['trackedObjects'].values() if s and s[0].colorName==color]
-    except:
-        print "in getObservedSpritesByColor"
-        embed()
+    unflattened = [s for s in game.observation['trackedObjects'].values() if s and s[0].colorName==color]
     return [item for sublist in unflattened for item in sublist]
 
 def chaserClosestTargets(sprite, game):

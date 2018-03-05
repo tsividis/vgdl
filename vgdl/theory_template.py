@@ -55,12 +55,15 @@ class Precondition(object):
 	"""
 	Appended to InteractionRules if conflicting effects occur from the same interaction, due to changed resources.
 	"""
-	def __init__(self, text, item, operator_name, num):
+	def __init__(self, text, item, operator_name, num, negated=False):
 		self.text = text
 		self.item = item
 		self.operator_name = operator_name
 		self.num = num
-		self.negated = False
+		self.negated = negated
+
+	def copy(self):
+		return Precondition(self.text, self.item, self.operator_name, self.num, self.negated)
 
 	def check(self, dictionary):
 		if self.item not in dictionary.keys():
@@ -109,7 +112,7 @@ class InteractionRule(object):
 		self.args = args
 		self.preconditions = preconditions
 		self.generic = generic ## if generic, this interaction rule belongs to the generic prior that is meant to be overriden.
-
+		self._hash = hash((self.interaction, self.slot1, self.slot2, tuple(sorted(self.args.iteritems()))))
 
 	def display(self):
 		if not self.preconditions:
@@ -118,8 +121,12 @@ class InteractionRule(object):
 			print self.interaction, self.slot1, self.slot2, self.args, [p.text for p in self.preconditions]
 		return
 
+	def copy(self):
+		return InteractionRule(self.interaction, self.slot1, self.slot2, dict(self.args) if self.args else {},
+				set([p.copy() for p in self.preconditions]), self.generic)
+	
 	def asTuple(self):
-		return (self.interaction, self.slot1, self.slot2, self.args) #TODO: Check that adding the value here doesn't mess up equality checks elsewhere
+		return (self.interaction, self.slot1, self.slot2, self.args)
 
 	def addPrecondition(self, precondition):
 		"""
@@ -135,6 +142,9 @@ class InteractionRule(object):
 
 	def checkPreconditions(self, agentState):
 		return all([p.check(agentState) for p in self.preconditions])
+
+	def __hash__(self):
+		return self._hash #+hash(time.time())
 
 	def __eq__(self, other):
 		if isinstance(other, self.__class__):
@@ -159,6 +169,9 @@ class TerminationRule:
 
 	def isDone(self, game):
 		return self.termination.isDone()
+
+	def copy(self):
+		return ccopy(self)
 
 	def __eq__(self,other):
 		return self.asTuple() == other.asTuple()
@@ -287,34 +300,25 @@ class Theory(object):
 		
 		self.mark = False ## For convenient marking and finding of hypotheses
 
-
+	## We don't want this to be precomputed because our way of generating child theories
+	## is to copy a theory and then change its interactionSet and spriteSet.
 	def __hash__(self):
-		return hash ( sum([ hash(r.interaction[0]+r.interaction[-1]+r.slot1[1]) for r in self.interactionSet]) + time.time())
-		# return hash( sum([ len(r.interaction) ^ 3*hash(r.interaction[0]) ^ 5*hash(r.interaction[-1]) ^ 7*hash(r.slot1[1]) ^ 9*hash(r.slot2[1]) for r in self.interactionSet if r.interaction != 'stepBack']) + 
-			# 17*sum([len(str(s.vgdlType)) for s in self.spriteSet]) ) 
-		# return hash(hash( tuple((tuple(sorted([(s.colorName, s.className, s.vgdlType) for s in self.spriteSet])),
-				# tuple(sorted([elt.asTuple()[0:3] for elt in self.interactionSet if elt.asTuple()[0]!='stepBack'])),
-				# tuple(sorted([elt.asTuple() for elt in self.terminationSet]))) ) ) + time.time())
+		return hash(sum([r.__hash__() for r in self.interactionSet]) + sum([s.__hash__() for s in self.spriteSet]))
 
 	def copy(self):
 		newTheory = Theory(self.game)
-		newTheory.classes = ccopy(self.classes)
-		newTheory.expandedSprites = ccopy(self.expandedSprites)
-		newTheory.interactionSet = ccopy(self.interactionSet)
-		newTheory.spriteObjects = ccopy(self.spriteObjects)
-		newTheory.spriteSet = ccopy(self.spriteSet)
+		newTheory.spriteSet = [s.copy() for s in self.spriteSet]
+		newTheory.classes = {s.className if s.className else 'EOS':[s] for s in newTheory.spriteSet}
+		newTheory.spriteObjects = {s.colorName:s for s in newTheory.spriteSet}
+		newTheory.expandedSprites = list(self.expandedSprites)
+		newTheory.interactionSet = [r.copy() for r in self.interactionSet]
 		newTheory.terminationSet = ccopy(self.terminationSet)
-		newTheory.dryingPaint = ccopy(self.dryingPaint)
-		try:
-			newTheory.errorMapHistory = [e.copy() for e in self.errorMapHistory]
-		except:
-			print "attribute error with errorMapHistory"
-			embed()
+		newTheory.dryingPaint = set(self.dryingPaint)
+
+		# newTheory.errorMapHistory = list(self.errorMapHistory) # currently unused but useful for debugging.
 		return newTheory
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
-		# print "in initializeSpriteSet"
-		# embed()
 		if not (vgdlSpriteParse or spriteInductionResult):
 			print "You must provide either a vgdlSpriteParse or the result of having performed sprite induction."
 			return
@@ -324,14 +328,12 @@ class Theory(object):
 			self.spriteSet = spriteInductionResult
 
 		# End of screen is a special object. Initialize it here.
-		# eos = Sprite(core.VGDLSprite, 'ENDOFSCREEN', None, None)
 		eos = Sprite(core.EOS, 'ENDOFSCREEN', None, None)
 		self.spriteSet.append(eos)
 
 		# Get mapping from sprite color to Sprite object
 		for s in self.spriteSet:
 			self.spriteObjects[s.colorName] = s
-		# embed()
 
 	def reconcileInteractionsAndSprites(self):
 		## VGDL contains some exceptions to the independence between interactionSet and spriteSet:
@@ -1024,8 +1026,7 @@ class Theory(object):
 					if not done:
 						for win in [True, False]:
 							false_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, win)
-							if false_rule not in self.falsified:
-								self.falsified.add(false_rule)
+							self.falsified.add(false_rule)
 					else:
 						# game is done. Hypothesize new theory. Code seems to work without doing this.
 						# new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, win)
@@ -1034,13 +1035,12 @@ class Theory(object):
 
 						## If you won/lost, you can't lose/win based on this class being 0
 						false_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, not win)
-						if false_rule not in self.falsified:
-							self.falsified.add(false_rule)
+						self.falsified.add(false_rule)
 
 						if not win:
 							## If you lost, maybe you lost because this class was 0. Check whether we'd already falsified this rule.
 							loss_terminationRule = SpriteCounterRule(self.colorToClassMapper(color), 0, False)
-							if loss_terminationRule not in self.terminationSet and loss_terminationRule not in self.falsified:
+							if loss_terminationRule not in self.falsified:
 								self.terminationSet.add(loss_terminationRule)
 
 			for n in range(2, len(absentColors) + 1):
@@ -1052,30 +1052,30 @@ class Theory(object):
 					if not done:
 						for win in [True, False]:
 							new_rule = MultiSpriteCounterRule(stypes=class_combination, win=win)
-							if new_rule not in self.multi_falsified:
-								self.multi_falsified.add(new_rule)
+							self.multi_falsified.add(new_rule)
 					else: # game ended
 						new_rule = MultiSpriteCounter(stypes=class_combination, win=win)
-						if new_rule not in self.multi_falsified and new_rule not in self.terminationSet:
+						if new_rule not in self.multi_falsified:
 							self.terminationSet.add(new_rule)
 
 						false_rule = MultiSpriteCounterRule(stypes=class_combination, win=not win)
-						if false_rule not in self.multi_falsified:
-							self.multi_falsified.add(false_rule)
+						self.multi_falsified.add(false_rule)
 
 		for rule in self.interactionSet:
 			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'nothing']:
 				if rule.generic:
 					preconditions = copy.deepcopy(rule.preconditions) if rule.preconditions else None
 					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, preconditions)
-					if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
-							for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
-						terminationRule not in self.terminationSet and
-						terminationRule not in self.falsified):
-						self.terminationSet.add(terminationRule)
+					if terminationRule not in self.falsified:
+						for t in self.terminationSet:
+							if t.ruleType != 'NoveltyRule': continue
+							if t.termination.s2 != rule.slot1 and t.termination.s1 != rule.slot2:
+								break
+						else:
+							self.terminationSet.add(terminationRule)
 				elif rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo']:
 					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
-					if terminationRule not in self.terminationSet and terminationRule not in self.falsified:
+					if terminationRule not in self.falsified:
 						self.terminationSet.add(terminationRule)
 
 			if rule.slot2 == 'EOS' and rule.generic:
@@ -1094,8 +1094,7 @@ class Theory(object):
 		for n in range(2, len(falsified_win_stypes) + 1):
 			for sprite_combination in itertools.combinations(falsified_win_stypes, n):
 				terminationRule = MultiSpriteCounterRule(stypes=sprite_combination)
-				if (all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
-					all([not terminationRule.__eq__(t) for t in self.multi_falsified])):
+				if terminationRule not in self.multi_falsified:
 					self.terminationSet.add(terminationRule)
 
 		self.terminationSet = sorted(self.terminationSet, key=lambda t:t.ruleType)
@@ -1510,22 +1509,13 @@ class Theory(object):
 
 	def __eq__(self, other):
 		if isinstance(other, self.__class__):
-
-			# Must check interactionSet in this way, to use overloaded equality of InteractionRules
-			# interactionSetEqual = all(any(i1==i2 for i2 in other.interactionSet) for i1 in self.interactionSet)
-			# spriteSetEqual = all(any(s1==s2 for s2 in other.spriteSet) for s1 in self.spriteSet)
-			# terminationSetEqual = all(any(t1==t2 for t2 in other.terminationSet) for t1 in self.terminationSet)
-
-			interactionSetEqual = equalLists(self.interactionSet, other.interactionSet)
-			spriteSetEqual = equalLists(self.spriteSet, other.spriteSet)
-			terminationSetEqual = equalLists(self.terminationSet, other.terminationSet)
-
+			interactionSetEqual = set(self.interactionSet) == set(other.interactionSet)
+			spriteSetEqual = set(self.spriteSet) == set(other.spriteSet)
+			# terminationSetEqual = equalLists(self.terminationSet, other.terminationSet)
 			return all([
 				spriteSetEqual,
 				interactionSetEqual, # TODO: Check if this uses InteractionRule overloaded __eq__
-				terminationSetEqual,
-				self.classes == other.classes,
-				# self.terminationSet == other.terminationSet #may want to delete this
+				# terminationSetEqual,
 				])
 		else:
 			return False
@@ -2458,6 +2448,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 ## TODO: write the function that maintains resourceObservations, or at least figure out
 ## its outputs and integrate with proposeArgs
 def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSpriteTypeDict, action=None, percentile=20, max_num=20):
+	print 'IN EXPAND SPRITES'
 	from vgdl.ontology import sampleFromDistribution, spriteInduction, updateDistribution
 
 	if max_num is None:
@@ -2466,7 +2457,6 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 
 	targetClass = errorMap.targetClass
 	targetToken = errorMap.targetToken
-
 
 	theory.expandedSprites.append(targetClass)
 	
@@ -2481,23 +2471,19 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 		spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, action=action, oldSpriteSet=theory.spriteSet,\
 		specificSpritesToUpdate=[targetToken], percentile=percentile, max_num=max_num)
 
-	# if 'unexpectedPosition' in errorMap.diagnosis:
-	# 	print "in expandSprites, unexpectedPosition"
-	# 	embed()
-
 	## Don't instantiate non-avatar proposals for the 'avatar' class.
 	if targetClass=='avatar':
 		spriteProposals = [s for s in spriteProposals if 'Avatar' in str(s[0][1])]
 	
 	for spriteProposal in spriteProposals:
-
 		newTheory = theory.copy()
 		newTheory.mostRecentEdit = 'spriteInduction'
 		newTheory.errorMapHistory.append(errorMap)
 		vgdlType = spriteProposal[0][1]
 		args = dict(spriteProposal[1:])
+
 		## Proposal specified args in terms of color; convert to class name for the actual theory.
-		if 'stype' in args.keys():
+		if 'stype' in args:
 			try:
 				args['stype'] = newTheory.spriteObjects[args['stype']].className
 			except:
@@ -2506,7 +2492,6 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 		color = newTheory.classes[targetClass][0].colorName
 		## If you're proposing an avatar change you need to do some bookkeeping to ensure only one avatar class in the description.
 		if 'Avatar' in str(vgdlType):
-
 			## Avatar can't shoot avatar.
 			if 'stype' in args.keys() and args['stype'] == 'avatar':
 				continue
@@ -2522,6 +2507,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 			newTheory.spriteObjects[tmpSprite.colorName] = tmpSprite
 			newTheory.spriteObjects[sprite.colorName] = sprite
 			newTheory.spriteSet = [item for sublist in newTheory.classes.values() for item in sublist]
+
 			for rule in newTheory.interactionSet:
 				if rule.slot1==targetClass:
 					rule.slot1='tmp'
@@ -2536,11 +2522,11 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 				if rule.slot2=='tmp':
 					rule.slot2='avatar'
 		else:
-			## Don't propos non-avatar types for the thing you're calling 'avatar'.
+			## Don't propose non-avatar types for the thing you're calling 'avatar'.
 			if targetClass=='avatar':
 				print "proposing non-avatar type for avatar"
-				# embed()
 				continue
+
 			sprite = Sprite(vgdlType, color, className=targetClass, args=args)
 			## Remove old sprite from spriteSet
 			newTheory.spriteSet.remove(newTheory.classes[targetClass][0])
@@ -2550,7 +2536,6 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 			newTheory.spriteObjects[color] = sprite
 		
 		childTheories.append(newTheory)
-
 	## TODO: what to do with orientation for missiles??
 	return targetClass, childTheories
 
@@ -2590,56 +2575,60 @@ predicateToOrderingMapping = {
 	'nothing':				(0,1),
 	'undoAll':				(0,1)}
 
+def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n):
 
-def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, generic=False):
+	key = (classPair, tuple(sorted(predicates)))
+	# print key
+	if key not in classPairPlusPredicateToRuleSets:
+
+		predicateGroups = []
+		for i in range(0,n+1):
+			predicateGroups.extend(list(itertools.combinations(predicates, i)))
+
+		bothOrderings = [[()], [()]]
+		alteredPairs = set()
+		for i,order in enumerate([classPair, (classPair[1], classPair[0])]):
+
+			for predicateGroup in predicateGroups:
+				if len(predicateGroup)==0:
+					pass
+				predicateRules = []
+				for predicate in predicateGroup:
+					
+					## orderings are (targetClass, neighbor). If the ordering we're proposing is consistent with the semantics
+					## of the predicate we're proposing, add this potential rule.
+					if i in predicateToOrderingMapping[predicate]:
+						alteredPairs.add(i)
+						allArgumentCombinations = proposeArgs(theory, predicate, errorMap, observations, 
+							generic=False)
+						predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
+							for comb in allArgumentCombinations])
+				if predicateRules:
+					bothOrderings[i].extend(list(itertools.product(*predicateRules)))
+		## Now generate combinations from each expanded predicateGroup that we added to each of the orderings
+		newRuleSets = list(itertools.product(bothOrderings[0], bothOrderings[1]))
+		newRuleSets = [[item for sublist in ruleSet for item in sublist] for ruleSet in newRuleSets]
+		classPairPlusPredicateToRuleSets[key] = (alteredPairs, newRuleSets)
+	
+	return classPairPlusPredicateToRuleSets[key]
+
+def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateToRuleSets, n=1, observations=None, generic=False):
 	## modifies the theory to propose n new interactonRules involving the given classPair
 	## for predicates that take arguments, proposes all possible combinations of args
 	## unless you call generic=False, in which case it only proposes what's in
 	## resourceObservations
 
-	import itertools
-	from vgdl.theory_template import InteractionRule
-
 	childTheories = []
-	predicateGroups = []
-	for i in range(0,n+1):
-		predicateGroups.extend(list(itertools.combinations(predicates, i)))
-	
-	## remove all generic interactionRules involving classPair (in either order)
-	# interactionSet = [rule for rule in theory.interactionSet if
-	# 	( classPair != (rule.asTuple()[1], rule.asTuple()[2]) and classPair != (rule.asTuple()[2], rule.asTuple()[1]) ) or
-	# 	rule.generic==False]
 
 	## Conditionals can only replace kill rules. Remove the existing kill rules and replace them with conditionals.
 	if 'conditionalKill' in errorMap.diagnosis:
 		toRemove = [rule for rule in theory.interactionSet if rule.asTuple()[1]==errorMap.targetClass and rule.asTuple()[0]=='killSprite']
-		if len(toRemove)>0:
-			print "actually removing kill rules in expandLine"
+		# if len(toRemove)>0:
+			# print "actually removing kill rules in expandLine"
 			# embed()
 		theory.interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
-
-	# print "creating orderings"
-	bothOrderings = [[()], [()]]
-	alteredPairs = set()
-	for i,order in enumerate([classPair, (classPair[1], classPair[0])]):
-
-		for predicateGroup in predicateGroups:
-			if len(predicateGroup)==0:
-				pass
-			predicateRules = []
-			for predicate in predicateGroup:
-				
-				## orderings are (targetClass, neighbor). If the ordering we're proposing is consistent with the semantics
-				## of the predicate we're proposing, add this potential rule.
-				if i in predicateToOrderingMapping[predicate]:
-					alteredPairs.add(i)
-					allArgumentCombinations = proposeArgs(theory, predicate, errorMap, observations, 
-						generic=generic)
-					predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
-						for comb in allArgumentCombinations])
-			if predicateRules:
-				bothOrderings[i].extend(list(itertools.product(*predicateRules)))
-	# print "done. Finding rules to remove"
+	
+	alteredPairs, newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
 	
 	toRemove = set()
 	if 0 in alteredPairs:
@@ -2651,34 +2640,23 @@ def expandLine(theory, errorMap, classPair, predicates, n=1, observations=None, 
 
 	for i in sorted(toRemove, reverse=True):
 		theory.interactionSet.pop(i)
-	# print "done. Adding rules"
-	## Now generate combinations from each expanded predicateGroup that we added to each of the orderings
-	newRuleSets = itertools.product(bothOrderings[0], bothOrderings[1])
 
-	for i,ruleSet in enumerate(list(newRuleSets)):
-		ruleSet = [item for sublist in ruleSet for item in sublist]
+	for i,ruleSet in enumerate(newRuleSets):
 		if len(ruleSet)>0:
 			newTheory = theory.copy()
 			newTheory.mostRecentEdit = 'interactionSetInduction'
 			newTheory.errorMapHistory.append(errorMap)
-			newTheory.interactionSet = ccopy(theory.interactionSet)
 			newTheory.interactionSet.extend(ruleSet)
 			for rule in ruleSet:
 				newTheory.dryingPaint.add(rule)
 			newTheory.reconcileInteractionsAndSprites()
 			childTheories.append(newTheory)
-			## This takes 97% of the run time of the function!
-			# if newTheory not in childTheories:
-				# childTheories.append(newTheory)
-	# if 'conditionalKill' in errorMap.diagnosis:
-		# print "conditional kill in expandLine"
-		# embed()
-	# print "done."
+
+	childTheories = list(set(childTheories))
 	if 'teleportToExit' in predicates:
 		print "found teleporttoexit"
 		embed()
-	# print "Created {} new theories".format(len(childTheories))
-	return classPair, childTheories, predicateGroups
+	return classPair, childTheories
 
 def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = None):
 	"""
@@ -2773,7 +2751,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 	DIRECTION_MAP = {(0,-1):'UP', (0,1):'DOWN', (1,0):'RIGHT', (-1,0):'LEFT'}
 
 	_obstypes = rle._obstypes
-	state = np.reshape(rle._getSensors(), rle.outdim)
+	# state = np.reshape(rle._getSensors(), rle.outdim)
 	newGoalType, newGoalColor= None, None
 
 	colorToSprite = {}
@@ -2812,18 +2790,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 						theory.classes[portalEntry][0].args['stype'] = portalExit
 
 					theory.classes[portalExit][0].vgdlType = Portal
-
-
-	## TODO: Change.
-	# resourcesToAdd = set()
-	# for i in theory.interactionSet:
-	# 	if i.args is not None:
-	# 		for k,v in i.args.items():
-	# 			if k=='resource':
-	# 				resourcesToAdd.add(v)
-			# if "resource" in i.args.keys():
-			# 	resourcesToAdd.add(i.args["resource"])
-
 
 	########### generating theory string
 	theoryString = 'game = """\n'
@@ -2905,15 +2871,11 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 	if debug==True:
 		print "in writeTheoryToTxt debug"
 		embed()
-	# for resource in resourcesToAdd:
-		# theoryString += "\t\t%s > Resource color=RESOURCETOADD limit=%s\n"%(resource, theory.resource_limits[resource])
 
 	if goalLoc:
 		if newGoalType == 'blank_space':
 			# we've selected an empty square to be the goal.
 			theoryString += "\t\tgoal > Passive color=LIGHTRED\n"
-
-
 
 	immovable_predicates = ['stepBack', 'undoAll']
 	kill_predicates = ['killSprite']
@@ -2968,22 +2930,20 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 	sortedInteractions += nonAvatarStepBackInteractions
 
 	for interactionRule in sortedInteractions:
-		if True:  #all([not interactionRule.__eq__(r) for r in added_rules]): ## don't duplicate rules.
+		if True:
 
 			c1 = interactionRule.slot1
 			c2 = interactionRule.slot2
 
-
-			# if c2=='EOS' or c1=='EOS': ## 'EOS stepBack' is always being written at the end. Don't handle it here.
-			# 	continue
 			if (c1=='laog' and len(theory.classes[c1])==0) or (c2=='laog' and len(theory.classes[c2])==0):
 				print "found laog"
 				embed()
 
 			for s1 in theory.classes[c1]:
 				if c2 not in theory.classes.keys():
-					print "c2 not in theory.classes.keys() in theory template"
+					print "c2 not in theory.classes.keys() in theory template. c2={}".format(c2)
 					embed()
+
 				for s2 in theory.classes[c2]:
 					argsString = ""
 
@@ -3076,33 +3036,49 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 		# embed()
 		theoryString += "\t\tSpriteCounter stype=goal limit=0 win=True\n"
 
-	# # fourth phase: the level mapping
+	## fourth phase: the level mapping
 
-	mappedState = []
-	for i in range(rle.outdim[0]):
-		newEntry = []
-		for j in range(rle.outdim[1]):
-			newEntry.append(" ")
+	locs = defaultdict(lambda:[])
+	mappedState = [[' ' for x in range(rle.outdim[1])] for y in range(rle.outdim[0])] 
+	for lst in rle._game.observation['trackedObjects'].values():
+		for sprite in lst:
+			y,x = sprite.rect.top/30, sprite.rect.left/30
+			locs[(y,x)].append(sprite)
 
-		mappedState.append(newEntry)
+	for k,v in locs.iteritems():
+		symbol = objectsToSymbol(rle, v, symbolDict)
+		mappedState[k[0]][k[1]] = symbol
 
-	for r in range(rle.outdim[0]):
-		for c in range(rle.outdim[1]):
-			if state[r][c] > 0:
-				try:
-					symbol = objectsToSymbol(rle, rle.getObjectsFromNumber(state[r][c]), symbolDict)
-					mappedState[r][c] = symbol
-				except:
-					print "in map"
-					embed()
+	
+	# mappedState = []
+	# for i in range(rle.outdim[0]):
+	# 	newEntry = []
+	# 	for j in range(rle.outdim[1]):
+	# 		newEntry.append(" ")
 
-			try:
-				if mappedState[r][c] == " " and goalLoc == (r,c):
-					# an empty square has been selected as the goal
-					mappedState[r][c] = "G"
-			except:
-				print "mappedState problem2"
-				embed()
+	# 	mappedState.append(newEntry)
+
+	# for r in range(rle.outdim[0]):
+	# 	for c in range(rle.outdim[1]):
+	# 		if state[r][c] > 0:
+	# 			try:
+	# 				symbol = objectsToSymbol(rle, rle.getObjectsFromNumber(state[r][c]), symbolDict)
+	# 				mappedState[r][c] = symbol
+	# 			except:
+	# 				print "in map"
+	# 				embed()
+
+	# 		try:
+	# 			if mappedState[r][c] == " " and goalLoc == (r,c):
+	# 				# an empty square has been selected as the goal
+	# 				mappedState[r][c] = "G"
+	# 		except:
+	# 			print "mappedState problem2"
+	# 			embed()
+
+	# if mappedState1!=mappedState:
+	# 	print "unequal states"
+	# 	embed()
 
 	levelString = 'level="""\n'
 	for mappedRow in mappedState:
@@ -3123,9 +3099,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 			c = theory.spriteObjects[colors].className
 			theoryString += "\t\t%s > %s\n"%(symbol, c)
 
-	# print "in writeTheory"
-	# embed()
-	# theoryString += "\t\tG > goal\n"
 	theoryString += '"""\n'
 	
 	parserString = 'if __name__ == "__main__":\n\tfrom vgdl.core import VGDLParser\n\tVGDLParser.playGame(game, level)\n'
@@ -3137,7 +3110,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 
 	levelString = levelString[levelString.find('"""')+3:-4]
 	theoryString = theoryString[theoryString.find('"""')+3:-4]
-	return theoryString, levelString, symbolDict#, immovables, killerObjects
+	return theoryString, levelString, symbolDict
 
 #class which stores the distribution over killIf__ parameters
 class PreconditionInduction():

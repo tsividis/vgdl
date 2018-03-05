@@ -12,9 +12,7 @@ from IPython import embed
 from core import *
 from tools import roundedPoints
 from ontology import colorDict
-# from vgdl.core import *
-# from vgdl.tools import roundedPoints
-# from vgdl.ontology import colorDict
+import time
 from copy import deepcopy
 
 class Sprite(object):
@@ -26,10 +24,17 @@ class Sprite(object):
         self.colorName= colorName
         self.className = className
         self.args = args
+        args = args if args else {}
+        self._hash = hash((self.className, self.colorName, str(self.vgdlType), tuple(sorted(args.iteritems()))))
 
-    # TODO: Should enforce proper syntax for properties
     def display(self):
         print (self.vgdlType, self.colorName, self.className, self.args)
+
+    def copy(self):
+        return Sprite(self.vgdlType, self.colorName, self.className, dict(self.args) if self.args else None)
+
+    def __hash__(self):
+        return self._hash
 
     def __eq__(self, other):
         return all([

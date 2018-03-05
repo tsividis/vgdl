@@ -72,12 +72,14 @@ BasicGame
         # sam > Flicker limit=5
         wall > Immovable color=DARKGRAY
     LevelMapping
+        R > random
         C > cloner
         F > flicker
         0 > base
         1 > box
         2 > box2
         3 > box3
+        4 > random
         w > wall
         c > cannon
         s > sam
@@ -89,11 +91,10 @@ BasicGame
         box3 avatar > killSprite
 
     TerminationSet
-        # SpriteCounter stype=box limit=0 win=True
+        SpriteCounter stype=box limit=0 win=True
         # SpriteCounter stype=box3 limit=0 win=False
-        MultiSpriteCounter stype1=box2 stype2=box3 win=False
+        # MultiSpriteCounter stype1=box2 stype2=box3 win=False
         Termination
-
 
 """
 level_game_pairs = [[game, level]]
