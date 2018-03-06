@@ -17,7 +17,7 @@ import math
 import warnings
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
-from stateobsnonstatic import copySpriteStingy, processFrame, buildTracker
+from stateobsnonstatic import buildTracker
 from termcolor import colored
 from line_profiler import LineProfiler
 from vgdl.util import manhattanDist, manhattanDist2
@@ -151,7 +151,7 @@ class Agent:
 						else:
 							o = (0,0)
 
-						sprite_list.append({'speed':sprite.speed, 'orientation':o, 'position':(sprite.rect.x,sprite.rect.y)})
+						sprite_list.append({'speed':sprite.speed, 'orientation':o, 'position':(sprite.rect.left,sprite.rect.top)})
 				state[color] = sprite_list
 		return state
 
@@ -628,6 +628,9 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 					continue
 				sprite.rect 		= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
 				sprite.lastrect 	= pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
+				if sprite.rect.left != sprite.lastrect.left and sprite.rect.top != sprite.lastrect.top and abs(sprite.rect.left  - sprite.lastrect.left ) != abs(sprite.rect.top - sprite.lastrect.top):
+					print "in setVrleState -- illegal rect/lastrect pair"
+					embed()
 				sprite.lastmove 	= int(matchingSprite.lastmove)
 				sprite.resources    = defaultdict(int)
 				for key in matchingSprite.inventory.keys():
@@ -709,7 +712,7 @@ def findNearestSprite(sprite, spriteList):
 	if spriteList == []:
 		return None
 	else:
-		distList = [abs(x.rect.x-sprite.rect.x)+abs(x.rect.y-sprite.rect.y) for x in spriteList]
+		distList = [abs(x.rect.left-sprite.rect.left)+abs(x.rect.top-sprite.rect.top) for x in spriteList]
 		return spriteList[distList.index(min(distList))]
 
 
@@ -1048,7 +1051,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			e.diagnosis.append('inventoryChange')
 			sA, sB = t[0], t[1]
 			e.targetToken = sB
-			e.targetClass = sB.name
+			e.targetClass = sA.name
 			e.targetColor = sB.colorName
 			sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
 			neighbors_prev = neighborsPrev(envB, envPrev, sPrev)
@@ -1561,7 +1564,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 
 	if any(['conditionalKill' in e.diagnosis for e in errorList]):
 		print 'bottom of expandTheories'
-		embed()
+		# embed()
 
 	return theories
 
@@ -1648,12 +1651,13 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 		# 		and any([not rule.generic for rule in matchingRules]):
 		if not 'conditionalKill' in errorMap.diagnosis \
 				and any([not rule.generic for rule in matchingRules]):
-			print "*******this happened"
+			print "*******non-generic rules for classPair"
+			# embed()
 			if ('objectDestruction' in errorMap.diagnosis
-						or any('objectDestruction' in e.diagnosis for e in theory.errorMapHistory) ):
+						or any(['objectDestruction' in e.diagnosis for e in theory.errorMapHistory if e.targetClass in targetClassPair]) ):
 				print "*******inner one happened"
 				embed()
-				errorMap.diagnosis.append('conditionalKill')
+			errorMap.diagnosis.append('conditionalKill')
 				# bug alert: this adds conditionalKill a lot and affects every targetClassPair
 				# 	even if that particular pair doesn't trigger the conditions
 			# print 'added conditionalKill'
