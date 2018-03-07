@@ -899,6 +899,9 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			continue
 		# Determine errorMapEntry object for position mismatch problem
 		errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
+		if 'unexpectedPosition' in errs[0].diagnosis:
+			print 'unexpectedPosition in diagnosis'
+			embed()
 		errorMap.extend(errs)
 
 	# Case B: Sprite moved in real environment, but we predicted a destruction
@@ -1562,9 +1565,9 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 
 		theories = newTheories
 
-	if any(['conditionalKill' in e.diagnosis for e in errorList]):
-		print 'bottom of expandTheories'
-		# embed()
+	# if any(['conditionalKill' in e.diagnosis for e in errorList]):
+	print 'bottom of expandTheories'
+	embed()
 
 	return theories
 
@@ -1657,7 +1660,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 						or any(['objectDestruction' in e.diagnosis for e in theory.errorMapHistory if e.targetClass in targetClassPair]) ):
 				print "*******inner one happened"
 				embed()
-			errorMap.diagnosis.append('conditionalKill')
+				errorMap.diagnosis.append('conditionalKill')
 				# bug alert: this adds conditionalKill a lot and affects every targetClassPair
 				# 	even if that particular pair doesn't trigger the conditions
 			# print 'added conditionalKill'
