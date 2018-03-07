@@ -32,6 +32,10 @@ AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
 ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPACE: (0,0), 0: (0,0)}
 
+# This makes experience replay run multiple samples 
+# for each time step if there is a Random in the theory
+EXPERIENCE_REPLAY_METHOD = 'sample_avg'
+
 class errorMapEntry:
 	def __init__(self):
 		self.diagnosis = []
@@ -275,8 +279,17 @@ class Agent:
 				self.testEpisode(gameObject,epoch=epoch)
 		return
 
+	def testEpisodes(self, gameObject, num_episodes):
+		'''
+		Test multiple episodes
+		'''
+		pass
+
+	def playEpisode(self, gameObject, actions):
+		pass
+
 	def testEpisode(self, gameObject, epoch=0):
-		actions = [K_UP]*3 + [K_SPACE]*7
+		actions = [K_UP]*3
 		# actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT]
 		# actions = [K_UP, K_LEFT, K_LEFT]
 		self.initializeEnvironment()
@@ -501,7 +514,7 @@ class Agent:
 		# embed()
 		if newTheories:
 			penalties, cumulative_penalties, experienceReplayRLEs = experienceReplay(newTheories, self.rleHistory, self.actionHistory,
-				self.symbolDict, self.best_params, method='sample_avg', displayTheories=False)
+				self.symbolDict, self.best_params, method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
 
 			scoreAndTheoryTuples = zip(penalties, newTheories, experienceReplayRLEs)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
@@ -1378,6 +1391,7 @@ def experienceReplayProfiler(hypotheses, rleHistory, actionHistory, symbolDict, 
 	lp.print_stats()
 	return mean_penalties, cumulative_penalties
 
+
 def singleTheoryExperienceReplayProfiler(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict, best_params):
 	lp = LineProfiler()
 	lp_wrapper = lp(singleTheoryExperienceReplay)
@@ -1385,12 +1399,22 @@ def singleTheoryExperienceReplayProfiler(rleHistory, actionHistory, method, targ
 	lp.print_stats()
 	return mean_penalties, cumulative_penalties, theoryRLEs
 
+
+def MultiEpisodeExperienceReplay(rleHistories, actionHistories, method, targetColor, displayStates, hypotheses, symbolDict, best_params):
+	# what am I averaging? 
+	# the avg error for each theory in each episode is wrong
+	# weight by actions
+	# saving multiple histories?
+
+	for rleHistory in rleHistories:
+
+
 def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict, best_params):
 	subsamplePercentage = .2
 	actionsPerIndex = 2
 
 	if method == 'sample_avg':
-		indices = range(len(rleHistory))
+		indices = range(len(actionHistory))
 		actionsPerIndex = 1
 	elif method == 'all':
 		indices = [0]
@@ -1424,6 +1448,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 			for env in theoryRLEs:
 				print env.show(color='blue')
 
+		
 		for n, action in enumerate(actionHistory[idx:end]):
 			penalties = []
 
@@ -1464,7 +1489,7 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, best_par
 		embed()
 	t1 = time.time()
 	results = []
-	num_samples = 10
+	num_samples = 20
 
 	for num, h in enumerate(hypotheses):
 		if displayTheories:
@@ -1472,7 +1497,8 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, best_par
 			h.display()
 		if method == 'all':
 			results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h], symbolDict, best_params))
-		elif method == 'sample_avg':
+		elif method == 'sample_avg':	
+			num_samples = num_samples if any(['Random' in str(s.vgdlType) for s in h.spriteSet]) else 1
 			temp_results = singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h]*num_samples, symbolDict, best_params)
 			results.append(([np.mean(temp_results[0])], [[np.mean(temp_results[1])]], [temp_results[2][0]]))
 
@@ -1563,7 +1589,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		print "Now running experience replay on {} theories".format(len(newTheories))
 
 		penalties, cumulative_penalties, _ = experienceReplay(newTheories, rleHistory[-2:], actionHistory[-1:], 
-			symbolDict, best_params, method='sample_avg', targetColor = errorMap.targetColor)
+			symbolDict, best_params, method=EXPERIENCE_REPLAY_METHOD, targetColor = errorMap.targetColor)
 
 		scoreAndTheoryTuples = zip(penalties, newTheories)
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
