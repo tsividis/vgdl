@@ -2448,7 +2448,6 @@ def proposePredicates(singlePairErrorSignal, observations):
 ## TODO: write the function that maintains resourceObservations, or at least figure out
 ## its outputs and integrate with proposeArgs
 def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSpriteTypeDict, action=None, percentile=20, max_num=20):
-	print 'IN EXPAND SPRITES'
 	from vgdl.ontology import sampleFromDistribution, spriteInduction, updateDistribution
 
 	if max_num is None:

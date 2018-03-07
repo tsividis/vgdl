@@ -276,7 +276,7 @@ class Agent:
 		return
 
 	def testEpisode(self, gameObject, epoch=0):
-		actions = [K_UP]*6
+		actions = [K_UP]*3 + [K_SPACE]*7
 		# actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT]
 		# actions = [K_UP, K_LEFT, K_LEFT]
 		self.initializeEnvironment()
@@ -501,7 +501,7 @@ class Agent:
 		# embed()
 		if newTheories:
 			penalties, cumulative_penalties, experienceReplayRLEs = experienceReplay(newTheories, self.rleHistory, self.actionHistory,
-				self.symbolDict, self.best_params, method='all', displayTheories=False)
+				self.symbolDict, self.best_params, method='sample_avg', displayTheories=False)
 
 			scoreAndTheoryTuples = zip(penalties, newTheories, experienceReplayRLEs)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
@@ -1392,10 +1392,6 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	if method == 'sample_avg':
 		indices = range(len(rleHistory))
 		actionsPerIndex = 1
-		# l = len(hypotheses)
-		# print 'running sample avg on theory'
-		# print 'Taking %i samples of hypothesis' % l
-		# print 'will take ~%ix longer' % l
 	elif method == 'all':
 		indices = [0]
 		actionsPerIndex = len(actionHistory)
@@ -1468,13 +1464,17 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, best_par
 		embed()
 	t1 = time.time()
 	results = []
-	num_samples_per_hypothesis = 50
+	num_samples = 10
+
 	for num, h in enumerate(hypotheses):
 		if displayTheories:
 			print "running experienceReplay on {}:".format(num)
 			h.display()
-		h = [h]*num_samples_per_hypothesis if method == 'sample_avg' else [h]
-		results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, h, symbolDict, best_params))
+		if method == 'all':
+			results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h], symbolDict, best_params))
+		elif method == 'sample_avg':
+			temp_results = singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h]*num_samples, symbolDict, best_params)
+			results.append(([np.mean(temp_results[0])], [[np.mean(temp_results[1])]], [temp_results[2][0]]))
 
 	print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 
@@ -1561,8 +1561,9 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		newTheories = list(set(newTheories))
 
 		print "Now running experience replay on {} theories".format(len(newTheories))
+
 		penalties, cumulative_penalties, _ = experienceReplay(newTheories, rleHistory[-2:], actionHistory[-1:], 
-			symbolDict, best_params, method='all', targetColor = errorMap.targetColor)
+			symbolDict, best_params, method='sample_avg', targetColor = errorMap.targetColor)
 
 		scoreAndTheoryTuples = zip(penalties, newTheories)
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
