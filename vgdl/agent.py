@@ -59,7 +59,7 @@ class errorMapEntry:
 		e.targetClass       = self.targetClass
 		e.targetColor 		= self.targetColor
 		e.intPairs          = self.intPairs
-		e.culpritClasss     = self.culpritClasses
+		e.culpritClasses    = self.culpritClasses
 		
 		return e
 
@@ -277,7 +277,7 @@ class Agent:
 
 	def testEpisode(self, gameObject, epoch=0):
 		
-		actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT]
+		actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT]
 		# actions = [K_UP, K_LEFT, K_LEFT]
 		self.initializeEnvironment()
 		# embed()
@@ -480,15 +480,15 @@ class Agent:
 		# print "After filtering for duplicates, have {} theories".format(len(newTheories))
 		# embed()
 		self.allTheories.extend(newTheories)
-		print "evaluation complete. Now running experienceReplay on {} theories".format(len(newTheories))
+		print ""
+		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
 
-		# embed()
 		if newTheories:
 			penalties, cumulative_penalties, experienceReplayRLEs = experienceReplay(newTheories, self.rleHistory, self.actionHistory,
 				self.symbolDict, self.best_params, method='all', displayTheories=False)
 
 			scoreAndTheoryTuples = zip(penalties, newTheories, experienceReplayRLEs)
-			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
+			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], len(x[1].interactionSet)))
 
 			for num, sh in enumerate(scoreAndTheoryTuples):
 				print "Theory: {} | Error: {}".format(num, sh[0])
@@ -508,8 +508,7 @@ class Agent:
 			print ""
 			hypotheses = [sh[1] for sh in scoresAndHypotheses]
 			print "{} survived".format(len(hypotheses))
-			# print ""
-			# embed()
+
 			if len(hypotheses) == 0:
 				print "0 hypotheses survived filter"
 				embed()
@@ -1171,12 +1170,6 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 	for className in neighbors_prev:
 		e.intPairs.append( (sA.name,className) )
 	# Determine mininum distance to neighbors in current real env -> to distinguish unexpectedPosition and unexpectedOverlap
-	
-	# all_sprites_envB = []
-	# for g in envB._game.sprite_groups.keys():
-	# 	all_sprites_envB += envB._game.sprite_groups[g]
-	# nearest_sprite = findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB) and (s not in envB._game.kill_list)])
-
 	all_sprites_envB = [item for sublist in envB._game.observation['trackedObjects'].values() for item in sublist]
 	nearest_sprite = findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB)])
 
@@ -1193,12 +1186,6 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 	if dist_ts == 0:
 		e.diagnosis.append('noMovement')
 		## Form all possible pairs of classes and propose these. This is because undoAll could cause this, so it's literally any classes combining.
-		# e.intPairs = list(itertools.combinations([k for k in envA._game.sprite_groups.keys() if envA._game.sprite_groups[k]],2))
-
-		# for k in envA._game.sprite_groups.keys():
-		# 	if len(envA._game.sprite_groups[k])>1:
-		# 		e.intPairs.append((k,k))
-
 		e.intPairs = list(itertools.combinations([k for k in envA._game.observation['trackedObjects'].keys() if 
 			envA._game.observation['trackedObjects'][k]], 2))
 
@@ -1219,14 +1206,9 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 		# find sprite in envA that corresponds to covered sprite in envB
 		color = nearest_sprite.colorName
 		className_envA = ''
-		# for k in [key for key in envA._game.sprite_groups.keys() if envA._game.sprite_groups[key]]:
-		# 	if color == envA._game.sprite_groups[k][0].colorName:
-		# 		className_envA = k
 		for k in [key for key in envA._game.observation['trackedObjects'].keys() if envA._game.observation['trackedObjects'][key]]:
 			if color == envA._game.observation['trackedObjects'][k][0].colorName:
 				className_envA = k
-
-		# covered_sprite_envA = findNearestSprite(sB,envA._game.sprite_groups[className_envA])
 
 		covered_sprite_envA = findNearestSprite(sB,envA._game.observation['trackedObjects'][className_envA])
 
@@ -1533,12 +1515,11 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		for theory in theories:
 			newTheories.extend(expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, prevAction, theory,
 					bestSpriteTypeDict, classPairPlusPredicateToRuleSets))
-		print "{} theories took {} seconds".format(len(theories), time.time()-t1)
+		print "Expanding {} theories took {} seconds".format(len(theories), time.time()-t1)
 
 		t1 = time.time()
 		newTheories = list(set(newTheories))
 
-		print "Now running experience replay on {} theories".format(len(newTheories))
 		penalties, cumulative_penalties, _ = experienceReplay(newTheories, rleHistory[-2:], actionHistory[-1:], 
 			symbolDict, best_params, method='all', targetColor = errorMap.targetColor)
 
@@ -1632,37 +1613,44 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 
 	## If there are unknown colors on screen, add them to the theory here.
 	if errorMap.targetClass not in theory.classes.keys():
-		existing_classes = [key for key in theory.classes if key[0] == 'c']
-		max_num = max([int(c[1:]) for c in existing_classes])
-		class_num = max_num+1 
-		errorMap.targetClass = 'c'+str(class_num)
+		if errorMap.targetColor in theory.spriteObjects:
+			errorMap.targetClass = theory.spriteObjects[errorMap.targetColor].className
+		else:
+			existing_classes = [key for key in theory.classes if key[0] == 'c']
+			max_num = max([int(c[1:]) for c in existing_classes])
+			class_num = max_num+1 
+			errorMap.targetClass = 'c'+str(class_num)
+			print "Got unknown targetclass for {}. Added generic sprite to spriteSet and interactionSet".format(errorMap.targetToken.colorName)
+			theory.addSpriteToTheory(errorMap.targetClass, errorMap.targetToken.colorName)
+			## Now get overlapping/nearby classes and reassign the target class to the shooter/spawnpoint/etc. 
+			## the next step will take care of not doing inference on these if we've done it already.
+			## NOTE: errorMap takes a unique targe class, and there are cases where you might have multiple singleton neighbors.
+			## For now you're taking just a random choice between those.
+			neighbors = neighborsPrev(envRealCurrent, envRealCurrent, errorMap.targetToken)
+			options = [item for sublist in [envRealCurrent._game.observation['trackedObjects'][k] for k in neighbors if 
+				len(envRealCurrent._game.observation['trackedObjects'][k]) == 1] for item in sublist]
+
+			if len(options)>1:
+				print "Warning: More than one singleton neighbor of a newly-spawned sprite. Randomly picking one as agent"
+			try:
+				overlapping_item = random.choice(options)
+			except:
+				print "overlapping_item problem in expandtheory"
+				embed()
+
+			errorMap.targetToken = overlapping_item
+			errorMap.targetClass = theory.spriteObjects[overlapping_item.colorName].className
+
+			## Redo induction for this type, even if you've done it before.
+			if errorMap.targetClass in theory.expandedSprites:
+				theory.expandedSprites.remove(errorMap.targetClass)
+
+		## Replace 'unknown' with new name in intPairs
 		newPairs = []
 		for num,pair in enumerate(errorMap.intPairs):
 			newPair = tuple([p if p!='unknown' else errorMap.targetClass for p in list(pair)])
 			newPairs.append(newPair)
 		errorMap.intPairs = newPairs
-		print "Got unknown targetclass for {}. Added generic sprite to spriteSet and interactionSet".format(errorMap.targetToken.colorName)
-		theory.addSpriteToTheory(errorMap.targetClass, errorMap.targetToken.colorName)
-
-		## now get overlapping/nearby classes and reassign the target class to the shooter/spawnpoint/etc. 
-		## the next step will take care of not doing inference on these if we've done it already.
-		## NOTE: errorMap takes a unique targe class, and there are cases where you might have multiple singleton neighbors.
-		## For now you're taking just a random choice between those.
-		neighbors = neighborsPrev(envRealCurrent, envRealCurrent, errorMap.targetToken)
-		options = [item for sublist in [envRealCurrent._game.observation['trackedObjects'][k] for k in neighbors if 
-			len(envRealCurrent._game.observation['trackedObjects'][k]) == 1] for item in sublist]
-
-		if len(options)>1:
-			print "Warning: More than one singleton neighbor of a newly-spawned sprite. Randomly picking one as agent"
-		overlapping_item = random.choice(options)
-		# overlapping_item = [item for sublist in envRealCurrent._game.sprite_groups.values() for item in sublist if 
-			# item.rect == errorMap.targetToken.rect and item.colorName!=errorMap.targetToken.colorName][0]
-		errorMap.targetToken = overlapping_item
-		errorMap.targetClass = theory.spriteObjects[overlapping_item.colorName].className
-
-		## Redo induction for this type, even if you've done it before.
-		if errorMap.targetClass in theory.expandedSprites:
-			theory.expandedSprites.remove(errorMap.targetClass)
 
 	## SpriteSet induction step
 	if errorMap.targetClass not in theory.expandedSprites:
@@ -1706,6 +1694,7 @@ def testAndExpand(theoryRLEs, hypotheses, action, envReal, envRealPrev, index, r
 		for e in errorList:
 			e.display()
 			print ""
+		# embed()
 	# else:
 		# print "No error"
 		# embed()
