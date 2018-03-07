@@ -17,7 +17,7 @@ import math
 import warnings
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
-from stateobsnonstatic import copySpriteStingy, processFrame, buildTracker
+from stateobsnonstatic import buildTracker
 from termcolor import colored
 from line_profiler import LineProfiler
 from vgdl.util import manhattanDist, manhattanDist2
@@ -151,7 +151,7 @@ class Agent:
 						else:
 							o = (0,0)
 
-						sprite_list.append({'speed':sprite.speed, 'orientation':o, 'position':(sprite.rect.x,sprite.rect.y)})
+						sprite_list.append({'speed':sprite.speed, 'orientation':o, 'position':(sprite.rect.left,sprite.rect.top)})
 				state[color] = sprite_list
 		return state
 
@@ -628,6 +628,9 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 					continue
 				sprite.rect 		= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
 				sprite.lastrect 	= pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
+				if sprite.rect.left != sprite.lastrect.left and sprite.rect.top != sprite.lastrect.top and abs(sprite.rect.left  - sprite.lastrect.left ) != abs(sprite.rect.top - sprite.lastrect.top):
+					print "in setVrleState -- illegal rect/lastrect pair"
+					embed()
 				sprite.lastmove 	= int(matchingSprite.lastmove)
 				sprite.resources    = defaultdict(int)
 				for key in matchingSprite.inventory.keys():
@@ -709,7 +712,7 @@ def findNearestSprite(sprite, spriteList):
 	if spriteList == []:
 		return None
 	else:
-		distList = [abs(x.rect.x-sprite.rect.x)+abs(x.rect.y-sprite.rect.y) for x in spriteList]
+		distList = [abs(x.rect.left-sprite.rect.left)+abs(x.rect.top-sprite.rect.top) for x in spriteList]
 		return spriteList[distList.index(min(distList))]
 
 
@@ -896,6 +899,9 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			continue
 		# Determine errorMapEntry object for position mismatch problem
 		errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
+		if 'unexpectedPosition' in errs[0].diagnosis:
+			print 'unexpectedPosition in diagnosis'
+			embed()
 		errorMap.extend(errs)
 
 	# Case B: Sprite moved in real environment, but we predicted a destruction
@@ -1048,7 +1054,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			e.diagnosis.append('inventoryChange')
 			sA, sB = t[0], t[1]
 			e.targetToken = sB
-			e.targetClass = sB.name
+			e.targetClass = sA.name
 			e.targetColor = sB.colorName
 			sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
 			neighbors_prev = neighborsPrev(envB, envPrev, sPrev)
@@ -1103,6 +1109,10 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				pair = (p0, p1)
 				newIntPairs.append(pair)
 			e.intPairs = newIntPairs
+
+		# if 'conditionalKill' in e.diagnosis:
+		# 	print 'evidence of conditionalKill?'
+		# 	embed()
 
 	return total_penalty, errorMap
 
@@ -1519,6 +1529,9 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 	# lookup table (dict) which maps (classPair, predicateTuple) to all combinations of all possible rules involving those classes and predicates
 	classPairPlusPredicateToRuleSets = dict()
 
+	# print 'top of expandTheories'
+	# embed()
+
 	for errorMap in errorList:
 		## Skip this whole step if you've already made changes for this theory. Just pass it on and you'll
 		## evaluate it on the whole dataset in the outer loop.
@@ -1552,58 +1565,16 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 
 		theories = newTheories
 
+	# if any(['conditionalKill' in e.diagnosis for e in errorList]):
+	print 'bottom of expandTheories'
+	embed()
+
 	return theories
-
-''' old expandTheories which was recursive
-def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction, rleHistory, actionHistory, symbolDict, best_params, bestSpriteTypeDict):
-	print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
-	# print [e.diagnosis for e in errorList]
-	if len(errorList) == 0:
-		return theories
-	if len(errorList) == 1:
-
-		## Skip this whole step if you've already made changes for this theory. Just pass it on and you'll
-		## evaluate it on the whole dataset in the outer loop.
-		if len(theories) == 1 and any([errorList[0] == e for e in theories[0].errorMapHistory]):
-			newTheories = [theories[0]]
-			return newTheories
-
-		print "In base case. Correcting error for {} for {} theories".format(errorList[0].targetClass, len(theories))
-		t1 = time.time()
-		newTheories = []
-		for theory in theories:
-			newTheories.extend(expandTheoryForOneErrorMap(errorList[0], envRealPrev, envRealCurrent, prevAction, theory, bestSpriteTypeDict))
-		print "{} theories took {} seconds".format(len(theories), time.time()-t1)
-		print "new theories length: {}".format(len(newTheories))
-		t1 = time.time()
-		newTheories = list(set(newTheories))
-		print "filtered theories length: {}. Took {} seconds.".format(len(newTheories), time.time()-t1)
-		# if len(newTheories) == 67:
-			# embed()
-
-		print "Now running experience replay on {} theories".format(len(newTheories))
-		penalties, cumulative_penalties, _ = experienceReplay(newTheories, rleHistory[-2:], actionHistory[-1:], 
-			symbolDict, best_params, method='all', targetColor = errorList[0].targetColor)
-
-		scoreAndTheoryTuples = zip(penalties, newTheories)
-		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
-
-		scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=0, max_num=None,
-				proportionOfSpriteTheories=None)]
-
-		newTheories = [s[1] for s in scoresAndHypotheses]
-
-	else:
-		tmpTheories = expandTheories(theories, [errorList[0]], envRealPrev, envRealCurrent, prevAction, rleHistory, actionHistory, symbolDict, best_params, bestSpriteTypeDict)
-		newTheories = expandTheories(tmpTheories, errorList[1:], envRealPrev, envRealCurrent, prevAction, rleHistory, actionHistory, symbolDict, best_params, bestSpriteTypeDict)
-
-	return newTheories
-'''
 
 def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, theory, bestSpriteTypeDict, classPairPlusPredicateToRuleSets):
 	## Fixes the problems generated by a single errorMap entry.
 
-	n=1 # n is the number of allowed rules for a particular classpair-ordering, probably (TODO)
+	n = 1 # n is the number of allowed rules for a particular classpair-ordering, probably (TODO)
 
 	## If we were about to make modifications we've made already, don't waste the time.
 	if any([errorMap == e for e in theory.errorMapHistory]):
@@ -1676,8 +1647,23 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 		## If we have non-generic rules for this pair in the theory, then this has to involve some kind of precondition
 		matchingRules = [rule for rule in theory.interactionSet if (rule not in list(theory.dryingPaint)) and 
 			( targetClassPair == (rule.slot1, rule.slot2) or targetClassPair == (rule.slot2, rule.slot1) )]
-		if any([not rule.generic for rule in matchingRules]):
-			errorMap.diagnosis.append('conditionalKill')
+
+		# if ('objectDestruction' in errorMap.diagnosis
+		# 			or any('objectDestruction' in e.diagnosis for e in theory.errorMapHistory) ) \
+		# 		and any([not rule.generic for rule in matchingRules]):
+		if not 'conditionalKill' in errorMap.diagnosis \
+				and any([not rule.generic for rule in matchingRules]):
+			print "*******non-generic rules for classPair"
+			# embed()
+			if ('objectDestruction' in errorMap.diagnosis
+						or any(['objectDestruction' in e.diagnosis for e in theory.errorMapHistory if e.targetClass in targetClassPair]) ):
+				print "*******inner one happened"
+				embed()
+				errorMap.diagnosis.append('conditionalKill')
+				# bug alert: this adds conditionalKill a lot and affects every targetClassPair
+				# 	even if that particular pair doesn't trigger the conditions
+			# print 'added conditionalKill'
+			# embed()
 		## Modify theory before the last step, then embed here to continue work
 		## if the diagnosis involves objectDestruction and the targetClassPair has non-generic rules,
 		## change the diagnosis here to conditionalKill such that you can propose preconditions in proposePredicates
@@ -1691,8 +1677,6 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 	if not newTheories:
 		newTheories = [theory]
 		theory.errorMapHistory.append(errorMap)
-		
-	return newTheories
 
 def testAndExpand(theoryRLEs, hypotheses, action, envReal, envRealPrev, index, rleHistory, actionHistory, symbolDict, best_params, bestSpriteTypeDict):
 	num = index

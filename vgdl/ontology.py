@@ -83,6 +83,7 @@ class GridPhysics():
             speed = sprite.speed
         if speed != 0 and hasattr(sprite, 'orientation'):
             sprite._updatePos(sprite.orientation, speed * self.gridsize[0])
+            print 'updatePos! grid passiveMovement' , id(self)
 
     def calculatePassiveMovement(self, sprite, allMovement=False):
         """
@@ -141,6 +142,7 @@ class GridPhysics():
 
         if speed != 0 and action is not None:
             sprite._updatePos(action, speed * self.gridsize[0])
+            print 'updatePos! grid  activeMovement' , id(self)
 
     def calculateActiveMovement(self, sprite, action, speed=None, allMovement=False):
         """
@@ -202,6 +204,7 @@ class ContinuousPhysics(GridPhysics):
 
         if (sprite.speed != 0 or hasattr(sprite,'jumping') and sprite.jumping) and hasattr(sprite, 'orientation'):#(why was this 0 to begin with???)
             sprite._updatePos(sprite.orientation, sprite.speed)
+            print 'updatePos! continuous passiveMovement'
             if self.gravity > 0 and sprite.mass > 0 and (sprite.gravity or sprite.jumping):
                 self.activeMovement(sprite, (0, self.gravity * sprite.mass))
             sprite.speed *= (1 - self.friction)
@@ -1778,6 +1781,7 @@ def pullWithIt(sprite, partner, game):
     tmp = sprite.lastrect
     v = unitVector(partner.lastdirection)
     sprite._updatePos(v, partner.speed * sprite.physics.gridsize[0])
+    print 'updatePos! pullWithIt'
 
     if isinstance(sprite.physics, ContinuousPhysics):
         sprite.speed = partner.speed
