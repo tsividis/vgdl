@@ -635,7 +635,13 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 				sprite.resources    = defaultdict(int)
 				for key in matchingSprite.inventory.keys():
 					sprite.resources[key] = matchingSprite.inventory[key][0]
-				sprite.orientation 	= tuple(matchingSprite.orientation) # consider copying only for avatar?
+				# in VGDL, only things which move passively have an orientation that isn't (0,0)
+				#	if we set
+				if (hypothesis.spriteObjects[matchingSprite.colorName].vgdlType in
+						[MovingAvatar, HorizontalAvatar, VerticalAvatar]):
+					sprite.orientation = (0,0)
+				else:
+					sprite.orientation 	= tuple(matchingSprite.orientation) # consider copying only for avatar?
 
 
 				## Other aspects of state to potentially transfer
@@ -1566,8 +1572,8 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		theories = newTheories
 
 	# if any(['conditionalKill' in e.diagnosis for e in errorList]):
-	print 'bottom of expandTheories'
-	embed()
+	# print 'bottom of expandTheories'
+	# embed()
 
 	return theories
 
@@ -1654,13 +1660,14 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 		# 		and any([not rule.generic for rule in matchingRules]):
 		if not 'conditionalKill' in errorMap.diagnosis \
 				and any([not rule.generic for rule in matchingRules]):
-			print "*******non-generic rules for classPair"
+			# print "*******non-generic rules for classPair"
 			# embed()
 			if ('objectDestruction' in errorMap.diagnosis
 						or any(['objectDestruction' in e.diagnosis for e in theory.errorMapHistory if e.targetClass in targetClassPair]) ):
-				print "*******inner one happened"
-				embed()
-				errorMap.diagnosis.append('conditionalKill')
+				pass
+				# print "*******inner one happened"
+				# embed()
+			errorMap.diagnosis.append('conditionalKill')
 				# bug alert: this adds conditionalKill a lot and affects every targetClassPair
 				# 	even if that particular pair doesn't trigger the conditions
 			# print 'added conditionalKill'
