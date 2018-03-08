@@ -36,6 +36,15 @@ ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPAC
 # for each time step if there is a Random in the theory
 EXPERIENCE_REPLAY_METHOD = 'sample_avg'
 
+
+# used to test the speed of a function
+def functionProfiler(function, *args):
+	lp = LineProfiler()
+	lp_wrapper = lp(function)
+	return_values = lp_wrapper(*args)
+	lp.print_stats()
+	return return_values
+
 class errorMapEntry:
 	def __init__(self):
 		self.diagnosis = []
@@ -276,17 +285,57 @@ class Agent:
 
 			for epoch in range(1):
 				# self.testTracker(gameObject)
-				self.testEpisode(gameObject,epoch=epoch)
+				# self.testEpisode(gameObject,epoch=epoch)
+				self.testEpisodes(gameObject, epoch=epoch)
 		return
 
-	def testEpisodes(self, gameObject, num_episodes):
-		'''
-		Test multiple episodes
-		'''
-		pass
+	def testEpisodes(self, gameObject, epoch=0):
+		num_cores = mp.cpu_count()
+		print "num cores: {}".format(num_cores) 
+		if num_cores<40:
+			print "WARNING: running on < 40 cores."
 
-	def playEpisode(self, gameObject, actions):
-		pass
+		actionSequences = [
+			[K_UP, K_UP], 
+			[K_RIGHT, K_UP]
+		]
+
+		self.rleHistory = [[] for i in range(len(actionSequences))]
+		self.actionHistory = [[] for i in range(len(actionSequences))]
+
+		for episode_num, actions in enumerate(actionSequences):
+			self.initializeEnvironment()
+			print "initializing RLE. Epoch={}".format(epoch)
+
+			self.all_objects = self.rle._game.getObjects() ## we need to store all_objects across multiple episodes
+
+			if epoch == 0:
+				gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, learnAvatar=self.learnAvatar, num_variants=0)
+
+			envReal = self.fastcopy(self.rle)
+			self.rleHistory[episode_num].append(envReal)
+
+			for num, action in enumerate(actions):
+				if self.rle._isDone()[0]:
+					print "Game is over."
+					break
+				print ">>> Step", num+1, "of", len(actions), "<<<"
+				## initialize VRLEs
+				theoryRLEs = VrleInitPhase(self.hypotheses, self.rle, self.symbolDict, self.best_params)
+				lastStep=False
+				if num == len(actions)-1:
+					lastStep=True
+				t2 = time.time()
+				hypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
+				print ""
+				print "executed step in {} seconds".format(time.time()-t2)
+				print ""
+				self.hypotheses = hypotheses
+
+			# print ">>> Embedded at the end of testEpisode"
+			embed()
+
+		return
 
 	def testEpisode(self, gameObject, epoch=0):
 		actions = [K_UP]*3
@@ -344,7 +393,7 @@ class Agent:
 			if num == len(actions)-1:
 				lastStep=True
 			t2 = time.time()
-			hypotheses = self.executeStep(action, self.hypotheses, theoryRLEs, lastStep)
+			hypotheses = self.executeStep(self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
 			print ""
 			print "executed step in {} seconds".format(time.time()-t2)
 			print ""
@@ -355,6 +404,7 @@ class Agent:
 		embed()
 
 		return
+
 
 	def manageNewObjects(self, hypotheses, envRealPrev, action, learnAvatar=True):
 
@@ -449,14 +499,7 @@ class Agent:
 		newRle._game.sprite_groups['avatar'][0].resources = ccopy(rle._game.sprite_groups['avatar'][0].resources)
 		return newRle
 
-	def executeStepProfiler(self, action, hypotheses, theoryRLEs, lastStep=False):
-		lp = LineProfiler()
-		lp_wrapper = lp(self.executeStep)
-		hypotheses = lp_wrapper(action, hypotheses, theoryRLEs, lastStep)
-		lp.print_stats()
-		return hypotheses
-
-	def executeStep(self, action, hypotheses, theoryRLEs, lastStep=False):
+	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, lastStep=False):
 
 		theory_change_flag = False
 
@@ -470,7 +513,7 @@ class Agent:
 		print "spriteInduction prep took {} seconds".format(time.time()-t1)
 
 		envRealPrev = self.fastcopy(self.rle)
-		self.actionHistory.append(action)
+		actionHistories[episode_num].append(action)
 		
 		# print "pre-step in executeStep"
 		# from vgdl.agent import VrleInitPhase, matchEnvs
@@ -483,7 +526,7 @@ class Agent:
 		hypotheses = self.manageNewObjects(hypotheses, envRealPrev, action, learnAvatar=self.learnAvatar)
 
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
-		self.rleHistory.append(envReal)
+		rleHistories[episode_num].append(envReal)
 		
 		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
 		self.rle._game.sprite_appearances = new_sprites
@@ -499,7 +542,7 @@ class Agent:
 	
 		for num, env in enumerate(theoryRLEs):
 			theories = testAndExpand(theoryRLEs, self.hypotheses, action, self.rle, envRealPrev, num, \
-				self.rleHistory, self.actionHistory, self.symbolDict, self.best_params, self.bestSpriteTypeDict)
+				rleHistories[episode_num], actionHistories[episode_num], self.symbolDict, self.best_params, self.bestSpriteTypeDict)
 			newTheories.extend(theories)
 
 		# print "Have {} new theories in outer loop".format(len(newTheories))
@@ -513,10 +556,11 @@ class Agent:
 
 		# embed()
 		if newTheories:
-			penalties, cumulative_penalties, experienceReplayRLEs = experienceReplay(newTheories, self.rleHistory, self.actionHistory,
-				self.symbolDict, self.best_params, method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
+			penalties = MultiEpisodeExperienceReplay(newTheories, rleHistories[:episode_num+1], actionHistories[:episode_num+1],
+				self.symbolDict, self.best_params, method=EXPERIENCE_REPLAY_METHOD, displayTheories=False
+			)
 
-			scoreAndTheoryTuples = zip(penalties, newTheories, experienceReplayRLEs)
+			scoreAndTheoryTuples = zip(penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 
 			for num, sh in enumerate(scoreAndTheoryTuples):
@@ -554,7 +598,6 @@ class Agent:
 		for h in hypotheses:
 			h.dryingPaint = set()
 		return hypotheses
-
 
 	########################################################################
 	######## TESTING HYPOTHESES BY RANDOM SAMPLING OR OTHER METHODS ########
@@ -633,14 +676,6 @@ class Agent:
 ######## RLE INITIALIZATION AND STATE-SETTING METHODS 			########
 ########################################################################
 
-def setVrleStateProfiler(rle, Vrle, hypothesis, best_params):
-	lp = LineProfiler()
-	lp_wrapper = lp(setVrleState)
-	hypotheses = lp_wrapper(rle, Vrle, hypothesis, best_params)
-	lp.print_stats()
-	return
-
-
 def setVrleState(rle, Vrle, hypothesis, best_params):
 	## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
 
@@ -682,21 +717,8 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 
 	return
 
-def initializeVrleProfiler(hypothesis, stateToSet, symbolDict, best_params):
-	lp = LineProfiler()
-	lp_wrapper = lp(initializeVrle)
-	Vrle = lp_wrapper(hypothesis, stateToSet, symbolDict, best_params)
-	lp.print_stats()
-	return Vrle
 
 def initializeVrle(hypothesis, stateToSet, symbolDict, best_params, debug=False):
-
-	def writeTheoryToTxtProfiler(rle, theory, symbolDict, txtFile, goalLoc = None):
-		lp = LineProfiler()
-		lp_wrapper = lp(writeTheoryToTxt)
-		theoryString, levelString, symbolDict = lp_wrapper(rle, theory, symbolDict, txtFile, goalLoc)
-		lp.print_stats()
-		return theoryString, levelString, symbolDict
 
 	## World in agent's mind given 'hypothesis', including object goal
 	gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, symbolDict,\
@@ -718,13 +740,6 @@ def initializeVrle(hypothesis, stateToSet, symbolDict, best_params, debug=False)
 	setVrleState(stateToSet, Vrle, hypothesis, best_params)
 
 	return Vrle
-
-def VrleInitPhaseProfiler(hypotheses, stateToSet, symbolDict, best_params):
-	lp = LineProfiler()
-	lp_wrapper = lp(VrleInitPhase)
-	VRLEs = lp_wrapper(hypotheses, stateToSet, symbolDict, best_params)
-	lp.print_stats()
-	return VRLEs
 
 def VrleInitPhase(hypotheses, stateToSet, symbolDict, best_params):
 	## Initialize multiple VRLEs, each corresponding to one hypothesis in theories
@@ -930,7 +945,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
 		if 'unexpectedPosition' in errs[0].diagnosis:
 			print 'unexpectedPosition in diagnosis'
-			embed()
+			# embed()
 		errorMap.extend(errs)
 
 	# Case B: Sprite moved in real environment, but we predicted a destruction
@@ -1394,31 +1409,6 @@ def getSalientStates(rleHistory):
 	## get actionsPerIndex
 	pass
 
-def experienceReplayProfiler(hypotheses, rleHistory, actionHistory, symbolDict, best_params, method='all', displayStates=False):
-	lp = LineProfiler()
-	lp_wrapper = lp(experienceReplay)
-	mean_penalties, cumulative_penalties = lp_wrapper(hypotheses, rleHistory, actionHistory, symbolDict, best_params, method, displayStates)
-	lp.print_stats()
-	return mean_penalties, cumulative_penalties
-
-
-def singleTheoryExperienceReplayProfiler(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict, best_params):
-	lp = LineProfiler()
-	lp_wrapper = lp(singleTheoryExperienceReplay)
-	mean_penalties, cumulative_penalties, theoryRLEs= lp_wrapper(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict, best_params)
-	lp.print_stats()
-	return mean_penalties, cumulative_penalties, theoryRLEs
-
-
-def MultiEpisodeExperienceReplay(rleHistories, actionHistories, method, targetColor, displayStates, hypotheses, symbolDict, best_params):
-	# what am I averaging? 
-	# the avg error for each theory in each episode is wrong
-	# weight by actions
-	# saving multiple histories?
-
-	for rleHistory in rleHistories:
-
-
 def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict, best_params):
 	subsamplePercentage = .2
 	actionsPerIndex = 2
@@ -1520,6 +1510,33 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, best_par
 
 	return mean_penalties, cumulative_penalties, theoryRLEs
 
+def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, symbolDict, best_params, method, targetColor=None, displayStates=False, displayTheories=False):
+	'''
+	Runs experience replay on multiple episodes with some action sequence for each episode and returns the penalties for the given theories (weighted on the number of actions)
+	'''
+	assert len(rleHistories) == len(actionHistories), 'rleHistories and actionHistories need to match'
+
+	print "Running MultiEpisodeExperienceReplay on %i episodes " % len(rleHistories)
+
+	multi_episode_mean_penalties = []
+	weight = 1./len(max(actionHistories, key=len))
+
+	for rleHistory, actionHistory in zip(rleHistories, actionHistories):
+		mean_penalties, _, _ = experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, 
+													best_params, method, targetColor, displayStates, displayTheories)
+		mean_penalties = np.array(mean_penalties)*weight*len(actionHistory)
+		multi_episode_mean_penalties.append(mean_penalties)
+
+	multi_episode_mean_penalties = np.mean(multi_episode_mean_penalties, axis=0)
+
+	return multi_episode_mean_penalties
+
+
+
+
+
+
+
 ########################################################################
 ######## THEORY MODIFICATION 									########
 ########################################################################
@@ -1594,7 +1611,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		for theory in theories:
 			newTheories.extend(expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, prevAction, theory,
 					bestSpriteTypeDict, classPairPlusPredicateToRuleSets))
-		print "{} theories took {} seconds".format(len(theories), time.time()-t1)
+		# print "{} theories took {} seconds".format(len(theories), time.time()-t1)
 
 		t1 = time.time()
 		newTheories = list(set(newTheories))
@@ -1763,6 +1780,8 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 	if not newTheories:
 		newTheories = [theory]
 		theory.errorMapHistory.append(errorMap)
+
+	return newTheories
 
 def testAndExpand(theoryRLEs, hypotheses, action, envReal, envRealPrev, index, rleHistory, actionHistory, symbolDict, best_params, bestSpriteTypeDict):
 	num = index
