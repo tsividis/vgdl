@@ -276,18 +276,60 @@ class Agent:
 
 			for epoch in range(1):
 				# self.testTracker(gameObject)
-				self.testEpisode(gameObject,epoch=epoch)
+				# self.testEpisode(gameObject,epoch=epoch)
+				self.testEpisodes(gameObject, epoch=epoch)
 		return
-
-	def testEpisodes(self, gameObject, num_episodes):
-		'''
-		Test multiple episodes
-		'''
-		pass
 
 	def playEpisode(self, gameObject, actions):
 		pass
 
+	def testEpisodes(self, gameObject, epoch=0):
+		num_cores = mp.cpu_count()
+		print "num cores: {}".format(num_cores) 
+		if num_cores<40:
+			print "WARNING: running on < 40 cores."
+
+		actionSequences = [
+			[K_UP, K_UP], 
+			[K_RIGHT, K_UP]
+		]
+
+		self.rleHistory = [[] for i in range(len(actionSequences))]
+		self.actionHistory = [[] for i in range(len(actionSequences))]
+
+		for episode_num, actions in enumerate(actionSequences):
+			self.initializeEnvironment()
+			print "initializing RLE. Epoch={}".format(epoch)
+
+			self.all_objects = self.rle._game.getObjects() ## we need to store all_objects across multiple episodes
+
+			if epoch == 0:
+				gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, learnAvatar=self.learnAvatar, num_variants=0)
+
+			envReal = self.fastcopy(self.rle)
+			self.rleHistory[episode_num].append(envReal)
+
+			for num, action in enumerate(actions):
+				if self.rle._isDone()[0]:
+					print "Game is over."
+					break
+				print ">>> Step", num+1, "of", len(actions), "<<<"
+				## initialize VRLEs
+				theoryRLEs = VrleInitPhase(self.hypotheses, self.rle, self.symbolDict, self.best_params)
+				lastStep=False
+				if num == len(actions)-1:
+					lastStep=True
+				t2 = time.time()
+				hypotheses = self.executeStep(self.rleHistory[episode_num], self.actionHistory[episode_num], action, self.hypotheses, theoryRLEs, lastStep)
+				print ""
+				print "executed step in {} seconds".format(time.time()-t2)
+				print ""
+				self.hypotheses = hypotheses
+
+			# print ">>> Embedded at the end of testEpisode"
+			embed()
+
+		return
 	def testEpisode(self, gameObject, epoch=0):
 		actions = [K_UP]*3
 		# actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT]
@@ -344,7 +386,7 @@ class Agent:
 			if num == len(actions)-1:
 				lastStep=True
 			t2 = time.time()
-			hypotheses = self.executeStep(action, self.hypotheses, theoryRLEs, lastStep)
+			hypotheses = self.executeStep(self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
 			print ""
 			print "executed step in {} seconds".format(time.time()-t2)
 			print ""
@@ -456,7 +498,7 @@ class Agent:
 		lp.print_stats()
 		return hypotheses
 
-	def executeStep(self, action, hypotheses, theoryRLEs, lastStep=False):
+	def executeStep(self, rleHistory, actionHistory, action, hypotheses, theoryRLEs, lastStep=False):
 
 		theory_change_flag = False
 
@@ -470,7 +512,7 @@ class Agent:
 		print "spriteInduction prep took {} seconds".format(time.time()-t1)
 
 		envRealPrev = self.fastcopy(self.rle)
-		self.actionHistory.append(action)
+		actionHistory.append(action)
 		
 		# print "pre-step in executeStep"
 		# from vgdl.agent import VrleInitPhase, matchEnvs
@@ -483,7 +525,7 @@ class Agent:
 		hypotheses = self.manageNewObjects(hypotheses, envRealPrev, action, learnAvatar=self.learnAvatar)
 
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
-		self.rleHistory.append(envReal)
+		rleHistory.append(envReal)
 		
 		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
 		self.rle._game.sprite_appearances = new_sprites
@@ -499,7 +541,7 @@ class Agent:
 	
 		for num, env in enumerate(theoryRLEs):
 			theories = testAndExpand(theoryRLEs, self.hypotheses, action, self.rle, envRealPrev, num, \
-				self.rleHistory, self.actionHistory, self.symbolDict, self.best_params, self.bestSpriteTypeDict)
+				rleHistory, actionHistory, self.symbolDict, self.best_params, self.bestSpriteTypeDict)
 			newTheories.extend(theories)
 
 		# print "Have {} new theories in outer loop".format(len(newTheories))
@@ -513,7 +555,7 @@ class Agent:
 
 		# embed()
 		if newTheories:
-			penalties, cumulative_penalties, experienceReplayRLEs = experienceReplay(newTheories, self.rleHistory, self.actionHistory,
+			penalties, cumulative_penalties, experienceReplayRLEs = experienceReplay(newTheories, rleHistory, actionHistory,
 				self.symbolDict, self.best_params, method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
 
 			scoreAndTheoryTuples = zip(penalties, newTheories, experienceReplayRLEs)
@@ -1407,6 +1449,10 @@ def MultiEpisodeExperienceReplay(rleHistories, actionHistories, method, targetCo
 	# saving multiple histories?
 
 	for rleHistory in rleHistories:
+		# do some stuff
+		pass
+
+	return # something?
 
 
 def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict, best_params):
