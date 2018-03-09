@@ -631,10 +631,14 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 				if sprite.rect.left != sprite.lastrect.left and sprite.rect.top != sprite.lastrect.top and abs(sprite.rect.left  - sprite.lastrect.left ) != abs(sprite.rect.top - sprite.lastrect.top):
 					print "in setVrleState -- illegal rect/lastrect pair"
 					embed()
-				sprite.lastmove 	= int(matchingSprite.lastmove)
-				sprite.resources    = defaultdict(int)
-				for key in matchingSprite.inventory.keys():
-					sprite.resources[key] = matchingSprite.inventory[key][0]
+				sprite.lastmove 	= matchingSprite.lastmove
+				
+				sprite.resources = defaultdict(int)
+				for rcolor in matchingSprite.inventory.keys():
+					sprite.resources[hypothesis.spriteObjects[rcolor].className] = matchingSprite.inventory[rcolor][0]
+				# sprite.resources    = {hypothesis.spriteObjects[rcolor].className: matchingSprite.inventory[rcolor]
+											# for rcolor in matchingSprite.inventory.keys()}
+
 				# in VGDL, only things which move passively have an orientation that isn't (0,0)
 				#	if we set
 				if (hypothesis.spriteObjects[matchingSprite.colorName].vgdlType in
@@ -654,6 +658,9 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 				# sprite.last_vy = ccopy(matchingSprite.last_vy)
 				# sprite.speed = ccopy(matchingSprite.speed)
 	Vrle._game.score = int(rle._game.score)
+	# if 
+	# print 'in setVrleState'
+	# embed()
 	Vrle._game.observation = buildTracker(Vrle)
 	Vrle._game.observation['lastscore'] = rle._game.observation['lastscore']
 
@@ -666,18 +673,11 @@ def initializeVrleProfiler(hypothesis, stateToSet, symbolDict, best_params):
 	lp.print_stats()
 	return Vrle
 
-def initializeVrle(hypothesis, stateToSet, symbolDict, best_params, debug=False):
-
-	def writeTheoryToTxtProfiler(rle, theory, symbolDict, txtFile, goalLoc = None):
-		lp = LineProfiler()
-		lp_wrapper = lp(writeTheoryToTxt)
-		theoryString, levelString, symbolDict = lp_wrapper(rle, theory, symbolDict, txtFile, goalLoc)
-		lp.print_stats()
-		return theoryString, levelString, symbolDict
+def initializeVrle(hypothesis, stateToSet, symbolDict, best_params, writeFile=False, debug=False):
 
 	## World in agent's mind given 'hypothesis', including object goal
 	gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, symbolDict,\
-		 "./examples/gridphysics/theorytest.py")
+		 "./examples/gridphysics/theorytest.py", writeFile=writeFile)
 
 	try:
 		Vrle = createMindEnv(gameString, levelString, output=False)
@@ -905,9 +905,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			continue
 		# Determine errorMapEntry object for position mismatch problem
 		errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
-		if 'unexpectedPosition' in errs[0].diagnosis:
-			print 'unexpectedPosition in diagnosis'
-			embed()
 		errorMap.extend(errs)
 
 	# Case B: Sprite moved in real environment, but we predicted a destruction
@@ -1588,6 +1585,8 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 		newTheories = [theory]
 		return newTheories
 
+	theory.errorMapHistory.append(errorMap)
+
 	newTheories = []
 
 	## For debugging. Don't make children of the true theory.
@@ -1606,6 +1605,12 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 				class_num = max_num+1
 				newClassName = 'c'+str(class_num)
 				theory.addSpriteToTheory(newClassName, color, vgdlType=Resource, args={'limit':errorMap.targetToken.inventory[k][1]})
+			else:
+				theory.spriteObjects[k].vgdlType = Resource
+				if theory.spriteObjects[k].args:
+					theory.spriteObjects[k].args['limit'] = errorMap.targetToken.inventory[k][1]
+				else:
+					theory.spriteObjects[k].args = {'limit':errorMap.targetToken.inventory[k][1]}
 
 	## If there are unknown colors on screen, add them to the theory here.
 	if errorMap.targetClass not in theory.classes.keys():
@@ -1631,7 +1636,11 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 
 		if len(options)>1:
 			print "Warning: More than one singleton neighbor of a newly-spawned sprite. Randomly picking one as agent"
-		overlapping_item = random.choice(options)
+		try:
+			overlapping_item = random.choice(options)
+		except:
+			print "overlapping_item problem in expandTheoryForOneErrorMap"
+			embed()
 		# overlapping_item = [item for sublist in envRealCurrent._game.sprite_groups.values() for item in sublist if 
 			# item.rect == errorMap.targetToken.rect and item.colorName!=errorMap.targetToken.colorName][0]
 		errorMap.targetToken = overlapping_item
@@ -1660,14 +1669,14 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 		# 		and any([not rule.generic for rule in matchingRules]):
 		if not 'conditionalKill' in errorMap.diagnosis \
 				and any([not rule.generic for rule in matchingRules]):
-			# print "*******non-generic rules for classPair"
 			# embed()
 			if ('objectDestruction' in errorMap.diagnosis
 						or any(['objectDestruction' in e.diagnosis for e in theory.errorMapHistory if e.targetClass in targetClassPair]) ):
-				pass
-				# print "*******inner one happened"
+				print "*******inner one happened"
 				# embed()
 			errorMap.diagnosis.append('conditionalKill')
+			print "*******non-generic rules for classPair"
+			# embed()
 				# bug alert: this adds conditionalKill a lot and affects every targetClassPair
 				# 	even if that particular pair doesn't trigger the conditions
 			# print 'added conditionalKill'

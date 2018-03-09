@@ -303,7 +303,7 @@ class Theory(object):
 		newTheory.interactionSet = [r.copy() for r in self.interactionSet]
 		newTheory.terminationSet = ccopy(self.terminationSet)
 		newTheory.dryingPaint = set(self.dryingPaint)
-		# newTheory.errorMapHistory = list(self.errorMapHistory) # currently unused but useful for debugging.
+		newTheory.errorMapHistory = list(self.errorMapHistory) # currently unused but useful for debugging.
 		return newTheory
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
@@ -2344,7 +2344,10 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 				for val in values:
 					argList.append({'speed':val})
 			elif predicate in ['killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']:
-				resources = [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]
+				resources = [theory.spriteObjects[rcolor].className for rcolor in observations['trackedObjects'][theory.classes['avatar'][0].colorName][0].inventory.keys()]
+				if len(resources) == 0:
+					print 'in proposeArgs: trying to propose conditional but no resources!'
+					embed()
 				limits = [1,2]
 				for comb in list(itertools.product(resources, limits)):
 					argList.append({'resource':comb[0], 'limit':comb[1]})
@@ -2676,7 +2679,7 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 		embed()
 	return classPair, childTheories
 
-def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = None):
+def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=False, goalLoc = None):
 	"""
 	-need to be able to take an optional argument that tells you the location of the goal, and put that into the level string
 	-assume that the goal sprite is getting killed
@@ -3121,9 +3124,11 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, debug=False, goalLoc = No
 	parserString = 'if __name__ == "__main__":\n\tfrom vgdl.core import VGDLParser\n\tVGDLParser.playGame(game, level)\n'
 
 	gameString = levelString + theoryString + parserString
-	with open(txtFile, 'w') as f:
-		f.write(gameString)
-	f.close()
+	
+	if writeFile:
+		with open(txtFile, 'w') as f:
+			f.write(gameString)
+		f.close()
 
 	levelString = levelString[levelString.find('"""')+3:-4]
 	theoryString = theoryString[theoryString.find('"""')+3:-4]
