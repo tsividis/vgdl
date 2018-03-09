@@ -794,17 +794,17 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		## Distance penalty
 		sA, sB = t[0], t[1] #sprites in envA, envB      
 		dist = t[2] #distance to sprite in envB
-		sA_type = theory.spriteObjects[sA.name].vgdlType
+		sA_type = theory.spriteObjects[sA.colorName].vgdlType
 		d = 30. # grid spacing
 
 		# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
 		if 'Random' in str(sA_type):   
 
 
-			if 'speed' in theory.spriteObjects[sA.name].args.keys():
-				sA_speed = theory.spriteObjects[sA.name].args['speed']
-			elif 'speed' in theory.spriteObjects[sA.name].__dict__.keys():
-				sA_speed = theory.spriteObjects[sA.name].speed
+			if 'speed' in theory.spriteObjects[sA.colorName].args.keys():
+				sA_speed = theory.spriteObjects[sA.colorName].args['speed']
+			elif 'speed' in theory.spriteObjects[sA.colorName].__dict__.keys():
+				sA_speed = theory.spriteObjects[sA.colorName].speed
 			else:
 				## this only happens when you initialize the real theory for testing but haven't explicitly set the speed
 				## in the VGDL description
@@ -841,7 +841,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			## TODO: This will break if things don't exist in the game at this point that match stype
 			# stype = theory.spriteObjects[sA.colorName].args['stype']
 
-			sA.stype = getSpritesByColor(envPrev._game, sA.colorName)[0].name
+			sA.stype = getSpritesByColor(envPrev._game, sA.colorName)[0].colorName
 			sA.fleeing = theory.spriteObjects[sA.colorName].args['fleeing']
 			try:
 				closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing) ##TODO: Don't use envPrev._game.
@@ -955,7 +955,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				e = errorMapEntry()
 				e.diagnosis.append('transformation')
 				e.targetToken = sA
-				e.targetClass = sA.name
+				e.targetClass = sA.colorName
 				e.targetColor = sA.colorName
 				# Find sprite corresponding to sB in previous time step
 				color = sB.colorName
@@ -984,7 +984,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 	# 2.2) Destruction
 	for sA in lonely_sprites_envA: #sA should have been destroyed
 		e = errorMapEntry()
-		e.targetClass = sA.name
+		e.targetClass = sA.colorName
 		e.targetColor = sA.colorName
 		candidates_in_killList = [s for s in envB._game.kill_list if s.colorName == sA.colorName]
 		sB = findNearestSprite(sA, candidates_in_killList)
@@ -1003,10 +1003,10 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			sPrev = sB #sprite was destroyed but hasn't moved
 
 		neighbors_prev = neighborsPrev(envA, envPrev, sPrev)
-		neighbors_prev = [c for c in neighbors_prev if c!=sA.name]
+		neighbors_prev = [c for c in neighbors_prev if c!=sA.colorName]
 		# Write potential interaction pairs to error map entry
 		for className in neighbors_prev:
-			e.intPairs.append( (sA.name,className) )
+			e.intPairs.append( (sA.colorName,className) )
 		errorMap.append(e)
 	# 2.3) Appearance
 	for sB in appeared_sprites_envB:
@@ -1024,7 +1024,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		if sMatch == []:
 			e.targetClass = 'unknown'
 		else:
-			e.targetClass = sMatch[0].name
+			e.targetClass = sMatch[0].colorName
 			e.targetColor = sMatch[0].colorName
 
 		# Find neighbors of target sprite in the real environment (envB) in the current time step -> could have caused appearance
@@ -1035,9 +1035,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		# nearestSprite = findNearestSprite(sB, [item for sublist in envA._game.sprite_groups.values() for item in sublist])
 		nearestSprite = findNearestSprite(sB, [item for sublist in envA._game.observation['trackedObjects'].values() for item in sublist])
 
-		if nearestSprite.name in neighbors_curr_and_prev:
-			e.intPairs.append((e.targetClass, nearestSprite.name))
-			e.culpritClasses.append(nearestSprite.name)
+		if nearestSprite.colorName in neighbors_curr_and_prev:
+			e.intPairs.append((e.targetClass, nearestSprite.colorName))
 		else:
 			print "got new sprite class but nearest prev-step sprite isn't a current neighbor"
 			embed()
@@ -1057,7 +1056,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			e.diagnosis.append('inventoryChange')
 			sA, sB = t[0], t[1]
 			e.targetToken = sB
-			e.targetClass = sA.name
+			e.targetClass = sA.colorName
 			e.targetColor = sB.colorName
 			sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
 			neighbors_prev = neighborsPrev(envB, envPrev, sPrev)
@@ -1072,7 +1071,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		sA = envA._game.observation['trackedObjects'][avatar_color][0]
 		sB = envB._game.observation['trackedObjects'][avatar_color][0]
 		e.targetToken = sA
-		e.targetClass = sA.name
+		e.targetClass = sA.colorName
 		e.targetColor = sA.colorName
 		sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
 		neighbors_prev = neighborsPrev(envB, envPrev, sPrev)
@@ -1102,6 +1101,9 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 	## convert color names in targetClass and intPairs to theory class names:
 	for e in errorMap:
+		if not e.targetClass in theory.spriteObjects.keys():
+			print "target class unknown? in errorSignal"
+			embed()
 		e.targetClass = theory.spriteObjects[e.targetClass].className if e.targetClass in theory.spriteObjects.keys() else 'unknown'
 
 		if e.intPairs:
@@ -1173,7 +1175,7 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 	# Step through sub-problems
 	e = errorMapEntry()
 	e.targetToken = sB
-	e.targetClass = sA.name
+	e.targetClass = sA.colorName
 	e.targetColor = sA.colorName
 
 	errorMaps = [e]
@@ -1182,7 +1184,7 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 
 	# Write potential interaction pairs to error map entry
 	for className in neighbors_prev:
-		e.intPairs.append( (sA.name,className) )
+		e.intPairs.append( (sA.colorName,className) )
 	# Determine mininum distance to neighbors in current real env -> to distinguish unexpectedPosition and unexpectedOverlap
 	
 	# all_sprites_envB = []
@@ -1243,14 +1245,14 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 
 		covered_sprite_envA = findNearestSprite(sB,envA._game.observation['trackedObjects'][className_envA])
 
-		e.intPairs = [(sA.name, covered_sprite_envA.name)] #overwrite interaction pair by the overlapping sprite pair
+		e.intPairs = [(sA.colorName, covered_sprite_envA.colorName)] #overwrite interaction pair by the overlapping sprite pair
 	if dist_ts>2:
 		e2 = errorMapEntry()
 		e2.targetToken = e.targetToken
 		e2.targetClass = e.targetClass
 		e2.targetColor = e.targetColor
 		e2.diagnosis.append('teleport')
-		e2.intPairs = [(sA.name, n) for n in neighbors_prev]
+		e2.intPairs = [(sA.colorName, n) for n in neighbors_prev]
 		errorMaps.append(e2)
 	# Return list of errorMapEntry objects
 	return errorMaps
