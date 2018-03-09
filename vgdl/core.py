@@ -1305,13 +1305,6 @@ class VGDLSprite(object):
             # print "MOVING"
         # if not( ((self.lastmove+1) % self.cooldown != 0) or abs(orientation[0])+abs(orientation[1])==0): ##used this until 9/14
             self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
-<<<<<<< HEAD
-
-        
-
-=======
-            # self.lastmove = 0
->>>>>>> with_tracker
 
     def _velocity(self):
         """ Current velocity vector. """
