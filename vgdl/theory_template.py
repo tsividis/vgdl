@@ -2336,11 +2336,11 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 					embed()
 				argList.append({'value':observations['score']-observations['lastscore']})
 			elif predicate == 'killIfSlow':
-				values = [1,2,3]
+				values = [1,2]
 				for val in values:
 					argList.append({'limitspeed':val})
 			elif predicate == 'killIfTooFast':
-				values = [10,11,12]
+				values = [10,11]
 				for val in values:
 					argList.append({'speed':val})
 			elif predicate in ['killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']:
@@ -2354,15 +2354,6 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 			else:
 				print "Error: Have not implemented non-generic proposeArgs() yet."
 				embed()
-
-			# if predicate=='killIfSlow':
-			# 	import numpy as np
-			# 	argList = {'limitspeed':np.mean(resourceObservations['speed'])}
-			# elif predicate=='killIfTooFast':
-			# 	import numpy as np
-			# 	argList = {'speed':np.mean(resourceObservations['speed'])}
-			# else:
-			# 	argList = resourceObservations[predicate]
 		else:
 			if predicate=='changeResource':
 				resources = [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]
