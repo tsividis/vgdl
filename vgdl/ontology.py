@@ -1506,12 +1506,12 @@ def transformToOnLanding(sprite, partner, game, stype='wall'):
 
     return ("transformToOnLanding", sprite.ID, partner.ID)
 
-def triggerOnLanding(sprite, partner, game, strigger=None):
-    '''triggers a triggerable sprite. triggerable is interesting. should change this?'''
-    if partner.speed*partner.orientation[1] == 0 and partner.lastrect.y != partner.rect.y:
-        trigger(sprite, partner, game, strigger)
-        args = {'strigger':strigger}
-        return ("trigger", sprite.ID, partner.ID, args)
+# def triggerOnLanding(sprite, partner, game, strigger=None):
+#     '''triggers a triggerable sprite. triggerable is interesting. should change this?'''
+#     if partner.speed*partner.orientation[1] == 0 and partner.lastrect.y != partner.rect.y:
+#         trigger(sprite, partner, game, strigger)
+#         args = {'strigger':strigger}
+#         return ("trigger", sprite.ID, partner.ID, args)
 
 def stepBack(sprite, partner, game):
     """ Revert last move. """
@@ -1539,9 +1539,8 @@ def bounceForward(sprite, partner, game): # FLAG
     game._updateCollisionDict(sprite)
     return ('bounceForward', sprite.ID, partner.ID)
 
-
 def conveySprite(sprite, partner, game):
-    """ Moves the partner in target direction by some step size. """
+    """ Moves the sprite in target direction by some step size. """
     tmp = sprite.lastrect
     v = unitVector(partner.orientation)
     #print "CONVEYING"
@@ -1552,7 +1551,7 @@ def conveySprite(sprite, partner, game):
     return ('conveySprite', sprite.ID, partner.ID)
 
 def windGust(sprite, partner, game):
-    """ Moves the partner in target direction by some step size, but stochastically
+    """ Moves the sprite in target direction by some step size, but stochastically
     (step, step-1 and step+1 are equally likely) """
     s = random.choice([partner.strength, partner.strength + 1, partner.strength - 1])
     if s != 0:
@@ -1608,41 +1607,39 @@ def reverseDirection(sprite, partner, game): # FLAG
     return ('reverseDirection', sprite.ID, partner.ID)
 
 ##TODO: add event labels for the below effects
-def reverseFloeIfActivated(sprite, partner, game, strigger=None):
-    '''sprite is Floe, partner is FrostbiteAvatar'''
-    if sprite.activated:
-        detrigger(sprite, partner, game, strigger)
-        reverseDirection(sprite, partner, game)
-        sprite.activated = False
-    ## returning the below is likely too much. Only adding this now for consistency of return statements.
-    args = {'strigger':strigger}
-    return ('reverseFloeIfActivated', sprite.ID, partner.ID, args)
+# def reverseFloeIfActivated(sprite, partner, game, strigger=None):
+#     '''sprite is Floe, partner is FrostbiteAvatar'''
+#     if sprite.activated:
+#         detrigger(sprite, partner, game, strigger)
+#         reverseDirection(sprite, partner, game)
+#         sprite.activated = False
+#     ## returning the below is likely too much. Only adding this now for consistency of return statements.
+#     args = {'strigger':strigger}
+#     return ('reverseFloeIfActivated', sprite.ID, partner.ID, args)
 
-def trigger(sprite, partner, game, strigger=None):
-    if strigger == None:
-        triggers = [sprite]
-    else:
-        triggers = game.getSprites(strigger)
+# def trigger(sprite, partner, game, strigger=None):
+#     if strigger == None:
+#         triggers = [sprite]
+#     else:
+#         triggers = game.getSprites(strigger)
 
-    for sprite in triggers:
-        sprite.triggered = True
-    return ('trigger', sprite.ID, partner.ID, strigger)
+#     for sprite in triggers:
+#         sprite.triggered = True
+#     return ('trigger', sprite.ID, partner.ID, strigger)
 
-def detrigger(sprite, partner, game, strigger=None):
-    if strigger == None:
-        triggers = [sprite]
-    else:
-        triggers = game.getSprites(strigger)
+# def detrigger(sprite, partner, game, strigger=None):
+#     if strigger == None:
+#         triggers = [sprite]
+#     else:
+#         triggers = game.getSprites(strigger)
 
-    for sprite in triggers:
-        sprite.detriggered = True
-    args = {'strigger':strigger}
-    return ('detrigger', sprite.ID, partner.ID, args)
-
+#     for sprite in triggers:
+#         sprite.detriggered = True
+#     args = {'strigger':strigger}
+#     return ('detrigger', sprite.ID, partner.ID, args)
 
 def flipDirection(sprite, partner, game): # FLAG
     sprite.orientation = random.choice(BASEDIRS)
-
     return ('flipDirection', sprite.ID, partner.ID)
 
 def bounceDirection(sprite, partner, game, friction=0): # FLAG
@@ -1655,7 +1652,6 @@ def bounceDirection(sprite, partner, game, friction=0): # FLAG
     sprite.orientation = (-2 * dp * snorm[0] + inc[0], -2 * dp * snorm[1] + inc[1])
     sprite.speed *= (1. - friction)
     return ('bounceDirection', sprite.ID, partner.ID)
-
 
 def wallBounce(sprite, partner, game, friction=0): # FLAG
     """ Bounce off orthogonally to the wall. """
@@ -1746,11 +1742,11 @@ def killIfHasMore(sprite, partner, game, resource, limit=1):
 def killIfOtherHasMore(sprite, partner, game, resource, limit=1):
     """ If 'partner' has more than a limit of the resource type given, sprite dies. """
     if partner.resources[resource] >= limit:
+        # print "should kill sprite"
         return killSprite(sprite, partner, game)
 
 def killIfHasLess(sprite, partner, game, resource, limit=1):
     """ If 'sprite' has less than a limit of the resource type given, it dies. """
-    # print sprite.resources[resource], limit
     if sprite.resources[resource] <= limit:
         return killSprite(sprite, partner, game)
 
@@ -1822,8 +1818,11 @@ def teleportToExit(sprite, partner, game):
     return ('teleportToExit', sprite.ID, partner.ID, args)
 
 def killIfTooFast(sprite,partner,game,speed):
-    if abs(sprite.speed*sprite.orientation[1]) > speed:
-        return killSprite(sprite, partner, game)
+    if sprite.speed is not None:
+        if abs(sprite.speed*sprite.orientation[1]) > speed:
+            return killSprite(sprite, partner, game)
+    else:
+        return
 
 def onLadder(sprite, partner, game):
 
@@ -1933,11 +1932,7 @@ def getSpritesByColor(game, color):
     return [item for sublist in unflattened for item in sublist]
 
 def getObservedSpritesByColor(game, color):
-    try:
-        unflattened = [s for s in game.observation['trackedObjects'].values() if s and s[0].colorName==color]
-    except:
-        print "in getObservedSpritesByColor"
-        embed()
+    unflattened = [s for s in game.observation['trackedObjects'].values() if s and s[0].colorName==color]
     return [item for sublist in unflattened for item in sublist]
 
 def chaserClosestTargets(sprite, game):

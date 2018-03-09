@@ -25,7 +25,8 @@ from termcolor import colored
 import cPickle
 from line_profiler import LineProfiler
 from stateobsnonstatic import processFrame
-
+import uuid
+from vgdl.core import VGDLParser
 
 OBSERVATION_LOCAL = 'local'
 OBSERVATION_GLOBAL = 'global'
@@ -81,11 +82,15 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         self._game.exceptedObjects = []
         self.makeSymbolDict()
         self._game.ignoreList = [] ## another way to mark objects that shouldn't be processed when doing induction (that is, collision objects)
-        #self._game.keystate = defaultdict(lambda:False)
         self._game.keystate = defaultdict(bool)
         self._game.metabolic_score = 0
         self.game_name = None
 
+    # def __init__(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, actionset=BASEDIRS, positions=None, **kwargs):
+    #     lp = LineProfiler()
+    #     lp_wrapper = lp(self.realInit)
+    #     lp_wrapper(gameDef, levelDef, observationType, visualize, actionset, positions, **kwargs)
+    #     lp.print_stats()
     # Get definition of the observation data expected
     def observationSpec(self):
         return{ 'scheme':'Doubles', 'size':self.outdim }
@@ -95,7 +100,6 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         allItems = ['avatar']+sorted(self._obstypes.keys())[::-1]
         return [allItems[i] for i in indices]
 
-
     def makeSymbolDict(self):
         inverseMapping = dict()
         colorMapping = dict()
@@ -103,9 +107,7 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         alnum = numbers + 'abcdefghijklmnopqrstuvwxyz'
         idx = 0
         OLD_GOAL = "oldGl"
-        # embed()
         for s in self._obstypes.keys():
-            # colorMapping[s] = colorDict[str(self._game.sprite_constr[s][1]['color'])].lower()
             if not s == "goal":
                 inverseMapping[s] = alnum[idx]
                 idx+=1
@@ -115,11 +117,8 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
                 inverseMapping[OLD_GOAL] = "O" # old goal
 
         inverseMapping['avatar'] = 'A'
-        # if "goal" in self._obstypes:
-        #     inverseMapping["goal"] = "G"
 
         self.symbolDict = inverseMapping
-        # self.colorMapping = colorMapping
         return
 
     def show(self, symbolDict=None, indent=False, showArrays=False, color='grey'):
@@ -527,8 +526,6 @@ def defInputGame(filename, randomize=False, index=None):
         return (game_file.game, game_file.level)
 
 def _createVGDLGame( gameSpec, levelSpec ):
-    import uuid
-    from vgdl.core import VGDLParser
     # parse, run and play.
     game = VGDLParser().parseGame(gameSpec)
     game.buildLevel(levelSpec)

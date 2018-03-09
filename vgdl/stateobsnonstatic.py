@@ -8,7 +8,7 @@ Managing states and observations, for different types of games
 
 import pygame
 from pybrain.utilities import setAllArgs
-from ontology import RotatingAvatar, BASEDIRS, GridPhysics, ShootAvatar, kill_effects
+from ontology import RotatingAvatar, BASEDIRS, GridPhysics, ShootAvatar, kill_effects, getSpritesByColor
 from core import VGDLSprite, Avatar
 from tools import listRotate
 from IPython import embed
@@ -278,7 +278,6 @@ class TrackedSprite(object):
         return hash(self.ID)
 
     def __init__(self, pos, color=None, size=(10,10)):
-        from ontology import GridPhysics
         self.name = None
         self.color = color
         self.rect = pygame.Rect(pos, size)
@@ -322,10 +321,9 @@ def buildTracker(rle):
     memory['score'] = rle._game.score
     memory['lastscore'] = rle._game.score
     for group in gameObject.sprite_groups.keys():
+        if gameObject.sprite_groups[group] and gameObject.sprite_groups[group][0].colorName not in trackedObjects:
+            trackedObjects[gameObject.sprite_groups[group][0].colorName] = []
         for sprite in gameObject.sprite_groups[group]:
-            if not sprite.colorName in trackedObjects:
-                trackedObjects[sprite.colorName] = []
-            # copy data over
             trackedObjects[sprite.colorName].append(copySpriteStingy(sprite))
     memory['trackedObjects'] = trackedObjects
     return memory
@@ -334,17 +332,17 @@ def copySpriteStingy(sprite):
     # copies all the data from sprite that we could reasonably get from
     #   a real CV system into a new sprite, then returns it
     newSprite = TrackedSprite([sprite.rect.left, sprite.rect.top], color=sprite.color) # automatically does colorName
-    newSprite.ID = ccopy(sprite.ID) # not sure if we need this
+    newSprite.ID = sprite.ID # not sure if we need this
     newSprite.name = newSprite.colorName
     newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
     newSprite.lastmove = sprite.lastmove
-    newSprite.rect = ccopy(sprite.rect)
-    newSprite.lastrect = ccopy(sprite.lastrect)
+    newSprite.rect = pygame.Rect(sprite.rect.left, sprite.rect.top, sprite.rect.width, sprite.rect.height)
+    newSprite.lastrect = pygame.Rect(sprite.lastrect.left, sprite.lastrect.top, sprite.lastrect.width, sprite.lastrect.height)
 
     if type(sprite) == TrackedSprite:
         newSprite.speed = sprite.speed
-        newSprite.inventory = ccopy(sprite.inventory) if sprite.inventory else dict()
-        newSprite.lastinventory = ccopy(sprite.lastinventory)
+        newSprite.inventory = dict(sprite.inventory) if sprite.inventory else dict()
+        newSprite.lastinventory = dict(sprite.lastinventory)
 
     return newSprite
 
@@ -383,23 +381,31 @@ def processFrame(memory, gameObject):
                             newSprite.speed = euclideanDist([sprite.rect.left, sprite.rect.top], [newSprite.rect.left, newSprite.rect.top])
                             newSprite.orientation = normalizeVec([sprite.rect.left - newSprite.rect.left, sprite.rect.top - newSprite.rect.top])
                         newSprite.rect.left , newSprite.rect.top = sprite.rect.left , sprite.rect.top
-                        newSprite.lastrect = ccopy(newSprite.rect)
-                        newSprite.rect = ccopy(sprite.rect)
-
-                        # newSprite.rect.move_ip(sprite.rect.rect.left - newSprite.rect.x, sprite.rect.y - newSprite.rect.y)
+                        
+                        newSprite.lastrect = pygame.Rect(newSprite.lastrect.left, newSprite.lastrect.top, newSprite.lastrect.width, newSprite.lastrect.height)
+                        newSprite.rect = pygame.Rect(sprite.rect.left, sprite.rect.top, sprite.rect.width, sprite.rect.height)
                 else:
                     # new, unseen object
                     newSprite = copySpriteStingy(sprite)
                 
                 # update inventory and inventory history
-                newSprite.lastinventory = ccopy(newSprite.inventory) if newSprite.inventory else dict()
+                newSprite.lastinventory = dict(newSprite.inventory) if newSprite.inventory else dict()
 
                 if sprite.resources:
                     newSprite.inventory = {}
                     try:
                         for key in sprite.resources:
-                            color = gameObject.sprite_groups[key][0].colorName
-                            limit = gameObject.sprite_groups[key][0].limit
+                            try:
+                                if str(eval(key)) in colorDict:
+                                    color = key
+                            except:
+                                try:
+                                    ## Color and fraction of progress bar displayed from sprite are in principle calculable from pixels
+                                    color = colorDict[str(gameObject.resources_colors[key])]
+                                except:
+                                    color = gameObject.sprite_groups[key][0].colorName
+                            
+                            limit = gameObject.resources_limits[key]
                             newSprite.inventory[color] = (sprite.resources[key], limit)
                     except:
                         print "in processFrame"
