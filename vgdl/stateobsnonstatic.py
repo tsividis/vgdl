@@ -346,7 +346,7 @@ def copySpriteStingy(sprite):
 
     return newSprite
 
-def processFrame(memory, gameObject, rle=None):
+def processFrame(memory, gameObject):
     # eventual goal is to process the frame, not the gameObject...
     # creates a COPY of memory and returns updated copy
     newMemory = dict()

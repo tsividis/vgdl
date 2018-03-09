@@ -423,7 +423,7 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         for k in self._game.keystate:
             self._game.keystate[k] = False
 
-        self._game.observation = processFrame(self._game.observation, self._game, self)
+        self._game.observation = processFrame(self._game.observation, self._game)
         return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
 
     def __repr__(self):
