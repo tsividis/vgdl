@@ -1669,17 +1669,13 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 		# 			or any('objectDestruction' in e.diagnosis for e in theory.errorMapHistory) ) \
 		# 		and any([not rule.generic for rule in matchingRules]):
 		if any([not rule.generic for rule in matchingRules]):
-			# embed()
 			if ('objectDestruction' in errorMap.diagnosis
 						or any(['objectDestruction' in e.diagnosis for e in theory.errorMapHistory if e.targetClass in targetClassPair]) ):
-				print "*******inner one happened"
+				# print "*******inner one happened"
 				# embed()
+				pass
 			errorMap.diagnosis.append('conditionalKill')
-			print "*******non-generic rules for classPair"
-			# embed()
-				# bug alert: this adds conditionalKill a lot and affects every targetClassPair
-				# 	even if that particular pair doesn't trigger the conditions
-			# print 'added conditionalKill'
+			# print "*******non-generic rules for classPair"
 			# embed()
 		## Modify theory before the last step, then embed here to continue work
 		## if the diagnosis involves objectDestruction and the targetClassPair has non-generic rules,
@@ -1690,6 +1686,9 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 			classPairPlusPredicateToRuleSets, n=n, 
 			observations=envRealCurrent._game.observation, generic=False)
 
+		theories = interateThresholds(theories, errorMap, targetClassPair)
+
+		# this is because it would cause us to propose conditional stuff for later targetClassPairs
 		if 'conditionalKill' in errorMap.diagnosis:
 			errorMap.diagnosis.remove('conditionalKill')
 			# print 'conditionalKill in expandTheoryForOneErrorMap'

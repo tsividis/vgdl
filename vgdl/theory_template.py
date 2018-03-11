@@ -2679,6 +2679,11 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 		embed()
 	return classPair, childTheories
 
+def interateThresholds(theories, errorMap, targetClassPair):
+	# for theory in theories:
+	# 	if 
+	return theories
+
 def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=False, goalLoc = None):
 	"""
 	-need to be able to take an optional argument that tells you the location of the goal, and put that into the level string
