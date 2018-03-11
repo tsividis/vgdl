@@ -463,7 +463,6 @@ class Agent:
 		print keyPresses[action]
 		print self.rle.show(color='blue')
 
-
 		print "evaluating {} old theories and proposing new ones".format(len(theoryRLEs))
 		updateTerminations(self.rle, hypotheses)
 		newTheories = []
