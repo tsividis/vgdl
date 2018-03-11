@@ -881,6 +881,9 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 	if envA._game.observation['score'] != envB._game.observation['score']:
 		total_penalty += p_score*abs(envA._game.observation['score']-envB._game.observation['score'])
+	if 0 < total_penalty and 'killIfHasMore' in [r.interaction for r in theory.interactionSet if r.slot2 == 'c2']:
+		print 'in errorSignal'
+		embed()
 	if penalty_only:
 		return total_penalty, []
 
@@ -1112,10 +1115,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				pair = (p0, p1)
 				newIntPairs.append(pair)
 			e.intPairs = newIntPairs
-
-		# if 'conditionalKill' in e.diagnosis:
-		# 	print 'evidence of conditionalKill?'
-		# 	embed()
 
 	return total_penalty, errorMap
 
@@ -1509,7 +1508,7 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 	return filtered
 
 def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction, rleHistory, actionHistory, symbolDict, best_params, bestSpriteTypeDict):
-	print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
+	# print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
 
 	# MEMOIZE!
 	# lookup table (dict) which maps (classPair, predicateTuple) to all combinations of all possible rules involving those classes and predicates
@@ -1679,19 +1678,14 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 		# if ('objectDestruction' in errorMap.diagnosis
 		# 			or any('objectDestruction' in e.diagnosis for e in theory.errorMapHistory) ) \
 		# 		and any([not rule.generic for rule in matchingRules]):
-		if not 'conditionalKill' in errorMap.diagnosis \
-				and any([not rule.generic for rule in matchingRules]):
-			# embed()
+		if any([not rule.generic for rule in matchingRules]):
 			if ('objectDestruction' in errorMap.diagnosis
 						or any(['objectDestruction' in e.diagnosis for e in theory.errorMapHistory if e.targetClass in targetClassPair]) ):
-				print "*******inner one happened"
+				# print "*******inner one happened"
 				# embed()
+				pass
 			errorMap.diagnosis.append('conditionalKill')
-			print "*******non-generic rules for classPair"
-			# embed()
-				# bug alert: this adds conditionalKill a lot and affects every targetClassPair
-				# 	even if that particular pair doesn't trigger the conditions
-			# print 'added conditionalKill'
+			# print "*******non-generic rules for classPair"
 			# embed()
 		## Modify theory before the last step, then embed here to continue work
 		## if the diagnosis involves objectDestruction and the targetClassPair has non-generic rules,
@@ -1701,6 +1695,15 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 		classPair, theories = expandLine(theory, errorMap, targetClassPair, predicates,
 			classPairPlusPredicateToRuleSets, n=n, 
 			observations=envRealCurrent._game.observation, generic=False)
+
+		theories = interateThresholds(theories, errorMap, targetClassPair)
+
+		# this is because it would cause us to propose conditional stuff for later targetClassPairs
+		if 'conditionalKill' in errorMap.diagnosis:
+			errorMap.diagnosis.remove('conditionalKill')
+			# print 'conditionalKill in expandTheoryForOneErrorMap'
+			# embed()
+
 		newTheories = list(set(theories))
 	if not newTheories:
 		newTheories = [theory]
