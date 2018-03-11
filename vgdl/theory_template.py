@@ -2340,7 +2340,7 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 				for val in values:
 					argList.append({'limitspeed':val})
 			elif predicate == 'killIfTooFast':
-				values = [10,11,12]
+				values = [10,11]
 				for val in values:
 					argList.append({'speed':val})
 			elif predicate in ['killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']:
@@ -2348,7 +2348,7 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 				if len(resources) == 0:
 					print 'in proposeArgs: trying to propose conditional but no resources!'
 					embed()
-				limits = [1,2]
+				limits = [0,1]
 				for comb in list(itertools.product(resources, limits)):
 					argList.append({'resource':comb[0], 'limit':comb[1]})
 			else:
@@ -2409,7 +2409,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 	## List of predicates that are unique to a physics type
 	physicsToPredicateMapping = {
 	'all' : 					['killSprite', 'cloneSprite', 'transformTo', 'transformToOnLanding',\
-								'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasLess',\
+								'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore',\
 								'killIfTooFast', 'killIfSlow',\
 								'undoAll', 'nothing',\
 								'turn', 'turnAround', 'reverseDirection', 'flipDirection', 'bounceForward',\
@@ -2426,7 +2426,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 	'objectDestruction': 		['killSprite'],
 	'newObjectAppeared': 		['cloneSprite'],
 	'transformation': 			['transformTo', 'transformToOnLanding'],
-	'conditionalKill': 			['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasLess',\
+	'conditionalKill': 			['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore',\
 								 'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
 
 	## Position difference
@@ -2565,7 +2565,7 @@ predicateToOrderingMapping = {
 	'killIfHasLess': 		(0,), 
 	'killIfHasMore': 		(0,),
 	'killIfOtherHasLess': 	(0,), 
-	'killIfOtherHasLess':	(0,),
+	'killIfOtherHasMore':	(0,),
 	'killIfTooFast':		(0,),
 	'killIfSlow':			(0,),
 	'killIfFromAbove':		(0,),
@@ -2643,7 +2643,7 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 
 	## Conditionals can only replace kill rules. Remove the existing kill rules and replace them with conditionals.
 	if 'conditionalKill' in errorMap.diagnosis:
-		toRemove = [rule for rule in theory.interactionSet if rule.asTuple()[1]==errorMap.targetClass and rule.asTuple()[0]=='killSprite']
+		toRemove = [rule for rule in theory.interactionSet if classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and rule.asTuple()[1] == errorMap.targetClass and rule.asTuple()[0]=='killSprite']
 		# if len(toRemove)>0:
 			# print "actually removing kill rules in expandLine"
 			# embed()
