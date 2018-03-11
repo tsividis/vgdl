@@ -5,7 +5,8 @@ from core import colorDict, VGDLParser, sys, keyPresses
 from ontology import *
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
 SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
-generateTheoryFromGame, expandLine, expandSprites, PreconditionInduction, proposePredicates, getRuleSetsForClassPairPredicate
+generateTheoryFromGame, expandLine, expandSprites, PreconditionInduction, proposePredicates, getRuleSetsForClassPairPredicate,\
+interateThresholds
 import os, subprocess, shutil
 from collections import defaultdict
 import importlib

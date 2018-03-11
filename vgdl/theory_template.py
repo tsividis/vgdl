@@ -2676,7 +2676,7 @@ def interateThresholds(theories, errorMap, targetClassPair):
 	# for theory in theories:
 	# 	if 
 	return theories
-	
+
 def getClassNameFromSpriteString(spriteName):
 	if len(rle._game.sprite_groups[spriteName])>0:
 		col = colorDict[str(rle._game.sprite_groups[spriteName][0].color)]
@@ -2899,7 +2899,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 			theoryString += "\t\tgoal > Passive color=LIGHTRED\n"
 
 	immovable_predicates = ['stepBack', 'undoAll']
-	kill_predicates = ['killSprite', 'killIfHasLess', 'killIfHasMore',\
+	kill_predicates = ['killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore',\
 			'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow']
 	immovables, killerObjects = [], []
 	# second phase: the interaction rules
