@@ -31,12 +31,22 @@ wwwwwwwwwwwwwwwwww
 level1 = """
 wwwwwwwwwwwwwwwwww
 w                w
-w g p     mpA    w
+w g p   m  pA    w
 w                w
-w   p     mmp    w
+w   p   m  m  p  w
 w g p            w
 wwwwwwwwwwwwwwwwww
 """
+
+# level1 = """
+# wwwwwwwwwwwwwwwwww
+# w        ppmm    w
+# w g p     mpA    w
+# w                w
+# w   p     mmp    w
+# w g p            w
+# wwwwwwwwwwwwwwwwww
+# """
 
 
 # level1 = """

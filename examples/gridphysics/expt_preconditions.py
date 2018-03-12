@@ -72,62 +72,6 @@ wwwwwwwwwwwwwwwwww
 """
 
 
-# level = """
-# wwwwwwwwwwwww
-# w pmAmp  w  w
-# w  pmp      w
-# w  pppp  pp w
-# w       p  gw
-# wwwwwwwwwwwww
-# """
-
-# level2 = """
-# wwwwwwwwwwwww
-# w           w
-# w  pmp      w
-# w  pppppppp w
-# w A     p  gw
-# wwwwwwwwwwwww
-# """
-
-# level = """
-# wwwwwwwwwwwwww
-# wm           w
-# w            w
-# w       pppppw
-# w     A p   gw
-# wwwwwwwwwwwwww
-# """
-# level = """
-# wwwww
-# wmA g
-# wwwww
-# """
-
-# level = """
-# wwwwwwwwwwwwwwwwww
-# w b c   w    m   w
-# w   c   w    wwwww
-# wcccc      p     w
-# w     c p       ww
-# ww   www A       w
-# wpppp          c w
-# w   pc           w
-# w g p    c    c  w
-# wwwwwwwwwwwwwwwwww
-# """
-
-
-# level = """
-# wwwwwwwww
-# w bp    w
-# w  p  m w
-# wppp A  w
-# w gp    w
-# wwwwwwwww
-# """
-
-
 
 game = """
 BasicGame frame_rate=30
@@ -164,7 +108,7 @@ BasicGame frame_rate=30
         SpriteCounter stype=goal limit=0 win=True
 """
 
-level_game_pairs = [[game, level1], [game, level2], [game, level3]] #[game, level0], 
+level_game_pairs = [[game, level0], [game, level1], [game, level2], [game, level3]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

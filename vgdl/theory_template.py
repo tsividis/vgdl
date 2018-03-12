@@ -2306,6 +2306,16 @@ def getKeywordsFromOntology(interactionName):
 		return []
 
 
+thresholdOrdering = {\
+	'killIfHasLess': 		range(-2,10),
+	'killIfHasMore': 		range(-2,10),
+	'killIfOtherHasLess': 	range(-2,10),
+	'killIfOtherHasMore': 	range(-2,10),
+	'killIfTooFast': 		range(100),
+	'killIfSlow': 			range(100)
+}
+
+
 def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 
 	## if generic==False, this will propose all args given what's in resourceObservations
@@ -2336,11 +2346,11 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 					embed()
 				argList.append({'value':observations['score']-observations['lastscore']})
 			elif predicate == 'killIfSlow':
-				values = [1,2]
+				values = [0]
 				for val in values:
 					argList.append({'limitspeed':val})
 			elif predicate == 'killIfTooFast':
-				values = [10,11]
+				values = [0]
 				for val in values:
 					argList.append({'speed':val})
 			elif predicate in ['killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']:
@@ -2348,7 +2358,7 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 				if len(resources) == 0:
 					print 'in proposeArgs: trying to propose conditional but no resources!'
 					embed()
-				limits = [0,1]
+				limits = [-2]
 				for comb in list(itertools.product(resources, limits)):
 					argList.append({'resource':comb[0], 'limit':comb[1]})
 			else:
@@ -2626,56 +2636,96 @@ def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, ob
 		# embed()
 	return classPairPlusPredicateToRuleSets[key]
 
-def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateToRuleSets, n=1, observations=None, generic=False):
-	## modifies the theory to propose n new interactonRules involving the given classPair
-	## for predicates that take arguments, proposes all possible combinations of args
-	## unless you call generic=False, in which case it only proposes what's in
-	## resourceObservations
+def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateToRuleSets, envRealPrev, envRealCurrent, action, rleHistory, actionHistory, experienceReplay, n=1, observations=None, generic=False):
+	## Modifies the theory to propose n new interactonRules involving the given classPair
+	## For predicates that take arguments, finds the first (according to some ordering) satisfying argument and returns that.
+	## generic=True proposes all possible combinations of args instead.
 
 	childTheories = [theory]
 
-	## Conditionals can only replace kill rules. Remove the existing kill rules and replace them with conditionals.
-	if 'conditionalKill' in errorMap.diagnosis:
-		toRemove = [rule for rule in theory.interactionSet if classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and rule.asTuple()[1] == errorMap.targetClass and rule.asTuple()[0]=='killSprite']
-		# if len(toRemove)>0:
-			# print "actually removing kill rules in expandLine"
+	##if iterating thresholds is not relevant:
+	predicatesWithThresholds = ['killIfTooFast', 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
+	relevantRulesWithArgs = [rule for rule in theory.interactionSet if rule.interaction in predicatesWithThresholds and 
+			classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and len(rule.args)>0]
+	if len(relevantRulesWithArgs) == 0:
+		## Conditionals can only replace kill rules. Remove the existing kill rules and replace them with conditionals.
+		if 'conditionalKill' in errorMap.diagnosis:
+			toRemove = [rule for rule in theory.interactionSet if classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and 
+					rule.asTuple()[1] == errorMap.targetClass and rule.asTuple()[0]=='killSprite']
+			theory.interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
+		
+		alteredPairs, newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
+		
+		toRemove = set()
+		if 0 in alteredPairs:
+			toRemove |= set([i for i in range(len(theory.interactionSet)) if 
+				theory.interactionSet[i].generic and classPair==(theory.interactionSet[i].asTuple()[1], theory.interactionSet[i].asTuple()[2])])
+		if 1 in alteredPairs:
+			toRemove |= set([i for i in range(len(theory.interactionSet)) if 
+				theory.interactionSet[i].generic and classPair==(theory.interactionSet[i].asTuple()[2], theory.interactionSet[i].asTuple()[1])])
+
+		for i in sorted(toRemove, reverse=True):
+			theory.interactionSet.pop(i)
+
+		for i,ruleSet in enumerate(newRuleSets):
+			if len(ruleSet)>0:
+				newTheory = theory.copy()
+				newTheory.mostRecentEdit = 'interactionSetInduction'
+				newTheory.errorMapHistory.append(errorMap)
+				newTheory.interactionSet.extend(ruleSet)
+				for rule in ruleSet:
+					newTheory.dryingPaint.add(rule)
+				newTheory.reconcileInteractionsAndSprites()
+				childTheories.append(newTheory)
+
+		childTheories = list(set(childTheories))
+
+		if 'teleportToExit' in predicates:
+			print "found teleporttoexit"
+			embed()
+	
+	## Iterate thresholds. If this is not relevant for a particular theory, iterateThresholds() will just return the theory unchanged.
+	iteratedTheories = []
+	for theory in childTheories:
+		iteratedTheories.append(interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHistory, theory, errorMap, classPair, experienceReplay))
+
+	return classPair, iteratedTheories
+
+def interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHistory, theory, errorMap, classPair, experienceReplay):
+	
+	predicatesWithThresholds = ['killIfTooFast', 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
+	relevantRulesWithArgs = [rule for rule in theory.interactionSet if rule.interaction in predicatesWithThresholds and \
+			classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and len(rule.args)>0]
+	if len(relevantRulesWithArgs)==1:
+		print "in iterateThresholds"
+		theory.display()
+		rule = relevantRulesWithArgs[0]
+		penalty, _, _ = experienceReplay([theory], rleHistory, actionHistory, 
+			rleHistory[0].symbolDict, {}, method='all', targetColor=errorMap.targetColor)
+		newPenalty = penalty
+		while newPenalty >= penalty:
+			argsToIncrement = [(k,v) for k,v in relevantRulesWithArgs[0].args.items() if type(v)==int]
+			if len(argsToIncrement)>1:
+				print "got more than one arg to increment in iterateThresholds(); this shouldn't happen"
+				embed()
+			k,v = argsToIncrement[0]
+			idx = thresholdOrdering[rule.interaction].index(v)
+			if len(thresholdOrdering[rule.interaction]) > idx+1:
+				rule.args[k] = thresholdOrdering[rule.interaction][idx+1]
+				newPenalty, _, _ = experienceReplay([theory], rleHistory, actionHistory, 
+					envRealPrev.symbolDict, {}, method='all', targetColor=errorMap.targetColor)
+				# print newPenalty, rule.display()
+			else:
+				break
+		# if newPenalty<penalty:
+			# print "got successful rule"
+			# print newPenalty, rule.display()
 			# embed()
-		theory.interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
-	
-	alteredPairs, newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
-	
-	toRemove = set()
-	if 0 in alteredPairs:
-		toRemove |= set([i for i in range(len(theory.interactionSet)) if 
-			theory.interactionSet[i].generic and classPair==(theory.interactionSet[i].asTuple()[1], theory.interactionSet[i].asTuple()[2])])
-	if 1 in alteredPairs:
-		toRemove |= set([i for i in range(len(theory.interactionSet)) if 
-			theory.interactionSet[i].generic and classPair==(theory.interactionSet[i].asTuple()[2], theory.interactionSet[i].asTuple()[1])])
-
-	for i in sorted(toRemove, reverse=True):
-		theory.interactionSet.pop(i)
-
-	for i,ruleSet in enumerate(newRuleSets):
-		if len(ruleSet)>0:
-			newTheory = theory.copy()
-			newTheory.mostRecentEdit = 'interactionSetInduction'
-			newTheory.errorMapHistory.append(errorMap)
-			newTheory.interactionSet.extend(ruleSet)
-			for rule in ruleSet:
-				newTheory.dryingPaint.add(rule)
-			newTheory.reconcileInteractionsAndSprites()
-			childTheories.append(newTheory)
-
-	childTheories = list(set(childTheories))
-	if 'teleportToExit' in predicates:
-		print "found teleporttoexit"
+	if len(relevantRulesWithArgs)>1:
+		print "you got more than 1 relevant rule with an argument in iterateThresholds; this shouldn't happen"
 		embed()
-	return classPair, childTheories
 
-def interateThresholds(theories, errorMap, targetClassPair):
-	# for theory in theories:
-	# 	if 
-	return theories
+	return theory
 
 def getClassNameFromSpriteString(spriteName):
 	if len(rle._game.sprite_groups[spriteName])>0:

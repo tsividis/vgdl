@@ -140,7 +140,6 @@ BasicGame frame_rate=30
         probe converter > stepBack
         converter1 box1 > bounceForward
         box1 converter2 > transformTo stype=fire
-        # box1 converter2 > killSprite
         converter3 avatar > transformTo stype=box1
         converter2 fire > killSprite
         box fire > stepBack
@@ -149,7 +148,7 @@ BasicGame frame_rate=30
         converter1 avatar > transformTo stype=fire
         probe fire > killSprite
         fire probe > killSprite
-        avatar converter > stepBack
+        # avatar converter > stepBack ## this was uncommented in the original experiment, but stepBack and transformTo are currently incompatible. fix bug.
         avatar poison > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
@@ -157,7 +156,6 @@ BasicGame frame_rate=30
 """
 
 
-# level_game_pairs = [[game0, level2], [game3, level3]]
 level_game_pairs = [[game0, level0], [game0, level1], [game0, level2],[game3, level3]]
 
 if __name__ == "__main__":
