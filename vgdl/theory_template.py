@@ -2337,11 +2337,11 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 					embed()
 				argList.append({'value':observations['score']-observations['lastscore']})
 			elif predicate == 'killIfSlow':
-				values = [1,2,3]
+				values = [1,2]
 				for val in values:
 					argList.append({'limitspeed':val})
 			elif predicate == 'killIfTooFast':
-				values = [10,11,12]
+				values = [10,11]
 				for val in values:
 					argList.append({'speed':val})
 			elif predicate in ['killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']:
@@ -2349,21 +2349,12 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 				if len(resources) == 0:
 					print 'in proposeArgs: trying to propose conditional but no resources!'
 					embed()
-				limits = [1,2]
+				limits = [0,1]
 				for comb in list(itertools.product(resources, limits)):
 					argList.append({'resource':comb[0], 'limit':comb[1]})
 			else:
 				print "Error: Have not implemented non-generic proposeArgs() yet."
 				embed()
-
-			# if predicate=='killIfSlow':
-			# 	import numpy as np
-			# 	argList = {'limitspeed':np.mean(resourceObservations['speed'])}
-			# elif predicate=='killIfTooFast':
-			# 	import numpy as np
-			# 	argList = {'speed':np.mean(resourceObservations['speed'])}
-			# else:
-			# 	argList = resourceObservations[predicate]
 		else:
 			if predicate=='changeResource':
 				resources = [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]
@@ -2410,7 +2401,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 	## List of predicates that are unique to a physics type
 	physicsToPredicateMapping = {
 	'all' : 					['killSprite', 'cloneSprite', 'transformTo', 'transformToOnLanding',\
-								'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasLess',\
+								'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore',\
 								'killIfTooFast', 'killIfSlow',\
 								'undoAll', 'nothing',\
 								'turn', 'turnAround', 'reverseDirection', 'flipDirection', 'bounceForward',\
@@ -2427,7 +2418,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 	'objectDestruction': 		['killSprite'],
 	'newObjectAppeared': 		['cloneSprite'],
 	'transformation': 			['transformTo', 'transformToOnLanding'],
-	'conditionalKill': 			['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasLess',\
+	'conditionalKill': 			['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore',\
 								 'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
 
 	## Position difference
@@ -2561,7 +2552,7 @@ predicateToOrderingMapping = {
 	'killIfHasLess': 		(0,), 
 	'killIfHasMore': 		(0,),
 	'killIfOtherHasLess': 	(0,), 
-	'killIfOtherHasLess':	(0,),
+	'killIfOtherHasMore':	(0,),
 	'killIfTooFast':		(0,),
 	'killIfSlow':			(0,),
 	'killIfFromAbove':		(0,),
@@ -2626,7 +2617,9 @@ def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, ob
 		newRuleSets = list(itertools.product(bothOrderings[0], bothOrderings[1]))
 		newRuleSets = [[item for sublist in ruleSet for item in sublist] for ruleSet in newRuleSets]
 		classPairPlusPredicateToRuleSets[key] = (alteredPairs, newRuleSets)
-	
+		
+		# print "in getRuleSetsForClassPairPredicate"
+		# embed()
 	return classPairPlusPredicateToRuleSets[key]
 
 def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateToRuleSets, n=1, observations=None, generic=False):
@@ -2635,11 +2628,11 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 	## unless you call generic=False, in which case it only proposes what's in
 	## resourceObservations
 
-	childTheories = []
+	childTheories = [theory]
 
 	## Conditionals can only replace kill rules. Remove the existing kill rules and replace them with conditionals.
 	if 'conditionalKill' in errorMap.diagnosis:
-		toRemove = [rule for rule in theory.interactionSet if rule.asTuple()[1]==errorMap.targetClass and rule.asTuple()[0]=='killSprite']
+		toRemove = [rule for rule in theory.interactionSet if classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and rule.asTuple()[1] == errorMap.targetClass and rule.asTuple()[0]=='killSprite']
 		# if len(toRemove)>0:
 			# print "actually removing kill rules in expandLine"
 			# embed()
@@ -2675,6 +2668,94 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 		embed()
 	return classPair, childTheories
 
+def interateThresholds(theories, errorMap, targetClassPair):
+	# for theory in theories:
+	# 	if 
+	return theories
+
+def getClassNameFromSpriteString(spriteName):
+	if len(rle._game.sprite_groups[spriteName])>0:
+		col = colorDict[str(rle._game.sprite_groups[spriteName][0].color)]
+		try:
+			className = [k for k in theory.classes.keys() if col in [c.colorName for c in theory.classes[k]]][0]
+		except:
+			print "couldn't find className"
+			embed()
+		return className
+	elif spriteName in theory.classes.keys():
+		return spriteName
+	else:
+		try:
+			## maybe we passed a color, so we should get the class.
+			return theory.spriteObjects[spriteName].className
+		except:
+			print "failed to get spriteName color. In getClassNameFromSpriteString"
+			embed()
+
+def buildArgsString(interactionRule):
+	relevantArgNames = getKeywordsFromOntology(interactionRule.interaction)
+	newInteractionName = interactionRule.interaction
+	if interactionRule.interaction =='killSprite':
+		oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
+		precondition = list(set(interactionRule.preconditions))[0]
+		if precondition:
+			print "in precondition in buildArgsString"
+			## We should never be here; this is deprecated.
+			embed()
+			if precondition.negated:
+				true_operator = oppositeOperatorMap[precondition.operator_name]
+			else:
+				true_operator = precondition.operator_name
+
+			if precondition.item=='speed':
+				newInteractionName = 'killIfTooFast'
+				limit = precondition.num
+				argsString = " speed=%s"%(str(limit))
+			else:
+				if true_operator in {"<", "<="}:
+					newInteractionName = 'killIfHasLess' #example
+					if true_operator == "<":
+						limit = precondition.num - 1
+					else:
+						limit = precondition.num
+
+				elif true_operator in {">", ">="}:
+					newInteractionName = 'killIfOtherHasMore'
+					if true_operator == ">":
+						limit = precondition.num + 1
+					else:
+						limit = precondition.num
+
+				argsString = " resource=%s limit=%s"%(precondition.item, str(limit))
+	elif interactionRule.interaction=='teleportToExit':
+		print "implement teleportToExit argsstring"
+		embed()
+		argsString = ""
+	elif interactionRule.interaction in ['killIfFromAbove', 'killIfFromBelow']:
+		print "implement killIfFromAbove argsstring"
+		embed()
+		argsString = ""
+	elif interactionRule.interaction == 'killIfTooFast':
+		argsString = ""
+		argsString += " speed=%s"%(interactionRule.args['speed'])
+	elif interactionRule.interaction == 'changeResource':
+		argsString = ""
+		argsString += " resource=%s value=%s"%(interactionRule.args['resource'], interactionRule.args['value'])
+	else:
+		if interactionRule.args:
+			argsString = ""
+			for k,v in interactionRule.args.items():
+				if k in ['stype', 'strigger']:
+					argsString += " %s=%s"%(k, getClassNameFromSpriteString(v))
+				else:
+					argsString += " %s=%s"%(k, v)
+		else:
+			print "buildArgsString got called but no precondition"
+			embed()
+
+	return argsString, newInteractionName
+
+
 def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=False, goalLoc = None):
 	"""
 	-need to be able to take an optional argument that tells you the location of the goal, and put that into the level string
@@ -2683,87 +2764,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 	2 ways of swapping in knowledge:
 	-cleanest way:
 	"""
-	def getClassNameFromSpriteString(spriteName):
-		if len(rle._game.sprite_groups[spriteName])>0:
-			col = colorDict[str(rle._game.sprite_groups[spriteName][0].color)]
-			try:
-				className = [k for k in theory.classes.keys() if col in [c.colorName for c in theory.classes[k]]][0]
-			except:
-				print "couldn't find className"
-				embed()
-			return className
-		elif spriteName in theory.classes.keys():
-			return spriteName
-		else:
-			try:
-				## maybe we passed a color, so we should get the class.
-				return theory.spriteObjects[spriteName].className
-			except:
-				print "failed to get spriteName color. In getClassNameFromSpriteString"
-				embed()
-
-	def buildArgsString(interactionRule):
-		relevantArgNames = getKeywordsFromOntology(interactionRule.interaction)
-		newInteractionName = interactionRule.interaction
-		if interactionRule.interaction =='killSprite':
-			oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
-			precondition = list(set(interactionRule.preconditions))[0]
-			if precondition:
-				print "in precondition in buildArgsString"
-				## We should never be here; this is deprecated.
-				embed()
-				if precondition.negated:
-					true_operator = oppositeOperatorMap[precondition.operator_name]
-				else:
-					true_operator = precondition.operator_name
-
-				if precondition.item=='speed':
-					newInteractionName = 'killIfTooFast'
-					limit = precondition.num
-					argsString = " speed=%s"%(str(limit))
-				else:
-					if true_operator in {"<", "<="}:
-						newInteractionName = 'killIfHasLess' #example
-						if true_operator == "<":
-							limit = precondition.num - 1
-						else:
-							limit = precondition.num
-
-					elif true_operator in {">", ">="}:
-						newInteractionName = 'killIfOtherHasMore'
-						if true_operator == ">":
-							limit = precondition.num + 1
-						else:
-							limit = precondition.num
-
-					argsString = " resource=%s limit=%s"%(precondition.item, str(limit))
-		elif interactionRule.interaction=='teleportToExit':
-			print "implement teleportToExit argsstring"
-			embed()
-			argsString = ""
-		elif interactionRule.interaction in ['killIfFromAbove', 'killIfFromBelow']:
-			print "implement killIfFromAbove argsstring"
-			embed()
-			argsString = ""
-		elif interactionRule.interaction == 'killIfTooFast':
-			argsString = ""
-			argsString += " speed=%s"%(interactionRule.args['speed'])
-		elif interactionRule.interaction == 'changeResource':
-			argsString = ""
-			argsString += " resource=%s value=%s"%(interactionRule.args['resource'], interactionRule.args['value'])
-		else:
-			if interactionRule.args:
-				argsString = ""
-				for k,v in interactionRule.args.items():
-					if k in ['stype', 'strigger']:
-						argsString += " %s=%s"%(k, getClassNameFromSpriteString(v))
-					else:
-						argsString += " %s=%s"%(k, v)
-			else:
-				print "buildArgsString got called but no precondition"
-				embed()
-
-		return argsString, newInteractionName
 
 	DIRECTION_MAP = {(0,-1):'UP', (0,1):'DOWN', (1,0):'RIGHT', (-1,0):'LEFT'}
 
@@ -2895,7 +2895,8 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 			theoryString += "\t\tgoal > Passive color=LIGHTRED\n"
 
 	immovable_predicates = ['stepBack', 'undoAll']
-	kill_predicates = ['killSprite']
+	kill_predicates = ['killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore',\
+			'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow']
 	immovables, killerObjects = [], []
 	# second phase: the interaction rules
 	theoryString += "\tInteractionSet\n"
