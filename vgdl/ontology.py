@@ -1967,7 +1967,9 @@ def chaserMovesToward(sprite, game, target, fleeing):
     return res
 
 def findChaserClosestTargets(sprite, spritePrev, game):
-    if type(sprite.stype)==tuple:
+    if sprite.stype in colorDict:
+        targets = getSpritesByColor(game, sprite.stype)
+    elif type(sprite.stype)==tuple:
         targets = getSpritesByColor(game, colorDict[str(sprite.stype)])
     else:
         targets = game.color_groups[sprite.colorName]

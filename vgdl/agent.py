@@ -1316,8 +1316,6 @@ def matchEnvs(envA, envB, debug=False):
 
 		the list of "lonely sprites" in B that don't map to any sprites in B: 
 			[s_A7, s_A8, ..]
-
-
 	'''
 	## For classes that have more than enumeration_limit instances, default to greedy version.
 	enumeration_limit = 10
@@ -1346,10 +1344,10 @@ def matchEnvs(envA, envB, debug=False):
 		matchingSpritesInEnvB = [s for s in getObservedSpritesByColor(envB._game, color)]
 
 		## If it is manageable to enumerate all possible pairings
-		if len(matchingSpritesInEnvA)<enumeration_limit:
-			while len(matchingSpritesInEnvA)<len(matchingSpritesInEnvB):
+		if len(matchingSpritesInEnvA) < enumeration_limit:
+			while len(matchingSpritesInEnvA) < len(matchingSpritesInEnvB):
 				matchingSpritesInEnvA.append(None)
-			while len(matchingSpritesInEnvB)<len(matchingSpritesInEnvA):
+			while len(matchingSpritesInEnvB) < len(matchingSpritesInEnvA):
 				matchingSpritesInEnvB.append(None)
 
 			assignment_options = []

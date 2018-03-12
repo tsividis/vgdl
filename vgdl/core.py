@@ -280,14 +280,6 @@ class BasicGame(object):
 
         self.reset()
 
-    @property
-    def color_groups(self):
-        color_groups = {}
-        for sclass, sprites in self.sprite_groups.iteritems():
-            if sprites:
-                color_groups[sprites[0].colorName] = sprites[:]
-        return color_groups
-
     def reset(self):
         self.score = 0
         self.time = 0
