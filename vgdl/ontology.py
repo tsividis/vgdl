@@ -1970,7 +1970,7 @@ def findChaserClosestTargets(sprite, spritePrev, game):
     if type(sprite.stype)==tuple:
         targets = getSpritesByColor(game, colorDict[str(sprite.stype)])
     else:
-        targets = game.sprite_groups[sprite.stype]
+        targets = game.color_groups[sprite.colorName]
     bestd = 1e100
     res = []
     for target in targets:

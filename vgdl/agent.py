@@ -566,9 +566,9 @@ class Agent:
 				self.symbolDict, self.best_params, method=EXPERIENCE_REPLAY_METHOD, displayTheories=False
 			)
 
-			scoreAndTheoryTuples = zip(penalties, newTheories, experienceReplayRLEs)
+			scoreAndTheoryTuples = zip(penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], len(x[1].interactionSet)))
-			
+
 			for num, sh in enumerate(scoreAndTheoryTuples):
 				print "Theory: {} | Error: {}".format(num, sh[0])
 				sh[1].display()
@@ -900,6 +900,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 			sA.stype = getSpritesByColor(envPrev._game, sA.colorName)[0].colorName
 			sA.fleeing = theory.spriteObjects[sA.colorName].args['fleeing']
+			closestTargets = []
 			try:
 				closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing) ##TODO: Don't use envPrev._game.
 			except:
@@ -1522,7 +1523,7 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, symb
 	weight = 1./len(max(actionHistories, key=len))
 
 	for rleHistory, actionHistory in zip(rleHistories, actionHistories):
-		mean_penalties, _, _ = experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, 
+		mean_penalties, _, expRLE = experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, 
 													best_params, method, targetColor, displayStates, displayTheories)
 		mean_penalties = np.array(mean_penalties)*weight*len(actionHistory)
 		multi_episode_mean_penalties.append(mean_penalties)
