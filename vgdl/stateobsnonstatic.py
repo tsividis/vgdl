@@ -326,6 +326,7 @@ def buildTracker(rle):
         for sprite in gameObject.sprite_groups[group]:
             trackedObjects[sprite.colorName].append(copySpriteStingy(sprite))
     memory['trackedObjects'] = trackedObjects
+    memory['kill_list'] = []
     return memory
 
 def copySpriteStingy(sprite):
@@ -355,6 +356,7 @@ def processFrame(memory, gameObject):
 
     # print "in processFrame"
     # embed()
+    newMemory['kill_list'] = [copySpriteStingy(s) for s in gameObject.kill_list]
     newMemory['isGrid'] = memory['isGrid']
     newMemory['lastscore'] = memory['score']
     newMemory['score'] = gameObject.score

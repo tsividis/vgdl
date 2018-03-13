@@ -280,7 +280,7 @@ class Agent:
 		# actions = [K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
 		# actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT]
 		# actions = [K_LEFT, K_UP, K_LEFT, K_LEFT]
-		actions = [K_UP, K_UP]
+		actions = [K_UP, K_UP, K_UP]
 		self.initializeEnvironment()
 		# embed()
 
@@ -899,8 +899,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			appeared_sprites_envB.append(sB)
 			continue 
 
-		# Find erroneously destroyed sA by finding envA sprite closest to sPrev
-		candidates_in_killList = [s for s in envA._game.kill_list if s.colorName == sPrev.colorName]
+		## Find erroneously destroyed sA by finding envA sprite closest to sPrev
+		candidates_in_killList = [s for s in envA._game.observation['kill_list'] if s.colorName == sPrev.colorName]
 		
 		## These are both double-checking things that should have been taken care of better
 		## by the sprite matching. But since it's imperfect given our limited knowledge, we're
@@ -968,7 +968,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		e = errorMapEntry()
 		e.targetClass = sA.colorName
 		e.targetColor = sA.colorName
-		candidates_in_killList = [s for s in envB._game.kill_list if s.colorName == sA.colorName]
+		candidates_in_killList = [s for s in envB._game.observation['kill_list'] if s.colorName == sA.colorName]
 		sB = findNearestSprite(sA, candidates_in_killList)
 		if sB == None:
 			print "WARNING: No target and interaction pair found in object destruction. You have not implemented this diagnosis."
@@ -1108,23 +1108,10 @@ def neighborsPrev(envA, envPrev, sPrev):
 	sPrev: target sprite in envPrev
 	"""
 	# Find potential interaction partners: neighboring sprites in previous step
-	
 	all_sprites = [item for sublist in envPrev._game.observation['trackedObjects'].values() for item in sublist]
 
 	# Neighbors of problematic sprite in real world in previous time step
-	# neighbors = [s for s in all_sprites if manhattanDist2(s, sPrev)<=np.sqrt(2) and s!=sPrev and (s not in envPrev._game.kill_list)]
 	neighbors = [s for s in all_sprites if manhattanDist2(s, sPrev)<=np.sqrt(2) and s!=sPrev]
-
-	# Determine corresponding classes in theory environment
-	# neighbors_color = [s.colorName for s in neighbors]
-	# neighbors_color = list(set(neighbors_color))
-	# neighbors_theoClassNames = []
-	# for color in neighbors_color:
-	# 	for className in envA._game.observation['trackedObjects'].keys():
-	# 		if envA._game.observation['trackedObjects'][className]!=[] and envA._game.observation['trackedObjects'][className][0].colorName == color:
-	# 			neighbors_theoClassNames.append(className)
-	# neighbors_theoClassNames = list(set(neighbors_theoClassNames)) #delete double entries
-
 	neighbors = list(set([n.colorName for n in neighbors]))	
 	return neighbors
 
