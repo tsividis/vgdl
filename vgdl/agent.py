@@ -827,13 +827,11 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			if sPrev is None:
 				continue
 
-			## TODO: This will break if things don't exist in the game at this point that match stype
-			# stype = theory.spriteObjects[sA.colorName].args['stype']
-
-			sA.stype = getSpritesByColor(envPrev._game, sA.colorName)[0].colorName
+			stype = theory.spriteObjects[sA.colorName].args['stype']
+			sA.stype = theory.classes[stype][0].colorName
 			sA.fleeing = theory.spriteObjects[sA.colorName].args['fleeing']
 			try:
-				closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing) ##TODO: Don't use envPrev._game.
+				closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
 			except:
 				print "tried to find chaseroptions in errorSignal"
 				embed()
