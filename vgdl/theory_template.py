@@ -2307,12 +2307,12 @@ def getKeywordsFromOntology(interactionName):
 
 
 thresholdOrdering = {\
-	'killIfHasLess': 		range(-2,10),
-	'killIfHasMore': 		range(-2,10),
-	'killIfOtherHasLess': 	range(-2,10),
-	'killIfOtherHasMore': 	range(-2,10),
-	'killIfTooFast': 		range(100),
-	'killIfSlow': 			range(100)
+	'killIfHasLess': 		range(-2,11),
+	'killIfHasMore': 		range(-2,11),
+	'killIfOtherHasLess': 	range(-2,11),
+	'killIfOtherHasMore': 	range(-2,11),
+	'killIfTooFast': 		range(-5,100,5),
+	'killIfSlow': 			range(-5,100,5)
 }
 
 
@@ -2641,7 +2641,7 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 	## For predicates that take arguments, finds the first (according to some ordering) satisfying argument and returns that.
 	## generic=True proposes all possible combinations of args instead.
 
-	childTheories = [theory]
+	childTheories = [theory.copy()]
 
 	##if iterating thresholds is not relevant:
 	predicatesWithThresholds = ['killIfTooFast', 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']

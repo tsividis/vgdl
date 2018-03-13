@@ -1967,9 +1967,13 @@ def chaserMovesToward(sprite, game, target, fleeing):
     return res
 
 def findChaserClosestTargets(sprite, spritePrev, game):
-    if type(sprite.stype)==tuple:
-        targets = getSpritesByColor(game, colorDict[str(sprite.stype)])
+    if sprite.stype in colorDict.values():
+        targets = getObservedSpritesByColor(game, sprite.stype)
+    elif type(sprite.stype)==tuple:
+        targets = getObservedSpritesByColor(game, colorDict[str(sprite.stype)])
     else:
+        ## This is the default VGDL behavior; if it gets to this case
+        ## it's being called to do normal game-playing stuff.
         targets = game.sprite_groups[sprite.stype]
     bestd = 1e100
     res = []

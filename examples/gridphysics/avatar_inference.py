@@ -18,10 +18,10 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
 w                              w
-w                   4          w
 w                              w
 w                              w
-w              A               w
+w      s          A            w
+w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -65,7 +65,6 @@ BasicGame
         cannon > SpawnPoint color=RED stype=box spawnCooldown=5
         missile > Missile
             sam  > orientation=UP color=BLUE singleton=True
-        # sam > Flicker limit=5
         wall > Immovable color=DARKGRAY
     LevelMapping
         C > cloner
