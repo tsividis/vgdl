@@ -18,9 +18,9 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
 w                              w
-w                              w
-w                              w
-w      s          A            w
+w      1          1            w
+w                        c     w
+w         c       A            w
 w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
@@ -62,7 +62,7 @@ BasicGame
         random > RandomNPC color=PURPLE speed=1 cooldown=1
         chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
         avatar  > MovingAvatar color=DARKBLUE #stype=sam
-        cannon > SpawnPoint color=RED stype=box spawnCooldown=5
+        cannon > SpawnPoint color=RED stype=sam spawnCooldown=1
         missile > Missile
             sam  > orientation=UP color=BLUE singleton=True
         wall > Immovable color=DARKGRAY

@@ -2474,7 +2474,6 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	targetClass = errorMap.targetClass
 	targetToken = errorMap.targetToken
 
-
 	theory.expandedSprites.append(targetClass)
 	
 	## Only propose sprites when something moves that we didn't think was going to move.
@@ -2655,7 +2654,7 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 			theory.interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
 		
 		alteredPairs, newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
-		
+		alteredPairs = {0,1}
 		toRemove = set()
 		if 0 in alteredPairs:
 			toRemove |= set([i for i in range(len(theory.interactionSet)) if 
@@ -2664,6 +2663,8 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 			toRemove |= set([i for i in range(len(theory.interactionSet)) if 
 				theory.interactionSet[i].generic and classPair==(theory.interactionSet[i].asTuple()[2], theory.interactionSet[i].asTuple()[1])])
 
+		# if len(toRemove)>0:
+			# embed()
 		for i in sorted(toRemove, reverse=True):
 			theory.interactionSet.pop(i)
 

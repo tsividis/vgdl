@@ -630,11 +630,8 @@ def setVrleState(rle, Vrle, hypothesis):
 				sprite.resources = defaultdict(int)
 				for rcolor in matchingSprite.inventory.keys():
 					sprite.resources[hypothesis.spriteObjects[rcolor].className] = matchingSprite.inventory[rcolor][0]
-				# sprite.resources    = {hypothesis.spriteObjects[rcolor].className: matchingSprite.inventory[rcolor]
-											# for rcolor in matchingSprite.inventory.keys()}
 
 				# in VGDL, only things which move passively have an orientation that isn't (0,0)
-				#	if we set
 				if (hypothesis.spriteObjects[matchingSprite.colorName].vgdlType in
 						[MovingAvatar, HorizontalAvatar, VerticalAvatar]):
 					sprite.orientation = (0,0)
@@ -652,9 +649,6 @@ def setVrleState(rle, Vrle, hypothesis):
 				# sprite.last_vy = ccopy(matchingSprite.last_vy)
 				# sprite.speed = ccopy(matchingSprite.speed)
 	Vrle._game.score = int(rle._game.score)
-	# if 
-	# print 'in setVrleState'
-	# embed()
 	Vrle._game.observation = buildTracker(Vrle)
 	Vrle._game.observation['lastscore'] = rle._game.observation['lastscore']
 
@@ -733,6 +727,12 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 	keys: (class1, class2). values: a diagnostic error signal
 	"""
 
+	#likelihood version
+	e_dist = 1e-10
+	e_inventory = 1e-10
+	e_disappearance = 1e-10
+
+
 	# Initialization
 	total_penalty = 0.
 	errorMap = []
@@ -746,14 +746,13 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		e.targetClass = None
 		e.targetColor = None
 		errorMap.append(e)
-		total_penalty = 1e6
+		# total_penalty = 1e6
+		total_penalty = 1. #likelihood version
 		return total_penalty, errorMap
 
 	# Match sprites in environments and get sprites that couldn't be matched
 	matched_sprites, lonely_sprites_envA, lonely_sprites_envB = matchEnvs(envA, envB)
 
-	# if not targetColor:
-		# print matched_sprites
 	if targetColor:
 		try:
 			matched_sprites = [m for m in matched_sprites if m[0].colorName == targetColor]
@@ -806,7 +805,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			xPrev = sPrev.rect.left/d
 			yPrev = sPrev.rect.top/d
 
-			dist_rNPC = manhattanDist((xB,yB), (xPrev, yPrev))
+			# dist_rNPC = manhattanDist((xB,yB), (xPrev, yPrev))
 			# dist_rNPC = [ manhattanDist( (xB,yB), (xPrev,yPrev) ), \
 			#                    manhattanDist( (xB,yB), (xPrev+sA_speed,yPrev) ), \
 			#                    manhattanDist( (xB,yB), (xPrev-sA_speed,yPrev) ), \
@@ -815,10 +814,12 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			#                  ]
 			# mindist_rNPC = min(dist_rNPC)
 			# total_penalty += p_speed*mindist_rNPC #penalize speed separately to discourage keeping around too many similar theories
-			
-			total_penalty += p_speed*min(dist,1.)
+			positionOptions = [(xPrev, yPrev), (xPrev+sA_speed, yPrev), (xPrev-sA_speed, yPrev), (xPrev, yPrev+sA_speed), (xPrev, yPrev-sA_speed)]
+			# total_penalty += p_speed*min(dist,1.)
+			total_penalty += np.log(.25-e_dist) if (xB, yB) in positionOptions else np.log(0.+e_dist) #likelihood
 		elif 'Missile' in str(sA_type):
-			total_penalty += p_speed*t[2] #penalize speed separately to discourage keeping around too many similar theories
+			# total_penalty += p_speed*t[2] #penalize speed separately to discourage keeping around too many similar theories
+			total_penalty += np.log(1.-e_dist) if dist==0. else np.log(0.+e_dist) #likelihood
 		elif 'Chaser' in str(sA_type):
 			
 			sPrev, _ = find_sPrev(sB, envB, envPrev)
@@ -842,12 +843,14 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 			## this should be arbitrarily high, actually. If you want this to be a surrogate likelihood function,
 			## the prob that a chaser moves away from what it's chasing is 0.
-			chaser_penalty = 0. if (xA,yA) in closestTargets else 100.
+			# chaser_penalty = 0. if (xA,yA) in closestTargets else 100.
+			# total_penalty += p_speed*chaser_penalty
+			total_penalty += np.log(1.-e_dist) if (xA,yA) in closestTargets else np.log(0.+e_dist) # likelihood
 
-			total_penalty += p_speed*chaser_penalty
 		# All of the other types are deterministic
 		else:
-			total_penalty += p_dist*t[2] 
+			# total_penalty += p_dist*t[2]
+			total_penalty += np.log(1.-e_dist) if t[2]==0. else np.log(0+e_dist)
 
 		inventory_penalty = 0
 		keys = list(set(t[0].inventory.keys()+t[1].inventory.keys()))
@@ -857,14 +860,17 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			t1_k = t[1].inventory[k] if k in t[1].inventory.keys() else (0,0)
 			inventory_penalty += abs(t0_k[0]-t1_k[0])
 
-		total_penalty += inventory_penalty
+		# total_penalty += inventory_penalty
+		total_penalty += np.log((e_inventory)**inventory_penalty) #likelihood
 
 	# Missing/additional/transformation penalty
-	total_penalty += p_miss * ( len(lonely_sprites_envA) + len(lonely_sprites_envB) )
+	# total_penalty += p_miss * ( len(lonely_sprites_envA) + len(lonely_sprites_envB) )
+	total_penalty += np.log((e_disappearance)**( len(lonely_sprites_envA) + len(lonely_sprites_envB) )) #likelihood
 
-	if envA._game.observation['score'] != envB._game.observation['score']:
-		total_penalty += p_score*abs(envA._game.observation['score']-envB._game.observation['score'])
+	# if envA._game.observation['score'] != envB._game.observation['score']:
+		# total_penalty += p_score*abs(envA._game.observation['score']-envB._game.observation['score'])
 
+	total_penalty = 1.-np.exp(total_penalty)
 	if penalty_only:
 		return total_penalty, []
 
@@ -998,11 +1004,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		e.targetToken = sB
 
 		# Find class of new object by comparing colors, or give 'unknown' if unsuccessful
-		color = sB.colorName
-		all_sprites_envA = []
-		for g in envA._game.sprite_groups.keys():
-			all_sprites_envA += envA._game.sprite_groups[g]
-		sMatch = [s for s in all_sprites_envA if s.colorName == color]
+		sMatch = getObservedSpritesByColor(envA._game, sB.colorName)
 		if sMatch == []:
 			e.targetClass = 'unknown'
 		else:
@@ -1498,13 +1500,13 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 			theories = newTheories
 			continue
 
-		print "In base case. Correcting error for {} for {} theories".format(errorMap.targetClass, len(theories))
+		# print "In base case. Correcting error for {} for {} theories".format(errorMap.targetClass, len(theories))
 		t1 = time.time()
 		newTheories = []
 		for theory in theories:
 			newTheories.extend(expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, prevAction, rleHistory, actionHistory, 
 					theory, bestSpriteTypeDict, classPairPlusPredicateToRuleSets))
-		print "Expanding {} theories took {} seconds".format(len(theories), time.time()-t1)
+		# print "Expanding {} theories took {} seconds".format(len(theories), time.time()-t1)
 
 		t1 = time.time()
 		newTheories = list(set(newTheories))
@@ -1521,10 +1523,6 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		newTheories = [s[1] for s in scoresAndHypotheses]
 
 		theories = newTheories
-
-	# if any(['conditionalKill' in e.diagnosis for e in errorList]):
-	# print 'bottom of expandTheories'
-	# embed()
 
 	return theories
 
@@ -1582,8 +1580,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			## NOTE: errorMap takes a unique targe class, and there are cases where you might have multiple singleton neighbors.
 			## For now you're taking just a random choice between those.
 			neighbors = neighborsPrev(envRealCurrent, envRealCurrent, errorMap.targetToken)
-			options = [item for sublist in [envRealCurrent._game.observation['trackedObjects'][k] for k in neighbors if 
-				len(envRealCurrent._game.observation['trackedObjects'][k]) == 1] for item in sublist]
+			options = [item for sublist in [envRealCurrent._game.observation['trackedObjects'][k] for k in neighbors] for item in sublist]
 
 			if len(options)>1:
 				print "Warning: More than one singleton neighbor of a newly-spawned sprite. Randomly picking one as agent"
@@ -1625,8 +1622,6 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 		except:
 			print "overlapping_item problem in expandTheoryForOneErrorMap"
 			embed()
-		# overlapping_item = [item for sublist in envRealCurrent._game.sprite_groups.values() for item in sublist if 
-			# item.rect == errorMap.targetToken.rect and item.colorName!=errorMap.targetToken.colorName][0]
 		errorMap.targetToken = overlapping_item
 		errorMap.targetClass = theory.spriteObjects[overlapping_item.colorName].className
 
@@ -1690,12 +1685,12 @@ def testAndExpand(theoryRLEs, hypotheses, action, envReal, envRealPrev, index, r
 
 	env.step(action)
 	penalty, errorList = errorSignal(env, envReal, hypothesis, envRealPrev)
-	
-	if errorList:
+
+	# if errorList:
 		# hypothesis.display()
-		for e in errorList:
-			e.display()
-			print ""
+		# for e in errorList:
+			# e.display()
+			# print ""
 		# embed()
 	# else:
 		# print "No error"
