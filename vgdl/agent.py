@@ -280,7 +280,8 @@ class Agent:
 		# actions = [K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
 		# actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT]
 		# actions = [K_LEFT, K_UP, K_LEFT, K_LEFT]
-		actions = [K_UP, K_UP, K_UP]
+		# actions = [K_UP, K_UP, K_UP]
+		actions = [0]*10
 		self.initializeEnvironment()
 		# embed()
 
@@ -816,7 +817,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			# total_penalty += p_speed*mindist_rNPC #penalize speed separately to discourage keeping around too many similar theories
 			positionOptions = [(xPrev, yPrev), (xPrev+sA_speed, yPrev), (xPrev-sA_speed, yPrev), (xPrev, yPrev+sA_speed), (xPrev, yPrev-sA_speed)]
 			# total_penalty += p_speed*min(dist,1.)
-			total_penalty += np.log(.25-e_dist) if (xB, yB) in positionOptions else np.log(0.+e_dist) #likelihood
+			total_penalty += np.log(1./len(positionOptions)-e_dist) if (xB, yB) in positionOptions else np.log(0.+e_dist) #likelihood
 		elif 'Missile' in str(sA_type):
 			# total_penalty += p_speed*t[2] #penalize speed separately to discourage keeping around too many similar theories
 			total_penalty += np.log(1.-e_dist) if dist==0. else np.log(0.+e_dist) #likelihood
@@ -845,7 +846,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			## the prob that a chaser moves away from what it's chasing is 0.
 			# chaser_penalty = 0. if (xA,yA) in closestTargets else 100.
 			# total_penalty += p_speed*chaser_penalty
-			total_penalty += np.log(1.-e_dist) if (xA,yA) in closestTargets else np.log(0.+e_dist) # likelihood
+			total_penalty += np.log(1./len(closestTargets)-e_dist) if (xA,yA) in closestTargets else np.log(0.+e_dist) # likelihood
 
 		# All of the other types are deterministic
 		else:
