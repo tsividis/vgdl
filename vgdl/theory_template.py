@@ -2415,7 +2415,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 								'undoAll', 'nothing',\
 								'turn', 'turnAround', 'reverseDirection', 'flipDirection', 'bounceForward',\
 								'changeResource', 'collectResource', 'changeScore', 'teleportToExit', 'conveySprite'],
-	'gridphysics': [],
+	'gridphysics': 				[],
 	'continuousphysics': 		['transformToOnLanding', 'killIfTooFast', 'killIfSlow', 'killIfFromAbove',\
 								'killIfFromBelow', 'bounceDirection', 'flipDirection', 'conveySprite', 'pullWithIt',\
 								'windGust','slipForward', 'wallBounce', 'wallStop','onRope', 'onLadder']
@@ -2432,7 +2432,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 
 	## Position difference
 	'noMovement': 				['undoAll'], #stepBack
-	'unexpectedPosition': 		['bounceForward'],
+	'unexpectedPosition': 		['bounceForward', 'nothing'],
 									# , 'pullWithIt', 'windGust', 'slipForward',\
 									# 'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap
 	'unexpectedOverlap':		['nothing'],#, 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
@@ -2591,10 +2591,12 @@ predicateToOrderingMapping = {
 	'wallStop':				(0,),
 	'onRope':				(0,),
 	'onLadder':				(0,),
-	'bounceForward':		(0,1),
+	'nothing':				(0,),
+	'bounceForward':		(0,),
  	'changeScore':			(0,1),
-	'nothing':				(0,1),
 	'undoAll':				(0,1)}
+
+predicatesThatConflictWithStepBack = ['nothing', 'transformTo']
 
 def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n):
 
@@ -2607,7 +2609,7 @@ def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, ob
 			predicateGroups.extend(list(itertools.combinations(predicates, i)))
 
 		bothOrderings = [[()], [()]]
-		alteredPairs = set()
+		# alteredPairs = set()
 		for i,order in enumerate([classPair, (classPair[1], classPair[0])]):
 
 			for predicateGroup in predicateGroups:
@@ -2619,7 +2621,7 @@ def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, ob
 					## orderings are (targetClass, neighbor). If the ordering we're proposing is consistent with the semantics
 					## of the predicate we're proposing, add this potential rule.
 					if i in predicateToOrderingMapping[predicate]:
-						alteredPairs.add(i)
+						# alteredPairs.add(i)
 						allArgumentCombinations = proposeArgs(theory, predicate, errorMap, observations, 
 							generic=False)
 						predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
@@ -2629,7 +2631,7 @@ def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, ob
 		## Now generate combinations from each expanded predicateGroup that we added to each of the orderings
 		newRuleSets = list(itertools.product(bothOrderings[0], bothOrderings[1]))
 		newRuleSets = [[item for sublist in ruleSet for item in sublist] for ruleSet in newRuleSets]
-		classPairPlusPredicateToRuleSets[key] = (alteredPairs, newRuleSets)
+		classPairPlusPredicateToRuleSets[key] = newRuleSets
 		
 		# print "in getRuleSetsForClassPairPredicate"
 		# embed()
@@ -2653,28 +2655,18 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 					rule.asTuple()[1] == errorMap.targetClass and rule.asTuple()[0]=='killSprite']
 			theory.interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
 		
-		alteredPairs, newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
-		alteredPairs = {0,1}
-		toRemove = set()
-		if 0 in alteredPairs:
-			toRemove |= set([i for i in range(len(theory.interactionSet)) if 
-				theory.interactionSet[i].generic and classPair==(theory.interactionSet[i].asTuple()[1], theory.interactionSet[i].asTuple()[2])])
-		if 1 in alteredPairs:
-			toRemove |= set([i for i in range(len(theory.interactionSet)) if 
-				theory.interactionSet[i].generic and classPair==(theory.interactionSet[i].asTuple()[2], theory.interactionSet[i].asTuple()[1])])
-
-		# if len(toRemove)>0:
-			# embed()
-		for i in sorted(toRemove, reverse=True):
-			theory.interactionSet.pop(i)
+		newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
 
 		for i,ruleSet in enumerate(newRuleSets):
-			if len(ruleSet)>0:
+			if len(ruleSet) > 0:
 				newTheory = theory.copy()
 				newTheory.mostRecentEdit = 'interactionSetInduction'
 				newTheory.errorMapHistory.append(errorMap)
-				newTheory.interactionSet.extend(ruleSet)
+				# remove old rules that conflict with the new ones
+				alteredPairs = set([(rule.slot1, rule.slot2) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack])
+				newTheory.interactionSet = [rule for rule in newTheory.interactionSet if 'stepBack' != rule.interaction or (rule.slot1, rule.slot2) not in alteredPairs]
 				for rule in ruleSet:
+					newTheory.interactionSet.append(rule)
 					newTheory.dryingPaint.add(rule)
 				newTheory.reconcileInteractionsAndSprites()
 				childTheories.append(newTheory)

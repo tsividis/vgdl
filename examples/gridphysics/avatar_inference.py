@@ -19,8 +19,8 @@ w                              w
 w                              w
 w                              w
 w      1          1            w
-w                        c     w
-w         c       A            w
+w                              w
+w                 A            w
 w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """

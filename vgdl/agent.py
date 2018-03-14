@@ -1085,9 +1085,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 	## convert color names in targetClass and intPairs to theory class names:
 	for e in errorMap:
-		if not e.targetClass in theory.spriteObjects.keys():
-			print "target class unknown? in errorSignal"
-			embed()
 		e.targetClass = theory.spriteObjects[e.targetClass].className if e.targetClass in theory.spriteObjects.keys() else 'unknown'
 
 		if e.intPairs:
