@@ -1650,8 +1650,8 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 						or any(['objectDestruction' in e.diagnosis for e in theory.errorMapHistory if e.targetClass in targetClassPair]) ):
 				# print "*******inner one happened"
 				# embed()
-				pass
-			singleIntPairErrorMap.diagnosis.append('conditionalKill')
+				# pass
+				singleIntPairErrorMap.diagnosis.append('conditionalKill')
 			# print "*******non-generic rules for classPair"
 			# embed()
 
