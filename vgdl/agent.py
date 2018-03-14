@@ -1368,64 +1368,65 @@ def matchEnvs(envA, envB, debug=False):
 			unmatched_colors[s.colorName].add(s)
 
 	# while it's still possible to make matches
-	# while color in set(unmatched_colorsA).interaction(set(unmatched_colorsB)):
-	# 	color, spritesA = unmatched_colorsA.popitem()
-	# 	# pop on of the unmatched sprites from the unmatched colors
-	# 	spriteA = spritesA.pop()
+	unmatched_colors = set(unmatched_colorsA).intersection(set(unmatched_colorsB))
+	while unmatched_colors:
+		color = unmatched_colors.pop()
+		# pop one of the unmatched sprites from the unmatched colors
+		spriteA = unmatched_colorsA[color].pop()
+		
+		# spriteA = spritesA.pop()
 
-	# 	# get all the sprites of the same color
-	# 	color_group = set(color_groupsA[color])
+		# get all the sprites of the same color in the second env
+		color_group = color_groupsB[color][:]
 
-	# 	# rematch sprites until we've tried to match them all
-	# 	while color_group:
-	# 		color_group.remove(spriteA)
-
-	# 		spriteB = findNearestSprite(spriteA, color_group)
-	# 		if spriteB:
-	# 			unmatched_colorsA.remove(spriteA)
-	# 			unmatched_sprite = match_dict[spriteA]
-	# 			if unmatched_sprite:
-	# 				unmatched_colorsB.add(unmatched_sprite)
-
-	# 			match_dict[spriteA] = spriteB
-	# 			if spriteB in unmatched_colorsB:
-	# 				unmatched_colorsB.remove(spriteB)
-				
-	# 			spriteA = spriteB
-	# 		else:
-	# 			unmatched_colorsA.add(spriteA)
+		# rematch sprites until we've tried to match them all
+		while color_group:
+			spriteB = findNearestSprite(spriteA, color_group)	
+			if spriteB:
+				color_group.remove(spriteB)
+				unmatched_sprite = match_dict[spriteA]
+				match_dict[spriteA] = spriteB
+				if unmatched_sprite:		
+					unmatchedB.add(unmatched_sprite)
+				if spriteB in unmatchedB:
+					unmatched.remove(spriteB)
+				if spriteA in unmatchedA:
+					unmatchedA.remove(spriteA)
+				spriteA = spriteB
+			else:
+				break
 
 
 	# Slowly goes through all possible combinations and finds minimum distance
-	for color in set(unmatched_colorsA).intersection(set(unmatched_colorsB)):
-		# get all sprites. We're basically just starting over
-		spritesA = color_groupsA[color]
-		spritesB = color_groupsB[color]
-		# pad sprites lists
-		spritesA = spritesA + [None]*(max(len(spritesA), len(spritesB)) - len(spritesA))
-		spritesB = spritesB + [None]*(max(len(spritesA), len(spritesB)) - len(spritesB))
-		# now they should be of equal length
+	# for color in set(unmatched_colorsA).intersection(set(unmatched_colorsB)):
+	# 	# get all sprites. We're basically just starting over
+	# 	spritesA = color_groupsA[color]
+	# 	spritesB = color_groupsB[color]
+	# 	# pad sprites lists
+	# 	spritesA = spritesA + [None]*(max(len(spritesA), len(spritesB)) - len(spritesA))
+	# 	spritesB = spritesB + [None]*(max(len(spritesA), len(spritesB)) - len(spritesB))
+	# 	# now they should be of equal length
 
-		min_sum_sqr_dists = float('inf')
-		best_matches = []
-		# O(n!) (exponential. Hopefully this doesn't go above 3 or 4)
-		for permutation in itertools.permutations(spritesA):
-			sum_sqr_dists = 0
-			perm_matches = []
-			for spriteA, spriteB in itertools.izip(permutation, spritesB):
-				sum_sqr_dists += manhattanDist2(spriteA, spriteB)**2
-				perm_matches.append((spriteA, spriteB))
-			if sum_sqr_dists < min_sum_sqr_dists:
-				best_matches = perm_matches
-				min_sum_sqr_dists = sum_sqr_dists
+	# 	min_sum_sqr_dists = float('inf')
+	# 	best_matches = []
+	# 	# O(n!) (exponential. Hopefully this doesn't go above 3 or 4)
+	# 	for permutation in itertools.permutations(spritesA):
+	# 		sum_sqr_dists = 0
+	# 		perm_matches = []
+	# 		for spriteA, spriteB in itertools.izip(permutation, spritesB):
+	# 			sum_sqr_dists += manhattanDist2(spriteA, spriteB)**2
+	# 			perm_matches.append((spriteA, spriteB))
+	# 		if sum_sqr_dists < min_sum_sqr_dists:
+	# 			best_matches = perm_matches
+	# 			min_sum_sqr_dists = sum_sqr_dists
 
-		for spriteA, spriteB in best_matches:
-			if not spriteA or not spriteB: continue # matched with None
-			match_dict[spriteA] = spriteB
-			if spriteA in unmatchedA:
-				unmatchedA.remove(spriteA)
-			if spriteB in unmatchedB:
-				unmatchedB.remove(spriteB)
+	# 	for spriteA, spriteB in best_matches:
+	# 		if not spriteA or not spriteB: continue # matched with None
+	# 		match_dict[spriteA] = spriteB
+	# 		if spriteA in unmatchedA:
+	# 			unmatchedA.remove(spriteA)
+	# 		if spriteB in unmatchedB:
+	# 			unmatchedB.remove(spriteB)
 
 	lonely_sprites_envA = list(unmatchedA)
 	lonely_sprites_envB = list(unmatchedB)
