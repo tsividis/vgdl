@@ -1647,7 +1647,8 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 		# 		and any([not rule.generic for rule in matchingRules]):
 		if any([not rule.generic for rule in matchingRules]):
 			if ('objectDestruction' in singleIntPairErrorMap.diagnosis
-						or any(['objectDestruction' in e.diagnosis for e in theory.errorMapHistory if e.targetClass in targetClassPair]) ):
+						or any(['kill' in rule.interaction for rule in theory.interactionSet if errorMap.targetClass==rule.slot1]) ):
+						# or any(['objectDestruction' in e.diagnosis for e in theory.errorMapHistory if e.targetClass in targetClassPair]) ):
 				# print "*******inner one happened"
 				# embed()
 				# pass
