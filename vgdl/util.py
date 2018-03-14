@@ -13,12 +13,12 @@ CAPCHARS = 'QWERTYUIOPSDFHJKLZXCVBNM'
 lp = LineProfiler()
 def profile(function):
 	''' Wrapper to print speed of function line-by-line '''
-	def profile(*args):
+	def profileFunction(*args):
 		lp_wrapper = lp(function)
 		return_values = lp_wrapper(*args)
 		lp.print_stats()
 		return return_values
-	return profile
+	return profileFunction
 
 
 class LinkedDict():
@@ -49,6 +49,11 @@ class LinkedDict():
 
     def __repr__(self):
         return '%r' % self.toList()
+
+    def copy(self):
+        newLinkedDict = LinkedDict()
+        for key, value in self.iteritems():
+            newLinkedDict[key] = value 
 
     def iteritems(self):
         return self._dict1.iteritems()
