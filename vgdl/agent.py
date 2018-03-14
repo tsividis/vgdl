@@ -762,13 +762,37 @@ def VrleInitPhase(hypotheses, stateToSet, symbolDict, best_params):
 
 	return VRLEs
 
-def findNearestSprite(sprite, spriteList):
+def findNearestSprite(sprite, spriteList, dist_function=manhattanDist2):
 	## returns the sprite in spriteList whose location best matches the location of sprite.
 	if not spriteList:
 		return None
-	else:
-		distList = [abs(x.rect.left-sprite.rect.left)+abs(x.rect.top-sprite.rect.top) for x in spriteList if x != sprite]
-		return spriteList[distList.index(min(distList))]
+
+	min_dist = float('inf')
+	closest_sprite = None
+	for s in spriteList:
+		if s == sprite: continue
+		dist = dist_function(s, sprite)
+		if dist < min_dist:
+			min_dist = dist
+			closest_sprite = s
+	return closest_sprite
+
+def findNearestSprites(sprite, spriteList, dist_function=manhattanDist2):
+	## returns a list of closest sprites where the distances are all equal
+	if not spriteList:
+		return []
+
+	dist_map = defaultdict(lambda: [])
+	min_dist = float('inf')
+	for s in spriteList:
+		if s == sprite: continue
+		dist = dist_function(s, sprite)
+		if dist < min_dist:
+			min_dist = dist
+			dist_map[dist].append(s)
+	return dist_map[min_dist]
+		
+
 
 
 
@@ -1289,8 +1313,129 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 	# Return list of errorMapEntry objects
 	return errorMaps
 
-
+# @profile
 def matchEnvs(envA, envB, debug=False):
+	'''
+	Compares environment A to environment B, mapping sprites from A to sprites from B 1 to 1 (if it can)
+	by comparing the positions of sprites in A to positions of sprites in B of the same color. 
+
+	Returns mapping that minimizes distance between matching sprites (hopefully?)
+
+	returns:
+
+		the matched sprites as a list of tuples of sprites from A and sprites from B 
+	and the manhatten distance between their positions: 
+		[(s_A1, s_B1, d), (s_A2, s_A3, d), ...]
+
+		the list of "lonely sprites" in A that don't map to any sprites in A: 
+			[s_A5, s_A6, ..]
+
+		the list of "lonely sprites" in B that don't map to any sprites in B: 
+			[s_A7, s_A8, ..]
+	'''
+
+	# Start creating our data structures.
+	matched_sprites, lonely_sprites_envA, lonely_sprites_envB = [],[],[]
+
+	color_groupsA = defaultdict(lambda : [])
+	color_groupsB = defaultdict(lambda : [])
+	positions = set()
+
+	# start with greedy algorithm
+	# match objects with the same position/color to each other
+
+	# map positions to objects
+	pos_groupsA = defaultdict(lambda : [])
+	pos_groupsB = defaultdict(lambda : [])
+
+	match_dict = LinkedDict()
+	unmatchedA = set()
+	unmatchedB = set()
+	# is there any guarantee for the ordering of the sprites?
+	# O(spritesA+spritesB) ~ O(n)
+	for env, pos_groups, color_groups, unmatched in [(envA, pos_groupsA, color_groupsA, unmatchedA), 
+													 (envB, pos_groupsB, color_groupsB, unmatchedB)]:
+		for name, sprites in env._game.sprite_groups.iteritems():
+			if sprites:
+				color = sprites[0].colorName
+				color_groups[color] = sprites
+				
+			for sprite in sprites:
+				pos = sprite.rect.topleft
+				pos_groups[pos].append(sprite)
+				positions.add(pos)
+				unmatched.add(sprite)
+
+
+	# Greedily matches sprites based on position first AND color
+	# O(n^2) (but will likely be O(n) since not many sprites overlap)
+	for pos in positions: # O(n)
+		for spriteA in pos_groupsA[pos]: # O(max 5ish?)
+			for spriteB in pos_groupsB[pos]: # O(max 5ish?)
+				if spriteA.colorName == spriteB.colorName:
+					if match_dict[spriteB]: continue # match already made
+					unmatchedA.remove(spriteA)
+					unmatchedB.remove(spriteB)
+					match_dict[spriteA] = spriteB
+					# stop after first match and go on to match next one
+					break
+
+	# O(unmatchedA+unmatchedB) ~ O(n)
+	unmatched_colorsA, unmatched_colorsB = defaultdict(lambda: set()), defaultdict(lambda: set())
+	for unmatched, unmatched_colors in [(unmatchedA, unmatched_colorsA),
+										(unmatchedB, unmatched_colorsB)]:
+		for s in unmatched:
+			unmatched_colors[s.colorName].add(s)
+
+	# while it's still possible to make matches
+	unmatched_colors = set(unmatched_colorsA).intersection(set(unmatched_colorsB))
+	for color in unmatched_colors:
+		# get all the sprites with the color in envB
+		# and the unmatched sprites with the color in envA
+		color_groupB = set(color_groupsB[color])
+		color_groupA = unmatched_colorsA[color]
+		
+		# pop one of the unmatched sprites from the unmatched color_groupA
+		spriteA = color_groupA.pop()
+		while (spriteA or color_groupA) and color_groupB:
+			# rematch sprites until we've tried to match them all
+			if not spriteA:
+				spriteA = color_groupA.pop()
+
+			# Definitely need a function for "findNearestSprites"
+			
+			spriteB = findNearestSprite(spriteA, color_groupB) 
+			color_groupB.remove(spriteB)
+			# grab the sprite we'll possibly unmatch
+			unmatched_spriteA = match_dict[spriteB]
+			match_dict[spriteA] = spriteB
+			if unmatched_spriteA:
+				unmatchedA.add(unmatched_spriteA)
+			if spriteA in unmatchedA:
+				unmatchedA.remove(spriteA)
+			if spriteB in unmatchedB:
+				unmatchedB.remove(spriteB)
+			spriteA = unmatched_spriteA
+
+		if spriteA:
+			color_groupA.add(spriteA)
+			unmatchedA.add(spriteA)
+
+	lonely_sprites_envA = list(unmatchedA)
+	lonely_sprites_envB = list(unmatchedB)
+	matched_sprites = [(s1, s2, manhattanDist2(s1, s2)) for s1, s2 in match_dict.iteritems()]
+
+	# print 'manhattan dists'
+	# for posA in pos_groupsA:
+	# 	for posB in pos_groupsB:
+	# 		if posA == posB: continue
+	# 		print manhattanDist(posA, posB)
+
+
+	return matched_sprites, lonely_sprites_envA, lonely_sprites_envB
+
+# @profile
+def matchEnvsV2(envA, envB, debug=False):
 	'''
 	Compares environment A to environment B, mapping sprites from A to sprites from B 1 to 1 (if it can)
 	by comparing the positions of sprites in A to positions of sprites in B of the same color. 
@@ -1367,66 +1512,36 @@ def matchEnvs(envA, envB, debug=False):
 		for s in unmatched:
 			unmatched_colors[s.colorName].add(s)
 
-	# while it's still possible to make matches
-	unmatched_colors = set(unmatched_colorsA).intersection(set(unmatched_colorsB))
-	while unmatched_colors:
-		color = unmatched_colors.pop()
-		# pop one of the unmatched sprites from the unmatched colors
-		spriteA = unmatched_colorsA[color].pop()
-		
-		# spriteA = spritesA.pop()
-
-		# get all the sprites of the same color in the second env
-		color_group = color_groupsB[color][:]
-
-		# rematch sprites until we've tried to match them all
-		while color_group:
-			spriteB = findNearestSprite(spriteA, color_group)	
-			if spriteB:
-				color_group.remove(spriteB)
-				unmatched_sprite = match_dict[spriteA]
-				match_dict[spriteA] = spriteB
-				if unmatched_sprite:		
-					unmatchedB.add(unmatched_sprite)
-				if spriteB in unmatchedB:
-					unmatched.remove(spriteB)
-				if spriteA in unmatchedA:
-					unmatchedA.remove(spriteA)
-				spriteA = spriteB
-			else:
-				break
-
-
 	# Slowly goes through all possible combinations and finds minimum distance
-	# for color in set(unmatched_colorsA).intersection(set(unmatched_colorsB)):
-	# 	# get all sprites. We're basically just starting over
-	# 	spritesA = color_groupsA[color]
-	# 	spritesB = color_groupsB[color]
-	# 	# pad sprites lists
-	# 	spritesA = spritesA + [None]*(max(len(spritesA), len(spritesB)) - len(spritesA))
-	# 	spritesB = spritesB + [None]*(max(len(spritesA), len(spritesB)) - len(spritesB))
-	# 	# now they should be of equal length
+	for color in set(unmatched_colorsA).intersection(set(unmatched_colorsB)):
+		# get all sprites. We're basically just starting over
+		spritesA = color_groupsA[color]
+		spritesB = color_groupsB[color]
+		# pad sprites lists
+		spritesA = spritesA + [None]*(max(len(spritesA), len(spritesB)) - len(spritesA))
+		spritesB = spritesB + [None]*(max(len(spritesA), len(spritesB)) - len(spritesB))
+		# now they should be of equal length
 
-	# 	min_sum_sqr_dists = float('inf')
-	# 	best_matches = []
-	# 	# O(n!) (exponential. Hopefully this doesn't go above 3 or 4)
-	# 	for permutation in itertools.permutations(spritesA):
-	# 		sum_sqr_dists = 0
-	# 		perm_matches = []
-	# 		for spriteA, spriteB in itertools.izip(permutation, spritesB):
-	# 			sum_sqr_dists += manhattanDist2(spriteA, spriteB)**2
-	# 			perm_matches.append((spriteA, spriteB))
-	# 		if sum_sqr_dists < min_sum_sqr_dists:
-	# 			best_matches = perm_matches
-	# 			min_sum_sqr_dists = sum_sqr_dists
+		min_sum_sqr_dists = float('inf')
+		best_matches = []
+		# O(n!) (exponential. Hopefully this doesn't go above 3 or 4)
+		for permutation in itertools.permutations(spritesA):
+			sum_sqr_dists = 0
+			perm_matches = []
+			for spriteA, spriteB in itertools.izip(permutation, spritesB):
+				sum_sqr_dists += manhattanDist2(spriteA, spriteB)**2
+				perm_matches.append((spriteA, spriteB))
+			if sum_sqr_dists < min_sum_sqr_dists:
+				best_matches = perm_matches
+				min_sum_sqr_dists = sum_sqr_dists
 
-	# 	for spriteA, spriteB in best_matches:
-	# 		if not spriteA or not spriteB: continue # matched with None
-	# 		match_dict[spriteA] = spriteB
-	# 		if spriteA in unmatchedA:
-	# 			unmatchedA.remove(spriteA)
-	# 		if spriteB in unmatchedB:
-	# 			unmatchedB.remove(spriteB)
+		for spriteA, spriteB in best_matches:
+			if not spriteA or not spriteB: continue # matched with None
+			match_dict[spriteA] = spriteB
+			if spriteA in unmatchedA:
+				unmatchedA.remove(spriteA)
+			if spriteB in unmatchedB:
+				unmatchedB.remove(spriteB)
 
 	lonely_sprites_envA = list(unmatchedA)
 	lonely_sprites_envB = list(unmatchedB)
@@ -1438,6 +1553,86 @@ def matchEnvs(envA, envB, debug=False):
 	# 		if posA == posB: continue
 	# 		print manhattanDist(posA, posB)
 
+
+	return matched_sprites, lonely_sprites_envA, lonely_sprites_envB
+
+# @profile
+def matchEnvsDeprecated(envA, envB, debug=False):
+	'''
+	Compares environment A to environment B, mapping sprites from A to sprites from B 1 to 1 (if it can)
+	by comparing the positions of sprites in A to positions of sprites in B of the same color. 
+	Returns mapping that minimizes distance between matching sprites (hopefully?)
+	returns:
+		the matched sprites as a list of tuples of sprites from A and sprites from B 
+	and the manhatten distance between their positions: 
+		[(s_A1, s_B1, d), (s_A2, s_A3, d), ...]
+		the list of "lonely sprites" in A that don't map to any sprites in A: 
+			[s_A5, s_A6, ..]
+		the list of "lonely sprites" in B that don't map to any sprites in B: 
+			[s_A7, s_A8, ..]
+	'''
+	## For classes that have more than enumeration_limit instances, default to greedy version.
+	enumeration_limit = 10
+
+	matched_sprites, lonely_sprites_envA, lonely_sprites_envB = [],[],[]
+
+	color_groupsA = defaultdict(lambda : [])
+	color_groupsB = defaultdict(lambda : [])
+	colors = set()
+
+	for name, sprites in envA._game.sprite_groups.iteritems():
+		if sprites:
+			color = sprites[0].colorName
+			color_groupsA[color] = sprites
+			colors.add(color)
+
+	for name, sprites in envB._game.sprite_groups.iteritems():
+		if sprites:
+			color = sprites[0].colorName
+			color_groupsB[color] = sprites
+			colors.add(color)
+
+	for color in colors:
+		# Find matching sprites via color
+		matchingSpritesInEnvA = [s for s in getObservedSpritesByColor(envA._game, color)]
+		matchingSpritesInEnvB = [s for s in getObservedSpritesByColor(envB._game, color)]
+
+		## If it is manageable to enumerate all possible pairings
+		if len(matchingSpritesInEnvA)<enumeration_limit:
+			while len(matchingSpritesInEnvA)<len(matchingSpritesInEnvB):
+				matchingSpritesInEnvA.append(None)
+			while len(matchingSpritesInEnvB)<len(matchingSpritesInEnvA):
+				matchingSpritesInEnvB.append(None)
+
+			assignment_options = []
+			for p in itertools.permutations(matchingSpritesInEnvA):
+				assignment_options.append(zip(p, matchingSpritesInEnvB))
+
+			min_sum = 1e6
+			best_assignments = None
+			for assignments in assignment_options:
+				curr_sum = sum([manhattanDist2(p[0], p[1])**2 for p in assignments if None not in p])
+				if curr_sum<min_sum:
+					min_sum = curr_sum
+					best_assignments = assignments
+			
+			for pair in best_assignments:
+				if None not in pair:
+					matched_sprites.append((pair[0], pair[1], manhattanDist2(pair[0], pair[1])))
+				if pair[1] is None:
+					lonely_sprites_envA.append(pair[0])
+				if pair[0] is None:
+					lonely_sprites_envB.append(pair[1])
+		else:	
+		## Otherwise default to a greedy version
+			to_remove = []
+			for sA in matchingSpritesInEnvA:
+				for sB in matchingSpritesInEnvB:
+					if manhattanDist2(sA, sB) == 0:
+						matched_sprites.append((sA, sB, 0.0))
+						matchingSpritesInEnvB.remove(sB)
+						to_remove.append(sA)
+						break
 
 	return matched_sprites, lonely_sprites_envA, lonely_sprites_envB
 
