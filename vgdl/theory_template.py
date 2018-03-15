@@ -2649,11 +2649,15 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 	relevantRulesWithArgs = [rule for rule in theory.interactionSet if rule.interaction in predicatesWithThresholds and 
 			classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and len(rule.args)>0]
 	if len(relevantRulesWithArgs) == 0:
-		## Conditionals can only replace kill rules. Remove the existing kill rules and replace them with conditionals.
 		if 'conditionalKill' in errorMap.diagnosis:
+			print "got conditionalKill"
+			embed()
+			## The only rules that should be removed when proposing conditionals are kill rules.
+			## Remove the existing kill rules and replace them with conditionals.
 			toRemove = [rule for rule in theory.interactionSet if classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and 
 					rule.asTuple()[1] == errorMap.targetClass and rule.asTuple()[0]=='killSprite']
 			theory.interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
+
 		
 		newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
 

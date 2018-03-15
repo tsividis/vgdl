@@ -20,7 +20,7 @@ w                              w
 w                              w
 w      1          1            w
 w                              w
-w                 A            w
+w         4       A            w
 w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
@@ -80,7 +80,7 @@ BasicGame
         A > avatar
     InteractionSet
         avatar wall > stepBack
-        box avatar > killSprite
+        box avatar > bounceForward
         box2 avatar > killSprite
         box3 avatar > killSprite
 
