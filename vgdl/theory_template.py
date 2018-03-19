@@ -2431,7 +2431,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 								 'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
 
 	## Position difference
-	'noMovement': 				['undoAll'], #stepBack
+	'noMovement': 				[],#['undoAll'], ## Possible bug: not proposing anything for noMovement
 	'unexpectedPosition': 		['bounceForward', 'nothing'],
 									# , 'pullWithIt', 'windGust', 'slipForward',\
 									# 'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap
@@ -2477,8 +2477,9 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	theory.expandedSprites.append(targetClass)
 	
 	## Only propose sprites when something moves that we didn't think was going to move.
+	## Possible bug: removed noMovement
 	if all([diagnosis not in ['unexpectedPosition', 'unexpectedOverlap', 
-		'orientationChange', 'unexpectedOverlap', 'noMovement', 'newObjectAppeared', 'objectDestruction'] for diagnosis in errorMap.diagnosis]):
+		'orientationChange', 'unexpectedOverlap', 'newObjectAppeared', 'objectDestruction'] for diagnosis in errorMap.diagnosis]):
 		return targetClass, childTheories
 
 	if 'objectDestruction' in errorMap.diagnosis:

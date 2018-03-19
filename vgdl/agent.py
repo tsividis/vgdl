@@ -471,6 +471,7 @@ class Agent:
 				self.rleHistory, self.actionHistory, self.symbolDict, self.bestSpriteTypeDict)
 			newTheories.extend(theories)
 
+
 		# print "Have {} new theories in outer loop".format(len(newTheories))
 		# t1 = time.time()
 		newTheories = list(set(newTheories))
@@ -478,8 +479,7 @@ class Agent:
 		# print "After filtering for duplicates, have {} theories".format(len(newTheories))
 		# embed()
 
-		# print "in executeStep"
-		# embed()
+
 
 		self.allTheories.extend(newTheories)
 		print ""
@@ -973,9 +973,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 					# Remove transformed-sprite-pair from respective lists
 					lonely_sprites_envA.pop(iA)
 					appeared_sprites_envB.pop(iB)
-	# if envB._isDone()[0]:
-		# print "avatar died. in errorSignal"
-		# embed()
 
 	# 2.2) Destruction
 	for sA in lonely_sprites_envA: #sA should have been destroyed
@@ -1261,7 +1258,7 @@ def matchEnvs(envA, envB, debug=False):
 		matchingSpritesInEnvB = [s for s in getObservedSpritesByColor(envB._game, color)]
 
 		## If it is manageable to enumerate all possible pairings
-		if len(matchingSpritesInEnvA)<enumeration_limit:
+		if max(len(matchingSpritesInEnvA), len(matchingSpritesInEnvB))<enumeration_limit:
 			while len(matchingSpritesInEnvA)<len(matchingSpritesInEnvB):
 				matchingSpritesInEnvA.append(None)
 			while len(matchingSpritesInEnvB)<len(matchingSpritesInEnvA):
@@ -1650,9 +1647,11 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			envRealPrev, envRealCurrent, bestSpriteTypeDict, action, percentile=20, max_num=30)
 		newTheories.extend(theories)
 
-	# if ('c5', 'avatar') in errorMap.intPairs:
-	# 	print "got c5 avatar int pair"
-	# 	embed()
+
+	# if ('c5', 'avatar') in errorMap.intPairs and 'noMovement' not in errorMap.diagnosis:
+		# print "got c5 avatar int pair"
+		# embed()
+
 	## InteractionSet induction step
 	for targetClassPair in errorMap.intPairs:
 
@@ -1688,8 +1687,11 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 		# this is because it would cause us to propose conditional stuff for later targetClassPairs
 		if 'conditionalKill' in singleIntPairErrorMap.diagnosis:
 			singleIntPairErrorMap.diagnosis.remove('conditionalKill')
+		newTheories.extend(list(set(theories)))
+	
+	newTheories = list(set(newTheories))
 
-		newTheories = list(set(theories))
+
 	if not newTheories:
 		newTheories = [theory]
 		theory.errorMapHistory.append(errorMap)
