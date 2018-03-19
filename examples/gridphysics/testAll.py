@@ -1,15 +1,15 @@
 
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                  g    x      w
-# w  x     x              x     gw
-# w             x         x   e  w
-# wxxxxxxxxxx    p        xxxxxxxw
-# w      mm x   pgp  x           w
-# w      mm x  x p         x     w
-# w    x         A a c         t w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                  g    x      w
+w  x     x              x     gw
+w             x         x   e  w
+wxxxxxxxxxx    p        xxxxxxxw
+w      mm x   pgp  x           w
+w      mm x  x p         x     w
+w    x         A a c         t w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 simplifiedLevel = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -20,18 +20,6 @@ wxxxxxxxxxx    p   x    xxxxxxxw
 w      mm x t pgp              w
 w      mm x  x p         x     w
 w    x    mm a A               w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
-
-spriteLimitReachedLevel = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                  g    x      w
-w  x     x              x     gw
-w             x         x   e  w
-wxxxxxxxxxx    p   x    xxxxxxxw
-w      mm x   pgp              w
-w      mm x  x p         x     w
-w    x         A a c         t w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -103,6 +91,7 @@ interactionSetAll = """
         sam medicine > transformTo stype=poison
         sam poison > transformTo stype=medicine
         sam exit1 > undoAll
+        sam wall > killSprite
 
         # avatar sam > killIfHasLess resource=armor limit=1
 

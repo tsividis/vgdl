@@ -282,7 +282,7 @@ class Agent:
 		# actions = [K_LEFT, K_UP, K_LEFT, K_LEFT]
 		# actions = [K_UP, K_UP, K_UP]
 		# actions = [0]*10
-		actions = [K_UP, K_LEFT, K_LEFT, K_DOWN, K_LEFT, K_LEFT]
+		actions = [K_UP, K_LEFT, K_LEFT,]# K_DOWN, K_LEFT, K_LEFT]
 
 		self.initializeEnvironment()
 		# embed()
@@ -477,6 +477,10 @@ class Agent:
 		# print "filtering took {} seconds".format(time.time()-t1)
 		# print "After filtering for duplicates, have {} theories".format(len(newTheories))
 		# embed()
+
+		# print "in executeStep"
+		# embed()
+
 		self.allTheories.extend(newTheories)
 		print ""
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
@@ -495,10 +499,10 @@ class Agent:
 
 			if not lastStep:
 				scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-					proportionOfSpriteTheories=None)]
+					proportionOfSpriteTheories=None, errorCutoff=.5)]
 			else:
 				scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-					proportionOfSpriteTheories=None)]
+					proportionOfSpriteTheories=None, errorCutoff=.5)]
 
 			print "Experience replay complete."
 			for num, sh in enumerate(scoresAndHypotheses):
@@ -910,7 +914,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 		## Find erroneously destroyed sA by finding envA sprite closest to sPrev
 		candidates_in_killList = [s for s in envA._game.observation['kill_list'] if s.colorName == sPrev.colorName]
-		
+
 		## These are both double-checking things that should have been taken care of better
 		## by the sprite matching. But since it's imperfect given our limited knowledge, we're
 		## being more thorough.
@@ -972,6 +976,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 	# if envB._isDone()[0]:
 		# print "avatar died. in errorSignal"
 		# embed()
+
 	# 2.2) Destruction
 	for sA in lonely_sprites_envA: #sA should have been destroyed
 		e = errorMapEntry()
@@ -1277,10 +1282,10 @@ def matchEnvs(envA, envB, debug=False):
 			for pair in best_assignments:
 				if None not in pair:
 					matched_sprites.append((pair[0], pair[1], manhattanDist2(pair[0], pair[1])))
-				if pair[1] is None:
-					lonely_sprites_envA.append(pair[0])
-				if pair[0] is None:
-					lonely_sprites_envB.append(pair[1])
+				# if pair[1] is None:
+					# lonely_sprites_envA.append(pair[0])
+				# if pair[0] is None:
+					# lonely_sprites_envB.append(pair[1])
 		else:	
 		## Otherwise default to a greedy version
 			to_remove = []
@@ -1291,6 +1296,12 @@ def matchEnvs(envA, envB, debug=False):
 						matchingSpritesInEnvB.remove(sB)
 						to_remove.append(sA)
 						break
+
+	all_sprites_envA = [sprite for sublist in envA._game.observation['trackedObjects'].values() for sprite in sublist]
+	all_sprites_envB = [sprite for sublist in envB._game.observation['trackedObjects'].values() for sprite in sublist]
+
+	lonely_sprites_envA = [s for s in all_sprites_envA if s not in [m[0] for m in matched_sprites]]
+	lonely_sprites_envB = [s for s in all_sprites_envB if s not in [m[1] for m in matched_sprites]]
 
 	return matched_sprites, lonely_sprites_envA, lonely_sprites_envB
 
@@ -1448,12 +1459,15 @@ def updateTerminations(rle, hypotheses):
 
 	return
 	
-def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSpriteTheories):
+def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSpriteTheories, errorCutoff=None):
 	## Returns the max_num theories that are at percentile or greater, given their score.
 
 	percentile = 100.-percentile
 	scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 	cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
+	# WARNING: not the Right Thing -- do the Right Thing later
+	cutoff = errorCutoff if errorCutoff else cutoff
+	# end warning
 	candidates = [s for s in scoreAndTheoryTuples if s[0]<=cutoff]
 
 	if max_num is None:
@@ -1636,6 +1650,9 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			envRealPrev, envRealCurrent, bestSpriteTypeDict, action, percentile=20, max_num=30)
 		newTheories.extend(theories)
 
+	# if ('c5', 'avatar') in errorMap.intPairs:
+	# 	print "got c5 avatar int pair"
+	# 	embed()
 	## InteractionSet induction step
 	for targetClassPair in errorMap.intPairs:
 

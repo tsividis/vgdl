@@ -2887,10 +2887,10 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
         left, top = sprite.rect.left, sprite.rect.top
         neighbors = [(left, top), (left-30, top), (left+30, top), (left, top-30), (left, top+30)]
         try:
-            # if game.sprite_appearances and any([(s.rect.left, s.rect.top) in neighbors for s in game.sprite_appearances]):
-            # BUG: line above causes "sprite limit reached" to print infinitely
-            # BUG: line below crashes because "trackedSprite doesn't support indexing"
-            if game.sprite_appearances and any([(s[1], s[2]) in neighbors for s in game.sprite_appearances]):
+            if game.sprite_appearances and any([(s.rect.left, s.rect.top) in neighbors for s in game.sprite_appearances]):
+                # BUG?: line above causes "sprite limit reached" to print infinitely
+                # BUG?: line below crashes because "trackedSprite doesn't support indexing"
+                # if game.sprite_appearances and any([(s[1], s[2]) in neighbors for s in game.sprite_appearances]):
                     # and any([(s[1], s[2])==(sprite.rect.left, sprite.rect.top) for s in game.sprite_appearances]):
                     ## Weird case of a new object appearing in the same position as another one. Update hypotheses related to shooters, spawnpoints, etc.
                 for k,v in game.sprite_appearance_predictions[sprite.ID].items():
