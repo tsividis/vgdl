@@ -1,6 +1,6 @@
 import unittest
 from line_profiler import LineProfiler
-from vgdl.agent import matchEnvs, matchEnvsDeprecated, createRLInputGameFromStrings
+from vgdl.agent import matchEnvs, createRLInputGameFromStrings
 from collections import defaultdict
 
 import tests.game_strings as gs
@@ -8,7 +8,7 @@ import tests.game_strings as gs
 class TestMatchEnvs(unittest.TestCase):
 
 	def setUp(self):
-		self.matchEnvs = matchEnvs
+		self.matchEnvs = matchEnvs2
 
 		self.test_envs = {}
 		for levels, level_strings in [(key, getattr(gs, key)) for key in gs.__dict__ if 'level' in key]:
