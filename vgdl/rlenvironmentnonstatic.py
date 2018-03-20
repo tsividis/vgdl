@@ -327,20 +327,10 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
             self._avatar.update(self._game)
         
         else:
-            
-            for s in self._game:
-                
-                #if s == self._avatar and action == 0:
-                #    continue
-                
+            for s in list(self._game):
                 if s not in self._game.kill_list:
-                    #print("A")
                     s.update(self._game)
-                
-                #if s == self._avatar:
-                    
-                    #print(s.rect)
-                    
+
     
         events = self._game._eventHandling()
         ## get events (e.g., (stepBack obj1ID, obj2ID))

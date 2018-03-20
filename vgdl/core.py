@@ -375,8 +375,6 @@ class BasicGame(object):
         self.sprite_order.append('avatar')
 
 
-
-
     def emptyBlocks(self):
         alls = [s for s in self]
         res = []
@@ -1193,7 +1191,7 @@ class BasicGame(object):
             # update sprites
         #print action
 
-        for s in self:
+        for s in list(self):
             s.update(self)
 
 
