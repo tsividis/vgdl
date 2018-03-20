@@ -1397,24 +1397,23 @@ def matchEnvs(envA, envB, debug=False):
 		color_groupB = set(color_groupsB[color])
 		unmatched_group = unmatched_colorsA[color].copy()
 		spriteA = unmatched_group.pop()
-		match_dict = matched_colors[color].copy()
-
+		match_dict = matched_colors[color]
 		# sum_dist = sum([sprite_dist(sA, sB) for sA, sB in match_dict.iteritems()])
 		
 		# pop one of the unmatched sprites from the unmatched color_groupA
-		pairing_paths = [(0, spriteA, unmatched_group, color_groupB, match_dict)]
+		pairing_paths = [(0, spriteA, unmatched_group, color_groupB, [])]
 		best_matches = None
 		while pairing_paths:
 			# rematch sprites until we've tried to match them all
 
 			# BFS - grab last pairing. Sorted in decending order of dist
-			sum_dist, spriteA, unmatched_group, color_groupB, match_dict = heapq.heappop(pairing_paths)
+			sum_dist, spriteA, unmatched_group, color_groupB, matches = heapq.heappop(pairing_paths)
 
 			# if not color_groupB:
 			# 	pairing_paths.append((sum_dist, pairs, color_groupB))
 			# 	break
-			best_matches = match_dict
-			if not (spriteA or unmatched_group) or not color_groupB:
+			best_matches = matches
+			if not (spriteA or unmatched_group):
 				break
 
 			if not spriteA:
@@ -1424,30 +1423,30 @@ def matchEnvs(envA, envB, debug=False):
 			for spriteB in nearest_sprites: 
 				color_group_copy = color_groupB.copy()
 				unmatched_group_copy = unmatched_group.copy()
-				match_dict_copy = match_dict.copy()
+				matches_copy = matches[:]
 				new_sum_dist = sum_dist
 
-				new_spriteA = match_dict_copy[spriteB]
+				new_spriteA = match_dict[spriteB]
+
 				if new_spriteA:
 					new_sum_dist -= manhattanDist2(new_spriteA, spriteB)**2
 				new_sum_dist += manhattanDist2(spriteA, spriteB)**2
-				match_dict_copy[spriteA] = spriteB
 
 				color_group_copy.remove(spriteB)
+				matches_copy.append((spriteA, spriteB))
 				
 
-				heapq.heappush(pairing_paths, (new_sum_dist, new_spriteA, unmatched_group_copy, color_group_copy, match_dict_copy))
+				heapq.heappush(pairing_paths, (new_sum_dist, new_spriteA, unmatched_group_copy, color_group_copy, matches_copy))
 
-		if best_matches == None:
-			raise RuntimeError, 'Could not find minimum pairing'
 		if spriteA:
 			unmatchedA.add(spriteA)
-		for sA, sB in best_matches.iteritems():
+		for sA, sB in best_matches:
 			if sA in unmatchedA:
 				unmatchedA.remove(sA)
 			if sB in unmatchedB:
 				unmatchedB.remove(sB)
-		matched_colors[color] = best_matches
+
+			matched_colors[color][sA] = sB
 
 	lonely_sprites_envA = list(unmatchedA)
 	lonely_sprites_envB = list(unmatchedB)
