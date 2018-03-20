@@ -8,7 +8,7 @@ import tests.game_strings as gs
 class TestMatchEnvs(unittest.TestCase):
 
 	def setUp(self):
-		self.matchEnvs = matchEnvs2
+		self.matchEnvs = matchEnvs
 
 		self.test_envs = {}
 		for levels, level_strings in [(key, getattr(gs, key)) for key in gs.__dict__ if 'level' in key]:
