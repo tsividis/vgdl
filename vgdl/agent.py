@@ -20,11 +20,12 @@ from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from stateobsnonstatic import buildTracker
 from termcolor import colored
-from vgdl.util import manhattanDist, manhattanDist2, LinkedDict, MemoDist, profile
+from vgdl.util import manhattanDist, manhattanDist2, LinkedDict, profile
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from colors import colorDict
 import copy_reg
 import types
+import heapq
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
@@ -1337,8 +1338,6 @@ def matchEnvs(envA, envB, debug=False):
 	# Start creating our data structures.
 	matched_sprites, lonely_sprites_envA, lonely_sprites_envB = [],[],[]
 
-	sprite_dist = MemoDist(manhattanDist2)
-
 	color_groupsA = defaultdict(lambda : [])
 	color_groupsB = defaultdict(lambda : [])
 	positions = set()
@@ -1350,7 +1349,7 @@ def matchEnvs(envA, envB, debug=False):
 	pos_groupsA = defaultdict(lambda : [])
 	pos_groupsB = defaultdict(lambda : [])
 
-	match_dict = LinkedDict()
+	matched_colors = defaultdict(lambda :LinkedDict())
 	unmatchedA = set()
 	unmatchedB = set()
 	# is there any guarantee for the ordering of the sprites?
@@ -1362,23 +1361,23 @@ def matchEnvs(envA, envB, debug=False):
 				color = sprites[0].colorName
 				color_groups[color] = sprites
 				
-			for sprite in sprites:
-				pos = sprite.rect.topleft
-				pos_groups[pos].append(sprite)
-				positions.add(pos)
-				unmatched.add(sprite)
-
+				for sprite in sprites:
+					pos = sprite.rect.topleft
+					pos_groups[pos].append(sprite)
+					positions.add(pos)
+					unmatched.add(sprite)
 
 	# Greedily matches sprites based on position first AND color
 	# O(n^2) (but will likely be O(n) since not many sprites overlap)
 	for pos in positions: # O(n)
 		for spriteA in pos_groupsA[pos]: # O(max 5ish?)
 			for spriteB in pos_groupsB[pos]: # O(max 5ish?)
-				if spriteA.colorName == spriteB.colorName:
-					if match_dict[spriteB]: continue # match already made
+				color = spriteA.colorName
+				if color == spriteB.colorName:
+					if matched_colors[color][spriteB]: continue # match already made
 					unmatchedA.remove(spriteA)
 					unmatchedB.remove(spriteB)
-					match_dict[spriteA] = spriteB
+					matched_colors[color][spriteA] = spriteB
 					# stop after first match and go on to match next one
 					break
 
@@ -1396,52 +1395,63 @@ def matchEnvs(envA, envB, debug=False):
 		# get all the sprites with the color in envB
 		# and the unmatched sprites with the color in envA
 		color_groupB = set(color_groupsB[color])
-		color_groupA = set(color_groupsA[color])
+		unmatched_group = unmatched_colorsA[color].copy()
+		spriteA = unmatched_group.pop()
+		match_dict = matched_colors[color].copy()
+
+		# sum_dist = sum([sprite_dist(sA, sB) for sA, sB in match_dict.iteritems()])
 		
 		# pop one of the unmatched sprites from the unmatched color_groupA
-		pairing_paths = [(0, [], color_groupB)]
-		best_pairing = None
+		pairing_paths = [(0, spriteA, unmatched_group, color_groupB, match_dict)]
+		best_matches = None
 		while pairing_paths:
 			# rematch sprites until we've tried to match them all
 
 			# BFS - grab last pairing. Sorted in decending order of dist
-			sum_dist, pairs, color_groupB = pairing_paths.pop()
+			sum_dist, spriteA, unmatched_group, color_groupB, match_dict = heapq.heappop(pairing_paths)
+
 			# if not color_groupB:
 			# 	pairing_paths.append((sum_dist, pairs, color_groupB))
 			# 	break
-			if not color_groupA or not color_groupB:
-				best_pairing = pairs
+			best_matches = match_dict
+			if not (spriteA or unmatched_group) or not color_groupB:
 				break
-			spriteA = color_groupA.pop()
 
-			# Definitely need a function for "findNearestSprites"
-			nearest_sprites = findNearestSprites(spriteA, color_groupB, sprite_dist)
+			if not spriteA:
+				spriteA = unmatched_group.pop()
+
+			nearest_sprites = findNearestSprites(spriteA, color_groupB, manhattanDist2)
 			for spriteB in nearest_sprites: 
 				color_group_copy = color_groupB.copy()
-				pairs_copy = pairs[:]
+				unmatched_group_copy = unmatched_group.copy()
+				match_dict_copy = match_dict.copy()
+				new_sum_dist = sum_dist
+
+				new_spriteA = match_dict_copy[spriteB]
+				if new_spriteA:
+					new_sum_dist -= manhattanDist2(new_spriteA, spriteB)**2
+				new_sum_dist += manhattanDist2(spriteA, spriteB)**2
+				match_dict_copy[spriteA] = spriteB
 
 				color_group_copy.remove(spriteB)
+				
 
-				dist = sprite_dist(spriteA, spriteB)
-				pairs_copy += [(spriteA, spriteB, dist)]
-				new_sum_dist = sum_dist + dist**2
+				heapq.heappush(pairing_paths, (new_sum_dist, new_spriteA, unmatched_group_copy, color_group_copy, match_dict_copy))
 
-				pairing_paths.append((new_sum_dist, pairs_copy, color_group_copy))
-			pairing_paths = sorted(pairing_paths, key=lambda path: path[0], reverse=True)
-		if best_pairing == None:
+		if best_matches == None:
 			raise RuntimeError, 'Could not find minimum pairing'
-		for pairing in best_pairing:
-			spriteA, spriteB, _ = pairing
-			if spriteA in unmatchedA:
-				unmatchedA.remove(spriteA)
-			if spriteB in unmatchedB:
-				unmatchedB.remove(spriteB)
-			print spriteA, spriteB
-			match_dict[spriteA] = spriteB
+		if spriteA:
+			unmatchedA.add(spriteA)
+		for sA, sB in best_matches.iteritems():
+			if sA in unmatchedA:
+				unmatchedA.remove(sA)
+			if sB in unmatchedB:
+				unmatchedB.remove(sB)
+		matched_colors[color] = best_matches
 
 	lonely_sprites_envA = list(unmatchedA)
 	lonely_sprites_envB = list(unmatchedB)
-	matched_sprites = [(s1, s2, sprite_dist(s1, s2)) for s1, s2 in match_dict.iteritems()]
+	matched_sprites = [(s1, s2, manhattanDist2(s1, s2)) for matched_color in matched_colors.values() for s1, s2 in matched_color.iteritems() ]
 
 	# print 'manhattan dists'
 	# for posA in pos_groupsA:

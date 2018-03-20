@@ -114,7 +114,7 @@ class TestMatchEnvs(unittest.TestCase):
 					self.assertEqual(dist, 0, "Incorrect match %r %r with dist %f. expected 0.0." % (sA, sB, dist))
 
 	def testOneMovingRightOn(self):
-		'Tests "level_strings4". Two adjacent groups of 3 logs. One of them moves to the right.'		
+		'Tests "level_strings5". Two adjacent groups of 3 logs. One of them moves to the right.'		
 		all_sprites, matched, lonelyA, lonelyB = self.getResults(*self.test_envs['level_strings5'])
 
 		self.assertNoLonelySprites(all_sprites, matched, lonelyA, lonelyB)
@@ -127,7 +127,7 @@ class TestMatchEnvs(unittest.TestCase):
 					self.assertEqual(dist, 0, "Incorrect match %r %r with dist %f. expected 0.0." % (sA, sB, dist))
 			
 	def testOneMovingRightOff(self):
-		'Tests "level_strings4". Two adjacent groups of 3 logs. One of them moves to the right.'		
+		'Tests "level_strings6". Two adjacent groups of 3 logs. One of them moves to the right.'		
 		all_sprites, matched, lonelyA, lonelyB = self.getResults(*self.test_envs['level_strings6'])
 
 		self.assertNoLonelySprites(all_sprites, matched, lonelyA, lonelyB)
@@ -139,5 +139,48 @@ class TestMatchEnvs(unittest.TestCase):
 				if sB.y == 90:
 					self.assertEqual(dist, 0, "Incorrect match %r %r with dist %f. expected 0.0." % (sA, sB, dist))
 			
+	def testDisappearingSprite(self):
+		'Tests "level_string7". Sprite disappears'		
+		all_sprites, matched, lonelyA, lonelyB = self.getResults(*self.test_envs['level_strings7'])
+
+		self.assertEqual(len(lonelyA), 1, "Expected lonely sprite in EnvA, got %r" % lonelyA)
+		self.assertEqual(len(lonelyB), 0, "Expected no lonely sprites in EnvB, got %r" % lonelyB)
+
+	def testMovingDisappearing(self):
+		'Tests "level_string8". Sprites move and one disappears'		
+		all_sprites, matched, lonelyA, lonelyB = self.getResults(*self.test_envs['level_strings8'])
+
+		self.assertEqual(len(lonelyA), 1, "Expected lonely sprite in EnvA, got %r" % lonelyA)
+		self.assertEqual(len(lonelyB), 0, "Expected no lonely sprites in EnvB, got %r" % lonelyB)
+		self.assertEqual(len(matched), len(all_sprites)-1)
+
+		for sA, sB, dist in matched:
+			if sA.name == 'log':
+				if sB.y == 60:
+					self.assertEqual(dist, 1, "Incorrect match %r %r with dist %f. expected 1.0." % (sA, sB, dist))
+
+	def testAppearingSprite(self):
+		'Tests "level_string7". Sprite appears'		
+		all_sprites, matched, lonelyA, lonelyB = self.getResults(*self.test_envs['level_strings9'])
+
+		self.assertEqual(len(lonelyA), 0, "Expected no lonely sprites in EnvA, got %r" % lonelyA)
+		self.assertEqual(len(lonelyB), 1, "Expected lonely sprite in EnvB, got %r" % lonelyB)				
 			
-			
+	def testMovingAppearing(self):
+		'Tests "level_string7". Sprites move and one disappears'		
+		all_sprites, matched, lonelyA, lonelyB = self.getResults(*self.test_envs['level_strings10'])
+
+		self.assertEqual(len(lonelyA), 0, "Expected no lonely sprites in EnvA, got %r" % lonelyA)
+		self.assertEqual(len(lonelyB), 1, "Expected lonely sprite in EnvB, got %r" % lonelyB)
+
+		for sA, sB, dist in matched:
+			if sA.name == 'log':
+				if sB.y == 60:
+					self.assertEqual(dist, 1, "Incorrect match %r %r with dist %f. expected 1.0." % (sA, sB, dist))			
+
+	def testEvenMoreThings(self):
+		'Tests "level_strings3". Group of 18 logs, moves to the right one space.'
+		all_sprites, matched, lonelyA, lonelyB = self.getResults(*self.test_envs['level_strings11'])
+
+		self.assertNoLonelySprites(all_sprites, matched, lonelyA, lonelyB)
+		self.assertMatchedDistance(matched, 'log', 1)

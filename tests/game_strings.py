@@ -126,3 +126,104 @@ w             w
 w     A       w
 wwwwwwwwwwwwwww
 ''')
+
+level_strings7 = ('''
+wwwwwwwwwwwwwww
+w             w
+w     L       w
+w             w
+w             w
+w             w
+w     A       w
+wwwwwwwwwwwwwww
+''', '''
+wwwwwwwwwwwwwww
+w             w
+w             w
+w             w
+w             w
+w             w
+w     A       w
+wwwwwwwwwwwwwww
+''')
+
+level_strings8 = ('''
+wwwwwwwwwwwwwww
+w             w
+w     LLL     w
+w             w
+w             w
+w             w
+w     A       w
+wwwwwwwwwwwwwww
+''', '''
+wwwwwwwwwwwwwww
+w      LL     w
+w             w
+w             w
+w             w
+w             w
+w     A       w
+wwwwwwwwwwwwwww
+''')
+
+
+level_strings9 = ('''
+wwwwwwwwwwwwwww
+w             w
+w             w
+w             w
+w             w
+w             w
+w     A       w
+wwwwwwwwwwwwwww
+''', '''
+wwwwwwwwwwwwwww
+w             w
+w             w
+w      L      w
+w             w
+w             w
+w     A       w
+wwwwwwwwwwwwwww
+''')
+
+level_strings10 = ('''
+wwwwwwwwwwwwwww
+w             w
+w      LL     w
+w             w
+w             w
+w             w
+w     A       w
+wwwwwwwwwwwwwww
+''', '''
+wwwwwwwwwwwwwww
+w     LLL     w
+w             w
+w             w
+w             w
+w             w
+w     A       w
+wwwwwwwwwwwwwww
+''')
+
+level_strings11 = ('''
+wwwwwwwwwwwwwww
+w     LLLLLL  w
+w     LLLLLL  w
+w     LLLLLL  w
+w             w
+w             w
+w     A       w
+wwwwwwwwwwwwwww
+''', '''
+wwwwwwwwwwwwwww
+w    LLLLLL   w
+w    LLLLLL   w
+w    LLLLLL   w
+w             w
+w             w
+w     A       w
+wwwwwwwwwwwwwww
+''')

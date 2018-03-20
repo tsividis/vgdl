@@ -22,23 +22,6 @@ def profile(function):
 		return return_values
 	return profileFunction
 
-class MemoDist():
-	def __init__(self, default_dist=lambda x, y: float('inf')):
-		self._dist = default_dist
-		self._dict = defaultdict(lambda: {})
-
-	def __call__(self, s1, s2):
-		
-		if s1 in self._dict:
-			if s2 in self._dict[s1]:
-				return self._dict[s1][s2]
-		elif s2 in self._dict:
-			if s1 in self._dict[s2]:
-				return self._dict[s2][s1]
-
-		self._dict[s1][s2] = self._dist(s1, s2)
-		return self._dict[s1][s2]
-
 
 class LinkedDict():
     def __init__(self):
@@ -71,8 +54,11 @@ class LinkedDict():
 
     def copy(self):
         newLinkedDict = LinkedDict()
-        for key, value in self.iteritems():
-            newLinkedDict[key] = value 
+        newLinkedDict._dict1 = self._dict1.copy()
+        newLinkedDict._dict2 = self._dict2.copy()
+        # for key, value in self.iteritems():
+        #     newLinkedDict[key] = value
+        return newLinkedDict
 
     def iteritems(self):
         return self._dict1.iteritems()
