@@ -1314,7 +1314,7 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 	# Return list of errorMapEntry objects
 	return errorMaps
 
-# @profile
+@profile
 def matchEnvs(envA, envB, debug=False):
 	'''
 	Compares environment A to environment B, mapping sprites from A to sprites from B 1 to 1 (if it can)
