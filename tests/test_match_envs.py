@@ -1,6 +1,6 @@
 import unittest
 from line_profiler import LineProfiler
-from vgdl.agent import matchEnvs, matchEnvsDeprecated, matchEnvsV2, createRLInputGameFromStrings
+from vgdl.agent import matchEnvs, matchEnvsDeprecated, createRLInputGameFromStrings
 from collections import defaultdict
 
 import tests.game_strings as gs

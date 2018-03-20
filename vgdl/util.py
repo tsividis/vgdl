@@ -6,6 +6,8 @@ import csv
 import cPickle
 from math import sqrt
 
+from collections import defaultdict
+
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
 CHARS = 'bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM'
 CAPCHARS = 'QWERTYUIOPSDFHJKLZXCVBNM'
@@ -19,6 +21,23 @@ def profile(function):
 		lp.print_stats()
 		return return_values
 	return profileFunction
+
+class MemoDist():
+	def __init__(self, default_dist=lambda x, y: float('inf')):
+		self._dist = default_dist
+		self._dict = defaultdict(lambda: {})
+
+	def __call__(self, s1, s2):
+		
+		if s1 in self._dict:
+			if s2 in self._dict[s1]:
+				return self._dict[s1][s2]
+		elif s2 in self._dict:
+			if s1 in self._dict[s2]:
+				return self._dict[s2][s1]
+
+		self._dict[s1][s2] = self._dist(s1, s2)
+		return self._dict[s1][s2]
 
 
 class LinkedDict():
