@@ -5,7 +5,8 @@ from core import colorDict, VGDLParser, sys, keyPresses
 from ontology import *
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
 SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
-generateTheoryFromGame, expandLine, expandSprites, PreconditionInduction, proposePredicates, getRuleSetsForClassPairPredicate
+generateTheoryFromGame, expandLine, expandSprites, PreconditionInduction, proposePredicates, getRuleSetsForClassPairPredicate,\
+interateThresholds
 import os, subprocess, shutil
 from collections import defaultdict
 import importlib
@@ -17,14 +18,14 @@ import math
 import warnings
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
-from stateobsnonstatic import copySpriteStingy, processFrame, buildTracker
+from stateobsnonstatic import buildTracker
 from termcolor import colored
-from line_profiler import LineProfiler
-from vgdl.util import manhattanDist, manhattanDist2
+from vgdl.util import manhattanDist, manhattanDist2, LinkedDict, profile
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from colors import colorDict
 import copy_reg
 import types
+import heapq
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
@@ -35,6 +36,8 @@ ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPAC
 # This makes experience replay run multiple samples 
 # for each time step if there is a Random in the theory
 EXPERIENCE_REPLAY_METHOD = 'sample_avg'
+
+
 
 class errorMapEntry:
 	def __init__(self):
@@ -63,7 +66,7 @@ class errorMapEntry:
 		e.targetClass       = self.targetClass
 		e.targetColor 		= self.targetColor
 		e.intPairs          = self.intPairs
-		e.culpritClasss     = self.culpritClasses
+		e.culpritClasses    = self.culpritClasses
 		
 		return e
 
@@ -155,7 +158,7 @@ class Agent:
 						else:
 							o = (0,0)
 
-						sprite_list.append({'speed':sprite.speed, 'orientation':o, 'position':(sprite.rect.x,sprite.rect.y)})
+						sprite_list.append({'speed':sprite.speed, 'orientation':o, 'position':(sprite.rect.left,sprite.rect.top)})
 				state[color] = sprite_list
 		return state
 
@@ -276,22 +279,66 @@ class Agent:
 
 			for epoch in range(1):
 				# self.testTracker(gameObject)
-				self.testEpisode(gameObject,epoch=epoch)
+				# self.testEpisode(gameObject,epoch=epoch)
+				self.testEpisodes(gameObject, epoch=epoch)
 		return
 
-	def testEpisodes(self, gameObject, num_episodes):
-		'''
-		Test multiple episodes
-		'''
-		pass
+	def testEpisodes(self, gameObject, epoch=0):
+		num_cores = mp.cpu_count()
+		print "num cores: {}".format(num_cores) 
+		if num_cores<40:
+			print "WARNING: running on < 40 cores."
 
-	def playEpisode(self, gameObject, actions):
-		pass
+		actionSequences = [
+			[K_UP, K_UP], 
+			[K_RIGHT, K_UP]
+		]
+
+		self.rleHistory = [[] for i in range(len(actionSequences))]
+		self.actionHistory = [[] for i in range(len(actionSequences))]
+		self.all_objects = [{} for i in range(len(actionSequences))]
+
+		for episode_num, actions in enumerate(actionSequences):
+			self.initializeEnvironment()
+			print "initializing RLE. Epoch={}".format(epoch)
+
+			self.all_objects[episode_num] = self.rle._game.getObjects() ## we need to store all_objects across multiple episodes
+			# embed()
+
+			if episode_num == 0:
+				gameObject = self.initializeHypotheses(self.all_objects[episode_num], learnSprites=True, learnAvatar=self.learnAvatar, num_variants=0)
+
+			envReal = self.fastcopy(self.rle)
+			self.rleHistory[episode_num].append(envReal)
+
+			for num, action in enumerate(actions):
+				if self.rle._isDone()[0]:
+					print "Game is over."
+					break
+				print ">>> Step", num+1, "of", len(actions), "<<<"
+				## initialize VRLEs
+				theoryRLEs = VrleInitPhase(self.hypotheses, self.rle, self.symbolDict, self.best_params)
+				lastStep=False
+				if num == len(actions)-1:
+					lastStep=True
+				t2 = time.time()
+				hypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
+				print ""
+				print "executed step in {} seconds".format(time.time()-t2)
+				print ""
+				self.hypotheses = hypotheses
+
+			# print ">>> Embedded at the end of testEpisode"
+			embed()
+
+		return
 
 	def testEpisode(self, gameObject, epoch=0):
 
-		actions = [K_UP]*3
 		# actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT]
+		
+		actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT]
+
 		# actions = [K_UP, K_LEFT, K_LEFT]
 		self.initializeEnvironment()
 
@@ -345,7 +392,7 @@ class Agent:
 			if num == len(actions)-1:
 				lastStep=True
 			t2 = time.time()
-			hypotheses = self.executeStep(action, self.hypotheses, theoryRLEs, lastStep)
+			hypotheses = self.executeStep(self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
 			print ""
 			print "executed step in {} seconds".format(time.time()-t2)
 			print ""
@@ -357,16 +404,19 @@ class Agent:
 
 		return
 
-	def manageNewObjects(self, hypotheses, envRealPrev, action, learnAvatar=True):
+
+	def manageNewObjects(self, episode_num, hypotheses, envRealPrev, action, learnAvatar=True):
 
 		## Add newly-seen objects.
 		current_objects = self.rle._game.getObjects()
 		if learnAvatar:
-			if any([current_objects[k]['sprite'].colorName not in [self.all_objects[key]['sprite'].colorName for key in self.all_objects.keys()] for k in current_objects.keys()]):
+			if any([current_objects[k]['sprite'].colorName not in [self.all_objects[episode_num][key]['sprite'].colorName 
+																	for key in self.all_objects[episode_num].keys()] 
+																		for k in current_objects.keys()]):
 				for k in current_objects.keys():
 					distributionInitSetup(self.rle._game, k)
-					if k not in self.all_objects.keys():
-						self.all_objects[k] = current_objects[k]
+					if k not in self.all_objects[episode_num].keys():
+						self.all_objects[episode_num][k] = current_objects[k]
 				spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, action=action,
 					oldSpriteSet=self.hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
 					percentile=10, max_num=20, allMovement=False)
@@ -376,8 +426,8 @@ class Agent:
 		else:
 			for k in current_objects.keys():
 				colorName = current_objects[k]['sprite'].colorName
-				if colorName not in [self.all_objects[key]['sprite'].colorName for key in self.all_objects.keys()]:
-					self.all_objects[k] = current_objects[k]
+				if colorName not in [self.all_objects[episode_num][key]['sprite'].colorName for key in self.all_objects[episode_num].keys()]:
+					self.all_objects[episode_num][k] = current_objects[k]
 					distributionInitSetup(self.rle._game, k)
 					## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep.
 					self.rle._game.ignoreList.append(k)
@@ -450,14 +500,7 @@ class Agent:
 		newRle._game.sprite_groups['avatar'][0].resources = ccopy(rle._game.sprite_groups['avatar'][0].resources)
 		return newRle
 
-	def executeStepProfiler(self, action, hypotheses, theoryRLEs, lastStep=False):
-		lp = LineProfiler()
-		lp_wrapper = lp(self.executeStep)
-		hypotheses = lp_wrapper(action, hypotheses, theoryRLEs, lastStep)
-		lp.print_stats()
-		return hypotheses
-
-	def executeStep(self, action, hypotheses, theoryRLEs, lastStep=False):
+	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, lastStep=False):
 
 		theory_change_flag = False
 
@@ -471,7 +514,7 @@ class Agent:
 		print "spriteInduction prep took {} seconds".format(time.time()-t1)
 
 		envRealPrev = self.fastcopy(self.rle)
-		self.actionHistory.append(action)
+		actionHistories[episode_num].append(action)
 		
 		# print "pre-step in executeStep"
 		# from vgdl.agent import VrleInitPhase, matchEnvs
@@ -481,10 +524,10 @@ class Agent:
 
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
-		hypotheses = self.manageNewObjects(hypotheses, envRealPrev, action, learnAvatar=self.learnAvatar)
+		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action, learnAvatar=self.learnAvatar)
 
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
-		self.rleHistory.append(envReal)
+		rleHistories[episode_num].append(envReal)
 		
 		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
 		self.rle._game.sprite_appearances = new_sprites
@@ -499,7 +542,7 @@ class Agent:
 	
 		for num, env in enumerate(theoryRLEs):
 			theories = testAndExpand(theoryRLEs, self.hypotheses, action, self.rle, envRealPrev, num, \
-				self.rleHistory, self.actionHistory, self.symbolDict, self.best_params, self.bestSpriteTypeDict)
+				rleHistories[episode_num], actionHistories[episode_num], self.symbolDict, self.best_params, self.bestSpriteTypeDict)
 			newTheories.extend(theories)
 
 		# print "Have {} new theories in outer loop".format(len(newTheories))
@@ -509,15 +552,16 @@ class Agent:
 		# print "After filtering for duplicates, have {} theories".format(len(newTheories))
 		# embed()
 		self.allTheories.extend(newTheories)
-		print "evaluation complete. Now running experienceReplay on {} theories".format(len(newTheories))
+		print ""
+		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
 
-		# embed()
 		if newTheories:
-			penalties, cumulative_penalties, experienceReplayRLEs = experienceReplay(newTheories, self.rleHistory, self.actionHistory,
-				self.symbolDict, self.best_params, method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
+			penalties = MultiEpisodeExperienceReplay(newTheories, rleHistories[:episode_num+1], actionHistories[:episode_num+1],
+				self.symbolDict, self.best_params, method=EXPERIENCE_REPLAY_METHOD, displayTheories=False
+			)
 
-			scoreAndTheoryTuples = zip(penalties, newTheories, experienceReplayRLEs)
-			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
+			scoreAndTheoryTuples = zip(penalties, newTheories)
+			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], len(x[1].interactionSet)))
 
 			for num, sh in enumerate(scoreAndTheoryTuples):
 				print "Theory: {} | Error: {}".format(num, sh[0])
@@ -537,8 +581,7 @@ class Agent:
 			print ""
 			hypotheses = [sh[1] for sh in scoresAndHypotheses]
 			print "{} survived".format(len(hypotheses))
-			# print ""
-			# embed()
+
 			if len(hypotheses) == 0:
 				print "0 hypotheses survived filter"
 				embed()
@@ -554,7 +597,6 @@ class Agent:
 		for h in hypotheses:
 			h.dryingPaint = set()
 		return hypotheses
-
 
 	########################################################################
 	######## TESTING HYPOTHESES BY RANDOM SAMPLING OR OTHER METHODS ########
@@ -633,14 +675,6 @@ class Agent:
 ######## RLE INITIALIZATION AND STATE-SETTING METHODS 			########
 ########################################################################
 
-def setVrleStateProfiler(rle, Vrle, hypothesis, best_params):
-	lp = LineProfiler()
-	lp_wrapper = lp(setVrleState)
-	hypotheses = lp_wrapper(rle, Vrle, hypothesis, best_params)
-	lp.print_stats()
-	return
-
-
 def setVrleState(rle, Vrle, hypothesis, best_params):
 	## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
 
@@ -657,11 +691,24 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 					continue
 				sprite.rect 		= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
 				sprite.lastrect 	= pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
-				sprite.lastmove 	= int(matchingSprite.lastmove)
-				sprite.resources    = defaultdict(int)
-				for key in matchingSprite.inventory.keys():
-					sprite.resources[key] = matchingSprite.inventory[key][0]
-				sprite.orientation 	= tuple(matchingSprite.orientation) # consider copying only for avatar?
+				if sprite.rect.left != sprite.lastrect.left and sprite.rect.top != sprite.lastrect.top and abs(sprite.rect.left  - sprite.lastrect.left ) != abs(sprite.rect.top - sprite.lastrect.top):
+					print "in setVrleState -- illegal rect/lastrect pair"
+					embed()
+				sprite.lastmove 	= matchingSprite.lastmove
+				
+				sprite.resources = defaultdict(int)
+				for rcolor in matchingSprite.inventory.keys():
+					sprite.resources[hypothesis.spriteObjects[rcolor].className] = matchingSprite.inventory[rcolor][0]
+				# sprite.resources    = {hypothesis.spriteObjects[rcolor].className: matchingSprite.inventory[rcolor]
+											# for rcolor in matchingSprite.inventory.keys()}
+
+				# in VGDL, only things which move passively have an orientation that isn't (0,0)
+				#	if we set
+				if (hypothesis.spriteObjects[matchingSprite.colorName].vgdlType in
+						[MovingAvatar, HorizontalAvatar, VerticalAvatar]):
+					sprite.orientation = (0,0)
+				else:
+					sprite.orientation 	= tuple(matchingSprite.orientation) # consider copying only for avatar?
 
 
 				## Other aspects of state to potentially transfer
@@ -674,30 +721,21 @@ def setVrleState(rle, Vrle, hypothesis, best_params):
 				# sprite.last_vy = ccopy(matchingSprite.last_vy)
 				# sprite.speed = ccopy(matchingSprite.speed)
 	Vrle._game.score = int(rle._game.score)
+	# if 
+	# print 'in setVrleState'
+	# embed()
 	Vrle._game.observation = buildTracker(Vrle)
 	Vrle._game.observation['lastscore'] = rle._game.observation['lastscore']
 
 	return
 
-def initializeVrleProfiler(hypothesis, stateToSet, symbolDict, best_params):
-	lp = LineProfiler()
-	lp_wrapper = lp(initializeVrle)
-	Vrle = lp_wrapper(hypothesis, stateToSet, symbolDict, best_params)
-	lp.print_stats()
-	return Vrle
 
-def initializeVrle(hypothesis, stateToSet, symbolDict, best_params, debug=False):
 
-	def writeTheoryToTxtProfiler(rle, theory, symbolDict, txtFile, goalLoc = None):
-		lp = LineProfiler()
-		lp_wrapper = lp(writeTheoryToTxt)
-		theoryString, levelString, symbolDict = lp_wrapper(rle, theory, symbolDict, txtFile, goalLoc)
-		lp.print_stats()
-		return theoryString, levelString, symbolDict
+def initializeVrle(hypothesis, stateToSet, symbolDict, best_params, writeFile=False, debug=False):
 
 	## World in agent's mind given 'hypothesis', including object goal
 	gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, symbolDict,\
-		 "./examples/gridphysics/theorytest.py")
+		 "./examples/gridphysics/theorytest.py", writeFile=writeFile)
 
 	try:
 		Vrle = createMindEnv(gameString, levelString, output=False)
@@ -716,13 +754,6 @@ def initializeVrle(hypothesis, stateToSet, symbolDict, best_params, debug=False)
 
 	return Vrle
 
-def VrleInitPhaseProfiler(hypotheses, stateToSet, symbolDict, best_params):
-	lp = LineProfiler()
-	lp_wrapper = lp(VrleInitPhase)
-	VRLEs = lp_wrapper(hypotheses, stateToSet, symbolDict, best_params)
-	lp.print_stats()
-	return VRLEs
-
 def VrleInitPhase(hypotheses, stateToSet, symbolDict, best_params):
 	## Initialize multiple VRLEs, each corresponding to one hypothesis in theories
 	## Set their state to that of the provided RLE
@@ -733,13 +764,37 @@ def VrleInitPhase(hypotheses, stateToSet, symbolDict, best_params):
 
 	return VRLEs
 
-def findNearestSprite(sprite, spriteList):
+def findNearestSprite(sprite, spriteList, dist_function=manhattanDist2, skip_self=False):
 	## returns the sprite in spriteList whose location best matches the location of sprite.
-	if spriteList == []:
+	if not spriteList:
 		return None
-	else:
-		distList = [abs(x.rect.x-sprite.rect.x)+abs(x.rect.y-sprite.rect.y) for x in spriteList]
-		return spriteList[distList.index(min(distList))]
+
+	min_dist = float('inf')
+	closest_sprite = None
+	for s in spriteList:
+		if s == sprite and skip_self: continue
+		dist = dist_function(s, sprite)
+		if dist < min_dist:
+			min_dist = dist
+			closest_sprite = s
+	return closest_sprite
+
+def findNearestSprites(sprite, spriteList, dist_function=manhattanDist2, skip_self=False):
+	## returns a list of closest sprites where the distances are all equal
+	if not spriteList:
+		return []
+
+	dist_map = defaultdict(lambda: [])
+	min_dist = float('inf')
+	for s in spriteList:
+		if s == sprite and skip_self: continue
+		dist = dist_function(s, sprite)
+		if dist <= min_dist:
+			min_dist = dist
+			dist_map[dist].append(s)
+	return dist_map[min_dist]
+		
+
 
 
 
@@ -814,17 +869,17 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		## Distance penalty
 		sA, sB = t[0], t[1] #sprites in envA, envB      
 		dist = t[2] #distance to sprite in envB
-		sA_type = theory.spriteObjects[sA.name].vgdlType
+		sA_type = theory.spriteObjects[sA.colorName].vgdlType
 		d = 30. # grid spacing
 
 		# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
 		if 'Random' in str(sA_type):   
 
 
-			if 'speed' in theory.spriteObjects[sA.name].args.keys():
-				sA_speed = theory.spriteObjects[sA.name].args['speed']
-			elif 'speed' in theory.spriteObjects[sA.name].__dict__.keys():
-				sA_speed = theory.spriteObjects[sA.name].speed
+			if 'speed' in theory.spriteObjects[sA.colorName].args.keys():
+				sA_speed = theory.spriteObjects[sA.colorName].args['speed']
+			elif 'speed' in theory.spriteObjects[sA.colorName].__dict__.keys():
+				sA_speed = theory.spriteObjects[sA.colorName].speed
 			else:
 				## this only happens when you initialize the real theory for testing but haven't explicitly set the speed
 				## in the VGDL description
@@ -861,8 +916,9 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			## TODO: This will break if things don't exist in the game at this point that match stype
 			# stype = theory.spriteObjects[sA.colorName].args['stype']
 
-			sA.stype = getSpritesByColor(envPrev._game, sA.colorName)[0].name
+			sA.stype = getSpritesByColor(envPrev._game, sA.colorName)[0].colorName
 			sA.fleeing = theory.spriteObjects[sA.colorName].args['fleeing']
+			closestTargets = []
 			try:
 				closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing) ##TODO: Don't use envPrev._game.
 			except:
@@ -903,6 +959,9 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 	if envA._game.observation['score'] != envB._game.observation['score']:
 		total_penalty += p_score*abs(envA._game.observation['score']-envB._game.observation['score'])
+	if 0 < total_penalty and 'killIfHasMore' in [r.interaction for r in theory.interactionSet if r.slot2 == 'c2']:
+		print 'in errorSignal'
+		embed()
 	if penalty_only:
 		return total_penalty, []
 
@@ -975,7 +1034,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				e = errorMapEntry()
 				e.diagnosis.append('transformation')
 				e.targetToken = sA
-				e.targetClass = sA.name
+				e.targetClass = sA.colorName
 				e.targetColor = sA.colorName
 				# Find sprite corresponding to sB in previous time step
 				color = sB.colorName
@@ -1004,7 +1063,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 	# 2.2) Destruction
 	for sA in lonely_sprites_envA: #sA should have been destroyed
 		e = errorMapEntry()
-		e.targetClass = sA.name
+		e.targetClass = sA.colorName
 		e.targetColor = sA.colorName
 		candidates_in_killList = [s for s in envB._game.kill_list if s.colorName == sA.colorName]
 		sB = findNearestSprite(sA, candidates_in_killList)
@@ -1023,10 +1082,10 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			sPrev = sB #sprite was destroyed but hasn't moved
 
 		neighbors_prev = neighborsPrev(envA, envPrev, sPrev)
-		neighbors_prev = [c for c in neighbors_prev if c!=sA.name]
+		neighbors_prev = [c for c in neighbors_prev if c!=sA.colorName]
 		# Write potential interaction pairs to error map entry
 		for className in neighbors_prev:
-			e.intPairs.append( (sA.name,className) )
+			e.intPairs.append( (sA.colorName,className) )
 		errorMap.append(e)
 	# 2.3) Appearance
 	for sB in appeared_sprites_envB:
@@ -1044,7 +1103,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		if sMatch == []:
 			e.targetClass = 'unknown'
 		else:
-			e.targetClass = sMatch[0].name
+			e.targetClass = sMatch[0].colorName
 			e.targetColor = sMatch[0].colorName
 
 		# Find neighbors of target sprite in the real environment (envB) in the current time step -> could have caused appearance
@@ -1055,9 +1114,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		# nearestSprite = findNearestSprite(sB, [item for sublist in envA._game.sprite_groups.values() for item in sublist])
 		nearestSprite = findNearestSprite(sB, [item for sublist in envA._game.observation['trackedObjects'].values() for item in sublist])
 
-		if nearestSprite.name in neighbors_curr_and_prev:
-			e.intPairs.append((e.targetClass, nearestSprite.name))
-			e.culpritClasses.append(nearestSprite.name)
+		if nearestSprite.colorName in neighbors_curr_and_prev:
+			e.intPairs.append((e.targetClass, nearestSprite.colorName))
 		else:
 			print "got new sprite class but nearest prev-step sprite isn't a current neighbor"
 			embed()
@@ -1077,7 +1135,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			e.diagnosis.append('inventoryChange')
 			sA, sB = t[0], t[1]
 			e.targetToken = sB
-			e.targetClass = sB.name
+			e.targetClass = sA.colorName
 			e.targetColor = sB.colorName
 			sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
 			neighbors_prev = neighborsPrev(envB, envPrev, sPrev)
@@ -1092,7 +1150,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		sA = envA._game.observation['trackedObjects'][avatar_color][0]
 		sB = envB._game.observation['trackedObjects'][avatar_color][0]
 		e.targetToken = sA
-		e.targetClass = sA.name
+		e.targetClass = sA.colorName
 		e.targetColor = sA.colorName
 		sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
 		neighbors_prev = neighborsPrev(envB, envPrev, sPrev)
@@ -1122,6 +1180,9 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 	## convert color names in targetClass and intPairs to theory class names:
 	for e in errorMap:
+		if not e.targetClass in theory.spriteObjects.keys():
+			print "target class unknown? in errorSignal"
+			embed()
 		e.targetClass = theory.spriteObjects[e.targetClass].className if e.targetClass in theory.spriteObjects.keys() else 'unknown'
 
 		if e.intPairs:
@@ -1189,7 +1250,7 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 	# Step through sub-problems
 	e = errorMapEntry()
 	e.targetToken = sB
-	e.targetClass = sA.name
+	e.targetClass = sA.colorName
 	e.targetColor = sA.colorName
 
 	errorMaps = [e]
@@ -1198,14 +1259,8 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 
 	# Write potential interaction pairs to error map entry
 	for className in neighbors_prev:
-		e.intPairs.append( (sA.name,className) )
+		e.intPairs.append( (sA.colorName,className) )
 	# Determine mininum distance to neighbors in current real env -> to distinguish unexpectedPosition and unexpectedOverlap
-	
-	# all_sprites_envB = []
-	# for g in envB._game.sprite_groups.keys():
-	# 	all_sprites_envB += envB._game.sprite_groups[g]
-	# nearest_sprite = findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB) and (s not in envB._game.kill_list)])
-
 	all_sprites_envB = [item for sublist in envB._game.observation['trackedObjects'].values() for item in sublist]
 	nearest_sprite = findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB)])
 
@@ -1222,12 +1277,6 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 	if dist_ts == 0:
 		e.diagnosis.append('noMovement')
 		## Form all possible pairs of classes and propose these. This is because undoAll could cause this, so it's literally any classes combining.
-		# e.intPairs = list(itertools.combinations([k for k in envA._game.sprite_groups.keys() if envA._game.sprite_groups[k]],2))
-
-		# for k in envA._game.sprite_groups.keys():
-		# 	if len(envA._game.sprite_groups[k])>1:
-		# 		e.intPairs.append((k,k))
-
 		e.intPairs = list(itertools.combinations([k for k in envA._game.observation['trackedObjects'].keys() if 
 			envA._game.observation['trackedObjects'][k]], 2))
 
@@ -1248,30 +1297,25 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 		# find sprite in envA that corresponds to covered sprite in envB
 		color = nearest_sprite.colorName
 		className_envA = ''
-		# for k in [key for key in envA._game.sprite_groups.keys() if envA._game.sprite_groups[key]]:
-		# 	if color == envA._game.sprite_groups[k][0].colorName:
-		# 		className_envA = k
 		for k in [key for key in envA._game.observation['trackedObjects'].keys() if envA._game.observation['trackedObjects'][key]]:
 			if color == envA._game.observation['trackedObjects'][k][0].colorName:
 				className_envA = k
 
-		# covered_sprite_envA = findNearestSprite(sB,envA._game.sprite_groups[className_envA])
-
 		covered_sprite_envA = findNearestSprite(sB,envA._game.observation['trackedObjects'][className_envA])
 
-		e.intPairs = [(sA.name, covered_sprite_envA.name)] #overwrite interaction pair by the overlapping sprite pair
+		e.intPairs = [(sA.colorName, covered_sprite_envA.colorName)] #overwrite interaction pair by the overlapping sprite pair
 	if dist_ts>2:
 		e2 = errorMapEntry()
 		e2.targetToken = e.targetToken
 		e2.targetClass = e.targetClass
 		e2.targetColor = e.targetColor
 		e2.diagnosis.append('teleport')
-		e2.intPairs = [(sA.name, n) for n in neighbors_prev]
+		e2.intPairs = [(sA.colorName, n) for n in neighbors_prev]
 		errorMaps.append(e2)
 	# Return list of errorMapEntry objects
 	return errorMaps
 
-
+# @profile
 def matchEnvs(envA, envB, debug=False):
 	'''
 	Compares environment A to environment B, mapping sprites from A to sprites from B 1 to 1 (if it can)
@@ -1290,73 +1334,135 @@ def matchEnvs(envA, envB, debug=False):
 
 		the list of "lonely sprites" in B that don't map to any sprites in B: 
 			[s_A7, s_A8, ..]
-
-
 	'''
-	## For classes that have more than enumeration_limit instances, default to greedy version.
-	enumeration_limit = 10
 
+	# Start creating our data structures.
 	matched_sprites, lonely_sprites_envA, lonely_sprites_envB = [],[],[]
 
 	color_groupsA = defaultdict(lambda : [])
 	color_groupsB = defaultdict(lambda : [])
-	colors = set()
+	positions = set()
 
-	for name, sprites in envA._game.sprite_groups.iteritems():
-		if sprites:
-			color = sprites[0].colorName
-			color_groupsA[color] = sprites
-			colors.add(color)
+	# start with greedy algorithm
+	# match objects with the same position/color to each other
 
-	for name, sprites in envB._game.sprite_groups.iteritems():
-		if sprites:
-			color = sprites[0].colorName
-			color_groupsB[color] = sprites
-			colors.add(color)
+	# map positions to objects
+	pos_groupsA = defaultdict(lambda : [])
+	pos_groupsB = defaultdict(lambda : [])
 
-	for color in colors:
-		# Find matching sprites via color
-		matchingSpritesInEnvA = [s for s in getObservedSpritesByColor(envA._game, color)]
-		matchingSpritesInEnvB = [s for s in getObservedSpritesByColor(envB._game, color)]
+	matched_colors = defaultdict(lambda :LinkedDict())
+	unmatchedA = set()
+	unmatchedB = set()
+	# is there any guarantee for the ordering of the sprites?
+	# O(spritesA+spritesB) ~ O(n)
+	for env, pos_groups, color_groups, unmatched in [(envA, pos_groupsA, color_groupsA, unmatchedA), 
+													 (envB, pos_groupsB, color_groupsB, unmatchedB)]:
+		for name, sprites in env._game.sprite_groups.iteritems():
+			if sprites:
+				color = sprites[0].colorName
+				color_groups[color] = sprites
+				
+				for sprite in sprites:
+					pos = sprite.rect.topleft
+					pos_groups[pos].append(sprite)
+					positions.add(pos)
+					unmatched.add(sprite)
 
-		## If it is manageable to enumerate all possible pairings
-		if len(matchingSpritesInEnvA)<enumeration_limit:
-			while len(matchingSpritesInEnvA)<len(matchingSpritesInEnvB):
-				matchingSpritesInEnvA.append(None)
-			while len(matchingSpritesInEnvB)<len(matchingSpritesInEnvA):
-				matchingSpritesInEnvB.append(None)
+	# Greedily matches sprites based on position first AND color
+	# O(n^2) (but will likely be O(n) since not many sprites overlap)
+	for pos in positions: # O(n)
+		for spriteA in pos_groupsA[pos]: # O(max 5ish?)
+			for spriteB in pos_groupsB[pos]: # O(max 5ish?)
+				color = spriteA.colorName
+				if color == spriteB.colorName:
+					if matched_colors[color][spriteB]: continue # match already made
+					unmatchedA.remove(spriteA)
+					unmatchedB.remove(spriteB)
+					matched_colors[color][spriteA] = spriteB
+					# stop after first match and go on to match next one
+					break
 
-			assignment_options = []
-			for p in itertools.permutations(matchingSpritesInEnvA):
-				assignment_options.append(zip(p, matchingSpritesInEnvB))
+	# O(unmatchedA+unmatchedB) ~ O(n)
+	unmatched_colorsA, unmatched_colorsB = defaultdict(lambda: set()), defaultdict(lambda: set())
+	for unmatched, unmatched_colors in [(unmatchedA, unmatched_colorsA),
+										(unmatchedB, unmatched_colorsB)]:
+		for s in unmatched:
+			unmatched_colors[s.colorName].add(s)
 
-			min_sum = 1e6
-			best_assignments = None
-			for assignments in assignment_options:
-				curr_sum = sum([manhattanDist2(p[0], p[1])**2 for p in assignments if None not in p])
-				if curr_sum<min_sum:
-					min_sum = curr_sum
-					best_assignments = assignments
-			
-			for pair in best_assignments:
-				if None not in pair:
-					matched_sprites.append((pair[0], pair[1], manhattanDist2(pair[0], pair[1])))
-				if pair[1] is None:
-					lonely_sprites_envA.append(pair[0])
-				if pair[0] is None:
-					lonely_sprites_envB.append(pair[1])
-		else:	
-		## Otherwise default to a greedy version
-			to_remove = []
-			for sA in matchingSpritesInEnvA:
-				for sB in matchingSpritesInEnvB:
-					if manhattanDist2(sA, sB) == 0:
-						matched_sprites.append((sA, sB, 0.0))
-						matchingSpritesInEnvB.remove(sB)
-						to_remove.append(sA)
-						break
+	# while it's still possible to make matches
+	unmatched_colors = set(unmatched_colorsA).intersection(set(unmatched_colorsB))
+	rematches = {}
+	for color in unmatched_colors:
+		# get all the sprites with the color in envB
+		# and the unmatched sprites with the color in envA
+		color_groupB = set(color_groupsB[color])
+		unmatched_group = unmatched_colorsA[color].copy()
+		spriteA = unmatched_group.pop()
+		match_dict = matched_colors[color]
+		# sum_dist = sum([sprite_dist(sA, sB) for sA, sB in match_dict.iteritems()])
+		
+		# pop one of the unmatched sprites from the unmatched color_groupA
+		pairing_paths = [(0, spriteA, unmatched_group, color_groupB, [])]
+		best_matches = None
+		while pairing_paths:
+			# rematch sprites until we've tried to match them all
+
+			# BFS - grab last pairing. Sorted in decending order of dist
+			sum_dist, spriteA, unmatched_group, color_groupB, matches = heapq.heappop(pairing_paths)
+
+			# if not color_groupB:
+			# 	pairing_paths.append((sum_dist, pairs, color_groupB))
+			# 	break
+			best_matches = matches
+			if not (spriteA or unmatched_group):
+				break
+
+			if not spriteA:
+				spriteA = unmatched_group.pop()
+
+			nearest_sprites = findNearestSprites(spriteA, color_groupB, manhattanDist2)
+			for spriteB in nearest_sprites: 
+				color_group_copy = color_groupB.copy()
+				unmatched_group_copy = unmatched_group.copy()
+				matches_copy = matches[:]
+				new_sum_dist = sum_dist
+
+				new_spriteA = match_dict[spriteB]
+
+				if new_spriteA:
+					new_sum_dist -= manhattanDist2(new_spriteA, spriteB)**2
+				new_sum_dist += manhattanDist2(spriteA, spriteB)**2
+
+				color_group_copy.remove(spriteB)
+				matches_copy.append((spriteA, spriteB))
+				
+
+				heapq.heappush(pairing_paths, (new_sum_dist, new_spriteA, unmatched_group_copy, color_group_copy, matches_copy))
+
+		if spriteA:
+			unmatchedA.add(spriteA)
+		for sA, sB in best_matches:
+			if sA in unmatchedA:
+				unmatchedA.remove(sA)
+			if sB in unmatchedB:
+				unmatchedB.remove(sB)
+
+			matched_colors[color][sA] = sB
+
+	lonely_sprites_envA = list(unmatchedA)
+	lonely_sprites_envB = list(unmatchedB)
+	matched_sprites = [(s1, s2, manhattanDist2(s1, s2)) for matched_color in matched_colors.values() for s1, s2 in matched_color.iteritems() ]
+
+	# print 'manhattan dists'
+	# for posA in pos_groupsA:
+	# 	for posB in pos_groupsB:
+	# 		if posA == posB: continue
+	# 		print manhattanDist(posA, posB)
+
 
 	return matched_sprites, lonely_sprites_envA, lonely_sprites_envB
+
+
 
 
 
@@ -1383,31 +1489,6 @@ def getSalientStates(rleHistory):
 	## make sure you don't sample the last state
 	## get actionsPerIndex
 	pass
-
-def experienceReplayProfiler(hypotheses, rleHistory, actionHistory, symbolDict, best_params, method='all', displayStates=False):
-	lp = LineProfiler()
-	lp_wrapper = lp(experienceReplay)
-	mean_penalties, cumulative_penalties = lp_wrapper(hypotheses, rleHistory, actionHistory, symbolDict, best_params, method, displayStates)
-	lp.print_stats()
-	return mean_penalties, cumulative_penalties
-
-
-def singleTheoryExperienceReplayProfiler(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict, best_params):
-	lp = LineProfiler()
-	lp_wrapper = lp(singleTheoryExperienceReplay)
-	mean_penalties, cumulative_penalties, theoryRLEs= lp_wrapper(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict, best_params)
-	lp.print_stats()
-	return mean_penalties, cumulative_penalties, theoryRLEs
-
-
-def MultiEpisodeExperienceReplay(rleHistories, actionHistories, method, targetColor, displayStates, hypotheses, symbolDict, best_params):
-	# what am I averaging? 
-	# the avg error for each theory in each episode is wrong
-	# weight by actions
-	# saving multiple histories?
-
-	for rleHistory in rleHistories:
-
 
 def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict, best_params):
 	subsamplePercentage = .2
@@ -1510,6 +1591,33 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, best_par
 
 	return mean_penalties, cumulative_penalties, theoryRLEs
 
+def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, symbolDict, best_params, method, targetColor=None, displayStates=False, displayTheories=False):
+	'''
+	Runs experience replay on multiple episodes with some action sequence for each episode and returns the penalties for the given theories (weighted on the number of actions)
+	'''
+	assert len(rleHistories) == len(actionHistories), 'rleHistories and actionHistories need to match'
+
+	print "Running MultiEpisodeExperienceReplay on %i episodes " % len(rleHistories)
+
+	multi_episode_mean_penalties = []
+	weight = 1./len(max(actionHistories, key=len))
+
+	for rleHistory, actionHistory in zip(rleHistories, actionHistories):
+		mean_penalties, _, expRLE = experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, 
+													best_params, method, targetColor, displayStates, displayTheories)
+		mean_penalties = np.array(mean_penalties)*weight*len(actionHistory)
+		multi_episode_mean_penalties.append(mean_penalties)
+
+	multi_episode_mean_penalties = np.mean(multi_episode_mean_penalties, axis=0)
+
+	return multi_episode_mean_penalties
+
+
+
+
+
+
+
 ########################################################################
 ######## THEORY MODIFICATION 									########
 ########################################################################
@@ -1560,12 +1668,15 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 	return filtered
 
 def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction, rleHistory, actionHistory, symbolDict, best_params, bestSpriteTypeDict):
-	print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
+	# print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
 
 
 	# MEMOIZE!
 	# lookup table (dict) which maps (classPair, predicateTuple) to all combinations of all possible rules involving those classes and predicates
 	classPairPlusPredicateToRuleSets = dict()
+
+	# print 'top of expandTheories'
+	# embed()
 
 	for errorMap in errorList:
 		## Skip this whole step if you've already made changes for this theory. Just pass it on and you'll
@@ -1581,7 +1692,8 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		for theory in theories:
 			newTheories.extend(expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, prevAction, theory,
 					bestSpriteTypeDict, classPairPlusPredicateToRuleSets))
-		print "{} theories took {} seconds".format(len(theories), time.time()-t1)
+
+		print "Expanding {} theories took {} seconds".format(len(theories), time.time()-t1)
 
 		t1 = time.time()
 		newTheories = list(set(newTheories))
@@ -1600,13 +1712,11 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		newTheories = [s[1] for s in scoresAndHypotheses]
 
 		theories = newTheories
-
 	return theories
 
 ''' old expandTheories which was recursive
 def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction, rleHistory, actionHistory, symbolDict, best_params, bestSpriteTypeDict):
 	print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
->>>>>>> with_tracker
 	# print [e.diagnosis for e in errorList]
 	if len(errorList) == 0:
 		return theories
@@ -1643,22 +1753,20 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 
 		newTheories = [s[1] for s in scoresAndHypotheses]
 
-	else:
-		tmpTheories = expandTheories(theories, [errorList[0]], envRealPrev, envRealCurrent, prevAction, rleHistory, actionHistory, symbolDict, best_params, bestSpriteTypeDict)
-		newTheories = expandTheories(tmpTheories, errorList[1:], envRealPrev, envRealCurrent, prevAction, rleHistory, actionHistory, symbolDict, best_params, bestSpriteTypeDict)
+	return theories'''
 
-	return newTheories
-'''
 
 def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, theory, bestSpriteTypeDict, classPairPlusPredicateToRuleSets):
 	## Fixes the problems generated by a single errorMap entry.
 
-	n=1 # n is the number of allowed rules for a particular classpair-ordering, probably (TODO)
+	n = 1 # n is the number of allowed rules for a particular classpair-ordering, probably (TODO)
 
 	## If we were about to make modifications we've made already, don't waste the time.
 	if any([errorMap == e for e in theory.errorMapHistory]):
 		newTheories = [theory]
 		return newTheories
+
+	theory.errorMapHistory.append(errorMap)
 
 	newTheories = []
 
@@ -1678,18 +1786,54 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 				class_num = max_num+1
 				newClassName = 'c'+str(class_num)
 				theory.addSpriteToTheory(newClassName, color, vgdlType=Resource, args={'limit':errorMap.targetToken.inventory[k][1]})
+			else:
+				theory.spriteObjects[k].vgdlType = Resource
+				if theory.spriteObjects[k].args:
+					theory.spriteObjects[k].args['limit'] = errorMap.targetToken.inventory[k][1]
+				else:
+					theory.spriteObjects[k].args = {'limit':errorMap.targetToken.inventory[k][1]}
 
 	## If there are unknown colors on screen, add them to the theory here.
-	if errorMap.targetClass not in theory.classes:
-		existing_classes = [key for key in theory.classes if key[0] == 'c']
-		max_num = max([int(c[1:]) for c in existing_classes])
-		class_num = max_num+1 
-		errorMap.targetClass = 'c'+str(class_num)
+	if errorMap.targetClass not in theory.classes.keys():
+		if errorMap.targetColor in theory.spriteObjects:
+			errorMap.targetClass = theory.spriteObjects[errorMap.targetColor].className
+		else:
+			existing_classes = [key for key in theory.classes if key[0] == 'c']
+			max_num = max([int(c[1:]) for c in existing_classes])
+			class_num = max_num+1 
+			errorMap.targetClass = 'c'+str(class_num)
+			print "Got unknown targetclass for {}. Added generic sprite to spriteSet and interactionSet".format(errorMap.targetToken.colorName)
+			theory.addSpriteToTheory(errorMap.targetClass, errorMap.targetToken.colorName)
+			## Now get overlapping/nearby classes and reassign the target class to the shooter/spawnpoint/etc. 
+			## the next step will take care of not doing inference on these if we've done it already.
+			## NOTE: errorMap takes a unique targe class, and there are cases where you might have multiple singleton neighbors.
+			## For now you're taking just a random choice between those.
+			neighbors = neighborsPrev(envRealCurrent, envRealCurrent, errorMap.targetToken)
+			options = [item for sublist in [envRealCurrent._game.observation['trackedObjects'][k] for k in neighbors if 
+				len(envRealCurrent._game.observation['trackedObjects'][k]) == 1] for item in sublist]
+
+			if len(options)>1:
+				print "Warning: More than one singleton neighbor of a newly-spawned sprite. Randomly picking one as agent"
+			try:
+				overlapping_item = random.choice(options)
+			except:
+				print "overlapping_item problem in expandtheory"
+				embed()
+
+			errorMap.targetToken = overlapping_item
+			errorMap.targetClass = theory.spriteObjects[overlapping_item.colorName].className
+
+			## Redo induction for this type, even if you've done it before.
+			if errorMap.targetClass in theory.expandedSprites:
+				theory.expandedSprites.remove(errorMap.targetClass)
+
+		## Replace 'unknown' with new name in intPairs
 		newPairs = []
 		for num,pair in enumerate(errorMap.intPairs):
 			newPair = tuple([p if p!='unknown' else errorMap.targetClass for p in list(pair)])
 			newPairs.append(newPair)
 		errorMap.intPairs = newPairs
+
 		print "Got unknown targetclass for {}. Added generic sprite to spriteSet and interactionSet".format(errorMap.targetToken.colorName)
 		theory.addSpriteToTheory(errorMap.targetClass, errorMap.targetToken.colorName)
 
@@ -1703,7 +1847,11 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 
 		if len(options)>1:
 			print "Warning: More than one singleton neighbor of a newly-spawned sprite. Randomly picking one as agent"
-		overlapping_item = random.choice(options)
+		try:
+			overlapping_item = random.choice(options)
+		except:
+			print "overlapping_item problem in expandTheoryForOneErrorMap"
+			embed()
 		# overlapping_item = [item for sublist in envRealCurrent._game.sprite_groups.values() for item in sublist if 
 			# item.rect == errorMap.targetToken.rect and item.colorName!=errorMap.targetToken.colorName][0]
 		errorMap.targetToken = overlapping_item
@@ -1726,8 +1874,19 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 		## If we have non-generic rules for this pair in the theory, then this has to involve some kind of precondition
 		matchingRules = [rule for rule in theory.interactionSet if (rule not in list(theory.dryingPaint)) and 
 			( targetClassPair == (rule.slot1, rule.slot2) or targetClassPair == (rule.slot2, rule.slot1) )]
+
+		# if ('objectDestruction' in errorMap.diagnosis
+		# 			or any('objectDestruction' in e.diagnosis for e in theory.errorMapHistory) ) \
+		# 		and any([not rule.generic for rule in matchingRules]):
 		if any([not rule.generic for rule in matchingRules]):
+			if ('objectDestruction' in errorMap.diagnosis
+						or any(['objectDestruction' in e.diagnosis for e in theory.errorMapHistory if e.targetClass in targetClassPair]) ):
+				# print "*******inner one happened"
+				# embed()
+				pass
 			errorMap.diagnosis.append('conditionalKill')
+			# print "*******non-generic rules for classPair"
+			# embed()
 		## Modify theory before the last step, then embed here to continue work
 		## if the diagnosis involves objectDestruction and the targetClassPair has non-generic rules,
 		## change the diagnosis here to conditionalKill such that you can propose preconditions in proposePredicates
@@ -1736,12 +1895,21 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, th
 		classPair, theories = expandLine(theory, errorMap, targetClassPair, predicates,
 			classPairPlusPredicateToRuleSets, n=n, 
 			observations=envRealCurrent._game.observation, generic=False)
+
+		theories = interateThresholds(theories, errorMap, targetClassPair)
+
+		# this is because it would cause us to propose conditional stuff for later targetClassPairs
+		if 'conditionalKill' in errorMap.diagnosis:
+			errorMap.diagnosis.remove('conditionalKill')
+			# print 'conditionalKill in expandTheoryForOneErrorMap'
+			# embed()
+
 		newTheories = list(set(theories))
 
 	if not newTheories:
 		newTheories = [theory]
 		theory.errorMapHistory.append(errorMap)
-		
+
 	return newTheories
 
 def testAndExpand(theoryRLEs, hypotheses, action, envReal, envRealPrev, index, rleHistory, actionHistory, symbolDict, best_params, bestSpriteTypeDict):
@@ -1757,6 +1925,7 @@ def testAndExpand(theoryRLEs, hypotheses, action, envReal, envRealPrev, index, r
 		for e in errorList:
 			e.display()
 			print ""
+		# embed()
 	# else:
 	# 	print "No error"
 	# 	embed()

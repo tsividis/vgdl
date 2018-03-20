@@ -17,11 +17,11 @@ level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
-w              R               w
 w                              w
-w                              w
+w              1               w
 w                              w
 w              A               w
+w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -86,10 +86,7 @@ BasicGame
         A > avatar
     InteractionSet
         avatar wall > stepBack
-        random wall > stepBack
         box avatar > killSprite
-        box2 avatar > killSprite
-        box3 avatar > killSprite
 
     TerminationSet
         # SpriteCounter stype=box limit=0 win=True
