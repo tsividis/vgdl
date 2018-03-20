@@ -60,13 +60,14 @@ BasicGame
         box3 > Immovable color=YELLOW
         flicker > Flicker timeout=1 color=ORANGE
         random > RandomNPC color=PURPLE speed=1 cooldown=1
-        chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
+        chaser > Chaser color=BLACK speed=1 cooldown=1 stype=avatar
         avatar  > MovingAvatar color=DARKBLUE #stype=sam
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=1
         missile > Missile
             sam  > orientation=UP color=BLUE singleton=True
         wall > Immovable color=DARKGRAY
     LevelMapping
+        R > random
         C > cloner
         F > flicker
         0 > base
@@ -80,15 +81,11 @@ BasicGame
         A > avatar
     InteractionSet
         avatar wall > stepBack
-        box avatar > bounceForward
-        box2 avatar > killSprite
-        box3 avatar > killSprite
-
+        box avatar > killSprite
     TerminationSet
-        # SpriteCounter stype=box2 limit=0 win=True
+        # SpriteCounter stype=box limit=0 win=True
         # SpriteCounter stype=box3 limit=0 win=False
-        # Termination
-
+        # MultiSpriteCounter stype1=box2 stype2=box3 win=False
 
 """
 level_game_pairs = [[game, level]]

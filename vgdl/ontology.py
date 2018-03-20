@@ -379,8 +379,6 @@ class SpawnPoint(SpriteProducer):
 
         self.lastmove += 1
 
-
-
 class RandomNPC(VGDLSprite):
     """ Chooses randomly from all available actions each step. """
     speed = 1
