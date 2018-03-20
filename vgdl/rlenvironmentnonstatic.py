@@ -309,7 +309,7 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         # if action != (0,0) and self._avatar:
         #     self._avatar._readMultiActions = lambda *x: [action]
 
-        # self._avatar._readMultiActions = lambda *x: [self._actionset[action]] # old
+
         possible_actions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
         
         if action in possible_actions:
@@ -321,11 +321,7 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         
         # update sprites
         if onlyavatar:
-            
-            #if action != 0:
-            #    self._avatar.update(self._game)
             self._avatar.update(self._game)
-        
         else:
             for s in list(self._game):
                 if s not in self._game.kill_list:
@@ -335,10 +331,7 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         events = self._game._eventHandling()
         ## get events (e.g., (stepBack obj1ID, obj2ID))
 
-        # self._gravepoints[(skey, self._rect2pos(s.rect))] = True
-
-
-        ## Added 5/2, to correct for the fact that some gmaes don't have _gravepoints by default
+        ## Added 5/2, to correct for the fact that some games don't have _gravepoints by default
         if not hasattr(self, '_gravepoints'):
             self._gravepoints = {}
         
@@ -354,10 +347,7 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
             for sprite in self._game.sprite_groups[k]:
                 if (k, self._rect2pos(sprite.rect)) not in self._gravepoints.keys():
                     self._gravepoints[(k, self._rect2pos(sprite.rect))] = True
-        # print "after adding gravepoints"
-        # embed()
-        #print("hi")
-        #print(self._avatar.rect)
+
         return events
 
         # if self.visualize:
