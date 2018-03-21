@@ -1356,7 +1356,7 @@ def matchEnvs(envA, envB, debug=False):
 	# O(spritesA+spritesB) ~ O(n)
 	for env, pos_groups, color_groups, unmatched in [(envA, pos_groupsA, color_groupsA, unmatchedA), 
 													 (envB, pos_groupsB, color_groupsB, unmatchedB)]:
-		for name, sprites in env._game.sprite_groups.iteritems():
+		for name, sprites in env._game.observation['trackedObjects'].iteritems():
 			if sprites:
 				color = sprites[0].colorName
 				color_groups[color] = sprites
@@ -1460,9 +1460,6 @@ def matchEnvs(envA, envB, debug=False):
 
 
 	return matched_sprites, lonely_sprites_envA, lonely_sprites_envB
-
-
-
 
 
 ########################################################################
