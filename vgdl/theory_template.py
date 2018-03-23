@@ -1000,9 +1000,9 @@ class Theory(object):
 		return (addedRule or addedClass)
 
 	def updateTerminations(self, rle=None):
-		self.terminationSet = [t for t in self.terminationSet
+		self.terminationSet = set([t for t in self.terminationSet
 							   if t.ruleType=='SpriteCounterRule' and
-							   not t.termination.win and all([not f.__eq__(t) for f in self.falsified])]
+							   not t.termination.win and t not in self.falsified])
 
 		colors = [tt[0].colorName for tt in self.classes.values() if tt[0].colorName != 'ENDOFSCREEN']
 		
@@ -1016,89 +1016,65 @@ class Theory(object):
 				if count == 0:
 					absentColors.append(color)
 					## If the game didn't end, you can't win or lose based on this particular class being 0
-					if not rle._isDone()[0]:
-						new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, True)
-						new_rule2 = SpriteCounterRule(self.colorToClassMapper(color), 0, False)
-						# print new_rule
-						# print new_rule2
-						# embed()
-						if new_rule not in self.falsified:
-							self.falsified.append(new_rule)
-							self.falsified.append(new_rule2)
+					done, win = rle._isDone()
+					if not done:
+						for win in [True, False]:
+							false_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, win)
+							self.falsified.add(false_rule)
 					else:
-						if rle._isDone()[1]:
-							new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, False)
-							## If you won, you can't lose based on this class being 0
-							# embed()
-							if new_rule not in self.falsified:
-								self.falsified.append(new_rule)
-						else:
-							## If you lost, you can't win based on this class being 0
-							new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, True)
-							if new_rule not in self.falsified:
-								self.falsified.append(new_rule)
+						# game is done. Hypothesize new theory. Code seems to work without doing this.
+						# new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, win)
+						# if new_rule not in self.falsified and new_rule not in self.terminationSet:
+						# 	self.terminationSet.add(new_rule)
 
+						## If you won/lost, you can't lose/win based on this class being 0
+						false_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, not win)
+						self.falsified.add(false_rule)
+
+						if not win:
 							## If you lost, maybe you lost because this class was 0. Check whether we'd already falsified this rule.
 							loss_terminationRule = SpriteCounterRule(self.colorToClassMapper(color), 0, False)
-							if (all([not loss_terminationRule.__eq__(t) for t in self.terminationSet]) and
-								all([not loss_terminationRule.__eq__(t) for t in self.falsified])):
-									self.terminationSet.append(loss_terminationRule)
+							if loss_terminationRule not in self.falsified:
+								self.terminationSet.add(loss_terminationRule)
 
 			for n in range(2, len(absentColors) + 1):
 				for color_combination in itertools.combinations(absentColors, n):
-					class_combination = [self.colorToClassMapper(color) for color in color_combination]
-					
-					## If the game didn't end, falsify multiSpriteCounter rules for this state.
-					if not rle._isDone()[0]:
-						new_rule1 = MultiSpriteCounterRule(stypes=class_combination, win=True)
-						new_rule2 = MultiSpriteCounterRule(stypes=class_combination, win=False)
-						if new_rule1 not in self.multi_falsified:
-							self.multi_falsified.append(new_rule1)
-							self.multi_falsified.append(new_rule2)
-					## If the game did end
-					else:
-						## If we won, falsify loss based on this state.
-						if rle._isDone()[1]:
-							new_rule = MultiSpriteCounterRule(stypes=class_combination, win=False)
-							if new_rule not in self.multi_falsified:
-								self.multi_falsified.append(new_rule)
-						## If we lost, falsify win based on this state.
-						else:
-							new_rule = MultiSpriteCounterRule(stypes=class_combination, win=True)
-							if new_rule not in self.multi_falsified:
-								self.multi_falsified.append(new_rule)
 
-							loss_terminationRule = MultiSpriteCounterRule(stypes=class_combination, win=False)
-							if loss_terminationRule not in self.terminationSet and loss_terminationRule not in self.falsified:
-									self.terminationSet.append(loss_terminationRule)
+					class_combination = [self.colorToClassMapper(color) for color in color_combination]
+					## If the game didn't end, falsify multiSpriteCounter rules for this state.
+					done, win = rle._isDone()
+					if not done:
+						for win in [True, False]:
+							new_rule = MultiSpriteCounterRule(stypes=class_combination, win=win)
+							self.multi_falsified.add(new_rule)
+					else: # game ended
+						new_rule = MultiSpriteCounter(stypes=class_combination, win=win)
+						if new_rule not in self.multi_falsified:
+							self.terminationSet.add(new_rule)
+
+						false_rule = MultiSpriteCounterRule(stypes=class_combination, win=not win)
+						self.multi_falsified.add(false_rule)
 
 		for rule in self.interactionSet:
-
 			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'nothing']:
-				if rule.generic and rule.preconditions:
-					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, copy.deepcopy(rule.preconditions))
-					if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
-							for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
-						all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
-						all([not terminationRule.__eq__(t) for t in self.falsified])):
-						self.terminationSet.append(terminationRule)
-				elif rule.generic and not rule.preconditions:
-					## Omit noveltytermination for randoms bumping into objects in the game; makes us disrupt plans even though we shouldnt't.
-					if ('Random' not in str(self.classes[rule.slot1][0].vgdlType)) and ('Random' not in str(self.classes[rule.slot2][0].vgdlType)) or rule.asTuple()[0]!='nothing':
-						terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
-						if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
-								for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
-							all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
-							all([not terminationRule.__eq__(t) for t in self.falsified])):
-							self.terminationSet.append(terminationRule)
+				if rule.generic:
+					preconditions = copy.deepcopy(rule.preconditions) if rule.preconditions else None
+					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, preconditions)
+					if terminationRule not in self.falsified:
+						for t in self.terminationSet:
+							if t.ruleType != 'NoveltyRule': continue
+							if t.termination.s2 != rule.slot1 and t.termination.s1 != rule.slot2:
+								break
+						else:
+							self.terminationSet.add(terminationRule)
 				elif rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo']:
 					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
-					if terminationRule not in self.terminationSet and terminationRule not in self.falsified:
-						self.terminationSet.append(terminationRule)
+					if terminationRule not in self.falsified:
+						self.terminationSet.add(terminationRule)
 
 			if rule.slot2 == 'EOS' and rule.generic:
 				terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
-				self.terminationSet.append(terminationRule)
+				self.terminationSet.add(terminationRule)
 
 		falsified_win_stypes = set([sprite_rule.termination.stype for sprite_rule in self.falsified
 			if (sprite_rule.termination.win and sprite_rule.termination.stype != 'EOS' and sprite_rule.termination.stype !='avatar')])
@@ -1112,9 +1088,8 @@ class Theory(object):
 		for n in range(2, len(falsified_win_stypes) + 1):
 			for sprite_combination in itertools.combinations(falsified_win_stypes, n):
 				terminationRule = MultiSpriteCounterRule(stypes=sprite_combination)
-				if (all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
-					all([not terminationRule.__eq__(t) for t in self.multi_falsified])):
-					self.terminationSet.append(terminationRule)
+				if terminationRule not in self.multi_falsified:
+					self.terminationSet.add(terminationRule)
 
 		self.terminationSet = sorted(self.terminationSet, key=lambda t:t.ruleType)
 
