@@ -179,10 +179,12 @@ class TerminationRule:
 	def __hash__(self):
 		return self._hash
 
+
 class TimeoutRule(TerminationRule):
 	def __init__(self, limit=0, win=False):
 		self.termination = Timeout(limit=limit, win=win)
 		self.ruleType = "TimeoutRule"
+		self._hash = hash(self.asTuple())
 
 	def display(self):
 		print (self.ruleType, self.termination.limit, self.termination.win)
@@ -196,6 +198,8 @@ class NoveltyRule(TerminationRule):
 		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
 		self.termination = NoveltyTermination(s1=s1, s2=s2, win=win, args=args)
 		self.ruleType = "NoveltyRule"
+		args = args if args else {}
+		self._hash = hash((self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, tuple(sorted(args.iteritems()))))
 
 	def display(self):
 		print self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, self.termination.args
@@ -204,13 +208,13 @@ class NoveltyRule(TerminationRule):
 	def asTuple(self):
 		return (self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, self.termination.args)
 
-
 class SpriteCounterRule(TerminationRule):
 	""" Game ends when the number of sprites of type 'stype' hits 'limit' (or below). """
 	def __init__(self,stype,limit,win):
 		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
 		self.termination = SpriteCounter(limit=limit, stype=stype, win=win)
 		self.ruleType = "SpriteCounterRule"
+		self._hash = hash(self.asTuple())
 
 	def display(self):
 		print self.ruleType, self.termination.stype, self.termination.limit, self.termination.win
@@ -226,6 +230,7 @@ class MultiSpriteCounterRule(TerminationRule):
     	argList = dict((str(i), stype) for i, stype in enumerate(stypes))
         self.termination = MultiSpriteCounter(limit=limit,win=win, **argList)
         self.ruleType = "MultiSpriteCounterRule"
+        self._hash = hash((self.ruleType, tuple(sorted(self.termination.stypes)), self.termination.limit, self.termination.win))
 
     def display(self):
         print self.ruleType, self.termination.stypes, self.termination.limit, self.termination.win
