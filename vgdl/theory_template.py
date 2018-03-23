@@ -163,6 +163,10 @@ class TerminationRule:
 	TODO: eventually incorporate multiple sprite termination conditions and timeout termination conditions.
 	At the moment, we assume single sprite conditions
 	"""
+	def __init__(self, termination, win, **kwargs):
+		self.termination = termination(win=win, **kwargs)
+		self._hash = hash(self)
+
 	def isDone(self, game):
 		return self.termination.isDone()
 
@@ -172,6 +176,8 @@ class TerminationRule:
 	def __eq__(self,other):
 		return self.asTuple() == other.asTuple()
 
+	def __hash__(self):
+		return self._hash
 
 class TimeoutRule(TerminationRule):
 	def __init__(self, limit=0, win=False):
