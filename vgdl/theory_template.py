@@ -514,13 +514,12 @@ class Theory(object):
 				if terminationClassSymbol in classesWithDiffAmounts:
 					timestep_amt = classesWithDiffAmounts[terminationClassSymbol]
 					spriteCounterRule= SpriteCounterRule(terminationClassSymbol,timestep_amt,win)
-					if not spriteCounterRule in self.terminationSet:
-						self.terminationSet.append(spriteCounterRule)
+
+					self.terminationSet.add(spriteCounterRule)
 
 		time = result["time"]
 		timeoutRule = TimeoutRule(limit=time, win=win)
-		if not timeoutRule in self.terminationSet:
-			self.terminationSet.append(timeoutRule)
+		self.terminationSet.add(timeoutRule)
 
 
 	def likelihood(self, timestep, sparse=False):
@@ -1890,7 +1889,7 @@ class Game(object):
 			T.interactionSet.append(rule)
 
 		rule =  SpriteCounterRule("avatar", 0, False)
-		T.terminationSet.append(rule)
+		T.terminationSet.add(rule)
 
 		T.updateTerminations()
 		return T
@@ -2207,21 +2206,21 @@ def generateTheoryFromGame(rle, alterGoal=False):
 			spritecounter = SpriteCounterRule(limit=termination.limit,
 											  stype=termination.stype,
 											  win=termination.win)
-			theory.terminationSet.append(spritecounter)
+			theory.terminationSet.add(spritecounter)
 		elif termination.name == 'MultiSpriteCounter':
 			if alterGoal:
 				termination.stypes = ['laog' if t=='goal' else t for t in termination.stypes]
 			multiSpriteCounter = MultiSpriteCounterRule(limit=termination.limit,
 											  stypes=termination.stypes,
 											  win=termination.win)
-			theory.terminationSet.append(multiSpriteCounter)
+			theory.terminationSet.add(multiSpriteCounter)
 		elif termination.name == 'Timeout':
 			timeout = TimeoutRule(limit=termination.limit,
 								  win=termination.win)
-			theory.terminationSet.append(timeout)
+			theory.terminationSet.add(timeout)
 		elif termination.name == 'NoveltyRule':
 			noveltyrule = NoveltyRule(s1=termination.s1, s2=termination.s2, win=termination.win)
-			theory.terminationSet.append(noveltyrule)
+			theory.terminationSet.add(noveltyrule)
 
 	return theory
 

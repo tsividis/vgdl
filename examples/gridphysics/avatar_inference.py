@@ -85,7 +85,7 @@ BasicGame
         box3 avatar > killSprite
 
     TerminationSet
-        # SpriteCounter stype=box2 limit=0 win=True
+        SpriteCounter stype=box2 limit=0 win=True
         # SpriteCounter stype=box3 limit=0 win=False
         # Termination
 
