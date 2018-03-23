@@ -282,7 +282,7 @@ class Agent:
 		# actions = [K_LEFT, K_UP, K_LEFT, K_LEFT]
 		# actions = [K_UP, K_UP, K_UP]
 		# actions = [0]*10
-		actions = [K_UP, K_LEFT, K_LEFT,]# K_DOWN, K_LEFT, K_LEFT]
+		actions = [K_UP, K_UP]# K_DOWN, K_LEFT, K_LEFT]
 
 		self.initializeEnvironment()
 		# embed()
@@ -1731,13 +1731,13 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.aliens"
 
-	# filename = "examples.gridphysics.avatar_inference"
+	filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.collect_resource"
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 
-	filename = "examples.gridphysics.testAll"
+	# filename = "examples.gridphysics.testAll"
 
 	global WBP
 	if 'grid' in filename:

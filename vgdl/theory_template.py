@@ -273,7 +273,7 @@ class Theory(object):
 		self.spriteSet = [] # Includes properties of sprites/objects
 		self.levelMapping = [] # Map of the game
 		self.interactionSet = [] # Interaction rules
-		self.terminationSet = [] # Conditions that lead to game termination
+		self.terminationSet = set() # Conditions that lead to game termination
 
 		self.spriteObjects = {} # Maps sprite color -> Sprite object
 		self.classes = {} # Maps classes -> objects
@@ -282,8 +282,8 @@ class Theory(object):
 		self.dryingPaint = set()
 		self.inModification = {}
 
-		self.falsified = []
-		self.multi_falsified = []
+		self.falsified = set()
+		self.multi_falsified = set()
 
 		self.posterior = False
 
