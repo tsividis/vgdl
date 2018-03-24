@@ -20,7 +20,7 @@ w                              w
 w                              w
 w      1          1            w
 w                              w
-w         4       A            w
+w                 A            w
 w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
@@ -61,7 +61,7 @@ BasicGame
         flicker > Flicker timeout=1 color=ORANGE
         random > RandomNPC color=PURPLE speed=1 cooldown=1
         chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
-        avatar  > MovingAvatar color=DARKBLUE #stype=sam
+        avatar  > FlakAvatar color=DARKBLUE stype=sam
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=1
         missile > Missile
             sam  > orientation=UP color=BLUE singleton=True

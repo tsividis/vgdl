@@ -7,7 +7,7 @@ w             x         x   e  w
 wxxxxxxxxxx    p        xxxxxxxw
 w      mm x   pgp  x           w
 w      mm x  x p         x     w
-w    x         A a c         t w
+w    x         A a c   c     t w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -23,7 +23,7 @@ w    x    mm a A               w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-level = simplifiedLevel
+# level = simplifiedLevel
 
 game="""
 BasicGame
@@ -33,7 +33,7 @@ BasicGame
 
         chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
         avatar  > MovingAvatar color=DARKBLUE #stype=sam
-        cannon > SpawnPoint color=RED stype=sam spawnCooldown=4 #16
+        cannon > SpawnPoint color=RED stype=sam spawnCooldown=2 #16
         missile > Missile
             sam  > orientation=UP color=BLUE cooldown=1 #4
         wall > Immovable color=DARKGRAY
@@ -61,6 +61,7 @@ BasicGame
         a > armor
         t > portal
         e > exit1
+        u > cannon medicine
 {}
     TerminationSet
         # SpriteCounter stype=box2 limit=0 win=True
@@ -87,8 +88,8 @@ interactionSetAll = """
         goal avatar > killSprite
         avatar goal > changeScore value=1
         avatar portal > teleportToExit
-
-        sam medicine > transformTo stype=poison
+        cannon medicine > nothing
+        # sam medicine > transformTo stype=poison
         sam poison > transformTo stype=medicine
         sam exit1 > undoAll
         sam wall > killSprite

@@ -27,9 +27,9 @@ from colors import colorDict
 import copy_reg
 import types
 
-AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
-RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
-AimedFlakAvatar, InertialAvatar, MarioAvatar]
+# AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
+# RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
+# AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
 ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPACE: (0,0), 0: (0,0)}
 
@@ -283,6 +283,7 @@ class Agent:
 		# actions = [K_UP, K_UP, K_UP]
 		actions = [0]*10
 		# actions = [K_UP, K_LEFT, K_LEFT,]# K_DOWN, K_LEFT, K_LEFT]
+		# actions = [0, K_SPACE, 0]
 
 		self.initializeEnvironment()
 		self.trueTheory = generateTheoryFromGame(self.rle)
@@ -603,14 +604,6 @@ class Agent:
 ######## RLE INITIALIZATION AND STATE-SETTING METHODS 			########
 ########################################################################
 
-def setVrleStateProfiler(rle, Vrle, hypothesis):
-	lp = LineProfiler()
-	lp_wrapper = lp(setVrleState)
-	hypotheses = lp_wrapper(rle, Vrle, hypothesis)
-	lp.print_stats()
-	return
-
-
 def setVrleState(rle, Vrle, hypothesis):
 	## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
 
@@ -621,10 +614,13 @@ def setVrleState(rle, Vrle, hypothesis):
 			color = Vrle._game.sprite_groups[k][0].colorName
 			matchingSpritesInRLE = getObservedSpritesByColor(rle._game, color)
 			for sprite in spriteGroupsToUpdate[k]:
+
 				matchingSprite = findNearestSprite(sprite, matchingSpritesInRLE)
-				# embed()
-				if matchingSprite is None:
+				if not matchingSprite:
 					continue
+				else:
+					matchingSprite = matchingSprite[0]
+
 				sprite.rect 		= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
 				sprite.lastrect 	= pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
 				if sprite.rect.left != sprite.lastrect.left and sprite.rect.top != sprite.lastrect.top and abs(sprite.rect.left  - sprite.lastrect.left ) != abs(sprite.rect.top - sprite.lastrect.top):
@@ -658,13 +654,6 @@ def setVrleState(rle, Vrle, hypothesis):
 	Vrle._game.observation['lastscore'] = rle._game.observation['lastscore']
 
 	return
-
-def initializeVrleProfiler(hypothesis, stateToSet, symbolDict, theoryRLE=None):
-	lp = LineProfiler()
-	lp_wrapper = lp(initializeVrle)
-	Vrle = lp_wrapper(hypothesis, stateToSet, symbolDict, theoryRLE)
-	lp.print_stats()
-	return Vrle
 
 def initializeVrle(hypothesis, stateToSet, symbolDict, theoryRLE=None, writeFile=False, debug=False):
 
@@ -703,8 +692,16 @@ def findNearestSprite(sprite, spriteList):
 	if spriteList == []:
 		return None
 	else:
-		distList = [abs(x.rect.left-sprite.rect.left)+abs(x.rect.top-sprite.rect.top) for x in spriteList]
-		return spriteList[distList.index(min(distList))]
+		minDist = float('inf')
+		nearestSprites = []
+		for x in spriteList:
+			dist = abs(x.rect.left-sprite.rect.left)+abs(x.rect.top-sprite.rect.top)
+			if dist < minDist:
+				nearestSprites = [x]
+				minDist = dist
+			elif dist==minDist:
+				nearestSprites.append(x)
+		return nearestSprites
 
 
 
@@ -926,7 +923,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				#appeared_sprites_envB.append(sB)
 				continue
 		else:
-			sA = findNearestSprite(sPrev, candidates_in_killList)
+			sA = findNearestSprite(sPrev, candidates_in_killList)[0]
 			if manhattanDist2(sA, sPrev)>1 and not sPrev: #there is no envA sprite where sPrev should have been
 				## if there was a kill event and an appearance event somewhere far, we should really see this as
 				## an appearance
@@ -979,7 +976,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		e.targetColor = sA.colorName
 		candidates_in_killList = [s for s in envB._game.observation['kill_list'] if s.colorName == sA.colorName]
 		sB = findNearestSprite(sA, candidates_in_killList)
-		if sB == None:
+
+		if not sB:
 			print "WARNING: No target and interaction pair found in object destruction. You have not implemented this diagnosis."
 			e.diagnosis.append('objectDidNotAppear')
 			e.targetToken = None
@@ -987,6 +985,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			errorMap.append(e)
 			continue
 		else:
+			sB = sB[0]
 			e.diagnosis.append('objectDestruction')
 			e.targetToken = sB
 			# Find the sprite that was destroyed in envB from the kill_list
@@ -1019,14 +1018,14 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		# Simultaneously find culprit classes - an overlapping sprite could have launched the sprite due to its class
 		
 		neighbors_curr_and_prev = neighboringSpritesColors(envB, sB) + neighboringSpritesColors(envPrev, sB)
-		# nearestSprite = findNearestSprite(sB, [item for sublist in envA._game.sprite_groups.values() for item in sublist])
-		nearestSprite = findNearestSprite(sB, [item for sublist in envA._game.observation['trackedObjects'].values() for item in sublist])
+		nearestSprites = findNearestSprite(sB, [item for sublist in envA._game.observation['trackedObjects'].values() for item in sublist])
 
-		if nearestSprite.colorName in neighbors_curr_and_prev:
-			e.intPairs.append((e.targetClass, nearestSprite.colorName))
-		else:
-			print "got new sprite class but nearest prev-step sprite isn't a current neighbor"
-			embed()
+		for nearestSprite in nearestSprites:
+			if nearestSprite.colorName in neighbors_curr_and_prev:
+				e.intPairs.append((e.targetClass, nearestSprite.colorName))
+			else:
+				print "got new sprite class but nearest prev-step sprite isn't a current neighbor"
+				embed()
 		errorMap.append(e)
 
 	# 3) Inventory change
@@ -1110,7 +1109,7 @@ def neighboringSpritesColors(env, sprite):
 	neighbors = list(set([n.colorName for n in neighbors]))
 	return neighbors
 
-def neighboringSprites(env, sprite):
+def neighboringSprites(env, sprite, distanceThreshold=2):
 	"""
 	Function to find neighbors of sprite in the given environment (should be where the sprite came from)
 	"""
@@ -1118,7 +1117,7 @@ def neighboringSprites(env, sprite):
 	all_sprites = [item for sublist in env._game.observation['trackedObjects'].values() for item in sublist]
 
 	# Neighbors of problematic sprite in real world in previous time step
-	neighbors = [s for s in all_sprites if manhattanDist2(s, sprite)<=np.sqrt(2) and s!=sprite]
+	neighbors = [s for s in all_sprites if manhattanDist2(s, sprite)<=np.sqrt(distanceThreshold) and s!=sprite]
 	return neighbors
 
 def find_sPrev(sB, envB, envPrev):
@@ -1158,7 +1157,7 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 		e.intPairs.append( (sA.colorName,className) )
 	# Determine mininum distance to neighbors in current real env -> to distinguish unexpectedPosition and unexpectedOverlap
 	all_sprites_envB = [item for sublist in envB._game.observation['trackedObjects'].values() for item in sublist]
-	nearest_sprite = findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB)])
+	nearest_sprite = findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB)])[0]
 
 	nearest_dist = manhattanDist2(sB, nearest_sprite)
 	# Determine orientation in current and previous step -> to detect orientation change
@@ -1197,7 +1196,7 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 			if color == envA._game.observation['trackedObjects'][k][0].colorName:
 				className_envA = k
 
-		covered_sprite_envA = findNearestSprite(sB,envA._game.observation['trackedObjects'][className_envA])
+		covered_sprite_envA = findNearestSprite(sB,envA._game.observation['trackedObjects'][className_envA])[0]
 
 		e.intPairs = [(sA.colorName, covered_sprite_envA.colorName)] #overwrite interaction pair by the overlapping sprite pair
 	if dist_ts>2:
@@ -1552,8 +1551,9 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 
 	theory.errorMapHistory.append(errorMap)
 
-	newTheories = []
+	newTheories = [theory.copy()]
 
+	newErrorMaps = [errorMap]
 	## For debugging. Don't make children of the true theory.
 	if hasattr(theory, 'trueTheory'):
 		newTheories = [theory]
@@ -1592,137 +1592,69 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			theory.addSpriteToTheory(errorMap.targetClass, errorMap.targetToken.colorName)
 			print "Got unknown targetclass for {}. Added generic sprite to spriteSet and interactionSet".format(errorMap.targetToken.colorName)
 
-			## Now get overlapping/nearby classes and reassign the target class to the shooter/spawnpoint/etc. 
-			## the next step will take care of not doing inference on these if we've done it already.
-			## NOTE: errorMap takes a unique targe class, and there are cases where you might have multiple singleton neighbors.
-			## For now you're taking just a random choice between those.
-
-
-			# if len(neighbors)>1:
-			# 	print "Warning: More than one singleton neighbor of a newly-spawned sprite. Randomly picking one as agent"
-			# try:
-			# 	overlapping_item = random.choice(neighbors)
-			# except:
-			# 	print "FIRST overlapping_item problem in expandTheoryForOneErrorMap"
-			# 	embed()
-
-			# print "In ELSE condition in expandTheoryForOneErrorMap"
-			# embed()
-			# errorMap.targetToken = overlapping_item
-			# errorMap.targetClass = theory.spriteObjects[overlapping_item.colorName].className
-
-			# ## Redo induction for this type, even if you've done it before.
-			# if errorMap.targetClass in theory.expandedSprites:
-			# 	theory.expandedSprites.remove(errorMap.targetClass)
-
-		## Replace 'unknown' with new name in intPairs
-		# newPairs = []
-		# for num,pair in enumerate(errorMap.intPairs):
-		# 	newPair = tuple([p if p!='unknown' else errorMap.targetClass for p in list(pair)])
-		# 	newPairs.append(newPair)
-		# errorMap.intPairs = newPairs
-
-		# print "Got unknown targetclass for {}. Added generic sprite to spriteSet and interactionSet".format(errorMap.targetToken.colorName)
-		# theory.addSpriteToTheory(errorMap.targetClass, errorMap.targetToken.colorName)
-
-		## now get overlapping/nearby classes and reassign the target class to the shooter/spawnpoint/etc. 
+		## Now get overlapping/nearby classes and reassign the target class to the shooter/spawnpoint/etc. 
 		## the next step will take care of not doing inference on these if we've done it already.
-		## NOTE: errorMap takes a unique targe class, and there are cases where you might have multiple singleton neighbors.
-		## For now you're taking just a random choice between those.
+		neighbors = neighboringSprites(envRealCurrent, errorMap.targetToken, 0)
 
-		neighbors = neighboringSprites(envRealCurrent, errorMap.targetToken)
 		print "neighbors of new class are {}".format(neighbors)
 		newErrorMaps = []
 		for neighbor in neighbors:
 			e = errorMap.copy()
 			e.targetToken = neighbor
-			e.targetClass = theory.spriteObjects[neighbor.colorName].className
 			newPairs = []
 			for num,pair in enumerate(e.intPairs):
 				newPair = tuple([p if p!='unknown' else e.targetClass for p in list(pair)])
 				newPairs.append(newPair)
 			e.intPairs = newPairs
+			e.targetClass = theory.spriteObjects[neighbor.colorName].className
 			newErrorMaps.append(e)
-		
-		print "Created {} new errorMaps".format(len(newErrorMaps))
-		for e in newErrorMaps:
-			if e.targetClass in theory.expandedSprites:
-				print "removing {} from theory.expandedSprites".format(e.targetClass)
-				theory.expandedSprites.remove(e.targetClass)
-
-		# if len(options)>1:
-		# 	print "Warning: More than one singleton neighbor of a newly-spawned sprite. Randomly picking one as agent"
-		# try:
-		# 	overlapping_item = random.choice(options)
-		# except:
-		# 	print "SECOND overlapping_item problem in expandTheoryForOneErrorMap"
-		# 	embed()
-		# errorMap.targetToken = overlapping_item
-		# errorMap.targetClass = theory.spriteObjects[overlapping_item.colorName].className
-
-		## Redo induction for this type, even if you've done it before.
-		# if errorMap.targetClass in theory.expandedSprites:
-		# 	theory.expandedSprites.remove(errorMap.targetClass)
 
 	## SpriteSet induction step
-	for e in newErrorMaps:
-		if e.targetClass not in theory.expandedSprites:
-			className, theories = expandSprites(envRealCurrent._game, theory, e, 
+	for eM in newErrorMaps:
+
+		theoryCopy = theory.copy()
+
+		if 'newObjectAppeared' in eM.diagnosis:
+			if eM.targetClass in theoryCopy.expandedSprites:
+				print "removing {} from theory.expandedSprites".format(eM.targetClass)
+				theoryCopy.expandedSprites.remove(eM.targetClass)
+				
+		if eM.targetClass not in theoryCopy.expandedSprites:
+			className, theories = expandSprites(envRealCurrent._game, theoryCopy, eM, 
 			envRealPrev, envRealCurrent, bestSpriteTypeDict, action, percentile=20, max_num=30)
-			print "doing spriteInduction for {} generated {} theories".format(e.targetClass, len(theories))
+			print "doing spriteInduction for {} generated {} theories".format(eM.targetClass, len(theories))
 			newTheories.extend(theories)	
 
-	embed()
-	## SpriteSet induction step
-	# if errorMap.targetClass not in theory.expandedSprites:
-	# 	## Potential bug: used to pass self.rle._game below.
-	# 	className, theories = expandSprites(envRealCurrent._game, theory, errorMap, 
-	# 		envRealPrev, envRealCurrent, bestSpriteTypeDict, action, percentile=20, max_num=30)
-	# 	newTheories.extend(theories)
-
 	## InteractionSet induction step
-	for targetClassPair in errorMap.intPairs:
+	# for eM in newErrorMaps:
+		for targetClassPair in eM.intPairs:
 
-		singleIntPairErrorMap = errorMap.copy()
-		singleIntPairErrorMap.intPairs = [targetClassPair]
-		## If we have non-generic rules for this pair in the theory, then this has to involve some kind of precondition
-		matchingRules = [rule for rule in theory.interactionSet if (rule not in list(theory.dryingPaint)) and 
-			( targetClassPair == (rule.slot1, rule.slot2) or targetClassPair == (rule.slot2, rule.slot1) )]
+			singleIntPairErrorMap = eM.copy()
+			singleIntPairErrorMap.intPairs = [targetClassPair]
+			## If we have non-generic rules for this pair in the theory, then this has to involve some kind of precondition
+			matchingRules = [rule for rule in theoryCopy.interactionSet if (rule not in list(theoryCopy.dryingPaint)) and 
+				( targetClassPair == (rule.slot1, rule.slot2) or targetClassPair == (rule.slot2, rule.slot1) )]
 
-		# if ('objectDestruction' in errorMap.diagnosis
-		# 			or any('objectDestruction' in e.diagnosis for e in theory.errorMapHistory) ) \
-		# 		and any([not rule.generic for rule in matchingRules]):
-		if any([not rule.generic for rule in matchingRules]):
-			if ('objectDestruction' in singleIntPairErrorMap.diagnosis
-						or any(['kill' in rule.interaction for rule in theory.interactionSet if errorMap.targetClass==rule.slot1]) ):
-						# or any(['objectDestruction' in e.diagnosis for e in theory.errorMapHistory if e.targetClass in targetClassPair]) ):
-				# print "*******inner one happened"
-				# embed()
-				# pass
-				singleIntPairErrorMap.diagnosis.append('conditionalKill')
-			# print "*******non-generic rules for classPair"
-			# embed()
+			if any([not rule.generic for rule in matchingRules]):
+				if ('objectDestruction' in singleIntPairErrorMap.diagnosis
+							or any(['kill' in rule.interaction for rule in theoryCopy.interactionSet if eM.targetClass==rule.slot1]) ):
+					singleIntPairErrorMap.diagnosis.append('conditionalKill')
 
-		## Modify theory before the last step, then embed here to continue work
-		## if the diagnosis involves objectDestruction and the targetClassPair has non-generic rules,
-		## change the diagnosis here to conditionalKill such that you can propose preconditions in proposePredicates
-		predicates = proposePredicates(singleIntPairErrorMap.diagnosis, envRealCurrent._game.observation)
+			## Modify theory before the last step, then embed here to continue work
+			## if the diagnosis involves objectDestruction and the targetClassPair has non-generic rules,
+			## change the diagnosis here to conditionalKill such that you can propose preconditions in proposePredicates
+			predicates = proposePredicates(singleIntPairErrorMap.diagnosis, envRealCurrent._game.observation)
 
-		classPair, theories = expandLine(theory, singleIntPairErrorMap, targetClassPair, predicates,
-			classPairPlusPredicateToRuleSets, envRealPrev, envRealCurrent, action, rleHistory, actionHistory, experienceReplay, n=n, 
-			observations=envRealCurrent._game.observation, generic=False)
+			classPair, theories = expandLine(theoryCopy, singleIntPairErrorMap, targetClassPair, predicates,
+				classPairPlusPredicateToRuleSets, envRealPrev, envRealCurrent, action, rleHistory, actionHistory, experienceReplay, n=n, 
+				observations=envRealCurrent._game.observation, generic=False)
 
-		# this is because it would cause us to propose conditional stuff for later targetClassPairs
-		if 'conditionalKill' in singleIntPairErrorMap.diagnosis:
-			singleIntPairErrorMap.diagnosis.remove('conditionalKill')
-		newTheories.extend(list(set(theories)))
-	
+			# this is because it would cause us to propose conditional stuff for later targetClassPairs
+			if 'conditionalKill' in singleIntPairErrorMap.diagnosis:
+				singleIntPairErrorMap.diagnosis.remove('conditionalKill')
+			newTheories.extend(list(set(theories)))
+		
 	newTheories = list(set(newTheories))
-
-
-	if not newTheories:
-		newTheories = [theory]
-		theory.errorMapHistory.append(errorMap)
 
 	return newTheories
 
