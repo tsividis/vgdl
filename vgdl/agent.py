@@ -492,7 +492,7 @@ class Agent:
 		lp.print_stats()
 		return hypotheses
 
-	def executeStep(self, action, hypotheses, theoryRLEs, lastStep=False):
+	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, lastStep=False):
 
 		theory_change_flag = False
 
@@ -506,14 +506,14 @@ class Agent:
 		print "spriteInduction prep took {} seconds".format(time.time()-t1)
 
 		envRealPrev = self.fastcopy(self.rle)
-		self.actionHistory.append(action)
+		actionHistories[episode_num].append(action)
 		
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
-		hypotheses = self.manageNewObjects(hypotheses, envRealPrev, action, learnAvatar=self.learnAvatar)
+		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action, learnAvatar=self.learnAvatar)
 
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
-		self.rleHistory.append(envReal)
+		self.rleHistories[episode_num].append(envReal)
 		
 		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
 		self.rle._game.sprite_appearances = new_sprites
@@ -528,7 +528,7 @@ class Agent:
 	
 		for num, env in enumerate(theoryRLEs):
 			theories = testAndExpand(theoryRLEs, self.hypotheses, action, self.rle, envRealPrev, num, \
-				self.rleHistory, self.actionHistory, self.symbolDict, self.bestSpriteTypeDict)
+				self.rleHistories[episode_num], self.actionHistories[episode_num], self.symbolDict, self.bestSpriteTypeDict)
 			newTheories.extend(theories)
 
 
@@ -546,7 +546,7 @@ class Agent:
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
 
 		if newTheories:
-			penalties = MultiEpisodeExperienceReplay(newTheories, self.rleHistory, self.actionHistory,
+			penalties = MultiEpisodeExperienceReplay(newTheories, self.rleHistories[:episode_num+1], self.actionHistories[:episode_num+1],
 				self.symbolDict, method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
 
 			scoreAndTheoryTuples = zip(penalties, newTheories)
