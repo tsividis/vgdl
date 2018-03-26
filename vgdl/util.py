@@ -5,9 +5,65 @@ import csv
 import cPickle
 from math import sqrt
 
+from collections import defaultdict
+
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
 CHARS = 'bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM'
 CAPCHARS = 'QWERTYUIOPSDFHJKLZXCVBNM'
+
+lp = LineProfiler()
+def profile(function):
+	''' Wrapper to print speed of function line-by-line '''
+	def profileFunction(*args):
+		lp_wrapper = lp(function)
+		return_values = lp_wrapper(*args)
+		lp.print_stats()
+		return return_values
+	return profileFunction
+
+
+class LinkedDict():
+    def __init__(self):
+        self._dict1 = {}
+        self._dict2 = {}
+
+    def __getitem__(self, key):
+        if key in self._dict1:
+            return self._dict1[key]
+        elif key in self._dict2:
+            return self._dict2[key]
+
+        return None
+
+    def __setitem__(self, key, value):
+        self._dict1[key] = value
+        self._dict2[value] = key
+
+    def __delitem__(self, key):
+        value = self._dict1[key]
+        del self._dict1[key]
+        del self._dict2[value]
+
+    def __len__(self):
+        """Returns the number of connections"""
+        return len(self._dict1)
+
+    def __repr__(self):
+        return '%r' % self.toList()
+
+    def copy(self):
+        newLinkedDict = LinkedDict()
+        newLinkedDict._dict1 = self._dict1.copy()
+        newLinkedDict._dict2 = self._dict2.copy()
+        # for key, value in self.iteritems():
+        #     newLinkedDict[key] = value
+        return newLinkedDict
+
+    def iteritems(self):
+        return self._dict1.iteritems()
+
+    def toList(self):
+        return [(key, value) for key, value in self.iteritems()]
 
 def softmax(w, t = 1.0):
     e = np.exp(np.array(w) / t)
