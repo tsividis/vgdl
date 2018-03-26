@@ -351,6 +351,7 @@ class Theory(object):
 		self.spriteSet.append(sprite)
 		self.spriteObjects[color] = sprite
 		return
+
 	"""Main functions"""
 
 	def prior(self):
@@ -2478,8 +2479,8 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	
 	## Only propose sprites when something moves that we didn't think was going to move.
 	## Possible bug: removed noMovement
-	if all([diagnosis not in ['unexpectedPosition', 'unexpectedOverlap', 
-		'orientationChange', 'unexpectedOverlap', 'newObjectAppeared', 'objectDestruction'] for diagnosis in errorMap.diagnosis]):
+	if all([diagnosis not in ['unexpectedPosition', 'unexpectedOverlap', 'newObjectAppeared',
+		'orientationChange', 'unexpectedOverlap', 'objectDestruction'] for diagnosis in errorMap.diagnosis]):
 		return targetClass, childTheories
 
 	if 'objectDestruction' in errorMap.diagnosis:
@@ -2487,6 +2488,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	else:
 		spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, action=action, oldSpriteSet=theory.spriteSet,\
 		specificSpritesToUpdate=[targetToken], percentile=percentile, max_num=max_num)
+
 
 	## Don't instantiate non-avatar proposals for the 'avatar' class.
 	if targetClass=='avatar':
@@ -2499,9 +2501,14 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 		newTheory.errorMapHistory.append(errorMap)
 		vgdlType = spriteProposal[0][1]
 		args = dict(spriteProposal[1:])
+		# if 'spawnCooldown' in args:
+		# 	print "got spawnCooldown in args"
+		# 	embed()
 		## Proposal specified args in terms of color; convert to class name for the actual theory.
 		if 'stype' in args.keys():
 			try:
+				if args['stype'] not in newTheory.spriteObjects:
+					return targetClass, []
 				args['stype'] = newTheory.spriteObjects[args['stype']].className
 			except:
 				print "got new stype as an arg but the theory doesn't have the object. In expandSprites()"
@@ -2907,6 +2914,11 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 
 				try:
 					argsString += " %s=%s"%("cooldown", s.cooldown)
+				except AttributeError:
+					pass
+
+				try:
+					argsString += " %s=%s"%("spawnCooldown", s.spawnCooldown)
 				except AttributeError:
 					pass
 
