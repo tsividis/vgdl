@@ -1122,19 +1122,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 	return total_penalty, errorMap
 
-def neighborsPrev(envA, envPrev, sPrev):
-	"""
-	Function to find neighbors of target sprite in the previous time step
-	Usually the arguments correspond to the following:
-	envA: hypothetical environment, current step
-	envPrev: real environment, previous step
-	sPrev: target sprite in envPrev
-	"""
-	# Find potential interaction partners: neighboring sprites in previous step
-	neighbors = neighboringSprites(env, sprite)
-	neighbors = list(set([n.colorName for n in neighbors]))
-	return neighbors
-
 def neighboringSprites(env, sprite, distanceThreshold=2):
 	"""
 	Function to find neighbors of sprite in the given environment (should be where the sprite came from)
@@ -1176,7 +1163,7 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 
 	errorMaps = [e]
 	# Find neighbors of target sprite in the previous time step
-	neighbors_prev = neighborsPrev(envA, envPrev, sPrev)
+	neighbors_prev = neighboringSpritesColors(envPrev, sPrev)
 
 	# Write potential interaction pairs to error map entry
 	for className in neighbors_prev:
