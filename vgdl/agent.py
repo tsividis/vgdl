@@ -35,6 +35,12 @@ import heapq
 
 ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPACE: (0,0), 0: (0,0)}
 
+# This makes experience replay run multiple samples 
+# for each time step if there is a Random in the theory
+EXPERIENCE_REPLAY_METHOD = 'all'
+
+
+
 class errorMapEntry:
 	def __init__(self):
 		self.diagnosis = []
