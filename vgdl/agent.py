@@ -1122,6 +1122,15 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 	return total_penalty, errorMap
 
+def neighboringSpritesColors(env, sprite):
+	"""
+	returns colors of the neighboring sprites in env
+	"""
+	# Find potential interaction partners: neighboring sprites in previous step
+	neighbors = neighboringSprites(env, sprite)
+	neighbors = list(set([n.colorName for n in neighbors]))
+	return neighbors
+
 def neighboringSprites(env, sprite, distanceThreshold=2):
 	"""
 	Function to find neighbors of sprite in the given environment (should be where the sprite came from)
