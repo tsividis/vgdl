@@ -982,7 +982,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 					print "WARNING: Found unexpected transformation"
 					sPrev = sPrev[0]
 					# Find neighbors of target sprite in the previous time step
-					neighbors_prev = neighborsPrev(envA, envPrev, sPrev)
+					neighbors_prev = neighboringSpritesColors(envPrev, sPrev)
 					# Write potential interaction pairs to error map entry
 					for className in neighbors_prev:
 						e.intPairs.append( (theory.spriteObjects[sPrev.colorName].className,className) )
@@ -1014,7 +1014,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			# Find neighbors of target sprite in the previous time step
 			sPrev = sB #sprite was destroyed but hasn't moved
 
-		neighbors_prev = neighborsPrev(envA, envPrev, sPrev)
+		neighbors_prev = neighboringSpritesColors(envPrev, sPrev)
 		neighbors_prev = [c for c in neighbors_prev if c!=sA.colorName]
 		# Write potential interaction pairs to error map entry
 		for className in neighbors_prev:
@@ -1029,11 +1029,11 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 		# Find class of new object by comparing colors, or give 'unknown' if unsuccessful
 		sMatch = getObservedSpritesByColor(envA._game, sB.colorName)
+		e.targetColor = sB.colorName
 		if sMatch == []:
 			e.targetClass = 'unknown'
 		else:
 			e.targetClass = sMatch[0].colorName
-			e.targetColor = sMatch[0].colorName
 
 		# Find neighbors of target sprite in the real environment (envB) in the current time step -> could have caused appearance
 		# And also in the previous time-step.
@@ -1041,7 +1041,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		
 		neighbors_curr_and_prev = neighboringSpritesColors(envB, sB) + neighboringSpritesColors(envPrev, sB)
 		nearestSprites = findNearestSprite(sB, [item for sublist in envA._game.observation['trackedObjects'].values() for item in sublist])
-
 
 		for nearestSprite in nearestSprites:
 			if nearestSprite.colorName in neighbors_curr_and_prev:
@@ -1068,7 +1067,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			e.targetClass = sA.colorName
 			e.targetColor = sB.colorName
 			sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
-			neighbors_prev = neighborsPrev(envB, envPrev, sPrev)
+			neighbors_prev = neighboringSpritesColors(envPrev, sPrev)
 			e.intPairs.extend([(e.targetClass, n) for n in neighbors_prev])
 			errorMap.append(e)
 
@@ -1083,7 +1082,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		e.targetClass = sA.colorName
 		e.targetColor = sA.colorName
 		sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
-		neighbors_prev = neighborsPrev(envB, envPrev, sPrev)
+		neighbors_prev = neighboringSpritesColors(envPrev, sPrev)
 		e.intPairs.extend([(e.targetClass, n) for n in neighbors_prev])
 		errorMap.append(e)
 
