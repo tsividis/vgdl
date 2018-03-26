@@ -392,16 +392,18 @@ class Agent:
 
 		return
 
-	def manageNewObjects(self, hypotheses, envRealPrev, action, learnAvatar=True):
+	def manageNewObjects(self, episode_num, hypotheses, envRealPrev, action, learnAvatar=True):
 
 		## Add newly-seen objects.
 		current_objects = self.rle._game.getObjects()
 		if learnAvatar:
-			if any([current_objects[k]['sprite'].colorName not in [self.all_objects[key]['sprite'].colorName for key in self.all_objects.keys()] for k in current_objects.keys()]):
+			if any([current_objects[k]['sprite'].colorName not in [self.all_objects[episode_num][key]['sprite'].colorName 
+																   for key in self.all_objects[episode_num]] 
+																   for k in current_objects]):
 				for k in current_objects.keys():
 					distributionInitSetup(self.rle._game, k)
-					if k not in self.all_objects.keys():
-						self.all_objects[k] = current_objects[k]
+					if k not in self.all_objects[episode_num]:
+						self.all_objects[episode_num][k] = current_objects[k]
 				spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, action=action,
 					oldSpriteSet=self.hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
 					percentile=10, max_num=20, allMovement=False)
@@ -411,8 +413,8 @@ class Agent:
 		else:
 			for k in current_objects.keys():
 				colorName = current_objects[k]['sprite'].colorName
-				if colorName not in [self.all_objects[key]['sprite'].colorName for key in self.all_objects.keys()]:
-					self.all_objects[k] = current_objects[k]
+				if colorName not in [self.all_objects[episode_num][key]['sprite'].colorName for key in self.all_objects.keys()]:
+					self.all_objects[episode_num][k] = current_objects[k]
 					distributionInitSetup(self.rle._game, k)
 					## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep.
 					self.rle._game.ignoreList.append(k)
