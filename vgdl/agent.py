@@ -496,7 +496,7 @@ class Agent:
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
 
 		if newTheories:
-			penalties, cumulative_penalties, experienceReplayRLEs = experienceReplay(newTheories, self.rleHistory, self.actionHistory,
+			penalties = MultiEpisodeExperienceReplay(newTheories, self.rleHistory, self.actionHistory,
 				self.symbolDict, method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
 
 			scoreAndTheoryTuples = zip(penalties, newTheories)
@@ -1627,7 +1627,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		t1 = time.time()
 		newTheories = list(set(newTheories))
 
-		penalties, cumulative_penalties, _ = experienceReplay(newTheories, rleHistory[-2:], actionHistory[-1:], 
+		penalties = MultiEpisodeExperienceReplay(newTheories, [rleHistory[-2:]], [actionHistory[-1:]], 
 			symbolDict, method=EXPERIENCE_REPLAY_METHOD, targetColor = errorMap.targetColor)
 
 		scoreAndTheoryTuples = zip(penalties, newTheories)
