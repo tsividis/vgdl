@@ -19,9 +19,9 @@ w                              w
 w                              w
 w                              w
 w                              w
-w                22            w
-w                 A            w
+w  222 222                     w
 w                              w
+w              A               w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -56,7 +56,7 @@ BasicGame
     SpriteSet
         cloner > Immovable color=GREEN
         box    > Immovable color=WHITE # orientation=RIGHT cooldown=1
-        box2 > Immovable color=GREEN
+        box2 > Missile speed=1 color=GREEN
         box3 > Immovable color=YELLOW
         flicker > Flicker timeout=1 color=ORANGE
         random > RandomNPC color=PURPLE speed=1 cooldown=1
@@ -80,14 +80,14 @@ BasicGame
         A > avatar
     InteractionSet
         avatar wall > stepBack
-        box avatar > bounceForward
-        box2 avatar > killSprite
+        box avatar > killSprite
+        avatar box2 > killSprite
         box3 avatar > killSprite
 
     TerminationSet
         SpriteCounter stype=box2 limit=0 win=True
         # SpriteCounter stype=box3 limit=0 win=False
-        # Termination
+        Termination
 
 
 """

@@ -515,7 +515,7 @@ class Agent:
 		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action, learnAvatar=self.learnAvatar)
 
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
-		self.rleHistories[episode_num].append(envReal)
+		self.rleHistory[episode_num].append(envReal)
 		
 		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
 		self.rle._game.sprite_appearances = new_sprites
@@ -530,7 +530,7 @@ class Agent:
 	
 		for num, env in enumerate(theoryRLEs):
 			theories = testAndExpand(theoryRLEs, self.hypotheses, action, self.rle, envRealPrev, num, \
-				self.rleHistories[episode_num], self.actionHistories[episode_num], self.symbolDict, self.bestSpriteTypeDict)
+				self.rleHistory[episode_num], self.actionHistory[episode_num], self.symbolDict, self.bestSpriteTypeDict)
 			newTheories.extend(theories)
 
 
@@ -548,7 +548,7 @@ class Agent:
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
 
 		if newTheories:
-			penalties = MultiEpisodeExperienceReplay(newTheories, self.rleHistories[:episode_num+1], self.actionHistories[:episode_num+1],
+			penalties = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], self.actionHistory[:episode_num+1],
 				self.symbolDict, method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
 
 			scoreAndTheoryTuples = zip(penalties, newTheories)
