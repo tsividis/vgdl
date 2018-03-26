@@ -1,4 +1,5 @@
 from IPython import embed
+from line_profiler import LineProfiler
 import itertools
 import random
 import csv
@@ -11,15 +12,15 @@ ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~
 CHARS = 'bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM'
 CAPCHARS = 'QWERTYUIOPSDFHJKLZXCVBNM'
 
-# lp = LineProfiler()
-# def profile(function):
-# 	''' Wrapper to print speed of function line-by-line '''
-# 	def profileFunction(*args):
-# 		lp_wrapper = lp(function)
-# 		return_values = lp_wrapper(*args)
-# 		lp.print_stats()
-# 		return return_values
-# 	return profileFunction
+lp = LineProfiler()
+def profile(function):
+	''' Wrapper to print speed of function line-by-line '''
+	def profileFunction(*args):
+		lp_wrapper = lp(function)
+		return_values = lp_wrapper(*args)
+		lp.print_stats()
+		return return_values
+	return profileFunction
 
 
 class LinkedDict():
