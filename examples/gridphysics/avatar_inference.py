@@ -18,8 +18,8 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
 w                              w
-w               22             w
 w                              w
+w                22            w
 w                 A            w
 w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -56,7 +56,7 @@ BasicGame
     SpriteSet
         cloner > Immovable color=GREEN
         box    > Immovable color=WHITE # orientation=RIGHT cooldown=1
-        box2 > Missile speed=1 color=GREEN
+        box2 > Immovable color=GREEN
         box3 > Immovable color=YELLOW
         flicker > Flicker timeout=1 color=ORANGE
         random > RandomNPC color=PURPLE speed=1 cooldown=1

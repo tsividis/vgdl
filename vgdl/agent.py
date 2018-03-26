@@ -1493,7 +1493,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	cumulative_penalties = np.array(cumulative_penalties)
 	mean_penalties = np.mean(cumulative_penalties, axis=0)
 	return mean_penalties, cumulative_penalties, theoryRLEs
-
+	
 def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, method='all', targetColor=None, displayStates=False, displayTheories=False):
 	if len(hypotheses)>10:
 		print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
