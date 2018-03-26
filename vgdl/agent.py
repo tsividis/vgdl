@@ -1525,6 +1525,27 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, method='
 
 	return mean_penalties, cumulative_penalties, theoryRLEs
 
+def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, symbolDict, best_params, method, targetColor=None, displayStates=False, displayTheories=False):
+	'''
+	Runs experience replay on multiple episodes with some action sequence for each episode and returns the penalties for the given theories (weighted on the number of actions)
+	'''
+	assert len(rleHistories) == len(actionHistories), 'rleHistories and actionHistories need to match'
+
+	print "Running MultiEpisodeExperienceReplay on %i episodes " % len(rleHistories)
+
+	multi_episode_mean_penalties = []
+	weight = 1./len(max(actionHistories, key=len))
+
+	for rleHistory, actionHistory in zip(rleHistories, actionHistories):
+		mean_penalties, _, expRLE = experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, 
+													best_params, method, targetColor, displayStates, displayTheories)
+		mean_penalties = np.array(mean_penalties)*weight*len(actionHistory)
+		multi_episode_mean_penalties.append(mean_penalties)
+
+	multi_episode_mean_penalties = np.mean(multi_episode_mean_penalties, axis=0)
+
+	return multi_episode_mean_penalties
+
 ########################################################################
 ######## THEORY MODIFICATION 									########
 ########################################################################
