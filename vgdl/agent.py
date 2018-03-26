@@ -317,7 +317,7 @@ class Agent:
 					break
 				print ">>> Step", num+1, "of", len(actions), "<<<"
 				## initialize VRLEs
-				theoryRLEs = VrleInitPhase(self.hypotheses, self.rle, self.symbolDict, self.best_params)
+				theoryRLEs = VrleInitPhase(self.hypotheses, self.rle, self.symbolDict)
 				lastStep=False
 				if num == len(actions)-1:
 					lastStep=True
@@ -1577,7 +1577,7 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, method='
 
 	return mean_penalties, cumulative_penalties, theoryRLEs
 
-def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, symbolDict, best_params, method, targetColor=None, displayStates=False, displayTheories=False):
+def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, symbolDict, method, targetColor=None, displayStates=False, displayTheories=False):
 	'''
 	Runs experience replay on multiple episodes with some action sequence for each episode and returns the penalties for the given theories (weighted on the number of actions)
 	'''
@@ -1590,7 +1590,7 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, symb
 
 	for rleHistory, actionHistory in zip(rleHistories, actionHistories):
 		mean_penalties, _, expRLE = experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, 
-													best_params, method, targetColor, displayStates, displayTheories)
+												     method, targetColor, displayStates, displayTheories)
 		mean_penalties = np.array(mean_penalties)*weight*len(actionHistory)
 		multi_episode_mean_penalties.append(mean_penalties)
 
