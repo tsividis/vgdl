@@ -318,6 +318,7 @@ class Agent:
 				print ">>> Step", num+1, "of", len(actions), "<<<"
 				## initialize VRLEs
 				theoryRLEs = VrleInitPhase(self.hypotheses, self.rle, self.symbolDict)
+
 				lastStep=False
 				if num == len(actions)-1:
 					lastStep=True
@@ -487,14 +488,8 @@ class Agent:
 		newRle._game.sprite_groups['avatar'][0].resources = ccopy(rle._game.sprite_groups['avatar'][0].resources)
 		return newRle
 
-	def executeStepProfiler(self, action, hypotheses, theoryRLEs, lastStep=False):
-		lp = LineProfiler()
-		lp_wrapper = lp(self.executeStep)
-		hypotheses = lp_wrapper(action, hypotheses, theoryRLEs, lastStep)
-		lp.print_stats()
-		return hypotheses
-
 	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, lastStep=False):
+
 
 		theory_change_flag = False
 
@@ -730,6 +725,7 @@ def initializeVrle(hypothesis, stateToSet, symbolDict, theoryRLE=None, writeFile
 		print "in initializeVrle"
 		embed()
 	Vrle._game.colorToClassDict = {k:v.className for k,v in hypothesis.spriteObjects.items()}
+	Vrle._game.isMadeFromTheory = True
 	## Don't do any of the rest if we have an ungrammatical hypothesis caused by num(avatars)>1.
 	if len(stateToSet._game.observation['trackedObjects'][hypothesis.classes['avatar'][0].colorName])>1:
 		print "Warning. In initializeVrle. Got more than one avatar. Returning None as Vrle."
@@ -747,7 +743,6 @@ def VrleInitPhase(hypotheses, stateToSet, symbolDict, theoryRLEs=None):
 	VRLEs = []
 	for num, hypothesis in enumerate(hypotheses):
 		VRLEs.append(initializeVrle(hypothesis, stateToSet, symbolDict, theoryRLEs[num] if theoryRLEs else None))
-
 	return VRLEs
 
 def findNearestSprite(sprite, spriteList):
@@ -1556,20 +1551,6 @@ def getSalientStates(rleHistory):
 	## get actionsPerIndex
 	pass
 
-def experienceReplayProfiler(hypotheses, rleHistory, actionHistory, symbolDict, method='all', displayStates=False):
-	lp = LineProfiler()
-	lp_wrapper = lp(experienceReplay)
-	mean_penalties, cumulative_penalties = lp_wrapper(hypotheses, rleHistory, actionHistory, symbolDict, method, displayStates)
-	lp.print_stats()
-	return mean_penalties, cumulative_penalties
-
-def singleTheoryExperienceReplayProfiler(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict):
-	lp = LineProfiler()
-	lp_wrapper = lp(singleTheoryExperienceReplay)
-	mean_penalties, cumulative_penalties, theoryRLEs= lp_wrapper(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict)
-	lp.print_stats()
-	return mean_penalties, cumulative_penalties, theoryRLEs
-
 def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict):
 
 	subsamplePercentage = .2
@@ -1603,20 +1584,23 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 		## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
 		t1 = time.time()
 		theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], symbolDict, theoryRLEs)
+
 		## Take a predetermined number of actions starting from idx
 		end = min(idx+actionsPerIndex, len(actionHistory))
 
 		if displayStates:
-			print "index: {}".format(idx)
+			print "setting state to index {}. Grounding state looks like this:".format(idx)
 			print rleHistory[idx].show()
+			print "hypothetical states are in blue below; should match the black state above."
 			for env in theoryRLEs:
 				print env.show(color='blue')
+			embed()
 
 		for n, action in enumerate(actionHistory[idx:end]):
 			penalties = []
 			if displayStates:
-				print action
-				print rleHistory[idx+n+1].show(color='green')
+				print "after taking action {}, real state looked like this:".format(action)
+				print rleHistory[idx+n+1].show()
 			for num, env in enumerate(theoryRLEs):                      
 
 				if env is not None:
@@ -1631,8 +1615,8 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 					print "in experienceReplay"
 					embed()
 				if displayStates:
-					print penalty
-					print env.show(color='blue')
+					print "resulting state incurred a penalty of {} and looks like this:".format(penalty)
+					print env.show(color='green')
 				
 			cumulative_penalties.append(penalties)
 	
@@ -1868,6 +1852,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			envRealPrev, envRealCurrent, bestSpriteTypeDict, action, percentile=20, max_num=30)
 			# print "doing spriteInduction for {} generated {} theories".format(eM.targetClass, len(theories))
 			newTheories.extend(theories)	
+
 	## InteractionSet induction step
 	# for eM in newErrorMaps:
 		for targetClassPair in eM.intPairs:
