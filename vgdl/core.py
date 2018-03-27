@@ -43,7 +43,6 @@ class VGDLParser(object):
     """ Parses a string into a Game object. """
     verbose = False
 
-
     @staticmethod
     def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", padding=0,positions=None):
         """ Parses the game and level map strings, and starts the game. """
@@ -273,11 +272,9 @@ class BasicGame(object):
         self.object_token_movement_options = {}
         self.sprite_appearances = [] ## New sprites that appear at any given step. This gets cleared at the end of each time-step.
         self.all_objects = None
-
         self.observation = None
-
         self.EOS = EOS((-1, -1))
-
+        self.isMadeFromTheory = False
         self.reset()
 
     def reset(self):
