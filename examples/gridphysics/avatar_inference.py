@@ -19,7 +19,7 @@ w                              w
 w                              w
 w                              w
 w                              w
-w  222 222                     w
+w      222                     w
 w                              w
 w              A               w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww

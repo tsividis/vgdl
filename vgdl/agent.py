@@ -754,17 +754,15 @@ def findNearestSprite(sprite, spriteList):
 	## returns the sprite in spriteList whose location best matches the location of sprite.
 	if spriteList == []:
 		return None
-	else:
-		minDist = float('inf')
-		nearestSprites = []
-		for x in spriteList:
-			dist = abs(x.rect.left-sprite.rect.left)+abs(x.rect.top-sprite.rect.top)
-			if dist < minDist:
-				nearestSprites = [x]
-				minDist = dist
-			elif dist==minDist:
-				nearestSprites.append(x)
-		return nearestSprites
+
+	minDist = float('inf')
+	nearestSprite = None
+	for x in spriteList:
+		dist = abs(x.rect.left-sprite.rect.left)+abs(x.rect.top-sprite.rect.top)
+		if dist < minDist:
+			nearestSprite = x
+			minDist = dist
+	return nearestSprite
 
 def findNearestSprites(sprite, spriteList, dist_function=manhattanDist2, skip_self=False):
 	## returns a list of closest sprites where the distances are all equal
@@ -1290,7 +1288,7 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 	# Return list of errorMapEntry objects
 	return errorMaps
 
-def matchEnvs(envA, envB, debug=False):
+def depMatchEnvs(envA, envB, debug=False):
 	'''
 	Compares environment A to environment B, mapping sprites from A to sprites from B 1 to 1 (if it can)
 	by comparing the positions of sprites in A to positions of sprites in B of the same color. 
@@ -1383,7 +1381,7 @@ def matchEnvs(envA, envB, debug=False):
 	return matched_sprites, lonely_sprites_envA, lonely_sprites_envB
 
 
-def newMatchEnvs(envA, envB, debug=False):
+def matchEnvs(envA, envB, debug=False):
 	'''
 	Compares environment A to environment B, mapping sprites from A to sprites from B 1 to 1 (if it can)
 	by comparing the positions of sprites in A to positions of sprites in B of the same color. 
@@ -1461,15 +1459,23 @@ def newMatchEnvs(envA, envB, debug=False):
 	rematches = {}
 	for color in unmatched_colors:
 		# get all the sprites with the color in envB
-		# and the unmatched sprites with the color in envA
-		color_groupB = set(color_groupsB[color])
-		unmatched_group = unmatched_colorsA[color].copy()
-		spriteA = unmatched_group.pop()
-		match_dict = matched_colors[color]
-		# sum_dist = sum([sprite_dist(sA, sB) for sA, sB in match_dict.iteritems()])
-		
+		# and the unmatched sprites with the color in envAh
+
+		pairing_paths = []
+		for spriteA in unmatched_colorsA[color]:
+			color_groupB = set(color_groupsB[color])
+			unmatched_group = set(unmatched_colorsA[color])
+			unmatched_group.remove(spriteA)
+			match_dict = matched_colors[color]
+			pairing_paths += [(0, spriteA, unmatched_group, color_groupB, [])]
+
+		# color_groupB = set(color_groupsB[color])
+		# unmatched_group = unmatched_colorsA[color].copy()
+		# spriteA = unmatched_group.pop()
+		# match_dict = matched_colors[color]
+		# pairing_paths = [(0, spriteA, unmatched_group, color_groupB, [])]
 		# pop one of the unmatched sprites from the unmatched color_groupA
-		pairing_paths = [(0, spriteA, unmatched_group, color_groupB, [])]
+			
 		best_matches = None
 		while pairing_paths:
 			# rematch sprites until we've tried to match them all
@@ -1495,14 +1501,20 @@ def newMatchEnvs(envA, envB, debug=False):
 				new_sum_dist = sum_dist
 
 				new_spriteA = match_dict[spriteB]
+				new_sum_dist += manhattanDist2(spriteA, spriteB)**2
 
 				if new_spriteA:
 					new_sum_dist -= manhattanDist2(new_spriteA, spriteB)**2
-				new_sum_dist += manhattanDist2(spriteA, spriteB)**2
 
 				color_group_copy.remove(spriteB)
 				matches_copy.append((spriteA, spriteB))
-				
+				if new_spriteA:
+					unmatched_group_copy.add(new_spriteA)
+
+				next_sprite = findNearestSprites(spriteA, unmatched_group_copy)
+				if next_sprite:
+					new_spriteA = next_sprite[0]
+					unmatched_group_copy.remove(next_sprite[0])
 
 				heapq.heappush(pairing_paths, (new_sum_dist, new_spriteA, unmatched_group_copy, color_group_copy, matches_copy))
 
