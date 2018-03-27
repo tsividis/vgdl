@@ -365,14 +365,6 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         #     self._last_state = self.getState()
         #     self._allEvents.append((self._previous_state, action, self._last_state))
 
-    def step_profiler(self, action):
-        lp = LineProfiler()
-        lp_wrapper = lp(self.step)
-        output = lp_wrapper(action)
-        lp.print_stats()
-
-        return output
-
     def step(self, action):
         #print self._game.sprite_groups['avatar']
         #print("start step")
