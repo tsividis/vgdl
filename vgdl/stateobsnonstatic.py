@@ -350,12 +350,17 @@ def copySpriteStingy(sprite):
 def processFrame(memory, gameObject):
     # eventual goal is to process the frame, not the gameObject...
     # creates a COPY of memory and returns updated copy
+    
+    # if not gameObject.isMadeFromTheory:
+    #     print "game object not made from theory"
+    #     embed()
     newMemory = dict()
     newTrackedObjects = defaultdict(list)
     spriteIDDict = {sprite.ID: sprite for lst in memory['trackedObjects'].values() for sprite in lst}
 
-    # print "in processFrame"
-    # embed()
+    # if gameObject.isMadeFromTheory and 'Flak' in str(gameObject.sprite_groups['avatar'][0].vgdlType):
+        # print "in processFrame"
+        # embed()
     newMemory['kill_list'] = [copySpriteStingy(s) for s in gameObject.kill_list]
     newMemory['isGrid'] = memory['isGrid']
     newMemory['lastscore'] = memory['score']
@@ -378,11 +383,19 @@ def processFrame(memory, gameObject):
                             newMemory['isGrid'] = False
                         # it moved since last sighting!
                         if newMemory['isGrid']:
-                            newSprite.speed = max(abs(sprite.rect.left - newSprite.rect.left), abs(sprite.rect.top - newSprite.rect.top)) * 1.0 / sprite.rect.width # TODO: don't depend on width
-                            newSprite.orientation = (np.sign(sprite.rect.left - newSprite.rect.left), np.sign(sprite.rect.top - newSprite.rect.top))
+                            if gameObject.isMadeFromTheory:
+                                newSprite.speed = sprite.speed
+                                newSprite.orientation = sprite.orientation
+                            else:
+                                newSprite.speed = max(abs(sprite.rect.left - newSprite.rect.left), abs(sprite.rect.top - newSprite.rect.top)) * 1.0 / sprite.rect.width # TODO: don't depend on width
+                                newSprite.orientation = (np.sign(sprite.rect.left - newSprite.rect.left), np.sign(sprite.rect.top - newSprite.rect.top))
                         else:
-                            newSprite.speed = euclideanDist([sprite.rect.left, sprite.rect.top], [newSprite.rect.left, newSprite.rect.top])
-                            newSprite.orientation = normalizeVec([sprite.rect.left - newSprite.rect.left, sprite.rect.top - newSprite.rect.top])
+                            if gameObject.isMadeFromTheory:
+                                newSprite.speed = sprite.speed
+                                newSprite.orientation = sprite.orientation
+                            else:
+                                newSprite.speed = euclideanDist([sprite.rect.left, sprite.rect.top], [newSprite.rect.left, newSprite.rect.top])
+                                newSprite.orientation = normalizeVec([sprite.rect.left - newSprite.rect.left, sprite.rect.top - newSprite.rect.top])
                         
                         newSprite.lastrect = pygame.Rect(newSprite.rect.left, newSprite.rect.top, newSprite.rect.width, newSprite.rect.height)
                         newSprite.rect = pygame.Rect(sprite.rect.left, sprite.rect.top, sprite.rect.width, sprite.rect.height)
