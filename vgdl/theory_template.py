@@ -2465,7 +2465,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	## Only propose sprites when something moves that we didn't think was going to move.
 	## Possible bug: removed noMovement
 	if all([diagnosis not in ['unexpectedPosition', 'unexpectedOverlap', 'newObjectAppeared',
-		'orientationChange', 'unexpectedOverlap', 'objectDestruction'] for diagnosis in errorMap.diagnosis]):
+		'orientationChange', 'unexpectedOverlap', 'objectDestruction', 'noMovement'] for diagnosis in errorMap.diagnosis]):
 		return targetClass, childTheories
 
 	if 'objectDestruction' in errorMap.diagnosis:
