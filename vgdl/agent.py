@@ -20,8 +20,7 @@ from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from stateobsnonstatic import buildTracker
 from termcolor import colored
-from line_profiler import LineProfiler
-from vgdl.util import manhattanDist, manhattanDist2, LinkedDict
+from vgdl.util import manhattanDist, manhattanDist2, LinkedDict, profile
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from colors import colorDict
 import copy_reg
@@ -486,13 +485,6 @@ class Agent:
 		newRle.symbolDict = ccopy(rle.symbolDict)
 		newRle._game.sprite_groups['avatar'][0].resources = ccopy(rle._game.sprite_groups['avatar'][0].resources)
 		return newRle
-
-	def executeStepProfiler(self, action, hypotheses, theoryRLEs, lastStep=False):
-		lp = LineProfiler()
-		lp_wrapper = lp(self.executeStep)
-		hypotheses = lp_wrapper(action, hypotheses, theoryRLEs, lastStep)
-		lp.print_stats()
-		return hypotheses
 
 	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, lastStep=False):
 
@@ -1473,20 +1465,6 @@ def getSalientStates(rleHistory):
 	## make sure you don't sample the last state
 	## get actionsPerIndex
 	pass
-
-def experienceReplayProfiler(hypotheses, rleHistory, actionHistory, symbolDict, method='all', displayStates=False):
-	lp = LineProfiler()
-	lp_wrapper = lp(experienceReplay)
-	mean_penalties, cumulative_penalties = lp_wrapper(hypotheses, rleHistory, actionHistory, symbolDict, method, displayStates)
-	lp.print_stats()
-	return mean_penalties, cumulative_penalties
-
-def singleTheoryExperienceReplayProfiler(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict):
-	lp = LineProfiler()
-	lp_wrapper = lp(singleTheoryExperienceReplay)
-	mean_penalties, cumulative_penalties, theoryRLEs= lp_wrapper(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict)
-	lp.print_stats()
-	return mean_penalties, cumulative_penalties, theoryRLEs
 
 def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, symbolDict):
 
