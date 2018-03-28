@@ -1,5 +1,4 @@
 import unittest
-from line_profiler import LineProfiler
 from vgdl.agent import matchEnvs, createRLInputGameFromStrings
 from collections import defaultdict
 
