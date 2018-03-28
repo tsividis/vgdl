@@ -2998,6 +2998,10 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 			c1 = interactionRule.slot1
 			c2 = interactionRule.slot2
 
+			if c1 not in theory.classes or c2 not in theory.classes:
+				print "c1 or c2 not in theory.classes"
+				embed()
+
 			if (c1=='laog' and len(theory.classes[c1])==0) or (c2=='laog' and len(theory.classes[c2])==0):
 				print "found laog"
 				embed()

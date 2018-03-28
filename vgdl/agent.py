@@ -290,8 +290,9 @@ class Agent:
 			print "WARNING: running on < 40 cores."
 
 		actionSequences = [
-			[K_UP, K_UP], 
-			[K_RIGHT, K_UP]
+			[0,0,0,0,0,0,0,0,0,0]
+			# [K_UP, K_UP], 
+			# [K_RIGHT, K_UP]
 		]
 
 		self.rleHistory = [[] for i in range(len(actionSequences))]
@@ -1285,7 +1286,7 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 	# Return list of errorMapEntry objects
 	return errorMaps
 
-def matchEnvs(envA, envB, debug=False):
+def oldMatchEnvs(envA, envB, debug=False):
 	'''
 	Compares environment A to environment B, mapping sprites from A to sprites from B 1 to 1 (if it can)
 	by comparing the positions of sprites in A to positions of sprites in B of the same color. 
@@ -1378,7 +1379,7 @@ def matchEnvs(envA, envB, debug=False):
 	return matched_sprites, lonely_sprites_envA, lonely_sprites_envB
 
 
-def newMatchEnvs(envA, envB, debug=False):
+def matchEnvs(envA, envB, debug=False):
 	'''
 	Compares environment A to environment B, mapping sprites from A to sprites from B 1 to 1 (if it can)
 	by comparing the positions of sprites in A to positions of sprites in B of the same color. 
@@ -1814,10 +1815,13 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 		if errorMap.targetColor in theory.spriteObjects:
 			errorMap.targetClass = theory.spriteObjects[errorMap.targetColor].className
 		else:
+			from vgdl.ontology import Resource
 			existing_classes = [key for key in theory.classes if key[0] == 'c']
 			max_num = max([int(c[1:]) for c in existing_classes])
 			class_num = max_num+1 
-			errorMap.targetClass = 'c'+str(class_num)
+			newClassName = 'c'+str(class_num)
+			errorMap.targetClass = newClassName
+			theory.addSpriteToTheory(newClassName, errorMap.targetColor, vgdlType=Resource)
 			print "Got unknown targetclass for {}. Added generic sprite to spriteSet and interactionSet".format(errorMap.targetToken.colorName)
 
 		## Now get overlapping/nearby classes and reassign the target class to the shooter/spawnpoint/etc. 
@@ -1919,13 +1923,13 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.aliens"
 
-	filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.collect_resource"
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 
-	# filename = "examples.gridphysics.testAll"
+	filename = "examples.gridphysics.testAll"
 
 	global WBP
 	if 'grid' in filename:
