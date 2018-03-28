@@ -824,7 +824,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		e.targetClass = None
 		e.targetColor = None
 		errorMap.append(e)
-		# total_penalty = 1e6
 		total_penalty = 1. #likelihood version
 		return total_penalty, errorMap
 
@@ -834,16 +833,9 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 	if targetColor:
 		try:
 			matched_sprites = [m for m in matched_sprites if m[0].colorName == targetColor]
-			# print targetColor
-			# if matched_sprites:
-				# targetColor = matched_sprites[0][0].colorName
-				# print targetColor
 			lonely_sprites_envA = [s for s in lonely_sprites_envA if s.colorName == targetColor]
 			lonely_sprites_envB = [s for s in lonely_sprites_envB if s.colorName == targetColor]
-			# print len(lonely_sprites_envA), len(lonely_sprites_envB)
-			# else:
-				# lonely_sprites_envA = []
-				# lonely_sprites_envB = []
+
 		except:
 			print "targetClass filter in errorSignal failed"
 			embed()
@@ -883,17 +875,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			xPrev = sPrev.rect.left/d
 			yPrev = sPrev.rect.top/d
 
-			# dist_rNPC = manhattanDist((xB,yB), (xPrev, yPrev))
-			# dist_rNPC = [ manhattanDist( (xB,yB), (xPrev,yPrev) ), \
-			#                    manhattanDist( (xB,yB), (xPrev+sA_speed,yPrev) ), \
-			#                    manhattanDist( (xB,yB), (xPrev-sA_speed,yPrev) ), \
-			#                    manhattanDist( (xB,yB), (xPrev,yPrev+sA_speed) ), \
-			#                    manhattanDist( (xB,yB), (xPrev,yPrev-sA_speed) ), \
-			#                  ]
-			# mindist_rNPC = min(dist_rNPC)
-			# total_penalty += p_speed*mindist_rNPC #penalize speed separately to discourage keeping around too many similar theories
 			positionOptions = [(xPrev, yPrev), (xPrev+sA_speed, yPrev), (xPrev-sA_speed, yPrev), (xPrev, yPrev+sA_speed), (xPrev, yPrev-sA_speed)]
-			# total_penalty += p_speed*min(dist,1.)
 			total_penalty += np.log(1./len(positionOptions)-e_dist) if (xB, yB) in positionOptions else np.log(0.+e_dist) #likelihood
 		elif 'Missile' in str(sA_type):
 			# total_penalty += p_speed*t[2] #penalize speed separately to discourage keeping around too many similar theories
@@ -927,7 +909,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 		# All of the other types are deterministic
 		else:
-			# total_penalty += p_dist*t[2]
 			total_penalty += np.log(1.-e_dist) if t[2]==0. else np.log(0+e_dist)
 
 		inventory_penalty = 0
@@ -938,11 +919,9 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			t1_k = t[1].inventory[k] if k in t[1].inventory.keys() else (0,0)
 			inventory_penalty += abs(t0_k[0]-t1_k[0])
 
-		# total_penalty += inventory_penalty
 		total_penalty += np.log((e_inventory)**inventory_penalty) #likelihood
 
 	# Missing/additional/transformation penalty
-	# total_penalty += p_miss * ( len(lonely_sprites_envA) + len(lonely_sprites_envB) )
 	total_penalty += np.log((e_disappearance)**( len(lonely_sprites_envA) + len(lonely_sprites_envB) )) #likelihood
 
 	# if envA._game.observation['score'] != envB._game.observation['score']:
@@ -1516,6 +1495,9 @@ def matchEnvs(envA, envB, debug=False):
 	lonely_sprites_envB = list(unmatchedB)
 	matched_sprites = [(s1, s2, manhattanDist2(s1, s2)) for matched_color in matched_colors.values() for s1, s2 in matched_color.iteritems() ]
 
+	# if lonely_sprites_envA:
+	# 	print "found lonely sprites"
+	# 	embed()
 	# print 'manhattan dists'
 	# for posA in pos_groupsA:
 	# 	for posB in pos_groupsB:
@@ -1898,12 +1880,12 @@ def testAndExpand(theoryRLEs, hypotheses, action, envReal, envRealPrev, index, r
 	env.step(action)
 	penalty, errorList = errorSignal(env, envReal, hypothesis, envRealPrev)
 
-	# if errorList:
-		# hypothesis.display()
-		# for e in errorList:
-			# e.display()
-			# print ""
-		# embed()
+	if errorList:
+		hypothesis.display()
+		for e in errorList:
+			e.display()
+			print ""
+		embed()
 	# else:
 		# print "No error"
 		# embed()
