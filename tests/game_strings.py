@@ -242,7 +242,7 @@ wwwwwwwwwwwwwww
 w             w
 w             w
 w             w
-w  LLL LLL    w
+w    LLL LLL  w
 w             w
 w     A       w
 wwwwwwwwwwwwwww

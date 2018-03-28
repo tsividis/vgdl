@@ -681,8 +681,8 @@ def setVrleState(rle, Vrle, hypothesis):
 				matchingSprite = findNearestSprite(sprite, matchingSpritesInRLE)
 				if not matchingSprite:
 					continue
-				else:
-					matchingSprite = matchingSprite[0]
+				# else:
+				# 	matchingSprite = matchingSprite[0]
 
 				sprite.rect 		= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
 				sprite.lastrect 	= pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
@@ -1001,7 +1001,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				#appeared_sprites_envB.append(sB)
 				continue
 		else:
-			sA = findNearestSprite(sPrev, candidates_in_killList)[0]
+			sA = findNearestSprite(sPrev, candidates_in_killList)
 			if manhattanDist2(sA, sPrev)>1 and not sPrev: #there is no envA sprite where sPrev should have been
 				## if there was a kill event and an appearance event somewhere far, we should really see this as
 				## an appearance
@@ -1063,7 +1063,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			errorMap.append(e)
 			continue
 		else:
-			sB = sB[0]
 			e.diagnosis.append('objectDestruction')
 			e.targetToken = sB
 			# Find the sprite that was destroyed in envB from the kill_list
@@ -1096,7 +1095,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		# Simultaneously find culprit classes - an overlapping sprite could have launched the sprite due to its class
 		
 		neighbors_curr_and_prev = neighboringSpritesColors(envB, sB) + neighboringSpritesColors(envPrev, sB)
-		nearestSprites = findNearestSprite(sB, [item for sublist in envA._game.observation['trackedObjects'].values() for item in sublist])
+		nearestSprites = findNearestSprites(sB, [item for sublist in envA._game.observation['trackedObjects'].values() for item in sublist])
 
 		for nearestSprite in nearestSprites:
 			if nearestSprite.colorName in neighbors_curr_and_prev:
@@ -1235,7 +1234,7 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 		e.intPairs.append( (sA.colorName,className) )
 	# Determine mininum distance to neighbors in current real env -> to distinguish unexpectedPosition and unexpectedOverlap
 	all_sprites_envB = [item for sublist in envB._game.observation['trackedObjects'].values() for item in sublist]
-	nearest_sprite = findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB)])[0]
+	nearest_sprite = findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB)])
 
 	nearest_dist = manhattanDist2(sB, nearest_sprite)
 	# Determine orientation in current and previous step -> to detect orientation change
@@ -1274,7 +1273,7 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 			if color == envA._game.observation['trackedObjects'][k][0].colorName:
 				className_envA = k
 
-		covered_sprite_envA = findNearestSprite(sB,envA._game.observation['trackedObjects'][className_envA])[0]
+		covered_sprite_envA = findNearestSprite(sB,envA._game.observation['trackedObjects'][className_envA])
 
 		e.intPairs = [(sA.colorName, covered_sprite_envA.colorName)] #overwrite interaction pair by the overlapping sprite pair
 	if dist_ts>2:
