@@ -247,3 +247,23 @@ w             w
 w     A       w
 wwwwwwwwwwwwwww
 ''')
+
+level_strings13 = ('''
+wwwwwwwwwwwwwww
+w             w
+w             w
+w             w
+w  LLL        w
+w             w
+w     A       w
+wwwwwwwwwwwwwww
+''', '''
+wwwwwwwwwwwwwww
+w             w
+w             w
+w             w
+w   LLL       w
+w             w
+w     A       w
+wwwwwwwwwwwwwww
+''')

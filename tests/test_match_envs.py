@@ -190,3 +190,9 @@ class TestMatchEnvs(unittest.TestCase):
 		all_sprites, matched, lonelyA, lonelyB = self.getResults(*self.test_envs['level_strings12'])
 		self.assertNoLonelySprites(all_sprites, matched, lonelyA, lonelyB)
 		self.assertMatchedDistance(matched, 'log', 4)
+
+	def testOneLog(self):
+		'Tests "level_strings12". One groups of 3 logs.'
+		all_sprites, matched, lonelyA, lonelyB = self.getResults(*self.test_envs['level_strings13'])
+		self.assertNoLonelySprites(all_sprites, matched, lonelyA, lonelyB)
+		self.assertMatchedDistance(matched, 'log', 1)
