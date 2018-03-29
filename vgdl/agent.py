@@ -537,8 +537,6 @@ class Agent:
 		# print "After filtering for duplicates, have {} theories".format(len(newTheories))
 		# embed()
 
-
-
 		self.allTheories.extend(newTheories)
 		print ""
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
@@ -557,10 +555,10 @@ class Agent:
 
 			if not lastStep:
 				scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-					proportionOfSpriteTheories=None, errorCutoff=.5)]
+					proportionOfSpriteTheories=None, errorCutoff=.2)]
 			else:
 				scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-					proportionOfSpriteTheories=None, errorCutoff=.5)]
+					proportionOfSpriteTheories=None, errorCutoff=.2)]
 
 			print "Experience replay complete."
 			for num, sh in enumerate(scoresAndHypotheses):
@@ -695,6 +693,13 @@ def setVrleState(rle, Vrle, hypothesis):
 				if (hypothesis.spriteObjects[matchingSprite.colorName].vgdlType in
 						[MovingAvatar, HorizontalAvatar, VerticalAvatar]):
 					sprite.orientation = (0,0)
+				elif hypothesis.spriteObjects[matchingSprite.colorName].vgdlType in [Missile]:
+					# print "found missile in setVrleState"
+					# embed()
+					orientation = (np.sign(matchingSprite.rect.left - matchingSprite.lastrect.left), np.sign(matchingSprite.rect.top - matchingSprite.lastrect.top))
+					if orientation == (0,0):
+						orientation = hypothesis.spriteObjects[matchingSprite.colorName].args['orientation']
+
 				else:
 					sprite.orientation 	= tuple(matchingSprite.orientation) # consider copying only for avatar?
 
@@ -726,7 +731,7 @@ def initializeVrle(hypothesis, stateToSet, symbolDict, theoryRLE=None, writeFile
 		print "in initializeVrle"
 		embed()
 	Vrle._game.colorToClassDict = {k:v.className for k,v in hypothesis.spriteObjects.items()}
-	Vrle._game.isMadeFromTheory = True
+	Vrle._game.isMadeFromTheory = False
 	## Don't do any of the rest if we have an ungrammatical hypothesis caused by num(avatars)>1.
 	if len(stateToSet._game.observation['trackedObjects'][hypothesis.classes['avatar'][0].colorName])>1:
 		print "Warning. In initializeVrle. Got more than one avatar. Returning None as Vrle."
@@ -901,10 +906,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			del sA.stype
 			del sA.fleeing
 
-			## this should be arbitrarily high, actually. If you want this to be a surrogate likelihood function,
-			## the prob that a chaser moves away from what it's chasing is 0.
-			# chaser_penalty = 0. if (xA,yA) in closestTargets else 100.
-			# total_penalty += p_speed*chaser_penalty
 			total_penalty += np.log(1./len(closestTargets)-e_dist) if (xA,yA) in closestTargets else np.log(0.+e_dist) # likelihood
 
 		# All of the other types are deterministic
@@ -1153,6 +1154,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				newIntPairs.append(pair)
 			e.intPairs = newIntPairs
 
+	# print "at end of errorSignal"
+	# embed()
 	return total_penalty, errorMap
 
 def neighboringSpritesColors(env, sprite):
@@ -1577,7 +1580,6 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 			print "hypothetical states are in blue below; should match the black state above."
 			for env in theoryRLEs:
 				print env.show(color='blue')
-			embed()
 
 		for n, action in enumerate(actionHistory[idx:end]):
 			penalties = []
@@ -1600,7 +1602,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 				if displayStates:
 					print "resulting state incurred a penalty of {} and looks like this:".format(penalty)
 					print env.show(color='green')
-				
+					embed()
 			cumulative_penalties.append(penalties)
 	
 	if not cumulative_penalties:
@@ -1823,7 +1825,6 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			e.targetClass = theory.spriteObjects[neighbor.colorName].className
 			newErrorMaps.append(e)
 
-	## SpriteSet induction step
 	for eM in newErrorMaps:
 
 		theoryCopy = theory.copy()
@@ -1832,15 +1833,15 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			if eM.targetClass in theoryCopy.expandedSprites:
 				print "removing {} from theory.expandedSprites".format(eM.targetClass)
 				theoryCopy.expandedSprites.remove(eM.targetClass)
-				
+		
+		## SpriteSet induction step
 		if eM.targetClass not in theoryCopy.expandedSprites:
 			className, theories = expandSprites(envRealCurrent._game, theoryCopy, eM, 
 			envRealPrev, envRealCurrent, bestSpriteTypeDict, action, percentile=20, max_num=30)
 			# print "doing spriteInduction for {} generated {} theories".format(eM.targetClass, len(theories))
 			newTheories.extend(theories)	
 
-	## InteractionSet induction step
-	# for eM in newErrorMaps:
+		## InteractionSet induction step
 		for targetClassPair in eM.intPairs:
 
 			singleIntPairErrorMap = eM.copy()
@@ -1880,12 +1881,12 @@ def testAndExpand(theoryRLEs, hypotheses, action, envReal, envRealPrev, index, r
 	env.step(action)
 	penalty, errorList = errorSignal(env, envReal, hypothesis, envRealPrev)
 
-	if errorList:
-		hypothesis.display()
-		for e in errorList:
-			e.display()
-			print ""
-		embed()
+	# if errorList:
+	# 	hypothesis.display()
+	# 	for e in errorList:
+	# 		e.display()
+	# 		print ""
+	# 	embed()
 	# else:
 		# print "No error"
 		# embed()
