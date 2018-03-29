@@ -2,12 +2,12 @@
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                  g    x      w
-w  x     x              x     gw
+w  x     x              x e   gw
 w             x         x   e  w
 wxxxxxxxxxx    p        xxxxxxxw
 w      mm x   pgp  x           w
 w      mm x  x p         x     w
-w    x         A a c   c     t w
+w    x      a  A a c   c    tt w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -33,7 +33,7 @@ BasicGame
 
         chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
         avatar  > MovingAvatar color=DARKBLUE #stype=sam
-        cannon > SpawnPoint color=RED stype=sam spawnCooldown=2 #16
+        cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         missile > Missile
             sam  > orientation=UP color=BLUE cooldown=1 #4
         wall > Immovable color=DARKGRAY
