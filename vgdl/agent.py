@@ -694,8 +694,9 @@ def setVrleState(rle, Vrle, hypothesis):
 						[MovingAvatar, HorizontalAvatar, VerticalAvatar]):
 					sprite.orientation = (0,0)
 				elif hypothesis.spriteObjects[matchingSprite.colorName].vgdlType in [Missile]:
-					# print "found missile in setVrleState"
-					# embed()
+					## Setting the Missile orientation to be consistent with the theory only makes sense for gridphysics games,
+					## because in continuous games the orientation of a missile that is initially DOWN can change to
+					## anything as a function of bounces. So doing it as below is actually ideal.
 					orientation = (np.sign(matchingSprite.rect.left - matchingSprite.lastrect.left), np.sign(matchingSprite.rect.top - matchingSprite.lastrect.top))
 					if orientation == (0,0):
 						orientation = hypothesis.spriteObjects[matchingSprite.colorName].args['orientation']
