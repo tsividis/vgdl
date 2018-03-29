@@ -2486,9 +2486,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 		newTheory.errorMapHistory.append(errorMap)
 		vgdlType = spriteProposal[0][1]
 		args = dict(spriteProposal[1:])
-		# if 'spawnCooldown' in args:
-		# 	print "got spawnCooldown in args"
-		# 	embed()
+
 		## Proposal specified args in terms of color; convert to class name for the actual theory.
 		if 'stype' in args.keys():
 			try:
