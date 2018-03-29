@@ -335,15 +335,18 @@ def copySpriteStingy(sprite):
     newSprite = TrackedSprite([sprite.rect.left, sprite.rect.top], color=sprite.color, size=(sprite.rect.width, sprite.rect.height)) # automatically does colorName
     newSprite.ID = sprite.ID # not sure if we need this
     newSprite.name = newSprite.colorName
-    newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
     newSprite.lastmove = sprite.lastmove
     newSprite.rect = pygame.Rect(sprite.rect.left, sprite.rect.top, sprite.rect.width, sprite.rect.height)
     newSprite.lastrect = pygame.Rect(sprite.lastrect.left, sprite.lastrect.top, sprite.lastrect.width, sprite.lastrect.height)
+
+    if hasattr(sprite, 'draw_arrow') and sprite.draw_arrow==True:
+        newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
 
     if type(sprite) == TrackedSprite:
         newSprite.speed = sprite.speed
         newSprite.inventory = dict(sprite.inventory) if sprite.inventory else dict()
         newSprite.lastinventory = dict(sprite.lastinventory)
+        newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
 
     return newSprite
 
@@ -351,16 +354,10 @@ def processFrame(memory, gameObject):
     # eventual goal is to process the frame, not the gameObject...
     # creates a COPY of memory and returns updated copy
     
-    # if not gameObject.isMadeFromTheory:
-    #     print "game object not made from theory"
-    #     embed()
     newMemory = dict()
     newTrackedObjects = defaultdict(list)
     spriteIDDict = {sprite.ID: sprite for lst in memory['trackedObjects'].values() for sprite in lst}
 
-    # if gameObject.isMadeFromTheory and 'Flak' in str(gameObject.sprite_groups['avatar'][0].vgdlType):
-        # print "in processFrame"
-        # embed()
     newMemory['kill_list'] = [copySpriteStingy(s) for s in gameObject.kill_list]
     newMemory['isGrid'] = memory['isGrid']
     newMemory['lastscore'] = memory['score']
@@ -386,6 +383,7 @@ def processFrame(memory, gameObject):
                             if gameObject.isMadeFromTheory:
                                 newSprite.speed = sprite.speed
                                 newSprite.orientation = sprite.orientation
+                                print "got sprite from theory"
                             else:
                                 newSprite.speed = max(abs(sprite.rect.left - newSprite.rect.left), abs(sprite.rect.top - newSprite.rect.top)) * 1.0 / sprite.rect.width # TODO: don't depend on width
                                 newSprite.orientation = (np.sign(sprite.rect.left - newSprite.rect.left), np.sign(sprite.rect.top - newSprite.rect.top))
@@ -431,6 +429,9 @@ def processFrame(memory, gameObject):
                 newTrackedObjects[sprite.colorName].append(newSprite)
     newMemory['trackedObjects'] = newTrackedObjects
 
+    # if 'sam' in gameObject.sprite_groups and len(gameObject.sprite_groups['sam'])==2:
+    #     print "at end of processFrame"
+    #     embed()
     if not newMemory['isGrid']:
         print 'not GridPhysics!!'
         embed()
