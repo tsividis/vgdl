@@ -43,7 +43,6 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """]
 
 
-
 game = """
 BasicGame
     SpriteSet
