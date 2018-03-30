@@ -23,14 +23,26 @@ w    x    mm a A               w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-# level = simplifiedLevel
+teleportlevel = """
+wwwwwwwww
+w      gw
+w      gw
+w       w
+w x     w
+w       w
+w       w
+w c A c w
+wwwwwwwww
+"""
+
+
+level = teleportlevel
 
 game="""
 BasicGame
     SpriteSet
         box    > Passive color=BROWN # orientation=RIGHT cooldown=1
         flicker > Flicker timeout=1 color=YELLOW
-
         chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
         avatar  > MovingAvatar color=DARKBLUE #stype=sam
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2

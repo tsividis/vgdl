@@ -753,7 +753,7 @@ def VrleInitPhase(hypotheses, stateToSet, symbolDict, theoryRLEs=None):
 	return VRLEs
 
 def findNearestSprite(sprite, spriteList):
-	## returns the sprite in spriteList whose location best matches the location of sprite.
+	## returns the sprites in spriteList whose locations best match the location of sprite.
 	if spriteList == []:
 		return None
 	else:
@@ -1015,6 +1015,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 					continue
 				else: #This was indeed a transformation
 					print "WARNING: Found unexpected transformation"
+					embed()
 					sPrev = sPrev[0]
 					# Find neighbors of target sprite in the previous time step
 					neighbors_prev = neighboringSpritesColors(envPrev, sPrev)
@@ -1266,6 +1267,8 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 		e2.diagnosis.append('teleport')
 		e2.intPairs = [(sA.colorName, n) for n in neighbors_prev]
 		errorMaps.append(e2)
+		print "got teleport"
+		embed()
 	# Return list of errorMapEntry objects
 	return errorMaps
 
