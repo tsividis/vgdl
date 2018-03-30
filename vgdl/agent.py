@@ -663,7 +663,6 @@ class Agent:
 
 def setVrleState(rle, Vrle, hypothesis):
 	## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
-
 	avatar = hypothesis.classes['avatar'][0]
 	spriteGroupsToUpdate = Vrle._game.sprite_groups
 	for k in spriteGroupsToUpdate.keys():
@@ -684,7 +683,7 @@ def setVrleState(rle, Vrle, hypothesis):
 					print "in setVrleState -- illegal rect/lastrect pair"
 					embed()
 				sprite.lastmove 	= matchingSprite.lastmove
-				
+				sprite.ID = matchingSprite.ID
 				sprite.resources = defaultdict(int)
 				for rcolor in matchingSprite.inventory.keys():
 					sprite.resources[hypothesis.spriteObjects[rcolor].className] = matchingSprite.inventory[rcolor][0]

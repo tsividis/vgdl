@@ -277,16 +277,14 @@ class TrackedSprite(object):
     def __hash__(self):
         return hash(self.ID)
 
-    def __init__(self, pos, color=None, size=(10,10)):
+    def __init__(self, pos, color=None, size=(10,10), ID=None):
         self.name = None
         self.color = color
         self.rect = pygame.Rect(pos, size)
         self.lastrect = pygame.Rect(pos, size)
-        # self.x = pos[0]
-        # self.y = pos[1]
         self.orientation = (0,0)
         self.speed = None
-        self.ID = uuid.uuid1()
+        self.ID = uuid.uuid1() if ID==None else ID
         self.color = color or self.color or PURPLE
         if self.color == ENDOFSCREEN:
             self.ID = 'ENDOFSCREEN'
@@ -332,8 +330,8 @@ def buildTracker(rle):
 def copySpriteStingy(sprite):
     # copies all the data from sprite that we could reasonably get from
     #   a real CV system into a new sprite, then returns it
-    newSprite = TrackedSprite([sprite.rect.left, sprite.rect.top], color=sprite.color, size=(sprite.rect.width, sprite.rect.height)) # automatically does colorName
-    newSprite.ID = sprite.ID # not sure if we need this
+    newSprite = TrackedSprite([sprite.rect.left, sprite.rect.top], color=sprite.color, size=(sprite.rect.width, sprite.rect.height), ID=sprite.ID) # automatically does colorName
+    newSprite.ID = sprite.ID # we definitely need this
     newSprite.name = newSprite.colorName
     newSprite.lastmove = sprite.lastmove
     newSprite.rect = pygame.Rect(sprite.rect.left, sprite.rect.top, sprite.rect.width, sprite.rect.height)
