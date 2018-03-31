@@ -138,9 +138,6 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
             for j in range(self.outdim[1]):
                 if state[i][j] == 0:
                     gameString += " "
-                # else:
-                #     symbol = objectsToSymbol(self, self.getObjectsFromNumber(state[i][j]), self.symbolDict)
-                #     gameString += symbol
                 elif state[i][j] == 1:
                     gameString += colored(symbolDict['avatar'], 'red')
                 else:
@@ -150,8 +147,6 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
                     elif state[i][j] != 2**(spriteIndex+1):
                         gameString += colored("$", color)
                     else:
-                        # spriteOverlap = True
-                        # break
                         spriteType = sorted(self._obstypes.keys())[::-1][spriteIndex]
                         gameString += colored(symbolDict[spriteType], color)
 

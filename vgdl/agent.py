@@ -319,7 +319,6 @@ class Agent:
 				print ">>> Step", num+1, "of", len(actions), "<<<"
 				## initialize VRLEs
 				theoryRLEs = VrleInitPhase(self.hypotheses, self.rle, self.symbolDict)
-
 				lastStep=False
 				if num == len(actions)-1:
 					lastStep=True
@@ -512,7 +511,6 @@ class Agent:
 
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
 		self.rleHistory[episode_num].append(envReal)
-		
 		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
 		self.rle._game.sprite_appearances = new_sprites
 
@@ -665,6 +663,8 @@ def setVrleState(rle, Vrle, hypothesis):
 	## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
 	avatar = hypothesis.classes['avatar'][0]
 	spriteGroupsToUpdate = Vrle._game.sprite_groups
+	spritesToRemove = defaultdict(lambda: [])
+
 	for k in spriteGroupsToUpdate.keys():
 		if spriteGroupsToUpdate[k]:
 			color = Vrle._game.sprite_groups[k][0].colorName
@@ -673,6 +673,8 @@ def setVrleState(rle, Vrle, hypothesis):
 
 				matchingSprite = findNearestSprite(sprite, matchingSpritesInRLE)
 				if not matchingSprite:
+					spritesToRemove[k].append(sprite)
+					print "didn't find matching sprite"
 					continue
 				else:
 					matchingSprite = matchingSprite[0]
@@ -713,6 +715,14 @@ def setVrleState(rle, Vrle, hypothesis):
 				# sprite.last_gravity = ccopy(matchingSprite.last_gravity)
 				# sprite.last_vy = ccopy(matchingSprite.last_vy)
 				# sprite.speed = ccopy(matchingSprite.speed)
+	
+	## Remove any sprites that were in the provided Vrle that aren't in the RLE.
+	for k,lst in spritesToRemove.iteritems():
+		for l in lst:
+			if l in Vrle._game.sprite_groups[k]:
+				Vrle._game.sprite_groups[k].remove(l)
+
+	Vrle._game.time = int(rle._game.time)
 	Vrle._game.score = int(rle._game.score)
 	Vrle._game.observation = buildTracker(Vrle)
 	Vrle._game.observation['lastscore'] = rle._game.observation['lastscore']
@@ -748,7 +758,7 @@ def VrleInitPhase(hypotheses, stateToSet, symbolDict, theoryRLEs=None):
 	## Set their state to that of the provided RLE
 	VRLEs = []
 	for num, hypothesis in enumerate(hypotheses):
-		VRLEs.append(initializeVrle(hypothesis, stateToSet, symbolDict, theoryRLEs[num] if theoryRLEs else None))
+		VRLEs.append(initializeVrle(hypothesis, stateToSet, symbolDict, theoryRLEs[num] if theoryRLEs else None, writeFile=True))
 	return VRLEs
 
 def findNearestSprite(sprite, spriteList):
@@ -1271,7 +1281,35 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 	# Return list of errorMapEntry objects
 	return errorMaps
 
-def matchEnvs(envA, envB, debug=False):
+
+def matchEnvs(envA, envB):
+	all_sprites_envA = [item for sublist in envA._game.observation['trackedObjects'].values() for item in sublist]
+	all_sprites_envB = [item for sublist in envB._game.observation['trackedObjects'].values() for item in sublist]
+
+	ID_dict = {}
+
+	matched_sprites, lonely_sprites_envA, lonely_sprites_envB = [],[],[]
+	for sprite in all_sprites_envA:
+		ID_dict[sprite.ID] = [sprite]
+
+	for sprite in all_sprites_envB:
+		if sprite.ID in ID_dict:
+			ID_dict[sprite.ID].append(sprite)
+		else:
+			lonely_sprites_envB.append(sprite)
+	for v in ID_dict.values():
+		if len(v)==2:
+			matched_sprites.append((v[0], v[1], manhattanDist2(v[0], v[1])))
+		elif len(v)==1:
+			lonely_sprites_envA.append(v[0])
+
+	new_matched_sprites, lonely_sprites_envA, lonely_sprites_envB = resolveUnmatchedSprites(lonely_sprites_envA, lonely_sprites_envB)
+
+	matched_sprites += new_matched_sprites
+
+	return matched_sprites, lonely_sprites_envA, lonely_sprites_envB
+
+def resolveUnmatchedSprites(envA_sprites, envB_sprites, debug=False):
 	'''
 	Compares environment A to environment B, mapping sprites from A to sprites from B 1 to 1 (if it can)
 	by comparing the positions of sprites in A to positions of sprites in B of the same color. 
@@ -1310,18 +1348,17 @@ def matchEnvs(envA, envB, debug=False):
 	unmatchedB = set()
 	# is there any guarantee for the ordering of the sprites?
 	# O(spritesA+spritesB) ~ O(n)
-	for env, pos_groups, color_groups, unmatched in [(envA, pos_groupsA, color_groupsA, unmatchedA), 
-													 (envB, pos_groupsB, color_groupsB, unmatchedB)]:
-		for name, sprites in env._game.observation['trackedObjects'].iteritems():
-			if sprites:
-				color = sprites[0].colorName
-				color_groups[color] = sprites
-				
-				for sprite in sprites:
-					pos = sprite.rect.topleft
-					pos_groups[pos].append(sprite)
-					positions.add(pos)
-					unmatched.add(sprite)
+	for sprites, pos_groups, color_groups, unmatched in [(envA_sprites, pos_groupsA, color_groupsA, unmatchedA), 
+													 (envB_sprites, pos_groupsB, color_groupsB, unmatchedB)]:
+		for sprite in sprites:
+			if sprite:
+				color = sprite.colorName
+				color_groups[color].append(sprite)
+			
+				pos = sprite.rect.topleft
+				pos_groups[pos].append(sprite)
+				positions.add(pos)
+				unmatched.add(sprite)
 
 	# Greedily matches sprites based on position first AND color
 	# O(n^2) (but will likely be O(n) since not many sprites overlap)
@@ -1518,8 +1555,6 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 					penalty, errorList = errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
 						rleHistory[idx+n], targetColor=targetColor, penalty_only=True)
 					penalties.append(penalty)
-					# embed()
-
 				except:
 					print "in experienceReplay"
 					embed()
