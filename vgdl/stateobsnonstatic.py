@@ -337,7 +337,7 @@ def copySpriteStingy(sprite):
     newSprite.lastmove = sprite.lastmove
     newSprite.rect = pygame.Rect(sprite.rect.left, sprite.rect.top, sprite.rect.width, sprite.rect.height)
     newSprite.lastrect = pygame.Rect(sprite.lastrect.left, sprite.lastrect.top, sprite.lastrect.width, sprite.lastrect.height)
-
+    
     if hasattr(sprite, 'draw_arrow') and sprite.draw_arrow==True:
         newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
 
@@ -381,10 +381,10 @@ def processFrame(memory, gameObject):
                             newMemory['isGrid'] = False
                         if newMemory['isGrid']:
                             newSprite.speed = max(abs(sprite.rect.left - newSprite.rect.left), abs(sprite.rect.top - newSprite.rect.top)) * 1.0 / sprite.rect.width # TODO: don't depend on width
-                            newSprite.lastDisplacement = (np.sign(sprite.rect.left - newSprite.rect.left), np.sign(sprite.rect.top - newSprite.rect.top))
+                            newSprite.lastDisplacement = (sprite.rect.left - newSprite.rect.left, sprite.rect.top - newSprite.rect.top)
                         else:
                             newSprite.speed = euclideanDist([sprite.rect.left, sprite.rect.top], [newSprite.rect.left, newSprite.rect.top])
-                            newSprite.lastDisplacement = normalizeVec([sprite.rect.left - newSprite.rect.left, sprite.rect.top - newSprite.rect.top])
+                            newSprite.lastDisplacement = (sprite.rect.left - newSprite.rect.left, sprite.rect.top - newSprite.rect.top)
                         
                         newSprite.lastrect = pygame.Rect(newSprite.rect.left, newSprite.rect.top, newSprite.rect.width, newSprite.rect.height)
                         newSprite.rect = pygame.Rect(sprite.rect.left, sprite.rect.top, sprite.rect.width, sprite.rect.height)
@@ -394,6 +394,10 @@ def processFrame(memory, gameObject):
                 
                 # update inventory and inventory history
                 newSprite.lastinventory = dict(newSprite.inventory) if newSprite.inventory else dict()
+
+                ## If the orientation is visibly displayed on the sprite
+                if hasattr(sprite, 'draw_arrow') and sprite.draw_arrow==True:
+                    newSprite.orientation = sprite.orientation
 
                 if sprite.resources:
                     newSprite.inventory = {}

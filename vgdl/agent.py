@@ -290,7 +290,8 @@ class Agent:
 			print "WARNING: running on < 40 cores."
 
 		actionSequences = [
-			[0,0,0,0,0,0,0,0,0,0]
+			[K_UP, K_RIGHT]
+			# [0,0,0,0,0,0,0,0,0,0]
 			# [K_UP, K_UP], 
 			# [K_RIGHT, K_UP]
 		]
@@ -301,15 +302,16 @@ class Agent:
 
 		for episode_num, actions in enumerate(actionSequences):
 			self.initializeEnvironment()
+
 			print "initializing RLE. Epoch={}".format(epoch)
 
 			self.all_objects[episode_num] = self.rle._game.getObjects() ## we need to store all_objects across multiple episodes
-			# embed()
 
 			if episode_num == 0:
 				gameObject = self.initializeHypotheses(self.all_objects[episode_num], learnSprites=True, learnAvatar=self.learnAvatar, num_variants=0)
 
 			envReal = self.fastcopy(self.rle)
+
 			self.rleHistory[episode_num].append(envReal)
 
 			for num, action in enumerate(actions):
@@ -486,6 +488,7 @@ class Agent:
 		newRle._game.observation = ccopy(rle._game.observation)
 		newRle.symbolDict = ccopy(rle.symbolDict)
 		newRle._game.sprite_groups['avatar'][0].resources = ccopy(rle._game.sprite_groups['avatar'][0].resources)
+
 		return newRle
 
 	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, lastStep=False):
@@ -661,6 +664,15 @@ class Agent:
 
 def setVrleState(rle, Vrle, hypothesis):
 	## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
+
+	## This is now playing a dual role. Instead of building in theory-laden perception, we
+	## are passing that functionality here. For example: processFrame() will never update the orientation of a sprite
+	## but will remember its last displacement. When we set a state here, we can interpret that previous
+	## observed displacement as a function of our hypothesis. E.g., if our last observed displacement for a
+	## RotatingAvatar was UP but we know that our last action was RIGHT, setVrleState() can 'infer' that
+	## this means the RotatingAvatar's orientation is actually RIGHT now, and can set it to that.
+	## IMPORTANT: This means that each sprite's orientation will only be correct if this function is called between each time-step.
+	
 	avatar = hypothesis.classes['avatar'][0]
 	spriteGroupsToUpdate = Vrle._game.sprite_groups
 	spritesToRemove = defaultdict(lambda: [])
@@ -690,19 +702,19 @@ def setVrleState(rle, Vrle, hypothesis):
 					sprite.resources[hypothesis.spriteObjects[rcolor].className] = matchingSprite.inventory[rcolor][0]
 
 				# in VGDL, only things which move passively have an orientation that isn't (0,0)
-				if (hypothesis.spriteObjects[matchingSprite.colorName].vgdlType in
-						[MovingAvatar, HorizontalAvatar, VerticalAvatar]):
-					sprite.orientation = (0,0)
-				elif hypothesis.spriteObjects[matchingSprite.colorName].vgdlType in [Missile]:
+				# if (hypothesis.spriteObjects[matchingSprite.colorName].vgdlType in
+				# 		[MovingAvatar, HorizontalAvatar, VerticalAvatar]):
+				# 	sprite.orientation = (0,0)
+				if hypothesis.spriteObjects[matchingSprite.colorName].vgdlType in [Missile]:
 					## Setting the Missile orientation to be consistent with the theory only makes sense for gridphysics games,
 					## because in continuous games the orientation of a missile that is initially DOWN can change to
 					## anything as a function of bounces. So doing it as below is actually ideal.
-					orientation = (np.sign(matchingSprite.rect.left - matchingSprite.lastrect.left), np.sign(matchingSprite.rect.top - matchingSprite.lastrect.top))
+					# orientation = (np.sign(matchingSprite.rect.left - matchingSprite.lastrect.left), np.sign(matchingSprite.rect.top - matchingSprite.lastrect.top))
+					orientation = matchingSprite.lastDisplacement
 					if orientation == (0,0):
 						orientation = hypothesis.spriteObjects[matchingSprite.colorName].args['orientation']
-
 				else:
-					sprite.orientation 	= tuple(matchingSprite.orientation) # consider copying only for avatar?
+					sprite.orientation = matchingSprite.orientation
 
 
 				## Other aspects of state to potentially transfer
@@ -714,7 +726,7 @@ def setVrleState(rle, Vrle, hypothesis):
 				# sprite.last_gravity = ccopy(matchingSprite.last_gravity)
 				# sprite.last_vy = ccopy(matchingSprite.last_vy)
 				# sprite.speed = ccopy(matchingSprite.speed)
-	
+
 	## Remove any sprites that were in the provided Vrle that aren't in the RLE.
 	for k,lst in spritesToRemove.iteritems():
 		for l in lst:
@@ -1844,11 +1856,11 @@ def testAndExpand(theoryRLEs, hypotheses, action, envReal, envRealPrev, index, r
 	penalty, errorList = errorSignal(env, envReal, hypothesis, envRealPrev)
 
 	# if errorList:
-	# 	hypothesis.display()
-	# 	for e in errorList:
-	# 		e.display()
-	# 		print ""
-	# 	embed()
+		# hypothesis.display()
+		# for e in errorList:
+			# e.display()
+			# print ""
+		# embed()
 	# else:
 		# print "No error"
 		# embed()

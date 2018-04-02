@@ -33,6 +33,15 @@ w c A  c w
 wwwwwwwwww
 """
 
+Avatarlevel = """
+wwwwwwwwww
+w       gw
+w g      w
+w        w
+w   A    w
+wwwwwwwwww
+"""
+
 # teleportlevel = """
 # wwwwwwwwww
 # w g     gw
@@ -46,7 +55,7 @@ wwwwwwwwww
 # """
 
 
-level = teleportlevel
+level = Avatarlevel
 
 game="""
 BasicGame
@@ -54,7 +63,7 @@ BasicGame
         box    > Passive color=BROWN # orientation=RIGHT cooldown=1
         flicker > Flicker timeout=1 color=YELLOW
         chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
-        avatar  > MovingAvatar color=DARKBLUE #stype=sam
+        avatar  > OrientedAvatar color=DARKBLUE stype=sam
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         missile > Missile
             sam  > orientation=UP color=BLUE cooldown=1 #4

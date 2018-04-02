@@ -15,6 +15,7 @@ import scipy.stats
 from tools import triPoints, unitVector, vectNorm, oncePerStep
 from ai import AStarWorld
 from IPython import embed
+from util import normalizeVec
 import core
 import copy
 import ipdb
@@ -2231,12 +2232,12 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
 
             from math import cos, sin
 
-            orientation = unitVector((current_sprite.orientation[0]*cos(angle)-current_sprite.orientation[1]*sin(angle),
-                                      current_sprite.orientation[0]*sin(angle)+current_sprite.orientation[1]*cos(angle)))
+            orientation = (current_sprite.orientation[0]*cos(angle)-current_sprite.orientation[1]*sin(angle),
+                           current_sprite.orientation[0]*sin(angle)+current_sprite.orientation[1]*cos(angle))
         else:
             orientation = current_sprite.orientation
 
-        orientation_options = {orientation: 1.0}
+        orientation_options = {normalizeVec(orientation): 1.0}
         position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.0}
         
         u = unitVector(orientation)
@@ -2267,12 +2268,12 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
 
             from math import cos, sin
 
-            orientation = unitVector((current_sprite.orientation[0]*cos(angle)-current_sprite.orientation[1]*sin(angle),
-                                      current_sprite.orientation[0]*sin(angle)+current_sprite.orientation[1]*cos(angle)))
+            orientation = (current_sprite.orientation[0]*cos(angle)-current_sprite.orientation[1]*sin(angle),
+                           current_sprite.orientation[0]*sin(angle)+current_sprite.orientation[1]*cos(angle))
         else:
             orientation = current_sprite.orientation
 
-        orientation_options = {orientation: 1.0}
+        orientation_options = {normalizeVec(orientation): 1.0}
 
         next_pos = (current_sprite.rect.left + speed*dx*game.block_size, 
                         current_sprite.rect.top + speed*dy*game.block_size)
@@ -2299,7 +2300,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
             if direction == RIGHT:
                 i = BASEDIRS.index(orientation)
                 orientation = BASEDIRS[(i - 1) % len(BASEDIRS)] 
-            orientation_options = {orientation: 1.0}
+            orientation_options = {normalizeVec(orientation): 1.0}
 
         next_pos = (current_sprite.rect.left+orientation[0]*speed*game.block_size, 
                         current_sprite.rect.top+orientation[1]*speed*game.block_size)
@@ -2334,8 +2335,8 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
             elif direction == DOWN:
                 i = BASEDIRS.index(orientation)
                 orientation = BASEDIRS[(i + 2) % len(BASEDIRS)]  
-            orientation_options = {d : noiseLevel for d in [UP, DOWN, LEFT, RIGHT]}
-            orientation_options[orientation] += 1-noiseLevel
+            orientation_options = {normalizeVec(d) : noiseLevel for d in [UP, DOWN, LEFT, RIGHT]}
+            orientation_options[normalizeVec(orientation)] += 1-noiseLevel
 
         curr_pos = (current_sprite.rect.left, current_sprite.rect.top)
         next_pos = (current_sprite.rect.left+orientation[0]*speed*game.block_size, 
@@ -2358,10 +2359,9 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
             orientation = actionToDir[keyPressToAction[action]]
             next_pos = (current_sprite.rect.left+orientation[0]*speed*game.block_size, 
                             current_sprite.rect.top+orientation[1]*speed*game.block_size)
-        orientation_options = {orientation: 1.0}
+        orientation_options = {normalizeVec(orientation): 1.0}
         position_options = {next_pos: 1.0}
         appearance_predictions = []
-
         return position_options, position_options, orientation_options, appearance_predictions
     
     elif sprite_type in [SpawnPoint]:
@@ -2892,7 +2892,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
                 for k in game.movement_options[sprite.ID]:
                     if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k]: 
                         if k in game.orientation_options[sprite.ID]:
-                            if sprite.orientation in game.orientation_options[sprite.ID][k]:
+                            if normalizeVec(sprite.orientation) in game.orientation_options[sprite.ID][k]:
                                 scoreAndTheoryTuples.append((0,k))
                         else:
                             scoreAndTheoryTuples.append((0,k))
