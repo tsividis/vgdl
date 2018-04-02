@@ -283,6 +283,7 @@ class TrackedSprite(object):
         self.rect = pygame.Rect(pos, size)
         self.lastrect = pygame.Rect(pos, size)
         self.orientation = (0,0)
+        self.lastDisplacement = (0,0)
         self.speed = None
         self.ID = uuid.uuid1() if ID==None else ID
         self.color = color or self.color or PURPLE
@@ -345,6 +346,7 @@ def copySpriteStingy(sprite):
         newSprite.inventory = dict(sprite.inventory) if sprite.inventory else dict()
         newSprite.lastinventory = dict(sprite.lastinventory)
         newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
+        newSprite.lastDisplacement = sprite.lastDisplacement
 
     return newSprite
 
@@ -371,27 +373,18 @@ def processFrame(memory, gameObject):
                     # not a new object
                     newSprite = copySpriteStingy(spriteIDDict[sprite.ID])
                     newSprite.lastmove += 1
+                    # Did the sprite move?
                     if sprite.rect.left != newSprite.rect.left or sprite.rect.top != newSprite.rect.top:
                         # first check if this is actually continuous (default assumes grid)
-                        # TODO: this way of checking whether it's a grid or not fails for projectiles and interesting bounce-forwards (like chains)
-                        if memory['isGrid'] and False:# sprite.rect.left  != newSprite.rect.left  and sprite.rect.top != newSprite.rect.top and abs(sprite.rect.left  - newSprite.rect.left ) != abs(sprite.rect.top - newSprite.rect.top):
+                        ## TODO: figure out whether we're in a grid. Currently always assuming we are.
+                        if memory['isGrid'] and False:
                             newMemory['isGrid'] = False
-                        # it moved since last sighting!
                         if newMemory['isGrid']:
-                            if gameObject.isMadeFromTheory:
-                                newSprite.speed = sprite.speed
-                                newSprite.orientation = sprite.orientation
-                                print "got sprite from theory"
-                            else:
-                                newSprite.speed = max(abs(sprite.rect.left - newSprite.rect.left), abs(sprite.rect.top - newSprite.rect.top)) * 1.0 / sprite.rect.width # TODO: don't depend on width
-                                newSprite.orientation = (np.sign(sprite.rect.left - newSprite.rect.left), np.sign(sprite.rect.top - newSprite.rect.top))
+                            newSprite.speed = max(abs(sprite.rect.left - newSprite.rect.left), abs(sprite.rect.top - newSprite.rect.top)) * 1.0 / sprite.rect.width # TODO: don't depend on width
+                            newSprite.lastDisplacement = (np.sign(sprite.rect.left - newSprite.rect.left), np.sign(sprite.rect.top - newSprite.rect.top))
                         else:
-                            if gameObject.isMadeFromTheory:
-                                newSprite.speed = sprite.speed
-                                newSprite.orientation = sprite.orientation
-                            else:
-                                newSprite.speed = euclideanDist([sprite.rect.left, sprite.rect.top], [newSprite.rect.left, newSprite.rect.top])
-                                newSprite.orientation = normalizeVec([sprite.rect.left - newSprite.rect.left, sprite.rect.top - newSprite.rect.top])
+                            newSprite.speed = euclideanDist([sprite.rect.left, sprite.rect.top], [newSprite.rect.left, newSprite.rect.top])
+                            newSprite.lastDisplacement = normalizeVec([sprite.rect.left - newSprite.rect.left, sprite.rect.top - newSprite.rect.top])
                         
                         newSprite.lastrect = pygame.Rect(newSprite.rect.left, newSprite.rect.top, newSprite.rect.width, newSprite.rect.height)
                         newSprite.rect = pygame.Rect(sprite.rect.left, sprite.rect.top, sprite.rect.width, sprite.rect.height)
@@ -427,9 +420,6 @@ def processFrame(memory, gameObject):
                 newTrackedObjects[sprite.colorName].append(newSprite)
     newMemory['trackedObjects'] = newTrackedObjects
 
-    # if 'sam' in gameObject.sprite_groups and len(gameObject.sprite_groups['sam'])==2:
-    #     print "at end of processFrame"
-    #     embed()
     if not newMemory['isGrid']:
         print 'not GridPhysics!!'
         embed()
