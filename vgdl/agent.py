@@ -38,7 +38,7 @@ ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPAC
 # This makes experience replay run multiple samples 
 # for each time step if there is a Random in the theory
 EXPERIENCE_REPLAY_METHOD = 'all'
-
+NUM_SAMPLES_PER_HYPOTHESIS = 20
 
 
 class errorMapEntry:
@@ -674,7 +674,6 @@ def setVrleState(rle, Vrle, hypothesis):
 				matchingSprite = findNearestSprite(sprite, matchingSpritesInRLE)
 				if not matchingSprite:
 					spritesToRemove[k].append(sprite)
-					print "didn't find matching sprite"
 					continue
 				else:
 					matchingSprite = matchingSprite[0]
@@ -825,7 +824,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 	e_inventory = 1e-10
 	e_disappearance = 1e-10
 
-
 	# Initialization
 	total_penalty = 0.
 	errorMap = []
@@ -893,7 +891,9 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			positionOptions = [(xPrev, yPrev), (xPrev+sA_speed, yPrev), (xPrev-sA_speed, yPrev), (xPrev, yPrev+sA_speed), (xPrev, yPrev-sA_speed)]
 			total_penalty += np.log(1./len(positionOptions)-e_dist) if (xB, yB) in positionOptions else np.log(0.+e_dist) #likelihood
 		elif 'Missile' in str(sA_type):
-			# total_penalty += p_speed*t[2] #penalize speed separately to discourage keeping around too many similar theories
+			# if 'flipDirection' in [r.interaction for r in theory.interactionSet]:
+				# print "found flipDirection"
+				# embed()
 			total_penalty += np.log(1.-e_dist) if dist==0. else np.log(0.+e_dist) #likelihood
 		elif 'Chaser' in str(sA_type):
 			
@@ -1582,8 +1582,11 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, method='
 		if displayTheories:
 			print "running experienceReplay on {}:".format(num)
 			h.display()
+		# if 'flipDirection' in [r.interaction for r in h.interactionSet]:
+			# print "got flipDirection in experienceReplay"
+			# embed()
 		if method == 'newMethod':
-			multipleHypotheses = [h]*num_samples_per_hypothesis
+			multipleHypotheses = [h]*NUM_SAMPLES_PER_HYPOTHESIS
 			results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, multipleHypotheses, symbolDict))
 		else:
 			results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h], symbolDict))
@@ -1603,7 +1606,7 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, symb
 	'''
 	assert len(rleHistories) == len(actionHistories), 'rleHistories and actionHistories need to match'
 
-	print "Running MultiEpisodeExperienceReplay on %i episodes " % len(rleHistories)
+	# print "Running MultiEpisodeExperienceReplay on %i episodes " % len(rleHistories)
 
 	multi_episode_mean_penalties = []
 	weight = 1./len(max(actionHistories, key=len))

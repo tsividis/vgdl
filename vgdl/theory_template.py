@@ -2340,13 +2340,15 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 				for val in values:
 					argList.append({'speed':val})
 			elif predicate in ['killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']:
-				resources = [theory.spriteObjects[rcolor].className for rcolor in observations['trackedObjects'][theory.classes['avatar'][0].colorName][0].inventory.keys()]
-				if len(resources) == 0:
-					print 'in proposeArgs: trying to propose conditional but no resources!'
+				try:
+					resources = [theory.spriteObjects[rcolor].className for rcolor in observations['trackedObjects'][theory.classes['avatar'][0].colorName][0].inventory.keys()]
+				except:
+					print "problem with resources in proposeArgs()"
 					embed()
 				limits = [-2]
 				for comb in list(itertools.product(resources, limits)):
-					argList.append({'resource':comb[0], 'limit':comb[1]})
+					if comb:
+						argList.append({'resource':comb[0], 'limit':comb[1]})
 			else:
 				print "Error: Have not implemented non-generic proposeArgs() yet."
 				embed()
@@ -2637,8 +2639,8 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 			classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and len(rule.args)>0]
 	if len(relevantRulesWithArgs) == 0:
 		if 'conditionalKill' in errorMap.diagnosis:
-			print "got conditionalKill"
-			embed()
+			# print "got conditionalKill"
+			# embed()
 			## The only rules that should be removed when proposing conditionals are kill rules.
 			## Remove the existing kill rules and replace them with conditionals.
 			toRemove = [rule for rule in theory.interactionSet if classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and 
@@ -2685,7 +2687,7 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHi
 		theory.display()
 		rule = relevantRulesWithArgs[0]
 		penalty, _, _ = experienceReplay([theory], rleHistory, actionHistory, 
-			rleHistory[0].symbolDict, {}, method='all', targetColor=errorMap.targetColor)
+			rleHistory[0].symbolDict, method='all', targetColor=errorMap.targetColor)
 		newPenalty = penalty
 		while newPenalty >= penalty:
 			argsToIncrement = [(k,v) for k,v in relevantRulesWithArgs[0].args.items() if type(v)==int]
@@ -2697,7 +2699,7 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHi
 			if len(thresholdOrdering[rule.interaction]) > idx+1:
 				rule.args[k] = thresholdOrdering[rule.interaction][idx+1]
 				newPenalty, _, _ = experienceReplay([theory], rleHistory, actionHistory, 
-					envRealPrev.symbolDict, {}, method='all', targetColor=errorMap.targetColor)
+					envRealPrev.symbolDict, method='all', targetColor=errorMap.targetColor)
 				# print newPenalty, rule.display()
 			else:
 				break

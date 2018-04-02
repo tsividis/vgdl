@@ -23,17 +23,27 @@ w    x    mm a A               w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
+## use this to test flipDirection.
 teleportlevel = """
-wwwwwwwww
-w      gw
-w      gw
-w       w
-w x     w
-w       w
-w       w
-w c A c w
-wwwwwwwww
+wwwwwwwwww
+w       gw
+w g      w
+w        w
+w c A  c w
+wwwwwwwwww
 """
+
+# teleportlevel = """
+# wwwwwwwwww
+# w g     gw
+# w        w
+# w        w
+# w x      w
+# w        w
+# w        w
+# w c A  c w
+# wwwwwwwwww
+# """
 
 
 level = teleportlevel
