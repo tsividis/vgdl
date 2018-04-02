@@ -93,7 +93,7 @@ class SpriteParser(object):
         resourcePackTypes = {self._eval(obj_type) for obj_type in SpriteParser.resourcePackTypeStrings}
         resourceType = self._eval("Resource")
         EOS = "EOS"
-        self.sprite_types[EOS] = Sprite(EOS,None,{})
+        self.sprite_types[EOS] = Sprite(EOS, None, args={})
 
         for sn in snodes:
             assert ">" in sn.content
@@ -118,14 +118,14 @@ class SpriteParser(object):
 
                     if sclass in resourcePackTypes:
                         #print "--> will be converted to ResourcePack"
-                        self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args_without_color)
+                        self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args=args_without_color)
                     elif sclass == resourceType:
                         #print "--> will be converted to ResourcePack"
-                        self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args_without_color)
+                        self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args=args_without_color)
                         # self.sprite_types[key+"_resource"] = Sprite(self._eval('ResourcePack'), color_type+"_resource", args_without_color)
                     else:
                         #print "--> will be ITSELF"
-                        self.sprite_types[key] = Sprite(sclass, color_type, args_without_color)
+                        self.sprite_types[key] = Sprite(sclass, color_type, args=args_without_color)
                 else:
                     args_without_color = deepcopy(args)
                     isResourceType = False
@@ -136,7 +136,7 @@ class SpriteParser(object):
                         s = self._eval('ResourcePack')
                     else:
                         s = sclass
-                        self.sprite_types[key] = Sprite(sclass, None, args)
+                        self.sprite_types[key] = Sprite(sclass, None, args=args)
 
                     try:
 
@@ -146,17 +146,17 @@ class SpriteParser(object):
                         color = s.colorName
 
                         if isResourceType:
-                            self.sprite_types[key] = Sprite(s, color, args_without_color)
+                            self.sprite_types[key] = Sprite(s, color, args=args_without_color)
                             # self.sprite_types[key+"_resource"] = Sprite(s, color, args_without_color)
                         else:
-                            self.sprite_types[key] = Sprite(s, color, args_without_color)
+                            self.sprite_types[key] = Sprite(s, color, args=args_without_color)
 
                     except AttributeError:
                         if isResourceType:
-                            self.sprite_types[key] = Sprite(s, None, args_without_color)
+                            self.sprite_types[key] = Sprite(s, None, args=args_without_color)
                             # self.sprite_types[key+"_resource"] = Sprite(s, None, args_without_color)
                         else:
-                            self.sprite_types[key] = Sprite(s, None, args_without_color)
+                            self.sprite_types[key] = Sprite(s, None, args=args_without_color)
 
                 if key in self.game.sprite_order:
                     # last one counts

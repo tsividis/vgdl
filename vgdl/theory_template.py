@@ -969,7 +969,7 @@ class Theory(object):
 			'''
 			Adds object-class assignments; avoids duplicates.
 			'''
-			c, o = classObjectPair[0], classObjectPair[1]
+			c, o = classObjectPair
 			if c in self.classes.keys():
 				if o not in self.classes[c]:
 					self.classes[c].append(o)

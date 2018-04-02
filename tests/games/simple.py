@@ -46,17 +46,8 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 game = """
 BasicGame
     SpriteSet
-        cloner > Immovable color=GREEN
-        box    > Immovable color=WHITE # orientation=RIGHT cooldown=1
-        box2 > Immovable color=GREEN
-        box3 > Immovable color=YELLOW
-        flicker > Flicker timeout=1 color=ORANGE
-        random > RandomNPC color=PURPLE speed=1 cooldown=1
-        chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
+        box    > Immovable color=WHITE 
         avatar  > MovingAvatar color=DARKBLUE
-        cannon > SpawnPoint color=RED stype=sam spawnCooldown=1
-        missile > Missile
-            sam  > orientation=UP color=BLUE singleton=True
         wall > Immovable color=DARKGRAY
     LevelMapping
         C > cloner

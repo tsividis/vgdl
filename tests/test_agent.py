@@ -3,7 +3,6 @@ import unittest
 from IPython import embed
 
 from vgdl.agent import Agent, VrleInitPhase, sampleFromDistribution
-from vgdl.theory_template import Game, generateTheoryFromGame
 from pygame.locals import *
 from vgdl.ontology import *
 
@@ -96,7 +95,9 @@ class TestAgent(unittest.TestCase):
 		action_sequences = [[K_UP]]
 		self.initialize(simple.game, simple.levels[0], action_sequences)
 
-		theory = generateTheoryFromGame(self.agent.rle)
+		print self.buildGenericTheory(self.agent.all_objects)
+
+
 		# self.executeStep(0, K_UP)
 		# hypothesis = self.agent.hypotheses[0]
 		# interaction = Interaction('DARKBLUE', 'DARKBLUE', 'stepBack', {})
@@ -113,6 +114,7 @@ class TestAgent(unittest.TestCase):
 		self.assertTrue(hypothesisAssignsVGDLType2Color(hypothesis, 'DARKBLUE', MovingAvatar))
 
 
+# if __name__ == '__main__':
 
 
 	

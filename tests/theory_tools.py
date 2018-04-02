@@ -1,8 +1,8 @@
 from collections import namedtuple
+from vgdl.theory_template import Theory, Game
 
 Interaction = namedtuple('Interaction', 'slot1, slot2,  interaction, args')
 ClassAssignment = namedtuple('ClassAssignment', 'vgdlType, args')
-
 
 def getColorAssignments(hypothesis):
 	'''Returns class assignments where class names are converted to their respective color names'''
@@ -56,7 +56,19 @@ def hypothesisContainsInteraction(hypothesis, interaction):
 def hypothesisAssignsVGDLType2Color(hypothesis, color_name, vgdl_type):
 	return getColorAssignments(hypothesis)[color_name].vgdlType == vgdl_type
 
+def generateTheoryFromGameString(game_string):
+	game = Game(vgdlString=game_string)
+	theory = Theory(game)
+	theory.initializeSpriteSet(game.vgdlSpriteParse)
+	for sprite in theory.spriteSet:
+		print sprite.colorName, sprite
 
-def compareTheories(theory1, theory2):
-	'''Compares if two theories are equal (based on color)'''
-	return True
+
+def TheoriesEqual(theory1, theory2):
+	'''Compares if two theories are equal. Class assignments based on color.'''
+
+	return False
+
+if __name__ == '__main__':
+	from tests.games import simple
+	generateTheoryFromGameString(simple.game)
