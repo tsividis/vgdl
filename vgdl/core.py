@@ -1078,8 +1078,6 @@ class BasicGame(object):
 
             ## Update actual sprite positions.
             for s in self:
-                if s.colorName=='DARKBLUE':
-                    print s.orientation
                 s.update(self)
 
             # handle collision effects

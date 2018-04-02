@@ -290,8 +290,8 @@ class Agent:
 			print "WARNING: running on < 40 cores."
 
 		actionSequences = [
-			[K_UP, K_RIGHT]
-			# [0,0,0,0,0,0,0,0,0,0]
+			# [K_UP, K_RIGHT, K_SPACE]
+			[0,0,0,0,0,0,0,0,0,0]
 			# [K_UP, K_UP], 
 			# [K_RIGHT, K_UP]
 		]
@@ -972,7 +972,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			warnings.warn('sPrev not found in position mismatch error')
 			continue
 		# Determine errorMapEntry object for position mismatch problem
-		errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
+		errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory)
 		errorMap.extend(errs)
 
 	# Case B: Sprite moved in real environment, but we predicted a destruction
@@ -1102,9 +1102,9 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		for nearestSprite in nearestSprites:
 			if nearestSprite.colorName in neighbors_curr_and_prev:
 				e.intPairs.append((e.targetClass, nearestSprite.colorName))
-			else:
-				print "got new sprite class but nearest prev-step sprite isn't a current neighbor"
-				embed()
+
+		if not e.intPairs:
+			print "Couldn't make intPairs in unexpected appearance case."
 		errorMap.append(e)
 
 	# 3) Inventory change
@@ -1218,7 +1218,7 @@ def find_sPrev(sB, envB, envPrev):
 		dist_ts = dist_ts[0]
 	return sPrev, dist_ts
 
-def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
+def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 	"""
 	Returns errorMapEntry object containing the position mismatch error
 	"""
@@ -1241,12 +1241,17 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts):
 	nearest_sprite = findNearestSprite(sB, [s for s in all_sprites_envB if (s!=sB)])[0]
 
 	nearest_dist = manhattanDist2(sB, nearest_sprite)
+	
 	# Determine orientation in current and previous step -> to detect orientation change
-	try:
-		oB = sB.orientation
-		oPrev = sPrev.orientation
-	except:
-		oB,oPrev = None,None
+	if theory.spriteObjects[sA.colorName].vgdlType in [Missile]:
+		oB = sB.lastDisplacement
+		oPrev = sPrev.lastDisplacement
+	else:
+		try:
+			oB = sB.orientation
+			oPrev = sPrev.orientation
+		except:
+			oB,oPrev = None,None
 
 	## Categorize into sub-problem-class
 	# 1.1) noMovement
@@ -1860,7 +1865,6 @@ def testAndExpand(theoryRLEs, hypotheses, action, envReal, envRealPrev, index, r
 		# for e in errorList:
 			# e.display()
 			# print ""
-		# embed()
 	# else:
 		# print "No error"
 		# embed()

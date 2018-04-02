@@ -29,6 +29,7 @@ wwwwwwwwww
 w       gw
 w g      w
 w        w
+w        w
 w c A  c w
 wwwwwwwwww
 """
@@ -36,8 +37,8 @@ wwwwwwwwww
 Avatarlevel = """
 wwwwwwwwww
 w       gw
-w g      w
-w        w
+w g  b   w
+w    b   w
 w   A    w
 wwwwwwwwww
 """
@@ -55,16 +56,17 @@ wwwwwwwwww
 # """
 
 
-level = Avatarlevel
+level = teleportlevel
 
 game="""
 BasicGame
     SpriteSet
         box    > Passive color=BROWN # orientation=RIGHT cooldown=1
+        box2 > Immovable color=PURPLE
         flicker > Flicker timeout=1 color=YELLOW
         chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
-        avatar  > OrientedAvatar color=DARKBLUE stype=sam
-        cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
+        avatar  > MovingAvatar color=DARKBLUE #stype=sam
+        cannon > SpawnPoint color=RED stype=sam spawnCooldown=3
         missile > Missile
             sam  > orientation=UP color=BLUE cooldown=1 #4
         wall > Immovable color=DARKGRAY
@@ -80,6 +82,7 @@ BasicGame
         f > flicker
         0 > base
         x > box
+        b > box2
         r > random
         w > wall
         c > cannon
@@ -106,9 +109,10 @@ interactionSetAll = """
         cannon wall > stepBack
         sam wall > killSprite
         box avatar > killSprite
+        box2 avatar > bounceForward
         cannon avatar > bounceForward
         box sam > killSprite
-        avatar sam > bounceForward
+        # avatar sam > bounceForward
         avatar wall > stepBack
         avatar armor > changeResource resource=armor value=1
         medicine avatar > collectResource
