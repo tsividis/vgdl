@@ -1639,8 +1639,9 @@ def reverseDirection(sprite, partner, game): # FLAG
 #     args = {'strigger':strigger}
 #     return ('detrigger', sprite.ID, partner.ID, args)
 
-def flipDirection(sprite, partner, game): # FLAG
+def flipDirection(sprite, partner, game):
     sprite.orientation = random.choice(BASEDIRS)
+    print "flipDirection"
     return ('flipDirection', sprite.ID, partner.ID)
 
 def bounceDirection(sprite, partner, game, friction=0): # FLAG

@@ -2424,7 +2424,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 									# , 'pullWithIt', 'windGust', 'slipForward',\
 									# 'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap
 	'unexpectedOverlap':		['nothing'],#, 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
-	'orientationChange': 		['reverseDirection', 'bounceDirection', 'flipDirection'],
+	'orientationChange': 		['reverseDirection', 'flipDirection'],
 									#'turn', 'turnAround', 
 	'teleport': 				['teleportToExit'],
 

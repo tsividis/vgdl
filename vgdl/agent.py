@@ -676,7 +676,7 @@ def setVrleState(rle, Vrle, hypothesis):
 	avatar = hypothesis.classes['avatar'][0]
 	spriteGroupsToUpdate = Vrle._game.sprite_groups
 	spritesToRemove = defaultdict(lambda: [])
-
+	allSprites = [item for sublist in spriteGroupsToUpdate.values() for item in sublist]
 	for k in spriteGroupsToUpdate.keys():
 		if spriteGroupsToUpdate[k]:
 			color = Vrle._game.sprite_groups[k][0].colorName
@@ -711,8 +711,30 @@ def setVrleState(rle, Vrle, hypothesis):
 					## anything as a function of bounces. So doing it as below is actually ideal.
 					# orientation = (np.sign(matchingSprite.rect.left - matchingSprite.lastrect.left), np.sign(matchingSprite.rect.top - matchingSprite.lastrect.top))
 					orientation = matchingSprite.lastDisplacement
+					# if 'flipDirection' in [r.interaction for r in hypothesis.interactionSet]:
+						# print "flipDirection in hypothesis"
+					overlappingSprites = findNearestSprite(sprite, allSprites)
+					overlappingSprites.remove(sprite)
+					## if there's a rule involving a stochastic predicate governing this sprite and anything
+					## it overlaps with, apply the stochastic predicate here.
+					for overlappingSprite in overlappingSprites:
+						if any([r.interaction in ['flipDirection'] for r in hypothesis.interactionSet if 
+							r.slot1==sprite.name and r.slot2==overlappingSprite.name]):
+								orientation = random.choice(BASEDIRS)
+								orientation = (orientation[0]*sprite.rect.width, orientation[1]*sprite.rect.height)
+								print "flipDirection changed orientation to", orientation
+								break
+						elif any([r.interaction in ['reverseDirection'] for r in hypothesis.interactionSet if 
+							r.slot1==sprite.name and r.slot2==overlappingSprite.name]):
+								orientation = (-orientation[0], -orientation[1])
+								print "reverseDirection changed orientation to", orientation
+								break
+						# embed()
 					if orientation == (0,0):
 						orientation = hypothesis.spriteObjects[matchingSprite.colorName].args['orientation']
+
+					sprite.orientation = orientation
+
 				else:
 					sprite.orientation = matchingSprite.orientation
 
@@ -1599,12 +1621,22 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, method='
 		if displayTheories:
 			print "running experienceReplay on {}:".format(num)
 			h.display()
-		# if 'flipDirection' in [r.interaction for r in h.interactionSet]:
-			# print "got flipDirection in experienceReplay"
-			# embed()
-		if method == 'newMethod':
+		# if method == 'newMethod':
+		if 'flipDirection' in [r.interaction for r in h.interactionSet]:
 			multipleHypotheses = [h]*NUM_SAMPLES_PER_HYPOTHESIS
 			results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, multipleHypotheses, symbolDict))
+			print "got flipDirection in experienceReplay"
+			from vgdl.agent import initializeVrle
+			newenv=initializeVrle(h, rleHistory[0], symbolDict)
+			## If you run the line above over and over you'll see that we're changing the orientation
+			## each time; that's because I'm having setVrleState() do that.
+			## if you do newenv.step(0) you'll see that all the other missiles move forward and this one
+			## doesn't.
+			print newenv._game.sprite_groups['c5'][0].orientation
+			embed()
+			## after the embed(), run
+			## newenv.step(0); newenv
+			## print newenv._game.sprite_groups['c5'][0].orientation
 		else:
 			results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h], symbolDict))
 

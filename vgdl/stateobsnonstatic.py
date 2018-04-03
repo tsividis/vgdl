@@ -381,7 +381,7 @@ def processFrame(memory, gameObject):
                             newMemory['isGrid'] = False
                         if newMemory['isGrid']:
                             newSprite.speed = max(abs(sprite.rect.left - newSprite.rect.left), abs(sprite.rect.top - newSprite.rect.top)) * 1.0 / sprite.rect.width # TODO: don't depend on width
-                            newSprite.lastDisplacement = (sprite.rect.left - newSprite.rect.left, sprite.rect.top - newSprite.rect.top)
+                            newSprite.lastDisplacement = (np.sign(sprite.rect.left - newSprite.rect.left), np.sign(sprite.rect.top - newSprite.rect.top))
                         else:
                             newSprite.speed = euclideanDist([sprite.rect.left, sprite.rect.top], [newSprite.rect.left, newSprite.rect.top])
                             newSprite.lastDisplacement = (sprite.rect.left - newSprite.rect.left, sprite.rect.top - newSprite.rect.top)
