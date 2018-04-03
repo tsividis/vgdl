@@ -165,7 +165,7 @@ class TerminationRule:
 	"""
 	def __init__(self, termination, win, **kwargs):
 		self.termination = termination(win=win, **kwargs)
-		self._hash = hash(self)
+		# self._hash = hash(self.termination.name)
 
 	def isDone(self, game):
 		return self.termination.isDone()
@@ -173,12 +173,21 @@ class TerminationRule:
 	def copy(self):
 		return ccopy(self)
 
+	def display(self):
+		print (self.termination.name+'Rule', self.termination.get_args())
+
 	def __eq__(self,other):
 		return self.asTuple() == other.asTuple()
 
 	def __hash__(self):
 		return self._hash
 
+def TerminationRuleConstructor(rule_type, **kwargs):
+	try:
+		termination_rule = eval(rule_type)
+		return termination_rule(**kwargs)
+	except NameError:
+		raise NameError, "termination rule '%s' not defined" % rule_type
 
 class TimeoutRule(TerminationRule):
 	def __init__(self, limit=0, win=False):
@@ -187,7 +196,7 @@ class TimeoutRule(TerminationRule):
 		self._hash = hash(self.asTuple())
 
 	def display(self):
-		print (self.ruleType, self.termination.limit, self.termination.win)
+		print self.asTuple()
 
 	def asTuple(self):
 		return (self.ruleType, self.termination.limit, self.termination.win)
@@ -202,8 +211,7 @@ class NoveltyRule(TerminationRule):
 		self._hash = hash((self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, tuple(sorted(args.iteritems()))))
 
 	def display(self):
-		print self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, self.termination.args
-		return
+		print self.asTuple()
 
 	def asTuple(self):
 		return (self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, self.termination.args)
@@ -217,8 +225,7 @@ class SpriteCounterRule(TerminationRule):
 		self._hash = hash(self.asTuple())
 
 	def display(self):
-		print self.ruleType, self.termination.stype, self.termination.limit, self.termination.win
-		return
+		print self.asTuple()
 
 	def asTuple(self):
 		return (self.ruleType, self.termination.stype, self.termination.limit, self.termination.win)
@@ -233,8 +240,7 @@ class MultiSpriteCounterRule(TerminationRule):
         self._hash = hash((self.ruleType, tuple(sorted(self.termination.stypes)), self.termination.limit, self.termination.win))
 
     def display(self):
-        print self.ruleType, self.termination.stypes, self.termination.limit, self.termination.win
-        return
+        print self.asTuple()
 
     def asTuple(self):
         return (self.ruleType, set(self.termination.stypes), self.termination.limit, self.termination.win)

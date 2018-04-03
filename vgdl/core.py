@@ -1403,6 +1403,7 @@ class Termination(object):
     """ Base class for all termination criteria. """
     def __init__(self):
         self.name = 'Generic'
+
     def isDone(self, game):
         """ returns whether the game is over, with a win/lose flag """
         from pygame.locals import K_ESCAPE, QUIT
@@ -1414,6 +1415,15 @@ class Termination(object):
         except:
             pass
         return False, None
+
+    def get_args(self):
+        args = {}
+        for key, value in self.__dict__.iteritems():
+            if key != 'name':
+                args[key] = value
+        if 'win' not in args:
+            args['win'] = False
+        return args
 
 class Conditional(object):
     """ Base class for all conditional criteria"""
