@@ -184,7 +184,10 @@ class TerminationRule:
 
 def TerminationRuleConstructor(rule_type, **kwargs):
 	try:
-		termination_rule = eval(rule_type)
+		if rule_type == 'NoveltyTerminationRule':
+			termination_rule = NoveltyRule
+		else:
+			termination_rule = eval(rule_type)
 		return termination_rule(**kwargs)
 	except NameError:
 		raise NameError, "termination rule '%s' not defined" % rule_type

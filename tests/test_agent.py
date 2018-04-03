@@ -92,23 +92,30 @@ class TestAgent(unittest.TestCase):
 	########################################
 	# Test Suite
 	def testLevel0(self):
+		test_hypothesis = generateTheoryFromGameString(simple.test_hypothesis)
+		test_hypothesis.display()
 		action_sequences = [[K_UP]]
 		self.initialize(simple.game, simple.levels[0], action_sequences)
 
 		# self.executeStep(0, K_UP)
+		self.runCurriculum(action_sequences)
+
+
+		h0 = self.agent.hypotheses[0]
+		self.assertTrue(theoriesEqual(h0, test_hypothesis))
 		# hypothesis = self.agent.hypotheses[0]
 		# interaction = Interaction('DARKBLUE', 'DARKBLUE', 'stepBack', {})
 		# # interaction2 = Interaction('DARKBLUE', 'DARKBLUE', 'killSprite', {})
 		# self.assertTrue(hypothesisContainsInteraction(hypothesis, interaction))
 		# # self.assertTrue(*hypothesisContainsInteraction(hypothesis, interaction2))
 
-	def testLevel1(self):
-		action_sequences = [[K_UP]]
-		self.initialize(simple.game, simple.levels[0], action_sequences)
-		self.executeStep(0, K_UP)
-		hypothesis = self.agent.hypotheses[0]
+	# def testLevel1(self):
+	# 	action_sequences = [[K_UP]]
+	# 	self.initialize(simple.game, simple.levels[0], action_sequences)
+	# 	self.executeStep(0, K_UP)
+	# 	hypothesis = self.agent.hypotheses[0]
 
-		self.assertTrue(hypothesisAssignsVGDLType2Color(hypothesis, 'DARKBLUE', MovingAvatar))
+	# 	self.assertTrue(hypothesisAssignsVGDLType2Color(hypothesis, 'DARKBLUE', MovingAvatar))
 
 
 # if __name__ == '__main__':

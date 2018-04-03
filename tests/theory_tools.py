@@ -86,6 +86,7 @@ def generateTheoryFromGameString(game_string):
 	# Add classes
 	for class_name, sprite in sprite_parser.sprite_types.iteritems():
 		# print class_name, sprite
+		# print class_name, sprite
 		theory.classes[class_name] = [sprite]
 		theory.spriteSet.append(sprite)
 		if class_name == 'EOS':
@@ -101,6 +102,7 @@ def generateTheoryFromGameString(game_string):
 	for termination in vgdl_game.terminations:
 		rule_type = termination.name+'Rule'
 		try:
+			print termination.get_args()
 			term_rule = TerminationRuleConstructor(rule_type, **termination.get_args())
 			theory.terminationSet.add(term_rule)
 		except NameError:
@@ -111,7 +113,7 @@ def generateTheoryFromGameString(game_string):
 	return theory
 
 
-def TheoriesEqual(theory1, theory2, ignore_novelty_terminations=True):
+def theoriesEqual(theory1, theory2, ignore_novelty_terminations=True):
 	'''Compares if two theories are equal where class assignments are based on color.'''
 	colors1, colors2 = set(theory1.spriteObjects), set(theory2.spriteObjects)
 	# Check if same colors used for class definition
@@ -142,5 +144,5 @@ if __name__ == '__main__':
 	from tests.games import simple
 	t1 = generateTheoryFromGameString(simple.game)
 	t2 = generateTheoryFromGameString(simple.game2)
-	assert TheoriesEqual(t1, t2), 'Theories not equal'
-	print 'theories equal'
+	# assert TheoriesEqual(t1, t2), 'Theories not equal'
+	print 'TheoriesEqual(t12, t2) = %s' % theoriesEqual(t1, t2)

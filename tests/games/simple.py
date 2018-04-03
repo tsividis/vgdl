@@ -4,7 +4,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
 w                              w
-w                              w
+w          BBBBB               w
 w                              w
 w                              w
 w              A               w
@@ -47,8 +47,11 @@ game = """
 BasicGame
     SpriteSet
         box    > Immovable color=WHITE 
-        avatar  > MovingAvatar color=DARKBLUE speed=2
+        avatar  > MovingAvatar color=DARKBLUE speed=1
         wall > Immovable color=DARKGRAY
+    LevelMapping
+        A > avatar
+        B > box
     InteractionSet
         avatar wall > stepBack
         box avatar > killSprite
@@ -61,7 +64,7 @@ game2 = """
 BasicGame
     SpriteSet
         white_box    > Immovable color=WHITE 
-        avatar  > MovingAvatar color=DARKBLUE speed=2
+        avatar  > MovingAvatar color=DARKBLUE speed=1
         wall > Immovable color=DARKGRAY
     InteractionSet
         
@@ -70,4 +73,17 @@ BasicGame
 
     TerminationSet
         SpriteCounter stype=white_box limit=0 win=True
+"""
+
+test_hypothesis = """
+BasicGame
+    SpriteSet
+        box > ResourcePack color=WHITE
+        wall > ResourcePack color=DARKGRAY
+        avatar > MovingAvatar color=DARKBLUE
+    TerminationSet
+        NoveltyTermination s1=box s2=EOS win=True
+        NoveltyTermination s1=avatar s2=EOS win=True
+        NoveltyTermination s1=wall s2=EOS win=True
+        SpriteCounter stype=avatar limit=0 win=False
 """
