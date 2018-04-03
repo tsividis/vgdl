@@ -290,9 +290,11 @@ class Agent:
 			print "WARNING: running on < 40 cores."
 
 		actionSequences = [
-			# [K_UP, K_RIGHT, K_SPACE]
+			# [0,0,0,0]
+			[K_UP, K_LEFT, K_UP]
+			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
 			# [0,0,0,0,0,0,0,0,0,0]
-			[K_UP, K_UP]
+			# [K_UP, K_UP]
 			# [K_RIGHT, K_UP]
 		]
 
@@ -662,6 +664,49 @@ class Agent:
 ######## RLE INITIALIZATION AND STATE-SETTING METHODS 			########
 ########################################################################
 
+def setSpriteState(sprite, matchingSprite, hypothesis):
+
+	if not matchingSprite:
+		print "WARNING: didn't find matching sprite in setSpriteState; this shouldn't happen"
+		embed()
+
+	sprite.rect 		= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
+	sprite.lastrect 	= pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
+	if sprite.rect.left != sprite.lastrect.left and sprite.rect.top != sprite.lastrect.top and abs(sprite.rect.left  - sprite.lastrect.left ) != abs(sprite.rect.top - sprite.lastrect.top):
+		print "in setVrleState -- illegal rect/lastrect pair"
+		embed()
+	sprite.lastmove 	= matchingSprite.lastmove
+	sprite.ID = matchingSprite.ID
+	sprite.resources = defaultdict(int)
+	for rcolor in matchingSprite.inventory.keys():
+		sprite.resources[hypothesis.spriteObjects[rcolor].className] = matchingSprite.inventory[rcolor][0]
+
+	# in VGDL, only things which move passively have an orientation that isn't (0,0)
+	if hypothesis.spriteObjects[matchingSprite.colorName].vgdlType in [Missile]:
+		## Setting the Missile orientation to be consistent with the theory only makes sense for gridphysics games,
+		## because in continuous games the orientation of a missile that is initially DOWN can change to
+		## anything as a function of bounces. So doing it as below is actually ideal.
+		orientation = matchingSprite.lastDisplacement
+
+		if orientation == (0,0):
+			orientation = hypothesis.spriteObjects[matchingSprite.colorName].args['orientation']
+
+		sprite.orientation = orientation
+
+	else:
+		sprite.orientation = matchingSprite.orientation
+
+	## Other aspects of state to potentially transfer
+	# sprite.jumping = ccopy(matchingSprite.jumping)
+	# sprite.wait_step = ccopy(matchingSprite.wait_step)
+	# sprite.rope = ccopy(matchingSprite.rope)
+	# sprite.gravity = ccopy(matchingSprite.gravity)
+	# sprite.last_rope = ccopy(matchingSprite.last_rope)
+	# sprite.last_gravity = ccopy(matchingSprite.last_gravity)
+	# sprite.last_vy = ccopy(matchingSprite.last_vy)
+	# sprite.speed = ccopy(matchingSprite.speed)
+	return
+
 def setVrleState(rle, Vrle, hypothesis):
 	## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
 
@@ -674,91 +719,47 @@ def setVrleState(rle, Vrle, hypothesis):
 	## IMPORTANT: This means that each sprite's orientation will only be correct if this function is called between each time-step.
 	
 	avatar = hypothesis.classes['avatar'][0]
-	spriteGroupsToUpdate = Vrle._game.sprite_groups
-	spritesToRemove = defaultdict(lambda: [])
-	allSprites = [item for sublist in spriteGroupsToUpdate.values() for item in sublist]
-	for k in spriteGroupsToUpdate.keys():
-		if spriteGroupsToUpdate[k]:
-			color = Vrle._game.sprite_groups[k][0].colorName
-			matchingSpritesInRLE = getObservedSpritesByColor(rle._game, color)
-			for sprite in spriteGroupsToUpdate[k]:
 
-				matchingSprite = findNearestSprite(sprite, matchingSpritesInRLE)
-				if not matchingSprite:
-					spritesToRemove[k].append(sprite)
-					continue
-				else:
-					matchingSprite = matchingSprite[0]
+	# note: there should at this point be no mismatch between the keys
+	for classKey in Vrle._game.sprite_groups:
+		if classKey=='wall':
+			continue
+		color = hypothesis.classes[classKey][0].colorName
+		# first make the new (vrle) env have the correct number of each thing
+		vrleSpriteCount = len(Vrle._game.sprite_groups[classKey])
+		rleSpriteCount = len(rle._game.observation['trackedObjects'][color])
+		if vrleSpriteCount > rleSpriteCount:
+			# just delete extraneous ones from the end
+			Vrle._game.sprite_groups[classKey] = Vrle._game.sprite_groups[classKey][:len(rle._game.observation['trackedObjects'][color])]
+		elif vrleSpriteCount < rleSpriteCount:
+			# have to duplicate Vrle sprites so we have enough to copy all the rle sprites into
+			Vrle._game.sprite_groups[classKey] += [copy.deepcopy(Vrle._game.sprite_groups[classKey][0]) for n in range(rleSpriteCount - vrleSpriteCount)]
 
-				sprite.rect 		= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
-				sprite.lastrect 	= pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
-				if sprite.rect.left != sprite.lastrect.left and sprite.rect.top != sprite.lastrect.top and abs(sprite.rect.left  - sprite.lastrect.left ) != abs(sprite.rect.top - sprite.lastrect.top):
-					print "in setVrleState -- illegal rect/lastrect pair"
-					embed()
-				sprite.lastmove 	= matchingSprite.lastmove
-				sprite.ID = matchingSprite.ID
-				sprite.resources = defaultdict(int)
-				for rcolor in matchingSprite.inventory.keys():
-					sprite.resources[hypothesis.spriteObjects[rcolor].className] = matchingSprite.inventory[rcolor][0]
+		# Now copy over sprite state (if we have any left of that type)
+		if not Vrle._game.sprite_groups[classKey]:
+			continue
+		color = Vrle._game.sprite_groups[classKey][0].colorName
+		for i in range(len(Vrle._game.sprite_groups[classKey])):
+			setSpriteState(Vrle._game.sprite_groups[classKey][i], rle._game.observation['trackedObjects'][color][i], hypothesis)
+	
 
-				# in VGDL, only things which move passively have an orientation that isn't (0,0)
-				# if (hypothesis.spriteObjects[matchingSprite.colorName].vgdlType in
-				# 		[MovingAvatar, HorizontalAvatar, VerticalAvatar]):
-				# 	sprite.orientation = (0,0)
-				if hypothesis.spriteObjects[matchingSprite.colorName].vgdlType in [Missile]:
-					## Setting the Missile orientation to be consistent with the theory only makes sense for gridphysics games,
-					## because in continuous games the orientation of a missile that is initially DOWN can change to
-					## anything as a function of bounces. So doing it as below is actually ideal.
-					# orientation = (np.sign(matchingSprite.rect.left - matchingSprite.lastrect.left), np.sign(matchingSprite.rect.top - matchingSprite.lastrect.top))
-					orientation = matchingSprite.lastDisplacement
-					# if 'flipDirection' in [r.interaction for r in hypothesis.interactionSet]:
-						# print "flipDirection in hypothesis"
-					overlappingSprites = findNearestSprite(sprite, allSprites)
-					overlappingSprites.remove(sprite)
-					## if there's a rule involving a stochastic predicate governing this sprite and anything
-					## it overlaps with, apply the stochastic predicate here.
-					# for overlappingSprite in overlappingSprites:
-					# 	if any([r.interaction in ['flipDirection'] for r in hypothesis.interactionSet if 
-					# 		r.slot1==sprite.name and r.slot2==overlappingSprite.name]):
-					# 			orientation = random.choice(BASEDIRS)
-					# 			# orientation = (orientation[0]*sprite.rect.width, orientation[1]*sprite.rect.height)
-					# 			print "flipDirection changed orientation to", orientation
-					# 			break
-					# 	elif any([r.interaction in ['reverseDirection'] for r in hypothesis.interactionSet if 
-					# 		r.slot1==sprite.name and r.slot2==overlappingSprite.name]):
-					# 			orientation = (-orientation[0], -orientation[1])
-					# 			print "reverseDirection changed orientation to", orientation
-					# 			break
-						# embed()
-					if orientation == (0,0):
-						orientation = hypothesis.spriteObjects[matchingSprite.colorName].args['orientation']
+	# if 'transformTo' in [r.interaction for r in hypothesis.interactionSet] and len(rle._game.sprite_groups['box2'])==3:
+		# print "transformTo in hypothesis"
+		# embed()
 
-					sprite.orientation = orientation
-
-				else:
-					sprite.orientation = matchingSprite.orientation
-
-
-				## Other aspects of state to potentially transfer
-				# sprite.jumping = ccopy(matchingSprite.jumping)
-				# sprite.wait_step = ccopy(matchingSprite.wait_step)
-				# sprite.rope = ccopy(matchingSprite.rope)
-				# sprite.gravity = ccopy(matchingSprite.gravity)
-				# sprite.last_rope = ccopy(matchingSprite.last_rope)
-				# sprite.last_gravity = ccopy(matchingSprite.last_gravity)
-				# sprite.last_vy = ccopy(matchingSprite.last_vy)
-				# sprite.speed = ccopy(matchingSprite.speed)
-
-	## Remove any sprites that were in the provided Vrle that aren't in the RLE.
-	for k,lst in spritesToRemove.iteritems():
-		for l in lst:
-			if l in Vrle._game.sprite_groups[k]:
-				Vrle._game.sprite_groups[k].remove(l)
+	## TODO:
+	# Make sure you can copy sprites appropriately
+	# first call to initializeVrle in experienceReplay() has to make a map with at least one of every sprite type
+	# make sure sprites in rle match sprites in vrle (by number, not just position)
 
 	# if 'flipDirection' in [r.interaction for r in hypothesis.interactionSet]:
-		# print "flipDirection in hypothesis"
+		# print "flipDirection in setVrleState"
 		# embed()
+	# if 'transformTo' in [r.interaction for r in hypothesis.interactionSet] and len(Vrle._game.sprite_groups['c4'])==3:
+	# 	print "transformTo in hypothesis"
+	# 	embed()
 	## TODO: use this? or do what you had done above.
+
 	Vrle._game._eventHandling()
 
 	Vrle._game.time = int(rle._game.time)
@@ -772,7 +773,7 @@ def initializeVrle(hypothesis, stateToSet, symbolDict, theoryRLE=None, writeFile
 
 	## World in agent's mind given 'hypothesis', including object goal
 	gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, symbolDict,\
-		 "./examples/gridphysics/theorytest.py", writeFile=writeFile)
+		 "./examples/gridphysics/theorytest.py", writeFile=writeFile, addAllObjects=True)
 
 	try:
 		Vrle = theoryRLE if theoryRLE else createMindEnv(gameString, levelString, output=False)
@@ -780,7 +781,7 @@ def initializeVrle(hypothesis, stateToSet, symbolDict, theoryRLE=None, writeFile
 		print "in initializeVrle"
 		embed()
 	Vrle._game.colorToClassDict = {k:v.className for k,v in hypothesis.spriteObjects.items()}
-	Vrle._game.isMadeFromTheory = False
+
 	## Don't do any of the rest if we have an ungrammatical hypothesis caused by num(avatars)>1.
 	if len(stateToSet._game.observation['trackedObjects'][hypothesis.classes['avatar'][0].colorName])>1:
 		print "Warning. In initializeVrle. Got more than one avatar. Returning None as Vrle."
@@ -1325,9 +1326,17 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 			if color == envA._game.observation['trackedObjects'][k][0].colorName:
 				className_envA = k
 
-		covered_sprite_envA = findNearestSprite(sB,envA._game.observation['trackedObjects'][className_envA])[0]
+		# covered_sprite_envA = findNearestSprite(sB,envA._game.observation['trackedObjects'][className_envA])
+		covered_sprite_envB = findNearestSprite(sB, [item for sublist in envB._game.observation['trackedObjects'].values() for item in sublist])
+		if covered_sprite_envB:
+			overlappingSpriteColorName = covered_sprite_envB[0].colorName
+		else:
+			print "problem with overlapping sprite in diagnosePosMismatch"
+			embed()
+			overlappingSpriteColorName = 'unknown'
 
-		e.intPairs = [(sA.colorName, covered_sprite_envA.colorName)] #overwrite interaction pair by the overlapping sprite pair
+		e.intPairs = [(sA.colorName, overlappingSpriteColorName)] #overwrite interaction pair by the overlapping sprite pair
+
 	if dist_ts>2:
 		e2 = errorMapEntry()
 		e2.targetToken = e.targetToken
@@ -1856,7 +1865,10 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			e.intPairs = newPairs
 			e.targetClass = theory.spriteObjects[neighbor.colorName].className
 			newErrorMaps.append(e)
-
+	for eM in newErrorMaps:
+		if any([e not in theory.classes and theory not in theory.spriteObjects for e in eM.intPairs]):
+			print "got unknown in intPairs"
+			embed()
 	for eM in newErrorMaps:
 
 		theoryCopy = theory.copy()

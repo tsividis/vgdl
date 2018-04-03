@@ -274,7 +274,6 @@ class BasicGame(object):
         self.all_objects = None
         self.observation = None
         self.EOS = EOS((-1, -1))
-        self.isMadeFromTheory = False
         self.reset()
 
     def reset(self):

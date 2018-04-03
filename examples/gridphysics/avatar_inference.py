@@ -16,11 +16,11 @@
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
-w                            2 w
-w                            2 w
+w                            1 w
+w                            1 w
 w                              w
 w             11               w
-w              A               w
+w              A          3 3  w
 w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
@@ -64,7 +64,7 @@ BasicGame
         avatar  > MovingAvatar color=DARKBLUE 
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=1
         missile > Missile
-            sam  > orientation=UP color=BLUE singleton=True
+            sam  > orientation=UP color=BLUE singleton=True cooldown=2
         wall > Immovable color=DARKGRAY
     LevelMapping
         C > cloner
@@ -81,11 +81,11 @@ BasicGame
     InteractionSet
         avatar wall > stepBack
         box avatar > transformTo stype=box2
-        box2 avatar > bounceForward
+        # box2 avatar > bounceForward
         box3 avatar > killSprite
 
     TerminationSet
-        SpriteCounter stype=box2 limit=0 win=True
+        SpriteCounter stype=box3 limit=0 win=True
         # SpriteCounter stype=box3 limit=0 win=False
         Termination
 

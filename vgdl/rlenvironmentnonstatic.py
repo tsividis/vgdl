@@ -10,7 +10,6 @@ import numpy as np
 from numpy import zeros
 import pygame
 from ontology import BASEDIRS
-from core import VGDLSprite
 from stateobsnonstatic import StateObsHandlerNonStatic
 from collections import defaultdict
 import argparse
@@ -117,7 +116,7 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
                 inverseMapping[OLD_GOAL] = "O" # old goal
 
         inverseMapping['avatar'] = 'A'
-
+        
         self.symbolDict = inverseMapping
         return
 

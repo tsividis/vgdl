@@ -2653,9 +2653,6 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 		
 		newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
 
-		# if 'transformTo' in predicates:
-			# print "got transfromto in expandLine"
-			# embed()
 		for i,ruleSet in enumerate(newRuleSets):
 			if len(ruleSet) > 0:
 				newTheory = theory.copy()
@@ -2803,7 +2800,7 @@ def buildArgsString(interactionRule, theory, rle):
 	return argsString, newInteractionName
 
 
-def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=False, goalLoc = None):
+def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=False, goalLoc = None, addAllObjects=False):
 	"""
 	-need to be able to take an optional argument that tells you the location of the goal, and put that into the level string
 	-assume that the goal sprite is getting killed
@@ -3112,45 +3109,22 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 
 	locs = defaultdict(lambda:[])
 	mappedState = [[' ' for x in range(rle.outdim[1])] for y in range(rle.outdim[0])] 
+	# embed()
+
 	for lst in rle._game.observation['trackedObjects'].values():
 		for sprite in lst:
 			y,x = sprite.rect.top/30, sprite.rect.left/30
 			locs[(y,x)].append(sprite)
+
 
 	for k,v in locs.iteritems():
 		symbol = objectsToSymbol(rle, v, symbolDict)
 		mappedState[k[0]][k[1]] = symbol
 
 	
-	# mappedState = []
-	# for i in range(rle.outdim[0]):
-	# 	newEntry = []
-	# 	for j in range(rle.outdim[1]):
-	# 		newEntry.append(" ")
-
-	# 	mappedState.append(newEntry)
-
-	# for r in range(rle.outdim[0]):
-	# 	for c in range(rle.outdim[1]):
-	# 		if state[r][c] > 0:
-	# 			try:
-	# 				symbol = objectsToSymbol(rle, rle.getObjectsFromNumber(state[r][c]), symbolDict)
-	# 				mappedState[r][c] = symbol
-	# 			except:
-	# 				print "in map"
-	# 				embed()
-
-	# 		try:
-	# 			if mappedState[r][c] == " " and goalLoc == (r,c):
-	# 				# an empty square has been selected as the goal
-	# 				mappedState[r][c] = "G"
-	# 		except:
-	# 			print "mappedState problem2"
-	# 			embed()
-
-	# if mappedState1!=mappedState:
-	# 	print "unequal states"
-	# 	embed()
+	allObjectsSymbol = '`'
+	if addAllObjects:
+		mappedState[0][0] = allObjectsSymbol
 
 	levelString = 'level="""\n'
 	for mappedRow in mappedState:
@@ -3171,6 +3145,10 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 			c = theory.spriteObjects[colors].className
 			theoryString += "\t\t%s > %s\n"%(symbol, c)
 
+	if addAllObjects:
+		allClasses = [c for c in theory.classes.keys() if c!='avatar' and c!='EOS']
+		theoryString += "\t\t%s > %s\n"%(allObjectsSymbol, " ".join(allClasses))
+	
 	theoryString += '"""\n'
 	
 	parserString = 'if __name__ == "__main__":\n\tfrom vgdl.core import VGDLParser\n\tVGDLParser.playGame(game, level)\n'
