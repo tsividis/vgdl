@@ -63,6 +63,8 @@ def generateTheoryFromGameString(game_string):
 	for sprite in theory.spriteSet:
 		print sprite.colorName, sprite
 
+	print theory.classes
+
 
 def TheoriesEqual(theory1, theory2):
 	'''Compares if two theories are equal. Class assignments based on color.'''
