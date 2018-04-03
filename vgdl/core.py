@@ -1077,7 +1077,7 @@ class BasicGame(object):
 
 
             ## Update actual sprite positions.
-            for s in self:
+            for s in list(self):
                 s.update(self)
 
             # handle collision effects
@@ -1185,12 +1185,10 @@ class BasicGame(object):
                 self.ended, win = t.isDone(self)
                 if self.ended:
                     return win, self.score
-            # update sprites
-        #print action
-
+        
+        # update sprites
         for s in list(self):
             s.update(self)
-
 
         # handle collision effects
         self._eventHandling()
@@ -1294,13 +1292,8 @@ class VGDLSprite(object):
     def _updatePos(self, orientation, speed=None):
         if speed is None:
             speed = self.speed
-        # if self.colorName=='YELLOW':
-        #     print "lastMove", self.lastmove
         if (self.lastmove+1)%self.cooldown==0 and abs(orientation[0])+abs(orientation[1])!=0:
-            # print "MOVING"
-        # if not( ((self.lastmove+1) % self.cooldown != 0) or abs(orientation[0])+abs(orientation[1])==0): ##used this until 9/14
             self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
-            # self.lastmove = 0
 
     def _velocity(self):
         """ Current velocity vector. """

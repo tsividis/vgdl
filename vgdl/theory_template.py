@@ -2349,6 +2349,9 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 				for comb in list(itertools.product(resources, limits)):
 					if comb:
 						argList.append({'resource':comb[0], 'limit':comb[1]})
+			elif predicate == 'transformTo':
+				for stype in [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]:
+					argList.append({'stype':stype})
 			else:
 				print "Error: Have not implemented non-generic proposeArgs() yet."
 				embed()
@@ -2414,7 +2417,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 	## Destruction/appearance/transformation
 	'objectDestruction': 		['killSprite'],
 	'newObjectAppeared': 		['cloneSprite'],
-	'transformation': 			['transformTo', 'transformToOnLanding'],
+	'transformation': 			['transformTo'],
 	'conditionalKill': 			['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore',\
 								 'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
 
@@ -2650,13 +2653,17 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 		
 		newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
 
+		# if 'transformTo' in predicates:
+			# print "got transfromto in expandLine"
+			# embed()
 		for i,ruleSet in enumerate(newRuleSets):
 			if len(ruleSet) > 0:
 				newTheory = theory.copy()
 				newTheory.mostRecentEdit = 'interactionSetInduction'
 				newTheory.errorMapHistory.append(errorMap)
 				# remove old rules that conflict with the new ones
-				alteredPairs = set([(rule.slot1, rule.slot2) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack])
+				alteredPairs = set([(rule.slot1, rule.slot2) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack] + \
+						[(rule.slot2, rule.slot1) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack])
 				newTheory.interactionSet = [rule for rule in newTheory.interactionSet if 'stepBack' != rule.interaction or (rule.slot1, rule.slot2) not in alteredPairs]
 				for rule in ruleSet:
 					newTheory.interactionSet.append(rule)
@@ -2713,8 +2720,8 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHi
 
 	return theory
 
-def getClassNameFromSpriteString(spriteName):
-	if len(rle._game.sprite_groups[spriteName])>0:
+def getClassNameFromSpriteString(spriteName, theory, rle):
+	if spriteName in rle._game.sprite_groups and len(rle._game.sprite_groups[spriteName])>0:
 		col = colorDict[str(rle._game.sprite_groups[spriteName][0].color)]
 		try:
 			className = [k for k in theory.classes.keys() if col in [c.colorName for c in theory.classes[k]]][0]
@@ -2732,7 +2739,7 @@ def getClassNameFromSpriteString(spriteName):
 			print "failed to get spriteName color. In getClassNameFromSpriteString"
 			embed()
 
-def buildArgsString(interactionRule):
+def buildArgsString(interactionRule, theory, rle):
 	relevantArgNames = getKeywordsFromOntology(interactionRule.interaction)
 	newInteractionName = interactionRule.interaction
 	if interactionRule.interaction =='killSprite':
@@ -2786,7 +2793,7 @@ def buildArgsString(interactionRule):
 			argsString = ""
 			for k,v in interactionRule.args.items():
 				if k in ['stype', 'strigger']:
-					argsString += " %s=%s"%(k, getClassNameFromSpriteString(v))
+					argsString += " %s=%s"%(k, getClassNameFromSpriteString(v, theory, rle))
 				else:
 					argsString += " %s=%s"%(k, v)
 		else:
@@ -2808,7 +2815,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 	DIRECTION_MAP = {(0,-1):'UP', (0,1):'DOWN', (1,0):'RIGHT', (-1,0):'LEFT'}
 
 	_obstypes = rle._obstypes
-	# state = np.reshape(rle._getSensors(), rle.outdim)
 	newGoalType, newGoalColor= None, None
 
 	colorToSprite = {}
@@ -2838,7 +2844,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 				if interactionRule.interaction == 'teleportToExit':
 					## second element in teleport tuple is the entrance; stype is the exit
 					portalEntry = interactionRule.slot2
-					portalExit = getClassNameFromSpriteString(interactionRule.args['stype'])
+					portalExit = getClassNameFromSpriteString(interactionRule.args['stype'], theory, rle)
 
 					theory.classes[portalEntry][0].vgdlType = Portal
 					if theory.classes[portalEntry][0].args is None:
@@ -3014,7 +3020,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 					argsString = ""
 
 					if interactionRule.preconditions or interactionRule.args:
-						args, interactionRule.interaction = buildArgsString(interactionRule)
+						args, interactionRule.interaction = buildArgsString(interactionRule, theory, rle)
 						argsString += args
 
 					if s1.colorName==newGoalColor:

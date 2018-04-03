@@ -291,8 +291,8 @@ class Agent:
 
 		actionSequences = [
 			# [K_UP, K_RIGHT, K_SPACE]
-			[0,0,0,0,0,0,0,0,0,0]
-			# [K_UP, K_UP], 
+			# [0,0,0,0,0,0,0,0,0,0]
+			[K_UP, K_UP]
 			# [K_RIGHT, K_UP]
 		]
 
@@ -302,7 +302,7 @@ class Agent:
 
 		for episode_num, actions in enumerate(actionSequences):
 			self.initializeEnvironment()
-
+			# embed()
 			print "initializing RLE. Epoch={}".format(epoch)
 
 			self.all_objects[episode_num] = self.rle._game.getObjects() ## we need to store all_objects across multiple episodes
@@ -717,18 +717,18 @@ def setVrleState(rle, Vrle, hypothesis):
 					overlappingSprites.remove(sprite)
 					## if there's a rule involving a stochastic predicate governing this sprite and anything
 					## it overlaps with, apply the stochastic predicate here.
-					for overlappingSprite in overlappingSprites:
-						if any([r.interaction in ['flipDirection'] for r in hypothesis.interactionSet if 
-							r.slot1==sprite.name and r.slot2==overlappingSprite.name]):
-								orientation = random.choice(BASEDIRS)
-								orientation = (orientation[0]*sprite.rect.width, orientation[1]*sprite.rect.height)
-								print "flipDirection changed orientation to", orientation
-								break
-						elif any([r.interaction in ['reverseDirection'] for r in hypothesis.interactionSet if 
-							r.slot1==sprite.name and r.slot2==overlappingSprite.name]):
-								orientation = (-orientation[0], -orientation[1])
-								print "reverseDirection changed orientation to", orientation
-								break
+					# for overlappingSprite in overlappingSprites:
+					# 	if any([r.interaction in ['flipDirection'] for r in hypothesis.interactionSet if 
+					# 		r.slot1==sprite.name and r.slot2==overlappingSprite.name]):
+					# 			orientation = random.choice(BASEDIRS)
+					# 			# orientation = (orientation[0]*sprite.rect.width, orientation[1]*sprite.rect.height)
+					# 			print "flipDirection changed orientation to", orientation
+					# 			break
+					# 	elif any([r.interaction in ['reverseDirection'] for r in hypothesis.interactionSet if 
+					# 		r.slot1==sprite.name and r.slot2==overlappingSprite.name]):
+					# 			orientation = (-orientation[0], -orientation[1])
+					# 			print "reverseDirection changed orientation to", orientation
+					# 			break
 						# embed()
 					if orientation == (0,0):
 						orientation = hypothesis.spriteObjects[matchingSprite.colorName].args['orientation']
@@ -754,6 +754,12 @@ def setVrleState(rle, Vrle, hypothesis):
 		for l in lst:
 			if l in Vrle._game.sprite_groups[k]:
 				Vrle._game.sprite_groups[k].remove(l)
+
+	# if 'flipDirection' in [r.interaction for r in hypothesis.interactionSet]:
+		# print "flipDirection in hypothesis"
+		# embed()
+	## TODO: use this? or do what you had done above.
+	Vrle._game._eventHandling()
 
 	Vrle._game.time = int(rle._game.time)
 	Vrle._game.score = int(rle._game.score)
@@ -1057,8 +1063,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				if sPrev == []: #This was an appearance, pass to (2.3) below
 					continue
 				else: #This was indeed a transformation
-					print "WARNING: Found unexpected transformation"
-					embed()
+					# print "WARNING: Found unexpected transformation"
 					sPrev = sPrev[0]
 					# Find neighbors of target sprite in the previous time step
 					neighbors_prev = neighboringSpritesColors(envPrev, sPrev)
@@ -1066,6 +1071,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 					for className in neighbors_prev:
 						e.intPairs.append( (theory.spriteObjects[sPrev.colorName].className,className) )
 					errorMap.append(e)
+
 					# Remove transformed-sprite-pair from respective lists
 					lonely_sprites_envA.pop(iA)
 					appeared_sprites_envB.pop(iB)
@@ -1193,8 +1199,23 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		if e.intPairs:
 			newIntPairs = []
 			for pair in e.intPairs:
-				p0 = theory.spriteObjects[pair[0]].className if pair[0] in theory.spriteObjects.keys() else 'unknown'
-				p1 = theory.spriteObjects[pair[1]].className if pair[1] in theory.spriteObjects.keys() else 'unknown'
+				
+				if pair[0] in theory.spriteObjects.keys():
+					p0 = theory.spriteObjects[pair[0]].className
+				elif pair[0] in theory.classes.keys():
+					p0 = pair[0]
+				else:
+					p0 = 'unknown'
+
+				if pair[1] in theory.spriteObjects.keys():
+					p1 = theory.spriteObjects[pair[1]].className
+				elif pair[1] in theory.classes.keys():
+					p1 = pair[1]
+				else:
+					p1 = 'unknown'
+
+				# p0 = theory.spriteObjects[pair[0]].className if pair[0] in theory.spriteObjects.keys() or pair[0] in theory.classes.keys() else 'unknown'
+				# p1 = theory.spriteObjects[pair[1]].className if pair[1] in theory.spriteObjects.keys() or pair[1] in theory.classes.keys() else 'unknown'
 				pair = (p0, p1)
 				newIntPairs.append(pair)
 			e.intPairs = newIntPairs
@@ -1625,15 +1646,15 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, method='
 		if 'flipDirection' in [r.interaction for r in h.interactionSet]:
 			multipleHypotheses = [h]*NUM_SAMPLES_PER_HYPOTHESIS
 			results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, multipleHypotheses, symbolDict))
-			print "got flipDirection in experienceReplay"
-			from vgdl.agent import initializeVrle
-			newenv=initializeVrle(h, rleHistory[0], symbolDict)
+			# print "got flipDirection in experienceReplay"
+			# from vgdl.agent import initializeVrle
+			# newenv=initializeVrle(h, rleHistory[0], symbolDict)
 			## If you run the line above over and over you'll see that we're changing the orientation
 			## each time; that's because I'm having setVrleState() do that.
 			## if you do newenv.step(0) you'll see that all the other missiles move forward and this one
 			## doesn't.
-			print newenv._game.sprite_groups['c5'][0].orientation
-			embed()
+			# print newenv._game.sprite_groups['c5'][0].orientation
+			# embed()
 			## after the embed(), run
 			## newenv.step(0); newenv
 			## print newenv._game.sprite_groups['c5'][0].orientation
@@ -1729,9 +1750,6 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 	# lookup table (dict) which maps (classPair, predicateTuple) to all combinations of all possible rules involving those classes and predicates
 	classPairPlusPredicateToRuleSets = dict()
 
-	# print 'top of expandTheories'
-	# embed()
-
 	for errorMap in errorList:
 		## Skip this whole step if you've already made changes for this theory. Just pass it on and you'll
 		## evaluate it on the whole dataset in the outer loop.
@@ -1787,6 +1805,9 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 		newTheories = [theory]
 		return newTheories
 
+	# if 'transformation' in errorMap.diagnosis:
+		# print "got transformation"
+		# embed()
 	## If there are unknown colors in an inventory, add them to the theory here.
 	if 'inventoryChange' in errorMap.diagnosis:
 		from vgdl.ontology import Resource
@@ -1916,13 +1937,13 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.aliens"
 
-	# filename = "examples.gridphysics.avatar_inference"
+	filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.collect_resource"
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 
-	filename = "examples.gridphysics.testAll"
+	# filename = "examples.gridphysics.testAll"
 
 	global WBP
 	if 'grid' in filename:
