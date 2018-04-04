@@ -576,8 +576,8 @@ class Agent:
 		else:
 			print "Got no new theories"
 
-		print "just expanded all theories"
-		embed()
+		# print "just expanded all theories"
+		# embed()
 
 		self.statesEncountered.append(self.rle._game.getFullState())
 		self.rle._game.sprite_appearances = []
