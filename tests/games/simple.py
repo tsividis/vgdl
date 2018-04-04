@@ -95,4 +95,5 @@ BasicGame
 
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
+        SpriteCounter stype=whale limit=0 win=True
 """

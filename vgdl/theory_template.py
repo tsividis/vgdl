@@ -1561,7 +1561,7 @@ class Theory(object):
 						value = self.classes[value][0].colorName
 					new_term.append(value)
 				tc = tuple(new_term)
-				string += "\n\t%s" % tc
+				string += "\n\t%s" % str(tc)
 		return string
 
 	def displayTerminationSet(self):
