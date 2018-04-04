@@ -87,6 +87,7 @@ BasicGame
         box > ResourcePack color=WHITE
         wall > ResourcePack color=DARKGRAY
         avatar > MovingAvatar color=DARKBLUE
+        whale > ResourcePack color=ORANGE
 
     InteractionSet
         # should learn this rule after one step 

@@ -1535,10 +1535,12 @@ class Theory(object):
 			if rule.interaction != 'stepBack':
 				rule.display()
 
-	def _stringClasses(self):
+	def _stringClasses(self, color_names=False):
 		string = "\nClass assignments:"
 		for c in self.classes:
 			class_list = [cl.colorName for cl in self.classes[c]]
+			if color_names:
+				c = cl.colorName
 			string += "\n\t{}: {}: {}: {}".format(c, class_list, self.spriteObjects[cl.colorName].vgdlType, \
 				self.spriteObjects[cl.colorName].args)
 		return string

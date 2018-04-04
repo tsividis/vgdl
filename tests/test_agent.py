@@ -108,7 +108,7 @@ class TestAgent(unittest.TestCase):
 		display = 'Theoies Not Equal\n'
 		if not classAssignmentsEqual(theory1, theory2):
 			display += '\n>>> Class Assignments not Equal'
-			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringClasses')
+			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringClasses', color_names=True)
 		if not interactionSetsEqual(theory1, theory2):
 			display += '\n>>> Interaction Sets not Equal'
 			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringRules', compare_theory=theory2, ignore_step_back=False, color_names=True)
