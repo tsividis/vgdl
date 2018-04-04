@@ -1548,12 +1548,19 @@ class Theory(object):
 	def displayClasses(self):
 		print self._stringClasses()
 
-	def _stringTerminations(self, ignore_novelty_terminations=True):
+	def _stringTerminations(self, ignore_novelty_terminations=True, color_names=False):
 		string = "\nTerminationSet:"
 		for tc in self.terminationSet:
 			if ignore_novelty_terminations and tc.ruleType == 'NoveltyRule':
 				pass
 			else:
+				term_tuple = tc.asTuple()
+				new_term = []
+				for value in term_tuple:
+					if value in self.classes:
+						value = self.classes[value][0].colorName
+					new_term.append(value)
+				tc = tuple(new_term)
 				string += "\n\t%s" % tc
 		return string
 

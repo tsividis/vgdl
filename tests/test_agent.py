@@ -114,7 +114,7 @@ class TestAgent(unittest.TestCase):
 			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringRules', compare_theory=theory2, ignore_step_back=False, color_names=True)
 		if not terminationSetsEqual(theory1, theory2, ignore_novelty_terminations):
 			display += '\n>>> Termination Sets not Equal'
-			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringTerminations')
+			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringTerminations', color_names=True)
 		# display += '\n%s' % theory1
 		# display += '\n%s' % theory2 
 		self.assertTrue(theoriesEqual(theory1, theory2), display)
