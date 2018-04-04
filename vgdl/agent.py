@@ -291,9 +291,9 @@ class Agent:
 
 		actionSequences = [
 			# [0,0,0,0]
-			[K_UP, K_UP, K_UP, K_UP, K_LEFT]
+			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			# [0,0,0,0,0,0,0,0,0,0]
+			[0,0,0,0,0,0,0,0,0,0]
 			# [K_UP, K_UP]
 			# [K_RIGHT, K_UP]
 		]
@@ -744,8 +744,7 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False):
 			# Now copy over sprite state (if we have any left of that type)
 			if not Vrle._game.sprite_groups[classKey]:
 				continue
-			color = Vrle._game.sprite_groups[classKey][0].colorName
-			for i in range(len(Vrle._game.sprite_groups[classKey])):
+			for i in range(rleSpriteCount):
 				setSpriteState(Vrle._game.sprite_groups[classKey][i], rle._game.observation['trackedObjects'][color][i], hypothesis)
 		
 
@@ -1683,8 +1682,9 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, method='
 		# if method == 'newMethod':
 		if 'flipDirection' in [r.interaction for r in h.interactionSet]:
 			multipleHypotheses = [h]*NUM_SAMPLES_PER_HYPOTHESIS
-			results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, multipleHypotheses, symbolDict))
-			# print "got flipDirection in experienceReplay"
+			tmpResults = singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, multipleHypotheses, symbolDict)
+			results.append((np.mean(tmpResults[0]), np.mean(tmpResults[1]), tmpResults[2][0]))
+			print "got flipDirection in experienceReplay"
 			# from vgdl.agent import initializeVrle
 			# newenv=initializeVrle(h, rleHistory[0], symbolDict)
 			## If you run the line above over and over you'll see that we're changing the orientation
@@ -1692,7 +1692,7 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, method='
 			## if you do newenv.step(0) you'll see that all the other missiles move forward and this one
 			## doesn't.
 			# print newenv._game.sprite_groups['c5'][0].orientation
-			# embed()
+			embed()
 			## after the embed(), run
 			## newenv.step(0); newenv
 			## print newenv._game.sprite_groups['c5'][0].orientation
@@ -2003,13 +2003,13 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.aliens"
 
-	filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.collect_resource"
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 
-	# filename = "examples.gridphysics.testAll"
+	filename = "examples.gridphysics.testAll"
 
 	global WBP
 	if 'grid' in filename:
