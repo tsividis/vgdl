@@ -239,7 +239,8 @@ class BasicGame(object):
                               'avatar',
                               ]
         # contains instance lists
-        self.sprite_groups = dict() #defaultdict(list)
+        self.sprite_groups = dict()
+        self.extra_sprites = dict()
         # which sprite types (abstract or not) are singletons?
         self.singletons = []
         # collision effects (ordered by execution order)

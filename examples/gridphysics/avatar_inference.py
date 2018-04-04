@@ -80,6 +80,7 @@ BasicGame
         A > avatar
     InteractionSet
         avatar wall > stepBack
+        # box avatar > nothing
         box avatar > transformTo stype=box2
         # box2 avatar > bounceForward
         box3 avatar > killSprite
