@@ -10,10 +10,17 @@ from vgdl.ontology import *
 from tests.games import *
 from tests.theory_tools import *
 
+# I'm not sure if this actually matters...
 FILENAME = 'tests.game.simple'
 
-class TestAgent(unittest.TestCase):
+###########################################
+# The abstract base class (DO NOT MODIFY)
+class _TestAgent(unittest.TestCase):
 
+	#######################################
+	# Set Up and Tear Down
+	#
+	# Simply creates a new agent for every test. You have to set up the games individually.
 	def setUp(self):
 		self.agent = Agent('full', FILENAME)
 
@@ -105,7 +112,6 @@ class TestAgent(unittest.TestCase):
 			if e < error_limit:
 				string += '\n%s' % h
 
-
 	########################################
 	# Assertion Function
 	def assertTheoriesEqual(self, theory1, theory2, ignore_novelty_terminations=True):
@@ -124,17 +130,15 @@ class TestAgent(unittest.TestCase):
 		self.assertTrue(theoriesEqual(theory1, theory2), display)
 
 	def assertHasTheory(self, theory):
-		self.assertTrue(theoryInHypotheses(theory, self.agent.hypotheses), 'Theory not in hypotheses')
+		self.assertTrue(theoryInHypotheses(theory, self.agent.hypotheses), 'Theory not in hypotheses: \n%s' % theory)
 
 
-	def assertHypothesisHasLowError(self, hypothesis, error_limit=0.01):
+	def assertTheoryBelowEpsilonError(self, hypothesis, epsilon=0.01):
 		''''''
 		for e, h in self.agent.scoresAndHypotheses:
 			if h == hypothesis:
-				self.assertTrue(e <= error_limit, 'Hypothesis does not have low error')
+				self.assertTrue(e <= epsilon, 'Hypothesis does not have low error')
 
-	########################################
-	# Test Suite
 	def _testLevel0(self):
 		test_hypothesis = generateTheoryFromGameString(simple.test_hypothesis2)
 		action_sequences = [[K_UP]]
@@ -148,18 +152,40 @@ class TestAgent(unittest.TestCase):
 		# self.assertTrue(theoriesEqual(h0, test_hypothesis))
 		self.assertTheoriesEqual(h0, test_hypothesis)
 
-
-	def testBasicsKillSpritesAndWin(self):
-		action_sequences = [[K_UP, K_UP]]
-		real_description = self.initRunCreate(basics.game, basics.levels[0], action_sequences)
+def _testConstructor(game, level, action_sequences):
+	'''Creates a basic test case. Theory learned == Real Game Description'''
+	def testCase(self):
+		real_description = self.initRunCreate(game, level, action_sequences)
 
 		self.assertHasTheory(real_description)
-		h = self.agent.hypotheses
-		self.assertTheoriesEqual(h[0], real_description)
+		self.assertTheoriesEqual(self.agent.hypotheses[0], real_description)
+		self.assertTheoryBelowEpsilonError(self.agent.hypotheses[0])
 
+	return testCase
+
+
+class TestAgent(_TestAgent):
+
+	########################################
+	# Test Suite
+	#
+	# This is one way to create a test case. Defaults to the basics (defined above)
+	testBasicsKillSpritesAndWin = _testConstructor(basics.game, basics.levels[0], [[K_UP, K_UP]])
+
+	# This is another way to create a test case. You do everything individually.
 	def testBasics(self):
 		action_sequences = [[K_LEFT, K_RIGHT]]
+		real_description = self.initRunCreate(basics.game, basics.levels[1], action_sequences)
+		
+		self.assertHasTheory(real_description)
+		self.assertTheoriesEqual(self.agent.hypotheses[0], real_description)
+		self.assertTheoryBelowEpsilonError(self.agent.hypotheses[0])
+
+
+
+
+
+class TestAgentOneGame(_TestAgent):
+
+	def testCase1(self):
 		self.assertTrue(True)
-
-
-	
