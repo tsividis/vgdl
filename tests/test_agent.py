@@ -40,9 +40,8 @@ class TestAgent(unittest.TestCase):
 		envReal = self.agent.fastcopy(self.agent.rle)
 		self.agent.rleHistory[episode_num].append(envReal)
 
-	def initialize(self, game_string, level_string, action_sequences):
+	def initialize(self, game_string, level_string, num_episodes):
 		'''Sets up environment, curriculum, and episode'''
-		num_episodes = len(action_sequences)
 		self.initializeEnvironment(game_string, level_string)
 		self.initializeCurriculum(num_episodes)
 		self.initializeEpisode(0)
@@ -111,7 +110,7 @@ class TestAgent(unittest.TestCase):
 			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringClasses', color_names=True)
 		if not interactionSetsEqual(theory1, theory2):
 			display += '\n>>> Interaction Sets not Equal'
-			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringRules', compare_theory=theory2, ignore_step_back=False, color_names=True)
+			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringRules', ignore_step_back=False, color_names=True)
 		if not terminationSetsEqual(theory1, theory2, ignore_novelty_terminations):
 			display += '\n>>> Termination Sets not Equal'
 			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringTerminations', color_names=True)
@@ -127,7 +126,7 @@ class TestAgent(unittest.TestCase):
 
 	########################################
 	# Test Suite
-	def testLevel0(self):
+	def _testLevel0(self):
 		test_hypothesis = generateTheoryFromGameString(simple.test_hypothesis2)
 		action_sequences = [[K_UP]]
 		self.initialize(simple.game3, simple.levels[0], action_sequences)
@@ -140,12 +139,16 @@ class TestAgent(unittest.TestCase):
 		# self.assertTrue(theoriesEqual(h0, test_hypothesis))
 		self.assertTheoriesEqual(h0, test_hypothesis)
 
-		# hypothesis = self.agent.hypotheses[0]
-		# interaction = Interaction('DARKBLUE', 'DARKBLUE', 'stepBack', {})
-		# # interaction2 = Interaction('DARKBLUE', 'DARKBLUE', 'killSprite', {})
-		# self.assertTrue(hypothesisContainsInteraction(hypothesis, interaction))
-		# # self.assertTrue(*hypothesisContainsInteraction(hypothesis, interaction2))
 
+	def testBasics(self):
+		real_description = generateTheoryFromGameString(basics.game)
+		action_sequences = [[K_UP, K_UP]]
+		self.initialize(basics.game, basics.levels[0], 1)
+
+		self.runCurriculum(action_sequences)
+
+		h = self.agent.hypotheses
+		self.assertTheoriesEqual(h[0], real_description)
 	# def testLevel1(self):
 	# 	action_sequences = [[K_UP]]
 	# 	self.initialize(simple.game, simple.levels[0], action_sequences)

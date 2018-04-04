@@ -1,11 +1,11 @@
 levels = ["""
-wwwwwwwwwwwwwwwwwwww
-w                  w
-w                  w
-w                  w
-w                  w
-w              A   w
-wwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwww
+w           w
+w           w
+w       b   w
+w       b   w
+w       A   w
+wwwwwwwwwwwww
 
 """,
 ]
@@ -36,6 +36,23 @@ BasicGame
         avatar wall > stepBack
         box avatar > killSprite
 
+        wall avatar > stepBack
+        wall box > stepBack
+
+        box wall > stepBack
+        avatar box > stepBack
+        box avatar > stepBack
+
+
+        avatar EOS > stepBack
+        wall EOS > stepBack
+        box EOS > stepBack
+
+        avatar avatar > stepBack
+        box box > stepBack
+        wall wall > stepBack
+
     TerminationSet
         SpriteCounter stype=box limit=0 win=True
+        SpriteCounter stype=avatar limit=0 win=False
 """
