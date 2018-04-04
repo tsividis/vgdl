@@ -626,7 +626,7 @@ class BasicGame(object):
             if key in self.lastcollisions:
                 del self.lastcollisions[key]
 
-    def _eventHandling(self):
+    def _eventHandling(self, predicateSubset=[]):
         self.lastcollisions = {}
         push_effect = 'bounceForward'
         back_effect = 'stepBack'
@@ -637,16 +637,17 @@ class BasicGame(object):
         dead = self.kill_list[:] # copy kill list
         created = []
 
-
-
         self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack','wallStop']
             else (2 if x[2].__name__ in ['killSprite', 'killIfTooFast'] else (3 if x[2].__name__ in ['changeResource', 'changeScore', 'conveySprite'] else 0)), reverse=True)
+
+        effectSubset = [eff for eff in self.collision_eff if eff[2].__name__ in predicateSubset] if predicateSubset else self.collision_eff
+
         # build the current sprite lists (if not yet available)
         # for class1, class2, effect, kwargs in self.collision_eff:
         while new_collisions:
             new_collisions = set()
             new_effects = []
-            for class1, class2, effect, kwargs in self.collision_eff:
+            for class1, class2, effect, kwargs in effectSubset:
                 for sprite_class in [class1, class2]:
                     if sprite_class not in self.lastcollisions:
                         if sprite_class in self.sprite_groups:

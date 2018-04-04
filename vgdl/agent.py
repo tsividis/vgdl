@@ -18,7 +18,7 @@ import math
 import warnings
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
-from stateobsnonstatic import buildTracker
+from stateobsnonstatic import buildTracker, UNOBSERVABLE_PREDICATES
 from termcolor import colored
 from line_profiler import LineProfiler
 from vgdl.util import manhattanDist, manhattanDist2, LinkedDict
@@ -291,7 +291,7 @@ class Agent:
 
 		actionSequences = [
 			# [0,0,0,0]
-			[K_UP, K_UP, K_UP, K_UP]
+			[K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
 			# [0,0,0,0,0,0,0,0,0,0]
 			# [K_UP, K_UP]
@@ -576,8 +576,8 @@ class Agent:
 		else:
 			print "Got no new theories"
 
-		# print "just expanded all theories"
-		# embed()
+		print "just expanded all theories"
+		embed()
 
 		self.statesEncountered.append(self.rle._game.getFullState())
 		self.rle._game.sprite_appearances = []
@@ -766,7 +766,7 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False):
 		# 	embed()
 		## TODO: use this? or do what you had done above.
 
-		Vrle._game._eventHandling()
+		Vrle._game._eventHandling(UNOBSERVABLE_PREDICATES)
 
 
 	Vrle._game.time = int(rle._game.time)

@@ -18,8 +18,9 @@ from collections import defaultdict
 import uuid
 from colors import *
 
-
-
+# predicates whose effects are not immediately observable by the "CV system"
+#  (used in setVrleState)
+UNOBSERVABLE_PREDICATES = ['reverseDirection', 'flipDirection']
 
 class StateObsHandlerNonStatic(object):
     """ Managing different types of state representations,

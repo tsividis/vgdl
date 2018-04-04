@@ -2394,6 +2394,8 @@ def proposePredicates(singlePairErrorSignal, observations):
 	## at the memory. For now it would only access the memory to make new proposals
 	## that build on previous ones (e.g., incrementing n, or going to conditional kill
 	## events if non-conditional kill events have already been proposed)
+	## NOTE: if more predicates are added whose effects are not immediately observable by the
+	##  "CV system" (like flipDirection), make sure to add them to the list in stateobsnonstatic!
 
 	predicates = []
 
