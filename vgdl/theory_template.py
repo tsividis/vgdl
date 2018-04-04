@@ -127,7 +127,7 @@ class InteractionRule(object):
 	def copy(self):
 		return InteractionRule(self.interaction, self.slot1, self.slot2, dict(self.args) if self.args else {},
 				set([p.copy() for p in self.preconditions]), self.generic)
-	
+
 	def asTuple(self):
 		return (self.interaction, self.slot1, self.slot2, self.args)
 
@@ -1503,7 +1503,7 @@ class Theory(object):
 				return c
 		return False
 
-	def _stringRules(self, ignore_step_back=True):
+	def _stringRules(self, ignore_step_back=True, color_names=False, compare_theory=None):
 		string = '\nInteractionSet:'
 		for rule in self.interactionSet:
 			if rule.interaction == 'nothing':
@@ -1511,7 +1511,21 @@ class Theory(object):
 			if ignore_step_back and rule.interaction == 'stepBack':
 				continue
 			else:
-				string += "\n\t%s" % rule
+				rule_name, c1, c2, args = rule.asTuple()
+				if color_names:
+					rule_tuple = (rule_name, self.classes[c1][0].colorName, self.classes[c2][0].colorName, args)
+				else:
+					rule_tuple = (rule_name, c1, c2, args)
+
+				rule_string = "%s %s %s %r" % rule_tuple
+
+				if compare_theory:
+					note = ""
+					if rule not in compare_theory.interactionSet:
+						note = "+"
+					string += "\n%s\t%s" % (note, rule_string)
+				else:
+					string += "\n\t%s" % rule_string
 		return string
 
 	def displayRules(self):

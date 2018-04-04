@@ -111,7 +111,7 @@ class TestAgent(unittest.TestCase):
 			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringClasses')
 		if not interactionSetsEqual(theory1, theory2):
 			display += '\n>>> Interaction Sets not Equal'
-			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringRules', ignore_step_back=False)
+			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringRules', compare_theory=theory2, ignore_step_back=False, color_names=True)
 		if not terminationSetsEqual(theory1, theory2, ignore_novelty_terminations):
 			display += '\n>>> Termination Sets not Equal'
 			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringTerminations')
@@ -128,9 +128,9 @@ class TestAgent(unittest.TestCase):
 	########################################
 	# Test Suite
 	def testLevel0(self):
-		test_hypothesis = generateTheoryFromGameString(simple.test_hypothesis)
+		test_hypothesis = generateTheoryFromGameString(simple.test_hypothesis2)
 		action_sequences = [[K_UP]]
-		self.initialize(simple.game, simple.levels[0], action_sequences)
+		self.initialize(simple.game3, simple.levels[0], action_sequences)
 
 		# self.executeStep(0, K_UP)
 		self.runCurriculum(action_sequences)

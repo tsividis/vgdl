@@ -75,7 +75,7 @@ def hypothesisContainsInteraction(hypothesis, interaction):
 def hypothesisAssignsVGDLType2Color(hypothesis, color_name, vgdl_type):
 	return getColorAssignments(hypothesis)[color_name].vgdlType == vgdl_type
 
-def generateTheoryFromGameString(game_string):
+def generateTheoryFromGameString(game_string, with_step_back=True):
 	vgdl_parser = VGDLParser()
 	sprite_parser = SpriteParser()
 	game = Game(game_string)
@@ -84,6 +84,7 @@ def generateTheoryFromGameString(game_string):
 	sprite_types = sprite_parser.parseGame(game_string)
 	vgdl_game = vgdl_parser.parseGame(game_string)
 	# Add classes
+	class_names = []
 	for class_name, sprite in sprite_parser.sprite_types.iteritems():
 		# print class_name, sprite
 
@@ -92,11 +93,13 @@ def generateTheoryFromGameString(game_string):
 		if class_name == 'EOS':
 			sprite.vgdlType = EOS
 			sprite.colorName = 'ENDOFSCREEN'
+		else:
+			class_names.append(class_name)
 		theory.spriteObjects[sprite.colorName] = sprite
+
 
 	# Add interaction Rules
 	for c1, c2, effect, args in vgdl_game.collision_eff:
-		# print c1, c2, effect, args
 		rule = InteractionRule(effect.__name__, c1, c2, args)
 		rule.display()
 		theory.interactionSet.append(rule)
@@ -186,5 +189,4 @@ if __name__ == '__main__':
 	t1 = generateTheoryFromGameString(simple.game)
 	t2 = generateTheoryFromGameString(simple.game2)
 	# assert TheoriesEqual(t1, t2), 'Theories not equal'
-	# t2.display()
 	print 'TheoriesEqual(t12, t2) = %s' % theoriesEqual(t1, t2)

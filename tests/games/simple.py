@@ -10,36 +10,6 @@ w                              w
 w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 
-""", """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                              w
-w                              w
-w                              w
-w                              w
-w                              w
-w              A               w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-""", """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                              w
-w                              w
-w                              w
-w                              w
-w                              w
-w              A               w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-""", """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                              w
-w                              w
-w                              w
-w                              w
-w                              w
-w              A               w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """]
 
 
@@ -59,7 +29,8 @@ BasicGame
     TerminationSet
         SpriteCounter stype=box limit=0 win=True
 """
-
+# game and game2 are identical (just with a name change)
+# (keep for testing purposes)
 game2 = """
 BasicGame
     SpriteSet
@@ -75,31 +46,51 @@ BasicGame
         SpriteCounter stype=white_box limit=0 win=True
 """
 
+game3 = """
+BasicGame
+    SpriteSet
+        box    > Immovable color=WHITE 
+        avatar  > MovingAvatar color=DARKBLUE speed=1
+        wall > Immovable color=DARKGRAY
+
+    LevelMapping
+        A > avatar
+        B > box
+
+    InteractionSet
+        # avatar box > stepBack
+        # avatar wall > stepBack
+
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+"""
+# Write your own test hypothesis here
+# This test_hypothesis passes after runing one execute step on levels[0]
 test_hypothesis = """
 BasicGame
     SpriteSet
         box > ResourcePack color=WHITE
         wall > ResourcePack color=DARKGRAY
         avatar > MovingAvatar color=DARKBLUE
+
     InteractionSet
+        # should learn this rule after one step 
         box avatar > killSprite
 
-        avatar avatar > stepBack
-        box box > stepBack
-        wall wall > stepBack
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+"""
 
-        avatar EOS > stepBack
+test_hypothesis2 = """
+BasicGame
+    SpriteSet
+        box > ResourcePack color=WHITE
+        wall > ResourcePack color=DARKGRAY
+        avatar > MovingAvatar color=DARKBLUE
 
-        box avatar > stepBack
-        wall box > stepBack
-        box wall > stepBack
-        box EOS > stepBack
-
-        avatar wall > stepBack
-        wall avatar > stepBack
-        wall EOS > stepBack
-
-
+    InteractionSet
+        # should learn this rule after one step 
+        avatar box > stepBack
 
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
