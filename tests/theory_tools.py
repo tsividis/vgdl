@@ -184,6 +184,12 @@ def theoriesEqual(theory1, theory2, ignore_novelty_terminations=True):
 
 	return True
 
+def theoryInHypotheses(theory, hypotheses):
+	for h in hypotheses:
+		if theoriesEqual(h, theory):
+			return True
+	return False
+
 if __name__ == '__main__':
 	from tests.games import simple
 	t1 = generateTheoryFromGameString(simple.game)

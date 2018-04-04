@@ -46,6 +46,11 @@ class TestAgent(unittest.TestCase):
 		self.initializeCurriculum(num_episodes)
 		self.initializeEpisode(0)
 
+	def initRunCreate(self, game, level, action_sequences):
+		self.initialize(game, level, len(action_sequences))
+		self.runCurriculum(action_sequences)
+		return generateTheoryFromGameString(game)
+
 	#######################################
 	# Agent Theory Tools
 	def sampleFromDistribution(self, all_objects):
@@ -118,8 +123,8 @@ class TestAgent(unittest.TestCase):
 		# display += '\n%s' % theory2 
 		self.assertTrue(theoriesEqual(theory1, theory2), display)
 
-	def assertHasHypothesis(self, hypothesis):
-		self.assertTrue(hypothesis in self.agent.hypotheses, 'Hypothesis not in hypotheses')
+	def assertHasTheory(self, theory):
+		self.assertTrue(theoryInHypotheses(theory, self.agent.hypotheses), 'Theory not in hypotheses')
 
 
 	def assertHypothesisHasLowError(self, hypothesis, error_limit=0.01):
@@ -144,27 +149,17 @@ class TestAgent(unittest.TestCase):
 		self.assertTheoriesEqual(h0, test_hypothesis)
 
 
-	def testBasics(self):
-		real_description = generateTheoryFromGameString(basics.game)
+	def testBasicsKillSpritesAndWin(self):
 		action_sequences = [[K_UP, K_UP]]
-		self.initialize(basics.game, basics.levels[0], 1)
+		real_description = self.initRunCreate(basics.game, basics.levels[0], action_sequences)
 
-		self.runCurriculum(action_sequences)
-
-		self.assertHasHypothesis(real_description)
+		self.assertHasTheory(real_description)
 		h = self.agent.hypotheses
 		self.assertTheoriesEqual(h[0], real_description)
 
-	# def testLevel1(self):
-	# 	action_sequences = [[K_UP]]
-	# 	self.initialize(simple.game, simple.levels[0], action_sequences)
-	# 	self.executeStep(0, K_UP)
-	# 	hypothesis = self.agent.hypotheses[0]
-
-	# 	self.assertTrue(hypothesisAssignsVGDLType2Color(hypothesis, 'DARKBLUE', MovingAvatar))
-
-
-# if __name__ == '__main__':
+	def testBasics(self):
+		action_sequences = [[K_LEFT, K_RIGHT]]
+		self.assertTrue(True)
 
 
 	

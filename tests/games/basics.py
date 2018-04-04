@@ -1,4 +1,5 @@
-levels = ["""
+levels = [
+"""
 wwwwwwwwwwwww
 w           w
 w           w
@@ -6,7 +7,15 @@ w       b   w
 w       b   w
 w       A   w
 wwwwwwwwwwwww
-
+""",
+"""
+wwwwwwwwwwwww
+w           w
+w           w
+w       b   w
+w       b   w
+w       A   w
+wwwwwwwwwwwww
 """,
 ]
 
