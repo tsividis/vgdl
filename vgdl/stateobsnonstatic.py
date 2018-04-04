@@ -18,8 +18,9 @@ from collections import defaultdict
 import uuid
 from colors import *
 
-
-
+# predicates whose effects are not immediately observable by the "CV system"
+#  (used in setVrleState)
+UNOBSERVABLE_PREDICATES = ['reverseDirection', 'flipDirection']
 
 class StateObsHandlerNonStatic(object):
     """ Managing different types of state representations,
@@ -277,16 +278,15 @@ class TrackedSprite(object):
     def __hash__(self):
         return hash(self.ID)
 
-    def __init__(self, pos, color=None, size=(10,10)):
+    def __init__(self, pos, color=None, size=(10,10), ID=None):
         self.name = None
         self.color = color
         self.rect = pygame.Rect(pos, size)
         self.lastrect = pygame.Rect(pos, size)
-        # self.x = pos[0]
-        # self.y = pos[1]
         self.orientation = (0,0)
+        self.lastDisplacement = (0,0)
         self.speed = None
-        self.ID = uuid.uuid1()
+        self.ID = uuid.uuid1() if ID==None else ID
         self.color = color or self.color or PURPLE
         if self.color == ENDOFSCREEN:
             self.ID = 'ENDOFSCREEN'
@@ -332,30 +332,33 @@ def buildTracker(rle):
 def copySpriteStingy(sprite):
     # copies all the data from sprite that we could reasonably get from
     #   a real CV system into a new sprite, then returns it
-    newSprite = TrackedSprite([sprite.rect.left, sprite.rect.top], color=sprite.color, size=(sprite.rect.width, sprite.rect.height)) # automatically does colorName
-    newSprite.ID = sprite.ID # not sure if we need this
+    newSprite = TrackedSprite([sprite.rect.left, sprite.rect.top], color=sprite.color, size=(sprite.rect.width, sprite.rect.height), ID=sprite.ID) # automatically does colorName
+    newSprite.ID = sprite.ID # we definitely need this
     newSprite.name = newSprite.colorName
-    newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
     newSprite.lastmove = sprite.lastmove
     newSprite.rect = pygame.Rect(sprite.rect.left, sprite.rect.top, sprite.rect.width, sprite.rect.height)
     newSprite.lastrect = pygame.Rect(sprite.lastrect.left, sprite.lastrect.top, sprite.lastrect.width, sprite.lastrect.height)
+    
+    if hasattr(sprite, 'draw_arrow') and sprite.draw_arrow==True:
+        newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
 
     if type(sprite) == TrackedSprite:
         newSprite.speed = sprite.speed
         newSprite.inventory = dict(sprite.inventory) if sprite.inventory else dict()
         newSprite.lastinventory = dict(sprite.lastinventory)
+        newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
+        newSprite.lastDisplacement = sprite.lastDisplacement
 
     return newSprite
 
 def processFrame(memory, gameObject):
     # eventual goal is to process the frame, not the gameObject...
     # creates a COPY of memory and returns updated copy
+    
     newMemory = dict()
     newTrackedObjects = defaultdict(list)
     spriteIDDict = {sprite.ID: sprite for lst in memory['trackedObjects'].values() for sprite in lst}
 
-    # print "in processFrame"
-    # embed()
     newMemory['kill_list'] = [copySpriteStingy(s) for s in gameObject.kill_list]
     newMemory['isGrid'] = memory['isGrid']
     newMemory['lastscore'] = memory['score']
@@ -371,18 +374,18 @@ def processFrame(memory, gameObject):
                     # not a new object
                     newSprite = copySpriteStingy(spriteIDDict[sprite.ID])
                     newSprite.lastmove += 1
+                    # Did the sprite move?
                     if sprite.rect.left != newSprite.rect.left or sprite.rect.top != newSprite.rect.top:
                         # first check if this is actually continuous (default assumes grid)
-                        # TODO: this way of checking whether it's a grid or not fails for projectiles and interesting bounce-forwards (like chains)
-                        if memory['isGrid'] and False:# sprite.rect.left  != newSprite.rect.left  and sprite.rect.top != newSprite.rect.top and abs(sprite.rect.left  - newSprite.rect.left ) != abs(sprite.rect.top - newSprite.rect.top):
+                        ## TODO: figure out whether we're in a grid. Currently always assuming we are.
+                        if memory['isGrid'] and False:
                             newMemory['isGrid'] = False
-                        # it moved since last sighting!
                         if newMemory['isGrid']:
                             newSprite.speed = max(abs(sprite.rect.left - newSprite.rect.left), abs(sprite.rect.top - newSprite.rect.top)) * 1.0 / sprite.rect.width # TODO: don't depend on width
-                            newSprite.orientation = (np.sign(sprite.rect.left - newSprite.rect.left), np.sign(sprite.rect.top - newSprite.rect.top))
+                            newSprite.lastDisplacement = (np.sign(sprite.rect.left - newSprite.rect.left), np.sign(sprite.rect.top - newSprite.rect.top))
                         else:
                             newSprite.speed = euclideanDist([sprite.rect.left, sprite.rect.top], [newSprite.rect.left, newSprite.rect.top])
-                            newSprite.orientation = normalizeVec([sprite.rect.left - newSprite.rect.left, sprite.rect.top - newSprite.rect.top])
+                            newSprite.lastDisplacement = (sprite.rect.left - newSprite.rect.left, sprite.rect.top - newSprite.rect.top)
                         
                         newSprite.lastrect = pygame.Rect(newSprite.rect.left, newSprite.rect.top, newSprite.rect.width, newSprite.rect.height)
                         newSprite.rect = pygame.Rect(sprite.rect.left, sprite.rect.top, sprite.rect.width, sprite.rect.height)
@@ -392,6 +395,10 @@ def processFrame(memory, gameObject):
                 
                 # update inventory and inventory history
                 newSprite.lastinventory = dict(newSprite.inventory) if newSprite.inventory else dict()
+
+                ## If the orientation is visibly displayed on the sprite
+                if hasattr(sprite, 'draw_arrow') and sprite.draw_arrow==True:
+                    newSprite.orientation = sprite.orientation
 
                 if sprite.resources:
                     newSprite.inventory = {}

@@ -2413,13 +2413,18 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 				for val in values:
 					argList.append({'speed':val})
 			elif predicate in ['killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']:
-				resources = [theory.spriteObjects[rcolor].className for rcolor in observations['trackedObjects'][theory.classes['avatar'][0].colorName][0].inventory.keys()]
-				if len(resources) == 0:
-					print 'in proposeArgs: trying to propose conditional but no resources!'
+				try:
+					resources = [theory.spriteObjects[rcolor].className for rcolor in observations['trackedObjects'][theory.classes['avatar'][0].colorName][0].inventory.keys()]
+				except:
+					print "problem with resources in proposeArgs()"
 					embed()
 				limits = [-2]
 				for comb in list(itertools.product(resources, limits)):
-					argList.append({'resource':comb[0], 'limit':comb[1]})
+					if comb:
+						argList.append({'resource':comb[0], 'limit':comb[1]})
+			elif predicate == 'transformTo':
+				for stype in [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]:
+					argList.append({'stype':stype})
 			else:
 				print "Error: Have not implemented non-generic proposeArgs() yet."
 				embed()
@@ -2462,6 +2467,8 @@ def proposePredicates(singlePairErrorSignal, observations):
 	## at the memory. For now it would only access the memory to make new proposals
 	## that build on previous ones (e.g., incrementing n, or going to conditional kill
 	## events if non-conditional kill events have already been proposed)
+	## NOTE: if more predicates are added whose effects are not immediately observable by the
+	##  "CV system" (like flipDirection), make sure to add them to the list in stateobsnonstatic!
 
 	predicates = []
 
@@ -2485,7 +2492,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 	## Destruction/appearance/transformation
 	'objectDestruction': 		['killSprite'],
 	'newObjectAppeared': 		['cloneSprite'],
-	'transformation': 			['transformTo', 'transformToOnLanding'],
+	'transformation': 			['transformTo'],
 	'conditionalKill': 			['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore',\
 								 'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
 
@@ -2495,7 +2502,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 									# , 'pullWithIt', 'windGust', 'slipForward',\
 									# 'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap
 	'unexpectedOverlap':		['nothing'],#, 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
-	'orientationChange': 		['reverseDirection', 'bounceDirection', 'flipDirection'],
+	'orientationChange': 		['reverseDirection', 'flipDirection'],
 									#'turn', 'turnAround', 
 	'teleport': 				['teleportToExit'],
 
@@ -2538,7 +2545,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	## Only propose sprites when something moves that we didn't think was going to move.
 	## Possible bug: removed noMovement
 	if all([diagnosis not in ['unexpectedPosition', 'unexpectedOverlap', 'newObjectAppeared',
-		'orientationChange', 'unexpectedOverlap', 'objectDestruction'] for diagnosis in errorMap.diagnosis]):
+		'orientationChange', 'unexpectedOverlap', 'objectDestruction', 'noMovement'] for diagnosis in errorMap.diagnosis]):
 		return targetClass, childTheories
 
 	if 'objectDestruction' in errorMap.diagnosis:
@@ -2559,9 +2566,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 		newTheory.errorMapHistory.append(errorMap)
 		vgdlType = spriteProposal[0][1]
 		args = dict(spriteProposal[1:])
-		# if 'spawnCooldown' in args:
-		# 	print "got spawnCooldown in args"
-		# 	embed()
+
 		## Proposal specified args in terms of color; convert to class name for the actual theory.
 		if 'stype' in args.keys():
 			try:
@@ -2712,8 +2717,8 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 			classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and len(rule.args)>0]
 	if len(relevantRulesWithArgs) == 0:
 		if 'conditionalKill' in errorMap.diagnosis:
-			print "got conditionalKill"
-			embed()
+			# print "got conditionalKill"
+			# embed()
 			## The only rules that should be removed when proposing conditionals are kill rules.
 			## Remove the existing kill rules and replace them with conditionals.
 			toRemove = [rule for rule in theory.interactionSet if classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and 
@@ -2729,7 +2734,8 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 				newTheory.mostRecentEdit = 'interactionSetInduction'
 				newTheory.errorMapHistory.append(errorMap)
 				# remove old rules that conflict with the new ones
-				alteredPairs = set([(rule.slot1, rule.slot2) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack])
+				alteredPairs = set([(rule.slot1, rule.slot2) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack] + \
+						[(rule.slot2, rule.slot1) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack])
 				newTheory.interactionSet = [rule for rule in newTheory.interactionSet if 'stepBack' != rule.interaction or (rule.slot1, rule.slot2) not in alteredPairs]
 				for rule in ruleSet:
 					newTheory.interactionSet.append(rule)
@@ -2760,7 +2766,7 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHi
 		theory.display()
 		rule = relevantRulesWithArgs[0]
 		penalty, _, _ = experienceReplay([theory], rleHistory, actionHistory, 
-			rleHistory[0].symbolDict, {}, method='all', targetColor=errorMap.targetColor)
+			rleHistory[0].symbolDict, method='all', targetColor=errorMap.targetColor)
 		newPenalty = penalty
 		while newPenalty >= penalty:
 			argsToIncrement = [(k,v) for k,v in relevantRulesWithArgs[0].args.items() if type(v)==int]
@@ -2772,7 +2778,7 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHi
 			if len(thresholdOrdering[rule.interaction]) > idx+1:
 				rule.args[k] = thresholdOrdering[rule.interaction][idx+1]
 				newPenalty, _, _ = experienceReplay([theory], rleHistory, actionHistory, 
-					envRealPrev.symbolDict, {}, method='all', targetColor=errorMap.targetColor)
+					envRealPrev.symbolDict, method='all', targetColor=errorMap.targetColor)
 				# print newPenalty, rule.display()
 			else:
 				break
@@ -2786,8 +2792,8 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHi
 
 	return theory
 
-def getClassNameFromSpriteString(spriteName):
-	if len(rle._game.sprite_groups[spriteName])>0:
+def getClassNameFromSpriteString(spriteName, theory, rle):
+	if spriteName in rle._game.sprite_groups and len(rle._game.sprite_groups[spriteName])>0:
 		col = colorDict[str(rle._game.sprite_groups[spriteName][0].color)]
 		try:
 			className = [k for k in theory.classes.keys() if col in [c.colorName for c in theory.classes[k]]][0]
@@ -2805,7 +2811,7 @@ def getClassNameFromSpriteString(spriteName):
 			print "failed to get spriteName color. In getClassNameFromSpriteString"
 			embed()
 
-def buildArgsString(interactionRule):
+def buildArgsString(interactionRule, theory, rle):
 	relevantArgNames = getKeywordsFromOntology(interactionRule.interaction)
 	newInteractionName = interactionRule.interaction
 	if interactionRule.interaction =='killSprite':
@@ -2859,7 +2865,7 @@ def buildArgsString(interactionRule):
 			argsString = ""
 			for k,v in interactionRule.args.items():
 				if k in ['stype', 'strigger']:
-					argsString += " %s=%s"%(k, getClassNameFromSpriteString(v))
+					argsString += " %s=%s"%(k, getClassNameFromSpriteString(v, theory, rle))
 				else:
 					argsString += " %s=%s"%(k, v)
 		else:
@@ -2869,7 +2875,7 @@ def buildArgsString(interactionRule):
 	return argsString, newInteractionName
 
 
-def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=False, goalLoc = None):
+def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=False, goalLoc = None, addAllObjects=False):
 	"""
 	-need to be able to take an optional argument that tells you the location of the goal, and put that into the level string
 	-assume that the goal sprite is getting killed
@@ -2881,7 +2887,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 	DIRECTION_MAP = {(0,-1):'UP', (0,1):'DOWN', (1,0):'RIGHT', (-1,0):'LEFT'}
 
 	_obstypes = rle._obstypes
-	# state = np.reshape(rle._getSensors(), rle.outdim)
 	newGoalType, newGoalColor= None, None
 
 	colorToSprite = {}
@@ -2911,7 +2916,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 				if interactionRule.interaction == 'teleportToExit':
 					## second element in teleport tuple is the entrance; stype is the exit
 					portalEntry = interactionRule.slot2
-					portalExit = getClassNameFromSpriteString(interactionRule.args['stype'])
+					portalExit = getClassNameFromSpriteString(interactionRule.args['stype'], theory, rle)
 
 					theory.classes[portalEntry][0].vgdlType = Portal
 					if theory.classes[portalEntry][0].args is None:
@@ -3071,6 +3076,10 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 			c1 = interactionRule.slot1
 			c2 = interactionRule.slot2
 
+			if c1 not in theory.classes or c2 not in theory.classes:
+				print "c1 or c2 not in theory.classes"
+				embed()
+
 			if (c1=='laog' and len(theory.classes[c1])==0) or (c2=='laog' and len(theory.classes[c2])==0):
 				print "found laog"
 				embed()
@@ -3083,7 +3092,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 					argsString = ""
 
 					if interactionRule.preconditions or interactionRule.args:
-						args, interactionRule.interaction = buildArgsString(interactionRule)
+						args, interactionRule.interaction = buildArgsString(interactionRule, theory, rle)
 						argsString += args
 
 					if s1.colorName==newGoalColor:
@@ -3175,45 +3184,22 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 
 	locs = defaultdict(lambda:[])
 	mappedState = [[' ' for x in range(rle.outdim[1])] for y in range(rle.outdim[0])] 
+	# embed()
+
 	for lst in rle._game.observation['trackedObjects'].values():
 		for sprite in lst:
 			y,x = sprite.rect.top/30, sprite.rect.left/30
 			locs[(y,x)].append(sprite)
+
 
 	for k,v in locs.iteritems():
 		symbol = objectsToSymbol(rle, v, symbolDict)
 		mappedState[k[0]][k[1]] = symbol
 
 	
-	# mappedState = []
-	# for i in range(rle.outdim[0]):
-	# 	newEntry = []
-	# 	for j in range(rle.outdim[1]):
-	# 		newEntry.append(" ")
-
-	# 	mappedState.append(newEntry)
-
-	# for r in range(rle.outdim[0]):
-	# 	for c in range(rle.outdim[1]):
-	# 		if state[r][c] > 0:
-	# 			try:
-	# 				symbol = objectsToSymbol(rle, rle.getObjectsFromNumber(state[r][c]), symbolDict)
-	# 				mappedState[r][c] = symbol
-	# 			except:
-	# 				print "in map"
-	# 				embed()
-
-	# 		try:
-	# 			if mappedState[r][c] == " " and goalLoc == (r,c):
-	# 				# an empty square has been selected as the goal
-	# 				mappedState[r][c] = "G"
-	# 		except:
-	# 			print "mappedState problem2"
-	# 			embed()
-
-	# if mappedState1!=mappedState:
-	# 	print "unequal states"
-	# 	embed()
+	allObjectsSymbol = '`'
+	if addAllObjects:
+		mappedState[0][0] = allObjectsSymbol
 
 	levelString = 'level="""\n'
 	for mappedRow in mappedState:
@@ -3234,6 +3220,10 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 			c = theory.spriteObjects[colors].className
 			theoryString += "\t\t%s > %s\n"%(symbol, c)
 
+	if addAllObjects:
+		allClasses = [c for c in theory.classes.keys() if c!='avatar' and c!='EOS']
+		theoryString += "\t\t%s > %s\n"%(allObjectsSymbol, " ".join(allClasses))
+	
 	theoryString += '"""\n'
 	
 	parserString = 'if __name__ == "__main__":\n\tfrom vgdl.core import VGDLParser\n\tVGDLParser.playGame(game, level)\n'

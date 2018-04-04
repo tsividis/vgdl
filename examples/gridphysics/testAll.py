@@ -2,12 +2,12 @@
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                  g    x      w
-w  x     x              x     gw
+w  x     x              x e   gw
 w             x         x   e  w
 wxxxxxxxxxx    p        xxxxxxxw
 w      mm x   pgp  x           w
 w      mm x  x p         x     w
-w    x         A a c   c     t w
+w    x      a  A a c   c    tt w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -23,17 +23,50 @@ w    x    mm a A               w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-# level = simplifiedLevel
+## use this to test flipDirection.
+teleportlevel = """
+wwwwwwwwww
+w       gw
+w g      w
+w        w
+w        w
+w c A  c w
+wwwwwwwwww
+"""
+
+Avatarlevel = """
+wwwwwwwwww
+w       gw
+w g  b   w
+w    b   w
+w   A    w
+wwwwwwwwww
+"""
+
+# teleportlevel = """
+# wwwwwwwwww
+# w g     gw
+# w        w
+# w        w
+# w x      w
+# w        w
+# w        w
+# w c A  c w
+# wwwwwwwwww
+# """
+
+
+level = teleportlevel
 
 game="""
 BasicGame
     SpriteSet
         box    > Passive color=BROWN # orientation=RIGHT cooldown=1
+        box2 > Immovable color=PURPLE
         flicker > Flicker timeout=1 color=YELLOW
-
         chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
         avatar  > MovingAvatar color=DARKBLUE #stype=sam
-        cannon > SpawnPoint color=RED stype=sam spawnCooldown=2 #16
+        cannon > SpawnPoint color=RED stype=sam spawnCooldown=3
         missile > Missile
             sam  > orientation=UP color=BLUE cooldown=1 #4
         wall > Immovable color=DARKGRAY
@@ -49,6 +82,7 @@ BasicGame
         f > flicker
         0 > base
         x > box
+        b > box2
         r > random
         w > wall
         c > cannon
@@ -75,9 +109,10 @@ interactionSetAll = """
         cannon wall > stepBack
         sam wall > killSprite
         box avatar > killSprite
+        box2 avatar > bounceForward
         cannon avatar > bounceForward
         box sam > killSprite
-        avatar sam > bounceForward
+        # avatar sam > bounceForward
         avatar wall > stepBack
         avatar armor > changeResource resource=armor value=1
         medicine avatar > collectResource

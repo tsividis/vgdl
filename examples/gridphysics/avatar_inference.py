@@ -16,12 +16,12 @@
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
-w                            2 w
-w                            2 w
+w              1             1 w
+w                            1 w
+w              2               w
+w                    2         w
+w              A          3 3  w
 w                              w
-w             11               w
-w                              w
-w              A               w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -61,10 +61,10 @@ BasicGame
         flicker > Flicker timeout=1 color=ORANGE
         random > RandomNPC color=PURPLE speed=1 cooldown=1
         chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
-        avatar  > MovingAvatar color=DARKBLUE
-        cannon > SpawnPoint color=RED stype=sam spawnCooldown=1
+        avatar  > MovingAvatar color=DARKBLUE 
+        cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         missile > Missile
-            sam  > orientation=UP color=BLUE singleton=True
+            sam  > orientation=UP color=BLUE singleton=False cooldown=1
         wall > Immovable color=DARKGRAY
     LevelMapping
         C > cloner
@@ -80,12 +80,14 @@ BasicGame
         A > avatar
     InteractionSet
         avatar wall > stepBack
-        box avatar > killSprite
-        avatar box2 > killSprite
+        # box avatar > nothing
+        box avatar > transformTo stype=box2
+        box2 avatar > killSprite
+        # box2 avatar > bounceForward
         box3 avatar > killSprite
 
     TerminationSet
-        SpriteCounter stype=box2 limit=0 win=True
+        SpriteCounter stype=box3 limit=0 win=True
         # SpriteCounter stype=box3 limit=0 win=False
         Termination
 
