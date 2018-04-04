@@ -291,7 +291,7 @@ class Agent:
 
 		actionSequences = [
 			# [0,0,0,0]
-			[K_UP, K_LEFT, K_UP]
+			[K_UP, K_UP, K_UP, K_UP]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
 			# [0,0,0,0,0,0,0,0,0,0]
 			# [K_UP, K_UP]
@@ -304,7 +304,7 @@ class Agent:
 
 		for episode_num, actions in enumerate(actionSequences):
 			self.initializeEnvironment()
-			# embed()
+
 			print "initializing RLE. Epoch={}".format(epoch)
 
 			self.all_objects[episode_num] = self.rle._game.getObjects() ## we need to store all_objects across multiple episodes
@@ -584,6 +584,7 @@ class Agent:
 
 		for h in hypotheses:
 			h.dryingPaint = set()
+		
 		return hypotheses
 
 
@@ -727,8 +728,9 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False):
 				continue
 			color = hypothesis.classes[classKey][0].colorName
 			# first make the new (vrle) env have the correct number of each thing
-			vrleSpriteCount = len(Vrle._game.sprite_groups[classKey])
+			vrleSpriteCount = len(Vrle._game.sprite_groups[classKey]) - len([s for s in Vrle._game.kill_list if s.colorName==color])
 			rleSpriteCount = len(rle._game.observation['trackedObjects'][color])
+			Vrle._game.kill_list = []
 			if vrleSpriteCount > rleSpriteCount:
 				# just delete extraneous ones from the end
 				Vrle._game.sprite_groups[classKey] = Vrle._game.sprite_groups[classKey][:len(rle._game.observation['trackedObjects'][color])]
@@ -777,8 +779,9 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False):
 def initializeVrle(hypothesis, stateToSet, symbolDict, theoryRLE=None, makeInitialVrle=False, writeFile=False, debug=False):
 
 	## World in agent's mind given 'hypothesis', including object goal
+	
 	gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, symbolDict,\
-		 "./examples/gridphysics/theorytest.py", writeFile=writeFile, addAllObjects=True)
+		 "./examples/gridphysics/theorytest.py", writeFile=writeFile, addAllObjects=makeInitialVrle)
 
 	try:
 		Vrle = theoryRLE if theoryRLE else createMindEnv(gameString, levelString, output=False)
@@ -1621,12 +1624,10 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 
 	cumulative_penalties = []
 
-	print "running initial vrleInitPhase"
 	initialRLEs = VrleInitPhase(hypotheses, rleHistory[0], symbolDict, makeInitialVrle=True)
 	for idx in indices:
 		## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
 		t1 = time.time()
-		print "running secondary vrleInitPhase"
 		theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], symbolDict, initialRLEs)
 
 		## Take a predetermined number of actions starting from idx
@@ -1909,7 +1910,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 		## the next step will take care of not doing inference on these if we've done it already.
 		neighbors = neighboringSprites(envRealCurrent, errorMap.targetToken, 0)
 
-		print "neighbors of new class are {}".format(neighbors)
+		# print "neighbors of new class are {}".format(neighbors)
 		newErrorMaps = []
 		for neighbor in neighbors:
 			e = errorMap.copy()

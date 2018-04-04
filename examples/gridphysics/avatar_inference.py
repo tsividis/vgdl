@@ -16,10 +16,10 @@
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
+w              1             1 w
 w                            1 w
-w                            1 w
-w                              w
-w             11               w
+w              2               w
+w                    2         w
 w              A          3 3  w
 w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -62,9 +62,9 @@ BasicGame
         random > RandomNPC color=PURPLE speed=1 cooldown=1
         chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
         avatar  > MovingAvatar color=DARKBLUE 
-        cannon > SpawnPoint color=RED stype=sam spawnCooldown=1
+        cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         missile > Missile
-            sam  > orientation=UP color=BLUE singleton=True cooldown=2
+            sam  > orientation=UP color=BLUE singleton=False cooldown=1
         wall > Immovable color=DARKGRAY
     LevelMapping
         C > cloner
@@ -82,6 +82,7 @@ BasicGame
         avatar wall > stepBack
         # box avatar > nothing
         box avatar > transformTo stype=box2
+        box2 avatar > killSprite
         # box2 avatar > bounceForward
         box3 avatar > killSprite
 
