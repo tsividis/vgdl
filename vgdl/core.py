@@ -43,7 +43,6 @@ class VGDLParser(object):
     """ Parses a string into a Game object. """
     verbose = False
 
-
     @staticmethod
     def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", padding=0,positions=None):
         """ Parses the game and level map strings, and starts the game. """
@@ -240,7 +239,8 @@ class BasicGame(object):
                               'avatar',
                               ]
         # contains instance lists
-        self.sprite_groups = dict() #defaultdict(list)
+        self.sprite_groups = dict()
+        self.extra_sprites = dict()
         # which sprite types (abstract or not) are singletons?
         self.singletons = []
         # collision effects (ordered by execution order)
@@ -273,11 +273,8 @@ class BasicGame(object):
         self.object_token_movement_options = {}
         self.sprite_appearances = [] ## New sprites that appear at any given step. This gets cleared at the end of each time-step.
         self.all_objects = None
-
         self.observation = None
-
         self.EOS = EOS((-1, -1))
-
         self.reset()
 
     def reset(self):
@@ -629,7 +626,7 @@ class BasicGame(object):
             if key in self.lastcollisions:
                 del self.lastcollisions[key]
 
-    def _eventHandling(self):
+    def _eventHandling(self, predicateSubset=[]):
         self.lastcollisions = {}
         push_effect = 'bounceForward'
         back_effect = 'stepBack'
@@ -640,16 +637,17 @@ class BasicGame(object):
         dead = self.kill_list[:] # copy kill list
         created = []
 
-
-
         self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack','wallStop']
             else (2 if x[2].__name__ in ['killSprite', 'killIfTooFast'] else (3 if x[2].__name__ in ['changeResource', 'changeScore', 'conveySprite'] else 0)), reverse=True)
+
+        effectSubset = [eff for eff in self.collision_eff if eff[2].__name__ in predicateSubset] if predicateSubset else self.collision_eff
+
         # build the current sprite lists (if not yet available)
         # for class1, class2, effect, kwargs in self.collision_eff:
         while new_collisions:
             new_collisions = set()
             new_effects = []
-            for class1, class2, effect, kwargs in self.collision_eff:
+            for class1, class2, effect, kwargs in effectSubset:
                 for sprite_class in [class1, class2]:
                     if sprite_class not in self.lastcollisions:
                         if sprite_class in self.sprite_groups:
@@ -1080,7 +1078,7 @@ class BasicGame(object):
 
 
             ## Update actual sprite positions.
-            for s in self:
+            for s in list(self):
                 s.update(self)
 
             # handle collision effects
@@ -1188,12 +1186,10 @@ class BasicGame(object):
                 self.ended, win = t.isDone(self)
                 if self.ended:
                     return win, self.score
-            # update sprites
-        #print action
-
+        
+        # update sprites
         for s in list(self):
             s.update(self)
-
 
         # handle collision effects
         self._eventHandling()
@@ -1297,13 +1293,8 @@ class VGDLSprite(object):
     def _updatePos(self, orientation, speed=None):
         if speed is None:
             speed = self.speed
-        # if self.colorName=='YELLOW':
-        #     print "lastMove", self.lastmove
         if (self.lastmove+1)%self.cooldown==0 and abs(orientation[0])+abs(orientation[1])!=0:
-            # print "MOVING"
-        # if not( ((self.lastmove+1) % self.cooldown != 0) or abs(orientation[0])+abs(orientation[1])==0): ##used this until 9/14
             self.rect = self.rect.move((orientation[0]*speed, orientation[1]*speed))
-            # self.lastmove = 0
 
     def _velocity(self):
         """ Current velocity vector. """

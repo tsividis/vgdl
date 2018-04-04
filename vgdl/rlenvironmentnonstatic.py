@@ -10,7 +10,6 @@ import numpy as np
 from numpy import zeros
 import pygame
 from ontology import BASEDIRS
-from core import VGDLSprite
 from stateobsnonstatic import StateObsHandlerNonStatic
 from collections import defaultdict
 import argparse
@@ -117,7 +116,7 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
                 inverseMapping[OLD_GOAL] = "O" # old goal
 
         inverseMapping['avatar'] = 'A'
-
+        
         self.symbolDict = inverseMapping
         return
 
@@ -138,9 +137,6 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
             for j in range(self.outdim[1]):
                 if state[i][j] == 0:
                     gameString += " "
-                # else:
-                #     symbol = objectsToSymbol(self, self.getObjectsFromNumber(state[i][j]), self.symbolDict)
-                #     gameString += symbol
                 elif state[i][j] == 1:
                     gameString += colored(symbolDict['avatar'], 'red')
                 else:
@@ -150,8 +146,6 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
                     elif state[i][j] != 2**(spriteIndex+1):
                         gameString += colored("$", color)
                     else:
-                        # spriteOverlap = True
-                        # break
                         spriteType = sorted(self._obstypes.keys())[::-1][spriteIndex]
                         gameString += colored(symbolDict[spriteType], color)
 
@@ -364,14 +358,6 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         #     self._previous_state = self._last_state
         #     self._last_state = self.getState()
         #     self._allEvents.append((self._previous_state, action, self._last_state))
-
-    def step_profiler(self, action):
-        lp = LineProfiler()
-        lp_wrapper = lp(self.step)
-        output = lp_wrapper(action)
-        lp.print_stats()
-
-        return output
 
     def step(self, action):
         #print self._game.sprite_groups['avatar']

@@ -80,6 +80,8 @@ def normalize(array):
 
 def normalizeVec(v):
 	mag = sqrt(sum([x*x for x in v]))
+	if mag==0:
+		return (0,0)
 	return tuple([x*1.0 / mag for x in v])
 
 def manhattanDist(a, b):
