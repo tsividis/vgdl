@@ -322,7 +322,7 @@ class Agent:
 				if num == len(actions)-1:
 					lastStep=True
 				t2 = time.time()
-				hypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
+				hypotheses, _ = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
 				print ""
 				print "executed step in {} seconds".format(time.time()-t2)
 				print ""
@@ -587,7 +587,7 @@ class Agent:
 
 		for h in hypotheses:
 			h.dryingPaint = set()
-		return hypotheses
+		return hypotheses, scoresAndHypotheses
 
 
 	########################################################################

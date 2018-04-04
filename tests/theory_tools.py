@@ -17,7 +17,7 @@ def getColorAssignments(hypothesis):
 
 def getColorName(hypothesis, class_name):
 	'''Returns the the color of a given class in a given hypothesis'''
-	assert class_name in hypothesis.classes, 'Key Error: class name not in hypothesis'
+	assert class_name in hypothesis.classes, 'Key Error: class name %s not in classes %r: %s' % (class_name, hypothesis.classes, hypothesis._stringClasses())
 	return hypothesis.classes[class_name][0].colorName
 
 def getColorInteraction(rule, hypothesis):
@@ -136,13 +136,13 @@ def classAssignmentsEqual(theory1, theory2):
 
 	return True
 
-def interactionSetsEqual(theory1, theory2, ignore_step_back=True):
+def interactionSetsEqual(theory1, theory2):
 	'''Check if interactions are equal (in terms of color, not class name)'''
-	interactions1 = set(getColorInteractionSet(theory1))
-	interactions2 = set(getColorInteractionSet(theory2))
-	if ignore_step_back:
-		interactions1 = set([i for i in interactions1 if i.interaction != 'stepBack'])
-		interactions2 = set([i for i in interactions1 if i.interaction != 'stepBack'])
+	interactions1 = getColorInteractionSet(theory1)
+	interactions2 = getColorInteractionSet(theory2)
+
+	interactions1 = set(interactions1)
+	interactions2 = set(interactions2)
 	if interactions1 != interactions2:
 		return False
 
@@ -161,12 +161,12 @@ def terminationSetsEqual(theory1, theory2, ignore_novelty_terminations=True):
 
 	return True
 
-def theoriesEqual(theory1, theory2, ignore_novelty_terminations=True, ignore_step_back=True):
+def theoriesEqual(theory1, theory2, ignore_novelty_terminations=True):
 	'''Compares if two theories are equal where class assignments are based on color.'''
 	if not classAssignmentsEqual(theory1, theory2):
 		return False
 
-	if not interactionSetsEqual(theory1, theory2, ignore_step_back):
+	if not interactionSetsEqual(theory1, theory2):
 		return False
 
 	if not terminationSetsEqual(theory1, theory2, ignore_novelty_terminations):
@@ -179,5 +179,5 @@ if __name__ == '__main__':
 	t1 = generateTheoryFromGameString(simple.game)
 	t2 = generateTheoryFromGameString(simple.game2)
 	# assert TheoriesEqual(t1, t2), 'Theories not equal'
-	t2.display()
+	# t2.display()
 	print 'TheoriesEqual(t12, t2) = %s' % theoriesEqual(t1, t2)

@@ -115,11 +115,14 @@ class InteractionRule(object):
 		self._hash = hash((self.interaction, self.slot1, self.slot2, tuple(sorted(self.args.iteritems()))))
 
 	def display(self):
+		print self
+
+	def __repr__(self):
 		if not self.preconditions:
-			print self.interaction, self.slot1, self.slot2, self.args
+			string = "%s %s %s %r" % (self.interaction, self.slot1, self.slot2, self.args)
 		else:
-			print self.interaction, self.slot1, self.slot2, self.args, [p.text for p in self.preconditions]
-		return
+			string = "%s %s %s %r %r" % (self.interaction, self.slot1, self.slot2, self.args, [p.text for p in self.preconditions])
+		return string
 
 	def copy(self):
 		return InteractionRule(self.interaction, self.slot1, self.slot2, dict(self.args) if self.args else {},
@@ -198,6 +201,10 @@ class TimeoutRule(TerminationRule):
 		self.ruleType = "TimeoutRule"
 		self._hash = hash(self.asTuple())
 
+
+	def __repr__(self):
+		return str(self.asTuple())
+
 	def display(self):
 		print self.asTuple()
 
@@ -213,6 +220,9 @@ class NoveltyRule(TerminationRule):
 		args = args if args else {}
 		self._hash = hash((self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, tuple(sorted(args.iteritems()))))
 
+	def __repr__(self):
+		return str(self.asTuple())
+
 	def display(self):
 		print self.asTuple()
 
@@ -226,6 +236,9 @@ class SpriteCounterRule(TerminationRule):
 		self.termination = SpriteCounter(limit=limit, stype=stype, win=win)
 		self.ruleType = "SpriteCounterRule"
 		self._hash = hash(self.asTuple())
+
+	def __repr__(self):
+		return str(self.asTuple())
 
 	def display(self):
 		print self.asTuple()
@@ -241,6 +254,10 @@ class MultiSpriteCounterRule(TerminationRule):
         self.termination = MultiSpriteCounter(limit=limit,win=win, **argList)
         self.ruleType = "MultiSpriteCounterRule"
         self._hash = hash((self.ruleType, tuple(sorted(self.termination.stypes)), self.termination.limit, self.termination.win))
+
+
+    def __repr__(self):
+    	print self.asTuple()
 
     def display(self):
         print self.asTuple()
@@ -1486,34 +1503,56 @@ class Theory(object):
 				return c
 		return False
 
+	def _stringRules(self, ignore_step_back=True):
+		string = '\nInteractionSet:'
+		for rule in self.interactionSet:
+			if ignore_step_back and rule.interaction == 'stepBack':
+				pass
+			else:
+				string += "\n\t%s" % rule
+		return string
+
 	def displayRules(self):
 		print ""
 		print "InteractionSet:"
 		for rule in self.interactionSet:
-			# if rule.interaction != 'stepBack':
-			rule.display()
+			if rule.interaction != 'stepBack':
+				rule.display()
 
-	def displayClasses(self):
-		print ""
-		print "Class assignments:"
+	def _stringClasses(self):
+		string = "\nClass assignments:"
 		for c in self.classes:
 			class_list = [cl.colorName for cl in self.classes[c]]
-			print "\t{}: {}: {}: {}".format(c, class_list, self.spriteObjects[cl.colorName].vgdlType, \
+			string += "\n\t{}: {}: {}: {}".format(c, class_list, self.spriteObjects[cl.colorName].vgdlType, \
 				self.spriteObjects[cl.colorName].args)
-		print
+		return string
+
+	def displayClasses(self):
+		print self._stringClasses()
+
+	def _stringTerminations(self, ignore_novelty_terminations=True):
+		string = "\nTerminationSet:"
+		for tc in self.terminationSet:
+			if ignore_novelty_terminations and tc.ruleType == 'NoveltyRule':
+				pass
+			else:
+				string += "\n\t%s" % tc
+		return string
 
 	def displayTerminationSet(self):
-		print ""
-		print "TerminationSet:"
-		for tc in self.terminationSet:
-			tc.display()
+		print self._stringTerminations()
 
 	def display(self):
-		self.displayClasses()
-		self.displayRules()
-		self.displayTerminationSet()
-		print "_______"
+		print self
 		return
+
+	def __repr__(self):
+		string = "------ Theory ------"
+		string += self._stringClasses()
+		string += self._stringRules()
+		string += self._stringTerminations()
+		string += '\n------------------'
+		return string
 
 	def __eq__(self, other):
 		if isinstance(other, self.__class__):

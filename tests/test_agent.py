@@ -68,8 +68,8 @@ class TestAgent(unittest.TestCase):
 	# Execution
 	def executeStep(self, episode_num, action, lastStep=False):
 		theoryRLEs = self.generateTheoryRLEs()
-		self.agent.hypotheses = self.agent.executeStep(episode_num, self.agent.rleHistory, self.agent.actionHistory, 
-											     action, self.agent.hypotheses, theoryRLEs, lastStep)
+		self.agent.hypotheses, self.agent.scoresAndHypotheses = self.agent.executeStep(episode_num, self.agent.rleHistory, self.agent.actionHistory, 
+											     										action, self.agent.hypotheses, theoryRLEs, lastStep)
 
 	def runEpisode(self, episode_num, actions):
 		self.initializeEpisode(episode_num)
@@ -83,17 +83,51 @@ class TestAgent(unittest.TestCase):
 
 	########################################
 	# Display Functions
-	def displayHypotheses(self):
-		print '==========HYPOTHESES=============='
+	def stringHypotheses(self):
+		string = '==========HYPOTHESES=============='
 		for h in self.agent.hypotheses:
-			print h.__dict__.keys()
-			h.display()
+			string += '\n%s' % h
+
+	def stringCompareTheories(self, theory1, theory2, string_function, **kwargs):
+		string = '--- Theory1'
+		string += '%s' % getattr(theory1, string_function)(**kwargs)
+		string += '\n--- Theory2'
+		string += '%s\n---' % getattr(theory2, string_function)(**kwargs)
+		return string
+
+	def stringLowErrorHypotheses(self, error):
+		string += '===============Low Error Hypotheses=============='
+		for e, h in self.agent.scoresAndHypotheses:
+			if e < error:
+				string += '\n%s' % h
+
+
+	########################################
+	# Assertion Function
+	def assertTheoriesEqual(self, theory1, theory2, ignore_novelty_terminations=True):
+		display = 'Theoies Not Equal\n'
+		if not classAssignmentsEqual(theory1, theory2):
+			display += '\n>>> Class Assignments not Equal'
+			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringClasses')
+		if not interactionSetsEqual(theory1, theory2):
+			display += '\n>>> Interaction Sets not Equal'
+			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringRules', ignore_step_back=False)
+		if not terminationSetsEqual(theory1, theory2, ignore_novelty_terminations):
+			display += '\n>>> Termination Sets not Equal'
+			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringTerminations')
+		# display += '\n%s' % theory1
+		# display += '\n%s' % theory2 
+		self.assertTrue(theoriesEqual(theory1, theory2), display)
+
+	def assertHypothesisHasLowError(self, hypothesis, scores_and_hypotheses, error=0.0):
+		''''''
+		self.assertTrue(True)
 
 	########################################
 	# Test Suite
 	def testLevel0(self):
 		test_hypothesis = generateTheoryFromGameString(simple.test_hypothesis)
-		action_sequences = [[K_UP]]
+		action_sequences = [[K_UP, K_UP, K_UP]]
 		self.initialize(simple.game, simple.levels[0], action_sequences)
 
 		# self.executeStep(0, K_UP)
@@ -101,7 +135,8 @@ class TestAgent(unittest.TestCase):
 
 		
 		h0 = self.agent.hypotheses[0]
-		self.assertTrue(theoriesEqual(h0, test_hypothesis))
+		# self.assertTrue(theoriesEqual(h0, test_hypothesis))
+		self.assertTheoriesEqual(h0, test_hypothesis)
 
 		# hypothesis = self.agent.hypotheses[0]
 		# interaction = Interaction('DARKBLUE', 'DARKBLUE', 'stepBack', {})

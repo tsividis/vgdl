@@ -81,6 +81,9 @@ BasicGame
         box > ResourcePack color=WHITE
         wall > ResourcePack color=DARKGRAY
         avatar > MovingAvatar color=DARKBLUE
+    InteractionSet
+        avatar box > nothing
+        box avatar > killSprite
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
 """
