@@ -730,6 +730,7 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False):
 			# first make the new (vrle) env have the correct number of each thing
 			vrleSpriteCount = len(Vrle._game.sprite_groups[classKey]) - len([s for s in Vrle._game.kill_list if s.colorName==color])
 			rleSpriteCount = len(rle._game.observation['trackedObjects'][color])
+			old_kill_list = Vrle._game.kill_list
 			Vrle._game.kill_list = []
 			if vrleSpriteCount > rleSpriteCount:
 				# just delete extraneous ones from the end
@@ -745,8 +746,11 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False):
 			if not Vrle._game.sprite_groups[classKey]:
 				continue
 			color = Vrle._game.sprite_groups[classKey][0].colorName
-			for i in range(len(Vrle._game.sprite_groups[classKey])):
-				setSpriteState(Vrle._game.sprite_groups[classKey][i], rle._game.observation['trackedObjects'][color][i], hypothesis)
+			for i in range(rleSpriteCount):
+				try:
+					setSpriteState(Vrle._game.sprite_groups[classKey][i], rle._game.observation['trackedObjects'][color][i], hypothesis)
+				except IndexError:
+					embed()
 		
 
 		# if 'transformTo' in [r.interaction for r in hypothesis.interactionSet] and len(rle._game.sprite_groups['box2'])==3:

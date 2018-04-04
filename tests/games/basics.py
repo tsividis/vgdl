@@ -49,7 +49,7 @@ BasicGame
         wall box > stepBack
 
         box wall > stepBack
-        avatar box > stepBack
+        # avatar box > stepBack
         box avatar > stepBack
 
 
