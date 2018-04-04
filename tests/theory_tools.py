@@ -141,8 +141,15 @@ def interactionSetsEqual(theory1, theory2):
 	interactions1 = getColorInteractionSet(theory1)
 	interactions2 = getColorInteractionSet(theory2)
 
+	interactions1 = [i for i in interactions1 if i.interaction != 'nothing']
+	interactions2 = [i for i in interactions2 if i.interaction != 'nothing']
+
+
 	interactions1 = set(interactions1)
 	interactions2 = set(interactions2)
+
+	if len(interactions1) != len(interactions2):
+		return False
 	if interactions1 != interactions2:
 		return False
 

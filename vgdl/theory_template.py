@@ -1506,8 +1506,10 @@ class Theory(object):
 	def _stringRules(self, ignore_step_back=True):
 		string = '\nInteractionSet:'
 		for rule in self.interactionSet:
+			if rule.interaction == 'nothing':
+				continue
 			if ignore_step_back and rule.interaction == 'stepBack':
-				pass
+				continue
 			else:
 				string += "\n\t%s" % rule
 		return string

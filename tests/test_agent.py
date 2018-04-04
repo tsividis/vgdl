@@ -95,10 +95,10 @@ class TestAgent(unittest.TestCase):
 		string += '%s\n---' % getattr(theory2, string_function)(**kwargs)
 		return string
 
-	def stringLowErrorHypotheses(self, error):
+	def stringLowErrorHypotheses(self, error_limit=0.01):
 		string += '===============Low Error Hypotheses=============='
 		for e, h in self.agent.scoresAndHypotheses:
-			if e < error:
+			if e < error_limit:
 				string += '\n%s' % h
 
 
@@ -119,15 +119,17 @@ class TestAgent(unittest.TestCase):
 		# display += '\n%s' % theory2 
 		self.assertTrue(theoriesEqual(theory1, theory2), display)
 
-	def assertHypothesisHasLowError(self, hypothesis, scores_and_hypotheses, error=0.0):
+	def assertHypothesisHasLowError(self, hypothesis, scores_and_hypotheses, error_limit=0.01):
 		''''''
-		self.assertTrue(True)
+		for e, h in scores_and_hypotheses:
+			if h == hypothesis:
+				self.assertTrue(e <= error_limit, 'Hypothesis does not have low error')
 
 	########################################
 	# Test Suite
 	def testLevel0(self):
 		test_hypothesis = generateTheoryFromGameString(simple.test_hypothesis)
-		action_sequences = [[K_UP, K_UP, K_UP]]
+		action_sequences = [[K_UP]]
 		self.initialize(simple.game, simple.levels[0], action_sequences)
 
 		# self.executeStep(0, K_UP)

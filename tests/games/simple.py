@@ -5,9 +5,9 @@ w                              w
 w                              w
 w                              w
 w          BBBBB               w
-w                              w
-w                              w
 w              A               w
+w                              w
+w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 
 """, """
@@ -82,8 +82,25 @@ BasicGame
         wall > ResourcePack color=DARKGRAY
         avatar > MovingAvatar color=DARKBLUE
     InteractionSet
-        avatar box > nothing
         box avatar > killSprite
+
+        avatar avatar > stepBack
+        box box > stepBack
+        wall wall > stepBack
+
+        avatar EOS > stepBack
+
+        box avatar > stepBack
+        wall box > stepBack
+        box wall > stepBack
+        box EOS > stepBack
+
+        avatar wall > stepBack
+        wall avatar > stepBack
+        wall EOS > stepBack
+
+
+
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
 """
