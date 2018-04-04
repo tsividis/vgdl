@@ -118,9 +118,13 @@ class TestAgent(unittest.TestCase):
 		# display += '\n%s' % theory2 
 		self.assertTrue(theoriesEqual(theory1, theory2), display)
 
-	def assertHypothesisHasLowError(self, hypothesis, scores_and_hypotheses, error_limit=0.01):
+	def assertHasHypothesis(self, hypothesis):
+		self.assertTrue(hypothesis in self.agent.hypotheses, 'Hypothesis not in hypotheses')
+
+
+	def assertHypothesisHasLowError(self, hypothesis, error_limit=0.01):
 		''''''
-		for e, h in scores_and_hypotheses:
+		for e, h in self.agent.scoresAndHypotheses:
 			if h == hypothesis:
 				self.assertTrue(e <= error_limit, 'Hypothesis does not have low error')
 
@@ -147,8 +151,10 @@ class TestAgent(unittest.TestCase):
 
 		self.runCurriculum(action_sequences)
 
+		self.assertHasHypothesis(real_description)
 		h = self.agent.hypotheses
 		self.assertTheoriesEqual(h[0], real_description)
+
 	# def testLevel1(self):
 	# 	action_sequences = [[K_UP]]
 	# 	self.initialize(simple.game, simple.levels[0], action_sequences)
