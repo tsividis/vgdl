@@ -1490,8 +1490,8 @@ class Theory(object):
 		print ""
 		print "InteractionSet:"
 		for rule in self.interactionSet:
-			if rule.interaction != 'stepBack':
-				rule.display()
+			# if rule.interaction != 'stepBack':
+			rule.display()
 
 	def displayClasses(self):
 		print ""

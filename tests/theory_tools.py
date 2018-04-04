@@ -1,7 +1,7 @@
 from collections import namedtuple
 from vgdl.theory_template import Theory, Game, InteractionRule, TerminationRuleConstructor
 from vgdl.class_theory_template import SpriteParser
-from vgdl.core import VGDLParser
+from vgdl.core import VGDLParser, EOS
 
 Interaction = namedtuple('Interaction', 'slot1, slot2,  interaction, args')
 ClassAssignment = namedtuple('ClassAssignment', 'vgdlType, args')
@@ -86,24 +86,29 @@ def generateTheoryFromGameString(game_string):
 	# Add classes
 	for class_name, sprite in sprite_parser.sprite_types.iteritems():
 		# print class_name, sprite
-		# print class_name, sprite
+
 		theory.classes[class_name] = [sprite]
 		theory.spriteSet.append(sprite)
 		if class_name == 'EOS':
+			sprite.vgdlType = EOS
 			sprite.colorName = 'ENDOFSCREEN'
 		theory.spriteObjects[sprite.colorName] = sprite
 
 	# Add interaction Rules
 	for c1, c2, effect, args in vgdl_game.collision_eff:
+		# print c1, c2, effect, args
 		rule = InteractionRule(effect.__name__, c1, c2, args)
+		rule.display()
 		theory.interactionSet.append(rule)
 
 	# Add termination Rules
 	for termination in vgdl_game.terminations:
 		rule_type = termination.name+'Rule'
 		try:
-			print termination.get_args()
 			term_rule = TerminationRuleConstructor(rule_type, **termination.get_args())
+			for key, value in term_rule.__dict__.iteritems():
+				if value == EOS:
+					setattr(term_rule, key, value)
 			theory.terminationSet.add(term_rule)
 		except NameError:
 			# pass
@@ -113,29 +118,58 @@ def generateTheoryFromGameString(game_string):
 	return theory
 
 
-def theoriesEqual(theory1, theory2, ignore_novelty_terminations=True):
-	'''Compares if two theories are equal where class assignments are based on color.'''
+def classAssignmentsEqual(theory1, theory2):
+	'''Check if class assignments are the same (based on color)'''
 	colors1, colors2 = set(theory1.spriteObjects), set(theory2.spriteObjects)
-	# Check if same colors used for class definition
+
+	# Check if same colors used for class definitions
 	if colors1 != colors2:
 		return False
 
 	# Check if class definitions are the same
 	for color in colors1:
 		# print
-		if theory1.spriteObjects[color] != theory2.spriteObjects[color]:
+		vgdl_type1 = theory1.spriteObjects[color].vgdlType
+		vgdl_type2 = theory2.spriteObjects[color].vgdlType
+		if vgdl_type1 != vgdl_type2:
 			return False
 
-	# Check if interactions are equal (in terms of color, not class name)
+	return True
+
+def interactionSetsEqual(theory1, theory2, ignore_step_back=True):
+	'''Check if interactions are equal (in terms of color, not class name)'''
 	interactions1 = set(getColorInteractionSet(theory1))
 	interactions2 = set(getColorInteractionSet(theory2))
+	if ignore_step_back:
+		interactions1 = set([i for i in interactions1 if i.interaction != 'stepBack'])
+		interactions2 = set([i for i in interactions1 if i.interaction != 'stepBack'])
 	if interactions1 != interactions2:
 		return False
 
-	# Check if terminations are equal (in terms of color, not class name)
+	return True
+
+def terminationSetsEqual(theory1, theory2, ignore_novelty_terminations=True):
+	'''Check if terminations are equal (in terms of color, not class name)'''
 	terminations1 = getColorTerminationSet(theory1)
 	terminations2 = getColorTerminationSet(theory2)
+
+	if ignore_novelty_terminations:
+		terminations1 = set([t for t in terminations1 if t.ruleType != 'NoveltyRule'])
+		terminations2 = set([t for t in terminations2 if t.ruleType != 'NoveltyRule'])
 	if terminations1 != terminations2:
+		return False
+
+	return True
+
+def theoriesEqual(theory1, theory2, ignore_novelty_terminations=True, ignore_step_back=True):
+	'''Compares if two theories are equal where class assignments are based on color.'''
+	if not classAssignmentsEqual(theory1, theory2):
+		return False
+
+	if not interactionSetsEqual(theory1, theory2, ignore_step_back):
+		return False
+
+	if not terminationSetsEqual(theory1, theory2, ignore_novelty_terminations):
 		return False
 
 	return True
@@ -145,4 +179,5 @@ if __name__ == '__main__':
 	t1 = generateTheoryFromGameString(simple.game)
 	t2 = generateTheoryFromGameString(simple.game2)
 	# assert TheoriesEqual(t1, t2), 'Theories not equal'
+	t2.display()
 	print 'TheoriesEqual(t12, t2) = %s' % theoriesEqual(t1, t2)

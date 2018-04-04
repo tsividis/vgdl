@@ -82,8 +82,5 @@ BasicGame
         wall > ResourcePack color=DARKGRAY
         avatar > MovingAvatar color=DARKBLUE
     TerminationSet
-        NoveltyTermination s1=box s2=EOS win=True
-        NoveltyTermination s1=avatar s2=EOS win=True
-        NoveltyTermination s1=wall s2=EOS win=True
         SpriteCounter stype=avatar limit=0 win=False
 """
