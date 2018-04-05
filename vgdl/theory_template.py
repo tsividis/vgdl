@@ -355,7 +355,7 @@ class Theory(object):
 		sprite = Sprite(vgdlType, color, className=newSpriteName, args=args)
 		for (o1,o2) in itertools.product([newSpriteName], self.classes.keys()):
 			rule1 = InteractionRule('stepBack', o1, o2, {}, set(), generic=True)
-			rule2 = InteractionRule('stepBack', o1, o2, {}, set(), generic=True)
+			rule2 = InteractionRule('stepBack', o2, o1, {}, set(), generic=True)
 			self.interactionSet.append(rule1)
 			self.interactionSet.append(rule2)
 		self.classes[newSpriteName] = [sprite]

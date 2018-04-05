@@ -26,18 +26,31 @@
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-#up, up, down
+#0,0,0,0,0,0
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                            1 w
 w                            1 w
-w              1               w
-w              1               w
-w              A          3 3  w
 w                              w
+w              A               w
+w                         3 3  w
+w         c    c               w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
+
+# #up, up, down
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w              1               w
+# w              1               w
+# w              A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 #0,0,0,0,0,0,0
 # level = """
@@ -112,6 +125,7 @@ BasicGame
         box2 avatar > killSprite
         # box2 avatar > bounceForward
         box3 avatar > killSprite
+        avatar sam > bounceForward
 
     TerminationSet
         SpriteCounter stype=box3 limit=0 win=True

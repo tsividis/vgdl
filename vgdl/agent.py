@@ -290,8 +290,8 @@ class Agent:
 			print "WARNING: running on < 40 cores."
 
 		actionSequences = [
-			# [0,0,0,0,0,0]
-			[K_UP, K_UP, K_DOWN]
+			[0,0,0,0,0,0]
+			# [K_UP, K_UP, K_DOWN]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
 			# [0,0,0,0,0,0,0,0,0,0]
@@ -552,7 +552,9 @@ class Agent:
 			scoreAndTheoryTuples = zip(penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], len(x[1].interactionSet)))
 
-			for num, sh in enumerate(scoreAndTheoryTuples):
+			for num, sh in reversed(list(enumerate(scoreAndTheoryTuples))):
+				if num > 100:
+					continue
 				print "Theory: {} | Error: {}".format(num, sh[0])
 				sh[1].display()
 			scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
