@@ -13,15 +13,41 @@
 
 # """
 
+#up, up, up, up, left
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w              1             1 w
+# w                            1 w
+# w              2               w
+# w                    2         w
+# w              A          3 3  w
+# w                           w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+#up, up, up
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w              1               w
+# w              1               w
+# w              A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
-w              1             1 w
 w                            1 w
-w              2               w
-w                    2         w
+w                            1 w
+w              1               w
+w              1               w
 w              A          3 3  w
-w                              w
+w   c   c                      w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 

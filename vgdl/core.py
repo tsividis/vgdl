@@ -769,12 +769,6 @@ class BasicGame(object):
                 new_collision_eff.append(element)
         self.effectList = new_collision_eff
 
-
-        # self.kill_list = dead[:]
-        # if len(self.effectList) > 0:
-            # print 'effectList', self.effectList
-        # self.effectList = list(set(self.effectList))
-
         return self.effectList
 
     def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0):

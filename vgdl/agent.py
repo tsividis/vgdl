@@ -290,11 +290,12 @@ class Agent:
 			print "WARNING: running on < 40 cores."
 
 		actionSequences = [
-			# [0,0,0,0]
+			[0,0,0,0]
+			# [K_UP, K_UP, K_DOWN]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			[0,0,0,0,0,0,0,0,0,0]
-			# [K_UP, K_UP]
+			# [0,0,0,0,0,0,0,0,0,0]
+			# [K_UP, K_UP, K_UP]
 			# [K_RIGHT, K_UP]
 		]
 
@@ -708,7 +709,7 @@ def setSpriteState(sprite, matchingSprite, hypothesis):
 	# sprite.speed = ccopy(matchingSprite.speed)
 	return
 
-def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False):
+def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False, debug=False):
 	## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
 
 	## This is now playing a dual role. Instead of building in theory-laden perception, we
@@ -718,10 +719,11 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False):
 	## RotatingAvatar was UP but we know that our last action was RIGHT, setVrleState() can 'infer' that
 	## this means the RotatingAvatar's orientation is actually RIGHT now, and can set it to that.
 	## IMPORTANT: This means that each sprite's orientation will only be correct if this function is called between each time-step.
-	
+	if debug:
+		print "in setVrleState"
+		embed()
 	if not makeInitialVrle:
-		avatar = hypothesis.classes['avatar'][0]
-
+		tmp_kill_list = []
 		# note: there should at this point be no mismatch between the keys
 		for classKey in Vrle._game.sprite_groups:
 			if classKey=='wall':
@@ -730,10 +732,10 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False):
 			# first make the new (vrle) env have the correct number of each thing
 			vrleSpriteCount = len(Vrle._game.sprite_groups[classKey]) - len([s for s in Vrle._game.kill_list if s.colorName==color])
 			rleSpriteCount = len(rle._game.observation['trackedObjects'][color])
-			Vrle._game.kill_list = []
 			if vrleSpriteCount > rleSpriteCount:
-				# just delete extraneous ones from the end
-				Vrle._game.sprite_groups[classKey] = Vrle._game.sprite_groups[classKey][:len(rle._game.observation['trackedObjects'][color])]
+				# just delete extraneous ones from the end by adding them to the kill_list
+				tmp_kill_list.extend(Vrle._game.sprite_groups[classKey][len(rle._game.observation['trackedObjects'][color]):])
+				# Vrle._game.sprite_groups[classKey] = Vrle._game.sprite_groups[classKey][:len(rle._game.observation['trackedObjects'][color])]
 			elif vrleSpriteCount < rleSpriteCount:
 				# have to duplicate Vrle sprites so we have enough to copy all the rle sprites into
 				try:
@@ -763,8 +765,7 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False):
 		# if 'transformTo' in [r.interaction for r in hypothesis.interactionSet] and len(Vrle._game.sprite_groups['c4'])==3:
 		# 	print "transformTo in hypothesis"
 		# 	embed()
-		## TODO: use this? or do what you had done above.
-
+		Vrle._game.kill_list = tmp_kill_list
 		Vrle._game._eventHandling(UNOBSERVABLE_PREDICATES)
 
 
@@ -783,7 +784,8 @@ def initializeVrle(hypothesis, stateToSet, symbolDict, theoryRLE=None, makeIniti
 		 "./examples/gridphysics/theorytest.py", writeFile=writeFile, addAllObjects=makeInitialVrle)
 
 	try:
-		Vrle = theoryRLE if theoryRLE else createMindEnv(gameString, levelString, output=False)
+		# Vrle = theoryRLE if theoryRLE else createMindEnv(gameString, levelString, output=False)
+		Vrle = createMindEnv(gameString, levelString, output=False)
 	except:
 		print "in initializeVrle"
 		embed()
@@ -2003,13 +2005,14 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.aliens"
 
-	# filename = "examples.gridphysics.avatar_inference"
+	filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.collect_resource"
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 
-	filename = "examples.gridphysics.testAll"
+	# filename = "examples.gridphysics.testAll"
+	# filename = "examples.gridphysics.basics"
 
 	global WBP
 	if 'grid' in filename:
