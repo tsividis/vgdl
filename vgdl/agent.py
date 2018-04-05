@@ -290,7 +290,7 @@ class Agent:
 			print "WARNING: running on < 40 cores."
 
 		actionSequences = [
-			[0,0,0,0]
+			[0,0,0,0,0,0]
 			# [K_UP, K_UP, K_DOWN]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
@@ -739,16 +739,18 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False, debug=False):
 			elif vrleSpriteCount < rleSpriteCount:
 				# have to duplicate Vrle sprites so we have enough to copy all the rle sprites into
 				try:
-					Vrle._game.sprite_groups[classKey] += [copy.deepcopy(Vrle._game.extra_sprites[classKey]) for n in range(rleSpriteCount - vrleSpriteCount)]
+					## Make as many new sprites as you need and put them at (0,0); we'll set their position and state below.
+					[Vrle._game._createSprite([classKey], (0,0)) for n in range(rleSpriteCount-vrleSpriteCount)]
+					# Vrle._game.sprite_groups[classKey] += [copy.deepcopy(Vrle._game.extra_sprites[classKey]) for n in range(rleSpriteCount - vrleSpriteCount)]
 				except:
 					print "problem in setVrleState"
 					embed()
 			# Now copy over sprite state (if we have any left of that type)
 			if not Vrle._game.sprite_groups[classKey]:
 				continue
-			for i in range(rleSpriteCount):
+
+			for i in range(min(len(Vrle._game.sprite_groups[classKey]), len(rle._game.observation['trackedObjects'][color]))):
 				setSpriteState(Vrle._game.sprite_groups[classKey][i], rle._game.observation['trackedObjects'][color][i], hypothesis)
-		
 
 		# if 'transformTo' in [r.interaction for r in hypothesis.interactionSet] and len(rle._game.sprite_groups['box2'])==3:
 			# print "transformTo in hypothesis"
