@@ -26,19 +26,7 @@
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-#up, up, up
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w                            1 w
-# w              1               w
-# w              1               w
-# w              A          3 3  w
-# w                              w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
-
+#up, up, down
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
@@ -47,9 +35,22 @@ w                            1 w
 w              1               w
 w              1               w
 w              A          3 3  w
-w   c   c                      w
+w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
+
+#0,0,0,0,0,0,0
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w              1               w
+# w              1               w
+# w              A          3 3  w
+# w   c   c                      w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww

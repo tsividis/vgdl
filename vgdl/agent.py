@@ -290,8 +290,8 @@ class Agent:
 			print "WARNING: running on < 40 cores."
 
 		actionSequences = [
-			[0,0,0,0,0,0]
-			# [K_UP, K_UP, K_DOWN]
+			# [0,0,0,0,0,0]
+			[K_UP, K_UP, K_DOWN]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
 			# [0,0,0,0,0,0,0,0,0,0]
@@ -734,7 +734,7 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False, debug=False):
 			rleSpriteCount = len(rle._game.observation['trackedObjects'][color])
 			if vrleSpriteCount > rleSpriteCount:
 				# just delete extraneous ones from the end by adding them to the kill_list
-				tmp_kill_list.extend(Vrle._game.sprite_groups[classKey][len(rle._game.observation['trackedObjects'][color]):])
+				tmp_kill_list.extend(Vrle._game.sprite_groups[classKey][rleSpriteCount:])
 				# Vrle._game.sprite_groups[classKey] = Vrle._game.sprite_groups[classKey][:len(rle._game.observation['trackedObjects'][color])]
 			elif vrleSpriteCount < rleSpriteCount:
 				# have to duplicate Vrle sprites so we have enough to copy all the rle sprites into
@@ -749,7 +749,7 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False, debug=False):
 			if not Vrle._game.sprite_groups[classKey]:
 				continue
 
-			for i in range(min(len(Vrle._game.sprite_groups[classKey]), len(rle._game.observation['trackedObjects'][color]))):
+			for i in range(min(len(Vrle._game.sprite_groups[classKey]), rleSpriteCount)):
 				setSpriteState(Vrle._game.sprite_groups[classKey][i], rle._game.observation['trackedObjects'][color][i], hypothesis)
 
 		# if 'transformTo' in [r.interaction for r in hypothesis.interactionSet] and len(rle._game.sprite_groups['box2'])==3:
