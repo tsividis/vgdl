@@ -115,16 +115,19 @@ class InteractionRule(object):
 		self._hash = hash((self.interaction, self.slot1, self.slot2, tuple(sorted(self.args.iteritems()))))
 
 	def display(self):
+		print self
+
+	def __repr__(self):
 		if not self.preconditions:
-			print self.interaction, self.slot1, self.slot2, self.args
+			string = "%s %s %s %r" % (self.interaction, self.slot1, self.slot2, self.args)
 		else:
-			print self.interaction, self.slot1, self.slot2, self.args, [p.text for p in self.preconditions]
-		return
+			string = "%s %s %s %r %r" % (self.interaction, self.slot1, self.slot2, self.args, [p.text for p in self.preconditions])
+		return string
 
 	def copy(self):
 		return InteractionRule(self.interaction, self.slot1, self.slot2, dict(self.args) if self.args else {},
 				set([p.copy() for p in self.preconditions]), self.generic)
-	
+
 	def asTuple(self):
 		return (self.interaction, self.slot1, self.slot2, self.args)
 
@@ -165,7 +168,7 @@ class TerminationRule:
 	"""
 	def __init__(self, termination, win, **kwargs):
 		self.termination = termination(win=win, **kwargs)
-		self._hash = hash(self)
+		# self._hash = hash(self.termination.name)
 
 	def isDone(self, game):
 		return self.termination.isDone()
@@ -173,12 +176,24 @@ class TerminationRule:
 	def copy(self):
 		return ccopy(self)
 
+	def display(self):
+		print (self.termination.name+'Rule', self.termination.get_args())
+
 	def __eq__(self,other):
 		return self.asTuple() == other.asTuple()
 
 	def __hash__(self):
 		return self._hash
 
+def TerminationRuleConstructor(rule_type, **kwargs):
+	try:
+		if rule_type == 'NoveltyTerminationRule':
+			termination_rule = NoveltyRule
+		else:
+			termination_rule = eval(rule_type)
+		return termination_rule(**kwargs)
+	except NameError:
+		raise NameError, "termination rule '%s' not defined" % rule_type
 
 class TimeoutRule(TerminationRule):
 	def __init__(self, limit=0, win=False):
@@ -186,8 +201,12 @@ class TimeoutRule(TerminationRule):
 		self.ruleType = "TimeoutRule"
 		self._hash = hash(self.asTuple())
 
+
+	def __repr__(self):
+		return str(self.asTuple())
+
 	def display(self):
-		print (self.ruleType, self.termination.limit, self.termination.win)
+		print self.asTuple()
 
 	def asTuple(self):
 		return (self.ruleType, self.termination.limit, self.termination.win)
@@ -201,9 +220,11 @@ class NoveltyRule(TerminationRule):
 		args = args if args else {}
 		self._hash = hash((self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, tuple(sorted(args.iteritems()))))
 
+	def __repr__(self):
+		return str(self.asTuple())
+
 	def display(self):
-		print self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, self.termination.args
-		return
+		print self.asTuple()
 
 	def asTuple(self):
 		return (self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, self.termination.args)
@@ -216,9 +237,11 @@ class SpriteCounterRule(TerminationRule):
 		self.ruleType = "SpriteCounterRule"
 		self._hash = hash(self.asTuple())
 
+	def __repr__(self):
+		return str(self.asTuple())
+
 	def display(self):
-		print self.ruleType, self.termination.stype, self.termination.limit, self.termination.win
-		return
+		print self.asTuple()
 
 	def asTuple(self):
 		return (self.ruleType, self.termination.stype, self.termination.limit, self.termination.win)
@@ -232,9 +255,12 @@ class MultiSpriteCounterRule(TerminationRule):
         self.ruleType = "MultiSpriteCounterRule"
         self._hash = hash((self.ruleType, tuple(sorted(self.termination.stypes)), self.termination.limit, self.termination.win))
 
+
+    def __repr__(self):
+    	print self.asTuple()
+
     def display(self):
-        print self.ruleType, self.termination.stypes, self.termination.limit, self.termination.win
-        return
+        print self.asTuple()
 
     def asTuple(self):
         return (self.ruleType, set(self.termination.stypes), self.termination.limit, self.termination.win)
@@ -967,7 +993,7 @@ class Theory(object):
 			'''
 			Adds object-class assignments; avoids duplicates.
 			'''
-			c, o = classObjectPair[0], classObjectPair[1]
+			c, o = classObjectPair
 			if c in self.classes.keys():
 				if o not in self.classes[c]:
 					self.classes[c].append(o)
@@ -1475,6 +1501,31 @@ class Theory(object):
 				return c
 		return False
 
+	def _stringRules(self, ignore_step_back=True, color_names=False, compare_theory=None):
+		string = '\nInteractionSet:'
+		for rule in self.interactionSet:
+			if rule.interaction == 'nothing':
+				continue
+			if ignore_step_back and rule.interaction == 'stepBack':
+				continue
+			else:
+				rule_name, c1, c2, args = rule.asTuple()
+				if color_names:
+					rule_tuple = (rule_name, self.classes[c1][0].colorName, self.classes[c2][0].colorName, args)
+				else:
+					rule_tuple = (rule_name, c1, c2, args)
+
+				rule_string = "%s %s %s %r" % rule_tuple
+
+				if compare_theory:
+					note = ""
+					if rule not in compare_theory.interactionSet:
+						note = "+"
+					string += "\n%s\t%s" % (note, rule_string)
+				else:
+					string += "\n\t%s" % rule_string
+		return string
+
 	def displayRules(self):
 		print ""
 		print "InteractionSet:"
@@ -1482,27 +1533,49 @@ class Theory(object):
 			if rule.interaction != 'stepBack':
 				rule.display()
 
-	def displayClasses(self):
-		print ""
-		print "Class assignments:"
+	def _stringClasses(self, color_names=False):
+		string = "\nClass assignments:"
 		for c in self.classes:
 			class_list = [cl.colorName for cl in self.classes[c]]
-			print "\t{}: {}: {}: {}".format(c, class_list, self.spriteObjects[cl.colorName].vgdlType, \
+			if color_names:
+				c = cl.colorName
+			string += "\n\t{}: {}: {}: {}".format(c, class_list, self.spriteObjects[cl.colorName].vgdlType, \
 				self.spriteObjects[cl.colorName].args)
-		print
+		return string
+
+	def displayClasses(self):
+		print self._stringClasses()
+
+	def _stringTerminations(self, ignore_novelty_terminations=True, color_names=False):
+		string = "\nTerminationSet:"
+		for tc in self.terminationSet:
+			if ignore_novelty_terminations and tc.ruleType == 'NoveltyRule':
+				pass
+			else:
+				term_tuple = tc.asTuple()
+				new_term = []
+				for value in term_tuple:
+					if value in self.classes:
+						value = self.classes[value][0].colorName
+					new_term.append(value)
+				tc = tuple(new_term)
+				string += "\n\t%s" % str(tc)
+		return string
 
 	def displayTerminationSet(self):
-		print ""
-		print "TerminationSet:"
-		for tc in self.terminationSet:
-			tc.display()
+		print self._stringTerminations()
 
 	def display(self):
-		self.displayClasses()
-		self.displayRules()
-		self.displayTerminationSet()
-		print "_______"
+		print self
 		return
+
+	def __repr__(self):
+		string = "------ Theory ------"
+		string += self._stringClasses()
+		string += self._stringRules()
+		string += self._stringTerminations()
+		string += '\n------------------'
+		return string
 
 	def __eq__(self, other):
 		if isinstance(other, self.__class__):
