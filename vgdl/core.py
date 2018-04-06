@@ -1077,6 +1077,8 @@ class BasicGame(object):
             ## Update actual sprite positions.
             for s in list(self):
                 s.update(self)
+                # if s.colorName=='RED' and s.rect.top==120:
+                    # print s.lastrect, s.rect
 
             # handle collision effects
             self._eventHandling()

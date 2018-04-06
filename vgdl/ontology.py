@@ -373,13 +373,14 @@ class SpawnPoint(SpriteProducer):
         if self.total and self.counter >= self.total:
             killSprite(self, None, game)
             return
+        self.lastrect = self.rect.copy()
 
         if ((game.time+1) % self.spawnCooldown == 0 and random.random() < self.prob):
             game._createSprite([self.stype], (self.rect.left, self.rect.top))
             self.counter += 1
 
         self.lastmove += 1
-
+        self.lastdisplacement += 1
 
 
 class RandomNPC(VGDLSprite):
