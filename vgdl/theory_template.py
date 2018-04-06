@@ -367,10 +367,12 @@ class Theory(object):
 		for interactionRule in self.interactionSet:
 			if 'teleportToExit' in interactionRule.interaction:
 				color = self.classes[interactionRule.slot2][0].colorName
-
 				self.spriteObjects[color].args = ccopy(interactionRule.args)
 				self.spriteObjects[color].vgdlType = Portal
 				self.classes[interactionRule.slot2][0] = self.spriteObjects[color]
+				for rule in self.interactionSet:
+					if rule.slot1==interactionRule.slot1 and rule.slot2==interactionRule.args['stype']:
+						rule.interaction = 'nothing'
 				interactionRule.args = {}
 
 	def addSpriteToTheory(self, newSpriteName, color, vgdlType='default', args=None):
