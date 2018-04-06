@@ -366,13 +366,11 @@ class Theory(object):
 		## resolve such exceptions here, by passing info from one part to the other as needed.
 		for interactionRule in self.interactionSet:
 			if 'teleportToExit' in interactionRule.interaction:
-				# embed()
 				color = self.classes[interactionRule.slot2][0].colorName
-				self.classes[interactionRule.slot2][0].args = ccopy(interactionRule.args)
+
 				self.spriteObjects[color].args = ccopy(interactionRule.args)
-				for s in self.spriteSet:
-					if s.colorName==color:
-						s.args = ccopy(interactionRule.args)
+				self.spriteObjects[color].vgdlType = Portal
+				self.classes[interactionRule.slot2][0] = self.spriteObjects[color]
 				interactionRule.args = {}
 
 	def addSpriteToTheory(self, newSpriteName, color, vgdlType='default', args=None):
@@ -381,7 +379,7 @@ class Theory(object):
 		sprite = Sprite(vgdlType, color, className=newSpriteName, args=args)
 		for (o1,o2) in itertools.product([newSpriteName], self.classes.keys()):
 			rule1 = InteractionRule('stepBack', o1, o2, {}, set(), generic=True)
-			rule2 = InteractionRule('stepBack', o1, o2, {}, set(), generic=True)
+			rule2 = InteractionRule('stepBack', o2, o1, {}, set(), generic=True)
 			self.interactionSet.append(rule1)
 			self.interactionSet.append(rule2)
 		self.classes[newSpriteName] = [sprite]
@@ -2425,6 +2423,9 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 			elif predicate == 'transformTo':
 				for stype in [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]:
 					argList.append({'stype':stype})
+			if predicate == 'teleportToExit':
+				for stype in [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]:
+					argList.append({'stype':stype})
 			else:
 				print "Error: Have not implemented non-generic proposeArgs() yet."
 				embed()
@@ -2711,6 +2712,11 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 
 	childTheories = [theory.copy()]
 
+	# if 'unexpectedPosition' in errorMap.diagnosis and 'c6' in theory.classes and 'Missile' in str(theory.classes['c6'][0].vgdlType):
+		# print "found missile"
+		### Why is errorMap.targetClass 'unknown'???
+		# embed()
+
 	##if iterating thresholds is not relevant:
 	predicatesWithThresholds = ['killIfTooFast', 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
 	relevantRulesWithArgs = [rule for rule in theory.interactionSet if rule.interaction in predicatesWithThresholds and 
@@ -2724,6 +2730,7 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 			toRemove = [rule for rule in theory.interactionSet if classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and 
 					rule.asTuple()[1] == errorMap.targetClass and rule.asTuple()[0]=='killSprite']
 			theory.interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
+			# FlAG: should this act on the theory or the copy?
 
 		
 		newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
@@ -2744,10 +2751,6 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 				childTheories.append(newTheory)
 
 		childTheories = list(set(childTheories))
-
-		if 'teleportToExit' in predicates:
-			print "found teleporttoexit"
-			embed()
 	
 	## Iterate thresholds. If this is not relevant for a particular theory, iterateThresholds() will just return the theory unchanged.
 	iteratedTheories = []

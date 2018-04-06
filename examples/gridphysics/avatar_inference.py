@@ -13,17 +13,88 @@
 
 # """
 
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w              1             1 w
-w                            1 w
-w              2               w
-w                    2         w
-w              A          3 3  w
-w                              w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# up, up, up, up, left
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w              1             1 w
+# w                            1 w
+# w              2               w
+# w                    2         w
+# w              A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+#combine with avatar sam bounceFoward. works.
+#0,0,0,0,0,0
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w              A               w
+# w                         3 3  w
+# w         c    c               w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+# TODO: You need to be able to re-run testAndExpand() when no hypotheses pass your filter
+## the problem here is that you need to build on expandSprite proposals with expandLine within one errorMap and
+## you don't ordinarily do that.
+#0,0,0,0,0,0
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w                              w
+# w              A          3 3  w
+# w         c    c               w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+# works if you don't allow the eventHandler to apply effects to newly-created sprites
+#[0,0,0,K_LEFT, K_LEFT,0,0]
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w                              w
+# w                         3 3  w
+# w         c    c A             w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+# #up, up, down
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w              1               w
+# w              1               w
+# w              A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+#0,0,0,0,0,0,0
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w              1               w
+# w              1               w
+# w              A          3 3  w
+# w   c   c                      w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -49,6 +120,22 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
+# super wacky level: add
+# cannon sam > stepBack
+# sam cannon > stepBack
+#, then push a cannon into the missles from another
+# spoiler: it teleports back to where it started O.o
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w                            1 w
+w                              w
+w  c           c    A          w
+w                         3 3  w
+w         c                    w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 
 game="""
@@ -82,9 +169,15 @@ BasicGame
         avatar wall > stepBack
         # box avatar > nothing
         box avatar > transformTo stype=box2
+        # cannon sam > stepBack
+        # sam cannon > stepBack
         box2 avatar > killSprite
         # box2 avatar > bounceForward
         box3 avatar > killSprite
+        cannon avatar > bounceForward
+        avatar sam > bounceForward
+        cannon sam > stepBack
+        sam cannon > stepBack
 
     TerminationSet
         SpriteCounter stype=box3 limit=0 win=True

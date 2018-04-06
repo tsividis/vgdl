@@ -224,21 +224,6 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         else:
             return False, False
 
-    def sensors_profiler(self, state=None):
-        lp = LineProfiler()
-        lp_wrapper = lp(self._getSensors)
-        output = lp_wrapper(state)
-        lp.print_stats()
-
-        return output
-
-    def sensors_profiler(self, state=None):
-        lp = LineProfiler()
-        lp_wrapper = lp(self._getSensors)
-        output = lp_wrapper(state)
-        lp.print_stats()
-        return output
-
     def _getSensors(self, state=None):
         # Get position and orientation
         if state is None:
@@ -371,7 +356,7 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
 
         # observation = self._getSensors() ## Consider commenting this out and not getting an observation.
         observation = 0
-        #observation = self.sensors_profiler()
+
         (ended, won) = self._isDone()
         self._game.time+=1
 

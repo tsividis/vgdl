@@ -635,7 +635,6 @@ class BasicGame(object):
         new_collisions = True
         self.effectList = []
         dead = self.kill_list[:] # copy kill list
-        created = []
 
         self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack','wallStop']
             else (2 if x[2].__name__ in ['killSprite', 'killIfTooFast'] else (3 if x[2].__name__ in ['changeResource', 'changeScore', 'conveySprite'] else 0)), reverse=True)
@@ -658,8 +657,12 @@ class BasicGame(object):
                                 sprite = self.sprite_groups[key]
                                 if sprite and sprite_class in sprite[0].stypes:
                                     sprite_group.extend(sprite)
+                        ## Note: This may cause serious problems
+                        ## You're going to not resolve collisions for any newly-created sprites.
+                        ## But the bet is that the way this is populated is such that 
+                        sprite_group = [s for s in sprite_group if s.lastmove>0]
+                        
                         self.lastcollisions[sprite_class] = (sprite_group[:], len(sprite_group))
-
 
                 # special case for end-of-screen
                 if class2 == "EOS":
@@ -768,12 +771,6 @@ class BasicGame(object):
             if element not in new_collision_eff:
                 new_collision_eff.append(element)
         self.effectList = new_collision_eff
-
-
-        # self.kill_list = dead[:]
-        # if len(self.effectList) > 0:
-            # print 'effectList', self.effectList
-        # self.effectList = list(set(self.effectList))
 
         return self.effectList
 

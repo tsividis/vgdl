@@ -290,11 +290,14 @@ class Agent:
 			print "WARNING: running on < 40 cores."
 
 		actionSequences = [
-			# [0,0,0,0]
-			[K_UP, K_UP, K_UP, K_UP, K_LEFT]
+			# [0,0,0,K_LEFT, K_LEFT,0,0]
+			# [K_UP, K_UP, K_DOWN]
+			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			# [0,0,0,0,0,0,0,0,0,0]
-			# [K_UP, K_UP]
+			# [0,0,0,0,0,0,0,0]
+
+			# [0,0,0,0,0,0,0,0,0,0,0,0]
+			[K_UP, K_UP, K_UP]
 			# [K_RIGHT, K_UP]
 		]
 
@@ -304,7 +307,7 @@ class Agent:
 
 		for episode_num, actions in enumerate(actionSequences):
 			self.initializeEnvironment()
-
+			# embed()
 			print "initializing RLE. Epoch={}".format(epoch)
 
 			self.all_objects[episode_num] = self.rle._game.getObjects() ## we need to store all_objects across multiple episodes
@@ -545,13 +548,16 @@ class Agent:
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
 
 		if newTheories:
+
 			penalties = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], self.actionHistory[:episode_num+1],
 				self.symbolDict, method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
 
 			scoreAndTheoryTuples = zip(penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], len(x[1].interactionSet)))
 
-			for num, sh in enumerate(scoreAndTheoryTuples):
+			for num, sh in reversed(list(enumerate(scoreAndTheoryTuples))):
+				if num > 100:
+					continue
 				print "Theory: {} | Error: {}".format(num, sh[0])
 				sh[1].display()
 			scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
@@ -586,7 +592,6 @@ class Agent:
 			h.dryingPaint = set()
 
 		return hypotheses, scoresAndHypotheses
-
 
 	########################################################################
 	######## TESTING HYPOTHESES BY RANDOM SAMPLING OR OTHER METHODS ########
@@ -672,11 +677,13 @@ def setSpriteState(sprite, matchingSprite, hypothesis):
 		embed()
 
 	sprite.rect 		= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
+	# sprite.lastrect = sprite.rect
 	sprite.lastrect 	= pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
-	if sprite.rect.left != sprite.lastrect.left and sprite.rect.top != sprite.lastrect.top and abs(sprite.rect.left  - sprite.lastrect.left ) != abs(sprite.rect.top - sprite.lastrect.top):
-		print "in setVrleState -- illegal rect/lastrect pair"
-		embed()
+	# if sprite.rect.left != sprite.lastrect.left and sprite.rect.top != sprite.lastrect.top and abs(sprite.rect.left  - sprite.lastrect.left ) != abs(sprite.rect.top - sprite.lastrect.top):
+		# print "in setVrleState -- illegal rect/lastrect pair"
+		# embed()
 	sprite.lastmove 	= matchingSprite.lastmove
+	# sprite.age 			= matchingSprite.age
 	sprite.ID = matchingSprite.ID
 	sprite.resources = defaultdict(int)
 	for rcolor in matchingSprite.inventory.keys():
@@ -708,7 +715,7 @@ def setSpriteState(sprite, matchingSprite, hypothesis):
 	# sprite.speed = ccopy(matchingSprite.speed)
 	return
 
-def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False):
+def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False, debug=False):
 	## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
 
 	## This is now playing a dual role. Instead of building in theory-laden perception, we
@@ -718,10 +725,11 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False):
 	## RotatingAvatar was UP but we know that our last action was RIGHT, setVrleState() can 'infer' that
 	## this means the RotatingAvatar's orientation is actually RIGHT now, and can set it to that.
 	## IMPORTANT: This means that each sprite's orientation will only be correct if this function is called between each time-step.
-	
+	if debug:
+		print "in setVrleState"
+		embed()
 	if not makeInitialVrle:
-		avatar = hypothesis.classes['avatar'][0]
-
+		tmp_kill_list = []
 		# note: there should at this point be no mismatch between the keys
 		for classKey in Vrle._game.sprite_groups:
 			if classKey=='wall':
@@ -730,28 +738,40 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False):
 			# first make the new (vrle) env have the correct number of each thing
 			vrleSpriteCount = len(Vrle._game.sprite_groups[classKey]) - len([s for s in Vrle._game.kill_list if s.colorName==color])
 			rleSpriteCount = len(rle._game.observation['trackedObjects'][color])
-			old_kill_list = Vrle._game.kill_list
-			Vrle._game.kill_list = []
+# <<<<<<< HEAD
+# 			old_kill_list = Vrle._game.kill_list
+# 			Vrle._game.kill_list = []
+# =======
+# >>>>>>> testing
 			if vrleSpriteCount > rleSpriteCount:
-				# just delete extraneous ones from the end
-				Vrle._game.sprite_groups[classKey] = Vrle._game.sprite_groups[classKey][:len(rle._game.observation['trackedObjects'][color])]
+				# just delete extraneous ones from the end by adding them to the kill_list
+				tmp_kill_list.extend(Vrle._game.sprite_groups[classKey][rleSpriteCount:])
+				# Vrle._game.sprite_groups[classKey] = Vrle._game.sprite_groups[classKey][:len(rle._game.observation['trackedObjects'][color])]
 			elif vrleSpriteCount < rleSpriteCount:
 				# have to duplicate Vrle sprites so we have enough to copy all the rle sprites into
 				try:
-					Vrle._game.sprite_groups[classKey] += [copy.deepcopy(Vrle._game.extra_sprites[classKey]) for n in range(rleSpriteCount - vrleSpriteCount)]
+					## Make as many new sprites as you need and put them at (0,0); we'll set their position and state below.
+					[Vrle._game._createSprite([classKey], (0,0)) for n in range(rleSpriteCount-vrleSpriteCount)]
+					# Vrle._game.sprite_groups[classKey] += [copy.deepcopy(Vrle._game.extra_sprites[classKey]) for n in range(rleSpriteCount - vrleSpriteCount)]
 				except:
 					print "problem in setVrleState"
 					embed()
 			# Now copy over sprite state (if we have any left of that type)
 			if not Vrle._game.sprite_groups[classKey]:
 				continue
-			color = Vrle._game.sprite_groups[classKey][0].colorName
-			for i in range(rleSpriteCount):
-				try:
-					setSpriteState(Vrle._game.sprite_groups[classKey][i], rle._game.observation['trackedObjects'][color][i], hypothesis)
-				except IndexError:
-					embed()
+# <<<<<<< HEAD
+# 			color = Vrle._game.sprite_groups[classKey][0].colorName
+# 			for i in range(rleSpriteCount):
+# 				try:
+# 					setSpriteState(Vrle._game.sprite_groups[classKey][i], rle._game.observation['trackedObjects'][color][i], hypothesis)
+# 				except IndexError:
+# 					embed()
 		
+# =======
+
+			for i in range(min(len(Vrle._game.sprite_groups[classKey]), rleSpriteCount)):
+				setSpriteState(Vrle._game.sprite_groups[classKey][i], rle._game.observation['trackedObjects'][color][i], hypothesis)
+# >>>>>>> testing
 
 		# if 'transformTo' in [r.interaction for r in hypothesis.interactionSet] and len(rle._game.sprite_groups['box2'])==3:
 			# print "transformTo in hypothesis"
@@ -768,8 +788,7 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False):
 		# if 'transformTo' in [r.interaction for r in hypothesis.interactionSet] and len(Vrle._game.sprite_groups['c4'])==3:
 		# 	print "transformTo in hypothesis"
 		# 	embed()
-		## TODO: use this? or do what you had done above.
-
+		Vrle._game.kill_list = tmp_kill_list
 		Vrle._game._eventHandling(UNOBSERVABLE_PREDICATES)
 
 
@@ -788,7 +807,8 @@ def initializeVrle(hypothesis, stateToSet, symbolDict, theoryRLE=None, makeIniti
 		 "./examples/gridphysics/theorytest.py", writeFile=writeFile, addAllObjects=makeInitialVrle)
 
 	try:
-		Vrle = theoryRLE if theoryRLE else createMindEnv(gameString, levelString, output=False)
+		# Vrle = theoryRLE if theoryRLE else createMindEnv(gameString, levelString, output=False)
+		Vrle = createMindEnv(gameString, levelString, output=False)
 	except:
 		print "in initializeVrle"
 		embed()
@@ -1284,8 +1304,8 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 	# Step through sub-problems
 	e = errorMapEntry()
 	e.targetToken = sB
-	e.targetClass = sA.colorName
-	e.targetColor = sA.colorName
+	e.targetClass = sB.colorName
+	e.targetColor = sB.colorName
 
 	errorMaps = [e]
 	# Find neighbors of target sprite in the previous time step
@@ -1340,7 +1360,6 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 			if color == envA._game.observation['trackedObjects'][k][0].colorName:
 				className_envA = k
 
-		# covered_sprite_envA = findNearestSprite(sB,envA._game.observation['trackedObjects'][className_envA])[0]
 		covered_sprite_envB = findNearestSprite(sB, [item for sublist in envB._game.observation['trackedObjects'].values() for item in sublist if sB!=item])[0]
 		if covered_sprite_envB.colorName not in theory.spriteObjects:
 			print "diagnosePosMismatch found a new color"
@@ -1350,24 +1369,6 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 			e1.targetClass = 'unknown'
 			e1.targetColor = covered_sprite_envB.colorName
 			errorMaps.append(e1)
-			# embed()
-			## Now you need to modify the errorMap so that you can both propose the new class appropriately
-			## and address the overlapping sprites error.
-			## e.intPairs gets 'cleaned' at the end of errorSignal() so you can't pass color info through that;
-			## you have to pass it through e.targetToken / e.targetColor.
-			# embed()
-		# if len(covered_sprite_envB)==1:
-		# 	overlappingSpriteColorName = covered_sprite_envB[0].colorName
-		# 	e.targetToken = covered_sprite_envB[0]
-		# 	e.targetClass = covered_sprite_envB[0].colorName
-		# 	e.targetColor = covered_sprite_envB[0].colorName
-		# else:
-		# 	print overlappingSpriteColorName
-		# 	print "problem with overlapping sprite in diagnosePosMismatch"
-		# 	embed()
-		# 	overlappingSpriteColorName = 'unknown'
-
-		# e.intPairs = [(sA.colorName, overlappingSpriteColorName)] #overwrite interaction pair by the overlapping sprite pair
 
 		e.intPairs = [(sA.colorName, covered_sprite_envB.colorName)] #overwrite interaction pair by the overlapping sprite pair
 
@@ -1379,8 +1380,7 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 		e2.diagnosis.append('teleport')
 		e2.intPairs = [(sA.colorName, n) for n in neighbors_prev]
 		errorMaps.append(e2)
-		print "got teleport"
-		embed()
+	
 	# Return list of errorMapEntry objects
 	return errorMaps
 
@@ -1687,8 +1687,9 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, method='
 		# if method == 'newMethod':
 		if 'flipDirection' in [r.interaction for r in h.interactionSet]:
 			multipleHypotheses = [h]*NUM_SAMPLES_PER_HYPOTHESIS
-			results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, multipleHypotheses, symbolDict))
-			# print "got flipDirection in experienceReplay"
+			tmpResults = singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, multipleHypotheses, symbolDict)
+			results.append((np.mean(tmpResults[0]), np.mean(tmpResults[1]), tmpResults[2][0]))
+			print "got flipDirection in experienceReplay"
 			# from vgdl.agent import initializeVrle
 			# newenv=initializeVrle(h, rleHistory[0], symbolDict)
 			## If you run the line above over and over you'll see that we're changing the orientation
@@ -1696,7 +1697,7 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, method='
 			## if you do newenv.step(0) you'll see that all the other missiles move forward and this one
 			## doesn't.
 			# print newenv._game.sprite_groups['c5'][0].orientation
-			# embed()
+			embed()
 			## after the embed(), run
 			## newenv.step(0); newenv
 			## print newenv._game.sprite_groups['c5'][0].orientation
@@ -1798,6 +1799,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		if len(theories) == 1 and any([errorMap == e for e in theories[0].errorMapHistory]):
 			newTheories = [theories[0]]
 			theories = newTheories
+			# FLAG: huh?
 			continue
 
 		# print "In base case. Correcting error for {} for {} theories".format(errorMap.targetClass, len(theories))
@@ -1832,6 +1834,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 
 	n = 1 # n is the number of allowed rules for a particular classpair-ordering, probably (TODO)
 
+	errorMap = errorMap.copy()
 	errorMap.targetClass = theory.spriteObjects[errorMap.targetClass].className if errorMap.targetClass in theory.spriteObjects.keys() else 'unknown'
 
 	if errorMap.intPairs:
@@ -1860,6 +1863,11 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 	if any([errorMap == e for e in theory.errorMapHistory]):
 		newTheories = [theory]
 		return newTheories
+
+	# if 'unexpectedPosition' in errorMap.diagnosis and 'c6' in theory.classes and 'Missile' in str(theory.classes['c6'][0].vgdlType):
+	# 	print "found missile"
+	# 	### Why is errorMap.targetClass 'unknown'???
+	# 	embed()
 
 	theory.errorMapHistory.append(errorMap)
 
@@ -2007,13 +2015,14 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.aliens"
 
-	filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.collect_resource"
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 
-	# filename = "examples.gridphysics.testAll"
+	filename = "examples.gridphysics.testAll"
+	# filename = "examples.gridphysics.basics"
 
 	global WBP
 	if 'grid' in filename:
