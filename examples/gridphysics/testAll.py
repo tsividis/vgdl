@@ -77,7 +77,7 @@ BasicGame
         goal > Passive color=GOLD
         armor > Resource limit=1 color=GRAY
         portal > Portal color=LIGHTGREEN stype=exit1
-        exit1 > Immovable color=GREEN
+        exit1 > ResourcePack color=GREEN
 
     LevelMapping
         f > flicker
@@ -103,6 +103,7 @@ BasicGame
         # SpriteCounter stype=box3 limit=0 win=False
         SpriteCounter stype=goal limit=0 win=True
         # Termination
+{}
 """
 
 interactionSetAll = """
@@ -135,7 +136,6 @@ interactionSetAll = """
 """
 
 game = game.format(interactionSetAll)
-
 level_game_pairs = [[game, level]]
 
 if __name__ == "__main__":

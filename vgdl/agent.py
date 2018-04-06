@@ -295,7 +295,7 @@ class Agent:
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
 			# [0,0,0,0,0,0,0,0]
-
+			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0,0,0]
 			# [0,0,0,0,0,0,0,0,0,0,0,0]
 			[K_UP, K_UP, K_UP]
 			# [K_RIGHT, K_UP]
@@ -564,10 +564,10 @@ class Agent:
 
 			if not lastStep:
 				scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-					proportionOfSpriteTheories=None, errorCutoff=.2)]
+					proportionOfSpriteTheories=None, errorCutoff=.3)]
 			else:
 				scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-					proportionOfSpriteTheories=None, errorCutoff=.2)]
+					proportionOfSpriteTheories=None, errorCutoff=.3)]
 
 			print "Experience replay complete."
 			for num, sh in enumerate(scoresAndHypotheses):
@@ -946,9 +946,22 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		sA_type = theory.spriteObjects[sA.colorName].vgdlType
 		d = 30. # grid spacing
 
+		if dist>0 and 'teleportToExit' in [r.interaction for r in theory.interactionSet]:
+			# print "found theory with teleport"
+			# embed()
+			sA_class = theory.spriteObjects[sA.colorName].className
+			teleportEntries = [theory.classes[r.slot2][0].colorName for r in theory.interactionSet if r.interaction=='teleportToExit' and r.slot1==sA_class]
+			teleportExitClasses = [theory.spriteObjects[colorName].args['stype'] for colorName in teleportEntries]
+			teleportExitColors = [theory.classes[c][0].colorName for c in teleportExitClasses]
+			teleportLocs = []
+			for exitType in teleportExitColors:
+				teleportLocs.extend([(s.rect.left, s.rect.top) for s in envB._game.observation['trackedObjects'][exitType]])
+			if (sB.rect.left, sB.rect.top) in teleportLocs:
+				total_penalty += np.log(e_dist)
+				continue
+
 		# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
 		if 'Random' in str(sA_type):   
-
 
 			if 'speed' in theory.spriteObjects[sA.colorName].args.keys():
 				sA_speed = theory.spriteObjects[sA.colorName].args['speed']
@@ -1335,13 +1348,15 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 	# 1.1) noMovement
 	if dist_ts == 0:
 		e.diagnosis.append('noMovement')
-		## Form all possible pairs of classes and propose these. This is because undoAll could cause this, so it's literally any classes combining.
-		e.intPairs = list(itertools.combinations([k for k in envA._game.observation['trackedObjects'].keys() if 
-			envA._game.observation['trackedObjects'][k]], 2))
 
-		for k in envA._game.observation['trackedObjects'].keys():
-			if len(envA._game.observation['trackedObjects'][k])>1:
-				e.intPairs.append((k,k))
+		## If we're trying to learn undoAll, uncomment all this and also allow undoAll in proposePredicates
+		## Form all possible pairs of classes and propose these. This is because undoAll could cause this, so it's literally any classes combining.
+		# e.intPairs = list(itertools.combinations([k for k in envA._game.observation['trackedObjects'].keys() if 
+			# envA._game.observation['trackedObjects'][k]], 2))
+
+		# for k in envA._game.observation['trackedObjects'].keys():
+			# if len(envA._game.observation['trackedObjects'][k])>1:
+				# e.intPairs.append((k,k))
 
 	# 1.2) orientationChange
 	if dist_ts!=0 and oB!=None and oB!=oPrev:
@@ -1879,7 +1894,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 		newTheories = [theory]
 		return newTheories
 
-	# if 'transformation' in errorMap.diagnosis:
+	# if 'teleport' in errorMap.diagnosis:
 		# print "got transformation"
 		# embed()
 	## If there are unknown colors in an inventory, add them to the theory here.
@@ -1978,7 +1993,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			if 'conditionalKill' in singleIntPairErrorMap.diagnosis:
 				singleIntPairErrorMap.diagnosis.remove('conditionalKill')
 			newTheories.extend(list(set(theories)))
-		
+
 	newTheories = list(set(newTheories))
 
 	return newTheories
@@ -2015,11 +2030,11 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.aliens"
 
-	# filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.collect_resource"
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
+	# filename = "examples.gridphysics.avatar_inference"
 
 	filename = "examples.gridphysics.testAll"
 	# filename = "examples.gridphysics.basics"

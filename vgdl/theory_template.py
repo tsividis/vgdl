@@ -2498,6 +2498,8 @@ def proposePredicates(singlePairErrorSignal, observations):
 								 'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
 
 	## Position difference
+	## NOTE: if you propose undoAll you also need to uncomment the lines that propose intPairs between any adjacent sprites
+			# on the board in errorSignal()
 	'noMovement': 				[],#['undoAll'], ## Possible bug: not proposing anything for noMovement
 	'unexpectedPosition': 		['bounceForward', 'nothing'],
 									# , 'pullWithIt', 'windGust', 'slipForward',\
@@ -2664,12 +2666,12 @@ predicateToOrderingMapping = {
  	'changeScore':			(0,1),
 	'undoAll':				(0,1)}
 
-predicatesThatConflictWithStepBack = ['nothing', 'transformTo']
+predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit']
 
 def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n):
 
 	key = (classPair, tuple(sorted(predicates)))
-	# print key
+
 	if key not in classPairPlusPredicateToRuleSets:
 
 		predicateGroups = []
@@ -2677,7 +2679,6 @@ def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, ob
 			predicateGroups.extend(list(itertools.combinations(predicates, i)))
 
 		bothOrderings = [[()], [()]]
-		# alteredPairs = set()
 		for i,order in enumerate([classPair, (classPair[1], classPair[0])]):
 
 			for predicateGroup in predicateGroups:
@@ -2685,13 +2686,14 @@ def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, ob
 					pass
 				predicateRules = []
 				for predicate in predicateGroup:
-					
 					## orderings are (targetClass, neighbor). If the ordering we're proposing is consistent with the semantics
 					## of the predicate we're proposing, add this potential rule.
 					if i in predicateToOrderingMapping[predicate]:
-						# alteredPairs.add(i)
 						allArgumentCombinations = proposeArgs(theory, predicate, errorMap, observations, 
 							generic=False)
+						for comb in allArgumentCombinations:
+							if predicate=='teleportToExit':
+								print comb
 						predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
 							for comb in allArgumentCombinations])
 				if predicateRules:
@@ -2699,10 +2701,9 @@ def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, ob
 		## Now generate combinations from each expanded predicateGroup that we added to each of the orderings
 		newRuleSets = list(itertools.product(bothOrderings[0], bothOrderings[1]))
 		newRuleSets = [[item for sublist in ruleSet for item in sublist] for ruleSet in newRuleSets]
+
 		classPairPlusPredicateToRuleSets[key] = newRuleSets
-		
-		# print "in getRuleSetsForClassPairPredicate"
-		# embed()
+
 	return classPairPlusPredicateToRuleSets[key]
 
 def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateToRuleSets, envRealPrev, envRealCurrent, action, rleHistory, actionHistory, experienceReplay, n=1, observations=None, generic=False):
@@ -2711,12 +2712,6 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 	## generic=True proposes all possible combinations of args instead.
 
 	childTheories = [theory.copy()]
-
-	# if 'unexpectedPosition' in errorMap.diagnosis and 'c6' in theory.classes and 'Missile' in str(theory.classes['c6'][0].vgdlType):
-		# print "found missile"
-		### Why is errorMap.targetClass 'unknown'???
-		# embed()
-
 	##if iterating thresholds is not relevant:
 	predicatesWithThresholds = ['killIfTooFast', 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
 	relevantRulesWithArgs = [rule for rule in theory.interactionSet if rule.interaction in predicatesWithThresholds and 
@@ -2734,7 +2729,6 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 
 		
 		newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
-
 		for i,ruleSet in enumerate(newRuleSets):
 			if len(ruleSet) > 0:
 				newTheory = theory.copy()
@@ -2745,8 +2739,9 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 						[(rule.slot2, rule.slot1) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack])
 				newTheory.interactionSet = [rule for rule in newTheory.interactionSet if 'stepBack' != rule.interaction or (rule.slot1, rule.slot2) not in alteredPairs]
 				for rule in ruleSet:
-					newTheory.interactionSet.append(rule)
-					newTheory.dryingPaint.add(rule)
+					ruleCopy = rule.copy()
+					newTheory.interactionSet.append(ruleCopy)
+					newTheory.dryingPaint.add(ruleCopy)
 				newTheory.reconcileInteractionsAndSprites()
 				childTheories.append(newTheory)
 

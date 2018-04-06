@@ -38,22 +38,22 @@ game1 = """
 BasicGame
     SpriteSet
         box    > Immovable color=WHITE 
-        avatar  > MovingAvatar color=DARKBLUE speed=1
+        avatar  > MovingAvatar color=DARKBLUE
         wall > Immovable color=DARKGRAY
     LevelMapping
         A > avatar
         b > box
     InteractionSet
-        avatar wall > stepBack
         box avatar > killSprite
 
+        avatar wall > stepBack
         wall avatar > stepBack
+        
         wall box > stepBack
-
         box wall > stepBack
+
         # avatar box > stepBack
         box avatar > stepBack
-
 
         avatar EOS > stepBack
         wall EOS > stepBack
@@ -72,7 +72,7 @@ game1 = """
 BasicGame
     SpriteSet
         box    > Immovable color=WHITE 
-        avatar  > MovingAvatar color=DARKBLUE speed=1
+        avatar  > MovingAvatar color=DARKBLUE
         wall > Immovable color=DARKGRAY
     LevelMapping
         A > avatar

@@ -130,7 +130,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                            1 w
 w                            1 w
-w              c   A           w
+w            c    A            w
 w  c                           w
 w                         3 3  w
 w         c                    w
