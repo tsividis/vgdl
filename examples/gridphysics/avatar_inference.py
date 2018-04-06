@@ -120,6 +120,22 @@
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
+# super wacky level: add
+# cannon sam > stepBack
+# sam cannon > stepBack
+#, then push a cannon into the missles from another
+# spoiler: it teleports back to where it started O.o
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w                            1 w
+w                              w
+w  c           c    A          w
+w                         3 3  w
+w         c                    w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 
 game="""
@@ -160,6 +176,8 @@ BasicGame
         box3 avatar > killSprite
         cannon avatar > bounceForward
         avatar sam > bounceForward
+        cannon sam > stepBack
+        sam cannon > stepBack
 
     TerminationSet
         SpriteCounter stype=box3 limit=0 win=True
