@@ -340,13 +340,11 @@ class Theory(object):
 		## resolve such exceptions here, by passing info from one part to the other as needed.
 		for interactionRule in self.interactionSet:
 			if 'teleportToExit' in interactionRule.interaction:
-				# embed()
 				color = self.classes[interactionRule.slot2][0].colorName
-				self.classes[interactionRule.slot2][0].args = ccopy(interactionRule.args)
+
 				self.spriteObjects[color].args = ccopy(interactionRule.args)
-				for s in self.spriteSet:
-					if s.colorName==color:
-						s.args = ccopy(interactionRule.args)
+				self.spriteObjects[color].vgdlType = Portal
+				self.classes[interactionRule.slot2][0] = self.spriteObjects[color]
 				interactionRule.args = {}
 
 	def addSpriteToTheory(self, newSpriteName, color, vgdlType='default', args=None):
@@ -2352,6 +2350,9 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 			elif predicate == 'transformTo':
 				for stype in [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]:
 					argList.append({'stype':stype})
+			if predicate == 'teleportToExit':
+				for stype in [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]:
+					argList.append({'stype':stype})
 			else:
 				print "Error: Have not implemented non-generic proposeArgs() yet."
 				embed()
@@ -2677,10 +2678,6 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 				childTheories.append(newTheory)
 
 		childTheories = list(set(childTheories))
-
-		if 'teleportToExit' in predicates:
-			print "found teleporttoexit"
-			embed()
 	
 	## Iterate thresholds. If this is not relevant for a particular theory, iterateThresholds() will just return the theory unchanged.
 	iteratedTheories = []

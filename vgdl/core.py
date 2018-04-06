@@ -660,7 +660,7 @@ class BasicGame(object):
                         ## Note: This may cause serious problems
                         ## You're going to not resolve collisions for any newly-created sprites.
                         ## But the bet is that the way this is populated is such that 
-                        # sprite_group = [s for s in sprite_group if s.lastmove>0]
+                        sprite_group = [s for s in sprite_group if s.lastmove>0]
                         
                         self.lastcollisions[sprite_class] = (sprite_group[:], len(sprite_group))
 

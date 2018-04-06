@@ -24,7 +24,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 ## use this to test flipDirection.
-teleportlevel = """
+flipDirectionLevel = """
 wwwwwwwwww
 w       gw
 w g      w
@@ -34,7 +34,8 @@ w c A  c w
 wwwwwwwwww
 """
 
-Avatarlevel = """
+
+AvatarLevel = """
 wwwwwwwwww
 w       gw
 w g  b   w
@@ -43,20 +44,20 @@ w   A    w
 wwwwwwwwww
 """
 
-# teleportlevel = """
-# wwwwwwwwww
-# w g     gw
-# w        w
-# w        w
-# w x      w
-# w        w
-# w        w
-# w c A  c w
-# wwwwwwwwww
-# """
+teleportLevel = """
+wwwwwwwwww
+w   e   gw
+w       gw
+w e      w
+w        w
+w   t t  w
+w        w
+w   A    w
+wwwwwwwwww
+"""
 
 
-level = teleportlevel
+level = teleportLevel
 
 game="""
 BasicGame

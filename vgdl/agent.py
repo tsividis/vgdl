@@ -290,12 +290,14 @@ class Agent:
 			print "WARNING: running on < 40 cores."
 
 		actionSequences = [
-			[0,0,0,K_LEFT, K_LEFT,0,0]
+			# [0,0,0,K_LEFT, K_LEFT,0,0]
 			# [K_UP, K_UP, K_DOWN]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			# [0,0,0,0,0,0,0,0,0,0]
-			# [K_UP, K_UP, K_UP]
+			# [0,0,0,0,0,0,0,0]
+
+			# [0,0,0,0,0,0,0,0,0,0,0,0]
+			[K_UP, K_UP, K_UP]
 			# [K_RIGHT, K_UP]
 		]
 
@@ -1381,8 +1383,8 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 		e2.diagnosis.append('teleport')
 		e2.intPairs = [(sA.colorName, n) for n in neighbors_prev]
 		errorMaps.append(e2)
-		print "got teleport"
-		embed()
+		# print "got teleport"
+		# embed()
 	# Return list of errorMapEntry objects
 	return errorMaps
 
@@ -2017,13 +2019,13 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.aliens"
 
-	filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.collect_resource"
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 
-	# filename = "examples.gridphysics.testAll"
+	filename = "examples.gridphysics.testAll"
 	# filename = "examples.gridphysics.basics"
 
 	global WBP
