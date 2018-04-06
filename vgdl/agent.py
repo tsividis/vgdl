@@ -1345,7 +1345,6 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 			if color == envA._game.observation['trackedObjects'][k][0].colorName:
 				className_envA = k
 
-		# covered_sprite_envA = findNearestSprite(sB,envA._game.observation['trackedObjects'][className_envA])[0]
 		covered_sprite_envB = findNearestSprite(sB, [item for sublist in envB._game.observation['trackedObjects'].values() for item in sublist if sB!=item])[0]
 		if covered_sprite_envB.colorName not in theory.spriteObjects:
 			print "diagnosePosMismatch found a new color"
@@ -1355,23 +1354,6 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 			e1.targetClass = 'unknown'
 			e1.targetColor = covered_sprite_envB.colorName
 			errorMaps.append(e1)
-			## Now you need to modify the errorMap so that you can both propose the new class appropriately
-			## and address the overlapping sprites error.
-			## e.intPairs gets 'cleaned' at the end of errorSignal() so you can't pass color info through that;
-			## you have to pass it through e.targetToken / e.targetColor.
-			# embed()
-		# if len(covered_sprite_envB)==1:
-		# 	overlappingSpriteColorName = covered_sprite_envB[0].colorName
-		# 	e.targetToken = covered_sprite_envB[0]
-		# 	e.targetClass = covered_sprite_envB[0].colorName
-		# 	e.targetColor = covered_sprite_envB[0].colorName
-		# else:
-		# 	print overlappingSpriteColorName
-		# 	print "problem with overlapping sprite in diagnosePosMismatch"
-		# 	embed()
-		# 	overlappingSpriteColorName = 'unknown'
-
-		# e.intPairs = [(sA.colorName, overlappingSpriteColorName)] #overwrite interaction pair by the overlapping sprite pair
 
 		e.intPairs = [(sA.colorName, covered_sprite_envB.colorName)] #overwrite interaction pair by the overlapping sprite pair
 
@@ -1383,8 +1365,7 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 		e2.diagnosis.append('teleport')
 		e2.intPairs = [(sA.colorName, n) for n in neighbors_prev]
 		errorMaps.append(e2)
-		# print "got teleport"
-		# embed()
+	
 	# Return list of errorMapEntry objects
 	return errorMaps
 
