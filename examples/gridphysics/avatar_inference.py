@@ -13,7 +13,7 @@
 
 # """
 
-#up, up, up, up, left
+# up, up, up, up, left
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
@@ -22,22 +22,53 @@
 # w              2               w
 # w                    2         w
 # w              A          3 3  w
-# w                           w
+# w                              w
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
+#too hard.
 #0,0,0,0,0,0
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w              A               w
+# w                         3 3  w
+# w         c    c               w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+#[0,0,0,K_LEFT, K_LEFT,0,0]
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                            1 w
 w                            1 w
 w                              w
-w              A               w
+w                              w
 w                         3 3  w
-w         c    c               w
+w         c    c A             w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
+
+
+# TODO: You need to be able to re-run testAndExpand() when no hypotheses pass your filter
+## the problme here is that you need to build on expandSprite proposals with expandLine within one errorMap and
+## you don't ordinarily do that.
+#0,0,0,0,0,0
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w                              w
+# w              A          3 3  w
+# w         c    c               w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # #up, up, down
 # level = """
@@ -122,10 +153,13 @@ BasicGame
         avatar wall > stepBack
         # box avatar > nothing
         box avatar > transformTo stype=box2
+        cannon sam > stepBack
+        sam cannon > stepBack
         box2 avatar > killSprite
         # box2 avatar > bounceForward
         box3 avatar > killSprite
-        avatar sam > bounceForward
+        cannon avatar > bounceForward
+        # avatar sam > bounceForward
 
     TerminationSet
         SpriteCounter stype=box3 limit=0 win=True

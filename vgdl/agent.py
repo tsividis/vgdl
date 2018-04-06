@@ -290,7 +290,7 @@ class Agent:
 			print "WARNING: running on < 40 cores."
 
 		actionSequences = [
-			[0,0,0,0,0,0]
+			[0,0,0,K_LEFT, K_LEFT,0,0]
 			# [K_UP, K_UP, K_DOWN]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
@@ -305,7 +305,7 @@ class Agent:
 
 		for episode_num, actions in enumerate(actionSequences):
 			self.initializeEnvironment()
-
+			# embed()
 			print "initializing RLE. Epoch={}".format(epoch)
 
 			self.all_objects[episode_num] = self.rle._game.getObjects() ## we need to store all_objects across multiple episodes
@@ -546,6 +546,7 @@ class Agent:
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
 
 		if newTheories:
+
 			penalties = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], self.actionHistory[:episode_num+1],
 				self.symbolDict, method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
 
@@ -589,7 +590,6 @@ class Agent:
 			h.dryingPaint = set()
 		
 		return hypotheses
-
 
 	########################################################################
 	######## TESTING HYPOTHESES BY RANDOM SAMPLING OR OTHER METHODS ########
@@ -675,11 +675,13 @@ def setSpriteState(sprite, matchingSprite, hypothesis):
 		embed()
 
 	sprite.rect 		= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
+	# sprite.lastrect = sprite.rect
 	sprite.lastrect 	= pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
-	if sprite.rect.left != sprite.lastrect.left and sprite.rect.top != sprite.lastrect.top and abs(sprite.rect.left  - sprite.lastrect.left ) != abs(sprite.rect.top - sprite.lastrect.top):
-		print "in setVrleState -- illegal rect/lastrect pair"
-		embed()
+	# if sprite.rect.left != sprite.lastrect.left and sprite.rect.top != sprite.lastrect.top and abs(sprite.rect.left  - sprite.lastrect.left ) != abs(sprite.rect.top - sprite.lastrect.top):
+		# print "in setVrleState -- illegal rect/lastrect pair"
+		# embed()
 	sprite.lastmove 	= matchingSprite.lastmove
+	# sprite.age 			= matchingSprite.age
 	sprite.ID = matchingSprite.ID
 	sprite.resources = defaultdict(int)
 	for rcolor in matchingSprite.inventory.keys():
@@ -1285,8 +1287,8 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 	# Step through sub-problems
 	e = errorMapEntry()
 	e.targetToken = sB
-	e.targetClass = sA.colorName
-	e.targetColor = sA.colorName
+	e.targetClass = sB.colorName
+	e.targetColor = sB.colorName
 
 	errorMaps = [e]
 	# Find neighbors of target sprite in the previous time step
@@ -1351,7 +1353,6 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 			e1.targetClass = 'unknown'
 			e1.targetColor = covered_sprite_envB.colorName
 			errorMaps.append(e1)
-			# embed()
 			## Now you need to modify the errorMap so that you can both propose the new class appropriately
 			## and address the overlapping sprites error.
 			## e.intPairs gets 'cleaned' at the end of errorSignal() so you can't pass color info through that;
@@ -1800,6 +1801,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		if len(theories) == 1 and any([errorMap == e for e in theories[0].errorMapHistory]):
 			newTheories = [theories[0]]
 			theories = newTheories
+			# FLAG: huh?
 			continue
 
 		# print "In base case. Correcting error for {} for {} theories".format(errorMap.targetClass, len(theories))
@@ -1834,6 +1836,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 
 	n = 1 # n is the number of allowed rules for a particular classpair-ordering, probably (TODO)
 
+	errorMap = errorMap.copy()
 	errorMap.targetClass = theory.spriteObjects[errorMap.targetClass].className if errorMap.targetClass in theory.spriteObjects.keys() else 'unknown'
 
 	if errorMap.intPairs:
@@ -1862,6 +1865,11 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 	if any([errorMap == e for e in theory.errorMapHistory]):
 		newTheories = [theory]
 		return newTheories
+
+	# if 'unexpectedPosition' in errorMap.diagnosis and 'c6' in theory.classes and 'Missile' in str(theory.classes['c6'][0].vgdlType):
+	# 	print "found missile"
+	# 	### Why is errorMap.targetClass 'unknown'???
+	# 	embed()
 
 	theory.errorMapHistory.append(errorMap)
 

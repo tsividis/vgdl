@@ -2638,6 +2638,11 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 
 	childTheories = [theory.copy()]
 
+	# if 'unexpectedPosition' in errorMap.diagnosis and 'c6' in theory.classes and 'Missile' in str(theory.classes['c6'][0].vgdlType):
+		# print "found missile"
+		### Why is errorMap.targetClass 'unknown'???
+		# embed()
+
 	##if iterating thresholds is not relevant:
 	predicatesWithThresholds = ['killIfTooFast', 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
 	relevantRulesWithArgs = [rule for rule in theory.interactionSet if rule.interaction in predicatesWithThresholds and 
@@ -2651,6 +2656,7 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 			toRemove = [rule for rule in theory.interactionSet if classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and 
 					rule.asTuple()[1] == errorMap.targetClass and rule.asTuple()[0]=='killSprite']
 			theory.interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
+			# FlAG: should this act on the theory or the copy?
 
 		
 		newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
