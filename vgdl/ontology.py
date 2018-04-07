@@ -1713,6 +1713,7 @@ def collectResource(sprite, partner, game): # FLAG
     r = sprite.resourceType
     partner.resources[r] = max(-1, min(partner.resources[r]+sprite.value, game.resources_limits[r]))
     killSprite(sprite, partner, game)
+    # args = {'resource':r, 'value':sprite.value, 'limit':game.resources_limits[r]}
     return ('collectResource' , sprite.ID, partner.ID)
 
 def changeResource(sprite, partner, resourceColor, game, resource, value=1, limit=None):
