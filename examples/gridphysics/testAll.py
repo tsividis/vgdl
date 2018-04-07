@@ -35,12 +35,22 @@ wwwwwwwwww
 """
 
 
+changeScoreLevel = """
+wwwwwwwwww
+w        w
+w    g   w
+w    g   w
+w    A   w
+wwwwwwwwww
+"""
+
+
 AvatarLevel = """
 wwwwwwwwww
 w       gw
 w g  b   w
 w    b   w
-w    A   w
+w   A    w
 wwwwwwwwww
 """
 
@@ -57,7 +67,7 @@ wwwwwwwwww
 """
 
 
-level = AvatarLevel
+level = changeScoreLevel
 
 game="""
 BasicGame
@@ -111,9 +121,7 @@ interactionSetAll = """
         cannon wall > stepBack
         sam wall > killSprite
         box avatar > killSprite
-        # box2 avatar > bounceForward
-        avatar box2 > changeScore value=5
-        box2 avatar > killSprite
+        box2 avatar > bounceForward
         cannon avatar > bounceForward
         box sam > killSprite
         # avatar sam > bounceForward
