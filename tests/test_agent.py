@@ -206,11 +206,3 @@ class TestBasics(_TestAgent):
 		self.assertAgentHasTheories()
 
 
-
-
-class TestAgentOneGame(_TestAgent):
-
-	def testCase1(self):
-		self.assertTrue(True)
-
-
