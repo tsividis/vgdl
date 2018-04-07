@@ -88,6 +88,8 @@ Place in as many or as few combinations of sets as you want.
 game1 = catDescriptions(sSet, iSet, tSet1)
 game2 = catDescriptions(sSet, iSet, tSet2)
 
+print game1
+
 test1 = TestCase(game1, level1, [[K_UP, K_UP]])
 test2 = TestCase(game1, level1, [[K_UP, K_RIGHT, K_RIGHT]])
 test3 = TestCase(game1, level1, [[K_UP]])

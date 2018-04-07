@@ -2015,13 +2015,13 @@ if __name__ == "__main__":
 	##simpleGame_missile: no support for learning that it can shoot things.
 	# filename = "examples.gridphysics.aliens"
 
-	# filename = "examples.gridphysics.avatar_inference"
+	filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.collect_resource"
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 
-	filename = "examples.gridphysics.testAll"
+	# filename = "examples.gridphysics.testAll"
 	# filename = "examples.gridphysics.basics"
 
 	global WBP

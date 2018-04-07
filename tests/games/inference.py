@@ -7,46 +7,53 @@ TerminationSet
 
 levelMapping = """
 LevelMapping
-    1 > box
-    2 > box2
-    3 > box3
-    w > wall
-    c > cannon
-    A > avatar
+	1 > box
+	2 > box2
+	3 > box3
+	w > wall
+	c > cannon
+	A > avatar
 """
 
 
 sSetBoxes = """
 SpriteSet
-    box	 > Immovable color=WHITE 
-    box2 > Immovable color=GREEN
-    box3 > Immovable color=YELLOW
-    wall > Immovable color=DARKGRAY
+	box	 > Immovable color=WHITE 
+	box2 > Immovable color=GREEN
+	box3 > Immovable color=YELLOW
+	wall > Immovable color=DARKGRAY
 """
 
-sSetCannon = """
+sSetCannons = joinDescs(sSetBoxes, """
 SpriteSet
 	cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
 	sam > Missile orientation=UP color=BLUE singleton=False cooldown=1
-"""
+""")
 
 iSetBoxes = """
 InteractionSet
-    avatar wall > stepBack
-    box avatar > transformTo stype=box2
-    box2 avatar > killSprite
-    box3 avatar > killSprite
-    # Need to include all step backs
-"""
+	avatar wall > stepBack
+	box avatar > transformTo stype=box2
+	box2 avatar > killSprite
+	box3 avatar > killSprite
+	# Need to include all step backs"""
 
-iSetCannons = """
+iSetCannons = joinDescs(iSetBoxes, """
 InteractionSet
-    cannon avatar > bounceForward
-    avatar sam > bounceForward
-    cannon sam > stepBack
-    sam cannon > stepBack	
-    # need to include additional stepbacks
-"""
+	cannon avatar > bounceForward
+	avatar sam > bounceForward
+	cannon sam > stepBack
+	sam cannon > stepBack
+	# need to include additional stepbacks""")
+
+print iSetCannons.__repr__()
+
+iSetWeird = joinDescs(iSetCannons, """
+InteractionSet
+	cannon sam > stepBack
+	sam cannon > stepBack
+""")
+print iSetWeird.__repr__()
 
 '''
 The original interaction set
@@ -68,8 +75,24 @@ InteractionSet
 
 
 gameBoxes = catDescriptions(sSetBoxes, iSetBoxes, tSetBase, levelMapping)
-gameCannons = catDescriptions(joinDescs(sSetBoxes, sSetCannon), 
-							  joinDescs(iSetBoxes, iSetCannons), tSetBase, levelMapping)
+
+gameCannons = catDescriptions(sSetCannons, iSetCannons, tSetBase, levelMapping)
+gameWeird = catDescriptions(sSetCannons, iSetWeird, tSetBase, levelMapping)
+print gameWeird
+
+level0 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w                            1 w
+w              c   A           w
+w  c                           w
+w                         3 3  w
+w         c                    w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+test0 = TestCase(gameWeird, level0, [[K_LEFT]*8])
+
 
 # up, up, up, up, left
 level1 = """

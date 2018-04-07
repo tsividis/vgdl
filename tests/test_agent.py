@@ -205,4 +205,8 @@ class TestBasics(_TestAgent):
 		self.executeStep(0, K_UP)
 		self.assertAgentHasTheories()
 
+class TestInference(_TestAgent):
+
+	# test1 = _testConstructor(*inference.test1)
+	test0 = _testConstructor(*inference.test0)
 

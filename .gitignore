@@ -1,6 +1,7 @@
 /illust.jpeg
 theorytest.py
 *.pyc
+*.npy
 /.settings
 /temp
 /videos
