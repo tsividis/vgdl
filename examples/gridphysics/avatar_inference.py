@@ -108,17 +108,17 @@
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                              w
-# w                              w
-# w                              w
-# w            1 C               w
-# w                              w
-# w                      A       w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                           3  w
+w                 2            w
+w          4                3  w
+w                      2       w
+w     4                        w
+w                      A       w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 #left, left, left, left, left, left, left, 0
 # level = """
@@ -149,17 +149,17 @@
 # works for changeResource, killIfOtherHasMore/Less.
 # currently broken by invisiblemedicine and (separately) the avatar dying
 #up, up, up, up
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w              p             1 w
-w              m             1 w
-w              m               w
-w              p               w
-w              A          3 3  w
-w                              w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w              p             1 w
+# w              m             1 w
+# w              m               w
+# w              p               w
+# w              A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # testing when poisons make you step back
 # works
@@ -179,6 +179,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 game="""
 BasicGame
     SpriteSet
+        avatar  > MovingAvatar color=DARKBLUE
         cloner > Immovable color=GREEN
         box    > Immovable color=WHITE # orientation=RIGHT cooldown=1
         box2 > Immovable color=GREEN
@@ -186,7 +187,6 @@ BasicGame
         flicker > Flicker timeout=1 color=ORANGE
         random > RandomNPC color=PURPLE speed=1 cooldown=1
         chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
-        avatar  > MovingAvatar color=DARKBLUE 
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         missile > Missile
             sam  > orientation=UP color=BLUE singleton=False cooldown=1
@@ -214,8 +214,8 @@ BasicGame
         box avatar > transformTo stype=box2
         # cannon sam > stepBack
         # sam cannon > stepBack
-        box2 avatar > killSprite
-        # box2 avatar > bounceForward
+        # box2 avatar > killSprite
+        box2 avatar > bounceForward
         box3 avatar > killSprite
         cannon avatar > bounceForward
         avatar sam > bounceForward

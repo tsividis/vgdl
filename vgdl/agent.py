@@ -297,8 +297,8 @@ class Agent:
 			# [0,0,0,0,0,0,0,0]
 			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0,0,0]
 			# [0,0,0,0,0,0,0,0,0,0,0,0]
-			# [K_UP, K_UP, K_UP]
-			[K_UP, K_UP]
+			[K_UP, K_UP, K_UP, K_RIGHT]
+			# [K_UP, K_UP]
 			# [K_RIGHT, K_UP]
 			# [K_UP, K_UP, K_UP, K_UP]
 			# [K_LEFT, K_UP, K_UP, K_UP, K_UP]
@@ -556,7 +556,7 @@ class Agent:
 				self.symbolDict, method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
 
 			scoreAndTheoryTuples = zip(penalties, newTheories)
-			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], len(x[1].interactionSet)))
+			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
 
 			for num, sh in reversed(list(enumerate(scoreAndTheoryTuples))):
 				if num > 100:
@@ -572,6 +572,7 @@ class Agent:
 				scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
 					proportionOfSpriteTheories=None, errorCutoff=.3)]
 
+			scoresAndHypotheses = [sh for sh in scoresAndHypotheses if sh[1].prior() == min([s[1].prior() for s in scoresAndHypotheses])]
 			print "Experience replay complete."
 			for num, sh in enumerate(scoresAndHypotheses):
 				print "Theory: {} | Error: {}".format(num, sh[0])
@@ -996,7 +997,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			yPrev = sPrev.rect.top/d
 
 			positionOptions = [(xPrev, yPrev), (xPrev+sA_speed, yPrev), (xPrev-sA_speed, yPrev), (xPrev, yPrev+sA_speed), (xPrev, yPrev-sA_speed)]
-			total_penalty += np.log(1./len(positionOptions)-e_dist) if (xB, yB) in positionOptions else np.log(0.+e_dist) #likelihood
+			# total_penalty += np.log(1./len(positionOptions)-e_dist) if (xB, yB) in positionOptions else np.log(0.+e_dist) #likelihood
+			total_penalty += np.log(1.-e_dist) if (xB,yB) in positionOptions else np.log(e_dist)
 		elif 'Missile' in str(sA_type):
 			# if 'flipDirection' in [r.interaction for r in theory.interactionSet]:
 				# print "found flipDirection"
@@ -1701,6 +1703,9 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, method='
 
 	t1 = time.time()
 	results = []
+	# if len(hypotheses)>100:
+		# print ">100 hypotheses"
+		# embed()
 	for num, h in enumerate(hypotheses):
 		if displayTheories:
 			print "running experienceReplay on {}:".format(num)
@@ -1879,30 +1884,22 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			newIntPairs.append(pair)
 		errorMap.intPairs = newIntPairs
 
-
 	## If we were about to make modifications we've made already, don't waste the time.
 	if any([errorMap == e for e in theory.errorMapHistory]):
+		errorMap.display()
+		print "we've addressed this theory before. Skipping it"
 		newTheories = [theory]
 		return newTheories
 
-	# if 'unexpectedPosition' in errorMap.diagnosis and 'c6' in theory.classes and 'Missile' in str(theory.classes['c6'][0].vgdlType):
-	# 	print "found missile"
-	# 	### Why is errorMap.targetClass 'unknown'???
-	# 	embed()
-
 	theory.errorMapHistory.append(errorMap)
-
 	newTheories = [theory.copy()]
-
 	newErrorMaps = [errorMap]
+
 	## For debugging. Don't make children of the true theory.
 	if hasattr(theory, 'trueTheory'):
 		newTheories = [theory]
 		return newTheories
 
-	# if 'teleport' in errorMap.diagnosis:
-		# print "got transformation"
-		# embed()
 	## If there are unknown colors in an inventory, add them to the theory here.
 	if 'inventoryChange' in errorMap.diagnosis:
 		from vgdl.ontology import Resource
@@ -2040,9 +2037,11 @@ if __name__ == "__main__":
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
-	# filename = "examples.gridphysics.avatar_inference"
 
-	filename = "examples.gridphysics.testAll"
+	filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.testAll"
+	
+
 	# filename = "examples.gridphysics.basics"
 
 	global WBP
