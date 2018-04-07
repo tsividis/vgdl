@@ -297,8 +297,11 @@ class Agent:
 			# [0,0,0,0,0,0,0,0]
 			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0,0,0]
 			# [0,0,0,0,0,0,0,0,0,0,0,0]
-			[K_UP, K_UP, K_UP]
+			# [K_UP, K_UP, K_UP]
+			# [K_UP, K_UP]
 			# [K_RIGHT, K_UP]
+			[K_UP, K_UP, K_UP, K_UP]
+			# [K_LEFT, K_UP, K_UP, K_UP, K_UP]
 		]
 
 		self.rleHistory = [[] for i in range(len(actionSequences))]
@@ -676,17 +679,21 @@ def setSpriteState(sprite, matchingSprite, hypothesis):
 		print "WARNING: didn't find matching sprite in setSpriteState; this shouldn't happen"
 		embed()
 
-	sprite.rect 		= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
+	sprite.rect 	= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
 	# sprite.lastrect = sprite.rect
-	sprite.lastrect 	= pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
+	sprite.lastrect = pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
 	# if sprite.rect.left != sprite.lastrect.left and sprite.rect.top != sprite.lastrect.top and abs(sprite.rect.left  - sprite.lastrect.left ) != abs(sprite.rect.top - sprite.lastrect.top):
 		# print "in setVrleState -- illegal rect/lastrect pair"
 		# embed()
-	sprite.lastmove 	= matchingSprite.lastmove
-	# sprite.age 			= matchingSprite.age
+	sprite.lastmove = matchingSprite.lastmove
+	# sprite.age 	= matchingSprite.age
 	sprite.ID = matchingSprite.ID
 	sprite.resources = defaultdict(int)
 	for rcolor in matchingSprite.inventory.keys():
+		if rcolor not in hypothesis.spriteObjects:
+			print 'in setSpriteState: next line is going to crash'
+			embed()
+			# maybe do sprite induction here on purple?
 		sprite.resources[hypothesis.spriteObjects[rcolor].className] = matchingSprite.inventory[rcolor][0]
 
 	# in VGDL, only things which move passively have an orientation that isn't (0,0)
@@ -2028,9 +2035,9 @@ if __name__ == "__main__":
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
-	# filename = "examples.gridphysics.avatar_inference"
+	filename = "examples.gridphysics.avatar_inference"
 
-	filename = "examples.gridphysics.testAll"
+	# filename = "examples.gridphysics.testAll"
 	# filename = "examples.gridphysics.basics"
 
 	global WBP

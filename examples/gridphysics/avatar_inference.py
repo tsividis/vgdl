@@ -125,18 +125,61 @@
 # sam cannon > stepBack
 #, then push a cannon into the missles from another
 # spoiler: it teleports back to where it started O.o
+# this no longer happens
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w            c    A            w
+# w  c                           w
+# w                         3 3  w
+# w         c                    w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+# #up, up
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w              m               w
+# w              m               w
+# w              A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+# works for changeResource, killIfOtherHasMore/Less.
+# currently broken by invisiblemedicine and (separately) the avatar dying
+#up, up, up, up
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
-w                            1 w
-w                            1 w
-w            c    A            w
-w  c                           w
-w                         3 3  w
-w         c                    w
+w              p             1 w
+w              m             1 w
+w              m               w
+w              p               w
+w              A          3 3  w
+w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
+# testing when poisons make you step back
+# works
+# #left, up, up, up, up
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w              p             1 w
+# w              m             1 w
+# w              m               w
+# w                              w
+# w             pA          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 game="""
 BasicGame
@@ -153,6 +196,9 @@ BasicGame
         missile > Missile
             sam  > orientation=UP color=BLUE singleton=False cooldown=1
         wall > Immovable color=DARKGRAY
+        medicine > Resource limit=4 color=GREEN
+        poison > Resource limit=3 color=PINK
+        invisiblemedicine > Resource limit=4 color=PURPLE
     LevelMapping
         C > cloner
         F > flicker
@@ -165,6 +211,8 @@ BasicGame
         c > cannon
         s > sam
         A > avatar
+        m > medicine
+        p > poison
     InteractionSet
         avatar wall > stepBack
         # box avatar > nothing
@@ -178,6 +226,15 @@ BasicGame
         avatar sam > bounceForward
         cannon sam > stepBack
         sam cannon > stepBack
+        medicine avatar > killSprite
+        avatar medicine > changeResource resource=invisiblemedicine value=1
+        avatar poison > changeResource resource=invisiblemedicine value=-1
+        poison avatar > killIfOtherHasMore resource=invisiblemedicine limit=0
+        # avatar medicine > changeResource resource=medicine value=1
+        # avatar poison > changeResource resource=medicine value=-1
+        # poison avatar > killIfHasMore resource=medicine limit=0 
+        # avatar poison > stepBack
+        # avatar poison > killIfHasMore resource=medicine limit=0
 
     TerminationSet
         SpriteCounter stype=box3 limit=0 win=True

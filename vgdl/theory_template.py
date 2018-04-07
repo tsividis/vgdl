@@ -2419,7 +2419,7 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 				try:
 					resources = [theory.spriteObjects[rcolor].className for rcolor in observations['trackedObjects'][theory.classes['avatar'][0].colorName][0].inventory.keys()]
 				except:
-					print "problem with resources in proposeArgs()"
+					print "problem with resources in proposeArgs()", " ...or the avatar died"
 					embed()
 				limits = [-2]
 				for comb in list(itertools.product(resources, limits)):
@@ -2428,7 +2428,7 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 			elif predicate == 'transformTo':
 				for stype in [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]:
 					argList.append({'stype':stype})
-			if predicate == 'teleportToExit':
+			elif predicate == 'teleportToExit':
 				for stype in [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]:
 					argList.append({'stype':stype})
 			else:
@@ -2646,7 +2646,7 @@ predicateToOrderingMapping = {
 	'killIfFromAbove':		(0,),
 	'killIfFromBelow':		(0,),
 	'changeResource':		(0,),
-	'collectResource':		(0,),
+	'collectResource':		(1,),
 	'stepBack':				(0,),
 	'cloneSprite':	 		(0,),
 	'transformTo':	 		(0,),

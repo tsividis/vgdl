@@ -117,7 +117,9 @@ interactionSetAll = """
         # avatar sam > bounceForward
         avatar wall > stepBack
         avatar armor > changeResource resource=armor value=1
-        medicine avatar > collectResource
+        # medicine avatar > collectResource
+        medicine avatar > killSprite
+        avatar medicine > changeResource resource=medicine value=1
         avatar poison > changeResource resource=medicine value=-1
         poison avatar > killIfOtherHasMore resource=medicine limit=0
         sam sam > killSprite
