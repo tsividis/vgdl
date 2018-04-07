@@ -120,12 +120,7 @@
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-# super wacky level: add
-# cannon sam > stepBack
-# sam cannon > stepBack
-#, then push a cannon into the missles from another
-# spoiler: it teleports back to where it started O.o
-# this no longer happens
+#left, left, left, left, left, left, left, 0
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w

@@ -8,7 +8,7 @@ from random import choice
 from copy import deepcopy
 from colors import *
 import itertools
-from math import sqrt
+from math import sqrt, cos, sin
 import pygame
 import numpy as np
 import scipy.stats
@@ -923,7 +923,6 @@ class AimedAvatar(ShootAvatar):
                 angle = self.angle_diff
             else:
                 angle = -self.angle_diff
-            from math import cos, sin
             self.orientation = unitVector((self.orientation[0]*cos(angle)-self.orientation[1]*sin(angle),
                                            self.orientation[0]*sin(angle)+self.orientation[1]*cos(angle)))
 
@@ -2232,8 +2231,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
             elif action == DOWN:
                 angle = angle_diff
 
-            from math import cos, sin
-
             orientation = (current_sprite.orientation[0]*cos(angle)-current_sprite.orientation[1]*sin(angle),
                            current_sprite.orientation[0]*sin(angle)+current_sprite.orientation[1]*cos(angle))
         else:
@@ -2267,8 +2264,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
                 angle = -angle_diff
             elif direction == DOWN:
                 angle = angle_diff
-
-            from math import cos, sin
 
             orientation = (current_sprite.orientation[0]*cos(angle)-current_sprite.orientation[1]*sin(angle),
                            current_sprite.orientation[0]*sin(angle)+current_sprite.orientation[1]*cos(angle))
