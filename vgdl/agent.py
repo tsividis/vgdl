@@ -738,11 +738,7 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False, debug=False):
 			# first make the new (vrle) env have the correct number of each thing
 			vrleSpriteCount = len(Vrle._game.sprite_groups[classKey]) - len([s for s in Vrle._game.kill_list if s.colorName==color])
 			rleSpriteCount = len(rle._game.observation['trackedObjects'][color])
-# <<<<<<< HEAD
-# 			old_kill_list = Vrle._game.kill_list
-# 			Vrle._game.kill_list = []
-# =======
-# >>>>>>> testing
+
 			if vrleSpriteCount > rleSpriteCount:
 				# just delete extraneous ones from the end by adding them to the kill_list
 				tmp_kill_list.extend(Vrle._game.sprite_groups[classKey][rleSpriteCount:])
@@ -759,19 +755,10 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False, debug=False):
 			# Now copy over sprite state (if we have any left of that type)
 			if not Vrle._game.sprite_groups[classKey]:
 				continue
-# <<<<<<< HEAD
-# 			color = Vrle._game.sprite_groups[classKey][0].colorName
-# 			for i in range(rleSpriteCount):
-# 				try:
-# 					setSpriteState(Vrle._game.sprite_groups[classKey][i], rle._game.observation['trackedObjects'][color][i], hypothesis)
-# 				except IndexError:
-# 					embed()
-		
-# =======
 
 			for i in range(min(len(Vrle._game.sprite_groups[classKey]), rleSpriteCount)):
 				setSpriteState(Vrle._game.sprite_groups[classKey][i], rle._game.observation['trackedObjects'][color][i], hypothesis)
-# >>>>>>> testing
+
 
 		# if 'transformTo' in [r.interaction for r in hypothesis.interactionSet] and len(rle._game.sprite_groups['box2'])==3:
 			# print "transformTo in hypothesis"
@@ -943,25 +930,43 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		## Distance penalty
 		sA, sB = t[0], t[1] #sprites in envA, envB      
 		dist = t[2] #distance to sprite in envB
+		sPrev, dist_ts = find_sPrev(sB, envB, envPrev) #Previous location of our sprite
+
 		sA_type = theory.spriteObjects[sA.colorName].vgdlType
 		d = 30. # grid spacing
 
+		## Calculate inventory penalty for the sprite
+		inventory_penalty = 0
+		keys = list(set(t[0].inventory.keys()+t[1].inventory.keys()))
+
+		for k in keys:
+			t0_k = t[0].inventory[k] if k in t[0].inventory.keys() else (0,0)
+			t1_k = t[1].inventory[k] if k in t[1].inventory.keys() else (0,0)
+			inventory_penalty += abs(t0_k[0]-t1_k[0])
+
+		total_penalty += np.log((e_inventory)**inventory_penalty) #likelihood
+		spritePrediction=False
+		## If a teleport event has taken place
 		if dist>0 and 'teleportToExit' in [r.interaction for r in theory.interactionSet]:
 			# print "found theory with teleport"
 			# embed()
 			sA_class = theory.spriteObjects[sA.colorName].className
-			teleportEntries = [theory.classes[r.slot2][0].colorName for r in theory.interactionSet if r.interaction=='teleportToExit' and r.slot1==sA_class]
-			teleportExitClasses = [theory.spriteObjects[colorName].args['stype'] for colorName in teleportEntries]
+			teleportEntryColors = [theory.classes[r.slot2][0].colorName for r in theory.interactionSet if r.interaction=='teleportToExit' and r.slot1==sA_class]
+			teleportExitClasses = [theory.spriteObjects[colorName].args['stype'] for colorName in teleportEntryColors]
 			teleportExitColors = [theory.classes[c][0].colorName for c in teleportExitClasses]
-			teleportLocs = []
+			teleportEntryLocs, teleportExitLocs = [],[]
+			for entryType in teleportEntryColors:
+				teleportEntryLocs.extend([s for s in envPrev._game.observation['trackedObjects'][entryType]])
 			for exitType in teleportExitColors:
-				teleportLocs.extend([(s.rect.left, s.rect.top) for s in envB._game.observation['trackedObjects'][exitType]])
-			if (sB.rect.left, sB.rect.top) in teleportLocs:
-				total_penalty += np.log(e_dist)
+				teleportExitLocs.extend([(s.rect.left, s.rect.top) for s in envB._game.observation['trackedObjects'][exitType]])
+			## If we've ended up at a purported exit and we could have gotten to an entry with a single step,
+			## consider that we teleported and don't penalize the distance any other way.
+			if (sB.rect.left, sB.rect.top) in teleportExitLocs and any([manhattanDist2(sPrev,s)<=sPrev.speed for s in teleportEntryLocs]):
+				total_penalty += np.log(1.-e_dist)
 				continue
 
 		# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
-		if 'Random' in str(sA_type):   
+		if 'Random' in str(sA_type):
 
 			if 'speed' in theory.spriteObjects[sA.colorName].args.keys():
 				sA_speed = theory.spriteObjects[sA.colorName].args['speed']
@@ -971,7 +976,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				## this only happens when you initialize the real theory for testing but haven't explicitly set the speed
 				## in the VGDL description
 				sA_speed = 1
-			sPrev, dist_ts = find_sPrev(sB, envB, envPrev) #sA in previous environment
+
 			if sPrev is None:
 				continue
 			xB = sB.rect.left/d
@@ -988,7 +993,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			total_penalty += np.log(1.-e_dist) if dist==0. else np.log(0.+e_dist) #likelihood
 		elif 'Chaser' in str(sA_type):
 			
-			sPrev, _ = find_sPrev(sB, envB, envPrev)
 			xA = sA.rect.left/d
 			yA = sA.rect.top/d
 			if sPrev is None:
@@ -1012,16 +1016,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		# All of the other types are deterministic
 		else:
 			total_penalty += np.log(1.-e_dist) if t[2]==0. else np.log(0+e_dist)
-
-		inventory_penalty = 0
-		keys = list(set(t[0].inventory.keys()+t[1].inventory.keys()))
-
-		for k in keys:
-			t0_k = t[0].inventory[k] if k in t[0].inventory.keys() else (0,0)
-			t1_k = t[1].inventory[k] if k in t[1].inventory.keys() else (0,0)
-			inventory_penalty += abs(t0_k[0]-t1_k[0])
-
-		total_penalty += np.log((e_inventory)**inventory_penalty) #likelihood
 
 	# Missing/additional/transformation penalty
 	total_penalty += np.log((e_disappearance)**( len(lonely_sprites_envA) + len(lonely_sprites_envB) )) #likelihood
@@ -1673,7 +1667,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 						rleHistory[idx+n], targetColor=targetColor, penalty_only=True)
 					penalties.append(penalty)
 				except:
-					print "in experienceReplay"
+					print "exception in experienceReplay"
 					embed()
 				if displayStates:
 					print "resulting state incurred a penalty of {} and looks like this:".format(penalty)

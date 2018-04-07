@@ -367,13 +367,16 @@ class Theory(object):
 		for interactionRule in self.interactionSet:
 			if 'teleportToExit' in interactionRule.interaction:
 				color = self.classes[interactionRule.slot2][0].colorName
-				self.spriteObjects[color].args = ccopy(interactionRule.args)
-				self.spriteObjects[color].vgdlType = Portal
-				self.classes[interactionRule.slot2][0] = self.spriteObjects[color]
-				for rule in self.interactionSet:
-					if rule.slot1==interactionRule.slot1 and rule.slot2==interactionRule.args['stype']:
-						rule.interaction = 'nothing'
-				interactionRule.args = {}
+				## If we haven't already made this a Portal, take care of the details.
+				if self.spriteObjects[color].vgdlType!=Portal:
+					self.spriteObjects[color].args = ccopy(interactionRule.args)
+					self.spriteObjects[color].vgdlType = Portal
+					self.classes[interactionRule.slot2][0] = self.spriteObjects[color]
+					for rule in self.interactionSet:
+						if rule.slot1==interactionRule.slot1 and 'stype' in interactionRule.args and \
+								rule.slot2==interactionRule.args['stype'] and rule!=interactionRule and rule.interaction != 'stepBack':
+								rule.interaction = 'nothing'
+					interactionRule.args = {}
 
 	def addSpriteToTheory(self, newSpriteName, color, vgdlType='default', args=None):
 		if vgdlType=='default':
@@ -1506,8 +1509,8 @@ class Theory(object):
 	def _stringRules(self, ignore_step_back=True, color_names=False, compare_theory=None):
 		string = '\nInteractionSet:'
 		for rule in self.interactionSet:
-			if rule.interaction == 'nothing':
-				continue
+			# if rule.interaction == 'nothing':
+				# continue
 			if ignore_step_back and rule.interaction == 'stepBack':
 				continue
 			else:
@@ -2693,9 +2696,6 @@ def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, ob
 					if i in predicateToOrderingMapping[predicate]:
 						allArgumentCombinations = proposeArgs(theory, predicate, errorMap, observations, 
 							generic=False)
-						for comb in allArgumentCombinations:
-							if predicate=='teleportToExit':
-								print comb
 						predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
 							for comb in allArgumentCombinations])
 				if predicateRules:
