@@ -40,7 +40,7 @@ wwwwwwwwww
 w       gw
 w g  b   w
 w    b   w
-w   A    w
+w    A   w
 wwwwwwwwww
 """
 
@@ -57,7 +57,7 @@ wwwwwwwwww
 """
 
 
-level = teleportLevel
+level = AvatarLevel
 
 game="""
 BasicGame
@@ -111,7 +111,9 @@ interactionSetAll = """
         cannon wall > stepBack
         sam wall > killSprite
         box avatar > killSprite
-        box2 avatar > bounceForward
+        # box2 avatar > bounceForward
+        avatar box2 > changeScore value=5
+        box2 avatar > killSprite
         cannon avatar > bounceForward
         box sam > killSprite
         # avatar sam > bounceForward

@@ -298,9 +298,9 @@ class Agent:
 			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0,0,0]
 			# [0,0,0,0,0,0,0,0,0,0,0,0]
 			# [K_UP, K_UP, K_UP]
-			# [K_UP, K_UP]
+			[K_UP, K_UP]
 			# [K_RIGHT, K_UP]
-			[K_UP, K_UP, K_UP, K_UP]
+			# [K_UP, K_UP, K_UP, K_UP]
 			# [K_LEFT, K_UP, K_UP, K_UP, K_UP]
 		]
 
@@ -892,9 +892,10 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 	"""
 
 	#likelihood version
-	e_dist = 1e-10
-	e_inventory = 1e-10
+	e_dist 			= 1e-10
+	e_inventory 	= 1e-10
 	e_disappearance = 1e-10
+	e_score			= 1e-10
 
 	# Initialization
 	total_penalty = 0.
@@ -953,6 +954,9 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 		total_penalty += np.log((e_inventory)**inventory_penalty) #likelihood
 		spritePrediction=False
+		if dist>0 and 'flipDirection' in [r.interaction for r in theory.interactionSet]:
+			print "got flipDirection"
+			embed()
 		## If a teleport event has taken place
 		if dist>0 and 'teleportToExit' in [r.interaction for r in theory.interactionSet]:
 			# print "found theory with teleport"
@@ -1027,7 +1031,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 	# Missing/additional/transformation penalty
 	total_penalty += np.log((e_disappearance)**( len(lonely_sprites_envA) + len(lonely_sprites_envB) )) #likelihood
 
-	# if envA._game.observation['score'] != envB._game.observation['score']:
+	if envA._game.observation['score'] != envB._game.observation['score']:
+		total_penalty += np.log(e_score)
 		# total_penalty += p_score*abs(envA._game.observation['score']-envB._game.observation['score'])
 
 	total_penalty = 1.-np.exp(total_penalty)
@@ -2035,9 +2040,9 @@ if __name__ == "__main__":
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
-	filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.avatar_inference"
 
-	# filename = "examples.gridphysics.testAll"
+	filename = "examples.gridphysics.testAll"
 	# filename = "examples.gridphysics.basics"
 
 	global WBP
