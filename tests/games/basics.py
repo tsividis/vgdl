@@ -34,6 +34,8 @@ reverseDirection
 
 
 '''
+
+# Win the game when you destroy all the boxes
 game1 = """
 BasicGame
     SpriteSet
@@ -68,7 +70,45 @@ BasicGame
         SpriteCounter stype=avatar limit=0 win=False
 """
 
+# Don't win the game when you destroy all the boxes
+game2 = """
+BasicGame
+    SpriteSet
+        box    > Immovable color=WHITE 
+        avatar  > MovingAvatar color=DARKBLUE speed=1
+        wall > Immovable color=DARKGRAY
+    LevelMapping
+        A > avatar
+        b > box
+    InteractionSet
+        avatar wall > stepBack
+        box avatar > killSprite
 
-test1 = TestCase(game1, level1, [[K_UP, K_UP, K_RIGHT, K_RIGHT]])
+        wall avatar > stepBack
+        wall box > stepBack
+
+        box wall > stepBack
+        # avatar box > stepBack
+        # box avatar > stepBack
+
+
+        avatar EOS > stepBack
+        wall EOS > stepBack
+        box EOS > stepBack
+
+        avatar avatar > stepBack
+        box box > stepBack
+        wall wall > stepBack
+
+    TerminationSet
+        # SpriteCounter stype=box limit=0 win=True
+        SpriteCounter stype=avatar limit=0 win=False
+"""
+
+
+
+test1 = TestCase(game1, level1, [[K_UP, K_UP]])
 test2 = TestCase(game1, level1, [[K_UP, K_RIGHT, K_RIGHT]])
 test3 = TestCase(game1, level1, [[K_UP]])
+
+test4 = TestCase(game2, level1, [[K_UP, K_UP]])

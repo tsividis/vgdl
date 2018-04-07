@@ -101,10 +101,12 @@ class _TestAgent(unittest.TestCase):
 			string += '\n%s' % h
 
 	def stringCompareTheories(self, theory1, theory2, string_function, **kwargs):
-		string = '--- Theory1'
+		string = '\n>>> %s not Equal'
+		string += '--- Theory1'
 		string += '%s' % getattr(theory1, string_function)(**kwargs)
 		string += '\n--- Theory2'
 		string += '%s\n---' % getattr(theory2, string_function)(**kwargs)
+		string += '<<<\n'
 		return string
 
 	def stringLowErrorHypotheses(self, error_limit=0.01):
@@ -115,20 +117,23 @@ class _TestAgent(unittest.TestCase):
 
 	########################################
 	# Assertion Function
-	def assertTheoriesEqual(self, theory1, theory2, ignore_novelty_terminations=True):
+	def assertTheoriesEqual(self, theory1, theory2, ignore_novelty_terminations=True, ignore_terminations=False):
 		display = 'Theoies Not Equal\n'
 		if not classAssignmentsEqual(theory1, theory2):
-			display += '\n>>> Class Assignments not Equal'
-			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringClasses', color_names=True)
+			display += self.stringCompareTheories(theory1, theory2, '_stringClasses', color_names=True)
 		if not interactionSetsEqual(theory1, theory2):
-			display += '\n>>> Interaction Sets not Equal'
-			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringRules', ignore_step_back=False, color_names=True)
-		if not terminationSetsEqual(theory1, theory2, ignore_novelty_terminations):
-			display += '\n>>> Termination Sets not Equal'
-			display += '\n%s\n<<<' % self.stringCompareTheories(theory1, theory2, '_stringTerminations', color_names=True)
-		# display += '\n%s' % theory1
-		# display += '\n%s' % theory2 
+			display += self.stringCompareTheories(theory1, theory2, '_stringRules', ignore_step_back=False, color_names=True)
+		if not ignore_terminations:
+			if not terminationSetsEqual(theory1, theory2, ignore_novelty_terminations):
+				display += self.stringCompareTheories(theory1, theory2, '_stringTerminations', color_names=True)
 		self.assertTrue(theoriesEqual(theory1, theory2), display)
+
+	def assertTheoriesNotEqual(self, theory1, theory2, ignore_novelty_terminations=True):
+		display = 'Theories Equal\n'
+		display += '>>> Theory1 and Theory2\n'
+		display += str(theory1)
+		display += '\n<<<'
+		self.assertFalse(theoriesEqual(theory1, theory2), display)
 
 	def assertAgentHasTheory(self, theory):
 		self.assertTrue(theoryInHypotheses(theory, self.agent.hypotheses), 'Theory not in hypotheses: \n%s' % theory)
@@ -171,22 +176,26 @@ def _testConstructor(game, level, action_sequences):
 ######################################################################################
 # The Test Class you actually want to modify!
 
-class TestAgent(_TestAgent):
+class TestBasics(_TestAgent):
 
 	########################################
 	# Test Suite
 	#
 	# This is one way to create a test case. Defaults to the basics (defined above)
-	testBasicsKillSpritesAndWin = _testConstructor(*basics.test1)
+	testKillSpritesAndWin = _testConstructor(*basics.test1)
+	testKillSpritesAndNothing = _testConstructor(*basics.test4)
 	## specify what levels you want to give it here. see basics.py for examples.
 
 	# This is another way to create a test case. You can do everything individually.
-	def testBasics(self):
+	def testKillSpriteAndStop(self):
 		real_description = self.initRunCreate(*basics.test2)
-		
-		self.assertAgentHasTheory(real_description)
+		# this may not be that useful, but I'll keep it around anyway.
 		self.assertTheoriesEqual(self.agent.hypotheses[0], real_description)
-		self.assertTheoryBelowEpsilonError(self.agent.hypotheses[0])
+
+	# def testKillSpritesAndNothing(self):
+	# 	real_description = self.initRunCreate(*basics.test4)
+	# 	self.assertTheoriesEqual(self.agent)
+
 
 	def testFilter(self):
 		self.initialize(*basics.test1)
