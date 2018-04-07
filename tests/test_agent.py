@@ -164,6 +164,7 @@ def _testConstructor(game, level, action_sequences):
 		self.assertAgentHasTheory(real_description)
 		self.assertTheoriesEqual(self.agent.hypotheses[0], real_description)
 		self.assertTheoryBelowEpsilonError(self.agent.hypotheses[0])
+		## Write whatever things you want to test for here.
 
 	return testCase
 
@@ -177,6 +178,7 @@ class TestAgent(_TestAgent):
 	#
 	# This is one way to create a test case. Defaults to the basics (defined above)
 	testBasicsKillSpritesAndWin = _testConstructor(*basics.test1)
+	## specify what levels you want to give it here. see basics.py for examples.
 
 	# This is another way to create a test case. You can do everything individually.
 	def testBasics(self):
@@ -201,3 +203,5 @@ class TestAgentOneGame(_TestAgent):
 
 	def testCase1(self):
 		self.assertTrue(True)
+
+
