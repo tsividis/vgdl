@@ -45,6 +45,7 @@ class errorMapEntry:
 	def __init__(self):
 		self.diagnosis = []
 		self.targetToken = None
+		self.targetTokens = None
 		self.targetClass = None
 		self.targetColor = None
 		self.intPairs = []
@@ -52,7 +53,10 @@ class errorMapEntry:
 	def display(self):
 		print ""
 		print "diagnosis: {}".format(self.diagnosis)
-		print "targetToken: {}".format(self.targetToken)
+		if self.targetTokens:
+			print "targetTokens: {}".format(self.targetTokens)
+		else:
+			print "targetToken: {}".format(self.targetToken)
 		print "targetClass: {}".format(self.targetClass)
 		print "targetColor: {}".format(self.targetColor)
 		# if self.targetToken is not None:
@@ -63,6 +67,7 @@ class errorMapEntry:
 		e                   = errorMapEntry()
 		e.diagnosis         = self.diagnosis
 		e.targetToken       = ccopy(self.targetToken)
+		e.targetTokens      = ccopy(self.targetTokens)
 		e.targetClass       = self.targetClass
 		e.targetColor 		= self.targetColor
 		e.intPairs          = self.intPairs
@@ -1277,21 +1282,26 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 	## Share information across errorMap items and make a unique list
 	if len(errorMap) > 1:
-		diagnosis_class_pairs = list(set([(e.diagnosis[0], e.targetClass) for e in errorMap]))
+		
+		diagnosis_class_pairs = list(set([tuple(e.diagnosis+[e.targetClass]) for e in errorMap]))
 		for dcp in diagnosis_class_pairs:
-			int_pairs = [item for sublist in [e.intPairs for e in errorMap if e.diagnosis[0] == dcp[0] and e.targetClass == dcp[1]] for item in sublist]
+			relatedErrorMaps = [e for e in errorMap if tuple(e.diagnosis)==dcp[0:-1] and e.targetClass==dcp[-1]]
+			# int_pairs = [item for sublist in [e.intPairs for e in errorMap if e.diagnosis[0] == dcp[0] and e.targetClass == dcp[1]] for item in sublist]
+			int_pairs = [item for sublist in [e.intPairs for e in relatedErrorMaps] for item in sublist]
 			int_pairs = list(set(int_pairs))
+			targetTokens = list(set([e.targetToken for e in relatedErrorMaps]))
 			## give int_pairs to each matching errorMap item.
 			for e in errorMap:
-				if e.diagnosis[0] == dcp[0] and e.targetClass == dcp[1]:
+				if tuple(e.diagnosis) == dcp[0:-1] and e.targetClass == dcp[1]:
 					e.intPairs = int_pairs
-
+					e.targetTokens = targetTokens
 		lst = [errorMap[0]]
 		for e in errorMap[1:]:
-			# if all([not(e.diagnosis == l.diagnosis and e.targetClass == l.targetClass) for l in lst]):
-			if all([not(e.diagnosis == l.diagnosis and e.targetClass == l.targetClass and e.targetToken == l.targetToken) for l in lst]):
+			if all([not(e.diagnosis == l.diagnosis and e.targetClass == l.targetClass) for l in lst]):
+			# if all([not(e.diagnosis == l.diagnosis and e.targetClass == l.targetClass and e.targetToken == l.targetToken) for l in lst]):
 				lst.append(e)
-
+		# print "filtered errorMap"
+		# embed()
 		errorMap = lst
 
 	# if len(errorMap)==4:

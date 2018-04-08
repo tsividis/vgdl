@@ -342,6 +342,7 @@ class Theory(object):
 		newTheory.terminationSet = ccopy(self.terminationSet)
 		newTheory.dryingPaint = set(self.dryingPaint)
 		newTheory.errorMapHistory = list(self.errorMapHistory) # currently unused but useful for debugging.
+		newTheory.experienceReplayRecord = ccopy(self.experienceReplayRecord)
 		return newTheory
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
@@ -2572,7 +2573,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 		spriteProposals = [k for k in game.spriteDistribution[targetToken.ID].keys() if 'Flicker' in str(k[0][1])]
 	else:
 		spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, action=action, oldSpriteSet=theory.spriteSet,\
-		specificSpritesToUpdate=[targetToken], percentile=percentile, max_num=max_num)
+		specificSpritesToUpdate=errorMap.targetTokens, percentile=percentile, max_num=max_num)
 
 
 	## Don't instantiate non-avatar proposals for the 'avatar' class.
@@ -2629,10 +2630,8 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 				if rule.slot2=='tmp':
 					rule.slot2='avatar'
 		else:
-			## Don't propos non-avatar types for the thing you're calling 'avatar'.
+			## Don't propose non-avatar types for the thing you're calling 'avatar'.
 			if targetClass=='avatar':
-				print "proposing non-avatar type for avatar"
-				# embed()
 				continue
 			sprite = Sprite(vgdlType, color, className=targetClass, args=args)
 			## Remove old sprite from spriteSet

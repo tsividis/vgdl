@@ -2870,35 +2870,35 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
         ## Update sprite distribution for a particular item
         objects = game.getObjects()
         notUpdated = [s for s in objects.keys() if s not in game.spriteDistribution.keys()]
-        if len(specificSpritesToUpdate)>1:
-            print "Error: you passed more than one specific sprite to update"
-            embed()
-        sprite = specificSpritesToUpdate[0]
-
+        # if len(specificSpritesToUpdate)>1:
+            # print "Error: you passed more than one specific sprite to update"
+            # embed()
+        # sprite = specificSpritesToUpdate[0]
         scoreAndTheoryTuples = []
 
-        left, top = sprite.rect.left, sprite.rect.top
-        neighbors = [(left, top), (left-30, top), (left+30, top), (left, top-30), (left, top+30)]
-        try:
-            if game.sprite_appearances and any([(s.rect.left, s.rect.top) in neighbors for s in game.sprite_appearances]):
-                for k,v in game.sprite_appearance_predictions[sprite.ID].items():
-                    if any([(appearance.colorName, appearance.rect.left, appearance.rect.top) in v for appearance in game.sprite_appearances]):
-                        scoreAndTheoryTuples.append((0,k))
-            else:
-                ## Normal case. Update hypotheses related to movement types.
-                for k in game.movement_options[sprite.ID]:
-                    if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k]: 
-                        if k in game.orientation_options[sprite.ID]:
-                            if normalizeVec(sprite.orientation) in game.orientation_options[sprite.ID][k]:
-                                scoreAndTheoryTuples.append((0,k))
-                        else:
+        for sprite in specificSpritesToUpdate:
+            left, top = sprite.rect.left, sprite.rect.top
+            neighbors = [(left, top), (left-30, top), (left+30, top), (left, top-30), (left, top+30)]
+            try:
+                if game.sprite_appearances and any([(s.rect.left, s.rect.top) in neighbors for s in game.sprite_appearances]):
+                    for k,v in game.sprite_appearance_predictions[sprite.ID].items():
+                        if any([(appearance.colorName, appearance.rect.left, appearance.rect.top) in v for appearance in game.sprite_appearances]):
                             scoreAndTheoryTuples.append((0,k))
-        except:
-            print "something broke in spriteInduction (probably has to do with cannon)"
-            embed()
+                else:
+                    ## Normal case. Update hypotheses related to movement types.
+                    for k in game.movement_options[sprite.ID]:
+                        if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k]: 
+                            if k in game.orientation_options[sprite.ID]:
+                                if normalizeVec(sprite.orientation) in game.orientation_options[sprite.ID][k]:
+                                    scoreAndTheoryTuples.append((0,k))
+                            else:
+                                scoreAndTheoryTuples.append((0,k))
+            except:
+                print "something broke in spriteInduction (probably has to do with cannon)"
+                embed()
                     
-
-        reasonableHypotheses = [s[1] for s in scoreAndTheoryTuples]
+        reasonableHypotheses = list(set([s[1] for s in scoreAndTheoryTuples]))
+        # reasonableHypotheses = [s[1] for s in scoreAndTheoryTuples]
         return reasonableHypotheses
 
     ## Reset ignoreList so that next time around you do inference.
