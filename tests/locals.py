@@ -44,12 +44,12 @@ def add2Set(desc_set, *descs):
 if __name__ == '__main__':
 	sprite_set = """
 SpriteSet
-    box    > Passive color=BROWN # orientation=RIGHT cooldown=1
-    box2 > Immovable color=PURPLE
+	box    > Passive color=BROWN # orientation=RIGHT cooldown=1
+	box2 > Immovable color=PURPLE
 """
 	sprite_set2 = """
 SpriteSet
-    box    > Passive color=BROWN # orientation=RIGHT cooldown=1
+	box    > Passive color=BROWN # orientation=RIGHT cooldown=1
     box2 > Immovable color=PURPLE
 """
 
