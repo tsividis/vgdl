@@ -149,6 +149,7 @@ def _testConstructor(game, level, action_sequences):
 	'''Creates a basic test case. Theory learned == Real Game Description'''
 	# print game
 	def testCase(self):
+		print 'RUNNING TEST'
 		print game, '\n', level, '\n', action_sequences, '\n'
 		real_description = self.initRunCreate(game, level, action_sequences)
 
@@ -191,9 +192,11 @@ class TestBasics(_TestAgent):
 		self.executeStep(0, K_UP)
 		self.assertAgentHasTheories()
 
-class TestInference(_TestAgent):
+class inference(_TestAgent):
 
 	# test1 = _testConstructor(*inference.test1)
 	test0 = _testConstructor(*inference.test0)
+
+	test1 = _testConstructor(*inference.test1)
 
 	# print inference.test0.game

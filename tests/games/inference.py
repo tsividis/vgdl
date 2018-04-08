@@ -45,10 +45,11 @@ LevelMapping
 
 sSetBoxes = """
 SpriteSet
-	box	 > Immovable color=WHITE 
-	box2 > Immovable color=GREEN
-	box3 > Immovable color=YELLOW
-	wall > Immovable color=DARKGRAY
+    avatar > MovingAvatar color=DARKBLUE
+    box	 > Immovable color=WHITE 
+    box2 > Immovable color=GREEN
+    box3 > Immovable color=YELLOW
+    wall > Immovable color=DARKGRAY
 """
 
 sSetCannons = joinDescs(sSetBoxes, """
