@@ -45,7 +45,7 @@ class errorMapEntry:
 	def __init__(self):
 		self.diagnosis = []
 		self.targetToken = None
-		self.targetTokens = None
+		self.targetTokens = []
 		self.targetClass = None
 		self.targetColor = None
 		self.intPairs = []
@@ -296,7 +296,7 @@ class Agent:
 			# [K_UP, K_UP, K_DOWN]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			[0,0,0,0,0,0,0,0]
+			[0]*6
 			# [0,0, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0,0,0]
 			# [0,0,0,0,0,0,0,0,0,0,0,0]
 			# [K_UP, K_UP, K_UP, K_RIGHT]
@@ -335,11 +335,11 @@ class Agent:
 				if num == len(actions)-1:
 					lastStep=True
 				t2 = time.time()
-				hypotheses, _ = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
+				scoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
 				print ""
 				print "executed step in {} seconds".format(time.time()-t2)
 				print ""
-				self.hypotheses = hypotheses
+				self.hypotheses = [tup[1] for tup in scoresAndHypotheses]
 
 			# print ">>> Embedded at the end of testEpisode"
 			embed()
@@ -393,11 +393,11 @@ class Agent:
 			if num == len(actions)-1:
 				lastStep=True
 			t2 = time.time()
-			hypotheses = self.executeStep(action, self.hypotheses, theoryRLEs, lastStep)
+			scoresAndHypotheses = self.executeStep(action, self.hypotheses, theoryRLEs, lastStep)
 			print ""
 			print "executed step in {} seconds".format(time.time()-t2)
 			print ""
-			self.hypotheses = hypotheses
+			self.hypotheses = [tup[1] for tup in scoresAndHypotheses]
 
 		print "{} time-steps took {} seconds".format(len(actions), time.time()-t1)
 		# print ">>> Embedded at the end of testEpisode"
@@ -522,7 +522,15 @@ class Agent:
 		scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
 			proportionOfSpriteTheories=None, errorCutoff=.3)]
 
-		scoresAndHypotheses = [sh for sh in scoresAndHypotheses if sh[1].prior() == min([s[1].prior() for s in scoresAndHypotheses])]
+		# filter out any theory whose added complexity does not improve its error
+		#	i.e. between two theories of equal perfomance, ignore the less likely/more complex one
+		errorLevelToMinPrior = dict()
+		epsilon = 0 # you never know with floats... could be necessary later
+		for score, theory in scoresAndHypotheses:
+			if score not in errorLevelToMinPrior or theory.prior() < errorLevelToMinPrior[score]:
+				errorLevelToMinPrior[score] = theory.prior()
+		scoresAndHypotheses = [sh for sh in scoresAndHypotheses if sh[1].prior() <= errorLevelToMinPrior[sh[0]] + epsilon]
+
 		print "Experience replay complete."
 		for num, sh in enumerate(scoresAndHypotheses):
 			print "Theory: {} | Error: {}".format(num, sh[0])
@@ -581,22 +589,19 @@ class Agent:
 		print ""
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
 
+		bestScoresAndHypotheses = []
+
 		if newTheories:
 			bestScoresAndHypotheses , scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
 
 			if len(bestScoresAndHypotheses) == 0:
-				retryNum = 1000 # TODO: arbitrary
-				# note for tomorrow: first missle appears at 96 :(
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN with best {} *****".format(retryNum)
 				embed()
-
-				# TODO: this takes absolutely forever, we should definitely filter the theories somehow.
-				#	(would need more info from scoreAndFilterTheories)
 
 				# from vgdl.agent import VrleInitPhase
 				# from vgdl.agent import testAndExpand
 
-				retryTheories = [t[1] for t in scoreAndTheoryTuples[:retryNum]]
+				retryTheories = [t for t in newTheories if hasattr(t, 'mostRecentEdit') and t.mostRecentEdit == 'spriteInduction']
 				theoryRLEs = VrleInitPhase(retryTheories, envRealPrev, self.symbolDict)
 				for h in retryTheories:
 					h.dryingPaint = set()
@@ -612,12 +617,11 @@ class Agent:
 				self.allTheories.extend(newerTheories)
 
 				bestScoresAndHypotheses , scoreAndTheoryTuples = self.scoreAndFilterTheories(newerTheories, episode_num)
-
-				if len(bestScoresAndHypotheses) == 0:
-					print "second attempt failed, 0 theories survived filter"
-					embed()
 		else:
 			print "Got no new theories"
+			# just use input hypotheses if no new Theories are generated
+			# TODO: do we really need to or will they have been filtered before?
+			# bestScoresAndHypotheses , scoreAndTheoryTuples = self.scoreAndFilterTheories(hypotheses, episode_num)
 
 		# print "just expanded all theories"
 		# embed()
@@ -628,7 +632,11 @@ class Agent:
 		for s , h in bestScoresAndHypotheses:
 			h.dryingPaint = set()
 
-		return [tup[1] for tup in bestScoresAndHypotheses], bestScoresAndHypotheses
+		if len(bestScoresAndHypotheses) == 0:
+			print "second attempt failed, 0 theories survived filter"
+			embed()
+
+		return bestScoresAndHypotheses
 
 	########################################################################
 	######## TESTING HYPOTHESES BY RANDOM SAMPLING OR OTHER METHODS ########
@@ -2036,9 +2044,9 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 		## SpriteSet induction step
 		if eM.targetClass not in theoryCopy.expandedSprites:
 			className, theories = expandSprites(envRealCurrent._game, theoryCopy, eM, 
-			envRealPrev, envRealCurrent, bestSpriteTypeDict, action, percentile=20, max_num=30)
+					envRealPrev, envRealCurrent, bestSpriteTypeDict, action, percentile=20, max_num=30)
 			theories = list(set(theories))
-			# since we're not actually going to build on these, we haven't necessarily addressed the error
+			# TODO: since we're not actually going to build on these, we haven't necessarily addressed the error
 			# tomorrow: not sure if this is actually the problem
 			# for t in theories:
 			# 	t.errorMapHistory.pop(len(t.errorMapHistory)-1)
@@ -2094,8 +2102,6 @@ def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistory, act
 	theories = expandTheories([hypothesis], errorList, envRealPrev, envReal, action, rleHistory, actionHistory, symbolDict, bestSpriteTypeDict)
 
 	return theories
-
-
 
 
 

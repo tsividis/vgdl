@@ -80,8 +80,9 @@ class _TestAgent(unittest.TestCase):
 	# Execution
 	def executeStep(self, episode_num, action, lastStep=False):
 		theoryRLEs = self.generateTheoryRLEs()
-		self.agent.hypotheses, self.agent.scoresAndHypotheses = self.agent.executeStep(episode_num, self.agent.rleHistory, self.agent.actionHistory, 
-											     										action, self.agent.hypotheses, theoryRLEs, lastStep)
+		self.agent.scoresAndHypotheses = self.agent.executeStep(episode_num, self.agent.rleHistory, self.agent.actionHistory, 
+											     				action, self.agent.hypotheses, theoryRLEs, lastStep)
+		self.agent.hypotheses = [tup[1] for tup in self.agent.scoresAndHypotheses]
 
 	def runEpisode(self, episode_num, actions):
 		self.initializeEpisode(episode_num)

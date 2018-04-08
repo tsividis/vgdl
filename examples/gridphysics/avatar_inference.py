@@ -72,17 +72,17 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 
 #[0]*10
 ## distinguishing between random and missiles
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                            1 w
-w                     4      1 w
-w                              w
-w   4                          w
-w                         3 3  w
-w         s    s A             w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                     4      1 w
+# w                              w
+# w   4                          w
+# w                         3 3  w
+# w         s    s A             w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 #[0]*10
 #randomnpc inference, just more sprites

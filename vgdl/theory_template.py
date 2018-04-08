@@ -1207,8 +1207,6 @@ class Theory(object):
 
 		return relevantRules
 
-
-
 	def searchForPossibleClasses(self, obj_Sprite, newClasses=0):
 		"""
 		If the object has been assigned, return it. Otherwise return all
