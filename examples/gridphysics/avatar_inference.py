@@ -70,18 +70,49 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-# #up, up, down
+#[0]*10
+## distinguishing between random and missiles
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
 # w                            1 w
-# w                            1 w
-# w              1               w
-# w              1               w
-# w              A          3 3  w
+# w                     4      1 w
 # w                              w
+# w   4                          w
+# w                         3 3  w
+# w         s    s A             w
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
+
+#[0]*10
+#randomnpc inference, just more sprites
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w    4                       1 w
+# w         4           4      1 w
+# w                              w
+# w   4         4                w
+# w                         3 3  w
+# w                A             w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+## combine with box2 avatar killsprite.
+## if you use box2 avatar bounceForward this could be
+## a good test of whether re-doing testAndExpand helps.
+# #up, up, down
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w                            1 w
+w              1               w
+w              1               w
+w              A          3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 #0,0,0,0,0,0,0
 # level = """
@@ -108,6 +139,9 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
+#up, up, up, right
+## tests whether we can learn randomNPCs and know that the box we push isn't a randomNPC
+## i.e., a good test of randomNPC likelihood and theory prior().
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
@@ -120,6 +154,8 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
+# Not getting this one because we stepBack with the missile
+## but our best theories are almost right.
 #left, left, left, left, left, left, left, 0
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -212,15 +248,14 @@ BasicGame
         avatar wall > stepBack
         # box avatar > nothing
         box avatar > transformTo stype=box2
-        # cannon sam > stepBack
-        # sam cannon > stepBack
         # box2 avatar > killSprite
-        box2 avatar > bounceForward
+        # box2 avatar > bounceForward
         box3 avatar > killSprite
         cannon avatar > bounceForward
         avatar sam > bounceForward
         cannon sam > stepBack
         sam cannon > stepBack
+        sam wall > killSprite
         medicine avatar > killSprite
         avatar medicine > changeResource resource=invisiblemedicine value=1
         avatar poison > changeResource resource=invisiblemedicine value=-1
