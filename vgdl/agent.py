@@ -1653,6 +1653,17 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	subsamplePercentage = .2
 	actionsPerIndex = 2
 
+	if len(hypotheses)>1:
+		print "got more than 1 hypothesis in singleTheoryExperienceReplay"
+		embed()
+	
+	key = (method, targetColor, rleHistory[0].ID, len(rleHistory))
+	
+	if key in hypotheses[0].experienceReplayRecord:
+		# print "found key in hypothesis experienceReplay"
+		# embed()
+		return hypotheses[0].experienceReplayRecord[key]
+
 	if method == 'all':
 		indices = range(len(rleHistory))
 		actionsPerIndex = 1
@@ -1719,7 +1730,9 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 
 	cumulative_penalties = np.array(cumulative_penalties)
 	mean_penalties = np.mean(cumulative_penalties, axis=0)
-	return mean_penalties, cumulative_penalties, theoryRLEs
+
+	hypotheses[0].experienceReplayRecord[key] = mean_penalties
+	return mean_penalties
 	
 def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, method='all', targetColor=None, displayStates=False, displayTheories=False):
 	if len(hypotheses)>10:
@@ -1735,33 +1748,35 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, method='
 			print "running experienceReplay on {}:".format(num)
 			h.display()
 		# if method == 'newMethod':
-		if 'flipDirection' in [r.interaction for r in h.interactionSet]:
-			multipleHypotheses = [h]*NUM_SAMPLES_PER_HYPOTHESIS
-			tmpResults = singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, multipleHypotheses, symbolDict)
-			results.append((np.mean(tmpResults[0]), np.mean(tmpResults[1]), tmpResults[2][0]))
-			print "got flipDirection in experienceReplay"
-			# from vgdl.agent import initializeVrle
-			# newenv=initializeVrle(h, rleHistory[0], symbolDict)
-			## If you run the line above over and over you'll see that we're changing the orientation
-			## each time; that's because I'm having setVrleState() do that.
-			## if you do newenv.step(0) you'll see that all the other missiles move forward and this one
-			## doesn't.
-			# print newenv._game.sprite_groups['c5'][0].orientation
-			embed()
-			## after the embed(), run
-			## newenv.step(0); newenv
-			## print newenv._game.sprite_groups['c5'][0].orientation
-		else:
-			results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h], symbolDict))
+		# if 'flipDirection' in [r.interaction for r in h.interactionSet]:
+		# 	multipleHypotheses = [h]*NUM_SAMPLES_PER_HYPOTHESIS
+		# 	tmpResults = singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, multipleHypotheses, symbolDict)
+		# 	# this worked when we returned 3 objects in singleTheoryExperienceReplay
+		# 	# results.append((np.mean(tmpResults[0]), np.mean(tmpResults[1]), tmpResults[2][0]))
+		# 	print "got flipDirection in experienceReplay"
+		# 	# from vgdl.agent import initializeVrle
+		# 	# newenv=initializeVrle(h, rleHistory[0], symbolDict)
+		# 	## If you run the line above over and over you'll see that we're changing the orientation
+		# 	## each time; that's because I'm having setVrleState() do that.
+		# 	## if you do newenv.step(0) you'll see that all the other missiles move forward and this one
+		# 	## doesn't.
+		# 	# print newenv._game.sprite_groups['c5'][0].orientation
+		# 	embed()
+		# 	## after the embed(), run
+		# 	## newenv.step(0); newenv
+		# 	## print newenv._game.sprite_groups['c5'][0].orientation
+		# else:
+		results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h], symbolDict))
 
 	if len(hypotheses)>10:
 		print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 
-	mean_penalties = [r[0][0] for r in results]
-	cumulative_penalties = [r[1][0][0] for r in results]
-	theoryRLEs = [r[2][0] for r in results]
+	mean_penalties = [r[0] for r in results]
+	# mean_penalties = [r[0][0] for r in results]
+	# cumulative_penalties = [r[1][0][0] for r in results]
+	# theoryRLEs = [r[2][0] for r in results]
 
-	return mean_penalties, cumulative_penalties, theoryRLEs
+	return mean_penalties
 
 def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, symbolDict, method, targetColor=None, displayStates=False, displayTheories=False):
 	'''
@@ -1775,7 +1790,7 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, symb
 	weight = 1./len(max(actionHistories, key=len))
 
 	for rleHistory, actionHistory in zip(rleHistories, actionHistories):
-		mean_penalties, _, expRLE = experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, 
+		mean_penalties = experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, 
 												     method, targetColor, displayStates, displayTheories)
 		mean_penalties = np.array(mean_penalties)*weight*len(actionHistory)
 		multi_episode_mean_penalties.append(mean_penalties)
@@ -1921,9 +1936,10 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 
 	## For debugging. Don't make children of the true theory.
 	if hasattr(theory, 'trueTheory'):
-		newTheories = [theory]
+		newTheories = [theory.copy()]
 		return newTheories
 
+	theory.experienceReplayRecord = {}
 	## If there are unknown colors in an inventory, add them to the theory here.
 	if 'inventoryChange' in errorMap.diagnosis:
 		from vgdl.ontology import Resource

@@ -413,8 +413,8 @@ class Theory(object):
 			else:
 				if any([t in vgdlTypeString for t in ['Resource','Portal','Immovable']]):
 					classScore +=0
-				elif 'Missile' in vgdlTypeString:
-					classScore += 1
+				# elif 'Missile' in vgdlTypeString:
+					# classScore += 1
 				else:
 					classScore += 2
 
