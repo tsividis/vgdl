@@ -1,5 +1,31 @@
 from tests.locals import *
 
+game = """
+BasicGame
+    SpriteSet
+        box	 > Immovable color=WHITE 
+        box2 > Immovable color=GREEN
+        box3 > Immovable color=YELLOW
+        wall > Immovable color=DARKGRAY
+        cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
+        sam > Missile orientation=UP color=BLUE single=False cooldown=1
+    LevelMapping
+        1 > box
+        2 > box2
+        3 > box3
+        w > wall
+        c > cannon
+        A > avatar
+    InteractionSet
+        avatar wall > stepBack
+        box avatar > transformTo stype=box2
+        box2 avatar > killSprite
+        box3 avatar > killSprite
+        # Need to include all step backs
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+"""
+
 tSetBase = """
 TerminationSet
     SpriteCounter stype=avatar limit=0 win=False
@@ -36,7 +62,8 @@ InteractionSet
 	box avatar > transformTo stype=box2
 	box2 avatar > killSprite
 	box3 avatar > killSprite
-	# Need to include all step backs"""
+	# Need to include all step backs
+"""
 
 iSetCannons = joinDescs(iSetBoxes, """
 InteractionSet
@@ -44,7 +71,8 @@ InteractionSet
 	avatar sam > bounceForward
 	cannon sam > stepBack
 	sam cannon > stepBack
-	# need to include additional stepbacks""")
+	# need to include additional stepbacks
+""")
 
 print iSetCannons.__repr__()
 
@@ -78,7 +106,8 @@ gameBoxes = catDescriptions(sSetBoxes, iSetBoxes, tSetBase, levelMapping)
 
 gameCannons = catDescriptions(sSetCannons, iSetCannons, tSetBase, levelMapping)
 gameWeird = catDescriptions(sSetCannons, iSetWeird, tSetBase, levelMapping)
-print gameWeird
+# print 
+print game
 
 level0 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -91,7 +120,7 @@ w                         3 3  w
 w         c                    w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
-test0 = TestCase(gameWeird, level0, [[K_LEFT]*8])
+test0 = TestCase(game, level0, [[K_LEFT]*8])
 
 
 # up, up, up, up, left
