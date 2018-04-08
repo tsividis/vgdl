@@ -410,11 +410,15 @@ class Theory(object):
 				if 'Moving' not in vgdlTypeString:
 					classScore += 1
 			else:
-				if all([t not in vgdlTypeString for t in ['Resource','Portal','Immovable']]):
-					classScore +=1
+				if any([t in vgdlTypeString for t in ['Resource','Portal','Immovable']]):
+					classScore +=0
+				elif 'Missile' in vgdlTypeString:
+					classScore += 1
+				else:
+					classScore += 2
 
-		ruleScore = len([rule for rule in self.interactionSet if rule.interaction!=stepBack])
-
+		# ruleScore = len([rule for rule in self.interactionSet if rule.interaction!=stepBack])
+		ruleScore = 1
 		return classScore + ruleScore/1000.
 
 	def explainTimeStep(self, timestep, fullTimestep, timesteps, currTheories=False, override=False):

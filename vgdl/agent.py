@@ -48,7 +48,6 @@ class errorMapEntry:
 		self.targetClass = None
 		self.targetColor = None
 		self.intPairs = []
-		self.culpritClasses = []
 	
 	def display(self):
 		print ""
@@ -59,7 +58,6 @@ class errorMapEntry:
 		# if self.targetToken is not None:
 			# print "targetColor: {}".format(self.targetToken.colorName)
 		print "intPairs: {}".format(self.intPairs)
-		print "culpritClasses: {}".format(self.culpritClasses)
 
 	def copy(self):
 		e                   = errorMapEntry()
@@ -68,12 +66,11 @@ class errorMapEntry:
 		e.targetClass       = self.targetClass
 		e.targetColor 		= self.targetColor
 		e.intPairs          = self.intPairs
-		e.culpritClasses    = self.culpritClasses
 		
 		return e
 
 	def __eq__(self, other):
-		if self.diagnosis == other.diagnosis and self.intPairs == other.intPairs and self.culpritClasses == other.culpritClasses:
+		if set(self.diagnosis) == set(other.diagnosis) and self.intPairs == other.intPairs:
 			return True
 		else:
 			return False
@@ -291,13 +288,13 @@ class Agent:
 
 		actionSequences = [
 			# [0,0,0,K_LEFT, K_LEFT,0,0]
-			# [K_UP, K_UP, K_DOWN]
+			[K_UP, K_UP, K_DOWN]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
 			# [0,0,0,0,0,0,0,0]
-			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0,0,0]
+			# [0,0, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0,0,0]
 			# [0,0,0,0,0,0,0,0,0,0,0,0]
-			[K_UP, K_UP, K_UP, K_RIGHT]
+			# [K_UP, K_UP, K_UP, K_RIGHT]
 			# [K_UP, K_UP]
 			# [K_RIGHT, K_UP]
 			# [K_UP, K_UP, K_UP, K_UP]
@@ -892,7 +889,10 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 	keys: (class1, class2). values: a diagnostic error signal
 	"""
 
-	#likelihood version
+	# grid spacing
+	d = 30.
+	
+	# likelihood version
 	e_dist 			= 1e-10
 	e_inventory 	= 1e-10
 	e_disappearance = 1e-10
@@ -936,28 +936,32 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 	## Penalize distance and additional/missing sprites
 	for t in matched_sprites:
+		
+		## Flag used to skip errorMap creation if we're looking at the behavior of a
+		## stochastic sprite whose observed position was within the space of possible positions
+		## Prevents trying to fix the same problem over and over.
+		reportError = True
+		
 		## Distance penalty
 		sA, sB = t[0], t[1] #sprites in envA, envB      
 		dist = t[2] #distance to sprite in envB
 		sPrev, dist_ts = find_sPrev(sB, envB, envPrev) #Previous location of our sprite
 
 		sA_type = theory.spriteObjects[sA.colorName].vgdlType
-		d = 30. # grid spacing
 
 		## Calculate inventory penalty for the sprite
 		inventory_penalty = 0
 		keys = list(set(t[0].inventory.keys()+t[1].inventory.keys()))
-
 		for k in keys:
 			t0_k = t[0].inventory[k] if k in t[0].inventory.keys() else (0,0)
 			t1_k = t[1].inventory[k] if k in t[1].inventory.keys() else (0,0)
 			inventory_penalty += abs(t0_k[0]-t1_k[0])
-
 		total_penalty += np.log((e_inventory)**inventory_penalty) #likelihood
-		spritePrediction=False
+
 		if dist>0 and 'flipDirection' in [r.interaction for r in theory.interactionSet]:
 			print "got flipDirection"
 			embed()
+
 		## If a teleport event has taken place
 		if dist>0 and 'teleportToExit' in [r.interaction for r in theory.interactionSet]:
 			# print "found theory with teleport"
@@ -977,59 +981,82 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				total_penalty += np.log(1.-e_dist)
 				continue
 
-		# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
-		if 'Random' in str(sA_type):
-
-			if 'speed' in theory.spriteObjects[sA.colorName].args.keys():
-				sA_speed = theory.spriteObjects[sA.colorName].args['speed']
-			elif 'speed' in theory.spriteObjects[sA.colorName].__dict__.keys():
-				sA_speed = theory.spriteObjects[sA.colorName].speed
-			else:
-				## this only happens when you initialize the real theory for testing but haven't explicitly set the speed
-				## in the VGDL description
-				sA_speed = 1
-
-			if sPrev is None:
-				continue
-			xB = sB.rect.left/d
-			yB = sB.rect.top/d
-			xPrev = sPrev.rect.left/d
-			yPrev = sPrev.rect.top/d
-
-			positionOptions = [(xPrev, yPrev), (xPrev+sA_speed, yPrev), (xPrev-sA_speed, yPrev), (xPrev, yPrev+sA_speed), (xPrev, yPrev-sA_speed)]
-			# total_penalty += np.log(1./len(positionOptions)-e_dist) if (xB, yB) in positionOptions else np.log(0.+e_dist) #likelihood
-			total_penalty += np.log(1.-e_dist) if (xB,yB) in positionOptions else np.log(e_dist)
-		elif 'Missile' in str(sA_type):
-			# if 'flipDirection' in [r.interaction for r in theory.interactionSet]:
-				# print "found flipDirection"
-				# embed()
-			total_penalty += np.log(1.-e_dist) if dist==0. else np.log(0.+e_dist) #likelihood
-		elif 'Chaser' in str(sA_type):
+		if any([stochasticType in str(sA_type) for stochasticType in ['Random', 'Chaser']]):
 			
-			xA = sA.rect.left/d
-			yA = sA.rect.top/d
-			if sPrev is None:
-				continue
+			# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
+			if 'Random' in str(sA_type):
+				if 'speed' in theory.spriteObjects[sA.colorName].args.keys():
+					sA_speed = theory.spriteObjects[sA.colorName].args['speed']
+				elif 'speed' in theory.spriteObjects[sA.colorName].__dict__.keys():
+					sA_speed = theory.spriteObjects[sA.colorName].speed
+				else:
+					## this only happens when you initialize the real theory for testing but haven't explicitly set the speed
+					## in the VGDL description
+					sA_speed = 1
 
-			stype = theory.spriteObjects[sA.colorName].args['stype']
-			sA.stype = theory.classes[stype][0].colorName
-			sA.fleeing = theory.spriteObjects[sA.colorName].args['fleeing']
-			try:
+				if sPrev is None:
+					continue
+				xB = sB.rect.left/d
+				yB = sB.rect.top/d
+				xPrev = sPrev.rect.left/d
+				yPrev = sPrev.rect.top/d
+
+				positionOptions = [(xPrev, yPrev), (xPrev+sA_speed, yPrev), (xPrev-sA_speed, yPrev), (xPrev, yPrev+sA_speed), (xPrev, yPrev-sA_speed)]
+				
+				if (xB,yB) in positionOptions:
+					total_penalty += np.log(1.-e_dist)
+					reportError = False
+				else:
+					total_penalty += np.log(e_dist)
+					errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory)
+
+				# total_penalty += np.log(1./len(positionOptions)-e_dist) if (xB, yB) in positionOptions else np.log(0.+e_dist) #likelihood
+				# total_penalty += np.log(1.-e_dist) if (xB,yB) in positionOptions else np.log(e_dist)
+			
+			elif 'Chaser' in str(sA_type):
+				
+				xA = sA.rect.left/d
+				yA = sA.rect.top/d
+				if sPrev is None:
+					continue
+
+				stype = theory.spriteObjects[sA.colorName].args['stype']
+				sA.stype = theory.classes[stype][0].colorName
+				sA.fleeing = theory.spriteObjects[sA.colorName].args['fleeing']
 				closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
-			except:
-				print "tried to find chaseroptions in errorSignal"
-				embed()
 
-			#New 2/12
-			del sA.stype
-			del sA.fleeing
+				#New 2/12
+				del sA.stype
+				del sA.fleeing
 
-			total_penalty += np.log(1./len(closestTargets)-e_dist) if (xA,yA) in closestTargets else np.log(0.+e_dist) # likelihood
+				if not closestTargets or (xA, yA) in closestTargets:
+					# total_penalty += np.log(1./len(closestTargets)-e_dist)
+					total_penalty += np.log(1.-e_dist)
+					reportError = False
+				else:
+					total_penalty += np.log(e_dist)
+					errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory)
+				# total_penalty += np.log(1./len(closestTargets)-e_dist) if (xA,yA) in closestTargets else np.log(0.+e_dist) # likelihood
 
 		# All of the other types are deterministic
 		else:
-			total_penalty += np.log(1.-e_dist) if t[2]==0. else np.log(0+e_dist)
+			if t[2]==0.:
+				total_penalty += np.log(1.-e_dist)
+				reportError = False
+			else:
+				total_penalty += np.log(e_dist)
 
+			# total_penalty += np.log(1.-e_dist) if t[2]==0. else np.log(0+e_dist)
+
+		if reportError:
+			# Determine errorMapEntry object for position mismatch problem
+			errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory)
+			errorMap.extend(errs)
+	
+	# if 'BLUE' in theory.spriteObjects and 'Missile' in str(theory.spriteObjects['BLUE'].vgdlType):
+		# if any(['unexpectedPosition' in e.diagnosis and e.targetColor=='BLUE' for e in errorMap]):
+			# print "got unexpectedPosition"
+			# embed()
 	# Missing/additional/transformation penalty
 	total_penalty += np.log((e_disappearance)**( len(lonely_sprites_envA) + len(lonely_sprites_envB) )) #likelihood
 
@@ -1046,21 +1073,39 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 	# 1) Position mismatch: Things have moved.
 
 	# Case A: matched sprites have different positions from what predicted
-	for t in matched_sprites:
-		dist_envs = t[2] #distance between sprites in real and theory environments
-		if dist_envs == 0.: #sprites located where expected -> no conflict
-			continue
-		sA = t[0]
-		sB = t[1]
-		posCurr = envB._rect2pos(sB.rect) #current position of sprite
-		# Find sprite corresponding to sB in previous time step
-		sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
-		if sPrev == None:
-			warnings.warn('sPrev not found in position mismatch error')
-			continue
-		# Determine errorMapEntry object for position mismatch problem
-		errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory)
-		errorMap.extend(errs)
+	# for t in matched_sprites:
+	# 	dist_envs = t[2] #distance between sprites in real and theory environments
+	# 	if dist_envs == 0.: #sprites located where expected -> no conflict
+	# 		continue
+	# 	sA = t[0]
+	# 	sB = t[1]
+
+	# 	sA_type = theory.spriteObjects[sA.colorName].vgdlType
+	# 	# For stochastic types don't generate errorMap if behavior is consistent with possible movements.
+	# 	if any([stochasticType in str(sA_type) for stochasticType in ['Random', 'Chaser']]):
+	# 		xB = sB.rect.left/d
+	# 		yB = sB.rect.top/d
+	# 		if 'Random' in str(sA_type):
+	# 			if (xB,yB) in positionOptions:
+	# 				continue
+	# 			# else:
+	# 				# print "random not in positionOptions"
+	# 				# embed()
+	# 		if 'Chaser' in str(sA_type):
+	# 			if (xB,yB) in closestTargets:
+	# 				continue
+	# 			# else:
+	# 				# print "chaser not in positionOptions"
+	# 				# embed()
+
+	# 	# Find sprite corresponding to sB in previous time step
+	# 	sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
+	# 	if sPrev == None:
+	# 		warnings.warn('sPrev not found in position mismatch error')
+	# 		continue
+	# 	# Determine errorMapEntry object for position mismatch problem
+	# 	errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory)
+	# 	errorMap.extend(errs)
 
 	# Case B: Sprite moved in real environment, but we predicted a destruction
 	# For this, we check if lonely envB sprite has match in envPrev (and pass to (2) if not)
@@ -1250,31 +1295,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 	## Sort so that you fix errors involving any new classes first when you build theories.
 	errorMap = sorted(errorMap, key=lambda x: x.targetClass!='unknown')
-
-	## convert color names in targetClass and intPairs to theory class names:
-	# for e in errorMap:
-	# 	e.targetClass = theory.spriteObjects[e.targetClass].className if e.targetClass in theory.spriteObjects.keys() else 'unknown'
-
-	# 	if e.intPairs:
-	# 		newIntPairs = []
-	# 		for pair in e.intPairs:
-				
-	# 			if pair[0] in theory.spriteObjects.keys():
-	# 				p0 = theory.spriteObjects[pair[0]].className
-	# 			elif pair[0] in theory.classes.keys():
-	# 				p0 = pair[0]
-	# 			else:
-	# 				p0 = 'unknown'
-
-	# 			if pair[1] in theory.spriteObjects.keys():
-	# 				p1 = theory.spriteObjects[pair[1]].className
-	# 			elif pair[1] in theory.classes.keys():
-	# 				p1 = pair[1]
-	# 			else:
-	# 				p1 = 'unknown'
-	# 			pair = (p0, p1)
-	# 			newIntPairs.append(pair)
-	# 		e.intPairs = newIntPairs
 
 	# print "at end of errorSignal"
 	# embed()
@@ -1886,8 +1906,8 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 
 	## If we were about to make modifications we've made already, don't waste the time.
 	if any([errorMap == e for e in theory.errorMapHistory]):
-		errorMap.display()
-		print "we've addressed this theory before. Skipping it"
+		# errorMap.display()
+		# print "we've addressed this theory before. Skipping it"
 		newTheories = [theory]
 		return newTheories
 
