@@ -11,7 +11,7 @@ from tests.theory_tools import *
 from tests.locals import *
 
 # I'm not sure if this actually matters...
-FILENAME = 'tests.game.simple'
+FILENAME = 'tests.game.inference'
 
 ###########################################
 # The abstract base class. Only add Assertion Methods
@@ -29,34 +29,27 @@ class _TestAgent(unittest.TestCase):
 
 	########################################
 	# Initialization
-	def initializeEnvironment(self, game_string=None, level_string=None):
+	def initializeCurriculum(self, game_string, level_string, action_sequences):
+		num_episodes = len(action_sequences)
 		self.agent.gameString = game_string
 		self.agent.levelString = level_string
-		self.agent.initializeEnvironment()
-
-	def initializeCurriculum(self, num_episodes):
 		self.agent.rleHistory = [[] for i in range(num_episodes)]
 		self.agent.actionHistory = [[] for i in range(num_episodes)]
 		self.agent.all_objects = [{} for i in range(num_episodes)]
 
 	def initializeEpisode(self, episode_num):
 		'''Sets up episode'''
+		self.agent.initializeEnvironment()
 		self.agent.all_objects[episode_num] = self.agent.rle._game.getObjects()
-		if not self.agent.hypotheses:
+		if episode_num == 0 or not self.agent.hypotheses:
+			print self.agent.learnAvatar
 			self.agent.initializeHypotheses(self.agent.all_objects[episode_num])
+		assert self.agent.hypotheses, 'No hypotheses initilialized'
 		envReal = self.agent.fastcopy(self.agent.rle)
 		self.agent.rleHistory[episode_num].append(envReal)
 
-	def initialize(self, game_string, level_string, action_sequences):
-		'''Sets up environment, curriculum, and episode'''
-		num_episodes = len(action_sequences)
-		self.initializeEnvironment(game_string, level_string)
-		self.initializeCurriculum(num_episodes)
-		self.initializeEpisode(0)
-
 	def initRunCreate(self, game, level, action_sequences):
-		self.initialize(game, level, action_sequences)
-		self.runCurriculum(action_sequences)
+		self.runCurriculum(game, level, action_sequences)
 		return generateTheoryFromGameString(game)
 
 	#######################################
@@ -78,18 +71,21 @@ class _TestAgent(unittest.TestCase):
 
 	########################################
 	# Execution
-	def executeStep(self, episode_num, action, lastStep=False):
+	def executeStep(self, episode_num, action, last_step):
 		theoryRLEs = self.generateTheoryRLEs()
 		self.agent.hypotheses, self.agent.scoresAndHypotheses = self.agent.executeStep(episode_num, self.agent.rleHistory, self.agent.actionHistory, 
-											     										action, self.agent.hypotheses, theoryRLEs, lastStep)
+											     										action, self.agent.hypotheses, theoryRLEs, last_step)
 
 	def runEpisode(self, episode_num, actions):
 		self.initializeEpisode(episode_num)
-		for action in actions:
-			self.executeStep(episode_num, action)
+		last_step = False
+		for num, action in enumerate(actions):
+			if num+1 == len(actions):
+				last_step = True
+			self.executeStep(episode_num, action, last_step)
 
-	def runCurriculum(self, action_sequences):
-		self.initializeCurriculum(len(action_sequences))
+	def runCurriculum(self, game_string, level_string, action_sequences):
+		self.initializeCurriculum(game_string, level_string, action_sequences)
 		for episode_num, actions in enumerate(action_sequences):
 			self.runEpisode(episode_num, actions)
 
@@ -148,22 +144,12 @@ class _TestAgent(unittest.TestCase):
 	def assertAgentHasTheories(self):
 		self.assertTrue(len(self.agent.hypotheses) > 0, 'Agent has no theories')
 
-	def _testLevel0(self):
-		test_hypothesis = generateTheoryFromGameString(simple.test_hypothesis2)
-		action_sequences = [[K_UP]]
-		self.initialize(simple.game3, simple.levels[0], action_sequences)
-
-		# self.executeStep(0, K_UP)
-		self.runCurriculum(action_sequences)
-
-		
-		h0 = self.agent.hypotheses[0]
-		# self.assertTrue(theoriesEqual(h0, test_hypothesis))
-		self.assertTheoriesEqual(h0, test_hypothesis)
 
 def _testConstructor(game, level, action_sequences):
 	'''Creates a basic test case. Theory learned == Real Game Description'''
+	# print game
 	def testCase(self):
+		print game, '\n', level, '\n', action_sequences, '\n'
 		real_description = self.initRunCreate(game, level, action_sequences)
 
 		self.assertAgentHasTheory(real_description)
@@ -210,3 +196,4 @@ class TestInference(_TestAgent):
 	# test1 = _testConstructor(*inference.test1)
 	test0 = _testConstructor(*inference.test0)
 
+	# print inference.test0.game

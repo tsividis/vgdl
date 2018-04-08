@@ -3,12 +3,13 @@ from tests.locals import *
 game = """
 BasicGame
     SpriteSet
-        box	 > Immovable color=WHITE 
+        box > Immovable color=WHITE 
         box2 > Immovable color=GREEN
         box3 > Immovable color=YELLOW
         wall > Immovable color=DARKGRAY
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         sam > Missile orientation=UP color=BLUE single=False cooldown=1
+        avatar  > MovingAvatar color=DARKBLUE 
     LevelMapping
         1 > box
         2 > box2
@@ -74,14 +75,14 @@ InteractionSet
 	# need to include additional stepbacks
 """)
 
-print iSetCannons.__repr__()
+# print iSetCannons.__repr__()
 
 iSetWeird = joinDescs(iSetCannons, """
 InteractionSet
 	cannon sam > stepBack
 	sam cannon > stepBack
 """)
-print iSetWeird.__repr__()
+# print iSetWeird.__repr__()
 
 '''
 The original interaction set
@@ -107,7 +108,7 @@ gameBoxes = catDescriptions(sSetBoxes, iSetBoxes, tSetBase, levelMapping)
 gameCannons = catDescriptions(sSetCannons, iSetCannons, tSetBase, levelMapping)
 gameWeird = catDescriptions(sSetCannons, iSetWeird, tSetBase, levelMapping)
 # print 
-print game
+# print game
 
 level0 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww

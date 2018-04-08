@@ -315,6 +315,7 @@ class Agent:
 			if episode_num == 0:
 				gameObject = self.initializeHypotheses(self.all_objects[episode_num], learnSprites=True, learnAvatar=self.learnAvatar, num_variants=0)
 
+			assert len(self.hypotheses) > 0, "initializeHypotheses generated no hypotheses"
 			envReal = self.fastcopy(self.rle)
 
 			self.rleHistory[episode_num].append(envReal)
@@ -331,6 +332,7 @@ class Agent:
 					lastStep=True
 				t2 = time.time()
 				hypotheses, _ = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
+				assert len(hypotheses) > 0, "after execute step, no hypotheses were left"
 				print ""
 				print "executed step in {} seconds".format(time.time()-t2)
 				print ""
