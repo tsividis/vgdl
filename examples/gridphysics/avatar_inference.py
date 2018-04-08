@@ -44,17 +44,17 @@
 ## the problem here is that you need to build on expandSprite proposals with expandLine within one errorMap and
 ## you don't ordinarily do that.
 #0,0,0,0,0,0
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w                            1 w
-# w                              w
-# w                              w
-# w              A          3 3  w
-# w         c    c               w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w                            1 w
+w                              w
+w                              w
+w              A          3 3  w
+w         c    c               w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 # works if you don't allow the eventHandler to apply effects to newly-created sprites
 #[0,0,0,K_LEFT, K_LEFT,0,0]

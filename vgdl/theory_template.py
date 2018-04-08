@@ -3205,8 +3205,12 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 
 	for k,v in locs.iteritems():
 		symbol = objectsToSymbol(rle, v, symbolDict)
-		mappedState[k[0]][k[1]] = symbol
-
+		try:
+			mappedState[k[0]][k[1]] = symbol
+		except:
+			print "mappedState problem in writeTheoryToTxt"
+			print mappedState
+			embed()
 	
 	allObjectsSymbol = '`'
 	if addAllObjects:
