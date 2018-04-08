@@ -285,7 +285,7 @@ class Agent:
 
 	def testEpisodes(self, gameObject, epoch=0):
 		num_cores = mp.cpu_count()
-		print "num cores: {}".format(num_cores) 
+		print "num cores: {}".format(num_cores)
 		if num_cores<40:
 			print "WARNING: running on < 40 cores."
 
@@ -295,9 +295,10 @@ class Agent:
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
 			# [0,0,0,0,0,0,0,0]
+			[0,0,0,0,0,0]
 			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0,0,0]
 			# [0,0,0,0,0,0,0,0,0,0,0,0]
-			[K_UP, K_UP, K_UP, K_RIGHT]
+			# [K_UP, K_UP, K_UP, K_RIGHT]
 			# [K_UP, K_UP]
 			# [K_RIGHT, K_UP]
 			# [K_UP, K_UP, K_UP, K_UP]
@@ -499,8 +500,37 @@ class Agent:
 
 		return newRle
 
-	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, lastStep=False):
+	def scoreAndFilterTheories(self, newTheories, episode_num):
+		penalties = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], self.actionHistory[:episode_num+1],
+			self.symbolDict, method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
 
+		scoreAndTheoryTuples = zip(penalties, newTheories)
+		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
+
+		for num, sh in reversed(list(enumerate(scoreAndTheoryTuples))):
+			if num > 100:
+				continue
+			print "Theory: {} | Error: {}".format(num, sh[0])
+			sh[1].display()
+		scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
+
+		# if not lastStep:
+		# 	scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
+		# 		proportionOfSpriteTheories=None, errorCutoff=.3)]
+		# else:
+		scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
+			proportionOfSpriteTheories=None, errorCutoff=.3)]
+
+		scoresAndHypotheses = [sh for sh in scoresAndHypotheses if sh[1].prior() == min([s[1].prior() for s in scoresAndHypotheses])]
+		print "Experience replay complete."
+		for num, sh in enumerate(scoresAndHypotheses):
+			print "Theory: {} | Error: {}".format(num, sh[0])
+		print ""
+		print "{} survived".format(len(scoresAndHypotheses))
+
+		return scoresAndHypotheses , scoreAndTheoryTuples
+
+	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, lastStep=False):
 
 		theory_change_flag = False
 
@@ -534,8 +564,8 @@ class Agent:
 		newTheories = []
 	
 		for num, env in enumerate(theoryRLEs):
-			theories = testAndExpand(theoryRLEs, self.hypotheses, action, self.rle, envRealPrev, num, \
-				self.rleHistory[episode_num], self.actionHistory[episode_num], self.symbolDict, self.bestSpriteTypeDict)
+			theories = testAndExpand(env, self.hypotheses[num], action, self.rle, envRealPrev, self.rleHistory[episode_num], \
+					self.actionHistory[episode_num], self.symbolDict, self.bestSpriteTypeDict)
 			newTheories.extend(theories)
 
 
@@ -551,38 +581,40 @@ class Agent:
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
 
 		if newTheories:
+			bestScoresAndHypotheses , scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
 
-			penalties = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], self.actionHistory[:episode_num+1],
-				self.symbolDict, method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
-
-			scoreAndTheoryTuples = zip(penalties, newTheories)
-			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
-
-			for num, sh in reversed(list(enumerate(scoreAndTheoryTuples))):
-				if num > 100:
-					continue
-				print "Theory: {} | Error: {}".format(num, sh[0])
-				sh[1].display()
-			scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
-
-			if not lastStep:
-				scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-					proportionOfSpriteTheories=None, errorCutoff=.3)]
-			else:
-				scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-					proportionOfSpriteTheories=None, errorCutoff=.3)]
-
-			scoresAndHypotheses = [sh for sh in scoresAndHypotheses if sh[1].prior() == min([s[1].prior() for s in scoresAndHypotheses])]
-			print "Experience replay complete."
-			for num, sh in enumerate(scoresAndHypotheses):
-				print "Theory: {} | Error: {}".format(num, sh[0])
-			print ""
-			hypotheses = [sh[1] for sh in scoresAndHypotheses]
-			print "{} survived".format(len(hypotheses))
-
-			if len(hypotheses) == 0:
-				print "0 hypotheses survived filter"
+			if len(bestScoresAndHypotheses) == 0:
+				retryNum = 1000 # TODO: arbitrary
+				# note for tomorrow: first missle appears at 96 :(
+				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN with best {} *****".format(retryNum)
 				embed()
+
+				# TODO: this takes absolutely forever, we should definitely filter the theories somehow.
+				#	(would need more info from scoreAndFilterTheories)
+
+				# from vgdl.agent import VrleInitPhase
+				# from vgdl.agent import testAndExpand
+
+				retryTheories = [t[1] for t in scoreAndTheoryTuples[:retryNum]]
+				theoryRLEs = VrleInitPhase(retryTheories, envRealPrev, self.symbolDict)
+				for h in retryTheories:
+					h.dryingPaint = set()
+
+				newerTheories = []
+
+				for num, env in enumerate(theoryRLEs):
+					theories = testAndExpand(env, retryTheories[num], action, self.rle, envRealPrev, self.rleHistory[episode_num], \
+							self.actionHistory[episode_num], self.symbolDict, self.bestSpriteTypeDict)
+					newerTheories.extend(theories)
+
+				newerTheories = list(set(newerTheories))
+				self.allTheories.extend(newerTheories)
+
+				bestScoresAndHypotheses , scoreAndTheoryTuples = self.scoreAndFilterTheories(newerTheories, episode_num)
+
+				if len(bestScoresAndHypotheses) == 0:
+					print "second attempt failed, 0 theories survived filter"
+					embed()
 		else:
 			print "Got no new theories"
 
@@ -592,10 +624,10 @@ class Agent:
 		self.statesEncountered.append(self.rle._game.getFullState())
 		self.rle._game.sprite_appearances = []
 
-		for h in hypotheses:
+		for s , h in bestScoresAndHypotheses:
 			h.dryingPaint = set()
 
-		return hypotheses, scoresAndHypotheses
+		return [tup[1] for tup in bestScoresAndHypotheses], bestScoresAndHypotheses
 
 	########################################################################
 	######## TESTING HYPOTHESES BY RANDOM SAMPLING OR OTHER METHODS ########
@@ -957,7 +989,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		spritePrediction=False
 		if dist>0 and 'flipDirection' in [r.interaction for r in theory.interactionSet]:
 			print "got flipDirection"
-			embed()
+			# embed()
 		## If a teleport event has taken place
 		if dist>0 and 'teleportToExit' in [r.interaction for r in theory.interactionSet]:
 			# print "found theory with teleport"
@@ -1099,7 +1131,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				appeared_sprites_envB.append(sB)
 				continue
 		# Now we are completely sure that sprite in envA has been erroneously removed
-		errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
+		errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory)
 		errorMap.extend(errs)
 
 	# 2) Unexpected destruction/appearance/transformation
@@ -1714,7 +1746,7 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, method='
 		if 'flipDirection' in [r.interaction for r in h.interactionSet]:
 			multipleHypotheses = [h]*NUM_SAMPLES_PER_HYPOTHESIS
 			tmpResults = singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, multipleHypotheses, symbolDict)
-			results.append((np.mean(tmpResults[0]), np.mean(tmpResults[1]), tmpResults[2][0]))
+			results.append((np.array([np.mean(tmpResults[0])]), np.array([[np.mean(tmpResults[1])]]), [tmpResults[2][0]]))
 			print "got flipDirection in experienceReplay"
 			# from vgdl.agent import initializeVrle
 			# newenv=initializeVrle(h, rleHistory[0], symbolDict)
@@ -1723,7 +1755,7 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, method='
 			## if you do newenv.step(0) you'll see that all the other missiles move forward and this one
 			## doesn't.
 			# print newenv._game.sprite_groups['c5'][0].orientation
-			embed()
+			# embed()
 			## after the embed(), run
 			## newenv.step(0); newenv
 			## print newenv._game.sprite_groups['c5'][0].orientation
@@ -1966,6 +1998,11 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 		if eM.targetClass not in theoryCopy.expandedSprites:
 			className, theories = expandSprites(envRealCurrent._game, theoryCopy, eM, 
 			envRealPrev, envRealCurrent, bestSpriteTypeDict, action, percentile=20, max_num=30)
+			theories = list(set(theories))
+			# since we're not actually going to build on these, we haven't necessarily addressed the error
+			# tomorrow: not sure if this is actually the problem
+			# for t in theories:
+			# 	t.errorMapHistory.pop(len(t.errorMapHistory)-1)
 			# print "doing spriteInduction for {} generated {} theories".format(eM.targetClass, len(theories))
 			newTheories.extend(theories)	
 
@@ -2001,10 +2038,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 
 	return newTheories
 
-def testAndExpand(theoryRLEs, hypotheses, action, envReal, envRealPrev, index, rleHistory, actionHistory, symbolDict, bestSpriteTypeDict):
-	num = index
-	env = theoryRLEs[num]
-	hypothesis = hypotheses[num]
+def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistory, actionHistory, symbolDict, bestSpriteTypeDict):
 
 	env.step(action)
 	penalty, errorList = errorSignal(env, envReal, hypothesis, envRealPrev)
