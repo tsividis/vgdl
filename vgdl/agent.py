@@ -288,10 +288,10 @@ class Agent:
 
 		actionSequences = [
 			# [0,0,0,K_LEFT, K_LEFT,0,0]
-			[K_UP, K_UP, K_DOWN]
+			# [K_UP, K_UP, K_DOWN]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			# [0,0,0,0,0,0,0,0]
+			[0,0,0,0,0,0,0,0]
 			# [0,0, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0,0,0]
 			# [0,0,0,0,0,0,0,0,0,0,0,0]
 			# [K_UP, K_UP, K_UP, K_RIGHT]
@@ -1288,11 +1288,15 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 		lst = [errorMap[0]]
 		for e in errorMap[1:]:
-			if [not(e.diagnosis == l.diagnosis and e.targetClass == l.targetClass and e.targetToken == l.targetToken) for l in lst]:
+			# if all([not(e.diagnosis == l.diagnosis and e.targetClass == l.targetClass) for l in lst]):
+			if all([not(e.diagnosis == l.diagnosis and e.targetClass == l.targetClass and e.targetToken == l.targetToken) for l in lst]):
 				lst.append(e)
 
 		errorMap = lst
 
+	# if len(errorMap)==4:
+		# print "found 4 errorMaps"
+		# embed()
 	## Sort so that you fix errors involving any new classes first when you build theories.
 	errorMap = sorted(errorMap, key=lambda x: x.targetClass!='unknown')
 

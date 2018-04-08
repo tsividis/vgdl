@@ -72,17 +72,17 @@
 
 #[0]*10
 ## distinguishing between random and missiles
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w                     4      1 w
-# w                              w
-# w   4                          w
-# w                         3 3  w
-# w         s    s A             w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w                     4      1 w
+w                              w
+w   4                          w
+w                         3 3  w
+w         s    s A             w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 #[0]*10
 #randomnpc inference, just more sprites
@@ -102,17 +102,17 @@
 ## if you use box2 avatar bounceForward this could be
 ## a good test of whether re-doing testAndExpand helps.
 # #up, up, down
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                            1 w
-w                            1 w
-w              1               w
-w              1               w
-w              A          3 3  w
-w                              w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w              1               w
+# w              1               w
+# w              A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 #0,0,0,0,0,0,0
 # level = """

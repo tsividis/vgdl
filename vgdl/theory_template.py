@@ -324,6 +324,7 @@ class Theory(object):
 		self.errorMapHistory = []
 		self.lineage = []
 		
+		self.experienceReplayRecord = {} ## store (targetColor, rleHistory.ID, len(rleHistory)):penalty
 		self.mark = False ## For convenient marking and finding of hypotheses
 
 	## We don't want this to be precomputed because our way of generating child theories
