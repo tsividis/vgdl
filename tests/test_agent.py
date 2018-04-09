@@ -199,4 +199,17 @@ class inference(_TestAgent):
 
 	test1 = _testConstructor(*inference.test1)
 
+	test2 = _testConstructor(*inference.test2)
+
+	test3 = _testConstructor(*inference.test3)
+
+	test4 = _testConstructor(*inference.test4)
+
+	test5 = _testConstructor(*inference.test5)
+
+	
+	test5 = _testConstructor(*inference.test5)
+
+
+
 	# print inference.test0.game
