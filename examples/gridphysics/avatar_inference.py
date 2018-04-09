@@ -44,17 +44,17 @@
 ## the problem here is that you need to build on expandSprite proposals with expandLine within one errorMap and
 ## you don't ordinarily do that.
 #0,0,0,0,0,0
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                            1 w
-w                            1 w
-w                              w
-w                              w
-w              A          3 3  w
-w         c    c               w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w                              w
+# w              A          3 3  w
+# w         c    c               w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # works if you don't allow the eventHandler to apply effects to newly-created sprites
 #[0,0,0,K_LEFT, K_LEFT,0,0]
@@ -83,6 +83,35 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w         s    s A             w
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
+
+#[0]*10
+# combine with sam wall reverseDirection
+# we do learn reverseDirection, but a few
+# incorrect Chaser theories have low error even though they're totally wrong.
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w                            1 w
+w                              w
+w         wwwwww               w
+w                         3 3  w
+w         s    s A             w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w         wwwwww               w
+# w                              w
+# w       5      5 A 3  3        w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
 
 #[0]*10
 #randomnpc inference, just more sprites
@@ -220,6 +249,7 @@ BasicGame
         box    > Immovable color=WHITE # orientation=RIGHT cooldown=1
         box2 > Immovable color=GREEN
         box3 > Immovable color=YELLOW
+        box5 > Immovable color=LIGHTBLUE
         flicker > Flicker timeout=1 color=ORANGE
         random > RandomNPC color=PURPLE speed=1 cooldown=1
         chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
@@ -238,6 +268,7 @@ BasicGame
         2 > box2
         3 > box3
         4 > random
+        5 > box5
         w > wall
         c > cannon
         s > sam
@@ -251,11 +282,12 @@ BasicGame
         # box2 avatar > killSprite
         # box2 avatar > bounceForward
         box3 avatar > killSprite
+        avatar box5 > killSprite
         cannon avatar > bounceForward
         avatar sam > bounceForward
         cannon sam > stepBack
         sam cannon > stepBack
-        sam wall > killSprite
+        sam wall > reverseDirection
         medicine avatar > killSprite
         avatar medicine > changeResource resource=invisiblemedicine value=1
         avatar poison > changeResource resource=invisiblemedicine value=-1

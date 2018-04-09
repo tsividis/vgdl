@@ -35,9 +35,11 @@ import heapq
 
 ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPACE: (0,0), 0: (0,0)}
 
-# This makes experience replay run multiple samples 
-# for each time step if there is a Random in the theory
+# This makes experience replay score a theory on all the one-step transitions we've seen
 EXPERIENCE_REPLAY_METHOD = 'all'
+# What average likelihood do we consider adequate for passing a theory on to the next generation?
+ERRORCUTOFF = .3
+# Not active now
 NUM_SAMPLES_PER_HYPOTHESIS = 20
 
 
@@ -296,7 +298,9 @@ class Agent:
 			# [K_UP, K_UP, K_DOWN]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			[0]*6
+			# [0]*6
+			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT],
+			# [K_RIGHT, K_RIGHT]
 			# [0,0, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0,0,0]
 			# [0,0,0,0,0,0,0,0,0,0,0,0]
 			# [K_UP, K_UP, K_UP, K_RIGHT]
@@ -304,6 +308,8 @@ class Agent:
 			# [K_RIGHT, K_UP]
 			# [K_UP, K_UP, K_UP, K_UP]
 			# [K_LEFT, K_UP, K_UP, K_UP, K_UP]
+			[0]*20
+			# [K_DOWN, K_LEFT]+[K_RIGHT]*23+[K_UP]*3
 		]
 
 		self.rleHistory = [[] for i in range(len(actionSequences))]
@@ -515,12 +521,8 @@ class Agent:
 			sh[1].display()
 		scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
 
-		# if not lastStep:
-		# 	scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-		# 		proportionOfSpriteTheories=None, errorCutoff=.3)]
-		# else:
 		scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-			proportionOfSpriteTheories=None, errorCutoff=.3)]
+			proportionOfSpriteTheories=None, errorCutoff=ERRORCUTOFF)]
 
 		# filter out any theory whose added complexity does not improve its error
 		#	i.e. between two theories of equal perfomance, ignore the less likely/more complex one
@@ -960,13 +962,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		except:
 			print "targetClass filter in errorSignal failed"
 			embed()
-	## Test output
-	# print '>>> matched_sprites:'
-	# for i in range(len(matched_sprites)):
-		# if True: #matched_sprites[i][2]!=0:
-			# print matched_sprites[i]
-	# print '>>> lonely_sprites_envA:', [s for s in lonely_sprites_envA]
-	# print '>>> lonely_sprites_envB:', [s for s in lonely_sprites_envB]
 
 	## Penalize distance and additional/missing sprites
 	for t in matched_sprites:
@@ -976,7 +971,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		## Prevents trying to fix the same problem over and over.
 		reportError = True
 		
-		## Distance penalty
 		sA, sB = t[0], t[1] #sprites in envA, envB      
 		dist = t[2] #distance to sprite in envB
 		sPrev, dist_ts = find_sPrev(sB, envB, envPrev) #Previous location of our sprite
@@ -992,14 +986,12 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			inventory_penalty += abs(t0_k[0]-t1_k[0])
 		total_penalty += np.log((e_inventory)**inventory_penalty) #likelihood
 
-		if dist>0 and 'flipDirection' in [r.interaction for r in theory.interactionSet]:
-			print "got flipDirection"
-			embed()
+		# if dist>0 and 'flipDirection' in [r.interaction for r in theory.interactionSet]:
+			# print "got flipDirection"
+			# embed()
 
 		## If a teleport event has taken place
 		if dist>0 and 'teleportToExit' in [r.interaction for r in theory.interactionSet]:
-			# print "found theory with teleport"
-			# embed()
 			sA_class = theory.spriteObjects[sA.colorName].className
 			teleportEntryColors = [theory.classes[r.slot2][0].colorName for r in theory.interactionSet if r.interaction=='teleportToExit' and r.slot1==sA_class]
 			teleportExitClasses = [theory.spriteObjects[colorName].args['stype'] for colorName in teleportEntryColors]
@@ -1048,9 +1040,9 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				# total_penalty += np.log(1.-e_dist) if (xB,yB) in positionOptions else np.log(e_dist)
 			
 			elif 'Chaser' in str(sA_type):
-				
-				xA = sA.rect.left/d
-				yA = sA.rect.top/d
+
+				xB = sB.rect.left/d
+				yB = sB.rect.top/d
 				if sPrev is None:
 					continue
 
@@ -1058,12 +1050,13 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				sA.stype = theory.classes[stype][0].colorName
 				sA.fleeing = theory.spriteObjects[sA.colorName].args['fleeing']
 				closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
+				if not closestTargets:
+					closestTargets = [(sPrev.rect.left/d, sPrev.rect.top/d)]
 
-				#New 2/12
 				del sA.stype
 				del sA.fleeing
 
-				if not closestTargets or (xA, yA) in closestTargets:
+				if (xB, yB) in closestTargets:
 					# total_penalty += np.log(1./len(closestTargets)-e_dist)
 					total_penalty += np.log(1.-e_dist)
 					reportError = False
@@ -1458,6 +1451,8 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 
 		e.intPairs = [(sA.colorName, covered_sprite_envB.colorName)] #overwrite interaction pair by the overlapping sprite pair
 
+		# print "got unexpectedOverlap"
+		# embed()
 	if dist_ts>2:
 		e2 = errorMapEntry()
 		e2.targetToken = e.targetToken
@@ -1698,7 +1693,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	
 	key = (method, targetColor, rleHistory[0].ID, len(rleHistory))
 	
-	if key in hypotheses[0].experienceReplayRecord:
+	if not displayStates and key in hypotheses[0].experienceReplayRecord:
 		# print "found key in hypothesis experienceReplay"
 		# embed()
 		return hypotheses[0].experienceReplayRecord[key]
@@ -2110,7 +2105,7 @@ def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistory, act
 if __name__ == "__main__":
 
 	##simpleGame_missile: no support for learning that it can shoot things.
-	# filename = "examples.gridphysics.aliens"
+	# filename = "examples.gridphysics.frogs"
 
 	# filename = "examples.gridphysics.collect_resource"
 

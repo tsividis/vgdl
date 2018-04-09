@@ -99,7 +99,7 @@ BasicGame frame_rate=30
         mover > VGDLSprite
             rand > RandomNPC color=LIGHTBLUE cooldown=1 #12 for humans, 2 for Planner
             chaser > Chaser
-                chaser1 > stype=box1 color=ORANGE  cooldown=12 #for humans
+                chaser1 > stype=box1 color=ORANGE  cooldown=2#cooldown=12 #for humans
                 chaser2 > stype=box3 color=LIGHTBLUE cooldown=12 #for humans
         wall > Immovable color=BLACK
         forcefield > Passive color=PURPLE

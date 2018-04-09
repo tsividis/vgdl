@@ -34,7 +34,7 @@ Logs spawn randomly, but trucks wrap around the screen and come back.
 
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwww
-w         w  G  w          w
+w         w  GG w          w
 w0000====0000000000====00012
 w00===000===000====0000===02
 www   ww   www    www  wwwww

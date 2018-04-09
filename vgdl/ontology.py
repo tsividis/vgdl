@@ -2880,7 +2880,8 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
             left, top = sprite.rect.left, sprite.rect.top
             neighbors = [(left, top), (left-30, top), (left+30, top), (left, top-30), (left, top+30)]
             try:
-                if game.sprite_appearances and any([(s.rect.left, s.rect.top) in neighbors for s in game.sprite_appearances]):
+                if game.sprite_appearances and any([(s.rect.left, s.rect.top) in neighbors for s in game.sprite_appearances]) and \
+                        sprite.ID in game.sprite_appearance_predictions:
                     for k,v in game.sprite_appearance_predictions[sprite.ID].items():
                         if any([(appearance.colorName, appearance.rect.left, appearance.rect.top) in v for appearance in game.sprite_appearances]):
                             scoreAndTheoryTuples.append((0,k))
