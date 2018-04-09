@@ -1,32 +1,5 @@
 from tests.locals import *
 
-game = """
-BasicGame
-    SpriteSet
-        box > Immovable color=WHITE 
-        box2 > Immovable color=GREEN
-        box3 > Immovable color=YELLOW
-        wall > Immovable color=DARKGRAY
-        cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
-        sam > Missile orientation=UP color=BLUE single=False cooldown=1
-        avatar  > MovingAvatar color=DARKBLUE 
-    LevelMapping
-        1 > box
-        2 > box2
-        3 > box3
-        w > wall
-        c > cannon
-        A > avatar
-    InteractionSet
-        avatar wall > stepBack
-        box avatar > transformTo stype=box2
-        box2 avatar > killSprite
-        box3 avatar > killSprite
-        # Need to include all step backs
-    TerminationSet
-        SpriteCounter stype=avatar limit=0 win=False
-"""
-
 tSetBase = """
 TerminationSet
     SpriteCounter stype=avatar limit=0 win=False
@@ -54,26 +27,26 @@ SpriteSet
 
 sSetCannons = joinDescs(sSetBoxes, """
 SpriteSet
-	cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
-	sam > Missile orientation=UP color=BLUE singleton=False cooldown=1
+    cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
+    sam > Missile orientation=UP color=BLUE singleton=False cooldown=1
 """)
 
 iSetBoxes = """
 InteractionSet
-	avatar wall > stepBack
-	box avatar > transformTo stype=box2
-	box2 avatar > killSprite
-	box3 avatar > killSprite
-	# Need to include all step backs
+    avatar wall > stepBack
+    box avatar > transformTo stype=box2
+    box2 avatar > killSprite
+    box3 avatar > killSprite
+    # Need to include all step backs
 """
 
 iSetCannons = joinDescs(iSetBoxes, """
 InteractionSet
-	cannon avatar > bounceForward
-	avatar sam > bounceForward
-	cannon sam > stepBack
-	sam cannon > stepBack
-	# need to include additional stepbacks
+    cannon avatar > bounceForward
+    avatar sam > bounceForward
+    # cannon sam > stepBack
+    # sam cannon > stepBack
+    # need to include additional stepbacks
 """)
 
 # print iSetCannons.__repr__()
@@ -111,6 +84,33 @@ gameWeird = catDescriptions(sSetCannons, iSetWeird, tSetBase, levelMapping)
 # print 
 # print game
 
+game = """
+BasicGame
+    SpriteSet
+        box > Immovable color=WHITE 
+        box2 > Immovable color=GREEN
+        box3 > Immovable color=YELLOW
+        wall > Immovable color=DARKGRAY
+        cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
+        sam > Missile orientation=UP color=BLUE single=False cooldown=1
+        avatar  > MovingAvatar color=DARKBLUE 
+    LevelMapping
+        1 > box
+        2 > box2
+        3 > box3
+        w > wall
+        c > cannon
+        A > avatar
+    InteractionSet
+        avatar wall > stepBack
+        box avatar > transformTo stype=box2
+        box2 avatar > killSprite
+        box3 avatar > killSprite
+        # Need to include all step backs
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+"""
+
 level0 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
@@ -122,7 +122,7 @@ w                         3 3  w
 w         c                    w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
-test0 = TestCase(game, level0, [[K_LEFT]*8])
+test0 = TestCase(game, level0, [[K_UP]*3])
 
 
 # up, up, up, up, left

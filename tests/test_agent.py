@@ -50,7 +50,6 @@ class _TestAgent(unittest.TestCase):
 
 	def initRunCreate(self, game, level, action_sequences):
 		self.runCurriculum(game, level, action_sequences)
-		return generateTheoryFromGameString(game)
 
 	#######################################
 	# Agent Theory Tools
@@ -145,16 +144,17 @@ class _TestAgent(unittest.TestCase):
 		self.assertTrue(len(self.agent.hypotheses) > 0, 'Agent has no theories')
 
 
-def _testConstructor(game, level, action_sequences):
+def _testConstructor(game, level, action_sequences, expected_theory=None):
 	'''Creates a basic test case. Theory learned == Real Game Description'''
 	# print game
 	def testCase(self):
 		print 'RUNNING TEST'
 		print game, '\n', level, '\n', action_sequences, '\n'
-		real_description = self.initRunCreate(game, level, action_sequences)
+		self.initRunCreate(game, level, action_sequences)
+		expected_theory = expected_theory if expected_theory else generateTheoryFromGameString(game)
 
-		self.assertAgentHasTheory(real_description)
-		self.assertTheoriesEqual(self.agent.hypotheses[0], real_description)
+		self.assertAgentHasTheory(expected_theory)
+		self.assertTheoriesEqual(self.agent.hypotheses[0], expected_theory)
 		self.assertTheoryBelowEpsilonError(self.agent.hypotheses[0])
 		## Write whatever things you want to test for here.
 
@@ -175,7 +175,8 @@ class TestBasics(_TestAgent):
 
 	# This is another way to create a test case. You can do everything individually.
 	def testKillSpriteAndStop(self):
-		real_description = self.initRunCreate(*basics.test2)
+		self.initRunCreate(*basics.test2)
+		real_description = generateTheoryFromGameString(basecs.test2.game)
 		# this may not be that useful, but I'll keep it around anyway.
 		self.assertTheoriesEqual(self.agent.hypotheses[0], real_description)
 
@@ -207,7 +208,7 @@ class inference(_TestAgent):
 
 	test5 = _testConstructor(*inference.test5)
 
-	
+
 	test5 = _testConstructor(*inference.test5)
 
 

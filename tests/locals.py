@@ -1,6 +1,10 @@
 from collections import namedtuple
 from pygame.locals import K_UP, K_RIGHT, K_LEFT, K_DOWN, K_SPACE
-TestCase = namedtuple('TestCase', 'game, level, action_sequences')
+
+TestCase = namedtuple('TestCase', 'game, level, action_sequences, expected_theory')
+TestCase.__new__.__defaults__ = ("", "", [], None)
+
+set_names = {'SpriteSet', 'LevelMapping', 'InteractionSet', 'TerminationSet'}
 
 def args(**kwargs):
 	args = ""
@@ -22,6 +26,7 @@ def ruleDef(class1, class2, rule_name, **kwargs):
 
 def catDescriptions(*desc_sets):
 	game_description = "BasicGame\n"
+
 	for desc_set in desc_sets:
 		game_description += '\t%s\n' % '\t'.join(desc_set.strip().splitlines(True))
 	return game_description
