@@ -2721,7 +2721,6 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 	## Modifies the theory to propose n new interactonRules involving the given classPair
 	## For predicates that take arguments, finds the first (according to some ordering) satisfying argument and returns that.
 	## generic=True proposes all possible combinations of args instead.
-
 	childTheories = [theory.copy()]
 	##if iterating thresholds is not relevant:
 	predicatesWithThresholds = ['killIfTooFast', 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
@@ -2771,14 +2770,15 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHi
 	relevantRulesWithArgs = [rule for rule in theory.interactionSet if rule.interaction in predicatesWithThresholds and \
 			classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and len(rule.args)>0]
 	if len(relevantRulesWithArgs)==1:
-		print "in iterateThresholds"
-		theory.display()
+		# print "in iterateThresholds"
+		# theory.display()
 		rule = relevantRulesWithArgs[0]
-		penalty, _, _ = experienceReplay([theory], rleHistory, actionHistory, 
+		penalty = experienceReplay([theory], rleHistory, actionHistory, 
 			rleHistory[0].symbolDict, method='all', targetColor=errorMap.targetColor)
 		newPenalty = penalty
 		while newPenalty >= penalty:
 			argsToIncrement = [(k,v) for k,v in relevantRulesWithArgs[0].args.items() if type(v)==int]
+			# embed()
 			if len(argsToIncrement)>1:
 				print "got more than one arg to increment in iterateThresholds(); this shouldn't happen"
 				embed()
@@ -2786,7 +2786,7 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHi
 			idx = thresholdOrdering[rule.interaction].index(v)
 			if len(thresholdOrdering[rule.interaction]) > idx+1:
 				rule.args[k] = thresholdOrdering[rule.interaction][idx+1]
-				newPenalty, _, _ = experienceReplay([theory], rleHistory, actionHistory, 
+				newPenalty = experienceReplay([theory], rleHistory, actionHistory, 
 					envRealPrev.symbolDict, method='all', targetColor=errorMap.targetColor)
 				# print newPenalty, rule.display()
 			else:
