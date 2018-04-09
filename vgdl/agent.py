@@ -308,7 +308,8 @@ class Agent:
 			# [K_RIGHT, K_UP]
 			# [K_UP, K_UP, K_UP, K_UP]
 			# [K_LEFT, K_UP, K_UP, K_UP, K_UP]
-			[0]*20
+			[K_UP]*4
+			# [0]*20
 			# [K_DOWN, K_LEFT]+[K_RIGHT]*23+[K_UP]*3
 		]
 
@@ -735,8 +736,9 @@ def setSpriteState(sprite, matchingSprite, hypothesis):
 	sprite.resources = defaultdict(int)
 	for rcolor in matchingSprite.inventory.keys():
 		if rcolor not in hypothesis.spriteObjects:
-			print 'in setSpriteState: next line is going to crash'
-			embed()
+			continue
+			# print 'in setSpriteState: next line is going to crash'
+			# embed()
 			# maybe do sprite induction here on purple?
 		sprite.resources[hypothesis.spriteObjects[rcolor].className] = matchingSprite.inventory[rcolor][0]
 
@@ -1330,7 +1332,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		# print "found 4 errorMaps"
 		# embed()
 	## Sort so that you fix errors involving any new classes first when you build theories.
-	errorMap = sorted(errorMap, key=lambda x: x.targetClass!='unknown')
+	errorMap = sorted(errorMap, key=lambda x: (x.targetClass!='unknown', 'inventoryChange' not in x.diagnosis) )
 
 	# print "at end of errorSignal"
 	# embed()
@@ -1974,9 +1976,12 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 		return newTheories
 
 	theory.experienceReplayRecord = {}
+
 	## If there are unknown colors in an inventory, add them to the theory here.
 	if 'inventoryChange' in errorMap.diagnosis:
 		from vgdl.ontology import Resource
+		# print "got inventoryChange"
+		# embed()
 		for k in errorMap.targetToken.inventory:
 			if k not in theory.spriteObjects.keys():
 				color = k

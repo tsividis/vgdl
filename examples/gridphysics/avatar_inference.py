@@ -88,17 +88,17 @@
 # combine with sam wall reverseDirection
 # we do learn reverseDirection, but a few
 # incorrect Chaser theories have low error even though they're totally wrong.
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                            1 w
-w                            1 w
-w                              w
-w         wwwwww               w
-w                         3 3  w
-w         s    s A             w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w         wwwwww               w
+# w                         3 3  w
+# w         s    s A             w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -214,17 +214,17 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # works for changeResource, killIfOtherHasMore/Less.
 # currently broken by invisiblemedicine and (separately) the avatar dying
 #up, up, up, up
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w              p             1 w
-# w              m             1 w
-# w              m               w
-# w              p               w
-# w              A          3 3  w
-# w                              w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w              p             1 w
+w              m             1 w
+w              m               w
+w              p               w
+w              A          3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 # testing when poisons make you step back
 # works
