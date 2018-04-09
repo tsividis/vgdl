@@ -100,6 +100,18 @@
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w                            1 w
+w           k                  w
+w  k      wwwwww               w
+w      s                  3 3  w
+w                A     s       w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
@@ -214,17 +226,17 @@
 # works for changeResource, killIfOtherHasMore/Less.
 # currently broken by invisiblemedicine and (separately) the avatar dying
 #up, up, up, up
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w              p             1 w
-w              m             1 w
-w              m               w
-w              p               w
-w              A          3 3  w
-w                              w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w              p             1 w
+# w              m             1 w
+# w              m               w
+# w              p               w
+# w              A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # testing when poisons make you step back
 # works
@@ -251,8 +263,8 @@ BasicGame
         box3 > Immovable color=YELLOW
         box5 > Immovable color=LIGHTBLUE
         flicker > Flicker timeout=1 color=ORANGE
-        random > RandomNPC color=PURPLE speed=1 cooldown=1
-        chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
+        random > RandomNPC color=PURPLE speed=1 cooldown=3
+        chaser > Chaser color=BLACK speed=1 cooldown=2 stype=avatar
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         missile > Missile
             sam  > orientation=UP color=BLUE singleton=False cooldown=1
@@ -272,6 +284,7 @@ BasicGame
         w > wall
         c > cannon
         s > sam
+        k > chaser
         A > avatar
         m > medicine
         p > poison
@@ -291,6 +304,7 @@ BasicGame
         medicine avatar > killSprite
         avatar medicine > changeResource resource=invisiblemedicine value=1
         avatar poison > changeResource resource=invisiblemedicine value=-1
+        avatar poison> killIfHasLess resource=medicine limit=1
         poison avatar > killIfOtherHasMore resource=invisiblemedicine limit=0
         # avatar medicine > changeResource resource=medicine value=1
         # avatar poison > changeResource resource=medicine value=-1

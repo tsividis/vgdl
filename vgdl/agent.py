@@ -308,7 +308,7 @@ class Agent:
 			# [K_RIGHT, K_UP]
 			# [K_UP, K_UP, K_UP, K_UP]
 			# [K_LEFT, K_UP, K_UP, K_UP, K_UP]
-			[K_UP]*4
+			[K_UP]*8
 			# [0]*20
 			# [K_DOWN, K_LEFT]+[K_RIGHT]*23+[K_UP]*3
 		]
@@ -598,11 +598,8 @@ class Agent:
 			bestScoresAndHypotheses , scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
 
 			if len(bestScoresAndHypotheses) == 0:
-				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN with best {} *****".format(retryNum)
+				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
 				embed()
-
-				# from vgdl.agent import VrleInitPhase
-				# from vgdl.agent import testAndExpand
 
 				retryTheories = [t for t in newTheories if hasattr(t, 'mostRecentEdit') and t.mostRecentEdit == 'spriteInduction']
 				theoryRLEs = VrleInitPhase(retryTheories, envRealPrev, self.symbolDict)
@@ -852,6 +849,7 @@ def initializeVrle(hypothesis, stateToSet, symbolDict, theoryRLE=None, makeIniti
 	## Don't do any of the rest if we have an ungrammatical hypothesis caused by num(avatars)>1.
 	if len(stateToSet._game.observation['trackedObjects'][hypothesis.classes['avatar'][0].colorName])>1:
 		print "Warning. In initializeVrle. Got more than one avatar. Returning None as Vrle."
+		embed()
 		Vrle = None
 		return Vrle
 	
@@ -1029,7 +1027,11 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				xPrev = sPrev.rect.left/d
 				yPrev = sPrev.rect.top/d
 
-				positionOptions = [(xPrev, yPrev), (xPrev+sA_speed, yPrev), (xPrev-sA_speed, yPrev), (xPrev, yPrev+sA_speed), (xPrev, yPrev-sA_speed)]
+				## if the sprite was allowed to move according to the theory
+				if sA.lastmove%theory.spriteObjects[sA.colorName].args['cooldown']:
+					positionOptions = [(xPrev, yPrev), (xPrev+sA_speed, yPrev), (xPrev-sA_speed, yPrev), (xPrev, yPrev+sA_speed), (xPrev, yPrev-sA_speed)]
+				else:
+					positionOptions = [(xPrev, yPrev)]
 				
 				if (xB,yB) in positionOptions:
 					total_penalty += np.log(1.-e_dist)
@@ -1051,8 +1053,12 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				stype = theory.spriteObjects[sA.colorName].args['stype']
 				sA.stype = theory.classes[stype][0].colorName
 				sA.fleeing = theory.spriteObjects[sA.colorName].args['fleeing']
-				closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
-				if not closestTargets:
+				
+				if sA.lastmove%theory.spriteObjects[sA.colorName].args['cooldown']:
+					closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
+					if not closestTargets:
+						closestTargets = [(sPrev.rect.left/d, sPrev.rect.top/d)]
+				else:
 					closestTargets = [(sPrev.rect.left/d, sPrev.rect.top/d)]
 
 				del sA.stype
@@ -1065,6 +1071,14 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				else:
 					total_penalty += np.log(e_dist)
 					errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory)
+				
+				# if sA.stype=='WHITE' and not sA.fleeing and sA.colorName=='BLUE':
+					# print "chasing white."
+					# print (sPrev.rect.left/d, sPrev.rect.top/d)
+					# print (xB,yB), closestTargets
+					# print reportError
+					# embed()
+
 				# total_penalty += np.log(1./len(closestTargets)-e_dist) if (xA,yA) in closestTargets else np.log(0.+e_dist) # likelihood
 
 		# All of the other types are deterministic

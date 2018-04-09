@@ -1943,7 +1943,7 @@ def chaserClosestTargets(sprite, game):
     res = []
     for target in targets:
         d = sprite.physics.distance(sprite.rect, target.rect)
-        if d < bestd:
+        if d < bestd and d>0:
             bestd = d
             res = [target]
         elif d == bestd:
@@ -1978,7 +1978,7 @@ def findChaserClosestTargets(sprite, spritePrev, game):
     res = []
     for target in targets:
         d = distance(spritePrev.rect, target.rect)
-        if d < bestd:
+        if d < bestd and d>0:
             bestd = d
             res = [target]
         elif d == bestd:
@@ -2888,6 +2888,8 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
                 else:
                     ## Normal case. Update hypotheses related to movement types.
                     for k in game.movement_options[sprite.ID]:
+                        if len(game.observation['trackedObjects'][sprite.colorName])>1 and ( ('singleton', True) in k or 'Avatar' in str(k[0][1]) ):
+                            continue
                         if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k]: 
                             if k in game.orientation_options[sprite.ID]:
                                 if normalizeVec(sprite.orientation) in game.orientation_options[sprite.ID][k]:
