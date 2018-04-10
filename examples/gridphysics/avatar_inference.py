@@ -103,11 +103,11 @@
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
-w                            1 w
-w                            1 w
+w        4                   1 w
+w              k             1 w
 w      4           A           w
 w                              w
-w          4              3 3  w
+w          k              3 3  w
 w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
@@ -263,8 +263,8 @@ BasicGame
         box3 > Immovable color=YELLOW
         box5 > Immovable color=LIGHTBLUE
         flicker > Flicker timeout=1 color=ORANGE
-        random > RandomNPC color=PURPLE speed=1 cooldown=3
-        chaser > Chaser color=BLACK speed=1 cooldown=4 stype=avatar fleeing=True
+        random > RandomNPC color=PURPLE speed=1 cooldown=1
+        chaser > Chaser color=BLACK speed=1 cooldown=3 stype=avatar fleeing=True
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         missile > Missile
             sam  > orientation=UP color=BLUE singleton=False cooldown=1

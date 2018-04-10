@@ -77,7 +77,7 @@ class errorMapEntry:
 		return e
 
 	def __eq__(self, other):
-		if set(self.diagnosis) == set(other.diagnosis) and self.intPairs == other.intPairs:
+		if set(self.diagnosis) == set(other.diagnosis) and self.targetClass == other.targetClass and sorted(self.intPairs)==sorted(other.intPairs):
 			return True
 		else:
 			return False
@@ -1913,6 +1913,8 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		## Skip this whole step if you've already made changes for this theory. Just pass it on and you'll
 		## evaluate it on the whole dataset in the outer loop.
 		if len(theories) == 1 and any([errorMap == e for e in theories[0].errorMapHistory]):
+			errorMap.display()
+			print "we've addressed this theory before (in expandTheories). Skipping it"
 			newTheories = [theories[0]]
 			theories = newTheories
 			# FLAG: huh?
@@ -1977,8 +1979,8 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 
 	## If we were about to make modifications we've made already, don't waste the time.
 	if any([errorMap == e for e in theory.errorMapHistory]):
-		# errorMap.display()
-		# print "we've addressed this theory before. Skipping it"
+		errorMap.display()
+		print "we've addressed this theory before. Skipping it"
 		newTheories = [theory]
 		return newTheories
 
@@ -2106,11 +2108,11 @@ def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistory, act
 	env.step(action)
 	penalty, errorList = errorSignal(env, envReal, hypothesis, envRealPrev)
 
-	if errorList:
-		hypothesis.display()
-		for e in errorList:
-			e.display()
-			print ""
+	# if errorList:
+		# hypothesis.display()
+		# for e in errorList:
+			# e.display()
+			# print ""
 	# else:
 		# print "No error"
 		# embed()
