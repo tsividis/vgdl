@@ -132,7 +132,7 @@ class _TestAgent(unittest.TestCase):
 		self.assertFalse(theoriesEqual(theory1, theory2), display)
 
 	def assertAgentHasTheory(self, theory):
-		self.assertTrue(theoryInHypotheses(theory, self.agent.hypotheses), 'Theory not in hypotheses: \n%s' % theory)
+		self.assertTrue(theoryInHypotheses(theory, self.agent.hypotheses), 'Theory not in hypotheses: \n%s' % theory._string(False, True, False))
 
 
 	def assertTheoryBelowEpsilonError(self, hypothesis, epsilon=0.01):
