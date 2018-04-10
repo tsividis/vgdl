@@ -77,7 +77,8 @@ avatarActions = {
 class GridPhysics():
     """ Define actions and key-mappings for grid-world dynamics. """
     def passiveMovement(self, sprite):
-        # print "passive movement for", sprite.name
+        # if sprite.colorName=='BLACK':
+            # print "passive movement for", sprite
         if sprite.speed is None:
             speed = 1
         else:
@@ -550,15 +551,13 @@ class Chaser(RandomNPC): ##
 
 
     def update(self, game):
-        VGDLSprite.update(self, game) # This increments self.lastmove by 1
+        VGDLSprite.update(self, game, random_npc=True) # This increments self.lastmove by 1
 
         options = []
-        position_options = {}
 
         for target in self._closestTargets(game):
             options.extend(self._movesToward(game, target))
         if len(options) == 0:
-            # options = BASEDIRS
             options = [(0,0)]
         self.physics.activeMovement(self, random.choice(options))
 

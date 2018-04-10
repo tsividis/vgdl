@@ -308,7 +308,7 @@ class Agent:
 			# [K_RIGHT, K_UP]
 			# [K_UP, K_UP, K_UP, K_UP]
 			# [K_LEFT, K_UP, K_UP, K_UP, K_UP]
-			[K_UP]*8
+			[K_LEFT]*8
 			# [0]*20
 			# [K_DOWN, K_LEFT]+[K_RIGHT]*23+[K_UP]*3
 		]
@@ -1028,7 +1028,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				yPrev = sPrev.rect.top/d
 
 				## if the sprite was allowed to move according to the theory
-				if sA.lastmove%theory.spriteObjects[sA.colorName].args['cooldown']:
+				if sA.lastmove%theory.spriteObjects[sA.colorName].args['cooldown']==0:
 					positionOptions = [(xPrev, yPrev), (xPrev+sA_speed, yPrev), (xPrev-sA_speed, yPrev), (xPrev, yPrev+sA_speed), (xPrev, yPrev-sA_speed)]
 				else:
 					positionOptions = [(xPrev, yPrev)]
@@ -1054,7 +1054,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				sA.stype = theory.classes[stype][0].colorName
 				sA.fleeing = theory.spriteObjects[sA.colorName].args['fleeing']
 				
-				if sA.lastmove%theory.spriteObjects[sA.colorName].args['cooldown']:
+				## the lastmove+1 is becuase of the *very* weird nature of the update function for Chaser.
+				if (sA.lastmove+1)%theory.spriteObjects[sA.colorName].args['cooldown']==0:
 					closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
 					if not closestTargets:
 						closestTargets = [(sPrev.rect.left/d, sPrev.rect.top/d)]

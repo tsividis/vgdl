@@ -105,10 +105,10 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                            1 w
 w                            1 w
-w           k                  w
-w  k      wwwwww               w
-w      s                  3 3  w
-w                A     s       w
+w      4           A           w
+w                              w
+w          4              3 3  w
+w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -264,7 +264,7 @@ BasicGame
         box5 > Immovable color=LIGHTBLUE
         flicker > Flicker timeout=1 color=ORANGE
         random > RandomNPC color=PURPLE speed=1 cooldown=3
-        chaser > Chaser color=BLACK speed=1 cooldown=2 stype=avatar
+        chaser > Chaser color=BLACK speed=1 cooldown=4 stype=avatar fleeing=True
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         missile > Missile
             sam  > orientation=UP color=BLUE singleton=False cooldown=1
