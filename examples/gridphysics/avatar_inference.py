@@ -70,6 +70,78 @@
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
+#[0]*10
+## distinguishing between random and missiles
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                     4      1 w
+# w                              w
+# w   4                          w
+# w                         3 3  w
+# w         s    s A             w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+#[0]*10
+# combine with sam wall reverseDirection
+# we do learn reverseDirection, but a few
+# incorrect Chaser theories have low error even though they're totally wrong.
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w         wwwwww               w
+# w                         3 3  w
+# w         s    s A             w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w        4                   1 w
+# w              k             1 w
+# w      4           A           w
+# w                              w
+# w          k              3 3  w
+# w                       s  s   w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w         wwwwww               w
+# w                              w
+# w       5      5 A 3  3        w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+
+#[0]*10
+#randomnpc inference, just more sprites
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w    4                       1 w
+# w         4           4      1 w
+# w                              w
+# w   4         4                w
+# w                         3 3  w
+# w                A             w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+## combine with box2 avatar killsprite.
+## if you use box2 avatar bounceForward this could be
+## a good test of whether re-doing testAndExpand helps.
 # #up, up, down
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -108,51 +180,98 @@
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
+#up, up, up, right
+## tests whether we can learn randomNPCs and know that the box we push isn't a randomNPC
+## i.e., a good test of randomNPC likelihood and theory prior().
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
-# w                              w
-# w                              w
-# w                              w
-# w            1 C               w
-# w                              w
+# w                           3  w
+# w                 2            w
+# w          4                3  w
+# w                      2       w
+# w     4                        w
 # w                      A       w
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-# super wacky level: add
-# cannon sam > stepBack
-# sam cannon > stepBack
-#, then push a cannon into the missles from another
-# spoiler: it teleports back to where it started O.o
+# Not getting this one because we stepBack with the missile
+## but our best theories are almost right.
+#left, left, left, left, left, left, left, 0
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w            c    A            w
+# w  c                           w
+# w                         3 3  w
+# w         c                    w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+# #up, up
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w              m               w
+# w              m               w
+# w              A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+# works for changeResource, killIfOtherHasMore/Less.
+# currently broken by invisiblemedicine and (separately) the avatar dying
+#up, up, up, up
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
-w                            1 w
-w                            1 w
-w              c   A           w
-w  c                           w
-w                         3 3  w
-w         c                    w
+w              p             1 w
+w              m             1 w
+w              m               w
+w              p               w
+w              A          3 3  w
+w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
+# testing when poisons make you step back
+# works
+# #left, up, up, up, up
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w              p             1 w
+# w              m             1 w
+# w              m               w
+# w                              w
+# w             pA          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 game="""
 BasicGame
     SpriteSet
+        avatar  > MovingAvatar color=DARKBLUE
         cloner > Immovable color=GREEN
         box    > Immovable color=WHITE # orientation=RIGHT cooldown=1
         box2 > Immovable color=GREEN
         box3 > Immovable color=YELLOW
+        box5 > Immovable color=LIGHTBLUE
         flicker > Flicker timeout=1 color=ORANGE
-        random > RandomNPC color=PURPLE speed=1 cooldown=1
-        chaser > Chaser color=BLACK speed=1 cooldown=1 stype=box
-        avatar  > MovingAvatar color=DARKBLUE 
+        random > RandomNPC color=PURPLE speed=1 cooldown=2
+        chaser > Chaser color=BLACK speed=1 cooldown=4 stype=avatar fleeing=True
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         missile > Missile
             sam  > orientation=UP color=BLUE singleton=False cooldown=1
         wall > Immovable color=DARKGRAY
+        medicine > Resource limit=4 color=GREEN
+        poison > Resource limit=3 color=PINK
+        invisiblemedicine > Resource limit=4 color=PURPLE
     LevelMapping
         C > cloner
         F > flicker
@@ -161,23 +280,37 @@ BasicGame
         2 > box2
         3 > box3
         4 > random
+        5 > box5
         w > wall
         c > cannon
         s > sam
+        k > chaser
         A > avatar
+        m > medicine
+        p > poison
     InteractionSet
         avatar wall > stepBack
         # box avatar > nothing
         box avatar > transformTo stype=box2
-        # cannon sam > stepBack
-        # sam cannon > stepBack
-        box2 avatar > killSprite
+        # box2 avatar > killSprite
         # box2 avatar > bounceForward
         box3 avatar > killSprite
+        avatar box5 > killSprite
         cannon avatar > bounceForward
         avatar sam > bounceForward
         cannon sam > stepBack
         sam cannon > stepBack
+        sam wall > reverseDirection
+        medicine avatar > killSprite
+        # avatar medicine > changeResource resource=invisiblemedicine value=1
+        # avatar poison > changeResource resource=invisiblemedicine value=-1
+        avatar poison> killIfHasMore resource=medicine limit=0
+        # poison avatar > killIfOtherHasMore resource=invisiblemedicine limit=0
+        avatar medicine > changeResource resource=medicine value=1
+        avatar poison > changeResource resource=medicine value=-1
+        # poison avatar > killIfOtherHasMore resource=medicine limit=0 
+        # avatar poison > stepBack
+        # avatar poison > killIfHasMore resource=medicine limit=0
 
     TerminationSet
         SpriteCounter stype=box3 limit=0 win=True

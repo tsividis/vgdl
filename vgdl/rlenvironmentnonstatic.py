@@ -84,6 +84,8 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         self._game.keystate = defaultdict(bool)
         self._game.metabolic_score = 0
         self.game_name = None
+        self.ID = uuid.uuid1()
+
 
     # def __init__(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, actionset=BASEDIRS, positions=None, **kwargs):
     #     lp = LineProfiler()

@@ -35,6 +35,16 @@ wwwwwwwwww
 """
 
 
+changeScoreLevel = """
+wwwwwwwwww
+w        w
+w    g   w
+w    g   w
+w    A   w
+wwwwwwwwww
+"""
+
+
 AvatarLevel = """
 wwwwwwwwww
 w       gw
@@ -57,7 +67,7 @@ wwwwwwwwww
 """
 
 
-level = teleportLevel
+level = changeScoreLevel
 
 game="""
 BasicGame
@@ -77,7 +87,7 @@ BasicGame
         goal > Passive color=GOLD
         armor > Resource limit=1 color=GRAY
         portal > Portal color=LIGHTGREEN stype=exit1
-        exit1 > Immovable color=GREEN
+        exit1 > ResourcePack color=GREEN
 
     LevelMapping
         f > flicker
@@ -103,6 +113,7 @@ BasicGame
         # SpriteCounter stype=box3 limit=0 win=False
         SpriteCounter stype=goal limit=0 win=True
         # Termination
+{}
 """
 
 interactionSetAll = """
@@ -116,7 +127,9 @@ interactionSetAll = """
         # avatar sam > bounceForward
         avatar wall > stepBack
         avatar armor > changeResource resource=armor value=1
-        medicine avatar > collectResource
+        # medicine avatar > collectResource
+        medicine avatar > killSprite
+        avatar medicine > changeResource resource=medicine value=1
         avatar poison > changeResource resource=medicine value=-1
         poison avatar > killIfOtherHasMore resource=medicine limit=0
         sam sam > killSprite
@@ -135,7 +148,6 @@ interactionSetAll = """
 """
 
 game = game.format(interactionSetAll)
-
 level_game_pairs = [[game, level]]
 
 if __name__ == "__main__":

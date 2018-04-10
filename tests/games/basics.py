@@ -36,7 +36,6 @@ reverseDirection
 '''
 
 # Win the game when you destroy all the boxes
-
 sSet = """
 SpriteSet
     box    > Immovable color=WHITE 
@@ -71,6 +70,75 @@ tSet2 = """
 TerminationSet
     # SpriteCounter stype=box limit=0 win=True
     SpriteCounter stype=avatar limit=0 win=False
+"""
+game1 = """
+BasicGame
+    SpriteSet
+        box    > Immovable color=WHITE 
+        avatar  > MovingAvatar color=DARKBLUE
+        wall > Immovable color=DARKGRAY
+    LevelMapping
+        A > avatar
+        b > box
+    InteractionSet
+        box avatar > killSprite
+
+        avatar wall > stepBack
+        wall avatar > stepBack
+        
+        wall box > stepBack
+        box wall > stepBack
+
+        # avatar box > stepBack
+        # box avatar > stepBack
+
+        avatar EOS > stepBack
+        wall EOS > stepBack
+        box EOS > stepBack
+
+        avatar avatar > stepBack
+        box box > stepBack
+        wall wall > stepBack
+
+    TerminationSet
+        SpriteCounter stype=box limit=0 win=True
+        SpriteCounter stype=avatar limit=0 win=False
+"""
+
+# Don't win the game when you destroy all the boxes
+game2 = """
+BasicGame
+    SpriteSet
+        box    > Immovable color=WHITE 
+        avatar  > MovingAvatar color=DARKBLUE
+        wall > Immovable color=DARKGRAY
+    LevelMapping
+        A > avatar
+        b > box
+    InteractionSet
+        avatar wall > stepBack
+        box avatar > killSprite
+
+        wall avatar > stepBack
+        wall box > stepBack
+
+        box wall > stepBack
+        # avatar box > stepBack
+        # box avatar > stepBack
+
+
+        avatar EOS > stepBack
+        wall EOS > stepBack
+        box EOS > stepBack
+
+        avatar avatar > stepBack
+        box box > stepBack
+        wall wall > stepBack
+
+    TerminationSet
+        # SpriteCounter stype=box limit=0 win=True
+        SpriteCounter stype=avatar limit=0 win=False
+
 """
 
 '''

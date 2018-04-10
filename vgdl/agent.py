@@ -35,9 +35,11 @@ import heapq
 
 ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPACE: (0,0), 0: (0,0)}
 
-# This makes experience replay run multiple samples 
-# for each time step if there is a Random in the theory
+# This makes experience replay score a theory on all the one-step transitions we've seen
 EXPERIENCE_REPLAY_METHOD = 'all'
+# What average likelihood do we consider adequate for passing a theory on to the next generation?
+ERRORCUTOFF = .3
+# Not active now
 NUM_SAMPLES_PER_HYPOTHESIS = 20
 
 
@@ -45,35 +47,37 @@ class errorMapEntry:
 	def __init__(self):
 		self.diagnosis = []
 		self.targetToken = None
+		self.targetTokens = []
 		self.targetClass = None
 		self.targetColor = None
 		self.intPairs = []
-		self.culpritClasses = []
 	
 	def display(self):
 		print ""
 		print "diagnosis: {}".format(self.diagnosis)
-		print "targetToken: {}".format(self.targetToken)
+		if self.targetTokens:
+			print "targetTokens: {}".format(self.targetTokens)
+		else:
+			print "targetToken: {}".format(self.targetToken)
 		print "targetClass: {}".format(self.targetClass)
 		print "targetColor: {}".format(self.targetColor)
 		# if self.targetToken is not None:
 			# print "targetColor: {}".format(self.targetToken.colorName)
 		print "intPairs: {}".format(self.intPairs)
-		print "culpritClasses: {}".format(self.culpritClasses)
 
 	def copy(self):
 		e                   = errorMapEntry()
 		e.diagnosis         = self.diagnosis
 		e.targetToken       = ccopy(self.targetToken)
+		e.targetTokens      = ccopy(self.targetTokens)
 		e.targetClass       = self.targetClass
 		e.targetColor 		= self.targetColor
 		e.intPairs          = self.intPairs
-		e.culpritClasses    = self.culpritClasses
 		
 		return e
 
 	def __eq__(self, other):
-		if self.diagnosis == other.diagnosis and self.intPairs == other.intPairs and self.culpritClasses == other.culpritClasses:
+		if set(self.diagnosis) == set(other.diagnosis) and self.targetClass == other.targetClass and sorted(self.intPairs)==sorted(other.intPairs):
 			return True
 		else:
 			return False
@@ -285,7 +289,7 @@ class Agent:
 
 	def testEpisodes(self, gameObject, epoch=0):
 		num_cores = mp.cpu_count()
-		print "num cores: {}".format(num_cores) 
+		print "num cores: {}".format(num_cores)
 		if num_cores<40:
 			print "WARNING: running on < 40 cores."
 
@@ -294,11 +298,17 @@ class Agent:
 			# [K_UP, K_UP, K_DOWN]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			# [0,0,0,0,0,0,0,0]
-
+			# [0]*6
+			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT],
+			# [K_RIGHT, K_RIGHT]
+			# [0,0, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0,0,0]
 			# [0,0,0,0,0,0,0,0,0,0,0,0]
-			[K_LEFT, K_LEFT, K_LEFT, K_LEFT]
 			# [K_RIGHT, K_UP]
+			[K_UP, K_UP, K_UP, K_UP]
+			# [K_LEFT, K_UP, K_UP, K_UP, K_UP]
+			# [K_LEFT]*8
+			# [0]*20
+			# [K_DOWN, K_LEFT]+[K_RIGHT]*23+[K_UP]*3
 		]
 
 		self.rleHistory = [[] for i in range(len(actionSequences))]
@@ -332,11 +342,12 @@ class Agent:
 					lastStep=True
 				t2 = time.time()
 				hypotheses, _ = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
-				assert len(hypotheses) > 0, "after execute step, no hypotheses were left"
+				scoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
+
 				print ""
 				print "executed step in {} seconds".format(time.time()-t2)
 				print ""
-				self.hypotheses = hypotheses
+				self.hypotheses = [tup[1] for tup in scoresAndHypotheses]
 
 			# print ">>> Embedded at the end of testEpisode"
 			embed()
@@ -390,11 +401,11 @@ class Agent:
 			if num == len(actions)-1:
 				lastStep=True
 			t2 = time.time()
-			hypotheses = self.executeStep(action, self.hypotheses, theoryRLEs, lastStep)
+			scoresAndHypotheses = self.executeStep(action, self.hypotheses, theoryRLEs, lastStep)
 			print ""
 			print "executed step in {} seconds".format(time.time()-t2)
 			print ""
-			self.hypotheses = hypotheses
+			self.hypotheses = [tup[1] for tup in scoresAndHypotheses]
 
 		print "{} time-steps took {} seconds".format(len(actions), time.time()-t1)
 		# print ">>> Embedded at the end of testEpisode"
@@ -498,8 +509,41 @@ class Agent:
 
 		return newRle
 
-	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, lastStep=False):
+	def scoreAndFilterTheories(self, newTheories, episode_num):
+		penalties = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], self.actionHistory[:episode_num+1],
+			self.symbolDict, method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
 
+		scoreAndTheoryTuples = zip(penalties, newTheories)
+		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
+
+		for num, sh in reversed(list(enumerate(scoreAndTheoryTuples))):
+			if num > 100:
+				continue
+			print "Theory: {} | Error: {}".format(num, sh[0])
+			sh[1].display()
+		scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
+
+		scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
+			proportionOfSpriteTheories=None, errorCutoff=ERRORCUTOFF)]
+
+		# filter out any theory whose added complexity does not improve its error
+		#	i.e. between two theories of equal perfomance, ignore the less likely/more complex one
+		errorLevelToMinPrior = dict()
+		epsilon = 0 # you never know with floats... could be necessary later
+		for score, theory in scoresAndHypotheses:
+			if score not in errorLevelToMinPrior or theory.prior() < errorLevelToMinPrior[score]:
+				errorLevelToMinPrior[score] = theory.prior()
+		scoresAndHypotheses = [sh for sh in scoresAndHypotheses if sh[1].prior() <= errorLevelToMinPrior[sh[0]] + epsilon]
+
+		print "Experience replay complete."
+		for num, sh in enumerate(scoresAndHypotheses):
+			print "Theory: {} | Error: {}".format(num, sh[0])
+		print ""
+		print "{} survived".format(len(scoresAndHypotheses))
+
+		return scoresAndHypotheses , scoreAndTheoryTuples
+
+	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, lastStep=False):
 
 		theory_change_flag = False
 
@@ -533,8 +577,8 @@ class Agent:
 		newTheories = []
 	
 		for num, env in enumerate(theoryRLEs):
-			theories = testAndExpand(theoryRLEs, self.hypotheses, action, self.rle, envRealPrev, num, \
-				self.rleHistory[episode_num], self.actionHistory[episode_num], self.symbolDict, self.bestSpriteTypeDict)
+			theories = testAndExpand(env, self.hypotheses[num], action, self.rle, envRealPrev, self.rleHistory[episode_num], \
+					self.actionHistory[episode_num], self.symbolDict, self.bestSpriteTypeDict)
 			newTheories.extend(theories)
 
 
@@ -549,40 +593,36 @@ class Agent:
 		print ""
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
 
+		bestScoresAndHypotheses = []
+
 		if newTheories:
+			bestScoresAndHypotheses , scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
 
-			penalties = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], self.actionHistory[:episode_num+1],
-				self.symbolDict, method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
-
-			scoreAndTheoryTuples = zip(penalties, newTheories)
-			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], len(x[1].interactionSet)))
-
-			for num, sh in reversed(list(enumerate(scoreAndTheoryTuples))):
-				if num > 100:
-					continue
-				print "Theory: {} | Error: {}".format(num, sh[0])
-				sh[1].display()
-			scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
-
-			if not lastStep:
-				scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-					proportionOfSpriteTheories=None, errorCutoff=.2)]
-			else:
-				scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-					proportionOfSpriteTheories=None, errorCutoff=.2)]
-
-			print "Experience replay complete."
-			for num, sh in enumerate(scoresAndHypotheses):
-				print "Theory: {} | Error: {}".format(num, sh[0])
-			print ""
-			hypotheses = [sh[1] for sh in scoresAndHypotheses]
-			print "{} survived".format(len(hypotheses))
-
-			if len(hypotheses) == 0:
-				print "0 hypotheses survived filter"
+			if len(bestScoresAndHypotheses) == 0:
+				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
 				embed()
+
+				retryTheories = [t for t in newTheories if hasattr(t, 'mostRecentEdit') and t.mostRecentEdit == 'spriteInduction']
+				theoryRLEs = VrleInitPhase(retryTheories, envRealPrev, self.symbolDict)
+				for h in retryTheories:
+					h.dryingPaint = set()
+
+				newerTheories = []
+
+				for num, env in enumerate(theoryRLEs):
+					theories = testAndExpand(env, retryTheories[num], action, self.rle, envRealPrev, self.rleHistory[episode_num], \
+							self.actionHistory[episode_num], self.symbolDict, self.bestSpriteTypeDict)
+					newerTheories.extend(theories)
+
+				newerTheories = list(set(newerTheories))
+				self.allTheories.extend(newerTheories)
+
+				bestScoresAndHypotheses , scoreAndTheoryTuples = self.scoreAndFilterTheories(newerTheories, episode_num)
 		else:
 			print "Got no new theories"
+			# just use input hypotheses if no new Theories are generated
+			# TODO: do we really need to or will they have been filtered before?
+			# bestScoresAndHypotheses , scoreAndTheoryTuples = self.scoreAndFilterTheories(hypotheses, episode_num)
 
 		# print "just expanded all theories"
 		# embed()
@@ -590,10 +630,14 @@ class Agent:
 		self.statesEncountered.append(self.rle._game.getFullState())
 		self.rle._game.sprite_appearances = []
 
-		for h in hypotheses:
+		for s , h in bestScoresAndHypotheses:
 			h.dryingPaint = set()
 
-		return hypotheses, scoresAndHypotheses
+		if len(bestScoresAndHypotheses) == 0:
+			print "second attempt failed, 0 theories survived filter"
+			embed()
+
+		return bestScoresAndHypotheses
 
 	########################################################################
 	######## TESTING HYPOTHESES BY RANDOM SAMPLING OR OTHER METHODS ########
@@ -678,17 +722,22 @@ def setSpriteState(sprite, matchingSprite, hypothesis):
 		print "WARNING: didn't find matching sprite in setSpriteState; this shouldn't happen"
 		embed()
 
-	sprite.rect 		= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
+	sprite.rect 	= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
 	# sprite.lastrect = sprite.rect
-	sprite.lastrect 	= pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
+	sprite.lastrect = pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
 	# if sprite.rect.left != sprite.lastrect.left and sprite.rect.top != sprite.lastrect.top and abs(sprite.rect.left  - sprite.lastrect.left ) != abs(sprite.rect.top - sprite.lastrect.top):
 		# print "in setVrleState -- illegal rect/lastrect pair"
 		# embed()
-	sprite.lastmove 	= matchingSprite.lastmove
-	# sprite.age 			= matchingSprite.age
+	sprite.lastmove = matchingSprite.lastmove
+	# sprite.age 	= matchingSprite.age
 	sprite.ID = matchingSprite.ID
 	sprite.resources = defaultdict(int)
 	for rcolor in matchingSprite.inventory.keys():
+		if rcolor not in hypothesis.spriteObjects:
+			continue
+			# print 'in setSpriteState: next line is going to crash'
+			# embed()
+			# maybe do sprite induction here on purple?
 		sprite.resources[hypothesis.spriteObjects[rcolor].className] = matchingSprite.inventory[rcolor][0]
 
 	# in VGDL, only things which move passively have an orientation that isn't (0,0)
@@ -740,11 +789,7 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False, debug=False):
 			# first make the new (vrle) env have the correct number of each thing
 			vrleSpriteCount = len(Vrle._game.sprite_groups[classKey]) - len([s for s in Vrle._game.kill_list if s.colorName==color])
 			rleSpriteCount = len(rle._game.observation['trackedObjects'][color])
-# <<<<<<< HEAD
-# 			old_kill_list = Vrle._game.kill_list
-# 			Vrle._game.kill_list = []
-# =======
-# >>>>>>> testing
+
 			if vrleSpriteCount > rleSpriteCount:
 				# just delete extraneous ones from the end by adding them to the kill_list
 				tmp_kill_list.extend(Vrle._game.sprite_groups[classKey][rleSpriteCount:])
@@ -761,28 +806,9 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False, debug=False):
 			# Now copy over sprite state (if we have any left of that type)
 			if not Vrle._game.sprite_groups[classKey]:
 				continue
-# <<<<<<< HEAD
-# 			color = Vrle._game.sprite_groups[classKey][0].colorName
-# 			for i in range(rleSpriteCount):
-# 				try:
-# 					setSpriteState(Vrle._game.sprite_groups[classKey][i], rle._game.observation['trackedObjects'][color][i], hypothesis)
-# 				except IndexError:
-# 					embed()
-		
-# =======
 
 			for i in range(min(len(Vrle._game.sprite_groups[classKey]), rleSpriteCount)):
 				setSpriteState(Vrle._game.sprite_groups[classKey][i], rle._game.observation['trackedObjects'][color][i], hypothesis)
-# >>>>>>> testing
-
-		# if 'transformTo' in [r.interaction for r in hypothesis.interactionSet] and len(rle._game.sprite_groups['box2'])==3:
-			# print "transformTo in hypothesis"
-			# embed()
-
-		## TODO:
-		# Make sure you can copy sprites appropriately
-		# first call to initializeVrle in experienceReplay() has to make a map with at least one of every sprite type
-		# make sure sprites in rle match sprites in vrle (by number, not just position)
 
 		# if 'flipDirection' in [r.interaction for r in hypothesis.interactionSet]:
 			# print "flipDirection in setVrleState"
@@ -824,6 +850,7 @@ def initializeVrle(hypothesis, stateToSet, symbolDict, theoryRLE=None, makeIniti
 	## Don't do any of the rest if we have an ungrammatical hypothesis caused by num(avatars)>1.
 	if len(stateToSet._game.observation['trackedObjects'][hypothesis.classes['avatar'][0].colorName])>1:
 		print "Warning. In initializeVrle. Got more than one avatar. Returning None as Vrle."
+		embed()
 		Vrle = None
 		return Vrle
 	
@@ -899,10 +926,14 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 	keys: (class1, class2). values: a diagnostic error signal
 	"""
 
-	#likelihood version
-	e_dist = 1e-10
-	e_inventory = 1e-10
+	# grid spacing
+	d = 30.
+	
+	# likelihood version
+	e_dist 			= 1e-10
+	e_inventory 	= 1e-10
 	e_disappearance = 1e-10
+	e_score			= 1e-10
 
 	# Initialization
 	total_penalty = 0.
@@ -932,90 +963,150 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		except:
 			print "targetClass filter in errorSignal failed"
 			embed()
-	## Test output
-	# print '>>> matched_sprites:'
-	# for i in range(len(matched_sprites)):
-		# if True: #matched_sprites[i][2]!=0:
-			# print matched_sprites[i]
-	# print '>>> lonely_sprites_envA:', [s for s in lonely_sprites_envA]
-	# print '>>> lonely_sprites_envB:', [s for s in lonely_sprites_envB]
 
 	## Penalize distance and additional/missing sprites
 	for t in matched_sprites:
-		## Distance penalty
+		
+		## Flag used to skip errorMap creation if we're looking at the behavior of a
+		## stochastic sprite whose observed position was within the space of possible positions
+		## Prevents trying to fix the same problem over and over.
+		reportError = True
+		
 		sA, sB = t[0], t[1] #sprites in envA, envB      
 		dist = t[2] #distance to sprite in envB
+		sPrev, dist_ts = find_sPrev(sB, envB, envPrev) #Previous location of our sprite
+
 		sA_type = theory.spriteObjects[sA.colorName].vgdlType
-		d = 30. # grid spacing
 
-		# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
-		if 'Random' in str(sA_type):   
-
-
-			if 'speed' in theory.spriteObjects[sA.colorName].args.keys():
-				sA_speed = theory.spriteObjects[sA.colorName].args['speed']
-			elif 'speed' in theory.spriteObjects[sA.colorName].__dict__.keys():
-				sA_speed = theory.spriteObjects[sA.colorName].speed
-			else:
-				## this only happens when you initialize the real theory for testing but haven't explicitly set the speed
-				## in the VGDL description
-				sA_speed = 1
-			sPrev, dist_ts = find_sPrev(sB, envB, envPrev) #sA in previous environment
-			if sPrev is None:
-				continue
-			xB = sB.rect.left/d
-			yB = sB.rect.top/d
-			xPrev = sPrev.rect.left/d
-			yPrev = sPrev.rect.top/d
-
-			positionOptions = [(xPrev, yPrev), (xPrev+sA_speed, yPrev), (xPrev-sA_speed, yPrev), (xPrev, yPrev+sA_speed), (xPrev, yPrev-sA_speed)]
-			total_penalty += np.log(1./len(positionOptions)-e_dist) if (xB, yB) in positionOptions else np.log(0.+e_dist) #likelihood
-		elif 'Missile' in str(sA_type):
-			# if 'flipDirection' in [r.interaction for r in theory.interactionSet]:
-				# print "found flipDirection"
-				# embed()
-			total_penalty += np.log(1.-e_dist) if dist==0. else np.log(0.+e_dist) #likelihood
-		elif 'Chaser' in str(sA_type):
-			
-			sPrev, _ = find_sPrev(sB, envB, envPrev)
-			xA = sA.rect.left/d
-			yA = sA.rect.top/d
-			if sPrev is None:
-				continue
-
-			stype = theory.spriteObjects[sA.colorName].args['stype']
-			sA.stype = theory.classes[stype][0].colorName
-			sA.fleeing = theory.spriteObjects[sA.colorName].args['fleeing']
-			try:
-				closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
-			except:
-				print "tried to find chaseroptions in errorSignal"
-				embed()
-
-			#New 2/12
-			del sA.stype
-			del sA.fleeing
-
-			total_penalty += np.log(1./len(closestTargets)-e_dist) if (xA,yA) in closestTargets else np.log(0.+e_dist) # likelihood
-
-		# All of the other types are deterministic
-		else:
-			total_penalty += np.log(1.-e_dist) if t[2]==0. else np.log(0+e_dist)
-
+		## Calculate inventory penalty for the sprite
 		inventory_penalty = 0
 		keys = list(set(t[0].inventory.keys()+t[1].inventory.keys()))
-
 		for k in keys:
 			t0_k = t[0].inventory[k] if k in t[0].inventory.keys() else (0,0)
 			t1_k = t[1].inventory[k] if k in t[1].inventory.keys() else (0,0)
 			inventory_penalty += abs(t0_k[0]-t1_k[0])
-
 		total_penalty += np.log((e_inventory)**inventory_penalty) #likelihood
 
+		# if dist>0 and 'flipDirection' in [r.interaction for r in theory.interactionSet]:
+			# print "got flipDirection"
+			# embed()
+
+		## If a teleport event has taken place
+		if dist>0 and 'teleportToExit' in [r.interaction for r in theory.interactionSet]:
+			sA_class = theory.spriteObjects[sA.colorName].className
+			teleportEntryColors = [theory.classes[r.slot2][0].colorName for r in theory.interactionSet if r.interaction=='teleportToExit' and r.slot1==sA_class]
+			teleportExitClasses = [theory.spriteObjects[colorName].args['stype'] for colorName in teleportEntryColors]
+			teleportExitColors = [theory.classes[c][0].colorName for c in teleportExitClasses]
+			teleportEntryLocs, teleportExitLocs = [],[]
+			for entryType in teleportEntryColors:
+				teleportEntryLocs.extend([s for s in envPrev._game.observation['trackedObjects'][entryType]])
+			for exitType in teleportExitColors:
+				teleportExitLocs.extend([(s.rect.left, s.rect.top) for s in envB._game.observation['trackedObjects'][exitType]])
+			## If we've ended up at a purported exit and we could have gotten to an entry with a single step,
+			## consider that we teleported and don't penalize the distance any other way.
+			if (sB.rect.left, sB.rect.top) in teleportExitLocs and any([manhattanDist2(sPrev,s)<=sPrev.speed for s in teleportEntryLocs]):
+				total_penalty += np.log(1.-e_dist)
+				continue
+
+		if any([stochasticType in str(sA_type) for stochasticType in ['Random', 'Chaser']]):
+			
+			# If RandomNPC: compare sB position to where it could have been given the hypothetical speed and random direction
+			if 'Random' in str(sA_type):
+				if 'speed' in theory.spriteObjects[sA.colorName].args.keys():
+					sA_speed = theory.spriteObjects[sA.colorName].args['speed']
+				elif 'speed' in theory.spriteObjects[sA.colorName].__dict__.keys():
+					sA_speed = theory.spriteObjects[sA.colorName].speed
+				else:
+					## this only happens when you initialize the real theory for testing but haven't explicitly set the speed
+					## in the VGDL description
+					sA_speed = 1
+
+				if sPrev is None:
+					continue
+				xB = sB.rect.left/d
+				yB = sB.rect.top/d
+				xPrev = sPrev.rect.left/d
+				yPrev = sPrev.rect.top/d
+
+				## if the sprite was allowed to move according to the theory
+				if sA.lastmove%theory.spriteObjects[sA.colorName].args['cooldown']==0:
+					positionOptions = [(xPrev, yPrev), (xPrev+sA_speed, yPrev), (xPrev-sA_speed, yPrev), (xPrev, yPrev+sA_speed), (xPrev, yPrev-sA_speed)]
+				else:
+					positionOptions = [(xPrev, yPrev)]
+				
+				if (xB,yB) in positionOptions:
+					total_penalty += np.log(1.-e_dist)
+					reportError = False
+				else:
+					total_penalty += np.log(e_dist)
+					errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory)
+
+				# total_penalty += np.log(1./len(positionOptions)-e_dist) if (xB, yB) in positionOptions else np.log(0.+e_dist) #likelihood
+				# total_penalty += np.log(1.-e_dist) if (xB,yB) in positionOptions else np.log(e_dist)
+			
+			elif 'Chaser' in str(sA_type):
+
+				xB = sB.rect.left/d
+				yB = sB.rect.top/d
+				if sPrev is None:
+					continue
+
+				stype = theory.spriteObjects[sA.colorName].args['stype']
+				sA.stype = theory.classes[stype][0].colorName
+				sA.fleeing = theory.spriteObjects[sA.colorName].args['fleeing']
+				
+				## the lastmove+1 is becuase of the *very* weird nature of the update function for Chaser.
+				if (sA.lastmove+1)%theory.spriteObjects[sA.colorName].args['cooldown']==0:
+					closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
+					if not closestTargets:
+						closestTargets = [(sPrev.rect.left/d, sPrev.rect.top/d)]
+				else:
+					closestTargets = [(sPrev.rect.left/d, sPrev.rect.top/d)]
+
+				del sA.stype
+				del sA.fleeing
+
+				if (xB, yB) in closestTargets:
+					# total_penalty += np.log(1./len(closestTargets)-e_dist)
+					total_penalty += np.log(1.-e_dist)
+					reportError = False
+				else:
+					total_penalty += np.log(e_dist)
+					errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory)
+				
+				# if sA.stype=='WHITE' and not sA.fleeing and sA.colorName=='BLUE':
+					# print "chasing white."
+					# print (sPrev.rect.left/d, sPrev.rect.top/d)
+					# print (xB,yB), closestTargets
+					# print reportError
+					# embed()
+
+				# total_penalty += np.log(1./len(closestTargets)-e_dist) if (xA,yA) in closestTargets else np.log(0.+e_dist) # likelihood
+
+		# All of the other types are deterministic
+		else:
+			if t[2]==0.:
+				total_penalty += np.log(1.-e_dist)
+				reportError = False
+			else:
+				total_penalty += np.log(e_dist)
+
+			# total_penalty += np.log(1.-e_dist) if t[2]==0. else np.log(0+e_dist)
+
+		if reportError:
+			# Determine errorMapEntry object for position mismatch problem
+			errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory)
+			errorMap.extend(errs)
+	
+	# if 'BLUE' in theory.spriteObjects and 'Missile' in str(theory.spriteObjects['BLUE'].vgdlType):
+		# if any(['unexpectedPosition' in e.diagnosis and e.targetColor=='BLUE' for e in errorMap]):
+			# print "got unexpectedPosition"
+			# embed()
 	# Missing/additional/transformation penalty
 	total_penalty += np.log((e_disappearance)**( len(lonely_sprites_envA) + len(lonely_sprites_envB) )) #likelihood
 
-	# if envA._game.observation['score'] != envB._game.observation['score']:
+	if envA._game.observation['score'] != envB._game.observation['score']:
+		total_penalty += np.log(e_score)
 		# total_penalty += p_score*abs(envA._game.observation['score']-envB._game.observation['score'])
 
 	total_penalty = 1.-np.exp(total_penalty)
@@ -1027,21 +1118,39 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 	# 1) Position mismatch: Things have moved.
 
 	# Case A: matched sprites have different positions from what predicted
-	for t in matched_sprites:
-		dist_envs = t[2] #distance between sprites in real and theory environments
-		if dist_envs == 0.: #sprites located where expected -> no conflict
-			continue
-		sA = t[0]
-		sB = t[1]
-		posCurr = envB._rect2pos(sB.rect) #current position of sprite
-		# Find sprite corresponding to sB in previous time step
-		sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
-		if sPrev == None:
-			warnings.warn('sPrev not found in position mismatch error')
-			continue
-		# Determine errorMapEntry object for position mismatch problem
-		errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory)
-		errorMap.extend(errs)
+	# for t in matched_sprites:
+	# 	dist_envs = t[2] #distance between sprites in real and theory environments
+	# 	if dist_envs == 0.: #sprites located where expected -> no conflict
+	# 		continue
+	# 	sA = t[0]
+	# 	sB = t[1]
+
+	# 	sA_type = theory.spriteObjects[sA.colorName].vgdlType
+	# 	# For stochastic types don't generate errorMap if behavior is consistent with possible movements.
+	# 	if any([stochasticType in str(sA_type) for stochasticType in ['Random', 'Chaser']]):
+	# 		xB = sB.rect.left/d
+	# 		yB = sB.rect.top/d
+	# 		if 'Random' in str(sA_type):
+	# 			if (xB,yB) in positionOptions:
+	# 				continue
+	# 			# else:
+	# 				# print "random not in positionOptions"
+	# 				# embed()
+	# 		if 'Chaser' in str(sA_type):
+	# 			if (xB,yB) in closestTargets:
+	# 				continue
+	# 			# else:
+	# 				# print "chaser not in positionOptions"
+	# 				# embed()
+
+	# 	# Find sprite corresponding to sB in previous time step
+	# 	sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
+	# 	if sPrev == None:
+	# 		warnings.warn('sPrev not found in position mismatch error')
+	# 		continue
+	# 	# Determine errorMapEntry object for position mismatch problem
+	# 	errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory)
+	# 	errorMap.extend(errs)
 
 	# Case B: Sprite moved in real environment, but we predicted a destruction
 	# For this, we check if lonely envB sprite has match in envPrev (and pass to (2) if not)
@@ -1080,7 +1189,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				appeared_sprites_envB.append(sB)
 				continue
 		# Now we are completely sure that sprite in envA has been erroneously removed
-		errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts)
+		errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory)
 		errorMap.extend(errs)
 
 	# 2) Unexpected destruction/appearance/transformation
@@ -1213,49 +1322,33 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 	## Share information across errorMap items and make a unique list
 	if len(errorMap) > 1:
-		diagnosis_class_pairs = list(set([(e.diagnosis[0], e.targetClass) for e in errorMap]))
+		
+		diagnosis_class_pairs = list(set([tuple(e.diagnosis+[e.targetClass]) for e in errorMap]))
 		for dcp in diagnosis_class_pairs:
-			int_pairs = [item for sublist in [e.intPairs for e in errorMap if e.diagnosis[0] == dcp[0] and e.targetClass == dcp[1]] for item in sublist]
+			relatedErrorMaps = [e for e in errorMap if tuple(e.diagnosis)==dcp[0:-1] and e.targetClass==dcp[-1]]
+			# int_pairs = [item for sublist in [e.intPairs for e in errorMap if e.diagnosis[0] == dcp[0] and e.targetClass == dcp[1]] for item in sublist]
+			int_pairs = [item for sublist in [e.intPairs for e in relatedErrorMaps] for item in sublist]
 			int_pairs = list(set(int_pairs))
+			targetTokens = list(set([e.targetToken for e in relatedErrorMaps]))
 			## give int_pairs to each matching errorMap item.
 			for e in errorMap:
-				if e.diagnosis[0] == dcp[0] and e.targetClass == dcp[1]:
+				if tuple(e.diagnosis) == dcp[0:-1] and e.targetClass == dcp[1]:
 					e.intPairs = int_pairs
-
+					e.targetTokens = targetTokens
 		lst = [errorMap[0]]
 		for e in errorMap[1:]:
-			if [not(e.diagnosis == l.diagnosis and e.targetClass == l.targetClass and e.targetToken == l.targetToken) for l in lst]:
+			if all([not(e.diagnosis == l.diagnosis and e.targetClass == l.targetClass) for l in lst]):
+			# if all([not(e.diagnosis == l.diagnosis and e.targetClass == l.targetClass and e.targetToken == l.targetToken) for l in lst]):
 				lst.append(e)
-
+		# print "filtered errorMap"
+		# embed()
 		errorMap = lst
 
+	# if len(errorMap)==4:
+		# print "found 4 errorMaps"
+		# embed()
 	## Sort so that you fix errors involving any new classes first when you build theories.
-	errorMap = sorted(errorMap, key=lambda x: x.targetClass!='unknown')
-
-	## convert color names in targetClass and intPairs to theory class names:
-	# for e in errorMap:
-	# 	e.targetClass = theory.spriteObjects[e.targetClass].className if e.targetClass in theory.spriteObjects.keys() else 'unknown'
-
-	# 	if e.intPairs:
-	# 		newIntPairs = []
-	# 		for pair in e.intPairs:
-				
-	# 			if pair[0] in theory.spriteObjects.keys():
-	# 				p0 = theory.spriteObjects[pair[0]].className
-	# 			elif pair[0] in theory.classes.keys():
-	# 				p0 = pair[0]
-	# 			else:
-	# 				p0 = 'unknown'
-
-	# 			if pair[1] in theory.spriteObjects.keys():
-	# 				p1 = theory.spriteObjects[pair[1]].className
-	# 			elif pair[1] in theory.classes.keys():
-	# 				p1 = pair[1]
-	# 			else:
-	# 				p1 = 'unknown'
-	# 			pair = (p0, p1)
-	# 			newIntPairs.append(pair)
-	# 		e.intPairs = newIntPairs
+	errorMap = sorted(errorMap, key=lambda x: (x.targetClass!='unknown', 'inventoryChange' not in x.diagnosis) )
 
 	# print "at end of errorSignal"
 	# embed()
@@ -1337,13 +1430,15 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 	# 1.1) noMovement
 	if dist_ts == 0:
 		e.diagnosis.append('noMovement')
-		## Form all possible pairs of classes and propose these. This is because undoAll could cause this, so it's literally any classes combining.
-		e.intPairs = list(itertools.combinations([k for k in envA._game.observation['trackedObjects'].keys() if 
-			envA._game.observation['trackedObjects'][k]], 2))
 
-		for k in envA._game.observation['trackedObjects'].keys():
-			if len(envA._game.observation['trackedObjects'][k])>1:
-				e.intPairs.append((k,k))
+		## If we're trying to learn undoAll, uncomment all this and also allow undoAll in proposePredicates
+		## Form all possible pairs of classes and propose these. This is because undoAll could cause this, so it's literally any classes combining.
+		# e.intPairs = list(itertools.combinations([k for k in envA._game.observation['trackedObjects'].keys() if 
+			# envA._game.observation['trackedObjects'][k]], 2))
+
+		# for k in envA._game.observation['trackedObjects'].keys():
+			# if len(envA._game.observation['trackedObjects'][k])>1:
+				# e.intPairs.append((k,k))
 
 	# 1.2) orientationChange
 	if dist_ts!=0 and oB!=None and oB!=oPrev:
@@ -1374,6 +1469,8 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 
 		e.intPairs = [(sA.colorName, covered_sprite_envB.colorName)] #overwrite interaction pair by the overlapping sprite pair
 
+		# print "got unexpectedOverlap"
+		# embed()
 	if dist_ts>2:
 		e2 = errorMapEntry()
 		e2.targetToken = e.targetToken
@@ -1608,6 +1705,17 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	subsamplePercentage = .2
 	actionsPerIndex = 2
 
+	if len(hypotheses)>1:
+		print "got more than 1 hypothesis in singleTheoryExperienceReplay"
+		embed()
+	
+	key = (method, targetColor, rleHistory[0].ID, len(rleHistory))
+	
+	if not displayStates and key in hypotheses[0].experienceReplayRecord:
+		# print "found key in hypothesis experienceReplay"
+		# embed()
+		return hypotheses[0].experienceReplayRecord[key]
+
 	if method == 'all':
 		indices = range(len(rleHistory))
 		actionsPerIndex = 1
@@ -1660,7 +1768,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 						rleHistory[idx+n], targetColor=targetColor, penalty_only=True)
 					penalties.append(penalty)
 				except:
-					print "in experienceReplay"
+					print "exception in experienceReplay"
 					embed()
 				if displayStates:
 					print "resulting state incurred a penalty of {} and looks like this:".format(penalty)
@@ -1674,7 +1782,9 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 
 	cumulative_penalties = np.array(cumulative_penalties)
 	mean_penalties = np.mean(cumulative_penalties, axis=0)
-	return mean_penalties, cumulative_penalties, theoryRLEs
+
+	hypotheses[0].experienceReplayRecord[key] = mean_penalties
+	return mean_penalties
 	
 def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, method='all', targetColor=None, displayStates=False, displayTheories=False):
 	if len(hypotheses)>10:
@@ -1682,38 +1792,43 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, method='
 
 	t1 = time.time()
 	results = []
+	# if len(hypotheses)>100:
+		# print ">100 hypotheses"
+		# embed()
 	for num, h in enumerate(hypotheses):
 		if displayTheories:
 			print "running experienceReplay on {}:".format(num)
 			h.display()
-		# if method == 'newMethod':
-		if 'flipDirection' in [r.interaction for r in h.interactionSet]:
-			multipleHypotheses = [h]*NUM_SAMPLES_PER_HYPOTHESIS
-			tmpResults = singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, multipleHypotheses, symbolDict)
-			results.append((np.mean(tmpResults[0]), np.mean(tmpResults[1]), tmpResults[2][0]))
-			print "got flipDirection in experienceReplay"
-			# from vgdl.agent import initializeVrle
-			# newenv=initializeVrle(h, rleHistory[0], symbolDict)
-			## If you run the line above over and over you'll see that we're changing the orientation
-			## each time; that's because I'm having setVrleState() do that.
-			## if you do newenv.step(0) you'll see that all the other missiles move forward and this one
-			## doesn't.
-			# print newenv._game.sprite_groups['c5'][0].orientation
-			embed()
-			## after the embed(), run
-			## newenv.step(0); newenv
-			## print newenv._game.sprite_groups['c5'][0].orientation
-		else:
-			results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h], symbolDict))
+		# if 'flipDirection' in [r.interaction for r in h.interactionSet]:
+		# 	multipleHypotheses = [h]*NUM_SAMPLES_PER_HYPOTHESIS
+		# 	tmpResults = singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, multipleHypotheses, symbolDict)
+		# 	# this worked when we returned 3 objects in singleTheoryExperienceReplay
+		# 	# results.append((np.mean(tmpResults[0]), np.mean(tmpResults[1]), tmpResults[2][0]))
+		# 	print "got flipDirection in experienceReplay"
+		# 	# from vgdl.agent import initializeVrle
+		# 	# newenv=initializeVrle(h, rleHistory[0], symbolDict)
+		# 	## If you run the line above over and over you'll see that we're changing the orientation
+		# 	## each time; that's because I'm having setVrleState() do that.
+		# 	## if you do newenv.step(0) you'll see that all the other missiles move forward and this one
+		# 	## doesn't.
+		# 	# print newenv._game.sprite_groups['c5'][0].orientation
+		# 	embed()
+		# 	## after the embed(), run
+		# 	## newenv.step(0); newenv
+		# 	## print newenv._game.sprite_groups['c5'][0].orientation
+		# else:
+		results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h], symbolDict))
+
 
 	if len(hypotheses)>10:
 		print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 
-	mean_penalties = [r[0][0] for r in results]
-	cumulative_penalties = [r[1][0][0] for r in results]
-	theoryRLEs = [r[2][0] for r in results]
+	mean_penalties = [r[0] for r in results]
+	# mean_penalties = [r[0][0] for r in results]
+	# cumulative_penalties = [r[1][0][0] for r in results]
+	# theoryRLEs = [r[2][0] for r in results]
 
-	return mean_penalties, cumulative_penalties, theoryRLEs
+	return mean_penalties
 
 def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, symbolDict, method, targetColor=None, displayStates=False, displayTheories=False):
 	'''
@@ -1727,7 +1842,7 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, symb
 	weight = 1./len(max(actionHistories, key=len))
 
 	for rleHistory, actionHistory in zip(rleHistories, actionHistories):
-		mean_penalties, _, expRLE = experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, 
+		mean_penalties = experienceReplay(hypotheses, rleHistory, actionHistory, symbolDict, 
 												     method, targetColor, displayStates, displayTheories)
 		mean_penalties = np.array(mean_penalties)*weight*len(actionHistory)
 		multi_episode_mean_penalties.append(mean_penalties)
@@ -1799,6 +1914,8 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		## Skip this whole step if you've already made changes for this theory. Just pass it on and you'll
 		## evaluate it on the whole dataset in the outer loop.
 		if len(theories) == 1 and any([errorMap == e for e in theories[0].errorMapHistory]):
+			errorMap.display()
+			print "we've addressed this theory before (in expandTheories). Skipping it"
 			newTheories = [theories[0]]
 			theories = newTheories
 			# FLAG: huh?
@@ -1832,6 +1949,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 
 def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rleHistory, actionHistory, theory, bestSpriteTypeDict, classPairPlusPredicateToRuleSets):
 
+
 	## Fixes the problems generated by a single errorMap entry.
 
 	n = 1 # n is the number of allowed rules for a particular classpair-ordering, probably (TODO)
@@ -1860,33 +1978,29 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			newIntPairs.append(pair)
 		errorMap.intPairs = newIntPairs
 
-
 	## If we were about to make modifications we've made already, don't waste the time.
 	if any([errorMap == e for e in theory.errorMapHistory]):
+		errorMap.display()
+		print "we've addressed this theory before. Skipping it"
 		newTheories = [theory]
 		return newTheories
-
-	# if 'unexpectedPosition' in errorMap.diagnosis and 'c6' in theory.classes and 'Missile' in str(theory.classes['c6'][0].vgdlType):
-	# 	print "found missile"
-	# 	### Why is errorMap.targetClass 'unknown'???
-	# 	embed()
 
 	theory.errorMapHistory.append(errorMap)
-
 	newTheories = [theory.copy()]
-
 	newErrorMaps = [errorMap]
+
 	## For debugging. Don't make children of the true theory.
 	if hasattr(theory, 'trueTheory'):
-		newTheories = [theory]
+		newTheories = [theory.copy()]
 		return newTheories
 
-	# if 'transformation' in errorMap.diagnosis:
-		# print "got transformation"
-		# embed()
+	theory.experienceReplayRecord = {}
+
 	## If there are unknown colors in an inventory, add them to the theory here.
 	if 'inventoryChange' in errorMap.diagnosis:
 		from vgdl.ontology import Resource
+		# print "got inventoryChange"
+		# embed()
 		for k in errorMap.targetToken.inventory:
 			if k not in theory.spriteObjects.keys():
 				color = k
@@ -1949,7 +2063,12 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 		## SpriteSet induction step
 		if eM.targetClass not in theoryCopy.expandedSprites:
 			className, theories = expandSprites(envRealCurrent._game, theoryCopy, eM, 
-			envRealPrev, envRealCurrent, bestSpriteTypeDict, action, percentile=20, max_num=30)
+					envRealPrev, envRealCurrent, bestSpriteTypeDict, action, percentile=20, max_num=30)
+			theories = list(set(theories))
+			# TODO: since we're not actually going to build on these, we haven't necessarily addressed the error
+			# tomorrow: not sure if this is actually the problem
+			# for t in theories:
+			# 	t.errorMapHistory.pop(len(t.errorMapHistory)-1)
 			# print "doing spriteInduction for {} generated {} theories".format(eM.targetClass, len(theories))
 			newTheories.extend(theories)	
 
@@ -1980,24 +2099,21 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			if 'conditionalKill' in singleIntPairErrorMap.diagnosis:
 				singleIntPairErrorMap.diagnosis.remove('conditionalKill')
 			newTheories.extend(list(set(theories)))
-		
+
 	newTheories = list(set(newTheories))
 
 	return newTheories
 
-def testAndExpand(theoryRLEs, hypotheses, action, envReal, envRealPrev, index, rleHistory, actionHistory, symbolDict, bestSpriteTypeDict):
-	num = index
-	env = theoryRLEs[num]
-	hypothesis = hypotheses[num]
+def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistory, actionHistory, symbolDict, bestSpriteTypeDict):
 
 	env.step(action)
 	penalty, errorList = errorSignal(env, envReal, hypothesis, envRealPrev)
 
-	if errorList:
-		hypothesis.display()
-		for e in errorList:
-			e.display()
-			print ""
+	# if errorList:
+		# hypothesis.display()
+		# for e in errorList:
+			# e.display()
+			# print ""
 	# else:
 		# print "No error"
 		# embed()
@@ -2010,20 +2126,21 @@ def testAndExpand(theoryRLEs, hypotheses, action, envReal, envRealPrev, index, r
 
 
 
-
-
 if __name__ == "__main__":
 
 	##simpleGame_missile: no support for learning that it can shoot things.
-	# filename = "examples.gridphysics.aliens"
+	# filename = "examples.gridphysics.frogs"
 
-	filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.collect_resource"
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 
+
+	filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.testAll"
+	
+
 	# filename = "examples.gridphysics.basics"
 
 	global WBP

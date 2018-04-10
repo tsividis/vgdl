@@ -326,6 +326,7 @@ class Theory(object):
 		self.errorMapHistory = []
 		self.lineage = []
 		
+		self.experienceReplayRecord = {} ## store (targetColor, rleHistory.ID, len(rleHistory)):penalty
 		self.mark = False ## For convenient marking and finding of hypotheses
 
 	## We don't want this to be precomputed because our way of generating child theories
@@ -343,6 +344,7 @@ class Theory(object):
 		newTheory.terminationSet = ccopy(self.terminationSet)
 		newTheory.dryingPaint = set(self.dryingPaint)
 		newTheory.errorMapHistory = list(self.errorMapHistory) # currently unused but useful for debugging.
+		newTheory.experienceReplayRecord = ccopy(self.experienceReplayRecord)
 		return newTheory
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
@@ -369,11 +371,16 @@ class Theory(object):
 		for interactionRule in self.interactionSet:
 			if 'teleportToExit' in interactionRule.interaction:
 				color = self.classes[interactionRule.slot2][0].colorName
-
-				self.spriteObjects[color].args = ccopy(interactionRule.args)
-				self.spriteObjects[color].vgdlType = Portal
-				self.classes[interactionRule.slot2][0] = self.spriteObjects[color]
-				interactionRule.args = {}
+				## If we haven't already made this a Portal, take care of the details.
+				if self.spriteObjects[color].vgdlType!=Portal:
+					self.spriteObjects[color].args = ccopy(interactionRule.args)
+					self.spriteObjects[color].vgdlType = Portal
+					self.classes[interactionRule.slot2][0] = self.spriteObjects[color]
+					for rule in self.interactionSet:
+						if rule.slot1==interactionRule.slot1 and 'stype' in interactionRule.args and \
+								rule.slot2==interactionRule.args['stype'] and rule!=interactionRule and rule.interaction != 'stepBack':
+								rule.interaction = 'nothing'
+					interactionRule.args = {}
 
 	def addSpriteToTheory(self, newSpriteName, color, vgdlType='default', args=None):
 		if vgdlType=='default':
@@ -392,20 +399,31 @@ class Theory(object):
 	"""Main functions"""
 
 	def prior(self):
+		## Very simple prior, prefering:
+			# Avatar = default type
+			# Everything else doesn't move
+			# Short non-default ruleset.
+			# Preference for explanations involving avatar being the cause of change:
+			#	 (penalty for long ruleset is shorter than penalty for type deviations)
 
-		def phi(numClasses, numRules, lamda):
-			#TODO: Refine this to take into account the minimum necessary size of the ruleset.
-			return lamda*numClasses + (1-lamda)*numRules
+		classScore = 0.
+		classes = [cl for cl in self.classes if cl!='EOS']
+		for c in classes:
+			vgdlTypeString = str(self.classes[c][0].vgdlType)
+			if 'Avatar' in vgdlTypeString:
+				if 'Moving' not in vgdlTypeString:
+					classScore += 1
+			else:
+				if any([t in vgdlTypeString for t in ['Resource','Portal','Immovable']]):
+					classScore +=0
+				# elif 'Missile' in vgdlTypeString:
+					# classScore += 1
+				else:
+					classScore += 2
 
-		#Mode is p(r-1) / (1-p). For now we pick p=.5, r=5 to reflect that phi=4 is modal.
-		def negBin(k, r, p):
-			return scipy.misc.comb(k+r-1, k) * p**k * (1-p)**r
-
-		numClasses, numRules = len(self.classes.keys()), len(self.interactionSet)
-		k = phi(numClasses, numRules, .5)
-
-		return negBin(k,5,.5)
-
+		# ruleScore = len([rule for rule in self.interactionSet if rule.interaction!=stepBack])
+		ruleScore = 1
+		return classScore + ruleScore/1000.
 
 	def explainTimeStep(self, timestep, fullTimestep, timesteps, currTheories=False, override=False):
 		"""
@@ -1191,8 +1209,6 @@ class Theory(object):
 
 		return relevantRules
 
-
-
 	def searchForPossibleClasses(self, obj_Sprite, newClasses=0):
 		"""
 		If the object has been assigned, return it. Otherwise return all
@@ -1506,8 +1522,8 @@ class Theory(object):
 	def _stringRules(self, ignore_step_back=True, color_names=False, compare_theory=None):
 		string = '\nInteractionSet:'
 		for rule in self.interactionSet:
-			if rule.interaction == 'nothing':
-				continue
+			# if rule.interaction == 'nothing':
+				# continue
 			if ignore_step_back and rule.interaction == 'stepBack':
 				continue
 			else:
@@ -2420,9 +2436,12 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 					argList.append({'speed':val})
 			elif predicate in ['killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']:
 				try:
-					resources = [theory.spriteObjects[rcolor].className for rcolor in observations['trackedObjects'][theory.classes['avatar'][0].colorName][0].inventory.keys()]
+					if observations['trackedObjects'][theory.classes['avatar'][0]]:
+						resources = [theory.spriteObjects[rcolor].className for rcolor in observations['trackedObjects'][theory.classes['avatar'][0].colorName][0].inventory.keys()]
+					else:
+						resources = [c for c in theory.classes if 'Resource' in str(theory.classes[c][0].vgdlType) and 'ResourcePack' not in str(theory.classes[c][0].vgdlType)]
 				except:
-					print "problem with resources in proposeArgs()"
+					print "problem with resources in proposeArgs()", " ...or the avatar died"
 					embed()
 				limits = [-2]
 				for comb in list(itertools.product(resources, limits)):
@@ -2506,11 +2525,13 @@ def proposePredicates(singlePairErrorSignal, observations):
 								 'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
 
 	## Position difference
+	## NOTE: if you propose undoAll you also need to uncomment the lines that propose intPairs between any adjacent sprites
+			# on the board in errorSignal()
 	'noMovement': 				[],#['undoAll'], ## Possible bug: not proposing anything for noMovement
 	'unexpectedPosition': 		['bounceForward', 'nothing'],
 									# , 'pullWithIt', 'windGust', 'slipForward',\
 									# 'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap
-	'unexpectedOverlap':		['nothing'],#, 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
+	'unexpectedOverlap':		['nothing', 'reverseDirection'],#, 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
 	'orientationChange': 		['reverseDirection', 'flipDirection'],
 									#'turn', 'turnAround', 
 	'teleport': 				['teleportToExit'],
@@ -2561,7 +2582,7 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 		spriteProposals = [k for k in game.spriteDistribution[targetToken.ID].keys() if 'Flicker' in str(k[0][1])]
 	else:
 		spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, action=action, oldSpriteSet=theory.spriteSet,\
-		specificSpritesToUpdate=[targetToken], percentile=percentile, max_num=max_num)
+		specificSpritesToUpdate=errorMap.targetTokens, percentile=percentile, max_num=max_num)
 
 
 	## Don't instantiate non-avatar proposals for the 'avatar' class.
@@ -2618,10 +2639,8 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 				if rule.slot2=='tmp':
 					rule.slot2='avatar'
 		else:
-			## Don't propos non-avatar types for the thing you're calling 'avatar'.
+			## Don't propose non-avatar types for the thing you're calling 'avatar'.
 			if targetClass=='avatar':
-				print "proposing non-avatar type for avatar"
-				# embed()
 				continue
 			sprite = Sprite(vgdlType, color, className=targetClass, args=args)
 			## Remove old sprite from spriteSet
@@ -2647,7 +2666,7 @@ predicateToOrderingMapping = {
 	'killIfFromAbove':		(0,),
 	'killIfFromBelow':		(0,),
 	'changeResource':		(0,),
-	'collectResource':		(0,),
+	'collectResource':		(1,),
 	'stepBack':				(0,),
 	'cloneSprite':	 		(0,),
 	'transformTo':	 		(0,),
@@ -2672,12 +2691,12 @@ predicateToOrderingMapping = {
  	'changeScore':			(0,1),
 	'undoAll':				(0,1)}
 
-predicatesThatConflictWithStepBack = ['nothing', 'transformTo']
+predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit']
 
 def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n):
 
 	key = (classPair, tuple(sorted(predicates)))
-	# print key
+
 	if key not in classPairPlusPredicateToRuleSets:
 
 		predicateGroups = []
@@ -2685,7 +2704,6 @@ def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, ob
 			predicateGroups.extend(list(itertools.combinations(predicates, i)))
 
 		bothOrderings = [[()], [()]]
-		# alteredPairs = set()
 		for i,order in enumerate([classPair, (classPair[1], classPair[0])]):
 
 			for predicateGroup in predicateGroups:
@@ -2693,11 +2711,9 @@ def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, ob
 					pass
 				predicateRules = []
 				for predicate in predicateGroup:
-					
 					## orderings are (targetClass, neighbor). If the ordering we're proposing is consistent with the semantics
 					## of the predicate we're proposing, add this potential rule.
 					if i in predicateToOrderingMapping[predicate]:
-						# alteredPairs.add(i)
 						allArgumentCombinations = proposeArgs(theory, predicate, errorMap, observations, 
 							generic=False)
 						predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
@@ -2707,24 +2723,16 @@ def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, ob
 		## Now generate combinations from each expanded predicateGroup that we added to each of the orderings
 		newRuleSets = list(itertools.product(bothOrderings[0], bothOrderings[1]))
 		newRuleSets = [[item for sublist in ruleSet for item in sublist] for ruleSet in newRuleSets]
+
 		classPairPlusPredicateToRuleSets[key] = newRuleSets
-		
-		# print "in getRuleSetsForClassPairPredicate"
-		# embed()
+
 	return classPairPlusPredicateToRuleSets[key]
 
 def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateToRuleSets, envRealPrev, envRealCurrent, action, rleHistory, actionHistory, experienceReplay, n=1, observations=None, generic=False):
 	## Modifies the theory to propose n new interactonRules involving the given classPair
 	## For predicates that take arguments, finds the first (according to some ordering) satisfying argument and returns that.
 	## generic=True proposes all possible combinations of args instead.
-
 	childTheories = [theory.copy()]
-
-	# if 'unexpectedPosition' in errorMap.diagnosis and 'c6' in theory.classes and 'Missile' in str(theory.classes['c6'][0].vgdlType):
-		# print "found missile"
-		### Why is errorMap.targetClass 'unknown'???
-		# embed()
-
 	##if iterating thresholds is not relevant:
 	predicatesWithThresholds = ['killIfTooFast', 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
 	relevantRulesWithArgs = [rule for rule in theory.interactionSet if rule.interaction in predicatesWithThresholds and 
@@ -2742,7 +2750,6 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 
 		
 		newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
-
 		for i,ruleSet in enumerate(newRuleSets):
 			if len(ruleSet) > 0:
 				newTheory = theory.copy()
@@ -2753,8 +2760,9 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 						[(rule.slot2, rule.slot1) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack])
 				newTheory.interactionSet = [rule for rule in newTheory.interactionSet if 'stepBack' != rule.interaction or (rule.slot1, rule.slot2) not in alteredPairs]
 				for rule in ruleSet:
-					newTheory.interactionSet.append(rule)
-					newTheory.dryingPaint.add(rule)
+					ruleCopy = rule.copy()
+					newTheory.interactionSet.append(ruleCopy)
+					newTheory.dryingPaint.add(ruleCopy)
 				newTheory.reconcileInteractionsAndSprites()
 				childTheories.append(newTheory)
 
@@ -2773,14 +2781,16 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHi
 	relevantRulesWithArgs = [rule for rule in theory.interactionSet if rule.interaction in predicatesWithThresholds and \
 			classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and len(rule.args)>0]
 	if len(relevantRulesWithArgs)==1:
-		print "in iterateThresholds"
-		theory.display()
+		# print "in iterateThresholds"
+		# theory.display()
 		rule = relevantRulesWithArgs[0]
-		penalty, _, _ = experienceReplay([theory], rleHistory, actionHistory, 
-			rleHistory[0].symbolDict, method='all', targetColor=errorMap.targetColor)
+		penalty = experienceReplay([theory], rleHistory, actionHistory, 
+			rleHistory[0].symbolDict, method='all', targetColor=errorMap.targetColor)[0]
 		newPenalty = penalty
 		while newPenalty >= penalty:
 			argsToIncrement = [(k,v) for k,v in relevantRulesWithArgs[0].args.items() if type(v)==int]
+			# if k=='limit' and rule.interaction == 'killIfOtherHasMore':
+				# embed()
 			if len(argsToIncrement)>1:
 				print "got more than one arg to increment in iterateThresholds(); this shouldn't happen"
 				embed()
@@ -2788,8 +2798,9 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHi
 			idx = thresholdOrdering[rule.interaction].index(v)
 			if len(thresholdOrdering[rule.interaction]) > idx+1:
 				rule.args[k] = thresholdOrdering[rule.interaction][idx+1]
-				newPenalty, _, _ = experienceReplay([theory], rleHistory, actionHistory, 
-					envRealPrev.symbolDict, method='all', targetColor=errorMap.targetColor)
+				theory.experienceReplayRecord = {}
+				newPenalty = experienceReplay([theory], rleHistory, actionHistory, 
+					envRealPrev.symbolDict, method='all', targetColor=errorMap.targetColor)[0]
 				# print newPenalty, rule.display()
 			else:
 				break
@@ -3205,8 +3216,12 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 
 	for k,v in locs.iteritems():
 		symbol = objectsToSymbol(rle, v, symbolDict)
-		mappedState[k[0]][k[1]] = symbol
-
+		try:
+			mappedState[k[0]][k[1]] = symbol
+		except:
+			print "mappedState problem in writeTheoryToTxt"
+			print mappedState
+			embed()
 	
 	allObjectsSymbol = '`'
 	if addAllObjects:

@@ -73,8 +73,10 @@ class _TestAgent(unittest.TestCase):
 	# Execution
 	def executeStep(self, episode_num, action, last_step):
 		theoryRLEs = self.generateTheoryRLEs()
+
 		self.agent.hypotheses, self.agent.scoresAndHypotheses = self.agent.executeStep(episode_num, self.agent.rleHistory, self.agent.actionHistory, 
 											     										action, self.agent.hypotheses, theoryRLEs, last_step)
+		self.agent.hypotheses = [tup[1] for tup in self.agent.scoresAndHypotheses]
 
 	def runEpisode(self, episode_num, actions):
 		self.initializeEpisode(episode_num)
@@ -155,7 +157,6 @@ def _testConstructor(game, level, action_sequences, expected_theory=None):
 			theory = generateTheoryFromGameString(expected_theory)
 		else:
 			theory = generateTheoryFromGameString(game)
-		embed()
 		self.initRunCreate(game, level, action_sequences)
 
 		# embed()
@@ -212,10 +213,10 @@ class inference(_TestAgent):
 
 	test4 = _testConstructor(*inference.test4)
 
-	test5 = _testConstructor(*inference.test5)
+	# test5 = _testConstructor(*inference.test5)
 
 
-	test5 = _testConstructor(*inference.test5)
+	# test5 = _testConstructor(*inference.test5)
 
 
 

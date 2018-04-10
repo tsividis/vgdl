@@ -8,7 +8,7 @@ from random import choice
 from copy import deepcopy
 from colors import *
 import itertools
-from math import sqrt
+from math import sqrt, cos, sin
 import pygame
 import numpy as np
 import scipy.stats
@@ -77,7 +77,8 @@ avatarActions = {
 class GridPhysics():
     """ Define actions and key-mappings for grid-world dynamics. """
     def passiveMovement(self, sprite):
-        # print "passive movement for", sprite.name
+        # if sprite.colorName=='BLACK':
+            # print "passive movement for", sprite
         if sprite.speed is None:
             speed = 1
         else:
@@ -550,15 +551,13 @@ class Chaser(RandomNPC): ##
 
 
     def update(self, game):
-        VGDLSprite.update(self, game) # This increments self.lastmove by 1
+        VGDLSprite.update(self, game, random_npc=True) # This increments self.lastmove by 1
 
         options = []
-        position_options = {}
 
         for target in self._closestTargets(game):
             options.extend(self._movesToward(game, target))
         if len(options) == 0:
-            # options = BASEDIRS
             options = [(0,0)]
         self.physics.activeMovement(self, random.choice(options))
 
@@ -923,7 +922,6 @@ class AimedAvatar(ShootAvatar):
                 angle = self.angle_diff
             else:
                 angle = -self.angle_diff
-            from math import cos, sin
             self.orientation = unitVector((self.orientation[0]*cos(angle)-self.orientation[1]*sin(angle),
                                            self.orientation[0]*sin(angle)+self.orientation[1]*cos(angle)))
 
@@ -1713,6 +1711,7 @@ def collectResource(sprite, partner, game): # FLAG
     r = sprite.resourceType
     partner.resources[r] = max(-1, min(partner.resources[r]+sprite.value, game.resources_limits[r]))
     killSprite(sprite, partner, game)
+    # args = {'resource':r, 'value':sprite.value, 'limit':game.resources_limits[r]}
     return ('collectResource' , sprite.ID, partner.ID)
 
 def changeResource(sprite, partner, resourceColor, game, resource, value=1, limit=None):
@@ -1943,7 +1942,7 @@ def chaserClosestTargets(sprite, game):
     res = []
     for target in targets:
         d = sprite.physics.distance(sprite.rect, target.rect)
-        if d < bestd:
+        if d < bestd and d>0:
             bestd = d
             res = [target]
         elif d == bestd:
@@ -1978,7 +1977,7 @@ def findChaserClosestTargets(sprite, spritePrev, game):
     res = []
     for target in targets:
         d = distance(spritePrev.rect, target.rect)
-        if d < bestd:
+        if d < bestd and d>0:
             bestd = d
             res = [target]
         elif d == bestd:
@@ -2231,8 +2230,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
             elif action == DOWN:
                 angle = angle_diff
 
-            from math import cos, sin
-
             orientation = (current_sprite.orientation[0]*cos(angle)-current_sprite.orientation[1]*sin(angle),
                            current_sprite.orientation[0]*sin(angle)+current_sprite.orientation[1]*cos(angle))
         else:
@@ -2266,8 +2263,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
                 angle = -angle_diff
             elif direction == DOWN:
                 angle = angle_diff
-
-            from math import cos, sin
 
             orientation = (current_sprite.orientation[0]*cos(angle)-current_sprite.orientation[1]*sin(angle),
                            current_sprite.orientation[0]*sin(angle)+current_sprite.orientation[1]*cos(angle))
@@ -2874,35 +2869,38 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
         ## Update sprite distribution for a particular item
         objects = game.getObjects()
         notUpdated = [s for s in objects.keys() if s not in game.spriteDistribution.keys()]
-        if len(specificSpritesToUpdate)>1:
-            print "Error: you passed more than one specific sprite to update"
-            embed()
-        sprite = specificSpritesToUpdate[0]
-
+        # if len(specificSpritesToUpdate)>1:
+            # print "Error: you passed more than one specific sprite to update"
+            # embed()
+        # sprite = specificSpritesToUpdate[0]
         scoreAndTheoryTuples = []
 
-        left, top = sprite.rect.left, sprite.rect.top
-        neighbors = [(left, top), (left-30, top), (left+30, top), (left, top-30), (left, top+30)]
-        try:
-            if game.sprite_appearances and any([(s.rect.left, s.rect.top) in neighbors for s in game.sprite_appearances]):
-                for k,v in game.sprite_appearance_predictions[sprite.ID].items():
-                    if any([(appearance.colorName, appearance.rect.left, appearance.rect.top) in v for appearance in game.sprite_appearances]):
-                        scoreAndTheoryTuples.append((0,k))
-            else:
-                ## Normal case. Update hypotheses related to movement types.
-                for k in game.movement_options[sprite.ID]:
-                    if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k]: 
-                        if k in game.orientation_options[sprite.ID]:
-                            if normalizeVec(sprite.orientation) in game.orientation_options[sprite.ID][k]:
-                                scoreAndTheoryTuples.append((0,k))
-                        else:
+        for sprite in specificSpritesToUpdate:
+            left, top = sprite.rect.left, sprite.rect.top
+            neighbors = [(left, top), (left-30, top), (left+30, top), (left, top-30), (left, top+30)]
+            try:
+                if game.sprite_appearances and any([(s.rect.left, s.rect.top) in neighbors for s in game.sprite_appearances]) and \
+                        sprite.ID in game.sprite_appearance_predictions:
+                    for k,v in game.sprite_appearance_predictions[sprite.ID].items():
+                        if any([(appearance.colorName, appearance.rect.left, appearance.rect.top) in v for appearance in game.sprite_appearances]):
                             scoreAndTheoryTuples.append((0,k))
-        except:
-            print "something broke in spriteInduction (probably has to do with cannon)"
-            embed()
+                else:
+                    ## Normal case. Update hypotheses related to movement types.
+                    for k in game.movement_options[sprite.ID]:
+                        if len(game.observation['trackedObjects'][sprite.colorName])>1 and ( ('singleton', True) in k or 'Avatar' in str(k[0][1]) ):
+                            continue
+                        if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k]: 
+                            if k in game.orientation_options[sprite.ID]:
+                                if normalizeVec(sprite.orientation) in game.orientation_options[sprite.ID][k]:
+                                    scoreAndTheoryTuples.append((0,k))
+                            else:
+                                scoreAndTheoryTuples.append((0,k))
+            except:
+                print "something broke in spriteInduction (probably has to do with cannon)"
+                embed()
                     
-
-        reasonableHypotheses = [s[1] for s in scoreAndTheoryTuples]
+        reasonableHypotheses = list(set([s[1] for s in scoreAndTheoryTuples]))
+        # reasonableHypotheses = [s[1] for s in scoreAndTheoryTuples]
         return reasonableHypotheses
 
     ## Reset ignoreList so that next time around you do inference.
