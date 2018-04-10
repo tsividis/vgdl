@@ -111,6 +111,7 @@ class SpriteParser(object):
                 # print (sclass, args, stypes)
                 if 'color' in args:
                     color_type = colorDict[str(args['color'])]
+
                     args_without_color = deepcopy(args)
                     del args_without_color['color']
 
@@ -126,6 +127,7 @@ class SpriteParser(object):
                     else:
                         #print "--> will be ITSELF"
                         self.sprite_types[key] = Sprite(sclass, color_type, args=args_without_color)
+                        print self.sprite_types[key].args
                 else:
                     args_without_color = deepcopy(args)
                     isResourceType = False
