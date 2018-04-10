@@ -2428,7 +2428,10 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 					argList.append({'speed':val})
 			elif predicate in ['killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']:
 				try:
-					resources = [theory.spriteObjects[rcolor].className for rcolor in observations['trackedObjects'][theory.classes['avatar'][0].colorName][0].inventory.keys()]
+					if observations['trackedObjects'][theory.classes['avatar'][0]]:
+						resources = [theory.spriteObjects[rcolor].className for rcolor in observations['trackedObjects'][theory.classes['avatar'][0].colorName][0].inventory.keys()]
+					else:
+						resources = [c for c in theory.classes if 'Resource' in str(theory.classes[c][0].vgdlType) and 'ResourcePack' not in str(theory.classes[c][0].vgdlType)]
 				except:
 					print "problem with resources in proposeArgs()", " ...or the avatar died"
 					embed()
@@ -2774,11 +2777,12 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHi
 		# theory.display()
 		rule = relevantRulesWithArgs[0]
 		penalty = experienceReplay([theory], rleHistory, actionHistory, 
-			rleHistory[0].symbolDict, method='all', targetColor=errorMap.targetColor)
+			rleHistory[0].symbolDict, method='all', targetColor=errorMap.targetColor)[0]
 		newPenalty = penalty
 		while newPenalty >= penalty:
 			argsToIncrement = [(k,v) for k,v in relevantRulesWithArgs[0].args.items() if type(v)==int]
-			# embed()
+			# if k=='limit' and rule.interaction == 'killIfOtherHasMore':
+				# embed()
 			if len(argsToIncrement)>1:
 				print "got more than one arg to increment in iterateThresholds(); this shouldn't happen"
 				embed()
@@ -2786,8 +2790,9 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHi
 			idx = thresholdOrdering[rule.interaction].index(v)
 			if len(thresholdOrdering[rule.interaction]) > idx+1:
 				rule.args[k] = thresholdOrdering[rule.interaction][idx+1]
+				theory.experienceReplayRecord = {}
 				newPenalty = experienceReplay([theory], rleHistory, actionHistory, 
-					envRealPrev.symbolDict, method='all', targetColor=errorMap.targetColor)
+					envRealPrev.symbolDict, method='all', targetColor=errorMap.targetColor)[0]
 				# print newPenalty, rule.display()
 			else:
 				break

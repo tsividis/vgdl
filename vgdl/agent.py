@@ -306,9 +306,9 @@ class Agent:
 			# [K_UP, K_UP, K_UP, K_RIGHT]
 			# [K_UP, K_UP]
 			# [K_RIGHT, K_UP]
-			# [K_UP, K_UP, K_UP, K_UP]
+			[K_UP, K_UP, K_UP, K_UP]
 			# [K_LEFT, K_UP, K_UP, K_UP, K_UP]
-			[K_LEFT]*8
+			# [K_LEFT]*8
 			# [0]*20
 			# [K_DOWN, K_LEFT]+[K_RIGHT]*23+[K_UP]*3
 		]

@@ -1290,8 +1290,6 @@ class VGDLSprite(object):
             self.physics.passiveMovement(self)
 
     def _updatePos(self, orientation, speed=None):
-        # if self.colorName=='BLACK':
-            # print "updatingPos for ", self, "lastmove:", self.lastmove
         if speed is None:
             speed = self.speed
         if (self.lastmove+1)%self.cooldown==0 and abs(orientation[0])+abs(orientation[1])!=0:
