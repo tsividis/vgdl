@@ -1,5 +1,6 @@
-from IPython import embed
+from IPython import embed as _embed
 from line_profiler import LineProfiler
+from inspect import currentframe, getframeinfo
 import itertools
 import random
 import csv
@@ -7,6 +8,16 @@ import cPickle
 from math import sqrt
 
 from collections import defaultdict
+
+def embed():
+	filename, lineno, function, _, index = getframeinfo(currentframe())
+	print 'EMBEDED!'
+	print 'File:', filename
+	print 'Function:', function
+	print 'LineNo:', lineno
+	print 'Index:', index
+	_embed()
+	raw_input('ESCAPE FROM EMBED!')
 
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
 CHARS = 'bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM'

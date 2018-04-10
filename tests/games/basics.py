@@ -53,7 +53,7 @@ InteractionSet
     box avatar > killSprite
 
     wall avatar > stepBack
-    wall box > stepBack
+    wall box > stepBlack
 
     box wall > stepBack
     # avatar box > stepBack

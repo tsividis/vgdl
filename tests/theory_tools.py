@@ -20,10 +20,19 @@ def getColorName(hypothesis, class_name):
 	assert class_name in hypothesis.classes, 'Key Error: class name %s not in classes %r: %s' % (class_name, hypothesis.classes, hypothesis._stringClasses())
 	return hypothesis.classes[class_name][0].colorName
 
+def getColorArgs(hypothesis, args):
+	new_args = args.copy()
+	for key, value in args.iteritems():
+		if value in hypothesis.classes:
+			new_args[key] = getColorName(hypothesis, value)
+	return new_args
+
+
 def getColorInteraction(rule, hypothesis):
 	color1 = getColorName(hypothesis, rule.slot1)
 	color2 = getColorName(hypothesis, rule.slot2)
-	return InteractionRule(rule.interaction, color1, color2, rule.args.copy())
+	args = getColorArgs(hypothesis, rule.args)
+	return InteractionRule(rule.interaction, color1, color2, args)
 
 def getColorInteractionSet(hypothesis):
 	'''Reterns interaction set where class names are converted to their respective color names'''
@@ -33,11 +42,8 @@ def getColorInteractionSet(hypothesis):
 	return color_interaction_set
 
 def getColorTermination(term, hypothesis):
-	args = term.termination.get_args()
 	name = term.ruleType
-	for key, value in args.iteritems():
-		if value in hypothesis.classes:
-			args[key] = getColorName(hypothesis, value)
+	args = getColorArgs(hypothesis, term.termination.get_args())
 	return TerminationRuleConstructor(name, **args)
 
 def getColorTerminationSet(hypothesis):

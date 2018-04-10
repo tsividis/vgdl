@@ -35,8 +35,6 @@ iSetBoxes = """
 InteractionSet
     avatar wall > stepBack
     box avatar > transformTo stype=box2
-    box2 avatar > killSprite
-    box3 avatar > killSprite
     # Need to include all step backs
 """
 
@@ -122,7 +120,7 @@ w                         3 3  w
 w         c                    w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
-test0 = TestCase(game, level0, [[K_UP]*3])
+test0 = TestCase(game, level0, [[K_LEFT]])
 
 
 # up, up, up, up, left
@@ -133,11 +131,61 @@ w              1             1 w
 w                            1 w
 w              2               w
 w                    2         w
-w              A          3 3  w
+w              A               w
 w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
-test1 = TestCase(gameBoxes, level1, [[K_UP]*3+[K_LEFT]])
+
+test1_theory = """
+BasicGame
+    SpriteSet
+        box > Immovable color=WHITE 
+        box2 > Immovable color=GREEN
+        wall > Immovable color=DARKGRAY
+        avatar  > MovingAvatar color=DARKBLUE 
+    LevelMapping
+        1 > box
+        2 > box2
+        A > avatar
+    InteractionSet
+        
+        box avatar > transformTo stype=box2
+
+        # box avatar > stepBack
+        # avatar box > stepBack
+        # box2 avatar > stepBack
+        # avatar box2 > stepBack
+
+        avatar wall > stepBack
+        wall avatar > stepBack
+
+        box box2 > stepBack
+        box2 box > stepBack
+        box wall > stepBack
+        wall box > stepBack
+        box2 wall > stepBack
+        wall box2 > stepBack
+
+
+        box box > stepBack
+        avatar avatar > stepBack
+        wall wall > stepBack
+        box2 box2 > stepBack
+
+        box EOS > stepBack
+        box2 EOS > stepBack
+        wall EOS > stepBack
+        avatar EOS > stepBack
+
+
+        # Need to include all step backs
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+        SpriteCounter stype=box limit=0 win=True
+"""
+test1 = TestCase(gameBoxes, level1, [[K_UP]*4+[K_LEFT]], test1_theory)
+
+
 
 #combine with avatar sam bounceFoward. works.
 #0,0,0,0,0,0

@@ -1,6 +1,6 @@
 import unittest
 
-from IPython import embed
+from vgdl.util import embed
 
 from vgdl.agent import Agent, VrleInitPhase, sampleFromDistribution
 from vgdl.ontology import *
@@ -22,6 +22,7 @@ class _TestAgent(unittest.TestCase):
 	#
 	# Simply creates a new agent for every test. You have to set up the games individually.
 	def setUp(self):
+		# embed()
 		self.agent = Agent('full', FILENAME)
 
 	def tearDown(self):
@@ -151,10 +152,13 @@ def _testConstructor(game, level, action_sequences, expected_theory=None):
 		print 'RUNNING TEST'
 		print game, '\n', level, '\n', action_sequences, '\n'
 		self.initRunCreate(game, level, action_sequences)
-		expected_theory = expected_theory if expected_theory else generateTheoryFromGameString(game)
-
-		self.assertAgentHasTheory(expected_theory)
-		self.assertTheoriesEqual(self.agent.hypotheses[0], expected_theory)
+		if expected_theory:
+			theory = generateTheoryFromGameString(expected_theory)
+		else:
+			theory = generateTheoryFromGameString(game)
+		# embed()
+		self.assertAgentHasTheory(theory)
+		self.assertTheoriesEqual(self.agent.hypotheses[0], theory)
 		self.assertTheoryBelowEpsilonError(self.agent.hypotheses[0])
 		## Write whatever things you want to test for here.
 

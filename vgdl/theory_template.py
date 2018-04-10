@@ -192,8 +192,10 @@ def TerminationRuleConstructor(rule_type, **kwargs):
 		else:
 			termination_rule = eval(rule_type)
 		return termination_rule(**kwargs)
-	except NameError:
-		raise NameError, "termination rule '%s' not defined" % rule_type
+	except (NameError, TypeError):
+		print 'termination rule constructor error'
+		embed()
+		# raise NameError, "termination rule '%s' not defined" % rule_type
 
 class TimeoutRule(TerminationRule):
 	def __init__(self, limit=0, win=False):
@@ -2423,7 +2425,7 @@ def proposeArgs(theory, predicate, errorMap, observations, generic=False):
 			elif predicate == 'transformTo':
 				for stype in [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]:
 					argList.append({'stype':stype})
-			if predicate == 'teleportToExit':
+			elif predicate == 'teleportToExit':
 				for stype in [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]:
 					argList.append({'stype':stype})
 			else:

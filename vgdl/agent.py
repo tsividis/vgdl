@@ -297,7 +297,7 @@ class Agent:
 			# [0,0,0,0,0,0,0,0]
 
 			# [0,0,0,0,0,0,0,0,0,0,0,0]
-			[K_UP, K_UP, K_UP]
+			[K_LEFT, K_LEFT, K_LEFT, K_LEFT]
 			# [K_RIGHT, K_UP]
 		]
 
