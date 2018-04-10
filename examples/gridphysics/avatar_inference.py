@@ -224,16 +224,28 @@
 # """
 
 # works for changeResource, killIfOtherHasMore/Less.
-# currently broken by invisiblemedicine and (separately) the avatar dying
 #up, up, up, up
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w              p             1 w
+# w              m             1 w
+# w              m               w
+# w              p               w
+# w              A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+#[up],[left,left,left]
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
-w              p             1 w
-w              m             1 w
-w              m               w
+w                            1 w
+w                            1 w
+w                              w
 w              p               w
-w              A          3 3  w
+w          pmm A          3 3  w
 w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
