@@ -67,7 +67,7 @@ wwwwwwwwww
 """
 
 
-level = changeScoreLevel
+level = flipDirectionLevel
 
 game="""
 BasicGame

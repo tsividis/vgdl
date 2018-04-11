@@ -419,8 +419,8 @@ class Theory(object):
 				else:
 					classScore += 2
 
-		# ruleScore = len([rule for rule in self.interactionSet if rule.interaction!=stepBack])
-		ruleScore = 1
+		ruleScore = len([rule for rule in self.interactionSet if rule.interaction in ['flipDirection']])
+		# ruleScore = 1
 		return classScore + ruleScore/1000.
 
 	def explainTimeStep(self, timestep, fullTimestep, timesteps, currTheories=False, override=False):

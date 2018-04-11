@@ -855,7 +855,7 @@ def initializeVrle(hypothesis, stateToSet, symbolDict, theoryRLE=None, makeIniti
 	## Don't do any of the rest if we have an ungrammatical hypothesis caused by num(avatars)>1.
 	if len(stateToSet._game.observation['trackedObjects'][hypothesis.classes['avatar'][0].colorName])>1:
 		print "Warning. In initializeVrle. Got more than one avatar. Returning None as Vrle."
-		embed()
+		# embed()
 		Vrle = None
 		return Vrle
 	
@@ -982,7 +982,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		sPrev, dist_ts = find_sPrev(sB, envB, envPrev) #Previous location of our sprite
 
 		sA_type = theory.spriteObjects[sA.colorName].vgdlType
-
+		sA_class = theory.spriteObjects[sA.colorName].className
+		
 		## Calculate inventory penalty for the sprite
 		inventory_penalty = 0
 		keys = list(set(t[0].inventory.keys()+t[1].inventory.keys()))
@@ -992,12 +993,19 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			inventory_penalty += abs(t0_k[0]-t1_k[0])
 		total_penalty += np.log((e_inventory)**inventory_penalty) #likelihood
 
-		# if dist>0 and 'flipDirection' in [r.interaction for r in theory.interactionSet]:
-			# print "got flipDirection"
-			# embed()
 
+		if dist>0 and 'flipDirection' in [r.interaction for r in theory.interactionSet if r.slot1==sA_class]:
+			neighbors_prev = neighboringSprites(envPrev, sPrev,0)
+			if neighbors_prev:
+				neighbor_class = theory.spriteObjects[neighbors_prev[0].colorName].className
+				if 'flipDirection' in [r.interaction for r in theory.interactionSet if r.slot1==sA_class and r.slot2==neighbor_class]:
+					positionOptions = [(sPrev.rect.left-d, sPrev.rect.top), (sPrev.rect.left+d, sPrev.rect.top), \
+							(sPrev.rect.left, sPrev.rect.top-d),(sPrev.rect.left, sPrev.rect.top+d)]
+					if (sB.rect.left, sB.rect.top) in positionOptions:
+						total_penalty += np.log(1.-e_dist)
+						continue
 		## If a teleport event has taken place
-		if dist>0 and 'teleportToExit' in [r.interaction for r in theory.interactionSet]:
+		if dist>0 and 'teleportToExit' in [r.interaction for r in theory.interactionSet if r.slot1==sA_class]:
 			sA_class = theory.spriteObjects[sA.colorName].className
 			teleportEntryColors = [theory.classes[r.slot2][0].colorName for r in theory.interactionSet if r.interaction=='teleportToExit' and r.slot1==sA_class]
 			teleportExitClasses = [theory.spriteObjects[colorName].args['stype'] for colorName in teleportEntryColors]
@@ -2147,8 +2155,8 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 
-	filename = "examples.gridphysics.avatar_inference"
-	# filename = "examples.gridphysics.testAll"
+	# filename = "examples.gridphysics.avatar_inference"
+	filename = "examples.gridphysics.testAll"
 	
 
 	# filename = "examples.gridphysics.basics"
