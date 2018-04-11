@@ -159,8 +159,11 @@ def _testConstructor(game, level, action_sequences, expected_theory=None):
 		else:
 			theory = generateTheoryFromGameString(game)
 <<<<<<< HEAD
+<<<<<<< HEAD
 		self.initRunCreate(game, level, action_sequences)
 
+=======
+>>>>>>> parent of 6a4ea44... working on 3rd test
 =======
 >>>>>>> parent of 6a4ea44... working on 3rd test
 		# embed()

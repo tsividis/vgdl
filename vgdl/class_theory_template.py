@@ -127,7 +127,10 @@ class SpriteParser(object):
                         #print "--> will be ITSELF"
                         self.sprite_types[key] = Sprite(sclass, color_type, args=args_without_color)
 <<<<<<< HEAD
+<<<<<<< HEAD
                         # print self.sprite_types[key].args
+=======
+>>>>>>> parent of 6a4ea44... working on 3rd test
 =======
 >>>>>>> parent of 6a4ea44... working on 3rd test
                 else:
