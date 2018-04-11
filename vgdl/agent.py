@@ -298,7 +298,7 @@ class Agent:
 			# [K_UP, K_UP, K_DOWN]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			# [0]*6
+			[0]*11
 			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT],
 			# [K_RIGHT, K_RIGHT]
 			# [0,0, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0,0,0]
@@ -306,8 +306,8 @@ class Agent:
 			# [K_UP, K_UP, K_UP, K_RIGHT]
 			# [K_UP, K_UP]
 			# [K_RIGHT, K_UP]
-			[K_UP],
-			[K_LEFT,K_LEFT,K_LEFT,K_LEFT]
+			# [K_UP],
+			# [K_LEFT,K_LEFT,K_LEFT,K_LEFT]
 			# [K_LEFT, K_UP, K_UP, K_UP, K_UP]
 			# [K_LEFT]*8
 			# [0]*20
@@ -747,7 +747,12 @@ def setSpriteState(sprite, matchingSprite, hypothesis):
 		## anything as a function of bounces. So doing it as below is actually ideal.
 		orientation = matchingSprite.lastDisplacement
 
-		if orientation == (0,0):
+		## WrapAround rule conflicts with the normal way of setting sprite orientation. If we have this rule, just go with the prior
+		## about a sprite's orientation.
+		c1 = hypothesis.spriteObjects[matchingSprite.colorName].className
+		wrapAroundApplies = any([rule.interaction=='wrapAround' and rule.slot1==c1 for rule in hypothesis.interactionSet])
+
+		if orientation == (0,0) or wrapAroundApplies:
 			orientation = hypothesis.spriteObjects[matchingSprite.colorName].args['orientation']
 
 		sprite.orientation = orientation
@@ -1332,9 +1337,13 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			targetTokens = list(set([e.targetToken for e in relatedErrorMaps]))
 			## give int_pairs to each matching errorMap item.
 			for e in errorMap:
-				if tuple(e.diagnosis) == dcp[0:-1] and e.targetClass == dcp[1]:
-					e.intPairs = int_pairs
-					e.targetTokens = targetTokens
+				try:
+					if tuple(e.diagnosis) == dcp[0:-1] and e.targetClass == dcp[1]:
+						e.intPairs = int_pairs
+						e.targetTokens = targetTokens
+				except:
+					print "problem in errorMap consolidation in errorSignal"
+					embed()
 		lst = [errorMap[0]]
 		for e in errorMap[1:]:
 			if all([not(e.diagnosis == l.diagnosis and e.targetClass == l.targetClass) for l in lst]):
@@ -1448,7 +1457,6 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 		e.diagnosis.append('unexpectedPosition')
 	# 1.4) unexpectedOverlap
 	if dist_ts!=0 and nearest_dist<1:
-
 		e.diagnosis.append('unexpectedOverlap')
 		# find sprite in envA that corresponds to covered sprite in envB
 		color = nearest_sprite.colorName
@@ -1456,7 +1464,6 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 		for k in [key for key in envA._game.observation['trackedObjects'].keys() if envA._game.observation['trackedObjects'][key]]:
 			if color == envA._game.observation['trackedObjects'][k][0].colorName:
 				className_envA = k
-
 		covered_sprite_envB = findNearestSprite(sB, [item for sublist in envB._game.observation['trackedObjects'].values() for item in sublist if sB!=item])[0]
 		if covered_sprite_envB.colorName not in theory.spriteObjects:
 			print "diagnosePosMismatch found a new color"
@@ -1466,18 +1473,20 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 			e1.targetClass = 'unknown'
 			e1.targetColor = covered_sprite_envB.colorName
 			errorMaps.append(e1)
-
 		e.intPairs = [(sA.colorName, covered_sprite_envB.colorName)] #overwrite interaction pair by the overlapping sprite pair
-
-		# print "got unexpectedOverlap"
-		# embed()
 	if dist_ts>2:
 		e2 = errorMapEntry()
 		e2.targetToken = e.targetToken
 		e2.targetClass = e.targetClass
 		e2.targetColor = e.targetColor
-		e2.diagnosis.append('teleport')
-		e2.intPairs = [(sA.colorName, n) for n in neighbors_prev]
+		dx, dy = abs(sB.rect.left-sPrev.rect.left), abs(sB.rect.top-sPrev.rect.top)
+		if (dx+sB.rect.width==envB._game.screensize[0] and dy==0) or (dx==0 and dy+sB.rect.height==envB._game.screensize[1]):
+			e2.diagnosis.append('wrapAround')
+			e2.intPairs.append((sA.colorName, 'ENDOFSCREEN'))
+			pass
+		else:
+			e2.diagnosis.append('teleport')
+			e2.intPairs = [(sA.colorName, n) for n in neighbors_prev]
 		errorMaps.append(e2)
 	
 	# Return list of errorMapEntry objects
@@ -2090,7 +2099,9 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			## if the diagnosis involves objectDestruction and the targetClassPair has non-generic rules,
 			## change the diagnosis here to conditionalKill such that you can propose preconditions in proposePredicates
 			predicates = proposePredicates(singleIntPairErrorMap.diagnosis, envRealCurrent._game.observation)
-
+			# if 'wrapAround' in eM.diagnosis:
+				# print "got unexpectedOverlap"
+				# embed()
 			classPair, theories = expandLine(theoryCopy, singleIntPairErrorMap, targetClassPair, predicates,
 				classPairPlusPredicateToRuleSets, envRealPrev, envRealCurrent, action, rleHistories, actionHistories, MultiEpisodeExperienceReplay, n=n, 
 				observations=envRealCurrent._game.observation, generic=False)
@@ -2109,11 +2120,11 @@ def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, a
 	env.step(action)
 	penalty, errorList = errorSignal(env, envReal, hypothesis, envRealPrev)
 
-	# if errorList:
-		# hypothesis.display()
-		# for e in errorList:
-			# e.display()
-			# print ""
+	if errorList:
+		hypothesis.display()
+		for e in errorList:
+			e.display()
+			print ""
 	# else:
 		# print "No error"
 		# embed()

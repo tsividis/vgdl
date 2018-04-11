@@ -355,7 +355,7 @@ class Theory(object):
 			self.spriteSet = spriteInductionResult
 
 		# End of screen is a special object. Initialize it here.
-		eos = Sprite(core.EOS, 'ENDOFSCREEN', None, None)
+		eos = Sprite(core.EOS, 'ENDOFSCREEN', 'EOS', None)
 		self.spriteSet.append(eos)
 
 		# Get mapping from sprite color to Sprite object
@@ -2362,7 +2362,6 @@ def getKeywordsFromOntology(interactionName):
 	 ##TODO: Fill in proposeArgs for the following keywords.
 	'spawnIfHasMore': ['resource', 'stype', 'limit'],\
 	'wallStop': ['friction'],\
-	'wrapAround': ['offset'],\
 	'wallBounce': ['friction'],\
 	'slipForward': ['prob'],\
 	'attractGaze': ['prob'],\
@@ -2499,7 +2498,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 								'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore',\
 								'killIfTooFast', 'killIfSlow',\
 								'undoAll', 'nothing',\
-								'turn', 'turnAround', 'reverseDirection', 'flipDirection', 'bounceForward',\
+								'turn', 'turnAround', 'reverseDirection', 'wrapAround', 'flipDirection', 'bounceForward',\
 								'changeResource', 'collectResource', 'changeScore', 'teleportToExit', 'conveySprite'],
 	'gridphysics': 				[],
 	'continuousphysics': 		['transformToOnLanding', 'killIfTooFast', 'killIfSlow', 'killIfFromAbove',\
@@ -2526,6 +2525,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 	'unexpectedOverlap':		['nothing', 'reverseDirection'],#, 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
 	'orientationChange': 		['reverseDirection', 'flipDirection'],
 									#'turn', 'turnAround', 
+	'wrapAround':				['wrapAround'], # no offsets
 	'teleport': 				['teleportToExit'],
 
 	## Object state change
@@ -2667,6 +2667,7 @@ predicateToOrderingMapping = {
 	'turnAround':			(0,),
 	'reverseDirection':		(0,),
 	'flipDirection':		(0,),
+	'wrapAround':			(0,),
  	'teleportToExit':		(0,),
  	'conveySprite':			(0,),
 	'windGust':				(0,),
@@ -2683,7 +2684,7 @@ predicateToOrderingMapping = {
  	'changeScore':			(0,1),
 	'undoAll':				(0,1)}
 
-predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit']
+predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit', 'wrapAround']
 
 def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n):
 

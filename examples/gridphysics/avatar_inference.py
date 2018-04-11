@@ -237,18 +237,28 @@
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-#[up],[left,left,left]
+## diagnoses ability to learn preconditions across multiple episodes. works.
+#[up],[left,left,left,left]
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w              p               w
+# w          pmm A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
-w                            1 w
-w                            1 w
-w                              w
-w              p               w
-w          pmm A          3 3  w
-w                              w
+w              A          3 3  w
+w                     s     s  w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
+
 
 # testing when poisons make you step back
 # works
@@ -279,7 +289,7 @@ BasicGame
         chaser > Chaser color=BLACK speed=1 cooldown=4 stype=avatar fleeing=True
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         missile > Missile
-            sam  > orientation=UP color=BLUE singleton=False cooldown=1
+            sam  > orientation=RIGHT color=BLUE singleton=False cooldown=1
         wall > Immovable color=DARKGRAY
         medicine > Resource limit=4 color=GREEN
         poison > Resource limit=3 color=PINK
@@ -312,7 +322,8 @@ BasicGame
         avatar sam > bounceForward
         cannon sam > stepBack
         sam cannon > stepBack
-        sam wall > reverseDirection
+        # sam wall > reverseDirection
+        sam EOS > wrapAround
         medicine avatar > killSprite
         # avatar medicine > changeResource resource=invisiblemedicine value=1
         # avatar poison > changeResource resource=invisiblemedicine value=-1
