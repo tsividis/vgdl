@@ -637,7 +637,7 @@ class Agent:
 			print "second attempt failed, 0 theories survived filter"
 			embed()
 
-		return bestScoresAndHypotheses
+		return bestScoresAndHypotheses, scoreAndTheoryTuples
 
 	########################################################################
 	######## TESTING HYPOTHESES BY RANDOM SAMPLING OR OTHER METHODS ########

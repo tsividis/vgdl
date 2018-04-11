@@ -49,7 +49,7 @@ class _TestAgent(unittest.TestCase):
 		envReal = self.agent.fastcopy(self.agent.rle)
 		self.agent.rleHistory[episode_num].append(envReal)
 
-	def initRunCreate(self, game, level, action_sequences, *args):
+	def initRunCreate(self, game, level, action_sequences):
 		self.runCurriculum(game, level, action_sequences)
 
 	#######################################
@@ -153,14 +153,18 @@ def _testConstructor(game, level, action_sequences, expected_theory=None):
 	def testCase(self):
 		print 'RUNNING TEST'
 		print game, '\n', level, '\n', action_sequences, '\n'
+		self.initRunCreate(game, level, action_sequences)
 		if expected_theory:
 			theory = generateTheoryFromGameString(expected_theory)
 		else:
 			theory = generateTheoryFromGameString(game)
+<<<<<<< HEAD
 		self.initRunCreate(game, level, action_sequences)
 
+=======
+>>>>>>> parent of 6a4ea44... working on 3rd test
 		# embed()
-		# self.assertAgentHasTheory(theory)
+		self.assertAgentHasTheory(theory)
 		self.assertTheoriesEqual(self.agent.hypotheses[0], theory)
 		self.assertTheoryBelowEpsilonError(self.agent.hypotheses[0])
 		## Write whatever things you want to test for here.
@@ -183,7 +187,7 @@ class TestBasics(_TestAgent):
 	# This is another way to create a test case. You can do everything individually.
 	def testKillSpriteAndStop(self):
 		self.initRunCreate(*basics.test2)
-		real_description = generateTheoryFromGameString(basics.test2.game)
+		real_description = generateTheoryFromGameString(basecs.test2.game)
 		# this may not be that useful, but I'll keep it around anyway.
 		self.assertTheoriesEqual(self.agent.hypotheses[0], real_description)
 

@@ -1,6 +1,4 @@
 from collections import namedtuple
-from itertools import combinations
-
 from vgdl.theory_template import Theory, Game, InteractionRule, TerminationRuleConstructor
 from vgdl.class_theory_template import SpriteParser
 from vgdl.core import VGDLParser, EOS
@@ -105,25 +103,12 @@ def generateTheoryFromGameString(game_string, with_step_back=True):
 			class_names.append(class_name)
 		theory.spriteObjects[sprite.colorName] = sprite
 
-		if class_name != 'EOS':
-			rule1 = InteractionRule('stepBack', class_name, class_name, {})
-			rule2 = InteractionRule('stepBack', class_name, 'EOS', {})
-			theory.interactionSet.append(rule1)
-			theory.interactionSet.append(rule2)
-
 
 	# Add interaction Rules
-	interacting_sprites = set()
 	for c1, c2, effect, args in vgdl_game.collision_eff:
-		interacting_sprites.add(frozenset([c1, c2]))
 		rule = InteractionRule(effect.__name__, c1, c2, args)
+		rule.display()
 		theory.interactionSet.append(rule)
-
-	for c1, c2 in combinations(theory.classes, 2):
-		if not set([c1, c2]) in interacting_sprites:
-			rule = InteractionRule('stepBack', c1, c2, args)
-			rule = InteractionRule('stepBack', c2, c1, args)
-			theory.interactionSet.append(rule)
 
 	# Add termination Rules
 	for termination in vgdl_game.terminations:
