@@ -295,10 +295,11 @@ class Agent:
 
 		actionSequences = [
 			# [0,0,0,K_LEFT, K_LEFT,0,0]
-			# [K_UP, K_UP, K_DOWN]
+			# [K_SPACE,0,K_UP,K_RIGHT]
+			[K_RIGHT, K_UP, K_SPACE, 0, 0,0,0,0]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			[0]*11
+			# [0]*11
 			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT],
 			# [K_RIGHT, K_RIGHT]
 			# [0,0, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0,0,0]
@@ -1106,15 +1107,15 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 			# total_penalty += np.log(1.-e_dist) if t[2]==0. else np.log(0+e_dist)
 
-		if reportError:
-			# Determine errorMapEntry object for position mismatch problem
-			errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory)
-			errorMap.extend(errs)
-	
-	# if 'BLUE' in theory.spriteObjects and 'Missile' in str(theory.spriteObjects['BLUE'].vgdlType):
-		# if any(['unexpectedPosition' in e.diagnosis and e.targetColor=='BLUE' for e in errorMap]):
-			# print "got unexpectedPosition"
-			# embed()
+		try:
+			if reportError:
+				# Determine errorMapEntry object for position mismatch problem
+				errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory)
+				errorMap.extend(errs)
+		except:
+			print "reportError problem"
+			embed()
+
 	# Missing/additional/transformation penalty
 	total_penalty += np.log((e_disappearance)**( len(lonely_sprites_envA) + len(lonely_sprites_envB) )) #likelihood
 
@@ -1127,43 +1128,6 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		return total_penalty, []
 
 	### Construct errorMap using previous state ###
-
-	# 1) Position mismatch: Things have moved.
-
-	# Case A: matched sprites have different positions from what predicted
-	# for t in matched_sprites:
-	# 	dist_envs = t[2] #distance between sprites in real and theory environments
-	# 	if dist_envs == 0.: #sprites located where expected -> no conflict
-	# 		continue
-	# 	sA = t[0]
-	# 	sB = t[1]
-
-	# 	sA_type = theory.spriteObjects[sA.colorName].vgdlType
-	# 	# For stochastic types don't generate errorMap if behavior is consistent with possible movements.
-	# 	if any([stochasticType in str(sA_type) for stochasticType in ['Random', 'Chaser']]):
-	# 		xB = sB.rect.left/d
-	# 		yB = sB.rect.top/d
-	# 		if 'Random' in str(sA_type):
-	# 			if (xB,yB) in positionOptions:
-	# 				continue
-	# 			# else:
-	# 				# print "random not in positionOptions"
-	# 				# embed()
-	# 		if 'Chaser' in str(sA_type):
-	# 			if (xB,yB) in closestTargets:
-	# 				continue
-	# 			# else:
-	# 				# print "chaser not in positionOptions"
-	# 				# embed()
-
-	# 	# Find sprite corresponding to sB in previous time step
-	# 	sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
-	# 	if sPrev == None:
-	# 		warnings.warn('sPrev not found in position mismatch error')
-	# 		continue
-	# 	# Determine errorMapEntry object for position mismatch problem
-	# 	errs = diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory)
-	# 	errorMap.extend(errs)
 
 	# Case B: Sprite moved in real environment, but we predicted a destruction
 	# For this, we check if lonely envB sprite has match in envPrev (and pass to (2) if not)
@@ -1334,8 +1298,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		errorMap.append(e)
 
 	## Share information across errorMap items and make a unique list
-	if len(errorMap) > 1:
-		
+	# if len(errorMap) > 1:
+	if errorMap:
 		diagnosis_class_pairs = list(set([tuple(e.diagnosis+[e.targetClass]) for e in errorMap]))
 		for dcp in diagnosis_class_pairs:
 			relatedErrorMaps = [e for e in errorMap if tuple(e.diagnosis)==dcp[0:-1] and e.targetClass==dcp[-1]]
@@ -1346,7 +1310,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			## give int_pairs to each matching errorMap item.
 			for e in errorMap:
 				try:
-					if tuple(e.diagnosis) == dcp[0:-1] and e.targetClass == dcp[1]:
+					if tuple(e.diagnosis) == dcp[0:-1] and e.targetClass == dcp[-1]:
 						e.intPairs = int_pairs
 						e.targetTokens = targetTokens
 				except:
@@ -1361,11 +1325,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		# embed()
 		errorMap = lst
 
-	# if len(errorMap)==4:
-		# print "found 4 errorMaps"
-		# embed()
-	## Sort so that you fix errors involving any new classes first when you build theories.
-	errorMap = sorted(errorMap, key=lambda x: (x.targetClass!='unknown', 'inventoryChange' not in x.diagnosis) )
+		## Sort so that you fix errors involving any new classes first when you build theories.
+		errorMap = sorted(errorMap, key=lambda x: (x.targetClass!='unknown', 'inventoryChange' not in x.diagnosis) )
 
 	# print "at end of errorSignal"
 	# embed()
@@ -1376,6 +1337,8 @@ def neighboringSpritesColors(env, sprite):
 	returns colors of the neighboring sprites in env
 	"""
 	# Find potential interaction partners: neighboring sprites in previous step
+	if sprite is None:
+		return []
 	neighbors = neighboringSprites(env, sprite)
 	neighbors = list(set([n.colorName for n in neighbors]))
 	return neighbors
@@ -1420,6 +1383,7 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 	e.targetColor = sB.colorName
 
 	errorMaps = [e]
+	
 	# Find neighbors of target sprite in the previous time step
 	neighbors_prev = neighboringSpritesColors(envPrev, sPrev)
 
@@ -2051,15 +2015,17 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			newTheories = [theory]
 			# embed()
 			return newTheories
+		
 		## Now get overlapping/nearby classes and reassign the target class to the shooter/spawnpoint/etc. 
 		## the next step will take care of not doing inference on these if we've done it already.
-		neighbors = neighboringSprites(envRealCurrent, errorMap.targetToken, 0)
+		neighbors = neighboringSprites(envRealCurrent, errorMap.targetToken, 1)
 
 		# print "neighbors of new class are {}".format(neighbors)
 		newErrorMaps = []
 		for neighbor in neighbors:
 			e = errorMap.copy()
 			e.targetToken = neighbor
+			e.targetTokens.append(e.targetToken)
 			newPairs = []
 			for num,pair in enumerate(e.intPairs):
 				newPair = tuple([p if p!='unknown' else e.targetClass for p in list(pair)])
@@ -2067,6 +2033,8 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			e.intPairs = newPairs
 			e.targetClass = theory.spriteObjects[neighbor.colorName].className
 			newErrorMaps.append(e)
+
+		# embed()
 
 	for eM in newErrorMaps:
 
@@ -2155,8 +2123,8 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 
-	# filename = "examples.gridphysics.avatar_inference"
-	filename = "examples.gridphysics.testAll"
+	filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.testAll"
 	
 
 	# filename = "examples.gridphysics.basics"

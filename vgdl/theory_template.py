@@ -2575,8 +2575,6 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	else:
 		spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, action=action, oldSpriteSet=theory.spriteSet,\
 		specificSpritesToUpdate=errorMap.targetTokens, percentile=percentile, max_num=max_num)
-
-
 	## Don't instantiate non-avatar proposals for the 'avatar' class.
 	if targetClass=='avatar':
 		spriteProposals = [s for s in spriteProposals if 'Avatar' in str(s[0][1])]
