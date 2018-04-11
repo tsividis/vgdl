@@ -1587,19 +1587,13 @@ class Theory(object):
 		print self
 		return
 
-	def _string(self, ignore_step_back=True, ignore_novelty_terminations=True, color_names=False):
-		string = "------ Theory ------"
-		string += self._stringClasses(color_names=color_names)
-		string += self._stringRules(color_names=color_names, 
-									ignore_step_back=ignore_step_back)
-		string += self._stringTerminations(color_names=color_names, 
-					ignore_novelty_terminations=ignore_novelty_terminations)
-		string += '\n------------------'	
-		return string
-
 	def __repr__(self):
-
-		return self._string()
+		string = "------ Theory ------"
+		string += self._stringClasses()
+		string += self._stringRules()
+		string += self._stringTerminations()
+		string += '\n------------------'
+		return string
 
 	def __eq__(self, other):
 		if isinstance(other, self.__class__):

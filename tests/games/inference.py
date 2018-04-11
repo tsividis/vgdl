@@ -159,8 +159,8 @@ BasicGame
         avatar wall > stepBack
         wall avatar > stepBack
 
-        # box box2 > stepBack
-        # box2 box > stepBack
+        box box2 > stepBack
+        box2 box > stepBack
         box wall > stepBack
         wall box > stepBack
         box2 wall > stepBack
@@ -200,56 +200,7 @@ w                         3 3  w
 w         c    c               w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
-test2_theory = """
-BasicGame
-    SpriteSet
-        box > Immovable color=WHITE 
-        box2 > Immovable color=GREEN
-        wall > Immovable color=DARKGRAY
-        avatar  > MovingAvatar color=DARKBLUE
-        cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
-        sam > Missile orientation=UP color=BLUE singleton=False cooldown=1
-    LevelMapping
-        1 > box
-        2 > box2
-        A > avatar
-    InteractionSet
-        
-        box avatar > transformTo stype=box2
-
-        # box avatar > stepBack
-        # avatar box > stepBack
-        # box2 avatar > stepBack
-        # avatar box2 > stepBack
-
-        avatar wall > stepBack
-        wall avatar > stepBack
-
-        box box2 > stepBack
-        box2 box > stepBack
-        box wall > stepBack
-        wall box > stepBack
-        box2 wall > stepBack
-        wall box2 > stepBack
-
-
-        box box > stepBack
-        avatar avatar > stepBack
-        wall wall > stepBack
-        box2 box2 > stepBack
-
-        box EOS > stepBack
-        box2 EOS > stepBack
-        wall EOS > stepBack
-        avatar EOS > stepBack
-
-
-        # Need to include all step backs
-    TerminationSet
-        SpriteCounter stype=avatar limit=0 win=False
-        SpriteCounter stype=box limit=0 win=True
-"""
-test2 = TestCase(gameBoxes, level1, [[0]*6], test2_theory)
+test2 = TestCase(gameBoxes, level1, [[0]*6])
 
 # TODO: You need to be able to re-run testAndExpand() when no hypotheses pass your filter
 ## the problem here is that you need to build on expandSprite proposals with expandLine within one errorMap and
