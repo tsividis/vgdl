@@ -21,12 +21,38 @@ class _TestAgent(unittest.TestCase):
 	# Set Up and Tear Down
 	#
 	# Simply creates a new agent for every test. You have to set up the games individually.
+	currentResults = None
+
 	def setUp(self):
 		# embed()
 		self.agent = Agent('full', FILENAME)
 
+	def run(self, results=None):
+		self.currentResults = results
+		unittest.TestCase.run(self, results)
+
 	def tearDown(self):
-		pass
+		errors = self.currentResults.errors
+		failures = self.currentResults.failures
+		if failures or errors:
+			from tests.theory_tools import *
+			from games import *
+			print '-------'
+			print
+			print 'ERRORS:'
+			for error, message in errors:
+				print error
+				print message
+			print
+			print 'FAILURES:'
+			for failure, message in failures:
+				print failure
+				print message
+			print '-------'
+			print 'importing tests.theory_tools'
+			print 'importing games'
+			print 'embeding'
+			embed()
 
 	########################################
 	# Initialization
@@ -104,7 +130,7 @@ class _TestAgent(unittest.TestCase):
 		string += '%s' % getattr(theory1, string_function)(**kwargs)
 		string += '\n--- Theory2'
 		string += '%s\n---' % getattr(theory2, string_function)(**kwargs)
-		string += '<<<\n'
+		string += '\n<<<\n'
 		return string
 
 	def stringLowErrorHypotheses(self, error_limit=0.01):
@@ -146,6 +172,9 @@ class _TestAgent(unittest.TestCase):
 	def assertAgentHasTheories(self):
 		self.assertTrue(len(self.agent.hypotheses) > 0, 'Agent has no theories')
 
+	def _testTest(self):
+		self.assertTrue(False)
+
 
 def _testConstructor(game, level, action_sequences, expected_theory=None):
 	'''Creates a basic test case. Theory learned == Real Game Description'''
@@ -153,12 +182,13 @@ def _testConstructor(game, level, action_sequences, expected_theory=None):
 	def testCase(self):
 		print 'RUNNING TEST'
 		print game, '\n', level, '\n', action_sequences, '\n'
-		self.initRunCreate(game, level, action_sequences)
 		if expected_theory:
 			theory = generateTheoryFromGameString(expected_theory)
 		else:
 			theory = generateTheoryFromGameString(game)
-		self.assertAgentHasTheory(theory)
+		self.initRunCreate(game, level, action_sequences)
+
+		# self.assertAgentHasTheory(theory)
 		self.assertTheoriesEqual(self.agent.hypotheses[0], theory)
 		self.assertTheoryBelowEpsilonError(self.agent.hypotheses[0])
 		## Write whatever things you want to test for here.
@@ -183,6 +213,7 @@ class TestBasics(_TestAgent):
 		self.initRunCreate(*basics.test2)
 		real_description = generateTheoryFromGameString(basecs.test2.game)
 		# this may not be that useful, but I'll keep it around anyway.
+		self.assertAgentHasTheories()
 		self.assertTheoriesEqual(self.agent.hypotheses[0], real_description)
 
 	# def testKillSpritesAndNothing(self):
@@ -198,7 +229,7 @@ class TestBasics(_TestAgent):
 		self.executeStep(0, K_UP)
 		self.assertAgentHasTheories()
 
-class inference(_TestAgent):
+class TestInference(_TestAgent):
 
 	# test1 = _testConstructor(*inference.test1)
 	test0 = _testConstructor(*inference.test0)

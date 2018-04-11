@@ -1,4 +1,7 @@
 from collections import namedtuple
+from itertools import combinations
+
+from IPython import embed
 from vgdl.theory_template import Theory, Game, InteractionRule, TerminationRuleConstructor
 from vgdl.class_theory_template import SpriteParser
 from vgdl.core import VGDLParser, EOS
@@ -101,14 +104,28 @@ def generateTheoryFromGameString(game_string, with_step_back=True):
 			sprite.colorName = 'ENDOFSCREEN'
 		else:
 			class_names.append(class_name)
+			rule1 = InteractionRule('stepBack', class_name, class_name, {})
+			rule2 = InteractionRule('stepBack', class_name, 'EOS', {})
+			theory.interactionSet.append(rule1)
+			theory.interactionSet.append(rule2)
+
 		theory.spriteObjects[sprite.colorName] = sprite
 
 
 	# Add interaction Rules
+	interacting_sprites = set()
 	for c1, c2, effect, args in vgdl_game.collision_eff:
+		interacting_sprites.add(frozenset([c1, c2]))
 		rule = InteractionRule(effect.__name__, c1, c2, args)
-		rule.display()
 		theory.interactionSet.append(rule)
+
+	for c1, c2 in combinations(class_names, 2):
+		combination = set([c1, c2])
+		if set([c1, c2]) not in interacting_sprites:
+			rule1 = InteractionRule('stepBack', c1, c2, args)
+			rule2 = InteractionRule('stepBack', c2, c1, args)
+			theory.interactionSet.append(rule1)
+			theory.interactionSet.append(rule2)
 
 	# Add termination Rules
 	for termination in vgdl_game.terminations:
@@ -197,8 +214,13 @@ def theoryInHypotheses(theory, hypotheses):
 	return False
 
 if __name__ == '__main__':
-	from tests.games import simple
+	from tests.games import simple, inference
 	t1 = generateTheoryFromGameString(simple.game)
 	t2 = generateTheoryFromGameString(simple.game2)
 	# assert TheoriesEqual(t1, t2), 'Theories not equal'
 	print 'TheoriesEqual(t12, t2) = %s' % theoriesEqual(t1, t2)
+
+	print inference.game
+	t3 = generateTheoryFromGameString(inference.game)
+
+	print interactionSetsEqual(t3, t3)

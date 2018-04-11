@@ -1,59 +1,5 @@
 from tests.locals import *
 
-tSetBase = """
-TerminationSet
-    SpriteCounter stype=avatar limit=0 win=False
-"""
-
-levelMapping = """
-LevelMapping
-	1 > box
-	2 > box2
-	3 > box3
-	w > wall
-	c > cannon
-	A > avatar
-"""
-
-
-sSetBoxes = """
-SpriteSet
-    avatar > MovingAvatar color=DARKBLUE
-    box	 > Immovable color=WHITE 
-    box2 > Immovable color=GREEN
-    box3 > Immovable color=YELLOW
-    wall > Immovable color=DARKGRAY
-"""
-
-sSetCannons = joinDescs(sSetBoxes, """
-SpriteSet
-    cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
-    sam > Missile orientation=UP color=BLUE singleton=False cooldown=1
-""")
-
-iSetBoxes = """
-InteractionSet
-    avatar wall > stepBack
-    box avatar > transformTo stype=box2
-    # Need to include all step backs
-"""
-
-iSetCannons = joinDescs(iSetBoxes, """
-InteractionSet
-    cannon avatar > bounceForward
-    avatar sam > bounceForward
-    # cannon sam > stepBack
-    # sam cannon > stepBack
-    # need to include additional stepbacks
-""")
-
-# print iSetCannons.__repr__()
-
-iSetWeird = joinDescs(iSetCannons, """
-InteractionSet
-	cannon sam > stepBack
-	sam cannon > stepBack
-""")
 # print iSetWeird.__repr__()
 
 '''
@@ -74,14 +20,6 @@ InteractionSet
     sam cannon > stepBack
 '''
 
-
-gameBoxes = catDescriptions(sSetBoxes, iSetBoxes, tSetBase, levelMapping)
-
-gameCannons = catDescriptions(sSetCannons, iSetCannons, tSetBase, levelMapping)
-gameWeird = catDescriptions(sSetCannons, iSetWeird, tSetBase, levelMapping)
-# print 
-# print game
-
 game = """
 BasicGame
     SpriteSet
@@ -90,7 +28,7 @@ BasicGame
         box3 > Immovable color=YELLOW
         wall > Immovable color=DARKGRAY
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
-        sam > Missile orientation=UP color=BLUE single=False cooldown=1
+        sam > Missile orientation=UP color=BLUE singleton=False cooldown=1
         avatar  > MovingAvatar color=DARKBLUE 
     LevelMapping
         1 > box
@@ -102,8 +40,6 @@ BasicGame
     InteractionSet
         avatar wall > stepBack
         box avatar > transformTo stype=box2
-        box2 avatar > killSprite
-        box3 avatar > killSprite
         # Need to include all step backs
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
@@ -150,40 +86,14 @@ BasicGame
     InteractionSet
         
         box avatar > transformTo stype=box2
-
-        # box avatar > stepBack
-        # avatar box > stepBack
-        # box2 avatar > stepBack
-        # avatar box2 > stepBack
-
-        avatar wall > stepBack
-        wall avatar > stepBack
-
-        box box2 > stepBack
-        box2 box > stepBack
-        box wall > stepBack
-        wall box > stepBack
-        box2 wall > stepBack
-        wall box2 > stepBack
-
-
-        box box > stepBack
-        avatar avatar > stepBack
-        wall wall > stepBack
-        box2 box2 > stepBack
-
-        box EOS > stepBack
-        box2 EOS > stepBack
-        wall EOS > stepBack
-        avatar EOS > stepBack
-
-
-        # Need to include all step backs
+        box2 avatar > nothing
+        
+        # step backs for non interacting sprites are automatically added
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
         SpriteCounter stype=box limit=0 win=True
 """
-test1 = TestCase(gameBoxes, level1, [[K_UP]*4+[K_LEFT]], test1_theory)
+test1 = TestCase(game, level1, [[K_UP]*4+[K_LEFT]], test1_theory)
 
 
 
@@ -200,7 +110,7 @@ w                         3 3  w
 w         c    c               w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
-test2 = TestCase(gameBoxes, level1, [[0]*6])
+test2 = TestCase(game, level2, [[0]*6])
 
 # TODO: You need to be able to re-run testAndExpand() when no hypotheses pass your filter
 ## the problem here is that you need to build on expandSprite proposals with expandLine within one errorMap and
@@ -218,7 +128,7 @@ w         c    c               w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test3 = TestCase(gameBoxes, level3, [[0]*6])
+test3 = TestCase(game, level3, [[0]*6])
 
 # works if you don't allow the eventHandler to apply effects to newly-created sprites
 #[0,0,0,K_LEFT, K_LEFT,0,0]
@@ -233,7 +143,7 @@ w                         3 3  w
 w         c    c A             w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
-test4 = TestCase(gameBoxes, level4, [[0]*3+[K_LEFT]*2+[0]*2])
+test4 = TestCase(game, level4, [[0]*3+[K_LEFT]*2+[0]*2])
 
 # #up, up, down
 level5 = """
@@ -247,7 +157,7 @@ w              A          3 3  w
 w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
-test5 = TestCase(gameBoxes, level5, [[K_UP, K_UP, K_DOWN]])
+test5 = TestCase(game, level5, [[K_UP, K_UP, K_DOWN]])
 
 #0,0,0,0,0,0,0
 level6 = """
@@ -261,7 +171,7 @@ w              A          3 3  w
 w   c   c                      w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
-test6 = TestCase(gameBoxes, level6, [[0]*7])
+test6 = TestCase(game, level6, [[0]*7])
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
