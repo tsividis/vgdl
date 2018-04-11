@@ -158,9 +158,6 @@ def _testConstructor(game, level, action_sequences, expected_theory=None):
 			theory = generateTheoryFromGameString(expected_theory)
 		else:
 			theory = generateTheoryFromGameString(game)
-		self.initRunCreate(game, level, action_sequences)
-
-		# embed()
 		self.assertAgentHasTheory(theory)
 		self.assertTheoriesEqual(self.agent.hypotheses[0], theory)
 		self.assertTheoryBelowEpsilonError(self.agent.hypotheses[0])
