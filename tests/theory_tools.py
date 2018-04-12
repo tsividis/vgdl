@@ -20,7 +20,7 @@ def getColorAssignments(hypothesis):
 
 def getColorName(hypothesis, class_name):
 	'''Returns the the color of a given class in a given hypothesis'''
-	assert class_name in hypothesis.classes, 'Key Error: class name %s not in classes %r: %s' % (class_name, hypothesis.classes, hypothesis._stringClasses())
+	assert class_name in hypothesis.classes, 'Key Error: class name %s not in classes: %r' % (class_name, hypothesis.classes.keys())
 	return hypothesis.classes[class_name][0].colorName
 
 def getColorArgs(hypothesis, args):
@@ -37,11 +37,13 @@ def getColorInteraction(rule, hypothesis):
 	args = getColorArgs(hypothesis, rule.args)
 	return InteractionRule(rule.interaction, color1, color2, args)
 
-def getColorInteractionSet(hypothesis):
+def getColorInteractionSet(hypothesis, ignore_nothing=True):
 	'''Reterns interaction set where class names are converted to their respective color names'''
-	color_interaction_set = []
+	color_interaction_set = set()
 	for rule in hypothesis.interactionSet:
-		color_interaction_set.append(getColorInteraction(rule, hypothesis))
+		if rule.interaction == 'nothing':
+			continue
+		color_interaction_set.add(getColorInteraction(rule, hypothesis))
 	return color_interaction_set
 
 def getColorTermination(term, hypothesis):
@@ -49,10 +51,11 @@ def getColorTermination(term, hypothesis):
 	args = getColorArgs(hypothesis, term.termination.get_args())
 	return TerminationRuleConstructor(name, **args)
 
-def getColorTerminationSet(hypothesis):
+def getColorTerminationSet(hypothesis, ignore_novelty_terminations=True):
 	'''Returns termination set where class names are converted to their respective color names'''
 	color_termination_set = set()
 	for term in hypothesis.terminationSet:
+		print term.ruleType
 		color_termination_set.add(getColorTermination(term, hypothesis))
 	return color_termination_set
 
@@ -74,8 +77,6 @@ def interactionsEqual(interaction1, interaction2):
 def hypothesisContainsInteraction(hypothesis, interaction):
 	'''assert hypothesis contains a specific interaction 
 	relating color1 and color2 with specific arguments'''
-
-	rule = hypothesis.interactionSet[0]
 	for i in getColorInteractionSet(hypothesis):
 		if interactionsEqual(i, interaction):
 			return True
@@ -84,7 +85,7 @@ def hypothesisContainsInteraction(hypothesis, interaction):
 def hypothesisAssignsVGDLType2Color(hypothesis, color_name, vgdl_type):
 	return getColorAssignments(hypothesis)[color_name].vgdlType == vgdl_type
 
-def generateTheoryFromGameString(game_string, with_step_back=True):
+def generateTheoryFromGameString(game_string):
 	vgdl_parser = VGDLParser()
 	sprite_parser = SpriteParser()
 	game = Game(game_string)
@@ -167,13 +168,6 @@ def interactionSetsEqual(theory1, theory2):
 	interactions1 = getColorInteractionSet(theory1)
 	interactions2 = getColorInteractionSet(theory2)
 
-	interactions1 = [i for i in interactions1 if i.interaction != 'nothing']
-	interactions2 = [i for i in interactions2 if i.interaction != 'nothing']
-
-
-	interactions1 = set(interactions1)
-	interactions2 = set(interactions2)
-
 	if len(interactions1) != len(interactions2):
 		return False
 	if interactions1 != interactions2:
@@ -181,18 +175,29 @@ def interactionSetsEqual(theory1, theory2):
 
 	return True
 
+def interactionSetsDiff(theory1, theory2):
+	i1 = getColorInteractionSet(theory1)
+	i2 = getColorInteractionSet(theory2)
+
+	return i1-i2, i2-i1
+
 def terminationSetsEqual(theory1, theory2, ignore_novelty_terminations=True):
 	'''Check if terminations are equal (in terms of color, not class name)'''
-	terminations1 = getColorTerminationSet(theory1)
-	terminations2 = getColorTerminationSet(theory2)
+	terminations1 = getColorTerminationSet(theory1, ignore_novelty_terminations)
+	terminations2 = getColorTerminationSet(theory2, ignore_novelty_terminations)
 
-	if ignore_novelty_terminations:
-		terminations1 = set([t for t in terminations1 if t.ruleType != 'NoveltyRule'])
-		terminations2 = set([t for t in terminations2 if t.ruleType != 'NoveltyRule'])
+	if len(terminations1) != len(terminations2):
+		return False
 	if terminations1 != terminations2:
 		return False
 
 	return True
+
+def terminationSetsDiff(theory1, theory2, ignore_novelty_terminations=True):
+	t1 = getColorTerminationSet(theory1, ignore_novelty_terminations)
+	t2 = getColorTerminationSet(theory2, ignore_novelty_terminations)
+
+	return t1-t2, t2-t1
 
 def theoriesEqual(theory1, theory2, ignore_novelty_terminations=True):
 	'''Compares if two theories are equal where class assignments are based on color.'''
@@ -220,7 +225,9 @@ if __name__ == '__main__':
 	# assert TheoriesEqual(t1, t2), 'Theories not equal'
 	print 'TheoriesEqual(t12, t2) = %s' % theoriesEqual(t1, t2)
 
-	print inference.game
-	t3 = generateTheoryFromGameString(inference.game)
-
-	print interactionSetsEqual(t3, t3)
+	t4_expected = generateTheoryFromGameString(inference.test4.expected_theory)
+	t4_real = generateTheoryFromGameString(inference.test4.game)
+	d1, d2 = interactionSetsDiff(t4_real, t4_expected)
+	print getColorInteractionSet(t4_real)
+	print d2
+	

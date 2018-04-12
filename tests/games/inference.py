@@ -218,7 +218,7 @@ test3 = TestCase(game3, level3, [[0]*6], test_theory3)
 game4 = catDescriptions(base_game, """
 InteractionSet
     avatar sam > bounceForward
-    canon avatar > bounceForward
+    cannon avatar > bounceForward
 """)
 
 # works if you don't allow the eventHandler to apply effects to newly-created sprites
@@ -246,13 +246,13 @@ BasicGame
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
-        canon avatar > bounceForward
+        cannon avatar > bounceForward
 
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
 """
 
-test4 = TestCase(base_game, level4, [[0]*3+[K_LEFT]*2+[0]*2], test_theory4)
+test4 = TestCase(game4, level4, [[0]*3+[K_LEFT]*2+[0]*2], test_theory4)
 
 
 #########################################################
@@ -286,14 +286,14 @@ BasicGame
         avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
         box avatar > transformTo stype=box2
-        box2 avatar > nothing
+        avatar box2 > nothing
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
         SpriteCounter stype=box limit=0 win=True
 
 """
 
-test5 = TestCase(base_game, level5, [[K_UP, K_UP, K_DOWN]], test_theory5)
+test5 = TestCase(game5, level5, [[K_UP, K_UP, K_DOWN]], test_theory5)
 
 
 #########################################################
