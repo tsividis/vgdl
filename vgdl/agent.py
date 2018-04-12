@@ -3,9 +3,9 @@ from functools import partial
 from util import *
 from core import colorDict, VGDLParser, sys, keyPresses
 from ontology import *
-from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
-SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
-generateTheoryFromGame, expandLine, expandSprites, PreconditionInduction, proposePredicates, getRuleSetsForClassPairPredicate,\
+from theory_template import Precondition, InteractionRule, TerminationRule, TimeoutRule, \
+SpriteCounterRule, MultiSpriteCounterRule, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
+generateTheoryFromGame, expandLine, expandSprites, proposePredicates, getRuleSetsForClassPairPredicate,\
 interateThresholds
 import os, subprocess, shutil
 from collections import defaultdict
@@ -195,7 +195,6 @@ class Agent:
 								rule.slot2 = 'c'+str(int(rule.slot2[1:])-1)
 
 					self.hypotheses.append(newTheory)
-					self.distributions[color] = PreconditionInduction()
 					self.history[color] = {}
 		else:
 			self.hypotheses = [initialTheory]
@@ -1847,12 +1846,6 @@ if __name__ == "__main__":
 	
 
 	# filename = "examples.gridphysics.basics"
-
-	global WBP
-	if 'grid' in filename:
-		import WBP_grid as WBP
-	else:
-		import WBP_continuous as WBP
 
 	level_game_pairs = None
 	# Playing GVG-AI games
