@@ -64,7 +64,6 @@ class _TestAgent(unittest.TestCase):
 		self.agent.initializeEnvironment()
 		self.agent.all_objects[episode_num] = self.agent.rle._game.getObjects()
 		if episode_num == 0 or not self.agent.hypotheses:
-			print self.agent.learnAvatar
 			self.agent.initializeHypotheses(self.agent.all_objects[episode_num])
 		assert self.agent.hypotheses, 'No hypotheses initilialized'
 		envReal = self.agent.fastcopy(self.agent.rle)

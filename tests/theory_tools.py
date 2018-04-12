@@ -55,7 +55,8 @@ def getColorTerminationSet(hypothesis, ignore_novelty_terminations=True):
 	'''Returns termination set where class names are converted to their respective color names'''
 	color_termination_set = set()
 	for term in hypothesis.terminationSet:
-		print term.ruleType
+		if term.ruleType == 'NoveltyRule':
+			continue
 		color_termination_set.add(getColorTermination(term, hypothesis))
 	return color_termination_set
 
