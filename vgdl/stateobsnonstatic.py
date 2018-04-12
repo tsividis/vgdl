@@ -20,7 +20,7 @@ from colors import *
 
 # predicates whose effects are not immediately observable by the "CV system"
 #  (used in setVrleState)
-UNOBSERVABLE_PREDICATES = ['reverseDirection', 'flipDirection', 'stepBack']
+UNOBSERVABLE_PREDICATES = ['reverseDirection', 'flipDirection', 'stepBack', 'wrapAround']
 
 class StateObsHandlerNonStatic(object):
     """ Managing different types of state representations,
@@ -297,6 +297,7 @@ class TrackedSprite(object):
         self.lastmove = 0
         self.inventory = dict() # color: (num_things, max_capacity) # pulled from progress bars on avatar
         self.lastinventory = dict()
+        self.firstorientation = None
         self.name = self.colorName
     
     def __repr__(self):
@@ -338,7 +339,7 @@ def copySpriteStingy(sprite):
     newSprite.lastmove = sprite.lastmove
     newSprite.rect = pygame.Rect(sprite.rect.left, sprite.rect.top, sprite.rect.width, sprite.rect.height)
     newSprite.lastrect = pygame.Rect(sprite.lastrect.left, sprite.lastrect.top, sprite.lastrect.width, sprite.lastrect.height)
-    
+
     if hasattr(sprite, 'draw_arrow') and sprite.draw_arrow==True:
         newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
 
@@ -347,6 +348,7 @@ def copySpriteStingy(sprite):
         newSprite.inventory = dict(sprite.inventory) if sprite.inventory else dict()
         newSprite.lastinventory = dict(sprite.lastinventory)
         newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
+        newSprite.firstorientation = sprite.firstorientation
         newSprite.lastDisplacement = sprite.lastDisplacement
 
     return newSprite
@@ -360,6 +362,7 @@ def processFrame(memory, gameObject):
     spriteIDDict = {sprite.ID: sprite for lst in memory['trackedObjects'].values() for sprite in lst}
 
     newMemory['kill_list'] = [copySpriteStingy(s) for s in gameObject.kill_list]
+    newMemory['new_sprites'] = []
     newMemory['isGrid'] = memory['isGrid']
     newMemory['lastscore'] = memory['score']
     newMemory['score'] = gameObject.score
@@ -387,11 +390,15 @@ def processFrame(memory, gameObject):
                             newSprite.speed = euclideanDist([sprite.rect.left, sprite.rect.top], [newSprite.rect.left, newSprite.rect.top])
                             newSprite.lastDisplacement = (sprite.rect.left - newSprite.rect.left, sprite.rect.top - newSprite.rect.top)
                         
+                        if newSprite.firstorientation is None:
+                            newSprite.firstorientation = newSprite.lastDisplacement
+                            # print "setting {} firstorientation to {}".format(newSprite, newSprite.firstorientation)
                         newSprite.lastrect = pygame.Rect(newSprite.rect.left, newSprite.rect.top, newSprite.rect.width, newSprite.rect.height)
                         newSprite.rect = pygame.Rect(sprite.rect.left, sprite.rect.top, sprite.rect.width, sprite.rect.height)
                 else:
                     # new, unseen object
                     newSprite = copySpriteStingy(sprite)
+                    newMemory['new_sprites'].append(newSprite)
                 
                 # update inventory and inventory history
                 newSprite.lastinventory = dict(newSprite.inventory) if newSprite.inventory else dict()

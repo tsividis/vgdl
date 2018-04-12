@@ -1863,9 +1863,9 @@ def cannotActivateSwitch(sprite, partner, game):
 # ---------------------------------------------------------------------
 
 sprite_types = [ResourcePack, Missile, Chaser, RandomNPC, Flicker, \
-                HorizontalAvatar, VerticalAvatar, FlakAvatar, ShootAvatar, AimedAvatar,
-                AimedFlakAvatar, RotatingAvatar, OrientedAvatar, RotatingFlippingAvatar, 
-                NoisyRotatingFlippingAvatar, SpawnPoint] #removed Resource, Immovable, Passive, AStarChaser,
+                HorizontalAvatar, VerticalAvatar, FlakAvatar, ShootAvatar,
+                RotatingAvatar, OrientedAvatar, SpawnPoint] 
+                #removed Resource, Immovable, Passive, AStarChaser,AimedAvatar, AimedFlakAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar
 
 
 def getSpeed(params):
@@ -2215,6 +2215,13 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
             u = unitVector(current_sprite.orientation)
             left, top = current_sprite.lastrect.left+u[0]*current_sprite.lastrect.size[0], current_sprite.lastrect.top+u[1]*current_sprite.lastrect.size[1]
             appearance_predictions = [(stype, left, top)]
+
+            ## ShootAvatar has orientation drawn on it, so we can query directly
+            if not action:
+                orientation_options = {current_sprite.orientation:1.}
+            else:
+                orientation_options = {(dx,dy):1.}
+
             return position_options, position_options, orientation_options, appearance_predictions
 
         else:
@@ -2900,7 +2907,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
                 embed()
                     
         reasonableHypotheses = list(set([s[1] for s in scoreAndTheoryTuples]))
-        # reasonableHypotheses = [s[1] for s in scoreAndTheoryTuples]
+
         return reasonableHypotheses
 
     ## Reset ignoreList so that next time around you do inference.

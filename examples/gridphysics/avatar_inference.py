@@ -224,19 +224,43 @@
 # """
 
 # works for changeResource, killIfOtherHasMore/Less.
-# currently broken by invisiblemedicine and (separately) the avatar dying
 #up, up, up, up
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w              p             1 w
+# w              m             1 w
+# w              m               w
+# w              p               w
+# w              A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+## diagnoses ability to learn preconditions across multiple episodes. works.
+#[up],[left,left,left,left]
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w              p               w
+# w          pmm A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+# [0]*11: test for wrapAround (add sam EOS wrapAround to rules)
 level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w              p             1 w
-w              m             1 w
-w              m               w
-w              p               w
-w              A          3 3  w
-w                              w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwww
+w         3 3   w
+w               w
+w  s   s   A    w
+w               w
+wwwwwwwwwwwwwwwww
 """
+
 
 # testing when poisons make you step back
 # works
@@ -253,10 +277,25 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
+# tests shootavatar, flakavatar. combine with sam wall killSprite
+#[K_RIGHT, K_UP, K_SPACE, 0, 0,0,0,0]
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w                              w
+# w              A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+
 game="""
 BasicGame
     SpriteSet
-        avatar  > MovingAvatar color=DARKBLUE
+        avatar  > ShootAvatar color=DARKBLUE stype=sam
         cloner > Immovable color=GREEN
         box    > Immovable color=WHITE # orientation=RIGHT cooldown=1
         box2 > Immovable color=GREEN
@@ -300,7 +339,9 @@ BasicGame
         avatar sam > bounceForward
         cannon sam > stepBack
         sam cannon > stepBack
-        sam wall > reverseDirection
+        # sam wall > killSprite
+        # sam wall > reverseDirection
+        sam EOS > wrapAround
         medicine avatar > killSprite
         # avatar medicine > changeResource resource=invisiblemedicine value=1
         # avatar poison > changeResource resource=invisiblemedicine value=-1

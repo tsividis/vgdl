@@ -357,7 +357,7 @@ class Theory(object):
 			self.spriteSet = spriteInductionResult
 
 		# End of screen is a special object. Initialize it here.
-		eos = Sprite(core.EOS, 'ENDOFSCREEN', None, None)
+		eos = Sprite(core.EOS, 'ENDOFSCREEN', 'EOS', None)
 		self.spriteSet.append(eos)
 
 		# Get mapping from sprite color to Sprite object
@@ -421,8 +421,8 @@ class Theory(object):
 				else:
 					classScore += 2
 
-		# ruleScore = len([rule for rule in self.interactionSet if rule.interaction!=stepBack])
-		ruleScore = 1
+		ruleScore = len([rule for rule in self.interactionSet if rule.interaction in ['flipDirection']])
+		# ruleScore = 1
 		return classScore + ruleScore/1000.
 
 	def explainTimeStep(self, timestep, fullTimestep, timesteps, currTheories=False, override=False):
@@ -2364,7 +2364,6 @@ def getKeywordsFromOntology(interactionName):
 	 ##TODO: Fill in proposeArgs for the following keywords.
 	'spawnIfHasMore': ['resource', 'stype', 'limit'],\
 	'wallStop': ['friction'],\
-	'wrapAround': ['offset'],\
 	'wallBounce': ['friction'],\
 	'slipForward': ['prob'],\
 	'attractGaze': ['prob'],\
@@ -2501,7 +2500,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 								'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore',\
 								'killIfTooFast', 'killIfSlow',\
 								'undoAll', 'nothing',\
-								'turn', 'turnAround', 'reverseDirection', 'flipDirection', 'bounceForward',\
+								'turn', 'turnAround', 'reverseDirection', 'wrapAround', 'flipDirection', 'bounceForward',\
 								'changeResource', 'collectResource', 'changeScore', 'teleportToExit', 'conveySprite'],
 	'gridphysics': 				[],
 	'continuousphysics': 		['transformToOnLanding', 'killIfTooFast', 'killIfSlow', 'killIfFromAbove',\
@@ -2528,6 +2527,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 	'unexpectedOverlap':		['nothing', 'reverseDirection'],#, 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
 	'orientationChange': 		['reverseDirection', 'flipDirection'],
 									#'turn', 'turnAround', 
+	'wrapAround':				['wrapAround'], # no offsets
 	'teleport': 				['teleportToExit'],
 
 	## Object state change
@@ -2577,8 +2577,6 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	else:
 		spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, action=action, oldSpriteSet=theory.spriteSet,\
 		specificSpritesToUpdate=errorMap.targetTokens, percentile=percentile, max_num=max_num)
-
-
 	## Don't instantiate non-avatar proposals for the 'avatar' class.
 	if targetClass=='avatar':
 		spriteProposals = [s for s in spriteProposals if 'Avatar' in str(s[0][1])]
@@ -2669,6 +2667,7 @@ predicateToOrderingMapping = {
 	'turnAround':			(0,),
 	'reverseDirection':		(0,),
 	'flipDirection':		(0,),
+	'wrapAround':			(0,),
  	'teleportToExit':		(0,),
  	'conveySprite':			(0,),
 	'windGust':				(0,),
@@ -2685,7 +2684,7 @@ predicateToOrderingMapping = {
  	'changeScore':			(0,1),
 	'undoAll':				(0,1)}
 
-predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit']
+predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit', 'wrapAround']
 
 def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n):
 
@@ -2722,7 +2721,7 @@ def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, ob
 
 	return classPairPlusPredicateToRuleSets[key]
 
-def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateToRuleSets, envRealPrev, envRealCurrent, action, rleHistory, actionHistory, experienceReplay, n=1, observations=None, generic=False):
+def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateToRuleSets, envRealPrev, envRealCurrent, action, rleHistories, actionHistories, MultiEpisodeExperienceReplay, n=1, observations=None, generic=False):
 	## Modifies the theory to propose n new interactonRules involving the given classPair
 	## For predicates that take arguments, finds the first (according to some ordering) satisfying argument and returns that.
 	## generic=True proposes all possible combinations of args instead.
@@ -2765,11 +2764,11 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 	## Iterate thresholds. If this is not relevant for a particular theory, iterateThresholds() will just return the theory unchanged.
 	iteratedTheories = []
 	for theory in childTheories:
-		iteratedTheories.append(interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHistory, theory, errorMap, classPair, experienceReplay))
+		iteratedTheories.append(interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, actionHistories, theory, errorMap, classPair, MultiEpisodeExperienceReplay))
 
 	return classPair, iteratedTheories
 
-def interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHistory, theory, errorMap, classPair, experienceReplay):
+def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, actionHistories, theory, errorMap, classPair, MultiEpisodeExperienceReplay):
 	
 	predicatesWithThresholds = ['killIfTooFast', 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
 	relevantRulesWithArgs = [rule for rule in theory.interactionSet if rule.interaction in predicatesWithThresholds and \
@@ -2778,8 +2777,8 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHi
 		# print "in iterateThresholds"
 		# theory.display()
 		rule = relevantRulesWithArgs[0]
-		penalty = experienceReplay([theory], rleHistory, actionHistory, 
-			rleHistory[0].symbolDict, method='all', targetColor=errorMap.targetColor)[0]
+		penalty = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
+			envRealPrev.symbolDict, method='all', targetColor=errorMap.targetColor)[0]
 		newPenalty = penalty
 		while newPenalty >= penalty:
 			argsToIncrement = [(k,v) for k,v in relevantRulesWithArgs[0].args.items() if type(v)==int]
@@ -2793,7 +2792,7 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistory, actionHi
 			if len(thresholdOrdering[rule.interaction]) > idx+1:
 				rule.args[k] = thresholdOrdering[rule.interaction][idx+1]
 				theory.experienceReplayRecord = {}
-				newPenalty = experienceReplay([theory], rleHistory, actionHistory, 
+				newPenalty = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
 					envRealPrev.symbolDict, method='all', targetColor=errorMap.targetColor)[0]
 				# print newPenalty, rule.display()
 			else:
