@@ -1863,9 +1863,9 @@ def cannotActivateSwitch(sprite, partner, game):
 # ---------------------------------------------------------------------
 
 sprite_types = [ResourcePack, Missile, Chaser, RandomNPC, Flicker, \
-                HorizontalAvatar, VerticalAvatar, FlakAvatar, ShootAvatar, AimedAvatar,
-                AimedFlakAvatar, RotatingAvatar, OrientedAvatar, RotatingFlippingAvatar, 
-                NoisyRotatingFlippingAvatar, SpawnPoint] #removed Resource, Immovable, Passive, AStarChaser,
+                HorizontalAvatar, VerticalAvatar, FlakAvatar, ShootAvatar,
+                RotatingAvatar, OrientedAvatar, SpawnPoint] 
+                #removed Resource, Immovable, Passive, AStarChaser,AimedAvatar, AimedFlakAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar
 
 
 def getSpeed(params):
@@ -2907,7 +2907,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
                 embed()
                     
         reasonableHypotheses = list(set([s[1] for s in scoreAndTheoryTuples]))
-        # reasonableHypotheses = [s[1] for s in scoreAndTheoryTuples]
+
         return reasonableHypotheses
 
     ## Reset ignoreList so that next time around you do inference.

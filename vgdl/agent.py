@@ -29,10 +29,6 @@ import types
 
 import heapq
 
-# AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
-# RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
-# AimedFlakAvatar, InertialAvatar, MarioAvatar]
-
 ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPACE: (0,0), 0: (0,0)}
 
 # This makes experience replay score a theory on all the one-step transitions we've seen
@@ -103,7 +99,6 @@ class Agent:
 		self.safeDistance = 6
 		self.emptyPlansLimit = 5
 		self.longHorizonObservationLimit = 2
-		self.learnAvatar = True
 		self.hypotheses = []
 		self.symbolDict = None
 		self.finalEventList = []
@@ -296,10 +291,11 @@ class Agent:
 		actionSequences = [
 			# [0,0,0,K_LEFT, K_LEFT,0,0]
 			# [K_SPACE,0,K_UP,K_RIGHT]
-			[K_RIGHT, K_UP, K_SPACE, 0, 0,0,0,0]
+			# [K_RIGHT, K_UP, K_SPACE, 0, 0,0,0,0]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			# [0]*11
+			# [0]*6
+			[0,K_RIGHT, K_SPACE, 0,0,0,0,0,0,0]
 			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT],
 			# [K_RIGHT, K_RIGHT]
 			# [0,0, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0,0,0]
@@ -327,7 +323,7 @@ class Agent:
 			self.all_objects[episode_num] = self.rle._game.getObjects() ## we need to store all_objects across multiple episodes
 
 			if episode_num == 0:
-				gameObject = self.initializeHypotheses(self.all_objects[episode_num], learnSprites=True, learnAvatar=self.learnAvatar, num_variants=0)
+				gameObject = self.initializeHypotheses(self.all_objects[episode_num], learnSprites=True, learnAvatar=True, num_variants=0)
 
 			envReal = self.fastcopy(self.rle)
 
@@ -381,7 +377,7 @@ class Agent:
 		self.all_objects= self.rle._game.getObjects()
 
 		if epoch == 0:
-			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, learnAvatar=self.learnAvatar, num_variants=0)
+			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, learnAvatar=True, num_variants=0)
 
 		## Start storing encountered states.
 		effectsEncountered = []
@@ -414,80 +410,27 @@ class Agent:
 
 		return
 
-	def manageNewObjects(self, episode_num, hypotheses, envRealPrev, action, learnAvatar=True):
+	def manageNewObjects(self, episode_num, hypotheses, envRealPrev, action):
 
 		## Add newly-seen objects.
 		current_objects = self.rle._game.getObjects()
-		if learnAvatar:
-			if any([current_objects[k]['sprite'].colorName not in [self.all_objects[episode_num][key]['sprite'].colorName 
-																   for key in self.all_objects[episode_num]] 
-																   for k in current_objects]):
-				for k in current_objects.keys():
-					distributionInitSetup(self.rle._game, k)
-					if k not in self.all_objects[episode_num]:
-						self.all_objects[episode_num][k] = current_objects[k]
-				spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, action=action,
-					oldSpriteSet=self.hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
-					percentile=10, max_num=20, allMovement=False)
-				spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, action=action,
-					oldSpriteSet=self.hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
-					percentile=10, max_num=20, allMovement=False)
-		else:
+
+		# if any([current_objects[k]['sprite'].colorName not in [self.all_objects[episode_num][key]['sprite'].colorName 
+																   # for key in self.all_objects[episode_num]] 
+																   # for k in current_objects]):
+		if any([k not in self.rle._game.movement_options for k in current_objects]):
 			for k in current_objects.keys():
-				colorName = current_objects[k]['sprite'].colorName
-				if colorName not in [self.all_objects[episode_num][key]['sprite'].colorName for key in self.all_objects.keys()]:
+				distributionInitSetup(self.rle._game, k)
+				if k not in self.all_objects[episode_num]:
 					self.all_objects[episode_num][k] = current_objects[k]
-					distributionInitSetup(self.rle._game, k)
-					## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep.
-					self.rle._game.ignoreList.append(k)
-					self.new_objects[colorName] = 0
+			spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, action=action,
+				oldSpriteSet=self.hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
+				percentile=10, max_num=20, allMovement=False)
+			spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, action=action,
+				oldSpriteSet=self.hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
+				percentile=10, max_num=20, allMovement=False)
 
 		return hypotheses
-
-	def predictCollisionsBasedOnTheory(self, theory, envReal, envRealPrev, action):
-		avatar_color = theory.classes['avatar'][0].colorName
-		observation = envRealPrev._game.observation['trackedObjects']
-		avatar_is_dead = len(envReal._game.observation['trackedObjects'][avatar_color]) == 0
-
-		predictions = {k:[] for k,v in observation.iteritems() if len(v)>0}
-		trackedSprites = [item for sublist in observation.values() for item in sublist]
-		
-		## Generate predictions for each sprite. We do this rather than running an RLE forward because
-		## an RLE about a hypothetical theory won't necessarily make the right collisions happen.
-		## That is, we need to know what collisions might potentially occur and know the involved items.
-		for trackedSprite in trackedSprites:
-			try:
-				speed = trackedSprite.speed
-				if speed is None:
-					speed = 1.
-				if trackedSprite.colorName == avatar_color and not \
-				any([k in str(theory.classes['avatar'][0].vgdlType) for k in ['Aimed', 'Rotating', 'Oriented']]):
-					orientation = ACTIONDICT[action]
-				else:
-					orientation = trackedSprite.orientation
-				pos = (trackedSprite.rect.left, trackedSprite.rect.top)
-				expected_pos = [pos[0]+orientation[0]*speed*trackedSprite.rect.width, \
-								pos[1]+orientation[1]*speed*trackedSprite.rect.width]
-				predictions[trackedSprite.colorName].extend([expected_pos])
-			except:
-				print "had trouble with avatar prediction in getTheoryLadenPrediction"
-				embed()
-
-		if avatar_is_dead:
-			avatar_loc = predictions[avatar_color][0]
-		else:
-			avatar_loc = envReal._game.observation['trackedObjects'][avatar_color][0].rect.left, \
-						 envReal._game.observation['trackedObjects'][avatar_color][0].rect.top
-
-		candidates = []
-		locs = {}
-		for key in predictions:
-			for location in predictions[key]:
-				if self.intersect(location, avatar_loc):
-					candidates.append(key)
-					locs[key] = location
-					break
-		return candidates, locs
 
 	def intersect(self, p1, p2):
 		return (abs(p1[0] - p2[0]) <= self.rle._game.block_size and abs(p1[1] - p2[1]) <= self.rle._game.block_size)
@@ -562,12 +505,33 @@ class Agent:
 		
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
-		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action, learnAvatar=self.learnAvatar)
+		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action)
 
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
 		self.rleHistory[episode_num].append(envReal)
+		
+		## If we learn anything about orientation in this step for a sprite that was created in a previous step,
+		## go back in time and assign that orientation. This is so that when you set the state to what you 
+		## remember from the past, you can incorporate this knowledge.
+		orientedSprites = [s for s in [item for sublist in envReal._game.observation['trackedObjects'].values() for item in sublist] if s.firstorientation]
+		if orientedSprites:
+			for i in list(reversed(range(len(self.rleHistory[episode_num])-1))):
+				allSprites = [s for s in [item for sublist in self.rleHistory[episode_num][i]._game.observation['trackedObjects'].values() \
+						for item in sublist]]
+				madeChange = False
+				for sprite in orientedSprites:
+					matchedSprite = [s for s in allSprites if s==sprite]
+					if matchedSprite and not matchedSprite[0].firstorientation:
+						matchedSprite[0].firstorientation = sprite.firstorientation
+						madeChange = True
+				## Stop going back in time once you've gone to a timestep where you haven't been able to apply your knowledge from this step
+				## (that is, when none of the sprites you learned about exist)
+				if not madeChange:
+					break
+
 		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
 		self.rle._game.sprite_appearances = new_sprites
+
 
 		print ""
 		print keyPresses[action]
@@ -724,13 +688,8 @@ def setSpriteState(sprite, matchingSprite, hypothesis):
 		embed()
 
 	sprite.rect 	= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
-	# sprite.lastrect = sprite.rect
 	sprite.lastrect = pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
-	# if sprite.rect.left != sprite.lastrect.left and sprite.rect.top != sprite.lastrect.top and abs(sprite.rect.left  - sprite.lastrect.left ) != abs(sprite.rect.top - sprite.lastrect.top):
-		# print "in setVrleState -- illegal rect/lastrect pair"
-		# embed()
 	sprite.lastmove = matchingSprite.lastmove
-	# sprite.age 	= matchingSprite.age
 	sprite.ID = matchingSprite.ID
 	sprite.resources = defaultdict(int)
 	for rcolor in matchingSprite.inventory.keys():
@@ -754,12 +713,19 @@ def setSpriteState(sprite, matchingSprite, hypothesis):
 		wrapAroundApplies = any([rule.interaction=='wrapAround' and rule.slot1==c1 for rule in hypothesis.interactionSet])
 
 		if orientation == (0,0) or wrapAroundApplies:
-			orientation = hypothesis.spriteObjects[matchingSprite.colorName].args['orientation']
-
+			orientation = matchingSprite.firstorientation if matchingSprite.firstorientation else hypothesis.spriteObjects[matchingSprite.colorName].args['orientation']
 		sprite.orientation = orientation
 
 	else:
-		sprite.orientation = matchingSprite.orientation
+		## Convoluted logic. Some avatars have arrows drawn on them; for those we are letting ourselves 'see' the arrow.
+		## This makes their orientation have some non-zero value. But if we're considering a hypothesis that 
+		## we're something that doesn't passively update its position as a function of its orientation, we don't want to
+		## set its orientation to this 'seen' value.
+		unOrientedAvatars = ['Moving', 'Flack', 'Horizontal', 'Vertical']
+		if all([avatarType not in str(hypothesis.spriteObjects[sprite.colorName].vgdlType) for avatarType in unOrientedAvatars]):
+			sprite.orientation = matchingSprite.orientation
+		else:
+			sprite.orientation = (0,0)
 
 	## Other aspects of state to potentially transfer
 	# sprite.jumping = ccopy(matchingSprite.jumping)
@@ -1397,30 +1363,20 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 	nearest_dist = manhattanDist2(sB, nearest_sprite)
 	
 	# Determine orientation in current and previous step -> to detect orientation change
-	if theory.spriteObjects[sA.colorName].vgdlType in [Missile]:
-		oB = sB.lastDisplacement
-		oPrev = sPrev.lastDisplacement
-	else:
-		try:
+	if sB and sPrev:
+		if theory.spriteObjects[sA.colorName].vgdlType in [Missile]:
+			oB = sB.lastDisplacement
+			oPrev = sPrev.lastDisplacement
+		else:
 			oB = sB.orientation
 			oPrev = sPrev.orientation
-		except:
-			oB,oPrev = None,None
+	else:
+		oB, oPrev = None, None
 
 	## Categorize into sub-problem-class
 	# 1.1) noMovement
 	if dist_ts == 0:
 		e.diagnosis.append('noMovement')
-
-		## If we're trying to learn undoAll, uncomment all this and also allow undoAll in proposePredicates
-		## Form all possible pairs of classes and propose these. This is because undoAll could cause this, so it's literally any classes combining.
-		# e.intPairs = list(itertools.combinations([k for k in envA._game.observation['trackedObjects'].keys() if 
-			# envA._game.observation['trackedObjects'][k]], 2))
-
-		# for k in envA._game.observation['trackedObjects'].keys():
-			# if len(envA._game.observation['trackedObjects'][k])>1:
-				# e.intPairs.append((k,k))
-
 	# 1.2) orientationChange
 	if dist_ts!=0 and oB!=None and oB!=oPrev:
 		e.diagnosis.append('orientationChange')
@@ -1997,24 +1953,27 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 				else:
 					theory.spriteObjects[k].args = {'limit':errorMap.targetToken.inventory[k][1]}
 
-	## If there are unknown colors on screen, add them to the theory here.
-	if errorMap.targetClass not in theory.classes.keys():
-		if errorMap.targetColor in theory.spriteObjects:
-			errorMap.targetClass = theory.spriteObjects[errorMap.targetColor].className
-		else:
-			from vgdl.ontology import Resource
-			existing_classes = [key for key in theory.classes if key[0] == 'c']
-			max_num = max([int(c[1:]) for c in existing_classes])
-			class_num = max_num+1 
-			newClassName = 'c'+str(class_num)
-			errorMap.targetClass = newClassName
-			theory.addSpriteToTheory(newClassName, errorMap.targetColor, vgdlType=Resource)
-			print "Got unknown targetclass for {}. Added generic sprite to spriteSet and interactionSet".format(errorMap.targetToken.colorName)
+	## If there are new objects on screen, add them to the thery or reason about related objects (e.g., spawnPoints)
+	if errorMap.targetClass not in theory.classes.keys() or errorMap.targetToken in envRealCurrent._game.observation['new_sprites']:
 
-		if 'newClass' in errorMap.diagnosis:
-			newTheories = [theory]
-			# embed()
-			return newTheories
+		## If there are unknown colors on screen, add them to the theory here.		
+		if errorMap.targetClass not in theory.classes.keys():
+			if errorMap.targetColor in theory.spriteObjects:
+				errorMap.targetClass = theory.spriteObjects[errorMap.targetColor].className
+			else:
+				from vgdl.ontology import Resource
+				existing_classes = [key for key in theory.classes if key[0] == 'c']
+				max_num = max([int(c[1:]) for c in existing_classes])
+				class_num = max_num+1 
+				newClassName = 'c'+str(class_num)
+				errorMap.targetClass = newClassName
+				theory.addSpriteToTheory(newClassName, errorMap.targetColor, vgdlType=Resource)
+				print "Got unknown targetclass for {}. Added generic sprite to spriteSet and interactionSet".format(errorMap.targetToken.colorName)
+
+			if 'newClass' in errorMap.diagnosis:
+				newTheories = [theory]
+				# embed()
+				return newTheories
 		
 		## Now get overlapping/nearby classes and reassign the target class to the shooter/spawnpoint/etc. 
 		## the next step will take care of not doing inference on these if we've done it already.
@@ -2033,8 +1992,6 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			e.intPairs = newPairs
 			e.targetClass = theory.spriteObjects[neighbor.colorName].className
 			newErrorMaps.append(e)
-
-		# embed()
 
 	for eM in newErrorMaps:
 
@@ -2094,6 +2051,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, actionHistories, symbolDict, bestSpriteTypeDict, episode_num):
 
 	env.step(action)
+
 	penalty, errorList = errorSignal(env, envReal, hypothesis, envRealPrev)
 
 	if errorList:
