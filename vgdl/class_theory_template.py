@@ -48,7 +48,7 @@ class Sprite(object):
         return not self.__eq__(other)
 
 class SpriteParser(object):
-    resourcePackTypeStrings = {'Immovable', 'Passive', 'ResourcePack', 'Spreader', 'Portal', 'SpawnPoint', 'Conveyor'}
+    resourcePackTypeStrings = {'Immovable', 'Passive', 'ResourcePack', 'Spreader', 'Portal', 'Conveyor'}
     def __init__(self):
     	self.sprite_types = dict()
 
@@ -76,7 +76,7 @@ class SpriteParser(object):
                 args[k] = val
         return sclass, args
 
-    def parseGame(self, tree):
+    def parseGame(self, tree, remove_singleton=True):
         """ Accepts either a string, or a tree. """
         if not isinstance(tree, Node):
             tree = indentTreeParser(tree).children[0]
@@ -84,13 +84,13 @@ class SpriteParser(object):
         self.game = sclass(**args)
         for c in tree.children:
             if c.content == "SpriteSet":
-                self.parseSprites(c.children)
+                self.parseSprites(c.children, remove_singleton=remove_singleton)
         #Return list of sprite types.
         return self.sprite_types.values()
 
 
-    def parseSprites(self, snodes, parentclass=None, parentargs={}, parenttypes=[]):
-        resourcePackTypes = {self._eval(obj_type) for obj_type in SpriteParser.resourcePackTypeStrings}
+    def parseSprites(self, snodes, parentclass=None, parentargs={}, parenttypes=[], remove_singleton=True):
+        resourcePackTypes = {self._eval(obj_type) for obj_type in SpriteParser.resourcePackTypeStrings }
         resourceType = self._eval("Resource")
         EOS = "EOS"
         self.sprite_types[EOS] = Sprite(EOS, None, args={})
@@ -105,7 +105,8 @@ class SpriteParser(object):
                 if args['singleton']==True:
                     self.game.singletons.append(key)
                 args = args.copy()
-                del args['singleton']
+                if remove_singleton:
+                    del args['singleton']
 
             if len(sn.children) == 0:
                 # print (sclass, args, stypes)

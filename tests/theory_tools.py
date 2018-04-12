@@ -15,7 +15,8 @@ def getColorAssignments(hypothesis):
 	for class_name, vgdl_classes in hypothesis.classes.iteritems():
 		color_name = vgdl_classes[0].colorName
 		sprite_object = hypothesis.spriteObjects[color_name]
-		color_assignments[color_name] = ClassAssignment(sprite_object.vgdlType, sprite_object.args)
+		args = getColorArgs(hypothesis, sprite_object.args if sprite_object.args else {})
+		color_assignments[color_name] = ClassAssignment(sprite_object.vgdlType, args)
 	return color_assignments
 
 def getColorName(hypothesis, class_name):
@@ -92,7 +93,7 @@ def generateTheoryFromGameString(game_string):
 	game = Game(game_string)
 	theory = Theory(game)
 
-	sprite_types = sprite_parser.parseGame(game_string)
+	sprite_types = sprite_parser.parseGame(game_string, remove_singleton=False)
 	vgdl_game = vgdl_parser.parseGame(game_string)
 	# Add classes
 	class_names = []
@@ -124,8 +125,8 @@ def generateTheoryFromGameString(game_string):
 	for c1, c2 in combinations(class_names, 2):
 		combination = set([c1, c2])
 		if set([c1, c2]) not in interacting_sprites:
-			rule1 = InteractionRule('stepBack', c1, c2, args)
-			rule2 = InteractionRule('stepBack', c2, c1, args)
+			rule1 = InteractionRule('stepBack', c1, c2, {})
+			rule2 = InteractionRule('stepBack', c2, c1, {})
 			theory.interactionSet.append(rule1)
 			theory.interactionSet.append(rule2)
 
@@ -145,6 +146,17 @@ def generateTheoryFromGameString(game_string):
 
 	return theory
 
+def classAssignmentsDiff(theory1, theory2):
+
+	color_type_tuples = (set(), set())
+
+	for color_type_tuple, theory in zip(color_type_tuples, (theory1, theory2)):
+		for color, assignment in theory.spriteObjects.iteritems():
+			color_type_tuple.add((color, assignment.vgdlType))
+
+	c1, c2 = color_type_tuples
+
+	return c1-c2, c2-c1
 
 def classAssignmentsEqual(theory1, theory2):
 	'''Check if class assignments are the same (based on color)'''
@@ -229,6 +241,13 @@ if __name__ == '__main__':
 	t4_expected = generateTheoryFromGameString(inference.test4.expected_theory)
 	t4_real = generateTheoryFromGameString(inference.test4.game)
 	d1, d2 = interactionSetsDiff(t4_real, t4_expected)
-	print getColorInteractionSet(t4_real)
-	print d2
-	
+	# print getColorInteractionSet(t4_real)
+	# print d2
+
+	print generateTheoryFromGameString(inference.test2.expected_theory)
+
+	# print 
+	# print classAssignmentsDiff(t4_real, t4_expected)
+
+
+	# print getColorAssignments(generateTheoryFromGameString(inference.test2))

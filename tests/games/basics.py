@@ -45,9 +45,6 @@ SpriteSet
 LevelMapping
     A > avatar
     b > box
-"""
-
-iSet = """
 InteractionSet
     box avatar > killSprite
 
@@ -69,8 +66,8 @@ TerminationSet
 You can piece together a full game description this way.
 Place in as many or as few combinations of sets as you want.
 '''
-game1 = catDescriptions(sSet, iSet, tSet1)
-game2 = catDescriptions(sSet, iSet, tSet2)
+game1 = catDescriptions(sSet, tSet1)
+game2 = catDescriptions(sSet, tSet2)
 
 # print game1
 

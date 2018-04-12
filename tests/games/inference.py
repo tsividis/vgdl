@@ -154,7 +154,7 @@ BasicGame
         box3 > Immovable color=YELLOW
         wall > Immovable color=DARKGRAY
         avatar  > MovingAvatar color=DARKBLUE 
-        sam > Missile orientation=UP color=BLUE singleton=FALSE cooldown=1
+        sam > Missile orientation=UP color=BLUE singleton=False cooldown=1
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
@@ -178,7 +178,7 @@ test2 = TestCase(game2, level2, [[0]*6], test_theory2)
 
 game3 = catDescriptions(base_game, """
 InteractionSet
-    box avatar > bounceForward
+    sam avatar > bounceForward
 """)
 level3 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -199,7 +199,7 @@ BasicGame
         box3 > Immovable color=YELLOW
         wall > Immovable color=DARKGRAY
         avatar  > MovingAvatar color=DARKBLUE 
-        sam > Missile orientation=UP color=BLUE singleton=FALSE cooldown=1
+        sam > Missile orientation=UP color=BLUE singleton=False cooldown=1
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
@@ -217,7 +217,6 @@ test3 = TestCase(game3, level3, [[0]*6], test_theory3)
 
 game4 = catDescriptions(base_game, """
 InteractionSet
-    avatar sam > bounceForward
     cannon avatar > bounceForward
 """)
 
@@ -327,7 +326,7 @@ BasicGame
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
-        sam wall > reversDirection
+        sam wall > reverseDirection
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
 """
@@ -477,7 +476,7 @@ BasicGame
         random > RandomNPC color=PURPLE speed=1 cooldown=2
         wall > Immovable color=DARKGRAY
         avatar  > MovingAvatar color=DARKBLUE
-    TerminationSete
+    TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
 """
 
@@ -492,17 +491,17 @@ InteractionSet
     box2 avatar > bounceForward
 """)
 
-#up, up, up, right
-## tests whether we can learn randomNPCs and know that the box we push isn't a randomNPC
+#up, up, up, right, 
+## tests that the box we push isn't a randomNPC
 ## i.e., a good test of randomNPC likelihood and theory prior().
 level12 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                           3  w
 w                 2            w
-w          4                3  w
+w                           3  w
 w                      2       w
-w     4                        w
+w                              w
 w                      A       w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
@@ -512,7 +511,6 @@ BasicGame
     SpriteSet
         box2 > Immovable color=GREEN
         box3 > Immovable color=YELLOW
-        random > RandomNPC color=PURPLE speed=1 cooldown=2
         wall > Immovable color=DARKGRAY
         avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
@@ -521,7 +519,7 @@ BasicGame
         SpriteCounter stype=avatar limit=0 win=False
 """
 
-test12 = TestCase(game12, level12, [[K_UP]*3+[K_RIGHT]], test_theory12)
+test12 = TestCase(game12, level12, [[K_UP]*3+[K_RIGHT]+[0]*4], test_theory12)
 
 
 #########################################################
@@ -599,7 +597,7 @@ BasicGame
         avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
         medicine avatar > killSprite
-        avatar medicine > changeResource resource=medicine value=1
+        avatar medicine > changeResource resource=medicine value=1 limit=4
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
 """

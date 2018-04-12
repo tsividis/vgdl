@@ -120,14 +120,28 @@ class _TestAgent(unittest.TestCase):
 		for h in self.agent.hypotheses:
 			string += '\n%s' % h
 
-	def stringCompareTheories(self, theory1, theory2, string_function, **kwargs):
-		string = '\n>>> %s not Equal'
-		string += '--- Theory1'
-		string += '%s' % getattr(theory1, string_function)(**kwargs)
-		string += '\n--- Theory2'
-		string += '%s\n---' % getattr(theory2, string_function)(**kwargs)
+	def stringDiffs(self, set_name, diff1, diff2):
+		string = '\n%s Not Equal' % set_name
+		string += '\nEverything equal except...' 
+		string += '\n>>>'
+		string += '--- Theory1 has these while Theory2 does not'
+		for diff in diff1:
+			string += '\n%s' % str(diff)
+		string += '\n--- Theory2 has these while Theory1 does not'
+		for diff in diff2:
+			string += '\n%s' % str(diff)
 		string += '\n<<<\n'
 		return string
+
+	def stringAllDiffs(self, theory1, theory2, ignore_novelty_terminations=True):
+		display = "Theory diffs\n"
+		if not classAssignmentsEqual(theory1, theory2):
+			display += self.stringDiffs('SpriteSet', *classAssignmentsDiff(theory1, theory2))
+		if not interactionSetsEqual(theory1, theory2):
+			display += self.stringDiffs('InteractionSet', *interactionSetsDiff(theory1, theory2))
+		if not terminationSetsEqual(theory1, theory2, ignore_novelty_terminations):
+			display += self.stringDiffs('TerminationSet', *terminationSetsDiff(theory1, theory2))
+		return display
 
 	def stringLowErrorHypotheses(self, error_limit=0.01):
 		string += '===============Low Error Hypotheses=============='
@@ -135,18 +149,12 @@ class _TestAgent(unittest.TestCase):
 			if e < error_limit:
 				string += '\n%s' % h
 
+		return string
+
 	########################################
 	# Assertion Function
-	def assertTheoriesEqual(self, theory1, theory2, ignore_novelty_terminations=True, ignore_terminations=False):
-		display = 'Theoies Not Equal\n'
-		if not classAssignmentsEqual(theory1, theory2):
-			display += self.stringCompareTheories(theory1, theory2, '_stringClasses', color_names=True)
-		if not interactionSetsEqual(theory1, theory2):
-			display += self.stringCompareTheories(theory1, theory2, '_stringRules', ignore_step_back=False, color_names=True)
-		if not ignore_terminations:
-			if not terminationSetsEqual(theory1, theory2, ignore_novelty_terminations):
-				display += self.stringCompareTheories(theory1, theory2, '_stringTerminations', color_names=True)
-		self.assertTrue(theoriesEqual(theory1, theory2), display)
+	def assertTheoriesEqual(self, theory1, theory2, ignore_novelty_terminations=True):
+		self.assertTrue(theoriesEqual(theory1, theory2), self.stringAllDiffs(theory1, theory2, ignore_novelty_terminations))
 
 	def assertTheoriesNotEqual(self, theory1, theory2, ignore_novelty_terminations=True):
 		display = 'Theories Equal\n'
@@ -155,8 +163,13 @@ class _TestAgent(unittest.TestCase):
 		display += '\n<<<'
 		self.assertFalse(theoriesEqual(theory1, theory2), display)
 
-	def assertAgentHasTheory(self, theory):
-		self.assertTrue(theoryInHypotheses(theory, self.agent.hypotheses), 'Theory not in hypotheses: \n%s' % theory)
+	def assertAgentHasTheory(self, theory, ignore_novelty_terminations=True):
+		diffs = "\nTop 3 Theory diffs\n"
+		if not theoryInHypotheses(theory, self.agent.hypotheses):
+			for h in self.agent.hypotheses[:3]:
+				diffs += self.stringAllDiffs(h, theory, ignore_novelty_terminations)
+
+		self.assertTrue(theoryInHypotheses(theory, self.agent.hypotheses), 'Theory not in hypotheses: \n%s\n%s' % (theory, diffs))
 
 
 	def assertTheoryBelowEpsilonError(self, hypothesis, epsilon=0.01):
@@ -213,7 +226,8 @@ class TestBasics(_TestAgent):
 		self.initRunCreate(game, level, action_sequences)
 		# this may not be that useful, but I'll keep it around anyway.
 		self.assertAgentHasTheories()
-		self.assertTheoriesEqual(self.agent.hypotheses[0], expected_theory)
+		self.assertAgentHasTheory(expected_theory)
+		# self.assertTheoriesEqual(self.agent.hypotheses[0], expected_theory)
 
 	# def testKillSpritesAndNothing(self):
 	# 	real_description = self.initRunCreate(*basics.test4)
