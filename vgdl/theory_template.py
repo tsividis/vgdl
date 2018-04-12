@@ -26,7 +26,6 @@ AimedFlakAvatar, InertialAvatar, MarioAvatar]
 Theory induction on VGDL Games
 """
 
-
 class TimeStep:
 	"""
 	Everything that happened in a time step in the game.
@@ -677,8 +676,6 @@ class Theory(object):
 		for event in timestep.events:
 			relevantRules.extend(self.findRelevantRules(event, timestep.agentState, checkDryingPaint=False, sparse=sparse))
 
-		# if set(['DARKBLUE', 'RED'])==set([event[1], event[2]]):
-		# 	embed()
 		if False in relevantRules:
 			return False
 		else:
@@ -711,13 +708,6 @@ class Theory(object):
 					 "Solution: AddRule()"]}
 
 		(eventInRules, predictionsHappened) = self.checkEvents(self.interpret(event), timestep), self.checkPredictions(event, timestep)
-
-
-
-		# print (eventInRules, predictionsHappened)
-		# self.display()
-		# print "event", event
-		# print "interaction set:", [i.asTuple() for i in self.interactionSet]
 
 		# if verbose:
 		if (eventInRules, predictionsHappened) not in failCases.keys():
@@ -3129,29 +3119,8 @@ def writeTheoryToTxt(rle, theory, txtFile, writeFile=False, debug=False, goalLoc
 							immovables.append(s1.className)
 			added_rules.append(interactionRule)
 
-	# if goal is an empty square
-	# if newGoalType == 'blank_space':
-	# theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', "killSprite")
-	# theoryString += "\t\t%s %s > %s\n"%('avatar', 'EOS', "stepBack")
-
-	# print "inwritetheory"
-	# embed()
-	## add EOS stepBack for all other sprites
-	# for c in theory.classes.keys():
-	# 	if c is not 'avatar':
-	# 		theoryString += "\t\t%s %s > %s\n"%(c, 'EOS', "stepBack")
-
-
-	# print "in writeTheory"
-	# embed()
 	immovables = list(set(immovables))
 	killerObjects = list(set(killerObjects))
-
-
-	# if theory.interactionSet[0].args is not None:
-	# 	if any([len(i.args.keys()) for i in theory.interactionSet]):
-	# 		print "inwritetheory"
-	# 		embed()
 
 	# third phase: the termination rules
 	theoryString += "\tTerminationSet\n"

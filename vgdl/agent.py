@@ -142,46 +142,6 @@ class Agent:
 		rle = rleCreateFunc()
 		return rle
 
-	def getStateByColor(self, rle):
-		state = {}
-		for k in rle._game.sprite_groups.keys():
-			if len(rle._game.sprite_groups[k]) > 0:
-				color = rle._game.sprite_groups[k][0].colorName
-				sprite_list = []
-				for sprite in rle._game.sprite_groups[k]:
-					if sprite not in rle._game.kill_list:
-						if hasattr(sprite, 'orientation'):
-							o = sprite.orientation 
-						else:
-							o = (0,0)
-
-						sprite_list.append({'speed':sprite.speed, 'orientation':o, 'position':(sprite.rect.left,sprite.rect.top)})
-				state[color] = sprite_list
-		return state
-
-	def IDmatch(self, envA, envB):
-		"""
-		Returns: dictionary with entries -> sB ID: matched sA ID
-		"""
-		warning = False
-		d = {}
-		# Match environments by position and color
-		matched_sprites, lonely_sprites_envA, lonely_sprites_envB = matchEnvs(envA, envB)
-		# Warn if there are unmatched or not accurately matched sprites
-		if len(lonely_sprites_envA)!=0 or len(lonely_sprites_envB)!=0:
-			warning = True
-			print "WARNING: Unmatched sprites in IDmatch -> truPenalty potentially flawed"
-			## this is called only when you're setting two environments. So by definition, the environments should
-			## be identical.
-		if any( [m[2]!=0 for m in matched_sprites] ) == True:
-			#print "WARNING: Non-zero distance between matched sprites (in IDmatch)"
-			pass
-		# Assign IDs
-		for m in matched_sprites:
-			sA, sB = m[0], m[1]
-			d[sB.ID.urn] = sA.ID.urn
-		return d, warning
-
 	def initializeHypotheses(self, allObjects, learnSprites=True, learnAvatar=True, num_variants=0):
 		if learnSprites:
 			observe(self.rle, 0, self.bestSpriteTypeDict)
@@ -351,73 +311,11 @@ class Agent:
 
 		return
 
-	def testEpisode(self, gameObject, epoch=0):
-		
-		# actions = [K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-		# actions = [K_LEFT, K_LEFT, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT]
-		# actions = [K_LEFT, K_UP, K_LEFT, K_LEFT]
-		# actions = [K_UP, K_UP, K_UP]
-
-		# actions = [0]*10
-		actions = [K_UP, K_UP]# K_DOWN, K_LEFT, K_LEFT]
-
-
-		self.initializeEnvironment()
-		# embed()
-
-		self.trueTheory = generateTheoryFromGame(self.rle)
-		self.trueTheory.trueTheory = True
-
-		print "initializing RLE. Epoch={}".format(epoch)
-		num_cores = mp.cpu_count()
-		print "num cores: {}".format(num_cores) 
-		if num_cores<40:
-			print "WARNING: running on < 40 cores."
-
-		self.all_objects= self.rle._game.getObjects()
-
-		if epoch == 0:
-			gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True, learnAvatar=True, num_variants=0)
-
-		## Start storing encountered states.
-		effectsEncountered = []
-		statesEncountered = [self.rle._game.getFullState()]
-		self.statesEncountered.append(self.rle._game.getFullState())
-		envReal = self.fastcopy(self.rle)
-		self.rleHistory.append(envReal)
-
-		t1 = time.time()
-		for num, action in enumerate(actions):
-			if self.rle._isDone()[0]:
-				print "Game is over."
-				break
-			print ">>> Step", num+1, "of", len(actions), "<<<"
-			## initialize VRLEs
-			theoryRLEs = VrleInitPhase(self.hypotheses, self.rle)
-			lastStep=False
-			if num == len(actions)-1:
-				lastStep=True
-			t2 = time.time()
-			scoresAndHypotheses = self.executeStep(action, self.hypotheses, theoryRLEs, lastStep)
-			print ""
-			print "executed step in {} seconds".format(time.time()-t2)
-			print ""
-			self.hypotheses = [tup[1] for tup in scoresAndHypotheses]
-
-		print "{} time-steps took {} seconds".format(len(actions), time.time()-t1)
-		# print ">>> Embedded at the end of testEpisode"
-		embed()
-
-		return
-
 	def manageNewObjects(self, episode_num, hypotheses, envRealPrev, action):
 
 		## Add newly-seen objects.
 		current_objects = self.rle._game.getObjects()
 
-		# if any([current_objects[k]['sprite'].colorName not in [self.all_objects[episode_num][key]['sprite'].colorName 
-																   # for key in self.all_objects[episode_num]] 
-																   # for k in current_objects]):
 		if any([k not in self.rle._game.movement_options for k in current_objects]):
 			for k in current_objects.keys():
 				distributionInitSetup(self.rle._game, k)
@@ -604,78 +502,6 @@ class Agent:
 
 		return bestScoresAndHypotheses
 
-	########################################################################
-	######## TESTING HYPOTHESES BY RANDOM SAMPLING OR OTHER METHODS ########
-	########################################################################
-
-
-	def testSteps(self, rle, actions, hypotheses, last_only=False, check=False):
-		## Evaluates all the hypotheses on the state of the provided rle, given actions.
-		## last_only: will take all actions and only *then* evaluate the distance between real and imagined states
-		
-		theoryRLEs = VrleInitPhase(hypotheses, rle)
-		# Match IDs between real and theory RLEs
-		ID_dictlist = []
-		for tR in theoryRLEs:
-			match, warning = self.IDmatch(tR, rle)
-			if warning:
-				print "IDmatch produced a warning, but environments should be the same"
-				embed()
-			ID_dictlist.append( match)
-		# Calculate penalties
-		cumulative_penalties = []
-
-		for n,action in enumerate(actions):
-			penalties = []
-			if last_only == False or n == len(actions)-1:
-				envRealPrev = self.fastcopy(rle)
-			rle.step(action)
-			for num, env in enumerate(theoryRLEs):
-				env.step(action)
-				if last_only == False or n == len(actions)-1:
-					penalty = self.truPenalty(env, rle, ID_dictlist[num])
-					# penalty, errorList = errorSignal(env, rle, hypotheses[num], envRealPrev)
-					penalties.append(penalty)
-			if last_only == False or n == len(actions)-1:
-				cumulative_penalties.append(penalties)
-
-		cumulative_penalties = np.array(cumulative_penalties)
-		return np.mean(cumulative_penalties, axis=0)
-
-	def randomizeState(self, rle):
-		rleCopy = self.fastcopy(rle)
-		x_options = range(1, rleCopy._game.width-1)
-		y_options = range(1, rleCopy._game.height-1)
-		pos_options = list(itertools.product(x_options, y_options))
-		nonWallObjects = [s for sp in rleCopy._game.sprite_groups.values() for s in sp if s.name!='wall']
-		for obj in nonWallObjects:
-			newPos = random.choice(pos_options)
-			pos_options.remove(newPos)
-			rleCopy._setRectPos(obj, newPos)
-		rleCopy.step(0)
-		return rleCopy
-	
-	def sampleWithReplacement(self, lst, k):
-		outlist = []
-		for i in range(k):
-			outlist.append(random.choice(lst))
-		return outlist
-
-	def testHypotheses(self, hypotheses, rrle=[], num_samples=10, actions_per_sample=10, last_only=False, check=False):
-		if rrle == []:
-			rle = self.initializeRLEFromGame()
-			rrle = []
-			for sample in range(num_samples):
-				rrle.append(self.randomizeState(rle))
-		cumulative_penalties = []
-		for sample in range(num_samples):
-			actions = self.sampleWithReplacement(self.actionSet, actions_per_sample)
-			penalties = self.testSteps(rrle[sample], actions, hypotheses, last_only=last_only, check=False)
-			cumulative_penalties.append(penalties)
-		cumulative_penalties = np.array(cumulative_penalties)
-		cumulative_penalties = list(np.mean(cumulative_penalties, axis=0))
-		scoreAndTheoryTuples = zip(cumulative_penalties, hypotheses)
-		return scoreAndTheoryTuples
 
 ########################################################################
 ######## RLE INITIALIZATION AND STATE-SETTING METHODS 			########
@@ -764,13 +590,11 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False, debug=False):
 			if vrleSpriteCount > rleSpriteCount:
 				# just delete extraneous ones from the end by adding them to the kill_list
 				tmp_kill_list.extend(Vrle._game.sprite_groups[classKey][rleSpriteCount:])
-				# Vrle._game.sprite_groups[classKey] = Vrle._game.sprite_groups[classKey][:len(rle._game.observation['trackedObjects'][color])]
 			elif vrleSpriteCount < rleSpriteCount:
 				# have to duplicate Vrle sprites so we have enough to copy all the rle sprites into
 				try:
 					## Make as many new sprites as you need and put them at (0,0); we'll set their position and state below.
 					[Vrle._game._createSprite([classKey], (0,0)) for n in range(rleSpriteCount-vrleSpriteCount)]
-					# Vrle._game.sprite_groups[classKey] += [copy.deepcopy(Vrle._game.extra_sprites[classKey]) for n in range(rleSpriteCount - vrleSpriteCount)]
 				except:
 					print "problem in setVrleState"
 					embed()
@@ -781,15 +605,8 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False, debug=False):
 			for i in range(min(len(Vrle._game.sprite_groups[classKey]), rleSpriteCount)):
 				setSpriteState(Vrle._game.sprite_groups[classKey][i], rle._game.observation['trackedObjects'][color][i], hypothesis)
 
-		# if 'flipDirection' in [r.interaction for r in hypothesis.interactionSet]:
-			# print "flipDirection in setVrleState"
-			# embed()
-		# if 'transformTo' in [r.interaction for r in hypothesis.interactionSet] and len(Vrle._game.sprite_groups['c4'])==3:
-		# 	print "transformTo in hypothesis"
-		# 	embed()
 		Vrle._game.kill_list = tmp_kill_list
 		Vrle._game._eventHandling(UNOBSERVABLE_PREDICATES)
-
 
 	Vrle._game.time = int(rle._game.time)
 	Vrle._game.score = int(rle._game.score)
@@ -815,8 +632,7 @@ def initializeVrle(hypothesis, stateToSet, theoryRLE=None, makeInitialVrle=False
 		for k,v in Vrle._game.sprite_groups.iteritems():
 			if v:
 				Vrle._game.extra_sprites[k] = copy.deepcopy(v[0])
-	# print "initialized Vrle"
-	# embed()
+
 	## Don't do any of the rest if we have an ungrammatical hypothesis caused by num(avatars)>1.
 	if len(stateToSet._game.observation['trackedObjects'][hypothesis.classes['avatar'][0].colorName])>1:
 		print "Warning. In initializeVrle. Got more than one avatar. Returning None as Vrle."
@@ -867,9 +683,6 @@ def findNearestSprites(sprite, spriteList, dist_function=manhattanDist2, skip_se
 			min_dist = dist
 			dist_map[dist].append(s)
 	return dist_map[min_dist]
-		
-
-
 
 
 ########################################################################
@@ -1400,7 +1213,6 @@ def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 	
 	# Return list of errorMapEntry objects
 	return errorMaps
-
 
 def matchEnvs(envA, envB):
 	all_sprites_envA = [item for sublist in envA._game.observation['trackedObjects'].values() for item in sublist]
