@@ -36,76 +36,40 @@ reverseDirection
 '''
 
 # Win the game when you destroy all the boxes
-game1 = """
-BasicGame
-    SpriteSet
-        box    > Immovable color=WHITE 
-        avatar  > MovingAvatar color=DARKBLUE
-        wall > Immovable color=DARKGRAY
-    LevelMapping
-        A > avatar
-        b > box
-    InteractionSet
-        box avatar > killSprite
 
-        avatar wall > stepBack
-        wall avatar > stepBack
-        
-        wall box > stepBack
-        box wall > stepBack
+sSet = """
+SpriteSet
+    box    > Immovable color=WHITE 
+    avatar  > MovingAvatar color=DARKBLUE speed=1
+    wall > Immovable color=DARKGRAY
+LevelMapping
+    A > avatar
+    b > box
+InteractionSet
+    box avatar > killSprite
 
-        # avatar box > stepBack
-        # box avatar > stepBack
-
-        avatar EOS > stepBack
-        wall EOS > stepBack
-        box EOS > stepBack
-
-        avatar avatar > stepBack
-        box box > stepBack
-        wall wall > stepBack
-
-    TerminationSet
-        SpriteCounter stype=box limit=0 win=True
-        SpriteCounter stype=avatar limit=0 win=False
+"""
+tSet1 = """
+TerminationSet
+    SpriteCounter stype=box limit=0 win=True
+    SpriteCounter stype=avatar limit=0 win=False
 """
 
 # Don't win the game when you destroy all the boxes
-game2 = """
-BasicGame
-    SpriteSet
-        box    > Immovable color=WHITE 
-        avatar  > MovingAvatar color=DARKBLUE
-        wall > Immovable color=DARKGRAY
-    LevelMapping
-        A > avatar
-        b > box
-    InteractionSet
-        avatar wall > stepBack
-        box avatar > killSprite
-
-        wall avatar > stepBack
-        wall box > stepBack
-
-        box wall > stepBack
-        # avatar box > stepBack
-        # box avatar > stepBack
-
-
-        avatar EOS > stepBack
-        wall EOS > stepBack
-        box EOS > stepBack
-
-        avatar avatar > stepBack
-        box box > stepBack
-        wall wall > stepBack
-
-    TerminationSet
-        # SpriteCounter stype=box limit=0 win=True
-        SpriteCounter stype=avatar limit=0 win=False
+tSet2 = """
+TerminationSet
+    # SpriteCounter stype=box limit=0 win=True
+    SpriteCounter stype=avatar limit=0 win=False
 """
 
+'''
+You can piece together a full game description this way.
+Place in as many or as few combinations of sets as you want.
+'''
+game1 = catDescriptions(sSet, tSet1)
+game2 = catDescriptions(sSet, tSet2)
 
+# print game1
 
 test1 = TestCase(game1, level1, [[K_UP, K_UP]])
 test2 = TestCase(game1, level1, [[K_UP, K_RIGHT, K_RIGHT]])
