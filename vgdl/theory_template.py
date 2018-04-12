@@ -415,7 +415,7 @@ class Theory(object):
 			else:
 				if any([t in vgdlTypeString for t in ['Resource','Portal','Immovable']]):
 					classScore +=0
-				# elif 'Missile' in vgdlTypeString:
+				# elif 'Random' not in vgdlTypeString:
 					# classScore += 1
 				else:
 					classScore += 2
@@ -2681,7 +2681,7 @@ predicateToOrderingMapping = {
  	'changeScore':			(0,1),
 	'undoAll':				(0,1)}
 
-predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit', 'wrapAround']
+predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit', 'wrapAround', 'reverseDirection']
 
 def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n):
 

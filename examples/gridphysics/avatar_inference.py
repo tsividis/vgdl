@@ -45,20 +45,22 @@
 ## the problem here is that you need to build on expandSprite proposals with expandLine within one errorMap and
 ## you don't ordinarily do that.
 #0,0,0,0,0,0
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                            1 w
-w                            1 w
-w                              w
-w              A               w
-w         c    c          3 3  w
-w                              w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w              A               w
+# w         c    c          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # works if you don't allow the eventHandler to apply effects to newly-created sprites
-#[0,0,0,K_LEFT, K_LEFT,0,0]
+# Note: this is much slower when you have more intParis, i.e., when you move things down a row.
+# It's actually too slow even when things are up a row.
+# [0,0,0,K_LEFT, K_LEFT,0,0]
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
@@ -66,13 +68,14 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                            1 w
 # w                              w
 # w                              w
-# w                         3 3  w
-# w         c    c A             w
+# w         c    c A        3 3  w
+# w                              w
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
 #[0]*10
 ## distinguishing between random and missiles
+# Works if you don't filter early against 'random' in prior.
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
@@ -89,17 +92,18 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # combine with sam wall reverseDirection
 # we do learn reverseDirection, but a few
 # incorrect Chaser theories have low error even though they're totally wrong.
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w                            1 w
-# w                              w
-# w         wwwwww               w
-# w                         3 3  w
-# w         s    s A             w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+# 4/11: not learning this.                                                  <------ PROBLEM
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w                            1 w
+w                              w
+w         wwwwww               w
+w                         3 3  w
+w         s    s A             w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -143,6 +147,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 ## combine with box2 avatar killsprite.
 ## if you use box2 avatar bounceForward this could be
 ## a good test of whether re-doing testAndExpand helps.
+# version with only transformTo rule is going into second testAndExpand() <---- PROBLEM
 # #up, up, down
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww

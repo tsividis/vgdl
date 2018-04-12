@@ -294,7 +294,8 @@ class Agent:
 			# [K_RIGHT, K_UP, K_SPACE, 0, 0,0,0,0]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			[0]*6
+			[0]*10
+			# [0,0,0,K_LEFT, K_LEFT,0,0]
 			# [0,K_RIGHT, K_SPACE, 0,0,0,0,0,0,0]
 			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT],
 			# [K_RIGHT, K_RIGHT]
@@ -565,7 +566,6 @@ class Agent:
 
 			if len(bestScoresAndHypotheses) == 0:
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
-				# embed()
 
 				retryTheories = [t for t in newTheories if hasattr(t, 'mostRecentEdit') and t.mostRecentEdit == 'spriteInduction']
 				theoryRLEs = VrleInitPhase(retryTheories, envRealPrev, self.symbolDict)
@@ -578,6 +578,7 @@ class Agent:
 					theories = testAndExpand(env, retryTheories[num], action, self.rle, envRealPrev, self.rleHistory[episode_num], \
 							self.actionHistory[episode_num], self.symbolDict, self.bestSpriteTypeDict)
 					newerTheories.extend(theories)
+				embed()
 
 				newerTheories = list(set(newerTheories))
 				self.allTheories.extend(newerTheories)
@@ -589,8 +590,8 @@ class Agent:
 			# TODO: do we really need to or will they have been filtered before?
 			# bestScoresAndHypotheses , scoreAndTheoryTuples = self.scoreAndFilterTheories(hypotheses, episode_num)
 
-		# print "just expanded all theories"
-		# embed()
+		print "just expanded all theories"
+		embed()
 
 		self.statesEncountered.append(self.rle._game.getFullState())
 		self.rle._game.sprite_appearances = []
@@ -711,7 +712,6 @@ def setSpriteState(sprite, matchingSprite, hypothesis):
 		## about a sprite's orientation.
 		c1 = hypothesis.spriteObjects[matchingSprite.colorName].className
 		wrapAroundApplies = any([rule.interaction=='wrapAround' and rule.slot1==c1 for rule in hypothesis.interactionSet])
-
 		if orientation == (0,0) or wrapAroundApplies:
 			orientation = matchingSprite.firstorientation if matchingSprite.firstorientation else hypothesis.spriteObjects[matchingSprite.colorName].args['orientation']
 		sprite.orientation = orientation
