@@ -78,3 +78,4 @@ TerminationSet
 	print mapping('avatar', 'A')
 	print args(color='GREEN')
 	print joinDescs(sprite_set, sprite_set2)
+

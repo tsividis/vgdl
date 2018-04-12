@@ -316,8 +316,6 @@ BasicGame
         SpriteCounter stype=box3 limit=0 win=True
         # SpriteCounter stype=box3 limit=0 win=False
         Termination
-
-
 """
 level_game_pairs = [[game, level]]
 
