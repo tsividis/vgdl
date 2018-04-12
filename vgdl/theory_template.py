@@ -1,0 +1,3319 @@
+from random import choice
+import itertools, copy, scipy.misc
+import numpy as np
+import dill
+import tempfile
+import json
+from class_theory_template import *
+from taxonomy import *
+from IPython import embed
+from ontology import *
+from collections import defaultdict
+import ipdb
+import operator
+import time, math
+from util import factorize, objectsToSymbol, ccopy
+from rlenvironmentnonstatic import createMindEnv
+from line_profiler import LineProfiler
+
+
+ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
+AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
+RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
+AimedFlakAvatar, InertialAvatar, MarioAvatar]
+
+"""
+Theory induction on VGDL Games
+"""
+
+
+class TimeStep:
+	"""
+	Everything that happened in a time step in the game.
+
+	Ex.)
+	TimeStep.agentAction = 'up'
+	TimeStep.agentState = {'health':1, 'treasure':2}
+	TimeStep.events = [(bounceForward, BLUE, ORANGE), (undoAll, ORANGE, BLACK)]
+	TimeStep.t = 4  --> meaning all of this took place at t_4
+	"""
+
+	def __init__(self, agentAction, agentState, events, gameState, rle):
+		self.agentAction = agentAction
+		self.agentState = agentState # agent's backpack
+		self.events = events
+		self.t = False # Number timestep
+		self.gameState = gameState
+		self.rle = rle
+
+	def display(self):
+		print (self.agentAction, self.agentState, self.events, self.gameState)
+		return (self.agentAction, self.agentState, self.events, self.gameState)
+
+
+class Precondition(object):
+	"""
+	Appended to InteractionRules if conflicting effects occur from the same interaction, due to changed resources.
+	"""
+	def __init__(self, text, item, operator_name, num, negated=False):
+		self.text = text
+		self.item = item
+		self.operator_name = operator_name
+		self.num = num
+		self.negated = negated
+
+	def copy(self):
+		return Precondition(self.text, self.item, self.operator_name, self.num, self.negated)
+
+	def check(self, dictionary):
+		if self.item not in dictionary.keys():
+			dictionary[self.item] = 0
+
+		if self.operator_name == '>':
+			answer = dictionary[self.item] > self.num
+		elif self.operator_name == '>=':
+			answer = dictionary[self.item] >= self.num
+		elif self.operator_name == '<':
+			answer = dictionary[self.item] < self.num
+		elif self.operator_name == '<=':
+			answer = dictionary[self.item] <= self.num
+
+		if self.negated:
+			return not answer
+		else:
+			return answer
+
+	def negate(self):
+		self.negated = not self.negated
+		self.text = 'not '+ self.text
+
+	def display(self):
+		print self.text
+
+	def __eq__(self, other):
+		try:
+			return self.text == other.text
+		except AttributeError:
+			return False
+
+	def __ne__(self, other):
+		return not self.__eq__(other)
+
+class InteractionRule(object):
+	"""
+	Rule defining how 2 classes of objects interact with each other.
+	# TODO: Should enforce proper syntax for interaction rules
+
+	"""
+	def __init__(self, interaction, c1, c2, args, preconditions=set(), generic=False):
+		self.interaction = interaction
+		self.slot1 = c1
+		self.slot2 = c2
+		self.args = args
+		self.preconditions = preconditions
+		self.generic = generic ## if generic, this interaction rule belongs to the generic prior that is meant to be overriden.
+		self._hash = hash((self.interaction, self.slot1, self.slot2, tuple(sorted(self.args.iteritems()))))
+
+	def display(self):
+		print self
+
+	def __repr__(self):
+		if not self.preconditions:
+			string = "%s %s %s %r" % (self.interaction, self.slot1, self.slot2, self.args)
+		else:
+			string = "%s %s %s %r %r" % (self.interaction, self.slot1, self.slot2, self.args, [p.text for p in self.preconditions])
+		return string
+
+	def copy(self):
+		return InteractionRule(self.interaction, self.slot1, self.slot2, dict(self.args) if self.args else {},
+				set([p.copy() for p in self.preconditions]), self.generic)
+
+	def asTuple(self):
+		return (self.interaction, self.slot1, self.slot2, self.args)
+
+	def addPrecondition(self, precondition):
+		"""
+		TODO: Now that we've reimplemented preconditions as lambda functions,
+		it can't properly check for equality of preconditions. You *may*
+		be able to get around this by checking for the equality of precondition.text
+		and making sure that precondition.text always reflects the functioning of the
+		lambda function.
+		"""
+		curr_preconditions = [p.text for p in self.preconditions]
+		if precondition.text not in curr_preconditions: #TODO: change equality for preconditions?
+			self.preconditions = set([precondition]) #TODO: Need to change this, if we accept more than one precondition for an interaction rule
+
+	def checkPreconditions(self, agentState):
+		return all([p.check(agentState) for p in self.preconditions])
+
+	def __hash__(self):
+		return self._hash #+hash(time.time())
+
+	def __eq__(self, other):
+		if isinstance(other, self.__class__):
+			return all([
+				self.asTuple()==other.asTuple(),
+				self.preconditions==other.preconditions
+				])
+		else:
+			return False
+
+	def __ne__(self, other):
+		return not self.__eq__(other)
+
+class TerminationRule:
+	"""
+	TODO: eventually incorporate multiple sprite termination conditions and timeout termination conditions.
+	At the moment, we assume single sprite conditions
+	"""
+	def __init__(self, termination, win, **kwargs):
+		self.termination = termination(win=win, **kwargs)
+		# self._hash = hash(self.termination.name)
+
+	def isDone(self, game):
+		return self.termination.isDone()
+
+	def copy(self):
+		return ccopy(self)
+
+	def display(self):
+		print (self.termination.name+'Rule', self.termination.get_args())
+
+	def __eq__(self,other):
+		return self.asTuple() == other.asTuple()
+
+	def __hash__(self):
+		return self._hash
+
+def TerminationRuleConstructor(rule_type, **kwargs):
+	try:
+		if rule_type == 'NoveltyTerminationRule':
+			termination_rule = NoveltyRule
+		else:
+			termination_rule = eval(rule_type)
+		return termination_rule(**kwargs)
+	except NameError:
+		raise NameError, "termination rule '%s' not defined" % rule_type
+
+class TimeoutRule(TerminationRule):
+	def __init__(self, limit=0, win=False):
+		self.termination = Timeout(limit=limit, win=win)
+		self.ruleType = "TimeoutRule"
+		self._hash = hash(self.asTuple())
+
+
+	def __repr__(self):
+		return str(self.asTuple())
+
+	def display(self):
+		print self.asTuple()
+
+	def asTuple(self):
+		return (self.ruleType, self.termination.limit, self.termination.win)
+
+class NoveltyRule(TerminationRule):
+	""" Game ends when the number of sprites of type 'stype' hits 'limit' (or below). """
+	def __init__(self,s1,s2,win,args=None):
+		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
+		self.termination = NoveltyTermination(s1=s1, s2=s2, win=win, args=args)
+		self.ruleType = "NoveltyRule"
+		args = args if args else {}
+		self._hash = hash((self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, tuple(sorted(args.iteritems()))))
+
+	def __repr__(self):
+		return str(self.asTuple())
+
+	def display(self):
+		print self.asTuple()
+
+	def asTuple(self):
+		return (self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, self.termination.args)
+
+class SpriteCounterRule(TerminationRule):
+	""" Game ends when the number of sprites of type 'stype' hits 'limit' (or below). """
+	def __init__(self,stype,limit,win):
+		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
+		self.termination = SpriteCounter(limit=limit, stype=stype, win=win)
+		self.ruleType = "SpriteCounterRule"
+		self._hash = hash(self.asTuple())
+
+	def __repr__(self):
+		return str(self.asTuple())
+
+	def display(self):
+		print self.asTuple()
+
+	def asTuple(self):
+		return (self.ruleType, self.termination.stype, self.termination.limit, self.termination.win)
+
+
+class MultiSpriteCounterRule(TerminationRule):
+    """ Game ends when the sum of all sprites of types 'stypes' hits 'limit'. """
+    def __init__(self, limit=0, win=True, stypes = []):
+    	argList = dict((str(i), stype) for i, stype in enumerate(stypes))
+        self.termination = MultiSpriteCounter(limit=limit,win=win, **argList)
+        self.ruleType = "MultiSpriteCounterRule"
+        self._hash = hash((self.ruleType, tuple(sorted(self.termination.stypes)), self.termination.limit, self.termination.win))
+
+
+    def __repr__(self):
+    	print self.asTuple()
+
+    def display(self):
+        print self.asTuple()
+
+    def asTuple(self):
+        return (self.ruleType, set(self.termination.stypes), self.termination.limit, self.termination.win)
+
+class ruleCluster(object):
+	def __init__(self, interactionAndPreconditionList, pairList):
+		self.clusteredRules = interactionAndPreconditionList
+		self.pairs = pairList
+		self.score = 0.
+
+	def __eq__(self, other):
+		if len(self.clusteredRules)!=len(other.clusteredRules):
+			return False
+		else:
+			return all([r1 in [r2 for r2 in other.clusteredRules] for r1 in self.clusteredRules])
+
+	def __ne__(self, other):
+		return not self.__eq__(other)
+
+## Helper print function
+def printInteractionSet(interactionSet):
+		print [i.display() for i in interactionSet]
+
+class Theory(object):
+	"""
+	A VGDL description of a game
+	"""
+	def __init__(self, game):
+		self.game = game
+		self.parent = None
+		self.children = []
+		self.twins = [] #Not used now, but potentially use to keep better track of genealogy
+		self.depth = 0
+
+		# Following VGDL structure
+		self.spriteSet = [] # Includes properties of sprites/objects
+		self.levelMapping = [] # Map of the game
+		self.interactionSet = [] # Interaction rules
+		self.terminationSet = set() # Conditions that lead to game termination
+
+		self.spriteObjects = {} # Maps sprite color -> Sprite object
+		self.classes = {} # Maps classes -> objects
+		self.predicates = set() # Types of possible interactions
+
+		self.dryingPaint = set()
+		self.inModification = {}
+
+		self.falsified = set()
+		self.multi_falsified = set()
+
+		self.posterior = False
+
+		self.goalColor = False ## TODO. Hack added 1/18/17 in lieu of termination set.
+
+		self.resource_limits = defaultdict(lambda:1)
+
+		self.errorHistory = []
+		self.cumulativeError = 0.
+
+		self.expandedSprites = []
+		self.errorMapHistory = []
+		self.lineage = []
+		
+		self.experienceReplayRecord = {} ## store (targetColor, rleHistory.ID, len(rleHistory)):penalty
+		self.mark = False ## For convenient marking and finding of hypotheses
+
+	## We don't want this to be precomputed because our way of generating child theories
+	## is to copy a theory and then change its interactionSet and spriteSet.
+	def __hash__(self):
+		return hash(sum([r.__hash__() for r in self.interactionSet]) + sum([s.__hash__() for s in self.spriteSet]))
+
+	def copy(self):
+		newTheory = Theory(self.game)
+		newTheory.spriteSet = [s.copy() for s in self.spriteSet]
+		newTheory.classes = {s.className if s.className else 'EOS':[s] for s in newTheory.spriteSet}
+		newTheory.spriteObjects = {s.colorName:s for s in newTheory.spriteSet}
+		newTheory.expandedSprites = list(self.expandedSprites)
+		newTheory.interactionSet = [r.copy() for r in self.interactionSet]
+		newTheory.terminationSet = ccopy(self.terminationSet)
+		newTheory.dryingPaint = set(self.dryingPaint)
+		newTheory.errorMapHistory = list(self.errorMapHistory) # currently unused but useful for debugging.
+		newTheory.experienceReplayRecord = ccopy(self.experienceReplayRecord)
+		return newTheory
+
+	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
+		if not (vgdlSpriteParse or spriteInductionResult):
+			print "You must provide either a vgdlSpriteParse or the result of having performed sprite induction."
+			return
+		if vgdlSpriteParse:
+			self.spriteSet = [s for s in vgdlSpriteParse if s.colorName is not None]
+		if spriteInductionResult:
+			self.spriteSet = spriteInductionResult
+
+		# End of screen is a special object. Initialize it here.
+		eos = Sprite(core.EOS, 'ENDOFSCREEN', 'EOS', None)
+		self.spriteSet.append(eos)
+
+		# Get mapping from sprite color to Sprite object
+		for s in self.spriteSet:
+			self.spriteObjects[s.colorName] = s
+
+	def reconcileInteractionsAndSprites(self):
+		## VGDL contains some exceptions to the independence between interactionSet and spriteSet:
+		## e.g., teleportation targets are specified in the spriteSet even though teleportation is an interaction.
+		## resolve such exceptions here, by passing info from one part to the other as needed.
+		for interactionRule in self.interactionSet:
+			if 'teleportToExit' in interactionRule.interaction:
+				color = self.classes[interactionRule.slot2][0].colorName
+				## If we haven't already made this a Portal, take care of the details.
+				if self.spriteObjects[color].vgdlType!=Portal:
+					self.spriteObjects[color].args = ccopy(interactionRule.args)
+					self.spriteObjects[color].vgdlType = Portal
+					self.classes[interactionRule.slot2][0] = self.spriteObjects[color]
+					for rule in self.interactionSet:
+						if rule.slot1==interactionRule.slot1 and 'stype' in interactionRule.args and \
+								rule.slot2==interactionRule.args['stype'] and rule!=interactionRule and rule.interaction != 'stepBack':
+								rule.interaction = 'nothing'
+					interactionRule.args = {}
+
+	def addSpriteToTheory(self, newSpriteName, color, vgdlType='default', args=None):
+		if vgdlType=='default':
+			vgdlType = ResourcePack
+		sprite = Sprite(vgdlType, color, className=newSpriteName, args=args)
+		self.classes[newSpriteName] = [sprite]
+		self.spriteSet.append(sprite)
+		self.spriteObjects[color] = sprite
+		for (o1,o2) in itertools.product([newSpriteName], self.classes.keys()):
+			rule1 = InteractionRule('stepBack', o1, o2, {}, set(), generic=True)
+			rule2 = InteractionRule('stepBack', o2, o1, {}, set(), generic=True)
+			self.interactionSet.append(rule1)
+			self.interactionSet.append(rule2)
+		return
+
+	"""Main functions"""
+
+	def prior(self):
+		## Very simple prior, prefering:
+			# Avatar = default type
+			# Everything else doesn't move
+			# Short non-default ruleset; penalty for rules involving preconditions
+			# Penalty for stochastic predicates
+			# Preference for explanations involving avatar being the cause of change:
+			#	 (penalty for long ruleset is shorter than penalty for type deviations)
+
+		classScore = 0.
+		classes = [cl for cl in self.classes if cl!='EOS']
+		for c in classes:
+			vgdlTypeString = str(self.classes[c][0].vgdlType)
+			if 'Avatar' in vgdlTypeString:
+				if 'Moving' not in vgdlTypeString:
+					classScore += 1
+			else:
+				if any([t in vgdlTypeString for t in ['Resource','Portal','Immovable']]):
+					classScore +=0
+				# elif 'Missile' in vgdlTypeString:
+					# classScore += 1
+				else:
+					classScore += 2
+		ruleScore = len([rule for rule in self.interactionSet if rule.interaction!='stepBack'])
+		ruleScore += len([rule for rule in self.interactionSet if rule.interaction in ['flipDirection']])
+		ruleScore += len([rule for rule in self.interactionSet if rule.args])
+		# ruleScore = 1
+		return classScore + ruleScore/1000.
+
+	def explainTimeStep(self, timestep, fullTimestep, timesteps, currTheories=False, override=False):
+		"""
+		Recursive function. Explains first event, then calls itself to explain the next events
+		contingent on current explanations.
+		Returns a set of theories that explain all the events that took place at timestep.
+		currTheories can be passed as args to enable the explanation of multiple events in a single timestep.
+		"""
+		# print "in explainTimeStep. Explaining", timestep.events
+		# if currTheories:
+		# 	print "current theory:"
+		# 	currTheories[0].display()
+		theories = []
+
+		# If we haven't provided theories that explain part of the time step, just explain the first event in the timestep
+		if not currTheories:
+			theories.extend(self.explainEvent(timestep.events[0], fullTimestep, timesteps, override=override))
+
+		# Otherwise, you're now being passed the remainder of the timestep,
+		# so timestep.events[0] is actually the first as-of-yet unexplained event.
+		# Generate theories based on hypothetical theories (aka, currTheories)
+		else:
+			for theory in currTheories:
+				newTheory = theory.explainEvent(timestep.events[0], fullTimestep, timesteps, override=override)
+				theories.extend(newTheory)
+
+
+		if len(timestep.events) == 1:							# Base Case
+			# print "in base case of explainTimeStep"
+			for t in theories:
+				t.depth = self.depth+1
+			# ## Falsify hypotheses
+			# relevantEvents = [t for t in fullTimestep.events if 'killSprite' in t or 'transformTo' in t]
+			# rle = fullTimestep.rle
+			# for event in relevantEvents:
+			# 	candidateSpriteType = [o for o in rle._game.sprite_groups if len(rle._game.sprite_groups[o])>0 and rle._game.sprite_groups[o][0].colorName == event[1]][0]
+			# 	if len([o for o in rle._game.sprite_groups[candidateSpriteType] if o not in rle._game.kill_list]) == 0 and not rle._isDone()[0]:
+			# 		self.falsified.append(SpriteCounterRule(self.colorToClassMapper(event[1]), 0, True))
+			# 		self.falsified.append(SpriteCounterRule(self.colorToSpriteMapper(event[1]), 0, False))
+
+
+			return theories
+		else:													# Recursive Case
+			# Create new timestep that consist of remaining unexpplained eventsl pass to the same function
+			# print "in recursive case"
+			updatedTimeStep = TimeStep(timestep.agentAction, timestep.agentState, timestep.events[1:], timestep.gameState, timestep.rle)
+			return self.explainTimeStep(updatedTimeStep, fullTimestep, timesteps, currTheories=theories, override=override)
+
+	def explainEvent(self, event, timestep, timesteps, override=False):
+		"""
+		Returns theories based on 'self' that explain the event, which is a tuple like:
+			(bounceForward, BLUE, ORANGE)
+		The theories will be Theory objects whose content may be something like:
+			(bounceForward, c1, c2 IF health>1)
+
+		"""
+		theories = []
+
+
+		likelihood = self.likelihood(timestep)
+
+		if likelihood==1:
+			theories.append(self)
+		else:
+			failCase = self.getFailCases(event, timestep)
+
+			# print event
+			# print "\tFail case: ", failCase
+			# print ""
+
+			# This particular event is explained. Don't change anything.
+			if failCase == 0:
+				theories.append(self)
+			# Add preconditions
+			elif failCase in [1,2,3]:
+				if failCase == 2 and event[0]=='killIfFromAbove': ## we're forgoing the process of doing proper precondition reasoning here; would be straightforward to do it.
+					# interpretation = self.interpret(event)
+					theories.extend(self.addRules(event))
+				else:
+					theories.extend(self.addPreconditions(event, timestep, timesteps))
+			# Add new rule
+			elif failCase == 4:
+				theories.extend(self.addRules(event))
+
+		return theories
+
+	def colorToClassMapper(self,color):
+		for c in self.classes:
+			for c_class in self.classes[c]:
+				if c_class.colorName == color:
+					return c
+
+		raise Exception("No corresponding class found for color")
+
+	def makeGameStateWithClasses(self, gameState):
+		classGameState = {k: 0 for k in self.classes.keys()}
+		for c in self.classes:
+			for s in self.classes[c]:
+				if s.colorName in gameState:
+					classGameState[c] += len(gameState[s.colorName])
+
+		return classGameState
+
+
+	def explainTermination(self, timestep, prevTimeSteps,result):
+		"""
+		adds all hypotheses about the termination conditions to the terminationSet
+		params:
+		timestep: the very last time step (at which termination occurs)
+		prevTimeSteps: all time steps previous to the termination time step
+		result: a dictionary for which the key 'win' is a boolean describing whether the game was won
+		"""
+		win = result['win']
+		classesWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
+		prevClassGameStates = [self.makeGameStateWithClasses(t.gameState['objects']) for t in prevTimeSteps]
+		classGameState = self.makeGameStateWithClasses(timestep.gameState['objects'])
+		for c in classGameState:
+			timestep_amt = classGameState[c]
+			timestep_amt_unique = not timestep_amt in [g[c] for g in prevClassGameStates]
+			if timestep_amt_unique:
+				classesWithDiffAmounts[c] = timestep_amt
+
+		# print "IN TERMINATION CONDITIONS"
+		# print timestep
+		# # print timestep.events
+		# print classesWithDiffAmounts
+		# print {k:[c.asTuple() for c in v] for k,v in self.classes.items()}
+
+		for event in timestep.events:
+			for i in [1,2]:
+				terminationClassColor = event[i] #self.getClass(event[i])
+				terminationClassSymbol = self.colorToClassMapper(terminationClassColor)
+				if terminationClassSymbol in classesWithDiffAmounts:
+					timestep_amt = classesWithDiffAmounts[terminationClassSymbol]
+					spriteCounterRule= SpriteCounterRule(terminationClassSymbol,timestep_amt,win)
+
+					self.terminationSet.add(spriteCounterRule)
+
+		time = result["time"]
+		timeoutRule = TimeoutRule(limit=time, win=win)
+		self.terminationSet.add(timeoutRule)
+
+
+	def likelihood(self, timestep, sparse=False):
+		"""
+		Makes sure that:
+			-all events in the timestep were covered by the ruleset
+			-everything predicted in the ruleset happened.
+
+		Right now returns only 1 or 0.
+		"""
+		# print "events in timestep {} | predictions in timestep {}".format(self.checkEventsInTimeStep(timestep), self.checkPredictionsInTimeStep(timestep))
+		if self.checkEventsInTimeStep(timestep) and self.checkPredictionsInTimeStep(timestep, sparse):
+			likelihood = 1.
+		else:
+			likelihood = 0.
+		return likelihood
+
+	def updateInteractionsPreconditions(self, resource, limit=None):
+		if not limit:
+			new_precond = Precondition(
+			text='new precondition for '+resource,
+			item=resource, operator_name='>', num=0)
+		else:
+			new_precond = Precondition(
+			text='new precondition for '+resource,
+			item=resource, operator_name='>=', num=limit)
+
+		# Add new generic rules for the avatar with preconditions
+		newInteractionRules = []
+		nonAvatars = [o for o in self.spriteSet if o.vgdlType not in AvatarTypes and o.colorName!='ENDOFSCREEN']
+		for o in nonAvatars:
+			rule = InteractionRule('killSprite', o.className, 'avatar', {}, set([new_precond]), generic=True)
+			newInteractionRules.append(rule)
+		# ipdb.set_trace()
+
+		return newInteractionRules
+
+	def checkTerminationCounterInState(self, c, termCondition):
+		"""
+		c = game state with classes instead of colors
+		"""
+		return c[termCondition.termination.stype] == termCondition.termination.limit
+
+
+	def getBadTerminationConditions(self, allTraces, verbose=False):
+		"""
+		Right now returns the list of termination conditions which are contradicted by the data.
+		"""
+		badTerminationConditions = []
+		for termCondition in self.terminationSet:
+			if termCondition.ruleType == "SpriteCounterRule":
+				for timesteps,result in allTraces:
+					for i in range(len(timesteps)):
+						t = timesteps[i]
+						c = self.makeGameStateWithClasses(t.gameState["objects"])
+						if i == len(timesteps) - 1:
+							if self.checkTerminationCounterInState(c, termCondition) and termCondition.termination.win != result["win"]:
+								if not termCondition in badTerminationConditions:
+									badTerminationConditions.append(termCondition)
+						else:
+							if self.checkTerminationCounterInState(c, termCondition): # if condition were true, would have ended on this time step.
+								if not termCondition in badTerminationConditions:
+									badTerminationConditions.append(termCondition)
+
+			elif termCondition.ruleType == "TimeoutRule":
+				for timesteps, result in allTraces:
+					if result["time"] > termCondition.termination.limit:
+						if not termCondition in badTerminationConditions:
+							badTerminationConditions.append(termCondition)
+
+		return badTerminationConditions
+
+
+	def checkEventsInTimeStep(self, timestep):
+		"""
+		Check if all events in the timestep are covered by the interaction rule set.
+		"""
+		# print "events:", timestep.events
+		interpretations = [self.interpret(event) for event in timestep.events]
+		return all([self.checkEvents(i, timestep) for i in interpretations])
+
+
+	def checkPredictions(self, event, timestep):
+		"""
+		Check if the relevant predictions to a specific event occurred.
+		"""
+		# TODO: Add comments here
+		interpretations = [self.interpret(e).asTuple() for e in timestep.events if self.interpret(e) is not False]
+		if interpretations:
+			relevantRules = self.findRelevantRules(event, timestep.agentState, checkDryingPaint=True)
+			if False in relevantRules:
+				return ()
+			if relevantRules:
+				return all([rule.asTuple() in interpretations for rule in relevantRules])
+
+		# If no interpretations, or if no relevant rules
+		return ()
+
+
+	def checkPredictionsInTimeStep(self, timestep, sparse=False):
+		"""
+		Check if all predictions for the timestep actually occurred.
+		"""
+		#Note: This fn cannot be exactly like checkPredictions(), becase here we don't care whether 'drying paint' is
+		#T or F. We need to actually check all the predictions.
+		interpretations = [self.interpret(event).asTuple() for event in timestep.events if self.interpret(event) is not False]
+
+		relevantRules = []
+		for event in timestep.events:
+			relevantRules.extend(self.findRelevantRules(event, timestep.agentState, checkDryingPaint=False, sparse=sparse))
+
+		# if set(['DARKBLUE', 'RED'])==set([event[1], event[2]]):
+		# 	embed()
+		if False in relevantRules:
+			return False
+		else:
+			for rule in relevantRules:
+				if rule.asTuple() not in interpretations:
+					return False
+			return True
+
+
+	def getFailCases(self, event, timestep, verbose=False):
+		"""
+		Note: the only predictions we care about checking for here are the ones that are in the original theory.
+		Predictions made by 'drying-paint' theories shouldn't be taken into account in the sense that all of these should receive
+		the same treatment. That is, if we have (bf c1 c2) in the original theory, and are currently explaining the events:
+		(ks c1 c2) (uA c1 c2),
+		what we want to do is realize that (ks c1 c2) needs a precondition on it. Then we add this to a theory (as drying paint)
+		and when we explain (uA c1 c2), we want to do exactly what we did with (ks c1 c2); recognize that it needs a single precondition.
+		So checkPredictions only checks for theories that are not in dryingPaint.
+		"""
+
+		failCases = {(True, True): 	 [0, "Event likelihood = 1"],
+					 (True, ()): [0, "Event likelihood = 1"],
+					 (True, False):  [1, "Event likelihood failed because the interactionSet predicts things that didn't happen. "+
+					 "Solution: Add preconditions to subset of interactionSet."],
+					 (False, True):  [2, "Event likelihood failed because interpreted event is not in interactionSet. "+
+					 "Solution: Add new rule with precondition on it."],
+					 (False, False): [3, "Event likelihood failed both ways."+
+					 "Solution: Add new rule with precondition on it; negate that precondition for other relevant rules."],
+					 (False, ()):    [4, "Event likelihood failed because interactionSet hasn't seen the event."+
+					 "Solution: AddRule()"]}
+
+		(eventInRules, predictionsHappened) = self.checkEvents(self.interpret(event), timestep), self.checkPredictions(event, timestep)
+
+
+
+		# print (eventInRules, predictionsHappened)
+		# self.display()
+		# print "event", event
+		# print "interaction set:", [i.asTuple() for i in self.interactionSet]
+
+		# if verbose:
+		if (eventInRules, predictionsHappened) not in failCases.keys():
+			print "weird fail case"
+			embed()
+
+		return failCases[(eventInRules, predictionsHappened)][0]
+
+
+	def checkEvents(self, interpretation, timestep):
+		"""
+		Checks whether everything in the interpretation is accounted for by the interactionSet.
+		"""
+
+		if interpretation:
+			interpretation = interpretation.asTuple()
+			for rule in [r for r in self.interactionSet if not r.generic]:
+				precon_list = [p.text for p in rule.preconditions]
+				if rule.asTuple()==interpretation:
+
+					# If no preconditions for the rule, then all is well.
+					if not rule.preconditions:
+						return True
+					# Otherwise, make sure predonditions are met.
+					else:
+						preconditions_are_met = all([p.check(timestep.agentState) for p in rule.preconditions])
+
+						return preconditions_are_met
+
+		# If we've checked everything and found no matching rule or rule+precondition or couldn't even interpret the event, return False.
+		return False
+
+
+	def addRules(self, event, override=False):
+		"""
+		Search over possible assignments for classes; posit new classes if necessary
+		Return theories that have either
+		Try to make it fit according to the current rules by searching
+		over possible class assignments for the objects.
+		Returns a list of theories.
+		"""
+		# print 'in addRules...'
+		newTheories = []
+		possibleAssignments = self.searchForAssignments(event)
+		try:
+			## Events now have an optional last element of the tuple that is 'args': a dictionary of names-->values for things like
+			## resources, stypes, values, etc.
+			## These are relevant for interactions like teleportToExit, changeResource, etc.
+			## Interactions in ontology.py that have arguments return at most two additional arguments. By convention, 'value' is always the
+			## last of these.
+
+			if 'stype' in event[3].keys():
+				obj3 = self.spriteObjects[event[3]['stype']]
+				# event[3]['stype'] = self.getClass(obj3)
+				tmpEvent = copy.deepcopy(event)
+				tmpEvent[3]['stype'] = self.getClass(obj3)
+				args = tmpEvent[3]
+			else:
+				args = event[3]
+		except:
+			args = {}
+
+		# if len(args.keys())>0:
+		# 	print "found args in addRules for event", event
+		# 	embed()
+		obj1 = self.spriteObjects[event[1]]
+		obj2 = self.spriteObjects[event[2]]
+
+		if possibleAssignments:
+			for assignment in possibleAssignments:
+				class1, class2 = assignment[0], assignment[1]
+
+				## Remove any relevant rules that are currently in the interaction set that are generic rules.
+				rulesToRemove = [rule for rule in self.interactionSet if
+					((class1==rule.slot1 and class2==rule.slot2) or (class1==rule.slot2 and class2==rule.slot1)) and rule.generic]
+
+				# terminationsToRemove = [rule for rule in self.terminationSet if (class1 in rule.asTuple() or class2 in rule.asTuple()) \
+				# and rule.ruleType=='SpriteCounterRule' and rule.generic]
+
+				self.interactionSet = [rule for rule in self.interactionSet if rule not in rulesToRemove]
+				# self.terminationSet = [rule for rule in self.terminationSet if rule not in terminationsToRemove]
+
+				interaction = InteractionRule(event[0], assignment[0], assignment[1], args) #This isn't strictly necessary, but follows createChild requirements.
+
+				classAssignments = [(assignment[0], obj1), (assignment[1], obj2)]
+				newTheory = self.createChild([interaction, classAssignments], override)
+				# Checks and only adds to newTheories if the created theory was actually different.
+				if newTheory:
+					newTheories.append(newTheory)
+
+		# print "adding {} theories with new assignments".format(len(newTheories))
+		return newTheories
+
+	def addPreconditions(self, event, timestep, timesteps):
+		"""
+		Creates preconditions based on the agentState that might help to explain the event.
+		Returns a list of theories.
+		"""
+		newTheories = []
+
+		obj1 = self.spriteObjects[event[1]]
+		obj2 = self.spriteObjects[event[2]]
+
+		classPair = (self.getClass(obj1), self.getClass(obj2))
+		# If object classes are currently being modified in the same timestep, obtain the same preconditions as before
+		if classPair in self.inModification.keys():
+			p = self.inModification[classPair]
+			interpretation = self.interpret(event)
+			interpretation.addPrecondition(p) #TODO: maybe you should be only doing this if interpreting worked in the line above.
+			newTheory = self.createChild([interpretation, False])
+			if newTheory:
+				newTheories.append(newTheory)
+		else:
+			# Create possible preconditions
+			concepts = []
+			## (text,item,operator,0)
+			for k in timestep.agentState.keys():
+				concepts.extend(self.generateNumberConcepts(k, timestep.agentState[k])) #TODO: Combine generateNumberConcepts and makePreconditions
+			generatedPreconditions = self.makePreconditions(concepts)
+			for p in generatedPreconditions:
+
+				tmp_theory = copy.deepcopy(self)
+
+				interpretation = tmp_theory.interpret(event)
+
+				# ipdb.set_trace()
+				# Find what rules you will need to negate
+				relevantInteractionSetRules = tmp_theory.findRelatedRules(classPair, tmp_theory.interactionSet)
+				relevantEvents = tmp_theory.findRelatedRules(classPair, [tmp_theory.interpret(e) for e in timestep.events])
+
+				if len(relevantEvents)>len(relevantInteractionSetRules):
+					# We want to add preconditions to the events that just happened that weren't predicted
+					eventsToModify = [r for r in relevantEvents if r not in relevantInteractionSetRules]
+
+					# And we need to make sure that the number concepts that we propose actually would have not been true in pervious cases (where this event didn't happen)
+					relevantTimesteps = [t for t in timesteps[:-1] if [tmp_theory.interpret(event) for event in t.events if tmp_theory.interpret(event) in relevantEvents]]
+
+					if all([not p.check(t.agentState) for t in relevantTimesteps]):
+						for e in eventsToModify:
+							e.addPrecondition(p)
+							tmp_theory = tmp_theory.createChild([e, False])
+						newTheories.append(tmp_theory)
+						# interpretation.addPrecondition(p)
+						# newTheories.append(tmp_theory)
+						# newTheory = self.createChild([interpretation, False]) #TODO: make sure this is properly negating all other similar events
+
+						# if newTheory:
+							# newTheories.append(newTheory)
+					# ipdb.set_trace()
+
+				elif len(relevantInteractionSetRules)>len(relevantEvents):
+					# We want to add preconditions to rules we have already put in the theory
+					eventsToModify = [r for r in relevantInteractionSetRules if r not in relevantEvents]
+					p.negate()
+					## We're positing that the negated p (now called p) should have been true in that previous time step. If that's not true
+					## it's because we generated a bad numberConcept, in which case we should just move on and not add it to the theory.
+					relevantTimesteps = [t for t in timesteps[:-1] if [tmp_theory.interpret(event) for event in t.events if tmp_theory.interpret(event) in eventsToModify]]
+					if all([p.check(t.agentState) for t in relevantTimesteps]):
+						for e in eventsToModify:
+							e.addPrecondition(p)
+							# newTheory = self.createChild([e, False])
+							newTheories.append(tmp_theory) ##TODO you didn't create a child theory, so your tracking of theory
+														## genealogy will be off.
+					# ipdb.set_trace()
+
+				# else:
+				# 	print "relevantEvents and relevantInteractionSetRules are disjoint but of same length"
+				# 	embed()
+
+		return newTheories
+
+	"""Helper functions"""
+	def interpret(self, event):
+		"""
+		Looks up objects by their corresponding class under the theory,
+		returns a corresponding interactionRule.
+
+		If those objects aren't known, returns false.
+
+		Ex) Event is a tuple: ('bounceForward', 'ORANGE', 'DARKBLUE') or ('changeResource', 'BLUE', 'RED', 1)
+		If we know that ORANGE=c1 and DARKBLUE=c2, returns the InteractionRule
+		that corresponds to (bounceForward, c1, c2)
+		"""
+
+		try:
+			obj1 = self.spriteObjects[event[1]]
+			obj2 = self.spriteObjects[event[2]]
+		except:
+			print "couldn't find event[2] in interpret()"
+			embed()
+
+		c1, c2 = self.getClass(obj1), self.getClass(obj2)
+
+		# Check if there is an extra value argument in event. Also if there's an stype arg, get its class.
+		try:
+			if 'stype' in event[3].keys():
+				obj3 = self.spriteObjects[event[3]['stype']]
+				# event[3]['stype'] = self.getClass(obj3)
+				tmpEvent = copy.deepcopy(event)
+				tmpEvent[3]['stype'] = self.getClass(obj3)
+				args = tmpEvent[3]
+			else:
+				args = event[3]
+			# print "args", args
+		except:
+			args = {}
+
+
+		#print 'classes:', c1, c2
+		if c1 and c2:
+			#print 'new interaction rule!'
+			return InteractionRule(event[0], c1, c2, args)
+		else:
+			return False
+
+	def findRelatedRules(self, classPair, interactionList):
+		#needs to take a list of interpretations or a list of interaction rules
+		return [interaction for interaction in interactionList if set(classPair) == set(interaction.asTuple()[1:3])]
+
+	def negatePreconditions(self, unfulfilledPredictions):
+		"""
+		Given a list of Interaction rules, will add a negation to each rule, if rule is not in drying paint.
+		"""
+		if len(unfulfilledPredictions) > 0:
+			print "in negatePreconditions"
+			embed()
+			# Iterate through relevant rules, negate them if they're not in the drying paint
+			for r in unfulfilledPredictions:
+				if r.asTuple() not in [new_r.asTuple() for new_r in self.dryingPaint]:
+					precondition = r.preconditions # Single precondition object
+
+					preconditionToNegate = copy.deepcopy(precondition)
+					preconditionToNegate.negate()
+					r.preconditions = [preconditionToNegate]
+
+			# Generate new interaction set with new preconditioned rules
+			newInteractionSet = []
+
+			for r1 in self.interactionSet:
+				for r2 in unfulfilledPredictions:
+					if r1.asTuple()==r2.asTuple():
+						newInteractionSet.append(r2)
+					else:
+						newInteractionSet.append(r1)
+
+
+			self.interactionSet = newInteractionSet
+
+
+	def makePreconditions(self, concepts):
+		preconditions = []
+
+		for c in concepts:
+			text = c[0]
+			item = c[1]
+			operator_name = c[2]
+			num = c[3]
+
+			preconditions.append(Precondition(text, item, operator_name, num))
+		return preconditions
+
+
+	def createChild(self, proposal, override=False):
+		"""
+		Spawns a new child theory with the new proposal incorporated
+		"""
+		newTheory = copy.deepcopy(self)
+		newTheory.depth = self.depth + 1
+		newTheory.parent = self
+		newTheory.children = []
+
+		#TODO: Could copy over the spriteSet and self.classes?
+
+		generatedNewTheory = newTheory.addProposal(proposal)
+
+		# TODO: Fix this override; right now you're ignoring new assignments (though presumably if it gets called properly it won't be a problem)
+		if override:
+			rules_to_remove = [r for r in self.interactionSet if r.generic and r.slot1==proposal[0].slot1 and r.slot2==proposal[0].slot2]
+			for rule in rules_to_remove:
+				newTheory.interactionSet.remove(rule)
+		if generatedNewTheory:
+			self.children.append(newTheory)
+			return newTheory
+		else:
+			return False
+
+	def addProposal(self, proposal):
+		"""
+		Adds proposal to theory; takes care of rule and assignments
+		"""
+
+		## Helper functions
+		def assignClass(classObjectPair):
+			'''
+			Adds object-class assignments; avoids duplicates.
+			'''
+			c, o = classObjectPair
+			if c in self.classes.keys():
+				if o not in self.classes[c]:
+					self.classes[c].append(o)
+					return True
+				return False
+			else:
+				self.classes[c] = [o]
+				return True
+
+		def addInteractionRule(rule):
+			"""
+			Adds interactionRule if it is not in interactionSet.
+			"""
+			if rule.interaction not in self.predicates:
+				self.predicates.add(rule.interaction)
+			if not self.findRule(rule, self.interactionSet):
+				self.interactionSet.append(rule)
+				self.dryingPaint.add(rule)
+				return True
+			return False
+
+		rule, assignments = proposal[0], proposal[1]
+		# Add the proposed rule to the Theory's InteractionSet
+		if rule:
+			addedRule = addInteractionRule(rule)
+		else:
+			addedRule = False
+		# Add the proposed class assignments to the Theory
+		addedClass = False
+		if assignments:
+			addedClass = any([assignClass(assignment) for assignment in assignments])
+
+		return (addedRule or addedClass)
+
+	def updateTerminations(self, rle=None):
+		self.terminationSet = set([t for t in self.terminationSet
+							   if t.ruleType=='SpriteCounterRule' and
+							   not t.termination.win and t not in self.falsified])
+
+		colors = [tt[0].colorName for tt in self.classes.values() if tt[0].colorName != 'ENDOFSCREEN']
+		
+		if rle:
+			objects = rle._game.observation['trackedObjects']
+			absentColors = []
+			for color in colors:
+				sprites = objects[color] if color in objects else []
+
+				count = len(sprites)
+				if count == 0:
+					absentColors.append(color)
+					## If the game didn't end, you can't win or lose based on this particular class being 0
+					done, win = rle._isDone()
+					if not done:
+						for win in [True, False]:
+							false_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, win)
+							self.falsified.add(false_rule)
+					else:
+						# game is done. Hypothesize new theory. Code seems to work without doing this.
+						# new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, win)
+						# if new_rule not in self.falsified and new_rule not in self.terminationSet:
+						# 	self.terminationSet.add(new_rule)
+
+						## If you won/lost, you can't lose/win based on this class being 0
+						false_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, not win)
+						self.falsified.add(false_rule)
+
+						if not win:
+							## If you lost, maybe you lost because this class was 0. Check whether we'd already falsified this rule.
+							loss_terminationRule = SpriteCounterRule(self.colorToClassMapper(color), 0, False)
+							if loss_terminationRule not in self.falsified:
+								self.terminationSet.add(loss_terminationRule)
+
+			for n in range(2, len(absentColors) + 1):
+				for color_combination in itertools.combinations(absentColors, n):
+
+					class_combination = [self.colorToClassMapper(color) for color in color_combination]
+					## If the game didn't end, falsify multiSpriteCounter rules for this state.
+					done, win = rle._isDone()
+					if not done:
+						for win in [True, False]:
+							new_rule = MultiSpriteCounterRule(stypes=class_combination, win=win)
+							self.multi_falsified.add(new_rule)
+					else: # game ended
+						new_rule = MultiSpriteCounter(stypes=class_combination, win=win)
+						if new_rule not in self.multi_falsified:
+							self.terminationSet.add(new_rule)
+
+						false_rule = MultiSpriteCounterRule(stypes=class_combination, win=not win)
+						self.multi_falsified.add(false_rule)
+
+		for rule in self.interactionSet:
+			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'nothing']:
+				if rule.generic:
+					preconditions = copy.deepcopy(rule.preconditions) if rule.preconditions else None
+					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, preconditions)
+					if terminationRule not in self.falsified:
+						for t in self.terminationSet:
+							if t.ruleType != 'NoveltyRule': continue
+							if t.termination.s2 != rule.slot1 and t.termination.s1 != rule.slot2:
+								break
+						else:
+							self.terminationSet.add(terminationRule)
+				elif rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo']:
+					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
+					if terminationRule not in self.falsified:
+						self.terminationSet.add(terminationRule)
+
+			if rule.slot2 == 'EOS' and rule.generic:
+				terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
+				self.terminationSet.add(terminationRule)
+
+		falsified_win_stypes = set([sprite_rule.termination.stype for sprite_rule in self.falsified
+			if (sprite_rule.termination.win and sprite_rule.termination.stype != 'EOS' and sprite_rule.termination.stype !='avatar')])
+		
+		## ?
+		try:
+			falsified_win_stypes.remove(self.classes['avatar'][0].args['stype'])
+		except:
+			pass
+
+		for n in range(2, len(falsified_win_stypes) + 1):
+			for sprite_combination in itertools.combinations(falsified_win_stypes, n):
+				terminationRule = MultiSpriteCounterRule(stypes=sprite_combination)
+				if terminationRule not in self.multi_falsified:
+					self.terminationSet.add(terminationRule)
+
+		self.terminationSet = sorted(self.terminationSet, key=lambda t:t.ruleType)
+
+		return self.terminationSet, self.falsified, self.multi_falsified
+
+	def findRule(self, rule, lst):
+		"""
+		Finds if a rule is in the interaction set.
+		"""
+		for interactionRule in lst:
+			if interactionRule == rule:
+				return True
+		return False
+
+
+	def getClass(self, obj):
+		"""
+		Obtains the classes of the object; otherwise returns False if class not found.
+		"""
+		for classNum, objList in self.classes.iteritems(): #TODO: The issue is here w/ objects not found in the classes list
+			for obj2 in objList:
+				if obj == obj2:
+					return classNum
+		return False
+
+
+
+	def findRelevantRules(self, event, agentState, checkDryingPaint=False, sparse=False):
+		"""
+		If an event involves c1 and c2, returns rules that use c1 and c2 in those slots.
+		"""
+		relevantRules = []
+
+		# If both classes exist (whether predicate already exists doesn't matter)
+		obj1 = self.spriteObjects[event[1]]
+		obj2 = self.spriteObjects[event[2]]
+		class1 = self.getClass(obj1)
+		class2 = self.getClass(obj2)
+
+		# if set([event[1], event[2]]) == set(['DARKBLUE', 'RED']):
+		# 	embed()
+
+		if class1 and class2:
+
+			# This should not include any rules that don't satisfy the current preconditions
+			rules = [rule for rule in self.interactionSet]
+
+			if not sparse:
+				#Default behavior
+				if not checkDryingPaint:
+					relevantRules.extend([rule for rule in rules if ((class1, class2) == (rule.asTuple()[1], rule.asTuple()[2]) or (class2, class1) == (rule.asTuple()[1], rule.asTuple()[2])) \
+						and all([p.check(agentState) for p in rule.preconditions]) and not rule.generic])
+				else:
+					# Here we only return rules that are not in the drying paint.
+					relevantRules.extend([rule for rule in rules if not self.findRule(rule, self.dryingPaint) \
+						and ((class1, class2) == (rule.asTuple()[1], rule.asTuple()[2]) or (class2, class1) == (rule.asTuple()[1], rule.asTuple()[2]))  \
+						and all([p.check(agentState) for p in rule.preconditions]) and not rule.generic])
+			else:
+				#'sparse' is passed when we check likelihood of lots of previous timesteps. The logic here is to
+				#only check predictions for previous timesteps when the predictions may have changed. Meaning, only return rules that
+				#are both relevant to the event *and* are new.
+				relevantRules.extend([rule for rule in list(self.dryingPaint) if ((class1, class2) == (rule.asTuple()[1], rule.asTuple()[2]) or (class2, class1) == (rule.asTuple()[1], rule.asTuple()[2])) \
+					and all([p.check(agentState) for p in rule.preconditions]) and not rule.generic])
+
+		# If both classes don't exist
+		else:
+			return [False]
+
+		return relevantRules
+
+	def searchForPossibleClasses(self, obj_Sprite, newClasses=0):
+		"""
+		If the object has been assigned, return it. Otherwise return all
+		possible classes. Optional argument can posit existence of a new class;
+		user specifies whether to add 0, 1, or 2 new classes.
+		"""
+		gotNewClass = False
+
+		# Get classes of sprites of the same VGDL Type
+		possibleClasses = []
+		for s in self.spriteSet:
+			s_class = self.getClass(s)
+			if s.vgdlType == obj_Sprite.vgdlType and s_class:
+				if s_class not in possibleClasses:
+					possibleClasses.append(s_class)
+
+		# Class exists
+		if self.getClass(obj_Sprite):
+			return [self.getClass(obj_Sprite)], gotNewClass
+
+		# Propose new classes and classes with sprites of the same vgdlType
+		elif newClasses > 0:
+			numClasses = len(self.classes.keys())
+			for i in range(1, newClasses+1):
+				possibleClasses.append('c'+str(numClasses+i)) # Classes that extend off number of existing classes
+			gotNewClass = True
+			return possibleClasses, gotNewClass
+
+		else: return [], gotNewClass
+
+
+	def searchForAssignments(self, event):
+		obj1 = self.spriteObjects[event[1]]
+		obj2 = self.spriteObjects[event[2]]
+
+
+		x1, gotNewClass = self.searchForPossibleClasses(obj1, newClasses=1)
+		if gotNewClass:
+			x2 = self.searchForPossibleClasses(obj2, newClasses=2)[0]
+		else:
+			x2 = self.searchForPossibleClasses(obj2, newClasses=1)[0]
+
+		if x1 and x2: # If both yielded possibilities
+			classAssignments = []
+
+			# If objects are the same type, any combo of classes is accepted
+			if obj1.vgdlType == obj2.vgdlType:
+				return list(itertools.product(x1,x2))
+
+			 # If objects are diff type, want diff classes
+			else:
+				classAssignments = [(c1, c2) for c1 in x1 for c2 in x2 if c1!=c2]
+				return classAssignments
+		else: return False
+
+	"""Prediction/generalization functions"""
+	def findRuleClusters(self):
+		ruleClusters = []
+		uniquePairs = list(set([(rule.slot1, rule.slot2) for rule in self.interactionSet]))
+		for pair in uniquePairs:
+			rules = [(r.interaction, r.preconditions) for r in self.interactionSet if (r.slot1,r.slot2)==pair]
+			ruleClusters.append(ruleCluster(rules, pair))
+		return ruleClusters
+
+	def predict(self, pair, lamda, tree, beta=1.,softmaxTemp=.1):
+
+		#Takes a pair of object, generates a prediction (distribution over predicates) for what happens
+		#if those collide.
+
+		predicateList = ['killSprite', 'cloneSprite', 'stepBack', 'transformTo', 'undoAll',
+		'bounceForward', 'conveySprite', 'windGust', 'slipForward', 'attractGaze', 'turnAround',
+		'reverseDirection', 'flipDirection', 'bounceDirection', 'wallBounce', 'wallStop',
+		'killIfSlow', 'killIfFromAbove', 'killIfAlive', 'collectResource', 'killIfHasMore',
+		'killIfOtherHasMore', 'killIfHasLess', 'killIfOtherHasLess', 'wrapAround',
+		'pullWithIt', 'teleportToExit']
+
+		# print ""
+		# print "predicting interactions for {} with parameters:".format(pair)
+		# print "lambda = {}. beta = {}. tree = {}. softmax temp = {}".format(lamda, beta, tree.name, softmaxTemp)
+		# print "(lambda: extrapolation (1) vs. guess (0) balance)"
+		# print "(beta: ontology (1) vs. rule-similarity (0) balance)"
+		# print ""
+
+		#Get class memberships
+		classes = (self.getClassFromColor(pair[0]), self.getClassFromColor(pair[1]))
+		if False in classes:
+			print "Can't make predictions; theory does not contain {}".format([el[0] for el in zip(pair, classes) if not el[1]])
+			return False
+		else:
+			pair = classes
+
+		inversePair = (pair[1], pair[0]) #a collision between cx and cy is the same as a collision between cy and cx. Locate both.
+		# print 'making predictions for', pair[0], pair[1]
+
+		knownRules = [rc for rc in self.findRuleClusters() if rc.pairs==pair or rc.pairs==inversePair]
+		if len(knownRules)>0:
+			#findRuleClusters will only return a single element if it works. It's a cluster, and contains all the matching rules.
+			knownRules = knownRules[0].clusteredRules
+			restOfRules = [p for p in predicateList if p not in [k[0] for k in knownRules]]
+
+			knownRules = [[k, 1.] for k in knownRules]
+			allRules = knownRules + [[r, 0.] for r in restOfRules]
+
+			return allRules
+		extrapolatedRules = [[r[0], r[1]*lamda] for r in self.extrapolateRule(pair, tree, beta)]
+		guessedRules = [[r[0], r[1]*(1-lamda)] for r in self.guessRule(predicateList)]
+
+		allRules = extrapolatedRules + guessedRules
+		scores = softmax([r[1] for r in allRules], softmaxTemp)
+		outList = [list(z) for z in zip([e[0] for e in allRules], scores)]
+
+		#merge original extrapolated rules if they use the same predicates
+		mergedRules = [outList[0]]
+		for i in range(1, len(extrapolatedRules)):
+			rule = outList[i]
+			for m in mergedRules:
+				if m[0]==rule[0]:
+					m[1] += rule[1]
+			if all([rule[0]!=m for m in [mR[0] for mR in mergedRules]]):
+				mergedRules.append(rule)
+
+		#convert ruleCluster rules to simple predicate form for ease of reading.
+		#TODO: figure out what format you really want eventually, if you're going to
+		#take actions, rather than just get a distribution over actions.
+		mergedRules = [[m[0].clusteredRules, m[1]] for m in mergedRules]
+		outList = mergedRules + outList[len(extrapolatedRules)+1:]
+
+		# for o in outList:
+		# 	print o
+		return outList
+
+	def guessRule(self, predicateList):
+		#Currently returns interactions (no preconditions, and not in the form of interactionRules)
+		#TODO: changeResource, spawnifHasMore require another argument. Add these and figure out how
+		#to pass those args. Maybe this is best done in the step that creates interactionRules
+		#in predict(). Also decide how to deal with values of optional args. Right now you'll
+		#just make predictions based on default args.
+
+		remainingPredicates = list(set(predicateList)-set([rule.interaction for rule in self.interactionSet]))
+		scores = [1./len(remainingPredicates)]*len(remainingPredicates)
+		return zip(remainingPredicates, scores)
+
+	def extrapolateRule(self, pair, tree, beta=1.,softmaxTemp=False):
+		#returns interactionRules (including preconditions) that are already in the interactionSet
+		#weighted by their similarity to the provided pair.
+		#TODO: think about default softmaxTemp.
+		if len(self.interactionSet)==0:
+			print "Can't extrapolate; our theory has no rules in the interactionSet!"
+			return
+		classPairs = list(set([(rule.slot1, rule.slot2) for rule in self.interactionSet]))
+		similarityScores = [self.pairSimilarity(pair, classPair, tree, beta) for classPair in classPairs]
+		similarityScores = normalize(similarityScores)
+		if softmaxTemp:
+			similarityScores = softmax(similarityScores,softmaxTemp)
+
+
+		classSimilarities = zip(classPairs, similarityScores)
+
+		ruleClusters = self.findRuleClusters()
+		for ruleCluster in ruleClusters:
+			ruleCluster.score = [cS[1] for cS in classSimilarities if cS[0]==ruleCluster.pairs][0]
+
+		return ([[rc, rc.score] for rc in ruleClusters])
+
+	def levenshtein(self, source, target):
+		source, target = list(source), list(target)
+		if max(len(source), len(target)) == 0:
+			return 1.
+		else:
+			z = 1.*max(len(source), len(target))
+			return 1. - self.levenshteinDistance(source, target)/z
+
+	def levenshteinDistance(self, source, target):
+	    if len(source) < len(target):
+	        return self.levenshteinDistance(target, source)
+
+	    # So now we have len(source) >= len(target).
+	    if len(target) == 0:
+	        return len(source)
+
+	    # print 'source', source
+	    # We call tuple() to force strings to be used as sequences
+	    # ('c', 'a', 't', 's') - numpy uses them as values by default.
+	    source = np.array(tuple(source))
+	    target = np.array(tuple(target))
+	    # We use a dynamic programming algorithm, but with the
+	    # added optimization that we only need the last two rows
+	    # of the matrix.
+	    previous_row = np.arange(len(target) + 1)
+	    for s in source:
+	        # Insertion (target grows longer than source):
+	        current_row = previous_row + 1
+
+	        # Substitution or matching:
+	        # Target and source items are aligned, and either
+	        # are different (cost of 1), or are the same (cost of 0).
+
+	        current_row[1:] = np.minimum(
+	                current_row[1:],
+	               	np.add(previous_row[:-1], [(t!=s).any() for t in target]))
+
+	        # Deletion (target grows shorter than source):
+	        current_row[1:] = np.minimum(
+	                current_row[1:],
+	                current_row[0:-1] + 1)
+
+	        previous_row = current_row
+
+	    return previous_row[-1]
+
+	def levenshtein2(self, s1, s2):
+		#Levenshtein (edit) distance. additions and deletions cost the same. No replacements.
+		count = 0
+		s1, s2 = list(s1), list(s2)
+		for i in range(len(s1)):
+			if s1[i] not in s2:
+				s2.append(s1[i])
+				count += 1
+		to_remove = []
+		for i in range(len(s2)):
+			if s2[i] not in s1:
+				to_remove.append(s2[i])
+				count += 1
+		for i in range(len(to_remove)):
+			s2.remove(to_remove[i])
+		return 1./(1+count)
+
+	def ruleSimilarity(self, cx, cy):
+		#Looks at rules in which cx participated in as slot 1, compares them to rules in which
+		#cy participated as slot 1. Compares in terms of their edit distance.
+		#Then does the same for slot 2.
+		cxSlot1 = [(r.interaction, r.slot2, r.preconditions) for r in self.interactionSet
+		if r.slot1==cx]
+		cySlot1 = [(r.interaction, r.slot2, r.preconditions) for r in self.interactionSet
+		if r.slot1==cy]
+
+		cxSlot2 = [(r.interaction, r.slot1, r.preconditions) for r in self.interactionSet
+		if r.slot2==cx]
+		cySlot2 = [(r.interaction, r.slot1, r.preconditions) for r in self.interactionSet
+		if r.slot2==cy]
+
+		return .5*self.levenshtein(cxSlot1, cySlot1) + .5*self.levenshtein(cxSlot2, cySlot2)
+
+	def pairSimilarity(self, pair1, pair2, tree, beta=1.):
+		cx, cm, cy, cn = pair1[0], pair1[1], pair2[0], pair2[1]
+		return (self.similarity(cx, cy, tree, beta) + self.similarity(cm, cn, tree, beta)) / 2.
+
+	def similarity(self, cx, cy, tree, beta=1.):
+		# Returns beta*treeSimilarity(c1,c2) + (1-beta)*ruleSimilarity(c1,c2)
+		# Uses whatever tree is passed in. Currently we only have VGDLTree, which is
+		# the original tree based on the VGDL ontology.
+		n1, n2 = self.classes[cx][0].vgdlType, self.classes[cy][0].vgdlType
+		treeSimilarity = tree.similarity(n1, n2)
+		ruleSimilarity = self.ruleSimilarity(cx,cy)
+		return beta*treeSimilarity + (1-beta)*ruleSimilarity
+
+	def generateNumberConcepts(self, item, num): # TODO: Make this set of preconditions smaller
+		"""
+		Preconditions can be drawn from a pre-defined set of number concepts:
+		n >= 0  --> any numbers from 0 to inf (having this amount of health is fine)
+		n < 0 --> any negative numbers 		  (having this amount of health is bad)
+		n >= 1 --> any numbers from 1 to inf  (having this amount of medicine and touching poison = safe)
+		n < 1 --> any numbers from -inf to 0  (having this amount of medicine and touching poison = death)
+		"""
+		concepts = []
+
+		## Speed is not a normal backpack item -- for now, simple hack that speed that kills you is 5 greater than your strength.
+		## TODO: Memorize speed of collisions w/ other objects; then adjust proposals as necessary.
+		if item=='speed':
+			num = self.classes['avatar'][0].vgdlType.strength+5
+			text = item+'>'+str(num)
+			operator = '>'
+			concepts.append((text,item,operator,num))
+			return concepts
+
+		## All other items
+		if num<0:
+			text = item+"<"+str(0)
+			operator = '<'
+			concepts.append((text,item,operator,0))
+		if num<1:
+			text = item+"<"+str(1)
+			operator = '<'
+			concepts.append((text,item,operator,1))
+		if num>-1: #num>=0:
+			text = item+">"+str(-1)
+			operator = '>' # 			operator = '>='
+			concepts.append((text,item,operator,-1))
+		if num>0: #num>=1:
+			text = item+">"+str(0)
+			operator = '>'
+			concepts.append((text,item,operator,0))
+
+		## Check for limits of resources and add count(resource)==limit to the concepts.
+		for rule in self.interactionSet:
+			if 'resource' in rule.args.keys() and rule.args['resource']==item and 'limit' in rule.args.keys() and num>=rule.args['limit']:
+				limit = rule.args['limit']
+				##Also have a concept that is == num:
+				text = item+">="+str(limit)
+				operator = '>='
+				concepts = [(text,item,operator,num)] ##superstition that you won because you had all of the limit items.
+				break
+		return concepts
+
+	def getClassFromColor(self, color):
+		for c in self.classes:
+			if color in [cl.colorName for cl in self.classes[c]]:
+				return c
+		return False
+
+	def _stringRules(self, ignore_step_back=True, color_names=False, compare_theory=None):
+		string = '\nInteractionSet:'
+		for rule in self.interactionSet:
+			# if rule.interaction == 'nothing':
+				# continue
+			if ignore_step_back and rule.interaction == 'stepBack':
+				continue
+			else:
+				rule_name, c1, c2, args = rule.asTuple()
+				if color_names:
+					rule_tuple = (rule_name, self.classes[c1][0].colorName, self.classes[c2][0].colorName, args)
+				else:
+					rule_tuple = (rule_name, c1, c2, args)
+
+				rule_string = "%s %s %s %r" % rule_tuple
+
+				if compare_theory:
+					note = ""
+					if rule not in compare_theory.interactionSet:
+						note = "+"
+					string += "\n%s\t%s" % (note, rule_string)
+				else:
+					string += "\n\t%s" % rule_string
+		return string
+
+	def displayRules(self):
+		print ""
+		print "InteractionSet:"
+		for rule in self.interactionSet:
+			if rule.interaction != 'stepBack':
+				rule.display()
+
+	def _stringClasses(self, color_names=False):
+		string = "\nClass assignments:"
+		for c in self.classes:
+			class_list = [cl.colorName for cl in self.classes[c]]
+			if color_names:
+				c = cl.colorName
+			string += "\n\t{}: {}: {}: {}".format(c, class_list, self.spriteObjects[cl.colorName].vgdlType, \
+				self.spriteObjects[cl.colorName].args)
+		return string
+
+	def displayClasses(self):
+		print self._stringClasses()
+
+	def _stringTerminations(self, ignore_novelty_terminations=True, color_names=False):
+		string = "\nTerminationSet:"
+		for tc in self.terminationSet:
+			if ignore_novelty_terminations and tc.ruleType == 'NoveltyRule':
+				pass
+			else:
+				term_tuple = tc.asTuple()
+				new_term = []
+				for value in term_tuple:
+					if value in self.classes:
+						value = self.classes[value][0].colorName
+					new_term.append(value)
+				tc = tuple(new_term)
+				string += "\n\t%s" % str(tc)
+		return string
+
+	def displayTerminationSet(self):
+		print self._stringTerminations()
+
+	def display(self):
+		print self
+		return
+
+	def __repr__(self):
+		string = "------ Theory ------"
+		string += self._stringClasses()
+		string += self._stringRules()
+		string += self._stringTerminations()
+		string += '\n------------------'
+		return string
+
+	def __eq__(self, other):
+		if isinstance(other, self.__class__):
+			interactionSetEqual = set(self.interactionSet) == set(other.interactionSet)
+			spriteSetEqual = set(self.spriteSet) == set(other.spriteSet)
+			# terminationSetEqual = equalLists(self.terminationSet, other.terminationSet)
+			return all([
+				spriteSetEqual,
+				interactionSetEqual, # TODO: Check if this uses InteractionRule overloaded __eq__
+				# terminationSetEqual,
+				])
+		else:
+			return False
+
+	def __ne__(self, other):
+		return not self.__eq__(other)
+
+def equalLists(lst1, lst2):
+	l1 = [r for r in lst1 if r not in lst2]
+	l2 = [r for r in lst2 if r not in lst1]
+	if len(l1)+len(l2)==0:
+		return True
+	else:
+		return False
+
+def normalize(array):
+	z = float(sum(array))
+	if z == 0:
+		return [1./len(array)]*len(array) #if all items have the same score of 0, return the same score for all.
+	else:
+		return [a/z for a in array]
+
+class Game(object):
+	"""
+	VGDL Game and Induction State.
+	"""
+	def __init__(self, vgdlString=False, spriteInductionResult=False):
+		# Game states #TODO: May not need these
+		#self.backpack = {}
+		#self.trace = [] # list of TimeStep objects that happened during a gameplay
+
+		self.vgdlString = vgdlString
+		self.spriteInductionResult = spriteInductionResult
+		if self.vgdlString:
+			self.vgdlSpriteParse = self.makeSpriteParse()
+		else:
+			self.vgdlSpriteParse = False
+
+		# Induction states
+		self.hypothesisSpace = []
+		self.theoryCount = 0
+
+		#inherit ontology from VGDL
+		self.VGDLTree = VGDLTree
+
+		self.nodes_generated = 0
+		self.nodes_eliminated = 0
+		self.nodes_accepted = 0
+
+	def display(self):
+		print self.theoryCount
+
+	def makeSpriteParse(self):
+		s = SpriteParser()
+		return s.parseGame(self.vgdlString)
+
+	def posterior(self):
+		#TODO: Consider allowing some amount of probability mass to uninstantiated hypotheses
+		#The problem with this is it's not clear what the content of those hypotheses,
+		#so it's unclear what you'd do with this new distribution.
+		if len(self.hypothesisSpace)>0:
+			z = 1.*sum([t.prior() for t in self.hypothesisSpace])
+			for t in self.hypothesisSpace:
+				t.posterior = t.prior()/z
+			return [t.posterior for t in self.hypothesisSpace]
+		else:
+			print "Empty hypothesis space; can't give you a posterior."
+	def entropy(self, theory):
+		entropySum = 0
+		numSpritesInClasses = float(sum([1 for c in theory.classes for i in c]))
+		#print "\t num sprites total:", numSpritesInClasses
+		for c in theory.classes:
+			classLength = len(theory.classes[c])
+			p = float(classLength/numSpritesInClasses)
+			#print p
+			entropySum += p * np.log2(p)
+		return -1 * entropySum
+
+	def orderHypotheses(self, hypotheses):
+		temp_hypotheses = [(h, -1 * h.depth, self.entropy(h)) for h in hypotheses]
+		temp_hypotheses = sorted(temp_hypotheses, key=operator.itemgetter(1,2))
+		return [h[0] for h in temp_hypotheses]
+
+	def explainTermination(self, theory, timestep, prevTimeSteps,result):
+		"""
+		adds all hypotheses about the termination conditions to the terminationSet
+		params:
+		theory: the theory that we are basing our new theories off of. Assume it's a member of hypothesis space.
+		timestep: the very last time step (at which termination occurs)
+		prevTimeSteps: all time steps previous to the termination time step
+		result: a dictionary for which the key 'win' is a boolean describing whether the game was won
+		"""
+
+		win = result['win']
+		classesWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
+		try:
+			prevClassGameStates = [theory.makeGameStateWithClasses(t.gameState['objects']) for t in prevTimeSteps]
+		except TypeError:
+			print "TypeError in explainTermination"
+			embed()
+		classGameState = theory.makeGameStateWithClasses(timestep.gameState['objects'])
+		rulesToAdd = []
+		for c in classGameState:
+			timestep_amt = classGameState[c]
+			timestep_amt_unique = not timestep_amt in [g[c] for g in prevClassGameStates]
+			if timestep_amt_unique:
+				classesWithDiffAmounts[c] = timestep_amt
+
+		for event in timestep.events:
+			# add sprite counter rules to the termination set, if applicable.
+			# Infer potential sprite counter rules by looking at sprite counts for this timestep.
+			for i in [1,2]:
+				terminationClassColor = event[i] #self.getClass(event[i])
+				terminationClassSymbol = theory.colorToClassMapper(terminationClassColor)
+				if terminationClassSymbol in classesWithDiffAmounts:
+					timestep_amt = classesWithDiffAmounts[terminationClassSymbol]
+					spriteCounterRule= SpriteCounterRule(terminationClassSymbol,timestep_amt,win)
+					if not spriteCounterRule in theory.terminationSet:
+						rulesToAdd.append(spriteCounterRule)
+
+
+		time = result["time"]
+		timeoutRule = TimeoutRule(limit=time, win=win)
+		# add a timeout rule to the termination set, if applicable. Use time at the end of this round.
+		if not timeoutRule in theory.terminationSet:
+			rulesToAdd.append(timeoutRule)
+
+		theoryIsSufficient = len(rulesToAdd) > 0
+
+		if not theoryIsSufficient:
+			# parent theory's termination set was insufficient for explaining the termination
+			# conditions of this time step. Need to add children theories to the hypothesis space.
+			self.hypothesisSpace.remove(theory)
+			for r in rulesToAdd:
+				t = deepcopy(theory)
+				t.terminationSet.add(r)
+				self.hypothesisSpace.add(t)
+
+	def completeTheory(self, theory, numSamples):
+
+		def sampleCompletedTheory(game, theory):
+			"""
+			Assign all remaining sprites to a class for a given theory in a given game.
+			This literally gives you a single *sample* from the possible ways you could extend the theory to include
+			all seen objects.
+			"""
+			# Find all remaining sprites
+			spritesLeft = []
+			for sprite in theory.spriteSet:
+				if not theory.getClass(sprite):
+					spritesLeft.append(sprite)
+
+			# For each sprite, assign it to a random possible class
+			allClassAssignments = []			# Will save the class assignments here
+			tempTheory = copy.deepcopy(theory) 	# Temporary theory
+			for sprite in spritesLeft:
+				possibleClasses,gotNewClass = tempTheory.searchForPossibleClasses(sprite, 1) # Second param is possible number of new classes
+				sampledClass = choice(possibleClasses)
+
+				classAssignments = [(sampledClass, sprite)]
+				allClassAssignments.extend(classAssignments)
+				tempTheory = tempTheory.createChild([None, classAssignments]) # Update the tempTheory; don't really want to save these theories
+
+			# newHypothesisSpace = []
+			# Finalize the temporary theory
+			if tempTheory:
+				newTheory = theory.createChild([None, allClassAssignments])
+				# game.hypothesisSpace.append(newTheory)
+				# newHypothesisSpace.append(newTheory)
+			# return game.hypothesisSpace
+			#used to return game.hypothesisSpace
+			# return newHypothesisSpace
+			return newTheory
+
+
+		newHypothesisSpace = []
+		for i in range(numSamples):
+			newHypothesisSpace.append(sampleCompletedTheory(self, theory))
+		return newHypothesisSpace
+
+	def predict(self, pair, lamda, numCompletionSamples=10, tree=False, beta=1., softmaxTemp=.1):
+
+		if not tree:
+			tree = self.VGDLTree
+
+		predictions = []
+
+		# pairs = [(t.getClassFromColor(pair[0]), t.getClassFromColor(pair[1])) for t in self.hypothesisSpace]
+		for theory in self.hypothesisSpace:
+			prediction = theory.predict(pair, lamda, tree, beta, softmaxTemp)
+			if prediction:
+				predictions.append([prediction, theory.prior()])
+			else: #prediction failed because we didn't have a complete theory
+				newTheories = self.completeTheory(theory, numCompletionSamples)
+				for t in newTheories:
+					predictions.append([t.predict(pair, lamda, tree, beta, softmaxTemp), t.prior()])
+
+		#TODO: The predicates are not always in the same order
+		# and predicate list varies in size (becasue sometimes two things happen and
+		#sometimes only one thing happens)
+
+		predicates = [p[0] for p in predictions[0][0]]
+		weights = [prediction[1] for prediction in predictions]
+		z = sum(weights)
+		weights = weights/z
+		predLists = [prediction[0] for prediction in predictions]
+		probs = [[p[1]*weights[i] for p in predLists[i]] for i in range(len(predictions))]
+		print len(weights), len(probs), len(probs[0])
+		sums = [sum([p[i] for p in probs]) for i in range(len(predicates))]
+
+		return zip(predicates, sums)
+
+
+	def DFSinduction(self, theory, timesteps, maxNumTheories, override=False, verbose=False):
+		"""
+		DFS implementation of induction function to deal with very long induction time.
+		"""
+
+		if verbose:
+			print "\nStart hyp space length:", len(self.hypothesisSpace)
+			print "running induction on theory"
+			theory.display()
+
+		# If still have time to generate more theories
+		if len(self.hypothesisSpace) - 1 < maxNumTheories: # Subtracting one because of the initial hypothesis we must start out with to do induction
+			ts_index = min(theory.depth, len(timesteps)-1) ## don't try to access nonexistent timesteps.
+
+			if not timesteps:
+				# If timesteps is an empty list, do nothing
+				return
+
+			if verbose:
+				print "Current theory depth: ", ts_index
+				print "Explaining event", timesteps[ts_index].events
+
+
+			# Explain current timestep
+			newTheories = theory.explainTimeStep(timesteps[ts_index], timesteps[ts_index], timesteps, override=override)
+
+			self.nodes_generated += len(newTheories)
+			if verbose:
+				print "Possible new theories: ", len(newTheories)
+				for theory in newTheories:
+					theory.display()
+
+
+			# If at the end of the timesteps list, add new theories to finalHypotheses
+			if ts_index+1 == len(timesteps): # Need to add one, because you will create a theory of depth one greater than the length of the timesteps
+				newTheoriesCount = 0
+				for newTheory in newTheories:
+					# if all(newTheory.likelihood(ts)==1.0 for ts in timesteps):
+					if sum([newTheory.likelihood(ts) for ts in timesteps])/len(timesteps)>.5:
+						self.nodes_accepted +=1
+						newTheoriesCount += 1
+						self.hypothesisSpace.append(newTheory)
+					else:
+						print "newTheory didn't explain all events"
+						print "theory:"
+						newTheory.display()
+						self.nodes_eliminated +=1
+				try:
+					max_likelihood = np.unique([sum([h.likelihood(ts) for ts in timesteps]) for h in self.hypothesisSpace])[-1]
+					self.hypothesisSpace = [h for h in self.hypothesisSpace if sum([h.likelihood(ts) for ts in timesteps]) == max_likelihood]
+					# if len(timesteps)>6:
+						# print "first max_likelihood"
+						# embed()
+				except IndexError:
+					# timesteps is an empty list
+					max_likelihood = 0
+					print "max_likelihood failed"
+					embed()
+				if verbose:
+					print "New theories that passed likelihood tests: ", newTheoriesCount
+					print "New hyp space length: ", len(self.hypothesisSpace)
+					print "Nodes created: {}. Nodes eliminated: {}. Nodes accepted: {}".format(self.nodes_generated, self.nodes_eliminated, self.nodes_accepted)
+
+
+			# If in the middle of timesteps:
+			# We've made some new theories to explain the most recent timestep.
+			# Make sure these new theories still explain all old timesteps.
+			elif ts_index+1 != len(timesteps):
+				acceptedTheories = []
+				for t in newTheories:
+					all_passed = True
+
+					for ts in timesteps[:t.depth-1]: 			# Check that the theory can explain all timesteps
+						if not t.likelihood(ts, sparse=True):
+							self.nodes_eliminated +=1
+							all_passed = False
+							break
+
+					# if all_passed:
+						# self.nodes_accepted += 1
+						# acceptedTheories.append(t)
+					acceptedTheories.append(t) ##TODO: Now you're just adding every theory!
+
+				newTheories = self.orderHypotheses(acceptedTheories)
+
+				if verbose:
+					print "New theories that passed likelihood tests: ", len(newTheories)
+					for t in newTheories:
+						t.display()
+					print "Nodes created: {}. Nodes eliminated: {}. Nodes accepted: {}".format(self.nodes_generated, self.nodes_eliminated, self.nodes_accepted)
+
+				for t in newTheories:
+					t.dryingPaint = set()
+
+				[self.DFSinduction(t, timesteps, maxNumTheories, override=override, verbose=verbose) for t in newTheories]
+
+
+
+
+	def buildGenericTheory(self, spriteSample=True, vgdlSpriteParse=False, learnAvatar=True):
+
+		T = Theory(self)
+
+		if spriteSample:
+			T.initializeSpriteSet(vgdlSpriteParse=False, spriteInductionResult=spriteSample)
+		else:
+			T.initializeSpriteSet(vgdlSpriteParse = vgdlSpriteParse, spriteInductionResult=False)
+
+		# Assign class names
+		avatars = [o for o in T.spriteSet if o.vgdlType in AvatarTypes]
+		nonAvatars = [o for o in T.spriteSet if o.vgdlType not in AvatarTypes and o.colorName!='ENDOFSCREEN']
+		allSprites = avatars+nonAvatars
+		eos = [o for o in T.spriteSet if o.colorName=='ENDOFSCREEN'][0]
+
+		if not learnAvatar:
+			avatar.className = 'avatar'
+			T.classes[avatar.className] = [avatar]
+
+			projectileName = ''
+			try:
+				projectileName = avatar.args['stype']
+			except (TypeError, KeyError) as e:
+				pass
+
+			projectileTypes = [Flicker, OrientedFlicker, Missile]
+			for i in range(len(nonAvatars)):
+				if projectileName == nonAvatars[i].className:
+					nonAvatars[i].className = projectileName
+				else:
+					nonAvatars[i].className = 'c'+str(i+2)
+
+				T.classes[nonAvatars[i].className] = [nonAvatars[i]]
+		else:
+			for i in range(len(allSprites)):
+				allSprites[i].className = 'c'+str(i+2)
+				T.classes[allSprites[i].className] = [allSprites[i]]
+
+		T.classes['EOS'] = [eos] ##initialize EOS with special name, since it gets such special treatment in VGDL text files.
+
+		for (o1, o2) in itertools.product(allSprites, allSprites):
+
+			## Default hypothesis that avatar can kill everything but that everything else is 'nothing'
+			# if o1.vgdlType not in AvatarTypes and o2.vgdlType not in AvatarTypes:
+			# 	rule = InteractionRule('nothing', o1.className, o2.className, {}, set(), generic=True)
+			# 	T.interactionSet.append(rule)
+			# elif o1.vgdlType not in AvatarTypes:
+			# 	rule = InteractionRule('killSprite', o1.className, o2.className, {}, set(), generic=True)
+			# 	T.interactionSet.append(rule)
+
+			## Default hypothesis that everything is stepBack
+			rule = InteractionRule('stepBack', o1.className, o2.className, {}, set(), generic=True)
+			T.interactionSet.append(rule)
+
+		for s1 in nonAvatars + avatars:
+			## append EOS rule
+			rule = InteractionRule('stepBack', s1.className, 'EOS', {}, set(), generic=True)
+			T.interactionSet.append(rule)
+
+		rule =  SpriteCounterRule("avatar", 0, False)
+		T.terminationSet.add(rule)
+
+		T.updateTerminations()
+		return T
+
+	def addNewObjectsToTheory(self, theory, spriteSample):
+		# Get the important objects in the theory names
+		avatar = [o for o in theory.spriteSet if o.vgdlType in AvatarTypes][0]
+		nonAvatars = [o for o in theory.spriteSet if o.vgdlType not in AvatarTypes and o.colorName!='ENDOFSCREEN']
+		eos = [o for o in theory.spriteSet if o.colorName=='ENDOFSCREEN'][0]
+
+		i = len(theory.classes)
+		knownColors = [item.colorName for sublist in theory.classes.values() for item in sublist]
+		for s in spriteSample:
+			## If it's a sprite that's not in our theory, add it to the theory's classes
+			## And intiialize all the generic rules.
+			if s.colorName not in knownColors:
+				s.className = 'c'+str(i)
+				theory.classes[s.className] = [s]
+				theory.spriteObjects[s.colorName] = s
+				theory.spriteSet.append(s)
+				rule = InteractionRule('killSprite', s.className, avatar.className, {}, set(), generic=True)
+				theory.interactionSet.append(rule)
+				rule = InteractionRule('stepBack', s.className, 'EOS', {}, set(), generic=True)
+				theory.interactionSet.append(rule)
+				for otherSprite in nonAvatars:
+					rule = InteractionRule('nothing', s.className, otherSprite.className, {}, set(), generic=True)
+					theory.interactionSet.append(rule)
+					rule = InteractionRule('nothing', otherSprite.className, s.className, {}, set(), generic=True)
+					theory.interactionSet.append(rule)
+				i+=1
+			else:
+				## Since we're taking care of sprite property inference separately, update sprite info in the theory every time
+				matchingSprite = [sprite for sprite in theory.spriteSet if sprite.colorName==s.colorName][0]
+				s.className = matchingSprite.className
+				theory.classes[s.className] = [s]
+				theory.spriteObjects[s.colorName] = s
+				theory.spriteSet.remove(matchingSprite)
+				theory.spriteSet.append(s)
+		return theory
+
+		## decide how we're falsifying termination conditions, and tracking ones that weren't falsified.
+
+	def runInduction(self, spriteSample, trace, maxNumTheories, verbose=False, existingTheories=False):
+		# spriteSample: a particular assignment of sprite types. You can decide how you get this when you generate the sample, in getToSubgoal
+		## Builds a generic theory and then overwrites it as it sees events in 'trace'.
+
+		timesteps, result = trace
+
+		## fiter for unique timesteps so that you don't waste time checking likelihoods, etc.
+		try:
+			unique_timesteps = [timesteps[0]]
+		except IndexError:
+			# timesteps is an empty list
+			unique_timesteps = []
+
+		for t in timesteps:
+			if t.events not in [timestep.events for timestep in unique_timesteps]:
+				unique_timesteps.append(t)
+
+		timesteps=unique_timesteps
+
+		if not existingTheories:
+			# Start with fake theory (generic prior)
+			T = self.buildGenericTheory(spriteSample)
+			init_hypotheses = [T]
+			self.hypothesisSpace = [] # Refresh the hypothesis space before DFS induction
+		else:
+			# Otherwise continue from the existing theories; work on the new events only.
+			# print "had existing theory"
+			## But first make sure we haven't seen a new object in the time step. if we have, it will be reflected in the spriteSample.
+			for theory in existingTheories:
+				theory = self.addNewObjectsToTheory(theory, spriteSample)
+			init_hypotheses = existingTheories
+			if timesteps:
+				self.hypothesisSpace = []
+			else:
+				self.hypothesisSpace = init_hypotheses
+
+		# This does DFS induction x times; not sure how to make it more like the behavior we want.
+		for theory in init_hypotheses: 	# each of these theories has depth 1
+			if verbose:
+				theory.display()
+			self.DFSinduction(theory, timesteps, maxNumTheories, override=True, verbose=verbose) ##override anything that was in the original set.
+
+		try:
+			if timesteps:
+				max_likelihood = np.unique([sum([h.likelihood(ts) for ts in timesteps]) for h in self.hypothesisSpace])[-1]
+				self.hypothesisSpace = [h for h in self.hypothesisSpace if sum([h.likelihood(ts) for ts in timesteps]) == max_likelihood]
+		except IndexError:
+			# timesteps is an empty list
+			max_likelihood = 0
+
+		# Termination set induction
+		## TODO: add this again.
+		# if result:
+		# 	hypothesisSpaceWithTermConditions = []
+		# 	for theory in self.hypothesisSpace:
+		# 		theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+		# 		hypothesisSpaceWithTermConditions.append(theory)
+
+		# 	self.hypothesisSpace = hypothesisSpaceWithTermConditions
+
+		if len(self.hypothesisSpace)==0:
+			print "no hypotheses"
+			embed()
+
+
+		return self.hypothesisSpace
+
+
+	# def runDFSInduction(self, trace, maxNumTheories, override=False, verbose=False):
+	# 	"""
+	# 	"""
+
+	# 	start = time.time()
+
+	# 	timesteps, result = trace
+	# 	temp_new_trace = ([timesteps[0]], None) # Just to run regular induction on first timestep
+
+	# 	# Analyze first timestep (to get some sprites in theory classes so that entropy doesn't face divide by zero error)
+	# 	self.induction(temp_new_trace, verbose=False)
+	# 	self.cleanHypothesisSpace([timesteps[0]], 1)
+
+	# 	init_hypotheses = self.orderHypotheses(self.hypothesisSpace)
+
+
+	# 	self.hypothesisSpace = [] # Refresh the hypothesis space before DFS induction
+
+	# 	# This does DFS induction x times; not sure how to make it more like the behavior we want.
+	# 	for theory in init_hypotheses: 	# each of these theories has depth 1
+	# 		if verbose:
+	# 			theory.display()
+	# 		self.DFSinduction(theory, timesteps, maxNumTheories, override, verbose=verbose)
+
+
+	# 	# Termination set induction
+	# 	if result:
+	# 		hypothesisSpaceWithTermConditions = []
+	# 		for theory in self.hypothesisSpace:
+	# 			theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+	# 			hypothesisSpaceWithTermConditions.append(theory)
+
+	# 		self.hypothesisSpace = hypothesisSpaceWithTermConditions
+
+	# 	if verbose:
+	# 		print "initial hypothesis space: ", len(self.hypothesisSpace)
+
+	# 	end = time.time()
+	# 	if verbose:
+	# 		print "generated {} hypotheses in {} seconds".format(len(self.hypothesisSpace), end-start)
+
+	# 	return self.hypothesisSpace
+
+
+
+	def induction(self, trace, verbose=False, allTraces=None):
+		"""
+		Iterates through trace, performing theory induction on each timestep, contingent on theories inferred for the previous steps.
+		"""
+		T = Theory(self)
+
+		##change this!
+		if self.spriteInductionResult:
+			T.initializeSpriteSet(vgdlSpriteParse=False, spriteInductionResult=self.spriteInductionResult)
+			print "initialized from sprite induction result"
+		elif self.vgdlSpriteParse:
+			T.initializeSpriteSet(vgdlSpriteParse=self.vgdlSpriteParse, spriteInductionResult=False)
+			print "initialized from sprite parse"
+
+		self.hypothesisSpace = [T]
+		newTheories = []
+
+		# For every timestep
+		timesteps, result = trace
+		for i in range(len(timesteps)):
+			timestep = timesteps[i]
+
+			if verbose:
+				print "explaining events {}".format(timestep.events)
+				print "___________________________________________________________________"
+
+			# For every theory
+			for theory in self.hypothesisSpace:
+				if theory.likelihood(timestep) < 1.0: 	# Theory needs to be changed
+					newTheories.extend(theory.explainTimeStep(timestep, timestep, timesteps))
+
+			# Make sure only to add unique theories
+			#print "Iterating through new theories"
+			for theory in newTheories:
+				# theory.display()
+				theoryIsNew = True
+				for existingTheory in self.hypothesisSpace:
+					if theory==existingTheory:
+						theoryIsNew = False
+						break
+				if theoryIsNew:
+					#print "ADDING NEW THEORIES IN INDUCTION --> now {} theories".format(len(self.hypothesisSpace))
+					self.hypothesisSpace.append(theory) #TODO: numbering of theories should take place here.
+
+			# if allTraces:
+			# 	for theory in self.hypothesisSpace:
+			# 		for timesteps,result in allTraces:
+			# 			if result:
+			# 				theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+
+			# 		badTerminationSet = theory.getBadTerminationConditions(allTraces)
+			# 		for t in badTerminationSet:
+			# 			theory.terminationSet.remove(t)
+
+
+			self.cleanHypothesisSpace(timesteps[0:i+1], 1) #All timesteps up to now should be fully explained
+
+			if verbose:
+				print "{} hypotheses:".format(len(self.hypothesisSpace))
+
+			# Sort hypotheses (right now by simple length metric), then print.
+			hypotheses = sorted(self.hypothesisSpace, key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
+
+			if verbose:
+				for h in hypotheses:
+					h.display()
+				print "___________________________________________________________________"
+				print ""
+
+		# Termination set induction
+		if result:
+			hypothesisSpaceWithTermConditions = []
+			for theory in self.hypothesisSpace:
+				theory.explainTermination(timesteps[-1], timesteps[:-1], result)
+				hypothesisSpaceWithTermConditions.append(theory)
+
+			self.hypothesisSpace = hypothesisSpaceWithTermConditions
+
+		return self.hypothesisSpace
+
+	def cleanHypothesisSpace(self, subtrace, threshold):
+		"""
+		Removes theories from hypothesisSpace if their likelihood for the timesteps
+		passed in 'subtrace' is below threshold.
+		"""
+		# print "In cleanHypothesisSpace..."
+		newHypothesisSpace = []
+
+		#print "hypothesis space", self.hypothesisSpace
+		for t in self.hypothesisSpace:
+			#print "CHECKING THEORY:"
+			#print " --> will check likelihood to see if the theory explains all of the timesteps (final check)"
+
+			# print subtrace
+			# for s in subtrace:
+			# 	print "timestep: "
+			# 	s.display()
+			# 	print "likelihood:", t.likelihood(s)
+
+			if all(t.likelihood(s)>=threshold for s in subtrace): #TODO: Issue might be here ?
+				t.dryingPaint = set()
+				newHypothesisSpace.append(t)
+
+
+		self.hypothesisSpace = newHypothesisSpace
+		# print "Done cleanHypothesisSpace...\n"
+		return
+
+def generateTheoryFromGame(rle, alterGoal=False):
+	"""
+	Given an rle, returns a very barebones theory object.
+	This object has only 2 fields set: the interaction set, and the classes.
+	"""
+	theory = Theory(rle._game)
+
+	inverseClasses = dict()
+	for i,s in enumerate(rle._game.sprite_constr):
+		(vgdlType, settings, _) = rle._game.sprite_constr[s]
+		# Handle objects for which color is not declared
+		# Should probably be done in a cleaner way when testing agent.py
+		# since we suppose a 1:1 mapping from colors to objects
+		try:
+			color = colorDict[str(settings['color'])]
+		except KeyError:
+			color = 'noColor'
+
+		if alterGoal and s=='goal':
+			s = s[::-1] #reverse string. goal is to change names so as to not confuse anything with actual goal once you set it.
+						# 'goal' is the only name that means something to all RLEs, so we're making sure to change this one.
+		sprite = Sprite(vgdlType, color, className=s, args=settings) #classname was i
+		theory.classes[s] = [sprite]
+		theory.spriteObjects[sprite.colorName] = sprite
+		theory.spriteSet.append(sprite)
+		inverseClasses[s] = i
+
+	## Add EOS as a class, too.
+	eos = Sprite(core.VGDLSprite, 'ENDOFSCREEN', None, None)
+	theory.classes['EOS'] = [eos]
+	theory.spriteObjects[eos.colorName] = eos
+	theory.spriteSet.append(eos)
+
+	for g1, g2, effect, kwargs in rle._game.collision_eff:
+		if alterGoal:
+			if g1=='goal':
+				g1 = g1[::-1]
+			if g2=='goal':
+				g2 = g2[::-1]
+		interaction = InteractionRule(effect.__name__, g1, g2, kwargs)
+		theory.interactionSet.append(interaction)
+
+	# Add termnation set
+	for termination in rle._game.terminations:
+		# No support for MultiSpriteCounterRule yet
+		# Checking type with 'hasattr': ugly but isinstance breaks due to
+		# relative imports
+		if termination.name == 'SpriteCounter':
+			if alterGoal and termination.stype=='goal':
+				termination.stype='laog'
+			spritecounter = SpriteCounterRule(limit=termination.limit,
+											  stype=termination.stype,
+											  win=termination.win)
+			theory.terminationSet.add(spritecounter)
+		elif termination.name == 'MultiSpriteCounter':
+			if alterGoal:
+				termination.stypes = ['laog' if t=='goal' else t for t in termination.stypes]
+			multiSpriteCounter = MultiSpriteCounterRule(limit=termination.limit,
+											  stypes=termination.stypes,
+											  win=termination.win)
+			theory.terminationSet.add(multiSpriteCounter)
+		elif termination.name == 'Timeout':
+			timeout = TimeoutRule(limit=termination.limit,
+								  win=termination.win)
+			theory.terminationSet.add(timeout)
+		elif termination.name == 'NoveltyRule':
+			noveltyrule = NoveltyRule(s1=termination.s1, s2=termination.s2, win=termination.win)
+			theory.terminationSet.add(noveltyrule)
+
+	return theory
+
+def generateSymbolDict(rle):
+	## run this once at the beginning of each game.
+	## if new objects appear that are of an unknown type we have to be able to deal with this; writeTheoryToTxt should be
+	## able to append to this dict if it finds any unknown objects.
+	inverseMapping = dict()
+
+	idx = 0
+	try:
+		colors = [colorDict[str(rle._game.sprite_constr[k][1]['color'])] for k in rle._obstypes.keys()]
+	except:
+		print "problem with generateSymbolDict"
+		embed()
+	## Note: this is not privileged info about the avatar; it's just grabbing the possible visible colors in the game.
+	try:
+		colors.append(colorDict[str(rle._game.sprite_constr['avatar'][1]['color'])])
+	except:
+		colors.append(colorDict[str(rle._game.sprite_constr['avatar'][0].color)])
+	possibilities = list(set([c for c in colors]))
+
+	for p in possibilities:
+		inverseMapping[p] = ALNUM[idx]
+		idx+=1
+
+	return inverseMapping
+
+
+## TODO: check and complete list of predicates
+# predicates = 
+# ['attractGaze','bounceForward', 'bounceDirection', 'changeResource', 
+# 'changeScore', 'killSprite', 'killIfHasMore', 'killIfHasLess', 
+# 'killOtherHasMore', 'killOtherHasLess' 'killIfSlow', 'nothing', 
+# 'spawnIfHasMore', 'transformTo', 'transformToOnLanding', 'triggerOnLanding', 
+# 'slipForward', 'wallBounce', 'wrapAround']
+
+def getKeywordsFromOntology(interactionName):
+	ontologyKeywordDict = \
+	{'changeResource': ['resource', 'value', 'limit'],\
+	'changeScore': ['value'],\
+	'transformTo': ['stype'],\
+	'teleportToExit': ['stype'],\
+	'killIfSlow': ['limitspeed'],\
+	'killIfTooFast': ['speed'],\
+	'killIfHasMore': ['resource', 'limit'],\
+	'killIfOtherHasMore': ['resource', 'limit'],\
+	'killIfHasLess': ['resource', 'limit'],\
+	'killIfOtherHasLess': ['resource', 'limit'],\
+
+	 ##TODO: Fill in proposeArgs for the following keywords.
+	'spawnIfHasMore': ['resource', 'stype', 'limit'],\
+	'wallStop': ['friction'],\
+	'wallBounce': ['friction'],\
+	'slipForward': ['prob'],\
+	'attractGaze': ['prob'],\
+	'bounceDirection': ['friction']
+	# 'reverseFloeIfActivated': ['strigger'],\
+	# 'trigger': ['strigger'],\
+	# 'detrigger': ['strigger'],\
+	# 'transformToOnLanding': ['stype'],\
+	# 'triggerOnLanding': ['strigger'],\
+	}
+	if interactionName in ontologyKeywordDict.keys():
+		return ontologyKeywordDict[interactionName]
+	else:
+		return []
+
+
+thresholdOrdering = {\
+	'killIfHasLess': 		range(-2,11),
+	'killIfHasMore': 		range(-2,11),
+	'killIfOtherHasLess': 	range(-2,11),
+	'killIfOtherHasMore': 	range(-2,11),
+	'killIfTooFast': 		range(-5,100,5),
+	'killIfSlow': 			range(-5,100,5)
+}
+
+
+def proposeArgs(theory, predicate, errorMap, observations, generic=False):
+
+	## if generic==False, this will propose all args given what's in resourceObservations
+	## which is the result of a function responsible for tracking possible resources, speeds, etc.
+
+	## if generic==True, it will just generate all possible args given some hypothesis space.
+	## For a predicate like changeResource this will result in a large number of args.
+
+	args = getKeywordsFromOntology(predicate)
+	argList = []
+	if not args:
+		return [{}]
+	else:
+		if not generic:
+			if predicate == 'changeResource':
+				resources = observations['trackedObjects'][errorMap.targetToken.colorName][0].inventory
+				diffs =  observations['trackedObjects'][errorMap.targetToken.colorName][0].inventoryDiff()
+				for resource, val in diffs.items():
+					if resource in resources.keys():
+						limit = resources[resource][1]
+					else:
+						limit = observations['trackedObjects'][errorMap.targetToken.colorName][0].lastinventory[resource][1]
+					resourceClass = theory.spriteObjects[resource].className
+					argList.append({'resource':resourceClass, 'value': val, 'limit':limit})
+			elif predicate == 'changeScore':
+				if observations['score']<observations['lastscore']:
+					print "got negative score in proposeArgs()"
+					embed()
+				argList.append({'value':observations['score']-observations['lastscore']})
+			elif predicate == 'killIfSlow':
+				values = [0]
+				for val in values:
+					argList.append({'limitspeed':val})
+			elif predicate == 'killIfTooFast':
+				values = [0]
+				for val in values:
+					argList.append({'speed':val})
+			elif predicate in ['killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']:
+				try:
+					if observations['trackedObjects'][theory.classes['avatar'][0]]:
+						resources = [theory.spriteObjects[rcolor].className for rcolor in observations['trackedObjects'][theory.classes['avatar'][0].colorName][0].inventory.keys()]
+					else:
+						resources = [c for c in theory.classes if 'Resource' in str(theory.classes[c][0].vgdlType) and 'ResourcePack' not in str(theory.classes[c][0].vgdlType)]
+				except:
+					print "problem with resources in proposeArgs()", " ...or the avatar died"
+					embed()
+				limits = [-2]
+				for comb in list(itertools.product(resources, limits)):
+					if comb:
+						argList.append({'resource':comb[0], 'limit':comb[1]})
+			elif predicate == 'transformTo':
+				for stype in [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]:
+					argList.append({'stype':stype})
+			elif predicate == 'teleportToExit':
+				for stype in [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]:
+					argList.append({'stype':stype})
+			else:
+				print "Error: Have not implemented non-generic proposeArgs() yet."
+				embed()
+		else:
+			if predicate=='changeResource':
+				resources = [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]
+				values = [1]
+				limits = [1,3]
+				for comb in list(itertools.product(resources, values, limits)):
+					argList.append({'resource':comb[0], 'value':comb[1], 'limit':comb[2]})
+			if predicate == 'changeScore':
+				values = [1]
+				for val in values:
+					argList.append({'value':val})
+			if predicate == 'transformTo':
+				for stype in [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]:
+					argList.append({'stype':stype})
+			if predicate == 'teleportToExit':
+				for stype in [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]:
+					argList.append({'stype':stype})
+			if predicate == 'killIfSlow':
+				values = [1,2,3]
+				for val in values:
+					argList.append({'limitspeed':val})
+			if predicate == 'killIfTooFast':
+				values = [10,11,12]
+				for val in values:
+					argList.append({'speed':val})
+			if predicate in ['killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']:
+				resources = [k for k in theory.classes.keys() if k not in ['avatar', 'EOS']]
+				limits = [1,2]
+				for comb in list(itertools.product(resources, limits)):
+					argList.append({'resource':comb[0], 'limit':comb[1]})
+		## TODO: Fill in the other resources
+	return argList
+
+
+def proposePredicates(singlePairErrorSignal, observations):
+	## Takes the error signal and proposes the appropriate predicates by looking
+	## at the memory. For now it would only access the memory to make new proposals
+	## that build on previous ones (e.g., incrementing n, or going to conditional kill
+	## events if non-conditional kill events have already been proposed)
+	## NOTE: if more predicates are added whose effects are not immediately observable by the
+	##  "CV system" (like flipDirection), make sure to add them to the list in stateobsnonstatic!
+
+	predicates = []
+
+	physicsType = 'gridphysics' if observations['isGrid'] else 'continuousphysics'
+	## List of predicates that are unique to a physics type
+	physicsToPredicateMapping = {
+	'all' : 					['killSprite', 'cloneSprite', 'transformTo', 'transformToOnLanding',\
+								'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore',\
+								'killIfTooFast', 'killIfSlow',\
+								'undoAll', 'nothing',\
+								'turn', 'turnAround', 'reverseDirection', 'wrapAround', 'flipDirection', 'bounceForward',\
+								'changeResource', 'collectResource', 'changeScore', 'teleportToExit', 'conveySprite'],
+	'gridphysics': 				[],
+	'continuousphysics': 		['transformToOnLanding', 'killIfTooFast', 'killIfSlow', 'killIfFromAbove',\
+								'killIfFromBelow', 'bounceDirection', 'flipDirection', 'conveySprite', 'pullWithIt',\
+								'windGust','slipForward', 'wallBounce', 'wallStop','onRope', 'onLadder']
+								}
+
+	errorSignalToPredicateMapping = {
+
+	## Destruction/appearance/transformation
+	'objectDestruction': 		['killSprite'],
+	'newObjectAppeared': 		['cloneSprite'],
+	'transformation': 			['transformTo'],
+	'conditionalKill': 			['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore',\
+								 'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
+
+	## Position difference
+	## NOTE: if you propose undoAll you also need to uncomment the lines that propose intPairs between any adjacent sprites
+			# on the board in errorSignal()
+	'noMovement': 				[],#['undoAll'], ## Possible bug: not proposing anything for noMovement
+	'unexpectedPosition': 		['bounceForward', 'nothing'],
+									# , 'pullWithIt', 'windGust', 'slipForward',\
+									# 'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap
+	'unexpectedOverlap':		['nothing', 'reverseDirection'],#, 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
+	'orientationChange': 		['reverseDirection', 'flipDirection'],
+									#'turn', 'turnAround', 
+	'wrapAround':				['wrapAround'], # no offsets
+	'teleport': 				['teleportToExit'],
+
+	## Object state change
+	'inventoryChange': 			['changeResource'], #collectResource
+	'scoreChange':				['changeScore'],
+	## Other
+	## TODO: These don't actually belong here, but we need to do more work to be able to learn these.
+	'other' : 					['conveySprite']
+								}
+
+	## Propose relevant rules
+	##TODO: right now this just gets the list from a single key
+	for predicate in singlePairErrorSignal:
+		predicates.extend(errorSignalToPredicateMapping[predicate])
+
+	## Filter out rules that aren't consistent with the known physics type
+	predicates = [p for p in predicates if p in physicsToPredicateMapping['all'] or 
+		p in physicsToPredicateMapping[physicsType]]
+
+	## TODO: Fill out the case where you consult the proposalMemory to make more complicated
+	## proposals
+
+	return list(set(predicates))
+
+## TODO: write the function that maintains resourceObservations, or at least figure out
+## its outputs and integrate with proposeArgs
+def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSpriteTypeDict, action=None, percentile=20, max_num=20):
+	from vgdl.ontology import sampleFromDistribution, spriteInduction, updateDistribution
+
+	if max_num is None:
+		max_num = 100000
+	childTheories = []
+
+	targetClass = errorMap.targetClass
+	targetToken = errorMap.targetToken
+
+	theory.expandedSprites.append(targetClass)
+	
+	## Only propose sprites when something moves that we didn't think was going to move.
+	## Possible bug: removed noMovement
+	if all([diagnosis not in ['unexpectedPosition', 'unexpectedOverlap', 'newObjectAppeared',
+		'orientationChange', 'unexpectedOverlap', 'objectDestruction', 'noMovement'] for diagnosis in errorMap.diagnosis]):
+		return targetClass, childTheories
+
+	if 'objectDestruction' in errorMap.diagnosis:
+		spriteProposals = [k for k in game.spriteDistribution[targetToken.ID].keys() if 'Flicker' in str(k[0][1])]
+	else:
+		spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, action=action, oldSpriteSet=theory.spriteSet,\
+		specificSpritesToUpdate=errorMap.targetTokens, percentile=percentile, max_num=max_num)
+	## Don't instantiate non-avatar proposals for the 'avatar' class.
+	if targetClass=='avatar':
+		spriteProposals = [s for s in spriteProposals if 'Avatar' in str(s[0][1])]
+	
+	for spriteProposal in spriteProposals:
+
+		newTheory = theory.copy()
+		newTheory.mostRecentEdit = 'spriteInduction'
+		newTheory.errorMapHistory.append(errorMap)
+		vgdlType = spriteProposal[0][1]
+		args = dict(spriteProposal[1:])
+
+		## Proposal specified args in terms of color; convert to class name for the actual theory.
+		if 'stype' in args.keys():
+			try:
+				if args['stype'] not in newTheory.spriteObjects:
+					return targetClass, []
+				args['stype'] = newTheory.spriteObjects[args['stype']].className
+			except:
+				print "got new stype as an arg but the theory doesn't have the object. In expandSprites()"
+				embed()
+		color = newTheory.classes[targetClass][0].colorName
+		## If you're proposing an avatar change you need to do some bookkeeping to ensure only one avatar class in the description.
+		if 'Avatar' in str(vgdlType):
+
+			## Avatar can't shoot avatar.
+			if 'stype' in args.keys() and args['stype'] == 'avatar':
+				continue
+			sprite = Sprite(vgdlType, color, className='avatar', args=args)
+			tmpType = newTheory.classes[targetClass][0].vgdlType
+			tmpSprite = newTheory.classes['avatar'][0]
+			tmpSprite.vgdlType = tmpType
+			tmpSprite.className=targetClass
+			tmpSprite.args = {}
+			## If the old class was also an avatar we want to use the new sprite for everything, so doing that step second, always.
+			newTheory.classes[targetClass] = [tmpSprite]
+			newTheory.classes['avatar'] = [sprite]
+			newTheory.spriteObjects[tmpSprite.colorName] = tmpSprite
+			newTheory.spriteObjects[sprite.colorName] = sprite
+			newTheory.spriteSet = [item for sublist in newTheory.classes.values() for item in sublist]
+			for rule in newTheory.interactionSet:
+				if rule.slot1==targetClass:
+					rule.slot1='tmp'
+				if rule.slot2==targetClass:
+					rule.slot2='tmp'
+				if rule.slot1=='avatar':
+					rule.slot1=targetClass
+				if rule.slot2=='avatar':
+					rule.slot2=targetClass
+				if rule.slot1=='tmp':
+					rule.slot1='avatar'
+				if rule.slot2=='tmp':
+					rule.slot2='avatar'
+		else:
+			## Don't propose non-avatar types for the thing you're calling 'avatar'.
+			if targetClass=='avatar':
+				continue
+			sprite = Sprite(vgdlType, color, className=targetClass, args=args)
+			## Remove old sprite from spriteSet
+			newTheory.spriteSet.remove(newTheory.classes[targetClass][0])
+			## Add new sprite
+			newTheory.spriteSet.append(sprite)
+			newTheory.classes[targetClass] = [sprite]
+			newTheory.spriteObjects[color] = sprite
+		
+		childTheories.append(newTheory)
+
+	## TODO: what to do with orientation for missiles??
+	return targetClass, childTheories
+
+predicateToOrderingMapping = {
+	'killSprite':			(0,),
+	'killIfHasLess': 		(0,), 
+	'killIfHasMore': 		(0,),
+	'killIfOtherHasLess': 	(0,), 
+	'killIfOtherHasMore':	(0,),
+	'killIfTooFast':		(0,),
+	'killIfSlow':			(0,),
+	'killIfFromAbove':		(0,),
+	'killIfFromBelow':		(0,),
+	'changeResource':		(0,),
+	'collectResource':		(1,),
+	'stepBack':				(0,),
+	'cloneSprite':	 		(0,),
+	'transformTo':	 		(0,),
+	'transformToOnLanding': (0,),
+	'turn':					(0,),
+	'turnAround':			(0,),
+	'reverseDirection':		(0,),
+	'flipDirection':		(0,),
+	'wrapAround':			(0,),
+ 	'teleportToExit':		(0,),
+ 	'conveySprite':			(0,),
+	'windGust':				(0,),
+	'bounceDirection':		(0,), 
+	'pullWithIt':			(0,),
+	'slipForward':			(0,),
+	'attractGaze':			(0,),
+	'wallBounce':			(0,),
+	'wallStop':				(0,),
+	'onRope':				(0,),
+	'onLadder':				(0,),
+	'nothing':				(0,),
+	'bounceForward':		(0,),
+ 	'changeScore':			(0,1),
+	'undoAll':				(0,1)}
+
+predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit', 'wrapAround']
+
+def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n):
+
+	key = (classPair, tuple(sorted(predicates)))
+
+	if key not in classPairPlusPredicateToRuleSets:
+
+		predicateGroups = []
+		for i in range(0,n+1):
+			predicateGroups.extend(list(itertools.combinations(predicates, i)))
+
+		bothOrderings = [[()], [()]]
+		for i,order in enumerate([classPair, (classPair[1], classPair[0])]):
+
+			for predicateGroup in predicateGroups:
+				if len(predicateGroup)==0:
+					pass
+				predicateRules = []
+				for predicate in predicateGroup:
+					## orderings are (targetClass, neighbor). If the ordering we're proposing is consistent with the semantics
+					## of the predicate we're proposing, add this potential rule.
+					if i in predicateToOrderingMapping[predicate]:
+						allArgumentCombinations = proposeArgs(theory, predicate, errorMap, observations, 
+							generic=False)
+						predicateRules.append([InteractionRule(predicate, order[0], order[1], args=comb) 
+							for comb in allArgumentCombinations])
+				if predicateRules:
+					bothOrderings[i].extend(list(itertools.product(*predicateRules)))
+		## Now generate combinations from each expanded predicateGroup that we added to each of the orderings
+		newRuleSets = list(itertools.product(bothOrderings[0], bothOrderings[1]))
+		newRuleSets = [[item for sublist in ruleSet for item in sublist] for ruleSet in newRuleSets]
+
+		classPairPlusPredicateToRuleSets[key] = newRuleSets
+
+	return classPairPlusPredicateToRuleSets[key]
+
+def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateToRuleSets, envRealPrev, envRealCurrent, action, rleHistories, actionHistories, MultiEpisodeExperienceReplay, n=1, observations=None, generic=False):
+	## Modifies the theory to propose n new interactonRules involving the given classPair
+	## For predicates that take arguments, finds the first (according to some ordering) satisfying argument and returns that.
+	## generic=True proposes all possible combinations of args instead.
+	childTheories = [theory.copy()]
+	##if iterating thresholds is not relevant:
+	predicatesWithThresholds = ['killIfTooFast', 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
+	relevantRulesWithArgs = [rule for rule in theory.interactionSet if rule.interaction in predicatesWithThresholds and 
+			classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and len(rule.args)>0]
+	if len(relevantRulesWithArgs) == 0:
+		if 'conditionalKill' in errorMap.diagnosis:
+			# print "got conditionalKill"
+			# embed()
+			## The only rules that should be removed when proposing conditionals are kill rules.
+			## Remove the existing kill rules and replace them with conditionals.
+			toRemove = [rule for rule in theory.interactionSet if classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and 
+					rule.asTuple()[1] == errorMap.targetClass and rule.asTuple()[0]=='killSprite']
+			theory.interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
+			# FlAG: should this act on the theory or the copy?
+
+		
+		newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
+		for i,ruleSet in enumerate(newRuleSets):
+			if len(ruleSet) > 0:
+				newTheory = theory.copy()
+				newTheory.mostRecentEdit = 'interactionSetInduction'
+				newTheory.errorMapHistory.append(errorMap)
+				# remove old rules that conflict with the new ones
+				alteredPairs = set([(rule.slot1, rule.slot2) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack] + \
+						[(rule.slot2, rule.slot1) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack])
+				newTheory.interactionSet = [rule for rule in newTheory.interactionSet if 'stepBack' != rule.interaction or (rule.slot1, rule.slot2) not in alteredPairs]
+				for rule in ruleSet:
+					ruleCopy = rule.copy()
+					newTheory.interactionSet.append(ruleCopy)
+					newTheory.dryingPaint.add(ruleCopy)
+				newTheory.reconcileInteractionsAndSprites()
+				childTheories.append(newTheory)
+
+		childTheories = list(set(childTheories))
+	
+	## Iterate thresholds. If this is not relevant for a particular theory, iterateThresholds() will just return the theory unchanged.
+	iteratedTheories = []
+	for theory in childTheories:
+		iteratedTheories.append(interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, actionHistories, theory, errorMap, classPair, MultiEpisodeExperienceReplay))
+
+	return classPair, iteratedTheories
+
+def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, actionHistories, theory, errorMap, classPair, MultiEpisodeExperienceReplay):
+	
+	predicatesWithThresholds = ['killIfTooFast', 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
+	relevantRulesWithArgs = [rule for rule in theory.interactionSet if rule.interaction in predicatesWithThresholds and \
+			classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and len(rule.args)>0]
+	if len(relevantRulesWithArgs)==1:
+		# print "in iterateThresholds"
+		# theory.display()
+		rule = relevantRulesWithArgs[0]
+		penalty = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
+			envRealPrev.symbolDict, method='all', targetColor=errorMap.targetColor)[0]
+		newPenalty = penalty
+		while newPenalty >= penalty:
+			argsToIncrement = [(k,v) for k,v in relevantRulesWithArgs[0].args.items() if type(v)==int]
+			# if k=='limit' and rule.interaction == 'killIfOtherHasMore':
+				# embed()
+			if len(argsToIncrement)>1:
+				print "got more than one arg to increment in iterateThresholds(); this shouldn't happen"
+				embed()
+			k,v = argsToIncrement[0]
+			idx = thresholdOrdering[rule.interaction].index(v)
+			if len(thresholdOrdering[rule.interaction]) > idx+1:
+				rule.args[k] = thresholdOrdering[rule.interaction][idx+1]
+				theory.experienceReplayRecord = {}
+				newPenalty = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
+					envRealPrev.symbolDict, method='all', targetColor=errorMap.targetColor)[0]
+				# print newPenalty, rule.display()
+			else:
+				break
+		# if newPenalty<penalty:
+			# print "got successful rule"
+			# print newPenalty, rule.display()
+			# embed()
+	if len(relevantRulesWithArgs)>1:
+		print "you got more than 1 relevant rule with an argument in iterateThresholds; this shouldn't happen"
+		embed()
+
+	return theory
+
+def getClassNameFromSpriteString(spriteName, theory, rle):
+	if spriteName in rle._game.sprite_groups and len(rle._game.sprite_groups[spriteName])>0:
+		col = colorDict[str(rle._game.sprite_groups[spriteName][0].color)]
+		try:
+			className = [k for k in theory.classes.keys() if col in [c.colorName for c in theory.classes[k]]][0]
+		except:
+			print "couldn't find className"
+			embed()
+		return className
+	elif spriteName in theory.classes.keys():
+		return spriteName
+	else:
+		try:
+			## maybe we passed a color, so we should get the class.
+			return theory.spriteObjects[spriteName].className
+		except:
+			print "failed to get spriteName color. In getClassNameFromSpriteString"
+			embed()
+
+def buildArgsString(interactionRule, theory, rle):
+	relevantArgNames = getKeywordsFromOntology(interactionRule.interaction)
+	newInteractionName = interactionRule.interaction
+	if interactionRule.interaction =='killSprite':
+		oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
+		precondition = list(set(interactionRule.preconditions))[0]
+		if precondition:
+			print "in precondition in buildArgsString"
+			## We should never be here; this is deprecated.
+			embed()
+			if precondition.negated:
+				true_operator = oppositeOperatorMap[precondition.operator_name]
+			else:
+				true_operator = precondition.operator_name
+
+			if precondition.item=='speed':
+				newInteractionName = 'killIfTooFast'
+				limit = precondition.num
+				argsString = " speed=%s"%(str(limit))
+			else:
+				if true_operator in {"<", "<="}:
+					newInteractionName = 'killIfHasLess' #example
+					if true_operator == "<":
+						limit = precondition.num - 1
+					else:
+						limit = precondition.num
+
+				elif true_operator in {">", ">="}:
+					newInteractionName = 'killIfOtherHasMore'
+					if true_operator == ">":
+						limit = precondition.num + 1
+					else:
+						limit = precondition.num
+
+				argsString = " resource=%s limit=%s"%(precondition.item, str(limit))
+	elif interactionRule.interaction=='teleportToExit':
+		print "implement teleportToExit argsstring"
+		embed()
+		argsString = ""
+	elif interactionRule.interaction in ['killIfFromAbove', 'killIfFromBelow']:
+		print "implement killIfFromAbove argsstring"
+		embed()
+		argsString = ""
+	elif interactionRule.interaction == 'killIfTooFast':
+		argsString = ""
+		argsString += " speed=%s"%(interactionRule.args['speed'])
+	elif interactionRule.interaction == 'changeResource':
+		argsString = ""
+		argsString += " resource=%s value=%s"%(interactionRule.args['resource'], interactionRule.args['value'])
+	else:
+		if interactionRule.args:
+			argsString = ""
+			for k,v in interactionRule.args.items():
+				if k in ['stype', 'strigger']:
+					argsString += " %s=%s"%(k, getClassNameFromSpriteString(v, theory, rle))
+				else:
+					argsString += " %s=%s"%(k, v)
+		else:
+			print "buildArgsString got called but no precondition"
+			embed()
+
+	return argsString, newInteractionName
+
+
+def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=False, goalLoc = None, addAllObjects=False):
+	"""
+	-need to be able to take an optional argument that tells you the location of the goal, and put that into the level string
+	-assume that the goal sprite is getting killed
+	-change the actual goal to be something else
+	2 ways of swapping in knowledge:
+	-cleanest way:
+	"""
+
+	DIRECTION_MAP = {(0,-1):'UP', (0,1):'DOWN', (1,0):'RIGHT', (-1,0):'LEFT'}
+
+	_obstypes = rle._obstypes
+	newGoalType, newGoalColor= None, None
+
+	colorToSprite = {}
+
+	for spriteType in rle._game.sprite_constr:
+		if spriteType != "avatar":
+			try:
+				colorToSprite[colorDict[str(rle._game.sprite_constr[spriteType][1]['color'])]] = spriteType
+			except KeyError:
+				print "in writeTheoryToTxt, keyError"
+				embed()
+
+	if goalLoc:
+		newGoalCode = state[goalLoc[0]][goalLoc[1]]
+		if newGoalCode == 0:
+			newGoalType = 'blank_space'
+		else:
+			newGoalIndex = int(round(math.log(newGoalCode,2)))-1
+			newGoalType = sorted(_obstypes.keys())[::-1][newGoalIndex]
+			newGoalColor = colorDict[str(rle._game.sprite_constr[newGoalType][1]['color'])]
+
+	## teleport sprites have to be handled separately, as the spriteType is relational -- it depends on
+	## what is in the interactionRules.
+	if theory.interactionSet[0].args is not None:
+		if any([len(i.args.keys()) for i in theory.interactionSet]):
+			for interactionRule in theory.interactionSet:
+				if interactionRule.interaction == 'teleportToExit':
+					## second element in teleport tuple is the entrance; stype is the exit
+					portalEntry = interactionRule.slot2
+					portalExit = getClassNameFromSpriteString(interactionRule.args['stype'], theory, rle)
+
+					theory.classes[portalEntry][0].vgdlType = Portal
+					if theory.classes[portalEntry][0].args is None:
+						theory.classes[portalEntry][0].args = {'stype':portalExit}
+					else:
+						theory.classes[portalEntry][0].args['stype'] = portalExit
+
+					theory.classes[portalExit][0].vgdlType = Portal
+
+	########### generating theory string
+	theoryString = 'game = """\n'
+	theoryString += "BasicGame\n"
+	# first phase: the sprite rules
+	theoryString += "\tSpriteSet\n"
+
+
+	for c, sprites in theory.classes.items():
+		if c == 'EOS':
+			pass
+		else:
+			for s in sprites:
+				unfilteredType = str(s.vgdlType)
+				stype = unfilteredType[unfilteredType.find("vgdl.ontology.")+len("vgdl.ontology."): unfilteredType.find(">")-1]
+				argsString = ""
+				## Catch-all 'OTHER' s.vgdlType is causing a problem. replace for now with generic.
+				if not stype:
+					if unfilteredType == "OTHER":
+						stype = 'ResourcePack'
+					else:
+						print "writetheorytotxt. stype problem"
+						embed()
+
+				if s.args:
+					for k,v in s.args.items():
+						if k == "color":
+							continue
+						elif k == "orientation":
+							argsString += " %s=%s"%(k, DIRECTION_MAP[v])
+						elif k == "speed":
+							argsString += " %s=%s"%(k, v)
+						else:
+							argsString += " %s=%s"%(k, str(v))
+
+				try:
+					argsString += " %s=%s"%("speed", str(s.speed))
+				except AttributeError:
+					pass
+
+				try:
+					argsString += " %s=%s"%("orientation", DIRECTION_MAP[s.orientation])
+				except AttributeError:
+					pass
+
+				try:
+					argsString += " %s=%s"%("fleeing", s.fleeing)
+				except AttributeError:
+					pass
+
+				try:
+					argsString += " %s=%s"%("cooldown", s.cooldown)
+				except AttributeError:
+					pass
+
+				try:
+					argsString += " %s=%s"%("spawnCooldown", s.spawnCooldown)
+				except AttributeError:
+					pass
+
+				if hasattr(s, 'stype'):
+					try:
+						##when we initialized stypes in spriteInduction, we didn't have access to what we would call objects in the theory.
+						colorConvertedToSType = theory.spriteObjects[s.stype].className
+						argsString += " %s=%s"%("stype", colorConvertedToSType)
+					except KeyError:
+						print "in TheoryToTxt(), search for colorConvertedToSType"
+						## TODO: If you, say, hypothesize that a missile is a Chaser and that it chases some random color but you don't have that color in your theory yet,
+						## you can end up here.
+
+
+				if "core" in stype:
+					stype = stype[stype.find("core.")+len("core."):]
+
+				if "avatar".lower() in stype.lower():
+					theoryString += "\t\t%s > %s color=%s%s\n"%("avatar", stype, s.colorName, argsString)
+				else:
+
+					sname = c
+					theoryString += "\t\t%s > %s color=%s%s\n"%(sname, stype, s.colorName, argsString)
+					if goalLoc and newGoalType != 'blank_space' and s.colorName==newGoalColor:
+						sname = colorToSprite[s.colorName]
+						theoryString += "\t\t%s > %s color=%s%s\n"%("goal", stype, s.colorName, argsString)
+	if debug==True:
+		print "in writeTheoryToTxt debug"
+		embed()
+
+	if goalLoc:
+		if newGoalType == 'blank_space':
+			# we've selected an empty square to be the goal.
+			theoryString += "\t\tgoal > Passive color=LIGHTRED\n"
+
+	immovable_predicates = ['stepBack', 'undoAll']
+	kill_predicates = ['killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore',\
+			'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow']
+	immovables, killerObjects = [], []
+	# second phase: the interaction rules
+	theoryString += "\tInteractionSet\n"
+	added_rules = []
+	sortedInteractionDict = {}
+	# create a dict mapping interacting class pairs to their list of interactions
+	for interactionRule in theory.interactionSet:
+		c1 = interactionRule.slot1
+		c2 = interactionRule.slot2
+		if c1 > c2:
+			c1, c2 = c2, c1 # flip order
+
+		if not (c1,c2) in sortedInteractionDict:
+			sortedInteractionDict[(c1, c2)] = [interactionRule]
+		else:
+			sortedInteractionDict[(c1, c2)].append(interactionRule)
+
+	sortedInteractions = []
+	# For some games (e.g. boulderdash), the order of 'stepBack' interactions
+	# matters: this list puts those that don't involve the avatar at the end
+	nonAvatarStepBackInteractions = []
+	for pair in sortedInteractionDict:
+		(killIfHasLessInteractions, killInteractions, scoreChangeInteractions,
+			nonKillInteractions, changeResourceInteractions) = [], [], [], [], []
+		for interactionRule in sortedInteractionDict[pair]:
+			if "kill" in interactionRule.interaction:
+				precondition = list(set(interactionRule.preconditions))
+				if precondition and precondition[0].operator_name in ['<', '<=']:
+					killIfHasLessInteractions.append(interactionRule)
+				else:
+					# check whether this is a killing interaction
+					killInteractions.append(interactionRule)
+			elif "changeScore" in interactionRule.interaction:
+				scoreChangeInteractions.append(interactionRule)
+			elif "changeResource" in interactionRule.interaction:
+				changeResourceInteractions.append(interactionRule)
+			elif "stepBack" in interactionRule.interaction and 'avatar' not in [interactionRule.slot1, interactionRule.slot2]:
+				nonAvatarStepBackInteractions.append(interactionRule)
+			else:
+				nonKillInteractions.append(interactionRule)
+
+		sortedInteractions += (killIfHasLessInteractions +
+			scoreChangeInteractions + changeResourceInteractions +
+			killInteractions + nonKillInteractions)
+		# make sure that killing interactions get processed before interactions
+		# that don't kill.
+		# EDIT: made killIfHasLess be processed first
+
+	sortedInteractions += nonAvatarStepBackInteractions
+
+	for interactionRule in sortedInteractions:
+		if True:
+
+			c1 = interactionRule.slot1
+			c2 = interactionRule.slot2
+
+			if c1 not in theory.classes or c2 not in theory.classes:
+				print "c1 or c2 not in theory.classes"
+				embed()
+
+			if (c1=='laog' and len(theory.classes[c1])==0) or (c2=='laog' and len(theory.classes[c2])==0):
+				print "found laog"
+				embed()
+
+			for s1 in theory.classes[c1]:
+				if c2 not in theory.classes.keys():
+					print "c2 not in theory.classes.keys() in theory template. c2={}".format(c2)
+					embed()
+				for s2 in theory.classes[c2]:
+					argsString = ""
+
+					if interactionRule.preconditions or interactionRule.args:
+						args, interactionRule.interaction = buildArgsString(interactionRule, theory, rle)
+						argsString += args
+
+					if s1.colorName==newGoalColor:
+						if not 'avatar' in str(s2.className): #only add actual goal object rule if it's not interacting with the avatar.
+							theoryString += "\t\t%s %s > %s%s\n"%('goal', c2, interactionRule.interaction, argsString)
+					elif s2.colorName==newGoalColor:
+						if not 'avatar' in str(s1.className):#only add actual goal object rule if it's not interacting with the avatar.
+							theoryString += "\t\t%s %s > %s%s\n"%(c1, 'goal', interactionRule.interaction, argsString)
+					else:
+						theoryString += "\t\t%s %s > %s%s\n"%(c1, c2, interactionRule.interaction, argsString)
+
+					if 'avatar' in str(s1.vgdlType).lower():
+						if interactionRule.interaction in immovable_predicates:
+							# print "must add immovable"
+							# embed()
+							immovables.append(s2.className)
+						if interactionRule.interaction in kill_predicates:
+							killerObjects.append(s2.className) ##killSprite is not symmetrical; you to append things that are (avatar obj killSprite)
+					elif 'avatar' in str(s2.vgdlType).lower():
+						if interactionRule.interaction in immovable_predicates:
+							# print "must add immovable"
+							# embed()
+							immovables.append(s1.className)
+			added_rules.append(interactionRule)
+
+	# if goal is an empty square
+	# if newGoalType == 'blank_space':
+	# theoryString += "\t\t%s %s > %s\n"%('goal', 'avatar', "killSprite")
+	# theoryString += "\t\t%s %s > %s\n"%('avatar', 'EOS', "stepBack")
+
+	# print "inwritetheory"
+	# embed()
+	## add EOS stepBack for all other sprites
+	# for c in theory.classes.keys():
+	# 	if c is not 'avatar':
+	# 		theoryString += "\t\t%s %s > %s\n"%(c, 'EOS', "stepBack")
+
+
+	# print "in writeTheory"
+	# embed()
+	immovables = list(set(immovables))
+	killerObjects = list(set(killerObjects))
+
+
+	# if theory.interactionSet[0].args is not None:
+	# 	if any([len(i.args.keys()) for i in theory.interactionSet]):
+	# 		print "inwritetheory"
+	# 		embed()
+
+	# third phase: the termination rules
+	theoryString += "\tTerminationSet\n"
+	goalConditionNotFound = True
+	for terminationRule in theory.terminationSet:
+		if terminationRule.ruleType == "TimeoutRule":
+			theoryString += "\t\tTimeout limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
+
+		elif terminationRule.ruleType == "SpriteCounterRule":
+			theoryString += "\t\tSpriteCounter stype=%s limit=%s win=%s\n" % \
+						(terminationRule.termination.stype, \
+						str(terminationRule.termination.limit), str(terminationRule.termination.win))
+			if terminationRule.termination.stype == "goal":
+				goalConditionNotFound = False
+		elif terminationRule.ruleType == "NoveltyRule":
+
+			theoryString += "\t\tNoveltyTermination s1=%s s2=%s win=%s" % \
+						(terminationRule.termination.s1, terminationRule.termination.s2, str(terminationRule.termination.win))
+			if terminationRule.termination.args:
+				# print "found args in terminationrule"
+				# embed()
+				noveltyArgString = " args={item:%s,num:%s,negated:%s,operator_name:%s}" % \
+				(terminationRule.termination.args.item, terminationRule.termination.args.num, terminationRule.termination.args.negated, terminationRule.termination.args.operator_name)
+				theoryString += noveltyArgString
+
+			theoryString +="\n"
+		else:
+			# multi sprite counter rule
+			theoryString += "\t\tMultiSpriteCounter "
+			for i in range(len(terminationRule.termination.stypes)):
+				theoryString += "stype%i=%s " % (i, terminationRule.termination.stypes[i])
+
+			theoryString += "limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
+
+
+	if goalLoc and goalConditionNotFound:
+		# embed()
+		theoryString += "\t\tSpriteCounter stype=goal limit=0 win=True\n"
+
+	## fourth phase: the level mapping
+
+	locs = defaultdict(lambda:[])
+	mappedState = [[' ' for x in range(rle.outdim[1])] for y in range(rle.outdim[0])] 
+	# embed()
+
+	for lst in rle._game.observation['trackedObjects'].values():
+		for sprite in lst:
+			y,x = sprite.rect.top/30, sprite.rect.left/30
+			locs[(y,x)].append(sprite)
+
+
+	for k,v in locs.iteritems():
+		symbol = objectsToSymbol(rle, v, symbolDict)
+		try:
+			mappedState[k[0]][k[1]] = symbol
+		except:
+			print "mappedState problem in writeTheoryToTxt"
+			print mappedState
+			embed()
+	
+	allObjectsSymbol = '`'
+	if addAllObjects:
+		mappedState[0][0] = allObjectsSymbol
+
+	levelString = 'level="""\n'
+	for mappedRow in mappedState:
+		levelString += reduce(lambda a,b: a+b, mappedRow) + "\n"
+
+	levelString += '"""\n'
+
+	theoryString += "\tLevelMapping\n"
+
+	for colors, symbol in symbolDict.items():
+		if type(colors)==tuple:
+			types = [theory.spriteObjects[c].className for c in colors if c in theory.spriteObjects.keys()]
+			if len(types)==2:
+				theoryString += "\t\t%s > %s %s\n"%(symbol, types[0], types[1])
+			elif len(types)==3:
+				theoryString += "\t\t%s > %s %s %s\n"%(symbol, types[0], types[1], types[2])
+		elif type(colors)==str and colors in theory.spriteObjects.keys():
+			c = theory.spriteObjects[colors].className
+			theoryString += "\t\t%s > %s\n"%(symbol, c)
+
+	if addAllObjects:
+		allClasses = [c for c in theory.classes.keys() if c!='avatar' and c!='EOS']
+		theoryString += "\t\t%s > %s\n"%(allObjectsSymbol, " ".join(allClasses))
+	
+	theoryString += '"""\n'
+	
+	parserString = 'if __name__ == "__main__":\n\tfrom vgdl.core import VGDLParser\n\tVGDLParser.playGame(game, level)\n'
+
+	gameString = levelString + theoryString + parserString
+	
+	if writeFile:
+		with open(txtFile, 'w') as f:
+			f.write(gameString)
+		f.close()
+
+	levelString = levelString[levelString.find('"""')+3:-4]
+	theoryString = theoryString[theoryString.find('"""')+3:-4]
+	return theoryString, levelString, symbolDict
+
+#class which stores the distribution over killIf__ parameters
+class PreconditionInduction():
+
+	def __init__ (self):
+		self.distr = {'speed':{},'resource':{}}
+		#maximum speed, maximum 
+		self.speed_n = 100
+		self.res_n = 10
+
+	#normalize distribution
+	def normalize(self, array):
+		tot = sum(array)
+		if tot != 0:
+			array = [i/tot for i in array]
+		return array
+
+	def updateDist(self,observations):
+		#update speed distribution
+		for key in observations['speed'].keys():
+			if key not in self.distr['speed']:
+				self.distr['speed'][key] = [1.0/self.speed_n for i in range(self.speed_n)]
+			for i in range(len(self.distr['speed'][key])):
+				if observations['speed'][key][0] is not None:
+					if i <= int(observations['speed'][key][0]):
+						self.distr['speed'][key][i] = 0
+				elif observations['speed'][key][1] is not None:
+					if i > int(observations['speed'][key][1]):
+						self.distr['speed'][key][i] = 0
+			#assuming that our likelihood function is uniform
+			self.distr['speed'][key] = self.normalize(self.distr['speed'][key])
+
+		#update resource distribution
+		for key in observations['resource'].keys():
+			for res in observations['resource'][key]:
+				if key not in self.distr['resource']:
+					self.distr['resource'][key] = {}
+				if res not in self.distr['resource'][key].keys():
+					## range(4) corresponds to each of the 4 cases.
+					self.distr['resource'][key][res] = [[1.0/self.res_n for i in range(self.res_n)] for i in range(4)]
+				
+				#4 cases:  killIfHasLess, killIfHasMore, killIfOtherHasLess, killIfOtherHasMore
+				val, avatar, sprite = observations['resource'][key][res]
+				
+				for i in range(len(self.distr['resource'][key][res][0])):
+					#killIfHasLess
+					if (i > val and avatar) or (i <= val and not avatar):
+						self.distr['resource'][key][res][0][i] = 0.0	
+
+					#killIfHasMore
+					if (i <= val and avatar) or (i > val and not avatar):
+						self.distr['resource'][key][res][1][i] = 0.0
+
+					#killIfOtherHasLess
+					if (i > val and sprite) or (i <= val and not sprite):
+						self.distr['resource'][key][res][2][i] = 0.0
+						
+					#killIfOtherHasMore
+					if (i <= val and sprite) or (i > val and not sprite):
+						self.distr['resource'][key][res][3][i] = 0.0
+				
+				for i in range(len(self.distr['resource'][key][res])):
+					self.distr['resource'][key][res][i] = self.normalize(self.distr['resource'][key][res][i])
