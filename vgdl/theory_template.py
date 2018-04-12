@@ -384,14 +384,14 @@ class Theory(object):
 		if vgdlType=='default':
 			vgdlType = ResourcePack
 		sprite = Sprite(vgdlType, color, className=newSpriteName, args=args)
+		self.classes[newSpriteName] = [sprite]
+		self.spriteSet.append(sprite)
+		self.spriteObjects[color] = sprite
 		for (o1,o2) in itertools.product([newSpriteName], self.classes.keys()):
 			rule1 = InteractionRule('stepBack', o1, o2, {}, set(), generic=True)
 			rule2 = InteractionRule('stepBack', o2, o1, {}, set(), generic=True)
 			self.interactionSet.append(rule1)
 			self.interactionSet.append(rule2)
-		self.classes[newSpriteName] = [sprite]
-		self.spriteSet.append(sprite)
-		self.spriteObjects[color] = sprite
 		return
 
 	"""Main functions"""
@@ -400,7 +400,8 @@ class Theory(object):
 		## Very simple prior, prefering:
 			# Avatar = default type
 			# Everything else doesn't move
-			# Short non-default ruleset.
+			# Short non-default ruleset; penalty for rules involving preconditions
+			# Penalty for stochastic predicates
 			# Preference for explanations involving avatar being the cause of change:
 			#	 (penalty for long ruleset is shorter than penalty for type deviations)
 
@@ -418,8 +419,9 @@ class Theory(object):
 					# classScore += 1
 				else:
 					classScore += 2
-
-		ruleScore = len([rule for rule in self.interactionSet if rule.interaction in ['flipDirection']])
+		ruleScore = len([rule for rule in self.interactionSet if rule.interaction!='stepBack'])
+		ruleScore += len([rule for rule in self.interactionSet if rule.interaction in ['flipDirection']])
+		ruleScore += len([rule for rule in self.interactionSet if rule.args])
 		# ruleScore = 1
 		return classScore + ruleScore/1000.
 
@@ -1949,9 +1951,6 @@ class Game(object):
 				T.classes[nonAvatars[i].className] = [nonAvatars[i]]
 		else:
 			for i in range(len(allSprites)):
-				# if allSprites[i].colorName=='DARKBLUE':
-					# allSprites[i].className = 'avatar'
-				# else:
 				allSprites[i].className = 'c'+str(i+2)
 				T.classes[allSprites[i].className] = [allSprites[i]]
 

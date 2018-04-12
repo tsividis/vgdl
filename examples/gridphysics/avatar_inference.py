@@ -28,15 +28,16 @@
 
 #combine with avatar sam bounceFoward. works.
 #0,0,0,0,0,0
+# works 4/12
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
 # w                            1 w
-# w                            1 w
+# w              A             1 w
 # w                              w
-# w              A               w
-# w                         3 3  w
-# w         c    c               w
+# w                              w
+# w         c    c          3 3  w
+# w                              w
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
@@ -44,17 +45,17 @@
 ## the problem here is that you need to build on expandSprite proposals with expandLine within one errorMap and
 ## you don't ordinarily do that.
 #0,0,0,0,0,0
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w                            1 w
-# w                              w
-# w                              w
-# w              A          3 3  w
-# w         c    c               w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w                            1 w
+w                              w
+w              A               w
+w         c    c          3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 # works if you don't allow the eventHandler to apply effects to newly-created sprites
 #[0,0,0,K_LEFT, K_LEFT,0,0]
@@ -252,14 +253,14 @@
 # """
 
 # [0]*11: test for wrapAround (add sam EOS wrapAround to rules)
-level = """
-wwwwwwwwwwwwwwwww
-w         3 3   w
-w               w
-w  s   s   A    w
-w               w
-wwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwww
+# w         3 3   w
+# w               w
+# w  s   s   A    w
+# w               w
+# wwwwwwwwwwwwwwwww
+# """
 
 
 # testing when poisons make you step back
@@ -340,8 +341,8 @@ BasicGame
         cannon sam > stepBack
         sam cannon > stepBack
         # sam wall > killSprite
-        # sam wall > reverseDirection
-        sam EOS > wrapAround
+        sam wall > reverseDirection
+        # sam EOS > wrapAround
         medicine avatar > killSprite
         # avatar medicine > changeResource resource=invisiblemedicine value=1
         # avatar poison > changeResource resource=invisiblemedicine value=-1

@@ -294,8 +294,8 @@ class Agent:
 			# [K_RIGHT, K_UP, K_SPACE, 0, 0,0,0,0]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			# [0]*6
-			[0,K_RIGHT, K_SPACE, 0,0,0,0,0,0,0]
+			[0]*6
+			# [0,K_RIGHT, K_SPACE, 0,0,0,0,0,0,0]
 			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT],
 			# [K_RIGHT, K_RIGHT]
 			# [0,0, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0,0,0]
@@ -561,11 +561,11 @@ class Agent:
 		bestScoresAndHypotheses = []
 
 		if newTheories:
-			bestScoresAndHypotheses , scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
+			bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
 
 			if len(bestScoresAndHypotheses) == 0:
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
-				embed()
+				# embed()
 
 				retryTheories = [t for t in newTheories if hasattr(t, 'mostRecentEdit') and t.mostRecentEdit == 'spriteInduction']
 				theoryRLEs = VrleInitPhase(retryTheories, envRealPrev, self.symbolDict)
@@ -582,7 +582,7 @@ class Agent:
 				newerTheories = list(set(newerTheories))
 				self.allTheories.extend(newerTheories)
 
-				bestScoresAndHypotheses , scoreAndTheoryTuples = self.scoreAndFilterTheories(newerTheories, episode_num)
+				bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newerTheories, episode_num)
 		else:
 			print "Got no new theories"
 			# just use input hypotheses if no new Theories are generated
@@ -1177,7 +1177,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		sB = findNearestSprite(sA, candidates_in_killList)
 
 		if not sB:
-			print "WARNING: No target and interaction pair found in object destruction. You have not implemented this diagnosis."
+			print "WARNING: No target and interaction pair found in object destruction. You have not implemented anything resulting from that diagnosis."
 			e.diagnosis.append('objectDidNotAppear')
 			e.targetToken = None
 			e.intPairs = []
