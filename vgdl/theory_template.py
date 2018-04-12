@@ -4,15 +4,17 @@ import numpy as np
 import dill
 import tempfile
 from class_theory_template import *
+from taxonomy import *
 from IPython import embed
 from ontology import *
 from collections import defaultdict
 import ipdb
 import operator
 import time, math
-from util import objectsToSymbol, ccopy
+from util import factorize, objectsToSymbol, ccopy
 from rlenvironmentnonstatic import createMindEnv
 from line_profiler import LineProfiler
+
 
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,

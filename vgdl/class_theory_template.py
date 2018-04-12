@@ -5,12 +5,9 @@ from tools import Node, indentTreeParser
 from collections import defaultdict
 import os
 import uuid
-import subprocess
-import glob
 import ipdb
 from IPython import embed
 from core import *
-from tools import roundedPoints
 from ontology import colorDict
 import time
 from copy import deepcopy

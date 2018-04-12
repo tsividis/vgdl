@@ -1,6 +1,4 @@
-# from theory_template_071416 import *
 from ontology import *
-# import pygraphviz as PG
 
 '''
 TODO:
