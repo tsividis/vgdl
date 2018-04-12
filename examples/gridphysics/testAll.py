@@ -27,10 +27,13 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 flipDirectionLevel = """
 wwwwwwwwww
 w       gw
-w g      w
 w        w
+w g   a  w
 w        w
-w c A  c w
+w      aaw
+w        w
+w c    c w
+w   A    w
 wwwwwwwwww
 """
 
@@ -85,7 +88,7 @@ BasicGame
         invisiblemedicine > Resource limit=4 color=PURPLE
         poison > Resource limit=3 color=PINK
         goal > Passive color=GOLD
-        armor > Resource limit=1 color=GRAY
+        armor > Resource limit=1 color=BLACK
         portal > Portal color=LIGHTGREEN stype=exit1
         exit1 > ResourcePack color=GREEN
 
@@ -119,7 +122,8 @@ BasicGame
 interactionSetAll = """
     InteractionSet
         cannon wall > stepBack
-        sam wall > killSprite
+        sam EOS > wrapAround
+        sam armor > killSprite
         box avatar > killSprite
         box2 avatar > bounceForward
         cannon avatar > bounceForward
@@ -141,7 +145,7 @@ interactionSetAll = """
         # sam medicine > transformTo stype=poison
         sam poison > transformTo stype=medicine
         sam exit1 > undoAll
-        sam wall > killSprite
+        # sam wall > killSprite
 
         # avatar sam > killIfHasLess resource=armor limit=1
 

@@ -2510,10 +2510,10 @@ def proposePredicates(singlePairErrorSignal, observations):
 
 	## Destruction/appearance/transformation
 	'objectDestruction': 		['killSprite'],
-	'newObjectAppeared': 		['cloneSprite'],
+	'newObjectAppeared': 		[],	#'cloneSprite'
 	'transformation': 			['transformTo'],
-	'conditionalKill': 			['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore',\
-								 'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
+	'conditionalKill': 			['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore'],
+								 # 'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
 
 	## Position difference
 	## NOTE: if you propose undoAll you also need to uncomment the lines that propose intPairs between any adjacent sprites
@@ -2523,7 +2523,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 									# , 'pullWithIt', 'windGust', 'slipForward',\
 									# 'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap
 	'unexpectedOverlap':		['nothing', 'reverseDirection'],#, 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
-	'orientationChange': 		['reverseDirection', 'flipDirection'],
+	'orientationChange': 		['flipDirection'], #'reverseDirection', 
 									#'turn', 'turnAround', 
 	'wrapAround':				['wrapAround'], # no offsets
 	'teleport': 				['teleportToExit'],
@@ -2533,7 +2533,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 	'scoreChange':				['changeScore'],
 	## Other
 	## TODO: These don't actually belong here, but we need to do more work to be able to learn these.
-	'other' : 					['conveySprite']
+	'other' : 					[] #'conveySprite'
 								}
 
 	## Propose relevant rules
@@ -2795,10 +2795,7 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, action
 				# print newPenalty, rule.display()
 			else:
 				break
-		# if newPenalty<penalty:
-			# print "got successful rule"
-			# print newPenalty, rule.display()
-			# embed()
+
 	if len(relevantRulesWithArgs)>1:
 		print "you got more than 1 relevant rule with an argument in iterateThresholds; this shouldn't happen"
 		embed()
@@ -2888,7 +2885,7 @@ def buildArgsString(interactionRule, theory, rle):
 	return argsString, newInteractionName
 
 
-def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=False, goalLoc = None, addAllObjects=False):
+def writeTheoryToTxt(rle, theory, txtFile, writeFile=False, debug=False, goalLoc = None, addAllObjects=False):
 	"""
 	-need to be able to take an optional argument that tells you the location of the goal, and put that into the level string
 	-assume that the goal sprite is getting killed
@@ -2897,6 +2894,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, writeFile=False, debug=Fa
 	-cleanest way:
 	"""
 
+	symbolDict = rle.symbolDict
 	DIRECTION_MAP = {(0,-1):'UP', (0,1):'DOWN', (1,0):'RIGHT', (-1,0):'LEFT'}
 
 	_obstypes = rle._obstypes

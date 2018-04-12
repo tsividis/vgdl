@@ -10,8 +10,18 @@
 # w         1  C C         C     w
 # w    C         A               w
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                       1      w
+# w                       1      w
+# w1111111111    C        1111111w
+# w         1   C2C           2  w
+# w         1    C               w
+# w              A               w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
+
 
 # up, up, up, up, left
 # level = """
@@ -29,17 +39,17 @@
 #combine with avatar sam bounceFoward. works.
 #0,0,0,0,0,0
 # works 4/12
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w              A             1 w
-# w                              w
-# w                              w
-# w         c    c          3 3  w
-# w                              w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w              A             1 w
+w                              w
+w                              w
+w         c    c          3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 # TODO: You need to be able to re-run testAndExpand() when no hypotheses pass your filter
 ## the problem here is that you need to build on expandSprite proposals with expandLine within one errorMap and
@@ -75,7 +85,7 @@
 
 #[0]*10
 ## distinguishing between random and missiles
-# Works if you don't filter early against 'random' in prior.
+# Works 4/12 if you don't filter early against 'random' in prior.
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
@@ -90,7 +100,7 @@
 
 #[0]*10
 # combine with sam wall reverseDirection
-# works 4/11
+# works 4/12
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
@@ -103,6 +113,8 @@
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
+#[0]*10
+# This doesn't test for anything new; it just has all the objects thrown in
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
@@ -112,18 +124,6 @@
 # w                              w
 # w          k              3 3  w
 # w                       s  s   w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
-
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w                            1 w
-# w                              w
-# w         wwwwww               w
-# w                              w
-# w       5      5 A 3  3        w
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
@@ -145,21 +145,8 @@
 ## combine with box2 avatar killsprite.
 ## if you use box2 avatar bounceForward this could be
 ## a good test of whether re-doing testAndExpand helps.
-# version with only transformTo rule is going into second testAndExpand() <---- PROBLEM
+# works 4/11
 # #up, up, down
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                            1 w
-w                            1 w
-w              1               w
-w              1               w
-w              A          3 3  w
-w                              w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
-
-#0,0,0,0,0,0,0
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
@@ -168,25 +155,15 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w              1               w
 # w              1               w
 # w              A          3 3  w
-# w   c   c                      w
+# w                              w
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                       1      w
-# w                       1      w
-# w1111111111    C        1111111w
-# w         1   C2C           2  w
-# w         1    C               w
-# w              A               w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
 
 #up, up, up, right
 ## tests whether we can learn randomNPCs and know that the box we push isn't a randomNPC
 ## i.e., a good test of randomNPC likelihood and theory prior().
+# works 4/12
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
@@ -299,7 +276,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 game="""
 BasicGame
     SpriteSet
-        avatar  > ShootAvatar color=DARKBLUE stype=sam
+        avatar  > MovingAvatar color=DARKBLUE #stype=sam
         cloner > Immovable color=GREEN
         box    > Immovable color=WHITE # orientation=RIGHT cooldown=1
         box2 > Immovable color=GREEN
