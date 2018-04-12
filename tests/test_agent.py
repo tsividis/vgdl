@@ -1,6 +1,6 @@
 import unittest
 
-from IPython import embed
+from vgdl.util import embed
 
 from vgdl.agent import Agent, VrleInitPhase, sampleFromDistribution
 from vgdl.ontology import *
@@ -11,7 +11,7 @@ from tests.theory_tools import *
 from tests.locals import *
 
 # I'm not sure if this actually matters...
-FILENAME = 'tests.game.simple'
+FILENAME = 'tests.game.inference'
 
 ###########################################
 # The abstract base class. Only add Assertion Methods
@@ -21,43 +21,58 @@ class _TestAgent(unittest.TestCase):
 	# Set Up and Tear Down
 	#
 	# Simply creates a new agent for every test. You have to set up the games individually.
+
 	def setUp(self):
+		# embed()
+
 		self.agent = Agent('full', FILENAME)
+		self.agent.scoresAndHypotheses = []
+
+	def run(self, results=None):
+		self.currentResults = results
+		unittest.TestCase.run(self, results)
 
 	def tearDown(self):
-		pass
+		errors = self.currentResults.errors
+		failures = self.currentResults.failures
+		if failures or errors:
+			print 
+			print 'ERRORS:'
+			print '=================='
+			for error, message in errors:
+				print error
+				print message
+			print
+			print 'FAILURES:'
+			for failure, message in failures:
+				print failure
+				print message
+			print '==================='
+			print 'EMBEDING inside test_agent'
+			embed()
 
 	########################################
 	# Initialization
-	def initializeEnvironment(self, game_string=None, level_string=None):
+	def initializeCurriculum(self, game_string, level_string, action_sequences):
+		num_episodes = len(action_sequences)
 		self.agent.gameString = game_string
 		self.agent.levelString = level_string
-		self.agent.initializeEnvironment()
-
-	def initializeCurriculum(self, num_episodes):
 		self.agent.rleHistory = [[] for i in range(num_episodes)]
 		self.agent.actionHistory = [[] for i in range(num_episodes)]
 		self.agent.all_objects = [{} for i in range(num_episodes)]
 
 	def initializeEpisode(self, episode_num):
 		'''Sets up episode'''
+		self.agent.initializeEnvironment()
 		self.agent.all_objects[episode_num] = self.agent.rle._game.getObjects()
-		if not self.agent.hypotheses:
+		if episode_num == 0:
 			self.agent.initializeHypotheses(self.agent.all_objects[episode_num])
+		assert self.agent.hypotheses, 'No hypotheses initilialized'
 		envReal = self.agent.fastcopy(self.agent.rle)
 		self.agent.rleHistory[episode_num].append(envReal)
 
-	def initialize(self, game_string, level_string, action_sequences):
-		'''Sets up environment, curriculum, and episode'''
-		num_episodes = len(action_sequences)
-		self.initializeEnvironment(game_string, level_string)
-		self.initializeCurriculum(num_episodes)
-		self.initializeEpisode(0)
-
 	def initRunCreate(self, game, level, action_sequences):
-		self.initialize(game, level, action_sequences)
-		self.runCurriculum(action_sequences)
-		return generateTheoryFromGameString(game)
+		self.runCurriculum(game, level, action_sequences)
 
 	#######################################
 	# Agent Theory Tools
@@ -78,19 +93,23 @@ class _TestAgent(unittest.TestCase):
 
 	########################################
 	# Execution
-	def executeStep(self, episode_num, action, lastStep=False):
+	def executeStep(self, episode_num, action, last_step):
 		theoryRLEs = self.generateTheoryRLEs()
-		self.agent.scoresAndHypotheses = self.agent.executeStep(episode_num, self.agent.rleHistory, self.agent.actionHistory, 
-											     				action, self.agent.hypotheses, theoryRLEs, lastStep)
-		self.agent.hypotheses = [tup[1] for tup in self.agent.scoresAndHypotheses]
+
+		scoresAndHypotheses = self.agent.executeStep(episode_num, self.agent.rleHistory, self.agent.actionHistory, 
+											     										action, self.agent.hypotheses, theoryRLEs, last_step)
+		self.agent.hypotheses = [tup[1] for tup in scoresAndHypotheses]
 
 	def runEpisode(self, episode_num, actions):
 		self.initializeEpisode(episode_num)
-		for action in actions:
-			self.executeStep(episode_num, action)
+		last_step = False
+		for num, action in enumerate(actions):
+			if num == len(actions)-1:
+				last_step = True
+			self.executeStep(episode_num, action, last_step)
 
-	def runCurriculum(self, action_sequences):
-		self.initializeCurriculum(len(action_sequences))
+	def runCurriculum(self, game_string, level_string, action_sequences):
+		self.initializeCurriculum(game_string, level_string, action_sequences)
 		for episode_num, actions in enumerate(action_sequences):
 			self.runEpisode(episode_num, actions)
 
@@ -107,7 +126,7 @@ class _TestAgent(unittest.TestCase):
 		string += '%s' % getattr(theory1, string_function)(**kwargs)
 		string += '\n--- Theory2'
 		string += '%s\n---' % getattr(theory2, string_function)(**kwargs)
-		string += '<<<\n'
+		string += '\n<<<\n'
 		return string
 
 	def stringLowErrorHypotheses(self, error_limit=0.01):
@@ -149,26 +168,25 @@ class _TestAgent(unittest.TestCase):
 	def assertAgentHasTheories(self):
 		self.assertTrue(len(self.agent.hypotheses) > 0, 'Agent has no theories')
 
-	def _testLevel0(self):
-		test_hypothesis = generateTheoryFromGameString(simple.test_hypothesis2)
-		action_sequences = [[K_UP]]
-		self.initialize(simple.game3, simple.levels[0], action_sequences)
+	def _testTest(self):
+		self.assertTrue(False)
 
-		# self.executeStep(0, K_UP)
-		self.runCurriculum(action_sequences)
 
-		
-		h0 = self.agent.hypotheses[0]
-		# self.assertTrue(theoriesEqual(h0, test_hypothesis))
-		self.assertTheoriesEqual(h0, test_hypothesis)
-
-def _testConstructor(game, level, action_sequences):
+def basicTestConstructor(game, level, action_sequences, expected_theory=None):
 	'''Creates a basic test case. Theory learned == Real Game Description'''
+	# print game
 	def testCase(self):
-		real_description = self.initRunCreate(game, level, action_sequences)
+		print 'RUNNING TEST'
+		print game, '\n', level, '\n', action_sequences, '\n'
+		if expected_theory:
+			theory = generateTheoryFromGameString(expected_theory)
+		else:
+			theory = generateTheoryFromGameString(game)
 
-		self.assertAgentHasTheory(real_description)
-		self.assertTheoriesEqual(self.agent.hypotheses[0], real_description)
+		self.initRunCreate(game, level, action_sequences)
+
+		self.assertAgentHasTheory(theory)
+		# self.assertTheoriesEqual(self.agent.hypotheses[0], theory)
 		self.assertTheoryBelowEpsilonError(self.agent.hypotheses[0])
 		## Write whatever things you want to test for here.
 
@@ -183,15 +201,19 @@ class TestBasics(_TestAgent):
 	# Test Suite
 	#
 	# This is one way to create a test case. Defaults to the basics (defined above)
-	testKillSpritesAndWin = _testConstructor(*basics.test1)
-	testKillSpritesAndNothing = _testConstructor(*basics.test4)
+	testKillSpritesAndWin = basicTestConstructor(*basics.test1)
+	testKillSpritesAndNothing = basicTestConstructor(*basics.test4)
 	## specify what levels you want to give it here. see basics.py for examples.
 
 	# This is another way to create a test case. You can do everything individually.
 	def testKillSpriteAndStop(self):
-		real_description = self.initRunCreate(*basics.test2)
+		game, level, action_sequences, expected_theory = basics.test2
+		if not expected_theory:
+			expected_theory = generateTheoryFromGameString(game)
+		self.initRunCreate(game, level, action_sequences)
 		# this may not be that useful, but I'll keep it around anyway.
-		self.assertTheoriesEqual(self.agent.hypotheses[0], real_description)
+		self.assertAgentHasTheories()
+		self.assertTheoriesEqual(self.agent.hypotheses[0], expected_theory)
 
 	# def testKillSpritesAndNothing(self):
 	# 	real_description = self.initRunCreate(*basics.test4)
@@ -199,19 +221,46 @@ class TestBasics(_TestAgent):
 
 
 	def testFilter(self):
-		self.initialize(*basics.test1)
+		game, level, action_sequences, _ = basics.test1
+		self.initializeCurriculum(game, level, action_sequences)
+		self.initializeEpisode(0)
 
-		self.executeStep(0, K_UP)
+		self.executeStep(0, K_UP, False)
 		self.assertAgentHasTheories()
-		self.executeStep(0, K_UP)
+		self.executeStep(0, K_UP, True)
 		self.assertAgentHasTheories()
 
+class TestInference(_TestAgent):
 
 
+	test1 = basicTestConstructor(*inference.test1)
 
-class TestAgentOneGame(_TestAgent):
+	test2 = basicTestConstructor(*inference.test2)
 
-	def testCase1(self):
-		self.assertTrue(True)
+	test3 = basicTestConstructor(*inference.test3)
+
+	test4 = basicTestConstructor(*inference.test4)
 
 
+	test5 = basicTestConstructor(*inference.test5)
+
+	test6 = basicTestConstructor(*inference.test6)
+
+	test7 = basicTestConstructor(*inference.test7)
+
+	test8 = basicTestConstructor(*inference.test8)
+
+	# test9 = basicTestConstructor(*inference.test9)
+	# test10 = basicTestConstructor(*inference.test10)
+
+	test11 = basicTestConstructor(*inference.test11)
+
+	test12 = basicTestConstructor(*inference.test12)
+
+	test13 = basicTestConstructor(*inference.test13)
+
+	test14 = basicTestConstructor(*inference.test14)
+
+	test15 = basicTestConstructor(*inference.test15)
+
+	test16 = basicTestConstructor(*inference.test16)
