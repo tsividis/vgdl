@@ -93,7 +93,7 @@ w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test1_theory = """
+test_theory1 = """
 BasicGame
     SpriteSet
         box > Immovable color=WHITE 
@@ -114,7 +114,7 @@ BasicGame
         SpriteCounter stype=avatar limit=0 win=False
         SpriteCounter stype=box limit=0 win=True
 """
-test1 = TestCase(game1, level1, [[K_UP]*4+[K_LEFT]], test1_theory)
+test1 = TestCase(game1, level1, [[K_UP]*4+[K_LEFT]], test_theory1)
 
 
 #########################################################
@@ -144,11 +144,12 @@ test_theory2 = """
 BasicGame
     SpriteSet
         box > Immovable color=WHITE 
-        box3 > Immovable color=GREEN
+        box3 > Immovable color=YELLOW
         wall > Immovable color=DARKGRAY
         avatar  > MovingAvatar color=DARKBLUE 
         sam > Missile orientation=UP color=BLUE singleton=FALSE cooldown=1
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
+        avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
         avatar sam > bounceForward
 
@@ -186,11 +187,12 @@ test_theory3 = """
 BasicGame
     SpriteSet
         box > Immovable color=WHITE 
-        box3 > Immovable color=GREEN
+        box3 > Immovable color=YELLOW
         wall > Immovable color=DARKGRAY
         avatar  > MovingAvatar color=DARKBLUE 
         sam > Missile orientation=UP color=BLUE singleton=FALSE cooldown=1
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
+        avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
         avatar sam > bounceForward
 
@@ -228,11 +230,12 @@ test_theory4 = """
 BasicGame
     SpriteSet
         box > Immovable color=WHITE 
-        box3 > Immovable color=GREEN
+        box3 > Immovable color=YELLOW
         wall > Immovable color=DARKGRAY
         avatar  > MovingAvatar color=DARKBLUE 
         sam > Missile orientation=UP color=BLUE singleton=FALSE cooldown=1
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
+        avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
         canon avatar > bounceForward
 
@@ -246,8 +249,7 @@ test4 = TestCase(base_game, level4, [[0]*3+[K_LEFT]*2+[0]*2], test_theory4)
 #########################################################
 #########################################################
 
-game5 = catDescriptions(base_game,
-"""
+game5 = catDescriptions(base_game,"""
 InteractionSet
     box avatar > transformTo stype=box2
 """)
@@ -264,11 +266,34 @@ w              A          3 3  w
 w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
-test5 = TestCase(base_game, level5, [[K_UP, K_UP, K_DOWN]])
+
+test_theory5 = """
+BasicGame
+    SpriteSet
+        box > Immovable color=WHITE 
+        box2 > Immovable color=GREEN
+        box3 > Immovable color=YELLOW
+        wall > Immovable color=DARKGRAY
+        avatar  > MovingAvatar color=DARKBLUE
+    InteractionSet
+        box avatar > transformTo stype=box2
+        box2 avatar > nothing
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+        SpriteCounter stype=box limit=0 win=True
+
+"""
+
+test5 = TestCase(base_game, level5, [[K_UP, K_UP, K_DOWN]], test_theory5)
 
 
 #########################################################
 #########################################################
+
+game6 = catDescriptions(base_game, """
+InteractionSet
+    sam wall > reverseDirection
+""")
 
 #0,0,0,0,0,0,0
 level6 = """
@@ -282,12 +307,31 @@ w              A          3 3  w
 w   c   c                      w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
-test6 = TestCase(base_game, level6, [[0]*7])
+
+test_theory6 = """
+BasicGame
+    SpriteSet
+        box > Immovable color=WHITE 
+        box3 > Immovable color=YELLOW
+        wall > Immovable color=DARKGRAY
+        sam > Missile orientation=UP color=BLUE singleton=FALSE cooldown=1
+        cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
+        avatar  > MovingAvatar color=DARKBLUE
+    InteractionSet
+        sam wall > reversDirection
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+"""
+test6 = TestCase(game6, level6, [[0]*7], test_theory6)
 
 
 #########################################################
 #########################################################
 
+game7 = catDescriptions(base_game, """
+InteractionSet
+    sam wall > reverseDirection
+""")
 
 # distinguishing between random and missiles
 level7 = """
@@ -302,11 +346,31 @@ w         s    s A             w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test7 = TestCase(base_game, level7, [[0]*10])
+test_theory7 = """
+BasicGame
+    SpriteSet
+        box > Immovable color=WHITE
+        box3 > Immovable color=YELLOW
+        random > RandomNPC color=PURPLE speed=1 cooldown=2
+        sam > Missile orientation=UP color=BLUE singleton=False cooldown=1
+        wall > Immovable color=DARKGRAY
+        avatar  > MovingAvatar color=DARKBLUE
+    InteractionSet
+        sam wall > reverseDirection
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+"""
+
+test7 = TestCase(game7, level7, [[0]*10], test_theory7)
 
 
 #########################################################
 #########################################################
+
+game8 = catDescriptions(base_game, """
+InteractionSet
+    sam wall > reverseDirection
+""")
 
 # combine with sam wall reverseDirection
 # we do learn reverseDirection, but a few
@@ -323,7 +387,21 @@ w         s    s A             w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test8 = TestCase(base_game, level8, [[0]*10])
+test_theory8 = """
+BasicGame
+    SpriteSet
+        box > Immovable color=WHITE
+        box3 > Immovable color=YELLOW
+        sam > Missile orientation=UP color=BLUE singleton=False cooldown=1
+        wall > Immovable color=DARKGRAY
+        avatar  > MovingAvatar color=DARKBLUE
+    InteractionSet
+        sam wall > reverseDirection
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+"""
+
+test8 = TestCase(game8, level8, [[0]*10], test_theory8)
 
 #########################################################
 #########################################################
@@ -364,6 +442,11 @@ test8 = TestCase(base_game, level8, [[0]*10])
 #########################################################
 #########################################################
 
+game11 = catDescriptions(base_game, """
+InteractionSet
+    box avatar > nothing
+""")
+
 #randomnpc inference, just more sprites
 level11 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -377,11 +460,28 @@ w                A             w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test11 = TestCase(base_game, level11, [[0]*10])
+test_theory11 = """
+BasicGame
+    SpriteSet
+        box > Immovable color=WHITE
+        box3 > Immovable color=YELLOW
+        random > RandomNPC color=PURPLE speed=1 cooldown=2
+        wall > Immovable color=DARKGRAY
+        avatar  > MovingAvatar color=DARKBLUE
+    TerminationSete
+        SpriteCounter stype=avatar limit=0 win=False
+"""
+
+test11 = TestCase(game11, level11, [[0]*10], test_theory11)
 
 
 #########################################################
 #########################################################
+
+game12 = catDescriptions(base_game, """
+InteractionSet
+    box2 avatar > bounceForward
+""")
 
 #up, up, up, right
 ## tests whether we can learn randomNPCs and know that the box we push isn't a randomNPC
@@ -398,11 +498,32 @@ w                      A       w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test12 = TestCase(base_game, level12, [[K_UP]*3+[K_RIGHT]])
+test_theory12 = """
+BasicGame
+    SpriteSet
+        box2 > Immovable color=GREEN
+        box3 > Immovable color=YELLOW
+        random > RandomNPC color=PURPLE speed=1 cooldown=2
+        wall > Immovable color=DARKGRAY
+        avatar  > MovingAvatar color=DARKBLUE
+    InteractionSet
+        box2 avatar > bounceForward
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+"""
+
+test12 = TestCase(game12, level12, [[K_UP]*3+[K_RIGHT]], test_theory12)
 
 
 #########################################################
 #########################################################
+
+game13 = catDescriptions(base_game, """
+InteractionSet
+    cannon sam > stepBack
+    sam cannon > stepBack
+    cannon avatar > bounceForward
+""")
 
 # Not getting this one because we stepBack with the missile
 ## but our best theories are almost right.
@@ -419,11 +540,32 @@ w         c                    w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test13 = TestCase(base_game, level13, [[K_LEFT]*7+[0]])
+test_theory13 = """
+BasicGame
+    SpriteSet
+        box > Immovable color=WHITE
+        box3 > Immovable color=YELLOW
+        sam > Missile orientation=UP color=BLUE singleton=FALSE cooldown=1
+        cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
+        wall > Immovable color=DARKGRAY
+        avatar  > MovingAvatar color=DARKBLUE
+    InteractionSet
+        cannon avatar > bounceForward
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+"""
+
+test13 = TestCase(game13, level13, [[K_LEFT]*7+[0]], test_theory13)
 
 
 #########################################################
 #########################################################
+
+game14 = catDescriptions(base_game, """
+InteractionSet
+    medicine avatar > killSprite
+    avatar medicine > changeResource resource=medicine value=1
+""")
 
 # #up, up
 level14 = """
@@ -438,12 +580,35 @@ w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test14 = TestCase(base_game, level14, [[K_UP]*2])
+test_theory14 = """
+BasicGame
+    SpriteSet
+        box > Immovable color=WHITE
+        box3 > Immovable color=YELLOW
+        medicine > Resource limit=4 color=GREEN
+        wall > Immovable color=DARKGRAY
+        avatar  > MovingAvatar color=DARKBLUE
+    InteractionSet
+        medicine avatar > killSprite
+        avatar medicine > changeResource resource=medicine value=1
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+"""
+
+test14 = TestCase(game14, level14, [[K_UP]*2], test_theory14)
 
 
 #########################################################
 #########################################################
 
+game15 = catDescriptions(base_game, """
+InteractionSet
+    avatar poison > killIfHasMore resource=medicine limit=0
+    # poison avatar > killSprite # Do we not include this?
+    medicine avatar > killSprite
+    avatar medicine > changeResource resource=medicine value=1
+    avatar poison > changeResource resource=medicine value=-1
+""")
 
 level15 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -457,12 +622,36 @@ w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test15 = TestCase(base_game, level15, [[K_UP]*4])
+test_theory15 = """
+BasicGame
+    SpriteSet
+        box > Immovable color=WHITE
+        box3 > Immovable color=YELLOW
+        medicine > Resource limit=4 color=GREEN
+        poison > Resource limit=3 color=PINK
+        wall > Immovable color=DARKGRAY
+        avatar  > MovingAvatar color=DARKBLUE
+    InteractionSet
+        avatar poison > killIfHasMore resource=medicine limit=0
+        # poison avatar > killSprite # Do we not include this?
+        medicine avatar > killSprite
+        avatar medicine > changeResource resource=medicine value=1
+        avatar poison > changeResource resource=medicine value=-1
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+"""
+
+test15 = TestCase(game15, level15, [[K_UP]*4], test_theory15)
 
 
 #########################################################
 #########################################################
 
+game16 = catDescriptions(base_game, """
+InteractionSet
+    avatar poison > killIfHasMore resource=medicine limit=0
+    avatar poison > changeResource resource=medicine limit=0
+""")
 
 level16 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -476,6 +665,21 @@ w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
+test_theory16 = """
+BasicGame
+    SpriteSet
+        box > Immovable color=WHITE
+        box3 > Immovable color=YELLOW
+        medicine > Immovable color=GREEN
+        poison > Resource limit=3 color=PINK
+        wall > Immovable color=DARKGRAY
+        avatar  > MovingAvatar color=DARKBLUE
+    InteractionSet
+        # avatar poison > killIfHasMore resource=medicine limit=0 # ?
+        avatar poison > changeResource resource=medicine limit=0 
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+"""
 test16 = TestCase(base_game, level16, [[K_LEFT]+[K_UP]*4])
 
 
