@@ -16,7 +16,6 @@ import os, subprocess, shutil
 import copy
 import math
 import warnings
-from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from stateobsnonstatic import buildTracker, UNOBSERVABLE_PREDICATES
 from termcolor import colored
@@ -144,7 +143,7 @@ class Agent:
 
 	def initializeHypotheses(self, allObjects, learnSprites=True, learnAvatar=True, num_variants=0):
 		if learnSprites:
-			observe(self.rle, 0, self.bestSpriteTypeDict)
+			observe(self.rle, self.bestSpriteTypeDict)
 			## Sample from distribution but actually just set everything to default.
 			spriteTypeHypothesis, exceptedObjects, _, _ = sampleFromDistribution(self.rle._game, \
 				self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, \
@@ -501,6 +500,17 @@ class Agent:
 
 		return bestScoresAndHypotheses
 
+
+
+########################################################################
+######## Other initialization METHODS                			########
+########################################################################
+
+def observe(rle, bestSpriteTypeDict):
+	spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict, action=None)
+	spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict, action=None)
+
+	return
 
 ########################################################################
 ######## RLE INITIALIZATION AND STATE-SETTING METHODS 			########
