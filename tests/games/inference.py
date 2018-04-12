@@ -126,6 +126,13 @@ InteractionSet
     sam wall > reverseDirection
 """)
 
+# Getting this after sam spawns
+# Warning. In initializeVrle. Got more than one avatar. Returning None as Vrle.
+
+# We're passing a list of VRLEs that contains None, 
+# and it's being executed at vgdl\agent.py, line 2109, env.step(action)
+# env is 'NoneType'
+
 #combine with avatar sam bounceFoward. works.
 #0,0,0,0,0,0
 level2 = """
@@ -162,6 +169,8 @@ test2 = TestCase(game2, level2, [[0]*6], test_theory2)
 #########################################################
 #########################################################
 
+# This also detects multiple sprites
+
 # TODO: You need to be able to re-run testAndExpand() when no hypotheses pass your filter
 ## the problem here is that you need to build on expandSprite proposals with expandLine within one errorMap and
 ## you don't ordinarily do that.
@@ -197,7 +206,7 @@ BasicGame
         avatar sam > bounceForward
 
     TerminationSet
-        SpriteCounter stype=avatar limet=0 win=False
+        SpriteCounter stype=avatar limit=0 win=False
 """
 
 test3 = TestCase(game3, level3, [[0]*6], test_theory3)

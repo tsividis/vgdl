@@ -171,7 +171,7 @@ class _TestAgent(unittest.TestCase):
 		self.assertTrue(False)
 
 
-def _testConstructor(game, level, action_sequences, expected_theory=None):
+def basicTestConstructor(game, level, action_sequences, expected_theory=None):
 	'''Creates a basic test case. Theory learned == Real Game Description'''
 	# print game
 	def testCase(self):
@@ -200,8 +200,8 @@ class TestBasics(_TestAgent):
 	# Test Suite
 	#
 	# This is one way to create a test case. Defaults to the basics (defined above)
-	testKillSpritesAndWin = _testConstructor(*basics.test1)
-	testKillSpritesAndNothing = _testConstructor(*basics.test4)
+	testKillSpritesAndWin = basicTestConstructor(*basics.test1)
+	testKillSpritesAndNothing = basicTestConstructor(*basics.test4)
 	## specify what levels you want to give it here. see basics.py for examples.
 
 	# This is another way to create a test case. You can do everything individually.
@@ -232,19 +232,34 @@ class TestBasics(_TestAgent):
 class TestInference(_TestAgent):
 
 
-	test1 = _testConstructor(*inference.test1)
+	test1 = basicTestConstructor(*inference.test1)
 
-	test2 = _testConstructor(*inference.test2)
+	test2 = basicTestConstructor(*inference.test2)
 
-	test3 = _testConstructor(*inference.test3)
+	test3 = basicTestConstructor(*inference.test3)
 
-	test4 = _testConstructor(*inference.test4)
-
-	# test5 = _testConstructor(*inference.test5)
+	test4 = basicTestConstructor(*inference.test4)
 
 
-	# test5 = _testConstructor(*inference.test5)
+	test5 = basicTestConstructor(*inference.test5)
 
+	test6 = basicTestConstructor(*inference.test6)
 
+	test7 = basicTestConstructor(*inference.test7)
 
-	# print inference.test0.game
+	test8 = basicTestConstructor(*inference.test8)
+
+	# test9 = basicTestConstructor(*inference.test9)
+	# test10 = basicTestConstructor(*inference.test10)
+
+	test11 = basicTestConstructor(*inference.test11)
+
+	test12 = basicTestConstructor(*inference.test12)
+
+	test13 = basicTestConstructor(*inference.test13)
+
+	test14 = basicTestConstructor(*inference.test14)
+
+	test15 = basicTestConstructor(*inference.test15)
+
+	test16 = basicTestConstructor(*inference.test16)
