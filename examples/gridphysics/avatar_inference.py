@@ -90,20 +90,18 @@
 
 #[0]*10
 # combine with sam wall reverseDirection
-# we do learn reverseDirection, but a few
-# incorrect Chaser theories have low error even though they're totally wrong.
-# 4/11: not learning this.                                                  <------ PROBLEM
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                            1 w
-w                            1 w
-w                              w
-w         wwwwww               w
-w                         3 3  w
-w         s    s A             w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# works 4/11
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w         wwwwww               w
+# w                         3 3  w
+# w         s    s A             w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -149,17 +147,17 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 ## a good test of whether re-doing testAndExpand helps.
 # version with only transformTo rule is going into second testAndExpand() <---- PROBLEM
 # #up, up, down
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w                            1 w
-# w              1               w
-# w              1               w
-# w              A          3 3  w
-# w                              w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w                            1 w
+w              1               w
+w              1               w
+w              A          3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 #0,0,0,0,0,0,0
 # level = """

@@ -419,9 +419,10 @@ class Theory(object):
 					# classScore += 1
 				else:
 					classScore += 2
-		ruleScore = len([rule for rule in self.interactionSet if rule.interaction!='stepBack'])
-		ruleScore += len([rule for rule in self.interactionSet if rule.interaction in ['flipDirection']])
-		ruleScore += len([rule for rule in self.interactionSet if rule.args])
+		# ruleScore = len([rule for rule in self.interactionSet if rule.interaction!='stepBack'])
+		# make line below +=
+		ruleScore = len([rule for rule in self.interactionSet if rule.interaction in ['flipDirection']])
+		# ruleScore += len([rule for rule in self.interactionSet if rule.args])
 		# ruleScore = 1
 		return classScore + ruleScore/1000.
 

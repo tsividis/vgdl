@@ -590,8 +590,8 @@ class Agent:
 			# TODO: do we really need to or will they have been filtered before?
 			# bestScoresAndHypotheses , scoreAndTheoryTuples = self.scoreAndFilterTheories(hypotheses, episode_num)
 
-		print "just expanded all theories"
-		embed()
+		# print "just expanded all theories"
+		# embed()
 
 		self.statesEncountered.append(self.rle._game.getFullState())
 		self.rle._game.sprite_appearances = []
@@ -2060,6 +2060,7 @@ def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, a
 			e.display()
 			print ""
 	# else:
+		# hypothesis.display()
 		# print "No error"
 		# embed()
 	# print "expanding theories"
