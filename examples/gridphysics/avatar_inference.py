@@ -101,17 +101,17 @@
 #[0]*10
 # combine with sam wall reverseDirection
 # works 4/12
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                            1 w
-w                            1 w
-w                              w
-w         wwwwww               w
-w                         3 3  w
-w         s    s A             w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w         wwwwww               w
+# w                         3 3  w
+# w         s    s A             w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 #[0]*10
 # This doesn't test for anything new; it just has all the objects thrown in
@@ -206,19 +206,20 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 
 # works for changeResource, killIfOtherHasMore/Less.
 #up, up, up, up
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w              p             1 w
-# w              m             1 w
-# w              m               w
-# w              p               w
-# w              A          3 3  w
-# w                              w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w              p             1 w
+w              m             1 w
+w              m               w
+w              p               w
+w              A          3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 ## diagnoses ability to learn preconditions across multiple episodes. works.
+# DOESN'T WORK 4/12 with avatar poision > killIfHasLess/More
 #[up],[left,left,left,left]
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -326,11 +327,11 @@ BasicGame
         medicine avatar > killSprite
         # avatar medicine > changeResource resource=invisiblemedicine value=1
         # avatar poison > changeResource resource=invisiblemedicine value=-1
-        avatar poison> killIfHasMore resource=medicine limit=0
+        # avatar poison> killIfHasMore resource=medicine limit=0
         # poison avatar > killIfOtherHasMore resource=invisiblemedicine limit=0
         avatar medicine > changeResource resource=medicine value=1
         avatar poison > changeResource resource=medicine value=-1
-        # poison avatar > killIfOtherHasMore resource=medicine limit=0 
+        poison avatar > killIfOtherHasMore resource=medicine limit=0 
         # avatar poison > stepBack
         # avatar poison > killIfHasMore resource=medicine limit=0
 

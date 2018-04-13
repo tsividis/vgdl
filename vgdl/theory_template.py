@@ -1267,7 +1267,6 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 			theory.interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
 			# FlAG: should this act on the theory or the copy?
 
-		
 		newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
 		for i,ruleSet in enumerate(newRuleSets):
 			if len(ruleSet) > 0:
@@ -1304,7 +1303,7 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, action
 		# theory.display()
 		rule = relevantRulesWithArgs[0]
 		penalty = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
-			envRealPrev.symbolDict, method='all', targetColor=errorMap.targetColor)[0]
+			method='all', targetColor=errorMap.targetColor)[0]
 		newPenalty = penalty
 		while newPenalty >= penalty:
 			argsToIncrement = [(k,v) for k,v in relevantRulesWithArgs[0].args.items() if type(v)==int]
@@ -1319,7 +1318,7 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, action
 				rule.args[k] = thresholdOrdering[rule.interaction][idx+1]
 				theory.experienceReplayRecord = {}
 				newPenalty = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
-					envRealPrev.symbolDict, method='all', targetColor=errorMap.targetColor)[0]
+					method='all', targetColor=errorMap.targetColor)[0]
 				# print newPenalty, rule.display()
 			else:
 				break
