@@ -89,7 +89,7 @@ class _TestAgent(unittest.TestCase):
 		return theory
 
 	def generateTheoryRLEs(self):
-		return VrleInitPhase(self.agent.hypotheses, self.agent.rle, self.agent.symbolDict)
+		return VrleInitPhase(self.agent.hypotheses, self.agent.rle)
 
 	########################################
 	# Execution

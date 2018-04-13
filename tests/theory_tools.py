@@ -27,8 +27,18 @@ def getColorName(hypothesis, class_name):
 def getColorArgs(hypothesis, args):
 	new_args = args.copy()
 	for key, value in args.iteritems():
-		if value in hypothesis.classes:
-			new_args[key] = getColorName(hypothesis, value)
+		try:
+			if value in hypothesis.classes:
+				new_args[key] = getColorName(hypothesis, value)
+		except TypeError:
+			if hasattr(value, '__iter__'):
+				new_value = []
+				for v in value:
+					if v in hypothesis.classes:
+						new_value.append(getColorName(hypothesis, v))
+				new_args[key] = new_value
+			else:
+				new_args[key] = value
 	return new_args
 
 
