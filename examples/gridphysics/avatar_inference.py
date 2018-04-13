@@ -55,17 +55,17 @@
 ## the problem here is that you need to build on expandSprite proposals with expandLine within one errorMap and
 ## you don't ordinarily do that.
 #0,0,0,0,0,0
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w                            1 w
-# w                              w
-# w              A               w
-# w         c    c          3 3  w
-# w                              w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w                            1 w
+w                              w
+w              A               w
+w         c    c          3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 # works if you don't allow the eventHandler to apply effects to newly-created sprites
 # Note: this is much slower when you have more intParis, i.e., when you move things down a row.
@@ -206,17 +206,17 @@
 
 # works for changeResource, killIfOtherHasMore/Less.
 #up, up, up, up
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w              p             1 w
-w              m             1 w
-w              m               w
-w              p               w
-w              A          3 3  w
-w                              w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w              p             1 w
+# w              m             1 w
+# w              m               w
+# w              p               w
+# w              A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 ## diagnoses ability to learn preconditions across multiple episodes. works.
 # DOESN'T WORK 4/12 with avatar poision > killIfHasLess/More

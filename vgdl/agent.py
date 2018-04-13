@@ -249,7 +249,7 @@ class Agent:
 			# [K_RIGHT, K_UP, K_SPACE, 0, 0,0,0,0]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			# [0]*6
+			[0]*6
 			# [K_UP, K_UP, K_DOWN]
 			# [0,0,0,K_LEFT, K_LEFT,0,0]
 			# [0,K_RIGHT, K_SPACE, 0,0,0,0,0,0,0]
@@ -261,7 +261,7 @@ class Agent:
 			# [K_UP, K_UP, K_UP, K_RIGHT]
 			# [K_UP, K_UP]
 			# [K_RIGHT, K_UP]
-			[K_UP]*4
+			# [K_UP]*4
 			# [K_LEFT,K_LEFT,K_LEFT,K_LEFT]
 			# [K_LEFT, K_UP, K_UP, K_UP, K_UP]
 			# [K_LEFT]*8
@@ -1570,39 +1570,60 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 	cutoff = errorCutoff if errorCutoff else cutoff
 	# end warning
 	candidates = [s for s in scoreAndTheoryTuples if s[0]<=cutoff]
+	filtered = []
 
 	if max_num is None:
 		max_num = len(candidates)+1
+
 	if proportionOfSpriteTheories is None:
 		candidates = sorted(candidates, key=lambda x:x[0])
-		return candidates[0:max_num]
-
-	sprite_candidates = [s for s in candidates if s[1].mostRecentEdit == 'spriteInduction']
-	induction_candidates = [s for s in candidates if s[1].mostRecentEdit == 'interactionSetInduction']
-	no_edit_candidates = [s for s in candidates if s[1].mostRecentEdit == 'none']
-	if len(sprite_candidates)>int(math.floor(max_num*proportionOfSpriteTheories)):
-		num_sprite_candidates_chosen = min(int(math.floor(max_num*proportionOfSpriteTheories)), len(sprite_candidates))
-		filtered = sprite_candidates[0:num_sprite_candidates_chosen]
+		filtered = candidates[0:max_num]
 	else:
-		num_sprite_candidates_chosen = len(sprite_candidates)
-		filtered = sprite_candidates
+		# TODO: this never happens any more, as of a long time ago I think
+		sprite_candidates = [s for s in candidates if s[1].mostRecentEdit == 'spriteInduction']
+		induction_candidates = [s for s in candidates if s[1].mostRecentEdit == 'interactionSetInduction']
+		no_edit_candidates = [s for s in candidates if s[1].mostRecentEdit == 'none']
+		if len(sprite_candidates)>int(math.floor(max_num*proportionOfSpriteTheories)):
+			num_sprite_candidates_chosen = min(int(math.floor(max_num*proportionOfSpriteTheories)), len(sprite_candidates))
+			filtered = sprite_candidates[0:num_sprite_candidates_chosen]
+		else:
+			num_sprite_candidates_chosen = len(sprite_candidates)
+			filtered = sprite_candidates
 
-	remaining = max_num - len(filtered)
-	filtered = induction_candidates[0:min(remaining, len(induction_candidates))] + filtered + no_edit_candidates
+		remaining = max_num - len(filtered)
+		filtered = induction_candidates[0:min(remaining, len(induction_candidates))] + filtered + no_edit_candidates
 
-	if len(filtered)<max_num:
-		diff = max_num - len(filtered)
-		filtered = filtered + sprite_candidates[num_sprite_candidates_chosen:min(len(sprite_candidates), num_sprite_candidates_chosen+diff)]
-	filtered = sorted(filtered, key=lambda x: x[0])
+		if len(filtered)<max_num:
+			diff = max_num - len(filtered)
+			filtered = filtered + sprite_candidates[num_sprite_candidates_chosen:min(len(sprite_candidates), num_sprite_candidates_chosen+diff)]
+		filtered = sorted(filtered, key=lambda x: x[0])
 
-	print "METHOD ONE FILTER:", [t[0] for t in filterd]
+	print "METHOD ONE FILTER:", [t[0] for t in filtered]
 
 	## here begins new filtering method:
 	# 	always keep first teir (by error)
 	# 	if adding the second teir isn't too many, do that
 	# 	if the first teir is too many, filter by prior
+	filtered = []
 
+	epsilon = .0001
+	teirOneThresh = candidates[0][0]
+	teirOne = [t for t in candidates if t[0] <= teirOneThresh + epsilon]
+	filtered = teirOne # by default
+	if len(teirOne) < max_num / 3 and len(teirOne) < len(candidates):
+		# TODO: magic number ^
+		# consider teir 2
+		teirTwoThresh = candidates[len(teirOne)][0]
+		# is it worth including them? TODO: magic number here
+		if teirTwoThresh < 2 * teirOneThresh and teirTwoThresh < cutoff:
+			teirTwo = [t for t in candidates if teirOneThresh + epsilon < t[0] <= teirTwoThresh + epsilon]
+			if len(teirOne) + len(teirTwo) < max_num:
+				filtered = teirOne + teirTwo
+	elif len(teirOne) > max_num:
+		# too many! have to filter by prior
+		filtered = sorted(teirOne, key=lambda t: t[1].prior())[:max_num]
 
+	print "METHOD TWO FILTER:", [t[0] for t in filtered]
 
 	if usePrior:
 		# filter out any theory whose added complexity does not improve its error
