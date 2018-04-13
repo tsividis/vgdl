@@ -261,13 +261,13 @@ class Agent:
 			# [K_UP, K_UP, K_UP, K_RIGHT]
 			# [K_UP, K_UP]
 			# [K_RIGHT, K_UP]
-			# [K_UP],
+			[K_UP]*4
 			# [K_LEFT,K_LEFT,K_LEFT,K_LEFT]
 			# [K_LEFT, K_UP, K_UP, K_UP, K_UP]
 			# [K_LEFT]*8
 			# [0]*20
 			# [K_DOWN, K_LEFT]+[K_RIGHT]*23+[K_UP]*3
-			[K_UP], [K_LEFT]*4
+			# [K_UP], [K_LEFT]*4
 		]
 
 		self.rleHistory = [[] for i in range(len(actionSequences))]
@@ -365,16 +365,7 @@ class Agent:
 		scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
 
 		scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-			proportionOfSpriteTheories=None, errorCutoff=ERRORCUTOFF)]
-
-		# filter out any theory whose added complexity does not improve its error
-		#	i.e. between two theories of equal perfomance, ignore the less likely/more complex one
-		errorLevelToMinPrior = dict()
-		epsilon = 0 # you never know with floats... could be necessary later
-		for score, theory in scoresAndHypotheses:
-			if score not in errorLevelToMinPrior or theory.prior() < errorLevelToMinPrior[score]:
-				errorLevelToMinPrior[score] = theory.prior()
-		scoresAndHypotheses = [sh for sh in scoresAndHypotheses if sh[1].prior() <= errorLevelToMinPrior[sh[0]] + epsilon]
+			proportionOfSpriteTheories=None, errorCutoff=ERRORCUTOFF, usePrior=True)]
 
 		print "Experience replay complete."
 		for num, sh in enumerate(scoresAndHypotheses):
@@ -469,7 +460,7 @@ class Agent:
 
 				for num, env in enumerate(theoryRLEs):
 					theories = testAndExpand(env, retryTheories[num], action, self.rle, envRealPrev, self.rleHistory[episode_num], \
-							self.actionHistory[episode_num], self.bestSpriteTypeDict)
+							self.actionHistory[episode_num], self.bestSpriteTypeDict, episode_num)
 					newerTheories.extend(theories)
 				embed()
 
@@ -1570,7 +1561,7 @@ def updateTerminations(rle, hypotheses):
 
 	return
 	
-def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSpriteTheories, errorCutoff=None):
+def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSpriteTheories, errorCutoff=None, usePrior=False):
 	## Returns the max_num theories that are at percentile or greater, given their score.
 
 	percentile = 100.-percentile
@@ -1604,6 +1595,25 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 		diff = max_num - len(filtered)
 		filtered = filtered + sprite_candidates[num_sprite_candidates_chosen:min(len(sprite_candidates), num_sprite_candidates_chosen+diff)]
 	filtered = sorted(filtered, key=lambda x: x[0])
+
+	print "METHOD ONE FILTER:", [t[0] for t in filterd]
+
+	## here begins new filtering method:
+	# 	always keep first teir (by error)
+	# 	if adding the second teir isn't too many, do that
+	# 	if the first teir is too many, filter by prior
+
+
+
+	if usePrior:
+		# filter out any theory whose added complexity does not improve its error
+		#	i.e. between two theories of equal perfomance, ignore the less likely/more complex one
+		errorLevelToMinPrior = dict()
+		epsilon = 0 # you never know with floats... could be necessary later
+		for score, theory in filtered:
+			if score not in errorLevelToMinPrior or theory.prior() < errorLevelToMinPrior[score]:
+				errorLevelToMinPrior[score] = theory.prior()
+		filtered = [sh for sh in filtered if sh[1].prior() <= errorLevelToMinPrior[sh[0]] + epsilon]
 
 	return filtered
 

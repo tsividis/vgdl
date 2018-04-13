@@ -327,7 +327,7 @@ BasicGame
         medicine avatar > killSprite
         # avatar medicine > changeResource resource=invisiblemedicine value=1
         # avatar poison > changeResource resource=invisiblemedicine value=-1
-        avatar poison> killIfHasMore resource=medicine limit=0
+        # avatar poison> killIfHasMore resource=medicine limit=0
         # poison avatar > killIfOtherHasMore resource=invisiblemedicine limit=0
         avatar medicine > changeResource resource=medicine value=1
         avatar poison > changeResource resource=medicine value=-1
