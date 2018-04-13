@@ -229,7 +229,7 @@ class MultiSpriteCounterRule(TerminationRule):
 
 
     def __repr__(self):
-    	print self.asTuple()
+    	return str(self.asTuple())
 
     def display(self):
         print self.asTuple()
@@ -510,7 +510,7 @@ class Theory(object):
 							new_rule = MultiSpriteCounterRule(stypes=class_combination, win=win)
 							self.multi_falsified.add(new_rule)
 					else: # game ended
-						new_rule = MultiSpriteCounter(stypes=class_combination, win=win)
+						new_rule = MultiSpriteCounterRule(stypes=class_combination, win=win)
 						if new_rule not in self.multi_falsified:
 							self.terminationSet.add(new_rule)
 
@@ -617,9 +617,13 @@ class Theory(object):
 			else:
 				term_tuple = tc.asTuple()
 				new_term = []
+
 				for value in term_tuple:
-					if value in self.classes:
-						value = self.classes[value][0].colorName
+					try:
+						if value in self.classes:
+							value = self.classes[value][0].colorName
+					except TypeError:
+						pass
 					new_term.append(value)
 				tc = tuple(new_term)
 				string += "\n\t%s" % str(tc)

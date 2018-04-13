@@ -530,6 +530,7 @@ InteractionSet
     cannon sam > stepBack
     sam cannon > stepBack
     cannon avatar > bounceForward
+    avatar sam > bounceForward
 """)
 
 # Not getting this one because we stepBack with the missile
@@ -558,6 +559,7 @@ BasicGame
         avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
         cannon avatar > bounceForward
+        sam wall > nothing
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
 """

@@ -37,7 +37,7 @@ reverseDirection
 
 # Win the game when you destroy all the boxes
 
-sSet = """
+base_game = """
 SpriteSet
     box    > Immovable color=WHITE 
     avatar  > MovingAvatar color=DARKBLUE speed=1
@@ -66,8 +66,8 @@ TerminationSet
 You can piece together a full game description this way.
 Place in as many or as few combinations of sets as you want.
 '''
-game1 = catDescriptions(sSet, tSet1)
-game2 = catDescriptions(sSet, tSet2)
+game1 = catDescriptions(base_game, tSet1)
+game2 = catDescriptions(base_game, tSet2)
 
 # print game1
 
