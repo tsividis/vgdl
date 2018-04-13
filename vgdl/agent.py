@@ -249,7 +249,7 @@ class Agent:
 			# [K_RIGHT, K_UP, K_SPACE, 0, 0,0,0,0]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			[0]*6
+			# [0]*6
 			# [K_UP, K_UP, K_DOWN]
 			# [0,0,0,K_LEFT, K_LEFT,0,0]
 			# [0,K_RIGHT, K_SPACE, 0,0,0,0,0,0,0]
@@ -267,6 +267,7 @@ class Agent:
 			# [K_LEFT]*8
 			# [0]*20
 			# [K_DOWN, K_LEFT]+[K_RIGHT]*23+[K_UP]*3
+			[K_UP], [K_LEFT]*4
 		]
 
 		self.rleHistory = [[] for i in range(len(actionSequences))]
@@ -446,9 +447,6 @@ class Agent:
 		# print "Have {} new theories in outer loop".format(len(newTheories))
 		# t1 = time.time()
 		newTheories = list(set(newTheories))
-		# print "filtering took {} seconds".format(time.time()-t1)
-		# print "After filtering for duplicates, have {} theories".format(len(newTheories))
-		# embed()
 
 		self.allTheories.extend(newTheories)
 		print ""
