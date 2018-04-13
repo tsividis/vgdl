@@ -353,7 +353,7 @@ class Theory(object):
 
 	"""Main functions"""
 
-	def prior(self, granularity=1, ruleWeight=.001):
+	def prior(self, granularity=2, ruleWeight=.001):
 		## Very simple prior, prefering:
 			# Avatar = default type
 			# Everything else doesn't move
@@ -389,7 +389,7 @@ class Theory(object):
 				elif not any([t in vgdlTypeString for t in ['Resource','Immovable']]):
 					classScore += 1
 
-			ruleScore += sum(1 for rule in self.interactionSet if rule.interaction in stochasticRules + wildRules)
+			ruleScore += sum(1 for rule in self.interactionSet if rule.interaction in stochasticRules + crazyRules)
 			# also get all the conditionals
 			ruleScore += sum(0.5 for rule in self.interactionSet if 'killIf' in rule.interaction)
 
