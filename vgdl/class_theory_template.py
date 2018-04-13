@@ -45,7 +45,7 @@ class Sprite(object):
         return not self.__eq__(other)
 
 class SpriteParser(object):
-    resourcePackTypeStrings = {'Immovable', 'Passive', 'ResourcePack', 'Spreader', 'Portal', 'Conveyor'}
+    resourcePackTypeStrings = {'Immovable', 'Passive', 'Spreader', 'Portal', 'Conveyor'}
     def __init__(self):
     	self.sprite_types = dict()
 
@@ -117,9 +117,9 @@ class SpriteParser(object):
                     if sclass in resourcePackTypes:
                         #print "--> will be converted to ResourcePack"
                         self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args=args_without_color)
-                    elif sclass == resourceType:
-                        #print "--> will be converted to ResourcePack"
-                        self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args=args_without_color)
+                    # elif sclass == resourceType:
+                    #     #print "--> will be converted to ResourcePack"
+                    #     self.sprite_types[key] = Sprite(self._eval('ResourcePack'), color_type, args=args_without_color)
                         # self.sprite_types[key+"_resource"] = Sprite(self._eval('ResourcePack'), color_type+"_resource", args_without_color)
                     else:
                         #print "--> will be ITSELF"
