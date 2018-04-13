@@ -365,7 +365,7 @@ class Agent:
 		scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
 
 		scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-			proportionOfSpriteTheories=None, errorCutoff=ERRORCUTOFF, usePrior=True)]
+			proportionOfSpriteTheories=None, errorCutoff=ERRORCUTOFF, usePrior=False)]
 
 		print "Experience replay complete."
 		for num, sh in enumerate(scoresAndHypotheses):
@@ -1570,6 +1570,9 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 	cutoff = errorCutoff if errorCutoff else cutoff
 	# end warning
 	candidates = [s for s in scoreAndTheoryTuples if s[0]<=cutoff]
+	if not candidates:
+		return []
+
 	filtered = []
 
 	if max_num is None:
@@ -1601,7 +1604,7 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 	print "METHOD ONE FILTER:", [t[0] for t in filtered]
 
 	## here begins new filtering method:
-	# 	always keep first teir (by error)
+	# 	always keep first teir (by error) (as long as it made the maxmium allowed error cutoff)
 	# 	if adding the second teir isn't too many, do that
 	# 	if the first teir is too many, filter by prior
 	filtered = []
@@ -1621,7 +1624,7 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 				filtered = teirOne + teirTwo
 	elif len(teirOne) > max_num:
 		# too many! have to filter by prior
-		filtered = sorted(teirOne, key=lambda t: t[1].prior())[:max_num]
+		filtered = sorted(teirOne, key=lambda t: t[1].prior(granularity=1))[:max_num]
 
 	print "METHOD TWO FILTER:", [t[0] for t in filtered]
 
