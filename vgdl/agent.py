@@ -95,6 +95,7 @@ class Agent:
 		self.safeDistance = 6
 		self.emptyPlansLimit = 5
 		self.longHorizonObservationLimit = 2
+		self.scores = []
 		self.hypotheses = []
 		self.symbolDict = None
 		self.finalEventList = []
@@ -303,7 +304,8 @@ class Agent:
 				print ""
 				print "executed step in {} seconds".format(time.time()-t2)
 				print ""
-				self.hypotheses = [tup[1] for tup in scoresAndHypotheses]
+				self.scores, self.hypotheses = zip(*scoresAndHypotheses)
+
 
 			# print ">>> Embedded at the end of testEpisode"
 			embed()

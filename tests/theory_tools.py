@@ -162,7 +162,10 @@ def classAssignmentsDiff(theory1, theory2):
 
 	for color_type_tuple, theory in zip(color_type_tuples, (theory1, theory2)):
 		for color, assignment in theory.spriteObjects.iteritems():
-			color_type_tuple.add((color, assignment.vgdlType))
+			vgdlType = assignment.vgdlType.__name__
+			if 'Resource' in vgdlType:
+				vgdlType = 'ResourceType'
+			color_type_tuple.add((color, vgdlType))
 
 	c1, c2 = color_type_tuples
 
@@ -170,20 +173,10 @@ def classAssignmentsDiff(theory1, theory2):
 
 def classAssignmentsEqual(theory1, theory2):
 	'''Check if class assignments are the same (based on color)'''
-	colors1, colors2 = set(theory1.spriteObjects), set(theory2.spriteObjects)
 
-	# Check if same colors used for class definitions
-	if colors1 != colors2:
+	diff1, diff2 = classAssignmentsDiff(theory1, theory2)
+	if diff1 or diff2:
 		return False
-
-	# Check if class definitions are the same
-	for color in colors1:
-		# print
-		vgdl_type1 = theory1.spriteObjects[color].vgdlType
-		vgdl_type2 = theory2.spriteObjects[color].vgdlType
-		if vgdl_type1 != vgdl_type2:
-			return False
-
 	return True
 
 def interactionSetsEqual(theory1, theory2):
@@ -261,3 +254,5 @@ if __name__ == '__main__':
 
 
 	# print getColorAssignments(generateTheoryFromGameString(inference.test2))
+
+	print classAssignmentsDiff(t4_real, t4_expected)

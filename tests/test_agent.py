@@ -24,9 +24,7 @@ class _TestAgent(unittest.TestCase):
 
 	def setUp(self):
 		# embed()
-
 		self.agent = Agent('full', FILENAME)
-		self.agent.scoresAndHypotheses = []
 
 	def run(self, results=None):
 		self.currentResults = results
@@ -44,6 +42,7 @@ class _TestAgent(unittest.TestCase):
 				print message
 			print
 			print 'FAILURES:'
+			print '=================='
 			for failure, message in failures:
 				print failure
 				print message
@@ -145,7 +144,7 @@ class _TestAgent(unittest.TestCase):
 
 	def stringLowErrorHypotheses(self, error_limit=0.01):
 		string += '===============Low Error Hypotheses=============='
-		for e, h in self.agent.scoresAndHypotheses:
+		for e, h in zip(self.agent.scores, self.agent.hypotheses):
 			if e < error_limit:
 				string += '\n%s' % h
 
@@ -172,11 +171,9 @@ class _TestAgent(unittest.TestCase):
 		self.assertTrue(theoryInHypotheses(theory, self.agent.hypotheses), 'Theory not in hypotheses: \n%s\n%s' % (theory, diffs))
 
 
-	def assertTheoryBelowEpsilonError(self, hypothesis, epsilon=0.01):
+	def assertTheoryBelowEpsilonError(self, h_index, epsilon=0.01):
 		''''''
-		for e, h in self.agent.scoresAndHypotheses:
-			if h == hypothesis:
-				self.assertTrue(e <= epsilon, 'Hypothesis does not have low error')
+		self.assertTrue(self.agent.scores[h_index] <= epsilon, 'Hypothesis does not have low error')
 
 	def assertAgentHasTheories(self):
 		self.assertTrue(len(self.agent.hypotheses) > 0, 'Agent has no theories')
@@ -200,7 +197,11 @@ def basicTestConstructor(game, level, action_sequences, expected_theory=None):
 
 		self.assertAgentHasTheory(theory)
 		# self.assertTheoriesEqual(self.agent.hypotheses[0], theory)
-		self.assertTheoryBelowEpsilonError(self.agent.hypotheses[0])
+		# min_epsilon = min(self.agent.scores)
+		# for i, t in enumerate(self.agent.hypotheses):
+		# 	if theoriesEqual(t, theory):
+		# 		self.assertTheoryBelowEpsilonError(i, min_epsilon)
+		# 		break
 		## Write whatever things you want to test for here.
 
 	return testCase

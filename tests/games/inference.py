@@ -93,7 +93,7 @@ w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test_theory1 = """
+expected_theory1 = """
 BasicGame
     SpriteSet
         box > Immovable color=WHITE 
@@ -114,7 +114,7 @@ BasicGame
         SpriteCounter stype=avatar limit=0 win=False
         SpriteCounter stype=box limit=0 win=True
 """
-test1 = TestCase(game1, level1, [[K_UP]*4+[K_LEFT]], test_theory1)
+test1 = TestCase(game1, level1, [[K_UP]*4+[K_LEFT]], expected_theory1)
 
 
 #########################################################
@@ -147,7 +147,7 @@ w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test_theory2 = """
+expected_theory2 = """
 BasicGame
     SpriteSet
         box > Immovable color=WHITE 
@@ -163,7 +163,7 @@ BasicGame
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
 """
-test2 = TestCase(game2, level2, [[0]*6], test_theory2)
+test2 = TestCase(game2, level2, [[0]*6], expected_theory2)
 
 
 #########################################################
@@ -192,7 +192,7 @@ w         c    c               w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test_theory3 = """
+expected_theory3 = """
 BasicGame
     SpriteSet
         box > Immovable color=WHITE 
@@ -209,7 +209,7 @@ BasicGame
         SpriteCounter stype=avatar limit=0 win=False
 """
 
-test3 = TestCase(game3, level3, [[0]*6], test_theory3)
+test3 = TestCase(game3, level3, [[0]*6], expected_theory3)
 
 
 #########################################################
@@ -234,7 +234,7 @@ w         c    c A             w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test_theory4 = """
+expected_theory4 = """
 BasicGame
     SpriteSet
         box > Immovable color=WHITE 
@@ -251,7 +251,7 @@ BasicGame
         SpriteCounter stype=avatar limit=0 win=False
 """
 
-test4 = TestCase(game4, level4, [[0]*3+[K_LEFT]*2+[0]*2], test_theory4)
+test4 = TestCase(game4, level4, [[0]*3+[K_LEFT]*2+[0]*2], expected_theory4)
 
 
 #########################################################
@@ -275,7 +275,7 @@ w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test_theory5 = """
+expected_theory5 = """
 BasicGame
     SpriteSet
         box > Immovable color=WHITE 
@@ -292,7 +292,7 @@ BasicGame
 
 """
 
-test5 = TestCase(game5, level5, [[K_UP, K_UP, K_DOWN]], test_theory5)
+test5 = TestCase(game5, level5, [[K_UP, K_UP, K_DOWN]], expected_theory5)
 
 
 #########################################################
@@ -316,7 +316,7 @@ w   c   c                      w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test_theory6 = """
+expected_theory6 = """
 BasicGame
     SpriteSet
         box > Immovable color=WHITE 
@@ -330,7 +330,7 @@ BasicGame
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
 """
-test6 = TestCase(game6, level6, [[0]*7], test_theory6)
+test6 = TestCase(game6, level6, [[0]*7], expected_theory6)
 
 
 #########################################################
@@ -354,7 +354,7 @@ w         s    s A             w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test_theory7 = """
+expected_theory7 = """
 BasicGame
     SpriteSet
         box > Immovable color=WHITE
@@ -369,7 +369,7 @@ BasicGame
         SpriteCounter stype=avatar limit=0 win=False
 """
 
-test7 = TestCase(game7, level7, [[0]*10], test_theory7)
+test7 = TestCase(game7, level7, [[0]*10], expected_theory7)
 
 
 #########################################################
@@ -395,7 +395,7 @@ w         s    s A             w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test_theory8 = """
+expected_theory8 = """
 BasicGame
     SpriteSet
         box > Immovable color=WHITE
@@ -409,7 +409,7 @@ BasicGame
         SpriteCounter stype=avatar limit=0 win=False
 """
 
-test8 = TestCase(game8, level8, [[0]*10], test_theory8)
+test8 = TestCase(game8, level8, [[0]*10], expected_theory8)
 
 #########################################################
 #########################################################
@@ -468,7 +468,7 @@ w                A             w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test_theory11 = """
+expected_theory11 = """
 BasicGame
     SpriteSet
         box > Immovable color=WHITE
@@ -480,7 +480,7 @@ BasicGame
         SpriteCounter stype=avatar limit=0 win=False
 """
 
-test11 = TestCase(game11, level11, [[0]*10], test_theory11)
+test11 = TestCase(game11, level11, [[0]*10], expected_theory11)
 
 
 #########################################################
@@ -506,7 +506,7 @@ w                      A       w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test_theory12 = """
+expected_theory12 = """
 BasicGame
     SpriteSet
         box2 > Immovable color=GREEN
@@ -519,7 +519,7 @@ BasicGame
         SpriteCounter stype=avatar limit=0 win=False
 """
 
-test12 = TestCase(game12, level12, [[K_UP]*3+[K_RIGHT]+[0]*4], test_theory12)
+test12 = TestCase(game12, level12, [[K_UP]*3+[K_RIGHT]+[0]*4], expected_theory12)
 
 
 #########################################################
@@ -548,7 +548,7 @@ w         c                    w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test_theory13 = """
+expected_theory13 = """
 BasicGame
     SpriteSet
         box > Immovable color=WHITE
@@ -564,7 +564,7 @@ BasicGame
         SpriteCounter stype=avatar limit=0 win=False
 """
 
-test13 = TestCase(game13, level13, [[K_LEFT]*7+[0]], test_theory13)
+test13 = TestCase(game13, level13, [[K_LEFT]*7+[0]], expected_theory13)
 
 
 #########################################################
@@ -589,7 +589,7 @@ w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test_theory14 = """
+expected_theory14 = """
 BasicGame
     SpriteSet
         box > Immovable color=WHITE
@@ -604,7 +604,7 @@ BasicGame
         SpriteCounter stype=avatar limit=0 win=False
 """
 
-test14 = TestCase(game14, level14, [[K_UP]*2], test_theory14)
+test14 = TestCase(game14, level14, [[K_UP]*2], expected_theory14)
 
 
 #########################################################
@@ -631,7 +631,7 @@ w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test_theory15 = """
+expected_theory15 = """
 BasicGame
     SpriteSet
         box > Immovable color=WHITE
@@ -650,7 +650,7 @@ BasicGame
         SpriteCounter stype=avatar limit=0 win=False
 """
 
-test15 = TestCase(game15, level15, [[K_UP]*4], test_theory15)
+test15 = TestCase(game15, level15, [[K_UP]*4], expected_theory15)
 
 
 #########################################################
@@ -658,7 +658,7 @@ test15 = TestCase(game15, level15, [[K_UP]*4], test_theory15)
 
 game16 = catDescriptions(base_game, """
 InteractionSet
-    avatar poison > killIfHasMore resource=medicine limit=0
+    poison avatar > killIfOtherHasMore resource=medicine limit=0
     avatar poison > changeResource resource=medicine limit=0
 """)
 
@@ -674,7 +674,7 @@ w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-test_theory16 = """
+expected_theory16 = """
 BasicGame
     SpriteSet
         box > Immovable color=WHITE
@@ -684,12 +684,14 @@ BasicGame
         wall > Immovable color=DARKGRAY
         avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
-        # avatar poison > killIfHasMore resource=medicine limit=0 # ?
-        avatar poison > changeResource resource=medicine limit=0 
+        avatar poison > changeResource resource=medicine limit=4 value=1 
+        poison avatar > killSprite # doesn't learn the 'ifHasMore'
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
+        SpriteCounter stype=poison limit=0 win=True  
+        # Should we add this last rule if it reduces our resources?
 """
-test16 = TestCase(base_game, level16, [[K_LEFT]+[K_UP]*4])
+test16 = TestCase(game16, level16, [[K_LEFT]+[K_UP]*4], expected_theory16)
 
 
 
