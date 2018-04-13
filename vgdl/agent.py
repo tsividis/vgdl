@@ -428,7 +428,6 @@ class Agent:
 		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
 		self.rle._game.sprite_appearances = new_sprites
 
-
 		print ""
 		print keyPresses[action]
 		print self.rle.show(color='blue')

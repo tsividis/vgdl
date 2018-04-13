@@ -109,7 +109,7 @@ w                            1 w
 w                              w
 w         wwwwww               w
 w                         3 3  w
-w         s    s A             w
+w  c c    s    s A             w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 

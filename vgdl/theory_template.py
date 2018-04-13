@@ -353,7 +353,7 @@ class Theory(object):
 
 	"""Main functions"""
 
-	def prior(self):
+	def prior(self, granularity=1, ruleWeight=.001):
 		## Very simple prior, prefering:
 			# Avatar = default type
 			# Everything else doesn't move
@@ -361,27 +361,44 @@ class Theory(object):
 			# Penalty for stochastic predicates
 			# Preference for explanations involving avatar being the cause of change:
 			#	 (penalty for long ruleset is shorter than penalty for type deviations)
+		# granularity is how specific we decide to get. note that they build on previous granularities
+		#	0: uniform prior
+		#	1: L1 norm, essentially. just number of nondefault rules and classes
+		# 	2: more specific beliefs about what's more and less "complicated" in a game
+
+		stochasticClasses = ['Chaser', 'RandomNPC']
+		stochasticRules = ['flipDirection']
+		crazyRules = ['undoAll']
 
 		classScore = 0.
-		classes = [cl for cl in self.classes if cl!='EOS']
-		for c in classes:
-			vgdlTypeString = str(self.classes[c][0].vgdlType)
-			if 'Avatar' in vgdlTypeString:
-				if 'Moving' not in vgdlTypeString:
+		ruleScore = 0.
+
+		if granularity > 0:
+			classScore += sum(1 for c in self.classes if not 'ResourcePack' in str(self.classes[c][0].vgdlType))
+			ruleScore += sum(1 if rule.interaction != 'stepBack' else 0 for rule in self.interactionSet)
+			# future note: technically, having removed stepBack should increase the ruleScore
+
+		if granularity > 1:
+			for c in [cl for cl in self.classes if cl!='EOS']:
+				vgdlTypeString = str(self.classes[c][0].vgdlType)
+				if 'Avatar' in vgdlTypeString:
+					if 'Moving' not in vgdlTypeString:
+						classScore += 1
+				elif any([t in vgdlTypeString for t in stochasticClasses]):
+					classScore += 1.5
+				elif not any([t in vgdlTypeString for t in ['Resource','Immovable']]):
 					classScore += 1
-			else:
-				if any([t in vgdlTypeString for t in ['Resource','Portal','Immovable']]):
-					classScore +=0
-				# elif 'Random' not in vgdlTypeString:
-					# classScore += 1
-				else:
-					classScore += 2
-		# ruleScore = len([rule for rule in self.interactionSet if rule.interaction!='stepBack'])
-		# make line below +=
-		ruleScore = len([rule for rule in self.interactionSet if rule.interaction in ['flipDirection']])
-		# ruleScore += len([rule for rule in self.interactionSet if rule.args])
-		# ruleScore = 1
-		return classScore + ruleScore/1000.
+
+			ruleScore += sum(1 for rule in self.interactionSet if rule.interaction in stochasticRules + wildRules)
+			# also get all the conditionals
+			ruleScore += sum(0.5 for rule in self.interactionSet if 'killIf' in rule.interaction)
+
+		if granularity > 2:
+			# maybe take number of args into account or something.
+			pass
+			# ruleScore += sum(len(rule.args) for rule in self.interactionSet)
+
+		return classScore + ruleScore * ruleWeight
 
 	def colorToClassMapper(self,color):
 		for c in self.classes:
