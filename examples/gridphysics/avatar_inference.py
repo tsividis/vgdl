@@ -55,17 +55,17 @@
 ## the problem here is that you need to build on expandSprite proposals with expandLine within one errorMap and
 ## you don't ordinarily do that.
 #0,0,0,0,0,0
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                            1 w
-w                            1 w
-w                              w
-w              A               w
-w         c    c          3 3  w
-w                              w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w              A               w
+# w         c    c          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # works if you don't allow the eventHandler to apply effects to newly-created sprites
 # Note: this is much slower when you have more intParis, i.e., when you move things down a row.
@@ -219,19 +219,19 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
 ## diagnoses ability to learn preconditions across multiple episodes. works.
-# DOESN'T WORK 4/12 with avatar poision > killIfHasLess/More
+# DOESN'T WORK 4/12 with avatar poison > killIfHasLess/More
 #[up],[left,left,left,left]
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w                            1 w
-# w                              w
-# w              p               w
-# w          pmm A          3 3  w
-# w                              w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w                            1 w
+w                              w
+w              p               w
+w          pmm A          3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 # [0]*11: test for wrapAround (add sam EOS wrapAround to rules)
 # level = """
@@ -331,7 +331,9 @@ BasicGame
         # poison avatar > killIfOtherHasMore resource=invisiblemedicine limit=0
         avatar medicine > changeResource resource=medicine value=1
         avatar poison > changeResource resource=medicine value=-1
-        poison avatar > killIfOtherHasMore resource=medicine limit=0 
+        poison avatar > killSprite
+        avatar poison > killIfHasLess resource=medicine limit=-1
+        # poison avatar > killIfOtherHasMore resource=medicine limit=0 
         # avatar poison > stepBack
         # avatar poison > killIfHasMore resource=medicine limit=0
 

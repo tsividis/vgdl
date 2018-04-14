@@ -1111,11 +1111,16 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	if targetClass=='avatar':
 		spriteProposals = [s for s in spriteProposals if 'Avatar' in str(s[0][1])]
 	
+	# if 'unexpectedPosition' in errorMap.diagnosis and errorMap.targetClass=='c6':
+		# print "got unexpectedPosition in expandSprites"
+		# embed()
 	for spriteProposal in spriteProposals:
 
 		newTheory = theory.copy()
 		newTheory.mostRecentEdit = 'spriteInduction'
-		newTheory.errorMapHistory.append(errorMap)
+		e = errorMap.copy()
+		e.componentsAddressed = 'spriteInduction'
+		newTheory.errorMapHistory.append(e)
 		vgdlType = spriteProposal[0][1]
 		args = dict(spriteProposal[1:])
 
@@ -1214,7 +1219,7 @@ predicateToOrderingMapping = {
  	'changeScore':			(0,1),
 	'undoAll':				(0,1)}
 
-predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit', 'wrapAround', 'reverseDirection']
+predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit', 'wrapAround', 'reverseDirection', 'killIfHasLess', 'killIfHasMore']
 
 def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n):
 
@@ -1276,7 +1281,9 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 			if len(ruleSet) > 0:
 				newTheory = theory.copy()
 				newTheory.mostRecentEdit = 'interactionSetInduction'
-				newTheory.errorMapHistory.append(errorMap)
+				e = errorMap.copy()
+				e.componentsAddressed = 'interactionSetInduction'
+				newTheory.errorMapHistory.append(e)
 				# remove old rules that conflict with the new ones
 				alteredPairs = set([(rule.slot1, rule.slot2) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack] + \
 						[(rule.slot2, rule.slot1) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack])
