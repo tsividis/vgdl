@@ -263,10 +263,10 @@ class Agent:
 			# [0,0,0,0,0,0,0,0,0,0,0,0]
 			# [0]*20
 			# [K_UP, K_UP, K_UP, K_RIGHT]
-			[K_UP, K_UP],
+			# [K_UP, K_UP],
 			# [K_RIGHT, K_UP]
-			# [K_UP]*4
-			[K_LEFT,K_LEFT,K_LEFT,K_LEFT]
+			[K_UP]*4
+			# [K_LEFT,K_LEFT,K_LEFT,K_LEFT]
 			# [K_LEFT, K_UP, K_UP, K_UP, K_UP]
 			# [K_LEFT]*8
 			# [0]*20
@@ -1043,6 +1043,27 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			e.targetClass = sA.colorName
 			e.targetColor = sB.colorName
 			sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
+			neighbors_prev = neighboringSpritesColors(envPrev, sPrev)
+			e.intPairs.extend([(e.targetClass, n) for n in neighbors_prev])
+			errorMap.append(e)
+
+	for sB in lonely_sprites_envB:
+		inventory_penalty = 0
+		sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
+		if not sPrev:
+			continue
+		keys = list(set(sB.inventory.keys()+sPrev.inventory.keys()))
+		for k in keys:
+			sB_k = sB.inventory[k] if k in sB.inventory.keys() else (0,0)
+			sPrev_k = sPrev.inventory[k] if k in sPrev.inventory.keys() else (0,0)
+			inventory_penalty += abs(sB_k[0]-sPrev_k[0])
+
+		if inventory_penalty > 0:
+			e = errorMapEntry()
+			e.diagnosis.append('inventoryChange')
+			e.targetToken = sB
+			e.targetClass = sB.colorName
+			e.targetColor = sB.colorName
 			neighbors_prev = neighboringSpritesColors(envPrev, sPrev)
 			e.intPairs.extend([(e.targetClass, n) for n in neighbors_prev])
 			errorMap.append(e)
