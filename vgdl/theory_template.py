@@ -518,7 +518,7 @@ class Theory(object):
 						self.multi_falsified.add(false_rule)
 
 		for rule in self.interactionSet:
-			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'nothing']:
+			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore', 'transformTo', 'nothing']:
 				if rule.generic:
 					preconditions = copy.deepcopy(rule.preconditions) if rule.preconditions else None
 					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, preconditions)
@@ -529,7 +529,7 @@ class Theory(object):
 								break
 						else:
 							self.terminationSet.add(terminationRule)
-				elif rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo']:
+				elif rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore', 'transformTo']:
 					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
 					if terminationRule not in self.falsified:
 						self.terminationSet.add(terminationRule)
