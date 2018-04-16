@@ -2008,7 +2008,7 @@ def setSpriteParams(param, sprite):
         elif p == "cooldown":
             sprite.cooldown = param[p]
 
-def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={}, missileOrientationClustering=False, allMovement=True):
+def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={}, missileOrientationClustering=False, allMovement=False):
     """
     This method gets all of the parameter information from the params variable
     instead of directly accessing the parameters in current_sprite.
@@ -2536,166 +2536,6 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
 
     return curr_distribution
 
-
-def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict, 
-    oldSpriteSet = None, mode='standard', learnAvatar=True):
-
-    import random
-    import numpy as np
-    from class_theory_template import Sprite
-    from ontology import ResourcePack
-    distributionsHaveChanged = False
-    
-    exceptions = []
-    sample = []
-
-    if not learnAvatar:
-        ##remove avatar. For now let's just assume we know which one it is.
-        ##TODO: You need to do avatarInduction, unless there's a generic type that can cover all types.
-        non_avatar_keys = []
-
-        for k in all_objects.keys():
-            if all_objects[k]['sprite'].name != 'avatar':
-                non_avatar_keys.append(k)
-            else:
-                from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
-                    RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
-                        AimedFlakAvatar, InertialAvatar, MarioAvatar
-                try:
-
-                    ## Add avatar, and add the attached arguments, i.e., what the avatar shoots.
-                    sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
-
-                    ## Get the object the Avatar shoots, add that.
-                    ao = game.sprite_constr[all_objects[k]['sprite'].stype]
-                    ao_vgdl_type = ao[0]
-                    ao_color = colorDict[str(ao[1]['color'])]
-                    ao_args = ao[1]
-                    
-                    ao_args.update({'singleton': 'True'})
-                    sample.append(Sprite(vgdlType=ao_vgdl_type, color=ao_color, className=all_objects[k]['sprite'].stype, args=ao_args))
-                    # sample.append(Sprite(vgdlType=Flicker, color='BLUE', className=all_objects[k]['sprite'].stype, args={'singleton':'True'}))
-
-                    exceptions.append(ao_color)
-                    # sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'healthPoints':all_objects[k]['sprite'].healthPoints}))
-                except AttributeError:
-                    # No args in avatar
-
-                    sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color']))
-
-        ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
-        types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions)) ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately
-                                                                                                        ## and not doing inference about it.
-    else:
-        types = list(set([all_objects[k]['type']['color'] for k in all_objects.keys()]))
-    best_params = {}
-    for obj_type in types:
-        ## Integrate evidence across all episodes; pick best hypothesis.
-        try:
-            param_product = {k:0 for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
-
-        except IndexError:
-            # bestSpriteTypeDict has yet to be populated for this object type
-            for k, v in game.getObjects().items():
-                if v['features']['color'] == obj_type:
-                    bestSpriteTypeDict[obj_type][k] = game.spriteDistribution[k]
-
-            param_product = {k:0 for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
-
-        z = 0.
-        for k in bestSpriteTypeDict[obj_type].keys():
-            for param in param_product.keys():
-                try:
-                    param_product[param] += spriteUpdateDict[k]*bestSpriteTypeDict[obj_type][k][param]
-                except KeyError:
-                    embed()
-
-            z += spriteUpdateDict[k]
-
-        for k in param_product:
-            try:
-                param_product[k] /= z
-            except ZeroDivisionError:
-                pass
-
-
-        if mode=='random':
-            if obj_type=='BLACK':
-                # embed()
-                spriteType=ResourcePack
-                best_param = [('vgdlType', spriteType)]
-            else:
-                spriteType = random.choice([ResourcePack, Missile, RandomNPC])
-                best_param = [('vgdlType', spriteType)]
-                for arg in initializeDistributionArgs(spriteType, types):
-                    best_param.append(random.choice(arg))
-        else:
-            best_param = max(param_product, key=param_product.get)
-        
-        best_params[obj_type] = best_param
-
-        sprite_type = best_param[0][1]
-
-        color = obj_type
-
-        if sprite_type=='OTHER':
-            from ontology import ResourcePack
-            sprite_type = ResourcePack
-
-        s = Sprite(vgdlType=sprite_type, colorName=color)
-
-        if mode=='random':
-            param = dict(best_param[1:])
-            setSpriteParams(param, s)
-        elif mode=='default':
-            s.vgdlType = ResourcePack            
-        else:
-            ## Find matching object in the existing hypothesis
-            try:
-                if oldSpriteSet:
-                    if s.colorName in [sprite.colorName for sprite in oldSpriteSet]:
-                        matchingSprite = [sprite for sprite in oldSpriteSet if s.colorName==sprite.colorName][0]
-                        # If types are different, distributionsHaveChanged is true
-                        if s.vgdlType!=matchingSprite.vgdlType:
-                            distributionsHaveChanged = True
-                            print ("Distributions for {} have changed from sprite type {} to {}".format(s.colorName, matchingSprite.vgdlType, s.vgdlType))
-                        # If one of the args is None but not the other,
-                        # distributionsHaveChanged is true
-                        elif ((s.args==None and matchingSprite.args!=None) or
-                            (s.args!=None and matchingSprite.args==None)):
-                            distributionsHaveChanged = True
-                            print ("Distribution args for {} have changed from {} to {}".format(s.colorName, s.args, matchingSprite.args))
-                        elif (s.args and matchingSprite.args) != None:
-                            # If args are different, except for the case where only an
-                            # orientation is reversed (e.g. turnAround), then
-                            # distributionsHaveChanged is true
-                            for key in s.args.keys() + matchingSprite.args.keys():
-                                try:
-                                    if not ((s.args[key] and matchingSprite.args[key])
-                                        in ([LEFT, RIGHT] or [UP, DOWN])):
-                                        if s.args[key] != matchingSprite.args[key]:
-                                            distributionsHaveChanged = True
-                                        print ("Distribution args for {} have changed from {} to {}".format(s.colorName, s.args, matchingSprite.args))
-                                except KeyError:
-                                    # If the new sprite has an arg that the old one
-                                    # doesn't, or vice-versa, then
-                                    # distributionsHaveChanged is true
-                                    distributionsHaveChanged = True
-                                    print ("Distribution args for {} have changed from {} to {}".format(s.colorName, s.args, matchingSprite.args))
-
-                    else:
-                        distributionsHaveChanged = True
-            except:
-                print "failed to find matching object in sampleFromDistribution"
-                embed()
-
-            param = dict(best_param[1:])
-            setSpriteParams(param, s) # set the parameters for sprite s
-
-        sample.append(s)
-
-    return sample, exceptions, distributionsHaveChanged, best_params
-
 def checkIfDistributionsHaveChanged(game, spriteUpdateDict, bestSpriteTypeDict):
 
     all_objects = game.all_objects
@@ -2748,8 +2588,7 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num):
     cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
     return [s for s in scoreAndTheoryTuples if s[0]>=cutoff][0:max_num]
 
-def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=None, old_outcome=None, specificSpritesToUpdate=[], 
-    percentile=20, max_num=20, allMovement=False):
+def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
     """
     An explanation of important data structures used in this function:
     game = a BasicGame object
@@ -2764,30 +2603,22 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
     game.movement_options tells you the probability of a sprite being in a particular position, given a certain
     setting of its attributes (e.g. specific values for speed, orientation, etc.) and also given sprite type.
     """
-    distributionsHaveChanged = False
+
     if action==None:
         action = 0
-    if step==0:
-    ## Prep for sprite induction
-        for sprite in game.getObjects():
-            distributionInitSetup(game, sprite)
-    elif step==1:
+
+    if step==1:
         ## Sprite Induction Part 1:
         ## every time you act, make sure there aren't new objects
         ## if there are, update spriteDistribution etc.
         objects = game.getObjects()
-
-        # print "step1"
-        # print objects.keys()
         newSprites = []
         for sprite in objects:
             if sprite not in game.spriteDistribution:
                 newSprites.append(sprite)
                 game.all_objects[sprite] = objects[sprite]
                 distributionInitSetup(game, sprite)
-        # if newSprites:
-            # print "found new sprite"
-            # embed()       
+
     elif step == 2:
         ## See the update options for each sprite type the sprite could be
         objects = game.getObjects()
@@ -2818,58 +2649,12 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
                     game.movement_options[sprite][param_combination], \
                     orientation_options, \
                     appearance_prediction = \
-                    updateOptions(game, sprite_type, sprite_obj, action=action, params=attributeDict, missileOrientationClustering=True, allMovement=allMovement)
+                    updateOptions(game, sprite_type, sprite_obj, action=action, params=attributeDict, missileOrientationClustering=True)
                     if param_combination in game.orientation_options[sprite].keys():
                         game.orientation_options[sprite][param_combination] = orientation_options
 
                     if param_combination in game.sprite_appearance_predictions[sprite].keys():
                         game.sprite_appearance_predictions[sprite][param_combination].extend(appearance_prediction)
-
-    elif step==3:
-        ## Update sprite distribution based on observations
-        objects = game.getObjects()
-        notUpdated = [s for s in objects.keys() if s not in game.spriteDistribution.keys()]
-
-        # distributionAtT1 = copy.deepcopy(game.spriteDistribution)
-
-        if not specificSpritesToUpdate:
-            ## if we don't pass a list of specific sprites, update all sprites
-            specificSpritesToUpdate = [s for s in game.spriteDistribution.keys() if 
-                s in objects.keys()]
-            try:
-                specificSpritesToUpdate = [s for s in specificSpritesToUpdate if
-                s not in e for e in game.effectList if e[0]!='nothing'] # Keys are the IDs of the game objects
-            except:
-                pass
-        for sprite in specificSpritesToUpdate:        
-            sprite_obj = objects[sprite]["sprite"]
-
-            if sprite not in game.ignoreList and sprite_obj.name != 'avatar':
-
-            # if all([sprite not in e for e in game.effectList if e[0]!='nothing']) and sprite not in game.ignoreList and sprite_obj.name != 'avatar':
-                # only update the distribution in this fashion if there are no events for this
-                # time step involving this sprite.
-
-                outcome = objects[sprite]["position"]
-                game.spriteDistribution = updateDistribution(game, sprite, game.spriteDistribution, \
-                                          game.movement_options, outcome, missileOrientationClustering=True)
-                game.object_token_spriteDistribution = updateDistribution(game, sprite, game.object_token_spriteDistribution, \
-                                          game.object_token_movement_options, outcome)
-
-                game.spriteUpdateDict[sprite] += 1
-
-        ## Update the global memory
-        for k in game.spriteDistribution.keys():
-            try:
-                color = game.all_objects[k]['type']['color']
-            except KeyError:
-                embed()
-            bestSpriteTypeDict[color][k] = game.spriteDistribution[k]
-
-        sample, exceptions, distributionsHaveChanged, _ = sampleFromDistribution(game, game.spriteDistribution, \
-            game.all_objects, game.spriteUpdateDict, bestSpriteTypeDict, \
-            oldSpriteSet = oldSpriteSet, default=False)
-
     elif step==4:
         # print "in step4 of spriteInduction"
         # embed()
@@ -2912,7 +2697,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, action=None, oldSpriteSet=No
 
     ## Reset ignoreList so that next time around you do inference.
     game.ignoreList = []
-    return distributionsHaveChanged
+    return
 
 def softmax(w, t = 1.0):
     e = np.exp(np.array(w) / t)

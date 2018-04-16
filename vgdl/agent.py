@@ -7,6 +7,7 @@ from theory_template import Precondition, InteractionRule, TerminationRule, Time
 SpriteCounterRule, MultiSpriteCounterRule, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
 generateTheoryFromGame, expandLine, expandSprites, proposePredicates, getRuleSetsForClassPairPredicate,\
 interateThresholds
+from class_theory_template import Sprite
 import os, subprocess, shutil
 from collections import defaultdict
 import importlib
@@ -105,10 +106,7 @@ class Agent:
 		self.statesEncountered = []
 		self.fakeInteractionRules = []
 		self.all_objects = {}
-		self.bestSpriteTypeDict = defaultdict(lambda : {})
 		self.spriteUpdateDict = defaultdict(lambda : 0)
-		## To track how many times we have run spriteType updates to each particular object
-		# self.bestSpriteTypeDict = defaultdict(lambda: {'count':0, 'distribution':None})
 		self.seen_resources = []
 		self.seen_limits = []
 		self.new_objects = {}
@@ -145,83 +143,56 @@ class Agent:
 		rle = rleCreateFunc()
 		return rle
 
-	def initializeHypotheses(self, allObjects, learnSprites=True, learnAvatar=True, num_variants=0):
-		if learnSprites:
-			observe(self.rle, self.bestSpriteTypeDict)
-			## Sample from distribution but actually just set everything to default.
-			spriteTypeHypothesis, exceptedObjects, _, _ = sampleFromDistribution(self.rle._game, \
-				self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, \
-				oldSpriteSet=None, mode='default', learnAvatar=learnAvatar)
-			self.rle._game.exceptedObjects = exceptedObjects
-			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
-			initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
-			initialTheory.terminationSet = [r for r in initialTheory.terminationSet if r.ruleType == 'SpriteCounterRule']
-		else:
-			gameObject = Game(self.gameString)
-			initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
+	def initializeHypotheses(self, allObjects):
 
+		observe(self.rle)
+
+		spriteList = []
+		colors = self.rle._game.observation['trackedObjects'].keys()
+		for color in colors:
+			s = Sprite(vgdlType=ResourcePack, colorName=color)
+			spriteList.append(s)
+		gameObject = Game(spriteInductionResult=spriteList)
+		initialTheory = gameObject.buildGenericTheory(spriteList)
+		initialTheory.terminationSet = [r for r in initialTheory.terminationSet if r.ruleType == 'SpriteCounterRule']
 		initialTheory.mostRecentEdit = 'none'
 
 		self.symbolDict = generateSymbolDict(self.rle)
 
-		if learnAvatar:
-			## Instantiate a hypothesis that each singleton class might be the avatar
-			self.hypotheses = []
-			## Grab all singleton classes and instantiate hypotheses that they are the avatar.
-			for color in self.symbolDict.keys():
-				if len(getSpritesByColor(self.rle._game, color)) == 1:
-					newTheory = copy.deepcopy(initialTheory)
-					oldClassName = newTheory.spriteObjects[color].className
-					del newTheory.classes[oldClassName]
-					newTheory.spriteObjects[color].className = 'avatar'
-					newTheory.spriteObjects[color].vgdlType = MovingAvatar
-					newTheory.classes['avatar'] = [newTheory.spriteObjects[color]]
+		## Instantiate a hypothesis that each singleton class might be the avatar
+		self.hypotheses = []
+		## Grab all singleton classes and instantiate hypotheses that they are the avatar.
+		for color in self.symbolDict.keys():
+			if len(getSpritesByColor(self.rle._game, color)) == 1:
+				newTheory = copy.deepcopy(initialTheory)
+				oldClassName = newTheory.spriteObjects[color].className
+				del newTheory.classes[oldClassName]
+				newTheory.spriteObjects[color].className = 'avatar'
+				newTheory.spriteObjects[color].vgdlType = MovingAvatar
+				newTheory.classes['avatar'] = [newTheory.spriteObjects[color]]
 
+				for rule in newTheory.interactionSet:
+					if rule.slot1 == oldClassName:
+						rule.slot1='avatar'
+					if rule.slot2 == oldClassName:
+						rule.slot2='avatar'
+
+				## Rename classes to ensure canonical ordering: c2, c3, ...
+				if min([int(k[1:]) for k in newTheory.classes.keys() if 'c' in k])>2:
+					for s in newTheory.spriteSet:
+						if s.className is not None and 'c' in s.className:
+							tmpClassName = s.className
+							del newTheory.classes[tmpClassName]
+							s.className = 'c'+str(int(s.className[1:])-1)
+							newTheory.classes[s.className] = [s]
 					for rule in newTheory.interactionSet:
-						if rule.slot1 == oldClassName:
-							rule.slot1='avatar'
-						if rule.slot2 == oldClassName:
-							rule.slot2='avatar'
+						if 'c' in rule.slot1:
+							rule.slot1 = 'c'+str(int(rule.slot1[1:])-1)
+						if 'c' in rule.slot2:
+							rule.slot2 = 'c'+str(int(rule.slot2[1:])-1)
 
-					## Rename classes to ensure canonical ordering: c2, c3, ...
-					if min([int(k[1:]) for k in newTheory.classes.keys() if 'c' in k])>2:
-						for s in newTheory.spriteSet:
-							if s.className is not None and 'c' in s.className:
-								tmpClassName = s.className
-								del newTheory.classes[tmpClassName]
-								s.className = 'c'+str(int(s.className[1:])-1)
-								newTheory.classes[s.className] = [s]
-						for rule in newTheory.interactionSet:
-							if 'c' in rule.slot1:
-								rule.slot1 = 'c'+str(int(rule.slot1[1:])-1)
-							if 'c' in rule.slot2:
-								rule.slot2 = 'c'+str(int(rule.slot2[1:])-1)
-
-					self.hypotheses.append(newTheory)
-					self.history[color] = {}
-		else:
-			self.hypotheses = [initialTheory]
-
-		## For debugging purposes: generate variants of the theory
-		## (as a stand-in for a more generic induction/elaboration process)
-		predicate_options = ['nothing', 'stepBack', 'killSprite', 'bounceForward', 'undoAll', 'reverseDirection']
-		for i in range(num_variants):
-			spriteTypeHypothesis, exceptedObjects, _, _ = sampleFromDistribution(self.rle._game, \
-				self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, \
-				oldSpriteSet=None, mode='random')
-			gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
-			theory = gameObject.buildGenericTheory(spriteTypeHypothesis)
-			for interactionRule in theory.interactionSet:
-				if interactionRule.slot1 == 'avatar':
-					interactionRule.interaction = random.choice(['nothing', 'stepBack', 'bounceForward', 'undoAll', 'reverseDirection'])
-				else:
-					interactionRule.interaction = random.choice(predicate_options)
-				if interactionRule.slot2 == 'EOS' and interactionRule.slot1!='avatar':
-					interactionRule.interaction = random.choice(['stepBack', 'reverseDirection', 'killSprite'])
-
-			theory.terminationSet = [r for r in initialTheory.terminationSet if r.ruleType == 'SpriteCounterRule']
-
-			self.randomTheories.append(theory)
+				self.hypotheses.append(newTheory)
+				self.history[color] = {}
 
 		return gameObject
 
@@ -253,7 +224,7 @@ class Agent:
 			# [K_RIGHT, K_UP, K_SPACE, 0, 0,0,0,0]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			# [0]*6
+			[0]*6
 			# [K_UP, K_UP, K_DOWN]
 			# [0,0,0,K_LEFT, K_LEFT,0,0]
 			# [0,K_RIGHT, K_SPACE, 0,0,0,0,0,0,0]
@@ -265,7 +236,7 @@ class Agent:
 			# [K_UP, K_UP, K_UP, K_RIGHT]
 			# [K_UP, K_UP],
 			# [K_RIGHT, K_UP]
-			[K_UP]*4
+			# [K_UP]*4
 			# [K_LEFT,K_LEFT,K_LEFT,K_LEFT]
 			# [K_LEFT, K_UP, K_UP, K_UP, K_UP]
 			# [K_LEFT]*8
@@ -280,13 +251,13 @@ class Agent:
 
 		for episode_num, actions in enumerate(actionSequences):
 			self.initializeEnvironment()
-			# embed()
 			print "initializing RLE. Epoch={}".format(epoch)
 
 			self.all_objects[episode_num] = self.rle._game.getObjects() ## we need to store all_objects across multiple episodes
+			# embed()
 
 			if episode_num == 0:
-				gameObject = self.initializeHypotheses(self.all_objects[episode_num], learnSprites=True, learnAvatar=True, num_variants=0)
+				gameObject = self.initializeHypotheses(self.all_objects[episode_num])
 
 			envReal = self.fastcopy(self.rle)
 
@@ -309,7 +280,6 @@ class Agent:
 				print ""
 				self.scores, self.hypotheses = zip(*scoresAndHypotheses)
 
-
 			# print ">>> Embedded at the end of testEpisode"
 			embed()
 
@@ -325,12 +295,9 @@ class Agent:
 				distributionInitSetup(self.rle._game, k)
 				if k not in self.all_objects[episode_num]:
 					self.all_objects[episode_num][k] = current_objects[k]
-			spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, action=action,
-				oldSpriteSet=self.hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
-				percentile=10, max_num=20, allMovement=False)
-			spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, action=action,
-				oldSpriteSet=self.hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
-				percentile=10, max_num=20, allMovement=False)
+			
+			spriteInduction(self.rle._game, step=1, action=action, specificSpritesToUpdate=[])
+			spriteInduction(self.rle._game, step=2, action=action, specificSpritesToUpdate=[])
 
 		return hypotheses
 
@@ -382,17 +349,6 @@ class Agent:
 
 	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, lastStep=False):
 
-		theory_change_flag = False
-
-		t1=time.time()
-		spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, action=action,
-			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
-			percentile=10, max_num=20, allMovement=False)
-		spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, action=action,
-			oldSpriteSet=hypotheses[0].spriteSet, old_outcome=None, specificSpritesToUpdate=[], 
-			percentile=10, max_num=20, allMovement=False)
-		print "spriteInduction prep took {} seconds".format(time.time()-t1)
-
 		envRealPrev = self.fastcopy(self.rle)
 		actionHistories[episode_num].append(action)
 		
@@ -435,7 +391,7 @@ class Agent:
 	
 		for num, env in enumerate(theoryRLEs):
 			theories = testAndExpand(env, self.hypotheses[num], action, self.rle, envRealPrev, self.rleHistory, \
-					self.actionHistory, self.bestSpriteTypeDict, episode_num)
+					self.actionHistory, episode_num)
 			newTheories.extend(theories)
 
 		# print "Have {} new theories in outer loop".format(len(newTheories))
@@ -453,20 +409,11 @@ class Agent:
 
 			if len(bestScoresAndHypotheses) == 0:
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
-				# embed()
-				# retryTheories = [t for t in newTheories if hasattr(t, 'mostRecentEdit') and t.mostRecentEdit == 'spriteInduction']
-				# theoryRLEs = VrleInitPhase(retryTheories, envRealPrev)
-				# for h in retryTheories:
-					# h.dryingPaint = set()
-
-				# theoryRLEs = VrleInitPhase(newTheories, envRealPrev)
 
 				newerTheories = []
 
 				for t in newTheories:
-					theories = addressRemainingErrorMaps(t, envRealPrev, self.rle, action, self.rleHistory, self.actionHistory, self.bestSpriteTypeDict)
-					# theories = testAndExpand(env, retryTheories[num], action, self.rle, envRealPrev, self.rleHistory[episode_num], \
-							# self.actionHistory[episode_num], self.bestSpriteTypeDict, episode_num)
+					theories = addressRemainingErrorMaps(t, envRealPrev, self.rle, action, self.rleHistory, self.actionHistory)
 					newerTheories.extend(theories)
 				newerTheories = list(set(newerTheories))
 
@@ -481,8 +428,6 @@ class Agent:
 			# TODO: do we really need to or will they have been filtered before?
 			# bestScoresAndHypotheses , scoreAndTheoryTuples = self.scoreAndFilterTheories(hypotheses, episode_num)
 
-		# print "just expanded all theories"
-		# embed()
 
 		self.statesEncountered.append(self.rle._game.getFullState())
 		self.rle._game.sprite_appearances = []
@@ -496,16 +441,13 @@ class Agent:
 
 		return bestScoresAndHypotheses
 
-
-
 ########################################################################
 ######## Other initialization METHODS                			########
 ########################################################################
 
-def observe(rle, bestSpriteTypeDict):
-	spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict, action=None)
-	spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict, action=None)
-
+def observe(rle):
+	spriteInduction(rle._game, step=1, action=None)
+	spriteInduction(rle._game, step=2, action=None)
 	return
 
 ########################################################################
@@ -1669,7 +1611,7 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 
 	return filtered
 
-def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction, rleHistories, actionHistories, bestSpriteTypeDict, episode_num):
+def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction, rleHistories, actionHistories, episode_num):
 	# print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
 
 	# MEMOIZE!
@@ -1692,7 +1634,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		newTheories = []
 		for theory in theories:
 			newTheories.extend(expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, prevAction, rleHistories, actionHistories, 
-					theory, bestSpriteTypeDict, classPairPlusPredicateToRuleSets))
+					theory, classPairPlusPredicateToRuleSets))
 		# print "Expanding {} theories took {} seconds".format(len(theories), time.time()-t1)
 
 		t1 = time.time()
@@ -1715,15 +1657,15 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 
 	return theories
 
-def addressRemainingErrorMaps(theory, envRealPrev, envRealCurrent, action, rleHistories, actionHistories, bestSpriteTypeDict):
+def addressRemainingErrorMaps(theory, envRealPrev, envRealCurrent, action, rleHistories, actionHistories):
 	errorMaps = [e for e in theory.errorMapHistory if e.componentsAddressed=='spriteInduction']
 	errorMaps = [e for e in errorMaps if all([d not in e.diagnosis for d in ['newObjectAppeared', 'newClass']])]
 	newTheories = []
 	for e in errorMaps:
-		newTheories.extend(expandTheoryForOneErrorMap(e, envRealPrev,envRealCurrent,action,rleHistories,actionHistories,theory,bestSpriteTypeDict,{}))
+		newTheories.extend(expandTheoryForOneErrorMap(e, envRealPrev,envRealCurrent,action,rleHistories,actionHistories,theory,{}))
 	return newTheories
 
-def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rleHistories, actionHistories, theory, bestSpriteTypeDict, classPairPlusPredicateToRuleSets):
+def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rleHistories, actionHistories, theory, classPairPlusPredicateToRuleSets):
 
 
 	## Fixes the problems generated by a single errorMap entry.
@@ -1844,7 +1786,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 		## SpriteSet induction step
 		if eM.targetClass not in theoryCopy.expandedSprites:
 			className, theories = expandSprites(envRealCurrent._game, theoryCopy, eM, 
-					envRealPrev, envRealCurrent, bestSpriteTypeDict, action, percentile=20, max_num=30)
+					envRealPrev, envRealCurrent, action, percentile=20, max_num=30)
 			theories = list(set(theories))
 			# TODO: since we're not actually going to build on these, we haven't necessarily addressed the error
 			# tomorrow: not sure if this is actually the problem
@@ -1887,7 +1829,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 
 	return newTheories
 
-def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, actionHistories, bestSpriteTypeDict, episode_num):
+def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, actionHistories, episode_num):
 
 	env.step(action)
 
@@ -1903,7 +1845,7 @@ def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, a
 		# print "No error"
 		# embed()
 	# print "expanding theories"
-	theories = expandTheories([hypothesis], errorList, envRealPrev, envReal, action, rleHistories, actionHistories, bestSpriteTypeDict, episode_num)
+	theories = expandTheories([hypothesis], errorList, envRealPrev, envReal, action, rleHistories, actionHistories, episode_num)
 
 	return theories
 

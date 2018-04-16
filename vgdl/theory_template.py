@@ -1084,8 +1084,8 @@ def proposePredicates(singlePairErrorSignal, observations):
 
 ## TODO: write the function that maintains resourceObservations, or at least figure out
 ## its outputs and integrate with proposeArgs
-def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSpriteTypeDict, action=None, percentile=20, max_num=20):
-	from vgdl.ontology import sampleFromDistribution, spriteInduction, updateDistribution
+def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, action=None, percentile=20, max_num=20):
+	from vgdl.ontology import spriteInduction, updateDistribution
 
 	if max_num is None:
 		max_num = 100000
@@ -1105,15 +1105,11 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	if 'objectDestruction' in errorMap.diagnosis:
 		spriteProposals = [k for k in game.spriteDistribution[targetToken.ID].keys() if 'Flicker' in str(k[0][1])]
 	else:
-		spriteProposals = spriteInduction(game, step=4, bestSpriteTypeDict=bestSpriteTypeDict, action=action, oldSpriteSet=theory.spriteSet,\
-		specificSpritesToUpdate=errorMap.targetTokens, percentile=percentile, max_num=max_num)
+		spriteProposals = spriteInduction(game, step=4, action=action,specificSpritesToUpdate=errorMap.targetTokens)
 	## Don't instantiate non-avatar proposals for the 'avatar' class.
 	if targetClass=='avatar':
 		spriteProposals = [s for s in spriteProposals if 'Avatar' in str(s[0][1])]
 	
-	# if 'unexpectedPosition' in errorMap.diagnosis and errorMap.targetClass=='c6':
-		# print "got unexpectedPosition in expandSprites"
-		# embed()
 	for spriteProposal in spriteProposals:
 
 		newTheory = theory.copy()

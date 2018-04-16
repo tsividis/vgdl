@@ -206,17 +206,17 @@
 
 # works for changeResource, killIfOtherHasMore/Less.
 #up, up, up, up
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w              p             1 w
-w              m             1 w
-w              m               w
-w              p               w
-w              A          3 3  w
-w                              w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w              p             1 w
+# w              m             1 w
+# w              m               w
+# w              p               w
+# w              A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 ## diagnoses ability to learn preconditions across multiple episodes. works.
 # works with avatar poison > killIfHasLess/More
@@ -273,6 +273,19 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w        c                     w
+w                              w
+w           c                  w
+w                              w
+w      11 22 A            3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+
+
 
 game="""
 BasicGame
@@ -288,7 +301,7 @@ BasicGame
         chaser > Chaser color=BLACK speed=1 cooldown=4 stype=avatar fleeing=True
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         missile > Missile
-            sam  > orientation=UP color=BLUE singleton=False cooldown=1
+            sam  > orientation=RIGHT color=BLUE singleton=False cooldown=1
         wall > Immovable color=DARKGRAY
         medicine > Resource limit=4 color=GREEN
         poison > Resource limit=3 color=PINK
@@ -312,8 +325,9 @@ BasicGame
     InteractionSet
         avatar wall > stepBack
         # box avatar > nothing
-        box avatar > transformTo stype=box2
-        # box2 avatar > killSprite
+        # box avatar > transformTo stype=box2
+        box avatar >killSprite
+        box2 avatar > killSprite
         # box2 avatar > bounceForward
         box3 avatar > killSprite
         avatar box5 > killSprite
