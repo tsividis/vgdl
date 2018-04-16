@@ -807,9 +807,8 @@ class BasicGame(object):
 
         # --------- Game-play ------------
         from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
-        from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution
-        from ontology import spriteInduction
-        # from theory_template import *
+        from ontology import spriteInduction, initializeDistribution, updateOptions
+
         finalEventList = []
         agentStatePrev = {}
         agentState = dict(self.getAvatars()[0].resources)
@@ -823,9 +822,8 @@ class BasicGame(object):
         self.all_objects = self.getObjects() # Save all objects, some which may be killed in game
 
         ##figure out keypress type:
-        disableContinuousKeyPress = False#all([self.all_objects[k]['sprite'].physicstype.__name__=='GridPhysics' for k in self.all_objects.keys()])
+        disableContinuousKeyPress = False
 
-        objects = self.getObjects()
         self.spriteDistribution = {}
         self.movement_options = {}
         self.sprite_appearance_predictions = {}
@@ -931,9 +929,7 @@ class BasicGame(object):
 
         # --------- Game-play ------------
         from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
-        from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution
-        from ontology import spriteInduction
-        # from theory_template import *
+        from ontology import spriteInduction, initializeDistribution, updateOptions
         finalEventList = []
         agentStatePrev = {}
         agentState = dict(self.getAvatars()[0].resources)
@@ -947,9 +943,8 @@ class BasicGame(object):
         self.all_objects = self.getObjects() # Save all objects, some which may be killed in game
 
         ##figure out keypress type:
-        disableContinuousKeyPress = all([self.all_objects[k]['sprite'].physicstype.__name__=='GridPhysics' for k in self.all_objects.keys()])
+        disableContinuousKeyPress = all([item.physicstype.__name__=='GridPhysics' for sublist in self.sprite_groups.values() for item in sublist])
 
-        objects = self.getObjects()
         self.spriteDistribution = {}
         self.movement_options = {}
         self.sprite_appearance_predictions = {}

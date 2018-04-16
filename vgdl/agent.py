@@ -38,7 +38,6 @@ ERRORCUTOFF = .3
 # Not active now
 NUM_SAMPLES_PER_HYPOTHESIS = 20
 
-
 class errorMapEntry:
 	def __init__(self):
 		self.diagnosis = []
@@ -208,7 +207,6 @@ class Agent:
 			gameObject = None
 
 			for epoch in range(1):
-				# self.testTracker(gameObject)
 				self.testEpisodes(gameObject,epoch=epoch)
 		return
 
@@ -427,7 +425,6 @@ class Agent:
 			# just use input hypotheses if no new Theories are generated
 			# TODO: do we really need to or will they have been filtered before?
 			# bestScoresAndHypotheses , scoreAndTheoryTuples = self.scoreAndFilterTheories(hypotheses, episode_num)
-
 
 		self.statesEncountered.append(self.rle._game.getFullState())
 		self.rle._game.sprite_appearances = []

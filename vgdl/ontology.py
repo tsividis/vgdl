@@ -1379,7 +1379,6 @@ class NoveltyTermination(Termination):
                     if e[2]=='ENDOFSCREEN':
                         name2 = 'EOS'
                     elif e[2] in [obj.ID for obj in game.kill_list]:
-                        # candidates = [obj for obj in game.kill_list]
                         name2 = [obj.name for obj in game.kill_list
                             if obj.ID==e[2]][0]
                     elif e[2] in game.getObjects().keys():
@@ -2046,21 +2045,13 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         cooldown = getCooldown(params)
         realLastmove = int(current_sprite.lastmove)
         current_sprite.lastmove +=1 ## to account for the fact that the normal update() function for a sprite runs before the calculateActiveMovement fn
-        # if current_sprite.colorName=='YELLOW' and fleeing==False and cooldown==3 and targetColor=='BLUE':
-        #     print "in chaser cooldown=3 updateOptions"
-        #     print current_sprite.lastmove
-        #     embed()
         realCooldown = int(current_sprite.cooldown)
         current_sprite.cooldown = cooldown
-        # if current_sprite.colorName=='LIGHTORANGE':
-            # print 'chaser'
-            # embed()
         try:
             targetName = [k for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName==targetColor][0]
             targets = game.sprite_groups[targetName]
         except:
             targets = []
-            # pass
 
         options = []
         position_options = {}
@@ -2381,7 +2372,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
     # Catches objects that can't be Oriented Sprite and Missile types b/c fails the if-statement
     return {}, {}, {}, []
 
-
 def initializeDistribution(sprite_types, objectColors):
     """
     Creates a uniform distribution over all parameter combinations
@@ -2470,7 +2460,6 @@ def initializeDistributionArgs(sprite_type, objectColors):
 
     return paramList
 
-
 def distributionInitSetup(game, spriteID):
     """
     Does setup for initializing distribution
@@ -2485,101 +2474,6 @@ def distributionInitSetup(game, spriteID):
     game.object_token_movement_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys()}
     game.sprite_appearance_predictions[spriteID] = {k:[] for k in game.spriteDistribution[spriteID].keys() if 'Avatar' in str(k[0][1]) or 'SpawnPoint' in str(k[0][1])}
     game.orientation_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys() if 'Avatar' in str(k[0][1])}
-
-def updateDistribution(game, sprite, curr_distribution, movement_options, outcome, specialID=None, missileOrientationClustering=False):
-
-    epsilon_prob = 0.000005
-
-    # For computing the new normalized likelihoods, we proceed as follows:
-
-    # The normalized likelihood for a given observation sequence o_1, ... o_t-1 given a parameter p_j is:
-    #   p(o_1, ..., o_t-1|p_j) / sum_i(p(o_1, .., o_t-1|p_i))
-    #
-    # We want to arrive at the new normalized likelihoods p(o_1, ..., o_t-1, o_t|p_j) / sum_i(p(o_1, .., o_t-1, o_t|p_i))
-    #
-    # We first compute the ratio between the normalization constants:
-    # sum_i(p(o_1, .., o_t-1, o_t|p_i)) / sum_j(p(o_1, .., o_t-1|p_j)) =
-    # sum_i(p(o_1, .., o_t-1|p_i) * p(o_t|p_i)) / sum_j(p(o_1, .., o_t-1|p_j))
-    #
-    # Now, we can get the new normalized likelihood by doing:
-    # p(o_1, ..., o_t-1, o_t|p_j) / sum_i(p(o_1, .., o_t-1, o_t|p_i)) =
-    #   p(o_1, ..., o_t-1|p_j) / sum_i(p(o_1, .., o_t-1|p_i)) *
-    #   p(o_t|p_j)
-    #   sum_i(p(o_1, .., o_t-1|p_i) * p(o_t|p_i)) / sum_k(p(o_1, .., o_t-1|p_k))
-
-    # if game.all_objects[sprite]['features']['color']=='GOLD':
-    #     print game.all_objects[sprite]['position']
-    #     print movement_options[sprite][(('vgdlType', RandomNPC), ('cooldown', 3), ('speed', 0.2))]
-    #     print movement_options[sprite][(('vgdlType', Missile), ('cooldown', 3), ('orientation', (1,0)), ('speed', 0.2))]
-    #     embed()
-    normalization_ratio = 0
-    alpha = 1.
-    if sprite in curr_distribution.keys():
-        for param_combination in curr_distribution[sprite].keys():
-            if outcome in movement_options[sprite][param_combination].keys():
-                if missileOrientationClustering and 'Missile' in str(param_combination[0][1]):
-                    normalization_ratio += curr_distribution[sprite][param_combination] * (movement_options[sprite][param_combination][outcome]**alpha)
-                else:
-                    normalization_ratio += curr_distribution[sprite][param_combination] * movement_options[sprite][param_combination][outcome]
-            else:
-                normalization_ratio += curr_distribution[sprite][param_combination] * epsilon_prob
-
-    if sprite in curr_distribution.keys():
-        for param_combination in curr_distribution[sprite].keys():
-            if outcome in movement_options[sprite][param_combination].keys():
-                if missileOrientationClustering and 'Missile' in str(param_combination[0][1]):
-                    curr_distribution[sprite][param_combination] *= ((movement_options[sprite][param_combination][outcome]**alpha) / normalization_ratio)
-                else:
-                    curr_distribution[sprite][param_combination] *= (movement_options[sprite][param_combination][outcome] / normalization_ratio)
-            else:
-                curr_distribution[sprite][param_combination] *= (epsilon_prob / normalization_ratio)
-
-    return curr_distribution
-
-def checkIfDistributionsHaveChanged(game, spriteUpdateDict, bestSpriteTypeDict):
-
-    all_objects = game.all_objects
-    curr_distribution = game.spriteDistribution
-    changes = False
-    exceptions = []
-
-    ## We don't do sprite inference for the avatar and for Flak
-    non_avatar_keys = []
-    for k in all_objects.keys():
-        if all_objects[k]['sprite'].name is not 'avatar':
-            non_avatar_keys.append(k)
-        else:
-            exceptions.append('BLUE')
-
-    ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
-    types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions)) ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately
-                                                                                                    ## and not doing inference about it.
-    for obj_type in types:
-        ## find the most-updated object, use that one for the sprite hypothesis.
-        options = [k for k in all_objects.keys() if all_objects[k]['type']['color'] == obj_type]
-        k = max(options, key=lambda x:spriteUpdateDict[x])
-
-        oldDistribution = bestSpriteTypeDict[obj_type]['distribution']
-
-        if spriteUpdateDict[k] >= bestSpriteTypeDict[obj_type]['count']: ## If we have more observations in the current episode than in our memory, use the current distribution
-            # k = random.choice(options)
-            ## always alphabetize the keys
-            ## sample multinomially from the spriteDistribution[key] dictionary, to get the spriteType
-            ## add that to the color info for that object.
-            if k not in curr_distribution.keys():
-                print k, "not in curr_distribution"
-                embed()
-            sprite_possibilities = curr_distribution[k]
-        else:
-            sprite_possibilities = bestSpriteTypeDict[obj_type]['distribution']
-
-        newDistribution = sprite_possibilities
-
-    return False
-
-def getKL(spriteDistribution1, spriteDistribution2):
-    d1, d2 = [v['prob'] for v in spriteDistribution1.values()], [v['prob'] for v in spriteDistribution2.values()]
-    return scipy.stats.entropy(d1,d2)
 
 def filterTheories(scoreAndTheoryTuples, percentile, max_num):
     import numpy as np
