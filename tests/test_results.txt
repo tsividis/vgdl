@@ -1,0 +1,225 @@
+======================================================================
+ERROR: test3 (tests.test_agent.TestInference)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "tests\test_agent.py", line 198, in testCase
+    self.initRunCreate(game, level, action_sequences)
+  File "tests\test_agent.py", line 76, in initRunCreate
+    self.runCurriculum(game, level, action_sequences)
+  File "tests\test_agent.py", line 115, in runCurriculum
+    self.runEpisode(episode_num, actions)
+  File "tests\test_agent.py", line 110, in runEpisode
+    self.executeStep(episode_num, action, last_step)
+  File "tests\test_agent.py", line 101, in executeStep
+    action, self.agent.hypotheses, theoryRLEs, last_step)
+  File "vgdl\agent.py", line 471, in executeStep
+    bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newerTheories, episode_num)
+  File "vgdl\agent.py", line 370, in scoreAndFilterTheories
+    proportionOfSpriteTheories=None, errorCutoff=ERRORCUTOFF, usePrior=False)]
+  File "vgdl\agent.py", line 1570, in filterTheories
+    cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
+  File "C:\Python27\lib\site-packages\numpy\lib\function_base.py", line 4274, in percentile
+    interpolation=interpolation)
+  File "C:\Python27\lib\site-packages\numpy\lib\function_base.py", line 4016, in _ureduce
+    r = func(a, **kwargs)
+  File "C:\Python27\lib\site-packages\numpy\lib\function_base.py", line 4391, in _percentile
+    x1 = take(ap, indices_below, axis=axis) * weights_below
+  File "C:\Python27\lib\site-packages\numpy\core\fromnumeric.py", line 134, in take
+    return _wrapfunc(a, 'take', indices, axis=axis, out=out, mode=mode)
+  File "C:\Python27\lib\site-packages\numpy\core\fromnumeric.py", line 57, in _wrapfunc
+    return getattr(obj, method)(*args, **kwds)
+IndexError: cannot do a non-empty take from an empty axes.
+
+======================================================================
+FAIL: test12 (tests.test_agent.TestInference)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "tests\test_agent.py", line 200, in testCase
+    self.assertAgentHasTheory(theory)
+  File "tests\test_agent.py", line 173, in assertAgentHasTheory
+    self.assertTrue(theoryInHypotheses(theory, self.agent.hypotheses), 'Theory not in hypotheses: \n%s\n%s' % (theory, diffs))
+AssertionError: Theory not in hypotheses:
+------ Expected Theory ------
+Class assignments:
+        EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: {}
+        wall: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: {}
+        avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: {}
+        box3: ['YELLOW']: <class 'vgdl.ontology.ResourcePack'>: {}
+        box2: ['GREEN']: <class 'vgdl.ontology.ResourcePack'>: {}
+InteractionSet:
+        bounceForward box2 avatar {}
+TerminationSet:
+        ('SpriteCounterRule', 'DARKBLUE', 0, False)
+------------------
+
+Top 3 Theory diffs
+Theory diffs
+
+SpriteSet Not Equal
+Everything equal except...
+>>>
+--- Theory1 has these while Theory2 does not
+('GREEN', 'RandomNPC')
+--- Theory2 has these while Theory1 does not
+('GREEN', 'ResourceType')
+<<<
+
+InteractionSet Not Equal
+Everything equal except...
+>>>--- Theory1 has these while Theory2 does not
+--- Theory2 has these while Theory1 does not
+bounceForward GREEN DARKBLUE {}
+<<<
+
+
+======================================================================
+FAIL: test15 (tests.test_agent.TestInference)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "tests\test_agent.py", line 200, in testCase
+    self.assertAgentHasTheory(theory)
+  File "tests\test_agent.py", line 173, in assertAgentHasTheory
+    self.assertTrue(theoryInHypotheses(theory, self.agent.hypotheses), 'Theory not in hypotheses: \n%s\n%s' % (theory, diffs))
+AssertionError: Theory not in hypotheses:
+------ Expected Theory ------
+Class assignments:
+        box: ['WHITE']: <class 'vgdl.ontology.ResourcePack'>: {}
+        wall: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: {}
+        poison: ['PINK']: <class 'vgdl.core.Resource'>: {'limit': 3}
+        EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: {}
+        avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: {}
+        medicine: ['GREEN']: <class 'vgdl.core.Resource'>: {'limit': 4}
+        box3: ['YELLOW']: <class 'vgdl.ontology.ResourcePack'>: {}
+InteractionSet:
+        killIfHasMore avatar poison {'limit': 0, 'resource': 'medicine'}
+        killSprite medicine avatar {}
+        changeResource avatar medicine {'resource': 'medicine', 'value': 1}
+        changeResource avatar poison {'resource': 'medicine', 'value': -1}
+TerminationSet:
+        ('SpriteCounterRule', 'DARKBLUE', 0, False)
+------------------
+
+Top 3 Theory diffs
+Theory diffs
+
+InteractionSet Not Equal
+Everything equal except...
+>>>
+--- Theory1 has these while Theory2 does not
+changeResource DARKBLUE PINK {'limit': 4, 'resource': 'GREEN', 'value': -1}
+changeResource DARKBLUE GREEN {'limit': 4, 'resource': 'GREEN', 'value': 1}
+--- Theory2 has these while Theory1 does not
+changeResource DARKBLUE GREEN {'resource': 'GREEN', 'value': 1}
+changeResource DARKBLUE PINK {'resource': 'GREEN', 'value': -1}
+<<<
+
+TerminationSet Not Equal
+Everything equal except...
+>>>
+--- Theory1 has these while Theory2 does not
+('MultiSpriteCounterRule', set(['DARKBLUE', 'GREEN']), 0, False)
+--- Theory2 has these while Theory1 does not
+<<<
+Theory diffs
+
+InteractionSet Not Equal
+Everything equal except...
+>>>--- Theory1 has these while Theory2 does not
+changeResource DARKBLUE PINK {'limit': 4, 'resource': 'GREEN', 'value': -1}
+changeResource DARKBLUE GREEN {'limit': 4, 'resource': 'GREEN', 'value': 1}
+reverseDirection DARKBLUE PINK {}
+--- Theory2 has these while Theory1 does not
+changeResource DARKBLUE GREEN {'resource': 'GREEN', 'value': 1}
+changeResource DARKBLUE PINK {'resource': 'GREEN', 'value': -1}
+<<<
+
+TerminationSet Not Equal
+Everything equal except...
+>>>
+--- Theory1 has these while Theory2 does not
+('MultiSpriteCounterRule', set(['DARKBLUE', 'GREEN']), 0, False)
+--- Theory2 has these while Theory1 does not
+<<<
+
+
+======================================================================
+FAIL: test6 (tests.test_agent.TestInference)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "tests\test_agent.py", line 200, in testCase
+    self.assertAgentHasTheory(theory)
+  File "tests\test_agent.py", line 173, in assertAgentHasTheory
+    self.assertTrue(theoryInHypotheses(theory, self.agent.hypotheses), 'Theory not in hypotheses: \n%s\n%s' % (theory, diffs))
+AssertionError: Theory not in hypotheses:
+------ Expected Theory ------
+Class assignments:
+        box: ['WHITE']: <class 'vgdl.ontology.ResourcePack'>: {}
+        sam: ['BLUE']: <class 'vgdl.ontology.Missile'>: {'singleton': 'FALSE', 'cooldown': 1, 'orientation': (0, -1)}
+        wall: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>: {}
+        cannon: ['RED']: <class 'vgdl.ontology.SpawnPoint'>: {'spawnCooldown': 2, 'stype': 'sam'}
+        EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>: {}
+        avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>: {}
+        box3: ['YELLOW']: <class 'vgdl.ontology.ResourcePack'>: {}
+InteractionSet:
+        reverseDirection sam wall {}
+TerminationSet:
+        ('SpriteCounterRule', 'DARKBLUE', 0, False)
+------------------
+
+Top 3 Theory diffs
+Theory diffs
+
+SpriteSet Not Equal
+Everything equal except...
+>>>
+--- Theory1 has these while Theory2 does not
+('BLUE', 'Chaser')
+--- Theory2 has these while Theory1 does not
+('BLUE', 'Missile')
+<<<
+
+InteractionSet Not Equal
+Everything equal except...
+>>>
+--- Theory1 has these while Theory2 does not
+stepBack BLUE DARKGRAY {}
+stepBack DARKGRAY BLUE {}
+--- Theory2 has these while Theory1 does not
+reverseDirection BLUE DARKGRAY {}
+<<<
+Theory diffs
+
+SpriteSet Not Equal
+Everything equal except...
+>>>--- Theory1 has these while Theory2 does not
+('BLUE', 'RandomNPC')
+--- Theory2 has these while Theory1 does not
+('BLUE', 'Missile')
+<<<
+
+InteractionSet Not Equal
+Everything equal except...
+>>>
+--- Theory1 has these while Theory2 does not
+stepBack BLUE DARKGRAY {}
+stepBack DARKGRAY BLUE {}
+--- Theory2 has these while Theory1 does not
+reverseDirection BLUE DARKGRAY {}
+<<<
+Theory diffs
+
+InteractionSet Not Equal
+Everything equal except...
+>>>
+--- Theory1 has these while Theory2 does not
+stepBack BLUE DARKGRAY {}
+stepBack DARKGRAY BLUE {}
+--- Theory2 has these while Theory1 does not
+reverseDirection BLUE DARKGRAY {}
+<<<
+
+
+----------------------------------------------------------------------
+Ran 14 tests in 2680.575s
+
+FAILED (failures=3, errors=1)

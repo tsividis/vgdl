@@ -12,6 +12,7 @@ from tests.locals import *
 
 # I'm not sure if this actually matters...
 FILENAME = 'tests.game.inference'
+EMBED_ON_FAILURE = True
 
 ###########################################
 # The abstract base class. Only add Assertion Methods
@@ -31,24 +32,25 @@ class _TestAgent(unittest.TestCase):
 		unittest.TestCase.run(self, results)
 
 	def tearDown(self):
-		errors = self.currentResults.errors
-		failures = self.currentResults.failures
-		if failures or errors:
-			print 
-			print 'ERRORS:'
-			print '=================='
-			for error, message in errors:
-				print error
-				print message
-			print
-			print 'FAILURES:'
-			print '=================='
-			for failure, message in failures:
-				print failure
-				print message
-			print '==================='
-			print 'EMBEDING inside test_agent'
-			embed()
+		if EMBED_ON_FAILURE:
+			errors = self.currentResults.errors
+			failures = self.currentResults.failures
+			if failures or errors:
+				print 
+				print 'ERRORS:'
+				print '=================='
+				for error, message in errors:
+					print error
+					print message
+				print
+				print 'FAILURES:'
+				print '=================='
+				for failure, message in failures:
+					print failure
+					print message
+				print '==================='
+				print 'EMBEDING inside test_agent'
+				embed()
 
 	########################################
 	# Initialization
