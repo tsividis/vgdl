@@ -1111,11 +1111,16 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, bestSprit
 	if targetClass=='avatar':
 		spriteProposals = [s for s in spriteProposals if 'Avatar' in str(s[0][1])]
 	
+	# if 'unexpectedPosition' in errorMap.diagnosis and errorMap.targetClass=='c6':
+		# print "got unexpectedPosition in expandSprites"
+		# embed()
 	for spriteProposal in spriteProposals:
 
 		newTheory = theory.copy()
 		newTheory.mostRecentEdit = 'spriteInduction'
-		newTheory.errorMapHistory.append(errorMap)
+		e = errorMap.copy()
+		e.componentsAddressed = 'spriteInduction'
+		newTheory.errorMapHistory.append(e)
 		vgdlType = spriteProposal[0][1]
 		args = dict(spriteProposal[1:])
 
@@ -1214,9 +1219,12 @@ predicateToOrderingMapping = {
  	'changeScore':			(0,1),
 	'undoAll':				(0,1)}
 
-predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit', 'wrapAround', 'reverseDirection']
+predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit', 'wrapAround', 'reverseDirection', 'killIfHasLess', 'killIfHasMore']
 
 def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n):
+
+	## If generating rulesets for n>1, don't generate combinations of the below for a particular classPair
+	conflictingPredicates = ['killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
 
 	key = (classPair, tuple(sorted(predicates)))
 
@@ -1234,6 +1242,11 @@ def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, ob
 					pass
 				predicateRules = []
 				for predicate in predicateGroup:
+					if n>1 and len(([p for p in predicateGroup if p in conflictingPredicates]))>1:
+						continue
+					# if n>1:
+						# print "in getRuleSetsForClassPairPredicate"
+						# embed()
 					## orderings are (targetClass, neighbor). If the ordering we're proposing is consistent with the semantics
 					## of the predicate we're proposing, add this potential rule.
 					if i in predicateToOrderingMapping[predicate]:
@@ -1260,6 +1273,10 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 	predicatesWithThresholds = ['killIfTooFast', 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
 	relevantRulesWithArgs = [rule for rule in theory.interactionSet if rule.interaction in predicatesWithThresholds and 
 			classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and len(rule.args)>0]
+
+	# if 'changeResource' in predicates:
+		# print "got changeResource"
+		# embed()
 	if len(relevantRulesWithArgs) == 0:
 		if 'conditionalKill' in errorMap.diagnosis:
 			# print "got conditionalKill"
@@ -1269,14 +1286,25 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 			toRemove = [rule for rule in theory.interactionSet if classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and 
 					rule.asTuple()[1] == errorMap.targetClass and rule.asTuple()[0]=='killSprite']
 			theory.interactionSet = [rule for rule in theory.interactionSet if rule not in toRemove]
-			# FlAG: should this act on the theory or the copy?
 
+			## changeResource and conditional kills make things a bit more complex; need to propose more complicated theories
+			if 'changeResource' in predicates:
+				n=2
+
+		# if 'inventoryChange' in errorMap.diagnosis:
+			# print "got inventory change in expandLine"
+			# embed()
+
+		## TODO: Modify getRuleSets... to only return combinations that have one changeResource and one killIf... (if n==2)
+		## TODO: Modify iterateThresholds to only modify dryingPaint
 		newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
 		for i,ruleSet in enumerate(newRuleSets):
 			if len(ruleSet) > 0:
 				newTheory = theory.copy()
 				newTheory.mostRecentEdit = 'interactionSetInduction'
-				newTheory.errorMapHistory.append(errorMap)
+				e = errorMap.copy()
+				e.componentsAddressed = 'interactionSetInduction'
+				newTheory.errorMapHistory.append(e)
 				# remove old rules that conflict with the new ones
 				alteredPairs = set([(rule.slot1, rule.slot2) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack] + \
 						[(rule.slot2, rule.slot1) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack])
@@ -1300,7 +1328,8 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, actionHistories, theory, errorMap, classPair, MultiEpisodeExperienceReplay):
 	
 	predicatesWithThresholds = ['killIfTooFast', 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
-	relevantRulesWithArgs = [rule for rule in theory.interactionSet if rule.interaction in predicatesWithThresholds and \
+	## used to be interactionSet
+	relevantRulesWithArgs = [rule for rule in list(theory.dryingPaint) if rule.interaction in predicatesWithThresholds and \
 			classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and len(rule.args)>0]
 	if len(relevantRulesWithArgs)==1:
 		# print "in iterateThresholds"
@@ -1311,8 +1340,6 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, action
 		newPenalty = penalty
 		while newPenalty >= penalty:
 			argsToIncrement = [(k,v) for k,v in relevantRulesWithArgs[0].args.items() if type(v)==int]
-			# if k=='limit' and rule.interaction == 'killIfOtherHasMore':
-				# embed()
 			if len(argsToIncrement)>1:
 				print "got more than one arg to increment in iterateThresholds(); this shouldn't happen"
 				embed()

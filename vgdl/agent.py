@@ -46,6 +46,7 @@ class errorMapEntry:
 		self.targetClass = None
 		self.targetColor = None
 		self.intPairs = []
+		self.componentsAddressed = []
 	
 	def display(self):
 		print ""
@@ -57,15 +58,17 @@ class errorMapEntry:
 		print "targetClass: {}".format(self.targetClass)
 		print "targetColor: {}".format(self.targetColor)
 		print "intPairs: {}".format(self.intPairs)
+		print "components addressed: {}".format(self.componentsAddressed)
 
 	def copy(self):
-		e                   = errorMapEntry()
-		e.diagnosis         = self.diagnosis
-		e.targetToken       = ccopy(self.targetToken)
-		e.targetTokens      = ccopy(self.targetTokens)
-		e.targetClass       = self.targetClass
-		e.targetColor 		= self.targetColor
-		e.intPairs          = self.intPairs
+		e                   	= errorMapEntry()
+		e.diagnosis         	= self.diagnosis
+		e.targetToken       	= ccopy(self.targetToken)
+		e.targetTokens      	= ccopy(self.targetTokens)
+		e.targetClass       	= self.targetClass
+		e.targetColor 			= self.targetColor
+		e.intPairs          	= self.intPairs
+		e.componentsAddressed 	= self.componentsAddressed
 		return e
 
 	def __eq__(self, other):
@@ -250,7 +253,7 @@ class Agent:
 			# [K_RIGHT, K_UP, K_SPACE, 0, 0,0,0,0]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			[0]*6
+			# [0]*6
 			# [K_UP, K_UP, K_DOWN]
 			# [0,0,0,K_LEFT, K_LEFT,0,0]
 			# [0,K_RIGHT, K_SPACE, 0,0,0,0,0,0,0]
@@ -260,9 +263,9 @@ class Agent:
 			# [0,0,0,0,0,0,0,0,0,0,0,0]
 			# [0]*20
 			# [K_UP, K_UP, K_UP, K_RIGHT]
-			# [K_UP, K_UP]
+			# [K_UP, K_UP],
 			# [K_RIGHT, K_UP]
-			# [K_UP]*4
+			[K_UP]*4
 			# [K_LEFT,K_LEFT,K_LEFT,K_LEFT]
 			# [K_LEFT, K_UP, K_UP, K_UP, K_UP]
 			# [K_LEFT]*8
@@ -435,7 +438,6 @@ class Agent:
 					self.actionHistory, self.bestSpriteTypeDict, episode_num)
 			newTheories.extend(theories)
 
-
 		# print "Have {} new theories in outer loop".format(len(newTheories))
 		# t1 = time.time()
 		newTheories = list(set(newTheories))
@@ -451,24 +453,28 @@ class Agent:
 
 			if len(bestScoresAndHypotheses) == 0:
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
+				# embed()
+				# retryTheories = [t for t in newTheories if hasattr(t, 'mostRecentEdit') and t.mostRecentEdit == 'spriteInduction']
+				# theoryRLEs = VrleInitPhase(retryTheories, envRealPrev)
+				# for h in retryTheories:
+					# h.dryingPaint = set()
 
-				retryTheories = [t for t in newTheories if hasattr(t, 'mostRecentEdit') and t.mostRecentEdit == 'spriteInduction']
-				theoryRLEs = VrleInitPhase(retryTheories, envRealPrev)
-				for h in retryTheories:
-					h.dryingPaint = set()
+				# theoryRLEs = VrleInitPhase(newTheories, envRealPrev)
 
 				newerTheories = []
 
-				for num, env in enumerate(theoryRLEs):
-					theories = testAndExpand(env, retryTheories[num], action, self.rle, envRealPrev, self.rleHistory[episode_num], \
-							self.actionHistory[episode_num], self.bestSpriteTypeDict, episode_num)
+				for t in newTheories:
+					theories = addressRemainingErrorMaps(t, envRealPrev, self.rle, action, self.rleHistory, self.actionHistory, self.bestSpriteTypeDict)
+					# theories = testAndExpand(env, retryTheories[num], action, self.rle, envRealPrev, self.rleHistory[episode_num], \
+							# self.actionHistory[episode_num], self.bestSpriteTypeDict, episode_num)
 					newerTheories.extend(theories)
-				embed()
-
 				newerTheories = list(set(newerTheories))
+
 				self.allTheories.extend(newerTheories)
 
 				bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newerTheories, episode_num)
+				embed()
+
 		else:
 			print "Got no new theories"
 			# just use input hypotheses if no new Theories are generated
@@ -1041,6 +1047,27 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			e.intPairs.extend([(e.targetClass, n) for n in neighbors_prev])
 			errorMap.append(e)
 
+	for sB in lonely_sprites_envB:
+		inventory_penalty = 0
+		sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
+		if not sPrev:
+			continue
+		keys = list(set(sB.inventory.keys()+sPrev.inventory.keys()))
+		for k in keys:
+			sB_k = sB.inventory[k] if k in sB.inventory.keys() else (0,0)
+			sPrev_k = sPrev.inventory[k] if k in sPrev.inventory.keys() else (0,0)
+			inventory_penalty += abs(sB_k[0]-sPrev_k[0])
+
+		if inventory_penalty > 0:
+			e = errorMapEntry()
+			e.diagnosis.append('inventoryChange')
+			e.targetToken = sB
+			e.targetClass = sB.colorName
+			e.targetColor = sB.colorName
+			neighbors_prev = neighboringSpritesColors(envPrev, sPrev)
+			e.intPairs.extend([(e.targetClass, n) for n in neighbors_prev])
+			errorMap.append(e)
+
 	# 4) Score change
 	if envA._game.observation['score'] != envB._game.observation['score']:
 		e = errorMapEntry()
@@ -1603,32 +1630,32 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 			filtered = filtered + sprite_candidates[num_sprite_candidates_chosen:min(len(sprite_candidates), num_sprite_candidates_chosen+diff)]
 		filtered = sorted(filtered, key=lambda x: x[0])
 
-	print "METHOD ONE FILTER:", [t[0] for t in filtered]
+	# print "METHOD ONE FILTER:", [t[0] for t in filtered]
 
 	## here begins new filtering method:
-	# 	always keep first teir (by error) (as long as it made the maxmium allowed error cutoff)
-	# 	if adding the second teir isn't too many, do that
-	# 	if the first teir is too many, filter by prior
+	# 	always keep first tier (by error) (as long as it made the maxmium allowed error cutoff)
+	# 	if adding the second tier isn't too many, do that
+	# 	if the first tier is too many, filter by prior
 	filtered = []
 
 	epsilon = .0001
-	teirOneThresh = candidates[0][0]
-	teirOne = [t for t in candidates if t[0] <= teirOneThresh + epsilon]
-	filtered = teirOne # by default
-	if len(teirOne) < max_num / 3 and len(teirOne) < len(candidates):
+	tierOneThresh = candidates[0][0]
+	tierOne = [t for t in candidates if t[0] <= tierOneThresh + epsilon]
+	filtered = tierOne # by default
+	if len(tierOne) < max_num / 3 and len(tierOne) < len(candidates):
 		# TODO: magic number ^
-		# consider teir 2
-		teirTwoThresh = candidates[len(teirOne)][0]
+		# consider tier 2
+		tierTwoThresh = candidates[len(tierOne)][0]
 		# is it worth including them? TODO: magic number here
-		if teirTwoThresh < 2 * teirOneThresh and teirTwoThresh < cutoff:
-			teirTwo = [t for t in candidates if teirOneThresh + epsilon < t[0] <= teirTwoThresh + epsilon]
-			if len(teirOne) + len(teirTwo) < max_num:
-				filtered = teirOne + teirTwo
-	elif len(teirOne) > max_num:
+		if tierTwoThresh < 2 * tierOneThresh and tierTwoThresh < cutoff:
+			tierTwo = [t for t in candidates if tierOneThresh + epsilon < t[0] <= tierTwoThresh + epsilon]
+			if len(tierOne) + len(tierTwo) < max_num:
+				filtered = tierOne + tierTwo
+	elif len(tierOne) > max_num:
 		# too many! have to filter by prior
-		filtered = sorted(teirOne, key=lambda t: t[1].prior(granularity=1))[:max_num]
+		filtered = sorted(tierOne, key=lambda t: t[1].prior(granularity=1))[:max_num]
 
-	print "METHOD TWO FILTER:", [t[0] for t in filtered]
+	# print "METHOD TWO FILTER:", [t[0] for t in filtered]
 
 	if usePrior:
 		# filter out any theory whose added complexity does not improve its error
@@ -1669,6 +1696,8 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		# print "Expanding {} theories took {} seconds".format(len(theories), time.time()-t1)
 
 		t1 = time.time()
+		# print "beforeFilter"
+		# embed()
 		newTheories = list(set(newTheories))
 		rleHistory, actionHistory = rleHistories[episode_num], actionHistories[episode_num]
 		penalties = MultiEpisodeExperienceReplay(newTheories, [rleHistory[-2:]], \
@@ -1677,14 +1706,22 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		scoreAndTheoryTuples = zip(penalties, newTheories)
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 
-		scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=0, max_num=None,
-				proportionOfSpriteTheories=None)]
+		# scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=0, max_num=None,
+				# proportionOfSpriteTheories=None)]
 
-		newTheories = [s[1] for s in scoresAndHypotheses]
-
+		# newTheories = [s[1] for s in scoresAndHypotheses]
+		newTheories = [s[1] for s in scoreAndTheoryTuples]
 		theories = newTheories
 
 	return theories
+
+def addressRemainingErrorMaps(theory, envRealPrev, envRealCurrent, action, rleHistories, actionHistories, bestSpriteTypeDict):
+	errorMaps = [e for e in theory.errorMapHistory if e.componentsAddressed=='spriteInduction']
+	errorMaps = [e for e in errorMaps if all([d not in e.diagnosis for d in ['newObjectAppeared', 'newClass']])]
+	newTheories = []
+	for e in errorMaps:
+		newTheories.extend(expandTheoryForOneErrorMap(e, envRealPrev,envRealCurrent,action,rleHistories,actionHistories,theory,bestSpriteTypeDict,{}))
+	return newTheories
 
 def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rleHistories, actionHistories, theory, bestSpriteTypeDict, classPairPlusPredicateToRuleSets):
 
