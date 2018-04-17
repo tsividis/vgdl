@@ -510,6 +510,14 @@ class BasicGame(object):
                              'airsteering',
                              'strength',
                              ]
+
+    def getAllObjects(self):
+        ID_dict = {}
+        for obj_type in self.sprite_groups:
+            for sprite in self.sprite_groups[obj_type]:
+                ID_dict[sprite.ID] = sprite
+        return ID_dict
+
     def getObjects(self):
         """
         Return dictionary with all the objects, and their parameters, from the full state.
@@ -780,14 +788,11 @@ class BasicGame(object):
         """
         # ----------- Initialization ----------
 
-
         self._initScreen(self.screensize,headless)
         pygame.display.flip()
         self.reset()
         clock = pygame.time.Clock()
         self.frame_rate = 5
-
-
 
         win = False
         i = 0
@@ -819,7 +824,7 @@ class BasicGame(object):
 
         # Prep for Sprite Induction
         sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
-        self.all_objects = self.getObjects() # Save all objects, some which may be killed in game
+        self.all_objects = self.getAllObjects() #self.getObjects() # Save all objects, some which may be killed in game
 
         ##figure out keypress type:
         disableContinuousKeyPress = False
@@ -940,8 +945,7 @@ class BasicGame(object):
 
         # Prep for Sprite Induction
         sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
-        self.all_objects = self.getObjects() # Save all objects, some which may be killed in game
-
+        self.all_objects = self.getAllObjects() #self.getObjects() # Save all objects, some which may be killed in game
         ##figure out keypress type:
         disableContinuousKeyPress = all([item.physicstype.__name__=='GridPhysics' for sublist in self.sprite_groups.values() for item in sublist])
 

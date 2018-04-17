@@ -1343,26 +1343,24 @@ class NoveltyTermination(Termination):
             if not eval(resource_str+true_operator+str(num)):
                 return False, None
 
-            # else:
-            #     print "found correct preconditions"
-                # embed()
-
         for e in game.effectList:
             id_not_found = False
             if (e[0] in ['killSprite', 'transformTo', 'nothing']) and len(e) > 2:
                 try:
-                    name1 = game.all_objects[e[1]]['sprite'].name
+                    # name1 = game.all_objects[e[1]]['sprite'].name
+                    name1 = game.all_objects[e[1]].name
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
                         name1 = 'EOS'
                     elif e[1] in [obj.ID for obj in game.kill_list]:
                         name1 = [obj.name for obj in game.kill_list
                             if obj.ID==e[1]][0]
-                    elif e[1] in game.getObjects().keys():
-                        name1 = game.getObjects()[e[1]]['sprite'].name
+                    # elif e[1] in game.getObjects().keys():
+                        # name1 = game.getObjects()[e[1]]['sprite'].name
+                    elif e[1] in game.getAllObjects().keys():
+                        name1 = game.getAllObjects()[e[1]].name
                     else:
                         id_not_found = True
-                        # embed()
                         ## This happens when we shoot an object and IDs are mismatched; default to the thing we shoot.
                         ## We've confirmed that this isn't due to other objects shot by other objects.
                         try:
@@ -1374,19 +1372,20 @@ class NoveltyTermination(Termination):
                     print("IndexError in game.all_objects")
                     embed()
                 try:
-                    name2 = game.all_objects[e[2]]['sprite'].name
+                    # name2 = game.all_objects[e[2]]['sprite'].name
+                    name2 = game.all_objects[e[2]].name
                 except KeyError:
                     if e[2]=='ENDOFSCREEN':
                         name2 = 'EOS'
                     elif e[2] in [obj.ID for obj in game.kill_list]:
                         name2 = [obj.name for obj in game.kill_list
                             if obj.ID==e[2]][0]
-                    elif e[2] in game.getObjects().keys():
-                        name2 = game.getObjects()[e[2]]['sprite'].name
+                    # elif e[2] in game.getObjects().keys():
+                        # name2 = game.getObjects()[e[2]]['sprite'].name
+                    elif e[2] in game.getAllObjects().keys():
+                        name2 = game.getAllObjects()[e[2]].name
                     else:
                         id_not_found = True
-                        # embed()
-
                         ## This happens when we shoot an object and IDs are mismatched; default to the thing we shoot.
                         ## We've confirmed that this isn't due to other objects shot by other objects.
                         try:
@@ -1401,25 +1400,22 @@ class NoveltyTermination(Termination):
                 if name1==self.s1 and name2==self.s2:
                     if id_not_found:
                         pass
-                    # print("NoveltyTermination with {} and {}".format(
-                        # name1, name2))
-                    # if name1=='c2' and name2=='avatar':
-                        # embed()
-                    #     ipdb.set_trace()
-
                     return True, self.win
             elif len(e) > 2 and e[2]=='ENDOFSCREEN':
                 name2 = 'EOS'
                 try:
-                    name1 = game.all_objects[e[1]]['sprite'].name
+                    # name1 = game.all_objects[e[1]]['sprite'].name
+                    name1 = game.all_objects[e[1]].name
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
                         name1 = 'EOS'
                     elif e[1] in [obj.ID for obj in game.kill_list]:
                         name1 = [obj.name for obj in game.kill_list
                             if obj.ID==e[1]][0]
-                    elif e[1] in game.getObjects().keys():
-                        name1 = game.getObjects()[e[1]]['sprite'].name
+                    # elif e[1] in game.getObjects().keys():
+                        # name1 = game.getObjects()[e[1]]['sprite'].name
+                    elif e[1] in game.getAllObjects().keys():
+                        name1 = game.getAllObjects()[e[1]].name
                     else:
                         # print "Couldn't find object in NoveltyTermination"
                         id_not_found = True
@@ -1438,11 +1434,6 @@ class NoveltyTermination(Termination):
                 if name1==self.s1 and name2 in str(self.s2):
                     if id_not_found:
                         pass
-                    # print("NoveltyTermination with {} and {}".format(
-                        # name1, name2))
-                    # if name1=='c2' and name2=='avatar':
-                        # embed()
-                    #     ipdb.set_trace()
                     return True, self.win
         return False, None
 
@@ -2077,49 +2068,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         current_sprite.lastmove = realLastmove
         return position_options, position_options, orientation_options, appearance_predictions
 
-    # AStarChaser
-    elif sprite_type == AStarChaser:
-        speed = getSpeed(params)
-        world = AStarWorld(game) ##how the AStarChaser makes its own calculations (see ai.py)
-
-        # If nothing to chase, then will stay in place
-        killed = [s.name for s in game.kill_list]
-        if 'avatar' in killed:
-            return ({(current_sprite.rect.left, current_sprite.rect.top): 1.}, 
-                   {(current_sprite.rect.left, current_sprite.rect.top): 1.}, 
-                   orientation_options, 
-                   appearance_predictions)
-
-        path = world.getMoveFor(current_sprite)
-        if len(path)>1:
-            move = path[1]
-
-            nextX, nextY = world.get_sprite_tile_position(move.sprite)
-            nowX, nowY = world.get_sprite_tile_position(current_sprite)
-
-            movement = None
-
-            if nowX == nextX:
-                if nextY > nowY:
-                    #logToFile('DOWN')
-                    movement = DOWN
-                else:
-                    #logToFile('UP')
-                    movement = UP
-            else:
-                if nextX > nowX:
-                    #logToFile('RIGHT')
-                    movement = RIGHT
-                else:
-                    #logToFile('LEFT')
-                    movement = LEFT
-        else: # Not foolproof, but will catch walls that are surrounded by other walls
-            movement = DOWN
-
-        left, top = current_sprite.physics.calculateActiveMovement(current_sprite, movement, speed=speed, 
-            allMovement=allMovement)
-        return {(left, top): 1.}, {(left, top): 1.}, orientation_options, appearance_predictions
-
     # Random NPC
     elif sprite_type == RandomNPC:
 
@@ -2467,8 +2415,9 @@ def distributionInitSetup(game, spriteID):
     objectColors = list(set([s.colorName for sublist in game.sprite_groups.values() for s in sublist])) ## all visible colors
     game.spriteDistribution[spriteID] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
     game.object_token_spriteDistribution[spriteID] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
-    if spriteID not in game.all_objects.keys():
-        game.all_objects[spriteID] = game.getObjects()[spriteID]
+    
+    # if spriteID not in game.all_objects.keys():
+        # game.all_objects[spriteID] = game.getAllObjects()[spriteID]
 
     game.movement_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys()}
     game.object_token_movement_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys()}
@@ -2505,33 +2454,28 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
         ## Sprite Induction Part 1:
         ## every time you act, make sure there aren't new objects
         ## if there are, update spriteDistribution etc.
-        objects = game.getObjects()
+        objects = game.getAllObjects()
         newSprites = []
-        for sprite in objects:
-            if sprite not in game.spriteDistribution:
-                newSprites.append(sprite)
-                game.all_objects[sprite] = objects[sprite]
-                distributionInitSetup(game, sprite)
+        for spriteID in objects:
+            if spriteID not in game.spriteDistribution:
+                newSprites.append(spriteID)
+                game.all_objects[spriteID] = objects[spriteID]
+                distributionInitSetup(game, spriteID)
 
     elif step == 2:
         ## See the update options for each sprite type the sprite could be
-        objects = game.getObjects()
-        notUpdated = [s for s in objects.keys() if s not in game.spriteDistribution.keys()]
-        if notUpdated:
-            print "step 2: not in sprite distribution:", notUpdated
-            embed()
-
+        objects = game.getAllObjects()
         game = game     # Save game state
-        for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:                  # Keys are the IDs of the game objects
-            for param_combination in game.spriteDistribution[sprite].keys(): # Check each potential sprite type
-                if game.spriteDistribution[sprite][param_combination]> 0:    # Make sure sprite_type is an option for sprite, and sprite is not killed
-                    sprite_obj = objects[sprite]["sprite"]
+        for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:         # Keys are the IDs of the game objects
+            for param_combination in game.spriteDistribution[sprite].keys():                      # Check each potential sprite type
+                if game.spriteDistribution[sprite][param_combination]> 0:                         # Make sure sprite_type is an option for sprite, and sprite is not killed
+                    # sprite_obj = objects[sprite]["sprite"]
+                    sprite_obj = objects[sprite]
 
                     sprite_type = param_combination[0]
                     attributeDict = {k:v for k,v in param_combination[1:]}
 
                     # Get potential next positions for sprite if it were that sprite type
-                    # if sprite_obj.name != 'avatar':
                     ##we are sprite_obj, and we are updating the options for where it could be next contingent on its being 'sprite_type'
                     # given a set of potential attribute values, update the movement options
                     # for this attribute tuple (i.e. candidate set of parameters)
@@ -2550,15 +2494,8 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
                     if param_combination in game.sprite_appearance_predictions[sprite].keys():
                         game.sprite_appearance_predictions[sprite][param_combination].extend(appearance_prediction)
     elif step==4:
-        # print "in step4 of spriteInduction"
-        # embed()
-        ## Update sprite distribution for a particular item
-        objects = game.getObjects()
-        notUpdated = [s for s in objects.keys() if s not in game.spriteDistribution.keys()]
-        # if len(specificSpritesToUpdate)>1:
-            # print "Error: you passed more than one specific sprite to update"
-            # embed()
-        # sprite = specificSpritesToUpdate[0]
+        ## Get all parameterizations of sprite type that could have led to the sprites in specificSpritesToUpdate
+        ## to their current positions
         scoreAndTheoryTuples = []
 
         for sprite in specificSpritesToUpdate:

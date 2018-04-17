@@ -142,7 +142,7 @@ class Agent:
 		rle = rleCreateFunc()
 		return rle
 
-	def initializeHypotheses(self, allObjects):
+	def initializeHypotheses(self):
 
 		observe(self.rle)
 
@@ -251,11 +251,12 @@ class Agent:
 			self.initializeEnvironment()
 			print "initializing RLE. Epoch={}".format(epoch)
 
-			self.all_objects[episode_num] = self.rle._game.getObjects() ## we need to store all_objects across multiple episodes
+			# self.all_objects[episode_num] = self.rle._game.getObjects() 
+			self.all_objects[episode_num] = self.rle._game.getAllObjects() ## we need to store all_objects across multiple episodes
 			# embed()
 
 			if episode_num == 0:
-				gameObject = self.initializeHypotheses(self.all_objects[episode_num])
+				gameObject = self.initializeHypotheses()
 
 			envReal = self.fastcopy(self.rle)
 
@@ -286,7 +287,7 @@ class Agent:
 	def manageNewObjects(self, episode_num, hypotheses, envRealPrev, action):
 
 		## Add newly-seen objects.
-		current_objects = self.rle._game.getObjects()
+		current_objects = self.rle._game.getAllObjects() #self.rle._game.getObjects()
 
 		if any([k not in self.rle._game.movement_options for k in current_objects]):
 			for k in current_objects.keys():
