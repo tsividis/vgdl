@@ -390,8 +390,6 @@ class Agent:
 					self.actionHistory, episode_num)
 			newTheories.extend(theories)
 
-		# print "Have {} new theories in outer loop".format(len(newTheories))
-		# t1 = time.time()
 		newTheories = list(set(newTheories))
 
 		self.allTheories.extend(newTheories)
@@ -416,8 +414,6 @@ class Agent:
 				self.allTheories.extend(newerTheories)
 
 				bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newerTheories, episode_num)
-				embed()
-
 		else:
 			print "Got no new theories"
 			# just use input hypotheses if no new Theories are generated
