@@ -10,7 +10,7 @@ import dill
 # the command 'pip install git+https://github.com/hyperopt/hyperopt'
 
 gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
-        	'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
+            'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
 def play_trainset(hyperparameters, game_number):
     start_time = time.time()
