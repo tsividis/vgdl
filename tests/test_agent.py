@@ -2,7 +2,7 @@ import unittest
 
 from vgdl.util import embed
 
-from vgdl.agent import Agent, VrleInitPhase, sampleFromDistribution
+from vgdl.agent import Agent, VrleInitPhase #, sampleFromDistribution
 from vgdl.ontology import *
 
 # imports all the game files created in games to the global namespace
@@ -77,17 +77,17 @@ class _TestAgent(unittest.TestCase):
 
 	#######################################
 	# Agent Theory Tools
-	def sampleFromDistribution(self, all_objects):
-		game = self.agent.rle._game
-		return sampleFromDistribution(game, game.spriteDistribution, all_objects, 
-			game.spriteUpdateDict, self.agent.bestSpriteTypeDict, 
-			oldSpriteSet=None, mode='default', learnAvatar=True)
+	# def sampleFromDistribution(self, all_objects):
+	# 	game = self.agent.rle._game
+	# 	return sampleFromDistribution(game, game.spriteDistribution, all_objects, 
+	# 		game.spriteUpdateDict, self.agent.bestSpriteTypeDict, 
+	# 		oldSpriteSet=None, mode='default', learnAvatar=True)
 
-	def buildGenericTheory(self, all_objects):
-		spriteTypeHypothesis, _, _, _ = self.sampleFromDistribution(all_objects)
-		game_object = Game(spriteInductionResult=spriteTypeHypothesis)
-		theory = game_object.buildGenericTheory(spriteTypeHypothesis)
-		return theory
+	# def buildGenericTheory(self, all_objects):
+	# 	spriteTypeHypothesis, _, _, _ = self.sampleFromDistribution(all_objects)
+	# 	game_object = Game(spriteInductionResult=spriteTypeHypothesis)
+	# 	theory = game_object.buildGenericTheory(spriteTypeHypothesis)
+	# 	return theory
 
 	def generateTheoryRLEs(self):
 		return VrleInitPhase(self.agent.hypotheses, self.agent.rle)
@@ -256,7 +256,7 @@ class TestInference(_TestAgent):
 
 	test3 = basicTestConstructor(*inference.test3)
 
-	test4 = basicTestConstructor(*inference.test4)
+	# test4 = basicTestConstructor(*inference.test4)
 
 
 	test5 = basicTestConstructor(*inference.test5)

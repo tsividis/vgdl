@@ -418,7 +418,7 @@ class Agent:
 				self.allTheories.extend(newerTheories)
 
 				bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newerTheories, episode_num)
-				embed()
+				# embed()
 
 		else:
 			print "Got no new theories"

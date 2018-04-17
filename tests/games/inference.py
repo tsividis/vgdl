@@ -178,7 +178,7 @@ test2 = TestCase(game2, level2, [[0]*6], expected_theory2)
 
 game3 = catDescriptions(base_game, """
 InteractionSet
-    sam avatar > bounceForward
+    avatar sam > bounceForward
 """)
 level3 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -303,7 +303,7 @@ InteractionSet
     sam wall > reverseDirection
 """)
 
-#0,0,0,0,0,0,0
+#0,0,0,0,0,0,0,0,0,0,0
 level6 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
@@ -327,10 +327,11 @@ BasicGame
         avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
         sam wall > reverseDirection
+        # Should get to the step where this happens
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
 """
-test6 = TestCase(game6, level6, [[0]*7], expected_theory6)
+test6 = TestCase(game6, level6, [[0]*10], expected_theory6)
 
 
 #########################################################
@@ -599,7 +600,7 @@ BasicGame
         avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
         medicine avatar > killSprite
-        avatar medicine > changeResource resource=medicine value=1 limit=4
+        avatar medicine > changeResource resource=medicine value=1
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
 """
@@ -697,3 +698,18 @@ test16 = TestCase(game16, level16, [[K_LEFT]+[K_UP]*4], expected_theory16)
 
 #########################################################
 #########################################################
+
+if __name__ == "__main__":
+    import argparse
+    from vgdl.core import VGDLParser
+
+    parser = argparse.ArgumentParser(description='play test games')
+
+    parser.add_argument('test', type=str, nargs=1)    
+
+
+    args = parser.parse_args()
+    test = eval(args.test[0])
+
+    game, level = test.game, test.level
+    VGDLParser.playGame(test.game, test.level)
