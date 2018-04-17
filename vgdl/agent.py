@@ -248,18 +248,15 @@ class Agent:
 		self.all_objects = [{} for i in range(len(actionSequences))]
 
 		for episode_num, actions in enumerate(actionSequences):
-			self.initializeEnvironment()
 			print "initializing RLE. Epoch={}".format(epoch)
 
-			# self.all_objects[episode_num] = self.rle._game.getObjects() 
+			self.initializeEnvironment()
 			self.all_objects[episode_num] = self.rle._game.getAllObjects() ## we need to store all_objects across multiple episodes
-			# embed()
 
 			if episode_num == 0:
 				gameObject = self.initializeHypotheses()
 
 			envReal = self.fastcopy(self.rle)
-
 			self.rleHistory[episode_num].append(envReal)
 
 			for num, action in enumerate(actions):
@@ -287,7 +284,7 @@ class Agent:
 	def manageNewObjects(self, episode_num, hypotheses, envRealPrev, action):
 
 		## Add newly-seen objects.
-		current_objects = self.rle._game.getAllObjects() #self.rle._game.getObjects()
+		current_objects = self.rle._game.getAllObjects()
 
 		if any([k not in self.rle._game.movement_options for k in current_objects]):
 			for k in current_objects.keys():
@@ -359,7 +356,7 @@ class Agent:
 		self.rleHistory[episode_num].append(envReal)
 		
 		## If we learn anything about orientation in this step for a sprite that was created in a previous step,
-		## go back in time and assign that orientation. This is so that when you set the state to what you 
+		## go back in time and assign that orientation to the previous steps that sprite was in. This is so that when you set the state to what you 
 		## remember from the past, you can incorporate this knowledge.
 		orientedSprites = [s for s in [item for sublist in envReal._game.observation['trackedObjects'].values() for item in sublist] if s.firstorientation]
 		if orientedSprites:
