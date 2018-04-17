@@ -285,6 +285,7 @@ class WBP():
 			if i%2==0:
 			else:
 			"""
+			print('passed here')
 			# current = self.noveltySelection(QNovelty, QReward)
 			current = self.rewardSelection(QReward, QNovelty)
 			print "visited:", len(visited)

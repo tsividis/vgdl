@@ -436,18 +436,22 @@ class Agent:
             quitting = False
 
             if self.parallel_planning:
-                def WBP_wrapper(hyperparameters, theory, queue):
-
+                def WBP_wrapper(l):
+                    hyperparameters, theory, queue = l
                     p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=theory, fakeInteractionRules = self.fakeInteractionRules,
                         seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                         firstOrderHorizon=self.firstOrderHorizon, hyperparameters=hyperparameters)
 
                     # Put the WBP object in a shared queue to facilitate manipulation
-                    queue.put(p)
+                    # queue.put(p)
+                    return p
 
                 # # start planners
                 # planners = []
-                result_queue = mp.Queue()
+                print('#1')
+                result_queue = None
+                # result_queue = mp.Queue()
+                print('#2')
                 #
                 # # Currently parallelizing over hyperparameters but not theories
                 # # (we have to be more careful about things like "hypotheses[0]"
@@ -475,18 +479,25 @@ class Agent:
                 #     planner.join()
                 #
                 pool = mp.Pool()
+                print('#3')
                 res = pool.map_async(WBP_wrapper, [(h_set, self.hypotheses[0], result_queue) for h_set in self.hyperparameter_sets])
+                print('#4')
                 pool.close()
+                print('#5')
                 pool.join()
+                print('#6')
+                # import ipdb; ipdb.set_trace()
 
-                p = result_queue.get()
+                # p = result_queue.get()
+                # print('#1')
 
             else:
 
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                     firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
-            bestNode, gameStringArray, objectPositionsArray = p.BFS()
+            best_index = np.argmin([p.total_nodes for p in res._value])
+            bestNode, gameStringArray, objectPositionsArray = res._value[best_index].BFS()
             self.total_planner_steps = p.total_nodes
 
             if bestNode is not None:
