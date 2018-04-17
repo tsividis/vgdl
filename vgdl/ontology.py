@@ -2004,7 +2004,8 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
     instead of directly accessing the parameters in current_sprite.
     game - current game object
     sprite_type - the sprite type class hypothesis
-    current_sprite - the current sprite object
+    current_sprite - the current sprite object. Note: sometimes we use the actual sprite objects from the game,
+        but we use it as a shell object so that we can run normal update functions using fake params we put in temporarily
     params - inferred params of the sprite. A dict mapping parameters (as strings) to their values.
     The default value of params is an empty dictionary - if that's the value passed, then the method will
     assume default values for each attribute.
@@ -2117,7 +2118,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
             clustered_position_options[(coords[0], coords[1])] = .5 + epsilon_prob
             #flip orientation
             orientation = (orientation[0]*-1, orientation[1]*-1)
-
             coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation,
                 allMovement=allMovement)
             if (coords[0], coords[1]) in clustered_position_options.keys():
