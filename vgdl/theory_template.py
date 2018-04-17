@@ -519,20 +519,42 @@ class Theory(object):
 
 		for rule in self.interactionSet:
 			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore', 'transformTo', 'nothing']:
-				if rule.generic:
-					preconditions = copy.deepcopy(rule.preconditions) if rule.preconditions else None
-					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, preconditions)
-					if terminationRule not in self.falsified:
-						for t in self.terminationSet:
-							if t.ruleType != 'NoveltyRule': continue
-							if t.termination.s2 != rule.slot1 and t.termination.s1 != rule.slot2:
-								break
-						else:
-							self.terminationSet.add(terminationRule)
+				if rule.generic and rule.preconditions:
+					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, copy.deepcopy(rule.preconditions))
+					if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
+							for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
+						all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
+						all([not terminationRule.__eq__(t) for t in self.falsified])):
+						self.terminationSet.append(terminationRule)
+				elif rule.generic and not rule.preconditions:
+					## Omit noveltytermination for randoms bumping into objects in the game; makes us disrupt plans even though we shouldnt't.
+					if ('Random' not in str(self.classes[rule.slot1][0].vgdlType)) and ('Random' not in str(self.classes[rule.slot2][0].vgdlType)) or rule.asTuple()[0]!='nothing':
+						terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
+						if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
+								for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
+							all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
+							all([not terminationRule.__eq__(t) for t in self.falsified])):
+							self.terminationSet.append(terminationRule)
+
+
+				# if rule.generic:
+				# 	preconditions = copy.deepcopy(rule.preconditions) if rule.preconditions else None
+				# 	terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, preconditions)
+				# 	if terminationRule not in self.falsified:
+				# 		for t in self.terminationSet:
+				# 			if t.ruleType != 'NoveltyRule': continue
+				# 			if t.termination.s2 != rule.slot1 and t.termination.s1 != rule.slot2:
+				# 				break
+				# 		else:
+				# 			self.terminationSet.add(terminationRule)
 				elif rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore', 'transformTo']:
 					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
-					if terminationRule not in self.falsified:
-						self.terminationSet.add(terminationRule)
+					if (all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
+						all([not terminationRule.__eq__(t) for t in self.falsified])):
+						self.terminationSet.append(terminationRule)
+					# terminationRule = SpriteCounterRule(rule.slot1, 0, True)
+					# if terminationRule not in self.falsified:
+						# self.terminationSet.add(terminationRule)
 
 			if rule.slot2 == 'EOS' and rule.generic:
 				terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
