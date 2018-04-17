@@ -26,8 +26,11 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from colors import colorDict
 import copy_reg
 import types
-
 import heapq
+
+import WBP
+from termcolor import colored
+from pathos.helpers import mp
 
 ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPACE: (0,0), 0: (0,0)}
 
@@ -78,11 +81,12 @@ class errorMapEntry:
 			return False
 
 class Agent:
-	def __init__(self, modelType, gameFilename):
+	def __init__(self, modelType, gameFilename, hyperparameter_sets={}, parallel_planning=False):
 		self.modelType = modelType
 		self.gameFilename = gameFilename
 		self.gameString = None
 		self.levelString = None
+		self.hyperparameter_sets = hyperparameter_sets
 		self.annealingFactor = 1.
 		self.shortHorizon = False
 		if self.shortHorizon == True:
@@ -92,7 +96,7 @@ class Agent:
 			self.starting_max_nodes = 10000
 			self.max_nodes_annealing = 10
 		self.firstOrderHorizon = True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
-		self.regrounding = 50
+		self.regrounding = 3
 		self.selective_regrounding = True
 		self.avoid_danger = True
 		self.safeDistance = 6
@@ -124,6 +128,11 @@ class Agent:
 		self.distributions = {}
 		self.history = {}
 		self.lastObjectState = {}
+
+		# Hyperopt output
+		self.total_game_steps = 0
+		self.total_planner_steps = 0
+		self.levels_won = 0
 
 	def initializeEnvironment(self):
 		if self.gameString == None or self.levelString == None:
@@ -209,6 +218,170 @@ class Agent:
 			for epoch in range(1):
 				self.testEpisodes(gameObject,epoch=epoch)
 		return
+
+	def playEpisodes(self, gameObject, num_episodes=5, epoch=0):
+		
+		## for playback
+		self.allStatesEncountered = [[] for i in range(num_episodes)]
+		episodes = []
+
+		## for inference
+		self.rleHistory = [[] for i in range(num_episodes)]
+		self.actionHistory = [[] for i in range(num_episodes)]
+		self.all_objects = [{} for i in range(num_episodes)]
+
+		for episode_num in range(num_episodes):
+			t1 = time.time()
+			gameObject, win, score, steps, statesEncountered = playEpisode(gameObject, episode_num)
+			episodes.append((n_level, steps, win, score))
+			allStatesEncountered.extend(statesEncountered)
+
+			# VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
+			# persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
+			
+			first_time_playing_level = False
+			print "Finished episode in {} seconds".format(time.time() - t1)
+		return
+
+	def playEpisode(self, gameObject, episode_num, flexible_goals=False, win=False, first_time_playing_level=False):
+		
+		self.initializeEnvironment()
+		print "initializing RLE"
+		steps, self.quits, self.longHorizonObservations = 0,0,0
+		self.all_objects = self.rle._game.getAllObjects()
+		ended, win = self.rle._isDone()
+		annealing = 1
+
+		statesEncountered = [self.rle._game.getFullState()]
+		self.statesEncountered.append(self.rle._game.getFullState())
+
+		#dep
+		if episode_num==0:
+			self.initializeHypotheses()
+
+		emptyPlans = 0
+		while not ended:
+			
+			## initialize one or many VRLEs according to hypothesis-selection method
+			theoryRLEs = self.VrleInitPhase(flexible_goals)
+
+			envReal = self.fastcopy(self.rle)
+			self.rleHistory[episode_num].append(envReal)
+
+			quitting = False
+
+			if self.parallel_planning:
+				def WBP_wrapper(l):
+					hyperparameters, theory, queue = l
+					p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=theory, fakeInteractionRules = self.fakeInteractionRules,
+						seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+						firstOrderHorizon=self.firstOrderHorizon, hyperparameters=hyperparameters)
+					return p
+				# # start planners
+				# print('#1')
+				result_queue = None
+				# print('#2')
+				pool = mp.Pool()
+				# print('#3')
+				res = pool.map_async(WBP_wrapper, [(h_set, self.hypotheses[0], result_queue) for h_set in self.hyperparameter_sets])
+				# print('#4')
+				pool.close()
+				# print('#5')
+				pool.join()
+				# print('#6')
+			else:
+
+				p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
+					seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+					firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
+			best_index = np.argmin([p.total_nodes for p in res._value])
+			bestNode, gameStringArray, objectPositionsArray = res._value[best_index].BFS()
+			self.total_planner_steps = p.total_nodes
+
+			if bestNode is not None:
+				solution = p.solution
+				gameString_array = p.gameString_array
+				objectPositionsArray = objectPositionsArray[::-1]
+			else:
+				solution = []
+
+			if solution and not p.quitting:
+				print "============================================="
+				print "got solution of length", len(solution)
+				for g in p.gameString_array:
+					print colored(g, 'green')
+				print "============================================="
+
+			if self.shortHorizon:
+				if not solution:
+					emptyPlans +=1
+				else:
+					emptyPlans = 0
+			else:
+				if (not solution) or p.quitting:
+					if self.longHorizonObservations<self.longHorizonObservationLimit:
+						print "Didn't get solution or decided to quit. Observing, then replanning."
+						observe(self.rle, 5, self.bestSpriteTypeDict)
+						solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
+						self.longHorizonObservations += 1
+					else:
+						quitting = True
+
+			if emptyPlans > self.emptyPlansLimit:
+				observe(self.rle, 5, self.bestSpriteTypeDict)
+
+			if not quitting:
+				for i, action in enumerate(solution):
+					bestScoresAndHypotheses = self.executeStep(episode_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, lastStep=False)
+					hypotheses = [bestScoresAndHypotheses[0][1]]
+
+					print "got hypotheses"
+					embed()
+					## TODO: determine value of theory_change_flag
+					if theory_change_flag:
+						self.hypotheses = hypotheses
+						break
+
+					ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
+
+					steps +=1
+
+					ended, win = self.rle._isDone()
+					if ended:
+						break
+
+					# if self.regrounding:
+					# if self.avoid_danger
+
+				if self.shortHorizon:
+					self.max_nodes *= self.max_nodes_annealing
+			else:
+				## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
+				## Search more deeply next time.
+				self.max_nodes *= self.max_nodes_annealing
+				return gameObject, False, self.rle._game.score, steps, statesEncountered
+		
+			annealing *= self.annealingFactor
+			ended, win = self.rle._isDone()
+
+		score = self.rle._game.score
+		output = "ended episode. Win={}                    ".format(win)
+		if win:
+			print colored('________________________________________________________________', 'white', 'on_green')
+			print colored('________________________________________________________________', 'white', 'on_green')
+
+			print colored(output, 'white', 'on_green')
+			print colored('________________________________________________________________', 'white', 'on_green')
+		else:
+			print colored('________________________________________________________________', 'white', 'on_red')
+			print colored(output, 'white', 'on_red')
+			print colored('________________________________________________________________', 'white', 'on_red')
+
+		return gameObject, win, score, steps, statesEncountered 
+	
+
+
+
 
 	def testEpisodes(self, gameObject, epoch=0):
 		num_cores = mp.cpu_count()
@@ -1499,7 +1672,7 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 
 	for rleHistory, actionHistory in zip(rleHistories, actionHistories):
 		mean_penalties = experienceReplay(hypotheses, rleHistory, actionHistory, 
-												     method, targetColor, displayStates, displayTheories)
+													 method, targetColor, displayStates, displayTheories)
 		mean_penalties = np.array(mean_penalties)*weight*len(actionHistory)
 		multi_episode_mean_penalties.append(mean_penalties)
 
