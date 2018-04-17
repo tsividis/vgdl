@@ -87,6 +87,7 @@ class Agent:
 		self.gameString = None
 		self.levelString = None
 		self.hyperparameter_sets = hyperparameter_sets
+		self.parallel_planning = parallel_planning
 		self.annealingFactor = 1.
 		self.shortHorizon = False
 		if self.shortHorizon == True:
@@ -230,9 +231,12 @@ class Agent:
 		self.actionHistory = [[] for i in range(num_episodes)]
 		self.all_objects = [{} for i in range(num_episodes)]
 
+		## for planning
+		self.max_nodes = self.starting_max_nodes
+
 		for episode_num in range(num_episodes):
 			t1 = time.time()
-			gameObject, win, score, steps, statesEncountered = playEpisode(gameObject, episode_num)
+			gameObject, win, score, steps, statesEncountered = self.playEpisode(gameObject, episode_num)
 			episodes.append((n_level, steps, win, score))
 			allStatesEncountered.extend(statesEncountered)
 
@@ -261,12 +265,12 @@ class Agent:
 
 		emptyPlans = 0
 		while not ended:
-			
-			## initialize one or many VRLEs according to hypothesis-selection method
-			theoryRLEs = self.VrleInitPhase(flexible_goals)
 
 			envReal = self.fastcopy(self.rle)
 			self.rleHistory[episode_num].append(envReal)
+			
+			## initialize one or many VRLEs according to hypothesis-selection method
+			theoryRLEs = VrleInitPhase(self.hypotheses, envReal)
 
 			quitting = False
 
@@ -294,8 +298,10 @@ class Agent:
 				p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
 					seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
 					firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
-			best_index = np.argmin([p.total_nodes for p in res._value])
-			bestNode, gameStringArray, objectPositionsArray = res._value[best_index].BFS()
+			print "made wbp"
+			embed()
+			# best_index = np.argmin([p.total_nodes for p in res._value])
+			# bestNode, gameStringArray, objectPositionsArray = res._value[best_index].BFS()
 			self.total_planner_steps = p.total_nodes
 
 			if bestNode is not None:

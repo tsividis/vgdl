@@ -41,21 +41,21 @@ def play_trainset(hyperparameters, game_number):
             yield color
 
 
-    gvgname = "../gvgai/training_set_1/{}".format(gameName)
+    # gvgname = "../gvgai/training_set_1/{}".format(gameName)
 
-    gameString = read_gvgai_game('{}.txt'.format(gvgname))
+    # gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
 
-    level_game_pairs = []
-    for level_number in range(5):
-        with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
-            level_game_pairs.append([gameString, level.read()])
+    # level_game_pairs = []
+    # for level_number in range(5):
+        # with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
+            # level_game_pairs.append([gameString, level.read()])
     
     # stop uncommenting here to play GVGAI games
     #uncomment this line to run local games
-    # gameName = filename
+    gameName = filename
 
-    agent = Agent('full', gameName, hyperparameter_sets=hyperparameters, parallel_planning=True)
+    agent = Agent('full', gameName, hyperparameter_sets=hyperparameters, parallel_planning=False)
 
     ##then pass this down for multiple episodes
     gameObject = None
