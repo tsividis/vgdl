@@ -497,7 +497,8 @@ class Agent:
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                     firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
             best_index = np.argmin([p.total_nodes for p in res._value])
-            bestNode, gameStringArray, objectPositionsArray = res._value[best_index].BFS()
+            p = res._value[best_index]
+            bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps = p.total_nodes
 
             if bestNode is not None:
@@ -525,6 +526,7 @@ class Agent:
                 if (not solution) or p.quitting:
                     if self.longHorizonObservations<self.longHorizonObservationLimit:
                         print "Didn't get solution or decided to quit. Observing, then replanning."
+                        print('passed here')
                         observe(self.rle, 5, self.bestSpriteTypeDict)
                         solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
                         self.longHorizonObservations += 1

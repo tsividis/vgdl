@@ -116,10 +116,10 @@ game = """
 BasicGame frame_rate=30
     SpriteSet
         avatar > MovingAvatar color=DARKBLUE cooldown=0#6
-        chaser > VGDLSprite cooldown=8
-            randomChaser > RandomNPC color=WHITE
-            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=0
-            goodChaser > AStarChaser color=RED stype=box2
+        # chaser > VGDLSprite cooldown=8
+        # randomChaser > RandomNPC color=WHITE
+        chaser > Chaser color=LIGHTGREEN stype=box2 cooldown=1
+        # goodChaser > AStarChaser color=RED stype=box2
         forcefield > Passive color=PURPLE
         box > Passive
             box1 > color=PINK
@@ -129,7 +129,7 @@ BasicGame frame_rate=30
         w > wall
         a > box1
         b > box2
-        m > mediumChaser
+        m > chaser
         r > randomChaser
         s > goodChaser
         f > forcefield

@@ -108,11 +108,11 @@ game = """
 BasicGame frame_rate=30
     SpriteSet
         avatar > MovingAvatar color=DARKBLUE cooldown=0
-        # mover > VGDLSprite
-        rand > RandomNPC color=LIGHTBLUE cooldown=2 #12 for humans, 2 for Planner
-        # chaser > Chaser
-        chaser1 > Chaser stype=box1 color=ORANGE  cooldown=2 #for humans
-        chaser2 > Chaser stype=box3 color=LIGHTBLUE cooldown=2 #for humans
+        mover > VGDLSprite
+            rand > RandomNPC color=LIGHTBLUE cooldown=1 #12 for humans, 2 for Planner
+            chaser > Chaser
+                chaser1 > stype=box1 color=ORANGE  cooldown=12 #for humans
+                chaser2 > stype=box3 color=LIGHTBLUE cooldown=12 #for humans
         wall > Immovable color=BLACK
         forcefield > Passive color=PURPLE
         box > Passive
@@ -139,23 +139,23 @@ BasicGame frame_rate=30
         box1 avatar > bounceForward
         box1 box2 > stepBack
         box1 box1 > bounceForward
-        avatar chaser1 > nothing
+        avatar chaser > nothing
         box2 avatar > killSprite
-        box1 chaser1 > killSprite
+        box1 chaser > killSprite
         box1 rand > killSprite
         box1 box3 > nothing
         avatar box3 > nothing
-        box3 chaser1 > killSprite
+        box3 chaser > killSprite
         box1 forcefield > nothing
         box2 forcefield > nothing
         rand forcefield > stepBack
         forcefield rand > stepBack
-        chaser1 forcefield > stepBack
+        chaser forcefield > stepBack
         avatar forcefield > nothing
         avatar rand > nothing
-        chaser1 wall > stepBack
-        chaser1 box2 > stepBack
-        chaser1 chaser1 > nothing
+        chaser wall > stepBack
+        chaser box2 > stepBack
+        chaser chaser > nothing
         missile EOS > wrapAround
         missile avatar > killSprite
         missile missile > reverseDirection

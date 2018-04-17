@@ -1,44 +1,41 @@
 level="""
-33333333333333333333333333333333
-33333333333333333333333333333333
-3333335                   333333
-333333    4    0          333333
-333333              2     333333
-333333                    333333
-333333      2             333333
-333333                 0  333333
-333333          4         333333
-333333                    333333
-33333333333333333333333333333333
-33333333333333333333333333333333
-33333333333333333333333333333333
+22222222222222222222222222222222
+2                              2
+2                              2
+2                              2
+2                              2
+2             5                2
+2                              2
+2                              2
+222           4               02
+22222222222222222222222222222222
 """
 game = """
 BasicGame
 	SpriteSet
-		avatar > MovingAvatar color=WHITE
-		c3 > ResourcePack color=BLUE
-		c2 > ResourcePack color=ORANGE
-		c5 > ResourcePack color=YELLOW
-		c4 > ResourcePack color=BLACK
+		avatar > MovingAvatar color=DARKBLUE
+		c3 > ResourcePack color=DARKGRAY
+		c2 > ResourcePack color=PINK
+		c5 > Chaser color=LIGHTGREEN fleeing=False cooldown=1 stype=c4
+		c4 > ResourcePack color=YELLOW
 	InteractionSet
 		c2 avatar > killSprite
 		c2 c5 > nothing
 		c5 c2 > nothing
+		c4 c5 > nothing
+		c5 c4 > nothing
 		c2 c4 > nothing
 		c4 c2 > nothing
 		c2 c3 > nothing
 		c3 c2 > nothing
 		c2 c2 > nothing
-		avatar c4 > stepBack
 		c5 avatar > killSprite
 		c3 c3 > nothing
 		avatar EOS > stepBack
 		c3 c4 > nothing
 		c4 c3 > nothing
 		c5 c5 > nothing
-		c4 c5 > nothing
-		c5 c4 > nothing
+		c4 avatar > killSprite
 		c3 c5 > nothing
 		c5 c3 > nothing
 		c4 c4 > nothing
@@ -57,6 +54,7 @@ BasicGame
 		NoveltyTermination s1=c3 s2=c3 win=True
 		NoveltyTermination s1=c3 s2=c4 win=True
 		NoveltyTermination s1=c3 s2=c5 win=True
+		NoveltyTermination s1=c4 s2=avatar win=True
 		NoveltyTermination s1=c4 s2=c4 win=True
 		NoveltyTermination s1=c4 s2=c5 win=True
 		NoveltyTermination s1=c5 s2=avatar win=True
@@ -68,10 +66,10 @@ BasicGame
 		NoveltyTermination s1=avatar s2=EOS win=True
 		SpriteCounter stype=avatar limit=0 win=False
 	LevelMapping
-		0 > c3
-		2 > c5
+		0 > c2
+		2 > c3
 		3 > c4
-		4 > c2
+		4 > c5
 		5 > avatar
 """
 if __name__ == "__main__":
