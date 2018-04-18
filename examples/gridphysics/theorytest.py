@@ -1,78 +1,120 @@
 level="""
-33333333333333333333333333333333
-33333333333333333333333333333333
-3333335                   333333
-333333    4    0          333333
-333333              2     333333
-333333                    333333
-333333      2             333333
-333333                 0  333333
-333333          4         333333
-333333                    333333
-33333333333333333333333333333333
-33333333333333333333333333333333
-33333333333333333333333333333333
+44444444444444444444444444444444
+44444444444444444444444444444444
+444444     5 6            444444
+444444    3    6          444444
+444444   2     1   4     4444444
+444444    45       4 4    444444
+4444444          2        444444
+444444   6    2      5    444444
+444444    1        0      444444
+444444         1          444444
+44444444444444444444444444444444
+44444444444444444444444444444444
+44444444444444444444444444444444
 """
 game = """
 BasicGame
 	SpriteSet
-		avatar > MovingAvatar color=WHITE
-		c3 > ResourcePack color=BLUE
-		c2 > ResourcePack color=ORANGE
-		c5 > ResourcePack color=YELLOW
-		c4 > ResourcePack color=BLACK
+		avatar > MovingAvatar color=DARKBLUE
+		c3 > ResourcePack color=LIGHTBLUE
+		c2 > ResourcePack color=PINK
+		c7 > ResourcePack color=ORANGE
+		c6 > ResourcePack color=GREEN
+		c5 > ResourcePack color=DARKGRAY
+		c4 > ResourcePack color=GOLD
 	InteractionSet
 		c2 avatar > killSprite
-		c2 c5 > nothing
-		c5 c2 > nothing
+		c6 c7 > nothing
+		c7 c6 > nothing
 		c2 c4 > nothing
 		c4 c2 > nothing
-		c2 c3 > nothing
-		c3 c2 > nothing
-		c2 c2 > nothing
-		avatar c4 > stepBack
-		c5 avatar > killSprite
-		c3 c3 > nothing
-		avatar EOS > stepBack
-		c3 c4 > nothing
-		c4 c3 > nothing
-		c5 c5 > nothing
+		c6 avatar > bounceForward
 		c4 c5 > nothing
 		c5 c4 > nothing
 		c3 c5 > nothing
 		c5 c3 > nothing
-		c4 c4 > nothing
+		c3 c4 > nothing
+		c4 c3 > nothing
+		c2 c5 > nothing
+		c5 c2 > nothing
+		c7 avatar > killSprite
+		c5 c7 > nothing
+		c7 c5 > nothing
+		avatar EOS > stepBack
 		c3 avatar > killSprite
-		c4 EOS > stepBack
+		c2 c6 > nothing
+		c6 c2 > nothing
+		c4 c6 > nothing
+		c6 c4 > nothing
+		c3 c7 > nothing
+		c7 c3 > nothing
+		c2 c2 > nothing
+		c5 c6 > nothing
+		c6 c5 > nothing
+		c3 c3 > nothing
+		c2 c7 > nothing
+		c7 c2 > nothing
+		c4 c7 > nothing
+		c7 c4 > nothing
+		c3 c6 > nothing
+		c6 c3 > nothing
+		c6 c6 > nothing
+		c2 c3 > nothing
+		c3 c2 > nothing
+		c7 c7 > nothing
+		avatar c5 > stepBack
+		c4 avatar > killSprite
+		c5 c5 > nothing
+		c4 c4 > nothing
 		c5 EOS > stepBack
-		c2 EOS > stepBack
+		c4 EOS > stepBack
+		c7 EOS > stepBack
 		c3 EOS > stepBack
+		c6 EOS > stepBack
+		c2 EOS > stepBack
 	TerminationSet
 		NoveltyTermination s1=c2 s2=avatar win=True
 		NoveltyTermination s1=c2 s2=c2 win=True
 		NoveltyTermination s1=c2 s2=c3 win=True
 		NoveltyTermination s1=c2 s2=c4 win=True
 		NoveltyTermination s1=c2 s2=c5 win=True
-		NoveltyTermination s1=c3 s2=avatar win=True
+		NoveltyTermination s1=c2 s2=c6 win=True
+		NoveltyTermination s1=c2 s2=c7 win=True
 		NoveltyTermination s1=c3 s2=c3 win=True
 		NoveltyTermination s1=c3 s2=c4 win=True
 		NoveltyTermination s1=c3 s2=c5 win=True
+		NoveltyTermination s1=c3 s2=c6 win=True
+		NoveltyTermination s1=c3 s2=c7 win=True
+		NoveltyTermination s1=c4 s2=avatar win=True
 		NoveltyTermination s1=c4 s2=c4 win=True
 		NoveltyTermination s1=c4 s2=c5 win=True
-		NoveltyTermination s1=c5 s2=avatar win=True
+		NoveltyTermination s1=c4 s2=c6 win=True
+		NoveltyTermination s1=c4 s2=c7 win=True
 		NoveltyTermination s1=c5 s2=c5 win=True
+		NoveltyTermination s1=c5 s2=c6 win=True
+		NoveltyTermination s1=c5 s2=c7 win=True
+		NoveltyTermination s1=c6 s2=c6 win=True
+		NoveltyTermination s1=c6 s2=c7 win=True
+		NoveltyTermination s1=c7 s2=avatar win=True
+		NoveltyTermination s1=c7 s2=c7 win=True
 		NoveltyTermination s1=c2 s2=EOS win=True
 		NoveltyTermination s1=c3 s2=EOS win=True
 		NoveltyTermination s1=c4 s2=EOS win=True
 		NoveltyTermination s1=c5 s2=EOS win=True
+		NoveltyTermination s1=c6 s2=EOS win=True
+		NoveltyTermination s1=c7 s2=EOS win=True
 		NoveltyTermination s1=avatar s2=EOS win=True
 		SpriteCounter stype=avatar limit=0 win=False
+		SpriteCounter stype=c3 limit=0 win=True
 	LevelMapping
-		0 > c3
-		2 > c5
-		3 > c4
-		4 > c2
-		5 > avatar
+		0 > c2
+		1 > c3
+		2 > c4
+		3 > avatar
+		4 > c5
+		5 > c6
+		6 > c7
 """
 if __name__ == "__main__":
 	from vgdl.core import VGDLParser
