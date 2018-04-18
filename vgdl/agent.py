@@ -258,7 +258,8 @@ class Agent:
 
 		statesEncountered = [self.rle._game.getFullState()]
 		self.statesEncountered.append(self.rle._game.getFullState())
-
+		envReal = self.fastcopy(self.rle)
+		self.rleHistory[episode_num].append(envReal)
 		#dep
 		if episode_num==0:
 			self.initializeHypotheses()
@@ -267,12 +268,12 @@ class Agent:
 		while not ended:
 
 			envReal = self.fastcopy(self.rle)
-			self.rleHistory[episode_num].append(envReal)
-			
-			##TODO: select hypothesis/es to plan with.
 
+			##TODO: select hypothesis/es to plan with.
+			hypothesesToPlanWith = [self.hypotheses[0]]
+			
 			## initialize one or many VRLEs according to hypothesis-selection method
-			theoryRLEs = VrleInitPhase(self.hypotheses, envReal)
+			theoryRLEs, plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal, makePlannerVrles=True)
 
 			quitting = False
 
@@ -280,7 +281,7 @@ class Agent:
 				pass
 				# def WBP_wrapper(l):
 				# 	hyperparameters, theory, queue = l
-				# 	p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=theory, fakeInteractionRules = self.fakeInteractionRules,
+				# 	p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=theory, fakeInteractionRules = self.fakeInteractionRules,
 				# 		seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
 				# 		firstOrderHorizon=self.firstOrderHorizon, hyperparameters=hyperparameters)
 				# 	return p
@@ -300,7 +301,7 @@ class Agent:
 				# p = res._value[best_index]
 			else:
 
-				p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
+				p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
 					seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
 					firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
 			
@@ -345,8 +346,8 @@ class Agent:
 			if not quitting:
 				for i, action in enumerate(solution):
 					bestScoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep=False)
-					hypotheses = [bestScoresAndHypotheses[0][1]]
-
+					self.hypotheses = [bestScoresAndHypotheses[0][1]]
+					# embed()
 					## TODO: determine value of theory_change_flag
 					# if theory_change_flag:
 						# self.hypotheses = hypotheses
@@ -450,7 +451,7 @@ class Agent:
 					break
 				print ">>> Step", num+1, "of", len(actions), "<<<"
 				## initialize VRLEs
-				theoryRLEs = VrleInitPhase(self.hypotheses, self.rle)
+				theoryRLEs, _ = VrleInitPhase(self.hypotheses, self.rle, makePlannerVrles=False)
 				lastStep=False
 				if num == len(actions)-1:
 					lastStep=True
@@ -504,8 +505,11 @@ class Agent:
 		return newRle
 
 	def scoreAndFilterTheories(self, newTheories, episode_num):
-		penalties = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], \
+		penalties, imaginedEffectsPerTheory = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], \
 			self.actionHistory[:episode_num+1], method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
+
+		for n,imaginedEffects in enumerate(imaginedEffectsPerTheory):
+			newTheories[n].setOfImaginedEffects = imaginedEffects
 
 		scoreAndTheoryTuples = zip(penalties, newTheories)
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
@@ -539,7 +543,7 @@ class Agent:
 
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
 		self.rleHistory[episode_num].append(envReal)
-		
+
 		## If we learn anything about orientation in this step for a sprite that was created in a previous step,
 		## go back in time and assign that orientation to the previous steps that sprite was in. This is so that when you set the state to what you 
 		## remember from the past, you can incorporate this knowledge.
@@ -588,7 +592,7 @@ class Agent:
 
 			if len(bestScoresAndHypotheses) == 0:
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
-
+				embed()
 				newerTheories = []
 
 				for t in newTheories:
@@ -637,11 +641,11 @@ def setSpriteState(sprite, matchingSprite, hypothesis):
 		print "WARNING: didn't find matching sprite in setSpriteState; this shouldn't happen"
 		embed()
 
-	sprite.rect 	= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
-	sprite.lastrect = pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
-	sprite.lastmove = matchingSprite.lastmove
-	sprite.ID = matchingSprite.ID
-	sprite.resources = defaultdict(int)
+	sprite.rect 		= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
+	sprite.lastrect 	= pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
+	sprite.lastmove 	= matchingSprite.lastmove
+	sprite.ID 			= matchingSprite.ID
+	sprite.resources 	= defaultdict(int)
 	for rcolor in matchingSprite.inventory.keys():
 		if rcolor not in hypothesis.spriteObjects:
 			continue
@@ -737,6 +741,8 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False, debug=False):
 	Vrle._game.observation = buildTracker(Vrle)
 	Vrle._game.observation['lastscore'] = rle._game.observation['lastscore']
 
+	# Make sure that all_objects has the same IDs as the parent RLE.
+	Vrle._game.all_objects = Vrle._game.getAllObjects()
 	return
 
 def initializeVrle(hypothesis, stateToSet, theoryRLE=None, makeInitialVrle=False, writeFile=False, debug=False):
@@ -772,21 +778,27 @@ def initializeVrle(hypothesis, stateToSet, theoryRLE=None, makeInitialVrle=False
 def convertTheoryToSubgoalTheory(theory):
 	T = theory.copy()
 	for rule in T.interactionSet:
-		if rule.generic:
+		if rule.generic and (rule.interaction, rule.slot1, rule.slot2) not in theory.setOfImaginedEffects:
 			if 'Avatar' not in str(T.classes[rule.slot1][0].vgdlType) and 'Avatar' not in str(T.classes[rule.slot2][0].vgdlType):
 				rule.interaction = 'nothing'
 			elif 'Avatar' not in str(T.classes[rule.slot1][0].vgdlType):
 				rule.interaction = 'killSprite'
 	return T
 
-def VrleInitPhase(hypotheses, stateToSet, theoryRLEs=None, makeInitialVrle=False):
+def VrleInitPhase(hypotheses, stateToSet, makePlannerVrles=False, theoryRLEs=None, makeInitialVrle=False):
 	## Initialize multiple VRLEs, each corresponding to one hypothesis in theories
 	## Set their state to that of the provided RLE
-	VRLEs = []
+	realVRLEs, plannerVRLEs = [], []
 	for num, hypothesis in enumerate(hypotheses):
-		convertedHypothesis = convertTheoryToSubgoalTheory(hypothesis)
-		VRLEs.append(initializeVrle(convertedHypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True))
-	return VRLEs
+		realVRLE = initializeVrle(hypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True)
+		if makePlannerVrles:
+			convertedHypothesis = convertTheoryToSubgoalTheory(hypothesis)
+			plannerVRLE = initializeVrle(convertedHypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True)
+		else:
+			plannerVRLE = None
+		realVRLEs.append(realVRLE)
+		plannerVRLEs.append(plannerVRLE)
+	return realVRLEs, plannerVRLEs
 
 def findNearestSprite(sprite, spriteList):
 	## returns the sprites in spriteList whose locations best match the location of sprite.
@@ -1611,12 +1623,14 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 		indices, actionsPerIndex = getSalientStates(subsamplePercentage, actionsPerIndex, rleHistory)
 
 	cumulative_penalties = []
+	setOfImaginedEffects = set()
+	initialRLEs, _ = VrleInitPhase(hypotheses, rleHistory[0], makePlannerVrles=False, makeInitialVrle=True)
 
-	initialRLEs = VrleInitPhase(hypotheses, rleHistory[0], makeInitialVrle=True)
 	for idx in indices:
 		## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
 		t1 = time.time()
-		theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], initialRLEs)
+		
+		theoryRLEs, _ = VrleInitPhase(hypotheses, rleHistory[idx], makePlannerVrles=False, theoryRLEs=initialRLEs)
 
 		## Take a predetermined number of actions starting from idx
 		end = min(idx+actionsPerIndex, len(actionHistory))
@@ -1631,12 +1645,15 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 		for n, action in enumerate(actionHistory[idx:end]):
 			penalties = []
 			if displayStates:
-				print "after taking action {}, real state looked like this:".format(action)
+				print "after taking action {}, real state looked like this:".format(keyPresses[action])
 				print rleHistory[idx+n+1].show()
 			for num, env in enumerate(theoryRLEs):                      
 
 				if env is not None:
-					env.step(action)
+					imaginedEffects = env.step(action)['effectList']
+					for effect in imaginedEffects:
+						effectWithClassNames = (effect[0], env._game.all_objects[effect[1]].name, env._game.all_objects[effect[2]].name)
+						setOfImaginedEffects.add(effectWithClassNames)
 				try:
 					penalty, errorList = errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
 						rleHistory[idx+n], targetColor=targetColor, penalty_only=True)
@@ -1656,16 +1673,15 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 
 	cumulative_penalties = np.array(cumulative_penalties)
 	mean_penalties = np.mean(cumulative_penalties, axis=0)
-
 	hypotheses[0].experienceReplayRecord[key] = mean_penalties
-	return mean_penalties
+	return mean_penalties, setOfImaginedEffects
 	
 def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', targetColor=None, displayStates=False, displayTheories=False):
 	if len(hypotheses)>10:
 		print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
 
 	t1 = time.time()
-	results = []
+	results, imaginedEffects = [], []
 	# if len(hypotheses)>100:
 		# print ">100 hypotheses"
 		# embed()
@@ -1673,15 +1689,17 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', target
 		if displayTheories:
 			print "running experienceReplay on {}:".format(num)
 			h.display()
-		results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h]))
-
+		mean_penalties, setOfImaginedEffects = singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h])
+		results.append(mean_penalties)
+		imaginedEffects.append(setOfImaginedEffects)
 
 	if len(hypotheses)>10:
 		print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 
+	# print "ran experienceReplay"
+	# embed()
 	mean_penalties = [r[0] for r in results]
-
-	return mean_penalties
+	return mean_penalties, imaginedEffects
 
 def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, method, targetColor=None, displayStates=False, displayTheories=False):
 	'''
@@ -1692,17 +1710,19 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 	# print "Running MultiEpisodeExperienceReplay on %i episodes " % len(rleHistories)
 
 	multi_episode_mean_penalties = []
+	imaginedEffectsPerTheory = [set() for i in range(len(hypotheses))]
+
 	weight = 1./len(max(actionHistories, key=len))
 
 	for rleHistory, actionHistory in zip(rleHistories, actionHistories):
-		mean_penalties = experienceReplay(hypotheses, rleHistory, actionHistory, 
+		mean_penalties, imaginedEffects = experienceReplay(hypotheses, rleHistory, actionHistory, 
 													 method, targetColor, displayStates, displayTheories)
 		mean_penalties = np.array(mean_penalties)*weight*len(actionHistory)
 		multi_episode_mean_penalties.append(mean_penalties)
-
+		for i in range(len(hypotheses)):
+			imaginedEffectsPerTheory[i] = imaginedEffectsPerTheory[i].union(imaginedEffects[i])
 	multi_episode_mean_penalties = np.mean(multi_episode_mean_penalties, axis=0)
-
-	return multi_episode_mean_penalties
+	return multi_episode_mean_penalties, imaginedEffectsPerTheory
 
 ########################################################################
 ######## THEORY MODIFICATION 									########
@@ -1830,9 +1850,8 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		# embed()
 		newTheories = list(set(newTheories))
 		rleHistory, actionHistory = rleHistories[episode_num], actionHistories[episode_num]
-		penalties = MultiEpisodeExperienceReplay(newTheories, [rleHistory[-2:]], \
+		penalties, _ = MultiEpisodeExperienceReplay(newTheories, [rleHistory[-2:]], \
 			[actionHistory[-1:]], method=EXPERIENCE_REPLAY_METHOD, targetColor = errorMap.targetColor)
-
 		scoreAndTheoryTuples = zip(penalties, newTheories)
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
 

@@ -280,6 +280,8 @@ class Theory(object):
 		self.expandedSprites = []
 		self.errorMapHistory = []
 		self.lineage = []
+
+		self.setOfImaginedEffects = set()
 		
 		self.experienceReplayRecord = {} ## store (targetColor, rleHistory.ID, len(rleHistory)):penalty
 		self.mark = False ## For convenient marking and finding of hypotheses
@@ -1355,7 +1357,7 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, action
 		# print "in iterateThresholds"
 		# theory.display()
 		rule = relevantRulesWithArgs[0]
-		penalty = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
+		penalty,_ = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
 			method='all', targetColor=errorMap.targetColor)[0]
 		newPenalty = penalty
 		while newPenalty >= penalty:
@@ -1368,7 +1370,7 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, action
 			if len(thresholdOrdering[rule.interaction]) > idx+1:
 				rule.args[k] = thresholdOrdering[rule.interaction][idx+1]
 				theory.experienceReplayRecord = {}
-				newPenalty = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
+				newPenalty,_ = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
 					method='all', targetColor=errorMap.targetColor)[0]
 				# print newPenalty, rule.display()
 			else:

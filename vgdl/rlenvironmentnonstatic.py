@@ -86,12 +86,6 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         self.game_name = None
         self.ID = uuid.uuid1()
 
-
-    # def __init__(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, actionset=BASEDIRS, positions=None, **kwargs):
-    #     lp = LineProfiler()
-    #     lp_wrapper = lp(self.realInit)
-    #     lp_wrapper(gameDef, levelDef, observationType, visualize, actionset, positions, **kwargs)
-    #     lp.print_stats()
     # Get definition of the observation data expected
     def observationSpec(self):
         return{ 'scheme':'Doubles', 'size':self.outdim }
@@ -348,7 +342,6 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
 
     def step(self, action):
         #print self._game.sprite_groups['avatar']
-        #print("start step")
         if action == ('space'):
             self._game.keystate[32] = True
             action = (0,0)
@@ -377,7 +370,8 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
             self._game.keystate[k] = False
 
         self._game.observation = processFrame(self._game.observation, self._game)
-        return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
+
+        return {'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
 
     def __repr__(self):
         return self.show()

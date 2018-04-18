@@ -240,11 +240,7 @@ class WBP():
 		# acceptableNodes = QReward
 		acceptableNodes = filter(lambda n:n.novelty<3, QReward)
 		acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
-		print "accetable:", len(acceptableNodes)
-		# if len(acceptableNodes)==0:
-			# acceptableNodes = QReward
-			# print "Removed filter"
-			# embed()
+		# print "accetable:", len(acceptableNodes)
 		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
 		try:
 			current = bestNodes.pop(0)
@@ -286,7 +282,7 @@ class WBP():
 			"""
 			# current = self.noveltySelection(QNovelty, QReward)
 			current = self.rewardSelection(QReward, QNovelty)
-			print "visited:", len(visited)
+			# print "visited:", len(visited)
 			# print("node chosen has position score {}".format(current.position_score()))
 			# print embed()
 			if current in [None, 'pickMaxNode']:
@@ -788,8 +784,10 @@ class Node():
 			# Second order lesion
 			# if s1 != 'avatar' and s2 != 'avatar':
 				# return 0, 10000
-
-			n_sprites = len(s1_positions)
+			# if s1_positions is None:
+				# print "got None for s1 positions in WBP"
+				# embed()
+			n_sprites = len(s1_positions) if s1_positions else 0
 			possiblePairList = []
 			try:
 				# A consequence of the two-way generic interactions in the
@@ -999,8 +997,9 @@ class Node():
 		# sum(self.rolloutArray) - self.metabolic_cost + self.position_score(-250)
 		self.intrinsic_reward = self.heuristicVal
 
-		print("heuristicVal {}".format(self.heuristicVal))
-		print("intrinsic_reward {}".format(self.intrinsic_reward))
+		## Print these if you need to debug heuristics
+		# print("heuristicVal {}".format(self.heuristicVal))
+		# print("intrinsic_reward {}".format(self.intrinsic_reward))
 		try:
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
 			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
