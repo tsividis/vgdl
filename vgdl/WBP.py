@@ -881,9 +881,6 @@ class Node():
 				# if noveltytermination_val!=0:
 					# print("noveltytermination_val for {} and {} is equal to {}".format(
 						# term.termination.s1, term.termination.s2, noveltytermination_val))
-
-				# if self.parent and self.parent.rle._game.score==0 and term.termination.args and term.termination.s1=='c6' and term.termination.s2=='avatar' and noveltytermination_val!=-5000:
-					# ipdb.set_trace()
 				if 'avatar' == term.termination.s2:
 					avatarNoveltyVals.append([self.WBP.annealing*noveltytermination_val,
 						ranking])
