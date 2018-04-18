@@ -16,6 +16,7 @@ from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
 from pathos.helpers import mp
+# import multiprocess as mp
 # from line_profiler import LineProfiler
 
 
@@ -247,15 +248,16 @@ class Agent:
             allStatesEncountered = []
             t1 = time.time()
             first_time_playing_level = True
+            pool = mp.Pool(processes=len(self.hyperparameter_sets))
 
             while not win and i<10:
-                gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
+                gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level, pool=pool)
                 self.total_game_steps += steps
                 episodes.append((n_level, steps, win, score))
                 allStatesEncountered.extend(statesEncountered)
                 levelEffectsEncountered.append(effectsEncountered)
-                VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
-                persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
+                # VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
+                # persist_movie=False, make_images=False, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
                 first_time_playing_level = False
                 i += 1
                 print "Finished in ", time.time() - t1
@@ -392,8 +394,7 @@ class Agent:
             return gameObject, win, score, steps, statesEncountered, effectsEncountered
         """
 
-
-    def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False):
+    def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None):
         from vgdl.util import manhattanDist
 
         ## Initialize external environment
@@ -478,13 +479,12 @@ class Agent:
                 #     planner.terminate()
                 #     planner.join()
                 #
-                pool = mp.Pool()
                 print('#3')
-                res = pool.map_async(WBP_wrapper, [(h_set, self.hypotheses[0], result_queue) for h_set in self.hyperparameter_sets])
+                res = pool.map(WBP_wrapper, [(h_set, self.hypotheses[0], result_queue) for h_set in self.hyperparameter_sets])
                 print('#4')
-                pool.close()
+                # pool.close()
                 print('#5')
-                pool.join()
+                # pool.join()
                 print('#6')
                 # import ipdb; ipdb.set_trace()
 
@@ -496,8 +496,9 @@ class Agent:
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                     firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
-            best_index = np.argmin([p.total_nodes for p in res._value])
-            p = res._value[best_index]
+            best_index = np.argmin([p.total_nodes for p in res])
+            print('passed here')
+            p = res[best_index]
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps = p.total_nodes
 
@@ -682,6 +683,8 @@ class Agent:
                 self.max_nodes *= self.max_nodes_annealing
                 # self.updateMemory(self.rle)
 
+                del res
+
                 return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered
 
 
@@ -710,6 +713,9 @@ class Agent:
             print colored('________________________________________________________________', 'white', 'on_red')
             print colored(output, 'white', 'on_red')
             print colored('________________________________________________________________', 'white', 'on_red')
+
+        del res
+
         return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
     def matchEventToRuleByIDAndSpriteName(self, event, rule):
