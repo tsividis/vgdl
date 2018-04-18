@@ -208,8 +208,8 @@ BasicGame frame_rate=30
     InteractionSet
         avatar wall > stepBack
         avatar poison1 > killSprite
-        avatar poison2 > stepBack
-        # avatar poison2 > killSprite
+        # avatar poison2 > stepBack
+        avatar poison2 > killSprite
         avatar poison3 > killSprite
         goal avatar > killSprite
         box1 avatar > bounceForward

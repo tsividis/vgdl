@@ -247,12 +247,52 @@ class Agent:
 			print "Finished episode in {} seconds".format(time.time() - t1)
 		return
 
+	def playCurriculum(self, level_game_pairs=None, num_episodes=10):
+		""" Plays a game level until it wins, then moves to the next one until
+		completion. """
+		if not level_game_pairs:
+			level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
+		episodes = []
+
+		for n_level, level_game in enumerate(level_game_pairs):
+
+			## for playback
+			self.allStatesEncountered = [[] for i in range(num_episodes)]
+			episodes = []
+
+			## for inference
+			self.rleHistory = [[] for i in range(num_episodes)]
+			self.actionHistory = [[] for i in range(num_episodes)]
+			self.all_objects = [{} for i in range(num_episodes)]
+
+			self.max_nodes = self.starting_max_nodes
+			win = False
+			gameObject = None
+			i=0
+			first_time_playing_level = True
+			allStatesEncountered = []
+
+			while not win and i<num_episodes:
+				gameObject, win, score, steps, statesEncountered = self.playEpisode(gameObject, i, win=win, first_time_playing_level=first_time_playing_level)
+				if not win:
+					embed()
+				self.total_game_steps += steps
+				episodes.append((n_level, steps, win, score))
+				allStatesEncountered.extend(statesEncountered)
+				i+=1
+			if i>=num_episodes:
+				return
+
+			self.levels_won +=1
+
+		return
+
 	def playEpisode(self, gameObject, episode_num, flexible_goals=False, win=False, first_time_playing_level=False):
 		
 		self.initializeEnvironment()
 		print "initializing RLE"
 		steps, self.quits, self.longHorizonObservations = 0,0,0
-		self.all_objects = self.rle._game.getAllObjects()
+		self.all_objects[episode_num] = self.rle._game.getAllObjects()
 		ended, win = self.rle._isDone()
 		annealing = 1
 
@@ -1592,6 +1632,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 
 	subsamplePercentage = .2
 	actionsPerIndex = 2
+	setOfImaginedEffects = set()
 
 	if len(hypotheses)>1:
 		print "got more than 1 hypothesis in singleTheoryExperienceReplay"
@@ -1600,7 +1641,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	key = (method, targetColor, rleHistory[0].ID, len(rleHistory))
 	
 	if not displayStates and key in hypotheses[0].experienceReplayRecord:
-		return hypotheses[0].experienceReplayRecord[key]
+		return hypotheses[0].experienceReplayRecord[key], setOfImaginedEffects
 
 	if method == 'all':
 		indices = range(len(rleHistory))
@@ -1623,7 +1664,6 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 		indices, actionsPerIndex = getSalientStates(subsamplePercentage, actionsPerIndex, rleHistory)
 
 	cumulative_penalties = []
-	setOfImaginedEffects = set()
 	initialRLEs, _ = VrleInitPhase(hypotheses, rleHistory[0], makePlannerVrles=False, makeInitialVrle=True)
 
 	for idx in indices:
@@ -1722,6 +1762,7 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 		for i in range(len(hypotheses)):
 			imaginedEffectsPerTheory[i] = imaginedEffectsPerTheory[i].union(imaginedEffects[i])
 	multi_episode_mean_penalties = np.mean(multi_episode_mean_penalties, axis=0)
+
 	return multi_episode_mean_penalties, imaginedEffectsPerTheory
 
 ########################################################################
