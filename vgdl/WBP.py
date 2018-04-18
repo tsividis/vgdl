@@ -786,10 +786,10 @@ class Node():
 			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
 
 			# Second order lesion
-			if s1 != 'avatar' and s2 != 'avatar':
-				return 0, 10000
-
+			# if s1 != 'avatar' and s2 != 'avatar':
+				# return 0, 10000
 			n_sprites = len(s1_positions)
+			possiblePairList = []
 			try:
 				# A consequence of the two-way generic interactions in the
 				# theory is that minimum-distance object pairs whose interactions
@@ -806,8 +806,6 @@ class Node():
 					 # raise an error and set the distance to 0
 				# print distance
 			except:
-				print "problem in compute_second_order"
-				embed()
 				distance = 0
 
 			if possiblePairList:

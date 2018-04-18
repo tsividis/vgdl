@@ -293,15 +293,16 @@ class Agent:
 				# print('#5')
 				pool.join()
 				# print('#6')
+				best_index = np.argmin([p.total_nodes for p in res._value])
+				bestNode, gameStringArray, objectPositionsArray = res._value[best_index].BFS()
 			else:
 
 				p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
 					seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
 					firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
-			print "made wbp"
-			embed()
-			# best_index = np.argmin([p.total_nodes for p in res._value])
-			# bestNode, gameStringArray, objectPositionsArray = res._value[best_index].BFS()
+			
+				bestNode, gameStringArray, objectPositionsArray = p.BFS()
+
 			self.total_planner_steps = p.total_nodes
 
 			if bestNode is not None:
@@ -327,28 +328,26 @@ class Agent:
 				if (not solution) or p.quitting:
 					if self.longHorizonObservations<self.longHorizonObservationLimit:
 						print "Didn't get solution or decided to quit. Observing, then replanning."
-						observe(self.rle, 5, self.bestSpriteTypeDict)
+						observe(self.rle, 5)
 						solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
 						self.longHorizonObservations += 1
 					else:
 						quitting = True
 
 			if emptyPlans > self.emptyPlansLimit:
-				observe(self.rle, 5, self.bestSpriteTypeDict)
+				observe(self.rle, 5)
 
 			if not quitting:
 				for i, action in enumerate(solution):
-					bestScoresAndHypotheses = self.executeStep(episode_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, lastStep=False)
+					bestScoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep=False)
 					hypotheses = [bestScoresAndHypotheses[0][1]]
 
-					print "got hypotheses"
-					embed()
+					# print "got hypotheses"
+					# embed()
 					## TODO: determine value of theory_change_flag
-					if theory_change_flag:
-						self.hypotheses = hypotheses
-						break
-
-					ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
+					# if theory_change_flag:
+						# self.hypotheses = hypotheses
+						# break
 
 					steps +=1
 
@@ -365,8 +364,11 @@ class Agent:
 				## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
 				## Search more deeply next time.
 				self.max_nodes *= self.max_nodes_annealing
+				
+				print "Got quitting==True. Embedding to debug."
+				embed()
 				return gameObject, False, self.rle._game.score, steps, statesEncountered
-		
+
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
 
@@ -525,8 +527,11 @@ class Agent:
 	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, lastStep=False):
 
 		envRealPrev = self.fastcopy(self.rle)
-		actionHistories[episode_num].append(action)
-		
+		try:
+			actionHistories[episode_num].append(action)
+		except:
+			print "problem appending to actionhistories"
+			embed()
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
 		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action)
@@ -615,9 +620,10 @@ class Agent:
 ######## Other initialization METHODS                			########
 ########################################################################
 
-def observe(rle):
-	spriteInduction(rle._game, step=1, action=None)
-	spriteInduction(rle._game, step=2, action=None)
+def observe(rle, num_steps=1):
+	for i in range(num_steps):
+		spriteInduction(rle._game, step=1, action=None)
+		spriteInduction(rle._game, step=2, action=None)
 	return
 
 ########################################################################
