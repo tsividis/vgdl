@@ -121,7 +121,7 @@ class WBP():
 			objLocs = [rle._rect2pos(element.rect) for element in rle._game.sprite_groups[objName]
 			if element not in rle._game.kill_list]
 		except:
-			return None
+			return []#None
 		return objLocs
 
 	def findAvatarInRLE(self, rle):
