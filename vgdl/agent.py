@@ -263,8 +263,6 @@ class Agent:
 		if episode_num==0:
 			self.initializeHypotheses()
 			updateTerminations(self.rle, self.hypotheses)
-			print "updated terminations"
-			embed()
 		emptyPlans = 0
 		while not ended:
 
