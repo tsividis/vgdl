@@ -786,9 +786,12 @@ class Node():
 			s2_positions = self.WBP.findObjectsInRLE(rle, s2)
 			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
 
+			if s2=='EOS':
+				print "found EOS"
+				embed()
 			# Second order lesion
-			if s1 != 'avatar' and s2 != 'avatar':
-				return 0, 10000
+			# if s1 != 'avatar' and s2 != 'avatar':
+				# return 0, 10000
 
 			n_sprites = len(s1_positions)
 			try:

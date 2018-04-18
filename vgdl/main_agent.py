@@ -496,8 +496,8 @@ class Agent:
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                     firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
-            print "made wbp"
-            embed()
+            # print "made wbp"
+            # embed()
             best_index = np.argmin([p.total_nodes for p in res._value])
             bestNode, gameStringArray, objectPositionsArray = res._value[best_index].BFS()
             self.total_planner_steps = p.total_nodes

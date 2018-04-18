@@ -14,8 +14,8 @@ game = """
 BasicGame
 	SpriteSet
 		avatar > MovingAvatar color=WHITE
-		c3 > ResourcePack color=BLUE
-		c2 > ResourcePack color=ORANGE
+		c3 > ResourcePack color=ORANGE
+		c2 > ResourcePack color=BLUE
 		c5 > ResourcePack color=YELLOW
 		c4 > ResourcePack color=BLACK
 	InteractionSet
@@ -66,10 +66,10 @@ BasicGame
 		NoveltyTermination s1=avatar s2=EOS win=True
 		SpriteCounter stype=avatar limit=0 win=False
 	LevelMapping
-		0 > c3
+		0 > c2
 		2 > c5
 		3 > c4
-		4 > c2
+		4 > c3
 		5 > avatar
 """
 if __name__ == "__main__":

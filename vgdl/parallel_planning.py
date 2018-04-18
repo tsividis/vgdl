@@ -21,7 +21,7 @@ def play_trainset(hyperparameters, game_number):
     #uncomment this line to run local games
     gameName = filename
 
-    agent = Agent('full', gameName, hyperparameter_sets=hyperparameters, parallel_planning=True)
+    agent = Agent('full', gameName, hyperparameter_sets=hyperparameters, parallel_planning=False)
 
     ##then pass this down for multiple episodes
     gameObject = None
