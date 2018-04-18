@@ -269,6 +269,8 @@ class Agent:
 			envReal = self.fastcopy(self.rle)
 			self.rleHistory[episode_num].append(envReal)
 			
+			##TODO: select hypothesis/es to plan with.
+
 			## initialize one or many VRLEs according to hypothesis-selection method
 			theoryRLEs = VrleInitPhase(self.hypotheses, envReal)
 
@@ -304,8 +306,6 @@ class Agent:
 			
 			bestNode, gameStringArray, objectPositionsArray = p.BFS()
 
-			print "made wbp"
-			embed()
 			# best_index = np.argmin([p.total_nodes for p in res._value])
 			# bestNode, gameStringArray, objectPositionsArray = res._value[best_index].BFS()
 			self.total_planner_steps = p.total_nodes
@@ -769,12 +769,23 @@ def initializeVrle(hypothesis, stateToSet, theoryRLE=None, makeInitialVrle=False
 
 	return Vrle
 
+def convertTheoryToSubgoalTheory(theory):
+	T = theory.copy()
+	for rule in T.interactionSet:
+		if rule.generic:
+			if 'Avatar' not in str(T.classes[rule.slot1][0].vgdlType) and 'Avatar' not in str(T.classes[rule.slot2][0].vgdlType):
+				rule.interaction = 'nothing'
+			elif 'Avatar' not in str(T.classes[rule.slot1][0].vgdlType):
+				rule.interaction = 'killSprite'
+	return T
+
 def VrleInitPhase(hypotheses, stateToSet, theoryRLEs=None, makeInitialVrle=False):
 	## Initialize multiple VRLEs, each corresponding to one hypothesis in theories
 	## Set their state to that of the provided RLE
 	VRLEs = []
 	for num, hypothesis in enumerate(hypotheses):
-		VRLEs.append(initializeVrle(hypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True))
+		convertedHypothesis = convertTheoryToSubgoalTheory(hypothesis)
+		VRLEs.append(initializeVrle(convertedHypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True))
 	return VRLEs
 
 def findNearestSprite(sprite, spriteList):
