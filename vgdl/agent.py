@@ -333,28 +333,26 @@ class Agent:
 				if (not solution) or p.quitting:
 					if self.longHorizonObservations<self.longHorizonObservationLimit:
 						print "Didn't get solution or decided to quit. Observing, then replanning."
-						observe(self.rle, 5, self.bestSpriteTypeDict)
+						observe(self.rle, 5)
 						solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
 						self.longHorizonObservations += 1
 					else:
 						quitting = True
 
 			if emptyPlans > self.emptyPlansLimit:
-				observe(self.rle, 5, self.bestSpriteTypeDict)
+				observe(self.rle, 5)
 
 			if not quitting:
 				for i, action in enumerate(solution):
-					bestScoresAndHypotheses = self.executeStep(episode_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, lastStep=False)
+					bestScoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep=False)
 					hypotheses = [bestScoresAndHypotheses[0][1]]
 
-					print "got hypotheses"
-					embed()
 					## TODO: determine value of theory_change_flag
-					if theory_change_flag:
-						self.hypotheses = hypotheses
-						break
+					# if theory_change_flag:
+						# self.hypotheses = hypotheses
+						# break
 
-					ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
+					# ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
 
 					steps +=1
 
@@ -371,6 +369,8 @@ class Agent:
 				## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
 				## Search more deeply next time.
 				self.max_nodes *= self.max_nodes_annealing
+				print "You got quitting==True from planner. Embedding to debug."
+				embed()
 				return gameObject, False, self.rle._game.score, steps, statesEncountered
 		
 			annealing *= self.annealingFactor
@@ -621,9 +621,10 @@ class Agent:
 ######## Other initialization METHODS                			########
 ########################################################################
 
-def observe(rle):
-	spriteInduction(rle._game, step=1, action=None)
-	spriteInduction(rle._game, step=2, action=None)
+def observe(rle, num_steps=1):
+	for i in range(num_steps):
+		spriteInduction(rle._game, step=1, action=None)
+		spriteInduction(rle._game, step=2, action=None)
 	return
 
 ########################################################################
