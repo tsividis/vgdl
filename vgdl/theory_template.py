@@ -303,6 +303,7 @@ class Theory(object):
 		newTheory.errorMapHistory = list(self.errorMapHistory) # currently unused but useful for debugging.
 		newTheory.experienceReplayRecord = ccopy(self.experienceReplayRecord)
 		newTheory.falsified = set(self.falsified)
+		newTheory.setOfImaginedEffects = set(self.setOfImaginedEffects)
 		return newTheory
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
@@ -536,6 +537,9 @@ class Theory(object):
 								for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
 							all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 							all([not terminationRule.__eq__(t) for t in self.falsified])):
+							if (rule.slot1=='c4' and rule.slot2=='avatar') or (rule.slot1=='avatar' and rule.slot2=='c4'):
+								print "found avatar c4"
+								# embed()
 							self.terminationSet.add(terminationRule)
 				elif rule.generic and not rule.preconditions:
 					if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
@@ -546,6 +550,10 @@ class Theory(object):
 									for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
 								all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 								all([not terminationRule.__eq__(t) for t in self.falsified])):
+								if (rule.slot1=='c4' and rule.slot2=='avatar') or (rule.slot1=='avatar' and rule.slot2=='c4'):
+									print "found avatar c4"
+									# embed()
+
 								self.terminationSet.add(terminationRule)
 
 
@@ -564,8 +572,8 @@ class Theory(object):
 				elif rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore', 'transformTo']:
 					# terminationRule = SpriteCounterRule(rule.slot1, 0, True)
 					# if (all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
-					# 	all([not terminationRule.__eq__(t) for t in self.falsified])):
-					# 	self.terminationSet.add(terminationRule)
+						# all([not terminationRule.__eq__(t) for t in self.falsified])):
+						# self.terminationSet.add(terminationRule)
 					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
 					if terminationRule not in self.falsified:
 						self.terminationSet.add(terminationRule)

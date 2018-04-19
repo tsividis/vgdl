@@ -299,7 +299,7 @@ class Agent:
 		envReal = self.fastcopy(self.rle)
 		self.rleHistory[episode_num].append(envReal)
 		#dep
-		if episode_num==0:
+		if not self.hypotheses:
 			self.initializeHypotheses()
 			updateTerminations(self.rle, self.hypotheses)
 		emptyPlans = 0
@@ -385,8 +385,11 @@ class Agent:
 
 			if not quitting:
 				for i, action in enumerate(solution):
+					print "executing step"
 					bestScoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep=False)
-					self.hypotheses = [bestScoresAndHypotheses[0][1]]
+					# self.hypotheses = [bestScoresAndHypotheses[0][1]]
+					self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
+					print "executed step"
 					# embed()
 					## TODO: determine value of theory_change_flag
 					# if theory_change_flag:
@@ -508,16 +511,16 @@ class Agent:
 		return
 
 	def manageNewObjects(self, episode_num, hypotheses, envRealPrev, action):
-
+		# embed()
 		## Add newly-seen objects.
 		current_objects = self.rle._game.getAllObjects()
-
-		if any([k not in self.rle._game.movement_options for k in current_objects]):
-			for k in current_objects.keys():
-				distributionInitSetup(self.rle._game, k)
-				if k not in self.all_objects[episode_num]:
-					self.all_objects[episode_num][k] = current_objects[k]
-			
+		newObjects = [k for k in current_objects if k not in self.rle._game.movement_options]
+		# if any([k not in self.rle._game.movement_options for k in current_objects]):
+			# for k in current_objects.keys():
+				# distributionInitSetup(self.rle._game, k)
+				# if k not in self.all_objects[episode_num]:
+					# self.all_objects[episode_num][k] = current_objects[k]
+		if newObjects:
 			spriteInduction(self.rle._game, step=1, action=action, specificSpritesToUpdate=[])
 			spriteInduction(self.rle._game, step=2, action=action, specificSpritesToUpdate=[])
 
@@ -545,11 +548,13 @@ class Agent:
 		return newRle
 
 	def scoreAndFilterTheories(self, newTheories, episode_num):
+		# print episode_num
+		# embed()
 		penalties, imaginedEffectsPerTheory = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], \
 			self.actionHistory[:episode_num+1], method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
 
 		for n,imaginedEffects in enumerate(imaginedEffectsPerTheory):
-			newTheories[n].setOfImaginedEffects = imaginedEffects
+			newTheories[n].setOfImaginedEffects = newTheories[n].setOfImaginedEffects.union(imaginedEffects)
 
 		scoreAndTheoryTuples = zip(penalties, newTheories)
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
@@ -570,7 +575,7 @@ class Agent:
 		print ""
 		print "{} survived".format(len(scoresAndHypotheses))
 
-		return scoresAndHypotheses , scoreAndTheoryTuples
+		return scoresAndHypotheses, scoreAndTheoryTuples
 
 	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, lastStep=False):
 
@@ -579,8 +584,9 @@ class Agent:
 		
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
+		print "took action; managing objects"
 		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action)
-
+		print "managed new objects; dealing with orientedSprites"
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
 		self.rleHistory[episode_num].append(envReal)
 
@@ -602,16 +608,16 @@ class Agent:
 				## (that is, when none of the sprites you learned about exist)
 				if not madeChange:
 					break
-
+		print "dealt with sprites; matching envs"
 		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
 		self.rle._game.sprite_appearances = new_sprites
-
+		print "managed envs"
 		print ""
 		print keyPresses[action]
 		print self.rle.show(color='blue')
 
 		print "evaluating {} old theories and proposing new ones".format(len(theoryRLEs))
-		# updateTerminations(self.rle, hypotheses)
+		updateTerminations(self.rle, hypotheses)
 		newTheories = []
 	
 		for num, env in enumerate(theoryRLEs):
@@ -645,9 +651,6 @@ class Agent:
 				bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newerTheories, episode_num)
 		else:
 			print "Got no new theories"
-			# just use input hypotheses if no new Theories are generated
-			# TODO: do we really need to or will they have been filtered before?
-			# bestScoresAndHypotheses , scoreAndTheoryTuples = self.scoreAndFilterTheories(hypotheses, episode_num)
 
 		self.statesEncountered.append(self.rle._game.getFullState())
 		self.rle._game.sprite_appearances = []
@@ -824,7 +827,7 @@ def convertTheoryToSubgoalTheory(theory):
 			elif 'Avatar' not in str(T.classes[rule.slot1][0].vgdlType):
 				rule.interaction = 'killSprite'
 	imaginedEffectTuples = set([(eff[1], eff[2]) for eff in theory.setOfImaginedEffects])
-	T.setOfImaginedEffects = theory.setOfImaginedEffects
+	# T.setOfImaginedEffects = theory.setOfImaginedEffects
 	T.terminationSet = [rule for rule in T.terminationSet if rule.ruleType!='NoveltyRule' or (rule.termination.s1, rule.termination.s2) not in imaginedEffectTuples]
 
 	return T
@@ -1639,7 +1642,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	key = (method, targetColor, rleHistory[0].ID, len(rleHistory))
 	
 	if not displayStates and key in hypotheses[0].experienceReplayRecord:
-		return hypotheses[0].experienceReplayRecord[key], setOfImaginedEffects
+		return hypotheses[0].experienceReplayRecord[key], hypotheses[0].setOfImaginedEffects
 
 	if method == 'all':
 		indices = range(len(rleHistory))
@@ -1896,8 +1899,8 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 
 		# scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=0, max_num=None,
 				# proportionOfSpriteTheories=None)]
-
 		# newTheories = [s[1] for s in scoresAndHypotheses]
+		
 		newTheories = [s[1] for s in scoreAndTheoryTuples]
 		theories = newTheories
 
@@ -1952,11 +1955,6 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 	theory.errorMapHistory.append(errorMap)
 	newTheories = [theory.copy()]
 	newErrorMaps = [errorMap]
-
-	## For debugging. Don't make children of the true theory.
-	if hasattr(theory, 'trueTheory'):
-		newTheories = [theory.copy()]
-		return newTheories
 
 	theory.experienceReplayRecord = {}
 

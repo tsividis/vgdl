@@ -66,8 +66,11 @@ class WBP():
 		self.gameString_array = []
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
+			print "made WBP with no theory passed to it!"
+			embed()
 		else:
-			self.theory=copy.deepcopy(theory)
+			# self.theory=copy.deepcopy(theory)
+			self.theory = theory.copy()
 			# self.theory.interactionSet.extend(fakeInteractionRules)
 			# print "before updating terminations in WBP"
 			# embed()
