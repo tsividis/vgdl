@@ -386,7 +386,11 @@ class Agent:
 			if not quitting:
 				for i, action in enumerate(solution):
 					print "executing step"
-					bestScoresAndHypotheses = self.executeStep(episode_num, i, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, objectPositionsArray, lastStep=False)
+					bestScoresAndHypotheses, danger = self.executeStep(episode_num, i, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, objectPositionsArray, lastStep=False)
+					
+					if danger:
+						print "got danger"
+						embed()
 					self.bestScoresAndHypotheses = bestScoresAndHypotheses
 					# self.hypotheses = [bestScoresAndHypotheses[0][1]]
 					self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
@@ -498,7 +502,7 @@ class Agent:
 				if num == len(actions)-1:
 					lastStep=True
 				t2 = time.time()
-				scoresAndHypotheses = self.executeStep(episode_num, num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
+				scoresAndHypotheses, _ = self.executeStep(episode_num, num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
 				print ""
 				print "executed step in {} seconds".format(time.time()-t2)
 				print ""
@@ -577,75 +581,35 @@ class Agent:
 		return scoresAndHypotheses, scoreAndTheoryTuples
 
 	def regroundOrNot(self, step_number, objectPositionsArray, hypothesis):
-		# regroundingFlag = False
+		## Returns predictionError=True/False, danger=True/False
+		## NOTE: If predictionError=True, we aren't evaluating danger
+		## because we end up replanning no matter what.
 
 		matchedEnvs, la, lb = matchEnvs(self.rle, objectPositionsArray[step_number+1])
 		if la:
-			return True
+			return True, False
 		if lb:
-			return True
+			return True, False
 		for match in matchedEnvs:
 			if match[2]!=0:
-				return True
-		return False
-		# if (step_number+1)%self.regrounding==0:
-		# if True:
-		# 	try:
-		# 		rlePositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in self.rle._game.sprite_groups.values() for item in sublist])
-		# 		hypPositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in objectPositionsArray[step_number+1]._game.sprite_groups.values() for item in sublist])
-		# 		rlePositionsTuples, hypPositionsTuples = [(p[0], p[1]) for p in rlePositions], [(p[0], p[1]) for p in hypPositions]
-
-		# 		killer_types = [inter.slot2 for inter in hypothesis.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
-		# 		# print "killer types", killer_types
-		# 		for objPos in hypPositions:
-		# 			if not regroundingFlag and (objPos[0], objPos[1]) not in rlePositionsTuples:
-		# 				# print "found object position difference", colored(objPos, 'white', 'on_magenta')
-		# 				# print 'regrounding because of', objPos[2].colorName, objPos[2], "position:", self.rle._rect2pos(objPos[2].rect)
-		# 				# try:
-		# 					# print "orientation:", objPos[2].orientation
-		# 				# except AttributeError:
-		# 					# pass
-		# 				nearest = findNearestSprite(objPos[2], [h[2] for h in rlePositions])
-		# 				# print "Nearest sprite:", nearest.colorName, nearest, "position:", self.rle._rect2pos(nearest.rect)
-		# 				# try:
-		# 					# print "orientation:", nearest.orientation
-		# 				# except AttributeError:
-		# 					# pass
-		# 				# print ""
-		# 				# embed()
-		# 				if self.selective_regrounding:
-		# 					if ((objPos[2].name=='avatar') or
-		# 						(objPos[2].name in killer_types and manhattanDist(self.rle._rect2pos(objPos[2].rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance)):
-
-		# 						# if objPos[2].name=='avatar':
-		# 							# embed()
-		# 						regroundingFlag = True
-		# 						# embed()
-		# 						break
-		# 				else:
-		# 					regroundingFlag = True
-		# 					break
-
-		# 		if regroundingFlag:
-		# 			print "regrounding"
-		# 			return regroundingFlag
-		# 		# if tuple(rlePositions) != tuple(hypPositions):
-		# 		# # if any(np.where(list(gameString_array[i+1]))[0] !=
-		# 		# #        np.where(list(self.rle.show()))[0]):
-		# 		#     print 'regrounding'
-		# 		#     embed()
-		# 		#     # embed()
-		# 		#     break
-		# 	except:
-		# 		# Mismatch in gamestring lengths
-		# 		print ""
-		# 		print 'regrounding problem'
-		# 		embed()
-
-		return regroundingFlag
+				return True, False
+		if self.selective_regrounding:
+			killer_colors = [hypothesis.classes[killerType][0].colorName for killerType in hypothesis.killerTypes if \
+					any([t in str(hypothesis.classes[killerType][0].vgdlType) for t in ['Random', 'Chaser', 'Missile']])]
+			if killer_colors:
+				avatar_color = hypothesis.classes['avatar'][0].colorName
+				avatar_sprite = self.rle._game.observation['trackedObjects'][avatar_color][0] if self.rle._game.observation['trackedObjects'][avatar_color] else None
+				if avatar_sprite:
+					for k in killer_colors:
+						if self.rle._game.observation['trackedObjects'][k]:
+							for sprite in self.rle._game.observation['trackedObjects'][k]:
+								if manhattanDist2(avatar_sprite, sprite)<self.safeDistance:
+									return False, True
+		return False, False
 
 	def executeStep(self, episode_num, step_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, objectPositionsArray, lastStep=False):
 
+		danger = False
 		envRealPrev = self.fastcopy(self.rle)
 		actionHistories[episode_num].append(action)
 		
@@ -686,9 +650,9 @@ class Agent:
 		print "evaluating {} old theories and proposing new ones".format(len(theoryRLEs))
 		updateTerminations(self.rle, hypotheses)
 		
-		regroundingFlag = self.regroundOrNot(step_num, objectPositionsArray, hypotheses[0])
+		predictionError, danger = self.regroundOrNot(step_num, objectPositionsArray, hypotheses[0])
 
-		if regroundingFlag:
+		if predictionError:
 			newTheories = []
 			for num, env in enumerate(theoryRLEs):
 				theories = testAndExpand(env, self.hypotheses[num], action, self.rle, envRealPrev, self.rleHistory, \
@@ -699,7 +663,7 @@ class Agent:
 		else:
 			newTheories = self.hypotheses
 			if self.bestScoresAndHypotheses:
-				return self.bestScoresAndHypotheses
+				return self.bestScoresAndHypotheses, danger
 		self.allTheories.extend(newTheories)
 		print ""
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
@@ -735,7 +699,7 @@ class Agent:
 			print "second attempt failed, 0 theories survived filter"
 			embed()
 
-		return bestScoresAndHypotheses
+		return bestScoresAndHypotheses, danger
 
 ########################################################################
 ######## Other initialization METHODS                			########

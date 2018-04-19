@@ -271,7 +271,7 @@ class Theory(object):
 		self.posterior = False
 
 		self.goalColor = False ## TODO. Hack added 1/18/17 in lieu of termination set.
-
+		self.killerTypes = set()
 		self.resource_limits = defaultdict(lambda:1)
 
 		self.errorHistory = []
@@ -304,6 +304,7 @@ class Theory(object):
 		newTheory.experienceReplayRecord = ccopy(self.experienceReplayRecord)
 		newTheory.falsified = set(self.falsified)
 		newTheory.setOfImaginedEffects = set(self.setOfImaginedEffects)
+		newTheory.killerTypes = set(self.killerTypes)
 		return newTheory
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
@@ -1352,6 +1353,8 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 				for rule in ruleSet:
 					ruleCopy = rule.copy()
 					newTheory.interactionSet.append(ruleCopy)
+					if ruleCopy.slot1=='avatar' and ruleCopy.interaction in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfTooFast', 'killIfTooSlow']:
+						newTheory.killerTypes.add(ruleCopy.slot2)
 					newTheory.dryingPaint.add(ruleCopy)
 				newTheory.reconcileInteractionsAndSprites()
 				childTheories.append(newTheory)
