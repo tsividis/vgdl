@@ -1694,8 +1694,8 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 				if env is not None:
 					imaginedEffects = env.step(action)['effectList']
 					for effect in imaginedEffects:
-						eff1Class = env._game.all_objects[effect[1]].name if effect[1] in env.game.all_objects else 'EOS'
-						eff2Class = env._game.all_objects[effect[2]].name if effect[2] in env.game.all_objects else 'EOS'
+						eff1Class = env._game.all_objects[effect[1]].name if effect[1] in env._game.all_objects else 'EOS'
+						eff2Class = env._game.all_objects[effect[2]].name if effect[2] in env._game.all_objects else 'EOS'
 						effectWithClassNames = (effect[0], eff1Class, eff2Class)
 						setOfImaginedEffects.add(effectWithClassNames)
 				try:
