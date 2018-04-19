@@ -68,8 +68,8 @@ class WBP():
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
 			self.theory=copy.deepcopy(theory)
-			self.theory.interactionSet.extend(fakeInteractionRules)
-			self.theory.updateTerminations()
+			# self.theory.interactionSet.extend(fakeInteractionRules)
+			self.theory.updateTerminations(ruleSetToUpdate=fakeInteractionRules)
 		print 'max nodes', self.max_nodes
 
 		# for rule in self.theory.interactionSet:
@@ -354,6 +354,8 @@ class WBP():
 								if stype in self.starting_stype_n.keys() and self.starting_stype_n[stype] > n_stypes:
 									child.terminal, child.win = True, True
 									foundWin = True
+									print "in weird found win condition in wbp"
+									embed()
 									break
 							if foundWin:
 								break
@@ -904,14 +906,6 @@ class Node():
 		except IndexError:
 			print "index error in position score"
 			return 0
-	"""
-	def getTo_profiler(self):
-		lp = LineProfiler()
-		lp_wrapper = lp(self.getToCurrentState)
-		output = lp_wrapper()
-		lp.print_stats()
-		return output
-	"""
 
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
@@ -944,14 +938,6 @@ class Node():
 				self.terminal, self.win = vrle._isDone()
 				i += 1
 		return vrle, self.win
-
-	"""
-	def eval_profiler(self):
-		lp = LineProfiler()
-		lp_wrapper = lp(self.eval)
-		lp_wrapper()
-		lp.print_stats()
-	"""
 
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)

@@ -274,8 +274,6 @@ class Agent:
 
 			while not win and i<num_episodes:
 				gameObject, win, score, steps, statesEncountered = self.playEpisode(gameObject, i, win=win, first_time_playing_level=first_time_playing_level)
-				if not win:
-					embed()
 				self.total_game_steps += steps
 				episodes.append((n_level, steps, win, score))
 				allStatesEncountered.extend(statesEncountered)
@@ -310,11 +308,11 @@ class Agent:
 			envReal = self.fastcopy(self.rle)
 
 			##TODO: select hypothesis/es to plan with.
-			hypothesesToPlanWith = [self.hypotheses[0]]
-			
+			selectedHypotheses 	= [self.hypotheses[0]]
+			hypothesesToPlanWith = [convertTheoryToSubgoalTheory(h) for h in selectedHypotheses]
 			## initialize one or many VRLEs according to hypothesis-selection method
-			theoryRLEs, plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal, makePlannerVrles=True)
-
+			theoryRLEs 	= VrleInitPhase(selectedHypotheses, envReal)
+			plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal)
 			quitting = False
 
 			if self.parallel_planning:
@@ -341,7 +339,7 @@ class Agent:
 				# p = res._value[best_index]
 			else:
 
-				p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
+				p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=hypothesesToPlanWith[0], fakeInteractionRules = self.fakeInteractionRules,
 					seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
 					firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
 			
@@ -491,7 +489,7 @@ class Agent:
 					break
 				print ">>> Step", num+1, "of", len(actions), "<<<"
 				## initialize VRLEs
-				theoryRLEs, _ = VrleInitPhase(self.hypotheses, self.rle, makePlannerVrles=False)
+				theoryRLEs = VrleInitPhase(self.hypotheses, self.rle)
 				lastStep=False
 				if num == len(actions)-1:
 					lastStep=True
@@ -823,22 +821,37 @@ def convertTheoryToSubgoalTheory(theory):
 				rule.interaction = 'nothing'
 			elif 'Avatar' not in str(T.classes[rule.slot1][0].vgdlType):
 				rule.interaction = 'killSprite'
+	imaginedEffectTuples = set([(eff[1], eff[2]) for eff in theory.setOfImaginedEffects])
+	T.terminationSet = [rule for rule in T.terminationSet if rule.ruleType!='NoveltyRule' or (rule.termination.s1, rule.termination.s2) not in imaginedEffectTuples]
+
 	return T
 
-def VrleInitPhase(hypotheses, stateToSet, makePlannerVrles=False, theoryRLEs=None, makeInitialVrle=False):
+def VrleInitPhase(hypotheses, stateToSet, theoryRLEs=None, makeInitialVrle=False):
 	## Initialize multiple VRLEs, each corresponding to one hypothesis in theories
 	## Set their state to that of the provided RLE
-	realVRLEs, plannerVRLEs = [], []
+	realVRLEs = []
 	for num, hypothesis in enumerate(hypotheses):
 		realVRLE = initializeVrle(hypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True)
-		if makePlannerVrles:
-			convertedHypothesis = convertTheoryToSubgoalTheory(hypothesis)
-			plannerVRLE = initializeVrle(convertedHypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True)
-		else:
-			plannerVRLE = None
 		realVRLEs.append(realVRLE)
-		plannerVRLEs.append(plannerVRLE)
-	return realVRLEs, plannerVRLEs
+	return realVRLEs
+
+# def VrleInitPhase(hypotheses, stateToSet, makePlannerVrles=False, theoryRLEs=None, makeInitialVrle=False):
+# 	## Initialize multiple VRLEs, each corresponding to one hypothesis in theories
+# 	## Set their state to that of the provided RLE
+# 	realVRLEs, plannerVRLEs = [], []
+# 	for num, hypothesis in enumerate(hypotheses):
+# 		realVRLE = initializeVrle(hypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True)
+# 		if makePlannerVrles:
+# 			convertedHypothesis = convertTheoryToSubgoalTheory(hypothesis)
+# 			plannerVRLE = initializeVrle(convertedHypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True)
+# 		else:
+# 			plannerVRLE = None
+# 		realVRLEs.append(realVRLE)
+# 		plannerVRLEs.append(plannerVRLE)
+# 	if makePlannerVrles:
+# 		print "madeVrles"
+# 		embed()
+# 	return realVRLEs, plannerVRLEs
 
 def findNearestSprite(sprite, spriteList):
 	## returns the sprites in spriteList whose locations best match the location of sprite.
@@ -1664,13 +1677,13 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 		indices, actionsPerIndex = getSalientStates(subsamplePercentage, actionsPerIndex, rleHistory)
 
 	cumulative_penalties = []
-	initialRLEs, _ = VrleInitPhase(hypotheses, rleHistory[0], makePlannerVrles=False, makeInitialVrle=True)
+	initialRLEs = VrleInitPhase(hypotheses, rleHistory[0], makeInitialVrle=True)
 
 	for idx in indices:
 		## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
 		t1 = time.time()
 		
-		theoryRLEs, _ = VrleInitPhase(hypotheses, rleHistory[idx], makePlannerVrles=False, theoryRLEs=initialRLEs)
+		theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], theoryRLEs=initialRLEs)
 
 		## Take a predetermined number of actions starting from idx
 		end = min(idx+actionsPerIndex, len(actionHistory))
