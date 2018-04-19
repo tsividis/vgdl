@@ -280,6 +280,8 @@ class Theory(object):
 		self.expandedSprites = []
 		self.errorMapHistory = []
 		self.lineage = []
+
+		self.setOfImaginedEffects = set()
 		
 		self.experienceReplayRecord = {} ## store (targetColor, rleHistory.ID, len(rleHistory)):penalty
 		self.mark = False ## For convenient marking and finding of hypotheses
@@ -300,6 +302,8 @@ class Theory(object):
 		newTheory.dryingPaint = set(self.dryingPaint)
 		newTheory.errorMapHistory = list(self.errorMapHistory) # currently unused but useful for debugging.
 		newTheory.experienceReplayRecord = ccopy(self.experienceReplayRecord)
+		newTheory.falsified = set(self.falsified)
+		newTheory.setOfImaginedEffects = set(self.setOfImaginedEffects)
 		return newTheory
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
@@ -461,7 +465,10 @@ class Theory(object):
 
 		return newInteractionRules
 
-	def updateTerminations(self, rle=None):
+	def updateTerminations(self, rle=None, ruleSetToUpdate=None):
+		if not ruleSetToUpdate:
+			ruleSetToUpdate = self.interactionSet
+
 		self.terminationSet = set([t for t in self.terminationSet
 							   if t.ruleType=='SpriteCounterRule' and
 							   not t.termination.win and t not in self.falsified])
@@ -517,24 +524,61 @@ class Theory(object):
 						false_rule = MultiSpriteCounterRule(stypes=class_combination, win=not win)
 						self.multi_falsified.add(false_rule)
 
-		for rule in self.interactionSet:
-			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore', 'transformTo', 'nothing']:
-				if rule.generic:
-					preconditions = copy.deepcopy(rule.preconditions) if rule.preconditions else None
-					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, preconditions)
-					if terminationRule not in self.falsified:
-						for t in self.terminationSet:
-							if t.ruleType != 'NoveltyRule': continue
-							if t.termination.s2 != rule.slot1 and t.termination.s1 != rule.slot2:
-								break
-						else:
+		## Every time we do replay, we store the effects we would have witnessed if that theory had been true
+		## For effects we think we've witnessed, we don't need NoveltyRules.
+		imaginedEffectTuples = set([(eff[1], eff[2]) for eff in self.setOfImaginedEffects])
+
+		for rule in ruleSetToUpdate:
+			if rule.asTuple()[0] in ['stepBack', 'killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore', 'transformTo', 'nothing']:
+				if rule.generic and rule.preconditions:
+					if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
+						terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, copy.deepcopy(rule.preconditions))
+						if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
+								for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
+							all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
+							all([not terminationRule.__eq__(t) for t in self.falsified])):
+							if (rule.slot1=='c4' and rule.slot2=='avatar') or (rule.slot1=='avatar' and rule.slot2=='c4'):
+								print "found avatar c4"
+								# embed()
 							self.terminationSet.add(terminationRule)
+				elif rule.generic and not rule.preconditions:
+					if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
+						## Omit noveltytermination for randoms bumping into objects in the game; makes us disrupt plans even though we shouldnt't.
+						if ('Random' not in str(self.classes[rule.slot1][0].vgdlType)) and ('Random' not in str(self.classes[rule.slot2][0].vgdlType)) or rule.asTuple()[0]!='nothing':
+							terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
+							if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
+									for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
+								all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
+								all([not terminationRule.__eq__(t) for t in self.falsified])):
+								if (rule.slot1=='c4' and rule.slot2=='avatar') or (rule.slot1=='avatar' and rule.slot2=='c4'):
+									print "found avatar c4"
+									# embed()
+
+								self.terminationSet.add(terminationRule)
+
+
+				# if rule.generic:
+				# 	preconditions = copy.deepcopy(rule.preconditions) if rule.preconditions else None
+				# 	terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, preconditions)
+				# 	if terminationRule not in self.falsified:
+				# 		for t in self.terminationSet:
+				# 			if t.ruleType != 'NoveltyRule': continue
+				# 			if t.termination.s2 != rule.slot1 and t.termination.s1 != rule.slot2:
+				# 				break
+				# 		else:
+				# 			self.terminationSet.add(terminationRule)
+
+				## For things it appears we can kill, add SpriteCounterRules
 				elif rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore', 'transformTo']:
+					# terminationRule = SpriteCounterRule(rule.slot1, 0, True)
+					# if (all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
+						# all([not terminationRule.__eq__(t) for t in self.falsified])):
+						# self.terminationSet.add(terminationRule)
 					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
 					if terminationRule not in self.falsified:
 						self.terminationSet.add(terminationRule)
 
-			if rule.slot2 == 'EOS' and rule.generic:
+			if rule.slot1!='EOS' and rule.slot2 == 'EOS' and rule.generic:
 				terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
 				self.terminationSet.add(terminationRule)
 
@@ -556,7 +600,6 @@ class Theory(object):
 		self.terminationSet = sorted(self.terminationSet, key=lambda t:t.ruleType)
 
 		return self.terminationSet, self.falsified, self.multi_falsified
-
 
 	def getClassFromColor(self, color):
 		for c in self.classes:
@@ -1332,7 +1375,7 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, action
 		# print "in iterateThresholds"
 		# theory.display()
 		rule = relevantRulesWithArgs[0]
-		penalty = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
+		penalty,_ = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
 			method='all', targetColor=errorMap.targetColor)[0]
 		newPenalty = penalty
 		while newPenalty >= penalty:
@@ -1345,7 +1388,7 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, action
 			if len(thresholdOrdering[rule.interaction]) > idx+1:
 				rule.args[k] = thresholdOrdering[rule.interaction][idx+1]
 				theory.experienceReplayRecord = {}
-				newPenalty = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
+				newPenalty,_ = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
 					method='all', targetColor=errorMap.targetColor)[0]
 				# print newPenalty, rule.display()
 			else:

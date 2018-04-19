@@ -26,8 +26,11 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from colors import colorDict
 import copy_reg
 import types
-
 import heapq
+
+import WBP
+from termcolor import colored
+from pathos.helpers import mp
 
 ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPACE: (0,0), 0: (0,0)}
 
@@ -78,11 +81,13 @@ class errorMapEntry:
 			return False
 
 class Agent:
-	def __init__(self, modelType, gameFilename):
+	def __init__(self, modelType, gameFilename, hyperparameter_sets={}, parallel_planning=False):
 		self.modelType = modelType
 		self.gameFilename = gameFilename
 		self.gameString = None
 		self.levelString = None
+		self.hyperparameter_sets = hyperparameter_sets
+		self.parallel_planning = parallel_planning
 		self.annealingFactor = 1.
 		self.shortHorizon = False
 		if self.shortHorizon == True:
@@ -92,7 +97,7 @@ class Agent:
 			self.starting_max_nodes = 10000
 			self.max_nodes_annealing = 10
 		self.firstOrderHorizon = True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
-		self.regrounding = 50
+		self.regrounding = 3
 		self.selective_regrounding = True
 		self.avoid_danger = True
 		self.safeDistance = 6
@@ -124,6 +129,11 @@ class Agent:
 		self.distributions = {}
 		self.history = {}
 		self.lastObjectState = {}
+
+		# Hyperopt output
+		self.total_game_steps = 0
+		self.total_planner_steps = 0
+		self.levels_won = 0
 
 	def initializeEnvironment(self):
 		if self.gameString == None or self.levelString == None:
@@ -210,6 +220,225 @@ class Agent:
 				self.testEpisodes(gameObject,epoch=epoch)
 		return
 
+	def playEpisodes(self, gameObject, num_episodes=5, epoch=0):
+		
+		## for playback
+		self.allStatesEncountered = [[] for i in range(num_episodes)]
+		episodes = []
+
+		## for inference
+		self.rleHistory = [[] for i in range(num_episodes)]
+		self.actionHistory = [[] for i in range(num_episodes)]
+		self.all_objects = [{} for i in range(num_episodes)]
+
+		## for planning
+		self.max_nodes = self.starting_max_nodes
+
+		for episode_num in range(num_episodes):
+			t1 = time.time()
+			gameObject, win, score, steps, statesEncountered = self.playEpisode(gameObject, episode_num)
+			episodes.append((n_level, steps, win, score))
+			allStatesEncountered.extend(statesEncountered)
+
+			# VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
+			# persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
+			
+			first_time_playing_level = False
+			print "Finished episode in {} seconds".format(time.time() - t1)
+		return
+
+	def playCurriculum(self, level_game_pairs=None, num_episodes=10):
+		""" Plays a game level until it wins, then moves to the next one until
+		completion. """
+		if not level_game_pairs:
+			level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
+		episodes = []
+
+		for n_level, level_game in enumerate(level_game_pairs):
+
+			## for playback
+			self.allStatesEncountered = [[] for i in range(num_episodes)]
+			episodes = []
+
+			## for inference
+			self.rleHistory = [[] for i in range(num_episodes)]
+			self.actionHistory = [[] for i in range(num_episodes)]
+			self.all_objects = [{} for i in range(num_episodes)]
+
+			self.max_nodes = self.starting_max_nodes
+			win = False
+			gameObject = None
+			i=0
+			first_time_playing_level = True
+			allStatesEncountered = []
+
+			while not win and i<num_episodes:
+				gameObject, win, score, steps, statesEncountered = self.playEpisode(gameObject, i, win=win, first_time_playing_level=first_time_playing_level)
+				self.total_game_steps += steps
+				episodes.append((n_level, steps, win, score))
+				allStatesEncountered.extend(statesEncountered)
+				i+=1
+			if i>=num_episodes:
+				return
+
+			self.levels_won +=1
+
+		return
+
+	def playEpisode(self, gameObject, episode_num, flexible_goals=False, win=False, first_time_playing_level=False):
+		
+		self.initializeEnvironment()
+		print "initializing RLE"
+		steps, self.quits, self.longHorizonObservations = 0,0,0
+		self.all_objects[episode_num] = self.rle._game.getAllObjects()
+		ended, win = self.rle._isDone()
+		annealing = 1
+
+		statesEncountered = [self.rle._game.getFullState()]
+		self.statesEncountered.append(self.rle._game.getFullState())
+		envReal = self.fastcopy(self.rle)
+		self.rleHistory[episode_num].append(envReal)
+		#dep
+		if not self.hypotheses:
+			self.initializeHypotheses()
+			updateTerminations(self.rle, self.hypotheses)
+		emptyPlans = 0
+		while not ended:
+
+			envReal = self.fastcopy(self.rle)
+
+			##TODO: select hypothesis/es to plan with.
+			selectedHypotheses 	= [self.hypotheses[0]]
+			hypothesesToPlanWith = [convertTheoryToSubgoalTheory(h) for h in selectedHypotheses]
+			## initialize one or many VRLEs according to hypothesis-selection method
+			theoryRLEs 	= VrleInitPhase(selectedHypotheses, envReal)
+			plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal)
+			quitting = False
+			# print "before planning"
+			# embed()
+			if self.parallel_planning:
+				pass
+				# def WBP_wrapper(l):
+				# 	hyperparameters, theory, queue = l
+				# 	p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=theory, fakeInteractionRules = self.fakeInteractionRules,
+				# 		seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+				# 		firstOrderHorizon=self.firstOrderHorizon, hyperparameters=hyperparameters)
+				# 	return p
+				# # # start planners
+				# # print('#1')
+				# result_queue = None
+				# # print('#2')
+				# pool = mp.Pool()
+				# # print('#3')
+				# res = pool.map_async(WBP_wrapper, [(h_set, self.hypotheses[0], result_queue) for h_set in self.hyperparameter_sets])
+				# # print('#4')
+				# pool.close()
+				# # print('#5')
+				# pool.join()
+				# # print('#6')
+				# best_index = np.argmin([p.total_nodes for p in res._value])
+				# p = res._value[best_index]
+			else:
+
+				p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=hypothesesToPlanWith[0], fakeInteractionRules = self.fakeInteractionRules,
+					seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+					firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
+			
+			bestNode, gameStringArray, objectPositionsArray = p.BFS()
+
+			# best_index = np.argmin([p.total_nodes for p in res._value])
+			# bestNode, gameStringArray, objectPositionsArray = res._value[best_index].BFS()
+			self.total_planner_steps = p.total_nodes
+
+			if bestNode is not None:
+				solution = p.solution
+				gameString_array = p.gameString_array
+				objectPositionsArray = objectPositionsArray[::-1]
+			else:
+				solution = []
+
+			if solution and not p.quitting:
+				print "============================================="
+				print "got solution of length", len(solution)
+				for g in p.gameString_array:
+					print colored(g, 'green')
+				print "============================================="
+
+			if self.shortHorizon:
+				if not solution:
+					emptyPlans +=1
+				else:
+					emptyPlans = 0
+			else:
+				if (not solution) or p.quitting:
+					if self.longHorizonObservations<self.longHorizonObservationLimit:
+						print "Didn't get solution or decided to quit. Observing, then replanning."
+						observe(self.rle, 5)
+						solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
+						self.longHorizonObservations += 1
+					else:
+						quitting = True
+
+			if emptyPlans > self.emptyPlansLimit:
+				print "observing"
+				observe(self.rle, 5)
+
+			if not quitting:
+				for i, action in enumerate(solution):
+					print "executing step"
+					bestScoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep=False)
+					# self.hypotheses = [bestScoresAndHypotheses[0][1]]
+					self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
+					print "executed step"
+					# embed()
+					## TODO: determine value of theory_change_flag
+					# if theory_change_flag:
+						# self.hypotheses = hypotheses
+						# break
+
+					# ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
+
+					steps +=1
+
+					ended, win = self.rle._isDone()
+					if ended:
+						break
+
+					# if self.regrounding:
+					# if self.avoid_danger
+
+				if self.shortHorizon:
+					self.max_nodes *= self.max_nodes_annealing
+			else:
+				## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
+				## Search more deeply next time.
+				self.max_nodes *= self.max_nodes_annealing
+				print "You got quitting==True from planner. Embedding to debug."
+				embed()
+				return gameObject, False, self.rle._game.score, steps, statesEncountered
+		
+			annealing *= self.annealingFactor
+			ended, win = self.rle._isDone()
+
+		score = self.rle._game.score
+		output = "ended episode. Win={}                    ".format(win)
+		if win:
+			print colored('________________________________________________________________', 'white', 'on_green')
+			print colored('________________________________________________________________', 'white', 'on_green')
+
+			print colored(output, 'white', 'on_green')
+			print colored('________________________________________________________________', 'white', 'on_green')
+		else:
+			print colored('________________________________________________________________', 'white', 'on_red')
+			print colored(output, 'white', 'on_red')
+			print colored('________________________________________________________________', 'white', 'on_red')
+
+		return gameObject, win, score, steps, statesEncountered 
+	
+
+
+
+
 	def testEpisodes(self, gameObject, epoch=0):
 		num_cores = mp.cpu_count()
 		print "num cores: {}".format(num_cores)
@@ -281,16 +510,16 @@ class Agent:
 		return
 
 	def manageNewObjects(self, episode_num, hypotheses, envRealPrev, action):
-
+		# embed()
 		## Add newly-seen objects.
 		current_objects = self.rle._game.getAllObjects()
-
-		if any([k not in self.rle._game.movement_options for k in current_objects]):
-			for k in current_objects.keys():
-				distributionInitSetup(self.rle._game, k)
-				if k not in self.all_objects[episode_num]:
-					self.all_objects[episode_num][k] = current_objects[k]
-			
+		newObjects = [k for k in current_objects if k not in self.rle._game.movement_options]
+		# if any([k not in self.rle._game.movement_options for k in current_objects]):
+			# for k in current_objects.keys():
+				# distributionInitSetup(self.rle._game, k)
+				# if k not in self.all_objects[episode_num]:
+					# self.all_objects[episode_num][k] = current_objects[k]
+		if newObjects:
 			spriteInduction(self.rle._game, step=1, action=action, specificSpritesToUpdate=[])
 			spriteInduction(self.rle._game, step=2, action=action, specificSpritesToUpdate=[])
 
@@ -318,8 +547,13 @@ class Agent:
 		return newRle
 
 	def scoreAndFilterTheories(self, newTheories, episode_num):
-		penalties = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], \
+		# print episode_num
+		# embed()
+		penalties, imaginedEffectsPerTheory = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], \
 			self.actionHistory[:episode_num+1], method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
+
+		for n,imaginedEffects in enumerate(imaginedEffectsPerTheory):
+			newTheories[n].setOfImaginedEffects = newTheories[n].setOfImaginedEffects.union(imaginedEffects)
 
 		scoreAndTheoryTuples = zip(penalties, newTheories)
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
@@ -340,7 +574,7 @@ class Agent:
 		print ""
 		print "{} survived".format(len(scoresAndHypotheses))
 
-		return scoresAndHypotheses , scoreAndTheoryTuples
+		return scoresAndHypotheses, scoreAndTheoryTuples
 
 	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, lastStep=False):
 
@@ -349,11 +583,12 @@ class Agent:
 		
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
+		print "took action; managing objects"
 		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action)
-
+		print "managed new objects; dealing with orientedSprites"
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
 		self.rleHistory[episode_num].append(envReal)
-		
+
 		## If we learn anything about orientation in this step for a sprite that was created in a previous step,
 		## go back in time and assign that orientation to the previous steps that sprite was in. This is so that when you set the state to what you 
 		## remember from the past, you can incorporate this knowledge.
@@ -372,10 +607,10 @@ class Agent:
 				## (that is, when none of the sprites you learned about exist)
 				if not madeChange:
 					break
-
+		print "dealt with sprites; matching envs"
 		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
 		self.rle._game.sprite_appearances = new_sprites
-
+		print "managed envs"
 		print ""
 		print keyPresses[action]
 		print self.rle.show(color='blue')
@@ -402,7 +637,7 @@ class Agent:
 
 			if len(bestScoresAndHypotheses) == 0:
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
-
+				embed()
 				newerTheories = []
 
 				for t in newTheories:
@@ -415,9 +650,6 @@ class Agent:
 				bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newerTheories, episode_num)
 		else:
 			print "Got no new theories"
-			# just use input hypotheses if no new Theories are generated
-			# TODO: do we really need to or will they have been filtered before?
-			# bestScoresAndHypotheses , scoreAndTheoryTuples = self.scoreAndFilterTheories(hypotheses, episode_num)
 
 		self.statesEncountered.append(self.rle._game.getFullState())
 		self.rle._game.sprite_appearances = []
@@ -435,9 +667,10 @@ class Agent:
 ######## Other initialization METHODS                			########
 ########################################################################
 
-def observe(rle):
-	spriteInduction(rle._game, step=1, action=None)
-	spriteInduction(rle._game, step=2, action=None)
+def observe(rle, num_steps=1):
+	for i in range(num_steps):
+		spriteInduction(rle._game, step=1, action=None)
+		spriteInduction(rle._game, step=2, action=None)
 	return
 
 ########################################################################
@@ -450,11 +683,11 @@ def setSpriteState(sprite, matchingSprite, hypothesis):
 		print "WARNING: didn't find matching sprite in setSpriteState; this shouldn't happen"
 		embed()
 
-	sprite.rect 	= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
-	sprite.lastrect = pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
-	sprite.lastmove = matchingSprite.lastmove
-	sprite.ID = matchingSprite.ID
-	sprite.resources = defaultdict(int)
+	sprite.rect 		= pygame.Rect(matchingSprite.rect.left, matchingSprite.rect.top, matchingSprite.rect.width, matchingSprite.rect.height)
+	sprite.lastrect 	= pygame.Rect(matchingSprite.lastrect.left, matchingSprite.lastrect.top, matchingSprite.lastrect.width, matchingSprite.lastrect.height)
+	sprite.lastmove 	= matchingSprite.lastmove
+	sprite.ID 			= matchingSprite.ID
+	sprite.resources 	= defaultdict(int)
 	for rcolor in matchingSprite.inventory.keys():
 		if rcolor not in hypothesis.spriteObjects:
 			continue
@@ -550,6 +783,8 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False, debug=False):
 	Vrle._game.observation = buildTracker(Vrle)
 	Vrle._game.observation['lastscore'] = rle._game.observation['lastscore']
 
+	# Make sure that all_objects has the same IDs as the parent RLE.
+	Vrle._game.all_objects = Vrle._game.getAllObjects()
 	return
 
 def initializeVrle(hypothesis, stateToSet, theoryRLE=None, makeInitialVrle=False, writeFile=False, debug=False):
@@ -582,13 +817,28 @@ def initializeVrle(hypothesis, stateToSet, theoryRLE=None, makeInitialVrle=False
 
 	return Vrle
 
+def convertTheoryToSubgoalTheory(theory):
+	T = theory.copy()
+	for rule in T.interactionSet:
+		if rule.generic and (rule.interaction, rule.slot1, rule.slot2) not in theory.setOfImaginedEffects:
+			if 'Avatar' not in str(T.classes[rule.slot1][0].vgdlType) and 'Avatar' not in str(T.classes[rule.slot2][0].vgdlType):
+				rule.interaction = 'nothing'
+			elif 'Avatar' not in str(T.classes[rule.slot1][0].vgdlType):
+				rule.interaction = 'killSprite'
+	imaginedEffectTuples = set([(eff[1], eff[2]) for eff in theory.setOfImaginedEffects])
+	# T.setOfImaginedEffects = theory.setOfImaginedEffects
+	T.terminationSet = [rule for rule in T.terminationSet if rule.ruleType!='NoveltyRule' or (rule.termination.s1, rule.termination.s2) not in imaginedEffectTuples]
+
+	return T
+
 def VrleInitPhase(hypotheses, stateToSet, theoryRLEs=None, makeInitialVrle=False):
 	## Initialize multiple VRLEs, each corresponding to one hypothesis in theories
 	## Set their state to that of the provided RLE
-	VRLEs = []
+	realVRLEs = []
 	for num, hypothesis in enumerate(hypotheses):
-		VRLEs.append(initializeVrle(hypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True))
-	return VRLEs
+		realVRLE = initializeVrle(hypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True)
+		realVRLEs.append(realVRLE)
+	return realVRLEs
 
 def findNearestSprite(sprite, spriteList):
 	## returns the sprites in spriteList whose locations best match the location of sprite.
@@ -1384,6 +1634,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 
 	subsamplePercentage = .2
 	actionsPerIndex = 2
+	setOfImaginedEffects = set()
 
 	if len(hypotheses)>1:
 		print "got more than 1 hypothesis in singleTheoryExperienceReplay"
@@ -1392,7 +1643,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	key = (method, targetColor, rleHistory[0].ID, len(rleHistory))
 	
 	if not displayStates and key in hypotheses[0].experienceReplayRecord:
-		return hypotheses[0].experienceReplayRecord[key]
+		return hypotheses[0].experienceReplayRecord[key], hypotheses[0].setOfImaginedEffects
 
 	if method == 'all':
 		indices = range(len(rleHistory))
@@ -1415,12 +1666,13 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 		indices, actionsPerIndex = getSalientStates(subsamplePercentage, actionsPerIndex, rleHistory)
 
 	cumulative_penalties = []
-
 	initialRLEs = VrleInitPhase(hypotheses, rleHistory[0], makeInitialVrle=True)
+
 	for idx in indices:
 		## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
 		t1 = time.time()
-		theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], initialRLEs)
+		
+		theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], theoryRLEs=initialRLEs)
 
 		## Take a predetermined number of actions starting from idx
 		end = min(idx+actionsPerIndex, len(actionHistory))
@@ -1435,12 +1687,15 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 		for n, action in enumerate(actionHistory[idx:end]):
 			penalties = []
 			if displayStates:
-				print "after taking action {}, real state looked like this:".format(action)
+				print "after taking action {}, real state looked like this:".format(keyPresses[action])
 				print rleHistory[idx+n+1].show()
 			for num, env in enumerate(theoryRLEs):                      
 
 				if env is not None:
-					env.step(action)
+					imaginedEffects = env.step(action)['effectList']
+					for effect in imaginedEffects:
+						effectWithClassNames = (effect[0], env._game.all_objects[effect[1]].name, env._game.all_objects[effect[2]].name)
+						setOfImaginedEffects.add(effectWithClassNames)
 				try:
 					penalty, errorList = errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
 						rleHistory[idx+n], targetColor=targetColor, penalty_only=True)
@@ -1460,16 +1715,15 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 
 	cumulative_penalties = np.array(cumulative_penalties)
 	mean_penalties = np.mean(cumulative_penalties, axis=0)
-
 	hypotheses[0].experienceReplayRecord[key] = mean_penalties
-	return mean_penalties
+	return mean_penalties, setOfImaginedEffects
 	
 def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', targetColor=None, displayStates=False, displayTheories=False):
 	if len(hypotheses)>10:
 		print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
 
 	t1 = time.time()
-	results = []
+	results, imaginedEffects = [], []
 	# if len(hypotheses)>100:
 		# print ">100 hypotheses"
 		# embed()
@@ -1477,15 +1731,17 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', target
 		if displayTheories:
 			print "running experienceReplay on {}:".format(num)
 			h.display()
-		results.append(singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h]))
-
+		mean_penalties, setOfImaginedEffects = singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h])
+		results.append(mean_penalties)
+		imaginedEffects.append(setOfImaginedEffects)
 
 	if len(hypotheses)>10:
 		print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 
+	# print "ran experienceReplay"
+	# embed()
 	mean_penalties = [r[0] for r in results]
-
-	return mean_penalties
+	return mean_penalties, imaginedEffects
 
 def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, method, targetColor=None, displayStates=False, displayTheories=False):
 	'''
@@ -1496,17 +1752,20 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 	# print "Running MultiEpisodeExperienceReplay on %i episodes " % len(rleHistories)
 
 	multi_episode_mean_penalties = []
+	imaginedEffectsPerTheory = [set() for i in range(len(hypotheses))]
+
 	weight = 1./len(max(actionHistories, key=len))
 
 	for rleHistory, actionHistory in zip(rleHistories, actionHistories):
-		mean_penalties = experienceReplay(hypotheses, rleHistory, actionHistory, 
-												     method, targetColor, displayStates, displayTheories)
+		mean_penalties, imaginedEffects = experienceReplay(hypotheses, rleHistory, actionHistory, 
+													 method, targetColor, displayStates, displayTheories)
 		mean_penalties = np.array(mean_penalties)*weight*len(actionHistory)
 		multi_episode_mean_penalties.append(mean_penalties)
-
+		for i in range(len(hypotheses)):
+			imaginedEffectsPerTheory[i] = imaginedEffectsPerTheory[i].union(imaginedEffects[i])
 	multi_episode_mean_penalties = np.mean(multi_episode_mean_penalties, axis=0)
 
-	return multi_episode_mean_penalties
+	return multi_episode_mean_penalties, imaginedEffectsPerTheory
 
 ########################################################################
 ######## THEORY MODIFICATION 									########
@@ -1634,16 +1893,15 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		# embed()
 		newTheories = list(set(newTheories))
 		rleHistory, actionHistory = rleHistories[episode_num], actionHistories[episode_num]
-		penalties = MultiEpisodeExperienceReplay(newTheories, [rleHistory[-2:]], \
+		penalties, _ = MultiEpisodeExperienceReplay(newTheories, [rleHistory[-2:]], \
 			[actionHistory[-1:]], method=EXPERIENCE_REPLAY_METHOD, targetColor = errorMap.targetColor)
-
 		scoreAndTheoryTuples = zip(penalties, newTheories)
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
 
 		# scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=0, max_num=None,
 				# proportionOfSpriteTheories=None)]
-
 		# newTheories = [s[1] for s in scoresAndHypotheses]
+		
 		newTheories = [s[1] for s in scoreAndTheoryTuples]
 		theories = newTheories
 
@@ -1698,12 +1956,6 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 	theory.errorMapHistory.append(errorMap)
 	newTheories = [theory.copy()]
 	newErrorMaps = [errorMap]
-
-	## For debugging. Don't make children of the true theory.
-	# TODO: unused?
-	if hasattr(theory, 'trueTheory'):
-		newTheories = [theory.copy()]
-		return newTheories
 
 	theory.experienceReplayRecord = {}
 

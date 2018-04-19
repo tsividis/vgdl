@@ -7,7 +7,7 @@
 # wwwwwwwwwwwww
 # """
 
-level0 = """
+level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
@@ -142,7 +142,7 @@ BasicGame frame_rate=30
         SpriteCounter stype=box1 limit=0 win=True
 """
 
-level_game_pairs = [[game, level0], [game, level1], [game, level2],
+level_game_pairs = [[game, level], [game, level1], [game, level2],
                     [game, level3]]
 
 if __name__ == "__main__":
