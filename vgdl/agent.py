@@ -451,7 +451,7 @@ class Agent:
 			# [K_RIGHT, K_UP, K_SPACE, 0, 0,0,0,0]
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			[0]*6
+			[0]*10
 			# [K_UP, K_UP, K_DOWN]
 			# [0,0,0,K_LEFT, K_LEFT,0,0]
 			# [0,K_RIGHT, K_SPACE, 0,0,0,0,0,0,0]
@@ -467,7 +467,6 @@ class Agent:
 			# [K_LEFT,K_LEFT,K_LEFT,K_LEFT]
 			# [K_LEFT, K_UP, K_UP, K_UP, K_UP]
 			# [K_LEFT]*8
-			# [0]*20
 			# [K_DOWN, K_LEFT]+[K_RIGHT]*23+[K_UP]*3
 			# [K_UP], [K_LEFT]*4
 		]
@@ -1014,7 +1013,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 					positionOptions = [(xPrev, yPrev)]
 				
 				if (xB,yB) in positionOptions:
-					total_penalty += np.log(1.-e_dist)
+					# total_penalty += np.log(1.-e_dist)
+					total_penalty += np.log(1.-e_dist*len(positionOptions))
 					reportError = False
 				else:
 					total_penalty += np.log(e_dist)
@@ -1043,7 +1043,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				del sA.fleeing
 
 				if (xB, yB) in closestTargets:
-					total_penalty += np.log(1.-e_dist)
+					# total_penalty += np.log(1.-e_dist)
+					total_penalty += np.log(1.-e_dist*len(closestTargets))
 					reportError = False
 				else:
 					total_penalty += np.log(e_dist)
@@ -1785,7 +1786,7 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 	## Returns the max_num theories that are at percentile or greater, given their score.
 
 	percentile = 100.-percentile
-	scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
+	scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
 	cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
 	# WARNING: not the Right Thing -- do the Right Thing later
 	cutoff = errorCutoff if errorCutoff else cutoff
@@ -1794,35 +1795,35 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 	if not candidates:
 		return []
 
-	filtered = []
+	# filtered = []
 
-	if max_num is None:
-		max_num = len(candidates)+1
+	# if max_num is None:
+	# 	max_num = len(candidates)+1
 
-	if proportionOfSpriteTheories is None:
-		candidates = sorted(candidates, key=lambda x:x[0])
-		filtered = candidates[0:max_num]
-	else:
-		# TODO: this never happens any more, as of a long time ago I think
-		sprite_candidates = [s for s in candidates if s[1].mostRecentEdit == 'spriteInduction']
-		induction_candidates = [s for s in candidates if s[1].mostRecentEdit == 'interactionSetInduction']
-		no_edit_candidates = [s for s in candidates if s[1].mostRecentEdit == 'none']
-		if len(sprite_candidates)>int(math.floor(max_num*proportionOfSpriteTheories)):
-			num_sprite_candidates_chosen = min(int(math.floor(max_num*proportionOfSpriteTheories)), len(sprite_candidates))
-			filtered = sprite_candidates[0:num_sprite_candidates_chosen]
-		else:
-			num_sprite_candidates_chosen = len(sprite_candidates)
-			filtered = sprite_candidates
+	# if proportionOfSpriteTheories is None:
+	# 	candidates = sorted(candidates, key=lambda x:x[0])
+	# 	filtered = candidates[0:max_num]
+	# else:
+	# 	# TODO: this never happens any more, as of a long time ago I think
+	# 	sprite_candidates = [s for s in candidates if s[1].mostRecentEdit == 'spriteInduction']
+	# 	induction_candidates = [s for s in candidates if s[1].mostRecentEdit == 'interactionSetInduction']
+	# 	no_edit_candidates = [s for s in candidates if s[1].mostRecentEdit == 'none']
+	# 	if len(sprite_candidates)>int(math.floor(max_num*proportionOfSpriteTheories)):
+	# 		num_sprite_candidates_chosen = min(int(math.floor(max_num*proportionOfSpriteTheories)), len(sprite_candidates))
+	# 		filtered = sprite_candidates[0:num_sprite_candidates_chosen]
+	# 	else:
+	# 		num_sprite_candidates_chosen = len(sprite_candidates)
+	# 		filtered = sprite_candidates
 
-		remaining = max_num - len(filtered)
-		filtered = induction_candidates[0:min(remaining, len(induction_candidates))] + filtered + no_edit_candidates
+	# 	remaining = max_num - len(filtered)
+	# 	filtered = induction_candidates[0:min(remaining, len(induction_candidates))] + filtered + no_edit_candidates
 
-		if len(filtered)<max_num:
-			diff = max_num - len(filtered)
-			filtered = filtered + sprite_candidates[num_sprite_candidates_chosen:min(len(sprite_candidates), num_sprite_candidates_chosen+diff)]
-		filtered = sorted(filtered, key=lambda x: x[0])
+	# 	if len(filtered)<max_num:
+	# 		diff = max_num - len(filtered)
+	# 		filtered = filtered + sprite_candidates[num_sprite_candidates_chosen:min(len(sprite_candidates), num_sprite_candidates_chosen+diff)]
+	# 	filtered = sorted(filtered, key=lambda x: x[0])
 
-	# print "METHOD ONE FILTER:", [t[0] for t in filtered]
+	# # print "METHOD ONE FILTER:", [t[0] for t in filtered]
 
 	## here begins new filtering method:
 	# 	always keep first tier (by error) (as long as it made the maxmium allowed error cutoff)
@@ -1895,7 +1896,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		penalties, _ = MultiEpisodeExperienceReplay(newTheories, [rleHistory[-2:]], \
 			[actionHistory[-1:]], method=EXPERIENCE_REPLAY_METHOD, targetColor = errorMap.targetColor)
 		scoreAndTheoryTuples = zip(penalties, newTheories)
-		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0])
+		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
 
 		# scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=0, max_num=None,
 				# proportionOfSpriteTheories=None)]

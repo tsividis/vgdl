@@ -2075,6 +2075,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         realCooldown = int(current_sprite.cooldown)
         speed, cooldown = getSpeed(params), getCooldown(params)
         current_sprite.cooldown = cooldown
+        current_sprite.lastmove -= 1 # see VGDL update function... this is actually necessary
         position_options = {}
 
         for option in BASEDIRS:
@@ -2086,6 +2087,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
                 position_options[(left, top)] = 1.0/len(BASEDIRS)
 
         current_sprite.cooldown = realCooldown
+        current_sprite.lastmove += 1
         return position_options, position_options, orientation_options, appearance_predictions
 
     # Missile or OrientedSprite

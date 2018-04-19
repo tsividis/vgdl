@@ -39,17 +39,17 @@
 #combine with avatar sam bounceFoward. works.
 #0,0,0,0,0,0
 # works 4/12
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                            1 w
-w              A             1 w
-w                              w
-w                              w
-w         c    c          3 3  w
-w                              w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w              A             1 w
+# w                              w
+# w                              w
+# w         c    c          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # TODO: You need to be able to re-run testAndExpand() when no hypotheses pass your filter
 ## the problem here is that you need to build on expandSprite proposals with expandLine within one errorMap and
@@ -86,17 +86,17 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 #[0]*10
 ## distinguishing between random and missiles
 # Works 4/12 if you don't filter early against 'random' in prior.
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w                     4      1 w
-# w                              w
-# w   4                          w
-# w                         3 3  w
-# w         s    s A             w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w                     4      1 w
+w                              w
+w   4                          w
+w                         3 3  w
+w         s    s A             w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 #[0]*10
 # combine with sam wall reverseDirection
