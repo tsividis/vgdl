@@ -69,12 +69,10 @@ class WBP():
 		else:
 			self.theory=copy.deepcopy(theory)
 			# self.theory.interactionSet.extend(fakeInteractionRules)
+			# print "before updating terminations in WBP"
+			# embed()
 			self.theory.updateTerminations(ruleSetToUpdate=fakeInteractionRules)
 		print 'max nodes', self.max_nodes
-
-		# for rule in self.theory.interactionSet:
-		# 	if 'stepBack'==rule.interaction:
-		# 		ipdb.set_trace()
 		i=1
 		for k in rle._game.all_objects.keys():
 			self.objIDs[k] = i * 100 * (rle.outdim[0]*rle.outdim[1]+self.padding)
@@ -354,8 +352,8 @@ class WBP():
 								if stype in self.starting_stype_n.keys() and self.starting_stype_n[stype] > n_stypes:
 									child.terminal, child.win = True, True
 									foundWin = True
-									print "in weird found win condition in wbp"
-									embed()
+									# print "in weird found win condition in wbp"
+									# embed()
 									break
 							if foundWin:
 								break

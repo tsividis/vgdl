@@ -302,6 +302,7 @@ class Theory(object):
 		newTheory.dryingPaint = set(self.dryingPaint)
 		newTheory.errorMapHistory = list(self.errorMapHistory) # currently unused but useful for debugging.
 		newTheory.experienceReplayRecord = ccopy(self.experienceReplayRecord)
+		newTheory.falsified = set(self.falsified)
 		return newTheory
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
@@ -528,15 +529,16 @@ class Theory(object):
 
 		for rule in ruleSetToUpdate:
 			if rule.asTuple()[0] in ['stepBack', 'killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore', 'transformTo', 'nothing']:
-				if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
-					if rule.generic and rule.preconditions:
+				if rule.generic and rule.preconditions:
+					if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
 						terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, copy.deepcopy(rule.preconditions))
 						if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
 								for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
 							all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 							all([not terminationRule.__eq__(t) for t in self.falsified])):
 							self.terminationSet.add(terminationRule)
-					elif rule.generic and not rule.preconditions:
+				elif rule.generic and not rule.preconditions:
+					if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
 						## Omit noveltytermination for randoms bumping into objects in the game; makes us disrupt plans even though we shouldnt't.
 						if ('Random' not in str(self.classes[rule.slot1][0].vgdlType)) and ('Random' not in str(self.classes[rule.slot2][0].vgdlType)) or rule.asTuple()[0]!='nothing':
 							terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
@@ -590,7 +592,6 @@ class Theory(object):
 		self.terminationSet = sorted(self.terminationSet, key=lambda t:t.ruleType)
 
 		return self.terminationSet, self.falsified, self.multi_falsified
-
 
 	def getClassFromColor(self, color):
 		for c in self.classes:

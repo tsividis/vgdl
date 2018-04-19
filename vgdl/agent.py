@@ -314,7 +314,8 @@ class Agent:
 			theoryRLEs 	= VrleInitPhase(selectedHypotheses, envReal)
 			plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal)
 			quitting = False
-
+			# print "before planning"
+			# embed()
 			if self.parallel_planning:
 				pass
 				# def WBP_wrapper(l):
@@ -379,6 +380,7 @@ class Agent:
 						quitting = True
 
 			if emptyPlans > self.emptyPlansLimit:
+				print "observing"
 				observe(self.rle, 5)
 
 			if not quitting:
@@ -609,7 +611,7 @@ class Agent:
 		print self.rle.show(color='blue')
 
 		print "evaluating {} old theories and proposing new ones".format(len(theoryRLEs))
-		updateTerminations(self.rle, hypotheses)
+		# updateTerminations(self.rle, hypotheses)
 		newTheories = []
 	
 		for num, env in enumerate(theoryRLEs):
@@ -822,6 +824,7 @@ def convertTheoryToSubgoalTheory(theory):
 			elif 'Avatar' not in str(T.classes[rule.slot1][0].vgdlType):
 				rule.interaction = 'killSprite'
 	imaginedEffectTuples = set([(eff[1], eff[2]) for eff in theory.setOfImaginedEffects])
+	T.setOfImaginedEffects = theory.setOfImaginedEffects
 	T.terminationSet = [rule for rule in T.terminationSet if rule.ruleType!='NoveltyRule' or (rule.termination.s1, rule.termination.s2) not in imaginedEffectTuples]
 
 	return T
@@ -834,24 +837,6 @@ def VrleInitPhase(hypotheses, stateToSet, theoryRLEs=None, makeInitialVrle=False
 		realVRLE = initializeVrle(hypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True)
 		realVRLEs.append(realVRLE)
 	return realVRLEs
-
-# def VrleInitPhase(hypotheses, stateToSet, makePlannerVrles=False, theoryRLEs=None, makeInitialVrle=False):
-# 	## Initialize multiple VRLEs, each corresponding to one hypothesis in theories
-# 	## Set their state to that of the provided RLE
-# 	realVRLEs, plannerVRLEs = [], []
-# 	for num, hypothesis in enumerate(hypotheses):
-# 		realVRLE = initializeVrle(hypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True)
-# 		if makePlannerVrles:
-# 			convertedHypothesis = convertTheoryToSubgoalTheory(hypothesis)
-# 			plannerVRLE = initializeVrle(convertedHypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True)
-# 		else:
-# 			plannerVRLE = None
-# 		realVRLEs.append(realVRLE)
-# 		plannerVRLEs.append(plannerVRLE)
-# 	if makePlannerVrles:
-# 		print "madeVrles"
-# 		embed()
-# 	return realVRLEs, plannerVRLEs
 
 def findNearestSprite(sprite, spriteList):
 	## returns the sprites in spriteList whose locations best match the location of sprite.
