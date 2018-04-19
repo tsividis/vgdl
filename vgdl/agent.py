@@ -969,7 +969,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 					positionOptions = [(sPrev.rect.left-d, sPrev.rect.top), (sPrev.rect.left+d, sPrev.rect.top), \
 							(sPrev.rect.left, sPrev.rect.top-d),(sPrev.rect.left, sPrev.rect.top+d)]
 					if (sB.rect.left, sB.rect.top) in positionOptions:
-						total_penalty += np.log(1.-e_dist)
+						# multiply by len(positionOptions) because really this is less probable than reverseDirection if both have "zero" error
+						total_penalty += np.log(1.-e_dist*len(positionOptions))
 						continue
 		## If a teleport event has taken place
 		if dist>0 and 'teleportToExit' in [r.interaction for r in theory.interactionSet if r.slot1==sA_class]:
