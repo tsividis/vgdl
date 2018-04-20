@@ -738,16 +738,18 @@ def setSpriteState(sprite, matchingSprite, hypothesis):
 		sprite.resources[hypothesis.spriteObjects[rcolor].className] = matchingSprite.inventory[rcolor][0]
 
 	# in VGDL, only things which move passively have an orientation that isn't (0,0)
-	if hypothesis.spriteObjects[matchingSprite.colorName].vgdlType in [Missile]:
+	if hypothesis.spriteObjects[matchingSprite.colorName].vgdlType == Missile:
 		## Setting the Missile orientation to be consistent with the theory only makes sense for gridphysics games,
 		## because in continuous games the orientation of a missile that is initially DOWN can change to
 		## anything as a function of bounces. So doing it as below is actually ideal.
-		orientation = matchingSprite.lastDisplacement
+		# slight modification: if it's the missile's first move, orientation is dictated by the theory
+		className = hypothesis.spriteObjects[matchingSprite.colorName].className
+		classOrientation = hypothesis.classes[className][0].args['orientation']
+		orientation = classOrientation if matchingSprite.lastmove <= 0 else matchingSprite.lastDisplacement
 
 		## WrapAround rule conflicts with the normal way of setting sprite orientation. If we have this rule, just go with the prior
 		## about a sprite's orientation.
-		c1 = hypothesis.spriteObjects[matchingSprite.colorName].className
-		wrapAroundApplies = any([rule.interaction=='wrapAround' and rule.slot1==c1 for rule in hypothesis.interactionSet])
+		wrapAroundApplies = any([rule.interaction=='wrapAround' and rule.slot1==className for rule in hypothesis.interactionSet])
 		if orientation == (0,0) or wrapAroundApplies:
 			orientation = matchingSprite.firstorientation if matchingSprite.firstorientation else hypothesis.spriteObjects[matchingSprite.colorName].args['orientation']
 		sprite.orientation = orientation
@@ -1008,7 +1010,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 					positionOptions = [(sPrev.rect.left-d, sPrev.rect.top), (sPrev.rect.left+d, sPrev.rect.top), \
 							(sPrev.rect.left, sPrev.rect.top-d),(sPrev.rect.left, sPrev.rect.top+d)]
 					if (sB.rect.left, sB.rect.top) in positionOptions:
-						total_penalty += np.log(1.-e_dist)
+						# multiply by len(positionOptions) because really this is less probable than reverseDirection if both have "zero" error
+						total_penalty += np.log(1.-e_dist*len(positionOptions))
 						continue
 		## If a teleport event has taken place
 		if dist>0 and 'teleportToExit' in [r.interaction for r in theory.interactionSet if r.slot1==sA_class]:
