@@ -1,9 +1,10 @@
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from hyperopt import fmin, tpe, hp
 from pathos.multiprocessing import ProcessingPool
+from IPython import embed
 import time
 import dill
-
+import importlib
 import argparse
 
 """
@@ -19,105 +20,108 @@ game_number = args.game_number
 # the command 'pip install git+https://github.com/hyperopt/hyperopt'
 
 gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
-            'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
+			'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
 local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper',  # 10-12
-    'expt_preconditions', 'expt_push_boulders2', 'expt_relational']  # 13-15 to play a "local" game
+	'expt_preconditions', 'expt_push_boulders2', 'expt_relational']  # 13-15 to play a "local" game
 
 def play_trainset():
-    start_time = time.time()
+	start_time = time.time()
 
 
-    # playing GVG-AI games
-    if game_number < 10:
-        gameName = gvggames[game_number]  # to play a gvgai game
-        def read_gvgai_game(filename):
-        	with open(filename, 'r') as f:
-        		new_doc = []
-        		g = gen_color()
-        		for line in f.readlines():
-        			new_line = (" ".join([string if string[:4]!="img="
-        				else "color={}".format(next(g))
-        				for string in line.split(" ")]))
-        			new_doc.append(new_line)
-        		new_doc = "\n".join(new_doc)
-        	return new_doc
+	# playing GVG-AI games
+	if game_number < 10:
+		gameName = gvggames[game_number]  # to play a gvgai game
+		def read_gvgai_game(filename):
+			with open(filename, 'r') as f:
+				new_doc = []
+				g = gen_color()
+				for line in f.readlines():
+					new_line = (" ".join([string if string[:4]!="img="
+						else "color={}".format(next(g))
+						for string in line.split(" ")]))
+					new_doc.append(new_line)
+				new_doc = "\n".join(new_doc)
+			return new_doc
 
-        def gen_color():
-        	from vgdl.colors import colorDict
-        	color_list = colorDict.values()
-        	color_list = [c for c in color_list if c not in ['UUWSWF']]
-        	for color in color_list:
-        		yield color
-
-
-        gvgname = "../gvgai/training_set_1/{}".format(gameName)
-
-        gameString = read_gvgai_game('{}.txt'.format(gvgname))
+		def gen_color():
+			from vgdl.colors import colorDict
+			color_list = colorDict.values()
+			color_list = [c for c in color_list if c not in ['UUWSWF']]
+			for color in color_list:
+				yield color
 
 
-        level_game_pairs = []
-        for level_number in range(5):
-        	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
-        		level_game_pairs.append([gameString, level.read()])
+		gvgname = "../gvgai/training_set_1/{}".format(gameName)
 
-    # running local games
-    else:
-        level_game_pairs = None
-        gameName = 'examples.gridphysics.{}'.format(local_games[game_number-10])
+		gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
 
-    # agent = Agent('full', gameName, hyperparameter_sets=hyperparameters, parallel_planning=False)
+		level_game_pairs = []
+		for level_number in range(5):
+			with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
+				level_game_pairs.append([gameString, level.read()])
 
-    ##then pass this down for multiple episodes
-    # gameObject = None
-    playCurriculum(level_game_pairs=level_game_pairs)
-    # agent.playEpisodes(None,5)
+	# running local games
+	else:
+		level_game_pairs = None
+		gameName = 'examples.gridphysics.{}'.format(local_games[game_number-10])
 
-    # total_time = time.time() - start_time
 
-    return total_time
+	# agent = Agent('full', gameName, hyperparameter_sets=hyperparameters, parallel_planning=False)
 
-def initializeEnvironment(self, gameFileName):
-    gameString, levelString = defInputGame(gameFilename, randomize=False)
-    rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
-    rle = rleCreateFunc()
-    return rle
+	##then pass this down for multiple episodes
+	# gameObject = None
+	playCurriculum(gameName, level_game_pairs=level_game_pairs)
+	# agent.playEpisodes(None,5)
 
-def playEpisode(self, gameObject, episode_num):
-    steps = 0
-    rle = initializeEnvironment()
+	# total_time = time.time() - start_time
 
-    for i in range(10):
-        if not ended:
-            rle.step(0)
-            steps += 1
-            ended, win = rle._isDone()
+	return total_time
 
-    return win, rle._game.score, steps
+def initializeEnvironment(gameFilename):
+	gameString, levelString = defInputGame(gameFilename, randomize=False)
+	rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
+	rle = rleCreateFunc()
+	return rle
 
-def playCurriculum(level_game_pairs, num_episodes=10):
-    """ Plays a game level until it wins or exceeds num_episodes, then moves to the next one until
-    completion. """
+def playEpisode(gameFilename, episode_num):
+	steps = 0
+	rle = initializeEnvironment(gameFilename)
+	embed()
+	for i in range(10):
+		if not ended:
+			rle.step(0)
+			steps += 1
+			ended, win = rle._isDone()
 
-    total_game_steps, levels_won = 0, 0
-    for n_level, level_game in enumerate(level_game_pairs):
-        win = False
-        gameObject = None
-        i=0
-        first_time_playing_level = True
-        allStatesEncountered = []
-        while not win and i<num_episodes:
-            win, score, steps = self.playEpisode(gameObject, i, win=win, first_time_playing_level=first_time_playing_level)
-            total_game_steps += steps
-            episodes.append((n_level, steps, win, score))
-            i+=1
-        if i>=num_episodes:
-            return
+	return win, rle._game.score, steps
 
-        levels_won +=1
+def playCurriculum(gameName, level_game_pairs, num_episodes=10):
+	""" Plays a game level until it wins or exceeds num_episodes, then moves to the next one until
+	completion. """
 
-    return
+	if not level_game_pairs:
+		level_game_pairs = importlib.import_module(gameName).level_game_pairs
+
+	total_game_steps, levels_won = 0, 0
+	for n_level, level_game in enumerate(level_game_pairs):
+		win = False
+		gameObject = None
+		i=0
+		first_time_playing_level = True
+		allStatesEncountered = []
+		while not win and i<num_episodes:
+			win, score, steps = playEpisode(gameObject, i)
+			total_game_steps += steps
+			episodes.append((n_level, steps, win, score))
+			i+=1
+		if i>=num_episodes:
+			return
+
+		levels_won +=1
+
+	return
 
 
 play_trainset()
