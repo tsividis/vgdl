@@ -1,4 +1,4 @@
-BasicGame square_size=32
+BasicGame
     SpriteSet
         base    > Immovable    color=WHITE
         avatar  > FlakAvatar   stype=sam color=DARKBLUE
