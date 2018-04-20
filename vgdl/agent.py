@@ -387,10 +387,7 @@ class Agent:
 				for i, action in enumerate(solution):
 					print "executing step"
 					bestScoresAndHypotheses, danger = self.executeStep(episode_num, i, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, objectPositionsArray, lastStep=False)
-					
-					if danger:
-						print "got danger"
-						embed()
+
 					self.bestScoresAndHypotheses = bestScoresAndHypotheses
 					# self.hypotheses = [bestScoresAndHypotheses[0][1]]
 					self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
@@ -401,11 +398,13 @@ class Agent:
 						# self.hypotheses = hypotheses
 						# break
 
-					# ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
-
 					steps +=1
 
 					ended, win = self.rle._isDone()
+					if self.avoid_danger and danger: 
+						print "got danger. Replanning"
+						break
+
 					if ended:
 						break
 
