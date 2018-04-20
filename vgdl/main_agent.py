@@ -232,8 +232,8 @@ class Agent:
             level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
         episodes = []
         allEffectsEncountered = []
-        shutil.rmtree("images/tmp")
-        os.makedirs("images/tmp")
+        # shutil.rmtree("images/tmp")
+        # os.makedirs("images/tmp")
         j=0
         flexible_goals = False
         for n_level, level_game in enumerate(level_game_pairs):
@@ -290,11 +290,11 @@ class Agent:
 
         output = {'modelType':self.modelType,
                     # 'gameName': self.gameFilename[self.gameFilename.find('expt'):],
-                    'gameName': gvgname[gvgname.find('set_1/')+6:],
+                    'gameName': self.gameFilename,
                     'condition': 'normal',
                     'episodes' : episodes}
 
-        # write_to_csv('pilotModelRuns_'+gvgname[gvgname.find('set_1/')+6:]+'.csv', output)
+        write_to_csv(str(self.gameFilename)+'.csv', output)
         # self.makeMovie()
 
     def makeHeatmap(self, statesEncountered, filename):
