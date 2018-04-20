@@ -1,5 +1,4 @@
 from rlenvironmentnonstatic import createRLInputGameFromStrings
-from pathos.multiprocessing import ProcessingPool
 from IPython import embed
 import pygame
 from pygame.locals import K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE
@@ -30,7 +29,7 @@ def play_trainset():
 
 
 	# playing GVG-AI games
-	if game_number < 11:
+	if game_number < 10:
 		gameName = gvggames[game_number]  # to play a gvgai game
 		def read_gvgai_game(filename):
 			with open(filename, 'r') as f:
@@ -52,7 +51,7 @@ def play_trainset():
 				yield color
 
 
-		gvgname = "../gvgai/mturk_games/{}".format(gameName)
+		gvgname = "gvgai/mturk_games/{}".format(gameName)
 
 		gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
