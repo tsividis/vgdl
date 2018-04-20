@@ -98,8 +98,8 @@ class Agent:
 			self.max_nodes_annealing = 10
 		self.firstOrderHorizon = True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
 		self.regrounding = 3
-		self.selective_regrounding = True
-		self.avoid_danger = True
+		self.reground_for_killer_types = True ## encourages safe behavior
+		self.reground_for_stochastic_types = True ## encourages replanning more often as these agents deviate from prediction
 		self.safeDistance = 6
 		self.emptyPlansLimit = 5
 		self.longHorizonObservationLimit = 2
@@ -386,7 +386,7 @@ class Agent:
 			if not quitting:
 				for i, action in enumerate(solution):
 					print "executing step"
-					bestScoresAndHypotheses, danger = self.executeStep(episode_num, i, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, objectPositionsArray, lastStep=False)
+					bestScoresAndHypotheses, reground_for_killer_types, reground_for_stochastic_types = self.executeStep(episode_num, i, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, objectPositionsArray, lastStep=False)
 
 					self.bestScoresAndHypotheses = bestScoresAndHypotheses
 					# self.hypotheses = [bestScoresAndHypotheses[0][1]]
@@ -401,8 +401,8 @@ class Agent:
 					steps +=1
 
 					ended, win = self.rle._isDone()
-					if self.avoid_danger and danger: 
-						print "got danger. Replanning"
+					if reground_for_killer_types or reground_for_stochastic_types: 
+						print "got reground for killer or stochastic type. Replanning"
 						break
 
 					if ended:
@@ -501,7 +501,7 @@ class Agent:
 				if num == len(actions)-1:
 					lastStep=True
 				t2 = time.time()
-				scoresAndHypotheses, _ = self.executeStep(episode_num, num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
+				scoresAndHypotheses, _, _ = self.executeStep(episode_num, num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
 				print ""
 				print "executed step in {} seconds".format(time.time()-t2)
 				print ""
@@ -580,35 +580,39 @@ class Agent:
 		return scoresAndHypotheses, scoreAndTheoryTuples
 
 	def regroundOrNot(self, step_number, objectPositionsArray, hypothesis):
-		## Returns predictionError=True/False, danger=True/False
-		## NOTE: If predictionError=True, we aren't evaluating danger
+		## Returns predictionError=True/False, regroundForKillerTypes=True/False, regroundForKillerTypes=True/False
+		## NOTE: If predictionError=True, we aren't evaluating regroundForX
 		## because we end up replanning no matter what.
 
 		matchedEnvs, la, lb = matchEnvs(self.rle, objectPositionsArray[step_number+1])
 		if la:
-			return True, False
+			return True, False, False
 		if lb:
-			return True, False
+			return True, False, False
 		for match in matchedEnvs:
 			if match[2]!=0:
-				return True, False
-		if self.selective_regrounding:
+				return True, False, False
+		if self.reground_for_killer_types or self.reground_for_stochastic_types:
 			killer_colors = [hypothesis.classes[killerType][0].colorName for killerType in hypothesis.killerTypes if \
 					any([t in str(hypothesis.classes[killerType][0].vgdlType) for t in ['Random', 'Chaser', 'Missile']])]
-			if killer_colors:
-				avatar_color = hypothesis.classes['avatar'][0].colorName
-				avatar_sprite = self.rle._game.observation['trackedObjects'][avatar_color][0] if self.rle._game.observation['trackedObjects'][avatar_color] else None
-				if avatar_sprite:
-					for k in killer_colors:
-						if self.rle._game.observation['trackedObjects'][k]:
-							for sprite in self.rle._game.observation['trackedObjects'][k]:
-								if manhattanDist2(avatar_sprite, sprite)<self.safeDistance:
-									return False, True
-		return False, False
+			random_colors = [hypothesis.classes[c][0].colorName for c in hypothesis.classes if 'Random' in str(hypothesis.classes[c][0].vgdlType)]
+			both_colors = list(set(killer_colors+random_colors))
+			avatar_color = hypothesis.classes['avatar'][0].colorName
+			avatar_sprite = self.rle._game.observation['trackedObjects'][avatar_color][0] if self.rle._game.observation['trackedObjects'][avatar_color] else None
+
+			if avatar_sprite:
+				for c in both_colors:
+					if self.rle._game.observation['trackedObjects'][c]:
+						for sprite in self.rle._game.observation['trackedObjects'][c]:
+							if manhattanDist2(avatar_sprite, sprite)<self.safeDistance:
+								regroundForKillerTypes = c in killer_colors
+								regroundForStochasticTypes = c in random_colors
+								return False, regroundForKillerTypes, regroundForStochasticTypes
+		return False, False, False
 
 	def executeStep(self, episode_num, step_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, objectPositionsArray, lastStep=False):
 
-		danger = False
+		regroundForKillerTypes, regroundForStochasticTypes = False, False
 		envRealPrev = self.fastcopy(self.rle)
 		actionHistories[episode_num].append(action)
 		
@@ -649,7 +653,7 @@ class Agent:
 		print "evaluating {} old theories and proposing new ones".format(len(theoryRLEs))
 		updateTerminations(self.rle, hypotheses)
 		
-		predictionError, danger = self.regroundOrNot(step_num, objectPositionsArray, hypotheses[0])
+		predictionError, regroundForKillerTypes, regroundForStochasticTypes = self.regroundOrNot(step_num, objectPositionsArray, hypotheses[0])
 
 		if predictionError:
 			newTheories = []
@@ -662,7 +666,7 @@ class Agent:
 		else:
 			newTheories = self.hypotheses
 			if self.bestScoresAndHypotheses:
-				return self.bestScoresAndHypotheses, danger
+				return self.bestScoresAndHypotheses, regroundForKillerTypes, regroundForStochasticTypes
 		self.allTheories.extend(newTheories)
 		print ""
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
@@ -698,7 +702,7 @@ class Agent:
 			print "second attempt failed, 0 theories survived filter"
 			embed()
 
-		return bestScoresAndHypotheses, danger
+		return bestScoresAndHypotheses, regroundForKillerTypes, regroundForStochasticTypes
 
 ########################################################################
 ######## Other initialization METHODS                			########
