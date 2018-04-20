@@ -1,4 +1,4 @@
-from rlenvironmentnonstatic import createRLInputGameFromStrings
+from rlenvironmentnonstatic import createRLInputGameFromStrings, defInputGame
 from IPython import embed
 import pygame
 from pygame.locals import K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE
@@ -66,6 +66,8 @@ def play_trainset():
 	else:
 		level_game_pairs = None
 		gameName = 'examples.gridphysics.{}'.format(local_games[game_number-10])
+		gameFile = importlib.import_module(gameName)
+		level_game_pairs = gameFile.level_game_pairs
 
 	##then pass this down for multiple episodes
 	# gameObject = None
