@@ -1,13 +1,6 @@
-# level = """
-# wwwwwwwwwwwww
-# wA     x    w
-# w b         w
-# w           w
-# w          aw
-# wwwwwwwwwwwww
-# """
 
-level = """
+level0 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
@@ -18,9 +11,12 @@ wm                             w
 w             b                w
 www                           aw
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 level1 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wm                             w
 w                              w
@@ -31,9 +27,12 @@ w    b                         w
 w  A                          aw
 www                            w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 level2 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w     m   Aba       a        a w
@@ -44,36 +43,12 @@ w                              w
 w                              w
 w                            a w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-# level2 = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                              w
-# w                              w
-# w  b                           w
-# w                              w
-# w                              w
-# wr A                          aw
-# www                            w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
-
-
-# level3 = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w     a       b    a      a    w
-# w                              w
-# w  b            a     a        w
-# w              A m             w
-# w     a     a                  w
-# w     b                       aw
-# www                  a         w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
-
 level3 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w  a                           w
 w     a            a      a    w
@@ -84,30 +59,19 @@ w     a     a            ffffffw
 w     a   a              f     w
 www                  a   f     w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-
-# level4 = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w  a                           w
-# w     a       b    a      a    w
-# w       a              fffff   w
-# w  b        m   a     af   f   w
-# w              A       f   f   w
-# w     a     a          fffff   w
-# w     a   a       b      a    aw
-# www                  a         w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
 
 game = """
 BasicGame frame_rate=30
     SpriteSet
-        avatar > MovingAvatar color=DARKBLUE cooldown=0#6
-        chaser > VGDLSprite cooldown=16
-            # randomChaser > RandomNPC color=WHITE
-            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=10
-            # goodChaser > AStarChaser color=RED stype=box2
+        avatar > MovingAvatar color=DARKBLUE cooldown=0
+        chaser > VGDLSprite cooldown=8
+            randomChaser > RandomNPC color=WHITE
+            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=0
+            goodChaser > AStarChaser color=RED stype=box2
         forcefield > Passive color=PURPLE
         box > Passive
             box1 > color=PINK
@@ -118,7 +82,7 @@ BasicGame frame_rate=30
         a > box1
         b > box2
         m > mediumChaser
-        # r > randomChaser
+        r > randomChaser
         s > goodChaser
         f > forcefield
     InteractionSet
@@ -142,8 +106,9 @@ BasicGame frame_rate=30
         SpriteCounter stype=box1 limit=0 win=True
 """
 
-level_game_pairs = [[game, level], [game, level1], [game, level2],
+level_game_pairs = [[game, level0], [game, level1], [game, level2],
                     [game, level3]]
+
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
@@ -160,7 +125,7 @@ if __name__ == "__main__":
         # index = random.choice(range(len(level_game_pairs)))
         for index, level in enumerate(level_game_pairs):
             wins = 0
-            while wins<1:
+            while wins<2:
                 VGDLParser.playGame(*level)
                 time.sleep(1)
                 data = np.load("temp_data.npy")

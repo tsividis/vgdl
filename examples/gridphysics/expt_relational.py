@@ -1,54 +1,66 @@
 
 level0 = """
-wwwwwwwwwwwwwwwwwwwwww
-wA                   w
-w    a    x          w
-w              f     w
-w                    w
-w      f             w
-w                 x  w
-w          a         w
-w                    p
-wwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwA                   wwwwww
+wwwwww    a    x          wwwwww
+wwwwww              f     wwwwww
+wwwwww                    wwwwww
+wwwwww      f             wwwwww
+wwwwww                 x  wwwwww
+wwwwww          a         wwwwww
+wwwwww                    wwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 level1 = """
-wwwwwwwwwwwwwwwwwwwwww
-wA                   w
-w    a    x          w
-w                    w
-w                    w
-w              z     w
-w   x    z           w
-w          a         w
-w                    p
-wwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwA                   wwwwww
+wwwwww    a    x          wwwwww
+wwwwww                    wwwwww
+wwwwww                    wwwwww
+wwwwww              z     wwwwww
+wwwwww   x    z           wwwwww
+wwwwww          a         wwwwww
+wwwwww                    wwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 level2 = """
-wwwwwwwwwwwwwwwwwwwwww
-w                    w
-w    a    x          w
-w                    w
-w                    w
-w              y     w
-w   x    y           w
-w          a         w
-w          A         p
-wwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwww                    wwwwww
+wwwwww    a    x          wwwwww
+wwwwww                    wwwwww
+wwwwww                    wwwwww
+wwwwww              y     wwwwww
+wwwwww   x    y           wwwwww
+wwwwww          a         wwwwww
+wwwwww          A         wwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 level3 = """
-wwwwwwwwwwwwwwwwwwwwww
-w                    w
-w         x          w
-w            y       w
-w                    w
-w          y   z     w
-w   x    z           w
-w                    w
-w          A         p
-wwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwww                    wwwwww
+wwwwww         x          wwwwww
+wwwwww            y       wwwwww
+wwwwww                    wwwwww
+wwwwww          y   z     wwwwww
+wwwwww   x    z           wwwwww
+wwwwww                    wwwwww
+wwwwww          A         wwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 
@@ -83,10 +95,8 @@ BasicGame frame_rate=30
         box box > stepBack
         box wall > stepBack
         probe wall > stepBack
-        # avatar converter > stepBack
         converter wall > stepBack
         probe converter > stepBack
-        converter probe > stepBack
         converter1 box > bounceForward
         box converter2 > transformTo stype=fire
         converter2 fire > killSprite
@@ -97,7 +107,7 @@ BasicGame frame_rate=30
         probe fire > killSprite
         fire probe > killSprite
         avatar poison > killSprite
-    TerminationSet  
+    TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=probe limit=0 win=True
 """
@@ -138,8 +148,9 @@ BasicGame frame_rate=30
         probe wall > stepBack
         converter wall > stepBack
         probe converter > stepBack
-        converter1 box1 > bounceForward
+        # converter1 box1 > bounceForward
         box1 converter2 > transformTo stype=fire
+        # box1 converter2 > killSprite
         converter3 avatar > transformTo stype=box1
         converter2 fire > killSprite
         box fire > stepBack
@@ -148,23 +159,20 @@ BasicGame frame_rate=30
         converter1 avatar > transformTo stype=fire
         probe fire > killSprite
         fire probe > killSprite
-        # avatar converter > stepBack ## this was uncommented in the original experiment, but stepBack and transformTo are currently incompatible. fix bug.
         avatar poison > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=probe limit=0 win=True
 """
 
-
 level_game_pairs = [[game0, level0], [game0, level1], [game0, level2],[game3, level3]]
-
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     import random, sys, time
     import numpy as np
     import csv
     from IPython import embed
-    
+
     levels = [l for l in locals().keys() if 'level' in l and len(l)<8]
     if len(sys.argv)==2:
         index = int(sys.argv[1])

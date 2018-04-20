@@ -18,11 +18,11 @@ parser.add_argument('--game_number', type=int, default=0, help='game number')
 args = parser.parse_args()
 game_number = args.game_number
 
-gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
-			'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
+gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  				# 0-4
+			'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  	# 5-9
 
-local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper',  # 10-12
-	'expt_preconditions', 'expt_push_boulders2', 'expt_relational']  # 13-15 to play a "local" game
+local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper',   # 10-12
+	'expt_preconditions', 'expt_push_boulders', 'expt_relational']  				# 13-15 to play a "local" game
 
 def play_trainset():
 	start_time = time.time()

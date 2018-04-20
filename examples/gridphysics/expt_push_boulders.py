@@ -1,15 +1,18 @@
 
-level = """
-wwwwwwwwwwwwwwwwwwwwww
-w  1    p            w
-w    2    p          w
-wA  q     2   w     ww
-w    w1       w w    w
-ww          q        w
-w   p    q      1    w
-w    2        g      w
-w         2          w
-wwwwwwwwwwwwwwwwwwwwww
+level0 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwww  1    p            wwwwww
+wwwwww    2    p          wwwwww
+wwwwwwA  q     2   w     wwwwwww
+wwwwww    w1       w w    wwwwww
+wwwwwww          q        wwwwww
+wwwwww   p    q      1    wwwwww
+wwwwww    2        g      wwwwww
+wwwwww         2          wwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 # level1 = """
@@ -26,42 +29,51 @@ wwwwwwwwwwwwwwwwwwwwww
 # """
 
 level1 = """
-wwwwwwwwwwwwwwwwwwwwww
-wA1   w    p       g w
-ww  1 w      p       w
-w     p      2  w   ww
-wwwwwww1        w   ww
-ww            q      w
-w    p    q        1 w
-w     2              w
-w         2          w
-wwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwA1   w    p       g wwwwww
+wwwwwww  1 w      p       wwwwww
+wwwwww     p      2  w   wwwwwww
+wwwwwwwwwwww1        w   wwwwwww
+wwwwwww            q      wwwwww
+wwwwww    p    q        1 wwwwww
+wwwwww     2              wwwwww
+wwwwww         2          wwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 level2 = """
-wwwwwwwwwwwwwwwwwwwwww
-w    1 A 1  p 1  w   w
-w  1 wwwwwwww   1    w
-w        p    2 p 11 w
-wwwwwwwwwwwwwwwwwww ww
-ww   p    w ww   w  zw
-wwwww   w   1   ww   w
-w   w2   ww  w   ww ww
-w  g     2www  p    ww
-wwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwww    1 A 1  p 1  w   wwwwww
+wwwwww  1 wwwwwwww   1    wwwwww
+wwwwww        p    2 p 11 wwwwww
+wwwwwwwwwwwwwwwwwwwwwwww wwwwwww
+wwwwwww   p    w ww   w  zwwwwww
+wwwwwwwwww   w   1   ww   wwwwww
+wwwwww   w2   ww  w   ww wwwwwww
+wwwwww  g     2www  p    wwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 level3 = """
-wwwwwwwwwwwwwwwwwwwwww
-w    1   p    w  w w w
-w  1 w p      w1  1 ww
-w g  w     p  1   11 w
-wwwwwwwwwwwwwwwwwww ww
-w   w  p  w w    w  zw
-wwww q    w 1 w  w   w
-w A  1ww q    w  ww ww
-w  w  w w w   w     ww
-wwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwww    1   p    w  w w wwwwww
+wwwwww  1 w p      w1  1 wwwwwww
+wwwwww g  w     p  1   11 wwwwww
+wwwwwwwwwwwwwwwwwwwwwwww wwwwwww
+wwwwww   w  p  w w    w  zwwwwww
+wwwwwwwww q    w 1 w  w   wwwwww
+wwwwww A  1ww q    w  ww wwwwwww
+wwwwww  w  w w w   w     wwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 
@@ -234,7 +246,7 @@ BasicGame frame_rate=30
         SpriteCounter stype=avatar  limit=0 win=False
 """
 
-level_game_pairs = [[game, level], [game, level1], [game, level2], [game, level3]]
+level_game_pairs = [[game, level0], [game, level1], [game, level2], [game, level3]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

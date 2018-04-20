@@ -1,11 +1,3 @@
-# level = """
-# wwwwwwwwwwwww
-# wA     x    w
-# w b         w
-# w           w
-# w          aw
-# wwwwwwwwwwwww
-# """
 
 level0 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -55,33 +47,6 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-# level2 = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                              w
-# w                              w
-# w  b                           w
-# w                              w
-# w                              w
-# wr A                          aw
-# www                            w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
-
-
-# level3 = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w     a       b    a      a    w
-# w                              w
-# w  b            a     a        w
-# w              A m             w
-# w     a     a                  w
-# w     b                       aw
-# www                  a         w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
-
 level3 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -98,19 +63,6 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
-
-# level4 = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w  a                           w
-# w     a       b    a      a    w
-# w       a              fffff   w
-# w  b        m   a     af   f   w
-# w              A       f   f   w
-# w     a     a          fffff   w
-# w     a   a       b      a    aw
-# www                  a         w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
 
 game = """
 BasicGame frame_rate=30
@@ -157,7 +109,6 @@ BasicGame frame_rate=30
 level_game_pairs = [[game, level0], [game, level1], [game, level2],
                     [game, level3]]
 
-# level_game_pairs = [[game, level0], [game, level2]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

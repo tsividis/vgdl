@@ -1,77 +1,66 @@
 
 level0 = """
-wwwwwwwwwwwwwwwwww
-w                w
-w     A          w
-w                w
-w                w
-w                w
-w  b             w
-w                w
-w             g  w
-wwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwww                wwwwwwww
+wwwwwwww     A          wwwwwwww
+wwwwwwww                wwwwwwww
+wwwwwwww                wwwwwwww
+wwwwwwww                wwwwwwww
+wwwwwwww  b             wwwwwwww
+wwwwwwww                wwwwwwww
+wwwwwwww             g  wwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 level1 = """
-wwwwwwwwwwwwwwwwww
-w b p   w    m   w
-w   p   w A  wwwww
-w g p         p  w
-wwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwww b p   w    m   wwwwwwww
+wwwwwwww   p   w A  wwwwwwwwwwww
+wwwwwwww g p         p  wwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
-
-# level1 = """
-# wwwwwwwwwwwwwwwwww
-# w b p   w    m   w
-# w   p   w A  wwwww
-# wpppp      p     w
-# w     p p       ww
-# ww   www         w
-# wpppp          p w
-# w   pp           w
-# w g p    p    p  w
-# wwwwwwwwwwwwwwwwww
-# """
 
 level2 = """
-wwwwwwwwwwwwwwwwww
-w   w   w    p  bw
-w m     w A  wwwww
-wwwww            w
-w               ww
-ww            wwww
-wwwww       wwwwww
-wmww        ww  gw
-wmp         pp   w
-wwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwww   p   w    p  bwwwwwwww
+wwwwwwww m     w A  wwwwwwwwwwww
+wwwwwwwwpppp      p     wwwwwwww
+wwwwwwww     p p       wwwwwwwww
+wwwwwwwww            pppwwwwwwww
+wwwwwwwwpppp       pppppwwwwwwww
+wwwwwwwwmpp        pp  gwwwwwwww
+wwwwwwwwmp      p  pp   wwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
-
-# level2 = """
-# wwwwwwwwwwwwwwwwww
-# w b p   w    m   w
-# w e p   w A  wwwww
-# wpppp      p     w
-# w     p p       ww
-# ww   www         w
-# wpppp        ffffw
-# w   pp       f g w
-# wmm p    p   f   w
-# wwwwwwwwwwwwwwwwww
-# """
 
 level3 = """
-wwwwwwwwwwwwwwwwww
-w   w   w        w
-w       w A  wwwww
-wwwww         pmmw
-w             w ww
-wwww         wwpww
-wwwww      wwwwpww
-w m pp     wwwwpww
-wbmmwwm    www g w
-wwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwww   p   w        wwwwwwww
+wwwwwwww       w A  wwwwwwwwwwww
+wwwwwwwwpppp      p  pmmwwwwwwww
+wwwwwwww     p p     p wwwwwwwww
+wwwwwwwwwpp         ppppwwwwwwww
+wwwwwwwwpppp      ppppppwwwwwwww
+wwwwwwww m pp     ppppppwwwwwwww
+wwwwwwwwbmmppm  p ppp g wwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
-
-
 
 game = """
 BasicGame frame_rate=30
@@ -125,7 +114,7 @@ if __name__ == "__main__":
         # index = random.choice(range(len(level_game_pairs)))
         for index, level in enumerate(level_game_pairs):
             wins = 0
-            while wins<1:
+            while wins<2:
                 VGDLParser.playGame(*level)
                 time.sleep(1)
                 data = np.load("temp_data.npy")

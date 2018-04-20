@@ -812,7 +812,6 @@ class BasicGame(object):
 
         # --------- Game-play ------------
         from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
-        from ontology import spriteInduction, initializeDistribution, updateOptions
 
         finalEventList = []
         agentStatePrev = {}
@@ -934,7 +933,6 @@ class BasicGame(object):
 
         # --------- Game-play ------------
         from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
-        from ontology import spriteInduction, initializeDistribution, updateOptions
         finalEventList = []
         agentStatePrev = {}
         agentState = dict(self.getAvatars()[0].resources)
