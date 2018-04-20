@@ -344,16 +344,16 @@ class Agent:
 					seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
 					firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
 			
-			bestNode, gameStringArray, objectPositionsArray = p.BFS()
+			bestNode, gameStringArray, predictedEnvs = p.BFS()
 
 			# best_index = np.argmin([p.total_nodes for p in res._value])
-			# bestNode, gameStringArray, objectPositionsArray = res._value[best_index].BFS()
+			# bestNode, gameStringArray, predictedEnvs = res._value[best_index].BFS()
 			self.total_planner_steps = p.total_nodes
 
 			if bestNode is not None:
 				solution = p.solution
 				gameString_array = p.gameString_array
-				objectPositionsArray = objectPositionsArray[::-1]
+				predictedEnvs = predictedEnvs[::-1]
 			else:
 				solution = []
 
@@ -386,7 +386,7 @@ class Agent:
 			if not quitting:
 				for i, action in enumerate(solution):
 					print "executing step"
-					bestScoresAndHypotheses, reground_for_killer_types, reground_for_stochastic_types = self.executeStep(episode_num, i, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, objectPositionsArray, lastStep=False)
+					bestScoresAndHypotheses, reground_for_killer_types, reground_for_stochastic_types = self.executeStep(episode_num, i, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, predictedEnvs, lastStep=False)
 
 					self.bestScoresAndHypotheses = bestScoresAndHypotheses
 					# self.hypotheses = [bestScoresAndHypotheses[0][1]]
@@ -579,12 +579,12 @@ class Agent:
 
 		return scoresAndHypotheses, scoreAndTheoryTuples
 
-	def regroundOrNot(self, step_number, objectPositionsArray, hypothesis):
+	def regroundOrNot(self, step_number, predictedEnvs, hypothesis):
 		## Returns predictionError=True/False, regroundForKillerTypes=True/False, regroundForKillerTypes=True/False
 		## NOTE: If predictionError=True, we aren't evaluating regroundForX
 		## because we end up replanning no matter what.
 
-		matchedEnvs, la, lb = matchEnvs(self.rle, objectPositionsArray[step_number+1])
+		matchedEnvs, la, lb = matchEnvs(self.rle, predictedEnvs[step_number+1])
 		if la:
 			return True, False, False
 		if lb:
@@ -610,7 +610,7 @@ class Agent:
 								return False, regroundForKillerTypes, regroundForStochasticTypes
 		return False, False, False
 
-	def executeStep(self, episode_num, step_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, objectPositionsArray, lastStep=False):
+	def executeStep(self, episode_num, step_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, predictedEnvs, lastStep=False):
 
 		regroundForKillerTypes, regroundForStochasticTypes = False, False
 		envRealPrev = self.fastcopy(self.rle)
@@ -653,7 +653,7 @@ class Agent:
 		print "evaluating {} old theories and proposing new ones".format(len(theoryRLEs))
 		updateTerminations(self.rle, hypotheses)
 		
-		predictionError, regroundForKillerTypes, regroundForStochasticTypes = self.regroundOrNot(step_num, objectPositionsArray, hypotheses[0])
+		predictionError, regroundForKillerTypes, regroundForStochasticTypes = self.regroundOrNot(step_num, predictedEnvs, hypotheses[0])
 
 		if predictionError:
 			newTheories = []
