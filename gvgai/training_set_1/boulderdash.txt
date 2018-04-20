@@ -1,0 +1,60 @@
+BasicGame
+	SpriteSet
+		wall > Immovable autotiling=true color=DARKGRAY
+		sword > Flicker color=PINK limit=0 singleton=True
+		exitdoor > Immovable color=GREEN
+		diamond > Resource color=YELLOW limit=9
+		avatar  > ShootAvatar   stype=sword frameRate=8 color=DARKBLUE
+		crab > RandomNPC cooldown=5 color=GOLD
+		butterfly > RandomNPC cooldown=5 color=RED
+		boulder > Missile orientation=DOWN color=GRAY speed=0.2
+		dirt > Immovable color=BLUE
+
+	LevelMapping
+		e > exitdoor
+		o > boulder
+		, > dirt
+		x > diamond
+		c > crab
+		b > butterfly
+
+	InteractionSet
+		dirt avatar > killSprite
+		dirt sword  > killSprite
+		avatar diamond > changeResource resource=diamond value=1
+		avatar diamond > changeScore value=5
+		diamond avatar > killSprite
+		avatar wall > stepBack
+		crab wall > stepBack
+		butterfly wall > stepBack
+		avatar boulder > stepBack
+		crab boulder > stepBack
+		butterfly boulder > stepBack
+		avatar boulder > killIfFromAbove
+		avatar butterfly > killSprite
+		avatar crab > killSprite
+		boulder dirt > stepBack
+		boulder wall > stepBack
+		boulder diamond > stepBack
+		boulder boulder > stepBack
+		crab dirt > stepBack
+		butterfly dirt > stepBack
+		crab butterfly > killSprite
+		butterfly crab > transformTo stype=diamond
+		butterfly crab > changeScore value=1
+		exitdoor avatar > killIfOtherHasMore resource=diamond limit=9
+		exitdoor avatar > nothing
+
+		sword crab > nothing
+		sword butterfly > nothing
+		sword boulder > nothing
+		sword avatar > nothing
+		avatar sword > nothing
+		sword exitdoor > nothing
+		sword diamond > nothing
+		sword wall > nothing
+
+	TerminationSet
+		#NoveltyTermination s1=avatar s2=exitdoor win=True args={item:diamond,num:0,negated:False,operator_name:>}
+		SpriteCounter stype=avatar limit=0 win=False
+		SpriteCounter stype=exitdoor limit=0 win=True
