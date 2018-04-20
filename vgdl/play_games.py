@@ -1,7 +1,11 @@
-from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
+from rlenvironmentnonstatic import createRLInputGameFromStrings
 from hyperopt import fmin, tpe, hp
 from pathos.multiprocessing import ProcessingPool
 from IPython import embed
+import pygame
+from pygame.locals import K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE
+from random import choice
+import os
 import time
 import dill
 import importlib
@@ -15,9 +19,6 @@ parser.add_argument('--game_number', type=int, default=0, help='game number')
 
 args = parser.parse_args()
 game_number = args.game_number
-# NOTE: fmin seems to fail with the hyperopt version installed by default
-# as of 01/2018: it is best to install directly from the github repo with
-# the command 'pip install git+https://github.com/hyperopt/hyperopt'
 
 gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
 			'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
@@ -30,7 +31,7 @@ def play_trainset():
 
 
 	# playing GVG-AI games
-	if game_number < 10:
+	if game_number < 11:
 		gameName = gvggames[game_number]  # to play a gvgai game
 		def read_gvgai_game(filename):
 			with open(filename, 'r') as f:
@@ -52,50 +53,62 @@ def play_trainset():
 				yield color
 
 
-		gvgname = "../gvgai/training_set_1/{}".format(gameName)
+		gvgname = "../gvgai/mturk_games/{}".format(gameName)
 
 		gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
-
 		level_game_pairs = []
 		for level_number in range(5):
-			with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
-				level_game_pairs.append([gameString, level.read()])
-
+			try:
+				with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
+					level_game_pairs.append([gameString, level.read()])
+			except:
+				pass
 	# running local games
 	else:
 		level_game_pairs = None
 		gameName = 'examples.gridphysics.{}'.format(local_games[game_number-10])
 
-
-	# agent = Agent('full', gameName, hyperparameter_sets=hyperparameters, parallel_planning=False)
-
 	##then pass this down for multiple episodes
 	# gameObject = None
 	playCurriculum(gameName, level_game_pairs=level_game_pairs)
-	# agent.playEpisodes(None,5)
 
-	# total_time = time.time() - start_time
+	return
 
-	return total_time
-
-def initializeEnvironment(gameFilename):
-	gameString, levelString = defInputGame(gameFilename, randomize=False)
+def initializeEnvironment(gameString, levelString):
 	rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
 	rle = rleCreateFunc()
+	rle.visualize = True
+	pygame.init()
+	# Initialize keystate for games with orientation
+	rle._game.keystate = list(pygame.key.get_pressed())
+	rle.reset()
 	return rle
 
-def playEpisode(gameFilename, episode_num):
+def playEpisode(filename, level_name, gameString, levelString, episode_num):
+	
+	if not os.path.exists("../vgdl_data/%s/%s/%s" % (filename, level_name, episode_num)):
+		os.makedirs("../vgdl_data/%s/%s/%s" % (filename, level_name, episode_num))
+
 	steps = 0
-	rle = initializeEnvironment(gameFilename)
-	embed()
+	actions = [K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE]
+	rle = initializeEnvironment(gameString, levelString)
+	ended = False
+	
 	for i in range(10):
 		if not ended:
-			rle.step(0)
+			action = choice(actions)
+			rle.step(action)
+			rle._game._drawAll()
+
+			fn = "../vgdl_data/%s/%s/%s/tmp%05d.png" % (filename, level_name, episode_num, i)
+			pygame.image.save(rle._game.screen, fn)
+
 			steps += 1
 			ended, win = rle._isDone()
+			score = rle._game.score
 
-	return win, rle._game.score, steps
+	return win, score, steps
 
 def playCurriculum(gameName, level_game_pairs, num_episodes=10):
 	""" Plays a game level until it wins or exceeds num_episodes, then moves to the next one until
@@ -105,22 +118,20 @@ def playCurriculum(gameName, level_game_pairs, num_episodes=10):
 		level_game_pairs = importlib.import_module(gameName).level_game_pairs
 
 	total_game_steps, levels_won = 0, 0
+	# embed()
 	for n_level, level_game in enumerate(level_game_pairs):
+		episodes = []
+		(gameString, levelString) = level_game
 		win = False
 		gameObject = None
 		i=0
-		first_time_playing_level = True
-		allStatesEncountered = []
 		while not win and i<num_episodes:
-			win, score, steps = playEpisode(gameObject, i)
+			win, score, steps = playEpisode(gameName, n_level, gameString, levelString, i)
 			total_game_steps += steps
 			episodes.append((n_level, steps, win, score))
 			i+=1
-		if i>=num_episodes:
-			return
 
 		levels_won +=1
-
 	return
 
 
