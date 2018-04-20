@@ -85,33 +85,33 @@
 
 #[0]*10
 ## distinguishing between random and missiles
-# Works 4/12 if you don't filter early against 'random' in prior.
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                            1 w
-w                     4      1 w
-w                              w
-w   4                          w
-w                         3 3  w
-w         s    s A             w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
-
-#[0]*10
-# combine with sam wall reverseDirection
-# works 4/12
+# Works 4/12
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
 # w                            1 w
-# w                            1 w
+# w                     4      1 w
 # w                              w
-# w         wwwwww               w
+# w   4                          w
 # w                         3 3  w
 # w         s    s A             w
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
+
+#[0]*10
+# combine with sam wall reverseDirection
+# works 4/12
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w                            1 w
+w                              w
+w         wwwwww               w
+w                         3 3  w
+w         s    s A             w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 #[0]*10
 # This doesn't test for anything new; it just has all the objects thrown in
