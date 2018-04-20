@@ -5,12 +5,16 @@ from pygame.locals import K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE
 from random import choice
 import os
 import time
-import dill
 import importlib
 import argparse
 
 """
-python -m vgdl.play_games --game_number 14
+
+Run a random agent for 10 steps per episode, for a max of 'num_episodes' episodes, on all levels of game 0:
+This outputs per-frame .png images to ../vgdl_data/game_name/level_number/episode_number/
+python -m vgdl.play_games --game_number 0
+
+
 """
 parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
