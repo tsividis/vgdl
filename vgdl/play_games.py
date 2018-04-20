@@ -1,5 +1,4 @@
 from rlenvironmentnonstatic import createRLInputGameFromStrings
-from hyperopt import fmin, tpe, hp
 from pathos.multiprocessing import ProcessingPool
 from IPython import embed
 import pygame
