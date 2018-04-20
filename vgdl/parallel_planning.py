@@ -15,6 +15,10 @@ game_number = args.game_number
 # as of 01/2018: it is best to install directly from the github repo with
 # the command 'pip install git+https://github.com/hyperopt/hyperopt'
 
+"""
+python -m vgdl.parallel_planning --game_number 0
+"""
+
 gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
             'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
