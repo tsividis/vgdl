@@ -236,6 +236,8 @@ class Agent:
         # os.makedirs("images/tmp")
         j=0
         flexible_goals = False
+
+        pool = mp.Pool(processes=len(self.hyperparameter_sets))
         for n_level, level_game in enumerate(level_game_pairs):
 
             print("Playing level {}".format(n_level))
@@ -248,7 +250,6 @@ class Agent:
             allStatesEncountered = []
             t1 = time.time()
             first_time_playing_level = True
-            pool = mp.Pool(processes=len(self.hyperparameter_sets))
 
             while not win and i<10:
                 gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level, pool=pool)
