@@ -475,7 +475,7 @@ class Agent:
 				if num == len(actions)-1:
 					lastStep=True
 				t2 = time.time()
-				scoresAndHypotheses, _, _ = self.executeStep(episode_num, num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
+				scoresAndHypotheses, _, _ = self.executeStep(episode_num, num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, [], lastStep=lastStep)
 				print ""
 				print "executed step in {} seconds".format(time.time()-t2)
 				print ""
@@ -558,6 +558,10 @@ class Agent:
 		## NOTE: If predictionError=True, we aren't evaluating regroundForX
 		## because we end up replanning no matter what.
 
+		if not objectPositionsArray:
+			print "warning! empty objectPositionsArray in regroundOrNot!"
+			return False , False , False
+
 		matchedEnvs, la, lb = matchEnvs(self.rle, objectPositionsArray[step_number+1])
 		if la:
 			return True, False, False
@@ -629,7 +633,8 @@ class Agent:
 		
 		predictionError, regroundForKillerTypes, regroundForStochasticTypes = self.regroundOrNot(step_num, objectPositionsArray, hypotheses[0])
 
-		if predictionError:
+		# if predictionError:
+		if True:
 			newTheories = []
 			for num, env in enumerate(theoryRLEs):
 				theories = testAndExpand(env, self.hypotheses[num], action, self.rle, envRealPrev, self.rleHistory, \
@@ -2128,9 +2133,10 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 
-	filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.testAll"
 	
+	filename = "examples.gridphysics.expt_antagonist"
 
 	# filename = "examples.gridphysics.basics"
 
