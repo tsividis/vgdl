@@ -298,6 +298,7 @@ class Agent:
 		self.statesEncountered.append(self.rle._game.getFullState())
 		envReal = self.fastcopy(self.rle)
 		self.rleHistory[episode_num].append(envReal)
+		
 		#dep
 		if not self.hypotheses:
 			self.initializeHypotheses()
@@ -389,7 +390,8 @@ class Agent:
 					bestScoresAndHypotheses, reground_for_killer_types, reground_for_stochastic_types = self.executeStep(episode_num, i, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, predictedEnvs, lastStep=False)
 
 					self.bestScoresAndHypotheses = bestScoresAndHypotheses
-					# self.hypotheses = [bestScoresAndHypotheses[0][1]]
+					print self.bestScoresAndHypotheses
+
 					self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
 					print "executed step"
 					# embed()
@@ -407,8 +409,6 @@ class Agent:
 
 					if ended:
 						break
-
-					# if self.avoid_danger
 
 				if self.shortHorizon:
 					self.max_nodes *= self.max_nodes_annealing
