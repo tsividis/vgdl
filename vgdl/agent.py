@@ -202,8 +202,7 @@ class Agent:
 
 				self.hypotheses.append(newTheory)
 				self.history[color] = {}
-
-		return gameObject
+		return
 
 	def testCurriculum(self, level_game_pairs=None):
 		if not level_game_pairs:
@@ -214,37 +213,8 @@ class Agent:
 			print("Playing level {}".format(n_level))
 			(self.gameString, self.levelString) = level_game
 
-			gameObject = None
-
 			for epoch in range(1):
-				self.testEpisodes(gameObject,epoch=epoch)
-		return
-
-	def playEpisodes(self, gameObject, num_episodes=5, epoch=0):
-		
-		## for playback
-		self.allStatesEncountered = [[] for i in range(num_episodes)]
-		episodes = []
-
-		## for inference
-		self.rleHistory = [[] for i in range(num_episodes)]
-		self.actionHistory = [[] for i in range(num_episodes)]
-		self.all_objects = [{} for i in range(num_episodes)]
-
-		## for planning
-		self.max_nodes = self.starting_max_nodes
-
-		for episode_num in range(num_episodes):
-			t1 = time.time()
-			gameObject, win, score, steps, statesEncountered = self.playEpisode(gameObject, episode_num)
-			episodes.append((n_level, steps, win, score))
-			allStatesEncountered.extend(statesEncountered)
-
-			# VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
-			# persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
-			
-			first_time_playing_level = False
-			print "Finished episode in {} seconds".format(time.time() - t1)
+				self.testEpisodes(epoch=epoch)
 		return
 
 	def playCurriculum(self, level_game_pairs=None, num_episodes=10):
@@ -255,6 +225,9 @@ class Agent:
 		episodes = []
 
 		for n_level, level_game in enumerate(level_game_pairs):
+
+			self.gameString = level_game[0]
+			self.levelString = level_game[1]
 
 			## for playback
 			self.allStatesEncountered = [[] for i in range(num_episodes)]
@@ -267,25 +240,26 @@ class Agent:
 
 			self.max_nodes = self.starting_max_nodes
 			win = False
-			gameObject = None
-			i=0
+			i = 0
+			# TODO: never used
 			first_time_playing_level = True
 			allStatesEncountered = []
 
-			while not win and i<num_episodes:
-				gameObject, win, score, steps, statesEncountered = self.playEpisode(gameObject, i, win=win, first_time_playing_level=first_time_playing_level)
+			while not win and i < num_episodes:
+				win, score, steps, statesEncountered = self.playEpisode(i, win=win, first_time_playing_level=first_time_playing_level)
 				self.total_game_steps += steps
 				episodes.append((n_level, steps, win, score))
 				allStatesEncountered.extend(statesEncountered)
-				i+=1
-			if i>=num_episodes:
-				return
-
-			self.levels_won +=1
+				if win:
+					print 'won'
+					break
+				i += 1
+			if i < num_episodes:
+				self.levels_won += 1
 
 		return
 
-	def playEpisode(self, gameObject, episode_num, flexible_goals=False, win=False, first_time_playing_level=False):
+	def playEpisode(self, episode_num, flexible_goals=False, win=False, first_time_playing_level=False):
 		
 		self.initializeEnvironment()
 		print "initializing RLE"
@@ -418,7 +392,7 @@ class Agent:
 				self.max_nodes *= self.max_nodes_annealing
 				print "You got quitting==True from planner. Embedding to debug."
 				embed()
-				return gameObject, False, self.rle._game.score, steps, statesEncountered
+				return False, self.rle._game.score, steps, statesEncountered
 		
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
@@ -436,13 +410,13 @@ class Agent:
 			print colored(output, 'white', 'on_red')
 			print colored('________________________________________________________________', 'white', 'on_red')
 
-		return gameObject, win, score, steps, statesEncountered 
+		return win, score, steps, statesEncountered 
 	
 
 
 
 
-	def testEpisodes(self, gameObject, epoch=0):
+	def testEpisodes(self, epoch=0):
 		num_cores = mp.cpu_count()
 		print "num cores: {}".format(num_cores)
 		if num_cores<40:
@@ -485,7 +459,7 @@ class Agent:
 			self.all_objects[episode_num] = self.rle._game.getAllObjects() ## we need to store all_objects across multiple episodes
 
 			if episode_num == 0:
-				gameObject = self.initializeHypotheses()
+				self.initializeHypotheses()
 
 			envReal = self.fastcopy(self.rle)
 			self.rleHistory[episode_num].append(envReal)
@@ -501,7 +475,7 @@ class Agent:
 				if num == len(actions)-1:
 					lastStep=True
 				t2 = time.time()
-				scoresAndHypotheses, _, _ = self.executeStep(episode_num, num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, lastStep)
+				scoresAndHypotheses, _, _ = self.executeStep(episode_num, num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, [], lastStep=lastStep)
 				print ""
 				print "executed step in {} seconds".format(time.time()-t2)
 				print ""
@@ -584,7 +558,12 @@ class Agent:
 		## NOTE: If predictionError=True, we aren't evaluating regroundForX
 		## because we end up replanning no matter what.
 
+		if not predictedEnvs:
+			print "warning! empty predictedEnvs in regroundOrNot!"
+			return False , False , False
+
 		matchedEnvs, la, lb = matchEnvs(self.rle, predictedEnvs[step_number+1])
+		
 		if la:
 			return True, False, False
 		if lb:
@@ -655,7 +634,8 @@ class Agent:
 		
 		predictionError, regroundForKillerTypes, regroundForStochasticTypes = self.regroundOrNot(step_num, predictedEnvs, hypotheses[0])
 
-		if predictionError:
+		# if predictionError:
+		if True:
 			newTheories = []
 			for num, env in enumerate(theoryRLEs):
 				theories = testAndExpand(env, self.hypotheses[num], action, self.rle, envRealPrev, self.rleHistory, \
@@ -2154,9 +2134,10 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 
-	filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.testAll"
 	
+	filename = "examples.gridphysics.expt_antagonist"
 
 	# filename = "examples.gridphysics.basics"
 
@@ -2202,7 +2183,6 @@ if __name__ == "__main__":
 	agent = Agent('full', gameName)
 
 	##For GVGAI games, use this line
-	# gameObject = None
 	# agent.playCurriculum(level_game_pairs=level_game_pairs)
 
 	##For local games, use this line

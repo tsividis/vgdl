@@ -1,4 +1,5 @@
 from hyperopt import fmin, tpe, hp
+import importlib
 from pathos.multiprocessing import ProcessingPool
 from agent import Agent
 import time
@@ -66,12 +67,14 @@ def play_trainset(hyperparameters):
     else:
         level_game_pairs = None
         gameName = 'examples.gridphysics.{}'.format(local_games[game_number-10])
+        gameFile = importlib.import_module(gameName)
+        level_game_pairs = gameFile.level_game_pairs
 
     agent = Agent('full', gameName, hyperparameter_sets=hyperparameters, parallel_planning=False)
 
     ##then pass this down for multiple episodes
     gameObject = None
-    agent.playCurriculum(level_game_pairs=level_game_pairs)
+    agent.playCurriculum(level_game_pairs=level_game_pairs, num_episodes=3)
     # agent.playEpisodes(None,5)
 
     total_time = time.time() - start_time
