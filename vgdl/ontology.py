@@ -1391,7 +1391,7 @@ class NoveltyTermination(Termination):
                     print("IndexError in game.all_objects")
                     embed()
 
-                if name1==self.s1 and name2==self.s2:
+                if (name1==self.s1 and name2==self.s2) or (name2==self.s1 and name1==self.s2):
                     if id_not_found:
                         pass
                     return True, self.win
@@ -1422,8 +1422,8 @@ class NoveltyTermination(Termination):
                     pass
                 # self.s2 returns a type for the EOS for some reason, so the
                 # check has to be performed like this
-                if (name1==self.s1 and name2 in str(self.s2) or name2==self.s1 and name1 in str(self.s2)):
-                # if name1==self.s1 and name2 in str(self.s2):
+                # if (name1==self.s1 and name2 in str(self.s2) or name2==self.s1 and name1 in str(self.s2)):
+                if name1==self.s1 and name2 in str(self.s2):
                     if id_not_found:
                         pass
                     return True, self.win

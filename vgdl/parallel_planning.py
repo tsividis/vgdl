@@ -24,7 +24,7 @@ gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
             'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
 local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper',  # 10-12
-    'expt_preconditions', 'expt_push_boulders', 'expt_relational']  # 13-15 to play a "local" game
+    'expt_preconditions', 'expt_push_boulders2', 'expt_relational', 'avatar_inference']  # 13-15 to play a "local" game
 
 def play_trainset(hyperparameters):
     start_time = time.time()
@@ -74,7 +74,7 @@ def play_trainset(hyperparameters):
 
     ##then pass this down for multiple episodes
     gameObject = None
-    agent.playCurriculum(level_game_pairs=level_game_pairs, num_episodes=3)
+    agent.playCurriculum(level_game_pairs=level_game_pairs, num_episodes=10)
     # agent.playEpisodes(None,5)
 
     total_time = time.time() - start_time

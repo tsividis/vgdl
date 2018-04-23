@@ -281,17 +281,17 @@ class Agent:
 		while not ended:
 
 			envReal = self.fastcopy(self.rle)
-
-			##TODO: select hypothesis/es to plan with.
-			selectedHypotheses 	= [self.hypotheses[0]]
+			# embed()
+			## Select hypothesis/es to plan with.
+			selectedHypotheses 	= [self.hypotheses[0]] # Only initialize as many theories as you are using parallel planners
+			# selectedHypotheses = self.hypotheses
 			hypothesesToPlanWith = [convertTheoryToSubgoalTheory(h) for h in selectedHypotheses]
+			
 			## initialize one or many VRLEs according to hypothesis-selection method
-			theoryRLEs 	= VrleInitPhase(selectedHypotheses, envReal)
-			plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal)
+			theoryRLEs 	= VrleInitPhase(self.hypotheses, envReal) # Initialize all predictions for all theories that we're keeping around
+			plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal) # Only initialize as many theories as you are using parallel planners
 			# embed()
 			quitting = False
-			# print "before planning"
-			# embed()
 			if self.parallel_planning:
 				pass
 				# def WBP_wrapper(l):
@@ -362,12 +362,13 @@ class Agent:
 			if not quitting:
 				for i, action in enumerate(solution):
 					print "executing step"
-					bestScoresAndHypotheses, reground_for_killer_types, reground_for_stochastic_types = self.executeStep(episode_num, i, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, predictedEnvs, lastStep=False)
+					bestScoresAndHypotheses, reground_for_killer_types, reground_for_stochastic_types = self.executeStep(episode_num, i, self.rleHistory, self.actionHistory, action, selectedHypotheses, theoryRLEs, predictedEnvs, lastStep=False)
 
 					self.bestScoresAndHypotheses = bestScoresAndHypotheses
 					print self.bestScoresAndHypotheses
 
 					self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
+					theoryRLEs 	= VrleInitPhase(self.hypotheses, envReal)
 					print "executed step"
 					# embed()
 					## TODO: determine value of theory_change_flag
@@ -544,7 +545,7 @@ class Agent:
 		scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
 
 		scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-			proportionOfSpriteTheories=None, errorCutoff=ERRORCUTOFF, usePrior=False)]
+			proportionOfSpriteTheories=None, errorCutoff=ERRORCUTOFF, usePrior=True)]
 
 		print "Experience replay complete."
 		for num, sh in enumerate(scoresAndHypotheses):
@@ -1722,7 +1723,9 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 						eff1Class = env._game.all_objects[effect[1]].name if effect[1] in env._game.all_objects else 'EOS'
 						eff2Class = env._game.all_objects[effect[2]].name if effect[2] in env._game.all_objects else 'EOS'
 						effectWithClassNames = (effect[0], eff1Class, eff2Class)
+						effectWithReversedClassNames = (effect[0], eff2Class, eff1Class)
 						setOfImaginedEffects.add(effectWithClassNames)
+						setOfImaginedEffects.add(effectWithReversedClassNames)
 				try:
 					penalty, errorList = errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
 						rleHistory[idx+n], targetColor=targetColor, penalty_only=True)
@@ -1822,36 +1825,6 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 	if not candidates:
 		return []
 
-	# filtered = []
-
-	# if max_num is None:
-	# 	max_num = len(candidates)+1
-
-	# if proportionOfSpriteTheories is None:
-	# 	candidates = sorted(candidates, key=lambda x:x[0])
-	# 	filtered = candidates[0:max_num]
-	# else:
-	# 	# TODO: this never happens any more, as of a long time ago I think
-	# 	sprite_candidates = [s for s in candidates if s[1].mostRecentEdit == 'spriteInduction']
-	# 	induction_candidates = [s for s in candidates if s[1].mostRecentEdit == 'interactionSetInduction']
-	# 	no_edit_candidates = [s for s in candidates if s[1].mostRecentEdit == 'none']
-	# 	if len(sprite_candidates)>int(math.floor(max_num*proportionOfSpriteTheories)):
-	# 		num_sprite_candidates_chosen = min(int(math.floor(max_num*proportionOfSpriteTheories)), len(sprite_candidates))
-	# 		filtered = sprite_candidates[0:num_sprite_candidates_chosen]
-	# 	else:
-	# 		num_sprite_candidates_chosen = len(sprite_candidates)
-	# 		filtered = sprite_candidates
-
-	# 	remaining = max_num - len(filtered)
-	# 	filtered = induction_candidates[0:min(remaining, len(induction_candidates))] + filtered + no_edit_candidates
-
-	# 	if len(filtered)<max_num:
-	# 		diff = max_num - len(filtered)
-	# 		filtered = filtered + sprite_candidates[num_sprite_candidates_chosen:min(len(sprite_candidates), num_sprite_candidates_chosen+diff)]
-	# 	filtered = sorted(filtered, key=lambda x: x[0])
-
-	# # print "METHOD ONE FILTER:", [t[0] for t in filtered]
-
 	## here begins new filtering method:
 	# 	always keep first tier (by error) (as long as it made the maxmium allowed error cutoff)
 	# 	if adding the second tier isn't too many, do that
@@ -1881,11 +1854,11 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 		# filter out any theory whose added complexity does not improve its error
 		#	i.e. between two theories of equal perfomance, ignore the less likely/more complex one
 		errorLevelToMinPrior = dict()
-		epsilon = 0 # you never know with floats... could be necessary later
 		for score, theory in filtered:
-			if score not in errorLevelToMinPrior or theory.prior() < errorLevelToMinPrior[score]:
-				errorLevelToMinPrior[score] = theory.prior()
-		filtered = [sh for sh in filtered if sh[1].prior() <= errorLevelToMinPrior[sh[0]] + epsilon]
+			score = round(score,8)
+			if score not in errorLevelToMinPrior or theory.prior(granularity=1) < errorLevelToMinPrior[score]:
+				errorLevelToMinPrior[score] = theory.prior(granularity=1)
+		filtered = [sh for sh in filtered if sh[1].prior(granularity=1) <= errorLevelToMinPrior[round(sh[0],8)]]
 
 	return filtered
 
@@ -1924,10 +1897,6 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 			[actionHistory[-1:]], method=EXPERIENCE_REPLAY_METHOD, targetColor = errorMap.targetColor)
 		scoreAndTheoryTuples = zip(penalties, newTheories)
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
-
-		# scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=0, max_num=None,
-				# proportionOfSpriteTheories=None)]
-		# newTheories = [s[1] for s in scoresAndHypotheses]
 		
 		newTheories = [s[1] for s in scoreAndTheoryTuples]
 		theories = newTheories

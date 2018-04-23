@@ -101,17 +101,17 @@
 #[0]*10
 # combine with sam wall reverseDirection
 # works 4/12
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                            1 w
-w                            1 w
-w                              w
-w         wwwwww               w
-w                         3 3  w
-w         s    s A             w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w         wwwwww               w
+# w                         3 3  w
+# w         s    s A             w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 #[0]*10
 # This doesn't test for anything new; it just has all the objects thrown in
@@ -285,6 +285,13 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
+level = """
+wwwwwwww
+wA     w
+w      w
+w    3 w
+wwwwwwww
+"""
 
 
 game="""
