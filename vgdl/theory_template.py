@@ -538,9 +538,6 @@ class Theory(object):
 								for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
 							all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 							all([not terminationRule.__eq__(t) for t in self.falsified])):
-							if (rule.slot1=='c4' and rule.slot2=='avatar') or (rule.slot1=='avatar' and rule.slot2=='c4'):
-								print "found avatar c4"
-								# embed()
 							self.terminationSet.add(terminationRule)
 				elif rule.generic and not rule.preconditions:
 					if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
@@ -551,9 +548,6 @@ class Theory(object):
 									for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
 								all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 								all([not terminationRule.__eq__(t) for t in self.falsified])):
-								if (rule.slot1=='c4' and rule.slot2=='avatar') or (rule.slot1=='avatar' and rule.slot2=='c4'):
-									print "found avatar c4"
-									# embed()
 
 								self.terminationSet.add(terminationRule)
 

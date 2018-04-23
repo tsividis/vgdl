@@ -288,6 +288,7 @@ class Agent:
 			## initialize one or many VRLEs according to hypothesis-selection method
 			theoryRLEs 	= VrleInitPhase(selectedHypotheses, envReal)
 			plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal)
+			# embed()
 			quitting = False
 			# print "before planning"
 			# embed()
@@ -563,7 +564,7 @@ class Agent:
 			return False , False , False
 
 		matchedEnvs, la, lb = matchEnvs(self.rle, predictedEnvs[step_number+1])
-		
+
 		if la:
 			return True, False, False
 		if lb:

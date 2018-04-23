@@ -1347,7 +1347,6 @@ class NoveltyTermination(Termination):
             id_not_found = False
             if (e[0] in ['killSprite', 'transformTo', 'nothing']) and len(e) > 2:
                 try:
-                    # name1 = game.all_objects[e[1]]['sprite'].name
                     name1 = game.all_objects[e[1]].name
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
@@ -1355,8 +1354,6 @@ class NoveltyTermination(Termination):
                     elif e[1] in [obj.ID for obj in game.kill_list]:
                         name1 = [obj.name for obj in game.kill_list
                             if obj.ID==e[1]][0]
-                    # elif e[1] in game.getObjects().keys():
-                        # name1 = game.getObjects()[e[1]]['sprite'].name
                     elif e[1] in game.getAllObjects().keys():
                         name1 = game.getAllObjects()[e[1]].name
                     else:
@@ -1372,7 +1369,6 @@ class NoveltyTermination(Termination):
                     print("IndexError in game.all_objects")
                     embed()
                 try:
-                    # name2 = game.all_objects[e[2]]['sprite'].name
                     name2 = game.all_objects[e[2]].name
                 except KeyError:
                     if e[2]=='ENDOFSCREEN':
@@ -1380,8 +1376,6 @@ class NoveltyTermination(Termination):
                     elif e[2] in [obj.ID for obj in game.kill_list]:
                         name2 = [obj.name for obj in game.kill_list
                             if obj.ID==e[2]][0]
-                    # elif e[2] in game.getObjects().keys():
-                        # name2 = game.getObjects()[e[2]]['sprite'].name
                     elif e[2] in game.getAllObjects().keys():
                         name2 = game.getAllObjects()[e[2]].name
                     else:
@@ -1404,7 +1398,6 @@ class NoveltyTermination(Termination):
             elif len(e) > 2 and e[2]=='ENDOFSCREEN':
                 name2 = 'EOS'
                 try:
-                    # name1 = game.all_objects[e[1]]['sprite'].name
                     name1 = game.all_objects[e[1]].name
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
@@ -1412,8 +1405,6 @@ class NoveltyTermination(Termination):
                     elif e[1] in [obj.ID for obj in game.kill_list]:
                         name1 = [obj.name for obj in game.kill_list
                             if obj.ID==e[1]][0]
-                    # elif e[1] in game.getObjects().keys():
-                        # name1 = game.getObjects()[e[1]]['sprite'].name
                     elif e[1] in game.getAllObjects().keys():
                         name1 = game.getAllObjects()[e[1]].name
                     else:
@@ -1431,7 +1422,8 @@ class NoveltyTermination(Termination):
                     pass
                 # self.s2 returns a type for the EOS for some reason, so the
                 # check has to be performed like this
-                if name1==self.s1 and name2 in str(self.s2):
+                if (name1==self.s1 and name2 in str(self.s2) or name2==self.s1 and name1 in str(self.s2)):
+                # if name1==self.s1 and name2 in str(self.s2):
                     if id_not_found:
                         pass
                     return True, self.win
