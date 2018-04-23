@@ -56,6 +56,7 @@ LevelMapping
     p > poison
 TerminationSet
     SpriteCounter stype=avatar limit=0 win=False
+    Termination
 """
 
 # level0 = """
@@ -339,7 +340,7 @@ test6 = TestCase(game6, level6, [[0]*10], expected_theory6)
 
 game7 = catDescriptions(base_game, """
 InteractionSet
-    sam wall > reverseDirection
+    # sam wall > reverseDirection
 """)
 
 # distinguishing between random and missiles
@@ -365,7 +366,7 @@ BasicGame
         wall > Immovable color=DARKGRAY
         avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
-        sam wall > reverseDirection
+        # sam wall > reverseDirection
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
 """
@@ -600,7 +601,7 @@ BasicGame
         avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
         medicine avatar > killSprite
-        avatar medicine > changeResource resource=medicine value=1
+        avatar medicine > changeResource resource=medicine value=1 limit=4
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
 """
@@ -645,8 +646,8 @@ BasicGame
         avatar poison > killIfHasMore resource=medicine limit=0
         # poison avatar > killSprite # Do we not include this?
         medicine avatar > killSprite
-        avatar medicine > changeResource resource=medicine value=1
-        avatar poison > changeResource resource=medicine value=-1
+        avatar medicine > changeResource resource=medicine value=1 limit=4
+        avatar poison > changeResource resource=medicine value=-1 limit=4
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
 """
@@ -698,18 +699,3 @@ test16 = TestCase(game16, level16, [[K_LEFT]+[K_UP]*4], expected_theory16)
 
 #########################################################
 #########################################################
-
-if __name__ == "__main__":
-    import argparse
-    from vgdl.core import VGDLParser
-
-    parser = argparse.ArgumentParser(description='play test games')
-
-    parser.add_argument('test', type=str, nargs=1)    
-
-
-    args = parser.parse_args()
-    test = eval(args.test[0])
-
-    game, level = test.game, test.level
-    VGDLParser.playGame(test.game, test.level)

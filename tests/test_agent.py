@@ -1,4 +1,5 @@
 import unittest
+import time
 
 from vgdl.util import embed
 
@@ -12,7 +13,7 @@ from tests.locals import *
 
 # I'm not sure if this actually matters...
 FILENAME = 'tests.game.inference'
-EMBED_ON_FAILURE = True
+EMBED_ON_FAILURE = False
 
 ###########################################
 # The abstract base class. Only add Assertion Methods
@@ -71,9 +72,6 @@ class _TestAgent(unittest.TestCase):
 		assert self.agent.hypotheses, 'No hypotheses initilialized'
 		envReal = self.agent.fastcopy(self.agent.rle)
 		self.agent.rleHistory[episode_num].append(envReal)
-
-	def initRunCreate(self, game, level, action_sequences):
-		self.runCurriculum(game, level, action_sequences)
 
 	#######################################
 	# Agent Theory Tools
@@ -195,7 +193,7 @@ def basicTestConstructor(game, level, action_sequences, expected_theory=None):
 		else:
 			theory = generateTheoryFromGameString(game)
 
-		self.initRunCreate(game, level, action_sequences)
+		self.runCurriculum(game, level, action_sequences)
 
 		self.assertAgentHasTheory(theory)
 		# self.assertTheoriesEqual(self.agent.hypotheses[0], theory)
@@ -226,14 +224,14 @@ class TestBasics(_TestAgent):
 		game, level, action_sequences, expected_theory = basics.test2
 		if not expected_theory:
 			expected_theory = generateTheoryFromGameString(game)
-		self.initRunCreate(game, level, action_sequences)
+		self.runCurriculum(game, level, action_sequences)
 		# this may not be that useful, but I'll keep it around anyway.
 		self.assertAgentHasTheories()
 		self.assertAgentHasTheory(expected_theory)
 		# self.assertTheoriesEqual(self.agent.hypotheses[0], expected_theory)
 
 	# def testKillSpritesAndNothing(self):
-	# 	real_description = self.initRunCreate(*basics.test4)
+	# 	real_description = self.runCurriculum(*basics.test4)
 	# 	self.assertTheoriesEqual(self.agent)
 
 
@@ -281,3 +279,66 @@ class TestInference(_TestAgent):
 	test15 = basicTestConstructor(*inference.test15)
 
 	test16 = basicTestConstructor(*inference.test16)
+
+class TestGeneral(_TestAgent):
+
+
+	# [9.328, 0.383, 0.28, 0.166, 148.216, 3.452, 104.065, 1.984, 2.221, 2.156, 34.015]
+	def test_learning_times(self):
+		game, level, action_sequences, _ = general.test_case
+		expected_theory = generateTheoryFromGameString(game)
+
+		self.initializeCurriculum(game, level, action_sequences)
+		episode_num = 0 
+		self.initializeEpisode(episode_num)
+
+
+		times_per_step_level1 = [0 for i in action_sequences[episode_num]]
+		last_step = False
+		actions = action_sequences[episode_num]
+		for num, action in enumerate(actions):
+			if num == len(actions)-1:
+				last_step = True
+
+			t0 = time.time()
+			self.executeStep(episode_num, action, last_step)
+			t1 = time.time()
+
+			times_per_step_level1[num] = round(t1-t0, 5)
+
+		episode_num = 1
+		self.initializeEpisode(episode_num)
+		times_per_step_level2 = [0 for i in action_sequences[episode_num]]
+		last_step = False
+		actions = action_sequences[episode_num]
+		for num, action in enumerate(actions):
+			if num == len(actions)-1:
+				last_step = True
+
+			t0 = time.time()
+			self.executeStep(episode_num, action, last_step)
+			t1 = time.time()
+
+			times_per_step_level2[num] = round(t1-t0, 5)
+
+		print times_per_step_level1, times_per_step_level2
+		self.assertAgentHasTheories()
+		self.assertAgentHasTheory(expected_theory)
+
+	test2 = basicTestConstructor(*general.test_case2)
+		
+
+if __name__ == "__main__":
+    import argparse
+    from vgdl.core import VGDLParser
+
+    parser = argparse.ArgumentParser(description='play test games')
+
+    parser.add_argument('test', type=str, nargs=1)    
+
+
+    args = parser.parse_args()
+    test = eval(args.test[0])
+
+    game, level = test.game, test.level
+    VGDLParser.playGame(test.game, test.level)
