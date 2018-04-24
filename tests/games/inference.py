@@ -56,6 +56,7 @@ LevelMapping
     p > poison
 TerminationSet
     SpriteCounter stype=avatar limit=0 win=False
+    Termination
 """
 
 # level0 = """
@@ -178,7 +179,7 @@ test2 = TestCase(game2, level2, [[0]*6], expected_theory2)
 
 game3 = catDescriptions(base_game, """
 InteractionSet
-    sam avatar > bounceForward
+    avatar sam > bounceForward
 """)
 level3 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -303,7 +304,7 @@ InteractionSet
     sam wall > reverseDirection
 """)
 
-#0,0,0,0,0,0,0
+#0,0,0,0,0,0,0,0,0,0,0
 level6 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
@@ -327,10 +328,11 @@ BasicGame
         avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
         sam wall > reverseDirection
+        # Should get to the step where this happens
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
 """
-test6 = TestCase(game6, level6, [[0]*7], expected_theory6)
+test6 = TestCase(game6, level6, [[0]*10], expected_theory6)
 
 
 #########################################################
@@ -338,7 +340,7 @@ test6 = TestCase(game6, level6, [[0]*7], expected_theory6)
 
 game7 = catDescriptions(base_game, """
 InteractionSet
-    sam wall > reverseDirection
+    # sam wall > reverseDirection
 """)
 
 # distinguishing between random and missiles
@@ -364,7 +366,7 @@ BasicGame
         wall > Immovable color=DARKGRAY
         avatar  > MovingAvatar color=DARKBLUE
     InteractionSet
-        sam wall > reverseDirection
+        # sam wall > reverseDirection
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
 """
@@ -644,8 +646,8 @@ BasicGame
         avatar poison > killIfHasMore resource=medicine limit=0
         # poison avatar > killSprite # Do we not include this?
         medicine avatar > killSprite
-        avatar medicine > changeResource resource=medicine value=1
-        avatar poison > changeResource resource=medicine value=-1
+        avatar medicine > changeResource resource=medicine value=1 limit=4
+        avatar poison > changeResource resource=medicine value=-1 limit=4
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
 """
