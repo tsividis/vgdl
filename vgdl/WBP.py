@@ -106,6 +106,8 @@ class WBP():
 			if len(rle._game.sprite_groups[k])>self.objectLocationTrackingLimit:
 				self.classesWhoseLocationsWeIgnore.append(k)
 
+		self.classesWhosePresenceWeIgnore = []
+		self.classesWhoseLocationsWeIgnore = []
 		print "ignoring presences for", self.classesWhosePresenceWeIgnore
 		print "ignoring locations for", self.classesWhoseLocationsWeIgnore
 		# Compute starting number of each SpriteCounter stype

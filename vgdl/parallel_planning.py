@@ -15,18 +15,24 @@ game_number = args.game_number
 # as of 01/2018: it is best to install directly from the github repo with
 # the command 'pip install git+https://github.com/hyperopt/hyperopt'
 
-gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
-        	'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
+# gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
+#         	'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
+#
+# local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper',  # 10-12
+#     'expt_preconditions', 'expt_push_boulders', 'expt_relational']  # 13-15 to play a "local" game
 
-local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper',  # 10-12
-    'expt_preconditions', 'expt_push_boulders', 'expt_relational']  # 13-15 to play a "local" game
+gvggames = ['aliens', 'boulderdash', 'chase', 'frogs',  # 0-3
+        	'missilecommand', 'portals', 'sokoban', 'survivezombies']  # 4-7
+
+local_games = ['expt_exploration_exploitation',  # 8
+    'expt_preconditions', 'expt_push_boulders', 'expt_relational']  # 9-11 to play a "local" game
 
 def play_trainset(hyperparameters):
     start_time = time.time()
 
 
     # playing GVG-AI games
-    if game_number < 10:
+    if game_number < 8:
         gameName = gvggames[game_number]  # to play a gvgai game
         def read_gvgai_game(filename):
         	with open(filename, 'r') as f:
