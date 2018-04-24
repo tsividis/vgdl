@@ -68,7 +68,8 @@ class _TestAgent(unittest.TestCase):
 		self.agent.initializeEnvironment()
 		self.agent.all_objects[episode_num] = self.agent.rle._game.getObjects()
 		if episode_num == 0:
-			self.agent.initializeHypotheses(self.agent.all_objects[episode_num])
+			# self.agent.initializeHypotheses(self.agent.all_objects[episode_num])
+			self.agent.initializeHypotheses()
 		assert self.agent.hypotheses, 'No hypotheses initilialized'
 		envReal = self.agent.fastcopy(self.agent.rle)
 		self.agent.rleHistory[episode_num].append(envReal)
