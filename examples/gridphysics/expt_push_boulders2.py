@@ -1,14 +1,14 @@
 
 level = """
 wwwwwwwwwwwwwwwwwwwwww
-w  1    p            w
-w    2    p          w
+w       p            w
+w  1 2    p          w
 wA  q     2   w     ww
 w    w1       w w    w
 ww          q        w
 w   p    q      1    w
-w    2        g  g   w
-w         2          w
+w             gg     w
+w                    w
 wwwwwwwwwwwwwwwwwwwwww
 """
 

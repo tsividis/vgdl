@@ -290,6 +290,9 @@ class Agent:
 			## initialize one or many VRLEs according to hypothesis-selection method
 			theoryRLEs 	= VrleInitPhase(self.hypotheses, envReal) # Initialize all predictions for all theories that we're keeping around
 			plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal) # Only initialize as many theories as you are using parallel planners
+			# if any([('avatar', 'c7') in list(set(h.setOfImaginedEffects)) for h in self.hypotheses]):
+				# print "found avatar c7"
+				# embed()
 			# embed()
 			quitting = False
 			if self.parallel_planning:
@@ -525,7 +528,7 @@ class Agent:
 
 		return newRle
 
-	def scoreAndFilterTheories(self, newTheories, episode_num):
+	def scoreAndFilterTheories(self, newTheories, episode_num, displayTheories=False):
 		# print episode_num
 		# embed()
 		penalties, imaginedEffectsPerTheory = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], \
@@ -545,7 +548,7 @@ class Agent:
 		scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
 
 		scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-			proportionOfSpriteTheories=None, errorCutoff=ERRORCUTOFF, usePrior=True)]
+			proportionOfSpriteTheories=None, errorCutoff=ERRORCUTOFF, usePrior=False)]
 
 		print "Experience replay complete."
 		for num, sh in enumerate(scoresAndHypotheses):
@@ -654,7 +657,7 @@ class Agent:
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
 
 		bestScoresAndHypotheses = []
-
+		# embed()
 		if newTheories:
 			bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
 
@@ -851,7 +854,6 @@ def convertTheoryToSubgoalTheory(theory):
 			elif 'Avatar' not in str(T.classes[rule.slot1][0].vgdlType):
 				rule.interaction = 'killSprite'
 	imaginedEffectTuples = set([(eff[1], eff[2]) for eff in theory.setOfImaginedEffects])
-	# T.setOfImaginedEffects = theory.setOfImaginedEffects
 	T.terminationSet = [rule for rule in T.terminationSet if rule.ruleType!='NoveltyRule' or (rule.termination.s1, rule.termination.s2) not in imaginedEffectTuples]
 
 	return T
@@ -1749,8 +1751,8 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	return mean_penalties, setOfImaginedEffects
 	
 def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', targetColor=None, displayStates=False, displayTheories=False):
-	if len(hypotheses)>10:
-		print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
+	# if len(hypotheses)>10:
+		# print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
 
 	t1 = time.time()
 	results, imaginedEffects = [], []
@@ -1765,8 +1767,8 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', target
 		results.append(mean_penalties)
 		imaginedEffects.append(setOfImaginedEffects)
 
-	if len(hypotheses)>10:
-		print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
+	# if len(hypotheses)>10:
+		# print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 
 	# print "ran experienceReplay"
 	# embed()
@@ -1779,8 +1781,9 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 	'''
 	assert len(rleHistories) == len(actionHistories), 'rleHistories and actionHistories need to match'
 
-	# print "Running MultiEpisodeExperienceReplay on %i episodes " % len(rleHistories)
-
+	t1 = time.time()
+	print "Running MultiEpisodeExperienceReplay on {} episodes and {} time-steps total".format(len(rleHistories), sum([len(r) for r in rleHistories]))
+	print "MultiEpisodeExperienceReplay on {} episodes and {} time-steps took {} seconds".format(len(rleHistories), sum([len(r) for r in rleHistories]), time.time()-t1)
 	multi_episode_mean_penalties = []
 	imaginedEffectsPerTheory = [set() for i in range(len(hypotheses))]
 
@@ -1803,12 +1806,13 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 
 def updateTerminations(rle, hypotheses):
 
-	terminationSet, falsified, multi_falsified = hypotheses[0].updateTerminations(rle)
+	# terminationSet, falsified, multi_falsified = hypotheses[0].updateTerminations(rle)
 
 	for h in hypotheses:
-		h.terminationSet = terminationSet
-		h.falsified = falsified
-		h.multi_falsified = multi_falsified
+		h.updateTerminations(rle)
+		# h.terminationSet = terminationSet
+		# h.falsified = falsified
+		# h.multi_falsified = multi_falsified
 
 	return
 	

@@ -379,7 +379,7 @@ class Theory(object):
 		ruleScore = 0.
 
 		if granularity > 0:
-			classScore += sum(1 for c in self.classes if not 'ResourcePack' in str(self.classes[c][0].vgdlType))
+			classScore += sum(1.1 for c in self.classes if not 'ResourcePack' in str(self.classes[c][0].vgdlType))
 			ruleScore += sum(1 if rule.interaction != 'stepBack' else 0 for rule in self.interactionSet)
 			# future note: technically, having removed stepBack should increase the ruleScore
 
@@ -392,7 +392,7 @@ class Theory(object):
 				elif any([t in vgdlTypeString for t in stochasticClasses]):
 					classScore += 1.5
 				elif not any([t in vgdlTypeString for t in ['Resource','Immovable']]):
-					classScore += 1
+					classScore += 1.1
 
 			ruleScore += sum(1 for rule in self.interactionSet if rule.interaction in stochasticRules + crazyRules)
 			# also get all the conditionals
