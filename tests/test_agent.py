@@ -1,8 +1,9 @@
 import unittest
+import time
 
 from vgdl.util import embed
 
-from vgdl.agent import Agent, VrleInitPhase, sampleFromDistribution
+from vgdl.agent import Agent, VrleInitPhase #, sampleFromDistribution
 from vgdl.ontology import *
 
 # imports all the game files created in games to the global namespace
@@ -12,7 +13,7 @@ from tests.locals import *
 
 # I'm not sure if this actually matters...
 FILENAME = 'tests.game.inference'
-EMBED_ON_FAILURE = True
+EMBED_ON_FAILURE = False
 
 ###########################################
 # The abstract base class. Only add Assertion Methods
@@ -67,38 +68,21 @@ class _TestAgent(unittest.TestCase):
 		self.agent.initializeEnvironment()
 		self.agent.all_objects[episode_num] = self.agent.rle._game.getObjects()
 		if episode_num == 0:
-			self.agent.initializeHypotheses(self.agent.all_objects[episode_num])
+			self.agent.initializeHypotheses(episode_num)
 		assert self.agent.hypotheses, 'No hypotheses initilialized'
 		envReal = self.agent.fastcopy(self.agent.rle)
 		self.agent.rleHistory[episode_num].append(envReal)
-
-	def initRunCreate(self, game, level, action_sequences):
-		self.runCurriculum(game, level, action_sequences)
-
-	#######################################
-	# Agent Theory Tools
-	def sampleFromDistribution(self, all_objects):
-		game = self.agent.rle._game
-		return sampleFromDistribution(game, game.spriteDistribution, all_objects, 
-			game.spriteUpdateDict, self.agent.bestSpriteTypeDict, 
-			oldSpriteSet=None, mode='default', learnAvatar=True)
-
-	def buildGenericTheory(self, all_objects):
-		spriteTypeHypothesis, _, _, _ = self.sampleFromDistribution(all_objects)
-		game_object = Game(spriteInductionResult=spriteTypeHypothesis)
-		theory = game_object.buildGenericTheory(spriteTypeHypothesis)
-		return theory
 
 	def generateTheoryRLEs(self):
 		return VrleInitPhase(self.agent.hypotheses, self.agent.rle)
 
 	########################################
 	# Execution
-	def executeStep(self, episode_num, action, last_step):
+	def executeStep(self, episode_num, action_num, action, last_step):
 		theoryRLEs = self.generateTheoryRLEs()
 
 		scoresAndHypotheses = self.agent.executeStep(episode_num, self.agent.rleHistory, self.agent.actionHistory, 
-											     										action, self.agent.hypotheses, theoryRLEs, last_step)
+											     										action, self.agent.hypotheses, last_step)
 		self.agent.hypotheses = [tup[1] for tup in scoresAndHypotheses]
 
 	def runEpisode(self, episode_num, actions):
@@ -107,7 +91,7 @@ class _TestAgent(unittest.TestCase):
 		for num, action in enumerate(actions):
 			if num == len(actions)-1:
 				last_step = True
-			self.executeStep(episode_num, action, last_step)
+			self.executeStep(episode_num, num, action, last_step)
 
 	def runCurriculum(self, game_string, level_string, action_sequences):
 		self.initializeCurriculum(game_string, level_string, action_sequences)
@@ -195,7 +179,7 @@ def basicTestConstructor(game, level, action_sequences, expected_theory=None):
 		else:
 			theory = generateTheoryFromGameString(game)
 
-		self.initRunCreate(game, level, action_sequences)
+		self.runCurriculum(game, level, action_sequences)
 
 		self.assertAgentHasTheory(theory)
 		# self.assertTheoriesEqual(self.agent.hypotheses[0], theory)
@@ -226,14 +210,14 @@ class TestBasics(_TestAgent):
 		game, level, action_sequences, expected_theory = basics.test2
 		if not expected_theory:
 			expected_theory = generateTheoryFromGameString(game)
-		self.initRunCreate(game, level, action_sequences)
+		self.runCurriculum(game, level, action_sequences)
 		# this may not be that useful, but I'll keep it around anyway.
 		self.assertAgentHasTheories()
 		self.assertAgentHasTheory(expected_theory)
 		# self.assertTheoriesEqual(self.agent.hypotheses[0], expected_theory)
 
 	# def testKillSpritesAndNothing(self):
-	# 	real_description = self.initRunCreate(*basics.test4)
+	# 	real_description = self.runCurriculum(*basics.test4)
 	# 	self.assertTheoriesEqual(self.agent)
 
 
@@ -250,34 +234,95 @@ class TestBasics(_TestAgent):
 class TestInference(_TestAgent):
 
 
-	# test1 = basicTestConstructor(*inference.test1)
+	test1 = basicTestConstructor(*inference.test1)
+	test2 = basicTestConstructor(*inference.test2)
 
-	# test2 = basicTestConstructor(*inference.test2)
+	### test3 = basicTestConstructor(*inference.test3)
 
-	# test3 = basicTestConstructor(*inference.test3)
+	test4 = basicTestConstructor(*inference.test4)
 
-	# test4 = basicTestConstructor(*inference.test4)
+	test5 = basicTestConstructor(*inference.test5)
 
+	### test6 = basicTestConstructor(*inference.test6)
 
-	# test5 = basicTestConstructor(*inference.test5)
+	# test7 = basicTestConstructor(*inference.test7) #takes long, but add it back at some point.
 
-	# test6 = basicTestConstructor(*inference.test6)
+	test8 = basicTestConstructor(*inference.test8)
 
-	# test7 = basicTestConstructor(*inference.test7)
+	### test9 = basicTestConstructor(*inference.test9)
+	### test10 = basicTestConstructor(*inference.test10)
 
-	# test8 = basicTestConstructor(*inference.test8)
+	### test11 = basicTestConstructor(*inference.test11)
 
-	# test9 = basicTestConstructor(*inference.test9)
-	# test10 = basicTestConstructor(*inference.test10)
+	test12 = basicTestConstructor(*inference.test12)
 
-	# test11 = basicTestConstructor(*inference.test11)
-
-	# test12 = basicTestConstructor(*inference.test12)
-
-	# test13 = basicTestConstructor(*inference.test13)
+	### test13 = basicTestConstructor(*inference.test13)
 
 	test14 = basicTestConstructor(*inference.test14)
 
 	test15 = basicTestConstructor(*inference.test15)
 
 	test16 = basicTestConstructor(*inference.test16)
+
+class _TestGeneral(_TestAgent):
+
+
+	# [9.328, 0.383, 0.28, 0.166, 148.216, 3.452, 104.065, 1.984, 2.221, 2.156, 34.015]
+	def test_learning_times(self):
+		game, level, action_sequences, _ = general.test_case
+		expected_theory = generateTheoryFromGameString(game)
+
+		self.initializeCurriculum(game, level, action_sequences)
+		episode_num = 0 
+		self.initializeEpisode(episode_num)
+
+
+		times_per_step_level1 = [0 for i in action_sequences[episode_num]]
+		last_step = False
+		actions = action_sequences[episode_num]
+		for num, action in enumerate(actions):
+			if num == len(actions)-1:
+				last_step = True
+
+			t0 = time.time()
+			self.executeStep(episode_num, action, last_step)
+			t1 = time.time()
+
+			times_per_step_level1[num] = round(t1-t0, 5)
+
+		episode_num = 1
+		self.initializeEpisode(episode_num)
+		times_per_step_level2 = [0 for i in action_sequences[episode_num]]
+		last_step = False
+		actions = action_sequences[episode_num]
+		for num, action in enumerate(actions):
+			if num == len(actions)-1:
+				last_step = True
+
+			t0 = time.time()
+			self.executeStep(episode_num, action, last_step)
+			t1 = time.time()
+
+			times_per_step_level2[num] = round(t1-t0, 5)
+
+		print times_per_step_level1, times_per_step_level2
+		self.assertAgentHasTheories()
+		self.assertAgentHasTheory(expected_theory)
+
+	test2 = basicTestConstructor(*general.test_case2)
+		
+
+if __name__ == "__main__":
+    import argparse
+    from vgdl.core import VGDLParser
+
+    parser = argparse.ArgumentParser(description='play test games')
+
+    parser.add_argument('test', type=str, nargs=1)    
+
+
+    args = parser.parse_args()
+    test = eval(args.test[0])
+
+    game, level = test.game, test.level
+    VGDLParser.playGame(test.game, test.level)
