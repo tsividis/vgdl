@@ -222,14 +222,12 @@ class Agent:
 		if not level_game_pairs:
 			level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
 		episodes = []
-
+		
 		for n_level, level_game in enumerate(level_game_pairs):
 
 			self.gameString = level_game[0]
 			self.levelString = level_game[1]
 
-			## for playback
-			self.allStatesEncountered = [[] for i in range(num_episodes)]
 			episodes = []
 
 			## for inference
@@ -242,13 +240,11 @@ class Agent:
 			i = 0
 			# TODO: never used
 			first_time_playing_level = True
-			allStatesEncountered = []
 
 			while not win and i < num_episodes:
-				win, score, steps, statesEncountered = self.playEpisode(n_level, i, win=win, first_time_playing_level=first_time_playing_level)
+				win, score, steps = self.playEpisode(n_level, i, win=win, first_time_playing_level=first_time_playing_level)
 				self.total_game_steps += steps
 				episodes.append((n_level, steps, win, score))
-				allStatesEncountered.extend(statesEncountered)
 				if win:
 					print 'won'
 					break
@@ -267,8 +263,7 @@ class Agent:
 		ended, win = self.rle._isDone()
 		annealing = 1
 
-		statesEncountered = [self.rle._game.getFullState()] ##TODO
-		self.statesEncountered.append(self.rle._game.getFullState()) ##TODO
+		self.statesEncountered.append(self.rle._game.getFullState())
 		
 		envReal = self.fastcopy(self.rle)
 		self.rleHistory[episode_num].append(envReal)
@@ -400,7 +395,7 @@ class Agent:
 				self.max_nodes *= self.max_nodes_annealing
 				print "You got quitting==True from planner. Embedding to debug."
 				embed()
-				return False, self.rle._game.score, steps, statesEncountered
+				return False, self.rle._game.score, steps
 		
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
@@ -418,7 +413,7 @@ class Agent:
 			print colored(output, 'white', 'on_red')
 			print colored('________________________________________________________________', 'white', 'on_red')
 
-		return win, score, steps, statesEncountered 
+		return win, score, steps
 	
 
 

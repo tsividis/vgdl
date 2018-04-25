@@ -230,8 +230,8 @@ w                            1 w
 w                            1 w
 w                              w
 w                              w
-w                         3 3  w
-w         c    c A             w
+w         c    c A        3 3  w
+w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
