@@ -1258,7 +1258,7 @@ predicateToOrderingMapping = {
  	'changeScore':			(0,1),
 	'undoAll':				(0,1)}
 
-predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit', 'wrapAround', 'reverseDirection', 'killIfHasLess', 'killIfHasMore']#, 'bounceForward']
+predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit', 'wrapAround', 'reverseDirection', 'killIfHasLess', 'killIfHasMore', 'bounceForward']
 
 # predicatesThatConflictWithStepBack = ['nothing']
 
