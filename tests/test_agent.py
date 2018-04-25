@@ -68,8 +68,7 @@ class _TestAgent(unittest.TestCase):
 		self.agent.initializeEnvironment()
 		self.agent.all_objects[episode_num] = self.agent.rle._game.getObjects()
 		if episode_num == 0:
-			# self.agent.initializeHypotheses(self.agent.all_objects[episode_num])
-			self.agent.initializeHypotheses()
+			self.agent.initializeHypotheses(episode_num)
 		assert self.agent.hypotheses, 'No hypotheses initilialized'
 		envReal = self.agent.fastcopy(self.agent.rle)
 		self.agent.rleHistory[episode_num].append(envReal)
@@ -82,7 +81,7 @@ class _TestAgent(unittest.TestCase):
 	def executeStep(self, episode_num, action_num, action, last_step):
 		theoryRLEs = self.generateTheoryRLEs()
 
-		scoresAndHypotheses = self.agent.executeStep(episode_num, action_num, self.agent.rleHistory, self.agent.actionHistory, 
+		scoresAndHypotheses = self.agent.executeStep(episode_num, self.agent.rleHistory, self.agent.actionHistory, 
 											     										action, self.agent.hypotheses, last_step)
 		self.agent.hypotheses = [tup[1] for tup in scoresAndHypotheses]
 

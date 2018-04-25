@@ -151,9 +151,9 @@ class Agent:
 		rle = rleCreateFunc()
 		return rle
 
-	def initializeHypotheses(self):
+	def initializeHypotheses(self, episode_num):
 
-		observe(self.rle)
+		self.observe(self.rle, episode_num)
 
 		spriteList = []
 		colors = self.rle._game.observation['trackedObjects'].keys()
@@ -201,6 +201,17 @@ class Agent:
 
 				self.hypotheses.append(newTheory)
 				self.history[color] = {}
+		return
+
+	def observe(self, rle, num_steps=1):
+		# embed()
+		for i in range(num_steps):
+			action = 0
+			bestScoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, lastStep=False)
+			self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
+		# for i in range(num_steps):
+			# spriteInduction(rle._game, step=1, action=None)
+			# spriteInduction(rle._game, step=2, action=None)
 		return
 
 	def testCurriculum(self, level_game_pairs=None):
@@ -273,7 +284,7 @@ class Agent:
 			if n_level!=0 and episode_num!=0:
 				print "Have no hypotheses but not playing the first episode / first level!"
 				embed()
-			self.initializeHypotheses()
+			self.initializeHypotheses(episode_num)
 			updateTerminations(self.rle, self.hypotheses)
 		
 		emptyPlans = 0
@@ -285,7 +296,7 @@ class Agent:
 			selectedHypotheses 	= [self.hypotheses[0]] # Only initialize as many theories as you are using parallel planners
 			# selectedHypotheses = self.hypotheses
 			hypothesesToPlanWith = [convertTheoryToSubgoalTheory(h) for h in selectedHypotheses]
- 			
+ 			# embed()
  			# Only initialize as many planner theories as you are using parallel planners
 			plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal)
 			quitting = False
@@ -346,7 +357,7 @@ class Agent:
 				if (not solution) or p.quitting:
 					if self.longHorizonObservations<self.longHorizonObservationLimit:
 						print "Didn't get solution or decided to quit. Observing, then replanning."
-						observe(self.rle, 5)
+						self.observe(self.rle, episode_num, 5)
 						solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
 						self.longHorizonObservations += 1
 					else:
@@ -354,13 +365,13 @@ class Agent:
 
 			if emptyPlans > self.emptyPlansLimit:
 				print "observing"
-				observe(self.rle, 5)
+				self.observe(self.rle, episode_num, 5)
 
 			if not quitting:
 				for action_num, action in enumerate(solution):
 					print "executing step"
 					bestScoresAndHypotheses = \
-							self.executeStep(episode_num, action_num, self.rleHistory, self.actionHistory, action, self.hypotheses, lastStep=False)
+							self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, lastStep=False)
 					
 					## TODO: Prediction error only corresponds to self.hypotheses[0]. What you actually want is
 					## checking for the predictions made by *each* of the hypotheses, and then if any give you prediction error,
@@ -457,7 +468,7 @@ class Agent:
 			self.all_objects[episode_num] = self.rle._game.getAllObjects() ## we need to store all_objects across multiple episodes
 
 			if episode_num == 0:
-				self.initializeHypotheses()
+				self.initializeHypotheses(episode_num)
 
 			envReal = self.fastcopy(self.rle)
 			self.rleHistory[episode_num].append(envReal)
@@ -473,7 +484,7 @@ class Agent:
 				if num == len(actions)-1:
 					lastStep=True
 				t2 = time.time()
-				scoresAndHypotheses = self.executeStep(episode_num, num, self.rleHistory, self.actionHistory, action, self.hypotheses, lastStep=lastStep)
+				scoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, lastStep=lastStep)
 				print ""
 				print "executed step in {} seconds".format(time.time()-t2)
 				print ""
@@ -608,7 +619,7 @@ class Agent:
 				if not madeChange:
 					break		
 
-	def executeStep(self, episode_num, step_num, rleHistories, actionHistories, action, hypotheses, lastStep=False):
+	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses, lastStep=False):
 
 		theoryRLEs = VrleInitPhase(hypotheses, self.rle)
 		envRealPrev = self.fastcopy(self.rle)
@@ -652,7 +663,7 @@ class Agent:
 			# embed()
 			if len(bestScoresAndHypotheses) == 0:
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
-				embed()
+				# embed()
 				newerTheories = []
 
 				for t in newTheories:
@@ -682,13 +693,7 @@ class Agent:
 ######## Other initialization METHODS                			########
 ########################################################################
 
-def observe(rle, num_steps=1):
-	print "You're running observe without taking any steps. You need to address this by actually running executeStep multiple times"
-	# embed()
-	for i in range(num_steps):
-		spriteInduction(rle._game, step=1, action=None)
-		spriteInduction(rle._game, step=2, action=None)
-	return
+
 
 ########################################################################
 ######## RLE INITIALIZATION AND STATE-SETTING METHODS 			########
