@@ -13,7 +13,7 @@ from tests.locals import *
 
 # I'm not sure if this actually matters...
 FILENAME = 'tests.game.inference'
-EMBED_ON_FAILURE = False
+EMBED_ON_FAILURE = True
 
 ###########################################
 # The abstract base class. Only add Assertion Methods

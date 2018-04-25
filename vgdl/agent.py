@@ -370,7 +370,7 @@ class Agent:
 				for action_num, action in enumerate(solution):
 					print "executing step"
 					bestScoresAndHypotheses = \
-							self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, lastStep=False)
+							self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses)
 					
 					## TODO: Prediction error only corresponds to self.hypotheses[0]. What you actually want is
 					## checking for the predictions made by *each* of the hypotheses, and then if any give you prediction error,
@@ -480,7 +480,7 @@ class Agent:
 				## initialize VRLEs
 				theoryRLEs = VrleInitPhase(self.hypotheses, self.rle)
 				t2 = time.time()
-				scoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, lastStep=lastStep)
+				scoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses)
 				print ""
 				print "executed step in {} seconds".format(time.time()-t2)
 				print ""
@@ -614,7 +614,7 @@ class Agent:
 				if not madeChange:
 					break		
 
-	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses, lastStep=False):
+	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses):
 
 		theoryRLEs = VrleInitPhase(hypotheses, self.rle)
 		envRealPrev = self.fastcopy(self.rle)
