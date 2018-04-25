@@ -440,7 +440,13 @@ class Agent:
 			## TEST4
 			# [K_LEFT],[K_UP,K_UP]
 			## TEST5
-			[0]*6
+			# [0]*6
+			## TEST6
+			# [0]*10
+			## TEST7
+			# [0, K_UP, K_UP, K_UP, K_RIGHT]
+			## TEST8
+			[K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0]
 			## PUSH_BOULDERS_2
 			# [K_RIGHT]*3, [K_RIGHT, K_RIGHT, K_UP]
 		]

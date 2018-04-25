@@ -97,53 +97,7 @@
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-# TODO: You need to be able to re-run testAndExpand() when no hypotheses pass your filter
-## the problem here is that you need to build on expandSprite proposals with expandLine within one errorMap and
-## you don't ordinarily do that.
-#0,0,0,0,0,0
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w                            1 w
-# w                              w
-# w              A               w
-# w         c    c          3 3  w
-# w                              w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
-
-# works if you don't allow the eventHandler to apply effects to newly-created sprites
-# Note: this is much slower when you have more intParis, i.e., when you move things down a row.
-# It's actually too slow even when things are up a row.
-# [0,0,0,K_LEFT, K_LEFT,0,0]
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                            1 w
-w                            1 w
-w                              w
-w                              w
-w         c    c A        3 3  w
-w                              w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
-
-#[0]*10
-## distinguishing between random and missiles
-# Works 4/12
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w                     4      1 w
-# w                              w
-# w   4                          w
-# w                         3 3  w
-# w         s    s A             w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
-
+## TEST6
 #[0]*10
 # combine with sam wall reverseDirection
 # works 4/12
@@ -159,57 +113,10 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-#[0]*10
-# This doesn't test for anything new; it just has all the objects thrown in
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w        4                   1 w
-# w              k             1 w
-# w      4           A           w
-# w                              w
-# w          k              3 3  w
-# w                       s  s   w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
-
-
-#[0]*10
-#randomnpc inference, just more sprites
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w    4                       1 w
-# w         4           4      1 w
-# w                              w
-# w   4         4                w
-# w                         3 3  w
-# w                A             w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
-
-## combine with box2 avatar killsprite.
-## if you use box2 avatar bounceForward this could be
-## a good test of whether re-doing testAndExpand helps.
-# works 4/11
-# #up, up, down
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w                            1 w
-# w              1               w
-# w              1               w
-# w              A          3 3  w
-# w                              w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
-
-
+## TEST7
 #up, up, up, right
 ## tests whether we can learn randomNPCs and know that the box we push isn't a randomNPC
 ## i.e., a good test of randomNPC likelihood and theory prior().
-# works 4/12
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
@@ -222,20 +129,21 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
+## TEST8
 # Not getting this one because we stepBack with the missile
 ## but our best theories are almost right.
 #left, left, left, left, left, left, left, 0
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w                            1 w
-# w            c    A            w
-# w  c                           w
-# w                         3 3  w
-# w         c                    w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w                            1 w
+w            c    A            w
+w  c                           w
+w                         3 3  w
+w         c                    w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 # #up, up
 # level = """
@@ -319,6 +227,9 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
+## Add a game where we do stepback and killSprite
+
+
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
@@ -339,6 +250,99 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwww
 # """
 
+## combine with box2 avatar killsprite.
+## if you use box2 avatar bounceForward this could be
+## a good test of whether re-doing testAndExpand helps.
+# works 4/11
+# #up, up, down
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w              1               w
+# w              1               w
+# w              A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+# TODO: You need to be able to re-run testAndExpand() when no hypotheses pass your filter
+## the problem here is that you need to build on expandSprite proposals with expandLine within one errorMap and
+## you don't ordinarily do that.
+#0,0,0,0,0,0
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w              A               w
+# w         c    c          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+# works if you don't allow the eventHandler to apply effects to newly-created sprites
+# Note: this is much slower when you have more intParis, i.e., when you move things down a row.
+# It's actually too slow even when things are up a row.
+# [0,0,0,K_LEFT, K_LEFT,0,0]
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w                              w
+# w                              w
+# w         c    c A        3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+#[0]*10
+## distinguishing between random and missiles
+# Works 4/12
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                     4      1 w
+# w                              w
+# w   4                          w
+# w                         3 3  w
+# w         s    s A             w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+#[0]*10
+# This doesn't test for anything new; it just has all the objects thrown in
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w        4                   1 w
+# w              k             1 w
+# w      4           A           w
+# w                              w
+# w          k              3 3  w
+# w                       s  s   w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
+
+#[0]*10
+#randomnpc inference, just more sprites
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w    4                       1 w
+# w         4           4      1 w
+# w                              w
+# w   4         4                w
+# w                         3 3  w
+# w                A             w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
 
 game="""
 BasicGame
@@ -350,7 +354,7 @@ BasicGame
         box3 > Immovable color=YELLOW
         box5 > Immovable color=LIGHTBLUE
         flicker > Flicker timeout=1 color=ORANGE
-        random > RandomNPC color=PURPLE speed=1 cooldown=2
+        random > RandomNPC color=PURPLE speed=1 cooldown=1
         chaser > Chaser color=BLACK speed=1 cooldown=4 stype=avatar fleeing=True
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         missile > Missile
@@ -394,10 +398,15 @@ BasicGame
 
         ## TEST5
         avatar sam > bounceForward
-        
+
+        ## TEST6
+        sam wall > reverseDirection
+
+        ## TEST7
+        box2 avatar > bounceForward
+
         # box avatar > nothing
         # box avatar >killSprite
-        # box2 avatar > killSprite
         
         box3 avatar > killSprite
         avatar box5 > killSprite
@@ -409,7 +418,6 @@ BasicGame
         
         sam cannon > stepBack
         # sam wall > killSprite
-        sam wall > reverseDirection
         # sam EOS > wrapAround
         medicine avatar > killSprite
         avatar medicine > changeResource resource=invisiblemedicine value=1
