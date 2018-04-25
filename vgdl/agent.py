@@ -368,7 +368,6 @@ class Agent:
 
 			if not quitting:
 				for action_num, action in enumerate(solution):
-					print "executing step"
 					bestScoresAndHypotheses = \
 							self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses)
 					
@@ -379,8 +378,6 @@ class Agent:
 
 					print bestScoresAndHypotheses
 					self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
-
-					print "executed step"
 					
 					if selectedHypotheses[0]!=self.hypotheses[0]:
 						print "Best theory is no longer equal to selected theory"
