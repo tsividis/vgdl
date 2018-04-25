@@ -41,17 +41,17 @@
 
 ## TEST2
 # [K_UP, K_UP, K_UP]
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w              1             1 w
-# w                            1 w
-# w              2               w
-# w                    2         w
-# w              A          3 3  w
-# w                              w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w              1             1 w
+w                            1 w
+w              2               w
+w                    2         w
+w              A          3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 ## TEST3
 #[K_LEFT, K_UP, K_UP]
@@ -133,17 +133,17 @@
 # Not getting this one because we stepBack with the missile
 ## but our best theories are almost right.
 #left, left, left, left, left, left, left, 0
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                            1 w
-w                            1 w
-w            c    A            w
-w  c                           w
-w                         3 3  w
-w         c                    w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w                            1 w
+# w            c    A            w
+# w  c                           w
+# w                         3 3  w
+# w         c                    w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 # #up, up
 # level = """
@@ -385,8 +385,8 @@ BasicGame
         # box2 avatar > nothing
 
         ## TEST2
-        # box2 avatar > bounceForward
-        # box box2 > killSprite
+        box2 avatar > bounceForward
+        box box2 > killSprite
 
         ## TEST3
         # box2 avatar > bounceForward
@@ -397,13 +397,13 @@ BasicGame
         # avatar box > killSprite
 
         ## TEST5
-        avatar sam > bounceForward
+        # avatar sam > bounceForward
 
         ## TEST6
-        sam wall > reverseDirection
+        # sam wall > reverseDirection
 
         ## TEST7
-        box2 avatar > bounceForward
+        # box2 avatar > bounceForward
 
         # box avatar > nothing
         # box avatar >killSprite

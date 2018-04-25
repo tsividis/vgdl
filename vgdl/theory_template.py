@@ -1254,9 +1254,9 @@ predicateToOrderingMapping = {
  	'changeScore':			(0,1),
 	'undoAll':				(0,1)}
 
-predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit', 'wrapAround', 'reverseDirection', 'killIfHasLess', 'killIfHasMore']
+predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit', 'wrapAround', 'reverseDirection', 'killIfHasLess', 'killIfHasMore']#, 'bounceForward']
 
-# predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit', 'wrapAround', 'reverseDirection','bounceForward'] # 'killIfHasLess', 'killIfHasMore', 
+# predicatesThatConflictWithStepBack = ['nothing']
 
 def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n):
 
@@ -1372,7 +1372,8 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, action
 		# theory.display()
 		rule = relevantRulesWithArgs[0]
 		penalty,_ = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
-			method='all', targetColor=errorMap.targetColor)[0]
+			method='all', targetColor=errorMap.targetColor)
+		penalty = penalty[0]
 		newPenalty = penalty
 		while newPenalty >= penalty:
 			argsToIncrement = [(k,v) for k,v in relevantRulesWithArgs[0].args.items() if type(v)==int]
@@ -1385,7 +1386,8 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, action
 				rule.args[k] = thresholdOrdering[rule.interaction][idx+1]
 				theory.experienceReplayRecord = {}
 				newPenalty,_ = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
-					method='all', targetColor=errorMap.targetColor)[0]
+					method='all', targetColor=errorMap.targetColor)
+				newPenalty = newPenalty[0]
 				# print newPenalty, rule.display()
 			else:
 				break

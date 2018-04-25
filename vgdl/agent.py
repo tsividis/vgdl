@@ -439,7 +439,7 @@ class Agent:
 			## TEST1
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			## TEST2
-			# [K_UP, K_UP, K_UP]
+			[K_UP, K_UP, K_UP]
 			## TEST3
 			# [K_LEFT, K_UP, K_UP]
 			## TEST4
@@ -451,7 +451,7 @@ class Agent:
 			## TEST7
 			# [0, K_UP, K_UP, K_UP, K_RIGHT]
 			## TEST8
-			[K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0]
+			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0]
 			## PUSH_BOULDERS_2
 			# [K_RIGHT]*3, [K_RIGHT, K_RIGHT, K_UP]
 		]
@@ -544,7 +544,7 @@ class Agent:
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
 
 		for num, sh in reversed(list(enumerate(scoreAndTheoryTuples))):
-			if num > 100:
+			if num > 5:
 				continue
 			print "Theory: {} | Error: {}".format(num, sh[0])
 			sh[1].display()
@@ -663,7 +663,7 @@ class Agent:
 			# embed()
 			if len(bestScoresAndHypotheses) == 0:
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
-				print "Addressing remaining error maps for {} theories".format(len(newTheory))
+				print "Addressing remaining error maps for {} theories".format(len(newTheories))
 				# embed()
 				newerTheories = []
 
