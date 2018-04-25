@@ -370,7 +370,7 @@ class Agent:
 				for action_num, action in enumerate(solution):
 					print "executing step"
 					bestScoresAndHypotheses = \
-							self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, lastStep=False)
+							self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses)
 					
 					## TODO: Prediction error only corresponds to self.hypotheses[0]. What you actually want is
 					## checking for the predictions made by *each* of the hypotheses, and then if any give you prediction error,
@@ -479,11 +479,8 @@ class Agent:
 				print ">>> Step", num+1, "of", len(actions), "<<<"
 				## initialize VRLEs
 				theoryRLEs = VrleInitPhase(self.hypotheses, self.rle)
-				lastStep=False
-				if num == len(actions)-1:
-					lastStep=True
 				t2 = time.time()
-				scoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, lastStep=lastStep)
+				scoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses)
 				print ""
 				print "executed step in {} seconds".format(time.time()-t2)
 				print ""
@@ -597,7 +594,6 @@ class Agent:
 								return False, regroundForKillerTypes, regroundForStochasticTypes
 		return False, False, False
 
-
 	def propagateMissileOrientationBackwards(self, envReal, episode_num):
 		## If we learn anything about orientation in this step for a sprite that was created in a previous step,
 		## go back in time and assign that orientation to the previous steps that sprite was in. This is so that when you set the state to what you 
@@ -618,7 +614,7 @@ class Agent:
 				if not madeChange:
 					break		
 
-	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses, lastStep=False):
+	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses):
 
 		theoryRLEs = VrleInitPhase(hypotheses, self.rle)
 		envRealPrev = self.fastcopy(self.rle)
@@ -2026,6 +2022,11 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			className, theories = expandSprites(envRealCurrent._game, theoryCopy, eM, 
 					envRealPrev, envRealCurrent, action, percentile=20, max_num=30)
 			theories = list(set(theories))
+			# nate debug
+			# for t in theories:
+			# 	if 'c5' in t.classes and 'Chaser' in str(t.classes['c5'][0].vgdlType) and t.classes['c5'][0].args['cooldown'] > 2:
+			# 		print 'finally found one in expandTheoryForOneErrorMap'
+			# 		embed()
 			# TODO: since we're not actually going to build on these, we haven't necessarily addressed the error
 			# tomorrow: not sure if this is actually the problem
 			# for t in theories:

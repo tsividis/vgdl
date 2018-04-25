@@ -2409,13 +2409,14 @@ def distributionInitSetup(game, spriteID):
     objectColors = list(set([s.colorName for sublist in game.sprite_groups.values() for s in sublist])) ## all visible colors
     game.spriteDistribution[spriteID] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
     game.object_token_spriteDistribution[spriteID] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
-    
+
     # if spriteID not in game.all_objects.keys():
         # game.all_objects[spriteID] = game.getAllObjects()[spriteID]
 
     game.movement_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys()}
     game.object_token_movement_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys()}
     game.sprite_appearance_predictions[spriteID] = {k:[] for k in game.spriteDistribution[spriteID].keys() if 'Avatar' in str(k[0][1]) or 'SpawnPoint' in str(k[0][1])}
+    # TODO: do we need to be specific to Avatar like this? Try not doing that and see if it breaks
     game.orientation_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys() if 'Avatar' in str(k[0][1])}
 
 def filterTheories(scoreAndTheoryTuples, percentile, max_num):
@@ -2477,6 +2478,10 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
                     ## missileOrientationClustering: considers left/right and up/down to be equivalent options in the likelihood
                     ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving
                     ## objects
+                    # nate debug
+                    # if sprite_obj.colorName == 'LIGHTGREEN':
+                    #     print 'in spriteInduction step 3, got' , sprite_obj
+                    #     embed()
                     game.object_token_movement_options[sprite][param_combination], \
                     game.movement_options[sprite][param_combination], \
                     orientation_options, \
@@ -2495,6 +2500,10 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
         for sprite in specificSpritesToUpdate:
             left, top = sprite.rect.left, sprite.rect.top
             neighbors = [(left, top), (left-30, top), (left+30, top), (left, top-30), (left, top+30)]
+            # nate debug
+            # if sprite.colorName == 'LIGHTGREEN':
+            #     print 'in spriteInduction step 4, got' , sprite
+            #     embed()
             try:
                 if game.sprite_appearances and any([(s.rect.left, s.rect.top) in neighbors for s in game.sprite_appearances]) and \
                         sprite.ID in game.sprite_appearance_predictions:
@@ -2505,9 +2514,22 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
                     ## Normal case. Update hypotheses related to movement types.
                     for k in game.movement_options[sprite.ID]:
                         if len(game.observation['trackedObjects'][sprite.colorName])>1 and ( ('singleton', True) in k or 'Avatar' in str(k[0][1]) ):
+                            # too many objects on the screen to be possible
                             continue
+                        # nate debug
+                        # try:
+                        #     if k[1][1] > 4:
+                        #         print "asdfladslkflk" , k
+                        # except:
+                        #     #this is just something with no args, it's fine
+                        #     pass
+                        # CHASERS BEING FILTERED BY THIS LINE
                         if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k]: 
                             if k in game.orientation_options[sprite.ID]:
+                                # nate debug
+                                # if k[1][1] > 2:
+                                #     print "secondsafd"
+                                #     embed()
                                 if normalizeVec(sprite.orientation) in game.orientation_options[sprite.ID][k]:
                                     scoreAndTheoryTuples.append((0,k))
                             else:
