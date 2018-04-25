@@ -203,15 +203,15 @@ class Agent:
 				self.history[color] = {}
 		return
 
-	def observe(self, rle, num_steps=1):
+	def observe(self, rle, episode_num, num_steps=1):
 		# embed()
-		for i in range(num_steps):
-			action = 0
-			bestScoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, lastStep=False)
-			self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
 		# for i in range(num_steps):
-			# spriteInduction(rle._game, step=1, action=None)
-			# spriteInduction(rle._game, step=2, action=None)
+			# action = 0
+			# bestScoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, lastStep=False)
+			# self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
+		for i in range(num_steps):
+			spriteInduction(rle._game, step=1, action=None)
+			spriteInduction(rle._game, step=2, action=None)
 		return
 
 	def testCurriculum(self, level_game_pairs=None):
@@ -279,7 +279,6 @@ class Agent:
 		envReal = self.fastcopy(self.rle)
 		self.rleHistory[episode_num].append(envReal)
 		
-		#dep
 		if not self.hypotheses:
 			if n_level!=0 and episode_num!=0:
 				print "Have no hypotheses but not playing the first episode / first level!"
@@ -357,7 +356,7 @@ class Agent:
 				if (not solution) or p.quitting:
 					if self.longHorizonObservations<self.longHorizonObservationLimit:
 						print "Didn't get solution or decided to quit. Observing, then replanning."
-						self.observe(self.rle, episode_num, 5)
+						self.observe(self.rle, episode_num, num_steps=5)
 						solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
 						self.longHorizonObservations += 1
 					else:
@@ -365,7 +364,7 @@ class Agent:
 
 			if emptyPlans > self.emptyPlansLimit:
 				print "observing"
-				self.observe(self.rle, episode_num, 5)
+				self.observe(self.rle, episode_num, num_steps=5)
 
 			if not quitting:
 				for action_num, action in enumerate(solution):
@@ -659,10 +658,12 @@ class Agent:
 		bestScoresAndHypotheses = []
 
 		if newTheories:
+			# embed()
 			bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
 			# embed()
 			if len(bestScoresAndHypotheses) == 0:
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
+				print "Addressing remaining error maps for {} theories".format(len(newTheory))
 				# embed()
 				newerTheories = []
 
@@ -1777,10 +1778,9 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 	'''
 	assert len(rleHistories) == len(actionHistories), 'rleHistories and actionHistories need to match'
 
-	if sum([len(r) for r in rleHistories]) >10:
+	if sum([len(r) for r in rleHistories]) > 10 or len(hypotheses)>10:
 		t1 = time.time()
-		print "Running MultiEpisodeExperienceReplay on {} episodes and {} time-steps total".format(len(rleHistories), sum([len(r) for r in rleHistories]))
-		print "MultiEpisodeExperienceReplay on {} episodes and {} time-steps took {} seconds".format(len(rleHistories), sum([len(r) for r in rleHistories]), time.time()-t1)
+		print "Running MultiEpisodeExperienceReplay on {} hypotheses, {} episodes and {} time-steps total".format(len(hypotheses), len(rleHistories), sum([len(r) for r in rleHistories]))
 	multi_episode_mean_penalties = []
 	imaginedEffectsPerTheory = [set() for i in range(len(hypotheses))]
 
@@ -1794,6 +1794,8 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 		for i in range(len(hypotheses)):
 			imaginedEffectsPerTheory[i] = imaginedEffectsPerTheory[i].union(imaginedEffects[i])
 	multi_episode_mean_penalties = np.mean(multi_episode_mean_penalties, axis=0)
+	if sum([len(r) for r in rleHistories]) > 10 or len(hypotheses)>10:
+		print "MultiEpisodeExperienceReplay on {} theories, {} episodes and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistories), sum([len(r) for r in rleHistories]), time.time()-t1)
 
 	return multi_episode_mean_penalties, imaginedEffectsPerTheory
 

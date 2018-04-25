@@ -1281,9 +1281,6 @@ def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, ob
 				for predicate in predicateGroup:
 					if n>1 and len(([p for p in predicateGroup if p in conflictingPredicates]))>1:
 						continue
-					# if n>1:
-						# print "in getRuleSetsForClassPairPredicate"
-						# embed()
 					## orderings are (targetClass, neighbor). If the ordering we're proposing is consistent with the semantics
 					## of the predicate we're proposing, add this potential rule.
 					if i in predicateToOrderingMapping[predicate]:

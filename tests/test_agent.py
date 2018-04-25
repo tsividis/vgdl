@@ -235,29 +235,28 @@ class TestInference(_TestAgent):
 
 
 	test1 = basicTestConstructor(*inference.test1)
-
 	test2 = basicTestConstructor(*inference.test2)
 
-	# test3 = basicTestConstructor(*inference.test3)
+	### test3 = basicTestConstructor(*inference.test3)
 
 	test4 = basicTestConstructor(*inference.test4)
 
 	test5 = basicTestConstructor(*inference.test5)
 
-	# test6 = basicTestConstructor(*inference.test6)
+	### test6 = basicTestConstructor(*inference.test6)
 
 	# test7 = basicTestConstructor(*inference.test7) #takes long, but add it back at some point.
 
 	test8 = basicTestConstructor(*inference.test8)
 
-	# test9 = basicTestConstructor(*inference.test9)
-	# test10 = basicTestConstructor(*inference.test10)
+	### test9 = basicTestConstructor(*inference.test9)
+	### test10 = basicTestConstructor(*inference.test10)
 
-	# test11 = basicTestConstructor(*inference.test11)
+	### test11 = basicTestConstructor(*inference.test11)
 
 	test12 = basicTestConstructor(*inference.test12)
 
-	# test13 = basicTestConstructor(*inference.test13)
+	### test13 = basicTestConstructor(*inference.test13)
 
 	test14 = basicTestConstructor(*inference.test14)
 
