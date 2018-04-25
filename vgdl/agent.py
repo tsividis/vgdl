@@ -360,7 +360,7 @@ class Agent:
 			if not quitting:
 				for i, action in enumerate(solution):
 					print "executing step"
-					bestScoresAndHypotheses, reground_for_killer_types, reground_for_stochastic_types = self.executeStep(episode_num, i, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, objectPositionsArray, lastStep=False)
+					bestScoresAndHypotheses, reground_for_killer_types, reground_for_stochastic_types = self.executeStep(episode_num, i, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, objectPositionsArray)
 
 					self.bestScoresAndHypotheses = bestScoresAndHypotheses
 					# self.hypotheses = [bestScoresAndHypotheses[0][1]]
@@ -471,11 +471,8 @@ class Agent:
 				print ">>> Step", num+1, "of", len(actions), "<<<"
 				## initialize VRLEs
 				theoryRLEs = VrleInitPhase(self.hypotheses, self.rle)
-				lastStep=False
-				if num == len(actions)-1:
-					lastStep=True
 				t2 = time.time()
-				scoresAndHypotheses, _, _ = self.executeStep(episode_num, num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, [], lastStep=lastStep)
+				scoresAndHypotheses, _, _ = self.executeStep(episode_num, num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, [])
 				print ""
 				print "executed step in {} seconds".format(time.time()-t2)
 				print ""
@@ -588,7 +585,7 @@ class Agent:
 								return False, regroundForKillerTypes, regroundForStochasticTypes
 		return False, False, False
 
-	def executeStep(self, episode_num, step_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, objectPositionsArray, lastStep=False):
+	def executeStep(self, episode_num, step_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, objectPositionsArray):
 
 		regroundForKillerTypes, regroundForStochasticTypes = False, False
 		envRealPrev = self.fastcopy(self.rle)
@@ -1820,36 +1817,6 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 	if not candidates:
 		return []
 
-	# filtered = []
-
-	# if max_num is None:
-	# 	max_num = len(candidates)+1
-
-	# if proportionOfSpriteTheories is None:
-	# 	candidates = sorted(candidates, key=lambda x:x[0])
-	# 	filtered = candidates[0:max_num]
-	# else:
-	# 	# TODO: this never happens any more, as of a long time ago I think
-	# 	sprite_candidates = [s for s in candidates if s[1].mostRecentEdit == 'spriteInduction']
-	# 	induction_candidates = [s for s in candidates if s[1].mostRecentEdit == 'interactionSetInduction']
-	# 	no_edit_candidates = [s for s in candidates if s[1].mostRecentEdit == 'none']
-	# 	if len(sprite_candidates)>int(math.floor(max_num*proportionOfSpriteTheories)):
-	# 		num_sprite_candidates_chosen = min(int(math.floor(max_num*proportionOfSpriteTheories)), len(sprite_candidates))
-	# 		filtered = sprite_candidates[0:num_sprite_candidates_chosen]
-	# 	else:
-	# 		num_sprite_candidates_chosen = len(sprite_candidates)
-	# 		filtered = sprite_candidates
-
-	# 	remaining = max_num - len(filtered)
-	# 	filtered = induction_candidates[0:min(remaining, len(induction_candidates))] + filtered + no_edit_candidates
-
-	# 	if len(filtered)<max_num:
-	# 		diff = max_num - len(filtered)
-	# 		filtered = filtered + sprite_candidates[num_sprite_candidates_chosen:min(len(sprite_candidates), num_sprite_candidates_chosen+diff)]
-	# 	filtered = sorted(filtered, key=lambda x: x[0])
-
-	# # print "METHOD ONE FILTER:", [t[0] for t in filtered]
-
 	## here begins new filtering method:
 	# 	always keep first tier (by error) (as long as it made the maxmium allowed error cutoff)
 	# 	if adding the second tier isn't too many, do that
@@ -2058,6 +2025,11 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			className, theories = expandSprites(envRealCurrent._game, theoryCopy, eM, 
 					envRealPrev, envRealCurrent, action, percentile=20, max_num=30)
 			theories = list(set(theories))
+			# nate debug
+			# for t in theories:
+			# 	if 'c5' in t.classes and 'Chaser' in str(t.classes['c5'][0].vgdlType) and t.classes['c5'][0].args['cooldown'] > 2:
+			# 		print 'finally found one in expandTheoryForOneErrorMap'
+			# 		embed()
 			# TODO: since we're not actually going to build on these, we haven't necessarily addressed the error
 			# tomorrow: not sure if this is actually the problem
 			# for t in theories:

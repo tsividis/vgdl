@@ -1150,6 +1150,10 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, action=No
 		spriteProposals = [k for k in game.spriteDistribution[targetToken.ID].keys() if 'Flicker' in str(k[0][1])]
 	else:
 		spriteProposals = spriteInduction(game, step=4, action=action,specificSpritesToUpdate=errorMap.targetTokens)
+        # nate debug
+        # if errorMap.targetClass in ['Chaser', 'c5'] and any(('cooldown', 3) in s for s in spriteProposals):
+        #     print 'expandSprites, doing induction on', errorMap.display()
+        #     embed()
 
 	## Don't instantiate non-avatar proposals for the 'avatar' class.
 	if targetClass=='avatar':
