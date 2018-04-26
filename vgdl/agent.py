@@ -380,8 +380,8 @@ class Agent:
 					self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
 					
 					if selectedHypotheses[0]!=self.hypotheses[0]:
-						print "Best theory is no longer equal to selected theory"
-						embed()
+						# print "Best theory is no longer equal to selected theory"
+						# embed()
 						break
 
 					steps +=1
@@ -436,7 +436,7 @@ class Agent:
 			## TEST1
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			## TEST2
-			[K_UP, K_UP, K_UP]
+			# [K_UP, K_UP, K_UP]
 			## TEST3
 			# [K_LEFT, K_UP, K_UP]
 			## TEST4
@@ -451,6 +451,8 @@ class Agent:
 			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0]
 			## PUSH_BOULDERS_2
 			# [K_RIGHT]*3, [K_RIGHT, K_RIGHT, K_UP]
+
+			[K_LEFT, K_LEFT, K_LEFT]
 		]
 
 		self.rleHistory = [[] for i in range(len(actionSequences))]
@@ -545,7 +547,7 @@ class Agent:
 		scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
 
 		scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-			proportionOfSpriteTheories=None, errorCutoff=ERRORCUTOFF, usePrior=False)]
+			proportionOfSpriteTheories=None, errorCutoff=ERRORCUTOFF, usePrior=True)]
 
 		print "Experience replay complete."
 		for num, sh in enumerate(scoresAndHypotheses):
@@ -1648,8 +1650,26 @@ def getSalientStates(rleHistory):
 	## get actionsPerIndex
 	pass
 
+def checkIfStatesAreDifferent(env1, env2):
+	if (env1 and not env2) or (env2 and not env1):
+		return True
+	matchedEnvs, la, lb = matchEnvs(env1, env2)
+	if la:
+		return True
+	if lb:
+		return True
+	for match in matchedEnvs:
+		if match[2]!=0:
+			return True
+	return False
+
 def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses):
 
+	# if there isn't a theory, it has error 1. (added for multiepisode experienceReplay)
+	if not hypotheses[0]:
+		return [1.] , set()
+
+	cutoffThreshold = 1. # aka two strikes, you're out
 	subsamplePercentage = .2
 	actionsPerIndex = 2
 	setOfImaginedEffects = set()
@@ -1658,13 +1678,24 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 		print "got more than 1 hypothesis in singleTheoryExperienceReplay"
 		embed()
 	
+
+	## This is only checking if you have replayed that exact sequence
+	## but you have definitely replayed a similar shorter sequence. Grab that value and then only modify
+	## it by the most recent step.
+	## This is still not going to address the fact that when you change a theory you're deleting the whole history
+	## How important it it actually to go all the way back and do full replay? As in,
+	## How often will a new modification make something old far worse? Maybe this is just completely unnecessary.
 	key = (method, targetColor, rleHistory[0].ID, len(rleHistory))
 	
 	if not displayStates and key in hypotheses[0].experienceReplayRecord:
 		return hypotheses[0].experienceReplayRecord[key], hypotheses[0].setOfImaginedEffects
 
 	if method == 'all':
-		indices = range(len(rleHistory))
+		if displayStates:
+			print "Playing replay FORWARD. Default is backwards."
+			indices = range(len(rleHistory))
+		else:
+			indices = reversed(range(len(rleHistory)))
 		actionsPerIndex = 1
 	elif method == 'oneReplay':
 		indices = [0]
@@ -1685,11 +1716,23 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 
 	cumulative_penalties = []
 	initialRLEs = VrleInitPhase(hypotheses, rleHistory[0], makeInitialVrle=True)
+	theoryRLEs = [[]]
 
 	for idx in indices:
 		## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
 		t1 = time.time()
 		
+		if sum([c[0] for c in cumulative_penalties])>cutoffThreshold:
+			# this hypothesis is so wrong it's not worth thinking about any more.
+			mean_penalties = [1.]
+			hypotheses[0].experienceReplayRecord[key] = mean_penalties
+			return mean_penalties, setOfImaginedEffects
+
+		# if any([checkIfStatesAreDifferent(tRLE, rleHistory[idx]) for tRLE in theoryRLEs]):
+			# print "states were different; making new theoryRLEs"
+			# theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], theoryRLEs=initialRLEs)
+		# else:
+			# print "got same states; not making new theoryRLE"
 		theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], theoryRLEs=initialRLEs)
 
 		## Take a predetermined number of actions starting from idx
@@ -1753,6 +1796,7 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', target
 		if displayTheories:
 			print "running experienceReplay on {}:".format(num)
 			h.display()
+		# print "running experienceReplay on", num
 		mean_penalties, setOfImaginedEffects = singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h])
 		results.append(mean_penalties)
 		imaginedEffects.append(setOfImaginedEffects)
@@ -1765,15 +1809,36 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', target
 	mean_penalties = [r[0] for r in results]
 	return mean_penalties, imaginedEffects
 
+## Just pass the unpacked rleHistories and actionHistories to experienceReplay
+# def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, method, targetColor=None, displayStates=False, displayTheories=False):
+# 	'''
+# 	Runs experience replay on multiple episodes with some action sequence for each episode and returns the penalties for the given theories (weighted on the number of actions)
+# 	'''
+# 	assert len(rleHistories) == len(actionHistories), 'rleHistories and actionHistories need to match'
+
+# 	if sum([len(r) for r in rleHistories]) > 10 or len(hypotheses)>10:
+# 		t1 = time.time()
+# 		print "Running MultiEpisodeExperienceReplay on {} hypotheses, {} episodes and {} time-steps total".format(len(hypotheses), len(rleHistories), sum([len(r) for r in rleHistories]))
+
+# 	unpackedRleHistories = [item for sublist in rleHistories for item in sublist]
+# 	unpackedActionHistories = [item for sublist in actionHistories for item in sublist]
+# 	mean_penalties, imaginedEffects = experienceReplay(hypotheses, unpackedRleHistories, unpackedActionHistories, 
+# 												 method, targetColor, displayStates, displayTheories)
+
+# 	return mean_penalties, imaginedEffects
+
 def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, method, targetColor=None, displayStates=False, displayTheories=False):
 	'''
 	Runs experience replay on multiple episodes with some action sequence for each episode and returns the penalties for the given theories (weighted on the number of actions)
 	'''
 	assert len(rleHistories) == len(actionHistories), 'rleHistories and actionHistories need to match'
 
+	hypotheses = hypotheses[:] # so we can replace some with None if they're not worth continuing with (and not modify the list passed in)
+
 	if sum([len(r) for r in rleHistories]) > 10 or len(hypotheses)>10:
 		t1 = time.time()
 		print "Running MultiEpisodeExperienceReplay on {} hypotheses, {} episodes and {} time-steps total".format(len(hypotheses), len(rleHistories), sum([len(r) for r in rleHistories]))
+
 	multi_episode_mean_penalties = []
 	imaginedEffectsPerTheory = [set() for i in range(len(hypotheses))]
 
@@ -1784,8 +1849,14 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 													 method, targetColor, displayStates, displayTheories)
 		mean_penalties = np.array(mean_penalties)*weight*len(actionHistory)
 		multi_episode_mean_penalties.append(mean_penalties)
+
 		for i in range(len(hypotheses)):
-			imaginedEffectsPerTheory[i] = imaginedEffectsPerTheory[i].union(imaginedEffects[i])
+			# if we have enough data, and it's very wrong, stop evaluating this theory for subsequent episodes
+			if mean_penalties[i] > ERRORCUTOFF and len(rleHistory) > 3:
+				hypotheses[i] = None
+			else:
+				imaginedEffectsPerTheory[i] = imaginedEffectsPerTheory[i].union(imaginedEffects[i])
+
 	multi_episode_mean_penalties = np.mean(multi_episode_mean_penalties, axis=0)
 	if sum([len(r) for r in rleHistories]) > 10 or len(hypotheses)>10:
 		print "MultiEpisodeExperienceReplay on {} theories, {} episodes and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistories), sum([len(r) for r in rleHistories]), time.time()-t1)

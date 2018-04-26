@@ -1,9 +1,10 @@
 
+
 level = """
 wwwwwwwwwwwwwwwwwwwwww
 w       p            w
 w  1 2    p          w
-wA  q     2   w     ww
+wA        2   w     ww
 w    w1       w w    w
 ww          q        w
 w   p    q      1    w
@@ -12,16 +13,16 @@ w                    w
 wwwwwwwwwwwwwwwwwwwwww
 """
 
-# level1 = """
+# level = """
 # wwwwwwwwwwwwwwwwwwwwww
-# wp         w        2w
-# w          1     11  w
-# w   g          1    ww
-# w  1  12     1      ww
-# ww             q     w
-# w                  A w
-# w  ww      q         w
-# w    1    2       1  w
+# w       p            w
+# w  1 2    p          w
+# wA  q     2   w     ww
+# w    w1       w w    w
+# ww          q        w
+# w   p    q      1    w
+# w             gg     w
+# w                    w
 # wwwwwwwwwwwwwwwwwwwwww
 # """
 
