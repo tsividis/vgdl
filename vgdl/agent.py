@@ -111,8 +111,8 @@ class Agent:
 		self.fakeInteractionRules = []
 		self.all_objects = {}
 		self.spriteUpdateDict = defaultdict(lambda : 0)
-		self.seen_resources = []
-		self.seen_limits = []
+		self.seen_resources = defaultdict(lambda : []) #key: a hypothesized avatar color. Value: list of colors of resources seen by that avatar.
+		self.seen_limits = defaultdict(lambda: [])
 		self.new_objects = {}
 		self.memory = []
 		self.rleHistory = []
@@ -290,12 +290,30 @@ class Agent:
 		while not ended:
 
 			envReal = self.fastcopy(self.rle)
-			# embed()
+
 			## Select hypothesis/es to plan with.
 			selectedHypotheses 	= [self.hypotheses[0]] # Only initialize as many theories as you are using parallel planners
 			# selectedHypotheses = self.hypotheses
 			hypothesesToPlanWith = [convertTheoryToSubgoalTheory(h) for h in selectedHypotheses]
- 			# embed()
+
+			## Create fake incentives to reexplore previously-explored items while possessing resources
+ 			for h in hypothesesToPlanWith:
+ 				avatarColor = h.classes['avatar'][0].colorName
+ 				for k,v in envReal._game.observation['trackedObjects'][avatarColor][0].inventory.items():
+ 					resourceClass = h.spriteObjects[k].className
+ 					resourceAmount, limit = v[0], v[1]
+
+ 					if k not in self.seen_resources[avatarColor]:
+ 						resourceClass = h.spriteObjects[k].className
+ 						h.interactionSet.extend(h.updateInteractionsPreconditions(resourceClass))
+ 						h.resource_limits[resourceClass] = limit
+ 						self.seen_resources[avatarColor].append(k)
+ 					elif resourceClass not in self.seen_limits[avatarColor] and resourceAmount==limit:
+ 			 			h.interactionSet.extend(h.updateInteractionsPreconditions(resourceClass, limit))
+ 			 			self.seen_limits[avatarColor].append(resourceClass)
+
+ 			[h.updateTerminations() for h in hypothesesToPlanWith]
+
  			# Only initialize as many planner theories as you are using parallel planners
 			plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal)
 			quitting = False
@@ -322,9 +340,10 @@ class Agent:
 				# best_index = np.argmin([p.total_nodes for p in res._value])
 				# p = res._value[best_index]
 			else:
+				avatarColor = hypothesesToPlanWith[0].classes['avatar'][0].colorName
 
 				p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=hypothesesToPlanWith[0], fakeInteractionRules = self.fakeInteractionRules,
-					seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+					seen_limits = self.seen_limits[avatarColor], annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
 					firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
 			
 			bestNode, gameStringArray, predictedEnvs = p.BFS()

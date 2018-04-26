@@ -41,17 +41,17 @@
 
 ## TEST2
 # [K_UP, K_UP, K_UP]
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w              1             1 w
-w                            1 w
-w              2               w
-w                    2         w
-w              A          3 3  w
-w                              w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w              1             1 w
+# w                            1 w
+# w              2               w
+# w                    2         w
+# w              A          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 ## TEST3
 #[K_LEFT, K_UP, K_UP]
@@ -342,6 +342,18 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                A             w
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
+
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w          m                 1 w
+w                              w
+w                              w
+w        A  mm            3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 
 game="""

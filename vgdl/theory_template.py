@@ -190,8 +190,9 @@ class NoveltyRule(TerminationRule):
 		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
 		self.termination = NoveltyTermination(s1=s1, s2=s2, win=win, args=args)
 		self.ruleType = "NoveltyRule"
-		args = args if args else {}
-		self._hash = hash((self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, tuple(sorted(args.iteritems()))))
+		args = frozenset(args) if args else frozenset()
+		# self._hash = hash((self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, tuple(sorted(args.iteritems()))))
+		self._hash = hash((self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, args))
 
 	def __repr__(self):
 		return str(self.asTuple())
@@ -1429,8 +1430,7 @@ def buildArgsString(interactionRule, theory, rle):
 		precondition = list(set(interactionRule.preconditions))[0]
 		if precondition:
 			print "in precondition in buildArgsString"
-			## We should never be here; this is deprecated.
-			embed()
+			# embed()
 			if precondition.negated:
 				true_operator = oppositeOperatorMap[precondition.operator_name]
 			else:
