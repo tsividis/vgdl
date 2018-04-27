@@ -32,6 +32,15 @@ import WBP
 from termcolor import colored
 from pathos.helpers import mp
 
+
+
+
+# multiEpisodeTiming = []
+# reverseReplay = False
+
+
+
+
 ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPACE: (0,0), 0: (0,0)}
 
 # This makes experience replay score a theory on all the one-step transitions we've seen
@@ -133,6 +142,7 @@ class Agent:
 		self.total_game_steps = 0
 		self.total_planner_steps = 0
 		self.levels_won = 0
+		self.assumeZeroErrorTheoryExists = False
 
 	def initializeEnvironment(self):
 		if self.gameString == None or self.levelString == None:
@@ -531,7 +541,7 @@ class Agent:
 		# print episode_num
 		# embed()
 		penalties, imaginedEffectsPerTheory = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], \
-			self.actionHistory[:episode_num+1], method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
+				self.actionHistory[:episode_num+1], method=EXPERIENCE_REPLAY_METHOD, displayTheories=False, assumeZeroErrorTheoryExists=self.assumeZeroErrorTheoryExists)
 
 		for n,imaginedEffects in enumerate(imaginedEffectsPerTheory):
 			newTheories[n].setOfImaginedEffects = newTheories[n].setOfImaginedEffects.union(imaginedEffects)
@@ -656,16 +666,28 @@ class Agent:
 			# embed()
 			bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
 			# embed()
-			if len(bestScoresAndHypotheses) == 0:
+			if len(bestScoresAndHypotheses) == 0:	
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
-				print "Addressing remaining error maps for {} theories".format(len(newTheories))
+				# print "Addressing remaining error maps for {} theories".format(len(newTheories))
 				# embed()
+
 				newerTheories = []
 
-				for t in newTheories:
-					theories = addressRemainingErrorMaps(t, envRealPrev, self.rle, action, self.rleHistory, self.actionHistory)
-					newerTheories.extend(theories)
-				newerTheories = list(set(newerTheories))
+				if self.assumeZeroErrorTheoryExists:
+					self.assumeZeroErrorTheoryExists = False
+					# redo testAndExpand, but take your time and do it thoroughly
+					for num, env in enumerate(theoryRLEs):
+						theories = testAndExpand(env, hypotheses[num], action, self.rle, envRealPrev, self.rleHistory, \
+								self.actionHistory, episode_num)
+						newerTheories.extend(theories)
+					newerTheories = list(set(newerTheories))
+
+				if len(newerTheories) == 0:
+					print "***** WARNING ***** still no hypotheses surviving filter when assumeZeroErrorTheoryExists is False, trying again"
+					for t in newTheories:
+						theories = addressRemainingErrorMaps(t, envRealPrev, self.rle, action, self.rleHistory, self.actionHistory)
+						newerTheories.extend(theories)
+					newerTheories = list(set(newerTheories))
 
 				self.allTheories.extend(newerTheories)
 
@@ -897,7 +919,7 @@ def findNearestSprites(sprite, spriteList, dist_function=manhattanDist2, skip_se
 
 
 ## Function generating penalty and error map
-def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_score=1, targetColor=None, penalty_only=False):
+def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_score=1, targetColor=None, penalty_only=False, earlyStopping=False):
 	"""
 	envA: hypothetical environment
 	envB: real environment
@@ -1086,6 +1108,10 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		except:
 			print "reportError problem"
 			embed()
+
+		if penalty_only and earlyStopping and 1.-np.exp(total_penalty) > 0.0001:
+			# print "CUT OFF"
+			return 1. , []
 
 	# Missing/additional/transformation penalty
 	total_penalty += np.log((e_disappearance)**( len(lonely_sprites_envA) + len(lonely_sprites_envB) )) #likelihood
@@ -1663,13 +1689,15 @@ def checkIfStatesAreDifferent(env1, env2):
 			return True
 	return False
 
-def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses):
+def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, assumeZeroErrorTheoryExists=False):
 
 	# if there isn't a theory, it has error 1. (added for multiepisode experienceReplay)
 	if not hypotheses[0]:
 		return [1.] , set()
 
 	cutoffThreshold = 1. # aka two strikes, you're out
+	if assumeZeroErrorTheoryExists:
+		cutoffThreshold = .00001 # aka one strike you're out
 	subsamplePercentage = .2
 	actionsPerIndex = 2
 	setOfImaginedEffects = set()
@@ -1691,11 +1719,20 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 		return hypotheses[0].experienceReplayRecord[key], hypotheses[0].setOfImaginedEffects
 
 	if method == 'all':
+		
+
+
 		if displayStates:
 			print "Playing replay FORWARD. Default is backwards."
 			indices = range(len(rleHistory))
 		else:
 			indices = reversed(range(len(rleHistory)))
+		# global reverseReplay
+		# indices = reversed(range(len(rleHistory))) if reverseReplay else range(len(rleHistory))
+
+
+
+
 		actionsPerIndex = 1
 	elif method == 'oneReplay':
 		indices = [0]
@@ -1724,6 +1761,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 		
 		if sum([c[0] for c in cumulative_penalties])>cutoffThreshold:
 			# this hypothesis is so wrong it's not worth thinking about any more.
+			# print "CUT OFF"
 			mean_penalties = [1.]
 			hypotheses[0].experienceReplayRecord[key] = mean_penalties
 			return mean_penalties, setOfImaginedEffects
@@ -1763,7 +1801,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 						setOfImaginedEffects.add(effectWithReversedClassNames)
 				try:
 					penalty, errorList = errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
-						rleHistory[idx+n], targetColor=targetColor, penalty_only=True)
+						rleHistory[idx+n], targetColor=targetColor, penalty_only=True, earlyStopping=assumeZeroErrorTheoryExists)
 					penalties.append(penalty)
 				except:
 					print "exception in experienceReplay"
@@ -1783,7 +1821,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	hypotheses[0].experienceReplayRecord[key] = mean_penalties
 	return mean_penalties, setOfImaginedEffects
 	
-def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', targetColor=None, displayStates=False, displayTheories=False):
+def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', targetColor=None, displayStates=False, displayTheories=False, assumeZeroErrorTheoryExists=False):
 	# if len(hypotheses)>10:
 		# print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
 
@@ -1797,7 +1835,8 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', target
 			print "running experienceReplay on {}:".format(num)
 			h.display()
 		# print "running experienceReplay on", num
-		mean_penalties, setOfImaginedEffects = singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h])
+		mean_penalties, setOfImaginedEffects = \
+				singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h],  assumeZeroErrorTheoryExists=assumeZeroErrorTheoryExists)
 		results.append(mean_penalties)
 		imaginedEffects.append(setOfImaginedEffects)
 
@@ -1827,10 +1866,37 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', target
 
 # 	return mean_penalties, imaginedEffects
 
-def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, method, targetColor=None, displayStates=False, displayTheories=False):
+def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, method, targetColor=None, displayStates=False, displayTheories=False, assumeZeroErrorTheoryExists=False):
 	'''
 	Runs experience replay on multiple episodes with some action sequence for each episode and returns the penalties for the given theories (weighted on the number of actions)
 	'''
+	# global multiEpisodeTiming
+	# global reverseReplay
+
+	# # setup
+	# multiEpisodeTiming.append([len(hypotheses)])
+
+	# for i in range(4):
+	# 	## setup
+	# 	for h in hypotheses:
+	# 		h.experienceReplayRecord = dict()
+
+	# 	if i % 2 == 0:
+	# 		reverseReplay = False
+	# 	else:
+	# 		reverseReplay = True
+	# 	if i > 1:
+	# 		assumeZeroErrorTheoryExists = True
+	# 	else:
+	# 		assumeZeroErrorTheoryExists = False
+
+	# 	start = time.time()
+
+
+
+
+
+	# actual function
 	assert len(rleHistories) == len(actionHistories), 'rleHistories and actionHistories need to match'
 
 	hypotheses = hypotheses[:] # so we can replace some with None if they're not worth continuing with (and not modify the list passed in)
@@ -1845,14 +1911,15 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 	weight = 1./len(max(actionHistories, key=len))
 
 	for rleHistory, actionHistory in zip(rleHistories, actionHistories):
-		mean_penalties, imaginedEffects = experienceReplay(hypotheses, rleHistory, actionHistory, 
-													 method, targetColor, displayStates, displayTheories)
+		mean_penalties, imaginedEffects = \
+				experienceReplay(hypotheses, rleHistory, actionHistory, method, targetColor, displayStates,\
+						displayTheories, assumeZeroErrorTheoryExists=assumeZeroErrorTheoryExists)
 		mean_penalties = np.array(mean_penalties)*weight*len(actionHistory)
 		multi_episode_mean_penalties.append(mean_penalties)
 
 		for i in range(len(hypotheses)):
 			# if we have enough data, and it's very wrong, stop evaluating this theory for subsequent episodes
-			if mean_penalties[i] > ERRORCUTOFF and len(rleHistory) > 3:
+			if mean_penalties[i] > ERRORCUTOFF and (len(rleHistory) > 3 or assumeZeroErrorTheoryExists):
 				hypotheses[i] = None
 			else:
 				imaginedEffectsPerTheory[i] = imaginedEffectsPerTheory[i].union(imaginedEffects[i])
@@ -1861,6 +1928,12 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 	if sum([len(r) for r in rleHistories]) > 10 or len(hypotheses)>10:
 		print "MultiEpisodeExperienceReplay on {} theories, {} episodes and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistories), sum([len(r) for r in rleHistories]), time.time()-t1)
 
+	# 	# teardown
+	# 	end = time.time()
+	# 	multiEpisodeTiming[-1].append(end-start)
+	# print multiEpisodeTiming[-1]
+
+
 	return multi_episode_mean_penalties, imaginedEffectsPerTheory
 
 ########################################################################
@@ -1868,7 +1941,6 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 ########################################################################
 
 def updateTerminations(rle, hypotheses):
-
 	for h in hypotheses:
 		h.updateTerminations(rle)
 	return
