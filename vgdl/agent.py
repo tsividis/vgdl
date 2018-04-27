@@ -142,7 +142,7 @@ class Agent:
 		self.total_game_steps = 0
 		self.total_planner_steps = 0
 		self.levels_won = 0
-		self.assumeZeroErrorTheoryExists = True
+		self.assumeZeroErrorTheoryExists = False
 
 	def initializeEnvironment(self):
 		if self.gameString == None or self.levelString == None:
@@ -295,7 +295,24 @@ class Agent:
 				embed()
 			self.initializeHypotheses(episode_num)
 			updateTerminations(self.rle, self.hypotheses)
-		
+
+		if first_time_playing_level:
+			## Add defaults to theories for any new objects.
+			## All hypotheses have the same number of classes / know about the same colors
+			newColors = [k for k in envReal._game.observation['trackedObjects'].keys() if k not in self.hypotheses[0].spriteObjects]
+			if newColors:
+				from vgdl.ontology import Resource
+				for color in newColors:
+					for h in self.hypotheses:
+						existing_classes = [key for key in h.classes if key[0] == 'c']
+						max_num = max([int(c[1:]) for c in existing_classes])
+						class_num = max_num+1 
+						newClassName = 'c'+str(class_num)
+						h.addSpriteToTheory(newClassName, color, vgdlType=Resource)
+
+
+		## check for new objects on new levels:
+
 		emptyPlans = 0
 		while not ended:
 
