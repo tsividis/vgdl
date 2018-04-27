@@ -1070,13 +1070,13 @@ def proposePredicates(singlePairErrorSignal, observations):
 								'killIfTooFast', 'killIfSlow',\
 								'undoAll', 'nothing',\
 								'turn', 'turnAround', 'reverseDirection', 'wrapAround', 'flipDirection', 'bounceForward',\
-								'changeResource', 'collectResource', 'changeScore', 'teleportToExit', 'conveySprite'],
+								'changeResource', 'collectResource', 'changeScore', 'teleportToExit'], 
 	'gridphysics': 				[],
 	'continuousphysics': 		['transformToOnLanding', 'killIfTooFast', 'killIfSlow', 'killIfFromAbove',\
 								'killIfFromBelow', 'bounceDirection', 'flipDirection', 'conveySprite', 'pullWithIt',\
 								'windGust','slipForward', 'wallBounce', 'wallStop','onRope', 'onLadder']
 								}
-
+								#conveySprite
 	errorSignalToPredicateMapping = {
 
 	## Destruction/appearance/transformation
