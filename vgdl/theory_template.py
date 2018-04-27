@@ -1350,10 +1350,11 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 				newTheory.interactionSet = [rule for rule in newTheory.interactionSet if 'stepBack' != rule.interaction or (rule.slot1, rule.slot2) not in alteredPairs]
 				for rule in ruleSet:
 					ruleCopy = rule.copy()
-					newTheory.interactionSet.append(ruleCopy)
-					if ruleCopy.slot1=='avatar' and ruleCopy.interaction in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfTooFast', 'killIfTooSlow']:
-						newTheory.killerTypes.add(ruleCopy.slot2)
-					newTheory.dryingPaint.add(ruleCopy)
+					if ruleCopy not in newTheory.interactionSet:
+						newTheory.interactionSet.append(ruleCopy)
+						if ruleCopy.slot1=='avatar' and ruleCopy.interaction in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfTooFast', 'killIfTooSlow']:
+							newTheory.killerTypes.add(ruleCopy.slot2)
+						newTheory.dryingPaint.add(ruleCopy)
 				newTheory.reconcileInteractionsAndSprites()
 				childTheories.append(newTheory)
 

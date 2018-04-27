@@ -685,12 +685,15 @@ class Agent:
 		self.allTheories.extend(newTheories)
 		print ""
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
-
+		# if len(newTheories)==len(hypotheses):
+			# embed()
 		bestScoresAndHypotheses = []
 
 		if newTheories:
 			# embed()
+			t1 = time.time()
 			bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
+			print time.time()-t1
 			# embed()
 			if len(bestScoresAndHypotheses) == 0:	
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
@@ -1727,6 +1730,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	subsamplePercentage = .2
 	actionsPerIndex = 2
 	setOfImaginedEffects = set()
+	cumulative_penalties = []
 
 	if len(hypotheses)>1:
 		print "got more than 1 hypothesis in singleTheoryExperienceReplay"
@@ -1752,7 +1756,16 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 			print "Playing replay FORWARD. Default is backwards."
 			indices = range(len(rleHistory))
 		else:
-			indices = list(reversed(range(len(rleHistory))))[1:]
+			indices = list(reversed(range(len(rleHistory))))
+			indices = indices[1:min(5, len(indices))]
+			keyForPreviousSequence = (method, targetColor, rleHistory[0].ID, len(rleHistory)-1)
+			if keyForPreviousSequence in hypotheses[0].experienceReplayRecord:
+				# print "found key for shorter sequence; only testing most recent step"
+				# embed()
+				indices = indices[0:1]
+				prevMeanError = hypotheses[0].experienceReplayRecord[keyForPreviousSequence][0]
+				cumulative_penalties = [[prevMeanError] for i in range(len(rleHistory)-2)]
+			# print "WARNING: You're only replaying the last 5 steps!"
 
 		# global reverseReplay
 		# indices = reversed(range(len(rleHistory))) if reverseReplay else range(len(rleHistory))
@@ -1778,7 +1791,6 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	elif method == 'salient':
 		indices, actionsPerIndex = getSalientStates(subsamplePercentage, actionsPerIndex, rleHistory)
 
-	cumulative_penalties = []
 	initialRLEs = VrleInitPhase(hypotheses, rleHistory[0], makeInitialVrle=True)
 	theoryRLEs = [[]]
 	for idx in indices:
@@ -2036,7 +2048,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		## evaluate it on the whole dataset in the outer loop.
 		if len(theories) == 1 and any([errorMap == e for e in theories[0].errorMapHistory]):
 			errorMap.display()
-			print "we've addressed this theory before (in expandTheories). Skipping it"
+			print "we've addressed this error before (in expandTheories). Skipping it"
 			newTheories = [theories[0]]
 			theories = newTheories
 			# FLAG: huh?
@@ -2107,7 +2119,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 	## If we were about to make modifications we've made already, don't waste the time.
 	if any([errorMap == e for e in theory.errorMapHistory]):
 		errorMap.display()
-		print "we've addressed this theory before. Skipping it"
+		print "we've addressed this error before. Skipping it"
 		newTheories = [theory]
 		return newTheories
 
@@ -2254,7 +2266,8 @@ def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, a
 		# embed()
 	# print "expanding theories"
 	theories = expandTheories([hypothesis], errorList, envRealPrev, envReal, action, rleHistories, actionHistories, episode_num)
-
+	if len(theories)==1 and theories[0]==hypothesis:
+		theories[0].experienceReplayRecord = hypothesis.experienceReplayRecord
 	return theories
 
 
