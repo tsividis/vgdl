@@ -142,7 +142,7 @@ class Agent:
 		self.total_game_steps = 0
 		self.total_planner_steps = 0
 		self.levels_won = 0
-		self.assumeZeroErrorTheoryExists = False
+		self.assumeZeroErrorTheoryExists = True
 
 	def initializeEnvironment(self):
 		if self.gameString == None or self.levelString == None:
@@ -328,7 +328,7 @@ class Agent:
  			 			h.interactionSet.extend(h.updateInteractionsPreconditions(resourceClass, limit))
  			 			self.seen_limits[avatarColor].append(resourceClass)
 
- 			embed()
+ 			# embed()
  			[h.updateTerminations() for h in hypothesesToPlanWith]
 
  			# Only initialize as many planner theories as you are using parallel planners
@@ -1752,7 +1752,8 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 			print "Playing replay FORWARD. Default is backwards."
 			indices = range(len(rleHistory))
 		else:
-			indices = reversed(range(len(rleHistory)))
+			indices = list(reversed(range(len(rleHistory))))[1:]
+
 		# global reverseReplay
 		# indices = reversed(range(len(rleHistory))) if reverseReplay else range(len(rleHistory))
 
@@ -1780,14 +1781,13 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	cumulative_penalties = []
 	initialRLEs = VrleInitPhase(hypotheses, rleHistory[0], makeInitialVrle=True)
 	theoryRLEs = [[]]
-
 	for idx in indices:
 		## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
 		t1 = time.time()
 		
 		if sum([c[0] for c in cumulative_penalties])>cutoffThreshold:
 			# this hypothesis is so wrong it's not worth thinking about any more.
-			# print "CUT OFF"
+			# print "CUT OFF at index {} of {}, max={}".format(idx,indices, max(indices))
 			mean_penalties = [1.]
 			hypotheses[0].experienceReplayRecord[key] = mean_penalties
 			return mean_penalties, setOfImaginedEffects
@@ -1860,9 +1860,12 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', target
 		if displayTheories:
 			print "running experienceReplay on {}:".format(num)
 			h.display()
-		# print "running experienceReplay on", num
 		mean_penalties, setOfImaginedEffects = \
 				singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h],  assumeZeroErrorTheoryExists=assumeZeroErrorTheoryExists)
+		# print "ran experienceReplay on {}. error: {}".format(num, mean_penalties[0])
+		# if len(hypotheses)>400:
+			# embed()
+
 		results.append(mean_penalties)
 		imaginedEffects.append(setOfImaginedEffects)
 
