@@ -1289,6 +1289,7 @@ class SpriteCounter(Termination):
 
     def isDone(self, game):
         if game.numSprites(self.stype) <= self.limit:
+            print "spritecounter rule", self.stype, self.limit
             return True, self.win
         else:
             return False, None
@@ -1394,6 +1395,7 @@ class NoveltyTermination(Termination):
                 if (name1==self.s1 and name2==self.s2) or (name2==self.s1 and name1==self.s2):
                     if id_not_found:
                         pass
+                    print 'noveltyrule', self.s1, self.s2
                     return True, self.win
             elif len(e) > 2 and e[2]=='ENDOFSCREEN':
                 name2 = 'EOS'
@@ -1426,6 +1428,7 @@ class NoveltyTermination(Termination):
                 if name1==self.s1 and name2 in str(self.s2):
                     if id_not_found:
                         pass
+                    print 'noveltyrule', self.s1, self.s2
                     return True, self.win
         return False, None
 

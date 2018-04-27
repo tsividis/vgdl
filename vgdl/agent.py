@@ -299,6 +299,12 @@ class Agent:
 			## Create fake incentives to reexplore previously-explored items while possessing resources
  			for h in hypothesesToPlanWith:
  				avatarColor = h.classes['avatar'][0].colorName
+ 				try:
+ 					a = envReal._game.observation['trackedObjects'][avatarColor][0]
+ 				except:
+ 					print "idn't find avatar"
+ 					embed()
+
  				for k,v in envReal._game.observation['trackedObjects'][avatarColor][0].inventory.items():
  					resourceClass = h.spriteObjects[k].className
  					resourceAmount, limit = v[0], v[1]
@@ -312,6 +318,7 @@ class Agent:
  			 			h.interactionSet.extend(h.updateInteractionsPreconditions(resourceClass, limit))
  			 			self.seen_limits[avatarColor].append(resourceClass)
 
+ 			embed()
  			[h.updateTerminations() for h in hypothesesToPlanWith]
 
  			# Only initialize as many planner theories as you are using parallel planners

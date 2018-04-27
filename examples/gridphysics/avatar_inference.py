@@ -347,10 +347,10 @@ level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                            1 w
-w          m                 1 w
+w          m   m             1 w
 w                              w
 w                              w
-w        A  mm            3 3  w
+w        A  p  p          3 3  w
 w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
@@ -432,19 +432,18 @@ BasicGame
         # sam wall > killSprite
         # sam EOS > wrapAround
         medicine avatar > killSprite
-        avatar medicine > changeResource resource=invisiblemedicine value=1
-        avatar poison > changeResource resource=invisiblemedicine value=-1
-        poison avatar > killIfOtherHasMore resource=invisiblemedicine limit=0
+        # avatar medicine > changeResource resource=invisiblemedicine value=1
+        # avatar poison > changeResource resource=invisiblemedicine value=-1
+        # poison avatar > killIfOtherHasMore resource=invisiblemedicine limit=0
         avatar wall > stepBack
-        # avatar medicine > changeResource resource=medicine value=1
-        # avatar poison > changeResource resource=medicine value=-1
-        # poison avatar > killSprite
-        # avatar poison > killIfHasLess resource=medicine limit=-1
+        avatar medicine > changeResource resource=medicine value=1
+        avatar poison > changeResource resource=medicine value=-1
+        poison avatar > killSprite
+        avatar poison > killIfHasLess resource=medicine limit=-1
 
     TerminationSet
         SpriteCounter stype=box3 limit=0 win=True
-        # SpriteCounter stype=box3 limit=0 win=False
-        Termination
+        SpriteCounter stype=avatar limit=0 win=False
 
 
 """
