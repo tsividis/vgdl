@@ -1,28 +1,28 @@
 
-level = """
-wwwwwwwwwwwwwwwwwwwwww
-w                    w
-w  1 2               w
-wA        2   w     ww
-w     1       gg     w
-w                    w
-wwwwwwwwwwwwwwwwwwwwww
-"""
-
-
-
 # level = """
 # wwwwwwwwwwwwwwwwwwwwww
-# w       p            w
-# w  1 2    p          w
+# w                    w
+# w  1 2               w
 # wA        2   w     ww
-# w    w1       w w    w
-# ww          q        w
-# w   p    q      1    w
-# w             gg     w
+# w     1       gg     w
 # w                    w
 # wwwwwwwwwwwwwwwwwwwwww
 # """
+
+
+
+level = """
+wwwwwwwwwwwwwwwwwwwwww
+w       p            w
+w  1 2    p          w
+wA        2   w     ww
+w    w1       w w    w
+ww          q        w
+w   p    q      1    w
+w             gg     w
+w                    w
+wwwwwwwwwwwwwwwwwwwwww
+"""
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwww

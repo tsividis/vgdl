@@ -685,15 +685,13 @@ class Agent:
 		self.allTheories.extend(newTheories)
 		print ""
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
-		# if len(newTheories)==len(hypotheses):
-			# embed()
 		bestScoresAndHypotheses = []
 
 		if newTheories:
 			# embed()
-			t1 = time.time()
+			# t1 = time.time()
 			bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
-			print time.time()-t1
+			# print time.time()-t1
 			# embed()
 			if len(bestScoresAndHypotheses) == 0:	
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
