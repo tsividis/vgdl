@@ -1754,8 +1754,8 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 			print "Playing replay FORWARD. Default is backwards."
 			indices = range(len(rleHistory))
 		else:
-			indices = list(reversed(range(len(rleHistory))))
-			indices = indices[1:min(5, len(indices))]
+			indices = list(reversed(range(len(rleHistory)-1)))
+			# indices = indices[1:min(5, len(indices))]
 			keyForPreviousSequence = (method, targetColor, rleHistory[0].ID, len(rleHistory)-1)
 			if keyForPreviousSequence in hypotheses[0].experienceReplayRecord:
 				# print "found key for shorter sequence; only testing most recent step"
@@ -1763,7 +1763,6 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 				indices = indices[0:1]
 				prevMeanError = hypotheses[0].experienceReplayRecord[keyForPreviousSequence][0]
 				cumulative_penalties = [[prevMeanError] for i in range(len(rleHistory)-2)]
-			# print "WARNING: You're only replaying the last 5 steps!"
 
 		# global reverseReplay
 		# indices = reversed(range(len(rleHistory))) if reverseReplay else range(len(rleHistory))
