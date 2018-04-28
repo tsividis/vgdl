@@ -106,8 +106,8 @@ class WBP():
 			if len(rle._game.sprite_groups[k])>self.objectLocationTrackingLimit:
 				self.classesWhoseLocationsWeIgnore.append(k)
 
-		self.classesWhosePresenceWeIgnore = []
-		self.classesWhoseLocationsWeIgnore = []
+		# self.classesWhosePresenceWeIgnore = []
+		# self.classesWhoseLocationsWeIgnore = []
 		print "ignoring presences for", self.classesWhosePresenceWeIgnore
 		print "ignoring locations for", self.classesWhoseLocationsWeIgnore
 		# Compute starting number of each SpriteCounter stype
@@ -904,7 +904,7 @@ class Node():
 
 		return heuristicVal
 
-	def position_score(self, factor=0):
+	def position_score(self, factor=1.):
 		try:
 			(x, y) = np.array((self.rle._game.getAvatars()[0].rect.x,
 				self.rle._game.getAvatars()[0].rect.y))/self.WBP.pixel_size
@@ -1004,7 +1004,7 @@ class Node():
 
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.position_score(-250)
-		self.intrinsic_reward = self.heuristicVal
+		self.intrinsic_reward = self.heuristicVal + self.position_score(-250)
 
 		print("heuristicVal {}".format(self.heuristicVal))
 		print("intrinsic_reward {}".format(self.intrinsic_reward))

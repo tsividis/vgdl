@@ -1,66 +1,54 @@
 
 level0 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwA                   wwwwww
-wwwwww    a    x          wwwwww
-wwwwww              f     wwwwww
-wwwwww                    wwwwww
-wwwwww      f             wwwwww
-wwwwww                 x  wwwwww
-wwwwww          a         wwwwww
-wwwwww                    wwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwww
+wA                   w
+w    a    x          w
+w              f     w
+w                    w
+w      f             w
+w                 x  w
+w          a         w
+w                    w
+wwwwwwwwwwwwwwwwwwwwww
 """
 
 level1 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwA                   wwwwww
-wwwwww    a    x          wwwwww
-wwwwww                    wwwwww
-wwwwww                    wwwwww
-wwwwww              z     wwwwww
-wwwwww   x    z           wwwwww
-wwwwww          a         wwwwww
-wwwwww                    wwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwww
+wA                   w
+w    a    x          w
+w                    w
+w                    w
+w              z     w
+w   x    z           w
+w          a         w
+w                    w
+wwwwwwwwwwwwwwwwwwwwww
 """
 
 level2 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwww                    wwwwww
-wwwwww    a    x          wwwwww
-wwwwww                    wwwwww
-wwwwww                    wwwwww
-wwwwww              y     wwwwww
-wwwwww   x    y           wwwwww
-wwwwww          a         wwwwww
-wwwwww          A         wwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwww
+w                    w
+w    a    x          w
+w                    w
+w                    w
+w              y     w
+w   x    y           w
+w          a         w
+w          A         w
+wwwwwwwwwwwwwwwwwwwwww
 """
 
 level3 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwww                    wwwwww
-wwwwww         x          wwwwww
-wwwwww            y       wwwwww
-wwwwww                    wwwwww
-wwwwww          y   z     wwwwww
-wwwwww   x    z           wwwwww
-wwwwww                    wwwwww
-wwwwww          A         wwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwww
+w                    w
+w         x          w
+w            y       w
+w                    w
+w          y   z     w
+w   x    z           w
+w                    w
+w          A         w
+wwwwwwwwwwwwwwwwwwwwww
 """
 
 

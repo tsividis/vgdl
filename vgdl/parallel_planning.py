@@ -67,7 +67,7 @@ def play_trainset(hyperparameters):
     # running local games
     else:
         level_game_pairs = None
-        gameName = 'examples.gridphysics.{}'.format(local_games[game_number-10])
+        gameName = 'examples.gridphysics_new.{}'.format(local_games[game_number-8])
 
     agent = Agent('full', gameName, hyperparameter_sets=hyperparameters, parallel_planning=True)
 

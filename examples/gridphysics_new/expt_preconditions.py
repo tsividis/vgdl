@@ -1,33 +1,22 @@
 
 level0 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwww                wwwwwwww
-wwwwwwww     A          wwwwwwww
-wwwwwwww                wwwwwwww
-wwwwwwww                wwwwwwww
-wwwwwwww                wwwwwwww
-wwwwwwww  b             wwwwwwww
-wwwwwwww                wwwwwwww
-wwwwwwww             g  wwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwww
+w                w
+w     A          w
+w                w
+w                w
+w                w
+w  b             w
+w                w
+w             g  w
+wwwwwwwwwwwwwwwwww
 """
 level1 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwww b p   w    m   wwwwwwww
-wwwwwwww   p   w A  wwwwwwwwwwww
-wwwwwwww g p         p  wwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwww
+w b p   w    m   w
+w   p   w A  wwwww
+w g p         p  w
+wwwwwwwwwwwwwwwwww
 """
 
 # level1 = """
@@ -44,19 +33,16 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
 level2 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwww   p   w    p  bwwwwwwww
-wwwwwwww m     w A  wwwwwwwwwwww
-wwwwwwwwpppp      p     wwwwwwww
-wwwwwwww     p p       wwwwwwwww
-wwwwwwwww            pppwwwwwwww
-wwwwwwwwpppp       pppppwwwwwwww
-wwwwwwwwmpp        pp  gwwwwwwww
-wwwwwwwwmp      p  pp   wwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwww
+w   p   w    p  bw
+w m     w A  wwwww
+wpppp      p     w
+w     p p       ww
+ww            pppw
+wpppp       pppppw
+wmpp        pp  gw
+wmp      p  pp   w
+wwwwwwwwwwwwwwwwww
 """
 
 # level2 = """
@@ -73,19 +59,16 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
 level3 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwww   p   w        wwwwwwww
-wwwwwwww       w A  wwwwwwwwwwww
-wwwwwwwwpppp      p  pmmwwwwwwww
-wwwwwwww     p p     p wwwwwwwww
-wwwwwwwwwpp         ppppwwwwwwww
-wwwwwwwwpppp      ppppppwwwwwwww
-wwwwwwww m pp     ppppppwwwwwwww
-wwwwwwwwbmmppm  p ppp g wwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwww
+w   p   w        w
+w       w A  wwwww
+wpppp      p  pmmw
+w     p p     p ww
+wwpp         ppppw
+wpppp      ppppppw
+w m pp     ppppppw
+wbmmppm  p ppp g w
+wwwwwwwwwwwwwwwwww
 """
 
 
