@@ -35,8 +35,8 @@ from pathos.helpers import mp
 
 
 
-# multiEpisodeTiming = []
-# reverseReplay = False
+multiEpisodeTiming = []
+reverseReplay = False
 
 
 
@@ -1722,13 +1722,13 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 		
 
 
-		if displayStates:
-			print "Playing replay FORWARD. Default is backwards."
-			indices = range(len(rleHistory))
-		else:
-			indices = reversed(range(len(rleHistory)))
-		# global reverseReplay
-		# indices = reversed(range(len(rleHistory))) if reverseReplay else range(len(rleHistory))
+		# if displayStates:
+		# 	print "Playing replay FORWARD. Default is backwards."
+		# 	indices = range(len(rleHistory))
+		# else:
+		# 	indices = reversed(range(len(rleHistory)))
+		global reverseReplay
+		indices = reversed(range(len(rleHistory))) if reverseReplay else range(len(rleHistory))
 
 
 
@@ -1866,31 +1866,32 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', target
 
 # 	return mean_penalties, imaginedEffects
 
-def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, method, targetColor=None, displayStates=False, displayTheories=False, assumeZeroErrorTheoryExists=False):
+def MultiEpisodeExperienceReplay(hypothesesTEMP, rleHistories, actionHistories, method, targetColor=None, displayStates=False, displayTheories=False, assumeZeroErrorTheoryExists=False):
 	'''
 	Runs experience replay on multiple episodes with some action sequence for each episode and returns the penalties for the given theories (weighted on the number of actions)
 	'''
-	# global multiEpisodeTiming
-	# global reverseReplay
+	global multiEpisodeTiming
+	global reverseReplay
 
-	# # setup
-	# multiEpisodeTiming.append([len(hypotheses)])
+	# setup
+	multiEpisodeTiming.append([len(hypothesesTEMP)])
 
-	# for i in range(4):
-	# 	## setup
-	# 	for h in hypotheses:
-	# 		h.experienceReplayRecord = dict()
+	for i in range(4):
+		## setup
+		hypotheses = hypothesesTEMP[:]
+		for h in hypotheses:
+			h.experienceReplayRecord = dict()
 
-	# 	if i % 2 == 0:
-	# 		reverseReplay = False
-	# 	else:
-	# 		reverseReplay = True
-	# 	if i > 1:
-	# 		assumeZeroErrorTheoryExists = True
-	# 	else:
-	# 		assumeZeroErrorTheoryExists = False
+		if i % 2 == 0:
+			reverseReplay = False
+		else:
+			reverseReplay = True
+		if i > 1:
+			assumeZeroErrorTheoryExists = True
+		else:
+			assumeZeroErrorTheoryExists = False
 
-	# 	start = time.time()
+		start = time.time()
 
 
 
@@ -1899,7 +1900,7 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 	# actual function
 	assert len(rleHistories) == len(actionHistories), 'rleHistories and actionHistories need to match'
 
-	hypotheses = hypotheses[:] # so we can replace some with None if they're not worth continuing with (and not modify the list passed in)
+	hypotheses = hypothesesTEMP[:] # so we can replace some with None if they're not worth continuing with (and not modify the list passed in)
 
 	if sum([len(r) for r in rleHistories]) > 10 or len(hypotheses)>10:
 		t1 = time.time()
@@ -1928,13 +1929,19 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 	if sum([len(r) for r in rleHistories]) > 10 or len(hypotheses)>10:
 		print "MultiEpisodeExperienceReplay on {} theories, {} episodes and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistories), sum([len(r) for r in rleHistories]), time.time()-t1)
 
-	# 	# teardown
-	# 	end = time.time()
-	# 	multiEpisodeTiming[-1].append(end-start)
-	# print multiEpisodeTiming[-1]
+		# teardown
+		end = time.time()
+		multiEpisodeTiming[-1].append(end-start)
+	print multiEpisodeTiming[-1]
+	saveTestResults(multiEpisodeTiming[-1])
 
 
 	return multi_episode_mean_penalties, imaginedEffectsPerTheory
+
+def saveTestResults(timingList):
+	file = open('testresults.csv', 'a')
+	file.write(','.join(str(elt) for elt in timingList) + '\n')
+	file.close()
 
 ########################################################################
 ######## THEORY MODIFICATION 									########
