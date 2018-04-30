@@ -294,7 +294,7 @@ class Agent:
 				print "Have no hypotheses but not playing the first episode / first level!"
 				embed()
 			self.initializeHypotheses(episode_num)
-			updateTerminations(self.rle, self.hypotheses)
+			updateTerminations(self.rle, self.hypotheses, addNoveltyRules=False)
 
 		if first_time_playing_level:
 			## Add defaults to theories for any new objects.
@@ -309,9 +309,6 @@ class Agent:
 						class_num = max_num+1 
 						newClassName = 'c'+str(class_num)
 						h.addSpriteToTheory(newClassName, color, vgdlType=Resource)
-
-
-		## check for new objects on new levels:
 
 		emptyPlans = 0
 		while not ended:
@@ -346,7 +343,7 @@ class Agent:
  			 			self.seen_limits[avatarColor].append(resourceClass)
 
  			# embed()
- 			[h.updateTerminations() for h in hypothesesToPlanWith]
+ 			[h.updateTerminations(addNoveltyRules=True) for h in hypothesesToPlanWith]
 
  			# Only initialize as many planner theories as you are using parallel planners
 			plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal)
@@ -687,7 +684,7 @@ class Agent:
 		print self.rle.show(color='blue')
 
 		print "evaluating {} old theories and proposing new ones".format(len(theoryRLEs))
-		updateTerminations(self.rle, hypotheses)
+		updateTerminations(self.rle, hypotheses, addNoveltyRules=False)
 		
 		## TODO: If you ever want to not always run testAndExpand, you should implement
 		## whatever check you need here. Also, keep track of the scores corresponding to each hypothesis
@@ -710,6 +707,12 @@ class Agent:
 			bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
 			# print time.time()-t1
 			# embed()
+
+			## We don't seem to be proposing the killSprite theory in combination with 'nothing' when we should
+			## for c3, c6 in expt_relational.
+			if any(['killSprite' in [r.interaction for r in h.interactionSet] for h in newTheories]):
+				print "found killSprite"
+				embed()
 			if len(bestScoresAndHypotheses) == 0:	
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
 				# print "Addressing remaining error maps for {} theories".format(len(newTheories))
@@ -1995,9 +1998,9 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 ######## THEORY MODIFICATION 									########
 ########################################################################
 
-def updateTerminations(rle, hypotheses):
+def updateTerminations(rle, hypotheses, addNoveltyRules=True):
 	for h in hypotheses:
-		h.updateTerminations(rle)
+		h.updateTerminations(rle, addNoveltyRules=addNoveltyRules)
 	return
 	
 def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSpriteTheories, errorCutoff=None, usePrior=False):

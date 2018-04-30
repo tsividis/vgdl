@@ -74,7 +74,7 @@ class WBP():
 			# self.theory.interactionSet.extend(fakeInteractionRules)
 			# print "before updating terminations in WBP"
 			# embed()
-			self.theory.updateTerminations(ruleSetToUpdate=fakeInteractionRules)
+			self.theory.updateTerminations(addNoveltyRules=True, ruleSetToUpdate=fakeInteractionRules)
 		print 'max nodes', self.max_nodes
 		i=1
 		for k in rle._game.all_objects.keys():

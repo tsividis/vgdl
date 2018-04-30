@@ -350,7 +350,7 @@ w                            1 w
 w          m   m             1 w
 w                              w
 w                              w
-w        A  p  p          3 3  w
+w        1  1 A           3 3  w
 w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
@@ -402,7 +402,8 @@ BasicGame
 
         ## TEST3
         # box2 avatar > bounceForward
-        # box avatar > killSprite
+        box avatar > killSprite
+        avatar box > stepBack
 
         ## TEST4
         # box2 avatar > bounceForward

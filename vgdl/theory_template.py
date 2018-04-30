@@ -467,7 +467,7 @@ class Theory(object):
 
 		return newInteractionRules
 
-	def updateTerminations(self, rle=None, ruleSetToUpdate=None):
+	def updateTerminations(self, rle=None, addNoveltyRules=True, ruleSetToUpdate=None):
 		if not ruleSetToUpdate:
 			ruleSetToUpdate = self.interactionSet
 
@@ -532,7 +532,7 @@ class Theory(object):
 
 		for rule in ruleSetToUpdate:
 			if rule.asTuple()[0] in ['stepBack', 'killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore', 'transformTo', 'nothing']:
-				if rule.generic and rule.preconditions:
+				if addNoveltyRules and rule.generic and rule.preconditions:
 					if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
 						terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, copy.deepcopy(rule.preconditions))
 						if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
@@ -540,7 +540,7 @@ class Theory(object):
 							all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 							all([not terminationRule.__eq__(t) for t in self.falsified])):
 							self.terminationSet.add(terminationRule)
-				elif rule.generic and not rule.preconditions:
+				elif addNoveltyRules and rule.generic and not rule.preconditions:
 					if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
 						## Omit noveltytermination for randoms bumping into objects in the game; makes us disrupt plans even though we shouldnt't.
 						if ('Random' not in str(self.classes[rule.slot1][0].vgdlType)) and ('Random' not in str(self.classes[rule.slot2][0].vgdlType)) or rule.asTuple()[0]!='nothing':
@@ -574,7 +574,7 @@ class Theory(object):
 					if terminationRule not in self.falsified:
 						self.terminationSet.add(terminationRule)
 
-			if rule.slot1!='EOS' and rule.slot2 == 'EOS' and rule.generic:
+			if addNoveltyRules and rule.slot1!='EOS' and rule.slot2 == 'EOS' and rule.generic:
 				terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
 				self.terminationSet.add(terminationRule)
 
@@ -1070,17 +1070,17 @@ def proposePredicates(singlePairErrorSignal, observations):
 								'killIfTooFast', 'killIfSlow',\
 								'undoAll', 'nothing',\
 								'turn', 'turnAround', 'reverseDirection', 'wrapAround', 'flipDirection', 'bounceForward',\
-								'changeResource', 'collectResource', 'changeScore', 'teleportToExit'], 
+								'changeResource', 'collectResource', 'changeScore', 'teleportToExit', 'conveySprite'], 
 	'gridphysics': 				[],
 	'continuousphysics': 		['transformToOnLanding', 'killIfTooFast', 'killIfSlow', 'killIfFromAbove',\
 								'killIfFromBelow', 'bounceDirection', 'flipDirection', 'conveySprite', 'pullWithIt',\
 								'windGust','slipForward', 'wallBounce', 'wallStop','onRope', 'onLadder']
 								}
-								#conveySprite
 	errorSignalToPredicateMapping = {
 
 	## Destruction/appearance/transformation
-	'objectDestruction': 		['killSprite'],
+	'objectDestruction': 		['killSprite', 'nothing'], ## removeStepBack is a special predicate that causes us to remove the stepBack interaction for a particular class pair
+																  ## this allows us to make rules that are either killSprite+stepBack or just killSprite
 	'newObjectAppeared': 		[],	#'cloneSprite'
 	'transformation': 			['transformTo'],
 	'conditionalKill': 			['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore'],
@@ -1261,7 +1261,6 @@ predicateToOrderingMapping = {
 
 predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit', 'wrapAround', 'reverseDirection', 'killIfHasLess', 'killIfHasMore', 'bounceForward']
 
-# predicatesThatConflictWithStepBack = ['nothing']
 
 def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n):
 
@@ -1313,9 +1312,13 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 	relevantRulesWithArgs = [rule for rule in theory.interactionSet if rule.interaction in predicatesWithThresholds and 
 			classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and len(rule.args)>0]
 
-	# if 'changeResource' in predicates:
-		# print "got changeResource"
-		# embed()
+	## You need to be able to represent that things can mutually destroy each other and create empty space
+	## (i.e., can add c1 c2 killSprite, c1 c2 nothing, c2 c1 killSprite, c2 c1 nothing), so you need more
+	## complex pairwise rules for this predicate.
+	## If we weren't resource-constrained we would just run n=3 for everything and not need these special cases.
+	if 'removeStepBack' in predicates:
+		n=2
+
 	if len(relevantRulesWithArgs) == 0:
 		if 'conditionalKill' in errorMap.diagnosis:
 			# print "got conditionalKill"
@@ -1330,6 +1333,7 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 			if 'changeResource' in predicates:
 				n=2
 
+
 		# if 'inventoryChange' in errorMap.diagnosis:
 			# print "got inventory change in expandLine"
 			# embed()
@@ -1337,6 +1341,7 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 		## TODO: Modify getRuleSets... to only return combinations that have one changeResource and one killIf... (if n==2)
 		## TODO: Modify iterateThresholds to only modify dryingPaint
 		newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
+		
 		for i,ruleSet in enumerate(newRuleSets):
 			if len(ruleSet) > 0:
 				newTheory = theory.copy()
@@ -1348,6 +1353,9 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 				alteredPairs = set([(rule.slot1, rule.slot2) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack] + \
 						[(rule.slot2, rule.slot1) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack])
 				newTheory.interactionSet = [rule for rule in newTheory.interactionSet if 'stepBack' != rule.interaction or (rule.slot1, rule.slot2) not in alteredPairs]
+				# if 'removeStepBack' in ruleSet:
+					# print "got removeStepBack"
+					# embed()
 				for rule in ruleSet:
 					ruleCopy = rule.copy()
 					if ruleCopy not in newTheory.interactionSet:
