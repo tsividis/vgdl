@@ -212,7 +212,7 @@ class Agent:
 			# self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
 		for i in range(num_steps):
 			spriteInduction(rle._game, step=1, action=None)
-			spriteInduction(rle._game, step=2, action=None)
+			updateAllOptions(rle._game, action=None)
 		return
 
 	def testCurriculum(self, level_game_pairs=None):
@@ -496,7 +496,8 @@ class Agent:
 			## PUSH_BOULDERS_2
 			# [K_RIGHT]*3, [K_RIGHT, K_RIGHT, K_UP]
 
-			[K_LEFT, K_LEFT, K_LEFT]
+			# [K_LEFT, K_LEFT, K_LEFT]
+			[0]*10
 		]
 
 		self.rleHistory = [[] for i in range(len(actionSequences))]
@@ -546,7 +547,6 @@ class Agent:
 					# self.all_objects[episode_num][k] = current_objects[k]
 		if newObjects:
 			spriteInduction(self.rle._game, step=1, action=action, specificSpritesToUpdate=[])
-			spriteInduction(self.rle._game, step=2, action=action, specificSpritesToUpdate=[])
 
 		return hypotheses
 
@@ -665,6 +665,7 @@ class Agent:
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
 		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action)
+		updateAllOptions(self.rle._game, action=action)
 
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
 		self.rleHistory[episode_num].append(envReal)
@@ -2246,10 +2247,10 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 	# filename = "examples.gridphysics.expt_push_boulders2"
-	filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.testAll"
 	
-	# filename = "examples.gridphysics.expt_antagonist"
+	filename = "examples.gridphysics.expt_antagonist"
 
 	# filename = "examples.gridphysics.basics"
 

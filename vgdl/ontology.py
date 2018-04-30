@@ -2430,6 +2430,47 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num):
     cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
     return [s for s in scoreAndTheoryTuples if s[0]>=cutoff][0:max_num]
 
+def updateAllOptions(game, action=None):
+    # was spriteInduction step 2
+    ## See the update options for each sprite type the sprite could be
+    objects = game.getAllObjects()
+    for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:         # Keys are the IDs of the game objects
+        for param_combination in game.spriteDistribution[sprite].keys():                      # Check each potential sprite type
+            if game.spriteDistribution[sprite][param_combination]> 0:                         # Make sure sprite_type is an option for sprite, and sprite is not killed
+                # sprite_obj = objects[sprite]["sprite"]
+                sprite_obj = objects[sprite]
+
+                sprite_type = param_combination[0]
+                attributeDict = {k:v for k,v in param_combination[1:]}
+
+                # Get potential next positions for sprite if it were that sprite type
+                ##we are sprite_obj, and we are updating the options for where it could be next contingent on its being 'sprite_type'
+                # given a set of potential attribute values, update the movement options
+                # for this attribute tuple (i.e. candidate set of parameters)
+
+                ## missileOrientationClustering: considers left/right and up/down to be equivalent options in the likelihood
+                ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving
+                ## objects
+                # nate debug
+                # if sprite_obj.colorName == 'LIGHTGREEN':
+                #     print 'in spriteInduction step 3, got' , sprite_obj
+                #     try:
+                #         if sprite_obj.lastmove > 2 and 'Chaser' in str( param_combination[0][1]) and param_combination[1][1] == 4:
+                #             print 'got right params'
+                #             embed()
+                #     except:
+                #         pass
+                game.object_token_movement_options[sprite][param_combination], \
+                game.movement_options[sprite][param_combination], \
+                orientation_options, \
+                appearance_prediction = \
+                updateOptions(game, sprite_type, sprite_obj, action=action, params=attributeDict, missileOrientationClustering=True)
+                if param_combination in game.orientation_options[sprite].keys():
+                    game.orientation_options[sprite][param_combination] = orientation_options
+
+                if param_combination in game.sprite_appearance_predictions[sprite].keys():
+                    game.sprite_appearance_predictions[sprite][param_combination].extend(appearance_prediction)
+
 def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
     """
     An explanation of important data structures used in this function:
@@ -2460,42 +2501,6 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
                 newSprites.append(spriteID)
                 game.all_objects[spriteID] = objects[spriteID]
                 distributionInitSetup(game, spriteID)
-
-    elif step == 2:
-        ## See the update options for each sprite type the sprite could be
-        objects = game.getAllObjects()
-        game = game     # Save game state
-        for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:         # Keys are the IDs of the game objects
-            for param_combination in game.spriteDistribution[sprite].keys():                      # Check each potential sprite type
-                if game.spriteDistribution[sprite][param_combination]> 0:                         # Make sure sprite_type is an option for sprite, and sprite is not killed
-                    # sprite_obj = objects[sprite]["sprite"]
-                    sprite_obj = objects[sprite]
-
-                    sprite_type = param_combination[0]
-                    attributeDict = {k:v for k,v in param_combination[1:]}
-
-                    # Get potential next positions for sprite if it were that sprite type
-                    ##we are sprite_obj, and we are updating the options for where it could be next contingent on its being 'sprite_type'
-                    # given a set of potential attribute values, update the movement options
-                    # for this attribute tuple (i.e. candidate set of parameters)
-
-                    ## missileOrientationClustering: considers left/right and up/down to be equivalent options in the likelihood
-                    ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving
-                    ## objects
-                    # nate debug
-                    # if sprite_obj.colorName == 'LIGHTGREEN':
-                    #     print 'in spriteInduction step 3, got' , sprite_obj
-                    #     embed()
-                    game.object_token_movement_options[sprite][param_combination], \
-                    game.movement_options[sprite][param_combination], \
-                    orientation_options, \
-                    appearance_prediction = \
-                    updateOptions(game, sprite_type, sprite_obj, action=action, params=attributeDict, missileOrientationClustering=True)
-                    if param_combination in game.orientation_options[sprite].keys():
-                        game.orientation_options[sprite][param_combination] = orientation_options
-
-                    if param_combination in game.sprite_appearance_predictions[sprite].keys():
-                        game.sprite_appearance_predictions[sprite][param_combination].extend(appearance_prediction)
     elif step==4:
         ## Get all parameterizations of sprite type that could have led to the sprites in specificSpritesToUpdate
         ## to their current positions
@@ -2520,14 +2525,6 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
                         if len(game.observation['trackedObjects'][sprite.colorName])>1 and ( ('singleton', True) in k or 'Avatar' in str(k[0][1]) ):
                             # too many objects on the screen to be possible
                             continue
-                        # nate debug
-                        # try:
-                        #     if k[1][1] > 4:
-                        #         print "asdfladslkflk" , k
-                        # except:
-                        #     #this is just something with no args, it's fine
-                        #     pass
-                        # CHASERS BEING FILTERED BY THIS LINE
                         if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k]: 
                             if k in game.orientation_options[sprite.ID]:
                                 # nate debug
