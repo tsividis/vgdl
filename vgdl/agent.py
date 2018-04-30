@@ -32,15 +32,6 @@ import WBP
 from termcolor import colored
 from pathos.helpers import mp
 
-
-
-
-multiEpisodeTiming = []
-reverseReplay = False
-
-
-
-
 ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPACE: (0,0), 0: (0,0)}
 
 # This makes experience replay score a theory on all the one-step transitions we've seen
@@ -120,8 +111,8 @@ class Agent:
 		self.fakeInteractionRules = []
 		self.all_objects = {}
 		self.spriteUpdateDict = defaultdict(lambda : 0)
-		self.seen_resources = []
-		self.seen_limits = []
+		self.seen_resources = defaultdict(lambda : []) #key: a hypothesized avatar color. Value: list of colors of resources seen by that avatar.
+		self.seen_limits = defaultdict(lambda: [])
 		self.new_objects = {}
 		self.memory = []
 		self.rleHistory = []
@@ -295,17 +286,59 @@ class Agent:
 				embed()
 			self.initializeHypotheses(episode_num)
 			updateTerminations(self.rle, self.hypotheses)
-		
+
+		if first_time_playing_level:
+			## Add defaults to theories for any new objects.
+			## All hypotheses have the same number of classes / know about the same colors
+			newColors = [k for k in envReal._game.observation['trackedObjects'].keys() if k not in self.hypotheses[0].spriteObjects]
+			if newColors:
+				from vgdl.ontology import Resource
+				for color in newColors:
+					for h in self.hypotheses:
+						existing_classes = [key for key in h.classes if key[0] == 'c']
+						max_num = max([int(c[1:]) for c in existing_classes])
+						class_num = max_num+1 
+						newClassName = 'c'+str(class_num)
+						h.addSpriteToTheory(newClassName, color, vgdlType=Resource)
+
+
+		## check for new objects on new levels:
+
 		emptyPlans = 0
 		while not ended:
 
 			envReal = self.fastcopy(self.rle)
-			# embed()
+
 			## Select hypothesis/es to plan with.
 			selectedHypotheses 	= [self.hypotheses[0]] # Only initialize as many theories as you are using parallel planners
 			# selectedHypotheses = self.hypotheses
 			hypothesesToPlanWith = [convertTheoryToSubgoalTheory(h) for h in selectedHypotheses]
+
+			## Create fake incentives to reexplore previously-explored items while possessing resources
+ 			for h in hypothesesToPlanWith:
+ 				avatarColor = h.classes['avatar'][0].colorName
+ 				try:
+ 					a = envReal._game.observation['trackedObjects'][avatarColor][0]
+ 				except:
+ 					print "idn't find avatar"
+ 					embed()
+
+ 				for k,v in envReal._game.observation['trackedObjects'][avatarColor][0].inventory.items():
+ 					resourceClass = h.spriteObjects[k].className
+ 					resourceAmount, limit = v[0], v[1]
+
+ 					if k not in self.seen_resources[avatarColor]:
+ 						resourceClass = h.spriteObjects[k].className
+ 						h.interactionSet.extend(h.updateInteractionsPreconditions(resourceClass))
+ 						h.resource_limits[resourceClass] = limit
+ 						self.seen_resources[avatarColor].append(k)
+ 					elif resourceClass not in self.seen_limits[avatarColor] and resourceAmount==limit:
+ 			 			h.interactionSet.extend(h.updateInteractionsPreconditions(resourceClass, limit))
+ 			 			self.seen_limits[avatarColor].append(resourceClass)
+
  			# embed()
+ 			[h.updateTerminations() for h in hypothesesToPlanWith]
+
  			# Only initialize as many planner theories as you are using parallel planners
 			plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal)
 			quitting = False
@@ -332,9 +365,10 @@ class Agent:
 				# best_index = np.argmin([p.total_nodes for p in res._value])
 				# p = res._value[best_index]
 			else:
+				avatarColor = hypothesesToPlanWith[0].classes['avatar'][0].colorName
 
 				p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=hypothesesToPlanWith[0], fakeInteractionRules = self.fakeInteractionRules,
-					seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+					seen_limits = self.seen_limits[avatarColor], annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
 					firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
 			
 			bestNode, gameStringArray, predictedEnvs = p.BFS()
@@ -659,12 +693,13 @@ class Agent:
 		self.allTheories.extend(newTheories)
 		print ""
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
-
 		bestScoresAndHypotheses = []
 
 		if newTheories:
 			# embed()
+			# t1 = time.time()
 			bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
+			# print time.time()-t1
 			# embed()
 			if len(bestScoresAndHypotheses) == 0:	
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
@@ -1701,6 +1736,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	subsamplePercentage = .2
 	actionsPerIndex = 2
 	setOfImaginedEffects = set()
+	cumulative_penalties = []
 
 	if len(hypotheses)>1:
 		print "got more than 1 hypothesis in singleTheoryExperienceReplay"
@@ -1719,20 +1755,19 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 		return hypotheses[0].experienceReplayRecord[key], hypotheses[0].setOfImaginedEffects
 
 	if method == 'all':
-		
-
-
-		# if displayStates:
-		# 	print "Playing replay FORWARD. Default is backwards."
-		# 	indices = range(len(rleHistory))
-		# else:
-		# 	indices = reversed(range(len(rleHistory)))
-		global reverseReplay
-		indices = reversed(range(len(rleHistory))) if reverseReplay else range(len(rleHistory))
-
-
-
-
+		if displayStates:
+			print "Playing replay FORWARD. Default is backwards."
+			indices = range(len(rleHistory))
+		else:
+			indices = list(reversed(range(len(rleHistory)-1)))
+			# indices = indices[1:min(5, len(indices))]
+			keyForPreviousSequence = (method, targetColor, rleHistory[0].ID, len(rleHistory)-1)
+			if keyForPreviousSequence in hypotheses[0].experienceReplayRecord:
+				# print "found key for shorter sequence; only testing most recent step"
+				# embed()
+				indices = indices[0:1]
+				prevMeanError = hypotheses[0].experienceReplayRecord[keyForPreviousSequence][0]
+				cumulative_penalties = [[prevMeanError] for i in range(len(rleHistory)-2)]
 		actionsPerIndex = 1
 	elif method == 'oneReplay':
 		indices = [0]
@@ -1751,17 +1786,15 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	elif method == 'salient':
 		indices, actionsPerIndex = getSalientStates(subsamplePercentage, actionsPerIndex, rleHistory)
 
-	cumulative_penalties = []
 	initialRLEs = VrleInitPhase(hypotheses, rleHistory[0], makeInitialVrle=True)
 	theoryRLEs = [[]]
-
 	for idx in indices:
 		## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
 		t1 = time.time()
 		
 		if sum([c[0] for c in cumulative_penalties])>cutoffThreshold:
 			# this hypothesis is so wrong it's not worth thinking about any more.
-			# print "CUT OFF"
+			# print "CUT OFF at index {} of {}, max={}".format(idx,indices, max(indices))
 			mean_penalties = [1.]
 			hypotheses[0].experienceReplayRecord[key] = mean_penalties
 			return mean_penalties, setOfImaginedEffects
@@ -1834,9 +1867,12 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', target
 		if displayTheories:
 			print "running experienceReplay on {}:".format(num)
 			h.display()
-		# print "running experienceReplay on", num
 		mean_penalties, setOfImaginedEffects = \
 				singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h],  assumeZeroErrorTheoryExists=assumeZeroErrorTheoryExists)
+		# print "ran experienceReplay on {}. error: {}".format(num, mean_penalties[0])
+		# if len(hypotheses)>400:
+			# embed()
+
 		results.append(mean_penalties)
 		imaginedEffects.append(setOfImaginedEffects)
 
@@ -1866,41 +1902,13 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', target
 
 # 	return mean_penalties, imaginedEffects
 
-def MultiEpisodeExperienceReplay(hypothesesTEMP, rleHistories, actionHistories, method, targetColor=None, displayStates=False, displayTheories=False, assumeZeroErrorTheoryExists=False):
+def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, method, targetColor=None, displayStates=False, displayTheories=False, assumeZeroErrorTheoryExists=False):
 	'''
 	Runs experience replay on multiple episodes with some action sequence for each episode and returns the penalties for the given theories (weighted on the number of actions)
 	'''
-	global multiEpisodeTiming
-	global reverseReplay
-
-	# setup
-	multiEpisodeTiming.append([len(hypothesesTEMP)])
-
-	for i in range(4):
-		## setup
-		hypotheses = hypothesesTEMP[:]
-		for h in hypotheses:
-			h.experienceReplayRecord = dict()
-
-		if i % 2 == 0:
-			reverseReplay = False
-		else:
-			reverseReplay = True
-		if i > 1:
-			assumeZeroErrorTheoryExists = True
-		else:
-			assumeZeroErrorTheoryExists = False
-
-		start = time.time()
-
-
-
-
-
-	# actual function
 	assert len(rleHistories) == len(actionHistories), 'rleHistories and actionHistories need to match'
 
-	hypotheses = hypothesesTEMP[:] # so we can replace some with None if they're not worth continuing with (and not modify the list passed in)
+	hypotheses = hypotheses[:] # so we can replace some with None if they're not worth continuing with (and not modify the list passed in)
 
 	if sum([len(r) for r in rleHistories]) > 10 or len(hypotheses)>10:
 		t1 = time.time()
@@ -1929,19 +1937,7 @@ def MultiEpisodeExperienceReplay(hypothesesTEMP, rleHistories, actionHistories, 
 	if sum([len(r) for r in rleHistories]) > 10 or len(hypotheses)>10:
 		print "MultiEpisodeExperienceReplay on {} theories, {} episodes and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistories), sum([len(r) for r in rleHistories]), time.time()-t1)
 
-		# teardown
-		end = time.time()
-		multiEpisodeTiming[-1].append(end-start)
-	print multiEpisodeTiming[-1]
-	saveTestResults(multiEpisodeTiming[-1])
-
-
 	return multi_episode_mean_penalties, imaginedEffectsPerTheory
-
-def saveTestResults(timingList):
-	file = open('testresults.csv', 'a')
-	file.write(','.join(str(elt) for elt in timingList) + '\n')
-	file.close()
 
 ########################################################################
 ######## THEORY MODIFICATION 									########
@@ -2014,7 +2010,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		## evaluate it on the whole dataset in the outer loop.
 		if len(theories) == 1 and any([errorMap == e for e in theories[0].errorMapHistory]):
 			errorMap.display()
-			print "we've addressed this theory before (in expandTheories). Skipping it"
+			print "we've addressed this error before (in expandTheories). Skipping it"
 			newTheories = [theories[0]]
 			theories = newTheories
 			# FLAG: huh?
@@ -2085,7 +2081,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 	## If we were about to make modifications we've made already, don't waste the time.
 	if any([errorMap == e for e in theory.errorMapHistory]):
 		errorMap.display()
-		print "we've addressed this theory before. Skipping it"
+		print "we've addressed this error before. Skipping it"
 		newTheories = [theory]
 		return newTheories
 
@@ -2232,7 +2228,8 @@ def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, a
 		# embed()
 	# print "expanding theories"
 	theories = expandTheories([hypothesis], errorList, envRealPrev, envReal, action, rleHistories, actionHistories, episode_num)
-
+	if len(theories)==1 and theories[0]==hypothesis:
+		theories[0].experienceReplayRecord = hypothesis.experienceReplayRecord
 	return theories
 
 

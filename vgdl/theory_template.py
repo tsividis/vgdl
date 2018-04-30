@@ -190,8 +190,9 @@ class NoveltyRule(TerminationRule):
 		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
 		self.termination = NoveltyTermination(s1=s1, s2=s2, win=win, args=args)
 		self.ruleType = "NoveltyRule"
-		args = args if args else {}
-		self._hash = hash((self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, tuple(sorted(args.iteritems()))))
+		args = frozenset(args) if args else frozenset()
+		# self._hash = hash((self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, tuple(sorted(args.iteritems()))))
+		self._hash = hash((self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, args))
 
 	def __repr__(self):
 		return str(self.asTuple())
@@ -1069,13 +1070,13 @@ def proposePredicates(singlePairErrorSignal, observations):
 								'killIfTooFast', 'killIfSlow',\
 								'undoAll', 'nothing',\
 								'turn', 'turnAround', 'reverseDirection', 'wrapAround', 'flipDirection', 'bounceForward',\
-								'changeResource', 'collectResource', 'changeScore', 'teleportToExit', 'conveySprite'],
+								'changeResource', 'collectResource', 'changeScore', 'teleportToExit'], 
 	'gridphysics': 				[],
 	'continuousphysics': 		['transformToOnLanding', 'killIfTooFast', 'killIfSlow', 'killIfFromAbove',\
 								'killIfFromBelow', 'bounceDirection', 'flipDirection', 'conveySprite', 'pullWithIt',\
 								'windGust','slipForward', 'wallBounce', 'wallStop','onRope', 'onLadder']
 								}
-
+								#conveySprite
 	errorSignalToPredicateMapping = {
 
 	## Destruction/appearance/transformation
@@ -1349,10 +1350,11 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 				newTheory.interactionSet = [rule for rule in newTheory.interactionSet if 'stepBack' != rule.interaction or (rule.slot1, rule.slot2) not in alteredPairs]
 				for rule in ruleSet:
 					ruleCopy = rule.copy()
-					newTheory.interactionSet.append(ruleCopy)
-					if ruleCopy.slot1=='avatar' and ruleCopy.interaction in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfTooFast', 'killIfTooSlow']:
-						newTheory.killerTypes.add(ruleCopy.slot2)
-					newTheory.dryingPaint.add(ruleCopy)
+					if ruleCopy not in newTheory.interactionSet:
+						newTheory.interactionSet.append(ruleCopy)
+						if ruleCopy.slot1=='avatar' and ruleCopy.interaction in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfTooFast', 'killIfTooSlow']:
+							newTheory.killerTypes.add(ruleCopy.slot2)
+						newTheory.dryingPaint.add(ruleCopy)
 				newTheory.reconcileInteractionsAndSprites()
 				childTheories.append(newTheory)
 
@@ -1429,8 +1431,7 @@ def buildArgsString(interactionRule, theory, rle):
 		precondition = list(set(interactionRule.preconditions))[0]
 		if precondition:
 			print "in precondition in buildArgsString"
-			## We should never be here; this is deprecated.
-			embed()
+			# embed()
 			if precondition.negated:
 				true_operator = oppositeOperatorMap[precondition.operator_name]
 			else:
