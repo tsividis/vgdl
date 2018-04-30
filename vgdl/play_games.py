@@ -145,3 +145,10 @@ def playCurriculum(gameName, level_game_pairs, num_episodes=10):
 
 
 play_trainset()
+
+
+
+TODO:
+needs to hold its own state
+and have a step() function which takes an action, updates state, and returns
+	new state, reward, ___
