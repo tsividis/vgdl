@@ -708,11 +708,6 @@ class Agent:
 			# print time.time()-t1
 			# embed()
 
-			## We don't seem to be proposing the killSprite theory in combination with 'nothing' when we should
-			## for c3, c6 in expt_relational.
-			if any(['killSprite' in [r.interaction for r in h.interactionSet] for h in newTheories]):
-				print "found killSprite"
-				embed()
 			if len(bestScoresAndHypotheses) == 0:	
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
 				# print "Addressing remaining error maps for {} theories".format(len(newTheories))

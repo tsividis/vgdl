@@ -1,29 +1,29 @@
 
-level0 = """
-wwwwwwwwwwwwwwwwwwwwww
-wA                   w
-w                    w
-w          x   f     w
-w                    w
-w      f             w
-w                 x  w
-w                    w
-w                    p
-wwwwwwwwwwwwwwwwwwwwww
-"""
-
 # level0 = """
 # wwwwwwwwwwwwwwwwwwwwww
 # wA                   w
-# w    a    x          w
-# w              f     w
+# w                    w
+# w          x   f     w
 # w                    w
 # w      f             w
 # w                 x  w
-# w          a         w
+# w                    w
 # w                    p
 # wwwwwwwwwwwwwwwwwwwwww
 # """
+
+level0 = """
+wwwwwwwwwwwwwwwwwwwwww
+wA                   w
+w    a    x          w
+w              f     w
+w                    w
+w      f             w
+w                 x  w
+w          a         w
+w                    p
+wwwwwwwwwwwwwwwwwwwwww
+"""
 
 level1 = """
 wwwwwwwwwwwwwwwwwwwwww
