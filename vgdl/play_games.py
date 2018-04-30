@@ -98,8 +98,11 @@ def playEpisode(filename, level_name, gameString, levelString, episode_num):
 	actions = [K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE]
 	rle = initializeEnvironment(gameString, levelString)
 	ended = False
+
+	fn = "../vgdl_data/%s/%s/%s/tmp%05d.png" % (filename, level_name, episode_num, 0)
+	pygame.image.save(rle._game.screen, fn)
 	
-	for i in range(10):
+	for i in range(1, 11):
 		if not ended:
 			action = choice(actions)
 			rle.step(action)
@@ -126,11 +129,13 @@ def playCurriculum(gameName, level_game_pairs, num_episodes=10):
 	for n_level, level_game in enumerate(level_game_pairs):
 		episodes = []
 		(gameString, levelString) = level_game
-		win = False
+		wins = 0
 		gameObject = None
 		i=0
-		while not win and i<num_episodes:
+		while wins < 2 and i<num_episodes:
 			win, score, steps = playEpisode(gameName, n_level, gameString, levelString, i)
+			if win:
+				wins += 1
 			total_game_steps += steps
 			episodes.append((n_level, steps, win, score))
 			i+=1
