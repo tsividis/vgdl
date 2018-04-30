@@ -1070,7 +1070,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 								'killIfTooFast', 'killIfSlow',\
 								'undoAll', 'nothing',\
 								'turn', 'turnAround', 'reverseDirection', 'wrapAround', 'flipDirection', 'bounceForward',\
-								'changeResource', 'collectResource', 'changeScore', 'teleportToExit', 'conveySprite'], 
+								'changeResource', 'collectResource', 'changeScore', 'teleportToExit', 'conveySprite', 'removeStepBack'], 
 	'gridphysics': 				[],
 	'continuousphysics': 		['transformToOnLanding', 'killIfTooFast', 'killIfSlow', 'killIfFromAbove',\
 								'killIfFromBelow', 'bounceDirection', 'flipDirection', 'conveySprite', 'pullWithIt',\
@@ -1079,7 +1079,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 	errorSignalToPredicateMapping = {
 
 	## Destruction/appearance/transformation
-	'objectDestruction': 		['killSprite', 'nothing'], ## removeStepBack is a special predicate that causes us to remove the stepBack interaction for a particular class pair
+	'objectDestruction': 		['killSprite', 'removeStepBack'], ## removeStepBack is a special predicate that causes us to remove the stepBack interaction for a particular class pair
 																  ## this allows us to make rules that are either killSprite+stepBack or just killSprite
 	'newObjectAppeared': 		[],	#'cloneSprite'
 	'transformation': 			['transformTo'],
@@ -1256,6 +1256,7 @@ predicateToOrderingMapping = {
 	'onLadder':				(0,),
 	'nothing':				(0,),
 	'bounceForward':		(0,),
+	'removeStepBack':		(0,),
  	'changeScore':			(0,1),
 	'undoAll':				(0,1)}
 
@@ -1353,9 +1354,13 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 				alteredPairs = set([(rule.slot1, rule.slot2) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack] + \
 						[(rule.slot2, rule.slot1) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack])
 				newTheory.interactionSet = [rule for rule in newTheory.interactionSet if 'stepBack' != rule.interaction or (rule.slot1, rule.slot2) not in alteredPairs]
-				# if 'removeStepBack' in ruleSet:
-					# print "got removeStepBack"
-					# embed()
+				if 'removeStepBack' in predicates:
+					if len(ruleSet)==1:
+						continue
+					else:
+						ruleSet = [rule for rule in ruleSet if rule.interaction !='removeStepBack']
+						toRemove = [rule for rule in newTheory.interactionSet if rule.slot1==classPair[0] and rule.slot2==classPair[1] and rule.interaction=='stepBack']
+						newTheory.interactionSet = [rule for rule in newTheory.interactionSet if rule not in toRemove]
 				for rule in ruleSet:
 					ruleCopy = rule.copy()
 					if ruleCopy not in newTheory.interactionSet:
