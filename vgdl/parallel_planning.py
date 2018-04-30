@@ -1,4 +1,3 @@
-from hyperopt import fmin, tpe, hp
 from pathos.multiprocessing import ProcessingPool
 from main_agent import Agent
 import time
