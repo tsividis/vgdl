@@ -2516,10 +2516,12 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
             try:
                 if game.sprite_appearances and any([(s.rect.left, s.rect.top) in neighbors for s in game.sprite_appearances]) and \
                         sprite.ID in game.sprite_appearance_predictions:
+                    print "first case"
                     for k,v in game.sprite_appearance_predictions[sprite.ID].items():
                         if any([(appearance.colorName, appearance.rect.left, appearance.rect.top) in v for appearance in game.sprite_appearances]):
                             scoreAndTheoryTuples.append((0,k))
                 else:
+                    print "normal case"
                     ## Normal case. Update hypotheses related to movement types.
                     for k in game.movement_options[sprite.ID]:
                         if len(game.observation['trackedObjects'][sprite.colorName])>1 and ( ('singleton', True) in k or 'Avatar' in str(k[0][1]) ):
@@ -2528,9 +2530,12 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
                         if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k]: 
                             if k in game.orientation_options[sprite.ID]:
                                 # nate debug
-                                # if k[1][1] > 2:
-                                #     print "secondsafd"
-                                #     embed()
+                                try:
+                                    if "Chaser" in str(k[0][1]) and k[1][1] > 4:
+                                        print "secondsafd"
+                                        embed()
+                                except:
+                                    pass
                                 if normalizeVec(sprite.orientation) in game.orientation_options[sprite.ID][k]:
                                     scoreAndTheoryTuples.append((0,k))
                             else:
