@@ -98,19 +98,19 @@ class Agent:
 		self.hyperparameter_sets = hyperparameter_sets
 		self.parallel_planning = parallel_planning
 		self.annealingFactor = 1.
-		self.shortHorizon = False
+		self.shortHorizon = False # How much do we search for a good plan before giving up?
 		if self.shortHorizon == True:
 			self.starting_max_nodes = 1000
 			self.max_nodes_annealing = 1.05
 		else:
 			self.starting_max_nodes = 10000
 			self.max_nodes_annealing = 10
-		self.firstOrderHorizon = True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
+		self.firstOrderHorizon = True # Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
 		self.regrounding = 3
-		self.reground_for_killer_types = True ## encourages safe behavior
-		self.reground_for_stochastic_types = True ## encourages replanning more often as these agents deviate from prediction
+		self.reground_for_killer_types = True # encourages safe behavior
+		self.reground_for_stochastic_types = True # encourages replanning more often as these agents deviate from prediction
 		self.safeDistance = 6
-		self.emptyPlansLimit = 5
+		self.emptyPlansLimit = 1#should be 5
 		self.longHorizonObservationLimit = 2
 		self.scores = []
 		self.hypotheses = []
@@ -138,6 +138,7 @@ class Agent:
 		self.distributions = {}
 		self.history = {}
 		self.lastObjectState = {}
+
 		# Hyperopt output
 		self.total_game_steps = 0
 		self.total_planner_steps = 0
@@ -279,6 +280,7 @@ class Agent:
 		
 		self.initializeEnvironment()
 		print "initializing RLE"
+
 		steps, self.quits, self.longHorizonObservations = 0,0,0
 		self.all_objects[episode_num] = self.rle._game.getAllObjects()
 		ended, win = self.rle._isDone()
@@ -326,27 +328,44 @@ class Agent:
  				try:
  					a = envReal._game.observation['trackedObjects'][avatarColor][0]
  				except:
- 					print "idn't find avatar"
+ 					print "Didn't find avatar"
  					embed()
 
  				for k,v in envReal._game.observation['trackedObjects'][avatarColor][0].inventory.items():
  					resourceClass = h.spriteObjects[k].className
  					resourceAmount, limit = v[0], v[1]
+ 					resourceClass = h.spriteObjects[k].className
+ 					h.resource_limits[resourceClass] = limit 						
+ 					if resourceAmount>0:
+ 						h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass))
+ 					if resourceAmount==limit:
+ 						h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass, limit))
 
+ 					
  					if k not in self.seen_resources[avatarColor]:
- 						resourceClass = h.spriteObjects[k].className
- 						h.interactionSet.extend(h.updateInteractionsPreconditions(resourceClass))
- 						h.resource_limits[resourceClass] = limit
  						self.seen_resources[avatarColor].append(k)
  					elif resourceClass not in self.seen_limits[avatarColor] and resourceAmount==limit:
- 			 			h.interactionSet.extend(h.updateInteractionsPreconditions(resourceClass, limit))
  			 			self.seen_limits[avatarColor].append(resourceClass)
 
- 			# embed()
+ 					# if k not in self.seen_resources[avatarColor]:
+ 					# 	resourceClass = h.spriteObjects[k].className
+ 					# 	h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass))
+ 					# 	h.resource_limits[resourceClass] = limit
+ 					# 	self.seen_resources[avatarColor].append(k)
+ 					# elif resourceClass not in self.seen_limits[avatarColor] and resourceAmount==limit:
+ 			 	# 		h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass, limit))
+ 			 	# 		self.seen_limits[avatarColor].append(resourceClass)
+
+			# embed()
  			[h.updateTerminations(addNoveltyRules=True) for h in hypothesesToPlanWith]
 
  			# Only initialize as many planner theories as you are using parallel planners
 			plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal)
+
+ 			# if envReal._game.observation['trackedObjects'][avatarColor][0].inventory:
+ 				# print "found inventory"
+ 				# embed()
+
 			quitting = False
 			if self.parallel_planning:
 				pass
@@ -406,6 +425,7 @@ class Agent:
 				if (not solution) or p.quitting:
 					if self.longHorizonObservations<self.longHorizonObservationLimit:
 						print "Didn't get solution or decided to quit. Observing, then replanning."
+						embed()
 						self.observe(self.rle, episode_num, num_steps=5)
 						solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
 						self.longHorizonObservations += 1
@@ -414,6 +434,7 @@ class Agent:
 
 			if emptyPlans > self.emptyPlansLimit:
 				print "observing"
+				# embed()
 				self.observe(self.rle, episode_num, num_steps=5)
 
 			if not quitting:
@@ -451,7 +472,7 @@ class Agent:
 				## Search more deeply next time.
 				self.max_nodes *= self.max_nodes_annealing
 				print "You got quitting==True from planner. Embedding to debug."
-				embed()
+				# embed()
 				return False, self.rle._game.score, steps
 		
 			annealing *= self.annealingFactor
@@ -1841,14 +1862,34 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 			for num, env in enumerate(theoryRLEs):                      
 
 				if env is not None:
+
+					## Store resources the avatar had before the step
+					## so we can update the dict of effects we thought we saw while having
+					## 1 or lim of each resource
+					avatarColor = hypotheses[num].classes['avatar'][0].colorName
+					resourceDict = {}
+					for k in env._game.sprite_groups['avatar'][0].resources.keys():
+						resourceColor = hypotheses[num].classes[k][0].colorName	
+						try:			
+							resourceDict[k] = env._game.observation['trackedObjects'][avatarColor][0].inventory[resourceColor]
+						except:
+							print 'resourceDict problem'
+							embed()
+
 					imaginedEffects = env.step(action)['effectList']
 					for effect in imaginedEffects:
 						eff1Class = env._game.all_objects[effect[1]].name if effect[1] in env._game.all_objects else 'EOS'
 						eff2Class = env._game.all_objects[effect[2]].name if effect[2] in env._game.all_objects else 'EOS'
-						effectWithClassNames = (effect[0], eff1Class, eff2Class)
-						effectWithReversedClassNames = (effect[0], eff2Class, eff1Class)
-						setOfImaginedEffects.add(effectWithClassNames)
-						setOfImaginedEffects.add(effectWithReversedClassNames)
+						setOfImaginedEffects.add((effect[0], eff1Class, eff2Class))
+						setOfImaginedEffects.add((effect[0], eff2Class, eff1Class))
+
+						for k,v in resourceDict.items():
+							if v[0]>0:
+								setOfImaginedEffects.add((effect[0], eff1Class, eff2Class, k, True, False))
+								setOfImaginedEffects.add((effect[0], eff2Class, eff1Class, k, True, False))
+							if v[0]==v[1]:
+								setOfImaginedEffects.add((effect[0], eff1Class, eff2Class, k, True, True))
+								setOfImaginedEffects.add((effect[0], eff2Class, eff1Class, k, True, True))
 				try:
 					penalty, errorList = errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
 						rleHistory[idx+n], targetColor=targetColor, penalty_only=True, earlyStopping=assumeZeroErrorTheoryExists)

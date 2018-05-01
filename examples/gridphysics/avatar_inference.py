@@ -349,9 +349,9 @@ w                              w
 w                            1 w
 w          m   m             1 w
 w                              w
-w                              w
-w        1  1 A           3 3  w
-w                              w
+w                          wwwww
+w        2  2              w 3 w
+w     A                    w 3 w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -372,7 +372,7 @@ BasicGame
         missile > Missile
             sam  > orientation=UP color=BLUE singleton=False cooldown=1
         wall > Immovable color=DARKGRAY
-        medicine > Resource limit=4 color=GREEN
+        medicine > Resource limit=2 color=LIGHTGREEN
         poison > Resource limit=3 color=PINK
         invisiblemedicine > Resource limit=4 color=PURPLE
     LevelMapping
@@ -397,13 +397,13 @@ BasicGame
         # box2 avatar > nothing
 
         ## TEST2
-        box2 avatar > bounceForward
-        box box2 > killSprite
+        # box2 avatar > bounceForward
+        # box box2 > killSprite
 
         ## TEST3
         # box2 avatar > bounceForward
-        box avatar > killSprite
-        avatar box > stepBack
+        # box avatar > killSprite
+        # avatar box > stepBack
 
         ## TEST4
         # box2 avatar > bounceForward
@@ -437,10 +437,12 @@ BasicGame
         # avatar poison > changeResource resource=invisiblemedicine value=-1
         # poison avatar > killIfOtherHasMore resource=invisiblemedicine limit=0
         avatar wall > stepBack
+
         avatar medicine > changeResource resource=medicine value=1
         avatar poison > changeResource resource=medicine value=-1
-        poison avatar > killSprite
+        # poison avatar >killIfHasLess resource=medicine limit=-1
         avatar poison > killIfHasLess resource=medicine limit=-1
+        poison avatar > killSprite
 
     TerminationSet
         SpriteCounter stype=box3 limit=0 win=True

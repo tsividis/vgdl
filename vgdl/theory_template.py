@@ -281,7 +281,7 @@ class Theory(object):
 		self.expandedSprites = []
 		self.errorMapHistory = []
 		self.lineage = []
-
+		self.fakeInteractionRules = []
 		self.setOfImaginedEffects = set()
 		
 		self.experienceReplayRecord = {} ## store (targetColor, rleHistory.ID, len(rleHistory)):penalty
@@ -528,18 +528,40 @@ class Theory(object):
 
 		## Every time we do replay, we store the effects we would have witnessed if that theory had been true
 		## For effects we think we've witnessed, we don't need NoveltyRules.
-		imaginedEffectTuples = set([(eff[1], eff[2]) for eff in self.setOfImaginedEffects])
+		# imaginedEffectTuples = set([(eff[1], eff[2]) for eff in self.setOfImaginedEffects])
+		imaginedEffectTuples = set([eff[1:] for eff in self.setOfImaginedEffects])
+
+		# if any([len(eff)>2 for eff in imaginedEffectTuples]):
+			# print "found long imaginedEffect"
+			# embed()
+		for rule in self.fakeInteractionRules:
+			if not rule.preconditions:
+				ruleTuple = (rule.slot1, rule.slot2)
+			elif list(rule.preconditions)[0].operator_name=='>':
+				ruleTuple = (rule.slot1, rule.slot2, list(rule.preconditions)[0].item, True, False)				
+			elif list(rule.preconditions)[0].operator_name=='>=':
+				ruleTuple = (rule.slot1, rule.slot2, list(rule.preconditions)[0].item, True, True)				
+			if ruleTuple not in imaginedEffectTuples:
+				# nr.append(rule)
+				ruleSetToUpdate.append(rule)
+
+		# if any([rule.preconditions for rule in self.fakeInteractionRules]):
+			# print "found fakeInteractionRules"
+			# embed()
+		# ruleSetToUpdate += [rule for rule in self.fakeInteractionRules if (rule.slot1, rule.slot2) not in imaginedEffectTuples]
 
 		for rule in ruleSetToUpdate:
 			if rule.asTuple()[0] in ['stepBack', 'killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore', 'transformTo', 'nothing']:
 				if addNoveltyRules and rule.generic and rule.preconditions:
-					if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
-						terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, copy.deepcopy(rule.preconditions))
-						if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
-								for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
-							all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
-							all([not terminationRule.__eq__(t) for t in self.falsified])):
-							self.terminationSet.add(terminationRule)
+					# if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
+					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, copy.deepcopy(rule.preconditions))
+					# print "got novelty termination with preconditions"
+					# embed()
+					if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
+							for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
+						all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
+						all([not terminationRule.__eq__(t) for t in self.falsified])):
+						self.terminationSet.add(terminationRule)
 				elif addNoveltyRules and rule.generic and not rule.preconditions:
 					if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
 						## Omit noveltytermination for randoms bumping into objects in the game; makes us disrupt plans even though we shouldnt't.
@@ -1443,7 +1465,7 @@ def buildArgsString(interactionRule, theory, rle):
 		oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
 		precondition = list(set(interactionRule.preconditions))[0]
 		if precondition:
-			print "in precondition in buildArgsString"
+			# print "in precondition in buildArgsString"
 			# embed()
 			if precondition.negated:
 				true_operator = oppositeOperatorMap[precondition.operator_name]
@@ -1465,7 +1487,7 @@ def buildArgsString(interactionRule, theory, rle):
 				elif true_operator in {">", ">="}:
 					newInteractionName = 'killIfOtherHasMore'
 					if true_operator == ">":
-						limit = precondition.num + 1
+						limit = precondition.num# + 1
 					else:
 						limit = precondition.num
 
@@ -1492,6 +1514,15 @@ def buildArgsString(interactionRule, theory, rle):
 					argsString += " %s=%s"%(k, getClassNameFromSpriteString(v, theory, rle))
 				else:
 					argsString += " %s=%s"%(k, v)
+		elif interactionRule.preconditions:
+			## Assume only one precondition:
+			precondition = list(interactionRule.preconditions)[0]
+			if precondition.operator_name in ["<", "<="]:
+				limit = precondition.num - 1
+			elif precondition.operator_name in [">", ">="]:
+				limit = precondition.num
+			argsString = " resource=%s limit=%s"%(precondition.item, str(limit))
+
 		else:
 			print "buildArgsString got called but no precondition"
 			embed()

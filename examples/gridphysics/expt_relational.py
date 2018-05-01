@@ -15,7 +15,7 @@
 level0 = """
 wwwwwwwwwwwwwwwwwwwwww
 wA                   w
-w    a    x          w
+w    a             x w
 w              f     w
 w                    w
 w      f             w
@@ -37,6 +37,19 @@ w          a         w
 w                    p
 wwwwwwwwwwwwwwwwwwwwww
 """
+
+# level1 = """
+# wwwwwwwwwwwwwwwwwwwwww
+# w                    w
+# w              A  x  w
+# w                    w
+# w                    w
+# w              z     w
+# w   x    z           w
+# w                    w
+# w                    p
+# wwwwwwwwwwwwwwwwwwwwww
+# """
 
 level2 = """
 wwwwwwwwwwwwwwwwwwwwww

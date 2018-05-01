@@ -74,6 +74,9 @@ class WBP():
 			# self.theory.interactionSet.extend(fakeInteractionRules)
 			# print "before updating terminations in WBP"
 			# embed()
+			# if self.rle._game.getAvatars()[0].resources:
+				# print "before updating terminations in WBP"
+				# embed()
 			self.theory.updateTerminations(addNoveltyRules=True, ruleSetToUpdate=fakeInteractionRules)
 		print 'max nodes', self.max_nodes
 		i=1
@@ -379,7 +382,7 @@ class WBP():
 						ended, win, t = child.rle._isDone(getTermination=True)
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
-						print "win"
+						print "win", t
 						# print t
 						# embed()
 						# return child, gameString_array
@@ -393,6 +396,7 @@ class WBP():
 				print "we have {} winning states".format(len(self.winning_states))
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
 				bestNode = bestNodes[0]
+				# embed()
 				# gameString_array.append(bestNode.rle.show())
 				# object_positions_array.append(copy.deepcopy(bestNode.rle))
 				return bestNode, gameString_array, object_positions_array

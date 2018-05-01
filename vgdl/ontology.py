@@ -1324,7 +1324,6 @@ class NoveltyTermination(Termination):
                 pass
 
     def isDone(self, game):
-
         ## self.args lets us do precondition-dependent terminations.
         if self.args:
             if type(self.args)==dict:
@@ -1395,7 +1394,7 @@ class NoveltyTermination(Termination):
                 if (name1==self.s1 and name2==self.s2) or (name2==self.s1 and name1==self.s2):
                     if id_not_found:
                         pass
-                    # print 'noveltyrule', self.s1, self.s2
+                    # print 'noveltyrule', self.s1, self.s2, self.args
                     return True, self.win
             elif len(e) > 2 and e[2]=='ENDOFSCREEN':
                 name2 = 'EOS'
@@ -1428,7 +1427,7 @@ class NoveltyTermination(Termination):
                 if name1==self.s1 and name2 in str(self.s2):
                     if id_not_found:
                         pass
-                    # print 'noveltyrule', self.s1, self.s2
+                    # print 'noveltyrule', self.s1, self.s2, self.args
                     return True, self.win
         return False, None
 
