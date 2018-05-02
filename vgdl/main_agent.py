@@ -79,6 +79,8 @@ class Agent:
         self.total_planner_steps = 0
         self.levels_won = 0
 
+        self.todo_delete = True
+
     def initializeEnvironment(self):
         if self.gameString==None or self.levelString==None:
             self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
@@ -207,10 +209,12 @@ class Agent:
         return gameObject
 
     def completeHypotheses(self, allObjects, first_time_playing_level):
-        if first_time_playing_level:
-            observe(self.rle, 15, self.bestSpriteTypeDict) ## observe many steps so that you're not completely clueless about object movements for the new level
+        previous_colors = [o['type']['color'] for o in self.previous_objects.values()]
+        current_colors = [o['type']['color'] for o in allObjects.values()]
+        if all([c in previous_colors for c in current_colors]):
+            observe(self.rle, 0, self.bestSpriteTypeDict) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
         else:
-            observe(self.rle, 15, self.bestSpriteTypeDict) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
+            observe(self.rle, 5, self.bestSpriteTypeDict) ## observe many steps so that you're not completely clueless about object movements for the new level
 
         ## Make sure any objects that appeared while we were observing are reflected in allObjects
         for k,v in self.rle._game.getObjects().items():
@@ -404,6 +408,7 @@ class Agent:
         steps = 0
         self.quits = 0
         self.longHorizonObservations = 0
+        self.previous_objects = self.all_objects if self.all_objects else {}
         self.all_objects= self.rle._game.getObjects()
         ended, win = self.rle._isDone()
         annealing = 1

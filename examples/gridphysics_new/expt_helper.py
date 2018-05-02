@@ -1,7 +1,6 @@
 
 level0 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
 w              a               w
@@ -11,12 +10,9 @@ w                              w
 w  A                           w
 www                            w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 level1 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w        a         a           w
@@ -27,12 +23,9 @@ w                   a          w
 w  A  b  a                     w
 www                 x          w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 level2 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w             b    a           w
@@ -42,8 +35,6 @@ w              A       f   f   w
 w                      fffff   w
 w         a       b            w
 www                            w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -62,7 +53,6 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 
 level3 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                b a b         w
 w        a       bbbbb         w
 w              a               w
@@ -71,8 +61,6 @@ w                         a    w
 w                   a          w
 w  A   w       b             bbw
 www    w            x        baw
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 

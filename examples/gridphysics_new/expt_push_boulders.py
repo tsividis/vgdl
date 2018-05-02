@@ -26,16 +26,16 @@ wwwwwwwwwwwwwwwwwwwwww
 # """
 
 level1 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwww
-wA1   w    p       g wwwwww
-ww  1 w      p       wwwwww
-w     p      2  w   wwwwwww
-wwwwwww1        w   wwwwwww
-ww            q      wwwwww
-w    p    q        1 wwwwww
-w     2              wwwwww
-w         2          wwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwww
+wA1   w    p       g w
+ww  1 w      p       w
+w     p      2  w   ww
+wwwwwww1        w   ww
+ww            q      w
+w    p    q        1 w
+w     2              w
+w         2          w
+wwwwwwwwwwwwwwwwwwwwww
 """
 
 level2 = """
