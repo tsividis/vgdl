@@ -155,7 +155,9 @@ class Agent:
 
 	def initializeHypotheses(self, episode_num):
 
-		self.observe(self.rle, episode_num)
+		# self.observe(self.rle, episode_num)
+
+		spriteInduction(self.rle._game, step=1, action=None)
 
 		spriteList = []
 		colors = self.rle._game.observation['trackedObjects'].keys()
@@ -207,12 +209,12 @@ class Agent:
 
 	def observe(self, rle, episode_num, num_steps=1):
 		# embed()
-		# for i in range(num_steps):
-			# action = 0
-			# bestScoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses, lastStep=False)
-			# self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
 		for i in range(num_steps):
-			spriteInduction(rle._game, step=1, action=None)
+			action = 0
+			bestScoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses)
+			self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
+		# for i in range(num_steps):
+			# spriteInduction(rle._game, step=1, action=None)
 			# updateAllOptions(rle._game, rle._game, action=None)
 		return
 
