@@ -32,15 +32,6 @@ import WBP
 from termcolor import colored
 from pathos.helpers import mp
 
-
-
-
-# multiEpisodeTiming = []
-# reverseReplay = False
-
-
-
-
 ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPACE: (0,0), 0: (0,0)}
 
 # This makes experience replay score a theory on all the one-step transitions we've seen
@@ -222,7 +213,7 @@ class Agent:
 			# self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
 		for i in range(num_steps):
 			spriteInduction(rle._game, step=1, action=None)
-			spriteInduction(rle._game, step=2, action=None)
+			updateAllOptions(rle._game, action=None)
 		return
 
 	def testCurriculum(self, level_game_pairs=None):
@@ -524,7 +515,8 @@ class Agent:
 			## PUSH_BOULDERS_2
 			# [K_RIGHT]*3, [K_RIGHT, K_RIGHT, K_UP]
 
-			[K_LEFT, K_LEFT, K_LEFT]
+			# [K_LEFT, K_LEFT, K_LEFT]
+			[0]*10
 		]
 
 		self.rleHistory = [[] for i in range(len(actionSequences))]
@@ -574,7 +566,6 @@ class Agent:
 					# self.all_objects[episode_num][k] = current_objects[k]
 		if newObjects:
 			spriteInduction(self.rle._game, step=1, action=action, specificSpritesToUpdate=[])
-			spriteInduction(self.rle._game, step=2, action=action, specificSpritesToUpdate=[])
 
 		return hypotheses
 
@@ -693,6 +684,7 @@ class Agent:
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
 		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action)
+		updateAllOptions(self.rle._game, action=action)
 
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
 		self.rleHistory[episode_num].append(envReal)
@@ -1784,9 +1776,6 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 		return hypotheses[0].experienceReplayRecord[key], hypotheses[0].setOfImaginedEffects
 
 	if method == 'all':
-		
-
-
 		if displayStates:
 			print "Playing replay FORWARD. Default is backwards."
 			indices = range(len(rleHistory))
@@ -1800,13 +1789,6 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 				indices = indices[0:1]
 				prevMeanError = hypotheses[0].experienceReplayRecord[keyForPreviousSequence][0]
 				cumulative_penalties = [[prevMeanError] for i in range(len(rleHistory)-2)]
-
-		# global reverseReplay
-		# indices = reversed(range(len(rleHistory))) if reverseReplay else range(len(rleHistory))
-
-
-
-
 		actionsPerIndex = 1
 	elif method == 'oneReplay':
 		indices = [0]
@@ -1965,33 +1947,6 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 	'''
 	Runs experience replay on multiple episodes with some action sequence for each episode and returns the penalties for the given theories (weighted on the number of actions)
 	'''
-	# global multiEpisodeTiming
-	# global reverseReplay
-
-	# # setup
-	# multiEpisodeTiming.append([len(hypotheses)])
-
-	# for i in range(4):
-	# 	## setup
-	# 	for h in hypotheses:
-	# 		h.experienceReplayRecord = dict()
-
-	# 	if i % 2 == 0:
-	# 		reverseReplay = False
-	# 	else:
-	# 		reverseReplay = True
-	# 	if i > 1:
-	# 		assumeZeroErrorTheoryExists = True
-	# 	else:
-	# 		assumeZeroErrorTheoryExists = False
-
-	# 	start = time.time()
-
-
-
-
-
-	# actual function
 	assert len(rleHistories) == len(actionHistories), 'rleHistories and actionHistories need to match'
 
 	hypotheses = hypotheses[:] # so we can replace some with None if they're not worth continuing with (and not modify the list passed in)
@@ -2022,12 +1977,6 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 	multi_episode_mean_penalties = np.mean(multi_episode_mean_penalties, axis=0)
 	if sum([len(r) for r in rleHistories]) > 10 or len(hypotheses)>10:
 		print "MultiEpisodeExperienceReplay on {} theories, {} episodes and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistories), sum([len(r) for r in rleHistories]), time.time()-t1)
-
-	# 	# teardown
-	# 	end = time.time()
-	# 	multiEpisodeTiming[-1].append(end-start)
-	# print multiEpisodeTiming[-1]
-
 
 	return multi_episode_mean_penalties, imaginedEffectsPerTheory
 
@@ -2338,10 +2287,10 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 	# filename = "examples.gridphysics.expt_push_boulders2"
-	filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.testAll"
 	
-	# filename = "examples.gridphysics.expt_antagonist"
+	filename = "examples.gridphysics.expt_antagonist"
 
 	# filename = "examples.gridphysics.basics"
 
