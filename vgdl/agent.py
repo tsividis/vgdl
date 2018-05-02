@@ -213,7 +213,7 @@ class Agent:
 			# self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
 		for i in range(num_steps):
 			spriteInduction(rle._game, step=1, action=None)
-			updateAllOptions(rle._game, action=None)
+			# updateAllOptions(rle._game, rle._game, action=None)
 		return
 
 	def testCurriculum(self, level_game_pairs=None):
@@ -684,7 +684,7 @@ class Agent:
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
 		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action)
-		updateAllOptions(self.rle._game, action=action)
+		# updateAllOptions(self.rle._game, self.rle._game, action=action)
 
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
 		self.rleHistory[episode_num].append(envReal)

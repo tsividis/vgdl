@@ -266,6 +266,7 @@ class BasicGame(object):
         self.effectList = [] # list of effects that happened this current timestep
         self.spriteDistribution = {}
         self.object_token_spriteDistribution = {}
+        self.lastUpdateOptionsTime = None
         self.spriteUpdateDict = defaultdict(int) ## track how many times we have run spriteType updates to each particular object
         self.movement_options = {}
         self.orientation_options = {}

@@ -188,14 +188,14 @@
 # """
 
 # [0]*11: test for wrapAround (add sam EOS wrapAround to rules)
-# level = """
-# wwwwwwwwwwwwwwwww
-# w         3 3   w
-# w               w
-# w  s   s   A    w
-# w               w
-# wwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwww
+w         3 3   w
+w               w
+w  s   s   A    w
+w               w
+wwwwwwwwwwwwwwwww
+"""
 
 
 # testing when poisons make you step back
@@ -343,17 +343,17 @@
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w m w                          w
-wwwww                          w
-w                              w
-w                              w
-w                          wwwww
-w        2  2   1 1    m   w 3 w
-w     A                    w 3 w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w m w                          w
+# wwwww                          w
+# w                              w
+# w                              w
+# w                          wwwww
+# w        2  2   1 1    m   w 3 w
+# w     A                    w 3 w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 
 game="""
@@ -370,7 +370,7 @@ BasicGame
         chaser > Chaser color=BLACK speed=1 cooldown=4 stype=avatar fleeing=True
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         missile > Missile
-            sam  > orientation=UP color=BLUE singleton=False cooldown=1
+            sam  > orientation=UP color=BLUE singleton=False cooldown=3
         wall > Immovable color=DARKGRAY
         medicine > Resource limit=2 color=LIGHTGREEN
         poison > Resource limit=3 color=PINK
@@ -413,7 +413,7 @@ BasicGame
         # avatar sam > bounceForward
 
         ## TEST6
-        # sam wall > reverseDirection
+        sam wall > reverseDirection
 
         ## TEST7
         # box2 avatar > bounceForward

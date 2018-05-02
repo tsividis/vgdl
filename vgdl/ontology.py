@@ -2339,8 +2339,9 @@ def initializeDistributionArgs(sprite_type, objectColors):
     """
 
     def initializeSpeed():
-        speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.,
-        1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1]
+        # speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.,
+        # 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1]
+        speedValues = [1.0, 2.0]
         return [('speed', v) for v in speedValues]
 
     def initializeOrientation():
@@ -2429,9 +2430,14 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num):
     cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
     return [s for s in scoreAndTheoryTuples if s[0]>=cutoff][0:max_num]
 
-def updateAllOptions(game, action=None):
+def updateAllOptions(game, gamePrev, action=None):
     # was spriteInduction step 2
     ## See the update options for each sprite type the sprite could be
+    if game.time==game.lastUpdateOptionsTime:
+        return
+    # embed()
+    game.lastUpdateOptionsTime=game.time
+
     objects = game.getAllObjects()
     for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:         # Keys are the IDs of the game objects
         for param_combination in game.spriteDistribution[sprite].keys():                      # Check each potential sprite type
@@ -2463,13 +2469,14 @@ def updateAllOptions(game, action=None):
                 game.movement_options[sprite][param_combination], \
                 orientation_options, \
                 appearance_prediction = \
-                updateOptions(game, sprite_type, sprite_obj, action=action, params=attributeDict, missileOrientationClustering=True)
+                updateOptions(gamePrev, sprite_type, sprite_obj, action=action, params=attributeDict, missileOrientationClustering=True)
                 if param_combination in game.orientation_options[sprite].keys():
                     game.orientation_options[sprite][param_combination] = orientation_options
 
                 if param_combination in game.sprite_appearance_predictions[sprite].keys():
                     game.sprite_appearance_predictions[sprite][param_combination].extend(appearance_prediction)
-
+    # print "updatedAllOptions"
+    # embed()
 def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
     """
     An explanation of important data structures used in this function:
