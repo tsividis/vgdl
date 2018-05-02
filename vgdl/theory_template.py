@@ -306,6 +306,9 @@ class Theory(object):
 		newTheory.falsified = set(self.falsified)
 		newTheory.setOfImaginedEffects = set(self.setOfImaginedEffects)
 		newTheory.killerTypes = set(self.killerTypes)
+		newTheory.resource_limits = defaultdict(lambda:1)
+		for k,v in self.resource_limits.items():
+			newTheory.resource_limits[k]=v
 		return newTheory
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):

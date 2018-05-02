@@ -345,12 +345,12 @@
 
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w m w                          w
+wwwww                          w
 w                              w
-w                            1 w
-w          m   m             1 w
 w                              w
 w                          wwwww
-w        2  2              w 3 w
+w        2  2   1 1    m   w 3 w
 w     A                    w 3 w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """

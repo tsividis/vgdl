@@ -382,7 +382,7 @@ class WBP():
 						ended, win, t = child.rle._isDone(getTermination=True)
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
-						print "win", t
+						# print "win", ended, win, t
 						# print t
 						# embed()
 						# return child, gameString_array
@@ -669,6 +669,7 @@ class Node():
 					if list(resource[1])[0].operator_name == '>'
 					else list(resource[1])[0].num
 					for resource in avatar_preconditions])
+				print "resource limits", resource_limits
 				try:
 					avatar_resource_quantities = np.array([rle._game.getAvatars()[0].resources[res] for res in resource_names])
 				except IndexError:
@@ -995,6 +996,8 @@ class Node():
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
 			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
 				self.win=True
+				print "reached resourceLimits in WBP"
+				embed()
 		except IndexError:
 			pass
 

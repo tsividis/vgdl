@@ -335,7 +335,8 @@ class Agent:
  					resourceClass = h.spriteObjects[k].className
  					resourceAmount, limit = v[0], v[1]
  					resourceClass = h.spriteObjects[k].className
- 					h.resource_limits[resourceClass] = limit 						
+ 					h.resource_limits[resourceClass] = limit
+
  					if resourceAmount>0:
  						h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass))
  					if resourceAmount==limit:
