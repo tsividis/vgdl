@@ -23,7 +23,7 @@ BasicGame
 		c3 c5 > nothing
 		c5 c3 > nothing
 		c2 c4 > killSprite
-		c6 avatar > killSprite
+		avatar c6 > nothing
 		c4 c5 > killSprite
 		avatar c3 > stepBack
 		c2 c5 > nothing
@@ -65,7 +65,6 @@ BasicGame
 		NoveltyTermination s1=c4 s2=EOS win=True
 		NoveltyTermination s1=c5 s2=EOS win=True
 		NoveltyTermination s1=avatar s2=EOS win=True
-		NoveltyTermination s1=c6 s2=avatar win=True
 		NoveltyTermination s1=c6 s2=EOS win=True
 		NoveltyTermination s1=c6 s2=c2 win=True
 		NoveltyTermination s1=c6 s2=c3 win=True
@@ -81,6 +80,7 @@ BasicGame
 		3 > c3
 		4 > c4
 		5 > c5
+		9 > avatar c6
 		8 > avatar c5
 """
 if __name__ == "__main__":
