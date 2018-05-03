@@ -188,14 +188,14 @@
 # """
 
 # [0]*11: test for wrapAround (add sam EOS wrapAround to rules)
-level = """
-wwwwwwwwwwwwwwwww
-w         3 3   w
-w               w
-w  s   s   A    w
-w               w
-wwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwww
+# w         3 3   w
+# w               w
+# w  s   s   A    w
+# w               w
+# wwwwwwwwwwwwwwwww
+# """
 
 
 # testing when poisons make you step back
@@ -355,6 +355,23 @@ wwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
+level = """
+wwwwwwwwwwwwwwwww
+w         3 3   w
+w   p           w
+w               w
+w A p           w
+wwwwwwwwwwwwwwwww
+"""
+
+level1 = """
+wwwwwwwwwwwwwwwww
+w         3 3   w
+w   p           w
+w               w
+w A p           w
+wwwwwwwwwwwwwwwww
+"""
 
 game="""
 BasicGame
@@ -450,7 +467,7 @@ BasicGame
 
 
 """
-level_game_pairs = [[game, level]]
+level_game_pairs = [[game, level], [game, level1]]
 
 
 if __name__ == "__main__":

@@ -96,7 +96,7 @@ class Agent:
 		else:
 			self.starting_max_nodes = 10000
 			self.max_nodes_annealing = 10
-		self.firstOrderHorizon = True # Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
+		self.firstOrderHorizon = False # Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
 		self.regrounding = 3
 		self.reground_for_killer_types = True # encourages safe behavior
 		self.reground_for_stochastic_types = True # encourages replanning more often as these agents deviate from prediction
@@ -153,7 +153,7 @@ class Agent:
 		rle = rleCreateFunc()
 		return rle
 
-	def initializeHypotheses(self, episode_num):
+	def initializeHypotheses(self):
 
 		spriteInduction(self.rle._game, step=1, action=None)
 
@@ -228,13 +228,20 @@ class Agent:
 				self.testEpisodes(epoch=epoch)
 		return
 
-	def playCurriculum(self, level_game_pairs=None, num_episodes=10):
+	def playCurriculum(self, level_game_pairs=None, num_episodes_per_level=10):
 		""" Plays a game level until it wins, then moves to the next one until
 		completion. """
 		if not level_game_pairs:
 			level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
 		episodes = []
 		
+		num_levels = len(level_game_pairs)
+		## for inference
+		self.rleHistory = [[] for i in range(num_levels*num_episodes_per_level)]
+		self.actionHistory = [[] for i in range(num_levels*num_episodes_per_level)]
+		self.all_objects = [{} for i in range(num_levels*num_episodes_per_level)]
+		
+		episodes_played = 0
 		for n_level, level_game in enumerate(level_game_pairs):
 
 			self.gameString = level_game[0]
@@ -242,26 +249,21 @@ class Agent:
 
 			episodes = []
 
-			## for inference
-			self.rleHistory = [[] for i in range(num_episodes)]
-			self.actionHistory = [[] for i in range(num_episodes)]
-			self.all_objects = [{} for i in range(num_episodes)]
-
 			self.max_nodes = self.starting_max_nodes
 			win = False
 			i = 0
 			# TODO: never used
 			first_time_playing_level = True
-
-			while not win and i < num_episodes:
-				win, score, steps = self.playEpisode(n_level, i, win=win, first_time_playing_level=first_time_playing_level)
+			while not win and i < num_episodes_per_level:
+				win, score, steps = self.playEpisode(n_level, episodes_played, win=win, first_time_playing_level=first_time_playing_level)
 				self.total_game_steps += steps
 				episodes.append((n_level, steps, win, score))
+				episodes_played += 1
 				if win:
 					print 'won'
 					break
 				i += 1
-			if i < num_episodes:
+			if i < num_episodes_per_level:
 				self.levels_won += 1
 
 		return
@@ -285,7 +287,7 @@ class Agent:
 			if n_level!=0 and episode_num!=0:
 				print "Have no hypotheses but not playing the first episode / first level!"
 				embed()
-			self.initializeHypotheses(episode_num)
+			self.initializeHypotheses()
 			updateTerminations(self.rle, self.hypotheses, addNoveltyRules=False)
 
 		if first_time_playing_level:
@@ -417,7 +419,7 @@ class Agent:
 				if (not solution) or p.quitting:
 					if self.longHorizonObservations<self.longHorizonObservationLimit:
 						print "Didn't get solution or decided to quit. Observing, then replanning."
-						embed()
+						# embed()
 						self.observe(self.rle, episode_num, num_steps=5)
 						solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
 						self.longHorizonObservations += 1
@@ -530,7 +532,7 @@ class Agent:
 			self.all_objects[episode_num] = self.rle._game.getAllObjects() ## we need to store all_objects across multiple episodes
 
 			if episode_num == 0:
-				self.initializeHypotheses(episode_num)
+				self.initializeHypotheses()
 
 			envReal = self.fastcopy(self.rle)
 			self.rleHistory[episode_num].append(envReal)
@@ -559,11 +561,6 @@ class Agent:
 		## Add newly-seen objects.
 		current_objects = self.rle._game.getAllObjects()
 		newObjects = [k for k in current_objects if k not in self.rle._game.movement_options]
-		# if any([k not in self.rle._game.movement_options for k in current_objects]):
-			# for k in current_objects.keys():
-				# distributionInitSetup(self.rle._game, k)
-				# if k not in self.all_objects[episode_num]:
-					# self.all_objects[episode_num][k] = current_objects[k]
 		if newObjects:
 			spriteInduction(self.rle._game, step=1, action=action, specificSpritesToUpdate=[])
 

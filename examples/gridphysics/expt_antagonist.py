@@ -8,31 +8,31 @@
 # """
 
 ## original version
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                              w
-# w                              w
-# w                              w
-# w             A                w
-# wm                             w
-# w             b                w
-# www                           aw
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
-
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
-w m                            w
 w                              w
 w                              w
-w                          a   w
-w m           A                w
-w             b b          a   w
-www                            w
+w                              w
+w             A                w
+wm                             w
+w             b                w
+www                           aw
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
+
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w m                            w
+# w                              w
+# w                              w
+# w                          a   w
+# w m           A                w
+# w             b b          a   w
+# www                            w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 level1 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww

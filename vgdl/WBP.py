@@ -996,8 +996,8 @@ class Node():
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
 			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
 				self.win=True
-				print "reached resourceLimits in WBP"
-				embed()
+				# print "reached resourceLimits in WBP"
+				# embed()
 		except IndexError:
 			pass
 
