@@ -1812,8 +1812,8 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	for idx in indices:
 		## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
 		t1 = time.time()
-		
-		if sum([c[0] for c in cumulative_penalties])>cutoffThreshold:
+
+		if sum([c[0] for c in cumulative_penalties])>cutoffThreshold and (assumeZeroErrorTheoryExists or indices.index(idx)>3):
 			# this hypothesis is so wrong it's not worth thinking about any more.
 			# print "CUT OFF at index {} of {}, max={}".format(idx,indices, max(indices))
 			mean_penalties = [1.]
@@ -1925,23 +1925,6 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', target
 	mean_penalties = [r[0] for r in results]
 	return mean_penalties, imaginedEffects
 
-## Just pass the unpacked rleHistories and actionHistories to experienceReplay
-# def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, method, targetColor=None, displayStates=False, displayTheories=False):
-# 	'''
-# 	Runs experience replay on multiple episodes with some action sequence for each episode and returns the penalties for the given theories (weighted on the number of actions)
-# 	'''
-# 	assert len(rleHistories) == len(actionHistories), 'rleHistories and actionHistories need to match'
-
-# 	if sum([len(r) for r in rleHistories]) > 10 or len(hypotheses)>10:
-# 		t1 = time.time()
-# 		print "Running MultiEpisodeExperienceReplay on {} hypotheses, {} episodes and {} time-steps total".format(len(hypotheses), len(rleHistories), sum([len(r) for r in rleHistories]))
-
-# 	unpackedRleHistories = [item for sublist in rleHistories for item in sublist]
-# 	unpackedActionHistories = [item for sublist in actionHistories for item in sublist]
-# 	mean_penalties, imaginedEffects = experienceReplay(hypotheses, unpackedRleHistories, unpackedActionHistories, 
-# 												 method, targetColor, displayStates, displayTheories)
-
-# 	return mean_penalties, imaginedEffects
 
 def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, method, targetColor=None, displayStates=False, displayTheories=False, assumeZeroErrorTheoryExists=False):
 	'''
@@ -2050,8 +2033,8 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		## Skip this whole step if you've already made changes for this theory. Just pass it on and you'll
 		## evaluate it on the whole dataset in the outer loop.
 		if len(theories) == 1 and any([errorMap == e for e in theories[0].errorMapHistory]):
-			errorMap.display()
-			print "we've addressed this error before (in expandTheories). Skipping it"
+			# errorMap.display()
+			# print "we've addressed this error before (in expandTheories). Skipping it"
 			newTheories = [theories[0]]
 			theories = newTheories
 			# FLAG: huh?
@@ -2258,11 +2241,11 @@ def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, a
 
 	penalty, errorList = errorSignal(env, envReal, hypothesis, envRealPrev)
 
-	if errorList:
-		hypothesis.display()
-		for e in errorList:
-			e.display()
-			print ""
+	# if errorList:
+		# hypothesis.display()
+		# for e in errorList:
+			# e.display()
+			# print ""
 	# else:
 		# hypothesis.display()
 		# print "No error"

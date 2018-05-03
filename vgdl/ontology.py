@@ -2070,12 +2070,13 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         realCooldown = int(current_sprite.cooldown)
         speed, cooldown = getSpeed(params), getCooldown(params)
         current_sprite.cooldown = cooldown
-        current_sprite.lastmove -= 1 # see VGDL update function... this is actually necessary
+        # current_sprite.lastmove -= 1 # see VGDL update function... this is actually necessary
         position_options = {}
 
         for option in BASEDIRS:
             left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed, 
                 allMovement=allMovement)
+
             if (left, top) in position_options.keys():
                 position_options[(left, top)] += 1.0/len(BASEDIRS)
             else:
@@ -2085,7 +2086,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
             # print "got randomNPC darkblue"
             # embed()
         current_sprite.cooldown = realCooldown
-        current_sprite.lastmove += 1
+        # current_sprite.lastmove += 1
         return position_options, position_options, orientation_options, appearance_predictions
 
     # Missile or OrientedSprite
