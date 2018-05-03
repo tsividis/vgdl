@@ -155,8 +155,6 @@ class Agent:
 
 	def initializeHypotheses(self, episode_num):
 
-		# self.observe(self.rle, episode_num)
-
 		spriteInduction(self.rle._game, step=1, action=None)
 
 		spriteList = []
@@ -208,7 +206,6 @@ class Agent:
 		return
 
 	def observe(self, rle, episode_num, num_steps=1):
-		# embed()
 		for i in range(num_steps):
 			action = 0
 			bestScoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses)
@@ -273,7 +270,7 @@ class Agent:
 		
 		self.initializeEnvironment()
 		print "initializing RLE"
-
+		# embed()
 		steps, self.quits, self.longHorizonObservations = 0,0,0
 		self.all_objects[episode_num] = self.rle._game.getAllObjects()
 		ended, win = self.rle._isDone()
@@ -359,6 +356,7 @@ class Agent:
  			# if envReal._game.observation['trackedObjects'][avatarColor][0].inventory:
  				# print "found inventory"
  				# embed()
+			# embed()
 
 			quitting = False
 			if self.parallel_planning:
@@ -473,7 +471,7 @@ class Agent:
 			ended, win = self.rle._isDone()
 
 		score = self.rle._game.score
-		output = "ended episode. Win={}                    ".format(win)
+		output = "ended episode. Win={}                   						  ".format(win)
 		if win:
 			print colored('________________________________________________________________', 'white', 'on_green')
 			print colored('________________________________________________________________', 'white', 'on_green')
@@ -2204,7 +2202,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 				theoryCopy.expandedSprites.remove(eM.targetClass)
 		
 		## SpriteSet induction step
-		if eM.targetClass not in theoryCopy.expandedSprites:
+		if eM.targetClass not in theoryCopy.expandedSprites and eM.targetColor!='YELLOW':
 			className, theories = expandSprites(envRealCurrent._game, theoryCopy, eM, 
 					envRealPrev, envRealCurrent, action, percentile=20, max_num=30)
 			theories = list(set(theories))

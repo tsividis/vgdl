@@ -7,16 +7,30 @@
 # wwwwwwwwwwwww
 # """
 
+## original version
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                              w
+# w                              w
+# w                              w
+# w             A                w
+# wm                             w
+# w             b                w
+# www                           aw
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+
 level = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
+w m                            w
 w                              w
 w                              w
-w                              w
-w             A                w
-wm                             w
-w             b                w
-www                           aw
+w                          a   w
+w m           A                w
+w             b b          a   w
+www                            w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -106,7 +120,7 @@ BasicGame frame_rate=30
         avatar > MovingAvatar color=DARKBLUE cooldown=0#6
         chaser > VGDLSprite cooldown=16
             # randomChaser > RandomNPC color=WHITE
-            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=10
+            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=4
             # goodChaser > AStarChaser color=RED stype=box2
         forcefield > Passive color=PURPLE
         box > Passive

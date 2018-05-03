@@ -1993,7 +1993,7 @@ def setSpriteParams(param, sprite):
         elif p == "cooldown":
             sprite.cooldown = param[p]
 
-def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={}, missileOrientationClustering=False, allMovement=False):
+def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={}, missileOrientationClustering=False, allMovement=False, nextGame=None):
     """
     This method gets all of the parameter information from the params variable
     instead of directly accessing the parameters in current_sprite.
@@ -2081,6 +2081,9 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
             else:
                 position_options[(left, top)] = 1.0/len(BASEDIRS)
 
+        # if current_sprite.colorName=='DARKBLUE' and cooldown==10:
+            # print "got randomNPC darkblue"
+            # embed()
         current_sprite.cooldown = realCooldown
         current_sprite.lastmove += 1
         return position_options, position_options, orientation_options, appearance_predictions
@@ -2435,10 +2438,10 @@ def updateAllOptions(game, gamePrev, action=None):
     ## See the update options for each sprite type the sprite could be
     if game.time==game.lastUpdateOptionsTime:
         return
-    # embed()
+
     game.lastUpdateOptionsTime=game.time
 
-    objects = game.getAllObjects()
+    objects = gamePrev.getAllObjects()
     for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:         # Keys are the IDs of the game objects
         for param_combination in game.spriteDistribution[sprite].keys():                      # Check each potential sprite type
             if game.spriteDistribution[sprite][param_combination]> 0:                         # Make sure sprite_type is an option for sprite, and sprite is not killed
@@ -2469,7 +2472,7 @@ def updateAllOptions(game, gamePrev, action=None):
                 game.movement_options[sprite][param_combination], \
                 orientation_options, \
                 appearance_prediction = \
-                updateOptions(gamePrev, sprite_type, sprite_obj, action=action, params=attributeDict, missileOrientationClustering=True)
+                updateOptions(gamePrev, sprite_type, sprite_obj, action=action, params=attributeDict, missileOrientationClustering=True,nextGame=game)
                 if param_combination in game.orientation_options[sprite].keys():
                     game.orientation_options[sprite][param_combination] = orientation_options
 
@@ -2522,12 +2525,12 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
             try:
                 if game.sprite_appearances and any([(s.rect.left, s.rect.top) in neighbors for s in game.sprite_appearances]) and \
                         sprite.ID in game.sprite_appearance_predictions:
-                    print "first case"
+                    # print "first case"
                     for k,v in game.sprite_appearance_predictions[sprite.ID].items():
                         if any([(appearance.colorName, appearance.rect.left, appearance.rect.top) in v for appearance in game.sprite_appearances]):
                             scoreAndTheoryTuples.append((0,k))
                 else:
-                    print "normal case"
+                    # print "normal case"
                     ## Normal case. Update hypotheses related to movement types.
                     for k in game.movement_options[sprite.ID]:
                         if len(game.observation['trackedObjects'][sprite.colorName])>1 and ( ('singleton', True) in k or 'Avatar' in str(k[0][1]) ):
@@ -2551,7 +2554,7 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
                 embed()
                     
         reasonableHypotheses = list(set([s[1] for s in scoreAndTheoryTuples]))
-
+        # embed()
         return reasonableHypotheses
 
     ## Reset ignoreList so that next time around you do inference.

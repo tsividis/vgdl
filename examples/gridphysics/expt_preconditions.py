@@ -1,4 +1,17 @@
 
+# level0 = """
+# wwwwwwwwwwwwwwwwww
+# w                w
+# w     A          w
+# w                w
+# w                w
+# w                w
+# w  b             w
+# w                w
+# w             g  w
+# wwwwwwwwwwwwwwwwww
+# """
+
 level0 = """
 wwwwwwwwwwwwwwwwww
 w                w
@@ -6,11 +19,12 @@ w     A          w
 w                w
 w                w
 w                w
-w  b             w
+w  b b      g    w
 w                w
 w             g  w
 wwwwwwwwwwwwwwwwww
 """
+
 level1 = """
 wwwwwwwwwwwwwwwwww
 w b p   w    m   w
