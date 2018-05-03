@@ -2186,11 +2186,6 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			className, theories = expandSprites(envRealCurrent._game, theoryCopy, eM, 
 					envRealPrev, envRealCurrent, action, percentile=20, max_num=30)
 			theories = list(set(theories))
-			# nate debug
-			# for t in theories:
-			# 	if 'c5' in t.classes and 'Chaser' in str(t.classes['c5'][0].vgdlType) and t.classes['c5'][0].args['cooldown'] > 2:
-			# 		print 'finally found one in expandTheoryForOneErrorMap'
-			# 		embed()
 			# TODO: since we're not actually going to build on these, we haven't necessarily addressed the error
 			# tomorrow: not sure if this is actually the problem
 			# for t in theories:

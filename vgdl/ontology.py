@@ -2460,15 +2460,6 @@ def updateAllOptions(game, gamePrev, action=None):
                 ## missileOrientationClustering: considers left/right and up/down to be equivalent options in the likelihood
                 ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving
                 ## objects
-                # nate debug
-                # if sprite_obj.colorName == 'LIGHTGREEN':
-                #     print 'in spriteInduction step 3, got' , sprite_obj
-                #     try:
-                #         if sprite_obj.lastmove > 2 and 'Chaser' in str( param_combination[0][1]) and param_combination[1][1] == 4:
-                #             print 'got right params'
-                #             embed()
-                #     except:
-                #         pass
                 game.object_token_movement_options[sprite][param_combination], \
                 game.movement_options[sprite][param_combination], \
                 orientation_options, \
@@ -2519,10 +2510,6 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
         for sprite in specificSpritesToUpdate:
             left, top = sprite.rect.left, sprite.rect.top
             neighbors = [(left, top), (left-30, top), (left+30, top), (left, top-30), (left, top+30)]
-            # nate debug
-            # if sprite.colorName == 'LIGHTGREEN':
-            #     print 'in spriteInduction step 4, got' , sprite
-            #     embed()
             try:
                 if game.sprite_appearances and any([(s.rect.left, s.rect.top) in neighbors for s in game.sprite_appearances]) and \
                         sprite.ID in game.sprite_appearance_predictions:
@@ -2539,13 +2526,6 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
                             continue
                         if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k]: 
                             if k in game.orientation_options[sprite.ID]:
-                                # nate debug
-                                try:
-                                    if "Chaser" in str(k[0][1]) and k[1][1] > 4:
-                                        print "secondsafd"
-                                        embed()
-                                except:
-                                    pass
                                 if normalizeVec(sprite.orientation) in game.orientation_options[sprite.ID][k]:
                                     scoreAndTheoryTuples.append((0,k))
                             else:
