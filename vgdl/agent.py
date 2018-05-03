@@ -2185,7 +2185,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 				theoryCopy.expandedSprites.remove(eM.targetClass)
 		
 		## SpriteSet induction step
-		if eM.targetClass not in theoryCopy.expandedSprites and eM.targetColor!='YELLOW':
+		if eM.targetClass not in theoryCopy.expandedSprites:
 			className, theories = expandSprites(envRealCurrent._game, theoryCopy, eM, 
 					envRealPrev, envRealCurrent, action, percentile=20, max_num=30)
 			theories = list(set(theories))
