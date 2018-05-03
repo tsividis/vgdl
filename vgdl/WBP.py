@@ -347,9 +347,9 @@ class WBP():
 						# a win condition
 						foundWin = False
 						for term in self.theory.terminationSet:
-							if isinstance(term, SpriteCounterRule) and term.termination.win==True:
+							if isinstance(term, SpriteCounterRule) and term.termination.win==True: #and rule.verified
 								stypes = [term.termination.stype]
-							elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
+							elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True: #and rule.verified
 								stypes = term.termination.stypes
 							else:
 								stypes = []

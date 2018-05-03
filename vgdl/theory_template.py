@@ -210,6 +210,7 @@ class SpriteCounterRule(TerminationRule):
 		self.termination = SpriteCounter(limit=limit, stype=stype, win=win)
 		self.ruleType = "SpriteCounterRule"
 		self._hash = hash(self.asTuple())
+		self.verified=False
 
 	def __repr__(self):
 		return str(self.asTuple())
@@ -227,7 +228,7 @@ class MultiSpriteCounterRule(TerminationRule):
         self.termination = MultiSpriteCounter(limit=limit,win=win, **argList)
         self.ruleType = "MultiSpriteCounterRule"
         self._hash = hash((self.ruleType, tuple(sorted(self.termination.stypes)), self.termination.limit, self.termination.win))
-
+        self.verified=False
 
     def __repr__(self):
     	return str(self.asTuple())
@@ -497,9 +498,11 @@ class Theory(object):
 							self.falsified.add(false_rule)
 					else:
 						# game is done. Hypothesize new theory. Code seems to work without doing this.
-						# new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, win)
-						# if new_rule not in self.falsified and new_rule not in self.terminationSet:
-						# 	self.terminationSet.add(new_rule)
+						new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, win)
+						## TODO: check this rule.verified construct (5/3/18). Also used in WBP.
+						# new_rule.verified = True
+						if new_rule not in self.falsified and new_rule not in self.terminationSet:
+							self.terminationSet.add(new_rule)
 
 						## If you won/lost, you can't lose/win based on this class being 0
 						false_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, not win)
@@ -523,6 +526,9 @@ class Theory(object):
 							self.multi_falsified.add(new_rule)
 					else: # game ended
 						new_rule = MultiSpriteCounterRule(stypes=class_combination, win=win)
+						## TODO: check this rule.verified construct (5/3/18)
+						# if win:
+							# new_rule.verified=True
 						if new_rule not in self.multi_falsified:
 							self.terminationSet.add(new_rule)
 

@@ -243,7 +243,6 @@ class Agent:
 		
 		episodes_played = 0
 		for n_level, level_game in enumerate(level_game_pairs):
-
 			self.gameString = level_game[0]
 			self.levelString = level_game[1]
 
