@@ -14,8 +14,8 @@ game_number = args.game_number
 # as of 01/2018: it is best to install directly from the github repo with
 # the command 'pip install git+https://github.com/hyperopt/hyperopt'
 
-gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
-        	'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
+gvggames = ['aliens', 'boulderdash', 'chase', 'frogs',  # 0-4
+        	'missilecommand', 'portals']  # 5-9
 #
 local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper',  # 10-12
     'expt_preconditions', 'expt_push_boulders', 'expt_relational']  # 13-15 to play a "local" game

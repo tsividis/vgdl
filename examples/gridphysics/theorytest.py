@@ -31,11 +31,8 @@ BasicGame
 		avatar EOS > stepBack
 		c6 c2 > nothing
 		c2 c6 > nothing
-		c6 c4 > nothing
 		c4 c6 > nothing
 		c2 c2 > nothing
-		c6 c5 > nothing
-		c5 c6 > nothing
 		c3 c3 > nothing
 		c6 c3 > nothing
 		c3 c6 > nothing
@@ -49,6 +46,7 @@ BasicGame
 		c5 EOS > stepBack
 		c4 EOS > stepBack
 		c4 c3 > stepBack
+		c5 c6 > stepBack
 		c3 EOS > stepBack
 		c6 EOS > stepBack
 		c2 EOS > stepBack
@@ -68,8 +66,6 @@ BasicGame
 		NoveltyTermination s1=c6 s2=EOS win=True
 		NoveltyTermination s1=c6 s2=c2 win=True
 		NoveltyTermination s1=c6 s2=c3 win=True
-		NoveltyTermination s1=c6 s2=c4 win=True
-		NoveltyTermination s1=c6 s2=c5 win=True
 		SpriteCounter stype=avatar limit=0 win=False
 		SpriteCounter stype=c4 limit=0 win=False
 		SpriteCounter stype=c2 limit=0 win=True
@@ -81,6 +77,7 @@ BasicGame
 		4 > c4
 		5 > c5
 		9 > avatar c6
+		b > c4 c6
 		8 > avatar c5
 """
 if __name__ == "__main__":
