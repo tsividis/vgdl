@@ -371,7 +371,6 @@ class BasicGame(object):
         self.sprite_order.remove('avatar')
         self.sprite_order.append('avatar')
 
-
     def emptyBlocks(self):
         alls = [s for s in self]
         res = []
@@ -435,7 +434,7 @@ class BasicGame(object):
         self.num_sprites += 1
         return s
 
-    def _initScreen(self, size,headless):
+    def _initScreen(self, size, headless):
         if(headless):
             os.environ["SDL_VIDEODRIVER"] = "dummy"
             pygame.display.init()
@@ -451,7 +450,6 @@ class BasicGame(object):
 
     def set_caption(self, text):
         pygame.display.set_caption(str(text))
-
 
     def __iter__(self):
         """ Iterator over all sprites (ordered) """

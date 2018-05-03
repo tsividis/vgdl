@@ -9,6 +9,7 @@ import importlib
 import argparse
 import sys
 import numpy as np
+from colors import LIGHTGRAY
 """
 
 Run a random agent for 10 steps per episode, for a max of 'num_episodes' episodes, on all levels of game 0:
@@ -87,11 +88,16 @@ def play_trainset():
 
 	return
 
-def initializeEnvironment(gameString, levelString):
+def initializeEnvironment(gameString, levelString, headless=True):
 	rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
 	rle = rleCreateFunc()
-	rle.visualize = True
-	pygame.init()
+	rle.visualize = not headless
+	if headless:
+		os.environ["SDL_VIDEODRIVER"] = "dummy"
+		pygame.init()
+	else:
+		pygame.init()
+
 	# Initialize keystate for games with orientation
 	rle._game.keystate = list(pygame.key.get_pressed())
 	rle.reset()
@@ -192,12 +198,13 @@ def init_game(path, isLocal=None):
 	wins = [0]
 
 	rle = initializeEnvironment(level_game_pairs[0][0], level_game_pairs[0][1])
-	rle._game._drawAll()
+	# rle._game._drawAll()
 
 	ended = False
 
 	# image , reward , game_has_ended
-	return screenToNumpyArray(rle._game.screen) , 0 , ended
+	return generateImage(rle._game) , 0 , ended
+	# return screenToNumpyArray(rle._game.screen) , 0 , ended
 
 def step(action):
 	# takes the step provided and returns the new state, reward, and whether the game has ended
@@ -215,7 +222,7 @@ def step(action):
 	ended, win = rle._isDone()
 	score = rle._game.score
 	steps += 1
-	rle._game._drawAll()
+	# rle._game._drawAll()
 
 	if win:
 		wins[episode_num] += 1
@@ -233,25 +240,32 @@ def step(action):
 		ended = True
 
 	# image , reward , game_has_ended
-	return screenToNumpyArray(rle._game.screen) , score-lastscore , ended
+	return generateImage(rle._game) , score-lastscore , ended
 
 def screenToNumpyArray(screen):
 	arr = pygame.surfarray.array3d(screen)
 	ret = np.copy(arr.transpose(1, 0, 2))
-	# screen.unlock()
 	return ret
 
-# def displaySurface(surf):
-# 	screen = pygame.display.set_mode(surf.get_size())
-# 	background = pygame.Surface(screen.get_size())
-#     background = background.convert()
-#     background.fill((250, 250, 250))
+def generateImage(game):
+	# returns numpy array of pixel values based on the sprites in the game
+	im = np.empty([game.screensize[1], game.screensize[0], 3], dtype=np.uint8)
+	bg = np.array(LIGHTGRAY, dtype=np.uint8) # background
+	im[:] = bg
+
+	for className in game.sprite_order:
+		if className in game.sprite_groups:
+			for sprite in game.sprite_groups[className]:
+				r, c, h, w = sprite.rect.top , sprite.rect.left , sprite.rect.height , sprite.rect.width
+				im[r:r+h, c:c+w, :] = np.array(sprite.color, dtype=np.uint8)
+
+	return im
 
 
 '''#######   USAGE ########
 >>> import vgdl.play_games
-In [1]: arr, _, _ = init_game('portals')
-In [2]: arr, reward, ended = step(K_DOWN)
+In [1]: im, _, _ = init_game('portals')
+In [2]: im, reward, ended = step(K_DOWN)
 # etc.
 '''
 
