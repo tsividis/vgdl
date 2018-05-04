@@ -87,7 +87,7 @@ class WBP():
 
 		self.short_horizon = shortHorizon
 		self.winning_states = []
-		self.trueAtomsIW1 = []
+		# self.trueAtomsIW1 = []
 		self.total_nodes = 0
 
 		## Ignore objects we don't want to track (i.e., non-moving immovables.)
@@ -166,6 +166,9 @@ class WBP():
 			else:
 				# if rle._game.sprite_groups[k]:
 					# print rle._game.sprite_groups[k][0].colorName
+				if rle._game.kill_list:
+					# import ipdb; ipdb.set_trace()
+					pass
 				for o in rle._game.sprite_groups[k]:
 					if o not in rle._game.kill_list:
 						## turn location into vector position (rows appended one after the other.)
@@ -175,6 +178,7 @@ class WBP():
 						vecValue = 10*pos[1] + 10*pos[0]*rle.outdim[0] + 10
 					else:
 						vecValue = 0
+						# import ipdb; ipdb.set_trace()
 					try:
 						if k == rle._game.getAvatars()[0].stype:
 							# Add avatar orientation to atom
@@ -189,6 +193,7 @@ class WBP():
 								vecValue += 300000
 					except (IndexError, AttributeError) as e:
 						pass
+
 					objPosCombination = self.objIDs[o.ID] + vecValue
 					# print("ObjId = {}, vecValue = {}".format(self.objIDs[o.ID], vecValue))
 					lst.append(objPosCombination)
@@ -216,6 +221,18 @@ class WBP():
 		if not self.vecSize:
 			self.vecSize = len(lst)
 			# print "Vector is length {}".format(self.vecSize)
+
+		try:
+			avatar_pos = self.findAvatarInRLE(rle)
+			vecValue = avatar_pos[1] + avatar_pos[0]*rle.outdim[0] + 1
+
+		except:
+			vecValue = [0]
+
+		stateIW1 = [vecValue] + [1 if char==' ' else 0 for pos, char in enumerate(rle.show())]
+		print(id(stateIW1))
+		lst.append(hash(tuple(stateIW1)))
+
 		return set(lst)
 
 	def compareDicts(self, d1,d2):
@@ -603,7 +620,7 @@ class Node():
 			return val
 		else:
 			## Normal case
-			n_stypes = len([0 for sprite in self.WBP.findObjectsInRLE(rle, stype)])
+			n_stypes = len([0 for sprite in self.WBP.findObjectsInRLE(rle, stype)]) if self.WBP.findObjectsInRLE(rle, stype) else 0
 
 			distance_to_goal = abs(n_stypes - limit)
 
@@ -624,6 +641,7 @@ class Node():
 			else:
 				kill_positions = np.array(objs)
 
+			possiblePairList = []
 			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
 			try:
 				# A consequence of the two-way generic interactions in the
@@ -636,7 +654,7 @@ class Node():
 					 for obj in stype_positions]
 
 				distance = min(possiblePairList)
-			except ValueError:
+			except (ValueError, TypeError) as e:
 				distance = 0
 
 			if possiblePairList:
@@ -701,7 +719,7 @@ class Node():
 					val += float(mult * second_alpha * sprite_n_distance) - 10000
 
 					# print distance
-				except ValueError:
+				except (ValueError, TypeError) as e:
 					if avatar_preconditions and avatars[0]:
 						print "valueError in spritecounter_val"
 						embed()
@@ -793,13 +811,15 @@ class Node():
 			if s1 != 'avatar' and s2 != 'avatar':
 				return 0, 10000
 
-			n_sprites = len(s1_positions)
+			n_sprites = len(s1_positions) if s1_positions else 0
+			possiblePairList = []
 			try:
 				# A consequence of the two-way generic interactions in the
 				# theory is that minimum-distance object pairs whose interactions
 				# were not yet observed will have their distance penalized twice
 				# as much when none of those objects is an avatar. This implies
 				# that non-avatar novel interactions will be favored over others
+
 				possiblePairList = [manhattanDist(obj, pos)
 					 for pos in s2_positions
 					 for obj in s1_positions
@@ -809,7 +829,7 @@ class Node():
 					 # of same type. If the list turns out to be empty, it will
 					 # raise an error and set the distance to 0
 				# print distance
-			except ValueError:
+			except (ValueError, TypeError) as e:
 				# embed()
 				distance = 0
 
@@ -980,15 +1000,7 @@ class Node():
 		self.updateNovelty()
 
 		"""
-		try:
-			avatar_pos = self.WBP.findAvatarInRLE(self.rle)
-			vecValue = avatar_pos[1] + avatar_pos[0]*self.rle.outdim[0] + 1
-			self.stateIW1 = [vecValue]
-		except:
-			vecValue = [0]
 
-		self.stateIW1.append([pos for pos, char in enumerate(self.rle.show()) if char== ' '])
-		self.updateNoveltyIW1()
 		"""
 
 		## Try rollouts for aliens?
@@ -1003,8 +1015,8 @@ class Node():
 		# print self.rle._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost, self.position_score()
 
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
-		# sum(self.rolloutArray) - self.metabolic_cost + self.position_score(-250)
-		self.intrinsic_reward = self.heuristicVal + self.position_score(-250)
+		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
+		self.intrinsic_reward = self.heuristicVal + self.position_score(0)
 
 		print("heuristicVal {}".format(self.heuristicVal))
 		print("intrinsic_reward {}".format(self.intrinsic_reward))
@@ -1027,7 +1039,6 @@ class Node():
 	def updateNoveltyIW1(self):
 		for state in self.WBP.trueAtomsIW1:
 			if self.stateIW1 == state:
-				self.novelty = 1
 				return self.novelty
 		self.novelty = 0
 		return self.novelty
