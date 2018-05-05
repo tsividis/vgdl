@@ -84,18 +84,18 @@
 ## TEST5
 #combine with avatar sam bounceFoward. works.
 #[0]*6
-# works 4/12
-level = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                            1 w
-w              A             1 w
-w                              w
-w                              w
-w         c    c          3 3  w
-w                              w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
+# # works 4/12
+# level = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                            1 w
+# w              A             1 w
+# w                              w
+# w                              w
+# w         c    c          3 3  w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
 
 ## TEST6
 #[0]*10

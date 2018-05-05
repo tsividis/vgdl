@@ -128,6 +128,7 @@ class Agent:
 		self.observed_resources = set()
 		self.distributions = {}
 		self.history = {}
+		self.initialErrorBuildup = []
 		self.lastObjectState = {}
 
 		# Hyperopt output
@@ -708,7 +709,6 @@ class Agent:
 		self.allTheories.extend(newTheories)
 		print ""
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
-		bestScoresAndHypotheses = []
 
 		if newTheories:
 			# embed()
@@ -743,18 +743,19 @@ class Agent:
 				self.allTheories.extend(newerTheories)
 
 				bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newerTheories, episode_num)
+				for s , h in bestScoresAndHypotheses:
+					h.dryingPaint = set()
+			if len(bestScoresAndHypotheses) == 0:
+				print "second attempt failed, 0 theories survived filter"
+				embed()
+
 		else:
-			print "Got no new theories"
+			print "WARNING: You are returning 'bestScoresAndHypotheses' but these scores are fake and are\
+					really the result of not scoring theories for the beginning observation period."
+			bestScoresAndHypotheses = [(0.0, h) for h in hypotheses]
 
 		self.statesEncountered.append(self.rle._game.getFullState())
 		self.rle._game.sprite_appearances = []
-
-		for s , h in bestScoresAndHypotheses:
-			h.dryingPaint = set()
-
-		if len(bestScoresAndHypotheses) == 0:
-			print "second attempt failed, 0 theories survived filter"
-			embed()
 
 		return bestScoresAndHypotheses
 
@@ -2024,6 +2025,15 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 	# lookup table (dict) which maps (classPair, predicateTuple) to all combinations of all possible rules involving those classes and predicates
 	classPairPlusPredicateToRuleSets = dict()
 
+	perColorErrorBaselines = dict()
+	if sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
+		assert len(theories)==1, "You got more than one theory in expandTheories while expecting only one."
+		colors = set([e.targetColor for e in errorList])
+		for color in colors:
+			penalties, _ = MultiEpisodeExperienceReplay(theories, rleHistories, \
+						actionHistories, method=EXPERIENCE_REPLAY_METHOD, targetColor = color)
+			perColorErrorBaselines[color] = penalties[0]
+
 	for errorMap in errorList:
 		## Skip this whole step if you've already made changes for this theory. Just pass it on and you'll
 		## evaluate it on the whole dataset in the outer loop.
@@ -2047,11 +2057,21 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		# print "beforeFilter"
 		# embed()
 		newTheories = list(set(newTheories))
-		rleHistory, actionHistory = rleHistories[episode_num], actionHistories[episode_num]
-		penalties, _ = MultiEpisodeExperienceReplay(newTheories, [rleHistory[-2:]], \
-			[actionHistory[-1:]], method=EXPERIENCE_REPLAY_METHOD, targetColor = errorMap.targetColor)
-		scoreAndTheoryTuples = zip(penalties, newTheories)
-		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
+		if sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
+			penalties, _ = MultiEpisodeExperienceReplay(newTheories, rleHistories, \
+					actionHistories, method=EXPERIENCE_REPLAY_METHOD, targetColor = errorMap.targetColor)		
+			scoreAndTheoryTuples = zip(penalties, newTheories)
+			print "{} theories before filtering".format(len(scoreAndTheoryTuples))
+			scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0]<perColorErrorBaselines[errorMap.targetColor]]
+			print "{} theories after filtering".format(len(scoreAndTheoryTuples))
+			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
+
+		else:
+			rleHistory, actionHistory = rleHistories[episode_num], actionHistories[episode_num]
+			penalties, _ = MultiEpisodeExperienceReplay(newTheories, [rleHistory[-2:]], \
+					[actionHistory[-1:]], method=EXPERIENCE_REPLAY_METHOD, targetColor = errorMap.targetColor)
+			scoreAndTheoryTuples = zip(penalties, newTheories)
+			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
 		
 		newTheories = [s[1] for s in scoreAndTheoryTuples]
 		theories = newTheories
@@ -2233,6 +2253,17 @@ def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, a
 
 	penalty, errorList = errorSignal(env, envReal, hypothesis, envRealPrev)
 
+	if sum([len(episode) for episode in rleHistories]) < OBSERVATION_PERIOD_LENGTH:
+		self.initialErrorBuildup.extend(errorList)
+		return []
+	elif sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
+		theories = expandTheories([hypothesis], self.initialErrorBuildup+errorList, envRealPrev, envReal, action, rleHistories, actionHistories, episode_num)
+	else:
+		theories = expandTheories([hypothesis], errorList, envRealPrev, envReal, action, rleHistories, actionHistories, episode_num)
+	
+	if len(theories)==1 and theories[0]==hypothesis:
+		theories[0].experienceReplayRecord = hypothesis.experienceReplayRecord
+	
 	# if errorList:
 		# hypothesis.display()
 		# for e in errorList:
@@ -2243,9 +2274,7 @@ def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, a
 		# print "No error"
 		# embed()
 	# print "expanding theories"
-	theories = expandTheories([hypothesis], errorList, envRealPrev, envReal, action, rleHistories, actionHistories, episode_num)
-	if len(theories)==1 and theories[0]==hypothesis:
-		theories[0].experienceReplayRecord = hypothesis.experienceReplayRecord
+
 	return theories
 
 
