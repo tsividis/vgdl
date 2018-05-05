@@ -680,7 +680,6 @@ class Agent:
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
 		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action)
-		# updateAllOptions(self.rle._game, self.rle._game, action=action)
 
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
 		self.rleHistory[episode_num].append(envReal)
