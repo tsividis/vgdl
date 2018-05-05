@@ -2109,6 +2109,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 	newErrorMaps = [errorMap]
 
 	theory.experienceReplayRecord = {}
+	updateAllOptions(envRalCurrent._game, envRealPrev._game, action)
 
 	## If there are unknown colors in an inventory, add them to the theory here.
 	if 'inventoryChange' in errorMap.diagnosis:

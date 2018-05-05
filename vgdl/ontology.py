@@ -1993,7 +1993,7 @@ def setSpriteParams(param, sprite):
         elif p == "cooldown":
             sprite.cooldown = param[p]
 
-def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={}, missileOrientationClustering=False, allMovement=False, nextGame=None):
+def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={}, missileOrientationClustering=False, allMovement=False):
     """
     This method gets all of the parameter information from the params variable
     instead of directly accessing the parameters in current_sprite.
@@ -2464,7 +2464,7 @@ def updateAllOptions(game, gamePrev, action=None):
                 game.movement_options[sprite][param_combination], \
                 orientation_options, \
                 appearance_prediction = \
-                updateOptions(gamePrev, sprite_type, sprite_obj, action=action, params=attributeDict, missileOrientationClustering=True,nextGame=game)
+                updateOptions(gamePrev, sprite_type, sprite_obj, action=action, params=attributeDict, missileOrientationClustering=True)
                 if param_combination in game.orientation_options[sprite].keys():
                     game.orientation_options[sprite][param_combination] = orientation_options
 
@@ -2498,10 +2498,10 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
         objects = game.getAllObjects()
         newSprites = []
         for spriteID in objects:
-            if spriteID not in game.spriteDistribution:
-                newSprites.append(spriteID)
-                game.all_objects[spriteID] = objects[spriteID]
-                distributionInitSetup(game, spriteID)
+            # if spriteID not in game.spriteDistribution:
+            newSprites.append(spriteID)
+            game.all_objects[spriteID] = objects[spriteID]
+            distributionInitSetup(game, spriteID)
     elif step==4:
         ## Get all parameterizations of sprite type that could have led to the sprites in specificSpritesToUpdate
         ## to their current positions
