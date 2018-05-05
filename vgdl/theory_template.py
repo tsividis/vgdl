@@ -1151,8 +1151,6 @@ def proposePredicates(singlePairErrorSignal, observations):
 def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, action=None, percentile=20, max_num=20):
 	from vgdl.ontology import spriteInduction
 
-	updateAllOptions(game, envRealPrev._game, action)
-
 	if max_num is None:
 		max_num = 100000
 	childTheories = []

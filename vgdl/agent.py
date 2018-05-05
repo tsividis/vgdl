@@ -518,7 +518,7 @@ class Agent:
 			# [K_RIGHT]*3, [K_RIGHT, K_RIGHT, K_UP]
 
 			# [K_LEFT, K_LEFT, K_LEFT]
-			[0]*10
+			[0]*6
 		]
 
 		self.rleHistory = [[] for i in range(len(actionSequences))]
@@ -681,7 +681,6 @@ class Agent:
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
 		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action)
-		# updateAllOptions(self.rle._game, self.rle._game, action=action)
 
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
 		self.rleHistory[episode_num].append(envReal)
@@ -1742,7 +1741,7 @@ def checkIfStatesAreDifferent(env1, env2):
 			return True
 	return False
 
-def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, assumeZeroErrorTheoryExists=False):
+def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, returnAllErrors=False, assumeZeroErrorTheoryExists=False):
 
 	# if there isn't a theory, it has error 1. (added for multiepisode experienceReplay)
 	if not hypotheses[0]:
@@ -2111,6 +2110,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 	newErrorMaps = [errorMap]
 
 	theory.experienceReplayRecord = {}
+	updateAllOptions(envRealCurrent._game, envRealPrev._game, action=action)
 
 	## If there are unknown colors in an inventory, add them to the theory here.
 	if 'inventoryChange' in errorMap.diagnosis:
@@ -2262,10 +2262,10 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 	# filename = "examples.gridphysics.expt_push_boulders2"
-	# filename = "examples.gridphysics.avatar_inference"
+	filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.testAll"
 	
-	filename = "examples.gridphysics.expt_antagonist"
+	# filename = "examples.gridphysics.expt_antagonist"
 
 	# filename = "examples.gridphysics.basics"
 

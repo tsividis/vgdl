@@ -83,19 +83,19 @@
 
 ## TEST5
 #combine with avatar sam bounceFoward. works.
-#0,0,0,0,0,0
+#[0]*6
 # works 4/12
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w              A             1 w
-# w                              w
-# w                              w
-# w         c    c          3 3  w
-# w                              w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w              A             1 w
+w                              w
+w                              w
+w         c    c          3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 ## TEST6
 #[0]*10
@@ -355,23 +355,23 @@
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-level = """
-wwwwwwwwwwwwwwwww
-w         3 3   w
-w   p           w
-w               w
-w A p           w
-wwwwwwwwwwwwwwwww
-"""
+# level = """
+# wwwwwwwwwwwwwwwww
+# w         3 3   w
+# w   p           w
+# w               w
+# w A p           w
+# wwwwwwwwwwwwwwwww
+# """
 
-level1 = """
-wwwwwwwwwwwwwwwww
-w         3 3   w
-w   p           w
-w               w
-w A p           w
-wwwwwwwwwwwwwwwww
-"""
+# level1 = """
+# wwwwwwwwwwwwwwwww
+# w         3 3   w
+# w   p           w
+# w               w
+# w A p           w
+# wwwwwwwwwwwwwwwww
+# """
 
 game="""
 BasicGame
@@ -387,7 +387,7 @@ BasicGame
         chaser > Chaser color=BLACK speed=1 cooldown=4 stype=avatar fleeing=True
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         missile > Missile
-            sam  > orientation=UP color=BLUE singleton=False cooldown=3
+            sam  > orientation=UP color=BLUE singleton=False cooldown=1
         wall > Immovable color=DARKGRAY
         medicine > Resource limit=2 color=LIGHTGREEN
         poison > Resource limit=3 color=PINK
@@ -427,10 +427,10 @@ BasicGame
         # avatar box > killSprite
 
         ## TEST5
-        # avatar sam > bounceForward
+        avatar sam > bounceForward
 
         ## TEST6
-        sam wall > reverseDirection
+        # sam wall > reverseDirection
 
         ## TEST7
         # box2 avatar > bounceForward
@@ -467,7 +467,7 @@ BasicGame
 
 
 """
-level_game_pairs = [[game, level], [game, level1]]
+level_game_pairs = [[game, level]]#, [game, level1]]
 
 
 if __name__ == "__main__":
