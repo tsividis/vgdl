@@ -285,6 +285,10 @@ class Agent:
 		self.statesEncountered.append(self.rle._game.getFullState())
 		
 		envReal = self.fastcopy(self.rle)
+		if sum([len(episode) for episode in rleHistories]) <= OBSERVATION_PERIOD_LENGTH:
+			# have to save extra info since we deal with the error maps after the step they occur
+			copyGameInferenceInfo(envReal, self.rle)
+
 		self.rleHistory[episode_num].append(envReal)
 		
 		if not self.hypotheses:
@@ -685,6 +689,10 @@ class Agent:
 		actionHistories[episode_num].append(action)
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
+		if sum([len(episode) for episode in rleHistories]) <= OBSERVATION_PERIOD_LENGTH:
+			# have to save extra info since we deal with the error maps after the step they occur
+			copyGameInferenceInfo(envReal, self.rle)
+
 		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action)
 
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
@@ -2023,7 +2031,7 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 
 	return filtered
 
-def expandTheories(theories, errorList, rleHistories, actionHistories, episode_num):
+def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction, rleHistories, actionHistories, episode_num):
 	# print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
 
 	# MEMOIZE!
@@ -2050,9 +2058,11 @@ def expandTheories(theories, errorList, rleHistories, actionHistories, episode_n
 			# FLAG: huh?
 			continue
 
-		envRealPrev = rleHistories[errorMap.episodeStepGenerated[0]][errorMap.episodeStepGenerated[1] - 1]
-		envRealCurrent = rleHistories[errorMap.episodeStepGenerated[0]][errorMap.episodeStepGenerated[1]]
-		prevAction = actionHistories[errorMap.episodeStepGenerated[0]][errorMap.episodeStepGenerated[1] - 1]
+		# ONLY in the the single step where we'll have error maps from previous steps
+		if sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
+			envRealPrev = rleHistories[errorMap.episodeStepGenerated[0]][errorMap.episodeStepGenerated[1] - 1]
+			envRealCurrent = rleHistories[errorMap.episodeStepGenerated[0]][errorMap.episodeStepGenerated[1]]
+			prevAction = actionHistories[errorMap.episodeStepGenerated[0]][errorMap.episodeStepGenerated[1] - 1]
 
 		# print "now dealing with errorMap"
 		# embed()
@@ -2164,8 +2174,8 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 				else:
 					theory.spriteObjects[k].args = {'limit':errorMap.targetToken.inventory[k][1]}
 
-	print "about to check for new sprites"
-	embed()
+	# print "about to check for new sprites"
+	# embed()
 	## If there are new objects on screen, add them to the thery or reason about related objects (e.g., spawnPoints)
 	if errorMap.targetClass not in theory.classes.keys() or errorMap.targetToken in envRealCurrent._game.observation['new_sprites']:
 
@@ -2278,9 +2288,9 @@ def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, a
 		initialErrorBuildup.extend(errorList)
 		return []
 	elif sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
-		theories = expandTheories([hypothesis], initialErrorBuildup+errorList, rleHistories, actionHistories, episode_num)
+		theories = expandTheories([hypothesis], initialErrorBuildup+errorList, None, None, None, rleHistories, actionHistories, episode_num)
 	else:
-		theories = expandTheories([hypothesis], errorList, rleHistories, actionHistories, episode_num)
+		theories = expandTheories([hypothesis], errorList, envRealPrev, envReal, action, rleHistories, actionHistories, episode_num)
 	
 	if len(theories)==1 and theories[0]==hypothesis:
 		theories[0].experienceReplayRecord = hypothesis.experienceReplayRecord
@@ -2297,6 +2307,16 @@ def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, a
 	# print "expanding theories"
 
 	return theories
+
+def copyGameInferenceInfo(envReal, rle):
+	envReal._game.spriteDistribution = ccopy(rle._game.spriteDistribution)
+	envReal._game.object_token_spriteDistribution = rle._game.object_token_spriteDistribution
+	envReal._game.movement_options = ccopy(rle._game.movement_options)
+	envReal._game.orientation_options = ccopy(rle._game.orientation_options)
+	envReal._game.sprite_appearance_predictions = ccopy(rle._game.sprite_appearance_predictions)
+	envReal._game.object_token_movement_options = ccopy(rle._game.object_token_movement_options)
+	envReal._game.sprite_appearances = ccopy(rle._game.sprite_appearances)
+
 
 
 
