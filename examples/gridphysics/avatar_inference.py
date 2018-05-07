@@ -101,17 +101,17 @@
 #[0]*10
 # combine with sam wall reverseDirection
 # works 4/12
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w                            1 w
-# w                              w
-# w         wwwwww               w
-# w                         3 3  w
-# w         s    s A             w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w                            1 w
+w                              w
+w         wwwwww               w
+w                         3 3  w
+w         s    s A             w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 ## TEST7
 #up, up, up, right
@@ -430,7 +430,7 @@ BasicGame
         avatar sam > bounceForward
 
         ## TEST6
-        # sam wall > reverseDirection
+        sam wall > reverseDirection
 
         ## TEST7
         # box2 avatar > bounceForward

@@ -40,6 +40,9 @@ EXPERIENCE_REPLAY_METHOD = 'all'
 ERRORCUTOFF = .3
 # Not active now
 NUM_SAMPLES_PER_HYPOTHESIS = 20
+# how long to just watch before theorizing about the game
+OBSERVATION_PERIOD_LENGTH = 12
+initialErrorBuildup = []
 
 class errorMapEntry:
 	def __init__(self):
@@ -50,6 +53,7 @@ class errorMapEntry:
 		self.targetColor = None
 		self.intPairs = []
 		self.componentsAddressed = []
+		self.episodeStepGenerated = None
 	
 	def display(self):
 		print ""
@@ -72,6 +76,7 @@ class errorMapEntry:
 		e.targetColor 			= self.targetColor
 		e.intPairs          	= self.intPairs
 		e.componentsAddressed 	= self.componentsAddressed
+		e.episodeStepGenerated	= self.episodeStepGenerated
 		return e
 
 	def __eq__(self, other):
@@ -128,7 +133,6 @@ class Agent:
 		self.observed_resources = set()
 		self.distributions = {}
 		self.history = {}
-		self.initialErrorBuildup = []
 		self.lastObjectState = {}
 
 		# Hyperopt output
@@ -295,6 +299,7 @@ class Agent:
 			## All hypotheses have the same number of classes / know about the same colors
 			newColors = [k for k in envReal._game.observation['trackedObjects'].keys() if k not in self.hypotheses[0].spriteObjects]
 			if newColors:
+				self.observe(self.rle, episode_num, OBSERVATION_PERIOD_LENGTH)
 				from vgdl.ontology import Resource
 				for color in newColors:
 					for h in self.hypotheses:
@@ -497,7 +502,7 @@ class Agent:
 		if num_cores<40:
 			print "WARNING: running on < 40 cores."
 
-		actionSequences = [
+		actionSequences = [ [0]*OBSERVATION_PERIOD_LENGTH +\
 			## TEST1
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
 			## TEST2
@@ -2018,7 +2023,7 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 
 	return filtered
 
-def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction, rleHistories, actionHistories, episode_num):
+def expandTheories(theories, errorList, rleHistories, actionHistories, episode_num):
 	# print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
 
 	# MEMOIZE!
@@ -2044,6 +2049,13 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 			theories = newTheories
 			# FLAG: huh?
 			continue
+
+		envRealPrev = rleHistories[errorMap.episodeStepGenerated[0]][errorMap.episodeStepGenerated[1] - 1]
+		envRealCurrent = rleHistories[errorMap.episodeStepGenerated[0]][errorMap.episodeStepGenerated[1]]
+		prevAction = actionHistories[errorMap.episodeStepGenerated[0]][errorMap.episodeStepGenerated[1] - 1]
+
+		# print "now dealing with errorMap"
+		# embed()
 
 		# print "In base case. Correcting error for {} for {} theories".format(errorMap.targetClass, len(theories))
 		t1 = time.time()
@@ -2152,6 +2164,8 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 				else:
 					theory.spriteObjects[k].args = {'limit':errorMap.targetToken.inventory[k][1]}
 
+	print "about to check for new sprites"
+	embed()
 	## If there are new objects on screen, add them to the thery or reason about related objects (e.g., spawnPoints)
 	if errorMap.targetClass not in theory.classes.keys() or errorMap.targetToken in envRealCurrent._game.observation['new_sprites']:
 
@@ -2248,18 +2262,25 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 	return newTheories
 
 def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, actionHistories, episode_num):
+	global initialErrorBuildup
+
+	episodeStep = (episode_num, len(rleHistories[episode_num]) - 1)
 
 	env.step(action)
 
 	penalty, errorList = errorSignal(env, envReal, hypothesis, envRealPrev)
 
+	# track where this error came from
+	for e in errorList:
+		e.episodeStepGenerated = episodeStep
+
 	if sum([len(episode) for episode in rleHistories]) < OBSERVATION_PERIOD_LENGTH:
-		self.initialErrorBuildup.extend(errorList)
+		initialErrorBuildup.extend(errorList)
 		return []
 	elif sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
-		theories = expandTheories([hypothesis], self.initialErrorBuildup+errorList, envRealPrev, envReal, action, rleHistories, actionHistories, episode_num)
+		theories = expandTheories([hypothesis], initialErrorBuildup+errorList, rleHistories, actionHistories, episode_num)
 	else:
-		theories = expandTheories([hypothesis], errorList, envRealPrev, envReal, action, rleHistories, actionHistories, episode_num)
+		theories = expandTheories([hypothesis], errorList, rleHistories, actionHistories, episode_num)
 	
 	if len(theories)==1 and theories[0]==hypothesis:
 		theories[0].experienceReplayRecord = hypothesis.experienceReplayRecord
