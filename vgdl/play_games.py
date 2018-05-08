@@ -281,6 +281,11 @@ def generateImage(game):
 In [1]: im, _, _ = init_game('portals')
 In [2]: im, reward, ended = step(K_DOWN)
 # etc.
+# ...
+# game ends for one reason or another: final frame (victory or death) returned
+# 	to proceed to the next frame (beginning of next level or retry of current level as approprate)
+In [23]: im, reward, ended = step('next_episode')
+# <continue entering step commands as before>
 '''
 
 if len(sys.argv) > 1:
