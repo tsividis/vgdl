@@ -1,0 +1,9 @@
+subject,condition,gameName,levels_won,steps,score
+full,normal,examples.gridphysics_new.expt_antagonist,0,1,0
+full,normal,examples.gridphysics_new.expt_antagonist,0,16,0
+full,normal,examples.gridphysics_new.expt_antagonist,1,36,0
+full,normal,examples.gridphysics_new.expt_antagonist,2,65,0
+full,normal,examples.gridphysics_new.expt_antagonist,3,91,0
+full,normal,examples.gridphysics_new.expt_antagonist,3,91,0
+full,normal,examples.gridphysics_new.expt_antagonist,3,104,0
+full,normal,examples.gridphysics_new.expt_antagonist,4,191,0

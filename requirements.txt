@@ -1,0 +1,8 @@
+scipy
+pybrain
+pathos
+numpy
+ipdb
+termcolor
+pygame
+gdata

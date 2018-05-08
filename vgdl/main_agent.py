@@ -16,6 +16,7 @@ from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
 from pathos.helpers import mp
+# import multiprocess as mp
 # from line_profiler import LineProfiler
 
 
@@ -77,6 +78,8 @@ class Agent:
         self.total_game_steps = 0
         self.total_planner_steps = 0
         self.levels_won = 0
+
+        self.todo_delete = True
 
     def initializeEnvironment(self):
         if self.gameString==None or self.levelString==None:
@@ -206,10 +209,12 @@ class Agent:
         return gameObject
 
     def completeHypotheses(self, allObjects, first_time_playing_level):
-        if first_time_playing_level:
-            observe(self.rle, 15, self.bestSpriteTypeDict) ## observe many steps so that you're not completely clueless about object movements for the new level
+        previous_colors = [o['type']['color'] for o in self.previous_objects.values()]
+        current_colors = [o['type']['color'] for o in allObjects.values()]
+        if all([c in previous_colors for c in current_colors]):
+            observe(self.rle, 0, self.bestSpriteTypeDict) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
         else:
-            observe(self.rle, 15, self.bestSpriteTypeDict) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
+            observe(self.rle, 5, self.bestSpriteTypeDict) ## observe many steps so that you're not completely clueless about object movements for the new level
 
         ## Make sure any objects that appeared while we were observing are reflected in allObjects
         for k,v in self.rle._game.getObjects().items():
@@ -231,10 +236,12 @@ class Agent:
             level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
         episodes = []
         allEffectsEncountered = []
-        shutil.rmtree("images/tmp")
-        os.makedirs("images/tmp")
+        # shutil.rmtree("images/tmp")
+        # os.makedirs("images/tmp")
         j=0
         flexible_goals = False
+
+        pool = mp.Pool(processes=len(self.hyperparameter_sets))
         for n_level, level_game in enumerate(level_game_pairs):
 
             print("Playing level {}".format(n_level))
@@ -249,13 +256,13 @@ class Agent:
             first_time_playing_level = True
 
             while not win and i<10:
-                gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
+                gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level, pool=pool)
                 self.total_game_steps += steps
                 episodes.append((n_level, steps, win, score))
                 allStatesEncountered.extend(statesEncountered)
                 levelEffectsEncountered.append(effectsEncountered)
-                VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
-                persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
+                # VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
+                # persist_movie=False, make_images=False, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
                 first_time_playing_level = False
                 i += 1
                 print "Finished in ", time.time() - t1
@@ -288,11 +295,11 @@ class Agent:
 
         output = {'modelType':self.modelType,
                     # 'gameName': self.gameFilename[self.gameFilename.find('expt'):],
-                    'gameName': gvgname[gvgname.find('set_1/')+6:],
+                    'gameName': self.gameFilename,
                     'condition': 'normal',
                     'episodes' : episodes}
 
-        # write_to_csv('pilotModelRuns_'+gvgname[gvgname.find('set_1/')+6:]+'.csv', output)
+        write_to_csv(str(self.gameFilename)+'.csv', output)
         # self.makeMovie()
 
     def makeHeatmap(self, statesEncountered, filename):
@@ -392,8 +399,7 @@ class Agent:
             return gameObject, win, score, steps, statesEncountered, effectsEncountered
         """
 
-
-    def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False):
+    def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None):
         from vgdl.util import manhattanDist
 
         ## Initialize external environment
@@ -402,6 +408,7 @@ class Agent:
         steps = 0
         self.quits = 0
         self.longHorizonObservations = 0
+        self.previous_objects = self.all_objects if self.all_objects else {}
         self.all_objects= self.rle._game.getObjects()
         ended, win = self.rle._isDone()
         annealing = 1
@@ -478,13 +485,12 @@ class Agent:
                 #     planner.terminate()
                 #     planner.join()
                 #
-                pool = mp.Pool()
                 print('#3')
-                res = pool.map_async(WBP_wrapper, [(h_set, self.hypotheses[0], result_queue) for h_set in self.hyperparameter_sets])
+                res = pool.map(WBP_wrapper, [(h_set, self.hypotheses[0], result_queue) for h_set in self.hyperparameter_sets])
                 print('#4')
-                pool.close()
+                # pool.close()
                 print('#5')
-                pool.join()
+                # pool.join()
                 print('#6')
                 # import ipdb; ipdb.set_trace()
 
@@ -498,7 +504,10 @@ class Agent:
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                     firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
-            
+            best_index = np.argmin([p.total_nodes for p in res])
+            print('passed here')
+            p = res[best_index]
+
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps = p.total_nodes
 
@@ -683,6 +692,8 @@ class Agent:
                 self.max_nodes *= self.max_nodes_annealing
                 # self.updateMemory(self.rle)
 
+                del res
+
                 return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered
 
 
@@ -711,6 +722,9 @@ class Agent:
             print colored('________________________________________________________________', 'white', 'on_red')
             print colored(output, 'white', 'on_red')
             print colored('________________________________________________________________', 'white', 'on_red')
+
+        del res
+
         return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
     def matchEventToRuleByIDAndSpriteName(self, event, rule):

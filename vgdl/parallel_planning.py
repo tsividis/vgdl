@@ -1,4 +1,3 @@
-from hyperopt import fmin, tpe, hp
 from pathos.multiprocessing import ProcessingPool
 from main_agent import Agent
 import time
@@ -15,11 +14,17 @@ game_number = args.game_number
 # as of 01/2018: it is best to install directly from the github repo with
 # the command 'pip install git+https://github.com/hyperopt/hyperopt'
 
-gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
-            'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
+gvggames = ['aliens', 'boulderdash', 'chase', 'frogs',  # 0-4
+        	'missilecommand', 'portals']  # 5-9
 
 local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper',  # 10-12
     'expt_preconditions', 'expt_push_boulders', 'expt_relational']  # 13-15 to play a "local" game
+
+# gvggames = ['aliens', 'boulderdash', 'chase', 'frogs',  # 0-3
+        	# 'missilecommand', 'portals', 'sokoban', 'survivezombies']  # 4-7
+
+# local_games = ['expt_exploration_exploitation',  # 8
+    # 'expt_preconditions', 'expt_push_boulders', 'expt_relational']  # 9-11 to play a "local" game
 
 def play_trainset(hyperparameters):
     start_time = time.time()
@@ -48,7 +53,7 @@ def play_trainset(hyperparameters):
         		yield color
 
 
-        gvgname = "../gvgai/training_set_1/{}".format(gameName)
+        gvgname = "./training_set_1/{}".format(gameName)
 
         gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
@@ -61,7 +66,7 @@ def play_trainset(hyperparameters):
     # running local games
     else:
         level_game_pairs = None
-        gameName = 'examples.gridphysics.{}'.format(local_games[game_number-10])
+        gameName = 'examples.gridphysics_new.{}'.format(local_games[game_number-10])
 
     agent = Agent('full', gameName, hyperparameter_sets=hyperparameters, parallel_planning=False)
 

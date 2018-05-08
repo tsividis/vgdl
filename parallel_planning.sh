@@ -1,5 +1,5 @@
 #! /bin/bash
-for i in {0..15}
-do
-  sbatch --mem=10000 -c 4 --wrap="python -m vgdl.parallel_planning --game_number=$i"
+for i in {0..5} 
+do 
+    python -m vgdl.parallel_planning --game_number=$i & 
 done

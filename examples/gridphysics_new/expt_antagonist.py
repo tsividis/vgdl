@@ -9,7 +9,6 @@
 
 level0 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                              w
 w                              w
@@ -19,12 +18,9 @@ wm                             w
 w             b                w
 www                           aw
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 level1 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wm                             w
 w                              w
@@ -35,12 +31,9 @@ w    b                         w
 w  A                          aw
 www                            w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
 level2 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w     m   Aba       a        a w
@@ -50,8 +43,6 @@ w                              w
 w                              w
 w                              w
 w                            a w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -84,7 +75,6 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 
 level3 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w  a                           w
 w     a            a      a    w
 w       a                      w
@@ -93,8 +83,6 @@ w         m    A   b           w
 w     a     a            ffffffw
 w     a   a              f     w
 www                  a   f     w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 
@@ -115,16 +103,16 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 game = """
 BasicGame frame_rate=30
     SpriteSet
-        avatar > MovingAvatar color=DARKBLUE cooldown=0#6
-        chaser > VGDLSprite cooldown=8
+        avatar > MovingAvatar color=DARKBLUE
+        chaser > VGDLSprite
             randomChaser > RandomNPC color=WHITE
-            mediumChaser > Chaser color=LIGHTGREEN stype=box2 cooldown=0
+            mediumChaser > Chaser color=LIGHTGREEN cooldown=1 stype=box2
             goodChaser > AStarChaser color=RED stype=box2
-        forcefield > Passive color=PURPLE
+        forcefield > Passive color=LIGHTBLUE
+        wall > Immovable color=DARKGRAY
         box > Passive
             box1 > color=PINK
             box2 > color=YELLOW
-        wall > Immovable color=DARKGRAY
     LevelMapping
         w > wall
         a > box1
