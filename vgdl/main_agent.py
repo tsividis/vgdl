@@ -177,7 +177,7 @@ class Agent:
 
     def initializeHypotheses(self, allObjects, learnSprites=True):
         if learnSprites:
-            observe(self.rle, 5, self.bestSpriteTypeDict)
+            observe(self.rle, 15, self.bestSpriteTypeDict)
             spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
                 self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
             self.rle._game.exceptedObjects = exceptedObjects
@@ -504,9 +504,9 @@ class Agent:
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                     firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
-            best_index = np.argmin([p.total_nodes for p in res])
-            print('passed here')
-            p = res[best_index]
+            # best_index = np.argmin([p.total_nodes for p in res])
+            # print('passed here')
+            # p = res[best_index]
 
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps = p.total_nodes
@@ -692,7 +692,7 @@ class Agent:
                 self.max_nodes *= self.max_nodes_annealing
                 # self.updateMemory(self.rle)
 
-                del res
+                # del res
 
                 return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered
 
@@ -723,7 +723,7 @@ class Agent:
             print colored(output, 'white', 'on_red')
             print colored('________________________________________________________________', 'white', 'on_red')
 
-        del res
+        # del res
 
         return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
