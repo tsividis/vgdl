@@ -198,6 +198,8 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
     def close():
         pass
 
+
+
     def _isDone(self, getTermination=False):
         # remember reward if the final state ends the game
         for t in self._game.terminations:

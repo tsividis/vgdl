@@ -40,6 +40,9 @@ EXPERIENCE_REPLAY_METHOD = 'all'
 ERRORCUTOFF = .3
 # Not active now
 NUM_SAMPLES_PER_HYPOTHESIS = 20
+# how long to just watch before theorizing about the game
+OBSERVATION_PERIOD_LENGTH = 12
+initialErrorBuildup = []
 
 class errorMapEntry:
 	def __init__(self):
@@ -50,6 +53,7 @@ class errorMapEntry:
 		self.targetColor = None
 		self.intPairs = []
 		self.componentsAddressed = []
+		self.episodeStepGenerated = None
 	
 	def display(self):
 		print ""
@@ -72,6 +76,7 @@ class errorMapEntry:
 		e.targetColor 			= self.targetColor
 		e.intPairs          	= self.intPairs
 		e.componentsAddressed 	= self.componentsAddressed
+		e.episodeStepGenerated	= self.episodeStepGenerated
 		return e
 
 	def __eq__(self, other):
@@ -89,19 +94,19 @@ class Agent:
 		self.hyperparameter_sets = hyperparameter_sets
 		self.parallel_planning = parallel_planning
 		self.annealingFactor = 1.
-		self.shortHorizon = False
+		self.shortHorizon = False # How much do we search for a good plan before giving up?
 		if self.shortHorizon == True:
 			self.starting_max_nodes = 1000
 			self.max_nodes_annealing = 1.05
 		else:
 			self.starting_max_nodes = 10000
 			self.max_nodes_annealing = 10
-		self.firstOrderHorizon = True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
+		self.firstOrderHorizon = False # Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
 		self.regrounding = 3
-		self.reground_for_killer_types = True ## encourages safe behavior
-		self.reground_for_stochastic_types = True ## encourages replanning more often as these agents deviate from prediction
+		self.reground_for_killer_types = True # encourages safe behavior
+		self.reground_for_stochastic_types = True # encourages replanning more often as these agents deviate from prediction
 		self.safeDistance = 6
-		self.emptyPlansLimit = 5
+		self.emptyPlansLimit = 1#should be 5
 		self.longHorizonObservationLimit = 2
 		self.scores = []
 		self.hypotheses = []
@@ -111,8 +116,8 @@ class Agent:
 		self.fakeInteractionRules = []
 		self.all_objects = {}
 		self.spriteUpdateDict = defaultdict(lambda : 0)
-		self.seen_resources = []
-		self.seen_limits = []
+		self.seen_resources = defaultdict(lambda : []) #key: a hypothesized avatar color. Value: list of colors of resources seen by that avatar.
+		self.seen_limits = defaultdict(lambda: [])
 		self.new_objects = {}
 		self.memory = []
 		self.rleHistory = []
@@ -129,11 +134,12 @@ class Agent:
 		self.distributions = {}
 		self.history = {}
 		self.lastObjectState = {}
-		self.bestScoresAndHypotheses = None
+
 		# Hyperopt output
 		self.total_game_steps = 0
 		self.total_planner_steps = 0
 		self.levels_won = 0
+		self.assumeZeroErrorTheoryExists = False
 
 	def initializeEnvironment(self):
 		if self.gameString == None or self.levelString == None:
@@ -154,7 +160,7 @@ class Agent:
 
 	def initializeHypotheses(self):
 
-		observe(self.rle)
+		spriteInduction(self.rle._game, step=1, action=None)
 
 		spriteList = []
 		colors = self.rle._game.observation['trackedObjects'].keys()
@@ -204,6 +210,16 @@ class Agent:
 				self.history[color] = {}
 		return
 
+	def observe(self, rle, episode_num, num_steps=1):
+		for i in range(num_steps):
+			action = 0
+			bestScoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses)
+			self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
+		# for i in range(num_steps):
+			# spriteInduction(rle._game, step=1, action=None)
+			# updateAllOptions(rle._game, rle._game, action=None)
+		return
+
 	def testCurriculum(self, level_game_pairs=None):
 		if not level_game_pairs:
 			level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs  
@@ -217,79 +233,143 @@ class Agent:
 				self.testEpisodes(epoch=epoch)
 		return
 
-	def playCurriculum(self, level_game_pairs=None, num_episodes=10):
+	def playCurriculum(self, level_game_pairs=None, num_episodes_per_level=10):
 		""" Plays a game level until it wins, then moves to the next one until
 		completion. """
 		if not level_game_pairs:
 			level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
 		episodes = []
-
+		
+		num_levels = len(level_game_pairs)
+		## for inference
+		self.rleHistory = [[] for i in range(num_levels*num_episodes_per_level)]
+		self.actionHistory = [[] for i in range(num_levels*num_episodes_per_level)]
+		self.all_objects = [{} for i in range(num_levels*num_episodes_per_level)]
+		
+		episodes_played = 0
 		for n_level, level_game in enumerate(level_game_pairs):
-
 			self.gameString = level_game[0]
 			self.levelString = level_game[1]
 
-			## for playback
-			self.allStatesEncountered = [[] for i in range(num_episodes)]
 			episodes = []
-
-			## for inference
-			self.rleHistory = [[] for i in range(num_episodes)]
-			self.actionHistory = [[] for i in range(num_episodes)]
-			self.all_objects = [{} for i in range(num_episodes)]
 
 			self.max_nodes = self.starting_max_nodes
 			win = False
 			i = 0
 			# TODO: never used
 			first_time_playing_level = True
-			allStatesEncountered = []
-
-			while not win and i < num_episodes:
-				win, score, steps, statesEncountered = self.playEpisode(i, win=win, first_time_playing_level=first_time_playing_level)
+			while not win and i < num_episodes_per_level:
+				win, score, steps = self.playEpisode(n_level, episodes_played, win=win, first_time_playing_level=first_time_playing_level)
 				self.total_game_steps += steps
 				episodes.append((n_level, steps, win, score))
-				allStatesEncountered.extend(statesEncountered)
+				episodes_played += 1
 				if win:
 					print 'won'
 					break
 				i += 1
-			if i < num_episodes:
+			if i < num_episodes_per_level:
 				self.levels_won += 1
 
 		return
 
-	def playEpisode(self, episode_num, flexible_goals=False, win=False, first_time_playing_level=False):
+	def playEpisode(self, n_level, episode_num, flexible_goals=False, win=False, first_time_playing_level=False):
 		
 		self.initializeEnvironment()
 		print "initializing RLE"
+		# embed()
 		steps, self.quits, self.longHorizonObservations = 0,0,0
 		self.all_objects[episode_num] = self.rle._game.getAllObjects()
 		ended, win = self.rle._isDone()
 		annealing = 1
 
-		statesEncountered = [self.rle._game.getFullState()]
 		self.statesEncountered.append(self.rle._game.getFullState())
+		
 		envReal = self.fastcopy(self.rle)
+		if sum([len(episode) for episode in rleHistories]) <= OBSERVATION_PERIOD_LENGTH:
+			# have to save extra info since we deal with the error maps after the step they occur
+			copyGameInferenceInfo(envReal, self.rle)
+
 		self.rleHistory[episode_num].append(envReal)
-		#dep
+		
 		if not self.hypotheses:
+			if n_level!=0 and episode_num!=0:
+				print "Have no hypotheses but not playing the first episode / first level!"
+				embed()
 			self.initializeHypotheses()
-			updateTerminations(self.rle, self.hypotheses)
+			updateTerminations(self.rle, self.hypotheses, addNoveltyRules=False)
+
+		if first_time_playing_level:
+			## Add defaults to theories for any new objects.
+			## All hypotheses have the same number of classes / know about the same colors
+			newColors = [k for k in envReal._game.observation['trackedObjects'].keys() if k not in self.hypotheses[0].spriteObjects]
+			if newColors:
+				self.observe(self.rle, episode_num, OBSERVATION_PERIOD_LENGTH)
+				from vgdl.ontology import Resource
+				for color in newColors:
+					for h in self.hypotheses:
+						existing_classes = [key for key in h.classes if key[0] == 'c']
+						max_num = max([int(c[1:]) for c in existing_classes])
+						class_num = max_num+1 
+						newClassName = 'c'+str(class_num)
+						h.addSpriteToTheory(newClassName, color, vgdlType=Resource)
+
 		emptyPlans = 0
 		while not ended:
 
 			envReal = self.fastcopy(self.rle)
 
-			##TODO: select hypothesis/es to plan with.
-			selectedHypotheses 	= [self.hypotheses[0]]
+			## Select hypothesis/es to plan with.
+			selectedHypotheses 	= [self.hypotheses[0]] # Only initialize as many theories as you are using parallel planners
+			# selectedHypotheses = self.hypotheses
 			hypothesesToPlanWith = [convertTheoryToSubgoalTheory(h) for h in selectedHypotheses]
-			## initialize one or many VRLEs according to hypothesis-selection method
-			theoryRLEs 	= VrleInitPhase(selectedHypotheses, envReal)
-			plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal)
-			quitting = False
-			# print "before planning"
+
+			## Create fake incentives to reexplore previously-explored items while possessing resources
+ 			for h in hypothesesToPlanWith:
+ 				avatarColor = h.classes['avatar'][0].colorName
+ 				try:
+ 					a = envReal._game.observation['trackedObjects'][avatarColor][0]
+ 				except:
+ 					print "Didn't find avatar"
+ 					embed()
+
+ 				for k,v in envReal._game.observation['trackedObjects'][avatarColor][0].inventory.items():
+ 					resourceClass = h.spriteObjects[k].className
+ 					resourceAmount, limit = v[0], v[1]
+ 					resourceClass = h.spriteObjects[k].className
+ 					h.resource_limits[resourceClass] = limit
+
+ 					if resourceAmount>0:
+ 						h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass))
+ 					if resourceAmount==limit:
+ 						h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass, limit))
+
+ 					
+ 					if k not in self.seen_resources[avatarColor]:
+ 						self.seen_resources[avatarColor].append(k)
+ 					elif resourceClass not in self.seen_limits[avatarColor] and resourceAmount==limit:
+ 			 			self.seen_limits[avatarColor].append(resourceClass)
+
+ 					# if k not in self.seen_resources[avatarColor]:
+ 					# 	resourceClass = h.spriteObjects[k].className
+ 					# 	h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass))
+ 					# 	h.resource_limits[resourceClass] = limit
+ 					# 	self.seen_resources[avatarColor].append(k)
+ 					# elif resourceClass not in self.seen_limits[avatarColor] and resourceAmount==limit:
+ 			 	# 		h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass, limit))
+ 			 	# 		self.seen_limits[avatarColor].append(resourceClass)
+
 			# embed()
+ 			[h.updateTerminations(addNoveltyRules=True) for h in hypothesesToPlanWith]
+
+ 			# Only initialize as many planner theories as you are using parallel planners
+			plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal)
+
+ 			# if envReal._game.observation['trackedObjects'][avatarColor][0].inventory:
+ 				# print "found inventory"
+ 				# embed()
+			# embed()
+
+			quitting = False
 			if self.parallel_planning:
 				pass
 				# def WBP_wrapper(l):
@@ -313,21 +393,22 @@ class Agent:
 				# best_index = np.argmin([p.total_nodes for p in res._value])
 				# p = res._value[best_index]
 			else:
+				avatarColor = hypothesesToPlanWith[0].classes['avatar'][0].colorName
 
 				p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=hypothesesToPlanWith[0], fakeInteractionRules = self.fakeInteractionRules,
-					seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+					seen_limits = self.seen_limits[avatarColor], annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
 					firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
 			
-			bestNode, gameStringArray, objectPositionsArray = p.BFS()
+			bestNode, gameStringArray, predictedEnvs = p.BFS()
 
 			# best_index = np.argmin([p.total_nodes for p in res._value])
-			# bestNode, gameStringArray, objectPositionsArray = res._value[best_index].BFS()
+			# bestNode, gameStringArray, predictedEnvs = res._value[best_index].BFS()
 			self.total_planner_steps = p.total_nodes
 
 			if bestNode is not None:
 				solution = p.solution
 				gameString_array = p.gameString_array
-				objectPositionsArray = objectPositionsArray[::-1]
+				predictedEnvs = predictedEnvs[::-1]
 			else:
 				solution = []
 
@@ -347,7 +428,8 @@ class Agent:
 				if (not solution) or p.quitting:
 					if self.longHorizonObservations<self.longHorizonObservationLimit:
 						print "Didn't get solution or decided to quit. Observing, then replanning."
-						observe(self.rle, 5)
+						# embed()
+						self.observe(self.rle, episode_num, num_steps=5)
 						solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
 						self.longHorizonObservations += 1
 					else:
@@ -355,34 +437,36 @@ class Agent:
 
 			if emptyPlans > self.emptyPlansLimit:
 				print "observing"
-				observe(self.rle, 5)
+				# embed()
+				self.observe(self.rle, episode_num, num_steps=5)
 
 			if not quitting:
-				for i, action in enumerate(solution):
-					print "executing step"
-					bestScoresAndHypotheses, reground_for_killer_types, reground_for_stochastic_types = self.executeStep(episode_num, i, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, objectPositionsArray, lastStep=False)
+				for action_num, action in enumerate(solution):
+					bestScoresAndHypotheses = \
+							self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses)
+					
+					## TODO: Prediction error only corresponds to self.hypotheses[0]. What you actually want is
+					## checking for the predictions made by *each* of the hypotheses, and then if any give you prediction error,
+					## you reground based on that.
+					predictionError, regroundForKillerTypes, regroundForStochasticTypes = self.regroundOrNot(action_num, predictedEnvs, self.hypotheses[0])
 
-					self.bestScoresAndHypotheses = bestScoresAndHypotheses
-					# self.hypotheses = [bestScoresAndHypotheses[0][1]]
+					print bestScoresAndHypotheses
 					self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
-					print "executed step"
-					# embed()
-					## TODO: determine value of theory_change_flag
-					# if theory_change_flag:
-						# self.hypotheses = hypotheses
-						# break
+					
+					if selectedHypotheses[0]!=self.hypotheses[0]:
+						# print "Best theory is no longer equal to selected theory"
+						# embed()
+						break
 
 					steps +=1
 
 					ended, win = self.rle._isDone()
-					if reground_for_killer_types or reground_for_stochastic_types: 
+					if regroundForKillerTypes or regroundForStochasticTypes: 
 						print "got reground for killer or stochastic type. Replanning"
 						break
 
 					if ended:
 						break
-
-					# if self.avoid_danger
 
 				if self.shortHorizon:
 					self.max_nodes *= self.max_nodes_annealing
@@ -391,14 +475,14 @@ class Agent:
 				## Search more deeply next time.
 				self.max_nodes *= self.max_nodes_annealing
 				print "You got quitting==True from planner. Embedding to debug."
-				embed()
-				return False, self.rle._game.score, steps, statesEncountered
+				# embed()
+				return False, self.rle._game.score, steps
 		
 			annealing *= self.annealingFactor
 			ended, win = self.rle._isDone()
 
 		score = self.rle._game.score
-		output = "ended episode. Win={}                    ".format(win)
+		output = "ended episode. Win={}                   						  ".format(win)
 		if win:
 			print colored('________________________________________________________________', 'white', 'on_green')
 			print colored('________________________________________________________________', 'white', 'on_green')
@@ -410,7 +494,7 @@ class Agent:
 			print colored(output, 'white', 'on_red')
 			print colored('________________________________________________________________', 'white', 'on_red')
 
-		return win, score, steps, statesEncountered 
+		return win, score, steps
 	
 
 
@@ -422,30 +506,28 @@ class Agent:
 		if num_cores<40:
 			print "WARNING: running on < 40 cores."
 
-		actionSequences = [
-			# [0,0,0,K_LEFT, K_LEFT,0,0]
-			# [K_SPACE,0,K_UP,K_RIGHT]
-			# [K_RIGHT, K_UP, K_SPACE, 0, 0,0,0,0]
+		actionSequences = [ [0]*OBSERVATION_PERIOD_LENGTH +\
+			## TEST1
 			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
-			# [K_LEFT, K_LEFT,K_LEFT,K_LEFT, K_DOWN, K_DOWN, K_DOWN, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
-			[0]*10
-			# [K_UP, K_UP, K_DOWN]
-			# [0,0,0,K_LEFT, K_LEFT,0,0]
-			# [0,K_RIGHT, K_SPACE, 0,0,0,0,0,0,0]
-			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT],
-			# [K_RIGHT, K_RIGHT]
-			# [0,0, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0,0,0]
-			# [0,0,0,0,0,0,0,0,0,0,0,0]
-			# [0]*20
-			# [K_UP, K_UP, K_UP, K_RIGHT]
-			# [K_UP, K_UP],
-			# [K_RIGHT, K_UP]
-			# [K_UP]*4
-			# [K_LEFT,K_LEFT,K_LEFT,K_LEFT]
-			# [K_LEFT, K_UP, K_UP, K_UP, K_UP]
-			# [K_LEFT]*8
-			# [K_DOWN, K_LEFT]+[K_RIGHT]*23+[K_UP]*3
-			# [K_UP], [K_LEFT]*4
+			## TEST2
+			# [K_UP, K_UP, K_UP]
+			## TEST3
+			# [K_LEFT, K_UP, K_UP]
+			## TEST4
+			# [K_LEFT],[K_UP,K_UP]
+			## TEST5
+			# [0]*6
+			## TEST6
+			# [0]*10
+			## TEST7
+			# [0, K_UP, K_UP, K_UP, K_RIGHT]
+			## TEST8
+			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0]
+			## PUSH_BOULDERS_2
+			# [K_RIGHT]*3, [K_RIGHT, K_RIGHT, K_UP]
+
+			# [K_LEFT, K_LEFT, K_LEFT]
+			[0]*6
 		]
 
 		self.rleHistory = [[] for i in range(len(actionSequences))]
@@ -471,11 +553,8 @@ class Agent:
 				print ">>> Step", num+1, "of", len(actions), "<<<"
 				## initialize VRLEs
 				theoryRLEs = VrleInitPhase(self.hypotheses, self.rle)
-				lastStep=False
-				if num == len(actions)-1:
-					lastStep=True
 				t2 = time.time()
-				scoresAndHypotheses, _, _ = self.executeStep(episode_num, num, self.rleHistory, self.actionHistory, action, self.hypotheses, theoryRLEs, [], lastStep=lastStep)
+				scoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses)
 				print ""
 				print "executed step in {} seconds".format(time.time()-t2)
 				print ""
@@ -491,14 +570,8 @@ class Agent:
 		## Add newly-seen objects.
 		current_objects = self.rle._game.getAllObjects()
 		newObjects = [k for k in current_objects if k not in self.rle._game.movement_options]
-		# if any([k not in self.rle._game.movement_options for k in current_objects]):
-			# for k in current_objects.keys():
-				# distributionInitSetup(self.rle._game, k)
-				# if k not in self.all_objects[episode_num]:
-					# self.all_objects[episode_num][k] = current_objects[k]
 		if newObjects:
 			spriteInduction(self.rle._game, step=1, action=action, specificSpritesToUpdate=[])
-			spriteInduction(self.rle._game, step=2, action=action, specificSpritesToUpdate=[])
 
 		return hypotheses
 
@@ -523,11 +596,11 @@ class Agent:
 
 		return newRle
 
-	def scoreAndFilterTheories(self, newTheories, episode_num):
+	def scoreAndFilterTheories(self, newTheories, episode_num, displayTheories=False):
 		# print episode_num
 		# embed()
 		penalties, imaginedEffectsPerTheory = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], \
-			self.actionHistory[:episode_num+1], method=EXPERIENCE_REPLAY_METHOD, displayTheories=False)
+				self.actionHistory[:episode_num+1], method=EXPERIENCE_REPLAY_METHOD, displayTheories=False, assumeZeroErrorTheoryExists=self.assumeZeroErrorTheoryExists)
 
 		for n,imaginedEffects in enumerate(imaginedEffectsPerTheory):
 			newTheories[n].setOfImaginedEffects = newTheories[n].setOfImaginedEffects.union(imaginedEffects)
@@ -536,14 +609,14 @@ class Agent:
 		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
 
 		for num, sh in reversed(list(enumerate(scoreAndTheoryTuples))):
-			if num > 100:
+			if num > 5:
 				continue
 			print "Theory: {} | Error: {}".format(num, sh[0])
 			sh[1].display()
 		scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
 
 		scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
-			proportionOfSpriteTheories=None, errorCutoff=ERRORCUTOFF, usePrior=False)]
+			proportionOfSpriteTheories=None, errorCutoff=ERRORCUTOFF, usePrior=True)]
 
 		print "Experience replay complete."
 		for num, sh in enumerate(scoresAndHypotheses):
@@ -553,16 +626,17 @@ class Agent:
 
 		return scoresAndHypotheses, scoreAndTheoryTuples
 
-	def regroundOrNot(self, step_number, objectPositionsArray, hypothesis):
+	def regroundOrNot(self, step_number, predictedEnvs, hypothesis):
 		## Returns predictionError=True/False, regroundForKillerTypes=True/False, regroundForKillerTypes=True/False
 		## NOTE: If predictionError=True, we aren't evaluating regroundForX
 		## because we end up replanning no matter what.
 
-		if not objectPositionsArray:
-			print "warning! empty objectPositionsArray in regroundOrNot!"
+		if not predictedEnvs:
+			print "warning! empty predictedEnvs in regroundOrNot!"
 			return False , False , False
 
-		matchedEnvs, la, lb = matchEnvs(self.rle, objectPositionsArray[step_number+1])
+		matchedEnvs, la, lb = matchEnvs(self.rle, predictedEnvs[step_number+1])
+
 		if la:
 			return True, False, False
 		if lb:
@@ -588,20 +662,7 @@ class Agent:
 								return False, regroundForKillerTypes, regroundForStochasticTypes
 		return False, False, False
 
-	def executeStep(self, episode_num, step_num, rleHistories, actionHistories, action, hypotheses, theoryRLEs, objectPositionsArray, lastStep=False):
-
-		regroundForKillerTypes, regroundForStochasticTypes = False, False
-		envRealPrev = self.fastcopy(self.rle)
-		actionHistories[episode_num].append(action)
-		
-		self.rle.step(action)
-		envReal = self.fastcopy(self.rle)
-		print "took action; managing objects"
-		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action)
-		print "managed new objects; dealing with orientedSprites"
-		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
-		self.rleHistory[episode_num].append(envReal)
-
+	def propagateMissileOrientationBackwards(self, envReal, episode_num):
 		## If we learn anything about orientation in this step for a sprite that was created in a previous step,
 		## go back in time and assign that orientation to the previous steps that sprite was in. This is so that when you set the state to what you 
 		## remember from the past, you can incorporate this knowledge.
@@ -619,79 +680,103 @@ class Agent:
 				## Stop going back in time once you've gone to a timestep where you haven't been able to apply your knowledge from this step
 				## (that is, when none of the sprites you learned about exist)
 				if not madeChange:
-					break
-		print "dealt with sprites; matching envs"
+					break		
+
+	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses):
+
+		theoryRLEs = VrleInitPhase(hypotheses, self.rle)
+		envRealPrev = self.fastcopy(self.rle)
+		actionHistories[episode_num].append(action)
+		self.rle.step(action)
+		envReal = self.fastcopy(self.rle)
+		if sum([len(episode) for episode in rleHistories]) <= OBSERVATION_PERIOD_LENGTH:
+			# have to save extra info since we deal with the error maps after the step they occur
+			copyGameInferenceInfo(envReal, self.rle)
+
+		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action)
+
+		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
+		self.rleHistory[episode_num].append(envReal)
+		self.propagateMissileOrientationBackwards(envReal, episode_num)
+
 		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
 		self.rle._game.sprite_appearances = new_sprites
-		print "managed envs"
+
 		print ""
 		print keyPresses[action]
 		print self.rle.show(color='blue')
 
 		print "evaluating {} old theories and proposing new ones".format(len(theoryRLEs))
-		updateTerminations(self.rle, hypotheses)
+		updateTerminations(self.rle, hypotheses, addNoveltyRules=False)
 		
-		predictionError, regroundForKillerTypes, regroundForStochasticTypes = self.regroundOrNot(step_num, objectPositionsArray, hypotheses[0])
+		## TODO: If you ever want to not always run testAndExpand, you should implement
+		## whatever check you need here. Also, keep track of the scores corresponding to each hypothesis
+		## so that you can return those when you don't do everything below the next 5 lines.
+		newTheories = []
+		for num, env in enumerate(theoryRLEs):
+			theories = testAndExpand(env, hypotheses[num], action, self.rle, envRealPrev, self.rleHistory, \
+					self.actionHistory, episode_num)
+			newTheories.extend(theories)
+		newTheories = list(set(newTheories))
 
-		# if predictionError:
-		if True:
-			newTheories = []
-			for num, env in enumerate(theoryRLEs):
-				theories = testAndExpand(env, self.hypotheses[num], action, self.rle, envRealPrev, self.rleHistory, \
-						self.actionHistory, episode_num)
-				newTheories.extend(theories)
-
-			newTheories = list(set(newTheories))
-		else:
-			newTheories = self.hypotheses
-			if self.bestScoresAndHypotheses:
-				return self.bestScoresAndHypotheses, regroundForKillerTypes, regroundForStochasticTypes
 		self.allTheories.extend(newTheories)
 		print ""
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
 
-		bestScoresAndHypotheses = []
-
 		if newTheories:
+			# embed()
+			# t1 = time.time()
 			bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
+			# print time.time()-t1
+			# embed()
 
-			if len(bestScoresAndHypotheses) == 0:
+			if len(bestScoresAndHypotheses) == 0:	
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
-				embed()
+				# print "Addressing remaining error maps for {} theories".format(len(newTheories))
+				# embed()
+
 				newerTheories = []
 
-				for t in newTheories:
-					theories = addressRemainingErrorMaps(t, envRealPrev, self.rle, action, self.rleHistory, self.actionHistory)
-					newerTheories.extend(theories)
-				newerTheories = list(set(newerTheories))
+				if self.assumeZeroErrorTheoryExists:
+					self.assumeZeroErrorTheoryExists = False
+					# redo testAndExpand, but take your time and do it thoroughly
+					for num, env in enumerate(theoryRLEs):
+						theories = testAndExpand(env, hypotheses[num], action, self.rle, envRealPrev, self.rleHistory, \
+								self.actionHistory, episode_num)
+						newerTheories.extend(theories)
+					newerTheories = list(set(newerTheories))
+
+				if len(newerTheories) == 0:
+					print "***** WARNING ***** still no hypotheses surviving filter when assumeZeroErrorTheoryExists is False, trying again"
+					for t in newTheories:
+						theories = addressRemainingErrorMaps(t, envRealPrev, self.rle, action, self.rleHistory, self.actionHistory)
+						newerTheories.extend(theories)
+					newerTheories = list(set(newerTheories))
 
 				self.allTheories.extend(newerTheories)
 
 				bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newerTheories, episode_num)
+				for s , h in bestScoresAndHypotheses:
+					h.dryingPaint = set()
+			if len(bestScoresAndHypotheses) == 0:
+				print "second attempt failed, 0 theories survived filter"
+				embed()
+
 		else:
-			print "Got no new theories"
+			print "WARNING: You are returning 'bestScoresAndHypotheses' but these scores are fake and are\
+					really the result of not scoring theories for the beginning observation period."
+			bestScoresAndHypotheses = [(0.0, h) for h in hypotheses]
 
 		self.statesEncountered.append(self.rle._game.getFullState())
 		self.rle._game.sprite_appearances = []
 
-		for s , h in bestScoresAndHypotheses:
-			h.dryingPaint = set()
-
-		if len(bestScoresAndHypotheses) == 0:
-			print "second attempt failed, 0 theories survived filter"
-			embed()
-
-		return bestScoresAndHypotheses, regroundForKillerTypes, regroundForStochasticTypes
+		return bestScoresAndHypotheses
 
 ########################################################################
 ######## Other initialization METHODS                			########
 ########################################################################
 
-def observe(rle, num_steps=1):
-	for i in range(num_steps):
-		spriteInduction(rle._game, step=1, action=None)
-		spriteInduction(rle._game, step=2, action=None)
-	return
+
 
 ########################################################################
 ######## RLE INITIALIZATION AND STATE-SETTING METHODS 			########
@@ -848,7 +933,6 @@ def convertTheoryToSubgoalTheory(theory):
 			elif 'Avatar' not in str(T.classes[rule.slot1][0].vgdlType):
 				rule.interaction = 'killSprite'
 	imaginedEffectTuples = set([(eff[1], eff[2]) for eff in theory.setOfImaginedEffects])
-	# T.setOfImaginedEffects = theory.setOfImaginedEffects
 	T.terminationSet = [rule for rule in T.terminationSet if rule.ruleType!='NoveltyRule' or (rule.termination.s1, rule.termination.s2) not in imaginedEffectTuples]
 
 	return T
@@ -900,7 +984,7 @@ def findNearestSprites(sprite, spriteList, dist_function=manhattanDist2, skip_se
 
 
 ## Function generating penalty and error map
-def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_score=1, targetColor=None, penalty_only=False):
+def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_score=1, targetColor=None, penalty_only=False, earlyStopping=False):
 	"""
 	envA: hypothetical environment
 	envB: real environment
@@ -1089,6 +1173,10 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		except:
 			print "reportError problem"
 			embed()
+
+		if penalty_only and earlyStopping and 1.-np.exp(total_penalty) > 0.0001:
+			# print "CUT OFF"
+			return 1. , []
 
 	# Missing/additional/transformation penalty
 	total_penalty += np.log((e_disappearance)**( len(lonely_sprites_envA) + len(lonely_sprites_envB) )) #likelihood
@@ -1653,23 +1741,63 @@ def getSalientStates(rleHistory):
 	## get actionsPerIndex
 	pass
 
-def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses):
+def checkIfStatesAreDifferent(env1, env2):
+	if (env1 and not env2) or (env2 and not env1):
+		return True
+	matchedEnvs, la, lb = matchEnvs(env1, env2)
+	if la:
+		return True
+	if lb:
+		return True
+	for match in matchedEnvs:
+		if match[2]!=0:
+			return True
+	return False
 
+def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, returnAllErrors=False, assumeZeroErrorTheoryExists=False):
+
+	# if there isn't a theory, it has error 1. (added for multiepisode experienceReplay)
+	if not hypotheses[0]:
+		return [1.] , set()
+
+	cutoffThreshold = 1. # aka two strikes, you're out
+	if assumeZeroErrorTheoryExists:
+		cutoffThreshold = .00001 # aka one strike you're out
 	subsamplePercentage = .2
 	actionsPerIndex = 2
 	setOfImaginedEffects = set()
+	cumulative_penalties = []
 
 	if len(hypotheses)>1:
 		print "got more than 1 hypothesis in singleTheoryExperienceReplay"
 		embed()
 	
+
+	## This is only checking if you have replayed that exact sequence
+	## but you have definitely replayed a similar shorter sequence. Grab that value and then only modify
+	## it by the most recent step.
+	## This is still not going to address the fact that when you change a theory you're deleting the whole history
+	## How important it it actually to go all the way back and do full replay? As in,
+	## How often will a new modification make something old far worse? Maybe this is just completely unnecessary.
 	key = (method, targetColor, rleHistory[0].ID, len(rleHistory))
 	
 	if not displayStates and key in hypotheses[0].experienceReplayRecord:
 		return hypotheses[0].experienceReplayRecord[key], hypotheses[0].setOfImaginedEffects
 
 	if method == 'all':
-		indices = range(len(rleHistory))
+		if displayStates:
+			print "Playing replay FORWARD. Default is backwards."
+			indices = range(len(rleHistory))
+		else:
+			indices = list(reversed(range(len(rleHistory)-1)))
+			# indices = indices[1:min(5, len(indices))]
+			keyForPreviousSequence = (method, targetColor, rleHistory[0].ID, len(rleHistory)-1)
+			if keyForPreviousSequence in hypotheses[0].experienceReplayRecord:
+				# print "found key for shorter sequence; only testing most recent step"
+				# embed()
+				indices = indices[0:1]
+				prevMeanError = hypotheses[0].experienceReplayRecord[keyForPreviousSequence][0]
+				cumulative_penalties = [[prevMeanError] for i in range(len(rleHistory)-2)]
 		actionsPerIndex = 1
 	elif method == 'oneReplay':
 		indices = [0]
@@ -1688,13 +1816,24 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	elif method == 'salient':
 		indices, actionsPerIndex = getSalientStates(subsamplePercentage, actionsPerIndex, rleHistory)
 
-	cumulative_penalties = []
 	initialRLEs = VrleInitPhase(hypotheses, rleHistory[0], makeInitialVrle=True)
-
+	theoryRLEs = [[]]
 	for idx in indices:
 		## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
 		t1 = time.time()
-		
+
+		if sum([c[0] for c in cumulative_penalties])>cutoffThreshold and (assumeZeroErrorTheoryExists or indices.index(idx)>3):
+			# this hypothesis is so wrong it's not worth thinking about any more.
+			# print "CUT OFF at index {} of {}, max={}".format(idx,indices, max(indices))
+			mean_penalties = [1.]
+			hypotheses[0].experienceReplayRecord[key] = mean_penalties
+			return mean_penalties, setOfImaginedEffects
+
+		# if any([checkIfStatesAreDifferent(tRLE, rleHistory[idx]) for tRLE in theoryRLEs]):
+			# print "states were different; making new theoryRLEs"
+			# theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], theoryRLEs=initialRLEs)
+		# else:
+			# print "got same states; not making new theoryRLE"
 		theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], theoryRLEs=initialRLEs)
 
 		## Take a predetermined number of actions starting from idx
@@ -1715,15 +1854,37 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 			for num, env in enumerate(theoryRLEs):                      
 
 				if env is not None:
+
+					## Store resources the avatar had before the step
+					## so we can update the dict of effects we thought we saw while having
+					## 1 or lim of each resource
+					avatarColor = hypotheses[num].classes['avatar'][0].colorName
+					resourceDict = {}
+					for k in env._game.sprite_groups['avatar'][0].resources.keys():
+						resourceColor = hypotheses[num].classes[k][0].colorName	
+						try:			
+							resourceDict[k] = env._game.observation['trackedObjects'][avatarColor][0].inventory[resourceColor]
+						except:
+							print 'resourceDict problem'
+							embed()
+
 					imaginedEffects = env.step(action)['effectList']
 					for effect in imaginedEffects:
 						eff1Class = env._game.all_objects[effect[1]].name if effect[1] in env._game.all_objects else 'EOS'
 						eff2Class = env._game.all_objects[effect[2]].name if effect[2] in env._game.all_objects else 'EOS'
-						effectWithClassNames = (effect[0], eff1Class, eff2Class)
-						setOfImaginedEffects.add(effectWithClassNames)
+						setOfImaginedEffects.add((effect[0], eff1Class, eff2Class))
+						setOfImaginedEffects.add((effect[0], eff2Class, eff1Class))
+
+						for k,v in resourceDict.items():
+							if v[0]>0:
+								setOfImaginedEffects.add((effect[0], eff1Class, eff2Class, k, True, False))
+								setOfImaginedEffects.add((effect[0], eff2Class, eff1Class, k, True, False))
+							if v[0]==v[1]:
+								setOfImaginedEffects.add((effect[0], eff1Class, eff2Class, k, True, True))
+								setOfImaginedEffects.add((effect[0], eff2Class, eff1Class, k, True, True))
 				try:
 					penalty, errorList = errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
-						rleHistory[idx+n], targetColor=targetColor, penalty_only=True)
+						rleHistory[idx+n], targetColor=targetColor, penalty_only=True, earlyStopping=assumeZeroErrorTheoryExists)
 					penalties.append(penalty)
 				except:
 					print "exception in experienceReplay"
@@ -1743,9 +1904,9 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	hypotheses[0].experienceReplayRecord[key] = mean_penalties
 	return mean_penalties, setOfImaginedEffects
 	
-def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', targetColor=None, displayStates=False, displayTheories=False):
-	if len(hypotheses)>10:
-		print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
+def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', targetColor=None, displayStates=False, displayTheories=False, assumeZeroErrorTheoryExists=False):
+	# if len(hypotheses)>10:
+		# print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
 
 	t1 = time.time()
 	results, imaginedEffects = [], []
@@ -1756,25 +1917,35 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', target
 		if displayTheories:
 			print "running experienceReplay on {}:".format(num)
 			h.display()
-		mean_penalties, setOfImaginedEffects = singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h])
+		mean_penalties, setOfImaginedEffects = \
+				singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h],  assumeZeroErrorTheoryExists=assumeZeroErrorTheoryExists)
+		# print "ran experienceReplay on {}. error: {}".format(num, mean_penalties[0])
+		# if len(hypotheses)>400:
+			# embed()
+
 		results.append(mean_penalties)
 		imaginedEffects.append(setOfImaginedEffects)
 
-	if len(hypotheses)>10:
-		print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
+	# if len(hypotheses)>10:
+		# print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 
 	# print "ran experienceReplay"
 	# embed()
 	mean_penalties = [r[0] for r in results]
 	return mean_penalties, imaginedEffects
 
-def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, method, targetColor=None, displayStates=False, displayTheories=False):
+
+def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, method, targetColor=None, displayStates=False, displayTheories=False, assumeZeroErrorTheoryExists=False):
 	'''
 	Runs experience replay on multiple episodes with some action sequence for each episode and returns the penalties for the given theories (weighted on the number of actions)
 	'''
 	assert len(rleHistories) == len(actionHistories), 'rleHistories and actionHistories need to match'
 
-	# print "Running MultiEpisodeExperienceReplay on %i episodes " % len(rleHistories)
+	hypotheses = hypotheses[:] # so we can replace some with None if they're not worth continuing with (and not modify the list passed in)
+
+	if sum([len(r) for r in rleHistories]) > 10 or len(hypotheses)>10:
+		t1 = time.time()
+		print "Running MultiEpisodeExperienceReplay on {} hypotheses, {} episodes and {} time-steps total".format(len(hypotheses), len(rleHistories), sum([len(r) for r in rleHistories]))
 
 	multi_episode_mean_penalties = []
 	imaginedEffectsPerTheory = [set() for i in range(len(hypotheses))]
@@ -1782,13 +1953,22 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 	weight = 1./len(max(actionHistories, key=len))
 
 	for rleHistory, actionHistory in zip(rleHistories, actionHistories):
-		mean_penalties, imaginedEffects = experienceReplay(hypotheses, rleHistory, actionHistory, 
-													 method, targetColor, displayStates, displayTheories)
+		mean_penalties, imaginedEffects = \
+				experienceReplay(hypotheses, rleHistory, actionHistory, method, targetColor, displayStates,\
+						displayTheories, assumeZeroErrorTheoryExists=assumeZeroErrorTheoryExists)
 		mean_penalties = np.array(mean_penalties)*weight*len(actionHistory)
 		multi_episode_mean_penalties.append(mean_penalties)
+
 		for i in range(len(hypotheses)):
-			imaginedEffectsPerTheory[i] = imaginedEffectsPerTheory[i].union(imaginedEffects[i])
+			# if we have enough data, and it's very wrong, stop evaluating this theory for subsequent episodes
+			if mean_penalties[i] > ERRORCUTOFF and (len(rleHistory) > 3 or assumeZeroErrorTheoryExists):
+				hypotheses[i] = None
+			else:
+				imaginedEffectsPerTheory[i] = imaginedEffectsPerTheory[i].union(imaginedEffects[i])
+
 	multi_episode_mean_penalties = np.mean(multi_episode_mean_penalties, axis=0)
+	if sum([len(r) for r in rleHistories]) > 10 or len(hypotheses)>10:
+		print "MultiEpisodeExperienceReplay on {} theories, {} episodes and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistories), sum([len(r) for r in rleHistories]), time.time()-t1)
 
 	return multi_episode_mean_penalties, imaginedEffectsPerTheory
 
@@ -1796,15 +1976,9 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 ######## THEORY MODIFICATION 									########
 ########################################################################
 
-def updateTerminations(rle, hypotheses):
-
-	terminationSet, falsified, multi_falsified = hypotheses[0].updateTerminations(rle)
-
+def updateTerminations(rle, hypotheses, addNoveltyRules=True):
 	for h in hypotheses:
-		h.terminationSet = terminationSet
-		h.falsified = falsified
-		h.multi_falsified = multi_falsified
-
+		h.updateTerminations(rle, addNoveltyRules=addNoveltyRules)
 	return
 	
 def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSpriteTheories, errorCutoff=None, usePrior=False):
@@ -1819,36 +1993,6 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 	candidates = [s for s in scoreAndTheoryTuples if s[0]<=cutoff]
 	if not candidates:
 		return []
-
-	# filtered = []
-
-	# if max_num is None:
-	# 	max_num = len(candidates)+1
-
-	# if proportionOfSpriteTheories is None:
-	# 	candidates = sorted(candidates, key=lambda x:x[0])
-	# 	filtered = candidates[0:max_num]
-	# else:
-	# 	# TODO: this never happens any more, as of a long time ago I think
-	# 	sprite_candidates = [s for s in candidates if s[1].mostRecentEdit == 'spriteInduction']
-	# 	induction_candidates = [s for s in candidates if s[1].mostRecentEdit == 'interactionSetInduction']
-	# 	no_edit_candidates = [s for s in candidates if s[1].mostRecentEdit == 'none']
-	# 	if len(sprite_candidates)>int(math.floor(max_num*proportionOfSpriteTheories)):
-	# 		num_sprite_candidates_chosen = min(int(math.floor(max_num*proportionOfSpriteTheories)), len(sprite_candidates))
-	# 		filtered = sprite_candidates[0:num_sprite_candidates_chosen]
-	# 	else:
-	# 		num_sprite_candidates_chosen = len(sprite_candidates)
-	# 		filtered = sprite_candidates
-
-	# 	remaining = max_num - len(filtered)
-	# 	filtered = induction_candidates[0:min(remaining, len(induction_candidates))] + filtered + no_edit_candidates
-
-	# 	if len(filtered)<max_num:
-	# 		diff = max_num - len(filtered)
-	# 		filtered = filtered + sprite_candidates[num_sprite_candidates_chosen:min(len(sprite_candidates), num_sprite_candidates_chosen+diff)]
-	# 	filtered = sorted(filtered, key=lambda x: x[0])
-
-	# # print "METHOD ONE FILTER:", [t[0] for t in filtered]
 
 	## here begins new filtering method:
 	# 	always keep first tier (by error) (as long as it made the maxmium allowed error cutoff)
@@ -1879,11 +2023,11 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 		# filter out any theory whose added complexity does not improve its error
 		#	i.e. between two theories of equal perfomance, ignore the less likely/more complex one
 		errorLevelToMinPrior = dict()
-		epsilon = 0 # you never know with floats... could be necessary later
 		for score, theory in filtered:
-			if score not in errorLevelToMinPrior or theory.prior() < errorLevelToMinPrior[score]:
-				errorLevelToMinPrior[score] = theory.prior()
-		filtered = [sh for sh in filtered if sh[1].prior() <= errorLevelToMinPrior[sh[0]] + epsilon]
+			score = round(score,8)
+			if score not in errorLevelToMinPrior or theory.prior(granularity=1) < errorLevelToMinPrior[score]:
+				errorLevelToMinPrior[score] = theory.prior(granularity=1)
+		filtered = [sh for sh in filtered if sh[1].prior(granularity=1) <= errorLevelToMinPrior[round(sh[0],8)]]
 
 	return filtered
 
@@ -1894,16 +2038,34 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 	# lookup table (dict) which maps (classPair, predicateTuple) to all combinations of all possible rules involving those classes and predicates
 	classPairPlusPredicateToRuleSets = dict()
 
+	perColorErrorBaselines = dict()
+	if sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
+		assert len(theories)==1, "You got more than one theory in expandTheories while expecting only one."
+		colors = set([e.targetColor for e in errorList])
+		for color in colors:
+			penalties, _ = MultiEpisodeExperienceReplay(theories, rleHistories, \
+						actionHistories, method=EXPERIENCE_REPLAY_METHOD, targetColor = color)
+			perColorErrorBaselines[color] = penalties[0]
+
 	for errorMap in errorList:
 		## Skip this whole step if you've already made changes for this theory. Just pass it on and you'll
 		## evaluate it on the whole dataset in the outer loop.
 		if len(theories) == 1 and any([errorMap == e for e in theories[0].errorMapHistory]):
-			errorMap.display()
-			print "we've addressed this theory before (in expandTheories). Skipping it"
+			# errorMap.display()
+			# print "we've addressed this error before (in expandTheories). Skipping it"
 			newTheories = [theories[0]]
 			theories = newTheories
 			# FLAG: huh?
 			continue
+
+		# ONLY in the the single step where we'll have error maps from previous steps
+		if sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
+			envRealPrev = rleHistories[errorMap.episodeStepGenerated[0]][errorMap.episodeStepGenerated[1] - 1]
+			envRealCurrent = rleHistories[errorMap.episodeStepGenerated[0]][errorMap.episodeStepGenerated[1]]
+			prevAction = actionHistories[errorMap.episodeStepGenerated[0]][errorMap.episodeStepGenerated[1] - 1]
+
+		# print "now dealing with errorMap"
+		# embed()
 
 		# print "In base case. Correcting error for {} for {} theories".format(errorMap.targetClass, len(theories))
 		t1 = time.time()
@@ -1917,15 +2079,21 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		# print "beforeFilter"
 		# embed()
 		newTheories = list(set(newTheories))
-		rleHistory, actionHistory = rleHistories[episode_num], actionHistories[episode_num]
-		penalties, _ = MultiEpisodeExperienceReplay(newTheories, [rleHistory[-2:]], \
-			[actionHistory[-1:]], method=EXPERIENCE_REPLAY_METHOD, targetColor = errorMap.targetColor)
-		scoreAndTheoryTuples = zip(penalties, newTheories)
-		scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
+		if sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
+			penalties, _ = MultiEpisodeExperienceReplay(newTheories, rleHistories, \
+					actionHistories, method=EXPERIENCE_REPLAY_METHOD, targetColor = errorMap.targetColor)		
+			scoreAndTheoryTuples = zip(penalties, newTheories)
+			print "{} theories before filtering".format(len(scoreAndTheoryTuples))
+			scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0]<perColorErrorBaselines[errorMap.targetColor]]
+			print "{} theories after filtering".format(len(scoreAndTheoryTuples))
+			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
 
-		# scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=0, max_num=None,
-				# proportionOfSpriteTheories=None)]
-		# newTheories = [s[1] for s in scoresAndHypotheses]
+		else:
+			rleHistory, actionHistory = rleHistories[episode_num], actionHistories[episode_num]
+			penalties, _ = MultiEpisodeExperienceReplay(newTheories, [rleHistory[-2:]], \
+					[actionHistory[-1:]], method=EXPERIENCE_REPLAY_METHOD, targetColor = errorMap.targetColor)
+			scoreAndTheoryTuples = zip(penalties, newTheories)
+			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
 		
 		newTheories = [s[1] for s in scoreAndTheoryTuples]
 		theories = newTheories
@@ -1974,7 +2142,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 	## If we were about to make modifications we've made already, don't waste the time.
 	if any([errorMap == e for e in theory.errorMapHistory]):
 		errorMap.display()
-		print "we've addressed this theory before. Skipping it"
+		print "we've addressed this error before. Skipping it"
 		newTheories = [theory]
 		return newTheories
 
@@ -1983,6 +2151,8 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 	newErrorMaps = [errorMap]
 
 	theory.experienceReplayRecord = {}
+
+	updateAllOptions(envRealCurrent._game, envRealPrev._game, action=action)
 
 	## If there are unknown colors in an inventory, add them to the theory here.
 	if 'inventoryChange' in errorMap.diagnosis:
@@ -2004,6 +2174,8 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 				else:
 					theory.spriteObjects[k].args = {'limit':errorMap.targetToken.inventory[k][1]}
 
+	# print "about to check for new sprites"
+	# embed()
 	## If there are new objects on screen, add them to the thery or reason about related objects (e.g., spawnPoints)
 	if errorMap.targetClass not in theory.classes.keys() or errorMap.targetToken in envRealCurrent._game.observation['new_sprites']:
 
@@ -2100,24 +2272,51 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 	return newTheories
 
 def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, actionHistories, episode_num):
+	global initialErrorBuildup
+
+	episodeStep = (episode_num, len(rleHistories[episode_num]) - 1)
 
 	env.step(action)
 
 	penalty, errorList = errorSignal(env, envReal, hypothesis, envRealPrev)
 
-	if errorList:
-		hypothesis.display()
-		for e in errorList:
-			e.display()
-			print ""
+	# track where this error came from
+	for e in errorList:
+		e.episodeStepGenerated = episodeStep
+
+	if sum([len(episode) for episode in rleHistories]) < OBSERVATION_PERIOD_LENGTH:
+		initialErrorBuildup.extend(errorList)
+		return []
+	elif sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
+		theories = expandTheories([hypothesis], initialErrorBuildup+errorList, None, None, None, rleHistories, actionHistories, episode_num)
+	else:
+		theories = expandTheories([hypothesis], errorList, envRealPrev, envReal, action, rleHistories, actionHistories, episode_num)
+	
+	if len(theories)==1 and theories[0]==hypothesis:
+		theories[0].experienceReplayRecord = hypothesis.experienceReplayRecord
+	
+	# if errorList:
+		# hypothesis.display()
+		# for e in errorList:
+			# e.display()
+			# print ""
 	# else:
 		# hypothesis.display()
 		# print "No error"
 		# embed()
 	# print "expanding theories"
-	theories = expandTheories([hypothesis], errorList, envRealPrev, envReal, action, rleHistories, actionHistories, episode_num)
 
 	return theories
+
+def copyGameInferenceInfo(envReal, rle):
+	envReal._game.spriteDistribution = ccopy(rle._game.spriteDistribution)
+	envReal._game.object_token_spriteDistribution = rle._game.object_token_spriteDistribution
+	envReal._game.movement_options = ccopy(rle._game.movement_options)
+	envReal._game.orientation_options = ccopy(rle._game.orientation_options)
+	envReal._game.sprite_appearance_predictions = ccopy(rle._game.sprite_appearance_predictions)
+	envReal._game.object_token_movement_options = ccopy(rle._game.object_token_movement_options)
+	envReal._game.sprite_appearances = ccopy(rle._game.sprite_appearances)
+
 
 
 
@@ -2132,11 +2331,11 @@ if __name__ == "__main__":
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
-
-	# filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.expt_push_boulders2"
+	filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.testAll"
 	
-	filename = "examples.gridphysics.expt_antagonist"
+	# filename = "examples.gridphysics.expt_antagonist"
 
 	# filename = "examples.gridphysics.basics"
 

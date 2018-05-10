@@ -16,11 +16,15 @@ game_number = args.game_number
 # as of 01/2018: it is best to install directly from the github repo with
 # the command 'pip install git+https://github.com/hyperopt/hyperopt'
 
+"""
+python -m vgdl.parallel_planning --game_number 0
+"""
+
 gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
             'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
 local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper',  # 10-12
-    'expt_preconditions', 'expt_push_boulders2', 'expt_relational']  # 13-15 to play a "local" game
+    'expt_preconditions', 'expt_push_boulders2', 'expt_relational', 'avatar_inference']  # 13-15 to play a "local" game
 
 def play_trainset(hyperparameters):
     start_time = time.time()
@@ -49,7 +53,7 @@ def play_trainset(hyperparameters):
         		yield color
 
 
-        gvgname = "../gvgai/training_set_1/{}".format(gameName)
+        gvgname = "gvgai/training_set_1/{}".format(gameName)
 
         gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
@@ -70,7 +74,7 @@ def play_trainset(hyperparameters):
 
     ##then pass this down for multiple episodes
     gameObject = None
-    agent.playCurriculum(level_game_pairs=level_game_pairs, num_episodes=3)
+    agent.playCurriculum(level_game_pairs=level_game_pairs, num_episodes_per_level=3)
     # agent.playEpisodes(None,5)
 
     total_time = time.time() - start_time

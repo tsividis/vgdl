@@ -74,7 +74,10 @@ class WBP():
 			# self.theory.interactionSet.extend(fakeInteractionRules)
 			# print "before updating terminations in WBP"
 			# embed()
-			self.theory.updateTerminations(ruleSetToUpdate=fakeInteractionRules)
+			# if self.rle._game.getAvatars()[0].resources:
+				# print "before updating terminations in WBP"
+				# embed()
+			self.theory.updateTerminations(addNoveltyRules=True, ruleSetToUpdate=fakeInteractionRules)
 		print 'max nodes', self.max_nodes
 		i=1
 		for k in rle._game.all_objects.keys():
@@ -344,9 +347,9 @@ class WBP():
 						# a win condition
 						foundWin = False
 						for term in self.theory.terminationSet:
-							if isinstance(term, SpriteCounterRule) and term.termination.win==True:
+							if isinstance(term, SpriteCounterRule) and term.termination.win==True: #and rule.verified
 								stypes = [term.termination.stype]
-							elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
+							elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True: #and rule.verified
 								stypes = term.termination.stypes
 							else:
 								stypes = []
@@ -379,7 +382,7 @@ class WBP():
 						ended, win, t = child.rle._isDone(getTermination=True)
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
-						print "win"
+						# print "win", ended, win, t
 						# print t
 						# embed()
 						# return child, gameString_array
@@ -393,6 +396,7 @@ class WBP():
 				print "we have {} winning states".format(len(self.winning_states))
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
 				bestNode = bestNodes[0]
+				# embed()
 				# gameString_array.append(bestNode.rle.show())
 				# object_positions_array.append(copy.deepcopy(bestNode.rle))
 				return bestNode, gameString_array, object_positions_array
@@ -665,6 +669,7 @@ class Node():
 					if list(resource[1])[0].operator_name == '>'
 					else list(resource[1])[0].num
 					for resource in avatar_preconditions])
+				print "resource limits", resource_limits
 				try:
 					avatar_resource_quantities = np.array([rle._game.getAvatars()[0].resources[res] for res in resource_names])
 				except IndexError:
@@ -991,6 +996,8 @@ class Node():
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
 			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
 				self.win=True
+				# print "reached resourceLimits in WBP"
+				# embed()
 		except IndexError:
 			pass
 

@@ -1,42 +1,54 @@
 
 level = """
 wwwwwwwwwwwwwwwwwwwwww
-w  1    p            w
-w    2    p          w
-wA  q     2   w     ww
-w    w1       w w    w
-ww          q        w
-w   p    q      1    w
-w    2        g  g   w
-w         2          w
+w                    w
+w  1                 w
+wA    1       w     ww
+w             gg     w
+w                    w
 wwwwwwwwwwwwwwwwwwwwww
 """
 
-# level1 = """
-# wwwwwwwwwwwwwwwwwwwwww
-# wp         w        2w
-# w          1     11  w
-# w   g          1    ww
-# w  1  12     1      ww
-# ww             q     w
-# w                  A w
-# w  ww      q         w
-# w    1    2       1  w
-# wwwwwwwwwwwwwwwwwwwwww
-# """
+
 
 level1 = """
 wwwwwwwwwwwwwwwwwwwwww
-wA1   w    p       g w
-ww  1 w      p       w
-w     p      2  w   ww
-wwwwwww1        w   ww
-ww            q      w
-w    p    q        1 w
-w     2              w
-w         2          w
+w       p            w
+w  1 2    p          w
+wA        2   w     ww
+w    w1       w w    w
+ww          q        w
+w   p    q      1    w
+w             gg     w
+w                    w
 wwwwwwwwwwwwwwwwwwwwww
 """
+
+# level = """
+# wwwwwwwwwwwwwwwwwwwwww
+# w       p            w
+# w  1 2    p          w
+# wA  q     2   w     ww
+# w    w1       w w    w
+# ww          q        w
+# w   p    q      1    w
+# w             gg     w
+# w                    w
+# wwwwwwwwwwwwwwwwwwwwww
+# """
+
+# level1 = """
+# wwwwwwwwwwwwwwwwwwwwww
+# wA1   w    p       g w
+# ww  1 w      p       w
+# w     p      2  w   ww
+# wwwwwww1        w   ww
+# ww            q      w
+# w    p    q        1 w
+# w     2              w
+# w         2          w
+# wwwwwwwwwwwwwwwwwwwwww
+# """
 
 level2 = """
 wwwwwwwwwwwwwwwwwwwwww

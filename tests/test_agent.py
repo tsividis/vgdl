@@ -13,7 +13,7 @@ from tests.locals import *
 
 # I'm not sure if this actually matters...
 FILENAME = 'tests.game.inference'
-EMBED_ON_FAILURE = False
+EMBED_ON_FAILURE = True
 
 ###########################################
 # The abstract base class. Only add Assertion Methods
@@ -68,7 +68,7 @@ class _TestAgent(unittest.TestCase):
 		self.agent.initializeEnvironment()
 		self.agent.all_objects[episode_num] = self.agent.rle._game.getObjects()
 		if episode_num == 0:
-			self.agent.initializeHypotheses(self.agent.all_objects[episode_num])
+			self.agent.initializeHypotheses(episode_num)
 		assert self.agent.hypotheses, 'No hypotheses initilialized'
 		envReal = self.agent.fastcopy(self.agent.rle)
 		self.agent.rleHistory[episode_num].append(envReal)
@@ -78,11 +78,11 @@ class _TestAgent(unittest.TestCase):
 
 	########################################
 	# Execution
-	def executeStep(self, episode_num, action, last_step):
+	def executeStep(self, episode_num, action_num, action, last_step):
 		theoryRLEs = self.generateTheoryRLEs()
 
 		scoresAndHypotheses = self.agent.executeStep(episode_num, self.agent.rleHistory, self.agent.actionHistory, 
-											     										action, self.agent.hypotheses, theoryRLEs, last_step)
+											     										action, self.agent.hypotheses)
 		self.agent.hypotheses = [tup[1] for tup in scoresAndHypotheses]
 
 	def runEpisode(self, episode_num, actions):
@@ -91,7 +91,7 @@ class _TestAgent(unittest.TestCase):
 		for num, action in enumerate(actions):
 			if num == len(actions)-1:
 				last_step = True
-			self.executeStep(episode_num, action, last_step)
+			self.executeStep(episode_num, num, action, last_step)
 
 	def runCurriculum(self, game_string, level_string, action_sequences):
 		self.initializeCurriculum(game_string, level_string, action_sequences)
@@ -234,31 +234,29 @@ class TestBasics(_TestAgent):
 class TestInference(_TestAgent):
 
 
-	# test1 = basicTestConstructor(*inference.test1)
+	test1 = basicTestConstructor(*inference.test1)
+	test2 = basicTestConstructor(*inference.test2)
 
-	# test2 = basicTestConstructor(*inference.test2)
+	### test3 = basicTestConstructor(*inference.test3)
 
-	# test3 = basicTestConstructor(*inference.test3)
+	test4 = basicTestConstructor(*inference.test4)
 
-	# test4 = basicTestConstructor(*inference.test4)
+	test5 = basicTestConstructor(*inference.test5)
 
+	### test6 = basicTestConstructor(*inference.test6)
 
-	# test5 = basicTestConstructor(*inference.test5)
+	# test7 = basicTestConstructor(*inference.test7) #takes long, but add it back at some point.
 
-	# test6 = basicTestConstructor(*inference.test6)
+	test8 = basicTestConstructor(*inference.test8)
 
-	# test7 = basicTestConstructor(*inference.test7)
+	### test9 = basicTestConstructor(*inference.test9)
+	### test10 = basicTestConstructor(*inference.test10)
 
-	# test8 = basicTestConstructor(*inference.test8)
+	### test11 = basicTestConstructor(*inference.test11)
 
-	# test9 = basicTestConstructor(*inference.test9)
-	# test10 = basicTestConstructor(*inference.test10)
+	test12 = basicTestConstructor(*inference.test12)
 
-	# test11 = basicTestConstructor(*inference.test11)
-
-	# test12 = basicTestConstructor(*inference.test12)
-
-	# test13 = basicTestConstructor(*inference.test13)
+	### test13 = basicTestConstructor(*inference.test13)
 
 	test14 = basicTestConstructor(*inference.test14)
 

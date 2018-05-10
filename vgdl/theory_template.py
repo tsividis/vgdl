@@ -190,8 +190,9 @@ class NoveltyRule(TerminationRule):
 		"""sclass = sprite class, snumber = sprite number, win = whether termination is a win"""
 		self.termination = NoveltyTermination(s1=s1, s2=s2, win=win, args=args)
 		self.ruleType = "NoveltyRule"
-		args = args if args else {}
-		self._hash = hash((self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, tuple(sorted(args.iteritems()))))
+		args = frozenset(args) if args else frozenset()
+		# self._hash = hash((self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, tuple(sorted(args.iteritems()))))
+		self._hash = hash((self.ruleType, self.termination.s1, self.termination.s2, self.termination.win, args))
 
 	def __repr__(self):
 		return str(self.asTuple())
@@ -209,6 +210,7 @@ class SpriteCounterRule(TerminationRule):
 		self.termination = SpriteCounter(limit=limit, stype=stype, win=win)
 		self.ruleType = "SpriteCounterRule"
 		self._hash = hash(self.asTuple())
+		self.verified=False
 
 	def __repr__(self):
 		return str(self.asTuple())
@@ -226,7 +228,7 @@ class MultiSpriteCounterRule(TerminationRule):
         self.termination = MultiSpriteCounter(limit=limit,win=win, **argList)
         self.ruleType = "MultiSpriteCounterRule"
         self._hash = hash((self.ruleType, tuple(sorted(self.termination.stypes)), self.termination.limit, self.termination.win))
-
+        self.verified=False
 
     def __repr__(self):
     	return str(self.asTuple())
@@ -280,7 +282,7 @@ class Theory(object):
 		self.expandedSprites = []
 		self.errorMapHistory = []
 		self.lineage = []
-
+		self.fakeInteractionRules = []
 		self.setOfImaginedEffects = set()
 		
 		self.experienceReplayRecord = {} ## store (targetColor, rleHistory.ID, len(rleHistory)):penalty
@@ -305,6 +307,9 @@ class Theory(object):
 		newTheory.falsified = set(self.falsified)
 		newTheory.setOfImaginedEffects = set(self.setOfImaginedEffects)
 		newTheory.killerTypes = set(self.killerTypes)
+		newTheory.resource_limits = defaultdict(lambda:1)
+		for k,v in self.resource_limits.items():
+			newTheory.resource_limits[k]=v
 		return newTheory
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
@@ -379,8 +384,8 @@ class Theory(object):
 		ruleScore = 0.
 
 		if granularity > 0:
-			classScore += sum(1 for c in self.classes if not 'ResourcePack' in str(self.classes[c][0].vgdlType))
-			ruleScore += sum(1 if rule.interaction != 'stepBack' else 0 for rule in self.interactionSet)
+			classScore += sum(1.1 for c in self.classes if not 'ResourcePack' in str(self.classes[c][0].vgdlType))
+			ruleScore += sum(1 if rule.interaction not in ['stepBack','nothing'] else 0 for rule in self.interactionSet)
 			# future note: technically, having removed stepBack should increase the ruleScore
 
 		if granularity > 1:
@@ -392,7 +397,7 @@ class Theory(object):
 				elif any([t in vgdlTypeString for t in stochasticClasses]):
 					classScore += 1.5
 				elif not any([t in vgdlTypeString for t in ['Resource','Immovable']]):
-					classScore += 1
+					classScore += 1.1
 
 			ruleScore += sum(1 for rule in self.interactionSet if rule.interaction in stochasticRules + crazyRules)
 			# also get all the conditionals
@@ -466,7 +471,7 @@ class Theory(object):
 
 		return newInteractionRules
 
-	def updateTerminations(self, rle=None, ruleSetToUpdate=None):
+	def updateTerminations(self, rle=None, addNoveltyRules=True, ruleSetToUpdate=None):
 		if not ruleSetToUpdate:
 			ruleSetToUpdate = self.interactionSet
 
@@ -493,9 +498,11 @@ class Theory(object):
 							self.falsified.add(false_rule)
 					else:
 						# game is done. Hypothesize new theory. Code seems to work without doing this.
-						# new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, win)
-						# if new_rule not in self.falsified and new_rule not in self.terminationSet:
-						# 	self.terminationSet.add(new_rule)
+						new_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, win)
+						## TODO: check this rule.verified construct (5/3/18). Also used in WBP.
+						# new_rule.verified = True
+						if new_rule not in self.falsified and new_rule not in self.terminationSet:
+							self.terminationSet.add(new_rule)
 
 						## If you won/lost, you can't lose/win based on this class being 0
 						false_rule = SpriteCounterRule(self.colorToClassMapper(color), 0, not win)
@@ -519,6 +526,9 @@ class Theory(object):
 							self.multi_falsified.add(new_rule)
 					else: # game ended
 						new_rule = MultiSpriteCounterRule(stypes=class_combination, win=win)
+						## TODO: check this rule.verified construct (5/3/18)
+						# if win:
+							# new_rule.verified=True
 						if new_rule not in self.multi_falsified:
 							self.terminationSet.add(new_rule)
 
@@ -527,22 +537,41 @@ class Theory(object):
 
 		## Every time we do replay, we store the effects we would have witnessed if that theory had been true
 		## For effects we think we've witnessed, we don't need NoveltyRules.
-		imaginedEffectTuples = set([(eff[1], eff[2]) for eff in self.setOfImaginedEffects])
+		# imaginedEffectTuples = set([(eff[1], eff[2]) for eff in self.setOfImaginedEffects])
+		imaginedEffectTuples = set([eff[1:] for eff in self.setOfImaginedEffects])
+
+		# if any([len(eff)>2 for eff in imaginedEffectTuples]):
+			# print "found long imaginedEffect"
+			# embed()
+		for rule in self.fakeInteractionRules:
+			if not rule.preconditions:
+				ruleTuple = (rule.slot1, rule.slot2)
+			elif list(rule.preconditions)[0].operator_name=='>':
+				ruleTuple = (rule.slot1, rule.slot2, list(rule.preconditions)[0].item, True, False)				
+			elif list(rule.preconditions)[0].operator_name=='>=':
+				ruleTuple = (rule.slot1, rule.slot2, list(rule.preconditions)[0].item, True, True)				
+			if ruleTuple not in imaginedEffectTuples:
+				# nr.append(rule)
+				ruleSetToUpdate.append(rule)
+
+		# if any([rule.preconditions for rule in self.fakeInteractionRules]):
+			# print "found fakeInteractionRules"
+			# embed()
+		# ruleSetToUpdate += [rule for rule in self.fakeInteractionRules if (rule.slot1, rule.slot2) not in imaginedEffectTuples]
 
 		for rule in ruleSetToUpdate:
 			if rule.asTuple()[0] in ['stepBack', 'killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore', 'transformTo', 'nothing']:
-				if rule.generic and rule.preconditions:
-					if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
-						terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, copy.deepcopy(rule.preconditions))
-						if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
-								for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
-							all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
-							all([not terminationRule.__eq__(t) for t in self.falsified])):
-							if (rule.slot1=='c4' and rule.slot2=='avatar') or (rule.slot1=='avatar' and rule.slot2=='c4'):
-								print "found avatar c4"
-								# embed()
-							self.terminationSet.add(terminationRule)
-				elif rule.generic and not rule.preconditions:
+				if addNoveltyRules and rule.generic and rule.preconditions:
+					# if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
+					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, copy.deepcopy(rule.preconditions))
+					# print "got novelty termination with preconditions"
+					# embed()
+					if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
+							for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
+						all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
+						all([not terminationRule.__eq__(t) for t in self.falsified])):
+						self.terminationSet.add(terminationRule)
+				elif addNoveltyRules and rule.generic and not rule.preconditions:
 					if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
 						## Omit noveltytermination for randoms bumping into objects in the game; makes us disrupt plans even though we shouldnt't.
 						if ('Random' not in str(self.classes[rule.slot1][0].vgdlType)) and ('Random' not in str(self.classes[rule.slot2][0].vgdlType)) or rule.asTuple()[0]!='nothing':
@@ -551,9 +580,6 @@ class Theory(object):
 									for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
 								all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 								all([not terminationRule.__eq__(t) for t in self.falsified])):
-								if (rule.slot1=='c4' and rule.slot2=='avatar') or (rule.slot1=='avatar' and rule.slot2=='c4'):
-									print "found avatar c4"
-									# embed()
 
 								self.terminationSet.add(terminationRule)
 
@@ -579,7 +605,7 @@ class Theory(object):
 					if terminationRule not in self.falsified:
 						self.terminationSet.add(terminationRule)
 
-			if rule.slot1!='EOS' and rule.slot2 == 'EOS' and rule.generic:
+			if addNoveltyRules and rule.slot1!='EOS' and rule.slot2 == 'EOS' and rule.generic:
 				terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
 				self.terminationSet.add(terminationRule)
 
@@ -1075,17 +1101,17 @@ def proposePredicates(singlePairErrorSignal, observations):
 								'killIfTooFast', 'killIfSlow',\
 								'undoAll', 'nothing',\
 								'turn', 'turnAround', 'reverseDirection', 'wrapAround', 'flipDirection', 'bounceForward',\
-								'changeResource', 'collectResource', 'changeScore', 'teleportToExit', 'conveySprite'],
+								'changeResource', 'collectResource', 'changeScore', 'teleportToExit', 'conveySprite', 'removeStepBack'], 
 	'gridphysics': 				[],
 	'continuousphysics': 		['transformToOnLanding', 'killIfTooFast', 'killIfSlow', 'killIfFromAbove',\
 								'killIfFromBelow', 'bounceDirection', 'flipDirection', 'conveySprite', 'pullWithIt',\
 								'windGust','slipForward', 'wallBounce', 'wallStop','onRope', 'onLadder']
 								}
-
 	errorSignalToPredicateMapping = {
 
 	## Destruction/appearance/transformation
-	'objectDestruction': 		['killSprite'],
+	'objectDestruction': 		['killSprite', 'removeStepBack'], ## removeStepBack is a special predicate that causes us to remove the stepBack interaction for a particular class pair
+																  ## this allows us to make rules that are either killSprite+stepBack or just killSprite
 	'newObjectAppeared': 		[],	#'cloneSprite'
 	'transformation': 			['transformTo'],
 	'conditionalKill': 			['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore'],
@@ -1257,10 +1283,12 @@ predicateToOrderingMapping = {
 	'onLadder':				(0,),
 	'nothing':				(0,),
 	'bounceForward':		(0,),
+	'removeStepBack':		(0,),
  	'changeScore':			(0,1),
 	'undoAll':				(0,1)}
 
-predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit', 'wrapAround', 'reverseDirection', 'killIfHasLess', 'killIfHasMore']
+predicatesThatConflictWithStepBack = ['nothing', 'transformTo', 'teleportToExit', 'wrapAround', 'reverseDirection', 'killIfHasLess', 'killIfHasMore', 'bounceForward']
+
 
 def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n):
 
@@ -1285,9 +1313,6 @@ def getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, ob
 				for predicate in predicateGroup:
 					if n>1 and len(([p for p in predicateGroup if p in conflictingPredicates]))>1:
 						continue
-					# if n>1:
-						# print "in getRuleSetsForClassPairPredicate"
-						# embed()
 					## orderings are (targetClass, neighbor). If the ordering we're proposing is consistent with the semantics
 					## of the predicate we're proposing, add this potential rule.
 					if i in predicateToOrderingMapping[predicate]:
@@ -1315,9 +1340,13 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 	relevantRulesWithArgs = [rule for rule in theory.interactionSet if rule.interaction in predicatesWithThresholds and 
 			classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and len(rule.args)>0]
 
-	# if 'changeResource' in predicates:
-		# print "got changeResource"
-		# embed()
+	## You need to be able to represent that things can mutually destroy each other and create empty space
+	## (i.e., can add c1 c2 killSprite, c1 c2 nothing, c2 c1 killSprite, c2 c1 nothing), so you need more
+	## complex pairwise rules for this predicate.
+	## If we weren't resource-constrained we would just run n=3 for everything and not need these special cases.
+	if 'removeStepBack' in predicates:
+		n=2
+
 	if len(relevantRulesWithArgs) == 0:
 		if 'conditionalKill' in errorMap.diagnosis:
 			# print "got conditionalKill"
@@ -1332,6 +1361,7 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 			if 'changeResource' in predicates:
 				n=2
 
+
 		# if 'inventoryChange' in errorMap.diagnosis:
 			# print "got inventory change in expandLine"
 			# embed()
@@ -1339,6 +1369,7 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 		## TODO: Modify getRuleSets... to only return combinations that have one changeResource and one killIf... (if n==2)
 		## TODO: Modify iterateThresholds to only modify dryingPaint
 		newRuleSets = getRuleSetsForClassPairPredicate(classPair, predicates, theory, errorMap, observations, classPairPlusPredicateToRuleSets, n)
+		
 		for i,ruleSet in enumerate(newRuleSets):
 			if len(ruleSet) > 0:
 				newTheory = theory.copy()
@@ -1350,12 +1381,20 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 				alteredPairs = set([(rule.slot1, rule.slot2) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack] + \
 						[(rule.slot2, rule.slot1) for rule in ruleSet if rule.interaction in predicatesThatConflictWithStepBack])
 				newTheory.interactionSet = [rule for rule in newTheory.interactionSet if 'stepBack' != rule.interaction or (rule.slot1, rule.slot2) not in alteredPairs]
+				if 'removeStepBack' in predicates:
+					if len(ruleSet)==1:
+						continue
+					else:
+						ruleSet = [rule for rule in ruleSet if rule.interaction !='removeStepBack']
+						toRemove = [rule for rule in newTheory.interactionSet if rule.slot1==classPair[0] and rule.slot2==classPair[1] and rule.interaction=='stepBack']
+						newTheory.interactionSet = [rule for rule in newTheory.interactionSet if rule not in toRemove]
 				for rule in ruleSet:
 					ruleCopy = rule.copy()
-					newTheory.interactionSet.append(ruleCopy)
-					if ruleCopy.slot1=='avatar' and ruleCopy.interaction in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfTooFast', 'killIfTooSlow']:
-						newTheory.killerTypes.add(ruleCopy.slot2)
-					newTheory.dryingPaint.add(ruleCopy)
+					if ruleCopy not in newTheory.interactionSet:
+						newTheory.interactionSet.append(ruleCopy)
+						if ruleCopy.slot1=='avatar' and ruleCopy.interaction in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfTooFast', 'killIfTooSlow']:
+							newTheory.killerTypes.add(ruleCopy.slot2)
+						newTheory.dryingPaint.add(ruleCopy)
 				newTheory.reconcileInteractionsAndSprites()
 				childTheories.append(newTheory)
 
@@ -1379,7 +1418,8 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, action
 		# theory.display()
 		rule = relevantRulesWithArgs[0]
 		penalty,_ = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
-			method='all', targetColor=errorMap.targetColor)[0]
+			method='all', targetColor=errorMap.targetColor)
+		penalty = penalty[0]
 		newPenalty = penalty
 		while newPenalty >= penalty:
 			argsToIncrement = [(k,v) for k,v in relevantRulesWithArgs[0].args.items() if type(v)==int]
@@ -1392,7 +1432,8 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, action
 				rule.args[k] = thresholdOrdering[rule.interaction][idx+1]
 				theory.experienceReplayRecord = {}
 				newPenalty,_ = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
-					method='all', targetColor=errorMap.targetColor)[0]
+					method='all', targetColor=errorMap.targetColor)
+				newPenalty = newPenalty[0]
 				# print newPenalty, rule.display()
 			else:
 				break
@@ -1429,9 +1470,8 @@ def buildArgsString(interactionRule, theory, rle):
 		oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
 		precondition = list(set(interactionRule.preconditions))[0]
 		if precondition:
-			print "in precondition in buildArgsString"
-			## We should never be here; this is deprecated.
-			embed()
+			# print "in precondition in buildArgsString"
+			# embed()
 			if precondition.negated:
 				true_operator = oppositeOperatorMap[precondition.operator_name]
 			else:
@@ -1452,7 +1492,7 @@ def buildArgsString(interactionRule, theory, rle):
 				elif true_operator in {">", ">="}:
 					newInteractionName = 'killIfOtherHasMore'
 					if true_operator == ">":
-						limit = precondition.num + 1
+						limit = precondition.num# + 1
 					else:
 						limit = precondition.num
 
@@ -1479,6 +1519,15 @@ def buildArgsString(interactionRule, theory, rle):
 					argsString += " %s=%s"%(k, getClassNameFromSpriteString(v, theory, rle))
 				else:
 					argsString += " %s=%s"%(k, v)
+		elif interactionRule.preconditions:
+			## Assume only one precondition:
+			precondition = list(interactionRule.preconditions)[0]
+			if precondition.operator_name in ["<", "<="]:
+				limit = precondition.num - 1
+			elif precondition.operator_name in [">", ">="]:
+				limit = precondition.num
+			argsString = " resource=%s limit=%s"%(precondition.item, str(limit))
+
 		else:
 			print "buildArgsString got called but no precondition"
 			embed()

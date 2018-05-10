@@ -1289,6 +1289,7 @@ class SpriteCounter(Termination):
 
     def isDone(self, game):
         if game.numSprites(self.stype) <= self.limit:
+            # print "spritecounter rule", self.stype, self.limit
             return True, self.win
         else:
             return False, None
@@ -1323,7 +1324,6 @@ class NoveltyTermination(Termination):
                 pass
 
     def isDone(self, game):
-
         ## self.args lets us do precondition-dependent terminations.
         if self.args:
             if type(self.args)==dict:
@@ -1347,7 +1347,6 @@ class NoveltyTermination(Termination):
             id_not_found = False
             if (e[0] in ['killSprite', 'transformTo', 'nothing']) and len(e) > 2:
                 try:
-                    # name1 = game.all_objects[e[1]]['sprite'].name
                     name1 = game.all_objects[e[1]].name
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
@@ -1355,8 +1354,6 @@ class NoveltyTermination(Termination):
                     elif e[1] in [obj.ID for obj in game.kill_list]:
                         name1 = [obj.name for obj in game.kill_list
                             if obj.ID==e[1]][0]
-                    # elif e[1] in game.getObjects().keys():
-                        # name1 = game.getObjects()[e[1]]['sprite'].name
                     elif e[1] in game.getAllObjects().keys():
                         name1 = game.getAllObjects()[e[1]].name
                     else:
@@ -1372,7 +1369,6 @@ class NoveltyTermination(Termination):
                     print("IndexError in game.all_objects")
                     embed()
                 try:
-                    # name2 = game.all_objects[e[2]]['sprite'].name
                     name2 = game.all_objects[e[2]].name
                 except KeyError:
                     if e[2]=='ENDOFSCREEN':
@@ -1380,8 +1376,6 @@ class NoveltyTermination(Termination):
                     elif e[2] in [obj.ID for obj in game.kill_list]:
                         name2 = [obj.name for obj in game.kill_list
                             if obj.ID==e[2]][0]
-                    # elif e[2] in game.getObjects().keys():
-                        # name2 = game.getObjects()[e[2]]['sprite'].name
                     elif e[2] in game.getAllObjects().keys():
                         name2 = game.getAllObjects()[e[2]].name
                     else:
@@ -1397,14 +1391,14 @@ class NoveltyTermination(Termination):
                     print("IndexError in game.all_objects")
                     embed()
 
-                if name1==self.s1 and name2==self.s2:
+                if (name1==self.s1 and name2==self.s2) or (name2==self.s1 and name1==self.s2):
                     if id_not_found:
                         pass
+                    # print 'noveltyrule', self.s1, self.s2, self.args
                     return True, self.win
             elif len(e) > 2 and e[2]=='ENDOFSCREEN':
                 name2 = 'EOS'
                 try:
-                    # name1 = game.all_objects[e[1]]['sprite'].name
                     name1 = game.all_objects[e[1]].name
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
@@ -1412,8 +1406,6 @@ class NoveltyTermination(Termination):
                     elif e[1] in [obj.ID for obj in game.kill_list]:
                         name1 = [obj.name for obj in game.kill_list
                             if obj.ID==e[1]][0]
-                    # elif e[1] in game.getObjects().keys():
-                        # name1 = game.getObjects()[e[1]]['sprite'].name
                     elif e[1] in game.getAllObjects().keys():
                         name1 = game.getAllObjects()[e[1]].name
                     else:
@@ -1431,9 +1423,11 @@ class NoveltyTermination(Termination):
                     pass
                 # self.s2 returns a type for the EOS for some reason, so the
                 # check has to be performed like this
+                # if (name1==self.s1 and name2 in str(self.s2) or name2==self.s1 and name1 in str(self.s2)):
                 if name1==self.s1 and name2 in str(self.s2):
                     if id_not_found:
                         pass
+                    # print 'noveltyrule', self.s1, self.s2, self.args
                     return True, self.win
         return False, None
 
@@ -1852,9 +1846,10 @@ def cannotActivateSwitch(sprite, partner, game):
 #     Sprite Induction
 # ---------------------------------------------------------------------
 
-sprite_types = [ResourcePack, Missile, Chaser, RandomNPC, Flicker, \
+sprite_types = [ResourcePack, Missile, Chaser, RandomNPC, \
                 HorizontalAvatar, VerticalAvatar, FlakAvatar, ShootAvatar,
                 RotatingAvatar, OrientedAvatar, SpawnPoint] 
+                ## removed Flicker!!
                 #removed Resource, Immovable, Passive, AStarChaser,AimedAvatar, AimedFlakAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar
 
 
@@ -2075,19 +2070,23 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         realCooldown = int(current_sprite.cooldown)
         speed, cooldown = getSpeed(params), getCooldown(params)
         current_sprite.cooldown = cooldown
-        current_sprite.lastmove -= 1 # see VGDL update function... this is actually necessary
+        # current_sprite.lastmove -= 1 # see VGDL update function... this is actually necessary
         position_options = {}
 
         for option in BASEDIRS:
             left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed, 
                 allMovement=allMovement)
+
             if (left, top) in position_options.keys():
                 position_options[(left, top)] += 1.0/len(BASEDIRS)
             else:
                 position_options[(left, top)] = 1.0/len(BASEDIRS)
 
+        # if current_sprite.colorName=='DARKBLUE' and cooldown==10:
+            # print "got randomNPC darkblue"
+            # embed()
         current_sprite.cooldown = realCooldown
-        current_sprite.lastmove += 1
+        # current_sprite.lastmove += 1
         return position_options, position_options, orientation_options, appearance_predictions
 
     # Missile or OrientedSprite
@@ -2344,8 +2343,9 @@ def initializeDistributionArgs(sprite_type, objectColors):
     """
 
     def initializeSpeed():
-        speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.,
-        1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1]
+        # speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.,
+        # 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1]
+        speedValues = [.3, .5, 1.0, 2.0]
         return [('speed', v) for v in speedValues]
 
     def initializeOrientation():
@@ -2378,7 +2378,7 @@ def initializeDistributionArgs(sprite_type, objectColors):
         return [('noiseLevel', v) for v in [0.0, 0.1]]
 
     def initializeTimeOut():
-        return [('timeout', v) for v in [1, 5, 10, 15, 20, 25]]
+        return [('timeout', v) for v in [5]] #[1, 5, 10, 15, 20, 25]
 
     paramList = []
     if sprite_type.__name__ in spriteToParams.keys():
@@ -2417,13 +2417,14 @@ def distributionInitSetup(game, spriteID):
     objectColors = list(set([s.colorName for sublist in game.sprite_groups.values() for s in sublist])) ## all visible colors
     game.spriteDistribution[spriteID] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
     game.object_token_spriteDistribution[spriteID] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
-    
+
     # if spriteID not in game.all_objects.keys():
         # game.all_objects[spriteID] = game.getAllObjects()[spriteID]
 
     game.movement_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys()}
     game.object_token_movement_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys()}
     game.sprite_appearance_predictions[spriteID] = {k:[] for k in game.spriteDistribution[spriteID].keys() if 'Avatar' in str(k[0][1]) or 'SpawnPoint' in str(k[0][1])}
+    # TODO: do we need to be specific to Avatar like this? Try not doing that and see if it breaks
     game.orientation_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys() if 'Avatar' in str(k[0][1])}
 
 def filterTheories(scoreAndTheoryTuples, percentile, max_num):
@@ -2433,6 +2434,44 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num):
     cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
     return [s for s in scoreAndTheoryTuples if s[0]>=cutoff][0:max_num]
 
+def updateAllOptions(game, gamePrev, action=None):
+    # was spriteInduction step 2
+    ## See the update options for each sprite type the sprite could be
+    if game.time==game.lastUpdateOptionsTime:
+        return
+
+    game.lastUpdateOptionsTime=game.time
+
+    objects = gamePrev.getAllObjects()
+    for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:         # Keys are the IDs of the game objects
+        for param_combination in game.spriteDistribution[sprite].keys():                      # Check each potential sprite type
+            if game.spriteDistribution[sprite][param_combination]> 0:                         # Make sure sprite_type is an option for sprite, and sprite is not killed
+                # sprite_obj = objects[sprite]["sprite"]
+                sprite_obj = objects[sprite]
+
+                sprite_type = param_combination[0]
+                attributeDict = {k:v for k,v in param_combination[1:]}
+
+                # Get potential next positions for sprite if it were that sprite type
+                ##we are sprite_obj, and we are updating the options for where it could be next contingent on its being 'sprite_type'
+                # given a set of potential attribute values, update the movement options
+                # for this attribute tuple (i.e. candidate set of parameters)
+
+                ## missileOrientationClustering: considers left/right and up/down to be equivalent options in the likelihood
+                ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving
+                ## objects
+                game.object_token_movement_options[sprite][param_combination], \
+                game.movement_options[sprite][param_combination], \
+                orientation_options, \
+                appearance_prediction = \
+                updateOptions(gamePrev, sprite_type, sprite_obj, action=action, params=attributeDict, missileOrientationClustering=True)
+                if param_combination in game.orientation_options[sprite].keys():
+                    game.orientation_options[sprite][param_combination] = orientation_options
+
+                if param_combination in game.sprite_appearance_predictions[sprite].keys():
+                    game.sprite_appearance_predictions[sprite][param_combination].extend(appearance_prediction)
+    # print "updatedAllOptions"
+    # embed()
 def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
     """
     An explanation of important data structures used in this function:
@@ -2459,42 +2498,10 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
         objects = game.getAllObjects()
         newSprites = []
         for spriteID in objects:
-            if spriteID not in game.spriteDistribution:
-                newSprites.append(spriteID)
-                game.all_objects[spriteID] = objects[spriteID]
-                distributionInitSetup(game, spriteID)
-
-    elif step == 2:
-        ## See the update options for each sprite type the sprite could be
-        objects = game.getAllObjects()
-        game = game     # Save game state
-        for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:         # Keys are the IDs of the game objects
-            for param_combination in game.spriteDistribution[sprite].keys():                      # Check each potential sprite type
-                if game.spriteDistribution[sprite][param_combination]> 0:                         # Make sure sprite_type is an option for sprite, and sprite is not killed
-                    # sprite_obj = objects[sprite]["sprite"]
-                    sprite_obj = objects[sprite]
-
-                    sprite_type = param_combination[0]
-                    attributeDict = {k:v for k,v in param_combination[1:]}
-
-                    # Get potential next positions for sprite if it were that sprite type
-                    ##we are sprite_obj, and we are updating the options for where it could be next contingent on its being 'sprite_type'
-                    # given a set of potential attribute values, update the movement options
-                    # for this attribute tuple (i.e. candidate set of parameters)
-
-                    ## missileOrientationClustering: considers left/right and up/down to be equivalent options in the likelihood
-                    ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving
-                    ## objects
-                    game.object_token_movement_options[sprite][param_combination], \
-                    game.movement_options[sprite][param_combination], \
-                    orientation_options, \
-                    appearance_prediction = \
-                    updateOptions(game, sprite_type, sprite_obj, action=action, params=attributeDict, missileOrientationClustering=True)
-                    if param_combination in game.orientation_options[sprite].keys():
-                        game.orientation_options[sprite][param_combination] = orientation_options
-
-                    if param_combination in game.sprite_appearance_predictions[sprite].keys():
-                        game.sprite_appearance_predictions[sprite][param_combination].extend(appearance_prediction)
+            # if spriteID not in game.spriteDistribution:
+            newSprites.append(spriteID)
+            game.all_objects[spriteID] = objects[spriteID]
+            distributionInitSetup(game, spriteID)
     elif step==4:
         ## Get all parameterizations of sprite type that could have led to the sprites in specificSpritesToUpdate
         ## to their current positions
@@ -2506,13 +2513,16 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
             try:
                 if game.sprite_appearances and any([(s.rect.left, s.rect.top) in neighbors for s in game.sprite_appearances]) and \
                         sprite.ID in game.sprite_appearance_predictions:
+                    # print "first case"
                     for k,v in game.sprite_appearance_predictions[sprite.ID].items():
                         if any([(appearance.colorName, appearance.rect.left, appearance.rect.top) in v for appearance in game.sprite_appearances]):
                             scoreAndTheoryTuples.append((0,k))
                 else:
+                    # print "normal case"
                     ## Normal case. Update hypotheses related to movement types.
                     for k in game.movement_options[sprite.ID]:
                         if len(game.observation['trackedObjects'][sprite.colorName])>1 and ( ('singleton', True) in k or 'Avatar' in str(k[0][1]) ):
+                            # too many objects on the screen to be possible
                             continue
                         if (sprite.rect.left, sprite.rect.top) in game.movement_options[sprite.ID][k]: 
                             if k in game.orientation_options[sprite.ID]:
@@ -2525,7 +2535,7 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
                 embed()
                     
         reasonableHypotheses = list(set([s[1] for s in scoreAndTheoryTuples]))
-
+        # embed()
         return reasonableHypotheses
 
     ## Reset ignoreList so that next time around you do inference.
