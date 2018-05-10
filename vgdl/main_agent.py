@@ -266,7 +266,7 @@ class Agent:
                 first_time_playing_level = False
                 i += 1
                 print "Finished in ", time.time() - t1
-
+                embed()
             if i >=10:
                 return
 
@@ -405,6 +405,7 @@ class Agent:
         ## Initialize external environment
         self.initializeEnvironment()
         print "initializing RLE"
+        embed()
         steps = 0
         self.quits = 0
         self.longHorizonObservations = 0
@@ -711,7 +712,7 @@ class Agent:
         score = self.rle._game.score
         # self.updateMemory(self.rle)
 
-        output = "ended episode. Win={}                    ".format(win)
+        output =          "ended episode. Win={}                                           ".format(win)
         if win:
             print colored('________________________________________________________________', 'white', 'on_green')
             print colored('________________________________________________________________', 'white', 'on_green')

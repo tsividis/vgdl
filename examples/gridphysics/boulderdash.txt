@@ -27,10 +27,10 @@ BasicGame
 		avatar wall > stepBack
 		crab wall > stepBack
 		butterfly wall > stepBack
-		avatar boulder > stepBack
+		#avatar boulder > stepBack
 		crab boulder > stepBack
 		butterfly boulder > stepBack
-		avatar boulder > killIfFromAbove
+		#avatar boulder > killIfFromAbove
 		avatar butterfly > killSprite
 		avatar crab > killSprite
 		boulder dirt > stepBack
