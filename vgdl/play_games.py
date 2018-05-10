@@ -22,6 +22,9 @@ In [2]: im, reward, ended = step(K_DOWN)
 # 	to proceed to the next frame (beginning of next level or retry of current level as approprate)
 In [23]: im, reward, ended = step('next_episode')
 # <continue entering step commands as before>
+# ...
+# when you want to export the results from this game (results cleared every time you call init_game)
+In [82]: writeResults('path/to/wherever/filename.csv') # will overwrite whatever's there
 '''
 
 gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  				# 0-4
@@ -282,19 +285,8 @@ def generateImage(game):
 	return im
 
 
-'''#######   USAGE ########
->>> import vgdl.play_games
-In [1]: im, _, _ = init_game('portals')
-In [2]: im, reward, ended = step(K_DOWN)
-# etc.
-# ...
-# game ends for one reason or another: final frame (victory or death) returned
-# 	to proceed to the next frame (beginning of next level or retry of current level as approprate)
-In [23]: im, reward, ended = step('next_episode')
-# <continue entering step commands as before>
-'''
 
-if len(sys.argv) > 1:
-	play_trainset()
+# if len(sys.argv) > 1:
+# 	play_trainset()
 
-embed()
+# embed()
