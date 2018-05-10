@@ -1313,21 +1313,36 @@ class VGDLSprite(object):
             shrunk = self.rect
 
         if self.is_avatar:
-            '''
             rounded = roundedPoints(shrunk)
             pygame.draw.polygon(screen, self.color, rounded)
             pygame.draw.lines(screen, LIGHTGREEN, True, rounded, 2)
-            '''
-            pygame.draw.rect(screen, self.color, shrunk)
-            #pygame.draw.lines(screen, LIGHTGREEN, True, shrunk, 2)
             r = self.rect.copy()
         elif not self.is_static:
-            #rounded = roundedPoints(shrunk)
-            #pygame.draw.polygon(screen, self.color, rounded)
-            pygame.draw.rect(screen, self.color, shrunk)
+            rounded = roundedPoints(shrunk)
+            pygame.draw.polygon(screen, self.color, rounded)
             r = self.rect.copy()
         else:
             r = screen.fill(self.color, shrunk)
+
+
+        # if self.is_avatar:
+        #     '''
+        #     rounded = roundedPoints(shrunk)
+        #     pygame.draw.polygon(screen, self.color, rounded)
+        #     pygame.draw.lines(screen, LIGHTGREEN, True, rounded, 2)
+        #     '''
+        #     pygame.draw.rect(screen, self.color, shrunk)
+        #     #pygame.draw.lines(screen, LIGHTGREEN, True, shrunk, 2)
+        #     r = self.rect.copy()
+        # elif not self.is_static:
+        #     #rounded = roundedPoints(shrunk)
+        #     #pygame.draw.polygon(screen, self.color, rounded)
+        #     pygame.draw.rect(screen, self.color, shrunk)
+        #     r = self.rect.copy()
+        # else:
+        #     r = screen.fill(self.color, shrunk)
+        
+
         if self.resources:
             self._drawResources(game, screen, shrunk)
         VGDLSprite.dirtyrects.append(r)
