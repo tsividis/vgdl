@@ -10,14 +10,20 @@ import argparse
 import sys
 import numpy as np
 from colors import LIGHTGRAY
-"""
-
-Run a random agent for 10 steps per episode, for a max of 'num_episodes' episodes, on all levels of game 0:
-This outputs per-frame .png images to ../vgdl_data/game_name/level_number/episode_number/
-python -m vgdl.play_games --game_number 0
 
 
-"""
+'''#######   USAGE ########
+>>> import vgdl.play_games
+In [1]: im, _, _ = init_game('portals')
+In [2]: im, reward, ended = step(K_DOWN)
+# etc.
+# ...
+# game ends for one reason or another: final frame (victory or death) returned
+# 	to proceed to the next frame (beginning of next level or retry of current level as approprate)
+In [23]: im, reward, ended = step('next_episode')
+# <continue entering step commands as before>
+'''
+
 gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  				# 0-4
 			'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  	# 5-9
 
