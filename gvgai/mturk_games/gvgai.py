@@ -10,7 +10,7 @@ def read_gvgai_game(filename):
     return game
 
 def create_level_game_pairs(game_number):
-    gvgname = "../gvgai/training_set_1/{}".format(gvggames[game_number])
+    gvgname = "./mturk_games/{}".format(gvggames[game_number])
 
     gameString = read_gvgai_game('{}.txt'.format(gvgname))
     level_game_pairs = []
