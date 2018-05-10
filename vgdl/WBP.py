@@ -922,6 +922,11 @@ class Node():
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
 		# print "sum:", heuristicVal
 
+		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
+		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
+
+		heuristicVal += sum(self.rolloutArray)
+		
 		return heuristicVal
 
 	def position_score(self, factor=1.):
@@ -1016,6 +1021,7 @@ class Node():
 
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
+
 		self.intrinsic_reward = self.heuristicVal + self.position_score(0)
 
 		print("heuristicVal {}".format(self.heuristicVal))

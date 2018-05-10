@@ -266,7 +266,7 @@ class Agent:
                 first_time_playing_level = False
                 i += 1
                 print "Finished in ", time.time() - t1
-                embed()
+                # embed()
             if i >=10:
                 return
 
@@ -405,7 +405,6 @@ class Agent:
         ## Initialize external environment
         self.initializeEnvironment()
         print "initializing RLE"
-        embed()
         steps = 0
         self.quits = 0
         self.longHorizonObservations = 0

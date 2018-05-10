@@ -23,7 +23,7 @@ BasicGame
 	InteractionSet
 		dirt avatar > killSprite
 		dirt sword  > killSprite
-		diamond avatar > collectResource scoreChange=5
+		diamond avatar > collectResource
 		avatar wall > stepBack
 		crab wall > stepBack
 		butterfly wall > stepBack
@@ -40,7 +40,7 @@ BasicGame
 		crab dirt > stepBack
 		butterfly dirt > stepBack
 		crab butterfly > killSprite
-		butterfly crab > transformTo stype=diamond scoreChange=1
+		butterfly crab > transformTo stype=diamond
 		exitdoor avatar > killIfOtherHasMore resource=diamond limit=9 scoreChange=100
 		exitdoor avatar > nothing
 
@@ -51,6 +51,7 @@ BasicGame
 		sword exitdoor > nothing
 		sword diamond > nothing
 		sword wall > nothing
+
 
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False

@@ -2,8 +2,8 @@ BasicGame
     SpriteSet
         safety > Resource  limit=4 color=BROWN
 
-        forestDense > SpawnPoint stype=log prob=0.4  cooldown=10 color=BLUE
-        forestSparse > SpawnPoint stype=log prob=0.1  cooldown=5 color=BLUE
+        forestDense > SpawnPoint stype=log prob=.4  spawnCooldown=10 color=BLUE
+        forestSparse > SpawnPoint stype=log prob=.1  spawnCooldown=5 color=BLUE
         structure > Immovable
             water > color=BLUE
             goal  > color=GREEN
