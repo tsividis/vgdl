@@ -19,7 +19,7 @@ def profile(function):
 		lp_wrapper = lp(function)
 		return_values = lp_wrapper(*args)
 		lp.print_stats()
-		return return_values
+		print return_values
 	return profileFunction
 
 

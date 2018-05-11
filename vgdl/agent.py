@@ -285,7 +285,7 @@ class Agent:
 		self.statesEncountered.append(self.rle._game.getFullState())
 		
 		envReal = self.fastcopy(self.rle)
-		if sum([len(episode) for episode in rleHistories]) <= OBSERVATION_PERIOD_LENGTH:
+		if sum([len(episode) for episode in self.rleHistory]) <= OBSERVATION_PERIOD_LENGTH:
 			# have to save extra info since we deal with the error maps after the step they occur
 			copyGameInferenceInfo(envReal, self.rle)
 
