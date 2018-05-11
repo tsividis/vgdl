@@ -65,7 +65,7 @@ class WBP():
 		self.allowRollouts = True
 		self.quitting = False
 		self.gameString_array = []
-		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.WBP.hyperparameters.items()])
+		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
