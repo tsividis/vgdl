@@ -1,3 +1,15 @@
+# level0 = """
+# wwwwwwwwwwwwwwwwww
+# w                w
+# w     A          w
+# w                w
+# w                w
+# w                w
+# w  b             w
+# w                w
+# w             g  w
+# wwwwwwwwwwwwwwwwww
+# """
 
 level0 = """
 wwwwwwwwwwwwwwwwww
@@ -6,11 +18,12 @@ w     A          w
 w                w
 w                w
 w                w
-w  b             w
+w  b b      g    w
 w                w
 w             g  w
 wwwwwwwwwwwwwwwwww
 """
+
 level1 = """
 wwwwwwwwwwwwwwwwww
 w b p   w    m   w
@@ -34,14 +47,14 @@ wwwwwwwwwwwwwwwwww
 
 level2 = """
 wwwwwwwwwwwwwwwwww
-w   p   w    p  bw
+w   w   w    p  bw
 w m     w A  wwwww
-wpppp      p     w
-w     p p       ww
-ww            pppw
-wpppp       pppppw
-wmpp        pp  gw
-wmp      p  pp   w
+wwwww            w
+w               ww
+ww            wwww
+wwwww       wwwwww
+wmww        ww  gw
+wmp         pp   w
 wwwwwwwwwwwwwwwwww
 """
 
@@ -60,72 +73,16 @@ wwwwwwwwwwwwwwwwww
 
 level3 = """
 wwwwwwwwwwwwwwwwww
-w   p   w        w
+w   w   w        w
 w       w A  wwwww
-wpppp      p  pmmw
-w     p p     p ww
-wwpp         ppppw
-wpppp      ppppppw
-w m pp     ppppppw
-wbmmppm  p ppp g w
+wwwww         pmmw
+w             w ww
+wwww         wwpww
+wwwww      wwwwpww
+w m pp     wwwwpww
+wbmmwwm    www g w
 wwwwwwwwwwwwwwwwww
 """
-
-
-# level = """
-# wwwwwwwwwwwww
-# w pmAmp  w  w
-# w  pmp      w
-# w  pppp  pp w
-# w       p  gw
-# wwwwwwwwwwwww
-# """
-
-# level2 = """
-# wwwwwwwwwwwww
-# w           w
-# w  pmp      w
-# w  pppppppp w
-# w A     p  gw
-# wwwwwwwwwwwww
-# """
-
-# level = """
-# wwwwwwwwwwwwww
-# wm           w
-# w            w
-# w       pppppw
-# w     A p   gw
-# wwwwwwwwwwwwww
-# """
-# level = """
-# wwwww
-# wmA g
-# wwwww
-# """
-
-# level = """
-# wwwwwwwwwwwwwwwwww
-# w b c   w    m   w
-# w   c   w    wwwww
-# wcccc      p     w
-# w     c p       ww
-# ww   www A       w
-# wpppp          c w
-# w   pc           w
-# w g p    c    c  w
-# wwwwwwwwwwwwwwwwww
-# """
-
-
-# level = """
-# wwwwwwwww
-# w bp    w
-# w  p  m w
-# wppp A  w
-# w gp    w
-# wwwwwwwww
-# """
 
 
 
@@ -150,7 +107,7 @@ BasicGame frame_rate=30
     InteractionSet
         avatar wall > stepBack
         medicine avatar > killSprite
-        avatar poison > killIfHasLess resource=medicine limit=1
+        avatar poison > killIfHasLess resource=medicine limit=-1
         avatar poison > changeResource resource=medicine value=-1
         avatar medicine > changeResource resource=medicine value=1
         box avatar > killSprite
@@ -164,7 +121,7 @@ BasicGame frame_rate=30
         SpriteCounter stype=goal limit=0 win=True
 """
 
-level_game_pairs = [[game, level0], [game, level1], [game, level2], [game, level3]]
+level_game_pairs = [[game, level1], [game, level1], [game, level2], [game, level3]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
@@ -181,7 +138,7 @@ if __name__ == "__main__":
         # index = random.choice(range(len(level_game_pairs)))
         for index, level in enumerate(level_game_pairs):
             wins = 0
-            while wins<2:
+            while wins<1:
                 VGDLParser.playGame(*level)
                 time.sleep(1)
                 data = np.load("temp_data.npy")

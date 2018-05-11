@@ -31,7 +31,7 @@ def play_trainset(hyperparameters):
 
 
     # playing GVG-AI games
-    if game_number < 10:
+    if game_number < 6:
         gameName = gvggames[game_number]  # to play a gvgai game
         def read_gvgai_game(filename):
         	with open(filename, 'r') as f:
@@ -66,9 +66,9 @@ def play_trainset(hyperparameters):
     # running local games
     else:
         level_game_pairs = None
-        gameName = 'examples.gridphysics_new.{}'.format(local_games[game_number-10])
+        gameName = 'examples.gridphysics_new.{}'.format(local_games[game_number-6])
 
-    agent = Agent('full', gameName, hyperparameter_sets=hyperparameters, parallel_planning=False)
+    agent = Agent('full', gameName, hyperparameter_sets=hyperparameters, parallel_planning=True)
 
     ##then pass this down for multiple episodes
     gameObject = None
@@ -81,7 +81,7 @@ def play_trainset(hyperparameters):
 hyperparameter_sets = [
     {
      'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
+     'sprite_second_alpha': 1000,
      'sprite_negative_mult': .1,
      'multisprite_first_alpha': 10000,
      'multisprite_second_alpha': 100,

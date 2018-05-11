@@ -1027,7 +1027,7 @@ class Theory(object):
 
 		falsified_win_stypes = set([sprite_rule.termination.stype for sprite_rule in self.falsified
 			if (sprite_rule.termination.win and sprite_rule.termination.stype != 'EOS' and sprite_rule.termination.stype !='avatar')])
-		
+
 		try:
 			falsified_win_stypes.remove(self.classes['avatar'][0].args['stype'])
 		except:
@@ -2251,9 +2251,9 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				if true_operator in {"<", "<="}:
 					newInteractionName = 'killIfHasLess' #example
 					if true_operator == "<":
-						limit = precondition.num - 1
+						limit = precondition.num - 2
 					else:
-						limit = precondition.num
+						limit = precondition.num - 1
 
 				elif true_operator in {">", ">="}:
 					newInteractionName = 'killIfOtherHasMore'
