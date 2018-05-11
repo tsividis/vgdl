@@ -2,7 +2,8 @@ from pathos.multiprocessing import ProcessingPool
 from main_agent import Agent
 import time
 import dill
-
+import os
+from IPython import embed
 import argparse
 
 parser = argparse.ArgumentParser(description='Process game number.')
@@ -13,6 +14,8 @@ game_number = args.game_number
 # NOTE: fmin seems to fail with the hyperopt version installed by default
 # as of 01/2018: it is best to install directly from the github repo with
 # the command 'pip install git+https://github.com/hyperopt/hyperopt'
+
+gameFileString = 'training_set_1'
 
 gvggames = ['aliens', 'boulderdash', 'chase', 'frogs',  # 0-4
         	'missilecommand', 'portals']  # 5-9
@@ -53,13 +56,13 @@ def play_trainset(hyperparameters):
         		yield color
 
 
-        gvgname = "./training_set_1/{}".format(gameName)
+        gvgname = "./{}/{}".format(gameFileString,gameName)
 
         gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
-
+        game_levels = [l for l in os.listdir(gameFileString) if gameName+'_lvl' in l]
         level_game_pairs = []
-        for level_number in range(5):
+        for level_number in range(len(game_levels)):
         	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
         		level_game_pairs.append([gameString, level.read()])
 

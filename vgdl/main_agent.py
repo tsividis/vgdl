@@ -206,7 +206,7 @@ class Agent:
 
     def initializeHypotheses(self, allObjects, learnSprites=True):
         if learnSprites:
-            observe(self.rle, 1, self.bestSpriteTypeDict)
+            observe(self.rle, 5, self.bestSpriteTypeDict)
             spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
                 self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
             self.rle._game.exceptedObjects = exceptedObjects
@@ -437,7 +437,6 @@ class Agent:
 
         ## Initialize external environment
         self.initializeEnvironment()
-
         print "initializing RLE"
         steps = 0
         self.quits = 0
