@@ -89,7 +89,15 @@ class Agent:
         self.rle._game.spriteUpdateDict = self.spriteUpdateDict
         return
 
-    def copy(self, rle):
+    def initializeRLEFromGame(self):
+        gameString, levelString = self.gameString, self.levelString
+        if gameString == None or levelString == None:
+            gameString, levelString = defInputGame(self.gameFilename, randomize=False)
+        rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
+        rle = rleCreateFunc()
+        return rle
+
+    def fastcopy(self, rle):
 
         newRle = self.initializeRLEFromGame()
         newRle._obstypes = ccopy(rle._obstypes)
@@ -97,11 +105,10 @@ class Agent:
             newRle._gravepoints = ccopy(rle._gravepoints)
         newRle._game.sprite_groups = ccopy(rle._game.sprite_groups)
         newRle._game.kill_list = ccopy(rle._game.kill_list)
-        newRle._game.lastcollisions = ccopy(rle._game.lastcollisions)
+        # newRle._game.lastcollisions = ccopy(rle._game.lastcollisions)
         newRle._game.time = ccopy(rle._game.time)
         newRle._game.score = ccopy(rle._game.score)
         newRle._game.keystate = ccopy(rle._game.keystate)
-        newRle._game.observation = ccopy(rle._game.observation)
         newRle.symbolDict = ccopy(rle.symbolDict)
         newRle._game.sprite_groups['avatar'][0].resources = ccopy(rle._game.sprite_groups['avatar'][0].resources)
 
@@ -430,6 +437,7 @@ class Agent:
 
         ## Initialize external environment
         self.initializeEnvironment()
+
         print "initializing RLE"
         steps = 0
         self.quits = 0
