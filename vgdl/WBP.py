@@ -493,6 +493,7 @@ class Node():
 		j=0
 		while not successfulRollout:
 			vrle = copy.deepcopy(Vrle)
+			# vrle = ccopy(Vrle)
 			prevHeuristicVal = self.heuristics(vrle, **self.WBP.hyperparameters)
 			rolloutArray = []
 			i=0
@@ -912,6 +913,7 @@ class Node():
 						ranking])
 				else:
 					heuristicVal += self.WBP.annealing * noveltytermination_val
+					## Lesions
 					# Exploit only
 					# heuristicVal += 0 * self.WBP.annealing * noveltytermination_val
 					# Explore only
@@ -1088,6 +1090,7 @@ class Node():
 
 	def playBack(self, make_movie=False):
 		vrle = copy.deepcopy(self.rle)
+		# vrle = ccopy(self.rle) #5/10/18
 		self.finalStatesEncountered = []
 		terminal = vrle._isDone()[0]
 		i=0

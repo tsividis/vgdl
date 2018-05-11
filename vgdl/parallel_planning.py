@@ -18,7 +18,7 @@ gvggames = ['aliens', 'boulderdash', 'chase', 'frogs',  # 0-4
         	'missilecommand', 'portals']  # 5-9
 
 local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper',  # 10-12
-    'expt_preconditions', 'expt_push_boulders', 'expt_relational']  # 13-15 to play a "local" game
+    'expt_preconditions', 'expt_push_boulders', 'expt_relational', 'video_debug']  # 13-15 to play a "local" game
 
 # gvggames = ['aliens', 'boulderdash', 'chase', 'frogs',  # 0-3
         	# 'missilecommand', 'portals', 'sokoban', 'survivezombies']  # 4-7
