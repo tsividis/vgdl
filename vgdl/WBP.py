@@ -65,6 +65,8 @@ class WBP():
 		self.allowRollouts = True
 		self.quitting = False
 		self.gameString_array = []
+		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.WBP.hyperparameters.items()])
+
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
@@ -492,7 +494,8 @@ class Node():
 		while not successfulRollout:
 			vrle = copy.deepcopy(Vrle)
 			# vrle = ccopy(Vrle)
-			prevHeuristicVal = self.heuristics(vrle, **self.WBP.hyperparameters)
+
+			prevHeuristicVal = self.heuristics(vrle, **self.WBP.rolloutHyperparameters)
 			rolloutArray = []
 			i=0
 			terminal, win = vrle._isDone()
