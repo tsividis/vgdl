@@ -122,6 +122,28 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         symbolDict = a dict mapping each sprite name to its symbol.
         If there's no sprite overlap, then returns a string. Else returns numpy array.
         """
+        
+        # locs = defaultdict(lambda:[])
+        # mappedState = [[' ' for x in range(self.outdim[1])] for y in range(self.outdim[0])] 
+        # # embed()
+
+        # for lst in self._game.sprite_groups.values():
+        #     for sprite in lst:
+        #         y,x = sprite.rect.top/30, sprite.rect.left/30
+        #         locs[(y,x)].append(sprite)
+
+
+        # for k,v in locs.iteritems():
+        #     symbol = objectsToSymbol(self, v, self.symbolDict)
+        #     try:
+        #         mappedState[k[0]][k[1]] = symbol
+        #     except:
+        #         print "mappedState problem in rlenvironmentNonStatic"
+        #         print mappedState
+        #         embed()
+    
+
+
         gameString = ""
         spriteOverlap = False # represents whether 2 sprites are on same location
         state = np.reshape(self._getSensors(), self.outdim)
