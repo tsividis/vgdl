@@ -52,7 +52,7 @@ class Agent:
         else:
             self.starting_max_nodes = 10000
             self.max_nodes_annealing = 10
-        self.firstOrderHorizon = True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
+        self.firstOrderHorizon = False ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
         self.regrounding = 3
         self.selective_regrounding = True
         self.avoid_danger = True
@@ -214,7 +214,7 @@ class Agent:
         if all([c in previous_colors for c in current_colors]):
             observe(self.rle, 0, self.bestSpriteTypeDict) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
         else:
-            observe(self.rle, 5, self.bestSpriteTypeDict) ## observe many steps so that you're not completely clueless about object movements for the new level
+            observe(self.rle, 15, self.bestSpriteTypeDict) ## observe many steps so that you're not completely clueless about object movements for the new level
 
         ## Make sure any objects that appeared while we were observing are reflected in allObjects
         for k,v in self.rle._game.getObjects().items():
@@ -241,7 +241,7 @@ class Agent:
         j=0
         flexible_goals = False
 
-        pool = mp.Pool(processes=len(self.hyperparameter_sets))
+        pool = mp.Pool(processes=len(self.hyperparameter_sets)) if self.parallel_planning else None
         for n_level, level_game in enumerate(level_game_pairs):
 
             print("Playing level {}".format(n_level))
@@ -497,14 +497,17 @@ class Agent:
                 # p = result_queue.get()
                 # print('#1')
 
+                best_index = np.argmin([p.total_nodes for p in res])
+                print('passed here')
+                p = res[best_index]
+
             else:
 
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                     firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
-            best_index = np.argmin([p.total_nodes for p in res])
-            print('passed here')
-            p = res[best_index]
+
+            p_quitting = p.quitting
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps = p.total_nodes
 
@@ -517,12 +520,15 @@ class Agent:
 
 
 
-            if solution and not p.quitting:
+            if solution and not p_quitting:
                 print "============================================="
                 print "got solution of length", len(solution)
                 for g in p.gameString_array:
                     print colored(g, 'green')
                 print "============================================="
+
+            if self.parallel_planning:
+                del res
 
             if self.shortHorizon:
                 if not solution:
@@ -530,7 +536,7 @@ class Agent:
                 else:
                     emptyPlans = 0
             else:
-                if (not solution) or p.quitting:
+                if (not solution) or p_quitting:
                     if self.longHorizonObservations<self.longHorizonObservationLimit:
                         print "Didn't get solution or decided to quit. Observing, then replanning."
                         print('passed here')
@@ -689,8 +695,6 @@ class Agent:
                 self.max_nodes *= self.max_nodes_annealing
                 # self.updateMemory(self.rle)
 
-                del res
-
                 return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered
 
 
@@ -720,7 +724,6 @@ class Agent:
             print colored(output, 'white', 'on_red')
             print colored('________________________________________________________________', 'white', 'on_red')
 
-        del res
 
         return gameObject, win, score, steps, statesEncountered, effectsEncountered
 

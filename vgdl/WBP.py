@@ -230,7 +230,6 @@ class WBP():
 			vecValue = [0]
 
 		stateIW1 = [vecValue] + [1 if char==' ' else 0 for pos, char in enumerate(rle.show())]
-		print(id(stateIW1))
 		lst.append(hash(tuple(stateIW1)))
 
 		return set(lst)
@@ -476,11 +475,12 @@ class Node():
 		metabolic_cost = 0
 		# if action==32:
 		if action!=NONE or action!=32:
-			metabolic_cost += 20#1./n
+			metabolic_cost -= 0#1./n
 			pass
 		if len(events)>0:
 			# metabolic_cost = .3
 			if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='bounceForward' for e in events]):
+				metabolic_cost -= 400
 				# metabolic_cost += .3#(1-1./n)*mult
 				pass
 			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
@@ -600,7 +600,7 @@ class Node():
 				if eval("{}{}{}".format(current_resource, true_operator, num)):
 					print "reached resource limit"
 					tmp_list.append(avatar)
-			except IndexError:
+			except (IndexError, KeyError) as e:
 				pass
 
 		for t in tmp_list:
@@ -808,8 +808,8 @@ class Node():
 			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
 
 			# Second order lesion
-			if s1 != 'avatar' and s2 != 'avatar':
-				return 0, 10000
+			# if s1 != 'avatar' and s2 != 'avatar':
+			# 	return 0, 10000
 
 			n_sprites = len(s1_positions) if s1_positions else 0
 			possiblePairList = []
@@ -1016,7 +1016,8 @@ class Node():
 
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
-		self.intrinsic_reward = self.heuristicVal + self.position_score(0)
+		print("metabolic cost is {}".format(self.metabolic_cost))
+		self.intrinsic_reward = self.heuristicVal + self.position_score(-250)
 
 		print("heuristicVal {}".format(self.heuristicVal))
 		print("intrinsic_reward {}".format(self.intrinsic_reward))
