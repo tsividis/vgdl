@@ -16,7 +16,7 @@ game_number = args.game_number
 
 gvggames = ['aliens', 'boulderdash', 'chase', 'frogs',  # 0-4
         	'missilecommand', 'portals']  # 5-9
-#
+
 local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper',  # 10-12
     'expt_preconditions', 'expt_push_boulders', 'expt_relational']  # 13-15 to play a "local" game
 
@@ -68,7 +68,7 @@ def play_trainset(hyperparameters):
         level_game_pairs = None
         gameName = 'examples.gridphysics_new.{}'.format(local_games[game_number-10])
 
-    agent = Agent('full', gameName, hyperparameter_sets=hyperparameters, parallel_planning=True)
+    agent = Agent('full', gameName, hyperparameter_sets=hyperparameters, parallel_planning=False)
 
     ##then pass this down for multiple episodes
     gameObject = None

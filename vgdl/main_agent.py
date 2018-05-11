@@ -266,7 +266,7 @@ class Agent:
                 first_time_playing_level = False
                 i += 1
                 print "Finished in ", time.time() - t1
-
+                # embed()
             if i >=10:
                 return
 
@@ -496,6 +496,8 @@ class Agent:
 
                 # p = result_queue.get()
                 # print('#1')
+            	best_index = np.argmin([p.total_nodes for p in res._value])
+            	p = res._value[best_index]
 
                 best_index = np.argmin([p.total_nodes for p in res])
                 print('passed here')
@@ -712,7 +714,7 @@ class Agent:
         score = self.rle._game.score
         # self.updateMemory(self.rle)
 
-        output = "ended episode. Win={}                    ".format(win)
+        output =          "ended episode. Win={}                                           ".format(win)
         if win:
             print colored('________________________________________________________________', 'white', 'on_green')
             print colored('________________________________________________________________', 'white', 'on_green')
@@ -856,8 +858,6 @@ class Agent:
             oldFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
             self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
                 not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
-
-
 
             if (not all([e in all_effects for e in effects])) or distributionsHaveChanged:
                 theory_change_flag = True
