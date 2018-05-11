@@ -138,9 +138,13 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 else:
                     symbol = '$'
             else:
-                symbol = colored(objectsToSymbol(self, v, self.symbolDict), color)
+                symbol = objectsToSymbol(self, v, self.symbolDict)
+            
             if symbol in ['A', 'X']:
                 symbol = colored(symbol, 'red')
+            else:
+                symbol = colored(symbol, color)
+            
             try:
                 mappedState[k[0]][k[1]] = symbol
             except:

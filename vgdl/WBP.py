@@ -230,7 +230,7 @@ class WBP():
 			vecValue = [0]
 
 		stateIW1 = [vecValue] + [1 if char==' ' else 0 for pos, char in enumerate(rle.show())]
-		print(id(stateIW1))
+		# print(id(stateIW1))
 		lst.append(hash(tuple(stateIW1)))
 
 		return set(lst)
@@ -260,7 +260,7 @@ class WBP():
 		# acceptableNodes = QReward
 		acceptableNodes = filter(lambda n:n.novelty<3, QReward)
 		acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
-		print "accetable:", len(acceptableNodes)
+		# print "accetable:", len(acceptableNodes)
 		# if len(acceptableNodes)==0:
 			# acceptableNodes = QReward
 			# print "Removed filter"
@@ -304,10 +304,10 @@ class WBP():
 			if i%2==0:
 			else:
 			"""
-			print('passed here')
+			# print('passed here')
 			# current = self.noveltySelection(QNovelty, QReward)
 			current = self.rewardSelection(QReward, QNovelty)
-			print "visited:", len(visited)
+			# print "visited:", len(visited)
 			# print("node chosen has position score {}".format(current.position_score()))
 			# print embed()
 			if current in [None, 'pickMaxNode']:
@@ -401,10 +401,8 @@ class WBP():
 						ended, win, t = child.rle._isDone(getTermination=True)
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
-						print "win"
-						# print t
+						# print "win"
 						# embed()
-						# return child, gameString_array
 					else:
 						QNovelty.append(child)
 						QReward.append(child)
@@ -935,7 +933,6 @@ class Node():
 		try:
 			(x, y) = np.array((self.rle._game.getAvatars()[0].rect.x,
 				self.rle._game.getAvatars()[0].rect.y))/self.WBP.pixel_size
-			# print factor * self.WBP.visited_positions[x, y]
 			return factor * self.WBP.visited_positions[x, y]
 		except IndexError:
 			print "index error in position score"
@@ -992,7 +989,6 @@ class Node():
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
 
-
 		self.rle, self.win = self.getToCurrentState()
 
 		self.updateObjIDs(self.rle)
@@ -1006,10 +1002,6 @@ class Node():
 					self.candidates.append(c)
 		self.updateNovelty()
 
-		"""
-
-		"""
-
 		## Try rollouts for aliens?
 		if self.WBP.allowRollouts and len(self.actionSeq)>0 and self.actionSeq[-1]==32:
 
@@ -1019,15 +1011,16 @@ class Node():
 
 		self.heuristicVal = self.heuristics(**self.WBP.hyperparameters)
 
+		## Old ways of incorporating rollout; keeping for reference.
 		# print self.rle._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost, self.position_score()
-
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
 
 		self.intrinsic_reward = self.heuristicVal + self.position_score(0)
 
-		print("heuristicVal {}".format(self.heuristicVal))
-		print("intrinsic_reward {}".format(self.intrinsic_reward))
+		## Debug printouts
+		# print("heuristicVal {}".format(self.heuristicVal))
+		# print("intrinsic_reward {}".format(self.intrinsic_reward))
 		try:
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
 			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):

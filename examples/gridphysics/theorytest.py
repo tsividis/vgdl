@@ -1,17 +1,17 @@
 level="""
 1111111111111111111111
-14            1     11
+13            1     11
 1                    1
-1             0      1
+12            0      1
 1111111111111111111111
 """
 game = """
 BasicGame
 	SpriteSet
-		c3 > RandomNPC color=DARKGRAY speed=2.1 cooldown=3
-		c2 > RandomNPC color=PINK speed=2.1 cooldown=3
+		c3 > RandomNPC color=DARKGRAY speed=1.6 cooldown=10
+		c2 > RandomNPC color=PINK speed=1.6 cooldown=10
 		avatar > MovingAvatar color=DARKBLUE
-		c4 > RandomNPC color=LIGHTBLUE speed=2.1 cooldown=3
+		c4 > RandomNPC color=LIGHTBLUE speed=1.6 cooldown=10
 	InteractionSet
 		c2 avatar > killSprite
 		c2 c4 > nothing
@@ -21,18 +21,16 @@ BasicGame
 		c2 c2 > nothing
 		c3 c3 > nothing
 		avatar EOS > stepBack
+		avatar c3 > stepBack
+		c4 avatar > nothing
+		c4 c4 > nothing
 		c3 c4 > nothing
 		c4 c3 > nothing
-		c4 avatar > killSprite
-		c4 c4 > nothing
-		c3 avatar > killSprite
 		c4 EOS > stepBack
 		c2 EOS > stepBack
 		c3 EOS > stepBack
 	TerminationSet
 		NoveltyTermination s1=c2 s2=avatar win=True
-		NoveltyTermination s1=c3 s2=avatar win=True
-		NoveltyTermination s1=c4 s2=avatar win=True
 		NoveltyTermination s1=c2 s2=EOS win=True
 		NoveltyTermination s1=c3 s2=EOS win=True
 		NoveltyTermination s1=c4 s2=EOS win=True
