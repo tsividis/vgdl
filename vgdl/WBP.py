@@ -124,6 +124,10 @@ class WBP():
 				stype = term.termination.stype
 				n_stypes = len([0 for sprite in self.findObjectsInRLE(self.rle, stype)])
 				self.starting_stype_n[stype] = n_stypes
+			elif isinstance(term, MultiSpriteCounterRule):
+				stypes = term.termination.stypes
+				n_stypes = sum([len(self.findObjectsInRLE(self.rle, stype)) for stype in stypes])
+				self.starting_stype_n[tuple(stypes)] = n_stypes
 
 	def findObjectsInRLE(self, rle, objName):
 		try:
@@ -403,24 +407,26 @@ class WBP():
 					if self.firstOrderHorizon:
 							# Return plan if first-order progress was made towards
 							# a win condition
-						ended, win = child.rle._isDone()
-						if not ended:
-							foundWin = False
-							for term in self.theory.terminationSet:
-								if isinstance(term, SpriteCounterRule) and term.termination.win==True:
-									stypes = [term.termination.stype]
-								elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
-									stypes = term.termination.stypes
-								else:
-									stypes = []
-								for stype in stypes:
-									n_stypes = len([0 for sprite in self.findObjectsInRLE(child.rle, stype)])
-									if stype in self.starting_stype_n.keys() and self.starting_stype_n[stype] > n_stypes:
-										child.terminal, child.win = True, True
-										foundWin = True
-										break
-								if foundWin:
-									break
+						# ended, win = child.rle._isDone()
+						# if not ended:
+						foundWin = False
+						for term in self.theory.terminationSet:
+							if isinstance(term, SpriteCounterRule) and term.termination.win==True:
+								stype = term.termination.stype
+								n_stypes = len([0 for sprite in self.findObjectsInRLE(child.rle, stype)])
+								if stype in self.starting_stype_n.keys() and self.starting_stype_n[stype] > n_stypes:
+									# print "exiting early because progress was made toward", stype
+									child.terminal, child.win = True, True
+									foundWin = True
+							elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
+								stypes = term.termination.stypes
+								n_stypes = sum([len(self.findObjectsInRLE(child.rle, stype)) for stype in stypes])
+								if tuple(stypes) in self.starting_stype_n.keys() and self.starting_stype_n[tuple(stypes)] > n_stypes:
+									print "exiting early because progress was made toward", stypes
+									child.terminal, child.win = True, True
+									foundWin = True
+							if foundWin:
+								break
 
 					if child.win:
 						# Get the gameString representation of the RLE at each
@@ -442,8 +448,8 @@ class WBP():
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
 						print "win"
-						if t and t.name=='NoveltyTermination' and ended:
-							print 'Novelty', t.s1, t.s2
+						# if t and t.name=='NoveltyTermination' and ended:
+							# print 'Novelty', t.s1, t.s2
 							# embed()
 					else:
 						QNovelty.append(child)
