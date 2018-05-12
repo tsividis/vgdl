@@ -230,7 +230,7 @@ class WBP():
 			vecValue = [0]
 
 		stateIW1 = [vecValue] + [1 if char==' ' else 0 for pos, char in enumerate(rle.show())]
-		lst.append(hash(tuple(stateIW1)))
+		# lst.append(hash(tuple(stateIW1)))
 
 		return set(lst)
 
@@ -475,12 +475,14 @@ class Node():
 		metabolic_cost = 0
 		# if action==32:
 		if action!=NONE or action!=32:
-			metabolic_cost -= 0#1./n
+			metabolic_cost -= .0#1./n
 			pass
+		if action==32:
+			metabolic_cost -= .1
 		if len(events)>0:
 			# metabolic_cost = .3
 			if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='bounceForward' for e in events]):
-				metabolic_cost -= 400
+				metabolic_cost -= .0
 				# metabolic_cost += .3#(1-1./n)*mult
 				pass
 			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
@@ -623,6 +625,7 @@ class Node():
 			n_stypes = len([0 for sprite in self.WBP.findObjectsInRLE(rle, stype)]) if self.WBP.findObjectsInRLE(rle, stype) else 0
 
 			distance_to_goal = abs(n_stypes - limit)
+			print("distance to goal {} is {}".format(stype, distance_to_goal))
 
 		if distance_to_goal!=0:
 			val -= float(mult * first_alpha) / distance_to_goal**2 ## Penalize quadratically for classes for which we'd have to kill many instances.
@@ -654,6 +657,7 @@ class Node():
 					 for obj in stype_positions]
 
 				distance = min(possiblePairList)
+				print("second order distance is {}".format(distance))
 			except (ValueError, TypeError) as e:
 				distance = 0
 
@@ -1022,7 +1026,7 @@ class Node():
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
 		print("metabolic cost is {}".format(self.metabolic_cost))
-		self.intrinsic_reward = self.heuristicVal + self.position_score(-250)
+		self.intrinsic_reward = self.heuristicVal + self.position_score(0)
 
 		print("heuristicVal {}".format(self.heuristicVal))
 		print("intrinsic_reward {}".format(self.intrinsic_reward))

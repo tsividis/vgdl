@@ -1136,9 +1136,14 @@ class NoveltyTermination(Termination):
 
         for e in game.effectList:
             id_not_found = False
+            class1, class2 = 'none', 'none'
             if (e[0] in ['killSprite', 'transformTo', 'nothing']) and len(e) > 2:
                 try:
                     name1 = game.all_objects[e[1]]['sprite'].name
+                    # Don't get a noveltyTermination from RandomNPCs
+                    class1 = str(game.all_objects[e[1]]['sprite'].__class__)
+                    if 'RandomNPC' in class1:
+                        return False, None
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
                         name1 = 'EOS'
@@ -1162,6 +1167,10 @@ class NoveltyTermination(Termination):
                     embed()
                 try:
                     name2 = game.all_objects[e[2]]['sprite'].name
+                    # Don't get a noveltyTermination from RandomNPCs
+                    class2 = str(game.all_objects[e[2]]['sprite'].__class__)
+                    if 'RandomNPC' in class2:
+                        return False, None
                 except KeyError:
                     if e[2]=='ENDOFSCREEN':
                         name2 = 'EOS'
@@ -1193,12 +1202,15 @@ class NoveltyTermination(Termination):
                         name1, name2))
                     # if name1=='c7' and name2=='avatar':
                     #     ipdb.set_trace()
-
+                    print("Classes are {} and {}".format(class1, class2))
                     return True, self.win
             elif len(e) > 2 and e[2]=='ENDOFSCREEN':
                 name2 = 'EOS'
                 try:
                     name1 = game.all_objects[e[1]]['sprite'].name
+                    # Don't get a noveltyTermination from RandomNPCs
+                    if 'RandomNPC' in str(game.all_objects[e[1]]['sprite'].__class__):
+                        return False, None
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
                         name1 = 'EOS'
@@ -1227,6 +1239,7 @@ class NoveltyTermination(Termination):
                         pass
                     print("NoveltyTermination with {} and {}".format(
                         name1, name2))
+                    print("Classes are {} and {}".format(class1, class2))
                     # if name1=='c7' and name2=='avatar':
                     #     ipdb.set_trace()
                     return True, self.win

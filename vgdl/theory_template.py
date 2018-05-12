@@ -948,7 +948,7 @@ class Theory(object):
 							   not t.termination.win and all([not f.__eq__(t) for f in self.falsified])]
 
 		if event:
-			relevantEvents = [t for t in event['effectList'] if t[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo']]
+			relevantEvents = [t for t in event['effectList'] if t[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'collectResource']]
 			# if relevantEvents:
 				# ipdb.set_trace()
 			rle = event['rle']
@@ -998,7 +998,7 @@ class Theory(object):
 
 		for rule in self.interactionSet:
 
-			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'nothing']:
+			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'nothing', 'collectResource']:
 				if rule.generic and rule.preconditions:
 					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, copy.deepcopy(rule.preconditions))
 					if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
@@ -1015,7 +1015,7 @@ class Theory(object):
 							all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 							all([not terminationRule.__eq__(t) for t in self.falsified])):
 							self.terminationSet.append(terminationRule)
-				elif rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo']:
+				elif rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'collectResource']:
 					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
 					if (all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 						all([not terminationRule.__eq__(t) for t in self.falsified])):
