@@ -89,6 +89,31 @@ class Agent:
         self.rle._game.spriteUpdateDict = self.spriteUpdateDict
         return
 
+    def initializeRLEFromGame(self):
+        gameString, levelString = self.gameString, self.levelString
+        if gameString == None or levelString == None:
+            gameString, levelString = defInputGame(self.gameFilename, randomize=False)
+        rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
+        rle = rleCreateFunc()
+        return rle
+
+    def fastcopy(self, rle):
+
+        newRle = self.initializeRLEFromGame()
+        newRle._obstypes = ccopy(rle._obstypes)
+        if hasattr(rle, '_gravepoints'):
+            newRle._gravepoints = ccopy(rle._gravepoints)
+        newRle._game.sprite_groups = ccopy(rle._game.sprite_groups)
+        newRle._game.kill_list = ccopy(rle._game.kill_list)
+        # newRle._game.lastcollisions = ccopy(rle._game.lastcollisions)
+        newRle._game.time = ccopy(rle._game.time)
+        newRle._game.score = ccopy(rle._game.score)
+        newRle._game.keystate = ccopy(rle._game.keystate)
+        newRle.symbolDict = ccopy(rle.symbolDict)
+        newRle._game.sprite_groups['avatar'][0].resources = ccopy(rle._game.sprite_groups['avatar'][0].resources)
+
+        return newRle
+        
     def getSpritesByColor(self, rle, color):
         outList = []
         for k in rle._game.sprite_groups.keys():
@@ -148,6 +173,8 @@ class Agent:
         try:
             Vrle._game.getAvatars()[0].resources = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
             Vrle._game.getAvatars()[0].orientation = copy.deepcopy(self.rle._game.getAvatars()[0].orientation)
+            # Vrle._game.getAvatars()[0].resources = ccopy(self.rle._game.getAvatars()[0].resources)
+            # Vrle._game.getAvatars()[0].orientation = ccopy(self.rle._game.getAvatars()[0].orientation)
         except (IndexError, AttributeError) as e:
             pass
         # Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
@@ -163,6 +190,8 @@ class Agent:
         for hypothesis in self.hypotheses[0:1]:
             tempHypothesis = copy.deepcopy(hypothesis)
             tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
+            # tmpFakeInteractionRules = ccopy(self.fakeInteractionRules)
+
             tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
             if not flexible_goals:
                 tempHypothesis.updateTerminations()
@@ -177,7 +206,7 @@ class Agent:
 
     def initializeHypotheses(self, allObjects, learnSprites=True):
         if learnSprites:
-            observe(self.rle, 15, self.bestSpriteTypeDict)
+            observe(self.rle, 5, self.bestSpriteTypeDict)
             spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
                 self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
             self.rle._game.exceptedObjects = exceptedObjects
@@ -236,8 +265,8 @@ class Agent:
             level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
         episodes = []
         allEffectsEncountered = []
-        # shutil.rmtree("images/tmp")
-        # os.makedirs("images/tmp")
+        shutil.rmtree("images/tmp")
+        os.makedirs("images/tmp")
         j=0
         flexible_goals = False
 
@@ -300,7 +329,8 @@ class Agent:
                     'episodes' : episodes}
 
         write_to_csv(str(self.gameFilename)+'.csv', output)
-        # self.makeMovie()
+
+        self.makeMovie()
 
     def makeHeatmap(self, statesEncountered, filename):
         from vgdl.plotting import featurePlot
@@ -359,6 +389,9 @@ class Agent:
 
 
     def makeMovie(self):
+        VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
+            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
+
         print "Creating Movie"
         movie_dir = "videos/"+self.gameFilename
 
@@ -564,9 +597,12 @@ class Agent:
                         try:
                             if self.rle._game.previousPositions[k] != self.rle._game.nextPositions[k]:
                                 self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.rle._game.previousPositions[k])
+                                # self.rle._game.objectMemoryDict[k] = ccopy(self.rle._game.previousPositions[k])
+
                         except KeyError:
                             pass
                     self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
+                    # self.rle._game.previousPositions = ccopy(self.rle._game.nextPositions)
 
 
                     # pinkID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['features']['color']=='PINK'][0]
@@ -795,6 +831,8 @@ class Agent:
 
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+            # agentState = ccopy(self.rle._game.getAvatars()[0].resources)
+
         except IndexError:
             agentState = defaultdict(lambda: 0)
 
@@ -805,6 +843,7 @@ class Agent:
 
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+            # agentState = ccopy(self.rle._game.getAvatars()[0].resources)
 
             for e in res['effectList']:
                 if 'changeResource' in e:
@@ -856,6 +895,8 @@ class Agent:
 
             ## Delete fake interaction rules for events that were witnessed in this time step.
             oldFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
+            # oldFakeInteractionRules = ccopy(self.fakeInteractionRules)
+
             self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
                 not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
 
@@ -929,6 +970,7 @@ class Agent:
 
 
         return hypotheses, theory_change_flag, effects
+
 
 
 if __name__ == "__main__":

@@ -1198,8 +1198,8 @@ class NoveltyTermination(Termination):
                 if name1==self.s1 and name2==self.s2:
                     if id_not_found:
                         pass
-                    print("NoveltyTermination with {} and {}".format(
-                        name1, name2))
+                    # print("NoveltyTermination with {} and {}".format(
+                        # name1, name2))
                     # if name1=='c7' and name2=='avatar':
                     #     ipdb.set_trace()
                     print("Classes are {} and {}".format(class1, class2))
@@ -1237,9 +1237,8 @@ class NoveltyTermination(Termination):
                 if name1==self.s1 and name2 in str(self.s2):
                     if id_not_found:
                         pass
-                    print("NoveltyTermination with {} and {}".format(
-                        name1, name2))
-                    print("Classes are {} and {}".format(class1, class2))
+                    # print("NoveltyTermination with {} and {}".format(
+                        # name1, name2))
                     # if name1=='c7' and name2=='avatar':
                     #     ipdb.set_trace()
                     return True, self.win
@@ -1381,11 +1380,12 @@ def attractGaze(sprite, partner, game, prob=0.5):
 def turnAround(sprite, partner, game):
     sprite.rect = sprite.lastrect
     sprite.lastmove = sprite.cooldown -1 ## Needed because updatePos looks for lastmove+1%cooldown==0
-    # sprite.lastmove = 4
+    firstspeed = sprite.speed
+    # if firstspeed<1:
+        # sprite.speed = 1.1 ## speed <1 weird creates a weird overlap in aliens, possibly in other games.
     sprite.physics.activeMovement(sprite, DOWN)
-    # sprite.lastmove = sprite.cooldown
-    # sprite.physics.activeMovement(sprite, DOWN)
     reverseDirection(sprite, partner, game)
+    # sprite.speed = firstspeed
     game._updateCollisionDict(sprite)
     if partner == None:
         return ('turnAround', sprite.ID)

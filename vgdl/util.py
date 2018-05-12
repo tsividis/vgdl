@@ -2,15 +2,16 @@ from IPython import embed
 import itertools
 import random
 import csv
+import cPickle
 
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
 CHARS = 'bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM'
 CAPCHARS = 'QWERTYUIOPSDFHJKLZXCVBNM'
 
 def softmax(w, t = 1.0):
-    e = np.exp(np.array(w) / t)
-    dist = e / np.sum(e)
-    return dist
+	e = np.exp(np.array(w) / t)
+	dist = e / np.sum(e)
+	return dist
 
 def normalize(array):
 	z = float(sum(array))
@@ -42,6 +43,10 @@ def factorize(rle, n):
 
 	return decomposition
 
+def findNearestSprite(sprite, spriteList):
+	## returns the sprite in spriteList whose location best matches the location of sprite.
+	return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
+		
 def objectsToSymbol(rle, objects, symbolDict):
 	objects = [rle._game.sprite_groups[o][0].colorName for o in objects]
 	try:
@@ -96,3 +101,6 @@ def write_to_csv(filename, game):
 			score = None
 		writer.writerow((game['modelType'], game['condition'], game['gameName'], levels_won, steps, score))
 	f.close()
+
+def ccopy(obj):
+	return cPickle.loads(cPickle.dumps(obj))

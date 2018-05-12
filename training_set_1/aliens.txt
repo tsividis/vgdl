@@ -5,22 +5,20 @@ BasicGame square_size=32
         missile > Missile
             sam  > orientation=UP    color=PINK singleton=True
             bomb > orientation=DOWN  color=RED  speed=0.5
-        alien   > Bomber       stype=bomb   prob=0.01  cooldown=3 speed=0.8
+        alien   > Bomber       stype=bomb   prob=0.1  cooldown=3 speed=0.8
             alienGreen > color=LIGHTGREEN
             alienBlue > color=GOLD
         portal  > invisible=True hidden=True
-        	portalSlow  > SpawnPoint   stype=alienBlue  spawnCooldown=4   total=3 color=LIGHTGRAY
-        	portalFast  > SpawnPoint   stype=alienGreen  spawnCooldown=4   total=3 color=LIGHTGRAY
+        	portalSlow  > SpawnPoint   stype=alienBlue  spawnCooldown=16   total=3 color=LIGHTGRAY
+        	portalFast  > SpawnPoint   stype=alienGreen  spawnCooldown=12   total=3 color=LIGHTGRAY
 
     LevelMapping
         0 > base
         1 > portalSlow
         2 > portalFast
-	s > sam
+	g > alienGreen
+	l > alienBlue
 	b > bomb
-	3 > alienGreen
-	4 > alienBlue
-
     TerminationSet
         SpriteCounter      stype=avatar               limit=0 win=False
         MultiSpriteCounter stype1=portal stype2=alien limit=0 win=True
@@ -35,6 +33,7 @@ BasicGame square_size=32
         bomb base > killSprite
         base sam > killSprite scoreChange=1
         sam base > killSprite
+	sam portal killSprite
 
         base   alien > killSprite
         avatar alien > killSprite scoreChange=-1

@@ -2,7 +2,8 @@ from pathos.multiprocessing import ProcessingPool
 from main_agent import Agent
 import time
 import dill
-
+import os
+from IPython import embed
 import argparse
 
 parser = argparse.ArgumentParser(description='Process game number.')
@@ -14,11 +15,13 @@ game_number = args.game_number
 # as of 01/2018: it is best to install directly from the github repo with
 # the command 'pip install git+https://github.com/hyperopt/hyperopt'
 
+gameFileString = 'training_set_1'
+
 gvggames = ['aliens', 'boulderdash', 'chase', 'frogs',  # 0-4
         	'missilecommand', 'portals']  # 5-9
 
 local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper',  # 10-12
-    'expt_preconditions', 'expt_push_boulders', 'expt_relational']  # 13-15 to play a "local" game
+    'expt_preconditions', 'expt_push_boulders', 'expt_relational', 'video_debug']  # 13-15 to play a "local" game
 
 # gvggames = ['aliens', 'boulderdash', 'chase', 'frogs',  # 0-3
         	# 'missilecommand', 'portals', 'sokoban', 'survivezombies']  # 4-7
@@ -53,13 +56,13 @@ def play_trainset(hyperparameters):
         		yield color
 
 
-        gvgname = "./training_set_1/{}".format(gameName)
+        gvgname = "./{}/{}".format(gameFileString,gameName)
 
         gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
-
+        game_levels = [l for l in os.listdir(gameFileString) if gameName+'_lvl' in l]
         level_game_pairs = []
-        for level_number in range(5):
+        for level_number in range(len(game_levels)):
         	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
         		level_game_pairs.append([gameString, level.read()])
 
@@ -84,9 +87,9 @@ hyperparameter_sets = [
      'sprite_second_alpha': 1000,
      'sprite_negative_mult': .1,
      'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
+     'multisprite_second_alpha': 0,#100,
      'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
+     'novelty_second_alpha': 0#50,
      },
     {
      'sprite_first_alpha': 10000,

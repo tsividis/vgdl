@@ -1,8 +1,11 @@
-filename = "examples.gridphysics.frogs2"
+import os
 
+filename = "examples.gridphysics.frogs2"
 
 gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
     'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
+gameFileString = 'training_set_1'
+
 
 def read_gvgai_game(filename):
     with open(filename, 'r') as f:
@@ -10,11 +13,15 @@ def read_gvgai_game(filename):
     return game
 
 def create_level_game_pairs(game_number):
-    gvgname = "./training_set_1/{}".format(gvggames[game_number])
+    gameName = gvggames[game_number]
+
+    gvgname = "./{}/{}".format(gameFileString, gameName)
+
+    game_levels = [l for l in os.listdir(gameFileString) if gameName+'_lvl' in l]
 
     gameString = read_gvgai_game('{}.txt'.format(gvgname))
     level_game_pairs = []
-    for level_number in range(5):
+    for level_number in range(len(game_levels)):
     	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
     		level_game_pairs.append([gameString, level.read()])
 

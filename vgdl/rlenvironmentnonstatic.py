@@ -122,6 +122,41 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         symbolDict = a dict mapping each sprite name to its symbol.
         If there's no sprite overlap, then returns a string. Else returns numpy array.
         """
+        ## faster version, but need to figure out how to display 
+        # locs = defaultdict(lambda:[])
+        # mappedState = [[' ' for x in range(self.outdim[1])] for y in range(self.outdim[0])] 
+        # for lst in self._game.sprite_groups.values():
+        #     for sprite in lst:
+        #         y,x = sprite.rect.top/30, sprite.rect.left/30
+        #         locs[(y,x)].append(sprite.name)
+
+
+        # for k,v in locs.iteritems():
+        #     if len(v)>1:
+        #         if 'avatar' in v:
+        #             symbol = 'X'
+        #         else:
+        #             symbol = '$'
+        #     else:
+        #         symbol = objectsToSymbol(self, v, self.symbolDict)
+            
+        #     if symbol in ['A', 'X']:
+        #         symbol = colored(symbol, 'red')
+        #     else:
+        #         symbol = colored(symbol, color)
+            
+        #     try:
+        #         mappedState[k[0]][k[1]] = symbol
+        #     except:
+        #         print "mappedState problem in rlenvironmentNonStatic"
+        #         print mappedState
+        #         embed()
+        # gameString = ""
+
+        # for mappedRow in mappedState:
+        #     gameString += reduce(lambda a,b: a+b, mappedRow) + "\n"
+        # return gameString
+
         gameString = ""
         spriteOverlap = False # represents whether 2 sprites are on same location
         state = np.reshape(self._getSensors(), self.outdim)
@@ -203,6 +238,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
     def _isDone(self, getTermination=False):
         # remember reward if the final state ends the game
+        self._game.terminations.sort(key=lambda x: 0 if (x.name=='SpriteCounter' and x.stype=='avatar' and x.win==False) else 1 if x.name=='SpriteCounter' else 2)
         for t in self._game.terminations:
             # Convention: the first criterion is for keyboard-interrupt termination
             # Breaking convention here
