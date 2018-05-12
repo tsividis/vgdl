@@ -73,7 +73,6 @@ class WBP():
 			self.theory=copy.deepcopy(theory)
 			self.theory.interactionSet.extend(fakeInteractionRules)
 			self.theory.updateTerminations()
-		# embed()
 		print 'max nodes', self.max_nodes
 
 		# for rule in self.theory.interactionSet:
@@ -355,22 +354,21 @@ class WBP():
 				# If there's already a projectile on the screen
 				# and the projectile class is a singleton
 				# and the action chosen is shooting
-				shoot_type = current.rle._game.getAvatars()[0].stype
-
-				if (self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
+				if (hasattr(current.rle._game.getAvatars()[0], 'stype') and
+						self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
 						bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
-						len([s for s in current.rle._game.sprite_groups[shoot_type] if s not in current.rle._game.kill_list])>0):
+						len([s for s in current.rle._game.sprite_groups[current.rle._game.getAvatars()[0].stype] if s not in current.rle._game.kill_list])>0):
 					current_actions = [0]					
 					avatar = current.rle._game.getAvatars()[0]
 					killer_sprites = [s for k in self.killer_types for s in current.rle._game.sprite_groups[k]]
 					if killer_sprites:
 						nearest = findNearestSprite(avatar, killer_sprites)
-						if manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))>2:
+						if manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))>3:
 							current_actions = [0]
 						else:
 							current_actions = [0, K_LEFT, K_RIGHT]
-							# print "didn't change current_actions; will plan normally"
-							# embed()
+							print "didn't change current_actions; will plan normally"
+							print "nearest dangerous sprite:", manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))
 
 			except (IndexError, AttributeError, TypeError) as e:
 				print "got triple except."
@@ -403,24 +401,26 @@ class WBP():
 					child.eval()
 
 					if self.firstOrderHorizon:
-						# Return plan if first-order progress was made towards
-						# a win condition
-						foundWin = False
-						for term in self.theory.terminationSet:
-							if isinstance(term, SpriteCounterRule) and term.termination.win==True:
-								stypes = [term.termination.stype]
-							elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
-								stypes = term.termination.stypes
-							else:
-								stypes = []
-							for stype in stypes:
-								n_stypes = len([0 for sprite in self.findObjectsInRLE(child.rle, stype)])
-								if stype in self.starting_stype_n.keys() and self.starting_stype_n[stype] > n_stypes:
-									child.terminal, child.win = True, True
-									foundWin = True
+							# Return plan if first-order progress was made towards
+							# a win condition
+						ended, win = child.rle._isDone()
+						if not ended:
+							foundWin = False
+							for term in self.theory.terminationSet:
+								if isinstance(term, SpriteCounterRule) and term.termination.win==True:
+									stypes = [term.termination.stype]
+								elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
+									stypes = term.termination.stypes
+								else:
+									stypes = []
+								for stype in stypes:
+									n_stypes = len([0 for sprite in self.findObjectsInRLE(child.rle, stype)])
+									if stype in self.starting_stype_n.keys() and self.starting_stype_n[stype] > n_stypes:
+										child.terminal, child.win = True, True
+										foundWin = True
+										break
+								if foundWin:
 									break
-							if foundWin:
-								break
 
 					if child.win:
 						# Get the gameString representation of the RLE at each
@@ -442,8 +442,8 @@ class WBP():
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
 						print "win"
-						# if t and t.name=='NoveltyTermination':
-							# print t.s1, t.s2
+						if t and t.name=='NoveltyTermination' and ended:
+							print 'Novelty', t.s1, t.s2
 							# embed()
 					else:
 						QNovelty.append(child)

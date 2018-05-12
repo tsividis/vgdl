@@ -379,6 +379,11 @@ class Theory(object):
 		likelihood = self.likelihood(timestep)
 
 		if likelihood==1:
+			# print "got likelihood=1"
+			# embed()
+			interpretedRule = self.interpret(event)
+			matchingRule = [rule for rule in self.interactionSet if (interpretedRule.slot1, interpretedRule.slot2) == (rule.asTuple()[1], rule.asTuple()[2])][0]
+			matchingRule.generic=False
 			theories.append(self)
 		else:
 			failCase = self.getFailCases(event, timestep)
