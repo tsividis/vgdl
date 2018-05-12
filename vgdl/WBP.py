@@ -62,7 +62,7 @@ class WBP():
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
 		self.classesWhoseLocationsWeIgnore = []
 		self.classesWhosePresenceWeIgnore = []
-		self.allowRollouts = True
+		self.allowRollouts = False
 		self.quitting = False
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
@@ -73,6 +73,7 @@ class WBP():
 			self.theory=copy.deepcopy(theory)
 			self.theory.interactionSet.extend(fakeInteractionRules)
 			self.theory.updateTerminations()
+
 		print 'max nodes', self.max_nodes
 
 		# for rule in self.theory.interactionSet:
@@ -355,11 +356,12 @@ class WBP():
 
 			current_actions = self.actions
 			try:
-				# If there's already a projectile on the screen
+				# If there's already a Missile on the screen
 				# and the projectile class is a singleton
 				# and the action chosen is shooting
 				if (hasattr(current.rle._game.getAvatars()[0], 'stype') and
 						self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
+						'Missile' in str(self.theory.classes[current.rle._game.getAvatars()[0].stype][0]) and
 						bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
 						len([s for s in current.rle._game.sprite_groups[current.rle._game.getAvatars()[0].stype] if s not in current.rle._game.kill_list])>0):
 					current_actions = [0]					
@@ -370,7 +372,7 @@ class WBP():
 						if manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))>3:
 							current_actions = [0]
 						else:
-							current_actions = [0, K_LEFT, K_RIGHT]
+							current_actions = [0, K_LEFT, K_RIGHT, K_UP, K_DOWN]
 							print "didn't change current_actions; will plan normally"
 							print "nearest dangerous sprite:", manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))
 
@@ -448,8 +450,8 @@ class WBP():
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
 						print "win"
-						# if t and t.name=='NoveltyTermination' and ended:
-							# print 'Novelty', t.s1, t.s2
+						if t and t.name=='NoveltyTermination' and ended:
+							print 'Novelty', t.s1, t.s2
 							# embed()
 					else:
 						QNovelty.append(child)
@@ -590,6 +592,9 @@ class Node():
 		# First order: progress in terms of number of sprites remaining.
 		# Second order: distance to the closest instance of a target sprite type.
 
+		# theory.interactionSet[16].generic=False
+		# theory.interactionSet[16].rule='killSprite'
+
 		val = 0
 		compute_second_order = True
 
@@ -611,11 +616,19 @@ class Node():
 
 		## If you can shoot a Flicker, give yourself credit for being close to things it kills, but remove credit for that Flicker being close to those things.
 		try:
-			if (rle._game.getAvatars()[0].stype in killer_types and
-				'Flicker' in str(theory.spriteObjects[rle._game.sprite_groups[rle._game.getAvatars()[0].stype][0].colorName].vgdlType)):
+			if rle._game.getAvatars()[0].stype in killer_types:
+				if rle._game.getAvatars()[0].stype in theory.classes:
+					color = theory.classes[rle._game.getAvatars()[0].stype][0].color
+				else:
+					color = rle._game.sprite_groups[rle._game.getAvatars()[0].stype][0].colorName
+			
+				if 'Flicker' in str(theory.spriteObjects[color].vgdlType):
 					killer_types.append(rle._game.getAvatars()[0].name)
 					killer_types.remove(rle._game.getAvatars()[0].stype)
+
 		except (IndexError, AttributeError) as e:
+			print "got exception in trying to assign Flicker bonus to avatar"
+			embed()
 			pass
 
 		# This list comprehension checks whether the avatar kills the stype with a preconditioned
@@ -824,10 +837,10 @@ class Node():
 			compute_second_order = False
 			mult = 1
 
-		## Don't give heuristic bonus for using the flicker. But the agent is still incentivized to try to make the flicker interact with other objects
-		## because of noveltyTerminationConditions.
-		if 'Flicker' in str(theory.classes[s1][0].vgdlType) or 'Flicker' in str(theory.classes[s2][0].vgdlType):
-			return 0, 10000
+		# ## Don't give heuristic bonus for using the flicker. But the agent is still incentivized to try to make the flicker interact with other objects
+		# ## because of noveltyTerminationConditions.
+		# if 'Flicker' in str(theory.classes[s1][0].vgdlType) or 'Flicker' in str(theory.classes[s2][0].vgdlType):
+		# 	return 0, 10000
 
 		## If the terminationRule is precondition-dependent, check that first. Don't give heuristic val if the preconditions aren't fulfilled.
 		if term.termination.args:
@@ -851,7 +864,14 @@ class Node():
 		if compute_second_order:
 			## Get all positions of objects whose type is in killer_types; compute minimum distance
 			## of each to the stypes we have to destroy. Return min over all mins.
-			# embed()
+			# if 'Flicker' in str(theory.classes[s1][0].vgdlType) or 'Flicker' in str(theory.classes[s2][0].vgdlType):
+				# embed()
+
+			###JOAO
+			# if 'Flicker' in str(theory.classes[s1][0].vgdlType) and not ('Flicker' in str(theory.classes[s2][0].vgdlType) or s2=='avatar'):
+			# 	s1 = s2
+			# 	s2 = 'avatar'
+
 			s2_positions = self.WBP.findObjectsInRLE(rle, s2)
 			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
 
@@ -949,9 +969,9 @@ class Node():
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=novelty_first_alpha, second_alpha=novelty_second_alpha)
-				# if noveltytermination_val!=0:
-					# print("noveltytermination_val for {} and {} is equal to {}".format(
-						# term.termination.s1, term.termination.s2, noveltytermination_val))
+				if noveltytermination_val!=0:
+					print("noveltytermination_val for {} and {} is equal to {}".format(
+						term.termination.s1, term.termination.s2, noveltytermination_val))
 
 				# if self.parent and self.parent.rle._game.score==0 and term.termination.args and term.termination.s1=='c6' and term.termination.s2=='avatar' and noveltytermination_val!=-5000:
 					# ipdb.set_trace()
