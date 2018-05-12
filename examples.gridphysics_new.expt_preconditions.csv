@@ -1,0 +1,8 @@
+subject,condition,gameName,levels_won,steps,score
+full,normal,examples.gridphysics_new.expt_preconditions,0,17,0
+full,normal,examples.gridphysics_new.expt_preconditions,1,36,0
+full,normal,examples.gridphysics_new.expt_preconditions,2,55,0
+full,normal,examples.gridphysics_new.expt_preconditions,2,92,0
+full,normal,examples.gridphysics_new.expt_preconditions,2,167,0
+full,normal,examples.gridphysics_new.expt_preconditions,3,222,0
+full,normal,examples.gridphysics_new.expt_preconditions,4,293,0

@@ -2223,7 +2223,8 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	-cleanest way:
 	"""
 	def getClassNameFromSpriteString(spriteName):
-		if len(rle._game.sprite_groups[spriteName])>0:
+
+		try:
 			col = colorDict[str(rle._game.sprite_groups[spriteName][0].color)]
 			try:
 				className = [k for k in theory.classes.keys() if col in [c.color for c in theory.classes[k]]][0]
@@ -2231,15 +2232,16 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				print "couldn't find className"
 				embed()
 			return className
-		elif spriteName in theory.classes.keys():
-			return spriteName
-		else:
-			try:
-				## maybe we passed a color, so we should get the class.
-				return theory.spriteObjects[spriteName].className
-			except:
-				print "failed to get spriteName color. In getClassNameFromSpriteString"
-				embed()
+		except KeyError:
+			if spriteName in theory.classes.keys():
+				return spriteName
+			else:
+				try:
+					## maybe we passed a color, so we should get the class.
+					return theory.spriteObjects[spriteName].className
+				except:
+					print "failed to get spriteName color. In getClassNameFromSpriteString"
+					embed()
 
 	def buildArgsString(interactionRule):
 		relevantArgNames = getKeywordsFromOntology(interactionRule.interaction)

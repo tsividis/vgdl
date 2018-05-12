@@ -1142,7 +1142,7 @@ class NoveltyTermination(Termination):
                     name1 = game.all_objects[e[1]]['sprite'].name
                     # Don't get a noveltyTermination from RandomNPCs
                     class1 = str(game.all_objects[e[1]]['sprite'].__class__)
-                    if 'RandomNPC' in class1:
+                    if 'RandomNPC' in class1  and e[2]  != 'avatar':
                         return False, None
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
@@ -1169,7 +1169,7 @@ class NoveltyTermination(Termination):
                     name2 = game.all_objects[e[2]]['sprite'].name
                     # Don't get a noveltyTermination from RandomNPCs
                     class2 = str(game.all_objects[e[2]]['sprite'].__class__)
-                    if 'RandomNPC' in class2:
+                    if 'RandomNPC' in class2  and e[1]  != 'avatar':
                         return False, None
                 except KeyError:
                     if e[2]=='ENDOFSCREEN':
@@ -1209,7 +1209,7 @@ class NoveltyTermination(Termination):
                 try:
                     name1 = game.all_objects[e[1]]['sprite'].name
                     # Don't get a noveltyTermination from RandomNPCs
-                    if 'RandomNPC' in str(game.all_objects[e[1]]['sprite'].__class__):
+                    if 'RandomNPC' in str(game.all_objects[e[1]]['sprite'].__class__) and e[2]  != 'avatar':
                         return False, None
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
@@ -1518,16 +1518,17 @@ def killIfAlive(sprite, partner, game):
         return killSprite(sprite, partner, game)
         # return ('killIfAlive' , sprite.ID, partner.ID)
 
-def collectResource(sprite, partner, game): # FLAG
+def collectResource(sprite, partner, game, resource=None, value=1, limit=None): # FLAG
     """ Adds/increments the resource type of sprite in partner """
     assert isinstance(sprite, Resource)
     r = sprite.resourceType
     partner.resources[r] = max(-1, min(partner.resources[r]+sprite.value, game.resources_limits[r]))
     # game.kill_list.append(sprite)
     killSprite(sprite, partner, game)
+    args = {'resource':sprite.name, 'value':value, 'limit':game.resources_limits[sprite.name]}
     #print 'Collected ', colorDict[str(sprite.color)]#partner.resources[r]
     # return ('collectResource', colorDict[str(partner.color)], colorDict[str(sprite.color)])
-    return ('collectResource' , sprite.ID, partner.ID)
+    return ('collectResource' , sprite.ID, partner.ID, args)
 
 def changeResource(sprite, partner, resourceColor, game, resource, value=1, limit=None):
     """ Increments a specific resource type in sprite """

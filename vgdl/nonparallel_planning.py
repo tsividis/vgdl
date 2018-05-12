@@ -14,7 +14,7 @@ game_number = args.game_number
 # as of 01/2018: it is best to install directly from the github repo with
 # the command 'pip install git+https://github.com/hyperopt/hyperopt'
 
-gvggames = ['aliens', 'boulderdash', 'chase', 'frogs',  # 0-4
+gvggames = ['aliens', 'boulderdash', 'chase', 'portals',  # 0-4
         	'missilecommand', 'sokoban']  # 5-9
 #
 local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper',  # 10-12
@@ -79,15 +79,15 @@ def play_trainset(hyperparameters):
     return total_time
 
 hyperparameter_sets = [
-    {
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 1000,
-     'sprite_negative_mult': .1,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
+     {
+      'sprite_first_alpha': 10000,
+      'sprite_second_alpha': 100,
+      'sprite_negative_mult': .1,
+      'multisprite_first_alpha': 10000,
+      'multisprite_second_alpha': 100,
+      'novelty_first_alpha': 5000,
+      'novelty_second_alpha': 50,
+      },
     {
      'sprite_first_alpha': 10000,
      'sprite_second_alpha': 100,

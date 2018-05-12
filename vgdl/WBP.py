@@ -62,7 +62,7 @@ class WBP():
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
 		self.classesWhoseLocationsWeIgnore = []
 		self.classesWhosePresenceWeIgnore = []
-		self.allowRollouts = True
+		self.allowRollouts = False
 		self.quitting = False
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
@@ -236,12 +236,7 @@ class WBP():
 			vecValue = [0]
 
 		stateIW1 = [vecValue] + [1 if char==' ' else 0 for pos, char in enumerate(rle.show())]
-<<<<<<< HEAD
 		# lst.append(hash(tuple(stateIW1)))
-=======
-		# print(id(stateIW1))
-		lst.append(hash(tuple(stateIW1)))
->>>>>>> e1abe53661fd142f9ee0897cd80b148c644b578a
 
 		return set(lst)
 
@@ -354,30 +349,30 @@ class WBP():
 			visited.append(current)
 
 			current_actions = self.actions
-			try:
-				# If there's already a projectile on the screen
-				# and the projectile class is a singleton
-				# and the action chosen is shooting
-				if (hasattr(current.rle._game.getAvatars()[0], 'stype') and
-						self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
-						bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
-						len([s for s in current.rle._game.sprite_groups[current.rle._game.getAvatars()[0].stype] if s not in current.rle._game.kill_list])>0):
-					current_actions = [0]					
-					avatar = current.rle._game.getAvatars()[0]
-					killer_sprites = [s for k in self.killer_types for s in current.rle._game.sprite_groups[k]]
-					if killer_sprites:
-						nearest = findNearestSprite(avatar, killer_sprites)
-						if manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))>3:
-							current_actions = [0]
-						else:
-							current_actions = [0, K_LEFT, K_RIGHT]
-							print "didn't change current_actions; will plan normally"
-							print "nearest dangerous sprite:", manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))
-
-			except (IndexError, AttributeError, TypeError) as e:
-				print "got triple except."
-				embed()
-				pass
+			# try:
+			# 	# If there's already a projectile on the screen
+			# 	# and the projectile class is a singleton
+			# 	# and the action chosen is shooting
+			# 	if (hasattr(current.rle._game.getAvatars()[0], 'stype') and
+			# 			self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
+			# 			bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
+			# 			len([s for s in current.rle._game.sprite_groups[current.rle._game.getAvatars()[0].stype] if s not in current.rle._game.kill_list])>0):
+			# 		current_actions = [0]
+			# 		avatar = current.rle._game.getAvatars()[0]
+			# 		killer_sprites = [s for k in self.killer_types for s in current.rle._game.sprite_groups[k]]
+			# 		if killer_sprites:
+			# 			nearest = findNearestSprite(avatar, killer_sprites)
+			# 			if manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))>3:
+			# 				current_actions = [0]
+			# 			else:
+			# 				current_actions = [0, K_LEFT, K_RIGHT]
+			# 				print "didn't change current_actions; will plan normally"
+			# 				print "nearest dangerous sprite:", manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))
+            #
+			# except (IndexError, AttributeError, TypeError) as e:
+			# 	print "got triple except."
+			# 	embed()
+			# 	pass
 
 
 			for a in current_actions:
@@ -569,7 +564,7 @@ class Node():
 						# Avatar is dead or doesn't have projectile
 						pass
 				i+=1
-			## we want optimistic estimates of the future value of a shot. 
+			## we want optimistic estimates of the future value of a shot.
 			## Take up to 100 samples but don't get caught in an infinite loop.
 			if terminal and not win and j<100:
 				successfulRollout = False
@@ -686,10 +681,13 @@ class Node():
 			# embed()
 			objs = [self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types]
 
-			if len(objs)>0:
-				kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
-			else:
-				kill_positions = np.array(objs)
+			try:
+				if len(objs)>0:
+					kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
+				else:
+					kill_positions = np.array(objs)
+			except TypeError:
+				kill_positions = np.array([])
 
 			possiblePairList = []
 			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
@@ -725,7 +723,7 @@ class Node():
 				resource_names = [list(resource[1])[0].item for resource in avatar_preconditions]
 
 				try:
-					resource_yielder_names = [[inter.slot2 if (inter.interaction=='changeResource' and inter.args['resource']==res) else res if (inter.interaction=='collectResource' and res==inter.slot1) else None
+					resource_yielder_names = [[inter.slot2 if (inter.interaction=='changeResource' and inter.args['resource']==res) else inter.slot1 if (inter.interaction=='collectResource' and res==inter.args['resource']==res) else None
 					for inter in theory.interactionSet] for res in resource_names]
 				except:
 					print "failure with resource_yielder_names"
@@ -1075,6 +1073,9 @@ class Node():
 		# print("intrinsic_reward {}".format(self.intrinsic_reward))
 		try:
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
+			for k in self.rle._game.getAvatars()[0].resources.keys():
+				if k not in self.WBP.seen_limits:
+					print("Current resource={}, limit={}".format(self.rle._game.getAvatars()[0].resources[k], self.WBP.theory.resource_limits[k]))
 			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
 				self.win=True
 		except IndexError:

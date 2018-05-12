@@ -53,10 +53,10 @@ class Agent:
             self.starting_max_nodes = 10000
             self.max_nodes_annealing = 10
         self.firstOrderHorizon = False ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
-        self.regrounding = 3
+        self.regrounding = 1000
         self.selective_regrounding = True
         self.avoid_danger = True
-        self.safeDistance = 6
+        self.safeDistance = 3
         self.emptyPlansLimit = 5
         self.longHorizonObservationLimit = 2
         self.hypotheses = []
@@ -113,7 +113,7 @@ class Agent:
         newRle._game.sprite_groups['avatar'][0].resources = ccopy(rle._game.sprite_groups['avatar'][0].resources)
 
         return newRle
-        
+
     def getSpritesByColor(self, rle, color):
         outList = []
         for k in rle._game.sprite_groups.keys():
@@ -206,7 +206,7 @@ class Agent:
 
     def initializeHypotheses(self, allObjects, learnSprites=True):
         if learnSprites:
-            observe(self.rle, 5, self.bestSpriteTypeDict)
+            observe(self.rle, 15, self.bestSpriteTypeDict)
             spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
                 self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
             self.rle._game.exceptedObjects = exceptedObjects
@@ -927,7 +927,7 @@ class Agent:
              # - Only one resource can change for each timestep
             # - The first time a resource changes, it goes from 0 to a positive
             #   value
-            for change_resource_effect in [e[3] for e in event['effectList'] if 'changeResource' in e]:
+            for change_resource_effect in [e[3] for e in event['effectList'] if ('changeResource' in e)] + [e[3] for e in event['effectList'] if ('collectResource' in e)]:
                 resource = change_resource_effect['resource']
                 val = change_resource_effect['value']
                 limit = change_resource_effect['limit']
@@ -942,6 +942,7 @@ class Agent:
                     # resourceColor = self.rle._game.sprite_groups[resource][0].colorName
                     # Add resource change to seen_resources list
                     self.seen_resources.append(resource)
+
 
                     hypotheses[0].resource_limits[resource] = limit
 

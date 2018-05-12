@@ -23,7 +23,8 @@ BasicGame
 	InteractionSet
 		dirt avatar > killSprite
 		dirt sword  > killSprite
-		diamond avatar > collectResource
+		avatar diamond > changeResource resource=diamond limit=10
+		diamond avatar > killSprite
 		avatar wall > stepBack
 		crab wall > stepBack
 		butterfly wall > stepBack

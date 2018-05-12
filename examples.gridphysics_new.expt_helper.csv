@@ -1,0 +1,5 @@
+subject,condition,gameName,levels_won,steps,score
+full,normal,examples.gridphysics_new.expt_helper,1,11,0
+full,normal,examples.gridphysics_new.expt_helper,2,23,0
+full,normal,examples.gridphysics_new.expt_helper,3,84,0
+full,normal,examples.gridphysics_new.expt_helper,4,149,0
