@@ -73,6 +73,7 @@ class WBP():
 			self.theory=copy.deepcopy(theory)
 			self.theory.interactionSet.extend(fakeInteractionRules)
 			self.theory.updateTerminations()
+		# embed()
 		print 'max nodes', self.max_nodes
 
 		# for rule in self.theory.interactionSet:
@@ -86,6 +87,10 @@ class WBP():
 		self.pixel_size = self.rle._game.screensize[0]/self.rle._game.width
 		self.visited_positions = np.zeros(np.array(self.rle._game.screensize)/
 			self.pixel_size)
+
+		self.killer_types = [inter.slot2 for inter in self.theory.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
+		if self.killer_types:
+			print 'killer types', self.killer_types
 
 		self.short_horizon = shortHorizon
 		self.winning_states = []
@@ -345,21 +350,53 @@ class WBP():
 			# embed()
 			visited.append(current)
 
-			for a in self.actions:
-				skipAction = False
-				try:
-					# If there's already a projectile on the screen
-					# and the projectile class is a singleton
-					# and the action chosen is shooting
-					if (self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
-						bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
-						a == K_SPACE):
-						# Then skip the action
-						skipAction = True
+			current_actions = self.actions
+			try:
+				# If there's already a projectile on the screen
+				# and the projectile class is a singleton
+				# and the action chosen is shooting
+				shoot_type = current.rle._game.getAvatars()[0].stype
 
-				except (IndexError, AttributeError, TypeError) as e:
-					# embed()
-					pass
+				if (self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
+						bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
+						len([s for s in current.rle._game.sprite_groups[shoot_type] if s not in current.rle._game.kill_list])>0):
+					current_actions = [0]					
+					avatar = current.rle._game.getAvatars()[0]
+					killer_sprites = [s for k in self.killer_types for s in current.rle._game.sprite_groups[k]]
+					if killer_sprites:
+						nearest = findNearestSprite(avatar, killer_sprites)
+						if manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))>2:
+							current_actions = [0]
+						else:
+							current_actions = [0, K_LEFT, K_RIGHT]
+							# print "didn't change current_actions; will plan normally"
+							# embed()
+
+			except (IndexError, AttributeError, TypeError) as e:
+				print "got triple except."
+				embed()
+				pass
+
+
+			for a in current_actions:
+				skipAction = False
+				# try:
+				# 	# If there's already a projectile on the screen
+				# 	# and the projectile class is a singleton
+				# 	# and the action chosen is shooting
+				# 	shoot_type = current.rle._game.getAvatars()[0].stype
+
+				# 	if (self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
+				# 		bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
+				# 		# a == K_SPACE):
+				# 		len([s for s in current.rle._game.sprite_groups[shoot_type] if s not in current.rle._game.kill_list])>0):
+				# 		# embed()
+				# 			# Then skip the action
+				# 			skipAction = True
+
+				# except (IndexError, AttributeError, TypeError) as e:
+				# 	# embed()
+				# 	pass
 
 				if not skipAction:
 					child = Node(self.rle, self, current.actionSeq+[a], current)
@@ -397,14 +434,17 @@ class WBP():
 							gameString_array.append(node.rle.show(color='green'))
 							object_positions_array.append(node.rle)
 							node = node.parent
+						print child.rle.show()
 						self.gameString_array = gameString_array[::-1]
 						self.object_positions_array = object_positions_array[::-1]
 
 						ended, win, t = child.rle._isDone(getTermination=True)
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
-						# print "win"
-						# embed()
+						print "win"
+						# if t and t.name=='NoveltyTermination':
+							# print t.s1, t.s2
+							# embed()
 					else:
 						QNovelty.append(child)
 						QReward.append(child)
@@ -504,12 +544,11 @@ class Node():
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
 				# print a
 				vrle.step(a)
-				print vrle.show(indent=True)
-				currHeuristicVal = self.heuristics(vrle, **self.WBP.hyperparameters)
+				print vrle.show(indent=True, color='cyan')
+				currHeuristicVal = self.heuristics(vrle, **self.WBP.rolloutHyperparameters)
 				heuristicVal = currHeuristicVal-prevHeuristicVal
 				rolloutArray.append(heuristicVal)
 				prevHeuristicVal = currHeuristicVal
-				# print vrle.show()
 				terminal, win, t = vrle._isDone(getTermination=True)
 				if terminal:
 					try:
@@ -523,8 +562,8 @@ class Node():
 						# Avatar is dead or doesn't have projectile
 						pass
 				i+=1
-			# embed()
-			## we want optimistic estimates of the future value of a shot. Take up to 100 samples but don't get caught in an infinite loop.
+			## we want optimistic estimates of the future value of a shot. 
+			## Take up to 100 samples but don't get caught in an infinite loop.
 			if terminal and not win and j<100:
 				successfulRollout = False
 				print "rolling out again"
@@ -532,7 +571,8 @@ class Node():
 				# embed()
 			else:
 				successfulRollout = True
-
+		# print sum(rolloutArray)
+		# embed()
 		if win:
 			self.terminal = terminal
 			self.win = win

@@ -1368,11 +1368,12 @@ def attractGaze(sprite, partner, game, prob=0.5):
 def turnAround(sprite, partner, game):
     sprite.rect = sprite.lastrect
     sprite.lastmove = sprite.cooldown -1 ## Needed because updatePos looks for lastmove+1%cooldown==0
-    # sprite.lastmove = 4
+    firstspeed = sprite.speed
+    # if firstspeed<1:
+        # sprite.speed = 1.1 ## speed <1 weird creates a weird overlap in aliens, possibly in other games.
     sprite.physics.activeMovement(sprite, DOWN)
-    # sprite.lastmove = sprite.cooldown
-    # sprite.physics.activeMovement(sprite, DOWN)
     reverseDirection(sprite, partner, game)
+    # sprite.speed = firstspeed
     game._updateCollisionDict(sprite)
     if partner == None:
         return ('turnAround', sprite.ID)

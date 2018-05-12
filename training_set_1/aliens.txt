@@ -16,7 +16,9 @@ BasicGame square_size=32
         0 > base
         1 > portalSlow
         2 > portalFast
-
+	g > alienGreen
+	l > alienBlue
+	b > bomb
     TerminationSet
         SpriteCounter      stype=avatar               limit=0 win=False
         MultiSpriteCounter stype1=portal stype2=alien limit=0 win=True
@@ -31,6 +33,7 @@ BasicGame square_size=32
         bomb base > killSprite
         base sam > killSprite scoreChange=1
         sam base > killSprite
+	sam portal killSprite
 
         base   alien > killSprite
         avatar alien > killSprite scoreChange=-1
