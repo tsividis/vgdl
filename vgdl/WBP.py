@@ -358,7 +358,8 @@ class WBP():
 				# If there's already a projectile on the screen
 				# and the projectile class is a singleton
 				# and the action chosen is shooting
-				if (hasattr(current.rle._game.getAvatars()[0], 'stype') and
+				if (current.rle._game.getAvatars() and hasattr(current.rle._game.getAvatars()[0], 'stype') and
+						'Missile' in str(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].vgdlType) and
 						self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
 						bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
 						len([s for s in current.rle._game.sprite_groups[current.rle._game.getAvatars()[0].stype] if s not in current.rle._game.kill_list])>0):
@@ -838,8 +839,8 @@ class Node():
 
 		## Don't give heuristic bonus for using the flicker. But the agent is still incentivized to try to make the flicker interact with other objects
 		## because of noveltyTerminationConditions.
-		if 'Flicker' in str(theory.classes[s1][0].vgdlType) or 'Flicker' in str(theory.classes[s2][0].vgdlType):
-			return 0, 10000
+		# if 'Flicker' in str(theory.classes[s1][0].vgdlType) or 'Flicker' in str(theory.classes[s2][0].vgdlType):
+			# return 0, 10000
 
 		## If the terminationRule is precondition-dependent, check that first. Don't give heuristic val if the preconditions aren't fulfilled.
 		if term.termination.args:
@@ -863,7 +864,11 @@ class Node():
 		if compute_second_order:
 			## Get all positions of objects whose type is in killer_types; compute minimum distance
 			## of each to the stypes we have to destroy. Return min over all mins.
-			# embed()
+
+			if 'Flicker' in str(theory.classes[s1][0].vgdlType) and not ('Flicker' in str(theory.classes[s2][0].vgdlType) or s2=='avatar'):
+				s1 = s2
+				s2 = 'avatar'
+
 			s2_positions = self.WBP.findObjectsInRLE(rle, s2)
 			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
 
@@ -934,8 +939,7 @@ class Node():
 		theory = self.WBP.theory
 		heuristicVal = 0
 		avatarNoveltyVals = []
-		print "in heuristics"
-		embed()
+
 		for term in theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,

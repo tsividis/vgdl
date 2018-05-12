@@ -1807,7 +1807,7 @@ class Game(object):
 		T.classes['EOS'] = [eos] ##initialize EOS with special name, since it gets such special treatment in VGDL text files.
 
 		for (o1, o2) in itertools.product(allSprites, allSprites):
-			if o1.vgdlType not in AvatarTypes and o2.vgdlType not in AvatarTypes:
+			if o1.vgdlType not in AvatarTypes and o2.vgdlType not in AvatarTypes+projectileTypes:
 				rule = InteractionRule('nothing', o1.className, o2.className, {}, set(), generic=True)
 				T.interactionSet.append(rule)
 			elif o1.vgdlType not in AvatarTypes:
