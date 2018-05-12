@@ -217,18 +217,18 @@ class SpriteCounterRule(TerminationRule):
 
 
 class MultiSpriteCounterRule(TerminationRule):
-    """ Game ends when the sum of all sprites of types 'stypes' hits 'limit'. """
-    def __init__(self, limit=0, win=True, stypes = []):
-    	argList = dict((str(i), stype) for i, stype in enumerate(stypes))
-        self.termination = MultiSpriteCounter(limit=limit,win=win, **argList)
-        self.ruleType = "MultiSpriteCounterRule"
+	""" Game ends when the sum of all sprites of types 'stypes' hits 'limit'. """
+	def __init__(self, limit=0, win=True, stypes = []):
+		argList = dict((str(i), stype) for i, stype in enumerate(stypes))
+		self.termination = MultiSpriteCounter(limit=limit,win=win, **argList)
+		self.ruleType = "MultiSpriteCounterRule"
 
-    def display(self):
-        print self.ruleType, self.termination.stypes, self.termination.limit, self.termination.win
-        return
+	def display(self):
+		print self.ruleType, self.termination.stypes, self.termination.limit, self.termination.win
+		return
 
-    def asTuple(self):
-        return (self.ruleType, set(self.termination.stypes), self.termination.limit, self.termination.win)
+	def asTuple(self):
+		return (self.ruleType, set(self.termination.stypes), self.termination.limit, self.termination.win)
 
 class ruleCluster(object):
 	def __init__(self, interactionAndPreconditionList, pairList):
@@ -984,7 +984,7 @@ class Theory(object):
 			knownColors = [sprite[0].color for sprite in self.classes.values()]
 			presentColors = [rle._game.sprite_groups[o][0].colorName for o in rle._game.sprite_groups
 							 if (len(rle._game.sprite_groups[o]) >
-							 	len([dead_sprite for dead_sprite in rle._game.kill_list if dead_sprite.name==o])) and
+								len([dead_sprite for dead_sprite in rle._game.kill_list if dead_sprite.name==o])) and
 							 rle._game.sprite_groups[o][0].colorName in knownColors]
 			absentColors = [color for color in knownColors
 							if color not in presentColors]
@@ -1298,42 +1298,42 @@ class Theory(object):
 			return 1. - self.levenshteinDistance(source, target)/z
 
 	def levenshteinDistance(self, source, target):
-	    if len(source) < len(target):
-	        return self.levenshteinDistance(target, source)
+		if len(source) < len(target):
+			return self.levenshteinDistance(target, source)
 
-	    # So now we have len(source) >= len(target).
-	    if len(target) == 0:
-	        return len(source)
+		# So now we have len(source) >= len(target).
+		if len(target) == 0:
+			return len(source)
 
-	    # print 'source', source
-	    # We call tuple() to force strings to be used as sequences
-	    # ('c', 'a', 't', 's') - numpy uses them as values by default.
-	    source = np.array(tuple(source))
-	    target = np.array(tuple(target))
-	    # We use a dynamic programming algorithm, but with the
-	    # added optimization that we only need the last two rows
-	    # of the matrix.
-	    previous_row = np.arange(len(target) + 1)
-	    for s in source:
-	        # Insertion (target grows longer than source):
-	        current_row = previous_row + 1
+		# print 'source', source
+		# We call tuple() to force strings to be used as sequences
+		# ('c', 'a', 't', 's') - numpy uses them as values by default.
+		source = np.array(tuple(source))
+		target = np.array(tuple(target))
+		# We use a dynamic programming algorithm, but with the
+		# added optimization that we only need the last two rows
+		# of the matrix.
+		previous_row = np.arange(len(target) + 1)
+		for s in source:
+			# Insertion (target grows longer than source):
+			current_row = previous_row + 1
 
-	        # Substitution or matching:
-	        # Target and source items are aligned, and either
-	        # are different (cost of 1), or are the same (cost of 0).
+			# Substitution or matching:
+			# Target and source items are aligned, and either
+			# are different (cost of 1), or are the same (cost of 0).
 
-	        current_row[1:] = np.minimum(
-	                current_row[1:],
-	               	np.add(previous_row[:-1], [(t!=s).any() for t in target]))
+			current_row[1:] = np.minimum(
+					current_row[1:],
+					np.add(previous_row[:-1], [(t!=s).any() for t in target]))
 
-	        # Deletion (target grows shorter than source):
-	        current_row[1:] = np.minimum(
-	                current_row[1:],
-	                current_row[0:-1] + 1)
+			# Deletion (target grows shorter than source):
+			current_row[1:] = np.minimum(
+					current_row[1:],
+					current_row[0:-1] + 1)
 
-	        previous_row = current_row
+			previous_row = current_row
 
-	    return previous_row[-1]
+		return previous_row[-1]
 
 	def levenshtein2(self, s1, s2):
 		#Levenshtein (edit) distance. additions and deletions cost the same. No replacements.
@@ -2130,7 +2130,7 @@ def generateTheoryFromGame(rle, alterGoal=True):
 		# interaction = InteractionRule(effect.__name__, inverseClasses[g1], inverseClasses[g2], None, None)
 		theory.interactionSet.append(interaction)
 
-    # def __init__(self, limit=0, win=True, stypes = []):
+	# def __init__(self, limit=0, win=True, stypes = []):
 
 	# Add termnation set
 	for termination in rle._game.terminations:
@@ -2223,7 +2223,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	-cleanest way:
 	"""
 	def getClassNameFromSpriteString(spriteName):
-		if len(rle._game.sprite_groups[spriteName])>0:
+		try:
 			col = colorDict[str(rle._game.sprite_groups[spriteName][0].color)]
 			try:
 				className = [k for k in theory.classes.keys() if col in [c.color for c in theory.classes[k]]][0]
@@ -2231,15 +2231,16 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				print "couldn't find className"
 				embed()
 			return className
-		elif spriteName in theory.classes.keys():
-			return spriteName
-		else:
-			try:
-				## maybe we passed a color, so we should get the class.
-				return theory.spriteObjects[spriteName].className
-			except:
-				print "failed to get spriteName color. In getClassNameFromSpriteString"
-				embed()
+		except KeyError:
+			if spriteName in theory.classes.keys():
+				return spriteName
+			else:
+				try:
+					## maybe we passed a color, so we should get the class.
+					return theory.spriteObjects[spriteName].className
+				except:
+					print "failed to get spriteName color. In getClassNameFromSpriteString"
+					embed()
 
 	def buildArgsString(interactionRule):
 		relevantArgNames = getKeywordsFromOntology(interactionRule.interaction)
