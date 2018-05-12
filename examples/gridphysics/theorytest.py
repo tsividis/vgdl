@@ -1,5 +1,6 @@
 level="""
 <<<<<<< HEAD
+<<<<<<< HEAD
 1  2   2    2   2   2    2   2
 888         2   2        2    
 888                           
@@ -12,6 +13,8 @@ level="""
    8                          
                 7             
 =======
+=======
+>>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
 4444444444444444444
 4   4 b      46  74
 49314        45   4
@@ -23,11 +26,15 @@ level="""
 4         1       4
 44404        5  444
 4444444444444444444
+<<<<<<< HEAD
+>>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
+=======
 >>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
 """
 game = """
 BasicGame
 	SpriteSet
+<<<<<<< HEAD
 <<<<<<< HEAD
 		sam > Missile color=PINK singleton=True orientation=UP
 		avatar > FlakAvatar color=DARKBLUE stype=sam
@@ -125,6 +132,64 @@ BasicGame
 		c5 c11 > nothing
 		c11 c5 > nothing
 		avatar EOS > stepBack
+=======
+		c9 > Missile color=PINK speed=0.5 orientation=UP cooldown=1
+		c8 > RandomNPC color=GREEN speed=1.5 cooldown=8
+		avatar > MovingAvatar color=DARKBLUE
+		c3 > RandomNPC color=LIGHTBLUE speed=1.5 cooldown=8
+		c2 > RandomNPC color=BLUE speed=1.5 cooldown=8
+		c11 > Missile color=LIGHTRED speed=0.5 orientation=LEFT cooldown=1
+		c10 > RandomNPC color=ORANGE speed=1.5 cooldown=8
+		c7 > RandomNPC color=LIGHTORANGE speed=1.5 cooldown=8
+		c6 > RandomNPC color=LIGHTGREEN speed=1.5 cooldown=8
+		c5 > RandomNPC color=DARKGRAY speed=1.5 cooldown=8
+		c4 > Missile color=BROWN speed=0.2 orientation=DOWN cooldown=5
+	InteractionSet
+		c2 avatar > killSprite
+		c6 c7 > nothing
+		c7 c6 > nothing
+		c11 avatar > killSprite
+		c8 c8 > nothing
+		c2 c4 > nothing
+		c4 c2 > nothing
+		c4 c8 > nothing
+		c8 c4 > nothing
+		c6 c11 > nothing
+		c11 c6 > nothing
+		c2 c10 > nothing
+		c10 c2 > nothing
+		c6 avatar > killSprite
+		c10 c11 > nothing
+		c11 c10 > nothing
+		c7 c9 > nothing
+		c9 c7 > nothing
+		c9 c5 > reverseDirection
+		c3 c5 > nothing
+		c5 c3 > nothing
+		c3 avatar > killSprite
+		c8 c9 > nothing
+		c9 c8 > nothing
+		c2 c5 > nothing
+		c5 c2 > nothing
+		c3 c9 > nothing
+		c9 c3 > nothing
+		c4 c9 > nothing
+		c9 c4 > nothing
+		c3 c10 > nothing
+		c10 c3 > nothing
+		c7 c10 > nothing
+		c10 c7 > nothing
+		c7 avatar > killSprite
+		c2 c8 > nothing
+		c8 c2 > nothing
+		c8 c10 > nothing
+		c10 c8 > nothing
+		c5 c7 > nothing
+		c7 c5 > nothing
+		c5 c11 > nothing
+		c11 c5 > nothing
+		avatar EOS > stepBack
+>>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
 		c3 c4 > nothing
 		c4 c3 > nothing
 		c5 c8 > nothing
@@ -194,6 +259,9 @@ BasicGame
 		c5 EOS > stepBack
 		c7 EOS > stepBack
 		c10 EOS > stepBack
+<<<<<<< HEAD
+>>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
+=======
 >>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
 		c3 EOS > stepBack
 		c11 EOS > stepBack
@@ -202,6 +270,7 @@ BasicGame
 		c2 EOS > stepBack
 		c4 EOS > stepBack
 	TerminationSet
+<<<<<<< HEAD
 <<<<<<< HEAD
 		NoveltyTermination s1=sam s2=sam win=True
 		NoveltyTermination s1=sam s2=c3 win=True
@@ -223,6 +292,12 @@ BasicGame
 		NoveltyTermination s1=c3 s2=avatar win=True
 		NoveltyTermination s1=c4 s2=avatar win=True
 		NoveltyTermination s1=c4 s2=c4 win=True
+=======
+		NoveltyTermination s1=c2 s2=avatar win=True
+		NoveltyTermination s1=c3 s2=avatar win=True
+		NoveltyTermination s1=c4 s2=avatar win=True
+		NoveltyTermination s1=c4 s2=c4 win=True
+>>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
 		NoveltyTermination s1=c4 s2=c9 win=True
 		NoveltyTermination s1=c4 s2=c11 win=True
 		NoveltyTermination s1=c6 s2=avatar win=True
@@ -249,6 +324,7 @@ BasicGame
 		SpriteCounter stype=c4 limit=0 win=True
 	LevelMapping
 <<<<<<< HEAD
+<<<<<<< HEAD
 		0 > sam
 		1 > c3
 		2 > c5
@@ -260,6 +336,8 @@ BasicGame
 		d > c5 c6
 		9 > c6
 =======
+=======
+>>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
 		0 > c2
 		1 > c3
 		c > avatar c10
@@ -272,6 +350,9 @@ BasicGame
 		8 > c9
 		9 > c10
 		b > c11
+<<<<<<< HEAD
+>>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
+=======
 >>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
 """
 if __name__ == "__main__":
