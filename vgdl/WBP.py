@@ -448,12 +448,24 @@ class WBP():
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
 						print "win"
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> parent of d8b0081... Adding debugging print statements
 						if t:
 							print t.__dict__
 							# print t.name, t.s1, t.s2
 						if not child.rle._game.getAvatars():
 							print "Think we won but no avatars!?!?"
 							embed()
+<<<<<<< HEAD
+=======
+=======
+						# if t and t.name=='NoveltyTermination' and ended:
+							# print 'Novelty', t.s1, t.s2
+							# embed()
+>>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
+>>>>>>> parent of d8b0081... Adding debugging print statements
 					else:
 						QNovelty.append(child)
 						QReward.append(child)
@@ -614,6 +626,10 @@ class Node():
 
 		## If you can shoot a Flicker, give yourself credit for being close to things it kills, but remove credit for that Flicker being close to those things.
 		try:
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> parent of d8b0081... Adding debugging print statements
 			if rle._game.getAvatars() and rle._game.getAvatars()[0].stype in killer_types:
 				if rle._game.getAvatars()[0].stype in theory.classes:
 					color = theory.classes[rle._game.getAvatars()[0].stype][0].color
@@ -621,6 +637,13 @@ class Node():
 					color = rle._game.sprite_groups[rle._game.getAvatars()[0].stype][0].colorName
 			
 				if 'Flicker' in str(theory.spriteObjects[color].vgdlType):
+<<<<<<< HEAD
+=======
+=======
+			if (rle._game.getAvatars()[0].stype in killer_types and
+				'Flicker' in str(theory.spriteObjects[rle._game.sprite_groups[rle._game.getAvatars()[0].stype][0].colorName].vgdlType)):
+>>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
+>>>>>>> parent of d8b0081... Adding debugging print statements
 					killer_types.append(rle._game.getAvatars()[0].name)
 					killer_types.remove(rle._game.getAvatars()[0].stype)
 		except (IndexError, AttributeError) as e:
