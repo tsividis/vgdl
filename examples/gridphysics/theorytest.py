@@ -1,15 +1,15 @@
 level="""
-1 2   2   2   2               
- 88                           
-888                           
-                              
-       8888        8  8       
-       8  8        8          
                               
                               
-  8  88    8      8    88888  
-  8   8    8           88888  
-                      7       
+        6                     
+                              
+                              
+                              
+                              
+ 8               888   8888888
+                              
+                              
+           b                  
 """
 game = """
 BasicGame
@@ -30,8 +30,7 @@ BasicGame
 		sam c3 > nothing
 		c3 sam > nothing
 		avatar c6 > killSprite
-		c5 c4 > nothing
-		c4 c5 > nothing
+		c4 c5 > killSprite
 		c3 avatar > killSprite
 		c5 sam > killSprite
 		c6 sam > nothing
@@ -54,8 +53,7 @@ BasicGame
 		c7 EOS > turnAround
 		c4 avatar > killSprite
 		sam EOS > killSprite
-		c7 c4 > nothing
-		c4 c7 > nothing
+		c4 c7 > killSprite
 		c6 c3 > nothing
 		c3 c6 > nothing
 		c6 EOS > killSprite
@@ -67,9 +65,7 @@ BasicGame
 		c4 EOS > stepBack
 		c3 EOS > stepBack
 	TerminationSet
-		MultiSpriteCounter stype0=c7 stype1=c3 limit=0 win=True
 		MultiSpriteCounter stype0=c7 stype1=c3 stype2=c5 limit=0 win=True
-		MultiSpriteCounter stype0=c7 stype1=c3 stype2=c6 limit=0 win=True
 		MultiSpriteCounter stype0=c7 stype1=c3 stype2=c6 stype3=c5 limit=0 win=True
 		NoveltyTermination s1=sam s2=sam win=True
 		NoveltyTermination s1=sam s2=c3 win=True
@@ -82,7 +78,6 @@ BasicGame
 		NoveltyTermination s1=c4 s2=EOS win=True
 		NoveltyTermination s1=c5 s2=avatar win=True
 		NoveltyTermination s1=c5 s2=c3 win=True
-		NoveltyTermination s1=c5 s2=c4 win=True
 		NoveltyTermination s1=c6 s2=sam win=True
 		NoveltyTermination s1=c6 s2=c3 win=True
 		NoveltyTermination s1=c6 s2=c5 win=True
@@ -90,13 +85,14 @@ BasicGame
 		NoveltyTermination s1=c7 s2=c5 win=True
 		NoveltyTermination s1=c7 s2=c6 win=True
 		NoveltyTermination s1=c7 s2=c3 win=True
-		NoveltyTermination s1=c7 s2=c4 win=True
 		SpriteCounter stype=avatar limit=0 win=False
 		SpriteCounter stype=c4 limit=0 win=True
 	LevelMapping
 		0 > sam
 		1 > c3
+		i > c5 c4
 		2 > c5
+		j > c5 sam
 		f > c7 c6
 		b > avatar sam
 		e > c7 c3
