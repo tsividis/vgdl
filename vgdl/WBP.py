@@ -372,7 +372,7 @@ class WBP():
 						if manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))>3:
 							current_actions = [0]
 						else:
-							current_actions = [0, K_LEFT, K_RIGHT, K_UP, K_DOWN]
+							current_actions = [0, K_LEFT, K_RIGHT]
 							print "didn't change current_actions; will plan normally"
 							print "nearest dangerous sprite:", manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))
 
@@ -451,7 +451,8 @@ class WBP():
 						self.statesEncountered.append(child.rle._game.getFullState())
 						print "win"
 						if t:
-							print t.name, t.s1, t.s2
+							print t.__dict__
+							# print t.name, t.s1, t.s2
 						if not child.rle._game.getAvatars():
 							print "Think we won but no avatars!?!?"
 							embed()
@@ -618,7 +619,7 @@ class Node():
 
 		## If you can shoot a Flicker, give yourself credit for being close to things it kills, but remove credit for that Flicker being close to those things.
 		try:
-			if rle._game.getAvatars()[0].stype in killer_types:
+			if rle._game.getAvatars() and rle._game.getAvatars()[0].stype in killer_types:
 				if rle._game.getAvatars()[0].stype in theory.classes:
 					color = theory.classes[rle._game.getAvatars()[0].stype][0].color
 				else:
