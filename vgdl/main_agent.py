@@ -206,7 +206,7 @@ class Agent:
 
     def initializeHypotheses(self, allObjects, learnSprites=True):
         if learnSprites:
-            observe(self.rle, 15, self.bestSpriteTypeDict)
+            observe(self.rle, 5, self.bestSpriteTypeDict)
             spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
                 self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
             self.rle._game.exceptedObjects = exceptedObjects
@@ -867,7 +867,7 @@ class Agent:
             self.rle.agentStatePrev = agentState
 
 
-        # embed()
+
         hypotheses = self.manageNewObjects(hypotheses)
 
         statesEncountered.append(self.rle._game.getFullState())

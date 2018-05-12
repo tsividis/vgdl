@@ -2,10 +2,10 @@ import os
 
 filename = "examples.gridphysics.frogs2"
 
-gvggames = ['aliens', 'boulderdash', 'butterflies', 'frogs', 
-    'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']
-
+gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
+    'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 gameFileString = 'training_set_1'
+
 
 def read_gvgai_game(filename):
     with open(filename, 'r') as f:
