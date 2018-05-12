@@ -629,6 +629,7 @@ class Node():
 					killer_types.remove(rle._game.getAvatars()[0].stype)
 		except (IndexError, AttributeError) as e:
 			print "try/except in spritecounter_val"
+			embed()
 			pass
 
 		# This list comprehension checks whether the avatar kills the stype with a preconditioned
@@ -858,7 +859,6 @@ class Node():
 
 			if not eval(resource_str+true_operator+str(num)):
 				return 2 * mult * first_alpha, 10000
-
 
 
 		if compute_second_order:
