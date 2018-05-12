@@ -56,7 +56,7 @@ class Agent:
         self.regrounding = 3
         self.selective_regrounding = True
         self.avoid_danger = True
-        self.safeDistance = 1
+        self.safeDistance = 6
         self.emptyPlansLimit = 5
         self.longHorizonObservationLimit = 2
         self.hypotheses = []

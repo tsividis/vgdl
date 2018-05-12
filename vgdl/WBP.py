@@ -62,7 +62,7 @@ class WBP():
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
 		self.classesWhoseLocationsWeIgnore = []
 		self.classesWhosePresenceWeIgnore = []
-		self.allowRollouts = False
+		self.allowRollouts = True
 		self.quitting = False
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
@@ -417,7 +417,7 @@ class WBP():
 								stype = term.termination.stype
 								n_stypes = len([0 for sprite in self.findObjectsInRLE(child.rle, stype)])
 								if stype in self.starting_stype_n.keys() and self.starting_stype_n[stype] > n_stypes:
-									# print "exiting early because progress was made toward", stype
+									print "exiting early because progress was made toward", stype
 									child.terminal, child.win = True, True
 									foundWin = True
 							elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
@@ -450,9 +450,11 @@ class WBP():
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
 						print "win"
-						if t and t.name=='NoveltyTermination' and ended:
-							print 'Novelty', t.s1, t.s2
-							# embed()
+						if t:
+							print t.name, t.s1, t.s2
+						if not child.rle._game.getAvatars():
+							print "Think we won but no avatars!?!?"
+							embed()
 					else:
 						QNovelty.append(child)
 						QReward.append(child)
