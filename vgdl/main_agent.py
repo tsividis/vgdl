@@ -56,7 +56,7 @@ class Agent:
         self.regrounding = 3
         self.selective_regrounding = True
         self.avoid_danger = True
-        self.safeDistance = 6
+        self.safeDistance = 1
         self.emptyPlansLimit = 5
         self.longHorizonObservationLimit = 2
         self.hypotheses = []
@@ -536,7 +536,7 @@ class Agent:
 
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                    firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
+                    firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[1])
             # best_index = np.argmin([p.total_nodes for p in res])
             # print('passed here')
             # p = res[best_index]

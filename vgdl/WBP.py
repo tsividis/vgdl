@@ -62,7 +62,7 @@ class WBP():
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
 		self.classesWhoseLocationsWeIgnore = []
 		self.classesWhosePresenceWeIgnore = []
-		self.allowRollouts = True
+		self.allowRollouts = False
 		self.quitting = False
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
@@ -448,21 +448,12 @@ class WBP():
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
 						print "win"
-<<<<<<< HEAD
-<<<<<<< HEAD
 						if t:
 							print t.__dict__
 							# print t.name, t.s1, t.s2
 						if not child.rle._game.getAvatars():
 							print "Think we won but no avatars!?!?"
 							embed()
-=======
-=======
->>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
-						# if t and t.name=='NoveltyTermination' and ended:
-							# print 'Novelty', t.s1, t.s2
-							# embed()
->>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
 					else:
 						QNovelty.append(child)
 						QReward.append(child)
@@ -623,8 +614,6 @@ class Node():
 
 		## If you can shoot a Flicker, give yourself credit for being close to things it kills, but remove credit for that Flicker being close to those things.
 		try:
-<<<<<<< HEAD
-<<<<<<< HEAD
 			if rle._game.getAvatars() and rle._game.getAvatars()[0].stype in killer_types:
 				if rle._game.getAvatars()[0].stype in theory.classes:
 					color = theory.classes[rle._game.getAvatars()[0].stype][0].color
@@ -632,17 +621,10 @@ class Node():
 					color = rle._game.sprite_groups[rle._game.getAvatars()[0].stype][0].colorName
 			
 				if 'Flicker' in str(theory.spriteObjects[color].vgdlType):
-=======
-			if (rle._game.getAvatars()[0].stype in killer_types and
-				'Flicker' in str(theory.spriteObjects[rle._game.sprite_groups[rle._game.getAvatars()[0].stype][0].colorName].vgdlType)):
->>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
-=======
-			if (rle._game.getAvatars()[0].stype in killer_types and
-				'Flicker' in str(theory.spriteObjects[rle._game.sprite_groups[rle._game.getAvatars()[0].stype][0].colorName].vgdlType)):
->>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
 					killer_types.append(rle._game.getAvatars()[0].name)
 					killer_types.remove(rle._game.getAvatars()[0].stype)
 		except (IndexError, AttributeError) as e:
+			print "try/except in spritecounter_val"
 			pass
 
 		# This list comprehension checks whether the avatar kills the stype with a preconditioned
@@ -949,6 +931,8 @@ class Node():
 		theory = self.WBP.theory
 		heuristicVal = 0
 		avatarNoveltyVals = []
+		print "in heuristics"
+		embed()
 		for term in theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,

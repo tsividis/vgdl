@@ -82,17 +82,9 @@ def play_trainset(hyperparameters):
     return total_time
 
 hyperparameter_sets = [
-<<<<<<< HEAD
-<<<<<<< HEAD
     {## Worked for aliens. 
     ##shortHorizon=False,regrounding=3, selective_regrounding=True, avoid_danger=True, safeDistance=6, emptyPlansLimit=5, longHorizonObservationLimit=2
      #WBP.allowRollouts=True
-=======
-    {
->>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
-=======
-    {
->>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
      'sprite_first_alpha': 10000,
      'sprite_second_alpha': 0,#100,
      'sprite_negative_mult': .1,
@@ -105,8 +97,6 @@ hyperparameter_sets = [
      'sprite_first_alpha': 10000,
      'sprite_second_alpha': 100,
      'sprite_negative_mult': 10.,
-<<<<<<< HEAD
-<<<<<<< HEAD
      'multisprite_first_alpha': 10000,
      'multisprite_second_alpha': 100,
      'novelty_first_alpha': 5000,
@@ -116,10 +106,6 @@ hyperparameter_sets = [
      'sprite_first_alpha': 10000,
      'sprite_second_alpha': 100,
      'sprite_negative_mult': .1,
-=======
->>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
-=======
->>>>>>> parent of f7cb177... Debugging second-order novelty bonus transferrence for flicker
      'multisprite_first_alpha': 10000,
      'multisprite_second_alpha': 100,
      'novelty_first_alpha': 5000,
