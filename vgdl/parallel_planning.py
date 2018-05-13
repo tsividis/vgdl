@@ -93,7 +93,9 @@ hyperparameter_sets = [
      'novelty_first_alpha': 5000,
      'novelty_second_alpha': 0#50,
      },
-    {
+    {## worked for missile command.
+    ##shortHorizon=False, regounding=3, selective_regrounding=True, avoid_danger=True, safeDistance=1, emptyPlansLimit=5, longHorizonObservationLimit=2
+    ##WBP.allowRollouts=False
      'sprite_first_alpha': 10000,
      'sprite_second_alpha': 100,
      'sprite_negative_mult': 10.,

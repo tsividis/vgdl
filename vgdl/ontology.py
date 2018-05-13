@@ -2243,12 +2243,13 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                 sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
 
                 ## Get the object the Avatar shoots, add that.
-                ao = game.sprite_constr[all_objects[k]['sprite'].stype]
+                projectile_name = all_objects[k]['sprite'].stype
+                ao = game.sprite_constr[projectile_name]
                 ao_vgdl_type = ao[0]
                 ao_color = colorDict[str(ao[1]['color'])]
                 ao_args = ao[1]
-                # embed()
-                # ao_args.update({'singleton': 'True'})
+                if projectile_name in game.singletons:
+                    ao_args.update({'singleton': 'True'})
                 sample.append(Sprite(vgdlType=ao_vgdl_type, color=ao_color, className=all_objects[k]['sprite'].stype, args=ao_args))
                 exceptions.append(ao_color)
             except AttributeError:

@@ -62,7 +62,7 @@ class WBP():
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
 		self.classesWhoseLocationsWeIgnore = []
 		self.classesWhosePresenceWeIgnore = []
-		self.allowRollouts = False
+		self.allowRollouts = True
 		self.quitting = False
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
@@ -74,10 +74,6 @@ class WBP():
 			self.theory.interactionSet.extend(fakeInteractionRules)
 			self.theory.updateTerminations()
 		print 'max nodes', self.max_nodes
-
-		# for rule in self.theory.interactionSet:
-		# 	if 'stepBack'==rule.interaction:
-		# 		ipdb.set_trace()
 		i=1
 		for k in rle._game.all_objects.keys():
 			self.objIDs[k] = i * 100 * (rle.outdim[0]*rle.outdim[1]+self.padding)
@@ -93,7 +89,6 @@ class WBP():
 
 		self.short_horizon = shortHorizon
 		self.winning_states = []
-		# self.trueAtomsIW1 = []
 		self.total_nodes = 0
 
 		## Ignore objects we don't want to track (i.e., non-moving immovables.)
@@ -112,8 +107,6 @@ class WBP():
 			if len(rle._game.sprite_groups[k])>self.objectLocationTrackingLimit:
 				self.classesWhoseLocationsWeIgnore.append(k)
 
-		# self.classesWhosePresenceWeIgnore = []
-		# self.classesWhoseLocationsWeIgnore = []
 		print "ignoring presences for", self.classesWhosePresenceWeIgnore
 		print "ignoring locations for", self.classesWhoseLocationsWeIgnore
 		# Compute starting number of each SpriteCounter stype
