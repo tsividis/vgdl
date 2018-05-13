@@ -634,17 +634,19 @@ class Agent:
                             rlePositionsTuples, hypPositionsTuples = [(p[0], p[1]) for p in rlePositions], [(p[0], p[1]) for p in hypPositions]
 
                             killer_types = [inter.slot2 for inter in hypotheses[0].interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
-                            # print "killer types", killer_types
+                            killer_colors = [hypotheses[0].classes[k][0].color for k in killer_types]
+                            print "killer types", killer_types
+                            # embed()
                             regroundingFlag = False
-                            for objPos in hypPositions:
-                                if not regroundingFlag and (objPos[0], objPos[1]) not in rlePositionsTuples:
+                            for objPos in rlePositions:
+                                if not regroundingFlag and (objPos[0], objPos[1]) not in hypPositionsTuples:
                                     # print "found object position difference", colored(objPos, 'white', 'on_magenta')
                                     # print 'regrounding because of', objPos[2].colorName, objPos[2], "position:", self.rle._rect2pos(objPos[2].rect)
                                     # try:
                                         # print "orientation:", objPos[2].orientation
                                     # except AttributeError:
                                         # pass
-                                    nearest = self.findNearestSprite(objPos[2], [h[2] for h in rlePositions])
+                                    # nearest = self.findNearestSprite(objPos[2], [h[2] for h in hypPositions])
                                     # print "Nearest sprite:", nearest.colorName, nearest, "position:", self.rle._rect2pos(nearest.rect)
                                     # try:
                                         # print "orientation:", nearest.orientation
@@ -654,10 +656,7 @@ class Agent:
                                     # embed()
                                     if self.selective_regrounding:
                                         if ((objPos[2].name=='avatar') or
-                                            (objPos[2].name in killer_types and manhattanDist(self.rle._rect2pos(objPos[2].rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance)):
-
-                                            # if objPos[2].name=='avatar':
-                                                # embed()
+                                            (objPos[2].colorName in killer_colors and manhattanDist(self.rle._rect2pos(objPos[2].rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance)):
                                             regroundingFlag = True
                                             # embed()
                                             break

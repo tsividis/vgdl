@@ -376,23 +376,6 @@ class WBP():
 
 			for a in current_actions:
 				skipAction = False
-				# try:
-				# 	# If there's already a projectile on the screen
-				# 	# and the projectile class is a singleton
-				# 	# and the action chosen is shooting
-				# 	shoot_type = current.rle._game.getAvatars()[0].stype
-
-				# 	if (self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
-				# 		bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
-				# 		# a == K_SPACE):
-				# 		len([s for s in current.rle._game.sprite_groups[shoot_type] if s not in current.rle._game.kill_list])>0):
-				# 		# embed()
-				# 			# Then skip the action
-				# 			skipAction = True
-
-				# except (IndexError, AttributeError, TypeError) as e:
-				# 	# embed()
-				# 	pass
 
 				if not skipAction:
 					child = Node(self.rle, self, current.actionSeq+[a], current)
