@@ -170,7 +170,6 @@ class Agent:
 		## Start storing encountered states.
 		totalStatesEncountered = [rle._game.getFullState()]
 
-
 		## initialize theory if necessary.
 		if len(self.hypotheses) == 0:
 			gameObject = self.initializeHypotheses(rle, allObjects, learnSprites=True)
@@ -187,12 +186,9 @@ class Agent:
 			## initialize one or many VRLEs according to hypothesis-selection method
 			VRLEs = self.VrleInitPhase(objectGoalLocation, rle)
 
-			## get to that goal
-
-				## VRLEs, hypothesis-selection-method .....
-				## figures out plan determined as above
-				## carries out plan.
-			print "calling getToObjecGoal"
+			## VRLEs, hypothesis-selection-method .....
+			## figures out plan determined as above
+			## carries out plan.
 			rle, self.hypotheses, finalEventList, candidateNewColors, statesEncountered, gameObject = \
 				getToObjectGoal(rle, VRLEs[0], self.plannerType, gameObject, self.hypotheses[0], self.gameString, self.levelString, \
 					objectGoal, allObjects, finalEventList, symbolDict=self.symbolDict)

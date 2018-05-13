@@ -68,8 +68,6 @@ class Agent:
         self.bestSpriteTypeDict = defaultdict(lambda : {})
         self.spriteUpdateDict = defaultdict(lambda : 0)
         self.best_params = None
-        ## To track how many times we have run spriteType updates to each particular object
-        # self.bestSpriteTypeDict = defaultdict(lambda: {'count':0, 'distribution':None})
         self.seen_resources = []
         self.seen_limits = []
         self.new_objects = {}
@@ -536,7 +534,7 @@ class Agent:
 
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                    firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[1])
+                    firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
             # best_index = np.argmin([p.total_nodes for p in res])
             # print('passed here')
             # p = res[best_index]
