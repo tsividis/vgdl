@@ -2248,12 +2248,9 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                 ao_color = colorDict[str(ao[1]['color'])]
                 ao_args = ao[1]
                 # embed()
-                ao_args.update({'singleton': 'True'})
+                # ao_args.update({'singleton': 'True'})
                 sample.append(Sprite(vgdlType=ao_vgdl_type, color=ao_color, className=all_objects[k]['sprite'].stype, args=ao_args))
-                # sample.append(Sprite(vgdlType=Flicker, color='BLUE', className=all_objects[k]['sprite'].stype, args={'singleton':'True'}))
-
                 exceptions.append(ao_color)
-                # sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'healthPoints':all_objects[k]['sprite'].healthPoints}))
             except AttributeError:
                 # No args in avatar
                 sample.append(Sprite(vgdlType=MovingAvatar, color=all_objects[k]['type']['color']))

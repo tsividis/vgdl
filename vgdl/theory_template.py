@@ -1013,7 +1013,10 @@ class Theory(object):
 						self.terminationSet.append(terminationRule)
 				elif rule.generic and not rule.preconditions:
 					## Omit noveltytermination for randoms bumping into objects in the game; makes us disrupt plans even though we shouldnt't.
-					if ('Random' not in str(self.classes[rule.slot1][0].vgdlType)) and ('Random' not in str(self.classes[rule.slot2][0].vgdlType)) or rule.asTuple()[0]!='nothing':
+					if (rule.asTuple()[0]!='nothing' or 
+							('Random' in str(self.classes[rule.slot1][0].vgdlType) and ('Flicker' in str(self.classes[rule.slot2][0].vgdlType))) or
+							('Random' in str(self.classes[rule.slot1][0].vgdlType) and ('Missile' in str(self.classes[rule.slot2][0].vgdlType))) or
+							('Random' not in str(self.classes[rule.slot1][0].vgdlType)) and ('Random' not in str(self.classes[rule.slot2][0].vgdlType))):
 						terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
 						if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
 								for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
@@ -1807,7 +1810,7 @@ class Game(object):
 		T.classes['EOS'] = [eos] ##initialize EOS with special name, since it gets such special treatment in VGDL text files.
 
 		for (o1, o2) in itertools.product(allSprites, allSprites):
-			if o1.vgdlType not in AvatarTypes and o2.vgdlType not in AvatarTypes+projectileTypes:
+			if o1.vgdlType not in AvatarTypes and o2.vgdlType not in AvatarTypes:
 				rule = InteractionRule('nothing', o1.className, o2.className, {}, set(), generic=True)
 				T.interactionSet.append(rule)
 			elif o1.vgdlType not in AvatarTypes:
