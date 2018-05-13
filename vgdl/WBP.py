@@ -697,7 +697,7 @@ class Node():
 			## of each to the stypes we have to destroy. Return min over all mins.
 			# embed()
 			objs = [self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types]
-
+			objs = [obj for obj in objs if obj]
 			if len(objs)>0:
 				kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
 			else:
