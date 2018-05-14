@@ -1,5 +1,10 @@
 # Deep RL 
 
+## Requirements
+[PyTorch](http://pytorch.org/) and the rest of the VGDL requirements.
+
+## Usage
+
 Change the game name in [utils/options.py](utils/options.py#L18):
 
 ```
@@ -11,9 +16,6 @@ and then run
 `python main.py`
 
 (You might also want to change the [training signature](utils/options.py#L26:L28) to keep track of your runs.)
-
-## Installation
-[PyTorch](http://pytorch.org/) and the rest of the VGDL requirements.
 
 ## Known Issues
 `pygame.init()` seems to be initializing something audio related in the background, which might give warnings based on permissions on OpenMind. [Here](https://stackoverflow.com/questions/31847497/pygame-tries-to-use-alsa?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa) is a description of the warning. This doesn't affect performance, but might make viewing your results a little harder depending on if the warnings get recorded in your logs. 
