@@ -52,6 +52,9 @@ BasicGame
 		sword diamond > nothing
 		sword wall > nothing
 
+		butterfly diamond > nothing
+		crab diamond > nothing
+
 
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False

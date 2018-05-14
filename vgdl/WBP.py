@@ -241,7 +241,7 @@ class WBP():
 			vecValue = [0]
 
 		stateIW1 = [vecValue] + [1 if char==' ' else 0 for pos, char in enumerate(rle.show())]
-		lst.append(hash(tuple(stateIW1)))
+		# lst.append(hash(tuple(stateIW1)))
 
 		return set(lst)
 
@@ -1238,7 +1238,7 @@ class Node():
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
 		print("metabolic cost is {}".format(self.metabolic_cost))
-		self.intrinsic_reward = self.heuristicVal + self.position_score(0) + self.metabolic_cost
+		self.intrinsic_reward = self.heuristicVal + self.position_score(0) # + self.metabolic_cost
 
 		## Debug printouts
 		# print("heuristicVal {}".format(self.heuristicVal))
