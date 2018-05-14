@@ -80,13 +80,13 @@ class vgdlEnv(Env):  # pixel-level inputs
     def reset(self):
         self._reset_experience()
         # self.exp_state1 = self.env.reset()
-        self.exp_state1, _, _ = vgdl.play_games.init_game(self.game, gvgai_path='../gvgai/mturk_games/')
+        self.exp_state1, _, _ = vgdl.play_games_dqn.init_game(self.game, gvgai_path='../gvgai/mturk_games/')
         return self._get_experience()
 
     def step(self, action_index):
         self.exp_action = action_index
         # self.exp_state1, self.exp_reward, self.exp_terminal1, _ = self.env.step(self.actions[self.exp_action])
-        self.exp_state1, self.exp_reward, self.exp_terminal1  = vgdl.play_games.step(self.actions[self.exp_action])
+        self.exp_state1, self.exp_reward, self.exp_terminal1  = vgdl.play_games_dqn.step(self.actions[self.exp_action])
         return self._get_experience()
 
 
