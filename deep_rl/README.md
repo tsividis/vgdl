@@ -1,4 +1,4 @@
-# Spatial Reasoning
+# Deep RL 
 
 Change the game name in [utils/options.py](utils/options.py#L18):
 
@@ -10,7 +10,7 @@ Change the game name in [utils/options.py](utils/options.py#L18):
 and then run
 `python main.py`
 
-(You might also want to change the training signature to keep track of your runs.)
+(You might also want to change the [training signature](utils/options.py#L26:L28) to keep track of your runs.)
 
 ## Installation
 [PyTorch](http://pytorch.org/) and the rest of the VGDL requirements.
