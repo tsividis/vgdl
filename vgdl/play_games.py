@@ -1,5 +1,5 @@
 from rlenvironmentnonstatic import createRLInputGameFromStrings, defInputGame
-from IPython import embed
+# from IPython import embed
 import pygame
 from pygame.locals import K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE
 from random import choice
@@ -10,6 +10,9 @@ import argparse
 import sys
 import numpy as np
 from colors import LIGHTGRAY
+
+import pdb
+
 """
 
 Run a random agent for 10 steps per episode, for a max of 'num_episodes' episodes, on all levels of game 0:
@@ -174,7 +177,7 @@ episode_num = 0
 wins = [0]
 lastscore = 0
 
-def init_game(path, isLocal=None):
+def init_game(path, isLocal=None, gvgai_path = "gvgai/mturk_games/"):
 	global level_game_pairs , rle , ended , steps , episode_num , wins
 
 	if isLocal == None:
@@ -191,7 +194,7 @@ def init_game(path, isLocal=None):
 	if isLocal:
 		level_game_pairs = load_local_game(path)
 	else:
-		level_game_pairs = load_gvgai_game(path)
+		level_game_pairs = load_gvgai_game(path, path=gvgai_path)
 
 	steps = 0
 	episode_num = 0
@@ -201,7 +204,7 @@ def init_game(path, isLocal=None):
 	# rle._game._drawAll()
 
 	ended = False
-
+	
 	# image , reward , game_has_ended
 	return generateImage(rle._game) , 0 , ended
 	# return screenToNumpyArray(rle._game.screen) , 0 , ended
@@ -236,7 +239,7 @@ def step(action):
 				ended = False
 
 	if steps > MAX_STEPS: 
-		print "MAX_STEPS threshold exceeded, ending game."
+		# print "MAX_STEPS threshold exceeded, ending game."
 		ended = True
 
 	# image , reward , game_has_ended
@@ -272,4 +275,4 @@ In [2]: im, reward, ended = step(K_DOWN)
 if len(sys.argv) > 1:
 	play_trainset()
 
-embed()
+# embed()
