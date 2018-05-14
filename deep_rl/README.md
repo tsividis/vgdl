@@ -2,7 +2,10 @@
 
 Change the game name in [utils/options.py](utils/options.py#L18):
 
-`[ "dqn",      "vgdl",      "portals",                  "dqn-cnn",      "sequential"],`
+```
+# agent_type, env_type,    game,                       model_type,     memory_type
+[ "dqn",      "vgdl",      "portals",                  "dqn-vgdl",      "sequential"]
+```
 
 and then run
 `python main.py`
