@@ -1,6 +1,6 @@
 # Spatial Reasoning
 
-Change the game name in utils/options.py:
+Change the game name in [utils/options.py](utils/options.py#L18):
 
 `[ "dqn",      "vgdl",      "portals",                  "dqn-cnn",      "sequential"],`
 
