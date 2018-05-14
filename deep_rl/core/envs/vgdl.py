@@ -14,7 +14,7 @@ import sys, random, scipy.misc, pdb
 from pygame.locals import K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE
 # from .. import vgdl.play_games
 sys.path.append('..')
-import vgdl.play_games
+import vgdl.play_games_dqn
 
 # pdb.set_trace()
 
