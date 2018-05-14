@@ -521,8 +521,25 @@ class Node():
 ## multiple samples??
 	def metabolics(self, rle, events, action, n=10, mult=.3):
 
+		# Computing reward unit to be used in metabolics
+		sprite_first_alpha = self.WBP.hyperparameters['sprite_first_alpha']
+		sprite_second_alpha = self.WBP.hyperparameters['sprite_second_alpha']
+		sprite_negative_mult = self.WBP.hyperparameters['sprite_negative_mult']
+		self.reward_unit = sprite_second_alpha
+		if rle==None:
+			rle = self.rle
+
+		theory = self.WBP.theory
+		for term in theory.terminationSet:
+			if isinstance(term, SpriteCounterRule):
+				self.compute_reward_unit(theory, term, term.termination.stype, rle,
+					first_alpha=sprite_first_alpha, second_alpha=sprite_second_alpha,
+					negative_mult=sprite_negative_mult)
+
+		print(self.reward_unit)
+
 		# metabolic_cost = 1./n
-		metabolic_cost = -.2 * 100 / (8**2) # multiplying second order incentive
+		metabolic_cost = -.2 * self.reward_unit # multiplying second order incentive
 		# if action==32:
 		if action!=NONE or action!=32:
 			metabolic_cost -= .0#1./n
@@ -532,7 +549,7 @@ class Node():
 		if len(events)>0:
 			# metabolic_cost = .3
 			if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='bounceForward' for e in events]):
-				metabolic_cost = -.3 * 100 / (8**2) # multiplying second order incentive
+				metabolic_cost = -.3 * self.reward_unit # multiplying second order incentive
 				# metabolic_cost += .3#(1-1./n)*mult
 				pass
 			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
@@ -590,6 +607,133 @@ class Node():
 			self.win = win
 		return rolloutArray
 
+	def compute_reward_unit(self, theory, term, stype, rle, first_alpha=10000.,
+						  second_alpha=100, negative_mult=.1):
+
+		# First order: progress in terms of number of sprites remaining.
+		# Second order: distance to the closest instance of a target sprite type.
+
+		# theory.interactionSet[16].generic=False
+		# theory.interactionSet[16].rule='killSprite'
+		# reward unit to be used for metabolic_cost; gets updated on compute_second_order
+
+		val = 0
+		compute_second_order = True
+
+		# Check if condition is win or loss and multiply accordingly
+		if term.termination.win:
+			mult = -1
+		else:
+			compute_second_order = False
+			mult = negative_mult
+
+		# Get all types that kill or transform stype (the target)
+		killer_types = [
+			inter.slot2 for inter in theory.interactionSet
+			if ((inter.interaction == 'killSprite' or
+				 inter.interaction == 'transformTo') and
+				 not inter.generic and
+				 not inter.preconditions
+				and inter.slot1 == stype)]
+
+		## If you can shoot a Flicker, give yourself credit for being close to things it kills, but remove credit for that Flicker being close to those things.
+		try:
+			if rle._game.getAvatars()[0].stype in killer_types:
+				if rle._game.getAvatars()[0].stype in theory.classes:
+					color = theory.classes[rle._game.getAvatars()[0].stype][0].color
+				else:
+					color = rle._game.sprite_groups[rle._game.getAvatars()[0].stype][0].colorName
+
+				if 'Flicker' in str(theory.spriteObjects[color].vgdlType):
+					killer_types.append(rle._game.getAvatars()[0].name)
+					killer_types.remove(rle._game.getAvatars()[0].stype)
+
+		except (IndexError, AttributeError) as e:
+			# print "got exception in trying to assign Flicker bonus to avatar"
+			pass
+
+		# This list comprehension checks whether the avatar kills the stype with a preconditioned
+		# interaction, and if so adds 'avatar' to the list as well as the precondition for that rule
+		avatar_preconditions = [
+			(inter.slot2, inter.preconditions) for inter in theory.interactionSet
+			if ((inter.interaction == 'killSprite' or
+				inter.interaction == 'killIfOtherHasMore' or
+				 inter.interaction == 'transformTo') and
+				 not inter.generic
+				 and inter.preconditions
+				and inter.slot1 == stype)]
+
+		tmp_list = []
+
+		## If we have preconditions, find the objects that we should go to given that we satisfy the relevant preconditions. E.g., if we have a key and want to know what
+		## happens with item x, go to it.
+		for avatar in avatar_preconditions:
+
+			precondition = list(avatar[1])[0]
+			item, num, negated, operator_name = precondition.item, precondition.num, precondition.negated, precondition.operator_name
+			if negated:
+				oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
+				true_operator = oppositeOperatorMap[operator_name]
+			else:
+				true_operator = operator_name
+			try:
+				current_resource = rle._game.sprite_groups[avatar[0]][0].resources[precondition.item]
+				## If we satisfy the precondiiton, append to tmp_list, then to killer_types (meaning we are capable of killing stype now)
+				if eval("{}{}{}".format(current_resource, true_operator, num)):
+					print "reached resource limit"
+					tmp_list.append(avatar)
+			except (IndexError, KeyError) as e:
+				pass
+
+		for t in tmp_list:
+			killer_types.append(t[0])
+			avatar_preconditions.remove(t)
+
+		else:
+			## Normal case
+			n_stypes = len([0 for sprite in self.WBP.findObjectsInRLE(rle, stype)]) if self.WBP.findObjectsInRLE(rle, stype) else 0
+
+
+		# print "stype, n_stypes, distance_to_goal, val", stype, n_stypes, distance_to_goal, val
+		if compute_second_order:
+			## Get all positions of objects whose type is in killer_types; compute minimum distance
+			## of each to the stypes we have to destroy. Return min over all mins.
+			# embed()
+			objs = [self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types]
+			objs = [obj for obj in objs if obj]
+
+			try:
+				if len(objs)>0:
+					kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
+				else:
+					kill_positions = np.array(objs)
+			except:
+				import ipdb; ipdb.set_trace()
+
+			possiblePairList = []
+			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
+			try:
+				# A consequence of the two-way generic interactions in the
+				# theory is that minimum-distance object pairs whose interactions
+				# were not yet observed will have their distance penalized twice
+				# as much when none of those objects is an avatar. This implies
+				# that avatar novel interactions will be favored over other ones
+				possiblePairList = [manhattanDist(obj, pos)
+					 for pos in kill_positions
+					 for obj in stype_positions]
+
+				distance = min(possiblePairList)
+				print("second order distance is {}".format(distance))
+			except (ValueError, TypeError) as e:
+				distance = 100
+
+			if possiblePairList:
+				n_sprites = len(possiblePairList) ## TODO: you're normalizing by the number of possible pairs of killer_sprites and target_sprites; you should just normalize by the number of targets
+				# Normalize by number of sprites, enforcing a prior that encourages
+				# goals that involve killing fewer objects
+				self.reward_unit = min(self.reward_unit, abs(float(mult*second_alpha)/n_sprites**2))
+				print("reward unit is {}".format(self.reward_unit))
+
 	def spritecounter_val(self, theory, term, stype, rle, first_alpha=10000.,
 						  second_alpha=100, negative_mult=.1):
 
@@ -598,6 +742,7 @@ class Node():
 
 		# theory.interactionSet[16].generic=False
 		# theory.interactionSet[16].rule='killSprite'
+		# reward unit to be used for metabolic_cost; gets updated on compute_second_order
 
 		val = 0
 		compute_second_order = True
@@ -732,7 +877,7 @@ class Node():
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
 				val += float(mult * second_alpha * distance)/n_sprites**2
-				print("val for sprite {} is {}".format(stype, val))
+
 
 			else:
 				# This helps in cases in which either the stype or the killer_type is not always on the screen
@@ -1039,7 +1184,7 @@ class Node():
 					self.terminal, self.win = vrle._isDone()
 			except:
 				print "conditions met but copy failed"
-				embed()
+				import ipdb; ipdb.set_trace()
 		else:
 			self.reconstructed=True
 			# print "copy failed; replaying from top"
