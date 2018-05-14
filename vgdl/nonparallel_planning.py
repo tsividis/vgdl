@@ -81,7 +81,7 @@ def play_trainset(hyperparameters):
 hyperparameter_sets = [
     {
      'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 1000,
+     'sprite_second_alpha': 100,
      'sprite_negative_mult': .1,
      'multisprite_first_alpha': 10000,
      'multisprite_second_alpha': 100,

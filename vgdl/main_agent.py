@@ -51,14 +51,14 @@ class Agent:
             self.max_nodes_annealing = 1.05
         else:
             self.starting_max_nodes = 10000
-            self.max_nodes_annealing = 10
+            self.max_nodes_annealing = 10.
         self.firstOrderHorizon = False ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
-        self.regrounding = 3
+        self.regrounding = 1000
         self.selective_regrounding = True
         self.avoid_danger = True
-        self.safeDistance = 6
+        self.safeDistance = 3
         self.emptyPlansLimit = 5
-        self.longHorizonObservationLimit = 2
+        self.longHorizonObservationLimit = 0
         self.hypotheses = []
         self.symbolDict = None
         self.finalEventList = []
@@ -113,7 +113,7 @@ class Agent:
         newRle._game.sprite_groups['avatar'][0].resources = ccopy(rle._game.sprite_groups['avatar'][0].resources)
 
         return newRle
-        
+
     def getSpritesByColor(self, rle, color):
         outList = []
         for k in rle._game.sprite_groups.keys():
@@ -537,7 +537,6 @@ class Agent:
                 p = res[best_index]
 
             else:
-
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                     firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
