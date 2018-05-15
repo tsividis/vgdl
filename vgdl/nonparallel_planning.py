@@ -59,7 +59,7 @@ def play_trainset(hyperparameters):
 
 
         level_game_pairs = []
-        for level_number in range(1):
+        for level_number in range(5):
         	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
         		level_game_pairs.append([gameString, level.read()])
 

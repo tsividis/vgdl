@@ -288,7 +288,7 @@ class Agent:
             while not win and i<10:
                 gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level, pool=pool)
                 self.total_game_steps += steps
-                episodes.append((n_level, steps, self.total_planner_steps, win, score))
+                episodes.append((n_level, steps, win, score, self.total_planner_steps))
                 allStatesEncountered.extend(statesEncountered)
                 levelEffectsEncountered.append(effectsEncountered)
                 # VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
@@ -328,6 +328,7 @@ class Agent:
                     'gameName': self.gameFilename,
                     'condition': 'normal',
                     'episodes' : episodes}
+
 
         write_to_csv(str(self.gameFilename)+'.csv', output)
 
