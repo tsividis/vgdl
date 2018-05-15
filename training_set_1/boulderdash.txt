@@ -6,7 +6,7 @@ BasicGame
 		diamond > Resource color=YELLOW limit=10
 		moving >
 			avatar  > ShootAvatar   stype=sword frameRate=8 color=DARKBLUE
-			enemy > RandomNPC cons=1 cooldown=5
+			enemy > RandomNPC cons=1 cooldown=1
 				crab > color=GOLD
 				butterfly > color=RED
 		boulder > Missile orientation=DOWN color=GRAY speed=0.2

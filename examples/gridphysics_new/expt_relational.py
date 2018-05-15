@@ -12,6 +12,13 @@ w                    w
 wwwwwwwwwwwwwwwwwwwwww
 """
 
+# level0 = """
+# wwwwwwwwwwwwwwwwwwwwww
+# wA                   w
+# w    a    x     f    w
+# wwwwwwwwwwwwwwwwwwwwww
+# """
+
 level1 = """
 wwwwwwwwwwwwwwwwwwwwww
 wA                   w
@@ -78,8 +85,8 @@ BasicGame frame_rate=30
         avatar wall > stepBack
         avatar fire > stepBack
         box avatar > bounceForward
-        box probe > stepBack
-        probe box > stepBack
+        box1 probe > stepBack
+        probe box1 > stepBack
         box box > stepBack
         box wall > stepBack
         probe wall > stepBack
@@ -92,6 +99,7 @@ BasicGame frame_rate=30
         probe probe > stepBack
         probe avatar > bounceForward
         converter1 avatar > transformTo stype=fire
+        converter1 fire > stepBack
         probe fire > killSprite
         fire probe > killSprite
         avatar converter > nothing
@@ -137,6 +145,7 @@ BasicGame frame_rate=30
         converter wall > stepBack
         probe converter > stepBack
         converter1 box1 > bounceForward
+        converter1 fire > stepBack
         box1 converter2 > transformTo stype=fire
         # box1 converter2 > killSprite
         converter3 avatar > transformTo stype=box1
@@ -191,6 +200,7 @@ BasicGame frame_rate=30
         converter wall > stepBack
         probe converter > stepBack
         converter1 box > bounceForward
+        converter1 fire > stepBack
         box converter2 > transformTo stype=fire
         converter2 fire > killSprite
         box fire > stepBack

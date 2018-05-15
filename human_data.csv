@@ -7,3 +7,14 @@ human,no_score,expt_antagonist,0,4.0,-1.0,0.5073039531707764
 human,no_score,expt_antagonist,0,0.0,-1.0,0.5106461048126221
 human,no_score,expt_helper,1,0.0,1.0,1.735215187072754
 human,no_score,expt_push_boulders,1,17.0,1.0,3.4192531108856201
+human,no_score,expt_relational,1,61.0,1.0,12.782305002212524
+human,no_score,expt_relational,3,69.0,1.0,12.649279832839966
+human,no_score,expt_relational,1,51.0,1.0,9.618710041046143
+human,no_score,expt_relational,1,43.0,1.0,9.120041847229004
+human,no_score,expt_relational,1,49.0,1.0,8.561486959457397
+human,no_score,expt_relational,1,39.0,1.0,7.7330029010772705
+human,no_score,expt_relational,1,39.0,1.0,7.331911087036133
+human,no_score,expt_relational,1,41.0,1.0,8.555935859680176
+human,no_score,expt_relational,3,58.0,1.0,10.879547119140625
+human,no_score,expt_relational,5,67.0,1.0,38.11046481132507
+human,no_score,expt_relational,7,80.0,1.0,16.646862983703613

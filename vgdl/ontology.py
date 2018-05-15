@@ -2000,6 +2000,7 @@ def initializeDistributionArgs(sprite_type, objectColors):
     def initializeSpeed():
         speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.,
         1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1]
+
         return [('speed', v) for v in speedValues]
         # initializeProperty(args, 'speed', speedValues)
 
@@ -2294,7 +2295,25 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                 try:
                     param_product[param] += spriteUpdateDict[k]*bestSpriteTypeDict[obj_type][k][param]
                 except KeyError:
-                    embed()
+                    print("Got key error when updating param_product")
+                    # If we landed here because we're trying to update the hypothesis
+                    # for the sprite chasing an object that wasn't around before,
+                    # this hypothesis should borrow the parameters from RandomNPC
+                    # with the same speed, as that's what Chaser behaviour defaults
+                    # to in the absence of its chasee.
+                    if 'Chaser' in str(param[0][1]):
+                        cooldown = [p[1] for p in param if p[0]=='cooldown']
+                        cooldown = cooldown[0] if cooldown else 1
+                        speed = [p[1] for p in param if p[0]=='speed']
+                        speed = speed[0] if speed else 1
+                        randomnpc_param = (
+                            ('vgdlType', RandomNPC),
+                            ('cooldown', cooldown),
+                            ('speed', speed)
+                        )
+                        param_product[randomnpc_param] += spriteUpdateDict[k]*bestSpriteTypeDict[obj_type][k][randomnpc_param]
+                    else:  # if this is not a new chaser, we shouldn't be landing here
+                        embed()
 
             z += spriteUpdateDict[k]
 
@@ -2521,6 +2540,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
             try:
                 color = game.all_objects[k]['type']['color']
             except KeyError:
+                print("got key error when trying to access sprite color")
                 embed()
             bestSpriteTypeDict[color][k] = game.spriteDistribution[k]
 
