@@ -1,0 +1,15 @@
+subject,condition,gameName,levels_won,steps,score
+full,normal,zelda,0,18,-1
+full,normal,zelda,1,61,0
+full,normal,zelda,1,84,-1
+full,normal,zelda,1,116,-2
+full,normal,zelda,1,156,-3
+full,normal,zelda,1,169,-4
+full,normal,zelda,1,213,-5
+full,normal,zelda,1,290,-5
+full,normal,zelda,2,331,-4
+full,normal,zelda,3,370,-3
+full,normal,zelda,3,372,-4
+full,normal,zelda,4,395,-3
+full,normal,zelda,4,411,-3
+full,normal,zelda,5,430,-2

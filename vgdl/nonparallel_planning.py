@@ -53,13 +53,13 @@ def play_trainset(hyperparameters):
         		yield color
 
 
-        gvgname = "./training_set_1/{}".format(gameName)
+        gvgname = "./examples/gridphysics/{}".format(gameName)
 
         gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
 
         level_game_pairs = []
-        for level_number in range(5):
+        for level_number in range(1):
         	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
         		level_game_pairs.append([gameString, level.read()])
 

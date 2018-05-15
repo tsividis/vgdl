@@ -1144,14 +1144,27 @@ class NoveltyTermination(Termination):
                     class1 = str(game.all_objects[e[1]]['sprite'].__class__)
                     if 'RandomNPC' in class1  and e[2]  != 'avatar':
                         return False, None
+                    if 'Flicker' in class1  and e[2]  == 'avatar':
+                        return False, None
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
                         name1 = 'EOS'
                     elif e[1] in [obj.ID for obj in game.kill_list]:
                         name1 = [obj.name for obj in game.kill_list
                             if obj.ID==e[1]][0]
+                        class1 = str([obj.__class__ for obj in game.kill_list
+                            if obj.ID==e[1]][0])
+                        if 'RandomNPC' in class1  and e[2]  != 'avatar':
+                            return False, None
+                        if 'Flicker' in class1  and e[2]  == 'avatar':
+                            return False, None
                     elif e[1] in game.getObjects().keys():
                         name1 = game.getObjects()[e[1]]['sprite'].name
+                        class1 =  str(game.getObjects()[e[1]]['sprite'].__class__)
+                        if 'RandomNPC' in class1  and e[2]  != 'avatar':
+                            return False, None
+                        if 'Flicker' in class1  and e[2]  == 'avatar':
+                            return False, None
                     else:
                         id_not_found = True
                         # embed()
@@ -1159,6 +1172,8 @@ class NoveltyTermination(Termination):
                         ## We've confirmed that this isn't due to other objects shot by other objects.
                         try:
                             name1 = game.getAvatars()[0].stype
+                            if e[2] == 'avatar':
+                                return False, None
                         except (AttributeError, IndexError) as err:
                             # Avatar dead or doesn't have stype
                             name1 = ''
@@ -1171,6 +1186,8 @@ class NoveltyTermination(Termination):
                     class2 = str(game.all_objects[e[2]]['sprite'].__class__)
                     if 'RandomNPC' in class2  and e[1]  != 'avatar':
                         return False, None
+                    if 'Flicker' in class2  and e[1]  == 'avatar':
+                        return False, None
                 except KeyError:
                     if e[2]=='ENDOFSCREEN':
                         name2 = 'EOS'
@@ -1178,8 +1195,19 @@ class NoveltyTermination(Termination):
                         # candidates = [obj for obj in game.kill_list]
                         name2 = [obj.name for obj in game.kill_list
                             if obj.ID==e[2]][0]
+                        class2 = str([obj.__class__ for obj in game.kill_list
+                            if obj.ID==e[2]][0])
+                        if 'RandomNPC' in class2  and e[1]  != 'avatar':
+                            return False, None
+                        if 'Flicker' in class2  and e[1]  == 'avatar':
+                            return False, None
                     elif e[2] in game.getObjects().keys():
                         name2 = game.getObjects()[e[2]]['sprite'].name
+                        class2 =  str(game.getObjects()[e[2]]['sprite'].__class__)
+                        if 'RandomNPC' in class2  and e[1]  != 'avatar':
+                            return False, None
+                        if 'Flicker' in class2  and e[1]  == 'avatar':
+                            return False, None
                     else:
                         id_not_found = True
                         # embed()
@@ -1210,6 +1238,8 @@ class NoveltyTermination(Termination):
                     name1 = game.all_objects[e[1]]['sprite'].name
                     # Don't get a noveltyTermination from RandomNPCs
                     if 'RandomNPC' in str(game.all_objects[e[1]]['sprite'].__class__) and e[2]  != 'avatar':
+                        return False, None
+                    if 'Flicker' in str(game.all_objects[e[1]]['sprite'].__class__)  and e[2]  == 'avatar':
                         return False, None
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
@@ -2257,17 +2287,15 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                 sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
 
                 ## Get the object the Avatar shoots, add that.
-                ao = game.sprite_constr[all_objects[k]['sprite'].stype]
+                projectile_name = all_objects[k]['sprite'].stype
+                ao = game.sprite_constr[projectile_name]
                 ao_vgdl_type = ao[0]
                 ao_color = colorDict[str(ao[1]['color'])]
                 ao_args = ao[1]
-                # embed()
-                ao_args.update({'singleton': 'True'})
+                if projectile_name in game.singletons:
+                    ao_args.update({'singleton': 'True'})
                 sample.append(Sprite(vgdlType=ao_vgdl_type, color=ao_color, className=all_objects[k]['sprite'].stype, args=ao_args))
-                # sample.append(Sprite(vgdlType=Flicker, color='BLUE', className=all_objects[k]['sprite'].stype, args={'singleton':'True'}))
-
                 exceptions.append(ao_color)
-                # sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'healthPoints':all_objects[k]['sprite'].healthPoints}))
             except AttributeError:
                 # No args in avatar
                 sample.append(Sprite(vgdlType=MovingAvatar, color=all_objects[k]['type']['color']))

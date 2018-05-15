@@ -53,7 +53,7 @@ class Agent:
             self.starting_max_nodes = 10000
             self.max_nodes_annealing = 10.
         self.firstOrderHorizon = False ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
-        self.regrounding = 3
+        self.regrounding = 1
         self.selective_regrounding = True
         self.avoid_danger = True
         self.safeDistance = 3
@@ -73,6 +73,7 @@ class Agent:
         self.seen_resources = []
         self.seen_limits = []
         self.new_objects = {}
+        self.extra_atom = False
 
         # Hyperopt output
         self.total_game_steps = 0
@@ -287,7 +288,7 @@ class Agent:
             while not win and i<10:
                 gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level, pool=pool)
                 self.total_game_steps += steps
-                episodes.append((n_level, steps, win, score))
+                episodes.append((n_level, steps, self.total_planner_steps, win, score))
                 allStatesEncountered.extend(statesEncountered)
                 levelEffectsEncountered.append(effectsEncountered)
                 # VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
@@ -296,10 +297,10 @@ class Agent:
                 i += 1
                 print "Finished in ", time.time() - t1
                 # embed()
-            if i >=10:
-                return
-
-            self.levels_won += 1
+            # if i >=10:
+            #     return
+            if i < 10:
+                self.levels_won += 1
 
             if heatmap:
                 self.makeHeatmap(allStatesEncountered, '{}_{}_level{}_heatmap.pdf'.format(
@@ -539,11 +540,11 @@ class Agent:
             else:
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                    firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
+                    firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0], extra_atom=self.extra_atom)
 
             p_quitting = p.quitting
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
-            self.total_planner_steps = p.total_nodes
+            self.total_planner_steps += p.total_nodes
 
             if bestNode is not None:
                 solution = p.solution
@@ -571,6 +572,12 @@ class Agent:
                     emptyPlans = 0
             else:
                 if (not solution) or p_quitting:
+                    # Here we make a distinction between quitting because you've
+                    # exhausted the number of nodes you can visit or because you
+                    # ran out of novelty. In the first case, you only wait longer,
+                    # in the second case, you also add a new atom to IW
+                    if p.exhausted_novelty:
+                        self.extra_atom = True
                     if self.longHorizonObservations<self.longHorizonObservationLimit:
                         print "Didn't get solution or decided to quit. Observing, then replanning."
                         print('passed here')
@@ -715,7 +722,7 @@ class Agent:
                                 for random in random_npc_positions]
                             # embed()
                             # print "random distances", min(possiblePairList)
-                            if min(possiblePairList) <= self.safeDistance:
+                            if min(possiblePairList) < self.safeDistance:
                                 print("Close to RandomNPC, regrounding")
                                 break
 

@@ -36,7 +36,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
-		firstOrderHorizon=False, hyperparameters={}):
+		firstOrderHorizon=False, hyperparameters={}, extra_atom=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.hyperparameters = hyperparameters
@@ -64,6 +64,9 @@ class WBP():
 		self.classesWhosePresenceWeIgnore = []
 		self.allowRollouts = False
 		self.quitting = False
+		self.exhausted_novelty = False
+		self.extra_atom = extra_atom
+		print("exta atom is {}".format(self.extra_atom))
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 
@@ -233,15 +236,18 @@ class WBP():
 			self.vecSize = len(lst)
 			# print "Vector is length {}".format(self.vecSize)
 
-		try:
-			avatar_pos = self.findAvatarInRLE(rle)
-			vecValue = avatar_pos[1] + avatar_pos[0]*rle.outdim[0] + 1
+		if self.extra_atom:
 
-		except:
-			vecValue = [0]
+			try:
+				avatar_pos = self.findAvatarInRLE(rle)
+				vecValue = avatar_pos[1] + avatar_pos[0]*rle.outdim[0] + 1
 
-		stateIW1 = [vecValue] + [1 if char==' ' else 0 for pos, char in enumerate(rle.show())]
-		# lst.append(hash(tuple(stateIW1)))
+			except:
+				vecValue = [0]
+
+
+			stateIW1 = [vecValue] + [1 if char==' ' else 0 for pos, char in enumerate(rle.show())]
+			lst.append(hash(tuple(stateIW1)))
 
 		return set(lst)
 
@@ -335,6 +341,7 @@ class WBP():
 				self.object_positions_array = object_positions_array[::-1]
 
 				self.quitting = True
+				self.exhausted_novelty = True
 				# return None
 				return node, gameString_array, object_positions_array
 
