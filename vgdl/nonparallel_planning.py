@@ -53,7 +53,7 @@ def play_trainset(hyperparameters):
         		yield color
 
 
-        gvgname = "./examples/gridphysics/{}".format(gameName)
+        gvgname = "./training_set_1/{}".format(gameName)
 
         gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
