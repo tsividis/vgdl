@@ -1,0 +1,12 @@
+numpy>=1.10.4
+requests>=2.0
+six
+pyglet>=1.2.0
+scipy==0.17.1
+pybrain
+pathos
+ipdb
+termcolor
+pygame
+gdata
+gym
