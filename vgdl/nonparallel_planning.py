@@ -14,15 +14,15 @@ game_number = args.game_number
 # as of 01/2018: it is best to install directly from the github repo with
 # the command 'pip install git+https://github.com/hyperopt/hyperopt'
 
-gvggames = ['aliens', 'boulderdash', 'chase', 'portals',  # 0-4
-        	'missilecommand', 'sokoban']  # 5-9
+# gvggames = ['aliens', 'boulderdash', 'chase', 'portals',  # 0-4
+#         	'missilecommand', 'sokoban']  # 5-9
 #
+
+gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
+        	'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
+
 local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper',  # 10-12
     'expt_preconditions', 'expt_push_boulders', 'expt_relational']  # 13-15 to play a "local" game
-
-# gvggames = ['aliens', 'boulderdash', 'chase', 'frogs',  # 0-3
-        	# 'missilecommand', 'portals', 'sokoban', 'survivezombies']  # 4-7
-
 # local_games = ['expt_exploration_exploitation',  # 8
     # 'expt_preconditions', 'expt_push_boulders', 'expt_relational']  # 9-11 to play a "local" game
 
@@ -31,7 +31,7 @@ def play_trainset(hyperparameters):
 
 
     # playing GVG-AI games
-    if game_number < 6:
+    if game_number < 10:
         gameName = gvggames[game_number]  # to play a gvgai game
         def read_gvgai_game(filename):
         	with open(filename, 'r') as f:
@@ -66,7 +66,7 @@ def play_trainset(hyperparameters):
     # running local games
     else:
         level_game_pairs = None
-        gameName = 'examples.gridphysics_new.{}'.format(local_games[game_number-6])
+        gameName = 'examples.gridphysics_new.{}'.format(local_games[game_number-10])
 
     agent = Agent('full', gameName, hyperparameter_sets=hyperparameters, parallel_planning=False)
 
@@ -87,15 +87,6 @@ hyperparameter_sets = [
       'multisprite_second_alpha': 100,
       'novelty_first_alpha': 5000,
       'novelty_second_alpha': 50,
-      },
-    {
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': 10.,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     }
+      }
 ]
 play_trainset(hyperparameter_sets)

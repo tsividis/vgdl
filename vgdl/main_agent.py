@@ -53,12 +53,12 @@ class Agent:
             self.starting_max_nodes = 10000
             self.max_nodes_annealing = 10.
         self.firstOrderHorizon = False ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
-        self.regrounding = 1000
+        self.regrounding = 3
         self.selective_regrounding = True
         self.avoid_danger = True
         self.safeDistance = 3
         self.emptyPlansLimit = 5
-        self.longHorizonObservationLimit = 0
+        self.longHorizonObservationLimit = 2
         self.hypotheses = []
         self.symbolDict = None
         self.finalEventList = []
@@ -243,7 +243,7 @@ class Agent:
         if all([c in previous_colors for c in current_colors]):
             observe(self.rle, 0, self.bestSpriteTypeDict) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
         else:
-            observe(self.rle, 15, self.bestSpriteTypeDict) ## observe many steps so that you're not completely clueless about object movements for the new level
+            observe(self.rle, 5, self.bestSpriteTypeDict) ## observe many steps so that you're not completely clueless about object movements for the new level
 
         ## Make sure any objects that appeared while we were observing are reflected in allObjects
         for k,v in self.rle._game.getObjects().items():

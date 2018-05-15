@@ -554,7 +554,7 @@ class Node():
 				pass
 			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
 			# 	metabolic_cost += 0.3
-		# metabolic_cost = 0
+		metabolic_cost = 0
 		return metabolic_cost
 
 	def rollout(self, Vrle):
@@ -1238,7 +1238,7 @@ class Node():
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
 		print("metabolic cost is {}".format(self.metabolic_cost))
-		self.intrinsic_reward = self.heuristicVal + self.position_score(0) + self.metabolic_cost
+		self.intrinsic_reward = self.heuristicVal # + self.position_score(0) + self.metabolic_cost
 
 		## Debug printouts
 		# print("heuristicVal {}".format(self.heuristicVal))

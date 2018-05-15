@@ -1,156 +1,115 @@
 level="""
-55555555555555555555555555
-53331366313333331336166335
-53331111113333333313313335
-53333666333333333131611315
-56333333333333333161333115
-55555555553333333313335665
-5 833321333333333333335665
-5  33333333 13333 33335665
-51113333333 33333133335335
-53333336333 55556 63115335
-5 2 333334  11661 33335335
-5   337333  33333 8    335
-55555555555555555555555555
+4444444444444444444444444444
+           4 7 4            
+0009900000099900009999900099
+00000999900000000009999000c9
+0009990009990009999000099909
+444   44   444    444  44444
+    6666   666   6  6666    
+ 6     555       555    55  
+  6   666     6   6666 66   
+4       3                  4
+4444444444444444444444444444
 """
 game = """
 BasicGame
 	SpriteSet
-		c9 > RandomNPC color=RED speed=1.0 cooldown=1
-		c8 > ResourcePack color=GREEN
-		avatar > ShootAvatar color=DARKBLUE stype=sword
-		sword > Flicker color=PINK singleton=True limit=5
-		c3 > ResourcePack color=BROWN
-		c7 > ResourcePack color=YELLOW
-		c6 > ResourcePack color=DARKGRAY
-		c5 > Missile color=GRAY speed=0.2 orientation=DOWN cooldown=1
-		c4 > RandomNPC color=GOLD speed=1.0 cooldown=1
-		diamond > Resource color=RESOURCETOADD limit=10
+		avatar > MovingAvatar color=DARKBLUE
+		c3 > Missile color=BROWN speed=0.1 orientation=LEFT cooldown=1
+		c2 > ResourcePack color=BLUE
+		c7 > ResourcePack color=GREEN
+		c6 > Missile color=YELLOW speed=0.1 orientation=RIGHT cooldown=1
+		c5 > Missile color=DTIZDF speed=0.2 orientation=RIGHT cooldown=1
+		c4 > ResourcePack color=DARKGRAY
 	InteractionSet
-		c7 c9 > nothing
-		c9 c7 > nothing
+		c2 avatar > killSprite
 		c6 c7 > nothing
 		c7 c6 > nothing
-		c8 c8 > nothing
-		c6 c8 > nothing
-		c8 c6 > nothing
-		c4 c8 > nothing
-		c8 c4 > nothing
-		c6 avatar > killIfOtherHasMore resource=diamond limit=1
-		avatar c6 > stepBack
-		c7 c8 > nothing
-		c8 c7 > nothing
-		c8 c9 > nothing
-		c9 c8 > nothing
-		sword c9 > nothing
-		c9 sword > nothing
-		c4 c9 > nothing
-		c9 c4 > nothing
-		sword avatar > killSprite
-		sword avatar > killIfOtherHasMore resource=diamond limit=1
-		avatar c7 > changeResource resource=diamond limit=10 value=1
+		c2 c4 > nothing
+		c4 c2 > nothing
+		c5 EOS > wrapAround offset=0
+		avatar c6 > killSprite
+		c4 c5 > nothing
+		c5 c4 > nothing
+		c3 c5 > nothing
+		c5 c3 > nothing
+		c3 c4 > nothing
+		c4 c3 > nothing
+		c2 c5 > nothing
+		c5 c2 > nothing
 		c7 avatar > killSprite
-		sword c7 > nothing
-		c7 sword > nothing
-		sword c5 > nothing
-		c5 sword > nothing
+		c5 c7 > nothing
+		c7 c5 > nothing
 		avatar EOS > stepBack
 		c3 avatar > killSprite
-		c5 c8 > nothing
-		c8 c5 > nothing
-		sword c3 > nothing
-		c3 sword > nothing
-		c3 c8 > nothing
-		c8 c3 > nothing
+		c2 c6 > nothing
+		c6 c2 > nothing
+		c4 c6 > nothing
+		c6 c4 > nothing
 		c3 c7 > nothing
 		c7 c3 > nothing
-		sword c6 > nothing
-		c6 sword > nothing
-		sword c4 > nothing
-		c4 sword > nothing
+		c2 c2 > nothing
+		c5 c6 > nothing
+		c6 c5 > nothing
 		c3 c3 > nothing
-		c8 avatar > nothing
+		c2 c7 > nothing
+		c7 c2 > nothing
 		c4 c7 > nothing
 		c7 c4 > nothing
 		c3 c6 > nothing
 		c6 c3 > nothing
 		c6 c6 > nothing
-		sword sword > nothing
+		c2 c3 > nothing
 		c7 c7 > nothing
-		c5 avatar > killIfOtherHasMore resource=diamond limit=1
-		avatar c5 > stepBack
-		avatar c4 > killSprite
-		sword c8 > nothing
-		c8 sword > nothing
-		c9 c9 > nothing
-		c9 avatar > killSprite
-		c9 avatar > killIfOtherHasMore resource=diamond limit=1
+		avatar c5 > killSprite
+		avatar c4 > stepBack
+		c5 c5 > nothing
 		c4 c4 > nothing
-		sword EOS > stepBack
-		c4 c3 > stepBack
-		c8 EOS > stepBack
-		c9 c5 > stepBack
-		c5 c3 > stepBack
-		c4 c5 > stepBack
-		c9 c6 > stepBack
-		c9 c3 > stepBack
-		c5 c7 > stepBack
-		c5 EOS > stepBack
-		c4 c6 > stepBack
-		c5 c5 > stepBack
-		c5 c6 > stepBack
+		c4 EOS > stepBack
 		c7 EOS > stepBack
 		c3 EOS > stepBack
 		c6 EOS > stepBack
-		c9 EOS > stepBack
-		c4 EOS > stepBack
+		c2 EOS > stepBack
 	TerminationSet
-		NoveltyTermination s1=sword s2=avatar win=True
-		NoveltyTermination s1=sword s2=sword win=True
-		NoveltyTermination s1=sword s2=c3 win=True
-		NoveltyTermination s1=sword s2=c5 win=True
-		NoveltyTermination s1=sword s2=c6 win=True
-		NoveltyTermination s1=sword s2=c7 win=True
-		NoveltyTermination s1=sword s2=c8 win=True
-		NoveltyTermination s1=c3 s2=c3 win=True
+		NoveltyTermination s1=c2 s2=avatar win=True
+		NoveltyTermination s1=c2 s2=c4 win=True
+		NoveltyTermination s1=c2 s2=c5 win=True
+		NoveltyTermination s1=c2 s2=c6 win=True
+		NoveltyTermination s1=c2 s2=c7 win=True
+		NoveltyTermination s1=c3 s2=avatar win=True
+		NoveltyTermination s1=c3 s2=c4 win=True
+		NoveltyTermination s1=c3 s2=c5 win=True
 		NoveltyTermination s1=c3 s2=c6 win=True
 		NoveltyTermination s1=c3 s2=c7 win=True
-		NoveltyTermination s1=c3 s2=c8 win=True
-		NoveltyTermination s1=c5 s2=c8 win=True
+		NoveltyTermination s1=c4 s2=c4 win=True
+		NoveltyTermination s1=c4 s2=c5 win=True
+		NoveltyTermination s1=c4 s2=c6 win=True
+		NoveltyTermination s1=c4 s2=c7 win=True
+		NoveltyTermination s1=c5 s2=c5 win=True
+		NoveltyTermination s1=c5 s2=c6 win=True
+		NoveltyTermination s1=c5 s2=c7 win=True
 		NoveltyTermination s1=c6 s2=c6 win=True
 		NoveltyTermination s1=c6 s2=c7 win=True
-		NoveltyTermination s1=c6 s2=c8 win=True
+		NoveltyTermination s1=c7 s2=avatar win=True
 		NoveltyTermination s1=c7 s2=c7 win=True
-		NoveltyTermination s1=c7 s2=c8 win=True
-		NoveltyTermination s1=c8 s2=c8 win=True
-		NoveltyTermination s1=c9 s2=avatar win=True
-		NoveltyTermination s1=sword s2=EOS win=True
+		NoveltyTermination s1=c2 s2=EOS win=True
 		NoveltyTermination s1=c3 s2=EOS win=True
 		NoveltyTermination s1=c4 s2=EOS win=True
-		NoveltyTermination s1=c5 s2=EOS win=True
 		NoveltyTermination s1=c6 s2=EOS win=True
 		NoveltyTermination s1=c7 s2=EOS win=True
-		NoveltyTermination s1=c8 s2=EOS win=True
-		NoveltyTermination s1=c9 s2=EOS win=True
 		NoveltyTermination s1=avatar s2=EOS win=True
-		NoveltyTermination s1=sword s2=avatar win=True args={item:diamond,num:0,negated:False,operator_name:>}
-		NoveltyTermination s1=c6 s2=avatar win=True args={item:diamond,num:0,negated:False,operator_name:>}
-		NoveltyTermination s1=c9 s2=avatar win=True args={item:diamond,num:0,negated:False,operator_name:>}
-		NoveltyTermination s1=c5 s2=avatar win=True args={item:diamond,num:0,negated:False,operator_name:>}
 		SpriteCounter stype=avatar limit=0 win=False
-		SpriteCounter stype=c3 limit=0 win=True
-		SpriteCounter stype=c7 limit=0 win=True
 	LevelMapping
-		0 > sword
-		1 > c5
-		2 > c4
-		3 > c3
-		4 > avatar
-		5 > c6
-		6 > c7
-		9 > avatar c8
-		7 > c8
-		8 > c9
+		0 > c2
+		1 > c3
+		c > c2 c2
+		3 > avatar
+		4 > c4
+		5 > c5
+		6 > c6
+		7 > c7
+		9 > c3 c2
+		b > c2 c3 c2
 """
 if __name__ == "__main__":
 	from vgdl.core import VGDLParser
