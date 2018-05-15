@@ -1,0 +1,5 @@
+# this is for the big ec2 instance
+
+# username is ubuntu, not ec2-user
+
+source activate mxnet_p27
