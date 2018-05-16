@@ -7,9 +7,11 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
+parser.add_argument('--pickle_file', type=str, default=None)
 
 args = parser.parse_args()
 game_number = args.game_number
+pickle_file = args.pickle_file
 # NOTE: fmin seems to fail with the hyperopt version installed by default
 # as of 01/2018: it is best to install directly from the github repo with
 # the command 'pip install git+https://github.com/hyperopt/hyperopt'
@@ -72,7 +74,7 @@ def play_trainset(hyperparameters):
 
     ##then pass this down for multiple episodes
     gameObject = None
-    agent.playCurriculum(level_game_pairs=level_game_pairs)
+    agent.playCurriculum(level_game_pairs=level_game_pairs, pickle_file=pickle_file)
 
     total_time = time.time() - start_time
 

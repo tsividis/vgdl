@@ -65,7 +65,7 @@ def objectsToSymbol(rle, objects, symbolDict):
 			symbolDict[tuple(objects)] = ALNUM[idx]
 			return ALNUM[idx]
 	except:
-		import ipdb; ipdb.set_trace()
+		# import ipdb; ipdb.set_trace()
 		print "objectsToSymbol problem."
 		embed()
 

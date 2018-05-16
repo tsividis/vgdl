@@ -86,6 +86,8 @@ class Agent:
 
         self.todo_delete = True
 
+        self.pickle_file = None
+
     def initializeEnvironment(self):
         if self.gameString==None or self.levelString==None:
             self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
@@ -229,17 +231,24 @@ class Agent:
         return VRLEs
 
     def initializeHypotheses(self, allObjects, learnSprites=True):
-        if learnSprites:
-            observe(self.rle, 15, self.bestSpriteTypeDict)
-            spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
-                self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
-            self.rle._game.exceptedObjects = exceptedObjects
-            gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
-            initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
-
-        else:
+        if self.pickle_file:
+            file = open(self.pickle_file, 'r')
+            initialTheory = pickle.load(file)
+            self.hypotheses = [initialTheory]
+            file.close()
             gameObject = Game(self.gameString)
-            initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
+        else:
+            if learnSprites:
+                observe(self.rle, 15, self.bestSpriteTypeDict)
+                spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
+                    self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
+                self.rle._game.exceptedObjects = exceptedObjects
+                gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
+                initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
+
+            else:
+                gameObject = Game(self.gameString)
+                initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
 
         # Handle wall vs. projectile interaction (hacky)
         avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
@@ -282,7 +291,7 @@ class Agent:
         self.hypotheses = newHypotheses
 
 
-    def playCurriculum(self, heatmap=False, level_game_pairs=None):
+    def playCurriculum(self, heatmap=False, level_game_pairs=None, pickle_file=None):
         """ Plays a game level until it wins, then moves to the next one until
         completion. """
         if not level_game_pairs:
@@ -293,6 +302,10 @@ class Agent:
         os.makedirs("images/tmp")
         j=0
         flexible_goals = False
+
+        if pickle_file:
+            print "got pickle file", pickle_file
+            self.pickle_file = pickle_file
 
         pool = mp.Pool(processes=len(self.hyperparameter_sets)) if self.parallel_planning else None
         for n_level, level_game in enumerate(level_game_pairs):
@@ -468,8 +481,6 @@ class Agent:
         legalActions = [K_LEFT, K_RIGHT, K_UP, K_DOWN, 0] #K_SPACE]
         # step #s where we want to save our progress
         whereToSave = {0,50,100,1000,5000, 10000}
-        # 
-
 
         ## Initialize external environment
         self.initializeEnvironment()
@@ -508,8 +519,8 @@ class Agent:
         while not ended:
             ## initialize one or many VRLEs according to hypothesis-selection method
 
-            if self.total_game_steps in whereToSave:
-                self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps)
+            # if self.total_game_steps in whereToSave:
+                # self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps)
 
             if self.total_game_steps > MAX_STEPS:
                 embed()
@@ -558,6 +569,7 @@ class Agent:
                     hypotheses[0].display()
                     sys.stdout = oldout
                     f.close()
+                    self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps)
                     # break
                 ended, win = self.rle._isDone()
 
@@ -983,8 +995,11 @@ class Agent:
         if event['effectList']:
             self.finalEventList.append(event)
 
-        if (event['effectList'] and run_induction) or distributionsHaveChanged:
-
+        ## EXPLORATION LESION: skip event learning if we're running with a pickle_file (which is the theory we freeze on)
+        if self.pickle_file is not None:
+            print "skipping induction because we have a frozen theory!"
+        if ((event['effectList'] and run_induction) or distributionsHaveChanged):
+            print "running induction"
             print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
 
             ## Delete fake interaction rules for events that were witnessed in this time step.
