@@ -3,7 +3,7 @@ from __future__ import division
 from __future__ import print_function
 import numpy as np
 import os
-import visdom
+# import visdom
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -116,9 +116,9 @@ class Params(object):   # NOTE: shared across all modules
         self.logger.warning("<===================================>")
 
         if self.visualize:
-            self.vis = visdom.Visdom()
-            self.logger.warning("bash$: python -m visdom.server")           # activate visdom server on bash
-            self.logger.warning("http://localhost:8097/env/" + self.refs)   # open this address on browser
+            #self.vis = visdom.Visdom()
+            #self.logger.warning("bash$: python -m visdom.server")           # activate visdom server on bash
+            #self.logger.warning("http://localhost:8097/env/" + self.refs)   # open this address on browser
 
 class EnvParams(Params):    # settings for simulation environment
     def __init__(self):
