@@ -1,14 +1,14 @@
 level="""
 4444444444444444444
-4   4 b      46  74
-49 14   2    45   4
-44444  8   93444444
-4     4        4 94
-4 b2  4444444    44
-4      5   b      4
-44444     444     4
+4 3 4   b    46  74
+49 14        45   4
+44444  8   9 444444
+4     4 2      4 94
+4 b   4444444    44
+4  2   5   b      4
+44444   8 444     4
 4         1       4
-44404   8    5  444
+44404        5  444
 4444444444444444444
 """
 game = """
@@ -19,7 +19,7 @@ BasicGame
 		avatar > MovingAvatar color=DARKBLUE
 		c3 > Portal color=LIGHTBLUE stype=c10
 		c2 > Missile color=PINK speed=0.5 orientation=DOWN cooldown=1
-		c11 > Missile color=LIGHTRED speed=0.5 orientation=LEFT cooldown=1
+		c11 > Missile color=LIGHTRED speed=0.5 orientation=RIGHT cooldown=1
 		c10 > Portal color=ORANGE
 		c7 > ResourcePack color=LIGHTGREEN
 		c6 > ResourcePack color=DARKGRAY
@@ -220,6 +220,7 @@ BasicGame
 		i > c11 c7
 		9 > c10
 		b > c11
+		j > c5 c2
 		f > c11 c6
 		e > c11 c5
 """

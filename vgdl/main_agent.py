@@ -124,12 +124,12 @@ class Agent:
         # where s=steps and n=a counter so we don't overwrite earlier runs
 
         try:
-            os.makedirs('./lesions/{}'.format(self.gameFilename))
+            os.makedirs('./lesions/exploration/{}'.format(self.gameFilename))
         except:
             # already exists, yay
             pass
 
-        form = './lesions/{}/{:06}steps_{}.pkl'
+        form = './lesions/exploration/{}/{:06}steps_{}.pkl'
         n = 0
         while os.path.exists(form.format(self.gameFilename, steps, n)):
             n += 1
@@ -467,7 +467,7 @@ class Agent:
         doRandomMoves = True
         legalActions = [K_LEFT, K_RIGHT, K_UP, K_DOWN, 0] #K_SPACE]
         # step #s where we want to save our progress
-        whereToSave = {0,16,50,100,1000,5000}
+        whereToSave = {0,50,100,1000,5000}
         # 
 
 
