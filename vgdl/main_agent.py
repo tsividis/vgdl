@@ -16,6 +16,7 @@ from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
 from pathos.helpers import mp
+from vgdl.colors import colorDict
 # import multiprocess as mp
 # from line_profiler import LineProfiler
 
@@ -37,7 +38,7 @@ def playCurriculum(agent, level_game_pairs):
 
 
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameter_sets={}, parallel_planning=False):
+    def __init__(self, modelType, gameFilename, hyperparameter_sets={}, parallel_planning=False, modelling_lesion=False, planning_lesion=False):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.gameString = None
@@ -50,8 +51,8 @@ class Agent:
             self.starting_max_nodes = 1000
             self.max_nodes_annealing = 1.05
         else:
-            self.starting_max_nodes = 10000
-            self.max_nodes_annealing = 10.
+            self.starting_max_nodes = 20000
+            self.max_nodes_annealing = 1.
         self.firstOrderHorizon = False ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
         self.regrounding = 1
         self.selective_regrounding = True
@@ -81,6 +82,14 @@ class Agent:
         self.levels_won = 0
 
         self.todo_delete = True
+
+        # Lesions
+        self.modelling_lesion = modelling_lesion
+
+        self.planning_lesion = planning_lesion
+        self.avatar_interactions_score = defaultdict(int)
+        self.avatar_interactions_locations = defaultdict(list)
+        self.projectile_interactions_locations = defaultdict(list)
 
     def initializeEnvironment(self):
         if self.gameString==None or self.levelString==None:
@@ -288,7 +297,19 @@ class Agent:
             while not win and i<10:
                 gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level, pool=pool)
                 self.total_game_steps += steps
-                episodes.append((n_level, steps, win, score, self.total_planner_steps))
+                episode_results = (n_level, steps, win, score, self.total_planner_steps)
+                episodes.append(episode_results)
+
+                # write progressively to file
+                output = {'modelType':self.modelType,
+                            # 'gameName': self.gameFilename[self.gameFilename.find('expt'):],
+                            'gameName': self.gameFilename,
+                            'condition': 'normal',
+                            'episodes' : [episode_results]}
+
+                write_to_csv(str(self.gameFilename)+'.csv', output)
+
+
                 allStatesEncountered.extend(statesEncountered)
                 levelEffectsEncountered.append(effectsEncountered)
                 # VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
@@ -323,14 +344,14 @@ class Agent:
         # self.makeMovie()
 
 
-        output = {'modelType':self.modelType,
-                    # 'gameName': self.gameFilename[self.gameFilename.find('expt'):],
-                    'gameName': self.gameFilename,
-                    'condition': 'normal',
-                    'episodes' : episodes}
-
-
-        write_to_csv(str(self.gameFilename)+'.csv', output)
+        # output = {'modelType':self.modelType,
+        #             # 'gameName': self.gameFilename[self.gameFilename.find('expt'):],
+        #             'gameName': self.gameFilename,
+        #             'condition': 'normal',
+        #             'episodes' : episodes}
+        #
+        #
+        # write_to_csv(str(self.gameFilename)+'.csv', output)
 
         self.makeMovie()
 
@@ -541,7 +562,9 @@ class Agent:
             else:
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                    firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0], extra_atom=self.extra_atom)
+                    firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0], extra_atom=self.extra_atom,
+                    planning_lesion=self.planning_lesion, avatar_interactions_score=self.avatar_interactions_score,
+                    avatar_interactions_locations=self.avatar_interactions_locations, projectile_interactions_locations=self.projectile_interactions_locations)
 
             p_quitting = p.quitting
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
@@ -895,6 +918,44 @@ class Agent:
             'gameState': self.rle._game.getFullStateColorized(), 'rle': self.rle}
         if event['effectList']:
             self.finalEventList.append(event)
+
+        if event['effectList'] and self.planning_lesion:
+            # Update event dictionaries to be sent to planner
+            for e in event['effectList']:
+                ended, win = self.rle._isDone()
+                avatar_color = 'DARKBLUE'
+                if avatar_color in e:
+                    try:
+                        pos = np.array((self.rle._game.getAvatars()[0].rect.x,
+                            self.rle._game.getAvatars()[0].rect.y))
+                    except IndexError:
+                        print "index error in position score"
+                        pos = (-1, -1)
+                    partner = e[1] if avatar_color==e[2] else e[2]
+
+                    # update score dictionary if you won or lost based on this interaction
+                    if ended:
+                        self.avatar_interactions_score[partner] += (1 if win else -1)
+
+                    self.avatar_interactions_locations[partner].append(tuple(pos))
+                try:
+                    projectile_name = self.rle._game.getAvatars()[0].stype
+                    projectile_color = [o for o in self.rle._game.getObjects().values() if projectile_name==o['sprite'].name][0]['sprite'].color
+                    projectile_color = colorDict[str(projectile_color)]
+                    if projectile_color in e:
+                        try:
+                            pos = np.array((self.rle._game.getAvatars()[0].rect.x,
+                                self.rle._game.getAvatars()[0].rect.y))
+                        except IndexError:
+                            print "index error in position score"
+                            pos = (-1, -1)
+                        partner = e[1] if projectile_color==e[2] else e[2]
+
+                        self.projectile_interactions_locations[partner].append(tuple(pos))
+                except:  # no projectile
+                    pass
+
+
 
         if (event['effectList'] and run_induction) or distributionsHaveChanged:
 

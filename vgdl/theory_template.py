@@ -1866,7 +1866,6 @@ class Game(object):
 	def runInduction(self, spriteSample, trace, maxNumTheories, verbose=False, existingTheories=False):
 		# spriteSample: a particular assignment of sprite types. You can decide how you get this when you generate the sample, in getToSubgoal
 		## Builds a generic theory and then overwrites it as it sees events in 'trace'.
-
 		timesteps, result = trace
 
 		## fiter for unique timesteps so that you don't waste time checking likelihoods, etc.
