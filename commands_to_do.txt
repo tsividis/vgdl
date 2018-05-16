@@ -3,3 +3,5 @@
 # username is ubuntu, not ec2-user
 
 source activate mxnet_p27
+
+tmux attach -t 0
