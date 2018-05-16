@@ -194,12 +194,12 @@ episodeResults = []
 def init_game(path, isLocal=None, gvgai_path = "gvgai/mturk_games/"):
 	global level_game_pairs , rle , ended , steps , levelNum , gameName , episodeResults , wins
 
-	#if '/' in path:
-	#	gameName = path[path.rfind('/')+1:]
-	#elif '.' in path:
-	#	gameName = path[path.rfind('.')+1:]
-	#else:
-	#	gameName = path
+	if '/' in path:
+		gameName = path[path.rfind('/')+1:]
+	elif '.' in path:
+		gameName = path[path.rfind('.')+1:]
+	else:
+		gameName = path
 
 	if isLocal == None:
 		# maybe we can still figure it out
