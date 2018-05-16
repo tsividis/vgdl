@@ -11,6 +11,15 @@ import sys
 import numpy as np
 from colors import LIGHTGRAY
 
+import pdb
+
+"""
+
+Run a random agent for 10 steps per episode, for a max of 'num_episodes' episodes, on all levels of game 0:
+This outputs per-frame .png images to ../vgdl_data/game_name/level_number/episode_number/
+python -m vgdl.play_games --game_number 0
+
+"""
 
 '''#######   USAGE ########
 >>> import vgdl.play_games
@@ -173,6 +182,7 @@ def playCurriculum(gameName, level_game_pairs, num_episodes=10):
 ACTIONS = [0, K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE]
 MAX_STEPS = 100
 WINS_REQUIRED = 3 # in the last 2*WINS_REQUIRED games
+wins = 0 #ignore the above one now I guess
 level_game_pairs = []
 steps = 0
 rle = None
@@ -181,15 +191,15 @@ levelNum = 0
 gameName = ''
 episodeResults = []
 
-def init_game(path, isLocal=None):
-	global level_game_pairs , rle , ended , steps , levelNum , gameName , episodeResults
+def init_game(path, isLocal=None, gvgai_path = "gvgai/mturk_games/"):
+	global level_game_pairs , rle , ended , steps , levelNum , gameName , episodeResults , wins
 
-	if '/' in path:
-		gameName = path[path.rfind('/')+1:]
-	elif '.' in path:
-		gameName = path[path.rfind('.')+1:]
-	else:
-		gameName = path
+	#if '/' in path:
+	#	gameName = path[path.rfind('/')+1:]
+	#elif '.' in path:
+	#	gameName = path[path.rfind('.')+1:]
+	#else:
+	#	gameName = path
 
 	if isLocal == None:
 		# maybe we can still figure it out
@@ -205,10 +215,11 @@ def init_game(path, isLocal=None):
 	if isLocal:
 		level_game_pairs = load_local_game(path)
 	else:
-		level_game_pairs = load_gvgai_game(path)
+		level_game_pairs = load_gvgai_game(path, path=gvgai_path)
 
 	steps = 0
 	levelNum = 0
+	wins = 0
 	episodeResults = []
 
 	rle = initializeEnvironment(level_game_pairs[0][0], level_game_pairs[0][1])
@@ -252,7 +263,8 @@ def step(action):
 
 	if win:
 		# if they've won half of the last 2*WINS_REQUIRED games
-		if sum(1 if tup[3] else 0 for tup in episodeResults[-2*WINS_REQUIRED:]) >= WINS_REQUIRED:
+		wins += 1
+		if wins >= 2: #sum(1 if tup[3] else 0 for tup in episodeResults[-2*WINS_REQUIRED:]) >= WINS_REQUIRED:
 			# next level
 			levelNum += 1
 
