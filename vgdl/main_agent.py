@@ -26,7 +26,7 @@ AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, Aimed
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
-MAX_STEPS = 30000
+MAX_STEPS = 10008
 
 # orientationPairs = {(0, 1):(0, -1), DOWN:UP, LEFT:RIGHT, RIGHT:LEFT}
 
@@ -467,7 +467,7 @@ class Agent:
         doRandomMoves = True
         legalActions = [K_LEFT, K_RIGHT, K_UP, K_DOWN, 0] #K_SPACE]
         # step #s where we want to save our progress
-        whereToSave = {0,50,100,1000,5000}
+        whereToSave = {0,50,100,1000,5000, 10000}
         # 
 
 
