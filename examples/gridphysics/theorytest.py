@@ -1,14 +1,14 @@
 level="""
 4444444444444444444
-4   4  8b    46  74
-49314        45   4
-44444  2   9 444444
-4     4        4 94
-4   b 4444444    44
-4   2b 5          4
-44444     444     4
-4         1       4
-44404   8    5  444
+4b          40 8  4
+4  9  2 4444  4 4 4
+44444 88         84
+4  94     4       4
+4  14     4  b    4
+44444          e  4
+4      3    9     4
+4  1 4 4c   4444444
+4 b         46   74
 4444444444444444444
 """
 game = """
@@ -26,7 +26,8 @@ BasicGame
 		c5 > Missile color=BROWN speed=0.8 orientation=DOWN cooldown=7
 		c4 > ResourcePack color=BLUE
 	InteractionSet
-		c2 avatar > killSprite
+		c3 c5 > nothing
+		c5 c3 > nothing
 		c6 c7 > nothing
 		c7 c6 > nothing
 		avatar c11 > killSprite
@@ -41,14 +42,15 @@ BasicGame
 		c10 c2 > nothing
 		c10 c11 > nothing
 		c11 c10 > nothing
+		avatar c2 > killSprite
 		c7 c9 > nothing
 		c9 c7 > nothing
 		c4 c5 > nothing
 		c5 c4 > nothing
 		c5 c9 > nothing
 		c9 c5 > nothing
-		c3 c5 > nothing
-		c5 c3 > nothing
+		c7 c10 > nothing
+		c10 c7 > nothing
 		c3 c4 > nothing
 		c4 c3 > nothing
 		avatar c6 > stepBack
@@ -62,8 +64,6 @@ BasicGame
 		c9 c4 > nothing
 		c3 c10 > nothing
 		c10 c3 > nothing
-		c7 c10 > nothing
-		c10 c7 > nothing
 		avatar c7 > killSprite
 		c2 c8 > nothing
 		c8 c2 > nothing
@@ -140,7 +140,6 @@ BasicGame
 		c2 EOS > stepBack
 		c4 EOS > stepBack
 	TerminationSet
-		NoveltyTermination s1=c2 s2=avatar win=True
 		NoveltyTermination s1=c2 s2=c2 win=True
 		NoveltyTermination s1=c2 s2=c3 win=True
 		NoveltyTermination s1=c2 s2=c4 win=True
@@ -221,6 +220,7 @@ BasicGame
 		b > c11
 		j > c5 c2
 		f > c11 c6
+		k > c11 c5 c2
 		e > c11 c5
 """
 if __name__ == "__main__":
