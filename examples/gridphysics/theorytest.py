@@ -1,14 +1,14 @@
 level="""
 4444444444444444444
-4 3 4   b    46  74
-49 14        45   4
-44444  8   9 444444
-4     4 2      4 94
-4 b   4444444    44
-4  2   5   b      4
-44444   8 444     4
+4   4  8b    46  74
+49314        45   4
+44444  2   9 444444
+4     4        4 94
+4   b 4444444    44
+4   2b 5          4
+44444     444     4
 4         1       4
-44404        5  444
+44404   8    5  444
 4444444444444444444
 """
 game = """
@@ -18,7 +18,7 @@ BasicGame
 		c8 > ResourcePack color=LIGHTORANGE
 		avatar > MovingAvatar color=DARKBLUE
 		c3 > Portal color=LIGHTBLUE stype=c10
-		c2 > Missile color=PINK speed=0.5 orientation=DOWN cooldown=1
+		c2 > Missile color=PINK speed=0.5 orientation=UP cooldown=1
 		c11 > Missile color=LIGHTRED speed=0.5 orientation=RIGHT cooldown=1
 		c10 > Portal color=ORANGE
 		c7 > ResourcePack color=LIGHTGREEN
@@ -64,7 +64,7 @@ BasicGame
 		c10 c3 > nothing
 		c7 c10 > nothing
 		c10 c7 > nothing
-		c7 avatar > killSprite
+		avatar c7 > killSprite
 		c2 c8 > nothing
 		c8 c2 > nothing
 		c8 c10 > nothing
@@ -175,7 +175,6 @@ BasicGame
 		NoveltyTermination s1=c6 s2=c8 win=True
 		NoveltyTermination s1=c6 s2=c9 win=True
 		NoveltyTermination s1=c6 s2=c10 win=True
-		NoveltyTermination s1=c7 s2=avatar win=True
 		NoveltyTermination s1=c7 s2=c7 win=True
 		NoveltyTermination s1=c7 s2=c8 win=True
 		NoveltyTermination s1=c7 s2=c9 win=True

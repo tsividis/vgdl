@@ -546,6 +546,7 @@ class Agent:
 
                 effectsEncountered.extend(effects)
                 steps +=1
+                print '{} steps'.format(self.total_game_steps)
                 if theory_change_flag:
                     self.hypotheses = hypotheses
                     print 'theory changed'
