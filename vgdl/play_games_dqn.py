@@ -180,7 +180,7 @@ def playCurriculum(gameName, level_game_pairs, num_episodes=10):
 #############################################################################
 # globals
 ACTIONS = [0, K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE]
-MAX_STEPS = 100
+MAX_STEPS = 400
 WINS_REQUIRED = 3 # in the last 2*WINS_REQUIRED games
 wins = 0 #ignore the above one now I guess
 level_game_pairs = []
@@ -216,6 +216,14 @@ def init_game(path, isLocal=None, gvgai_path = "gvgai/mturk_games/"):
 		level_game_pairs = load_local_game(path)
 	else:
 		level_game_pairs = load_gvgai_game(path, path=gvgai_path)
+
+	respath = 'results.csv'
+	if not episodeResults:
+		out = open(respath, 'a')
+		out.write( 'game name,level number,steps,win,score\n' ) 
+		out.close()
+	else:
+		writeResults(respath)
 
 	steps = 0
 	levelNum = 0
@@ -272,10 +280,11 @@ def step(action):
 	return generateImage(rle._game) , score-lastscore , ended
 
 def writeResults(path='results.csv'):
-	out = open(path, 'w')
-	out.write( 'game name,level number,steps,win,score\n' ) 
+	out = open(path, 'a')
+	# out.write( 'game name,level number,steps,win,score\n' ) 
 	for tup in episodeResults:
 		out.write('{},{},{},{},{}\n'.format(*tup))
+	out.close()
 
 def screenToNumpyArray(screen):
 	arr = pygame.surfarray.array3d(screen)
