@@ -273,8 +273,8 @@ class WBP():
 		return current
 
 	def rewardSelection(self, QReward, QNovelty):
-		# acceptableNodes = QReward
-		acceptableNodes = filter(lambda n:n.novelty<3, QReward)
+		acceptableNodes = QReward
+		# acceptableNodes = filter(lambda n:n.novelty<3, QReward)
 		acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
 		# print "accetable:", len(acceptableNodes)
 		# if len(acceptableNodes)==0:
