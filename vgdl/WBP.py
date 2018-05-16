@@ -36,7 +36,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
-		firstOrderHorizon=False, hyperparameters={}, extra_atom=False):
+		firstOrderHorizon=False, hyperparameters={}, extra_atom=False, deleteNoveltyTerminations=False, corruptTheoryProbability=0.):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.hyperparameters = hyperparameters
@@ -75,7 +75,12 @@ class WBP():
 		else:
 			self.theory=copy.deepcopy(theory)
 			self.theory.interactionSet.extend(fakeInteractionRules)
+		
 			self.theory.updateTerminations()
+
+			## To use for the no-curiosity lesion
+			if deleteNoveltyTerminations:
+				self.theory.terminationSet = [rule for rule in self.theory.terminationSet if rule.ruleType!='NoveltyRule']
 
 		print 'max nodes', self.max_nodes
 
@@ -1331,6 +1336,8 @@ class Node():
 				self.finalStatesEncountered.append(vrle._game.getFullState())
 			terminal = vrle._isDone()[0]
 			i+=1
+
+
 
 
 if __name__ == "__main__":

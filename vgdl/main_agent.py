@@ -5,6 +5,8 @@ from ontology import *
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
 SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
 generateTheoryFromGame
+from class_theory_template import Sprite
+import random
 import os, subprocess, shutil
 from collections import defaultdict
 import WBP
@@ -306,6 +308,7 @@ class Agent:
         if pickle_file:
             print "got pickle file", pickle_file
             self.pickle_file = pickle_file
+
 
         pool = mp.Pool(processes=len(self.hyperparameter_sets)) if self.parallel_planning else None
         for n_level, level_game in enumerate(level_game_pairs):
@@ -637,6 +640,8 @@ class Agent:
                     p = res[best_index]
 
                 else:
+                    if self.pickle_file:
+                        deleteNoveltyTerminations = True
                     p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                         seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                         firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0], extra_atom=self.extra_atom)
@@ -995,9 +1000,6 @@ class Agent:
         if event['effectList']:
             self.finalEventList.append(event)
 
-        ## EXPLORATION LESION: skip event learning if we're running with a pickle_file (which is the theory we freeze on)
-        if self.pickle_file is not None:
-            print "skipping induction because we have a frozen theory!"
         if ((event['effectList'] and run_induction) or distributionsHaveChanged):
             print "running induction"
             print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
@@ -1012,7 +1014,7 @@ class Agent:
             if (not all([e in all_effects for e in effects])) or distributionsHaveChanged:
                 theory_change_flag = True
 
-            sample, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
+            sample, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
 
             # for s in sample:
                 # s.display()
@@ -1080,8 +1082,6 @@ class Agent:
 
 
         return hypotheses, theory_change_flag, effects
-
-
 
 if __name__ == "__main__":
 

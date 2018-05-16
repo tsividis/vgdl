@@ -8,10 +8,12 @@ import argparse
 parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
 parser.add_argument('--pickle_file', type=str, default=None)
+parser.add_argument('--corruption_prob', type=float, default=0.)
 
 args = parser.parse_args()
 game_number = args.game_number
 pickle_file = args.pickle_file
+corruption_prob = args.corruption_prob
 # NOTE: fmin seems to fail with the hyperopt version installed by default
 # as of 01/2018: it is best to install directly from the github repo with
 # the command 'pip install git+https://github.com/hyperopt/hyperopt'
@@ -30,7 +32,6 @@ local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper'
 
 def play_trainset(hyperparameters):
     start_time = time.time()
-
 
     # playing GVG-AI games
     if game_number < 10:
