@@ -1763,7 +1763,7 @@ class Game(object):
 					print "New theories that passed likelihood tests: ", len(newTheories)
 					for t in newTheories:
 						t.display()
-					print "Nodes created: {}. Nodes eliminated: {}. Nodes accepted: {}".format(self.nodes_generated, self.nodes_eliminated, self.nodes_accepted)
+					print "Nodes created: {}. Nodes eliminated: {}. Nodes accepted: {}".format(self.nodes_generated, self.nodes_eliminated, self.nodes_agccepted)
 
 				for t in newTheories:
 					t.dryingPaint = set()
@@ -2234,14 +2234,13 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				print "couldn't find className"
 				embed()
 			return className
-		except KeyError:
+		except:
 			if spriteName in theory.classes.keys():
 				return spriteName
 			else:
-				try:
-					## maybe we passed a color, so we should get the class.
+				if spriteName in theory.spriteObjects:
 					return theory.spriteObjects[spriteName].className
-				except:
+				else:
 					print "failed to get spriteName color. In getClassNameFromSpriteString"
 					embed()
 

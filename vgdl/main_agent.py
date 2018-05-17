@@ -56,7 +56,7 @@ class Agent:
         self.regrounding = 3
         self.selective_regrounding = True
         self.avoid_danger = True
-        self.safeDistance = 3
+        self.safeDistance = 1
         self.emptyPlansLimit = 5
         self.longHorizonObservationLimit = 2
         self.hypotheses = []
@@ -163,7 +163,7 @@ class Agent:
     def initializeVrle(self, hypothesis):
         ## World in agent's head given 'hypothesis', including object goal
         gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
-                 "./examples/gridphysics/theorytest.py")
+                 "./examples/gridphysics/theorytest2.py")
         Vrle = createMindEnv(gameString, levelString, output=False)
 
         self.setSpritePositions(self.rle, Vrle, hypothesis)
@@ -541,13 +541,13 @@ class Agent:
 
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                    firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
+                    firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[2])
             # best_index = np.argmin([p.total_nodes for p in res])
             # print('passed here')
             # p = res[best_index]
 
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
-            self.total_planner_steps = p.total_nodes
+            self.total_planner_steps += p.total_nodes
 
             if bestNode is not None:
                 solution = p.solution

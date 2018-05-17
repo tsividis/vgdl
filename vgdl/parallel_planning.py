@@ -62,6 +62,8 @@ def play_trainset(hyperparameters):
 
         game_levels = [l for l in os.listdir(gameFileString) if gameName+'_lvl' in l]
 
+        # print "You're about to run only one level!!!"
+        # embed()
         level_game_pairs = []
         for level_number in range(len(game_levels)):
         	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
@@ -84,7 +86,7 @@ def play_trainset(hyperparameters):
 
 hyperparameter_sets = [
     {## Worked for aliens. 
-    ##shortHorizon=False,regrounding=3, selective_regrounding=True, avoid_danger=True, safeDistance=6, emptyPlansLimit=5, longHorizonObservationLimit=2
+    ##shortHorizon=False,regrounding=3, selective_regrounding=True, avoid_danger=True, safeDistance=3, emptyPlansLimit=5, longHorizonObservationLimit=2
      #WBP.allowRollouts=True
      'sprite_first_alpha': 10000,
      'sprite_second_alpha': 0,#100,

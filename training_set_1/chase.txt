@@ -1,7 +1,7 @@
 BasicGame
     SpriteSet
         carcass > Immovable color=BROWN
-        goat > stype=avatar
+        goat > stype=avatar cooldown=4
             angry  > Chaser color=GOLD
             scared > Fleeing color=RED
         avatar > MovingAvatar color=DARKBLUE
