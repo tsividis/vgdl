@@ -594,7 +594,7 @@ class Node():
 
 		## If you can shoot a Flicker, give yourself credit for being close to things it kills, but remove credit for that Flicker being close to those things.
 		try:
-			if rle._game.getAvatars() and rle._game.getAvatars()[0].stype in killer_types:
+			if rle._game.getAvatars() and hasattr(rle._game.getAvatars()[0], 'stype') and rle._game.getAvatars()[0].stype in killer_types:
 				if rle._game.getAvatars()[0].stype in theory.classes:
 					color = theory.classes[rle._game.getAvatars()[0].stype][0].color
 				else:

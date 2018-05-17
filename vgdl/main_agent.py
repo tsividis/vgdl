@@ -548,7 +548,7 @@ class Agent:
 
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps = p.total_nodes
-
+            embed()
             if bestNode is not None:
                 solution = p.solution
                 gameString_array = p.gameString_array
