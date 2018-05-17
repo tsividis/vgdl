@@ -61,7 +61,7 @@ def play_trainset(hyperparameters):
         gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
         game_levels = [l for l in os.listdir(gameFileString) if gameName+'_lvl' in l]
-        embed()
+
         level_game_pairs = []
         for level_number in range(len(game_levels)):
         	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
