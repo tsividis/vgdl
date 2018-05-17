@@ -478,7 +478,7 @@ class Agent:
 
         # FOR EXPLORATION LESION *****
         doRandomMoves = True
-        legalActions = [K_LEFT, K_RIGHT, K_UP, K_DOWN, 0] #K_SPACE]
+        legalActions = [K_LEFT, K_RIGHT, K_UP, K_DOWN, 0]#, K_SPACE]
         # step #s where we want to save our progress
         whereToSave = {0,50,100,1000,5000, 10000}
 

@@ -1,0 +1,69 @@
+
+
+new theory change at step 1
+_______
+
+InteractionSet:
+stepBack c3 c2 {}
+stepBack avatar c2 {}
+nothing c3 c3 {}
+
+Class assignments:
+	c3: ['RED']: <class 'vgdl.ontology.Chaser'>
+	c2: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>
+
+
+
+new theory change at step 1
+_______
+
+InteractionSet:
+stepBack c2 c3 {}
+nothing c2 c2 {}
+
+Class assignments:
+	c3: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>
+	c2: ['PINK']: <class 'vgdl.ontology.RandomNPC'>
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>
+	c4: ['GREEN']: <class 'vgdl.ontology.ResourcePack'>
+
+
+
+new theory change at step 14
+_______
+
+InteractionSet:
+stepBack c2 c3 {}
+nothing c2 c2 {}
+killSprite c4 c2 {}
+cloneSprite c2 c4 {}
+
+Class assignments:
+	c3: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>
+	c2: ['PINK']: <class 'vgdl.ontology.RandomNPC'>
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>
+	c4: ['GREEN']: <class 'vgdl.ontology.ResourcePack'>
+
+
+
+new theory change at step 23
+_______
+
+InteractionSet:
+stepBack c2 c3 {}
+nothing c2 c2 {}
+killSprite c4 c2 {}
+cloneSprite c2 c4 {}
+stepBack avatar c3 {}
+
+Class assignments:
+	c3: ['DARKGRAY']: <class 'vgdl.ontology.ResourcePack'>
+	c2: ['PINK']: <class 'vgdl.ontology.RandomNPC'>
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>
+	c4: ['GREEN']: <class 'vgdl.ontology.ResourcePack'>
+
