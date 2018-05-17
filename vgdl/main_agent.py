@@ -1094,15 +1094,13 @@ class Agent:
 def corruptTheory(rle, hypothesis, corruptionProbability):
     ## grab first spriteToken of each type
     theory = copy.deepcopy(hypothesis)
-    try:
-        spriteTokens = [rle._game.sprite_groups[k][0] for k in rle._game.sprite_groups.keys() if rle._game.sprite_groups[k] and k not in ['avatar']]
-    except:
-        print "spritetokens failed"
-        embed()
+    spriteTokens = [rle._game.sprite_groups[k][0] for k in rle._game.sprite_groups.keys() if rle._game.sprite_groups[k] and k not in ['avatar']]
+
     for spriteToken in spriteTokens:
         if random.random()<corruptionProbability:
             matchingSprite = theory.spriteObjects[spriteToken.colorName]
             newSpriteParams = random.choice(rle._game.spriteDistribution[spriteToken.ID].keys())
+            matchingSprite.vgdlType = newSpriteParams[0]
             paramDict = dict(newSpriteParams[1:])
             # s = Sprite(vgdlType=newSpriteParams[0], color=spriteToken.colorName)
             setSpriteParams(paramDict, matchingSprite) # set the parameters for sprite s
