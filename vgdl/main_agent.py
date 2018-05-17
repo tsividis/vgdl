@@ -327,13 +327,13 @@ class Agent:
         # self.makeMovie()
 
 
-        output = {'modelType':self.modelType,
-                    # 'gameName': self.gameFilename[self.gameFilename.find('expt'):],
-                    'gameName': self.gameFilename,
-                    'condition': 'normal',
-                    'episodes' : episodes}
+        # output = {'modelType':self.modelType,
+        #             # 'gameName': self.gameFilename[self.gameFilename.find('expt'):],
+        #             'gameName': self.gameFilename,
+        #             'condition': 'normal',
+        #             'episodes' : episodes}
 
-        write_to_csv(str(self.gameFilename)+'.csv', output)
+        # write_to_csv(str(self.gameFilename)+'.csv', output)
 
         self.makeMovie()
 
