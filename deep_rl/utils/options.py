@@ -119,6 +119,7 @@ class Params(object):   # NOTE: shared across all modules
             #self.vis = visdom.Visdom()
             #self.logger.warning("bash$: python -m visdom.server")           # activate visdom server on bash
             #self.logger.warning("http://localhost:8097/env/" + self.refs)   # open this address on browser
+            pass
 
 class EnvParams(Params):    # settings for simulation environment
     def __init__(self):
