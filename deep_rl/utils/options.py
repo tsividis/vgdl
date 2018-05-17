@@ -56,7 +56,7 @@ class Params(object):   # NOTE: shared across all modules
                 self.hidden_dim     = 256
 
             self.use_cuda           = True #torch.cuda.is_available()
-            self.dtype              = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
+            self.dtype              = torch.cuda.FloatTensor 
         elif self.agent_type == "a3c":
             self.enable_log_at_train_step = True # when False, x-axis would be frame_step instead of train_step
 
