@@ -28,7 +28,14 @@ AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, Aimed
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
-MAX_STEPS = 10008
+MAX_STEPS = 1000
+
+# which games have which legal moves
+left_right = ['aliens',]
+alldirs = ['missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda', 'butterflies', 'chase', 'frogs', 'boulderdash', 'expt_antagonist', 'expt_exploration_exploitation', 'expt_helper', 'expt_preconditions', 'expt_push_boulders', 'expt_relational']
+with_space = ['aliens', 'missilecommand', 'zelda']
+
+legalActions = [0,]
 
 # orientationPairs = {(0, 1):(0, -1), DOWN:UP, LEFT:RIGHT, RIGHT:LEFT}
 
@@ -296,6 +303,16 @@ class Agent:
     def playCurriculum(self, heatmap=False, level_game_pairs=None, pickle_file=None):
         """ Plays a game level until it wins, then moves to the next one until
         completion. """
+        global legalActions
+        if any(s in self.gameFilename for s in left_right):
+            legalActions += [K_LEFT, K_RIGHT]
+        elif any(s in self.gameFilename for s in alldirs):
+            legalActions += [K_LEFT, K_RIGHT, K_UP, K_DOWN,]
+        else:
+            embed()
+        if any(s in self.gameFilename for s in with_space):
+            legalActions += [K_SPACE,]
+
         if not level_game_pairs:
             level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
         episodes = []
@@ -481,9 +498,8 @@ class Agent:
 
         # FOR EXPLORATION LESION *****
         doRandomMoves = True
-        legalActions = [K_LEFT, K_RIGHT, K_UP, K_DOWN, 0] #K_SPACE]
         # step #s where we want to save our progress
-        whereToSave = {0,50,100,1000,5000, 10000}
+        # whereToSave = {0,50,100,1000,5000, 10000}
 
         ## Initialize external environment
         self.initializeEnvironment()
