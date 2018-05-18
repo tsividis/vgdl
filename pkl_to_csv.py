@@ -4,7 +4,7 @@ import os
 import sys
 import pickle
 
-rootdir = './lesions/'
+rootdir = './lesions/exploration/'
 
 outfile = open('all_pickles.csv', 'w')
 outfile.write('gamename,step number,number of non-generic rules\n')
