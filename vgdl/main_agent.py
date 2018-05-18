@@ -1,4 +1,4 @@
-# from IPython import embed
+from IPython import embed
 from util import *
 from core import colorDict, VGDLParser, sys, keyPresses
 from ontology import *
@@ -18,11 +18,15 @@ from termcolor import colored
 from pathos.helpers import mp
 # import multiprocess as mp
 # from line_profiler import LineProfiler
+from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
+import pickle
 
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
+
+MAX_STEPS = 600
 
 # orientationPairs = {(0, 1):(0, -1), DOWN:UP, LEFT:RIGHT, RIGHT:LEFT}
 
@@ -112,6 +116,25 @@ class Agent:
 
         return newRle
         
+    def outputLesionSnapshot(self, theory, steps):
+        # pickles the theory and saves it in the gameName folder as {s}steps{n}
+        # where s=steps and n=a counter so we don't overwrite earlier runs
+
+        try:
+            os.makedirs('./baseline/exploration/{}'.format(self.gameFilename))
+        except:
+            # already exists, yay
+            pass
+
+        form = './baseline/exploration/{}/{:06}steps_{}.pkl'
+        n = 0
+        while os.path.exists(form.format(self.gameFilename, steps, n)):
+            n += 1
+        
+        file = open(form.format(self.gameFilename, steps, n), 'wb')
+        pickle.dump(theory, file)
+        file.close()
+
     def getSpritesByColor(self, rle, color):
         outList = []
         for k in rle._game.sprite_groups.keys():
@@ -284,7 +307,7 @@ class Agent:
 
             while not win and i<10:
                 gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level, pool=pool)
-                self.total_game_steps += steps
+                # self.total_game_steps += steps
                 episode_results = (n_level, steps, win, score, self.total_planner_steps)
                 episodes.append(episode_results)
                 output = {'modelType':self.modelType,
@@ -295,6 +318,8 @@ class Agent:
                 write_to_csv(str(self.gameFilename)+'.csv', output)
                 allStatesEncountered.extend(statesEncountered)
                 levelEffectsEncountered.append(effectsEncountered)
+                if self.total_game_steps > MAX_STEPS:
+                    return
                 # VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
                 # persist_movie=False, make_images=False, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
                 first_time_playing_level = False
@@ -621,12 +646,27 @@ class Agent:
 
                     effectsEncountered.extend(effects)
                     steps +=1
+                    self.total_game_steps += 1
+                    print self.total_game_steps , 'steps so far'
                     if theory_change_flag:
                         self.hypotheses = hypotheses
-                        break
+                        print 'theory changed'
+                        # hypotheses[0].    display()
+                        f = open('theoryChanges.txt', 'a')
+                        f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps))
+                        oldout = sys.stdout
+                        sys.stdout = f
+                        hypotheses[0].display()
+                        sys.stdout = oldout
+                        f.close()
+                        self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps)
+                        # break
                     ended, win = self.rle._isDone()
                     if ended:
                         break
+                    if self.total_game_steps > MAX_STEPS:
+                        embed()
+                        return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
                     ## Make sure you're far enough from unpredictable dangerous objects.
 
