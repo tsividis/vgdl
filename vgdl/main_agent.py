@@ -26,7 +26,7 @@ AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, Aimed
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
-MAX_STEPS = 10008
+MAX_STEPS = 1000
 
 # which games have which legal moves
 left_right = ['aliens',]
