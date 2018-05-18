@@ -119,60 +119,6 @@ def initializeEnvironment(gameString, levelString, headless=True):
 	# rle.reset()
 	return rle
 
-def playEpisode(filename, level_name, gameString, levelString, episode_num):
-	
-	if not os.path.exists("../vgdl_data/%s/%s/%s" % (filename, level_name, episode_num)):
-		os.makedirs("../vgdl_data/%s/%s/%s" % (filename, level_name, episode_num))
-
-	steps = 0
-	actions = [K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE]
-	rle = initializeEnvironment(gameString, levelString, headless=False)
-	ended = False
-
-	fn = "../vgdl_data/%s/%s/%s/tmp%05d.png" % (filename, level_name, episode_num, 0)
-	pygame.image.save(rle._game.screen, fn)
-	
-	for i in range(1, 11):
-		if not ended:
-			action = choice(actions)
-			rle.step(action)
-			rle._game._drawAll()
-
-			fn = "../vgdl_data/%s/%s/%s/tmp%05d.png" % (filename, level_name, episode_num, i)
-			pygame.image.save(rle._game.screen, fn)
-
-			steps += 1
-			ended, win = rle._isDone()
-			score = rle._game.score
-
-	return win, score, steps
-
-def playCurriculum(gameName, level_game_pairs, num_episodes=10):
-	""" Plays a game level until it wins or exceeds num_episodes, then moves to the next one until
-	completion. """
-
-	if not level_game_pairs:
-		level_game_pairs = importlib.import_module(gameName).level_game_pairs
-
-	total_game_steps, levels_won = 0, 0
-	# embed()
-	for n_level, level_game in enumerate(level_game_pairs):
-		episodes = []
-		(gameString, levelString) = level_game
-		wins = 0
-		gameObject = None
-		i=0
-		while wins < 2 and i<num_episodes:
-			win, score, steps = playEpisode(gameName, n_level, gameString, levelString, i)
-			if win:
-				wins += 1
-			total_game_steps += steps
-			episodes.append((n_level, steps, win, score))
-			i+=1
-
-		levels_won +=1
-	return
-
 #############################################################################
 #																			#
 # 					API (if you could call it that)							#
@@ -260,7 +206,7 @@ def step(action):
 	ended, win = rle._isDone()
 	score = rle._game.score
 	steps += 1
-	print rle
+	#print rle
 
 	if steps > MAX_STEPS: 
 		print "MAX_STEPS threshold exceeded, ending game."
