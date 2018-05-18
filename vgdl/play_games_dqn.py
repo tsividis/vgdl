@@ -206,7 +206,7 @@ def step(action):
 	ended, win = rle._isDone()
 	score = rle._game.score
 	steps += 1
-	print rle
+	#print rle
 
 	if steps > MAX_STEPS: 
 		print "MAX_STEPS threshold exceeded, ending game."
