@@ -56,7 +56,7 @@ class Params(object):   # NOTE: shared across all modules
                 self.hidden_dim     = 256
 
             self.use_cuda           = True #torch.cuda.is_available()
-            self.dtype              = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
+            self.dtype              = torch.cuda.FloatTensor 
         elif self.agent_type == "a3c":
             self.enable_log_at_train_step = True # when False, x-axis would be frame_step instead of train_step
 
@@ -120,6 +120,7 @@ class Params(object):   # NOTE: shared across all modules
             #self.vis = visdom.Visdom()
             #self.logger.warning("bash$: python -m visdom.server")           # activate visdom server on bash
             #self.logger.warning("http://localhost:8097/env/" + self.refs)   # open this address on browser
+            pass
 
 class EnvParams(Params):    # settings for simulation environment
     def __init__(self):
