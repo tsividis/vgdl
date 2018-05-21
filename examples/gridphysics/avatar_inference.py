@@ -1,4 +1,6 @@
+from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
+multiTesting = False
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -22,86 +24,100 @@
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
-
 ## TEST1
-#[K_UP, K_UP, K_UP, K_UP, K_LEFT]
-## combine with transform box1 to box2
-# and box2 nothing
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w              1             1 w
-# w                            1 w
-# w              2               w
-# w                    2         w
-# w              A          3 3  w
-# w                              w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+testSequence1 = [[K_UP, K_UP, K_UP, K_UP, K_LEFT]]
+testLevel1 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w              1             1 w
+w                            1 w
+w              2               w
+w                    2         w
+w              A          3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+testRules1 = '''
+        box avatar > transformTo stype=box2
+        box2 avatar > nothing
+'''
 
 ## TEST2
-# [K_UP, K_UP, K_UP]
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w              1             1 w
-# w                            1 w
-# w              2               w
-# w                    2         w
-# w              A          3 3  w
-# w                              w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+testSequence2 = [[K_UP, K_UP, K_UP]]
+testLevel2 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w              1             1 w
+w                            1 w
+w              2               w
+w                    2         w
+w              A          3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+testRules2 = """
+        box2 avatar > bounceForward
+        box box2 > killSprite
+"""
 
 ## TEST3
-#[K_LEFT, K_UP, K_UP]
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w              1             1 w
-# w                            1 w
-# w              2               w
-# w                    2         w
-# w              1A         3 3  w
-# w                              w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+testSequence3 = [[K_LEFT, K_UP, K_UP]]
+testLevel3 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w              1             1 w
+w                            1 w
+w              2               w
+w                    2         w
+w              1A         3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+testRules3 = """
+        box2 avatar > bounceForward
+        box avatar > killSprite
+        avatar box > stepBack
+"""
 
 ## TEST4
-# [[K_LEFT], [K_UP, K_UP, K_UP]]
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w              1             1 w
-# w                            1 w
-# w               2              w
-# w                    2         w
-# w              1A         3 3  w
-# w                              w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+testSequence4 = [[K_LEFT], [K_UP, K_UP, K_UP]]
+testLevel4 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w              1             1 w
+w                            1 w
+w               2              w
+w                    2         w
+w              1A         3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+testRules4 = """
+        box2 avatar > bounceForward
+        avatar box > killSprite
+"""
 
 ## TEST5
-#combine with avatar sam bounceFoward. works.
-#[0]*6
 # # works 4/12
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                            1 w
-# w              A             1 w
-# w                              w
-# w                              w
-# w         c    c          3 3  w
-# w                              w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+testSequence5 = [[0]*6]
+testLevel5 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                            1 w
+w              A             1 w
+w                              w
+w                              w
+w         c    c          3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+testRules5 = """
+        avatar sam > bounceForward
+"""
 
 ## TEST6
-#[0]*10
-# combine with sam wall reverseDirection
-# works 4/12
-level = """
+testSequence6 = [[0]*10]
+testLevel6 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                            1 w
@@ -112,22 +128,28 @@ w                         3 3  w
 w         s    s A             w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
+testRules6 = """
+        sam wall > reverseDirection
+"""
 
 ## TEST7
-#up, up, up, right
 ## tests whether we can learn randomNPCs and know that the box we push isn't a randomNPC
 ## i.e., a good test of randomNPC likelihood and theory prior().
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w                           3  w
-# w                 2            w
-# w          4                3  w
-# w                      2       w
-# w     4                        w
-# w                      A       w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+testSequence7 = [[K_UP, K_UP, K_UP, K_RIGHT]]
+testLevel7 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                           3  w
+w                 2            w
+w          4                3  w
+w                      2       w
+w     4                        w
+w                      A       w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+testRules7 = """
+        box2 avatar > bounceForward
+"""
 
 ## TEST8
 # Not getting this one because we stepBack with the missile
@@ -160,17 +182,17 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 
 # works for changeResource, killIfOtherHasMore/Less.
 #up, up, up, up
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w              p             1 w
-# w              m             1 w
-# w              m               w
-# w              p               w
-# w              A          3 3  w
-# w                              w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
+level = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w              p             1 w
+w              m             1 w
+w              m               w
+w              p               w
+w              A          3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
 
 ## diagnoses ability to learn preconditions across multiple episodes. works.
 # works with avatar poison > killIfHasLess/More
@@ -409,31 +431,10 @@ BasicGame
         m > medicine
         p > poison
     InteractionSet
-        ## TEST1
-        # box avatar > transformTo stype=box2
-        # box2 avatar > nothing
+        # vvvvv test rules
+{testRules}
+        # ^^^^^ test rules
 
-        ## TEST2
-        # box2 avatar > bounceForward
-        # box box2 > killSprite
-
-        ## TEST3
-        # box2 avatar > bounceForward
-        # box avatar > killSprite
-        # avatar box > stepBack
-
-        ## TEST4
-        # box2 avatar > bounceForward
-        # avatar box > killSprite
-
-        ## TEST5
-        avatar sam > bounceForward
-
-        ## TEST6
-        sam wall > reverseDirection
-
-        ## TEST7
-        # box2 avatar > bounceForward
 
         # box avatar > nothing
         # box avatar >killSprite
@@ -467,8 +468,38 @@ BasicGame
 
 
 """
-level_game_pairs = [[game, level]]#, [game, level1]]
+level_game_pairs = [[game.format(testRules=''), level]]#, [game, level1]]
 
+# to do specific test
+level_game_pairs = [[game.format(testRules=testRules5), testLevel5]] # currently crashes, TODO
+# level_game_pairs = [[game.format(testRules=testRules7), testLevel7]]
+# currently crashes, TODO ("mappedState problem in writeTheoryToTxt")
+''' traceback:
+Traceback (most recent call last):
+  File "vgdl/theory_template.py", line 1838, in writeTheoryToTxt
+    mappedState[k[0]][k[1]] = symbol
+IndexError: list index out of range
+'''
+
+if multiTesting:
+    level_game_pairs = [
+        [game.format(testRules=testRules1), testLevel1],
+        [game.format(testRules=testRules2), testLevel2],
+        [game.format(testRules=testRules3), testLevel3],
+        [game.format(testRules=testRules4), testLevel4],
+        [game.format(testRules=testRules5), testLevel5],
+        [game.format(testRules=testRules6), testLevel6],
+        [game.format(testRules=testRules7), testLevel7],
+    ]
+    actionSequences = [
+        testSequence1,
+        testSequence2,
+        testSequence3,
+        testSequence4,
+        testSequence5,
+        testSequence6,
+        testSequence7,
+    ]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser

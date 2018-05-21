@@ -1,7 +1,8 @@
 import multiprocessing as mp
 from functools import partial
 from util import *
-from core import colorDict, VGDLParser, sys, keyPresses
+import sys, traceback
+from core import colorDict, VGDLParser, keyPresses
 from ontology import *
 from theory_template import Precondition, InteractionRule, TerminationRule, TimeoutRule, \
 SpriteCounterRule, MultiSpriteCounterRule, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
@@ -15,7 +16,7 @@ import numpy as np
 import ipdb, time
 import os, subprocess, shutil
 import copy
-import math
+from math import ceil, floor
 import warnings
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from stateobsnonstatic import buildTracker, UNOBSERVABLE_PREDICATES
@@ -41,7 +42,7 @@ ERRORCUTOFF = .3
 # Not active now
 NUM_SAMPLES_PER_HYPOTHESIS = 20
 # how long to just watch before theorizing about the game
-OBSERVATION_PERIOD_LENGTH = 12
+OBSERVATION_PERIOD_LENGTH = 10
 initialErrorBuildup = []
 
 class errorMapEntry:
@@ -220,18 +221,21 @@ class Agent:
 			# updateAllOptions(rle._game, rle._game, action=None)
 		return
 
-	def testCurriculum(self, level_game_pairs=None):
+	def testCurriculum(self, level_game_pairs=None, actionSequences=None):
 		if not level_game_pairs:
-			level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs  
+			module = importlib.import_module(self.gameFilename)
+			level_game_pairs = module.level_game_pairs
 		
+		results = []
 		for n_level, level_game in enumerate(level_game_pairs):
 
 			print("Playing level {}".format(n_level))
 			(self.gameString, self.levelString) = level_game
 
 			for epoch in range(1):
-				self.testEpisodes(epoch=epoch)
-		return
+				res = self.testEpisodes(epoch=epoch, actionSequences=actionSequences[n_level] if actionSequences else None)
+				results.append(res)
+		return results
 
 	def playCurriculum(self, level_game_pairs=None, num_episodes_per_level=10):
 		""" Plays a game level until it wins, then moves to the next one until
@@ -500,39 +504,45 @@ class Agent:
 
 
 
-	def testEpisodes(self, epoch=0):
+	def testEpisodes(self, epoch=0, actionSequences=None):
 		num_cores = mp.cpu_count()
 		print "num cores: {}".format(num_cores)
 		if num_cores<40:
 			print "WARNING: running on < 40 cores."
 
-		actionSequences = [ [0]*OBSERVATION_PERIOD_LENGTH +\
-			## TEST1
-			# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
-			## TEST2
-			# [K_UP, K_UP, K_UP]
-			## TEST3
-			# [K_LEFT, K_UP, K_UP]
-			## TEST4
-			# [K_LEFT],[K_UP,K_UP]
-			## TEST5
-			# [0]*6
-			## TEST6
-			# [0]*10
-			## TEST7
-			# [0, K_UP, K_UP, K_UP, K_RIGHT]
-			## TEST8
-			# [K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0]
-			## PUSH_BOULDERS_2
-			# [K_RIGHT]*3, [K_RIGHT, K_RIGHT, K_UP]
+		if actionSequences == None:
+			actionSequences = [
+				## TEST1
+				# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
+				## TEST2
+				# [K_UP, K_UP, K_UP]
+				## TEST3
+				# [K_LEFT, K_UP, K_UP]
+				## TEST4
+				# [K_LEFT],[K_UP,K_UP]
+				## TEST5
+				# [0]*6
+				## TEST6
+				# [0]*10
+				## TEST7
+				[0, K_UP, K_UP, K_UP, K_RIGHT]
+				## TEST8
+				# [K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0]
+				## PUSH_BOULDERS_2
+				# [K_RIGHT]*3, [K_RIGHT, K_RIGHT, K_UP]
 
-			# [K_LEFT, K_LEFT, K_LEFT]
-			[0]*6
-		]
+				# [K_LEFT, K_LEFT, K_LEFT]
+				# [0]*6
+			]
+
+		# add mandatory observation period
+		actionSequences[0] = [0]*OBSERVATION_PERIOD_LENGTH + actionSequences[0]
 
 		self.rleHistory = [[] for i in range(len(actionSequences))]
 		self.actionHistory = [[] for i in range(len(actionSequences))]
 		self.all_objects = [{} for i in range(len(actionSequences))]
+
+		totalTimeStart = time.time()
 
 		for episode_num, actions in enumerate(actionSequences):
 			print "initializing RLE. Epoch={}".format(epoch)
@@ -560,10 +570,12 @@ class Agent:
 				print ""
 				self.scores, self.hypotheses = zip(*scoresAndHypotheses)
 
-			# print ">>> Embedded at the end of testEpisode"
+			print ">>> Embedded at the end of episode {}".format(episode_num)
 			embed()
 
-		return
+		totalTime = time.time() - totalTimeStart
+
+		return (totalTime, zip(self.scores, self.hypotheses))
 
 	def manageNewObjects(self, episode_num, hypotheses, envRealPrev, action):
 		# embed()
@@ -1730,7 +1742,7 @@ def subSampleStates(subsamplePercentage, actionsPerIndex, rleHistory):
 	## indices = [0,2,10], actionsPerIndex=5, 
 	## in which case you'll double-penalize states 2,3,4.
 
-	numStatesToSample = int(math.ceil(subsamplePercentage*len(rleHistory)))
+	numStatesToSample = int(ceil(subsamplePercentage*len(rleHistory)))
 	indices = list(np.random.choice(len(rleHistory)-1, numStatesToSample, replace=False))
 	actionsPerIndex = actionsPerIndex
 
@@ -1754,13 +1766,13 @@ def checkIfStatesAreDifferent(env1, env2):
 			return True
 	return False
 
-def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, returnAllErrors=False, assumeZeroErrorTheoryExists=False):
+def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, returnAllErrors=False, assumeZeroErrorTheoryExists=False, errorCutoff=ERRORCUTOFF):
 
 	# if there isn't a theory, it has error 1. (added for multiepisode experienceReplay)
 	if not hypotheses[0]:
 		return [1.] , set()
 
-	cutoffThreshold = 1. # aka two strikes, you're out
+	cutoffThreshold = max(1, floor(errorCutoff * len(rleHistory)))+.0001 # aka n strikes, you're out
 	if assumeZeroErrorTheoryExists:
 		cutoffThreshold = .00001 # aka one strike you're out
 	subsamplePercentage = .2
@@ -1904,7 +1916,7 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	hypotheses[0].experienceReplayRecord[key] = mean_penalties
 	return mean_penalties, setOfImaginedEffects
 	
-def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', targetColor=None, displayStates=False, displayTheories=False, assumeZeroErrorTheoryExists=False):
+def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', targetColor=None, displayStates=False, displayTheories=False, assumeZeroErrorTheoryExists=False, errorCutoff=ERRORCUTOFF):
 	# if len(hypotheses)>10:
 		# print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
 
@@ -1918,7 +1930,7 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', target
 			print "running experienceReplay on {}:".format(num)
 			h.display()
 		mean_penalties, setOfImaginedEffects = \
-				singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h],  assumeZeroErrorTheoryExists=assumeZeroErrorTheoryExists)
+				singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h],  assumeZeroErrorTheoryExists=assumeZeroErrorTheoryExists, errorCutoff=errorCutoff)
 		# print "ran experienceReplay on {}. error: {}".format(num, mean_penalties[0])
 		# if len(hypotheses)>400:
 			# embed()
@@ -1935,7 +1947,7 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', target
 	return mean_penalties, imaginedEffects
 
 
-def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, method, targetColor=None, displayStates=False, displayTheories=False, assumeZeroErrorTheoryExists=False):
+def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, method, targetColor=None, displayStates=False, displayTheories=False, assumeZeroErrorTheoryExists=False, errorCutoff=ERRORCUTOFF):
 	'''
 	Runs experience replay on multiple episodes with some action sequence for each episode and returns the penalties for the given theories (weighted on the number of actions)
 	'''
@@ -1955,13 +1967,13 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 	for rleHistory, actionHistory in zip(rleHistories, actionHistories):
 		mean_penalties, imaginedEffects = \
 				experienceReplay(hypotheses, rleHistory, actionHistory, method, targetColor, displayStates,\
-						displayTheories, assumeZeroErrorTheoryExists=assumeZeroErrorTheoryExists)
+						displayTheories, assumeZeroErrorTheoryExists=assumeZeroErrorTheoryExists, errorCutoff=errorCutoff)
 		mean_penalties = np.array(mean_penalties)*weight*len(actionHistory)
 		multi_episode_mean_penalties.append(mean_penalties)
 
 		for i in range(len(hypotheses)):
 			# if we have enough data, and it's very wrong, stop evaluating this theory for subsequent episodes
-			if mean_penalties[i] > ERRORCUTOFF and (len(rleHistory) > 3 or assumeZeroErrorTheoryExists):
+			if mean_penalties[i] > errorCutoff and (len(rleHistory) > 3 or assumeZeroErrorTheoryExists):
 				hypotheses[i] = None
 			else:
 				imaginedEffectsPerTheory[i] = imaginedEffectsPerTheory[i].union(imaginedEffects[i])
@@ -2024,10 +2036,10 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 		#	i.e. between two theories of equal perfomance, ignore the less likely/more complex one
 		errorLevelToMinPrior = dict()
 		for score, theory in filtered:
-			score = round(score,8)
+			# score = round(score, 8)
 			if score not in errorLevelToMinPrior or theory.prior(granularity=1) < errorLevelToMinPrior[score]:
 				errorLevelToMinPrior[score] = theory.prior(granularity=1)
-		filtered = [sh for sh in filtered if sh[1].prior(granularity=1) <= errorLevelToMinPrior[round(sh[0],8)]]
+		filtered = [sh for sh in filtered if sh[1].prior(granularity=1) <= errorLevelToMinPrior[sh[0]]]#round(sh[0],8)]]
 
 	return filtered
 
@@ -2038,6 +2050,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 	# lookup table (dict) which maps (classPair, predicateTuple) to all combinations of all possible rules involving those classes and predicates
 	classPairPlusPredicateToRuleSets = dict()
 
+	errorsAddressedPerColor = dict()
 	perColorErrorBaselines = dict()
 	if sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
 		assert len(theories)==1, "You got more than one theory in expandTheories while expecting only one."
@@ -2046,6 +2059,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 			penalties, _ = MultiEpisodeExperienceReplay(theories, rleHistories, \
 						actionHistories, method=EXPERIENCE_REPLAY_METHOD, targetColor = color)
 			perColorErrorBaselines[color] = penalties[0]
+			errorsAddressedPerColor[color] = 0
 
 	for errorMap in errorList:
 		## Skip this whole step if you've already made changes for this theory. Just pass it on and you'll
@@ -2081,12 +2095,23 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		newTheories = list(set(newTheories))
 		if sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
 			penalties, _ = MultiEpisodeExperienceReplay(newTheories, rleHistories, \
-					actionHistories, method=EXPERIENCE_REPLAY_METHOD, targetColor = errorMap.targetColor)		
+					actionHistories, method=EXPERIENCE_REPLAY_METHOD, targetColor=errorMap.targetColor, errorCutoff=.5)
 			scoreAndTheoryTuples = zip(penalties, newTheories)
 			print "{} theories before filtering".format(len(scoreAndTheoryTuples))
-			scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0]<perColorErrorBaselines[errorMap.targetColor]]
+			scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
 			print "{} theories after filtering".format(len(scoreAndTheoryTuples))
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
+			print "doing testAndExpand"
+			print 'scores:' , [t[0] for t in scoreAndTheoryTuples]
+			errorsAddressedPerColor[errorMap.targetColor] += 1
+
+			# if errorsAddressedPerColor[errorMap.targetColor] % 2 == 0:
+			# update error threshold for this color
+			med = scoreAndTheoryTuples[len(scoreAndTheoryTuples)/2][0] + .0001 # to allow all infinitestimals
+			print 'new baseline:' , med
+			perColorErrorBaselines[errorMap.targetColor] = med
+
+			# embed()
 
 		else:
 			rleHistory, actionHistory = rleHistories[episode_num], actionHistories[episode_num]
@@ -2378,13 +2403,48 @@ if __name__ == "__main__":
 	##uncomment this line to run local games
 	gameName = filename
 
-	agent = Agent('full', gameName)
 
-	##For GVGAI games, use this line
-	# agent.playCurriculum(level_game_pairs=level_game_pairs)
+	module = importlib.import_module(gameName)
+	level_game_pairs = module.level_game_pairs
+	actionSequences = None
 
-	##For local games, use this line
-	# agent.playCurriculum(level_game_pairs=None)
+	multiTesting = False
+	try:
+		if module.multiTesting:
+			multiTesting = True
+			actionSequences = module.actionSequences
+	except:
+		pass
 
-	## For testing, use this line
-	agent.testCurriculum(level_game_pairs=None)
+
+	results = []
+	if multiTesting:
+		# have to make a new agent each time since they're really different games all in one
+		for num in xrange(len(level_game_pairs)):
+			agent = Agent('full', gameName)
+
+			try:
+				results += agent.testCurriculum([level_game_pairs[num]], [actionSequences[num]])
+			except:
+				results += [("CRASHED :( here's all we know:", traceback.format_exc())]
+
+	else:
+		# normal mode
+
+		agent = Agent('full', gameName)
+
+		##For GVGAI games, use this line
+		# agent.playCurriculum(level_game_pairs=level_game_pairs)
+
+		##For local games, use this line
+		# agent.playCurriculum(level_game_pairs=None)
+
+		## For testing, use this line
+		results = agent.testCurriculum(level_game_pairs, actionSequences)
+
+	for num,res in enumerate(results):
+		print '\n--------test {} produced the following:--------'.format(num+1)
+		print res
+		print ''
+
+	embed()
