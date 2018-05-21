@@ -1,6 +1,14 @@
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
-multiTesting = False
+multiTesting = True
+''' how to use multiTesting (i.e. how to catch some bugs before pushing them)
+- turn the above flag to True
+- it will run all the tests listed at the bottom
+- inspect outputted theories
+- some may crash -- rerun those individually by turning this flag off
+    and setting level_game_pairs to the appropriate thing
+- that's it
+'''
 
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -74,7 +82,7 @@ w                              w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 testRules3 = """
-        box2 avatar > bounceForward
+        box2 avatar > bounceForward # shouldn't learn this
         box avatar > killSprite
         avatar box > stepBack
 """
