@@ -289,7 +289,7 @@ class Agent:
 		self.statesEncountered.append(self.rle._game.getFullState())
 		
 		envReal = self.fastcopy(self.rle)
-		if sum([len(episode) for episode in rleHistories]) <= OBSERVATION_PERIOD_LENGTH:
+		if sum([len(episode) for episode in self.rleHistory]) <= OBSERVATION_PERIOD_LENGTH:
 			# have to save extra info since we deal with the error maps after the step they occur
 			copyGameInferenceInfo(envReal, self.rle)
 
@@ -1791,8 +1791,11 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	## This is still not going to address the fact that when you change a theory you're deleting the whole history
 	## How important it it actually to go all the way back and do full replay? As in,
 	## How often will a new modification make something old far worse? Maybe this is just completely unnecessary.
-	key = (method, targetColor, rleHistory[0].ID, len(rleHistory))
-	
+	try:
+		key = (method, targetColor, rleHistory[0].ID, len(rleHistory))
+	except:
+		print "key for singleTheoryExperienceReplay failed"
+		embed()
 	if not displayStates and key in hypotheses[0].experienceReplayRecord:
 		return hypotheses[0].experienceReplayRecord[key], hypotheses[0].setOfImaginedEffects
 
