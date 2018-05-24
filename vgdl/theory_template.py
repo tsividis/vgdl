@@ -385,7 +385,7 @@ class Theory(object):
 
 		if granularity > 0:
 			classScore += sum(1.1 for c in self.classes if not 'ResourcePack' in str(self.classes[c][0].vgdlType))
-			ruleScore += sum(1 if rule.interaction not in ['stepBack','nothing'] else 0 for rule in self.interactionSet)
+			ruleScore += sum(0 if rule.generic else 1 for rule in self.interactionSet)
 			# future note: technically, having removed stepBack should increase the ruleScore
 
 		if granularity > 1:

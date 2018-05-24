@@ -124,7 +124,7 @@ testRules5 = """
 """
 
 ## TEST6
-testSequence6 = [[0]*10]
+testSequence6 = [[0]*6]
 testLevel6 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
@@ -493,8 +493,8 @@ actionSequences = [
 
 # to do specific test
 level_game_pairs = [[game.format(testRules=testRules5), testLevel5]] # currently crashes, TODO
-level_game_pairs = [[game.format(testRules=testRules1), testLevel1]]
-actionSequences = [testSequence1]
+level_game_pairs = [[game.format(testRules=testRules8), testLevel8]]
+actionSequences = [testSequence8]
 # currently crashes, TODO ("mappedState problem in writeTheoryToTxt")
 ''' traceback:
 Traceback (most recent call last):
