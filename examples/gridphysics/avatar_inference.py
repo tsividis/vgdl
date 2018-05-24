@@ -1,6 +1,6 @@
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
-multiTesting = True
+multiTesting = False
 ''' how to use multiTesting (i.e. how to catch some bugs before pushing them)
 - turn the above flag to True
 - it will run all the tests listed at the bottom
@@ -157,6 +157,25 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 testRules7 = """
         box2 avatar > bounceForward
+"""
+
+# This doesn't test for anything new; it just has all the objects thrown in at once
+testSequence8 = [[0]*3]
+testLevel8 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w        4                   1 w
+w              k             1 w
+w      4           A           w
+w                              w
+w          k              3 3  w
+w                       s  s   w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+testRules8 = """
+        chaser wall > stepBack
+        random wall > stepBack
+        sam wall > stepBack
 """
 
 ## TEST8
@@ -345,21 +364,6 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # """
 
 #[0]*10
-# This doesn't test for anything new; it just has all the objects thrown in
-# level = """
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# w                              w
-# w        4                   1 w
-# w              k             1 w
-# w      4           A           w
-# w                              w
-# w          k              3 3  w
-# w                       s  s   w
-# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-# """
-
-
-#[0]*10
 #randomnpc inference, just more sprites
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -414,10 +418,10 @@ BasicGame
         box5 > Immovable color=LIGHTBLUE
         flicker > Flicker timeout=1 color=ORANGE
         random > RandomNPC color=PURPLE speed=1 cooldown=1
-        chaser > Chaser color=BLACK speed=1 cooldown=4 stype=avatar fleeing=True
+        chaser > Chaser color=BLACK speed=1 cooldown=3 stype=avatar fleeing=True
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         missile > Missile
-            sam  > orientation=UP color=BLUE singleton=False cooldown=1
+            sam  > orientation=UP color=BLUE singleton=False cooldown=2
         wall > Immovable color=DARKGRAY
         medicine > Resource limit=2 color=LIGHTGREEN
         poison > Resource limit=3 color=PINK
@@ -480,7 +484,7 @@ level_game_pairs = [[game.format(testRules=''), level]]#, [game, level1]]
 
 # to do specific test
 level_game_pairs = [[game.format(testRules=testRules5), testLevel5]] # currently crashes, TODO
-# level_game_pairs = [[game.format(testRules=testRules7), testLevel7]]
+level_game_pairs = [[game.format(testRules=testRules8), testLevel8]]
 # currently crashes, TODO ("mappedState problem in writeTheoryToTxt")
 ''' traceback:
 Traceback (most recent call last):
@@ -498,6 +502,7 @@ if multiTesting:
         [game.format(testRules=testRules5), testLevel5],
         [game.format(testRules=testRules6), testLevel6],
         [game.format(testRules=testRules7), testLevel7],
+        [game.format(testRules=testRules8), testLevel8],
     ]
     actionSequences = [
         testSequence1,
@@ -507,6 +512,7 @@ if multiTesting:
         testSequence5,
         testSequence6,
         testSequence7,
+        testSequence8,
     ]
 
 if __name__ == "__main__":

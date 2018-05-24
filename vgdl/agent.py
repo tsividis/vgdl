@@ -28,6 +28,7 @@ from colors import colorDict
 import copy_reg
 import types
 import heapq
+from tqdm import tqdm, trange
 
 import WBP
 from termcolor import colored
@@ -609,8 +610,8 @@ class Agent:
 		return newRle
 
 	def scoreAndFilterTheories(self, newTheories, episode_num, displayTheories=False):
-		# print episode_num
-		# embed()
+		print "top of scoreAndFilterTheories"
+
 		penalties, imaginedEffectsPerTheory = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], \
 				self.actionHistory[:episode_num+1], method=EXPERIENCE_REPLAY_METHOD, displayTheories=False, assumeZeroErrorTheoryExists=self.assumeZeroErrorTheoryExists)
 
@@ -1928,7 +1929,8 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', target
 	# if len(hypotheses)>100:
 		# print ">100 hypotheses"
 		# embed()
-	for num, h in enumerate(hypotheses):
+	for num in trange(len(hypotheses)):
+		h = hypotheses[num]
 		if displayTheories:
 			print "running experienceReplay on {}:".format(num)
 			h.display()
@@ -2052,8 +2054,6 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 	# MEMOIZE!
 	# lookup table (dict) which maps (classPair, predicateTuple) to all combinations of all possible rules involving those classes and predicates
 	classPairPlusPredicateToRuleSets = dict()
-
-	errorsAddressedPerColor = dict()
 	perColorErrorBaselines = dict()
 	if sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
 		assert len(theories)==1, "You got more than one theory in expandTheories while expecting only one."
@@ -2062,7 +2062,6 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 			penalties, _ = MultiEpisodeExperienceReplay(theories, rleHistories, \
 						actionHistories, method=EXPERIENCE_REPLAY_METHOD, targetColor = color)
 			perColorErrorBaselines[color] = penalties[0]
-			errorsAddressedPerColor[color] = 0
 
 	for errorMap in errorList:
 		## Skip this whole step if you've already made changes for this theory. Just pass it on and you'll
@@ -2087,6 +2086,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		# print "In base case. Correcting error for {} for {} theories".format(errorMap.targetClass, len(theories))
 		t1 = time.time()
 		newTheories = []
+		print "expanding theories for one errorMap"
 		for theory in theories:
 			newTheories.extend(expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, prevAction, rleHistories, actionHistories, 
 					theory, classPairPlusPredicateToRuleSets))
@@ -2104,15 +2104,14 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 			scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
 			print "{} theories after filtering".format(len(scoreAndTheoryTuples))
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
-			print "doing testAndExpand"
 			print 'scores:' , [t[0] for t in scoreAndTheoryTuples]
-			errorsAddressedPerColor[errorMap.targetColor] += 1
 
-			# if errorsAddressedPerColor[errorMap.targetColor] % 2 == 0:
 			# update error threshold for this color
-			med = scoreAndTheoryTuples[len(scoreAndTheoryTuples)/2][0] + .0001 # to allow all infinitestimals
+			med = scoreAndTheoryTuples[len(scoreAndTheoryTuples)//3][0] + .000001 # to allow all infinitestimals
 			print 'new baseline:' , med
 			perColorErrorBaselines[errorMap.targetColor] = med
+			scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
+			print "{} theories after filtering with new baseline".format(len(scoreAndTheoryTuples))
 
 			# embed()
 
@@ -2318,7 +2317,7 @@ def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, a
 	elif sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
 		theories = expandTheories([hypothesis], initialErrorBuildup+errorList, None, None, None, rleHistories, actionHistories, episode_num)
 	else:
-		theories = expandTheories([hypothesis], errorList, envRealPrev, envReal, action, rleHistories, actionHistories, episode_num)
+		theories = expandTheories([hypothesis], errorList, 		   envRealPrev, envReal, action, rleHistories, actionHistories, episode_num)
 	
 	if len(theories)==1 and theories[0]==hypothesis:
 		theories[0].experienceReplayRecord = hypothesis.experienceReplayRecord
