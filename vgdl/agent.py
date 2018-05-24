@@ -513,27 +513,13 @@ class Agent:
 
 		if actionSequences == None:
 			actionSequences = [
-				## TEST1
-				# [K_UP, K_UP, K_UP, K_UP, K_LEFT]
-				## TEST2
-				# [K_UP, K_UP, K_UP]
-				## TEST3
-				# [K_LEFT, K_UP, K_UP]
-				## TEST4
-				# [K_LEFT],[K_UP,K_UP]
-				## TEST5
-				# [0]*6
-				## TEST6
-				# [0]*10
-				## TEST7
-				[0, K_UP, K_UP, K_UP, K_RIGHT]
 				## TEST8
 				# [K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0]
 				## PUSH_BOULDERS_2
 				# [K_RIGHT]*3, [K_RIGHT, K_RIGHT, K_UP]
 
 				# [K_LEFT, K_LEFT, K_LEFT]
-				# [0]*6
+				[0]*6
 			]
 
 		# add mandatory observation period
@@ -1929,7 +1915,8 @@ def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', target
 	# if len(hypotheses)>100:
 		# print ">100 hypotheses"
 		# embed()
-	for num in trange(len(hypotheses)):
+	itr = trange(len(hypotheses)) if len(hypotheses) > 20 else range(len(hypotheses))
+	for num in itr:
 		h = hypotheses[num]
 		if displayTheories:
 			print "running experienceReplay on {}:".format(num)
@@ -2037,16 +2024,20 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 	# print "METHOD TWO FILTER:", [t[0] for t in filtered]
 
 	if usePrior:
-		# filter out any theory whose added complexity does not improve its error
-		#	i.e. between two theories of equal perfomance, ignore the less likely/more complex one
-		errorLevelToMinPrior = dict()
-		for score, theory in filtered:
-			# score = round(score, 8)
-			if score not in errorLevelToMinPrior or theory.prior(granularity=1) < errorLevelToMinPrior[score]:
-				errorLevelToMinPrior[score] = theory.prior(granularity=1)
-		filtered = [sh for sh in filtered if sh[1].prior(granularity=1) <= errorLevelToMinPrior[sh[0]]]#round(sh[0],8)]]
-
+		filtered = filterByPrior(filtered)
 	return filtered
+
+def filterByPrior(scoreAndTheoryTuples, numPerLevel=1):
+	# filter out any theory after the first numPerLevel whose added complexity does not improve its error
+	#	i.e. between two theories of equal perfomance, ignore the less likely/more complex one
+	errorLevelToMinPrior = dict()
+	for score, theory in scoreAndTheoryTuples:
+		if score not in errorLevelToMinPrior:
+			errorLevelToMinPrior[score] = [999999999] * numPerLevel
+		if theory.prior(granularity=1) < errorLevelToMinPrior[score][-1]:
+			errorLevelToMinPrior[score][-1] = theory.prior(granularity=1)
+			errorLevelToMinPrior[score].sort()
+	return [sh for sh in scoreAndTheoryTuples if sh[1].prior(granularity=1) <= errorLevelToMinPrior[sh[0]][-1]]
 
 def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction, rleHistories, actionHistories, episode_num):
 	# print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
@@ -2408,7 +2399,7 @@ if __name__ == "__main__":
 
 	module = importlib.import_module(gameName)
 	level_game_pairs = module.level_game_pairs
-	actionSequences = None
+	actionSequences = module.actionSequences if hasattr(module, 'actionSequences') else None
 
 	multiTesting = False
 	try:

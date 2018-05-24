@@ -417,11 +417,11 @@ BasicGame
         box3 > Immovable color=YELLOW
         box5 > Immovable color=LIGHTBLUE
         flicker > Flicker timeout=1 color=ORANGE
-        random > RandomNPC color=PURPLE speed=1 cooldown=1
+        random > RandomNPC color=PURPLE speed=1 cooldown=2
         chaser > Chaser color=BLACK speed=1 cooldown=3 stype=avatar fleeing=True
         cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
         missile > Missile
-            sam  > orientation=UP color=BLUE singleton=False cooldown=2
+            sam  > orientation=UP color=BLUE singleton=False cooldown=1
         wall > Immovable color=DARKGRAY
         medicine > Resource limit=2 color=LIGHTGREEN
         poison > Resource limit=3 color=PINK
@@ -481,10 +481,20 @@ BasicGame
 
 """
 level_game_pairs = [[game.format(testRules=''), level]]#, [game, level1]]
+actionSequences = [
+        ## TEST8
+        # [K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, K_LEFT, 0]
+        ## PUSH_BOULDERS_2
+        # [K_RIGHT]*3, [K_RIGHT, K_RIGHT, K_UP]
+
+        # [K_LEFT, K_LEFT, K_LEFT]
+        [0]*6
+]
 
 # to do specific test
 level_game_pairs = [[game.format(testRules=testRules5), testLevel5]] # currently crashes, TODO
-level_game_pairs = [[game.format(testRules=testRules8), testLevel8]]
+level_game_pairs = [[game.format(testRules=testRules1), testLevel1]]
+actionSequences = [testSequence1]
 # currently crashes, TODO ("mappedState problem in writeTheoryToTxt")
 ''' traceback:
 Traceback (most recent call last):
