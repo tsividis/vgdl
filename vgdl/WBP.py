@@ -73,7 +73,7 @@ class WBP():
 			self.theory=copy.deepcopy(theory)
 			self.theory.interactionSet.extend(fakeInteractionRules)
 			self.theory.updateTerminations()
-		embed()
+
 		print 'max nodes', self.max_nodes
 		i=1
 		for k in rle._game.all_objects.keys():
