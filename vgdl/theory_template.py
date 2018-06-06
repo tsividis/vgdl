@@ -1432,7 +1432,8 @@ class Theory(object):
 		print ""
 		print "InteractionSet:"
 		for rule in self.interactionSet:
-			rule.display()
+			if not rule.generic:
+				rule.display()
 
 	def displayClasses(self):
 		print ""
@@ -1444,6 +1445,7 @@ class Theory(object):
 		print
 
 	def displayTerminationSet(self):
+		return
 		print ""
 		print "TerminationSet:"
 		for tc in self.terminationSet:
