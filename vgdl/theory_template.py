@@ -1440,7 +1440,8 @@ class Theory(object):
 		print "Class assignments:"
 		for c in self.classes:
 			class_list = [cl.color for cl in self.classes[c]]
-			print "\t{}: {}: {}".format(c, class_list, self.spriteObjects[cl.color].vgdlType)
+			if cl.color!='ENDOFSCREEN':
+				print "\t{}: {}: {}".format(c, class_list, self.spriteObjects[cl.color].vgdlType)
 		#print self.classes
 		print
 
@@ -2108,6 +2109,7 @@ def generateTheoryFromGame(rle, alterGoal=True):
 						# 'goal' is the only name that means something to all RLEs, so we're making sure to change this one.
 		sprite = Sprite(vgdlType, color, className=s, args=settings) #classname was i
 		theory.classes[s] = [sprite]
+		theory.spriteObjects[color] = sprite
 		inverseClasses[s] = i
 
 	## Add EOS as a class, too.
