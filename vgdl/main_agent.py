@@ -17,7 +17,7 @@ from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrin
 from termcolor import colored
 from pathos.helpers import mp
 # import multiprocess as mp
-# from line_profiler import LineProfiler
+from line_profiler import LineProfiler
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
 import pickle
 
@@ -227,7 +227,7 @@ class Agent:
 
     def initializeHypotheses(self, allObjects, learnSprites=True):
         if learnSprites:
-            observe(self.rle, 15, self.bestSpriteTypeDict)
+            observe(self.rle, 10, self.bestSpriteTypeDict)
             spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
                 self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
             self.rle._game.exceptedObjects = exceptedObjects
