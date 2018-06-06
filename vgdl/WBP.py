@@ -1152,15 +1152,25 @@ if __name__ == "__main__":
 	## objects.
 	# gameFilename = "examples.gridphysics.theorytest"
 	# gameFilename = "examples.gridphysics.boulderdash"
-	gameFilename = "examples.gridphysics.theorytest"
+	gameFilename = "examples.gridphysics_2.expt_helper"
 	# gameFilename = "examples.continuousphysics.breakout_big"
-
-	gameString, levelString = defInputGame(gameFilename, randomize=True)
-	rleCreateFunc = lambda: createRLInputGame(gameFilename)
+	gameString, levelString = defInputGame(gameFilename)
+	rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
 	rle = rleCreateFunc()
-	embed()
-	p = WBP(rle, gameFilename)
 
+	hyperparameters = {
+	 'sprite_first_alpha': 10000,
+	 'sprite_second_alpha': 100,
+	 'sprite_negative_mult': .1,
+	 'multisprite_first_alpha': 10000,
+	 'multisprite_second_alpha': 100,
+	 'novelty_first_alpha': 5000,
+	 'novelty_second_alpha': 50,
+	 }
+	 
+	# embed()
+	# p = WBP(rle, gameFilename)
+	p = WBP(rle, gameFilename, annealing=1, max_nodes=10000, shortHorizon=False, firstOrderHorizon=True, hyperparameters=hyperparameters)
 
 	# embed()
 	t1 = time.time()

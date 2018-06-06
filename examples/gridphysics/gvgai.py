@@ -36,7 +36,6 @@ if __name__ == "__main__":
 
     if len(sys.argv)>=2:
         game_n = int(sys.argv[1])
-
     else:
         game_n = 0
 
