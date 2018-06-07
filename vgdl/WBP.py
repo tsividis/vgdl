@@ -67,7 +67,7 @@ class WBP():
 		self.quitting = False
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-
+		self.display = False
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
@@ -235,6 +235,7 @@ class WBP():
 			vecValue = [0]
 
 		stateIW1 = [vecValue] + [1 if char==' ' else 0 for pos, char in enumerate(rle.show())]
+		# embed()
 		# print(id(stateIW1))
 		lst.append(hash(tuple(stateIW1)))
 
@@ -342,7 +343,8 @@ class WBP():
 
 			self.statesEncountered.append(current.rle._game.getFullState())
 
-			print current.rle.show(indent=True)
+			if self.display:
+				print current.rle.show(indent=True)
 
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
@@ -419,7 +421,8 @@ class WBP():
 							gameString_array.append(node.rle.show(color='green'))
 							object_positions_array.append(node.rle)
 							node = node.parent
-						print child.rle.show()
+						if self.display:
+							print child.rle.show()
 						self.gameString_array = gameString_array[::-1]
 						self.object_positions_array = object_positions_array[::-1]
 
@@ -535,7 +538,8 @@ class Node():
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
 				# print a
 				vrle.step(a)
-				print vrle.show(indent=True, color='cyan')
+				if self.display:
+					print vrle.show(indent=True, color='cyan')
 				currHeuristicVal = self.heuristics(vrle, **self.WBP.rolloutHyperparameters)
 				heuristicVal = currHeuristicVal-prevHeuristicVal
 				rolloutArray.append(heuristicVal)
@@ -1184,7 +1188,6 @@ if __name__ == "__main__":
 	# last.playBack(make_movie=True)
 	# VGDLParser.playGame(gameString, levelString, p.statesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
 	# VGDLParser.playGame(gameString, levelString, last.finalStatesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
-
 
 	print time.time()-t1
 	# embed()
