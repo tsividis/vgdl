@@ -130,7 +130,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             mappedState = [[1 for x in range(self.outdim[1])] for y in range(self.outdim[0])]
         else:
             mappedState = [[' ' for x in range(self.outdim[1])] for y in range(self.outdim[0])]
-        #mappedState = [[[' ']*self.outdim[1]]*self.outdim[0]]
         for lst in self._game.sprite_groups.values():
             for sprite in lst:
                 if sprite not in self._game.kill_list:
@@ -157,6 +156,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 else:
                     if color != 'grey':
                         symbol = colored(symbol, color)
+
             try:
                 mappedState[k[0]][k[1]] = symbol
             except:
