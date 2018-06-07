@@ -16,6 +16,7 @@ import time
 import ipdb
 import copy
 from threading import Lock
+from termcolor import colored
 from Queue import Queue
 from util import *
 # import multiprocessing
@@ -1153,7 +1154,7 @@ if __name__ == "__main__":
 	## objects.
 	# gameFilename = "examples.gridphysics.theorytest"
 	# gameFilename = "examples.gridphysics.boulderdash"
-	gameFilename = "examples.gridphysics_2.expt_helper"
+	gameFilename = "examples.gridphysics_2.planner_test0"
 	# gameFilename = "examples.continuousphysics.breakout_big"
 	gameString, levelString = defInputGame(gameFilename)
 	rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
@@ -1162,7 +1163,7 @@ if __name__ == "__main__":
 	hyperparameters = {
 	 'sprite_first_alpha': 10000,
 	 'sprite_second_alpha': 100,
-	 'sprite_negative_mult': .1,
+	 'sprite_negative_mult': 10,
 	 'multisprite_first_alpha': 10000,
 	 'multisprite_second_alpha': 100,
 	 'novelty_first_alpha': 5000,
@@ -1171,14 +1172,16 @@ if __name__ == "__main__":
 	 
 	# embed()
 	# p = WBP(rle, gameFilename)
-	p = WBP(rle, gameFilename, annealing=1, max_nodes=10000, shortHorizon=False, firstOrderHorizon=True, hyperparameters=hyperparameters)
+	p = WBP(rle, gameFilename, annealing=1, max_nodes=10000, shortHorizon=False, firstOrderHorizon=False, hyperparameters=hyperparameters)
 
 	# embed()
 	t1 = time.time()
-	last, gameString_array = p.BFS()
-	from core import VGDLParser
+	node, gameString_array, object_positions_array = p.BFS()
+	for g in p.gameString_array:
+		print colored(g, 'green')
+	# from core import VGDLParser
 	# embed()
-	last.playBack(make_movie=True)
+	# last.playBack(make_movie=True)
 	# VGDLParser.playGame(gameString, levelString, p.statesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
 	# VGDLParser.playGame(gameString, levelString, last.finalStatesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
 
