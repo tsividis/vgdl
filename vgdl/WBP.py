@@ -67,7 +67,7 @@ class WBP():
 		self.quitting = False
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-
+		self.display = False
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
@@ -234,7 +234,9 @@ class WBP():
 		except:
 			vecValue = [0]
 
-		stateIW1 = [vecValue] + [1 if char==' ' else 0 for pos, char in enumerate(rle.show())]
+		#stateIW1 = [vecValue] + [1 if char==' ' else 0 for char in rle.show(binary=False)]
+		stateIW1 = [vecValue] + rle.show(binary=True)
+		# embed()
 		# print(id(stateIW1))
 		lst.append(hash(tuple(stateIW1)))
 
@@ -342,7 +344,8 @@ class WBP():
 
 			self.statesEncountered.append(current.rle._game.getFullState())
 
-			print current.rle.show(indent=True)
+			if self.display:
+				print current.rle.show(indent=True)
 
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
@@ -419,7 +422,8 @@ class WBP():
 							gameString_array.append(node.rle.show(color='green'))
 							object_positions_array.append(node.rle)
 							node = node.parent
-						print child.rle.show()
+						if self.display:
+							print child.rle.show()
 						self.gameString_array = gameString_array[::-1]
 						self.object_positions_array = object_positions_array[::-1]
 
@@ -490,12 +494,60 @@ class Node():
 		# self.lastState = None
 		self.reconstructed=False
 		self.expanded = False
+		#self.RLEtemplate = self.initializeRLEFromGame()
 		self.rolloutDepth = 13#max(rle.outdim)
 		if self.parent is not None:
 			self.rolloutArray = parent.rolloutArray[1:]
 		else:
 			self.rolloutArray = []
 
+
+	def initializeRLEFromGame(self):
+		gameString, levelString = defInputGame(self.WBP.gameFilename)
+		rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
+		rle = rleCreateFunc()
+		return rle
+
+	def fastcopy_new(self, rle):
+		# look at dicts
+		#import ipdb; ipdb.set_trace()
+		#newRle = ccopy(self.RLEtemplate)
+		newRle = self.initializeRLEFromGame()
+		newRle._obstypes = rle._obstypes.copy()
+		if hasattr(rle, '_gravepoints'):
+			newRle._gravepoints = rle._gravepoints.copy()
+		newRle._game.sprite_groups = rle._game.sprite_groups.copy() # don't touch
+		newRle._game.kill_list = rle._game.kill_list[:] # don't touch
+		newRle._game.lastcollisions = rle._game.lastcollisions.copy()
+		newRle._game.time = rle._game.time
+		newRle._game.score = rle._game.score
+		newRle._game.keystate = rle._game.keystate.copy()
+		if hasattr(rle, 'observation'):
+			newRle._game.observation = ccopy(rle._game.observation)
+		newRle.symbolDict = rle.symbolDict.copy()
+		newRle._game.sprite_groups['avatar'][0].resources = rle._game.sprite_groups['avatar'][0].resources.copy()
+
+		return newRle
+
+	def fastcopy(self, rle):
+		# look at dicts
+		#import ipdb; ipdb.set_trace()
+		newRle = self.initializeRLEFromGame()
+		newRle._obstypes = ccopy(rle._obstypes)
+		if hasattr(rle, '_gravepoints'):
+			newRle._gravepoints = ccopy(rle._gravepoints)
+		newRle._game.sprite_groups = ccopy(rle._game.sprite_groups) # don't touch
+		newRle._game.kill_list = ccopy(rle._game.kill_list) # don't touch
+		newRle._game.lastcollisions = ccopy(rle._game.lastcollisions)
+		newRle._game.time = ccopy(rle._game.time)
+		newRle._game.score = ccopy(rle._game.score)
+		newRle._game.keystate = ccopy(rle._game.keystate)
+		if hasattr(rle, 'observation'):
+			newRle._game.observation = ccopy(rle._game.observation)
+		newRle.symbolDict = ccopy(rle.symbolDict)
+		newRle._game.sprite_groups['avatar'][0].resources = ccopy(rle._game.sprite_groups['avatar'][0].resources)
+
+		return newRle
 
 ## when to trigger rollouts, if any
 ## rollout length
@@ -535,7 +587,8 @@ class Node():
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
 				# print a
 				vrle.step(a)
-				print vrle.show(indent=True, color='cyan')
+				if self.display:
+					print vrle.show(indent=True, color='cyan')
 				currHeuristicVal = self.heuristics(vrle, **self.WBP.rolloutHyperparameters)
 				heuristicVal = currHeuristicVal-prevHeuristicVal
 				rolloutArray.append(heuristicVal)
@@ -990,13 +1043,14 @@ class Node():
 		lp.print_stats()
 		return output
 	"""
-
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
 			## try to copy parent lastState. Then take action and store as current lastState.
 			## if that fails, replay from beginning and store as current lastState
 			try:
-				vrle = cPickle.loads(cPickle.dumps(self.parent.rle, -1))
+				#vrle = cPickle.loads(cPickle.dumps(self.parent.rle, -1))
+				vrle = ccopy(self.parent.rle)
+				#vrle = self.fastcopy(self.parent.rle)
 				# vrle = copy.deepcopy(self.parent.rle)
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
@@ -1011,7 +1065,9 @@ class Node():
 		else:
 			self.reconstructed=True
 			# print "copy failed; replaying from top"
-			vrle = cPickle.loads(cPickle.dumps(self.rle, -1))
+			#vrle = cPickle.loads(cPickle.dumps(self.rle, -1))
+			vrle = ccopy(self.rle)
+			#vrle = self.fastcopy(self.rle)
 			# vrle = copy.deepcopy(self.rle)
 			self.terminal, self.win = vrle._isDone()
 			i=0
@@ -1030,7 +1086,6 @@ class Node():
 		lp_wrapper()
 		lp.print_stats()
 	"""
-
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
 
@@ -1132,14 +1187,14 @@ class Node():
 		self.finalStatesEncountered = []
 		terminal = vrle._isDone()[0]
 		i=0
-		if not make_movie:
+		if not make_movie and self.display:
 			print vrle.show()
 		while not terminal and i<len(self.actionSeq):
 			a = self.actionSeq[i]
 			vrle.step(a)
 			if not make_movie:
 				print actionDict[a]
-				print vrle.show()
+				if self.display: print vrle.show()
 			else:
 				self.finalStatesEncountered.append(vrle._game.getFullState())
 			terminal = vrle._isDone()[0]
@@ -1184,7 +1239,6 @@ if __name__ == "__main__":
 	# last.playBack(make_movie=True)
 	# VGDLParser.playGame(gameString, levelString, p.statesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
 	# VGDLParser.playGame(gameString, levelString, last.finalStatesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
-
 
 	print time.time()-t1
 	# embed()
