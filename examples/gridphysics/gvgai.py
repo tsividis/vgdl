@@ -9,8 +9,8 @@ def read_gvgai_game(filename):
         game=f.read()
     return game
 
-def create_level_game_pairs(game_number):
-    gvgname = "./gvgai/training_set_1/{}".format(gvggames[game_number])
+def create_level_game_pairs(name):
+    gvgname = "./gvgai/games/{}".format(name)
     gameString = read_gvgai_game('{}.txt'.format(gvgname))
     level_game_pairs = []
     for level_number in range(5):
@@ -27,12 +27,12 @@ if __name__ == "__main__":
     from IPython import embed
 
     if len(sys.argv)>=2:
-        game_n = int(sys.argv[1])
+        game_name = sys.argv[1]
 
     else:
-        game_n = 0
+        game_name = 0
 
-    level_game_pairs = create_level_game_pairs(game_n)
+    level_game_pairs = create_level_game_pairs(game_name)
     if len(sys.argv)>=3:
          level_n = int(sys.argv[2])
          level_game_pairs = [level_game_pairs[level_n]]
@@ -52,7 +52,7 @@ if __name__ == "__main__":
             # Save in format [subect, condition, gamename, levels won, steps taken, score, time elapsed]
             row = ['human', 'no_score', 'expt_preconditions', levels_won, data[1], data[3], data[0]]
 
-            filename = "human_data_{}.csv".format(gvggames[game_n])
+            filename = "human_data_{}.csv".format(game_name)
             f = open(filename, 'a+') ##append, but also read.
             g = open(filename, 'r')
             writer = csv.writer(f)

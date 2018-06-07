@@ -1,0 +1,29 @@
+BasicGame
+    SpriteSet
+        background > Immovable color=GRAY
+        door > Passive color=BROWN
+        wall > Immovable color=BLACK
+        water > Immovable color=LIGHTBLUE
+        box > Passive color=PURPLE
+        avatar > MovingAvatar color=DARKBLUE
+    TerminationSet
+        SpriteCounter stype=door limit=0 win=True
+        SpriteCounter stype=avatar limit=0 win=False
+    InteractionSet
+        avatar wall > stepBack
+        box avatar > bounceForward
+        box wall > undoAll
+        box box > undoAll
+        wall box > undoAll
+        water box > killSprite
+        box water > killSprite
+        avatar water > killSprite
+        door avatar > killSprite
+
+    LevelMapping
+        A > background avatar
+        w > wall
+        x > background water
+        c > background box
+        o > background door
+        . > background

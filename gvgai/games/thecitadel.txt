@@ -1,0 +1,66 @@
+#The Citadel: http://www.mobygames.com/game/citadel__
+
+BasicGame
+    SpriteSet
+        background > Immovable color=LIGHTGRAY
+        squarehole   > Immovable color=PURPLE
+        roundhole   > Immovable color=BLUE
+        avatar > OrientedAvatar color=DARKBLUE
+        goal > Immovable color=BROWN
+        crate    > Passive color=RED shrinkfactor=0.8
+        boulder    > Passive color=GOLD shrinkfactor=0.8
+        wall > Immovable color=BLACK autotiling=true
+
+    LevelMapping
+        0 > background roundhole
+        1 > background squarehole
+        b > background boulder
+        c > background crate
+        g > background goal
+        . > background
+        A > background avatar
+        w > wall
+
+    InteractionSet
+        avatar wall > stepBack
+        avatar squarehole > stepBack
+        avatar roundhole > stepBack
+
+        boulder avatar  > bounceForward
+        boulder boulder > undoAll
+        boulder crate > undoAll
+        boulder wall > undoAll
+        boulder goal > undoAll
+
+        boulder roundhole > killSprite
+        roundhole boulder > killSprite
+        boulder roundhole > changeScore value=1
+        boulder squarehole > killSprite
+
+        crate avatar > bounceForward
+        crate crate  > bounceForward
+        crate crate  > bounceForward
+        crate crate  > bounceForward
+        crate crate  > bounceForward
+        crate crate  > bounceForward
+        crate crate  > bounceForward
+        crate crate  > bounceForward
+        crate crate  > bounceForward
+        crate crate  > bounceForward
+        crate crate  > bounceForward
+
+        crate wall > undoAll
+        crate boulder > undoAll
+        crate goal > undoAll
+        crate roundhole > undoAll
+
+        crate squarehole > killSprite
+        squarehole crate > killSprite
+        crate squarehole > changeScore value=1
+        goal avatar > killSprite
+        goal avatar > changeScore value=5
+
+
+    TerminationSet
+        SpriteCounter stype=goal limit=0 win=True
+        SpriteCounter stype=avatar limit=0 win=False

@@ -1,0 +1,34 @@
+BasicGame
+
+    SpriteSet
+        ground > Immovable color=LIGHTGRAY
+        hole   > Immovable color=BLUE
+        avatar > OrientedAvatar rotateInPlace=False color=DARKBLUE
+        bbox > Passive
+            box    >  color=BROWN
+            boxin  >  color=GOLD
+        wall > Immovable color=DARKGRAY
+
+    LevelMapping
+        A > avatar ground
+        o > hole
+        * > box ground
+        . > ground
+        w > ground wall
+
+    InteractionSet
+        avatar EOS > wrapAround
+        bbox avatar  > bounceForward
+        box EOS > wrapAround
+        avatar wall > stepBack
+        bbox bbox   > undoAll
+        bbox wall   > undoAll
+        box hole    > transformTo stype=boxin
+        box hole    > changeScore value=1
+        boxin ground > transformTo stype=box
+        boxin ground > changeScore value=1
+
+    TerminationSet
+        SpriteCounter stype=box    limit=0 win=True
+
+

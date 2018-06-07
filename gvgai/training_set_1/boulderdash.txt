@@ -21,7 +21,7 @@ BasicGame
 	InteractionSet
 		dirt avatar > killSprite
 		dirt sword  > killSprite
-		diamond avatar > changeResource resoure=diamond value=1
+		diamond avatar > changeResource resource=diamond value=1
 		diamond avatar > changeScore value=5
 		avatar wall > stepBack
 		crab wall > stepBack
