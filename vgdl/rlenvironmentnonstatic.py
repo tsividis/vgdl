@@ -117,81 +117,98 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # self.colorMapping = colorMapping
         return
 
-    def show(self, indent=False, showArrays=False, color='grey'):
+    def show(self, indent=False, showArrays=False, binary=False, color='grey'):
         """
         symbolDict = a dict mapping each sprite name to its symbol.
         If there's no sprite overlap, then returns a string. Else returns numpy array.
         """
         ## faster version, but need to figure out how to display 
-        # locs = defaultdict(lambda:[])
-        # mappedState = [[' ' for x in range(self.outdim[1])] for y in range(self.outdim[0])] 
-        # for lst in self._game.sprite_groups.values():
-        #     for sprite in lst:
-        #         y,x = sprite.rect.top/30, sprite.rect.left/30
-        #         locs[(y,x)].append(sprite.name)
 
-
-        # for k,v in locs.iteritems():
-        #     if len(v)>1:
-        #         if 'avatar' in v:
-        #             symbol = 'X'
-        #         else:
-        #             symbol = '$'
-        #     else:
-        #         symbol = objectsToSymbol(self, v, self.symbolDict)
-            
-        #     if symbol in ['A', 'X']:
-        #         symbol = colored(symbol, 'red')
-        #     else:
-        #         symbol = colored(symbol, color)
-            
-        #     try:
-        #         mappedState[k[0]][k[1]] = symbol
-        #     except:
-        #         print "mappedState problem in rlenvironmentNonStatic"
-        #         print mappedState
-        #         embed()
-        # gameString = ""
-
-        # for mappedRow in mappedState:
-        #     gameString += reduce(lambda a,b: a+b, mappedRow) + "\n"
-        # return gameString
-
-        gameString = ""
-        spriteOverlap = False # represents whether 2 sprites are on same location
-        state = np.reshape(self._getSensors(), self.outdim)
-        for i in range(self.outdim[0]):
-            if indent:
-                gameString += "     "
-            for j in range(self.outdim[1]):
-                if state[i][j] == 0:
-                    gameString += " "
-                # else:
-                #     symbol = objectsToSymbol(self, self.getObjectsFromNumber(state[i][j]), self.symbolDict)
-                #     gameString += symbol
-                elif state[i][j] == 1:
-                    gameString += colored(self.symbolDict['avatar'], 'red')
-                else:
-                    spriteIndex = int(round(math.log(state[i][j],2)))-1
-                    if state[i][j]%2 == 1:
-                        gameString += colored("X", 'red')
-                    elif state[i][j] != 2**(spriteIndex+1):
-                        gameString += colored("$", color)
-                    else:
-                        # spriteOverlap = True
-                        # break
-                        spriteType = sorted(self._obstypes.keys())[::-1][spriteIndex]
-                        gameString += colored(self.symbolDict[spriteType], color)
-
-            gameString += "\n"
-            if spriteOverlap:
-                break
-
-        if showArrays and spriteOverlap:
-            print "There were overlapping sprites while doing rle.show! Returning an array representation instead."
-            return np.reshape(self._getSensors(), self.outdim)
+        locs = defaultdict(lambda:[])
+        if binary:
+            mappedState = [[1 for x in range(self.outdim[1])] for y in range(self.outdim[0])]
         else:
-            return gameString
+            mappedState = [[' ' for x in range(self.outdim[1])] for y in range(self.outdim[0])]
+        for lst in self._game.sprite_groups.values():
+            for sprite in lst:
+                if sprite not in self._game.kill_list:
+                    y,x = sprite.rect.top/30, sprite.rect.left/30
+                    locs[(y,x)].append(sprite.name)
+
+        for k,v in locs.iteritems():
+            if binary:
+                symbol = 0
+            else:
+                if len(v)>1:
+                    if 'avatar' in v:
+                        symbol = 'X'
+                    else:
+                        symbol = '$'
+                else:
+                    if 'avatar' in v:
+                        symbol = 'A'
+                    else:
+                        symbol = objectsToSymbol(self, v, self.symbolDict)
+                
+                if symbol in ['A', 'X']:
+                    symbol = colored(symbol, 'red')
+                else:
+                    if color != 'grey':
+                        symbol = colored(symbol, color)
+
+            try:
+                mappedState[k[0]][k[1]] = symbol
+            except:
+                print "mappedState problem in rlenvironmentNonStatic"
+                print mappedState
+                # embed()
+        if binary:
+            gameString = []
+            for mappedRow in mappedState:
+                gameString.extend(mappedRow)
+        else:
+            gameString = ""
+            for mappedRow in mappedState:
+                gameString += reduce(lambda a,b: a+b, mappedRow) + "\n"
+        return gameString
+
+
+        # gameString_new = ""
+        # spriteOverlap = False # represents whether 2 sprites are on same location
+        # state = np.reshape(self._getSensors(), self.outdim)
+
+        # for i in range(self.outdim[0]):
+        #     if indent:
+        #         gameString_new += "     "
+        #     for j in range(self.outdim[1]):
+        #         if state[i][j] == 0:
+        #             gameString_new += " "
+        #         # else:
+        #         #     symbol = objectsToSymbol(self, self.getObjectsFromNumber(state[i][j]), self.symbolDict)
+        #         #     gameString += symbol
+        #         elif state[i][j] == 1:
+        #             gameString_new += colored(self.symbolDict['avatar'], 'red')
+        #         else:
+        #             spriteIndex = int(round(math.log(state[i][j],2)))-1
+        #             if state[i][j]%2 == 1:
+        #                 gameString_new += colored("X", 'red')
+        #             elif state[i][j] != 2**(spriteIndex+1):
+        #                 gameString_new += colored("$", color)
+        #             else:
+        #                 # spriteOverlap = True
+        #                 # break
+        #                 spriteType = sorted(self._obstypes.keys())[::-1][spriteIndex]
+        #                 gameString_new += colored(self.symbolDict[spriteType], color)
+
+        #     gameString_new += "\n"
+        #     if spriteOverlap:
+        #         break
+
+        # if showArrays and spriteOverlap:
+        #     print "There were overlapping sprites while doing rle.show! Returning an array representation instead."
+        #     return np.reshape(self._getSensors(), self.outdim)
+        # else:
+        #     return gameString_new
 
     # Get definition of the actions that are accepted
     def actionSpec(self):
