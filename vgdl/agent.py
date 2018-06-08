@@ -2094,7 +2094,11 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 					actionHistories, method=EXPERIENCE_REPLAY_METHOD, targetColor=errorMap.targetColor, errorCutoff=.5)
 			scoreAndTheoryTuples = zip(penalties, newTheories)
 			print "{} theories before filtering".format(len(scoreAndTheoryTuples))
-			scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
+
+			scoreAndTheoryTupleCandidates = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
+			if scoreAndTheoryTupleCandidates:
+				scoreAndTheoryTuples = scoreAndTheoryTupleCandidates
+
 			print "{} theories after first filter".format(len(scoreAndTheoryTuples))
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
 
@@ -2359,10 +2363,10 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 	# filename = "examples.gridphysics.expt_push_boulders2"
-	filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.testAll"
 	
-	# filename = "examples.gridphysics.expt_antagonist"
+	filename = "examples.gridphysics.expt_antagonist"
 
 	# filename = "examples.gridphysics.basics"
 
