@@ -99,7 +99,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         alnum = numbers + 'abcdefghijklmnopqrstuvwxyz'
         idx = 0
         OLD_GOAL = "oldGl"
-        # embed()
         for s in self._obstypes.keys():
             # colorMapping[s] = colorDict[str(self._game.sprite_constr[s][1]['color'])].lower()
             if not s == "goal":
@@ -160,9 +159,10 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             try:
                 mappedState[k[0]][k[1]] = symbol
             except:
-                print "mappedState problem in rlenvironmentNonStatic"
-                print mappedState
-                # embed()
+                # print "mappedState problem in rlenvironmentNonStatic"
+                ## if you define rules poorly, objects can go off screen, in which case they can't be assigned to an on-screen loc!
+                continue
+
         if binary:
             gameString = []
             for mappedRow in mappedState:
@@ -396,8 +396,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             for sprite in self._game.sprite_groups[k]:
                 if (k, self._rect2pos(sprite.rect)) not in self._gravepoints.keys():
                     self._gravepoints[(k, self._rect2pos(sprite.rect))] = True
-        # print "after adding gravepoints"
-        # embed()
         return events
 
         # if self.visualize:
@@ -431,7 +429,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             action = (0,0)
         pre_step_score = self._game.score
         events = self._performAction(action)
-        # embed()
         # observation = self._getSensors()
 
         observation = self._getSensors()

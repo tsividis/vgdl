@@ -45,7 +45,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w  a                           w
 w     a            a      a    w
 w       a                      w
-w               a              w
+w  c            a              w
 w         m    A   b           w
 w     a     a            ffffffw
 w     a   a              f     w
@@ -67,14 +67,18 @@ BasicGame frame_rate=30
             box1 > color=PINK
             box2 > color=YELLOW
         wall > Immovable color=DARKGRAY
+        cannon > SpawnPoint stype=spear spawnCooldown=2 total=2 color=BLUE
+        spear > Missile orientation=RIGHT color=ORANGE
     LevelMapping
         w > wall
         a > box1
         b > box2
         m > mediumChaser
         r > randomChaser
-        s > goodChaser
+        g > goodChaser
         f > forcefield
+        c > cannon
+        s > spear
     InteractionSet
         avatar wall > stepBack
         mover wall > stepBack
@@ -99,7 +103,7 @@ BasicGame frame_rate=30
 # level_game_pairs = [[game, level0], [game, level1], [game, level2],
 #                     [game, level3]]
 
-# level_game_pairs = [[game, level0], [game, level2]]
+level_game_pairs = [[game, level], [game, level2]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
