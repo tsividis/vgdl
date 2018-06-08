@@ -7,4 +7,6 @@ theorytest.py
 .spyderproject
 venv
 .DS_Store
+examples/gridphysics/theorytest.py
+examples/gridphysics/theorytest2.py
 /avatar_inference.py
