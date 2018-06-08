@@ -6,3 +6,5 @@
 .spyderproject
 venv
 examples/gridphysics/theorytest.py
+examples/gridphysics/theorytest2.py
+.DS_Store
