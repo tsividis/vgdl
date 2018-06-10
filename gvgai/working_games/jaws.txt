@@ -1,0 +1,58 @@
+BasicGame
+    SpriteSet
+        water > Immovable color=LIGHTBLUE img=newset/water2
+        holes > SpawnPoint color=GREEN img=newset/whirlpool2 portal=True
+            sharkhole  >  stype=shark  prob=0.025 total=1
+            whalehole  >  stype=whale  prob=0.1 spawnCooldown=10
+            piranhahole  >  stype=piranha  prob=0.1 spawnCooldown=10
+
+        moving >
+            avatar  > ShootAvatar color=RED  stype=torpedo img=newset/submarine
+            torpedo > Missile color=WHITE  img=oryx/orb2
+            fish >
+                shark  > Chaser speed=0.1 color=ORANGE img=newset/shark2 stype=avatar
+                whale  > Missile  orientation=RIGHT  speed=0.1 color=BROWN img=newset/whale
+                piranha > Missile orientation=LEFT speed=0.1 color=RED img=newset/piranha1
+
+        shell > Resource color=GOLD limit=20 img=oryx/amulat1
+        sharkFang > Resource color=GOLD limit=1 img=oryx/sword4
+        portal >
+            winPortal > SpawnPoint stype=winCounter spawnCooldown=1000 limit=1 portal=True color=LIGHTBLUE
+        winCounter > Immovable color=LIGHTBLUE
+
+
+    LevelMapping
+        1 > water piranhahole
+        2 > water whalehole
+        3 > water sharkhole
+        . > water
+        * > water winPortal
+        A > water avatar
+
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+        MultiSpriteCounter stype=winCounter limit=1 win=True
+
+    InteractionSet
+        EOS avatar > stepBack
+	EOS shark > stepBack
+        EOS torpedo  > killSprite
+	EOS fish > killSprite
+
+        whale torpedo > transformTo stype=shell 
+	whale torpedo > changeScore value=1
+        piranha torpedo > transformTo stype=shell 
+	piranha torpedo > changeScore value=1
+        torpedo fish > killSprite
+
+        sharkFang avatar > collectResource 
+	sharkFang avatar > changeScore value=1000
+        shell avatar > collectResource 
+	shell avatar > changeScore value=1
+
+        avatar shark > spawnIfHasMore resource=shell limit=15 stype=sharkFang
+        shark avatar > killIfOtherHasMore resource=shell limit=15
+
+        avatar shark  > killIfHasLess resource=shell limit=15
+        avatar whale  > killSprite
+	avatar piranha > killSprite
