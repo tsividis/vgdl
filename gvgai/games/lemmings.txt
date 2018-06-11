@@ -5,33 +5,33 @@ BasicGame
         shovel > Flicker color=BROWN limit=1 singleton=True img=oryx/pickaxe 
 
         entrance > SpawnPoint total=20 spawnCooldown=50 stype=lemming color=PURPLE portal=True
-        avatar > Immovable color=GREEN #This is actually the exit, but Chaser only works when stype=avatar for some reason
+        goal > Immovable color=GREEN #This is actually the goal, but Chaser only works when stype=goal for some reason
 
         moving >
-            avatar2  > ShootAvatar stype=shovel color=DARKBLUE
-            lemming > Chaser  stype=avatar speed=0.1 color=RED
+            avatar  > ShootAvatar stype=shovel color=DARKBLUE
+            lemming > Chaser  stype=goal speed=0.1 color=RED
 
         wall > Immovable color=GRAY img=oryx/dirtwall autotiling=True
     LevelMapping
-        x > floor avatar
+        x > floor goal
         e > floor entrance
         h > floor hole
         . > floor
-        A > floor avatar2
+        A > floor avatar
         w > floor wall
 
     TerminationSet
-        SpriteCounter  stype=avatar2  limit=0 win=False
+        SpriteCounter  stype=avatar  limit=0 win=False
         MultiSpriteCounter stype1=entrance stype2=lemming limit=0 win=True
 
     InteractionSet
-        avatar2 hole  > killSprite 
-	avatar2 hole > changeScore value=-5
+        avatar hole  > killSprite 
+	avatar hole > changeScore value=-5
         lemming hole  > killSprite 
 	lemming hole > changeScore value=-2
         moving wall > stepBack
 	moving EOS > stepBack
         wall shovel  > killSprite 
 	wall shovel > changeScore value=-1
-        lemming avatar > killSprite 
-	lemming avatar > changeScore value=2
+        lemming goal > killSprite 
+	lemming goal > changeScore value=2
