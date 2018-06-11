@@ -1,4 +1,4 @@
-*xxxxxxxxx..........xx
+xxxxxxxxxx..........xx
 xxxxxxxxx...........xx
 xxxxxxx.........w..xxx
 xxxx1..............xxx

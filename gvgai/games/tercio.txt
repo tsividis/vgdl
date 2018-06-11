@@ -10,17 +10,13 @@ BasicGame
 
         target > Immovable color=GREEN
         winTarget > Immovable color=RED
-        crate > Passive color=BROWN shrinkfactor=0.8
-        avatar > MovingAvatar color=DARKBLUE
-            inGrey > color=PINK
-            inBlack > color=PURPLE
-            inWhite > color=GOLD
-            inBlue > color=LIGHTGREEN
+        crate > Passive color=BROWN
+        inGrey > MovingAvatar color=PINK
+        inBlack > MovingAvatar color=PURPLE
+        inWhite > MovingAvatar color=GOLD
+        inBlue > MovingAvatar color=LIGHTGREEN
 
         wall > Immovable color=ORANGE autotiling=True
-        portal  >
-            winPortal   > SpawnPoint   stype=winCounter spawnCooldown=1000 limit=1 portal=True color=ORANGE
-	winCounter > Immovable color=ORANGE 
     
     LevelMapping
         . > black
@@ -41,11 +37,10 @@ BasicGame
         r > target blue
 
         w > wall
-        * > wall winPortal
 
     TerminationSet
-        SpriteCounter      stype=target               limit=0 win=True
-        MultiSpriteCounter      stype=winCounter limit=1 win=False
+        SpriteCounter stype=target limit=0 win=True
+        Timeout timeout=1000 win=False
         
     InteractionSet
         inWhite EOS > stepBack

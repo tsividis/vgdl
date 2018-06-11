@@ -1,22 +1,17 @@
 BasicGame square_size=25
   SpriteSet
     floor > Immovable color=WHITE hidden=True img=oryx/backBlack
-    fullMolar > Immovable
-        fullMolarInf > color=YELLOW
-        fullMolarSup > color=RED
-    deadMolar > Immovable
-        deadMolarInf > color=GREEN
-        deadMolarSup > color=BLUE
+    fullMolarInf > Immovable color=YELLOW
+    fullMolarSup > Immovable color=RED
+    deadMolarInf > Immovable color=GREEN
+    deadMolarSup > Immovable color=BLUE
 
-    movable >
-        avatar  > ShootAvatar stype=fluor color=DARKBLUE frameRate=8
-        food > Chaser speed=0.1
-            hotdog >  stype=fullMolarInf color=ORANGE
-            burger >  stype=fullMolarSup color=BROWN
+    avatar  > ShootAvatar stype=fluor color=DARKBLUE frameRate=8
+    hotdog > Chaser speed=0.1 stype=fullMolarInf color=ORANGE
+    burger > Chaser speed=0.1 stype=fullMolarSup color=BROWN
 
-    holes > SpawnPoint color=LIGHTGRAY portal=True
-        hotdoghole  >  stype=hotdog  prob=0.15 spawnCooldown=8 total=5 color=PURPLE
-        burgerhole  >  stype=burger  prob=0.15 spawnCooldown=8 total=5 color=PINK
+    hotdoghole > SpawnPoint color=LIGHTGRAY portal=True stype=hotdog  prob=0.15 spawnCooldown=8 total=5 color=PURPLE
+    burgerhole > SpawnPoint color=LIGHTGRAY portal=True stype=burger  prob=0.15 spawnCooldown=8 total=5 color=PINK
 
     fluor > Missile color=LIGHTBLUE shrinkfactor=0.5 img=oryx/slime1
     wall > Immovable color=GRAY img=oryx/wall6
@@ -33,25 +28,37 @@ BasicGame square_size=25
     A > avatar floor
 
   InteractionSet
-    movable wall > stepBack 
-    fluor food > killSprite 
-    fluor food > changeScore value=1
-    food fluor   > killSprite 
-    food fluor  > changeScore value=1
+    avatar wall > stepBack
+    hotdog wall > stepBack
+    burger wall > stepBack
+    fluor hotdog > killSprite
+    fluor hotdog > changeScore value=1
+    hotdog fluor   > killSprite 
+    hotdog fluor  > changeScore value=1
+    fluor burger > killSprite
+    fluor burger > changeScore value=1
+    burger fluor   > killSprite
+    burger fluor  > changeScore value=1
     fluor wall   > killSprite
 
-    fullMolarInf food > transformTo stype=deadMolarInf 
-    fullMolarInf food > changeScore value=-3 
-    food fullMolarInf > killSprite
-    deadMolarInf avatar > transformTo stype=fullMolarInf 
+    fullMolarInf hotdog > transformTo stype=deadMolarInf
+    fullMolarInf hotdog > changeScore value=-3 
+    hotdog fullMolarInf > killSprite
+    fullMolarInf burger > transformTo stype=deadMolarInf
+    fullMolarInf burger > changeScore value=-3
+    burger fullMolarInf > killSprite
+    deadMolarInf avatar > transformTo stype=fullMolarInf
     deadMolarInf avatar > changeScore value=1
 
-    fullMolarSup food > transformTo stype=deadMolarSup 
-    fullMolarSup food > changeScore value=-3 
-    food fullMolarSup > killSprite
-    deadMolarSup avatar > transformTo stype=fullMolarSup 
+    fullMolarSup hotdog > transformTo stype=deadMolarSup
+    fullMolarSup hotdog > changeScore value=-3
+    hotdog fullMolarSup > killSprite
+    fullMolarSup burger > transformTo stype=deadMolarSup
+    fullMolarSup burger > changeScore value=-3
+    burger fullMolarSup > killSprite
+    deadMolarSup avatar > transformTo stype=fullMolarSup
     deadMolarSup avatar > changeScore value=1
 
   TerminationSet
-    SpriteCounter stype=fullMolar win=False
-    MultiSpriteCounter stype1=holes stype2=food limit=0 win=True
+    MultiSpriteCounter stype1=fullMolarInf stype2=fullMolarSup win=False
+    MultiSpriteCounter stype1=hotdoghole stype2=hotdog stype3=burger stype4=burgerhole limit=0 win=True
