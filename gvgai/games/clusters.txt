@@ -4,16 +4,15 @@ BasicGame key_handler=Pulse
         floor > Immovable img=oryx/floor3 hidden=True color=LIGHTGRAY
         hole   > Immovable color=DARKBLUE img=oryx/spike2 portal=True
 
-        block > Immovable
-            blueblock > img=newset/blockB color=LIGHTBLUE
-            redblock > img=newset/blockR color=LIGHTRED
-            greenblock > img=newset/blockG color=LIGHTGREEN
+        blueblock > Immovable img=newset/blockB color=LIGHTBLUE
+        redblock > Immovable img=newset/blockR color=LIGHTRED
+        greenblock > Immovable img=newset/blockG color=LIGHTGREEN
 
-        box   > Passive
+        box > Passive 
             bluebox > img=newset/blockB2 color=BLUE
             redbox > img=newset/blockR2  color=RED
             greenbox > img=newset/blockG2 color=GREEN
-            brokenBox > img=newset/block3 color=BROWN
+            brokenBox >  img=newset/block3 color=BROWN
 
         avatar > MovingAvatar img=oryx/knight1  color=GOLD
         wall > Immovable img=oryx/wall3 autotiling=True color=GRAY
@@ -38,7 +37,10 @@ BasicGame key_handler=Pulse
         avatar hole > killSprite 
         avatar hole > changeScore value=-1
 
-        box avatar > bounceForward
+        bluebox avatar > bounceForward
+        redbox avatar > bounceForward
+        greenbox avatar > bounceForward
+        brokenBox avatar > bounceForward
 
         bluebox blueblock > transformTo stype=blueblock 
         bluebox blueblock > changeScore value=1
@@ -50,7 +52,9 @@ BasicGame key_handler=Pulse
         greenbox greenblock > changeScore value=1
         greenblock greenblock > stepBack
 
-        avatar block > stepBack
+        avatar blueblock > stepBack
+        avatar redblock > stepBack
+        avatar greenblock > stepBack
 
         greenbox blueblock > undoAll 
 	greenbox redblock > undoAll
@@ -59,9 +63,37 @@ BasicGame key_handler=Pulse
         bluebox greenblock > undoAll 
 	bluebox redblock > undoAll
 
-        box box > undoAll 
-	box wall > undoAll
-        box hole > transformTo stype=brokenBox
+        bluebox redbox > undoAll 
+        bluebox greenbox > undoAll
+        bluebox bluebox > undoAll
+        bluebox brokenbox > undoAll
+
+        redbox redbox > undoAll
+        redbox greenbox > undoAll
+        redbox bluebox > undoAll
+        redbox brokenbox > undoAll
+
+        greenbox redbox > undoAll
+        greenbox greenbox > undoAll
+        greenbox bluebox > undoAll
+        greenbox brokenbox > undoAll
+
+        brokenbox redbox > undoAll
+        brokenbox greenbox > undoAll
+        brokenbox bluebox > undoAll
+        brokenbox brokenbox > undoAll
+
+
+
+	redbox wall > undoAll
+        greenbox wall > undoAll
+        bluebox wall > undoAll
+        brokenbox wall > undoAll
+        redbox hole > transformTo stype=brokenBox
+        greenbox hole > transformTo stype=brokenBox
+        bluebox hole > transformTo stype=brokenBox
+        brokenbox hole > transformTo stype=brokenBox
+
 
 
     TerminationSet

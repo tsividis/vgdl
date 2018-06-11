@@ -1,18 +1,16 @@
 BasicGame
     SpriteSet
         water > Immovable color=LIGHTBLUE img=newset/water2
-        holes > SpawnPoint color=GREEN img=newset/whirlpool2 portal=True
-            sharkhole  >  stype=shark  prob=0.025 total=1
-            whalehole  >  stype=whale  prob=0.1 spawnCooldown=10
-            piranhahole  >  stype=piranha  prob=0.1 spawnCooldown=10
+        sharkhole  > SpawnPoint color=GREEN stype=shark  prob=0.025 total=1 img=newset/whirlpool2 portal=True 
+        whalehole  > SpawnPoint color=GREEN stype=whale  prob=0.1 spawnCooldown=10 img=newset/whirlpool2 portal=True 
+        piranhahole  >  SpawnPoint color=GREEN stype=piranha  prob=0.1 spawnCooldown=10 img=newset/whirlpool2 portal=True 
 
-        moving >
-            avatar  > ShootAvatar color=RED  stype=torpedo img=newset/submarine
-            torpedo > Missile color=WHITE  img=oryx/orb2
-            fish >
-                shark  > Chaser speed=0.1 color=ORANGE img=newset/shark2 stype=avatar
-                whale  > Missile  orientation=RIGHT  speed=0.1 color=BROWN img=newset/whale
-                piranha > Missile orientation=LEFT speed=0.1 color=RED img=newset/piranha1
+
+        avatar  > ShootAvatar color=RED  stype=torpedo img=newset/submarine
+        torpedo > Missile color=WHITE  img=oryx/orb2
+        shark  > Chaser speed=0.1 color=ORANGE img=newset/shark2 stype=avatar
+        whale  > Missile  orientation=RIGHT  speed=0.1 color=BROWN img=newset/whale
+        piranha > Missile orientation=LEFT speed=0.1 color=RED img=newset/piranha1
 
         shell > Resource color=YELLOW limit=20 img=oryx/amulat1
         sharkFang > Resource color=GOLD limit=1 img=oryx/sword4
@@ -34,13 +32,19 @@ BasicGame
         avatar EOS > stepBack
 	EOS shark > stepBack
         EOS torpedo  > killSprite
-	EOS fish > killSprite
+
+	EOS shark > killSprite
+        EOS whale > killSprite
+        EOS piranha > killSprite
 
         whale torpedo > transformTo stype=shell 
 	whale torpedo > changeScore value=1
         piranha torpedo > transformTo stype=shell 
 	piranha torpedo > changeScore value=1
-        torpedo fish > killSprite
+
+        torpedo shark > killSprite
+        torpedo whale > killSprite
+        torpedo piranha > killSprite
 
         sharkFang avatar > collectResource 
 	sharkFang avatar > changeScore value=1000

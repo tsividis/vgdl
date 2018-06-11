@@ -6,20 +6,17 @@ BasicGame key_handler=Pulse
         key > Resource color=GREEN limit=1
         lock > Immovable color=RED
 
-        food >
-            ingredients > Passive
-                boilingwater > img=newset/boilingwater frameRate=8 color=LIGHTBLUE
-                rawpasta > img=newset/pasta color=YELLOW
-                tomato > img=newset/tomato color=RED
-                tuna > img=newset/tuna color=LIGHTRED
+ 
+        boilingwater > Passive img=newset/boilingwater frameRate=8 color=LIGHTBLUE
+        rawpasta > Passive img=newset/pasta color=YELLOW
+        tomato > Passive img=newset/tomato color=RED
+        tuna > Passive img=newset/tuna color=LIGHTRED
 
-            placedIngredients > Passive
-                pastainplace > img=newset/pastaplate color=GOLD
-                sauceinplace > img=newset/tomatosauce color=ORANGE
+        pastainplace > Passive img=newset/pastaplate color=GOLD
+        sauceinplace > Passive img=newset/tomatosauce color=ORANGE
 
-        placed > Immovable
-            wrongplace  > color=BLACK img=oryx/slash1  
-            plateinplace > color=WHITE img=newset/pastasauce 
+        wrongplace  > Immovable color=BLACK img=oryx/slash1  
+        plateinplace > Immovable color=WHITE img=newset/pastasauce 
 	wall > Immovable color=GRAY img=newset/floor4
 
 
@@ -35,10 +32,34 @@ BasicGame key_handler=Pulse
 
     InteractionSet
 
-        food avatar > bounceForward
-        food wall > undoAll 
-	food lock > undoAll
-	food key > undoAll
+        boilingwater avatar > bounceForward
+        rawpasta avatar > bounceForward
+        tomato avatar > bounceForward
+        tuna avatar > bounceForward
+        pastainplace avatar > bounceForward
+        sauceinplace avatar > bounceForward
+
+        boilingwater wall > undoAll 
+        rawpasta wall > undoAll 
+        tomato wall > undoAll 
+        tuna wall > undoAll 
+        pastainplace wall > undoAll 
+        sauceinplace wall > undoAll 
+
+	boilingwater lock > undoAll
+        rawpasta lock > undoAll
+        tomato lock > undoAll
+        tuna lock > undoAll
+        pastainplace lock > undoAll
+        sauceinplace lock > undoAll
+
+
+	boilingwater key > undoAll
+        rawpasta key > undoAll
+        tomato key > undoAll
+        tuna key > undoAll
+        pastainplace key > undoAll
+        sauceinplace key > undoAll
 
         rawpasta boilingwater > transformTo stype=pastainplace 
         rawpasta boilingwater > changeScore value=4 

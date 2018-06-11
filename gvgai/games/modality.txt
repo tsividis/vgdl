@@ -6,10 +6,11 @@ BasicGame key_handler=Pulse  square_size=50
         target > Passive color=ORANGE  img=newset/hole1 portal=True
         winTarget > Immovable color=GREEN img=newset/hole1
         crate > Passive color=BROWN img=oryx/bush5 
-        avatar > MovingAvatar color=DARKBLUE
-            inGrey > color=PINK
-            inBlack > color=PURPLE
-            inWhite > color=GOLD
+            
+        inGrey > MovingAvatar color=PINK
+        inBlack > MovingAvatar color=PURPLE
+        inWhite > MovingAvatar color=GOLD
+
         wall > Immovable color=LIGHTGRAY img=oryx/dirtwall autotiling=True
     
     LevelMapping

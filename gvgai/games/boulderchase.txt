@@ -4,14 +4,13 @@ BasicGame
 		wall > Immovable color=GRAY autotiling=true img=oryx/dirtWall
 		sword > Flicker color=YELLOW limit=1 singleton=True img=oryx/pickaxe
 		dirt > Immovable color=BROWN img=oryx/backLBrown
-		exitdoor > Portal color=GREEN img=oryx/door2
+		exitdoor > Immovable color=GREEN img=oryx/door2
 		diamond > Resource color=GOLD limit=10 img=oryx/diamond3
 		boulder > Missile orientation=DOWN color=GRAY speed=0.2 img=oryx/mineral1
-		moving >
-			avatar  > ShootAvatar  color=WHITE stype=sword frameRate=8 img=oryx/spelunky
-			enemy > Chaser  stype=avatar speed=0.1
-				crab > color=RED img=oryx/scorpion2
-				butterfly > color=BLUE img=oryx/bat2
+
+                avatar  > ShootAvatar  color=WHITE stype=sword frameRate=8 img=oryx/spelunky
+                crab > Chaser stype=avatar speed=0.1 color=RED img=oryx/scorpion2
+                butterfly > Chaser stype=avatar speed=0.1 color=BLUE img=oryx/bat2
 
 	LevelMapping
 		. > background dirt
@@ -24,21 +23,26 @@ BasicGame
 		A > background avatar
 
 	InteractionSet
-		dirt avatar > killSprite 
-		dirt sword > killSprite
-		diamond avatar > collectResource 
+                dirt avatar > killSprite 
+                dirt sword > killSprite
+                diamond avatar > collectResource 
                 diamond avatar > changeScore value=2
-		moving wall > stepBack 
-		moving boulder > stepBack
 
-		avatar boulder > killIfFromAbove 
+                avatar wall > stepBack 
+                avatar boulder > stepBack
+                crab wall > stepBack 
+                crab boulder > stepBack
+                butterfly wall > stepBack 
+                butterfly boulder > stepBack
+
+                avatar boulder > killIfFromAbove 
                 avatar boulder > changeScore value=-1
-		avatar butterfly > killSprite 
+                avatar butterfly > killSprite 
                 avatar butterfly > changeScore value=-1 
-		avatar crab > killSprite 
+                avatar crab > killSprite 
                 avatar crab > changeScore value=-1 
 
-		enemy boulder > killIfFromAbove 
+                enemy boulder > killIfFromAbove 
                 enemy boulder > changeScore value=5 
 
 		boulder dirt > stepBack 

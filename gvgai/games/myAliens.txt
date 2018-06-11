@@ -4,9 +4,8 @@ BasicGame
         avatar  > HorizontalAvatar
         alien   > Missile  orientation=DOWN  speed=0.8 color=ORANGE
         ghost > Missile orientation=DOWN speed=0.8 color=PURPLE
-        portal  >
-            portalAlien  > SpawnPoint orientation=RIGHT   stype=alien  spawnCooldown=16  prob=0.08 total=20 img=portal
-            portalGhost  > SpawnPoint orientation=RIGHT   stype=ghost  spawnCooldown=12  prob=0.08 total=20 img=portal
+        portalAlien  > SpawnPoint orientation=RIGHT   stype=alien  spawnCooldown=16  prob=0.08 total=20 img=portal
+        portalGhost  > SpawnPoint orientation=RIGHT   stype=ghost  spawnCooldown=12  prob=0.08 total=20 img=portal
 
     LevelMapping
         0 > base

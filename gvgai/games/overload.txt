@@ -2,12 +2,10 @@ BasicGame
     SpriteSet
         floor > Immovable color=LIGHTGRAY img=oryx/grass autotiling=True
         castlef > Immovable color=BLACK img=oryx/floor3
-        structure > Immovable
-            marsh > color=BROWN img=oryx/tree1
-            goal  > Portal color=GREEN img=oryx/dooropen1
-        moving >
-            avatar > ShootAvatar color=BLUE ammo=weapon stype=sword img=oryx/prince1
-            random > RandomNPC color=DARKBLUE speed=1 cooldown=4 img=oryx/spelunky_0 cons=8
+        marsh > Immovable color=BROWN img=oryx/tree1
+        goal  > Immovable color=GREEN img=oryx/dooropen1
+        avatar > ShootAvatar color=BLUE ammo=weapon stype=sword img=oryx/prince1
+        random > RandomNPC color=DARKBLUE speed=1 cooldown=4 img=oryx/spelunky_0 cons=8
         sword > Flicker color=RED limit=5 singleton=True img=oryx/sword3
         weapon > Resource color=PINK value=10000 limit=10000 img=oryx/sword3 
         gold  > Resource color=GOLD limit=11  img=oryx/gold2 # this limit is only used for visualizing progress
@@ -22,7 +20,8 @@ BasicGame
         gold avatar     > collectResource 
 	gold avatar     > changeScore value=1
         gold random     > collectResource
-        moving wall     > stepBack
+        avatar wall     > stepBack
+        random wall     > stepBack
         avatar marsh    > killIfHasMore      resource=gold limit=11
         random marsh    > killIfHasMore      resource=gold limit=11
         goal avatar     > killIfOtherHasMore resource=gold limit=10

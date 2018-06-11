@@ -4,14 +4,12 @@ BasicGame
         sword > Flicker color=BLACK limit=5 singleton=True img=oryx/sword1
         entrance > SpawnPoint total=5 color=PINK cooldown=100 stype=doctor img=oryx/dooropen1 portal=True
         virus > Immovable color=RED img=oryx/slime4
-        moving >
-            avatar > ShootAvatar stype=sword
-                 normal   > color=WHITE img=newset/girl2
-                 carrier  > color=BROWN img=newset/girl2_c frameRate=8
-            npc    > RandomNPC speed=0.25  cons=1
-                 host     > color=GREEN img=newset/man3
-                 infected > color=ORANGE speed=0.5 img=newset/cursedman frameRate=8
-                 doctor > color=BLUE speed=0.2 img=newset/nurse
+
+        normal   > ShootAvatar stype=sword color=WHITE img=newset/girl2
+        carrier  > ShootAvatar stype=sword color=BROWN img=newset/girl2_c frameRate=8
+        host     > RandomNPC speed=0.25  cons=1 color=GREEN img=newset/man3
+        infected > RandomNPC speed=0.25  cons=1 color=ORANGE speed=0.5 img=newset/cursedman frameRate=8
+        doctor > RandomNPC speed=0.25  cons=1 color=BLUE speed=0.2 img=newset/nurse
         wall > Immovable color=GRAY img=oryx/wall3 autotiling=True
 
     TerminationSet
@@ -20,7 +18,14 @@ BasicGame
     InteractionSet
         doctor sword    > killSprite 
 	doctor sword  > changeScore value=2
-        moving wall       > stepBack
+    
+        normal wall       > stepBack
+        carrier wall       > stepBack
+        host  wall       > stepBack
+        infected wall       > stepBack
+        doctor wall       > stepBack
+
+
         carrier doctor  > transformTo stype=normal  
 	carrier doctor > changeScore value=-1
         host carrier      > transformTo stype=infected 

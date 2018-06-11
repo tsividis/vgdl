@@ -4,11 +4,10 @@ BasicGame
         trunk > Immovable color=WHITE img=newset/cloud1
         cursed > Immovable color=GRAY img=newset/cursedman
 
-        movable > 
-            demon > Bomber stype=bolt color=BLUE img=oryx/devil1 prob=0.15 spawnCooldown=6 speed=0.4 frameRate=8
-            angel > Bomber stype=salvation color=GREEN img=oryx/angel1 prob=0.05 spawnCooldown=6 speed=0.45 frameRate=8
-            citizen > Chaser stype=output color=RED img=newset/man2 speed=0.4
-            blessed > Chaser stype=output color=ORANGE img=newset/blessedman speed=0.4
+        demon > Bomber stype=bolt color=BLUE img=oryx/devil1 prob=0.15 spawnCooldown=6 speed=0.4 frameRate=8
+        angel > Bomber stype=salvation color=GREEN img=oryx/angel1 prob=0.05 spawnCooldown=6 speed=0.45 frameRate=8
+        citizen > Chaser stype=output color=RED img=newset/man2 speed=0.4
+        blessed > Chaser stype=output color=ORANGE img=newset/blessedman speed=0.4
             
         avatar > MovingAvatar img=newset/girl4 frameRate=10
 
@@ -16,9 +15,8 @@ BasicGame
         output > Immovable color=GOLD img=oryx/dooropen1 portal=True
         box > Passive color=BROWN img=newset/cloud2  
 
-        missile > Missile
-            bolt > orientation=DOWN color=PURPLE speed=0.2 img=oryx/firedown1
-            salvation > orientation=DOWN color=PINK speed=0.2 img=oryx/icedown1
+        bolt > Missile orientation=DOWN color=PURPLE speed=0.2 img=oryx/firedown1
+        salvation > Missile orientation=DOWN color=PINK speed=0.2 img=oryx/icedown1
         
         wall > Immovable color=LIGHTGRAY img=oryx/wall3 autotiling=True
 
@@ -27,8 +25,16 @@ BasicGame
             Timeout timeout=1000 win=True
 
     InteractionSet
-        movable wall > reverseDirection
-        movable wall > stepBack
+        demon wall > reverseDirection
+        demon wall > stepBack
+        angel wall > reverseDirection
+        angel wall > stepBack
+        citizen wall > reverseDirection
+        citizen wall > stepBack
+        blessed wall > reverseDirection
+        blessed wall > stepBack
+        
+
         avatar wall > stepBack
         avatar EOS > stepBack
 
