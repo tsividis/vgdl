@@ -2044,7 +2044,7 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 		filtered = filterByPrior(filtered)
 	return filtered
 
-def filterByPrior(scoreAndTheoryTuples, numPerLevel=1, granularity=1):
+def filterByPrior(scoreAndTheoryTuples, numPerLevel=1, granularity=1, targetColor=None):
 	# filter out any theory after the first numPerLevel whose added complexity does not improve its error
 	#	i.e. between two theories of equal perfomance, ignore the less likely/more complex one
 	precision = 16
@@ -2053,10 +2053,10 @@ def filterByPrior(scoreAndTheoryTuples, numPerLevel=1, granularity=1):
 		score = round(score, precision)
 		if score not in errorLevelToMinPrior:
 			errorLevelToMinPrior[score] = [999999999] * numPerLevel
-		if theory.prior(granularity=granularity) < errorLevelToMinPrior[score][-1]:
-			errorLevelToMinPrior[score][-1] = theory.prior(granularity=granularity)
+		if theory.prior(granularity=granularity, targetColor=targetColor) < errorLevelToMinPrior[score][-1]:
+			errorLevelToMinPrior[score][-1] = theory.prior(granularity=granularity, targetColor=targetColor)
 			errorLevelToMinPrior[score].sort()
-	return [sh for sh in scoreAndTheoryTuples if sh[1].prior(granularity=granularity) <= errorLevelToMinPrior[round(sh[0], precision)][-1]]
+	return [sh for sh in scoreAndTheoryTuples if sh[1].prior(granularity=granularity, targetColor=targetColor) <= errorLevelToMinPrior[round(sh[0], precision)][-1]]
 
 def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction, rleHistories, actionHistories, episode_num):
 	# print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
@@ -2116,21 +2116,32 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
 
 			# hyperparameters here:
-			theoriesPerErrorLevel = 3
+			theoriesPerErrorLevel = 4
 			medianDivisor = 3
+			tooManyTheoriesCutoff = 50
 
-			embed()
+			count = 0
 
-			scoreAndTheoryTuples = filterByPrior(scoreAndTheoryTuples, numPerLevel=theoriesPerErrorLevel, granularity=2)
-			print "{} theories after filtering by prior".format(len(scoreAndTheoryTuples))
+			# embed()
+			while len(scoreAndTheoryTuples) > tooManyTheoriesCutoff:
+				scoreAndTheoryTuples = filterByPrior(scoreAndTheoryTuples, numPerLevel=theoriesPerErrorLevel, granularity=2, targetColor=errorMap.targetColor)
+				print "{} theories after filtering by prior".format(len(scoreAndTheoryTuples))
 
-			# update error threshold for this color
-			med = scoreAndTheoryTuples[len(scoreAndTheoryTuples)//medianDivisor][0] + .000001 # to allow all infinitestimals
-			# med = (scoreAndTheoryTuples[0][0] + .0001) * 4
-			print 'new baseline:' , med
-			perColorErrorBaselines[errorMap.targetColor] = med
-			scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
-			print "{} theories after filtering with new baseline".format(len(scoreAndTheoryTuples))
+				# update error threshold for this color
+				med = scoreAndTheoryTuples[len(scoreAndTheoryTuples)//medianDivisor][0] + .000001 # to allow all infinitestimals
+				# med = (scoreAndTheoryTuples[0][0] + .0001) * 4
+				print 'new baseline:' , med
+				perColorErrorBaselines[errorMap.targetColor] = med
+				scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
+				print "{} theories after filtering with new baseline".format(len(scoreAndTheoryTuples))
+
+				theoriesPerErrorLevel = max(2, theoriesPerErrorLevel - 1)
+
+				count += 1
+
+				if count > 5:
+					#give up, it's unavoidable
+					break
 
 			print 'scores:' , [t[0] for t in scoreAndTheoryTuples]
 			# embed()
