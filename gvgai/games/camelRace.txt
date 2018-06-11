@@ -1,36 +1,45 @@
 BasicGame
     SpriteSet
         floor > Immovable color=LIGHTGRAY hidden=True img=oryx/backBiege
-        camel > color=BROWN
-            randomCamel > RandomNPC speed=0.25 cons=8 img=newset/camel1 frameRate=7 cooldown=6
-            straightCamelFast > Missile speed=0.6 frameRate=4 cooldown=6
-                fastR > orientation=RIGHT img=newset/camel2
-                fastL > orientation=LEFT img=newset/camel2L
-            straightCamelMedium > Missile speed=0.3 frameRate=6 cooldown=6
-                mediumR > orientation=RIGHT img=newset/camel3
-                mediumL > orientation=LEFT img=newset/camel3L
-            straightCamelSlow > Missile speed=0.15 frameRate=10 cooldown=6
-                slowR > orientation=RIGHT img=newset/camel4
-                slowL > orientation=LEFT img=newset/camel4L
-        structure >
-            goal  > Immovable color=GREEN img=newset/exit2
+        randomCamel > RandomNPC speed=0.25 cons=8 color=GREEN frameRate=7 cooldown=6
+        fastR > Missile speed=0.6 frameRate=4 cooldown=6 orientation=RIGHT color=BLUE
+        fastL > Missile speed=0.6 frameRate=4 cooldown=6 orientation=LEFT color=LIGHTBLUE
+        mediumR > Missile speed=0.3 frameRate=6 cooldown=6 orientation=RIGHT color=ORANGE
+        mediumL > Missile speed=0.3 frameRate=6 cooldown=6 orientation=LEFT color=LIGHTORANGE
+        slowR > Missile speed=0.15 frameRate=10 cooldown=6 orientation=RIGHT color=LIGHTGREEN
+        slowL > Missile speed=0.15 frameRate=10 cooldown=6 orientation=LEFT color=PURPLE
+        goal  > Immovable color=GREEN img=newset/exit2
         winnerNPC > Immovable color=RED img=oryx/sparkle2
-        winnerPlayer > Immovable color=PINK img=oryx/sparkle1
-        avatar > MovingAvatar color=BLUE frameRate=8
-            left > img=newset/camel5L
-            right > img=newset/camel5
+        winnerPlayer > MovingAvatar color=PINK img=oryx/sparkle1
+        avatar > MovingAvatar color=DARKBLUE frameRate=8
 
         wall > Immovable color=GRAY img=oryx/dirtwall autotiling=True
 
     InteractionSet
-        left goal > killSprite 
-        right goal > killSprite
-        left goal > changeScore value=1
-        right goal > changeScore value=1
-        camel goal  > transformTo stype=winnerNPC 
-        camel goal  > changeScore value=-1 
+        avatar goal > transformTo stype=winnerPlayer 
+        avatar goal > changeScore value=1
+        randomCamel goal  > transformTo stype=winnerNPC 
+        randomCamel goal  > changeScore value=-1 
+        randomCamel wall  > stepBack
+        fastR goal  > transformTo stype=winnerNPC 
+        fastR goal  > changeScore value=-1 
+        fastR wall  > stepBack
+        fastL goal  > transformTo stype=winnerNPC 
+        fastL goal  > changeScore value=-1 
+        fastL wall  > stepBack
+        mediumR goal  > transformTo stype=winnerNPC 
+        mediumR goal  > changeScore value=-1 
+        mediumR wall  > stepBack
+        mediumL goal  > transformTo stype=winnerNPC 
+        mediumL goal  > changeScore value=-1 
+        mediumL wall  > stepBack
+        slowR goal  > transformTo stype=winnerNPC 
+        slowR goal  > changeScore value=-1 
+        slowR wall  > stepBack
+        slowL goal  > transformTo stype=winnerNPC 
+        slowL goal  > changeScore value=-1 
+        slowL wall  > stepBack
         avatar wall > stepBack
-        camel wall  > stepBack
 
     LevelMapping
         g > goal floor
@@ -42,10 +51,9 @@ BasicGame
         m > mediumL floor
         s > slowL floor
         . > floor
-        A > left floor
-        B > right floor
+        A > avatar floor
+        B > avatar floor
 
     TerminationSet
-        MultiSpriteCounter stype1=left stype2=right limit=0 win=True
         MultiSpriteCounter stype1=winnerPlayer limit=1 win=True
         MultiSpriteCounter stype1=winnerNPC limit=1 win=False
