@@ -7,19 +7,16 @@ BasicGame
         portal  >
             portalAlien  > SpawnPoint orientation=RIGHT   stype=alien  spawnCooldown=16  prob=0.08 total=20 img=portal
             portalGhost  > SpawnPoint orientation=RIGHT   stype=ghost  spawnCooldown=12  prob=0.08 total=20 img=portal
-            winPortal > SpawnPoint stype=winCounter spawnCooldown=1000 limit=1 portal=True
-        winCounter > Immovable
 
     LevelMapping
         0 > base
         1 > portalAlien
         2 > portalGhost
         w > wall
-        * > wall winPortal
 
     TerminationSet
         SpriteCounter      stype=avatar               limit=0 win=False
-        MultiSpriteCounter stype=winCounter limit=1 win=True
+        Timeout timeout=1000 win=True
 
     InteractionSet
         avatar  wall  > stepBack

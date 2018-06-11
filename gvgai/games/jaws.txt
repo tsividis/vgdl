@@ -14,11 +14,8 @@ BasicGame
                 whale  > Missile  orientation=RIGHT  speed=0.1 color=BROWN img=newset/whale
                 piranha > Missile orientation=LEFT speed=0.1 color=RED img=newset/piranha1
 
-        shell > Resource color=GOLD limit=20 img=oryx/amulat1
+        shell > Resource color=YELLOW limit=20 img=oryx/amulat1
         sharkFang > Resource color=GOLD limit=1 img=oryx/sword4
-        portal >
-            winPortal > SpawnPoint stype=winCounter spawnCooldown=1000 limit=1 portal=True color=LIGHTBLUE
-        winCounter > Immovable color=LIGHTBLUE
 
 
     LevelMapping
@@ -26,15 +23,15 @@ BasicGame
         2 > water whalehole
         3 > water sharkhole
         . > water
-        * > water winPortal
         A > water avatar
 
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
-        MultiSpriteCounter stype=winCounter limit=1 win=True
+        Timeout timeout=1000 win=True
 
     InteractionSet
         EOS avatar > stepBack
+        avatar EOS > stepBack
 	EOS shark > stepBack
         EOS torpedo  > killSprite
 	EOS fish > killSprite

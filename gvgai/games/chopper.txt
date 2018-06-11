@@ -9,7 +9,7 @@ BasicGame
         avatar   > ShootAvatar orientation=DOWN color=YELLOW ammo=bullet stype=bomb img=newset/helicopter rotateInPlace=False
         missile > Missile color=GOLD
             sam  > orientation=UP color=BLUE speed=0.25 img=oryx/bullet1
-            bomb > orientation=DOWN color=RED speed=0.75 img=newset/bomb singleton=True shrinkfactor=0.5
+            bomb > orientation=DOWN color=RED speed=0.75 img=newset/bomb singleton=True
 
         cloud  > Missile img=newset/cloud2
             leftCloud  > orientation=LEFT speed=0.05  color=WHITE
@@ -22,7 +22,7 @@ BasicGame
             portalBase  > stype=tank  spawnCooldown=40   total=20
             portalAmmo  > stype=supply spawnCooldown=10 prob=0.15
 
-        supply > Missile  orientation=LEFT speed=0.25 img=oryx/goldsack shrinkfactor=0.5
+        supply > Missile  orientation=LEFT speed=0.25 img=oryx/goldsack 
         bullet > Resource color=GREEN limit=20
     
     LevelMapping
@@ -51,7 +51,8 @@ BasicGame
 	sam wall > killSprite
 	sam EOS > killSprite
 
-        tank bomb > killSprite scoreChange=1
+        tank bomb > killSprite 
+        tank bomb > changeScore value=1
         bomb tank > killSprite 
 	bomb wall > killSprite
 	bomb EOS > killSprite
@@ -64,8 +65,10 @@ BasicGame
         # tank wall > stepBack
 	# tank EOS  > stepBack
 
-        satellite sam > killSprite scoreChange=-1
-        sam satellite > killSprite scoreChange=-1
+        satellite sam > killSprite 
+        satellite same > changeScore value=-1 
+        sam satellite > killSprite 
+        sam satellite > changeScore value=-1
 	satellite wall > stepBack 
 	satellite EOS > stepBack
 

@@ -1,6 +1,6 @@
 BasicGame
     SpriteSet
-        floor > Immovable img=newset/floor6 hidden=True
+        floor > Immovable color=GRAY img=newset/floor6 hidden=True
         human >
             annoyed > RandomNPC speed=0.25 img=newset/cursedman cons=2 color=PURPLE
             citizen >
@@ -8,21 +8,20 @@ BasicGame
             avatar > ShootAvatar stype=cigarette img=newset/girl1 rotateInPlace=False color=BLUE
 
         george > Chaser color=YELLOW stype=citizen speed=0.25 img=newset/man4 frameRate=8
-        cigarette > Flicker limit=5 singleton=True img=newset/cigarette
+        cigarette > Flicker color=BROWN limit=5 singleton=True img=newset/cigarette
         wall > Immovable img=oryx/wall6 color=LIGHTGRAY
-        portal >
-            winPortal > SpawnPoint stype=winCounter spawnCooldown=1000 limit=1 portal=True color=LIGHTGRAY
-        winCounter > Immovable color=LIGHTGRAY
 
     TerminationSet
         SpriteCounter stype=avatar  win=False
         SpriteCounter stype=quiet   win=False
-        MultiSpriteCounter stype=winCounter limit=1 win=True
+        Timeout timeout=1000 win=True
 
     InteractionSet
         quiet george > transformTo stype=annoyed
-        avatar george > killSprite scoreChange=-1
-        annoyed cigarette > transformTo stype=quiet scoreChange=1
+        avatar george > killSprite 
+        avatar george > changeScore value=-1
+        annoyed cigarette > transformTo stype=quiet 
+        annoyed cigarette > changeScore value=1
         human wall > stepBack
 
     LevelMapping
@@ -31,4 +30,3 @@ BasicGame
         A > floor avatar
         . > floor
         w > wall
-        * > wall winPortal

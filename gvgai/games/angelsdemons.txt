@@ -21,13 +21,10 @@ BasicGame
             salvation > orientation=DOWN color=PINK speed=0.2 img=oryx/icedown1
         
         wall > Immovable color=LIGHTGRAY img=oryx/wall3 autotiling=True
-        portal >
-            winPortal > SpawnPoint stype=winCounter spawnCooldown=1000 limit=1 portal=True color=LIGHTGRAY
-        winCounter > Immovable color=LIGHTGRAY 
 
     TerminationSet
 	    MultiSpriteCounter stype1=cursed limit=1 win=False
-    MultiSpriteCounter stype=winCounter limit=1 win=True
+            Timeout timeout=1000 win=True
 
     InteractionSet
         movable wall > reverseDirection
@@ -39,17 +36,22 @@ BasicGame
         box box > bounceForward
         box wall > killSprite
 
-        bolt wall > killSprite scoreChange=-1
-        bolt box > killSprite scoreChange=1
+        bolt wall > killSprite 
+        bolt wall > changeScore value=-1
+        bolt box > killSprite 
+        bolt box > changeScore value=1
 
         citizen bolt > transformTo stype=cursed
         bolt citizen > killSprite
         citizen bolt > changeScore value=-1
 
-        bolt avatar > killSprite scoreChange=-5
+        bolt avatar > killSprite 
+        bolt avatar > changeScore value=-5 
 
-        salvation wall > killSprite scoreChange=1
-        salvation box > killSprite scoreChange=-1
+        salvation wall > killSprite 
+        salvation wall > changeScore value=1
+        salvation box > killSprite 
+        salvation box > changeScore value=-1
 
         citizen salvation > transformTo stype=blessed 
         salvation citizen > killSprite
@@ -67,5 +69,4 @@ BasicGame
         o > sky output
         . > sky
         w > wall
-        * > wall winPortal
         A > sky avatar

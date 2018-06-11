@@ -18,8 +18,8 @@ BasicGame key_handler=Pulse
                 sauceinplace > img=newset/tomatosauce color=ORANGE
 
         placed > Immovable
-            wrongplace  > img=oryx/slash1  
-            plateinplace > img=newset/pastasauce 
+            wrongplace  > color=BLACK img=oryx/slash1  
+            plateinplace > color=WHITE img=newset/pastasauce 
 	wall > Immovable color=GRAY img=newset/floor4
 
 
@@ -40,32 +40,43 @@ BasicGame key_handler=Pulse
 	food lock > undoAll
 	food key > undoAll
 
-        rawpasta boilingwater > transformTo stype=pastainplace scoreChange=4 
+        rawpasta boilingwater > transformTo stype=pastainplace 
+        rawpasta boilingwater > changeScore value=4 
 	boilingwater rawpasta > killSprite
-        rawpasta tuna  > transformTo stype=wrongplace scoreChange=-1 
+        rawpasta tuna  > transformTo stype=wrongplace 
+        rawpasta tuna > changeScore value=-1 
 	tuna rawpasta > killSprite
-        rawpasta tomato > transformTo stype=wrongplace scoreChange=-1 
+        rawpasta tomato > transformTo stype=wrongplace 
+        rawpasta tomato > changeScore value=-1  
 	tomato rawpasta > killSprite
-        rawpasta sauceinplace > transformTo stype=wrongplace scoreChange=-1 
+        rawpasta sauceinplace > transformTo stype=wrongplace 
+        rawpasta sauceinplace > changeScore value=-1 
 	sauceinplace rawpasta > killSprite
 
-        tomato tuna > transformTo stype=sauceinplace scoreChange=4 
+        tomato tuna > transformTo stype=sauceinplace 
+        tomato tuna > changeScore value=4 
 	tuna tomato > killSprite
-        tomato boilingwater > transformTo stype=wrongplace scoreChange=-1
+        tomato boilingwater > transformTo stype=wrongplace 
+        tomato boilingwater > changeScore value=-1 
         boilingwater tomato > killSprite
-	tomato pastainplace > transformTo stype=wrongplace scoreChange=-1
+	tomato pastainplace > transformTo stype=wrongplace 
+        tomato pastainplace > changeScore value=-1 
         pastainplace tomato > killSprite
-	boilingwater sauceinplace > transformTo stype=wrongplace scoreChange=-1 
+	boilingwater sauceinplace > transformTo stype=wrongplace 
+        boilingwater sauceinplace > changeScore value=-1  
 	sauceinplace boilingwater > killSprite
 
-        tuna boilingwater > transformTo stype=wrongplace scoreChange=-1 
+        tuna boilingwater > transformTo stype=wrongplace 
+        tuna boilingwater > changeScore value=-1 
 	boilingwater tuna > killSprite
-        tuna pastainplace > transformTo stype=wrongplace scoreChange=-1 
+        tuna pastainplace > transformTo stype=wrongplace 
+        tuna pastainplace > changeScore value=-1
 	pastainplace tuna > killSprite
         pastainplace sauceinplace > transformTo stype=plateinplace scoreChange=17 
 	sauceinplace pastainplace > killSprite
 
-        key avatar > collectResource scoreChange=1
+        key avatar > collectResource 
+        key avatar > changeScore value=1
         lock avatar > killIfOtherHasMore resource=key limit=1
         key avatar > killSprite
 
