@@ -1,42 +1,34 @@
 BasicGame square_size=30
     SpriteSet
 
-        water > Immovable color=LIGHTBLUE img=newset/water3
-        land > Immovable color=BROWN img=oryx/grass autotiling=True
+        water > Immovable color=LIGHTBLUE
+        land > Immovable color=BROWN autotiling=True
 
-        port > Immovable color=YELLOW
-            portGold > img=newset/dock1 
-            portGems > img=newset/dock2 
-            portDiamonds > img=newset/dock3 
+        portGold > Immovable color=GOLD
+        portGems > Immovable color=YELLOW
+        portDiamonds > Immovable color=BLUE
 
         shipwreck > Immovable img=newset/shipwreck portal=True color=BLACK
 
-        holes > SpawnPoint color=LIGHTGRAY invisible=True hidden=True
-            goldhole  >  stype=gold  prob=0.01
-            gemshole  >  stype=gems  prob=0.01
-            diamondshole  >  stype=diamonds  prob=0.01
+        goldhole  > SpawnPoint color=LIGHTGRAY  stype=gold  prob=0.01
+        gemshole  > SpawnPoint color=LIGHTGRAY  stype=gems  prob=0.01
+        diamondshole  > SpawnPoint color=LIGHTGRAY stype=diamonds  prob=0.01
 
-        good > Resource limit=1 color=ORANGE
-            gold > img=oryx/gold2 singleton=True
-            gems > img=oryx/diamond2 singleton=True
-            diamonds > img=oryx/goldsack singleton=True
+        gold > Resource limit=1 singleton=True color=GREEN
+        gems > Resource limit=1 singleton=True color=RED
+        diamonds > Resource limit=1 singleton=True color=PURPLE
 
-        whirlpool > Immovable color=DARKBLUE img=newset/whirlpool2
+        whirlpool > Immovable color=BLACK
 
-        treasure > Resource color=GREEN invisible=True
-            t10 >
-            t5 >
-            t1 >
+        t10 > Resource color=GREEN
+        t5 > Resource color=GREEN
+        t1 > Resource color=GREEN
 
-        avatar > MovingAvatar color=RED img=newset/ship
-        portal >
-            winPortal > SpawnPoint stype=winCounter spawnCooldown=1000 limit=1 portal=True color=BROWN
-        winCounter > Immovable color=BROWN
+        avatar > MovingAvatar color=DARKBLUE
 
 
     LevelMapping
         . > water
-        * > water land winPortal
         x > water land
         A > water avatar
         1 > water portGold
@@ -46,15 +38,18 @@ BasicGame square_size=30
         s > water shipwreck goldhole gemshole diamondshole
 
     TerminationSet
-        SpriteCounter      stype=avatar               limit=0 win=False
-        MultiSpriteCounter stype=winCounter limit=1 win=True
+        SpriteCounter stype=avatar limit=0 win=False
+        Timeout timeout=1000 win=True
 
     InteractionSet
         avatar  EOS  > stepBack
         avatar  land  > stepBack
-        avatar whirlpool > killSprite scoreChange=-10
+        avatar whirlpool > killSprite
+        avatar whirlpool > changeScore value=-10
 
-        good avatar > collectResource
+        gold avatar > collectResource
+        gems avatar > collectResource
+        diamonds avatar > collectResource
 
         avatar portGold > spawnIfHasMore resource=gold limit=1 stype=t10
         avatar portGems > spawnIfHasMore resource=gems limit=1 stype=t10

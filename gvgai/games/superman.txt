@@ -1,0 +1,84 @@
+BasicGame
+    SpriteSet
+
+        sky > Immovable color=LIGHTGRAY hidden=True
+        building > Immovable color=PURPLE
+        street > Immovable color=ORANGE
+        emptyspace > Immovable color=WHITE invisible=True
+        jail > Immovable color=BROWN
+
+        portalLeft > SpawnPoint color=GOLD portal=True spawnCooldown=67 total=20 stype=bleft
+        portalRight > SpawnPoint color=GOLD portal=True spawnCooldown=67 total=20 stype=bright
+
+        bleft > Bomber orientation=UP color=BLUE  prob=0.1 spawnCooldown=6 speed=0.5 stype=missileL 
+        bright > Bomber orientation=UP color=BLUE  prob=0.1 spawnCooldown=6 speed=0.5 stype=missileR
+
+        villain  > Resource color=GREEN limit=8 value=0
+        villaingang > Resource color=GREEN limit=1 value=0
+
+        standingcivilian > Missile orientation=DOWN color=GRAY speed=0.2
+        hurtcivilian > Immovable color=LIGHTRED
+        fallingcivilian > Missile orientation=DOWN color=GRAY speed=0.2
+
+
+        missileL > Missile speed=0.6 color=PINK orientation=LEFT
+        missileR > Missile speed=0.6 color=PINK orientation=RIGHT
+
+        avatar > MovingAvatar color=RED frameRate=8
+
+        wall > Immovable color=BLACK
+
+    InteractionSet
+        avatar wall > stepBack
+        avatar EOS > stepBack 
+        avatar portal > stepBack
+
+        bleft wall > reverseDirection
+        bleft wall > stepBack
+        bright wall > reverseDirection
+        bright wall > stepBack
+        missileL EOS > killSprite
+        missileR EOS > killSprite
+
+        building missileL > transformTo stype=emptyspace
+        missileL building > killSprite
+        building missileR > transformTo stype=emptyspace
+        missileR building > killSprite
+
+        standingcivilian building > stepBack
+        standingcivilian emptyspace > transformTo stype=fallingcivilian
+        fallingcivilian building > transformTo stype=standingcivilian
+
+        fallingcivilian wall > transformTo stype=hurtcivilian
+        fallingcivilian avatar > killSprite 
+        fallingcivilian avatar > changeScore value=1
+
+        avatar bleft > changeResource resource=villain value=1 
+        avatar bleft > changeScore value=1
+        bleft avatar > killSprite
+        avatar bright > changeResource resource=villain value=1 
+        avatar bright > changeScore value=1
+        bright avatar > killSprite
+
+        avatar jail > spawnIfHasMore resource=villain stype=villaingang limit=8
+        avatar jail > changeResource resource=villain value=-8
+        villaingang jail > killSprite 
+        villaingang jail > changeScore value=1000
+
+
+    LevelMapping
+        A > avatar street
+        b > building sky
+        s > street
+        l > bleft sky
+        r > bright sky
+        c > standingcivilian sky
+        p > portalRight street
+        q > portalLeft street
+        j > jail
+        . > sky
+
+    TerminationSet
+        MultiSpriteCounter stype1=hurtcivilian limit=1 win=False
+        SpriteCounter stype=avatar limit=0  win=False
+        MultiSpriteCounter stype1=portalLeft stype2=portalRight stype3=bleft stype4=bright limit=0 win=True
