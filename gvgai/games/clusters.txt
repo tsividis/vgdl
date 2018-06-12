@@ -8,11 +8,11 @@ BasicGame key_handler=Pulse
         redblock > Immovable img=newset/blockR color=LIGHTRED
         greenblock > Immovable img=newset/blockG color=LIGHTGREEN
 
-        box > Passive 
-            bluebox > img=newset/blockB2 color=BLUE
-            redbox > img=newset/blockR2  color=RED
-            greenbox > img=newset/blockG2 color=GREEN
-            brokenBox >  img=newset/block3 color=BROWN
+
+        bluebox > Passive img=newset/blockB2 color=BLUE
+        redbox > Passive img=newset/blockR2  color=RED
+        greenbox > Passive  img=newset/blockG2 color=GREEN
+        brokenBox > Passive  img=newset/block3 color=BROWN
 
         avatar > MovingAvatar img=oryx/knight1  color=GOLD
         wall > Immovable img=oryx/wall3 autotiling=True color=GRAY
@@ -98,6 +98,6 @@ BasicGame key_handler=Pulse
 
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
-        SpriteCounter stype=box limit=0 win=True
+        MultiSpriteCounter stype1=bluebox stype2=redbox stype3=greenbox stype4=brokenBox limit=0 win=True
         MultiSpriteCounter stype1=brokenBox limit=1 win=False
         Timeout timeout=1500 win=False
