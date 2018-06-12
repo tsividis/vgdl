@@ -159,6 +159,25 @@ testRules7 = """
         box2 avatar > bounceForward
 """
 
+## TEST7 temp
+# this works but 8 doesn't wtf
+testSequence7 = [[K_UP, K_UP, K_UP, K_RIGHT]]
+testLevel7 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                           3  w
+w  r              s            w
+w          k                3  w
+w             r        s       w
+w     k                        w
+w                      A       w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+testRules7 = """
+        sam wall > stepBack
+        box2 avatar > bounceForward
+"""
+
 # This doesn't test for anything new; it just has all the objects thrown in at once
 testSequence8 = [[0]*3]
 testLevel8 = """
@@ -407,6 +426,25 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwww
 # """
 
+# **TODO**
+# this test consistently gave me the mapping error
+# I think it's when something goes off screen
+# testSequence = [[K_UP, K_UP, K_UP, K_RIGHT]]
+# testLevel = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                           3  w
+# w                 s            w
+# w          k                3  w
+# w                      s       w
+# w     k                        w
+# w                      A       w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+# testRules = """
+#         box2 avatar > bounceForward
+# """
+
 game="""
 BasicGame
     SpriteSet
@@ -528,4 +566,4 @@ if multiTesting:
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     # parse, run and play.
-    VGDLParser.playGame(game, level)
+    VGDLParser.playGame(level_game_pairs[0], level_game_pairs[1])
