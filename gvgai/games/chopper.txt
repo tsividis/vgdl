@@ -7,15 +7,15 @@ BasicGame
         satellite   > RandomNPC    color=LIGHTGRAY img=newset/satellite cons=1
         avatar   > ShootAvatar orientation=DOWN color=YELLOW ammo=bullet stype=bomb img=newset/helicopter rotateInPlace=False
 
-        sam  > Missile orientation=UP color=BLUE speed=0.25 img=oryx/bullet1
+        sam  > Missile orientation=UP color=LIGHTRED speed=0.25 img=oryx/bullet1
         bomb > Missile orientation=DOWN color=RED speed=0.75 img=newset/bomb singleton=True
         
-        leftCloud  > Missile orientation=LEFT speed=0.05  color=WHITE img=newset/cloud2
-        fastLeftCloud  > Missile orientation=LEFT speed=0.2  color=WHITE img=newset/cloud2
-        rightCloud  > Missile  orientation=RIGHT speed=0.05  color=WHITE img=newset/cloud2
-        fastRightCloud  > Missile  orientation=RIGHT speed=0.2  color=WHITE img=newset/cloud2
+        leftCloud  > Missile orientation=LEFT speed=0.05  color=RSQPUS img=newset/cloud2
+        fastLeftCloud  > Missile orientation=LEFT speed=0.2  color=LMZTUO img=newset/cloud2
+        rightCloud  > Missile  orientation=RIGHT speed=0.05  color=VYPDQP img=newset/cloud2
+        fastRightCloud  > Missile  orientation=RIGHT speed=0.2  color=VNUJQV img=newset/cloud2
 
-        tank   > Bomber color=RED stype=sam  prob=0.03  spawnCooldown=5 speed=0.2 img=newset/tank_blueU
+        tank   > Bomber color=BROWN stype=sam  prob=0.03  spawnCooldown=5 speed=0.2 img=newset/tank_blueU
             
         portalBase  > SpawnPoint  color=BLACK img=oryx/dooropen1 portal=True stype=tank  spawnCooldown=40   total=20 
         portalAmmo  > SpawnPoint  color=DARKBLUE img=oryx/dooropen1 portal=True stype=supply spawnCooldown=10 prob=0.15

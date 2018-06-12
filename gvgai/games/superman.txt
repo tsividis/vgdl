@@ -7,22 +7,22 @@ BasicGame
         emptyspace > Immovable color=WHITE invisible=True
         jail > Immovable color=BROWN
 
-        portalLeft > SpawnPoint color=GOLD portal=True spawnCooldown=67 total=20 stype=bleft
-        portalRight > SpawnPoint color=GOLD portal=True spawnCooldown=67 total=20 stype=bright
+        portalLeft > SpawnPoint color=IOQEEF portal=True spawnCooldown=67 total=20 stype=bleft
+        portalRight > SpawnPoint color=LBLFCJ portal=True spawnCooldown=67 total=20 stype=bright
 
-        bleft > Bomber orientation=UP color=BLUE  prob=0.1 spawnCooldown=6 speed=0.5 stype=missileL 
-        bright > Bomber orientation=UP color=BLUE  prob=0.1 spawnCooldown=6 speed=0.5 stype=missileR
+        bleft > Bomber orientation=UP color=LRSPUS  prob=0.1 spawnCooldown=6 speed=0.5 stype=missileL 
+        bright > Bomber orientation=UP color=TDLEMS  prob=0.1 spawnCooldown=6 speed=0.5 stype=missileR
 
-        villain  > Resource color=GREEN limit=8 value=0
-        villaingang > Resource color=GREEN limit=1 value=0
+        villain  > Resource color=YOYTZM limit=8 value=0
+        villaingang > Resource color=KSXCRX limit=1 value=0
 
-        standingcivilian > Missile orientation=DOWN color=GRAY speed=0.2
+        standingcivilian > Missile orientation=DOWN color=CVHTTO speed=0.2
         hurtcivilian > Immovable color=LIGHTRED
-        fallingcivilian > Missile orientation=DOWN color=GRAY speed=0.2
+        fallingcivilian > Missile orientation=DOWN color=WLMEZR speed=0.2
 
 
-        missileL > Missile speed=0.6 color=PINK orientation=LEFT
-        missileR > Missile speed=0.6 color=PINK orientation=RIGHT
+        missileL > Missile speed=0.6 color=CDMHFV orientation=LEFT
+        missileR > Missile speed=0.6 color=ENKXEZ orientation=RIGHT
 
         avatar > MovingAvatar color=RED frameRate=8
 

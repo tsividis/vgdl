@@ -9,7 +9,7 @@ BasicGame key_handler=Pulse
  
         boilingwater > Passive img=newset/boilingwater frameRate=8 color=LIGHTBLUE
         rawpasta > Passive img=newset/pasta color=YELLOW
-        tomato > Passive img=newset/tomato color=RED
+        tomato > Passive img=newset/tomato color=EWZHFR
         tuna > Passive img=newset/tuna color=LIGHTRED
 
         pastainplace > Passive img=newset/pastaplate color=GOLD

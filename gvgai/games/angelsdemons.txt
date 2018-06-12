@@ -1,6 +1,6 @@
 BasicGame
     SpriteSet
-        sky > Immovable img=oryx/backLBlue
+        sky > Immovable color=LIGHTBLUE img=oryx/backLBlue
         trunk > Immovable color=WHITE img=newset/cloud1
         cursed > Immovable color=GRAY img=newset/cursedman
 
@@ -9,9 +9,9 @@ BasicGame
         citizen > Chaser stype=output color=RED img=newset/man2 speed=0.4
         blessed > Chaser stype=output color=ORANGE img=newset/blessedman speed=0.4
             
-        avatar > MovingAvatar img=newset/girl4 frameRate=10
+        avatar > MovingAvatar color=DARKGRAY img=newset/girl4 frameRate=10
 
-        input > SpawnPoint color=GOLD stype=citizen spawnCooldown=16 img=oryx/dooropen1 portal=True
+        input > SpawnPoint color=YELLOW stype=citizen spawnCooldown=16 img=oryx/dooropen1 portal=True
         output > Immovable color=GOLD img=oryx/dooropen1 portal=True
         box > Passive color=BROWN img=newset/cloud2  
 

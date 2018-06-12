@@ -10,19 +10,19 @@ BasicGame square_size=30
 
         shipwreck > Immovable img=newset/shipwreck portal=True color=BLACK
 
-        goldhole  > SpawnPoint color=LIGHTGRAY  stype=gold  prob=0.01
-        gemshole  > SpawnPoint color=LIGHTGRAY  stype=gems  prob=0.01
-        diamondshole  > SpawnPoint color=LIGHTGRAY stype=diamonds  prob=0.01
+        goldhole  > SpawnPoint color=TDLEMS  stype=gold  prob=0.01
+        gemshole  > SpawnPoint color=YOYTZM  stype=gems  prob=0.01
+        diamondshole  > SpawnPoint color=KSXCRX stype=diamonds  prob=0.01
 
         gold > Resource limit=1 singleton=True color=GREEN
         gems > Resource limit=1 singleton=True color=RED
         diamonds > Resource limit=1 singleton=True color=PURPLE
 
-        whirlpool > Immovable color=BLACK
+        whirlpool > Immovable color=DARKGRAY
 
-        t10 > Resource color=GREEN
-        t5 > Resource color=GREEN
-        t1 > Resource color=GREEN
+        t10 > Resource color=CDMHFV
+        t5 > Resource color=ENKXEZ
+        t1 > Resource color=NNZXQZ
 
         avatar > MovingAvatar color=DARKBLUE
 

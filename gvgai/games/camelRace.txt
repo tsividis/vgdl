@@ -8,7 +8,7 @@ BasicGame
         mediumL > Missile speed=0.3 frameRate=6 cooldown=6 orientation=LEFT color=LIGHTORANGE
         slowR > Missile speed=0.15 frameRate=10 cooldown=6 orientation=RIGHT color=LIGHTGREEN
         slowL > Missile speed=0.15 frameRate=10 cooldown=6 orientation=LEFT color=PURPLE
-        goal  > Immovable color=GREEN img=newset/exit2
+        goal  > Immovable color=LIGHTRED img=newset/exit2
         winnerNPC > Immovable color=RED img=oryx/sparkle2
         winnerPlayer > MovingAvatar color=PINK img=oryx/sparkle1
         avatar > MovingAvatar color=DARKBLUE frameRate=8

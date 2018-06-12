@@ -11,9 +11,9 @@ BasicGame square_size=25
     burger > Chaser speed=0.1 stype=fullMolarSup color=BROWN
 
     hotdoghole > SpawnPoint color=LIGHTGRAY portal=True stype=hotdog  prob=0.15 spawnCooldown=8 total=5 color=PURPLE
-    burgerhole > SpawnPoint color=LIGHTGRAY portal=True stype=burger  prob=0.15 spawnCooldown=8 total=5 color=PINK
+    burgerhole > SpawnPoint color=ZFZCIB portal=True stype=burger  prob=0.15 spawnCooldown=8 total=5 color=PINK
 
-    fluor > Missile color=LIGHTBLUE shrinkfactor=0.5 img=oryx/slime1
+    fluor > Missile color=LIGHTBLUE img=oryx/slime1
     wall > Immovable color=GRAY img=oryx/wall6
 
 

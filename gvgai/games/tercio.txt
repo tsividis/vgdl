@@ -6,7 +6,7 @@ BasicGame
         white > Immovable color=WHITE
         blue > Immovable color=BLUE
 
-        grey > Immovable color=GRAY
+        grey > Immovable color=LBLFCJ
 
         target > Immovable color=GREEN
         winTarget > Immovable color=RED
@@ -16,7 +16,7 @@ BasicGame
         inWhite > MovingAvatar color=GOLD
         inBlue > MovingAvatar color=LIGHTGREEN
 
-        wall > Immovable color=ORANGE autotiling=True
+        wall > Immovable color=GRAY autotiling=True
     
     LevelMapping
         . > black

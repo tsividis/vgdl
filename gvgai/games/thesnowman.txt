@@ -3,25 +3,25 @@
 BasicGame
     SpriteSet
 
-        floor > Immovable color=DARKGRAY
+        floor > Immovable color=LIGHTGRAY
 
         avatar > MovingAvatar frameRate=8 color=DARKBLUE
 
         key > Resource color=GREEN limit=1
-        lock > Immovable color=BROWN
+        lock > Immovable color=GOLD
 
         base > Passive color=WHITE
-        body > Passive color=LIGHTGRAY
+        body > Passive color=LRSPUS
         chest > Passive color=LIGHTBLUE
         head > Passive color=LIGHTGREEN
 
-        baseinplace > Immovable color=GRAY
+        baseinplace > Immovable color=BROWN
         bodyinplace > Immovable color=YELLOW
         chestinplace > Immovable color=ORANGE
         headinplace > Immovable color=RED
         wrongplace  > Immovable color=PINK
 
-        wall > Immovable color=BLACK autotiling=True
+        wall > Immovable color=DARKGRAY autotiling=True
 
     LevelMapping
         s > floor base

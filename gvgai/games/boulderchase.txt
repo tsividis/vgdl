@@ -6,7 +6,7 @@ BasicGame
 		dirt > Immovable color=BROWN img=oryx/backLBrown
 		exitdoor > Immovable color=GREEN img=oryx/door2
 		diamond > Resource color=GOLD limit=10 img=oryx/diamond3
-		boulder > Missile orientation=DOWN color=GRAY speed=0.2 img=oryx/mineral1
+		boulder > Missile orientation=DOWN color=PURPLE speed=0.2 img=oryx/mineral1
 
                 avatar  > ShootAvatar  color=WHITE stype=sword frameRate=8 img=oryx/spelunky
                 crab > Chaser stype=avatar speed=0.1 color=RED img=oryx/scorpion2
