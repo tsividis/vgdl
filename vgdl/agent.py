@@ -404,6 +404,18 @@ class Agent:
 					seen_limits = self.seen_limits[avatarColor], annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
 					firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
 			
+			#TEMP: start
+			from goal_programming import *
+			target_theory = constructTargetTheory(self.hypotheses[0])
+			killself_theory = constructKillSelfTheory(self.hypotheses[0])
+			move_theory = constructTouchNothingEverywhereTheory(self.hypotheses[0])
+			printAllRules(self.hypotheses[0])
+			print()
+			print()
+			printAllRules(move_theory)
+			embed()
+			#TEMP: end
+
 			bestNode, gameStringArray, predictedEnvs = p.BFS()
 
 			# best_index = np.argmin([p.total_nodes for p in res._value])
