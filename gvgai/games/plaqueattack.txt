@@ -1,6 +1,6 @@
 BasicGame square_size=25
   SpriteSet
-    floor > Immovable color=WHITE hidden=True img=oryx/backBlack
+    floor > Immovable color=WHITE hidden=True 
     fullMolarInf > Immovable color=YELLOW
     fullMolarSup > Immovable color=RED
     deadMolarInf > Immovable color=GREEN

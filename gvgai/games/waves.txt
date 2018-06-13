@@ -7,8 +7,8 @@ BasicGame
         sam  > Missile orientation=RIGHT color=GREEN speed=1.0
         laser > Missile orientation=LEFT speed=0.3 color=RED
 
-        portalSlow  > SpawnPoint   stype=alien  spawnCooldown=10 prob=0.05 color=PURPLE portal=True
-        rockPortal  > SpawnPoint   stype=rock  spawnCooldown=10 prob=0.2 color=PINK portal=True
+        portalSlow  > SpawnPoint   stype=alien  spawnCooldown=10 prob=0.05 color=PURPLE 
+        rockPortal  > SpawnPoint   stype=rock  spawnCooldown=10 prob=0.2 color=PINK 
 
         shield > Resource color=GOLD limit=4
 

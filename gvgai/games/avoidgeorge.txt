@@ -1,15 +1,15 @@
 BasicGame
     SpriteSet
-        floor > Immovable color=GRAY img=newset/floor6 hidden=True
+        floor > Immovable color=GRAY  hidden=True
         
-        annoyed > RandomNPC speed=0.25 img=newset/cursedman cons=2 color=PURPLE
+        annoyed > RandomNPC speed=0.25 cons=2 color=PURPLE
         citizen >    
-            quiet > RandomNPC speed=0.25 img=newset/man2 cons=1 color=GREEN
-            avatar > ShootAvatar stype=cigarette img=newset/girl1 rotateInPlace=False color=BLUE
+            quiet > RandomNPC speed=0.25 cons=1 color=GREEN
+            avatar > ShootAvatar stype=cigarette rotateInPlace=False color=BLUE
 
-        george > Chaser color=YELLOW stype=citizen speed=0.25 img=newset/man4 frameRate=8
-        cigarette > Flicker color=BROWN limit=5 singleton=True img=newset/cigarette
-        wall > Immovable img=oryx/wall6 color=LIGHTGRAY
+        george > Chaser color=YELLOW stype=citizen speed=0.25 frameRate=8
+        cigarette > Flicker color=BROWN limit=5 singleton=True 
+        wall > Immovable color=LIGHTGRAY
 
     TerminationSet
         SpriteCounter stype=avatar  win=False

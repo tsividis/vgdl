@@ -16,7 +16,7 @@ BasicGame
         inWhite > MovingAvatar color=GOLD
         inBlue > MovingAvatar color=LIGHTGREEN
 
-        wall > Immovable color=GRAY autotiling=True
+        wall > Immovable color=GRAY 
     
     LevelMapping
         . > black

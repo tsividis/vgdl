@@ -1,26 +1,26 @@
 BasicGame
     SpriteSet
-        stratosphere > Immovable hidden=True color=LIGHTBLUE img=oryx/backLBlue
-        thermosphere > Immovable hidden=True color=BLUE img=oryx/seaWater
-        troposphere > Immovable hidden=True clor=GRAY img=oryx/backGrey
+        stratosphere > Immovable hidden=True color=LIGHTBLUE 
+        thermosphere > Immovable hidden=True color=BLUE 
+        troposphere > Immovable hidden=True clor=GRAY 
 
-        satellite   > RandomNPC    color=LIGHTGRAY img=newset/satellite cons=1
-        avatar   > ShootAvatar orientation=DOWN color=YELLOW ammo=bullet stype=bomb img=newset/helicopter rotateInPlace=False
+        satellite   > RandomNPC    color=LIGHTGRAY  cons=1
+        avatar   > ShootAvatar orientation=DOWN color=YELLOW ammo=bullet stype=bomb  rotateInPlace=False
 
-        sam  > Missile orientation=UP color=LIGHTRED speed=0.25 img=oryx/bullet1
-        bomb > Missile orientation=DOWN color=RED speed=0.75 img=newset/bomb singleton=True
+        sam  > Missile orientation=UP color=LIGHTRED speed=0.25 
+        bomb > Missile orientation=DOWN color=RED speed=0.75  singleton=True
         
-        leftCloud  > Missile orientation=LEFT speed=0.05  color=RSQPUS img=newset/cloud2
-        fastLeftCloud  > Missile orientation=LEFT speed=0.2  color=LMZTUO img=newset/cloud2
-        rightCloud  > Missile  orientation=RIGHT speed=0.05  color=VYPDQP img=newset/cloud2
-        fastRightCloud  > Missile  orientation=RIGHT speed=0.2  color=VNUJQV img=newset/cloud2
+        leftCloud  > Missile orientation=LEFT speed=0.05  color=RSQPUS 
+        fastLeftCloud  > Missile orientation=LEFT speed=0.2  color=LMZTUO 
+        rightCloud  > Missile  orientation=RIGHT speed=0.05  color=VYPDQP 
+        fastRightCloud  > Missile  orientation=RIGHT speed=0.2  color=VNUJQV 
 
-        tank   > Bomber color=BROWN stype=sam  prob=0.03  spawnCooldown=5 speed=0.2 img=newset/tank_blueU
+        tank   > Bomber color=BROWN stype=sam  prob=0.03  spawnCooldown=5 speed=0.2 
             
-        portalBase  > SpawnPoint  color=BLACK img=oryx/dooropen1 portal=True stype=tank  spawnCooldown=40   total=20 
-        portalAmmo  > SpawnPoint  color=DARKBLUE img=oryx/dooropen1 portal=True stype=supply spawnCooldown=10 prob=0.15
+        portalBase  > SpawnPoint  color=BLACK  stype=tank  spawnCooldown=40   total=20 
+        portalAmmo  > SpawnPoint  color=DARKBLUE  stype=supply spawnCooldown=10 prob=0.15
 
-        supply > Missile  color=GOLD orientation=LEFT speed=0.25 img=oryx/goldsack 
+        supply > Missile  color=GOLD orientation=LEFT speed=0.25 
         bullet > Resource color=GREEN limit=20
     
     LevelMapping

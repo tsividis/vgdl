@@ -7,7 +7,7 @@ BasicGame
         key > Resource color=ORANGE limit=1
         goal > Immovable color=GREEN
         box > Passive color=BROWN
-        wall > Immovable color=LIGHTGRAY autotiling=True
+        wall > Immovable color=LIGHTGRAY 
 
     LevelMapping
         A > avatar floor

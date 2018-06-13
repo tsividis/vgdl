@@ -1,21 +1,21 @@
 BasicGame key_handler=Pulse
     SpriteSet
 
-        floor > Immovable img=oryx/floor3 hidden=True color=LIGHTGRAY
-        hole   > Immovable color=DARKBLUE img=oryx/spike2 portal=True
+        floor > Immovable hidden=True color=LIGHTGRAY
+        hole   > Immovable color=DARKBLUE 
 
-        blueblock > Immovable img=newset/blockB color=LIGHTBLUE
-        redblock > Immovable img=newset/blockR color=LIGHTRED
-        greenblock > Immovable img=newset/blockG color=LIGHTGREEN
+        blueblock > Immovable color=LIGHTBLUE
+        redblock > Immovable color=LIGHTRED
+        greenblock > Immovable color=LIGHTGREEN
 
 
-        bluebox > Passive img=newset/blockB2 color=BLUE
-        redbox > Passive img=newset/blockR2  color=RED
-        greenbox > Passive  img=newset/blockG2 color=GREEN
-        brokenBox > Passive  img=newset/block3 color=BROWN
+        bluebox > Passive color=BLUE
+        redbox > Passive color=RED
+        greenbox > Passive  color=GREEN
+        brokenbox > Passive  color=BROWN
 
-        avatar > MovingAvatar img=oryx/knight1  color=GOLD
-        wall > Immovable img=oryx/wall3 autotiling=True color=GRAY
+        avatar > MovingAvatar color=GOLD
+        wall > Immovable color=GRAY
 
     LevelMapping
             A > avatar floor
@@ -89,15 +89,15 @@ BasicGame key_handler=Pulse
         greenbox wall > undoAll
         bluebox wall > undoAll
         brokenbox wall > undoAll
-        redbox hole > transformTo stype=brokenBox
-        greenbox hole > transformTo stype=brokenBox
-        bluebox hole > transformTo stype=brokenBox
-        brokenbox hole > transformTo stype=brokenBox
+        redbox hole > transformTo stype=brokenbox
+        greenbox hole > transformTo stype=brokenbox
+        bluebox hole > transformTo stype=brokenbox
+        brokenbox hole > transformTo stype=brokenbox
 
 
 
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
-        MultiSpriteCounter stype1=bluebox stype2=redbox stype3=greenbox stype4=brokenBox limit=0 win=True
-        MultiSpriteCounter stype1=brokenBox limit=1 win=False
+        MultiSpriteCounter stype1=bluebox stype2=redbox stype3=greenbox stype4=brokenbox limit=0 win=True
+        MultiSpriteCounter stype1=brokenbox limit=1 win=False
         Timeout timeout=1500 win=False

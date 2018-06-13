@@ -1,19 +1,19 @@
 BasicGame
     SpriteSet
-        water > Immovable color=LIGHTBLUE img=newset/water2
-        sharkhole  > SpawnPoint color=LKLWDD stype=shark  prob=0.025 total=1 img=newset/whirlpool2 portal=True 
-        whalehole  > SpawnPoint color=DLLJEV stype=whale  prob=0.1 spawnCooldown=10 img=newset/whirlpool2 portal=True 
-        piranhahole  >  SpawnPoint color=GREEN stype=piranha  prob=0.1 spawnCooldown=10 img=newset/whirlpool2 portal=True 
+        water > Immovable color=LIGHTBLUE 
+        sharkhole  > SpawnPoint color=LKLWDD stype=shark  prob=0.025 total=1  
+        whalehole  > SpawnPoint color=DLLJEV stype=whale  prob=0.1 spawnCooldown=10 
+        piranhahole  >  SpawnPoint color=GREEN stype=piranha  prob=0.1 spawnCooldown=10 whirlpool2 
 
 
-        avatar  > ShootAvatar color=JHXDKF  stype=torpedo img=newset/submarine
+        avatar  > ShootAvatar color=JHXDKF  stype=torpedo 
         torpedo > Missile color=WHITE  img=oryx/orb2
-        shark  > Chaser speed=0.1 color=ORANGE img=newset/shark2 stype=avatar
-        whale  > Missile  orientation=RIGHT  speed=0.1 color=BROWN img=newset/whale
-        piranha > Missile orientation=LEFT speed=0.1 color=RED img=newset/piranha1
+        shark  > Chaser speed=0.1 color=ORANGE  stype=avatar
+        whale  > Missile  orientation=RIGHT  speed=0.1 color=BROWN 
+        piranha > Missile orientation=LEFT speed=0.1 color=RED 
 
-        shell > Resource color=YELLOW limit=20 img=oryx/amulat1
-        sharkFang > Resource color=GOLD limit=1 img=oryx/sword4
+        shell > Resource color=YELLOW limit=20 
+        sharkFang > Resource color=GOLD limit=1 
 
 
     LevelMapping

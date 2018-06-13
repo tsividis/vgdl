@@ -7,17 +7,17 @@ BasicGame key_handler=Pulse
         lock > Immovable color=RED
 
  
-        boilingwater > Passive img=newset/boilingwater frameRate=8 color=LIGHTBLUE
-        rawpasta > Passive img=newset/pasta color=YELLOW
-        tomato > Passive img=newset/tomato color=EWZHFR
-        tuna > Passive img=newset/tuna color=LIGHTRED
+        boilingwater > Passive frameRate=8 color=LIGHTBLUE
+        rawpasta > Passive color=YELLOW
+        tomato > Passive color=EWZHFR
+        tuna > Passive color=LIGHTRED
 
-        pastainplace > Passive img=newset/pastaplate color=GOLD
-        sauceinplace > Passive img=newset/tomatosauce color=ORANGE
+        pastainplace > Passive color=GOLD
+        sauceinplace > Passive color=ORANGE
 
-        wrongplace  > Immovable color=BLACK img=oryx/slash1  
-        plateinplace > Immovable color=WHITE img=newset/pastasauce 
-	wall > Immovable color=GRAY img=newset/floor4
+        wrongplace  > Immovable color=BLACK  
+        plateinplace > Immovable color=WHITE 
+	wall > Immovable color=GRAY 
 
 
     LevelMapping

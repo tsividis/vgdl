@@ -7,8 +7,8 @@ BasicGame
         emptyspace > Immovable color=WHITE invisible=True
         jail > Immovable color=BROWN
 
-        portalLeft > SpawnPoint color=IOQEEF portal=True spawnCooldown=67 total=20 stype=bleft
-        portalRight > SpawnPoint color=LBLFCJ portal=True spawnCooldown=67 total=20 stype=bright
+        portalLeft > SpawnPoint color=IOQEEF spawnCooldown=67 total=20 stype=bleft
+        portalRight > SpawnPoint color=LBLFCJ spawnCooldown=67 total=20 stype=bright
 
         bleft > Bomber orientation=UP color=LRSPUS  prob=0.1 spawnCooldown=6 speed=0.5 stype=missileL 
         bright > Bomber orientation=UP color=TDLEMS  prob=0.1 spawnCooldown=6 speed=0.5 stype=missileR

@@ -1,11 +1,11 @@
 BasicGame
     SpriteSet
-        base    > Immovable    color=WHITE img=base
+        base    > Immovable    color=WHITE 
         avatar  > HorizontalAvatar color=SQYLIY
         alien   > Missile  orientation=DOWN  speed=0.8 color=ORANGE
         ghost > Missile orientation=DOWN speed=0.8 color=PURPLE
-        portalAlien  > SpawnPoint orientation=RIGHT   stype=alien  color=CCKQQB spawnCooldown=16  prob=0.08 total=20 img=portal
-        portalGhost  > SpawnPoint orientation=RIGHT   stype=ghost  color=BVUTFD spawnCooldown=12  prob=0.08 total=20 img=portal
+        portalAlien  > SpawnPoint orientation=RIGHT   stype=alien  color=CCKQQB spawnCooldown=16  prob=0.08 total=20 
+        portalGhost  > SpawnPoint orientation=RIGHT   stype=ghost  color=BVUTFD spawnCooldown=12  prob=0.08 total=20 
 
     LevelMapping
         0 > base
@@ -21,5 +21,7 @@ BasicGame
         avatar  wall  > stepBack
         alien   EOS  > turnAround
         base   alien > killSprite
-        alien avatar > killSprite scoreChange=1
-        avatar ghost > killSprite scoreChange=-10
+        alien avatar > killSprite 
+        alien avatar > changeScore value=1
+        avatar ghost > killSprite 
+        avatar ghost > changeScore value=-10

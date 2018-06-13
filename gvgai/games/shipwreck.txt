@@ -2,13 +2,13 @@ BasicGame square_size=30
     SpriteSet
 
         water > Immovable color=LIGHTBLUE
-        land > Immovable color=BROWN autotiling=True
+        land > Immovable color=BROWN 
 
         portGold > Immovable color=GOLD
         portGems > Immovable color=YELLOW
         portDiamonds > Immovable color=BLUE
 
-        shipwreck > Immovable img=newset/shipwreck portal=True color=BLACK
+        shipwreck > Immovable color=BLACK
 
         goldhole  > SpawnPoint color=TDLEMS  stype=gold  prob=0.01
         gemshole  > SpawnPoint color=YOYTZM  stype=gems  prob=0.01

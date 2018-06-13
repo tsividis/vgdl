@@ -1,17 +1,17 @@
 BasicGame key_handler=Pulse  square_size=50
     SpriteSet
-        black > Immovable color=BLACK img=oryx/backBlack
-        white > Immovable color=WHITE img=oryx/backGrey
-        grey > Immovable color=GRAY img=oryx/backOBrown
-        target > Passive color=ORANGE  img=newset/hole1 portal=True
-        winTarget > Immovable color=GREEN img=newset/hole1
-        crate > Passive color=BROWN img=oryx/bush5 
+        black > Immovable color=BLACK 
+        white > Immovable color=WHITE 
+        grey > Immovable color=GRAY 
+        target > Passive color=ORANGE  
+        winTarget > Immovable color=GREEN 
+        crate > Passive color=BROWN 
             
         inGrey > MovingAvatar color=PINK
         inBlack > MovingAvatar color=PURPLE
         inWhite > MovingAvatar color=GOLD
 
-        wall > Immovable color=LIGHTGRAY img=oryx/dirtwall autotiling=True
+        wall > Immovable color=LIGHTGRAY 
     
     LevelMapping
         . > black

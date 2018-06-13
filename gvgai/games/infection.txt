@@ -1,16 +1,16 @@
 BasicGame
     SpriteSet
-        floor > Immovable color=LIGHTGRAY img=oryx/backGrey hidden=True
-        sword > Flicker color=BLACK limit=5 singleton=True img=oryx/sword1
-        entrance > SpawnPoint total=5 color=PINK cooldown=100 stype=doctor img=oryx/dooropen1 portal=True
-        virus > Immovable color=RED img=oryx/slime4
+        floor > Immovable color=LIGHTGRAY hidden=True
+        sword > Flicker color=BLACK limit=5 singleton=True
+        entrance > SpawnPoint total=5 color=PINK cooldown=100 stype=doctor portal=True
+        virus > Immovable color=RED 
 
-        normal   > ShootAvatar stype=sword color=WHITE img=newset/girl2
-        carrier  > ShootAvatar stype=sword color=BROWN img=newset/girl2_c frameRate=8
-        host     > RandomNPC speed=0.25  cons=1 color=GREEN img=newset/man3
-        infected > RandomNPC speed=0.25  cons=1 color=ORANGE speed=0.5 img=newset/cursedman frameRate=8
-        doctor > RandomNPC speed=0.25  cons=1 color=BLUE speed=0.2 img=newset/nurse
-        wall > Immovable color=GRAY img=oryx/wall3 autotiling=True
+        normal   > ShootAvatar stype=sword color=WHITE 
+        carrier  > ShootAvatar stype=sword color=BROWN  frameRate=8
+        host     > RandomNPC speed=0.25  cons=1 color=GREEN 
+        infected > RandomNPC speed=0.25  cons=1 color=ORANGE speed=0.5  frameRate=8
+        doctor > RandomNPC speed=0.25  cons=1 color=BLUE speed=0.2 
+        wall > Immovable color=GRAY  autotiling=True
 
     TerminationSet
         SpriteCounter stype=host   win=True

@@ -21,7 +21,7 @@ BasicGame
         headinplace > Immovable color=RED
         wrongplace  > Immovable color=PINK
 
-        wall > Immovable color=DARKGRAY autotiling=True
+        wall > Immovable color=DARKGRAY 
 
     LevelMapping
         s > floor base
