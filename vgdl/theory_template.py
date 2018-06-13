@@ -1838,6 +1838,12 @@ def writeTheoryToTxt(rle, theory, txtFile, writeFile=False, debug=False, goalLoc
 			y,x = sprite.rect.top/30, sprite.rect.left/30
 			locs[(y,x)].append(sprite)
 
+	## If this theory includes any new classes, add them to the symbolDict
+	for k in theory.spriteObjects.keys():
+		if k!='EOS' and k not in symbolDict:
+			idx=len(symbolDict.keys())
+			symbolDict[k]=ALNUM[idx]
+
 
 	for k,v in locs.iteritems():
 		symbol = objectsToSymbol(rle, v, symbolDict)

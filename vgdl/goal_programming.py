@@ -1,7 +1,8 @@
 """Module for modifying hypotheses with alternative goals"""
 import itertools
-from vgdl.ontology import Resource
+from vgdl.ontology import Resource, ResourcePack
 from vgdl.colors import colorDict
+from util import ALNUM
 from vgdl.theory_template import (Precondition, InteractionRule, TerminationRule, TimeoutRule,
                                   SpriteCounterRule, MultiSpriteCounterRule, Theory, Game, writeTheoryToTxt, generateSymbolDict,
                                   generateTheoryFromGame, expandLine, expandSprites, proposePredicates, getRuleSetsForClassPairPredicate,
@@ -23,7 +24,7 @@ def constructTargetTheory(theory):
     """Creates a copy of the theory with a new class, where the avatar's goal is to collect all objects of this class"""
     h = theory.copy()
     new_name, color = createNewClassInfo(h)
-    h.addSpriteToTheory(new_name, color, vgdlType=Resource)
+    h.addSpriteToTheory(new_name, color, vgdlType=ResourcePack)
     h.interactionSet.append(InteractionRule('killSprite', new_name, 'avatar', {}, set()))
     h.terminationSet.append(SpriteCounterRule(new_name, 0, True))
     return h
@@ -44,7 +45,7 @@ def constructTouchNothingEverywhereTheory(theory):
     h = theory.copy()
 
     new_name, color = createNewClassInfo(h)
-    h.addSpriteToTheory(new_name, color, vgdlType=Resource)
+    h.addSpriteToTheory(new_name, color, vgdlType=ResourcePack)
     h.interactionSet = [rule for rule in h.interactionSet 
                         if not(rule.slot1 == 'avatar' or rule.slot2 == 'avatar' or
                         rule.slot1 == 'EOS' and rule.slot2 == new_name)]
@@ -68,3 +69,17 @@ def constructTouchNothingEverywhereTheory(theory):
 def printAllRules(theory):
     for rule in theory.interactionSet:
         rule.display()
+
+def addNewSprite(rle, spriteType, loc):
+    s = rle._game._createSprite([spriteType], loc)[0]
+    rle._other_types.append(spriteType)
+    rle._game.added_sprites.append(s)
+    if spriteType not in rle.symbolDict:
+        idx=len(rle.symbolDict.keys())
+        rle.symbolDict[spriteType]=ALNUM[idx]
+    
+    for skey in rle._other_types:
+        ss = rle._game.sprite_groups[skey]
+        rle._obstypes[skey] = [rle._sprite2state(sprite, oriented=False)
+                                    for sprite in ss]
+    return

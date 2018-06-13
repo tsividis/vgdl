@@ -276,6 +276,7 @@ class BasicGame(object):
         self.all_objects = None
         self.observation = None
         self.EOS = EOS((-1, -1))
+        self.added_sprites = [] ## for goal programming we also iterate through this list when updating sprites in the game.
         self.reset()
 
     def reset(self):
