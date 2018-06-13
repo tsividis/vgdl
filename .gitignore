@@ -8,3 +8,6 @@ venv
 examples/gridphysics/theorytest.py
 examples/gridphysics/theorytest2.py
 .DS_Store
+human_data.csv
+temp_data.npy
+

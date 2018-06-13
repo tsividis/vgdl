@@ -7,3 +7,6 @@ human,no_score,expt_antagonist,0,4.0,-1.0,0.5073039531707764
 human,no_score,expt_antagonist,0,0.0,-1.0,0.5106461048126221
 human,no_score,expt_helper,1,0.0,1.0,1.735215187072754
 human,no_score,expt_push_boulders,1,17.0,1.0,3.4192531108856201
+human,no_score,expt_preconditions,1,14.0,1.0,3.1646530628204346
+human,no_score,expt_preconditions,2,14.0,1.0,2.3626079559326172
+human,no_score,expt_preconditions,2,18.0,-1.0,2.6440820693969727
