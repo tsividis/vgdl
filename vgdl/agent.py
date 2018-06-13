@@ -413,6 +413,8 @@ class Agent:
 			print()
 			print()
 			printAllRules(move_theory)
+			newenv=initializeVrle(move_theory, self.rle, writeFile=True)
+			addNewSprite(newenv, 'c5', (30,30))
 			embed()
 			#TEMP: end
 
