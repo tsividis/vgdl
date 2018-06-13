@@ -149,13 +149,32 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
 w                           3  w
 w                 2            w
-w          4                3  w
+w          r                3  w
 w                      2       w
-w     4                        w
+w     r                        w
 w                      A       w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 testRules7 = """
+        box2 avatar > bounceForward
+"""
+
+## TEST7 temp
+# this works but 8 doesn't wtf
+testSequence7 = [[K_UP, K_UP, K_UP, K_RIGHT]]
+testLevel7 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w                           3  w
+w  r              s            w
+w          k                3  w
+w             r        s       w
+w     k                        w
+w                      A       w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+testRules7 = """
+        sam wall > stepBack
         box2 avatar > bounceForward
 """
 
@@ -164,9 +183,9 @@ testSequence8 = [[0]*3]
 testLevel8 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
-w        4                   1 w
+w        r                   1 w
 w              k             1 w
-w      4           A           w
+w      r           A           w
 w                              w
 w          k              3 3  w
 w                       s  s   w
@@ -355,9 +374,9 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
 # w                            1 w
-# w                     4      1 w
+# w                     r      1 w
 # w                              w
-# w   4                          w
+# w   r                          w
 # w                         3 3  w
 # w         s    s A             w
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -368,10 +387,10 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # level = """
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # w                              w
-# w    4                       1 w
-# w         4           4      1 w
+# w    r                       1 w
+# w         r           r      1 w
 # w                              w
-# w   4         4                w
+# w   r         r                w
 # w                         3 3  w
 # w                A             w
 # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -407,6 +426,25 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 # wwwwwwwwwwwwwwwww
 # """
 
+# **TODO**
+# this test consistently gave me the mapping error
+# I think it's when something goes off screen
+# testSequence = [[K_UP, K_UP, K_UP, K_RIGHT]]
+# testLevel = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                           3  w
+# w                 s            w
+# w          k                3  w
+# w                      s       w
+# w     k                        w
+# w                      A       w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+# testRules = """
+#         box2 avatar > bounceForward
+# """
+
 game="""
 BasicGame
     SpriteSet
@@ -418,10 +456,10 @@ BasicGame
         box5 > Immovable color=LIGHTBLUE
         flicker > Flicker timeout=1 color=ORANGE
         random > RandomNPC color=PURPLE speed=1 cooldown=2
-        chaser > Chaser color=BLACK speed=1 cooldown=3 stype=avatar fleeing=True
-        cannon > SpawnPoint color=RED stype=sam spawnCooldown=2
+        chaser > Chaser color=BLUE speed=1 cooldown=3 stype=avatar fleeing=True
+        cannon > SpawnPoint color=BLACK stype=sam spawnCooldown=2
         missile > Missile
-            sam  > orientation=UP color=BLUE singleton=False cooldown=1
+            sam  > orientation=UP color=RED singleton=False cooldown=1
         wall > Immovable color=DARKGRAY
         medicine > Resource limit=2 color=LIGHTGREEN
         poison > Resource limit=3 color=PINK
@@ -433,7 +471,7 @@ BasicGame
         1 > box
         2 > box2
         3 > box3
-        4 > random
+        r > random
         5 > box5
         w > wall
         c > cannon
@@ -528,4 +566,4 @@ if multiTesting:
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
     # parse, run and play.
-    VGDLParser.playGame(game, level)
+    VGDLParser.playGame(level_game_pairs[0], level_game_pairs[1])

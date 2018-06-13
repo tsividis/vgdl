@@ -795,9 +795,6 @@ def setSpriteState(sprite, matchingSprite, hypothesis):
 	for rcolor in matchingSprite.inventory.keys():
 		if rcolor not in hypothesis.spriteObjects:
 			continue
-			# print 'in setSpriteState: next line is going to crash'
-			# embed()
-			# maybe do sprite induction here on purple?
 		sprite.resources[hypothesis.spriteObjects[rcolor].className] = matchingSprite.inventory[rcolor][0]
 
 	# in VGDL, only things which move passively have an orientation that isn't (0,0)
@@ -893,7 +890,7 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False, debug=False):
 	Vrle._game.all_objects = Vrle._game.getAllObjects()
 	return
 
-def initializeVrle(hypothesis, stateToSet, theoryRLE=None, makeInitialVrle=False, writeFile=False, debug=False):
+def initializeVrle(hypothesis, stateToSet, theoryRLE=None, makeInitialVrle=False, writeFile=False):
 
 	## World in agent's mind given 'hypothesis', including object goal
 	gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis,\
@@ -1753,7 +1750,17 @@ def checkIfStatesAreDifferent(env1, env2):
 			return True
 	return False
 
-def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, hypotheses, returnAllErrors=False, assumeZeroErrorTheoryExists=False, errorCutoff=ERRORCUTOFF):
+def singleTheoryExperienceReplay(
+		rleHistory,
+		actionHistory,
+		method,
+		targetColor,
+		displayStates,
+		hypotheses,
+		returnAllErrors=False,
+		assumeZeroErrorTheoryExists=False,
+		errorCutoff=ERRORCUTOFF
+	):
 
 	# if there isn't a theory, it has error 1. (added for multiepisode experienceReplay)
 	if not hypotheses[0]:
@@ -1906,7 +1913,17 @@ def singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor,
 	hypotheses[0].experienceReplayRecord[key] = mean_penalties
 	return mean_penalties, setOfImaginedEffects
 	
-def experienceReplay(hypotheses, rleHistory, actionHistory, method='all', targetColor=None, displayStates=False, displayTheories=False, assumeZeroErrorTheoryExists=False, errorCutoff=ERRORCUTOFF):
+def experienceReplay(
+		hypotheses,
+		rleHistory,
+		actionHistory,
+		method='all',
+		targetColor=None,
+		displayStates=False,
+		displayTheories=False,
+		assumeZeroErrorTheoryExists=False,
+		errorCutoff=ERRORCUTOFF
+	):
 	# if len(hypotheses)>10:
 		# print "Running experience replay on {} theories and {} time-steps".format(len(hypotheses), len(rleHistory))
 
@@ -2027,7 +2044,7 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 		filtered = filterByPrior(filtered)
 	return filtered
 
-def filterByPrior(scoreAndTheoryTuples, numPerLevel=1):
+def filterByPrior(scoreAndTheoryTuples, numPerLevel=1, granularity=1, targetColor=None):
 	# filter out any theory after the first numPerLevel whose added complexity does not improve its error
 	#	i.e. between two theories of equal perfomance, ignore the less likely/more complex one
 	precision = 16
@@ -2036,10 +2053,10 @@ def filterByPrior(scoreAndTheoryTuples, numPerLevel=1):
 		score = round(score, precision)
 		if score not in errorLevelToMinPrior:
 			errorLevelToMinPrior[score] = [999999999] * numPerLevel
-		if theory.prior(granularity=1) < errorLevelToMinPrior[score][-1]:
-			errorLevelToMinPrior[score][-1] = theory.prior(granularity=1)
+		if theory.prior(granularity=granularity, targetColor=targetColor) < errorLevelToMinPrior[score][-1]:
+			errorLevelToMinPrior[score][-1] = theory.prior(granularity=granularity, targetColor=targetColor)
 			errorLevelToMinPrior[score].sort()
-	return [sh for sh in scoreAndTheoryTuples if sh[1].prior(granularity=1) <= errorLevelToMinPrior[round(sh[0], precision)][-1]]
+	return [sh for sh in scoreAndTheoryTuples if sh[1].prior(granularity=granularity, targetColor=targetColor) <= errorLevelToMinPrior[round(sh[0], precision)][-1]]
 
 def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction, rleHistories, actionHistories, episode_num):
 	# print "In expandTheories. errorList length: {}. Theories length {}".format(len(errorList), len(theories))
@@ -2096,21 +2113,45 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 			print "{} theories before filtering".format(len(scoreAndTheoryTuples))
 			scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
 			print "{} theories after first filter".format(len(scoreAndTheoryTuples))
-			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
+			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior(targetColor=errorMap.targetColor)))
 
 			# hyperparameters here:
-			theoriesPerErrorLevel = 5
+			theoriesPerErrorLevel = 4
 			medianDivisor = 3
+			tooManyTheoriesCutoff = 50
 
-			scoreAndTheoryTuples = filterByPrior(scoreAndTheoryTuples, numPerLevel=theoriesPerErrorLevel)
-			print "{} theories after filtering by prior".format(len(scoreAndTheoryTuples))
-
+			############# long test
 			# update error threshold for this color
 			med = scoreAndTheoryTuples[len(scoreAndTheoryTuples)//medianDivisor][0] + .000001 # to allow all infinitestimals
+			# med = (scoreAndTheoryTuples[0][0] + .0001) * 4
 			print 'new baseline:' , med
 			perColorErrorBaselines[errorMap.targetColor] = med
 			scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
-			print "{} theories after filtering with new baseline".format(len(scoreAndTheoryTuples))
+			#########end
+
+
+			# count = 0
+
+			# # embed()
+			# while len(scoreAndTheoryTuples) > tooManyTheoriesCutoff:
+			# 	scoreAndTheoryTuples = filterByPrior(scoreAndTheoryTuples, numPerLevel=theoriesPerErrorLevel, granularity=2, targetColor=errorMap.targetColor)
+			# 	print "{} theories after filtering by prior".format(len(scoreAndTheoryTuples))
+
+			# 	# update error threshold for this color
+			# 	med = scoreAndTheoryTuples[len(scoreAndTheoryTuples)//medianDivisor][0] + .000001 # to allow all infinitestimals
+			# 	# med = (scoreAndTheoryTuples[0][0] + .0001) * 4
+			# 	print 'new baseline:' , med
+			# 	perColorErrorBaselines[errorMap.targetColor] = med
+			# 	scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
+			# 	print "{} theories after filtering with new baseline".format(len(scoreAndTheoryTuples))
+
+			# 	theoriesPerErrorLevel = max(2, theoriesPerErrorLevel - 1)
+
+			# 	count += 1
+
+			# 	if count > 5:
+			# 		#give up, it's unavoidable
+			# 		break
 
 			print 'scores:' , [t[0] for t in scoreAndTheoryTuples]
 			# embed()

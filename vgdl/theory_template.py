@@ -363,7 +363,7 @@ class Theory(object):
 
 	"""Main functions"""
 
-	def prior(self, granularity=2, ruleWeight=.001):
+	def prior(self, granularity=2, ruleWeight=.001, targetColor=None):
 		## Very simple prior, prefering:
 			# Avatar = default type
 			# Everything else doesn't move
@@ -384,24 +384,31 @@ class Theory(object):
 		ruleScore = 0.
 
 		if granularity > 0:
-			classScore += sum(1.1 for c in self.classes if not 'ResourcePack' in str(self.classes[c][0].vgdlType))
-			ruleScore += sum(0 if rule.generic else 1 for rule in self.interactionSet)
+			classScore += sum(1.1 for c in self.classes if not 'ResourcePack' in str(self.classes[c][0].vgdlType) and (targetColor == None or targetColor == self.classes[c][0].colorName))
+			ruleScore += sum(0 if rule.generic else 1 for rule in self.interactionSet \
+					if (targetColor == None or targetColor == self.classes[rule.slot1][0].colorName or targetColor == self.classes[rule.slot2][0].colorName))
 			# future note: technically, having removed stepBack should increase the ruleScore
 
 		if granularity > 1:
-			for c in [cl for cl in self.classes if cl!='EOS']:
+			for c in [cl for cl in self.classes if cl!='EOS' and (targetColor == None or targetColor == self.classes[cl][0].colorName)]:
 				vgdlTypeString = str(self.classes[c][0].vgdlType)
 				if 'Avatar' in vgdlTypeString:
 					if 'Moving' not in vgdlTypeString:
 						classScore += 1
 				elif any([t in vgdlTypeString for t in stochasticClasses]):
 					classScore += 1.5
+				# elif 'Chaser' in vgdlTypeString:
+				# 	classScore += 1.3
+				# elif 'RandomNPC' in vgdlTypeString:
+				# 	classScore += 1.5
 				elif not any([t in vgdlTypeString for t in ['Resource','Immovable']]):
 					classScore += 1.1
 
-			ruleScore += sum(1 for rule in self.interactionSet if rule.interaction in stochasticRules + crazyRules)
+			ruleScore += sum(1 for rule in self.interactionSet if rule.interaction in stochasticRules + crazyRules\
+					and (targetColor == None or targetColor == self.classes[rule.slot1][0].colorName or targetColor == self.classes[rule.slot2][0].colorName))
 			# also get all the conditionals
-			ruleScore += sum(0.5 for rule in self.interactionSet if 'killIf' in rule.interaction)
+			ruleScore += sum(0.5 for rule in self.interactionSet if 'killIf' in rule.interaction
+					and (targetColor == None or targetColor == self.classes[rule.slot1][0].colorName or targetColor == self.classes[rule.slot2][0].colorName))
 
 		if granularity > 2:
 			# maybe take number of args into account or something.
