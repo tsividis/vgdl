@@ -973,6 +973,21 @@ def findNearestSprites(sprite, spriteList, dist_function=manhattanDist2, skip_se
 			dist_map[dist].append(s)
 	return dist_map[min_dist]
 
+def closestSpritesToLoc(left, top, spriteList):
+	if spriteList == []:
+		return None
+	else:
+		minDist = float('inf')
+		nearestSprites = []
+		for x in spriteList:
+			dist = abs(x.rect.left-left)+abs(x.rect.top-top)
+			if dist < minDist:
+				nearestSprites = [x]
+				minDist = dist
+			elif dist==minDist:
+				nearestSprites.append(x)
+		return nearestSprites
+
 
 ########################################################################
 ######## ERROR SIGNAL AND STATE-COMPARISON METHODS 				########
@@ -1035,6 +1050,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		except:
 			print "targetClass filter in errorSignal failed"
 			embed()
+
+	all_sprites_envB = [item for sublist in envB._game.observation['trackedObjects'].values() for item in sublist]
 
 	## Penalize distance and additional/missing sprites
 	for t in matched_sprites:
@@ -1137,8 +1154,23 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				## the lastmove+1 is becuase of the *very* weird nature of the update function for Chaser.
 				if (sA.lastmove+1)%theory.spriteObjects[sA.colorName].args['cooldown']==0:
 					closestTargets = findChaserOptions(sA, sPrev, envPrev._game, fleeing=sA.fleeing)
+					# embed()
 					if not closestTargets:
 						closestTargets = [(sPrev.rect.left/d, sPrev.rect.top/d)]
+					else:
+						# if any of the options cause step back, then the current loc is also possible
+						# TODO ** should remove the place causing stepback too...
+						flag = False
+						for loc in closestTargets:
+							closestSprites = closestSpritesToLoc(loc[0]*d, loc[1]*d, all_sprites_envB)
+							for s in closestSprites:
+								if manhattanDist((loc[0]*d, loc[1]*d), (s.rect.left, s.rect.top)) < d \
+										and theory.containsRule(stype, theory.getClassFromColor(s.colorName), 'stepBack'):
+									closestTargets += [(sPrev.rect.left/d, sPrev.rect.top/d)]
+									flag = True
+									break
+							if flag:
+								break
 				else:
 					closestTargets = [(sPrev.rect.left/d, sPrev.rect.top/d)]
 
@@ -2094,7 +2126,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		# embed()
 
 		# print "In base case. Correcting error for {} for {} theories".format(errorMap.targetClass, len(theories))
-		t1 = time.time()
+		# t1 = time.time()
 		newTheories = []
 		print "expanding theories for one errorMap"
 		for theory in theories:
@@ -2111,39 +2143,49 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 					actionHistories, method=EXPERIENCE_REPLAY_METHOD, targetColor=errorMap.targetColor, errorCutoff=.5)
 			scoreAndTheoryTuples = zip(penalties, newTheories)
 			print "{} theories before filtering".format(len(scoreAndTheoryTuples))
+			# embed()
 			scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
 			print "{} theories after first filter".format(len(scoreAndTheoryTuples))
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior(targetColor=errorMap.targetColor)))
+
+
+			# errorMap.display()
+			# # looking for chasers
+			# for s, t in scoreAndTheoryTuples:
+			# 	if 'Chaser' in str(t.classes['c2'][0].vgdlType):
+			# 		print "got one! " + str(s)
+
 
 			# hyperparameters here:
 			theoriesPerErrorLevel = 4
 			medianDivisor = 3
 			tooManyTheoriesCutoff = 50
 
-			############# long test
-			# update error threshold for this color
-			med = scoreAndTheoryTuples[len(scoreAndTheoryTuples)//medianDivisor][0] + .000001 # to allow all infinitestimals
-			# med = (scoreAndTheoryTuples[0][0] + .0001) * 4
-			print 'new baseline:' , med
-			perColorErrorBaselines[errorMap.targetColor] = med
-			scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
-			#########end
+
+			# ############# long test
+			# # update error threshold for this color
+			# med = scoreAndTheoryTuples[len(scoreAndTheoryTuples)//medianDivisor][0] + .000001 # to allow all infinitestimals
+			# # med = (scoreAndTheoryTuples[0][0] + .0001) * 4
+			# print 'new baseline:' , med
+			# perColorErrorBaselines[errorMap.targetColor] = med
+			# scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
+			# #########end
 
 
 			# count = 0
 
 			# # embed()
 			# while len(scoreAndTheoryTuples) > tooManyTheoriesCutoff:
-			# 	scoreAndTheoryTuples = filterByPrior(scoreAndTheoryTuples, numPerLevel=theoriesPerErrorLevel, granularity=2, targetColor=errorMap.targetColor)
-			# 	print "{} theories after filtering by prior".format(len(scoreAndTheoryTuples))
 
-			# 	# update error threshold for this color
-			# 	med = scoreAndTheoryTuples[len(scoreAndTheoryTuples)//medianDivisor][0] + .000001 # to allow all infinitestimals
-			# 	# med = (scoreAndTheoryTuples[0][0] + .0001) * 4
-			# 	print 'new baseline:' , med
-			# 	perColorErrorBaselines[errorMap.targetColor] = med
-			# 	scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
-			# 	print "{} theories after filtering with new baseline".format(len(scoreAndTheoryTuples))
+			scoreAndTheoryTuples = filterByPrior(scoreAndTheoryTuples, numPerLevel=theoriesPerErrorLevel, granularity=2, targetColor=errorMap.targetColor)
+			print "{} theories after filtering by prior".format(len(scoreAndTheoryTuples))
+
+			# update error threshold for this color
+			med = scoreAndTheoryTuples[len(scoreAndTheoryTuples)//medianDivisor][0] + .000001 # to allow all infinitestimals
+			print 'new baseline:' , med
+			perColorErrorBaselines[errorMap.targetColor] = med
+			scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
+			print "{} theories after filtering with new baseline".format(len(scoreAndTheoryTuples))
 
 			# 	theoriesPerErrorLevel = max(2, theoriesPerErrorLevel - 1)
 
@@ -2153,8 +2195,14 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 			# 		#give up, it's unavoidable
 			# 		break
 
+
+			# # looking for chasers
+			# for s, t in scoreAndTheoryTuples:
+			# 	if 'Chaser' in str(t.classes['c2'][0].vgdlType):
+			# 		print "still here... " + str(s)
+
+
 			print 'scores:' , [t[0] for t in scoreAndTheoryTuples]
-			# embed()
 
 		else:
 			rleHistory, actionHistory = rleHistories[episode_num], actionHistories[episode_num]
@@ -2177,8 +2225,6 @@ def addressRemainingErrorMaps(theory, envRealPrev, envRealCurrent, action, rleHi
 	return newTheories
 
 def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rleHistories, actionHistories, theory, classPairPlusPredicateToRuleSets):
-
-
 	## Fixes the problems generated by a single errorMap entry.
 
 	n = 1 # n is the number of allowed rules for a particular classpair-ordering, probably (TODO)
@@ -2209,9 +2255,9 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 
 	## If we were about to make modifications we've made already, don't waste the time.
 	if any([errorMap == e for e in theory.errorMapHistory]):
-		errorMap.display()
-		print "we've addressed this error before. Skipping it"
-		newTheories = [theory]
+		# errorMap.display()
+		print "we've addressed this error before. Skipping it. color: " + str(errorMap.targetColor)
+		newTheories = [theory.copy()]
 		return newTheories
 
 	theory.errorMapHistory.append(errorMap)
@@ -2244,7 +2290,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 
 	# print "about to check for new sprites"
 	# embed()
-	## If there are new objects on screen, add them to the thery or reason about related objects (e.g., spawnPoints)
+	## If there are new objects on screen, add them to the theory or reason about related objects (e.g., spawnPoints)
 	if errorMap.targetClass not in theory.classes.keys() or errorMap.targetToken in envRealCurrent._game.observation['new_sprites']:
 
 		## If there are unknown colors on screen, add them to the theory here.		
@@ -2262,7 +2308,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 				print "Got unknown targetclass for {}. Added generic sprite to spriteSet and interactionSet".format(errorMap.targetToken.colorName)
 
 			if 'newClass' in errorMap.diagnosis:
-				newTheories = [theory]
+				newTheories = [theory.copy()]
 				# embed()
 				return newTheories
 		

@@ -197,6 +197,43 @@ testRules8 = """
         sam wall > stepBack
 """
 
+# temp version for testing Chaser learning
+testSequence8 = [[0]*3]
+testLevel8 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w        r                   1 w
+w              k             1 w
+w      r           A           w
+w                            3 w
+w          k            s  s 3 w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+testRules8 = """
+        chaser wall > stepBack
+        random wall > stepBack
+        sam wall > stepBack
+"""
+
+testSequence9 = [[0]*3]
+testLevel9 = """
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w                              w
+w k                          1 w
+w                            1 w
+w k                A           w
+w                              w
+w                         3 3  w
+w                              w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+"""
+testRules9 = """
+        chaser wall > stepBack
+        random wall > stepBack
+        sam wall > stepBack
+"""
+
 ## TEST8
 # Not getting this one because we stepBack with the missile
 ## but our best theories are almost right.
@@ -531,8 +568,11 @@ actionSequences = [
 
 # to do specific test
 level_game_pairs = [[game.format(testRules=testRules5), testLevel5]] # currently crashes, TODO
+level_game_pairs = [[game.format(testRules=testRules9), testLevel9]]
+actionSequences = [testSequence9]
 level_game_pairs = [[game.format(testRules=testRules8), testLevel8]]
 actionSequences = [testSequence8]
+
 # currently crashes, TODO ("mappedState problem in writeTheoryToTxt")
 ''' traceback:
 Traceback (most recent call last):
