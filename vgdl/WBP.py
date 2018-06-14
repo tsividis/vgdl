@@ -92,6 +92,8 @@ class WBP():
 		self.winning_states = []
 		self.trueAtomsIW1 = []
 		self.total_nodes = 0
+		# if "c6" in self.theory.classes:
+			# embed()
 
 		## Ignore objects we don't want to track (i.e., non-moving immovables.)
 		self.objectsToTrack = []

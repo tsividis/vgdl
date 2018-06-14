@@ -2,6 +2,7 @@ from hyperopt import fmin, tpe, hp
 import importlib
 from pathos.multiprocessing import ProcessingPool
 from agent import Agent
+from goal_programming import GoalAgent
 import time
 import dill
 
@@ -24,7 +25,8 @@ gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
             'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
 local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper',  # 10-12
-    'expt_preconditions', 'expt_push_boulders2', 'expt_relational', 'avatar_inference']  # 13-15 to play a "local" game
+    'expt_preconditions', 'expt_push_boulders2', 'expt_relational', 'avatar_inference',   # 13-16 to play a "local" game
+    'push_boulders_simple'] #17 a game for testing goal_programming
 
 def play_trainset(hyperparameters):
     start_time = time.time()
@@ -76,6 +78,9 @@ def play_trainset(hyperparameters):
     gameObject = None
     agent.playCurriculum(level_game_pairs=level_game_pairs, num_episodes_per_level=3)
     # agent.playEpisodes(None,5)
+
+    goalAgent = GoalAgent(agent)
+    goalAgent.playGoalCurriculum(agent, level_game_pairs=level_game_pairs, num_episodes_per_level=3)
 
     total_time = time.time() - start_time
 
