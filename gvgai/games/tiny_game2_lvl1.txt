@@ -1,10 +1,10 @@
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 wwwwA                       wwww
-wwww                 b      wwww
-wwww            a           wwww
-wwww     a           b      wwww
+wwww                 b     bwwww
+wwww            a         b wwww
+wwww     b           b    b wwww
 wwww                    a   wwww
-wwww          a             wwww
+wwww                        wwww
 wwww                        wwww
 wwww                        wwww
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww

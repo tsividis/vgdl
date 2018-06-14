@@ -15,7 +15,8 @@ game_number = args.game_number
 # as of 01/2018: it is best to install directly from the github repo with
 # the command 'pip install git+https://github.com/hyperopt/hyperopt'
 
-gameFileString = 'training_set_1'
+# gameFileString = 'training_set_1'
+gameFileString = 'gvgai/games'
 
 gvggames = ['tiny_game1', 'tiny_game2', 'aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
             'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
@@ -59,7 +60,6 @@ def play_trainset(hyperparameters):
         gvgname = "./{}/{}".format(gameFileString,gameName)
 
         gameString = read_gvgai_game('{}.txt'.format(gvgname))
-        print gameString
 
         game_levels = [l for l in os.listdir(gameFileString) if gameName+'_lvl' in l]
 
@@ -79,7 +79,7 @@ def play_trainset(hyperparameters):
 
     ##then pass this down for multiple episodes
     gameObject = None
-    print "about to play curriculum"
+
     agent.playCurriculum(level_game_pairs=level_game_pairs)
 
     total_time = time.time() - start_time
