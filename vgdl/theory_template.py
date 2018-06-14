@@ -641,6 +641,12 @@ class Theory(object):
 				return c
 		return False
 
+	def containsRule(self, ca, cb, pred):
+		for rule in self.interactionSet:
+			if ca == rule.slot1 and cb == rule.slot2 and pred == rule.interaction:
+				return True
+		return False
+
 	def _stringRules(self, ignore_step_back=True, color_names=False, compare_theory=None):
 		string = '\nInteractionSet:'
 		for rule in self.interactionSet:
