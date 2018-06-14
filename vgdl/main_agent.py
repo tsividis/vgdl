@@ -286,10 +286,10 @@ class Agent:
             level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
         episodes = []
         allEffectsEncountered = []
-        embed()
-        # if 'images' in os.listdir('.') and 'tmp' in os.listdir('images'):
-            # shutil.rmtree("images/tmp")
-        # os.makedirs("images/tmp")
+
+        if 'images' in os.listdir('.') and 'tmp' in os.listdir('images'):
+            shutil.rmtree("images/tmp")
+        os.makedirs("images/tmp")
         j=0
         flexible_goals = False
 
