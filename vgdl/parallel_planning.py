@@ -59,6 +59,7 @@ def play_trainset(hyperparameters):
         gvgname = "./{}/{}".format(gameFileString,gameName)
 
         gameString = read_gvgai_game('{}.txt'.format(gvgname))
+        print gameString
 
         game_levels = [l for l in os.listdir(gameFileString) if gameName+'_lvl' in l]
 
