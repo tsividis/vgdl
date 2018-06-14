@@ -1,0 +1,98 @@
+BasicGame
+    SpriteSet
+        stratosphere > Immovable hidden=True color=LIGHTBLUE 
+        thermosphere > Immovable hidden=True color=BLUE 
+        troposphere > Immovable hidden=True clor=GRAY 
+
+        satellite   > RandomNPC    color=LIGHTGRAY  cons=1
+        avatar   > ShootAvatar orientation=DOWN color=YELLOW ammo=bullet stype=bomb  rotateInPlace=False
+
+        sam  > Missile orientation=UP color=LIGHTRED speed=0.25 
+        bomb > Missile orientation=DOWN color=RED speed=0.75  singleton=True
+        
+        leftCloud  > Missile orientation=LEFT speed=0.05  color=RSQPUS 
+        fastLeftCloud  > Missile orientation=LEFT speed=0.2  color=LMZTUO 
+        rightCloud  > Missile  orientation=RIGHT speed=0.05  color=VYPDQP 
+        fastRightCloud  > Missile  orientation=RIGHT speed=0.2  color=VNUJQV 
+
+        tank   > Bomber color=BROWN stype=sam  prob=0.03  spawnCooldown=5 speed=0.2 
+            
+        portalBase  > SpawnPoint  color=BLACK  stype=tank  spawnCooldown=40   total=20 
+        portalAmmo  > SpawnPoint  color=DARKBLUE  stype=supply spawnCooldown=10 prob=0.15
+
+        supply > Missile  color=GOLD orientation=LEFT speed=0.25 
+        bullet > Resource color=GREEN limit=20
+    
+    LevelMapping
+        A > avatar stratosphere
+        c > satellite thermosphere
+        b > portalBase troposphere
+        a > portalAmmo stratosphere
+        t > thermosphere
+        s > stratosphere
+        p > troposphere
+        l > leftCloud stratosphere
+        d > fastLeftCloud stratosphere
+        r > rightCloud stratosphere
+        e > fastRightCloud stratosphere
+
+    TerminationSet
+        SpriteCounter      stype=avatar               limit=0 win=False
+        SpriteCounter      stype=satellite               limit=0 win=False
+        MultiSpriteCounter stype1=portalBase stype2=tank limit=0 win=True
+        
+    InteractionSet
+        avatar wall > stepBack 
+	avatar EOS > stepBack
+        avatar sam > killSprite
+        sam avatar > killSprite 
+	sam wall > killSprite
+	sam EOS > killSprite
+
+        tank bomb > killSprite 
+        tank bomb > changeScore value=1
+        bomb tank > killSprite 
+	bomb wall > killSprite
+	bomb EOS > killSprite
+
+        bomb sam > killSprite
+	sam bomb > killSprite
+
+        tank wall  > reverseDirection
+	tank EOS  > reverseDirection
+        # tank wall > stepBack
+	# tank EOS  > stepBack
+
+        satellite sam > killSprite 
+        satellite same > changeScore value=-1 
+        sam satellite > killSprite 
+        sam satellite > changeScore value=-1
+	satellite wall > stepBack 
+	satellite EOS > stepBack
+
+        avatar supply > changeResource resource=bullet value=5
+        supply avatar > killSprite
+        supply wall > killSprite 
+	supply EOS > killSprite
+
+        avatar portalBase > stepBack 
+        avatar portalAmmo > stepBack 
+
+	avatar thermosphere > stepBack
+	avatar troposphere > stepBack
+        satellite stratosphere > stepBack
+
+        leftCloud sam > killSprite
+        fastLeftCloud sam > killSprite
+        rightCloud sam > killSprite
+        fastRightCloud sam > killSprite
+
+	sam leftCloud > killSprite
+        sam fastLeftCloud > killSprite
+        sam rightCloud > killSprite
+        sam fastRightCloud > killSprite
+
+        leftCloud EOS > wrapAround
+        fastLeftCloud EOS > wrapAround
+        rightCloud EOS > wrapAround
+        fastRightCloud EOS > wrapAround

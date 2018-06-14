@@ -1,0 +1,59 @@
+BasicGame
+    SpriteSet
+        water > Immovable color=LIGHTBLUE 
+        sharkhole  > SpawnPoint color=LKLWDD stype=shark  prob=0.025 total=1  
+        whalehole  > SpawnPoint color=DLLJEV stype=whale  prob=0.1 spawnCooldown=10 
+        piranhahole  >  SpawnPoint color=GREEN stype=piranha  prob=0.1 spawnCooldown=10 whirlpool2 
+
+
+        avatar  > ShootAvatar color=JHXDKF  stype=torpedo 
+        torpedo > Missile color=WHITE  img=oryx/orb2
+        shark  > Chaser speed=0.1 color=ORANGE  stype=avatar
+        whale  > Missile  orientation=RIGHT  speed=0.1 color=BROWN 
+        piranha > Missile orientation=LEFT speed=0.1 color=RED 
+
+        shell > Resource color=YELLOW limit=20 
+        sharkFang > Resource color=GOLD limit=1 
+
+
+    LevelMapping
+        1 > water piranhahole
+        2 > water whalehole
+        3 > water sharkhole
+        . > water
+        A > water avatar
+
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+        Timeout timeout=1000 win=True
+
+    InteractionSet
+        EOS avatar > stepBack
+        avatar EOS > stepBack
+	EOS shark > stepBack
+        EOS torpedo  > killSprite
+
+	EOS shark > killSprite
+        EOS whale > killSprite
+        EOS piranha > killSprite
+
+        whale torpedo > transformTo stype=shell 
+	whale torpedo > changeScore value=1
+        piranha torpedo > transformTo stype=shell 
+	piranha torpedo > changeScore value=1
+
+        torpedo shark > killSprite
+        torpedo whale > killSprite
+        torpedo piranha > killSprite
+
+        sharkFang avatar > collectResource 
+	sharkFang avatar > changeScore value=1000
+        shell avatar > collectResource 
+	shell avatar > changeScore value=1
+
+        avatar shark > spawnIfHasMore resource=shell limit=15 stype=sharkFang
+        shark avatar > killIfOtherHasMore resource=shell limit=15
+
+        avatar shark  > killIfHasLess resource=shell limit=15
+        avatar whale  > killSprite
+	avatar piranha > killSprite

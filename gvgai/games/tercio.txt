@@ -1,0 +1,82 @@
+#Modality: #http://www.puzzlescript.net/play.html?p=6888061
+
+BasicGame
+    SpriteSet
+        black > Immovable color=BLACK
+        white > Immovable color=WHITE
+        blue > Immovable color=BLUE
+
+        grey > Immovable color=LBLFCJ
+
+        target > Immovable color=GREEN
+        winTarget > Immovable color=RED
+        crate > Passive color=BROWN
+        inGrey > MovingAvatar color=PINK
+        inBlack > MovingAvatar color=PURPLE
+        inWhite > MovingAvatar color=GOLD
+        inBlue > MovingAvatar color=LIGHTGREEN
+
+        wall > Immovable color=GRAY 
+    
+    LevelMapping
+        . > black
+        + > white
+        - > blue
+        g > grey
+
+        B > inBlack black
+        A > inWhite white
+        L > inBlue blue
+
+        * > crate black
+        @ > crate white
+        $ > crate blue
+
+        t > target black
+        u > target white
+        r > target blue
+
+        w > wall
+
+    TerminationSet
+        SpriteCounter stype=target limit=0 win=True
+        Timeout timeout=1000 win=False
+        
+    InteractionSet
+        inWhite EOS > stepBack
+        inBlack EOS > stepBack
+        inBlue EOS > stepBack
+        inGrey EOS > stepBack
+
+        inBlack blue > stepBack
+        inWhite blue > stepBack
+        inBlue white > stepBack
+        inBlack white > stepBack
+        inWhite black > stepBack
+        inBlue black > stepBack
+
+        inWhite black > transformTo stype=inBlack
+        inBlue black > transformTo stype=inBlack
+        inGrey black > transformTo stype=inBlack
+        inBlack white > transformTo stype=inWhite
+        inBlue white > transformTo stype=inWhite
+        inGrey white > transformTo stype=inWhite
+        inWhite blue > transformTo stype=inBlue
+        inBlack blue > transformTo stype=inBlue
+        inGrey blue > transformTo stype=inBlue
+        inWhite grey > transformTo stype=inGrey
+        inBlack grey > transformTo stype=inGrey
+        inBlue grey > transformTo stype=inGrey
+
+        crate inWhite > bounceForward
+        crate inBlack > bounceForward
+        crate inBlue > bounceForward
+        crate inGrey > bounceForward
+        crate wall > undoAll
+        target wall > undoAll
+        inWhite wall > stepBack
+        inBlack wall > stepBack
+        inBlue wall > stepBack
+        inGrey wall > stepBack
+        target crate > transformTo stype=winTarget
+        target crate > changeScore value=1

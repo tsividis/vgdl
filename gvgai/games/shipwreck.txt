@@ -1,0 +1,85 @@
+BasicGame square_size=30
+    SpriteSet
+
+        water > Immovable color=LIGHTBLUE
+        land > Immovable color=BROWN 
+
+        portGold > Immovable color=GOLD
+        portGems > Immovable color=YELLOW
+        portDiamonds > Immovable color=BLUE
+
+        shipwreck > Immovable color=BLACK
+
+        goldhole  > SpawnPoint color=TDLEMS  stype=gold  prob=0.01
+        gemshole  > SpawnPoint color=YOYTZM  stype=gems  prob=0.01
+        diamondshole  > SpawnPoint color=KSXCRX stype=diamonds  prob=0.01
+
+        gold > Resource limit=1 singleton=True color=GREEN
+        gems > Resource limit=1 singleton=True color=RED
+        diamonds > Resource limit=1 singleton=True color=PURPLE
+
+        whirlpool > Immovable color=DARKGRAY
+
+        t10 > Resource color=CDMHFV
+        t5 > Resource color=ENKXEZ
+        t1 > Resource color=NNZXQZ
+
+        avatar > MovingAvatar color=DARKBLUE
+
+
+    LevelMapping
+        . > water
+        x > water land
+        A > water avatar
+        1 > water portGold
+        2 > water portGems
+        3 > water portDiamonds
+        w > water whirlpool
+        s > water shipwreck goldhole gemshole diamondshole
+
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+        Timeout timeout=1000 win=True
+
+    InteractionSet
+        avatar  EOS  > stepBack
+        avatar  land  > stepBack
+        avatar whirlpool > killSprite
+        avatar whirlpool > changeScore value=-10
+
+        gold avatar > collectResource
+        gems avatar > collectResource
+        diamonds avatar > collectResource
+
+        avatar portGold > spawnIfHasMore resource=gold limit=1 stype=t10
+        avatar portGems > spawnIfHasMore resource=gems limit=1 stype=t10
+        avatar portDiamonds > spawnIfHasMore resource=diamonds limit=1 stype=t10
+
+        avatar portGold > spawnIfHasMore resource=diamonds limit=1 stype=t5
+        avatar portGems > spawnIfHasMore resource=gold limit=1 stype=t5
+        avatar portDiamonds > spawnIfHasMore resource=gems limit=1 stype=t5
+
+        avatar portGold > spawnIfHasMore resource=gems limit=1 stype=t1
+        avatar portGems > spawnIfHasMore resource=diamonds limit=1 stype=t1
+        avatar portDiamonds > spawnIfHasMore resource=gold limit=1 stype=t1
+
+        avatar t10 > changeResource resource=gold value=-1 
+        avatar t10 > changeScore value=10
+        avatar t10 > changeResource resource=gems value=-1 
+        avatar t10 > changeScore value=10
+        avatar t10 > changeResource resource=diamonds value=-1
+        avatar t10 > changeScore value=10
+
+        avatar t5 > changeResource resource=gold value=-1 
+        avatar t5 > changeScore value=5
+        avatar t5 > changeResource resource=gems value=-1 
+        avatar t5 > changeScore value=5
+        avatar t5 > changeResource resource=diamonds value=-1 
+        avatar t5 > changeScore value=5
+
+        avatar t1 > changeResource resource=gold value=-1 
+        avatar t1 > changeScore value=1
+        avatar t1 > changeResource resource=gems value=-1 
+        avatar t1 > changeScore value=1
+        avatar t1 > changeResource resource=diamonds value=-1 
+        avatar t1 > changeScore value=1

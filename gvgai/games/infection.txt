@@ -1,0 +1,46 @@
+BasicGame
+    SpriteSet
+        floor > Immovable color=LIGHTGRAY hidden=True
+        sword > Flicker color=BLACK limit=5 singleton=True
+        entrance > SpawnPoint total=5 color=PINK cooldown=100 stype=doctor portal=True
+        virus > Immovable color=RED 
+
+        normal   > ShootAvatar stype=sword color=WHITE 
+        carrier  > ShootAvatar stype=sword color=BROWN  frameRate=8
+        host     > RandomNPC speed=0.25  cons=1 color=GREEN 
+        infected > RandomNPC speed=0.25  cons=1 color=ORANGE speed=0.5  frameRate=8
+        doctor > RandomNPC speed=0.25  cons=1 color=BLUE speed=0.2 
+        wall > Immovable color=GRAY  autotiling=True
+
+    TerminationSet
+        SpriteCounter stype=host   win=True
+
+    InteractionSet
+        doctor sword    > killSprite 
+	doctor sword  > changeScore value=2
+    
+        normal wall       > stepBack
+        carrier wall       > stepBack
+        host  wall       > stepBack
+        infected wall       > stepBack
+        doctor wall       > stepBack
+
+
+        carrier doctor  > transformTo stype=normal  
+	carrier doctor > changeScore value=-1
+        host carrier      > transformTo stype=infected 
+	host carrier > changeScore value=2
+        infected doctor > transformTo stype=host
+        normal infected > transformTo stype=carrier 
+	normal virus  > transformTo stype=carrier
+        host infected > transformTo stype=infected 
+	host virus    > transformTo stype=infected
+        doctor virus    > killSprite
+
+    LevelMapping
+        1 > floor doctor
+        0 > floor host
+        x > floor virus
+        A > floor normal
+        e > floor entrance
+        . > floor

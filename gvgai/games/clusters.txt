@@ -1,0 +1,103 @@
+BasicGame key_handler=Pulse
+    SpriteSet
+
+        floor > Immovable hidden=True color=LIGHTGRAY
+        hole   > Immovable color=DARKBLUE 
+
+        blueblock > Immovable color=LIGHTBLUE
+        redblock > Immovable color=LIGHTRED
+        greenblock > Immovable color=LIGHTGREEN
+
+
+        bluebox > Passive color=BLUE
+        redbox > Passive color=RED
+        greenbox > Passive  color=GREEN
+        brokenbox > Passive  color=BROWN
+
+        avatar > MovingAvatar color=GOLD
+        wall > Immovable color=GRAY
+
+    LevelMapping
+            A > avatar floor
+            h > hole floor
+
+            1 > bluebox floor
+            2 > redbox floor
+            3 > greenbox floor
+
+            a > blueblock floor
+            b > redblock floor
+            c > greenblock floor
+
+            . > floor
+
+
+    InteractionSet
+        avatar wall > stepBack
+        avatar hole > killSprite 
+        avatar hole > changeScore value=-1
+
+        bluebox avatar > bounceForward
+        redbox avatar > bounceForward
+        greenbox avatar > bounceForward
+        brokenBox avatar > bounceForward
+
+        bluebox blueblock > transformTo stype=blueblock 
+        bluebox blueblock > changeScore value=1
+        blueblock blueblock > stepBack
+        redbox redblock > transformTo stype=redblock 
+        redbox redblock > changeScore value=1
+        redblock redblock > stepBack
+        greenbox greenblock > transformTo stype=greenblock 
+        greenbox greenblock > changeScore value=1
+        greenblock greenblock > stepBack
+
+        avatar blueblock > stepBack
+        avatar redblock > stepBack
+        avatar greenblock > stepBack
+
+        greenbox blueblock > undoAll 
+	greenbox redblock > undoAll
+        redbox blueblock > undoAll 
+	redbox greenblock > undoAll
+        bluebox greenblock > undoAll 
+	bluebox redblock > undoAll
+
+        bluebox redbox > undoAll 
+        bluebox greenbox > undoAll
+        bluebox bluebox > undoAll
+        bluebox brokenbox > undoAll
+
+        redbox redbox > undoAll
+        redbox greenbox > undoAll
+        redbox bluebox > undoAll
+        redbox brokenbox > undoAll
+
+        greenbox redbox > undoAll
+        greenbox greenbox > undoAll
+        greenbox bluebox > undoAll
+        greenbox brokenbox > undoAll
+
+        brokenbox redbox > undoAll
+        brokenbox greenbox > undoAll
+        brokenbox bluebox > undoAll
+        brokenbox brokenbox > undoAll
+
+
+
+	redbox wall > undoAll
+        greenbox wall > undoAll
+        bluebox wall > undoAll
+        brokenbox wall > undoAll
+        redbox hole > transformTo stype=brokenbox
+        greenbox hole > transformTo stype=brokenbox
+        bluebox hole > transformTo stype=brokenbox
+        brokenbox hole > transformTo stype=brokenbox
+
+
+
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+        MultiSpriteCounter stype1=bluebox stype2=redbox stype3=greenbox stype4=brokenbox limit=0 win=True
+        MultiSpriteCounter stype1=brokenbox limit=1 win=False
+        Timeout timeout=1500 win=False

@@ -1,0 +1,51 @@
+BasicGame key_handler=Pulse  square_size=50
+    SpriteSet
+        black > Immovable color=BLACK 
+        white > Immovable color=WHITE 
+        grey > Immovable color=GRAY 
+        target > Passive color=ORANGE  
+        winTarget > Immovable color=GREEN 
+        crate > Passive color=BROWN 
+            
+        inGrey > MovingAvatar color=PINK
+        inBlack > MovingAvatar color=PURPLE
+        inWhite > MovingAvatar color=GOLD
+
+        wall > Immovable color=LIGHTGRAY 
+    
+    LevelMapping
+        . > black
+        + > white
+        g > grey
+        b > inBlack black
+        A > inWhite white
+        * > crate black
+        @ > crate white
+        t > target black
+        u > target white
+
+    TerminationSet
+        SpriteCounter      stype=target               limit=0 win=True
+        
+    InteractionSet
+        inWhite EOS > stepBack
+        inBlack EOS > stepBack
+        inGrey EOS > stepBack
+        inBlack white > stepBack
+        inWhite black > stepBack
+
+        inGrey black > transformTo stype=inBlack
+        inGrey white > transformTo stype=inWhite
+        inWhite grey > transformTo stype=inGrey
+        inBlack grey > transformTo stype=inGrey
+
+        crate inWhite > bounceForward
+        crate inBlack > bounceForward
+        crate inGrey > bounceForward
+        crate wall > undoAll
+        target wall > undoAll
+        inWhite wall > stepBack
+        inBlack wall > stepBack
+        inGrey wall > stepBack
+        target crate > transformTo stype=winTarget 
+	target crate > changeScore value=1

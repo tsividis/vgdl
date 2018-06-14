@@ -1,0 +1,54 @@
+BasicGame
+  SpriteSet
+    floor > Immovable color=LIGHTGRAY
+    city  > Immovable color=PURPLE
+    bullet > Flicker limit=5 color=GOLD
+    avatar > ShootAvatar stype=bullet color=DARKBLUE
+    enemy_slow > Chaser stype=city color=GREEN speed=0.1
+    enemy_fast  > Chaser stype=city color=RED speed=0.3
+    niceGuy > Chaser stype=city color=ORANGE speed=0.1
+    death   > Immovable color=BLACK
+    enemySlowPortal > SpawnPoint stype=enemy_slow spawnCooldown=100  total=2 color=QTLHNJ
+    enemyFastPortal > SpawnPoint stype=enemy_fast spawnCooldown=100  total=2 color=CVHTTO
+    niceGuyPortal   > SpawnPoint stype=niceGuy spawnCooldown=100  total=2 color=WLMEZR
+    wall > Immovable color=GRAY
+
+  LevelMapping
+    c > city floor
+    m > enemySlowPortal floor
+    f > enemyFastPortal floor
+    n > niceGuyPortal floor
+    . > floor
+    A > avatar floor
+
+  InteractionSet
+    avatar EOS    > stepBack
+    avatar wall   > stepBack
+    enemy_slow EOS    > stepBack
+    enemy_slow wall   > stepBack
+    enemy_fast EOS    > stepBack
+    enemy_fast wall   > stepBack
+    niceGuy EOS    > stepBack
+    niceGuy wall   > stepBack
+    enemy_slow city > killSprite
+    city enemy_slow > killSprite
+    enemy_fast city > killSprite
+    city enemy_fast  > killSprite
+    enemy_slow city > changeScore value=-1
+    enemy_fast city > changeScore value=-1
+    niceGuy bullet > transformTo stype=death
+    niceGuy bullet > changeScore value=-1
+    enemy_slow bullet > killSprite
+    enemy_slow bullet > changeScore value=2
+    enemy_fast bullet > killSprite
+    enemy_fast bullet > changeScore value=2
+    niceGuy city > killSprite
+    niceGuy city > changeScore value=2
+
+  TerminationSet
+    SpriteCounter stype=city   win=False
+    MultiSpriteCounter stype1=enemy_slow stype2=enemy_fast stype3=niceGuy stype4=enemySlowPortal stype5=enemyFastPortal stype6=niceGuyPortal limit=0 win=True
+    MultiSpriteCounter stype=death limit=1 win=False
+    MultiSpriteCounter stype=death limit=2 win=False
+    MultiSpriteCounter stype=death limit=3 win=False
+    MultiSpriteCounter stype=death limit=4 win=False

@@ -1,0 +1,93 @@
+#The Citadel: http://www.mobygames.com/game/citadel__
+
+BasicGame
+    SpriteSet
+
+        floor > Immovable color=LIGHTGRAY
+
+        avatar > MovingAvatar frameRate=8 color=DARKBLUE
+
+        key > Resource color=GREEN limit=1
+        lock > Immovable color=GOLD
+
+        base > Passive color=WHITE
+        body > Passive color=LRSPUS
+        chest > Passive color=LIGHTBLUE
+        head > Passive color=LIGHTGREEN
+
+        baseinplace > Immovable color=BROWN
+        bodyinplace > Immovable color=YELLOW
+        chestinplace > Immovable color=ORANGE
+        headinplace > Immovable color=RED
+        wrongplace  > Immovable color=PINK
+
+        wall > Immovable color=DARKGRAY 
+
+    LevelMapping
+        s > floor base
+        b > floor body
+        c > floor chest
+        h > floor head
+        k > floor key
+        l > floor lock
+        . > floor
+        A > floor avatar
+
+    InteractionSet
+        avatar wall > stepBack
+
+        body avatar > bounceForward
+        chest avatar > bounceForward
+        head avatar > bounceForward
+
+
+        base lock > undoAll
+        base key > undoAll
+        base wall > undoAll
+        body key > undoAll
+        body wall > undoAll
+        body lock > undoAll
+        chest key > undoAll
+        chest wall > undoAll
+        chest lock > undoAll
+        head key > undoAll
+        head wall > undoAll
+        head lock > undoAll
+
+        avatar baseinplace > stepBack
+        avatar bodyinplace > stepBack
+        avatar chestinplace > stepBack
+        avatar headinplace > stepBack
+
+        body base > transformTo stype=bodyinplace
+        body base > changeScore value=2
+        body head  > transformTo stype=wrongplace
+        body head  > changeScore value=-1
+        body chest > transformTo stype=wrongplace
+        body chest > changeScore value=-1
+
+        chest bodyinplace > transformTo stype=chestinplace
+        chest bodyinplace > changeScore value=5
+        chest base > transformTo stype=wrongplace
+        chest base > changeScore value=-1
+        chest head > transformTo stype=wrongplace
+        chest head > changeScore value=-1
+
+        head chestinplace > transformTo stype=headinplace
+        head chestinplace > changeScore value=13
+        head base > transformTo stype=wrongplace
+        head base > changeScore value=-1
+        head bodyinplace > transformTo stype=wrongplace
+        head bodyinplace > changeScore value=-1
+
+        avatar key > changeResource resource=key value=1 
+        avatar key > changeScore value=1
+        key avatar > killSprite
+
+        lock avatar > killIfOtherHasMore resource=key limit=1
+	lock avatarWithKey > killSprite
+        lock avatar > undoAll
+
+    TerminationSet
+        MultiSpriteCounter stype1=wrongplace limit=1 win=False
+        MultiSpriteCounter stype1=headinplace limit=1 win=True

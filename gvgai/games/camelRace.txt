@@ -1,0 +1,59 @@
+BasicGame
+    SpriteSet
+        floor > Immovable color=LIGHTGRAY hidden=True 
+        randomCamel > RandomNPC speed=0.25 cons=8 color=GREEN frameRate=7 cooldown=6
+        fastR > Missile speed=0.6 frameRate=4 cooldown=6 orientation=RIGHT color=BLUE
+        fastL > Missile speed=0.6 frameRate=4 cooldown=6 orientation=LEFT color=LIGHTBLUE
+        mediumR > Missile speed=0.3 frameRate=6 cooldown=6 orientation=RIGHT color=ORANGE
+        mediumL > Missile speed=0.3 frameRate=6 cooldown=6 orientation=LEFT color=LIGHTORANGE
+        slowR > Missile speed=0.15 frameRate=10 cooldown=6 orientation=RIGHT color=LIGHTGREEN
+        slowL > Missile speed=0.15 frameRate=10 cooldown=6 orientation=LEFT color=PURPLE
+        goal  > Immovable color=LIGHTRED 
+        winnerNPC > Immovable color=RED 
+        winnerPlayer > MovingAvatar color=PINK 
+        avatar > MovingAvatar color=DARKBLUE frameRate=8
+
+        wall > Immovable color=GRAY  
+
+    InteractionSet
+        avatar goal > transformTo stype=winnerPlayer 
+        avatar goal > changeScore value=1
+        randomCamel goal  > transformTo stype=winnerNPC 
+        randomCamel goal  > changeScore value=-1 
+        randomCamel wall  > stepBack
+        fastR goal  > transformTo stype=winnerNPC 
+        fastR goal  > changeScore value=-1 
+        fastR wall  > stepBack
+        fastL goal  > transformTo stype=winnerNPC 
+        fastL goal  > changeScore value=-1 
+        fastL wall  > stepBack
+        mediumR goal  > transformTo stype=winnerNPC 
+        mediumR goal  > changeScore value=-1 
+        mediumR wall  > stepBack
+        mediumL goal  > transformTo stype=winnerNPC 
+        mediumL goal  > changeScore value=-1 
+        mediumL wall  > stepBack
+        slowR goal  > transformTo stype=winnerNPC 
+        slowR goal  > changeScore value=-1 
+        slowR wall  > stepBack
+        slowL goal  > transformTo stype=winnerNPC 
+        slowL goal  > changeScore value=-1 
+        slowL wall  > stepBack
+        avatar wall > stepBack
+
+    LevelMapping
+        g > goal floor
+        r > randomCamel floor
+        h > fastR floor
+        n > mediumR floor
+        t > slowR floor
+        f > fastL floor
+        m > mediumL floor
+        s > slowL floor
+        . > floor
+        A > avatar floor
+        B > avatar floor
+
+    TerminationSet
+        MultiSpriteCounter stype1=winnerPlayer limit=1 win=True
+        MultiSpriteCounter stype1=winnerNPC limit=1 win=False

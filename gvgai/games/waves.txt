@@ -1,0 +1,63 @@
+BasicGame
+    SpriteSet
+        background > Immovable color=BLACK
+        asteroid > Immovable color=BROWN
+
+        rock > Missile orientation=LEFT speed=0.95 color=BLUE
+        sam  > Missile orientation=RIGHT color=GREEN speed=1.0
+        laser > Missile orientation=LEFT speed=0.3 color=RED
+
+        portalSlow  > SpawnPoint   stype=alien  spawnCooldown=10 prob=0.05 color=PURPLE 
+        rockPortal  > SpawnPoint   stype=rock  spawnCooldown=10 prob=0.2 color=PINK 
+
+        shield > Resource color=GOLD limit=4
+
+        avatar  > ShootAvatar color=DARKBLUE stype=sam speed=1.0 rotateInPlace=False
+        alien > Bomber color=ORANGE speed=0.1 orientation=LEFT stype=laser prob=0.01
+    
+    LevelMapping
+        1 > background portalSlow
+        2 > background rockPortal
+        A > background avatar shield
+        s > background asteroid
+        . > background
+
+    TerminationSet
+        SpriteCounter stype=avatar limit=0 win=False
+        Timeout timeout=500 win=True
+        
+    InteractionSet
+        avatar  EOS  > stepBack
+        alien   EOS  > killSprite
+        rock EOS  > killSprite
+        sam EOS  > killSprite
+        laser EOS  > killSprite
+
+        alien sam > killSprite
+        sam alien > killSprite
+        alien sam > changeScore value=2
+
+        sam laser > transformTo stype=shield
+        laser sam > killSprite
+
+        avatar shield > changeResource resource=shield value=1
+        shield avatar > killSprite
+
+        avatar rock > killIfHasLess resource=shield limit=0
+        avatar rock > changeResource resource=shield value=-1
+        rock avatar > killSprite
+
+        avatar alien > killIfHasLess resource=shield limit=0
+        avatar alien > changeResource resource=shield value=-1
+        alien avatar > killSprite
+
+        avatar laser > killIfHasLess resource=shield limit=0
+        avatar laser > changeResource resource=shield value=-1
+        laser avatar > killSprite
+
+        asteroid laser > killSprite
+        asteroid sam > killSprite
+        rock asteroid > killSprite
+        alien asteroid > killSprite
+        laser asteroid > killSprite
+        avatar asteroid > stepBack
