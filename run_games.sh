@@ -14,7 +14,7 @@ sudo docker build -t ptsividis/vgdl-default-parameters .
 ## run processses in background if you put -d flag (daemon)
 # -i interactive
 # try to get bash terminal inside container
-for i in {0..3}
+for i in {0..2}
 do
   sudo docker run ptsividis/vgdl-default-parameters python -m vgdl.parallel_planning --game_number=$i >> game_$i_output.txt
 done
