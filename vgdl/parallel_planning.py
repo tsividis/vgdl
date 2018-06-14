@@ -17,7 +17,7 @@ game_number = args.game_number
 
 gameFileString = 'training_set_1'
 
-gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
+gvggames = ['tiny_game1', 'tiny_game2', 'aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
             'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
 local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper',  # 10-12
