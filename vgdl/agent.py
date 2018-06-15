@@ -519,7 +519,8 @@ class Agent:
 				# [K_RIGHT]*3, [K_RIGHT, K_RIGHT, K_UP]
 
 				# [K_LEFT, K_LEFT, K_LEFT]
-				[0]*6
+				# [0]*6
+				[K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
 			]
 
 		# add mandatory observation period
@@ -2103,7 +2104,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		for color in colors:
 			penalties, _ = MultiEpisodeExperienceReplay(theories, rleHistories, \
 						actionHistories, method=EXPERIENCE_REPLAY_METHOD, targetColor = color)
-			perColorErrorBaselines[color] = penalties[0]
+			perColorErrorBaselines[color] = penalties[0] + .00001
 
 	for errorMap in errorList:
 		## Skip this whole step if you've already made changes for this theory. Just pass it on and you'll
@@ -2139,8 +2140,11 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		# embed()
 		newTheories = list(set(newTheories))
 		if sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
+			cutCorners = len(newTheories) > 750 and scoreAndTheoryTuples[0][0] < .000001
+			if cutCorners:
+				print '*warning* too many theories, cutting some corners'
 			penalties, _ = MultiEpisodeExperienceReplay(newTheories, rleHistories, \
-					actionHistories, method=EXPERIENCE_REPLAY_METHOD, targetColor=errorMap.targetColor, errorCutoff=.5)
+					actionHistories, method=EXPERIENCE_REPLAY_METHOD, targetColor=errorMap.targetColor, errorCutoff=.5, assumeZeroErrorTheoryExists=cutCorners)
 			scoreAndTheoryTuples = zip(penalties, newTheories)
 			print "{} theories before filtering".format(len(scoreAndTheoryTuples))
 			# embed()
@@ -2158,8 +2162,8 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 
 			# hyperparameters here:
 			theoriesPerErrorLevel = 4
-			medianDivisor = 3
-			tooManyTheoriesCutoff = 50
+			medianDivisor = 3.0
+			tooManyTheoriesCutoff = 30
 
 
 			# ############# long test
@@ -2172,28 +2176,29 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 			# #########end
 
 
-			# count = 0
+			count = 0
 
 			# # embed()
-			# while len(scoreAndTheoryTuples) > tooManyTheoriesCutoff:
+			while count == 0 or len(scoreAndTheoryTuples) > tooManyTheoriesCutoff:
 
-			scoreAndTheoryTuples = filterByPrior(scoreAndTheoryTuples, numPerLevel=theoriesPerErrorLevel, granularity=2, targetColor=errorMap.targetColor)
-			print "{} theories after filtering by prior".format(len(scoreAndTheoryTuples))
+				scoreAndTheoryTuples = filterByPrior(scoreAndTheoryTuples, numPerLevel=theoriesPerErrorLevel, granularity=2, targetColor=errorMap.targetColor)
+				print "{} theories after filtering by prior".format(len(scoreAndTheoryTuples))
 
-			# update error threshold for this color
-			med = scoreAndTheoryTuples[len(scoreAndTheoryTuples)//medianDivisor][0] + .000001 # to allow all infinitestimals
-			print 'new baseline:' , med
-			perColorErrorBaselines[errorMap.targetColor] = med
-			scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
-			print "{} theories after filtering with new baseline".format(len(scoreAndTheoryTuples))
+				# update error threshold for this color
+				med = scoreAndTheoryTuples[int(ceil(len(scoreAndTheoryTuples)/medianDivisor))][0] + .000001 # to allow all infinitestimals
+				print 'new baseline:' , med
+				perColorErrorBaselines[errorMap.targetColor] = med
+				scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
+				print "{} theories after filtering with new baseline".format(len(scoreAndTheoryTuples))
 
-			# 	theoriesPerErrorLevel = max(2, theoriesPerErrorLevel - 1)
+				theoriesPerErrorLevel = max(2, theoriesPerErrorLevel - 1)
+				theoriesPerErrorLevel = 2
 
-			# 	count += 1
+				count += 1
 
-			# 	if count > 5:
-			# 		#give up, it's unavoidable
-			# 		break
+				if count > 5:
+					#give up, it's unavoidable
+					break
 
 
 			# # looking for chasers
@@ -2446,10 +2451,10 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 	# filename = "examples.gridphysics.expt_push_boulders2"
-	filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.testAll"
 	
-	# filename = "examples.gridphysics.expt_antagonist"
+	filename = "examples.gridphysics.expt_antagonist"
 
 	# filename = "examples.gridphysics.basics"
 
