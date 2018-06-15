@@ -19,7 +19,7 @@ hyperparameter_sets = [
      }
 ]
 games_to_hyperparameters = {
-	'game1' : [hyperparameter_sets[0], hyperparameter_sets[1], hyperparameter_sets[2]],
+	'game1' : [hyperparameter_sets[0], hyperparameter_sets[1]],
 	'game2' : [hyperparameter_sets[1]],
 	'game3' : [hyperparameter_sets[0]]
 }
