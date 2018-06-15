@@ -1,7 +1,7 @@
-import params, os, itertools, subprocess, shlex
+import params, os, itertools, subprocess, shlex, psutil
 from joblib import Parallel, delayed
 
-num_cores = len(os.sched_getaffinity(0))
+num_cores = psutil.cpu_count()
 
 lst = []
 for k,v in games_to_hyperparameters:
