@@ -4,7 +4,7 @@ from joblib import Parallel, delayed
 num_cores = psutil.cpu_count()
 
 lst = []
-for k,v in games_to_hyperparameters:
+for k,v in params.games_to_hyperparameters:
 	x = itertools.repeat(k)
 	lst.extend(zip(x,v))
 
