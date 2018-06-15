@@ -7,3 +7,4 @@ termcolor
 pygame
 gdata
 joblib
+psutil
