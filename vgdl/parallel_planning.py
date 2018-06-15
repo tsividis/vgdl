@@ -8,12 +8,13 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
+parser.add_argument('--game_name', type=str, default=str(0), help='game name')
+parser.add_argument('--hyperparameters', type=int, default=0, help='hyperparameters')
 
 args = parser.parse_args()
 game_number = args.game_number
-# NOTE: fmin seems to fail with the hyperopt version installed by default
-# as of 01/2018: it is best to install directly from the github repo with
-# the command 'pip install git+https://github.com/hyperopt/hyperopt'
+game_name = args.game_name
+hyperparameters = args.hyperparameters
 
 # gameFileString = 'training_set_1'
 gameFileString = 'gvgai/games'
@@ -24,15 +25,8 @@ gvggames = ['tiny_game1', 'tiny_game2', 'aliens', 'boulderdash', 'butterflies', 
 local_games = ['expt_antagonist', 'expt_exploration_exploitation', 'expt_helper',  # 10-12
     'expt_preconditions', 'expt_push_boulders', 'expt_relational']  # 13-15 to play a "local" game
 
-# gvggames = ['aliens', 'boulderdash', 'chase', 'frogs',  # 0-3
-        	# 'missilecommand', 'portals', 'sokoban', 'survivezombies']  # 4-7
-
-# local_games = ['expt_exploration_exploitation',  # 8
-    # 'expt_preconditions', 'expt_push_boulders', 'expt_relational']  # 9-11 to play a "local" game
-
 def play_trainset(hyperparameters):
     start_time = time.time()
-
 
     # playing GVG-AI games
     if game_number < 10:

@@ -3,23 +3,11 @@
 # Build docker file. You should login with "docker login", but since you only have
 # to do this once, I'm not putting it on the script
 ## build an image with this particular name
-sudo docker build -t ptsividis/vgdl-default-parameters .
+sudo docker build -t ptsividis/vgdl-parallel-model .
 
-# Modify this to contain whichever set you want to run
-# Each container's log file will be written inside that container, under the name game_$i_output.txt
-# (this is just because I don't know how of a clean way of writing them to the local
-# directory)
+## Bind host (AWS) file system (in particular, the vgdl folder) to the /source directory in the Docker image
+## and then run /source/run_games.py
+sudo docker run -v /home/ubuntu/vgdl:/source ptsividis/default_parameters python /source/run_games.py
 
-## sudo docker run FLAGS ...
-## run processses in background if you put -d flag (daemon)
-# -i interactive
-# try to get bash terminal inside container
-for i in {0..2}
-do
-  sudo docker run ptsividis/vgdl-default-parameters python -m vgdl.parallel_planning --game_number=$i >> game_$i_output.txt
-done
+## doing so will, say, create local .csv files (or whatever) that are directly accessible from the host (AWS) directory.
 
-# There is a small tradeoff here between giving the logs unique names vs. not:
-# the first option allows you to put them all in your local directory without
-# fear of overwriting stuff, but you do have to know the game number in order
-# to access them remotely
