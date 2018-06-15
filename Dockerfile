@@ -2,7 +2,7 @@
 FROM python:2
 
 # Set the working directory to /app
-WORKDIR /home/loula/Programming/python/vgdl
+WORKDIR /Users/pedrotsividis/Projects/atari/vgdl/vgdl
 
 # Copy the current directory contents into the container at /app
 ADD . .
