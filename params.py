@@ -1,9 +1,3 @@
-games_to_hyperparameters = {
-	'game1' : [hyperparameter_sets[0], hyperparameter_sets[1], hyperparameter_sets[2]],
-	'game2' : [hyperparameter_sets[1]],
-	'game3' : [hyperparameter_sets[0]]
-}
-
 hyperparameter_sets = [
     {
      'sprite_first_alpha': 10000,
@@ -24,3 +18,8 @@ hyperparameter_sets = [
      'novelty_second_alpha': 50,
      }
 ]
+games_to_hyperparameters = {
+	'game1' : [hyperparameter_sets[0], hyperparameter_sets[1], hyperparameter_sets[2]],
+	'game2' : [hyperparameter_sets[1]],
+	'game3' : [hyperparameter_sets[0]]
+}
