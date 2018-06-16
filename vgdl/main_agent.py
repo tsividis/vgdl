@@ -307,18 +307,17 @@ class Agent:
             first_time_playing_level = True
 
             while not win and i<10:
-                gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
-                # self.total_game_steps += steps
-                episode_results = (n_level, steps, win, score, self.total_planner_steps)
+                # gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
+                # episode_results = (n_level, steps, win, score, self.total_planner_steps)
+                episode_results = [1,2,3,4,5]
                 episodes.append(episode_results)
                 output = {'modelType':self.modelType,
                             'gameName': self.gameFilename,
                             'condition': 'normal',
                             'episodes' : [episode_results]}
-
-                write_to_csv(str(self.gameFilename)+'.csv', output)
-                allStatesEncountered.extend(statesEncountered)
-                levelEffectsEncountered.append(effectsEncountered)
+                write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+'.csv', output)
+                # allStatesEncountered.extend(statesEncountered)
+                # levelEffectsEncountered.append(effectsEncountered)
                 if self.total_game_steps > MAX_STEPS:
                     return
                 # VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
@@ -351,15 +350,6 @@ class Agent:
                 embed()
 
         # self.makeMovie()
-
-
-        # output = {'modelType':self.modelType,
-        #             # 'gameName': self.gameFilename[self.gameFilename.find('expt'):],
-        #             'gameName': self.gameFilename,
-        #             'condition': 'normal',
-        #             'episodes' : episodes}
-
-        # write_to_csv(str(self.gameFilename)+'.csv', output)
 
         self.makeMovie()
 
@@ -507,7 +497,7 @@ class Agent:
             ## initialize one or many VRLEs according to hypothesis-selection method
             theoryRLEs = self.VrleInitPhase(flexible_goals)
 
-            planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
+            planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
             ## Initialize planner
             p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                 seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,

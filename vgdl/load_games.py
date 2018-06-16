@@ -19,7 +19,7 @@ hyperparameter_index = args.hyperparameter_index
 gameFileString = 'gvgai/games'
 
 hyperparameter_sets = [
-    {
+    {'idx'           : 0,
      'short_horizon' : False,
      'first_order_horizon': True,
      'sprite_first_alpha': 10000,
@@ -30,9 +30,20 @@ hyperparameter_sets = [
      'novelty_first_alpha': 5000,
      'novelty_second_alpha': 50,
      },
-    {
+    {'idx'           : 1,
      'short_horizon' : False,
      'first_order_horizon': True,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': 10.,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {'idx'           : 2,
+     'short_horizon' : False,
+     'first_order_horizon': False,
      'sprite_first_alpha': 10000,
      'sprite_second_alpha': 100,
      'sprite_negative_mult': 10.,
@@ -68,7 +79,6 @@ def play_trainset(hyperparameters):
     gvgname = "./{}/{}".format(gameFileString,game_name)
     gameString = read_gvgai_game('{}.txt'.format(gvgname))
     game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
-    print game_levels
 
     level_game_pairs = []
     for level_number in range(len(game_levels)):
@@ -80,7 +90,7 @@ def play_trainset(hyperparameters):
     ##then pass this down for multiple episodes
     gameObject = None
 
-    # agent.playCurriculum(level_game_pairs=level_game_pairs)
+    agent.playCurriculum(level_game_pairs=level_game_pairs)
 
     total_time = time.time() - start_time
 

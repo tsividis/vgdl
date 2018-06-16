@@ -1,5 +1,6 @@
 from IPython import embed
 import itertools
+import os
 import random
 import csv
 import cPickle
@@ -84,9 +85,10 @@ def make_random_name(chars):
 		name+=random.choice(chars)
 	return name
 
-def write_to_csv(filename, game):
-
-	f = open(filename, 'a+') ##append, but also read.
+def write_to_csv(foldername, filename, game):
+	if foldername not in os.listdir('model_results'):
+		os.makedirs(foldername)
+	f = open('model_results/'+foldername+'/'+filename, 'a+') ##append, but also read.
 	writer = csv.writer(f)
 	if len(f.readlines())==0:
 		writer.writerow(('subject', 'condition', 'gameName', 'levels_won', 'steps', 'planner_steps', 'score'))
