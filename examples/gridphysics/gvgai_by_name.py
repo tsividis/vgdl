@@ -43,26 +43,5 @@ if __name__ == "__main__":
          # level_game_pairs = [level_game_pairs[level_n]]
          
     for index, level in enumerate(level_game_pairs):
-        wins = 0
-        tries = 0
-        while wins<1 and tries<3:
-            VGDLParser.playGame(*level)
-            time.sleep(1)
-            data = np.load("temp_data.npy")
-            win = data[2]
-            if win:
-                wins+=1
-            tries += 1
-            levels_won = index + wins
-            # Save in format [subect, condition, gamename, levels won, steps taken, score, time elapsed]
-            row = ['human', 'no_score', 'expt_preconditions', levels_won, data[1], data[3], data[0]]
+        VGDLParser.playGame(*level)
 
-            filename = "human_data_{}.csv".format(gvggames[game_n])
-            f = open(filename, 'a+') ##append, but also read.
-            g = open(filename, 'r')
-            writer = csv.writer(f)
-            if len(g.readlines())==0:
-                writer.writerow(('subject', 'condition', 'gameName', 'levels_won', 'steps', 'score', 'time'))
-            writer.writerow(row)
-            f.close()
-            g.close()
