@@ -8,15 +8,40 @@ import argparse
 parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
 parser.add_argument('--game_name', type=str, default=str(0), help='game name')
-parser.add_argument('--hyperparameters', type=int, default=0, help='hyperparameters')
+parser.add_argument('--hyperparameter_index', type=int, default=0, help='hyperparameter_index')
 
 args = parser.parse_args()
 game_number = args.game_number
 game_name = args.game_name
-hyperparameters = args.hyperparameters
+hyperparameter_index = args.hyperparameter_index
 
 # gameFileString = 'training_set_1'
 gameFileString = 'gvgai/games'
+
+hyperparameter_sets = [
+    {
+     'short_horizon' : False,
+     'first_order_horizon': True,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': .1,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {
+     'short_horizon' : False,
+     'first_order_horizon': True,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': 10.,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     }
+]
 
 def gen_color():
     from vgdl.colors import colorDict
@@ -50,7 +75,7 @@ def play_trainset(hyperparameters):
     	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
     		level_game_pairs.append([gameString, level.read()])
 
-    agent = Agent('full', game_name, hyperparameter_sets=hyperparameters, parallel_planning=False)
+    agent = Agent('full', game_name, hyperparameters=hyperparameters, parallel_planning=False)
 
     ##then pass this down for multiple episodes
     gameObject = None
@@ -61,4 +86,7 @@ def play_trainset(hyperparameters):
 
     return total_time
 
-play_trainset([hyperparameters])
+play_trainset(hyperparameter_sets[hyperparameter_index])
+
+
+

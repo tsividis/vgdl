@@ -41,22 +41,22 @@ def playCurriculum(agent, level_game_pairs):
 
 
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameter_sets={}, parallel_planning=False):
+    def __init__(self, modelType, gameFilename, hyperparameters, parallel_planning=False):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.gameString = None
         self.levelString = None
-        self.hyperparameter_sets = hyperparameter_sets
+        self.hyperparameters = hyperparameters
         self.parallel_planning = parallel_planning
         self.annealingFactor = 1.
-        self.shortHorizon = False
+        self.shortHorizon = hyperparameters['short_horizon']#False
+        self.firstOrderHorizon = hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
         if self.shortHorizon == True:
             self.starting_max_nodes = 1000
             self.max_nodes_annealing = 1.05
         else:
             self.starting_max_nodes = 10000
             self.max_nodes_annealing = 10
-        self.firstOrderHorizon = True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
         self.regrounding = 3
         self.selective_regrounding = True
         self.avoid_danger = True
@@ -293,7 +293,6 @@ class Agent:
         j=0
         flexible_goals = False
 
-        pool = mp.Pool(processes=len(self.hyperparameter_sets))
         for n_level, level_game in enumerate(level_game_pairs):
 
             print("Playing level {}".format(n_level))
@@ -308,7 +307,7 @@ class Agent:
             first_time_playing_level = True
 
             while not win and i<10:
-                gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level, pool=pool)
+                gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
                 # self.total_game_steps += steps
                 episode_results = (n_level, steps, win, score, self.total_planner_steps)
                 episodes.append(episode_results)
@@ -508,10 +507,11 @@ class Agent:
             ## initialize one or many VRLEs according to hypothesis-selection method
             theoryRLEs = self.VrleInitPhase(flexible_goals)
 
+            planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
             ## Initialize planner
             p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                 seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
+                firstOrderHorizon=self.firstOrderHorizon, hyperparameters=planner_hyperparameters)
 
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes
