@@ -121,6 +121,8 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 testRules5 = """
         avatar sam > bounceForward
+        sam wall > stepBack
+        sam sam > killSprite
 """
 
 ## TEST6
@@ -157,26 +159,28 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 """
 testRules7 = """
         box2 avatar > bounceForward
+        sam wall > stepBack
+        random wall > stepBack
 """
 
-## TEST7 temp
-# this works but 8 doesn't wtf
-testSequence7 = [[K_UP, K_UP, K_UP, K_RIGHT]]
-testLevel7 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w                           3  w
-w  r              s            w
-w          k                3  w
-w             r        s       w
-w     k                        w
-w                      A       w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
-testRules7 = """
-        sam wall > stepBack
-        box2 avatar > bounceForward
-"""
+# ## TEST7 temp
+# # this works but 8 doesn't wtf -- nvm
+# testSequence7 = [[K_UP, K_UP, K_UP, K_RIGHT]]
+# testLevel7 = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w                           3  w
+# w  r              s            w
+# w          k                3  w
+# w             r        s       w
+# w     k                        w
+# w                      A       w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+# testRules7 = """
+#         sam wall > stepBack
+#         box2 avatar > bounceForward
+# """
 
 # This doesn't test for anything new; it just has all the objects thrown in at once
 testSequence8 = [[0]*3]
@@ -197,25 +201,26 @@ testRules8 = """
         sam wall > stepBack
 """
 
-# temp version for testing Chaser learning
-testSequence8 = [[0]*3]
-testLevel8 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w                              w
-w        r                   1 w
-w              k             1 w
-w      r           A           w
-w                            3 w
-w          k            s  s 3 w
-w                              w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-"""
-testRules8 = """
-        chaser wall > stepBack
-        random wall > stepBack
-        sam wall > stepBack
-"""
+# # temp version for testing Chaser learning
+# testSequence8 = [[0]*3]
+# testLevel8 = """
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# w                              w
+# w        r                   1 w
+# w              k             1 w
+# w      r           A           w
+# w                            3 w
+# w          k            s  s 3 w
+# w                              w
+# wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+# """
+# testRules8 = """
+#         chaser wall > stepBack
+#         random wall > stepBack
+#         sam wall > stepBack
+# """
 
+# not an officialtest, this is to demonstrate a possible failure mode
 testSequence9 = [[0]*3]
 testLevel9 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -568,10 +573,9 @@ actionSequences = [
 
 # to do specific test
 level_game_pairs = [[game.format(testRules=testRules5), testLevel5]] # currently crashes, TODO
-level_game_pairs = [[game.format(testRules=testRules9), testLevel9]]
-actionSequences = [testSequence9]
-level_game_pairs = [[game.format(testRules=testRules8), testLevel8]]
-actionSequences = [testSequence8]
+actionSequences = [testSequence5]
+# level_game_pairs = [[game.format(testRules=testRules8), testLevel8]]
+# actionSequences = [testSequence8]
 
 # currently crashes, TODO ("mappedState problem in writeTheoryToTxt")
 ''' traceback:
@@ -587,20 +591,20 @@ if multiTesting:
         [game.format(testRules=testRules2), testLevel2],
         [game.format(testRules=testRules3), testLevel3],
         [game.format(testRules=testRules4), testLevel4],
-        [game.format(testRules=testRules5), testLevel5],
+        # [game.format(testRules=testRules5), testLevel5],
         [game.format(testRules=testRules6), testLevel6],
         [game.format(testRules=testRules7), testLevel7],
-        [game.format(testRules=testRules8), testLevel8],
+        # [game.format(testRules=testRules8), testLevel8],
     ]
     actionSequences = [
         testSequence1,
         testSequence2,
         testSequence3,
         testSequence4,
-        testSequence5,
+        # testSequence5,
         testSequence6,
         testSequence7,
-        testSequence8,
+        # testSequence8,
     ]
 
 if __name__ == "__main__":
