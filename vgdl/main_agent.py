@@ -502,76 +502,16 @@ class Agent:
 
         emptyPlans = 0
         while not ended:
-            ## initialize one or many VRLEs according to hypothesis-selection method
-            theoryRLEs = self.VrleInitPhase(flexible_goals)
 
             quitting = False
 
-            if self.parallel_planning:
-                def WBP_wrapper(l):
-                    hyperparameters, theory, queue = l
-                    p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=theory, fakeInteractionRules = self.fakeInteractionRules,
-                        seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                        firstOrderHorizon=self.firstOrderHorizon, hyperparameters=hyperparameters)
+            ## initialize one or many VRLEs according to hypothesis-selection method
+            theoryRLEs = self.VrleInitPhase(flexible_goals)
 
-                    # Put the WBP object in a shared queue to facilitate manipulation
-                    # queue.put(p)
-                    return p
-
-                # # start planners
-                # planners = []
-                print('#1')
-                result_queue = None
-                # result_queue = mp.Queue()
-                print('#2')
-                #
-                # # Currently parallelizing over hyperparameters but not theories
-                # # (we have to be more careful about things like "hypotheses[0]"
-                # #  if we are gonna do both)
-                # planners = [mp.Process(
-                #     target=WBP_wrapper, args=(hyperparameter_set, self.hypotheses[0], result_queue))
-                #     for hyperparameter_set in self.hyperparameter_sets]
-                #
-                # # start planners
-                # for planner in planners:
-                #     planner.start()
-                #
-                # # check if any planner has finished
-                # finished_one_planner = False
-                # while not finished_one_planner:
-                #     for number, planner in enumerate(planners):
-                #         if not planner.is_alive():
-                #             # import ipdb; ipdb.set_trace()
-                #             finished_one_planner = True
-                #             break
-                #
-                # # kill all processes
-                # for planner in planners:
-                #     planner.terminate()
-                #     planner.join()
-                #
-                print('#3')
-                res = pool.map(WBP_wrapper, [(h_set, self.hypotheses[0], result_queue) for h_set in self.hyperparameter_sets])
-                print('#4')
-                # pool.close()
-                print('#5')
-                # pool.join()
-                print('#6')
-                # import ipdb; ipdb.set_trace()
-
-                # p = result_queue.get()
-                # print('#1')
-            	best_index = np.argmin([p.total_nodes for p in res._value])
-            	p = res._value[best_index]
-
-            else:
-
-                p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
-                    seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                    firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[2])
-            # best_index = np.argmin([p.total_nodes for p in res])
-            # print('passed here')
-            # p = res[best_index]
+            ## Initialize planner
+            p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
+                seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+                firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
 
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes
@@ -582,8 +522,6 @@ class Agent:
                 objectPositionsArray = objectPositionsArray[::-1]
             else:
                 solution = []
-
-
 
             if solution and not p.quitting:
                 print "============================================="
