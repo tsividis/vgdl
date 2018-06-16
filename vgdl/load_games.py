@@ -46,7 +46,7 @@ hyperparameter_sets = [
      'first_order_horizon': False,
      'sprite_first_alpha': 10000,
      'sprite_second_alpha': 100,
-     'sprite_negative_mult': 10.,
+     'sprite_negative_mult': .1,
      'multisprite_first_alpha': 10000,
      'multisprite_second_alpha': 100,
      'novelty_first_alpha': 5000,
@@ -79,7 +79,7 @@ def play_trainset(hyperparameters):
     gvgname = "./{}/{}".format(gameFileString,game_name)
     gameString = read_gvgai_game('{}.txt'.format(gvgname))
     game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
-
+    print game_levels
     level_game_pairs = []
     for level_number in range(len(game_levels)):
     	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
