@@ -24,7 +24,7 @@ def gen_color():
     color_list = [c for c in color_list if c not in ['UUWSWF']]
     for color in color_list:
         yield color
-                
+
 def read_gvgai_game(filename):
     with open(filename, 'r') as f:
         new_doc = []
@@ -42,7 +42,8 @@ def play_trainset(hyperparameters):
 
     gvgname = "./{}/{}".format(gameFileString,game_name)
     gameString = read_gvgai_game('{}.txt'.format(gvgname))
-    game_levels = [l for l in os.listdir(gameFileString) if game_name+'_lvl' in l]
+    game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
+    print game_levels
 
     level_game_pairs = []
     for level_number in range(len(game_levels)):
