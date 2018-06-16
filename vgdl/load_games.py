@@ -80,7 +80,7 @@ def play_trainset(hyperparameters):
     ##then pass this down for multiple episodes
     gameObject = None
 
-    agent.playCurriculum(level_game_pairs=level_game_pairs)
+    # agent.playCurriculum(level_game_pairs=level_game_pairs)
 
     total_time = time.time() - start_time
 
