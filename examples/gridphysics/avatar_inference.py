@@ -1,6 +1,6 @@
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
-multiTesting = True
+multiTesting = False
 ''' how to use multiTesting (i.e. how to catch some bugs before pushing them)
 - turn the above flag to True
 - it will run all the tests listed at the bottom

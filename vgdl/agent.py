@@ -43,7 +43,7 @@ ERRORCUTOFF = .3
 # Not active now
 NUM_SAMPLES_PER_HYPOTHESIS = 20
 # how long to just watch before theorizing about the game
-OBSERVATION_PERIOD_LENGTH = 10
+OBSERVATION_PERIOD_LENGTH = 12
 initialErrorBuildup = []
 
 class errorMapEntry:
@@ -597,7 +597,7 @@ class Agent:
 		return newRle
 
 	def scoreAndFilterTheories(self, newTheories, episode_num, displayTheories=False):
-		print "top of scoreAndFilterTheories"
+		# print "top of scoreAndFilterTheories"
 
 		penalties, imaginedEffectsPerTheory = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], \
 				self.actionHistory[:episode_num+1], method=EXPERIENCE_REPLAY_METHOD, displayTheories=False, assumeZeroErrorTheoryExists=self.assumeZeroErrorTheoryExists)
@@ -714,6 +714,7 @@ class Agent:
 		## so that you can return those when you don't do everything below the next 5 lines.
 		newTheories = []
 		for num, env in enumerate(theoryRLEs):
+			# print 'test n expand #' + str(num)
 			theories = testAndExpand(env, hypotheses[num], action, self.rle, envRealPrev, self.rleHistory, \
 					self.actionHistory, episode_num)
 			newTheories.extend(theories)
@@ -726,7 +727,12 @@ class Agent:
 		if newTheories:
 			# embed()
 			# t1 = time.time()
+			prev = self.assumeZeroErrorTheoryExists
+			if len(newTheories) > 888:# and scoreAndTheoryTuples[0][0] < .000001:
+				print 'too many theories, scoring less carefully in executeStep'
+				self.assumeZeroErrorTheoryExists = True
 			bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
+			self.assumeZeroErrorTheoryExists = prev
 			# print time.time()-t1
 			# embed()
 
@@ -2152,29 +2158,16 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 			print "{} theories after first filter".format(len(scoreAndTheoryTuples))
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior(targetColor=errorMap.targetColor)))
 
-
 			# errorMap.display()
 			# # looking for chasers
 			# for s, t in scoreAndTheoryTuples:
 			# 	if 'Chaser' in str(t.classes['c2'][0].vgdlType):
 			# 		print "got one! " + str(s)
 
-
 			# hyperparameters here:
 			theoriesPerErrorLevel = 4
 			medianDivisor = 3.0
 			tooManyTheoriesCutoff = 30
-
-
-			# ############# long test
-			# # update error threshold for this color
-			# med = scoreAndTheoryTuples[len(scoreAndTheoryTuples)//medianDivisor][0] + .000001 # to allow all infinitestimals
-			# # med = (scoreAndTheoryTuples[0][0] + .0001) * 4
-			# print 'new baseline:' , med
-			# perColorErrorBaselines[errorMap.targetColor] = med
-			# scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
-			# #########end
-
 
 			count = 0
 
@@ -2200,7 +2193,6 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 					#give up, it's unavoidable
 					break
 
-
 			# # looking for chasers
 			# for s, t in scoreAndTheoryTuples:
 			# 	if 'Chaser' in str(t.classes['c2'][0].vgdlType):
@@ -2218,6 +2210,10 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 		
 		newTheories = [s[1] for s in scoreAndTheoryTuples]
 		theories = newTheories
+
+	# if sum([len(episode) for episode in rleHistories]) >= OBSERVATION_PERIOD_LENGTH:
+		# print 'done with observation period and inference'
+		# embed()
 
 	return theories
 
@@ -2392,6 +2388,9 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 
 def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, actionHistories, episode_num):
 	global initialErrorBuildup
+
+	# print 'top of test and expand, here is the thing ' + str(len(rleHistories[0]))
+	# print env.show()
 
 	episodeStep = (episode_num, len(rleHistories[episode_num]) - 1)
 
