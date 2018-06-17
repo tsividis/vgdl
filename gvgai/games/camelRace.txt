@@ -2,12 +2,12 @@ BasicGame
     SpriteSet
         floor > Immovable color=LIGHTGRAY hidden=True 
         randomCamel > RandomNPC speed=0.25 cons=8 color=GREEN frameRate=7 cooldown=6
-        fastR > Missile speed=0.6 frameRate=4 cooldown=6 orientation=RIGHT color=BLUE
-        fastL > Missile speed=0.6 frameRate=4 cooldown=6 orientation=LEFT color=LIGHTBLUE
-        mediumR > Missile speed=0.3 frameRate=6 cooldown=6 orientation=RIGHT color=ORANGE
-        mediumL > Missile speed=0.3 frameRate=6 cooldown=6 orientation=LEFT color=LIGHTORANGE
-        slowR > Missile speed=0.15 frameRate=10 cooldown=6 orientation=RIGHT color=LIGHTGREEN
-        slowL > Missile speed=0.15 frameRate=10 cooldown=6 orientation=LEFT color=PURPLE
+        fastR > Missile speed=1 cooldown=5 orientation=RIGHT color=BLUE
+        fastL > Missile speed=1 cooldown=5 orientation=LEFT color=LIGHTBLUE
+        mediumR > Missile speed=1 cooldown=4 orientation=RIGHT color=ORANGE
+        mediumL > Missile speed=1 cooldown=4 orientation=LEFT color=LIGHTORANGE
+        slowR > Missile speed=1 cooldown=4 orientation=RIGHT color=LIGHTGREEN
+        slowL > Missile speed=1 cooldown=4 orientation=LEFT color=PURPLE
         goal  > Immovable color=LIGHTRED 
         winnerNPC > Immovable color=RED 
         winnerPlayer > MovingAvatar color=PINK 
