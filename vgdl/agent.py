@@ -247,9 +247,9 @@ class Agent:
 		
 		num_levels = len(level_game_pairs)
 		## for inference
-		self.rleHistory = [[] for i in range(num_levels*num_episodes_per_level)]
-		self.actionHistory = [[] for i in range(num_levels*num_episodes_per_level)]
-		self.all_objects = [{} for i in range(num_levels*num_episodes_per_level)]
+		self.rleHistory = []#[] for i in range(num_levels*num_episodes_per_level)]
+		self.actionHistory = []#[] for i in range(num_levels*num_episodes_per_level)]
+		self.all_objects = []#{} for i in range(num_levels*num_episodes_per_level)]
 		
 		episodes_played = 0
 		for n_level, level_game in enumerate(level_game_pairs):
@@ -278,6 +278,10 @@ class Agent:
 		return
 
 	def playEpisode(self, n_level, episode_num, flexible_goals=False, win=False, first_time_playing_level=False):
+		
+		self.rleHistory += [[]]
+		self.actionHistory += [[]]
+		self.all_objects += [{}]
 		
 		self.initializeEnvironment()
 		print "initializing RLE"
@@ -520,20 +524,27 @@ class Agent:
 
 				# [K_LEFT, K_LEFT, K_LEFT]
 				# [0]*6
-				[K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
+				# [K_UP, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT]
+				[K_UP] * 6,
+				[K_UP] * 6,
 			]
 
 		# add mandatory observation period
 		actionSequences[0] = [0]*OBSERVATION_PERIOD_LENGTH + actionSequences[0]
 
-		self.rleHistory = [[] for i in range(len(actionSequences))]
-		self.actionHistory = [[] for i in range(len(actionSequences))]
-		self.all_objects = [{} for i in range(len(actionSequences))]
+		# NOTE: having this here means every level it starts from scratch on these
+		self.rleHistory = []#] for i in range(len(actionSequences))]
+		self.actionHistory = []#] for i in range(len(actionSequences))]
+		self.all_objects = []#{} for i in range(len(actionSequences))]
 
 		totalTimeStart = time.time()
 
 		for episode_num, actions in enumerate(actionSequences):
 			print "initializing RLE. Epoch={}".format(epoch)
+
+			self.rleHistory += [[]]
+			self.actionHistory += [[]]
+			self.all_objects += [{}]
 
 			self.initializeEnvironment()
 			self.all_objects[episode_num] = self.rle._game.getAllObjects() ## we need to store all_objects across multiple episodes
@@ -776,6 +787,8 @@ class Agent:
 		self.statesEncountered.append(self.rle._game.getFullState())
 		self.rle._game.sprite_appearances = []
 
+		# print 'end of executeStep'
+		# embed()
 		return bestScoresAndHypotheses
 
 ########################################################################
@@ -2443,7 +2456,7 @@ def copyGameInferenceInfo(envReal, rle):
 if __name__ == "__main__":
 
 	##simpleGame_missile: no support for learning that it can shoot things.
-	# filename = "examples.gridphysics.frogs"
+	filename = "examples.gridphysics.frogs"
 
 	# filename = "examples.gridphysics.collect_resource"
 
@@ -2453,7 +2466,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.testAll"
 	
-	filename = "examples.gridphysics.expt_antagonist"
+	# filename = "examples.gridphysics.expt_antagonist"
 
 	# filename = "examples.gridphysics.basics"
 
