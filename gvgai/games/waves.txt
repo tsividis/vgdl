@@ -24,7 +24,7 @@ BasicGame
 
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
-        Timeout timeout=500 win=True
+        Timeout limit=500 win=True
         
     InteractionSet
         avatar  EOS  > stepBack

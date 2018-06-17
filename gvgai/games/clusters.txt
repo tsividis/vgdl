@@ -100,4 +100,4 @@ BasicGame key_handler=Pulse
         SpriteCounter stype=avatar limit=0 win=False
         MultiSpriteCounter stype1=bluebox stype2=redbox stype3=greenbox stype4=brokenbox limit=0 win=True
         MultiSpriteCounter stype1=brokenbox limit=1 win=False
-        Timeout timeout=1500 win=False
+        Timeout limit=1500 win=False
