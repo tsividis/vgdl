@@ -87,32 +87,23 @@ def make_random_name(chars):
 
 def write_to_csv(foldername, filename, game):
 	if filename not in os.listdir('model_results/'+foldername+'/'):
-		# embed()
-		f = open('model_results/'+foldername+'/'+filename, 'w') ##append, but also read.
+		f = open('model_results/'+foldername+'/'+filename, 'w+') #write
 		writer = csv.writer(f)
 		writer.writerow(('subject', 'condition', 'gameName', 'levels_won', 'steps', 'planner_steps', 'score'))
 	else:
-		# f = open('model_results/'+foldername+'/'+filename, 'r') #read.
-		# reader = csv.reader(f)
-		# linecount = sum(1 for row in reader)
-		# f.close()
-		# import random, time, math
-		# time.sleep(math.ceil(random.random()*10))
 		f = open('model_results/'+foldername+'/'+filename, 'a+') ##append, but also read.
 		writer = csv.writer(f)
-		# if linecount==0:
-			# writer.writerow(('subject', 'condition', 'gameName', 'levels_won', 'steps', 'planner_steps', 'score'))
-		episodes = game['episodes']
-		steps, levels_won, score, planner_steps = 0, 0, 0, 0
-		for episode in episodes:
-			steps += episode[1]
-			planner_steps += episode[-1]
-			levels_won += episode[2]
-			if episode[3] is not None:
-				score +=episode[3]
-			else:
-				score = None
-			writer.writerow((game['modelType'], game['condition'], game['gameName'], levels_won, steps, planner_steps, score))
+	episodes = game['episodes']
+	steps, levels_won, score, planner_steps = 0, 0, 0, 0
+	for episode in episodes:
+		steps += episode[1]
+		planner_steps += episode[-1]
+		levels_won += episode[2]
+		if episode[3] is not None:
+			score +=episode[3]
+		else:
+			score = None
+		writer.writerow((game['modelType'], game['condition'], game['gameName'], levels_won, steps, planner_steps, score))
 	f.close()
 def ccopy(obj):
 	return cPickle.loads(cPickle.dumps(obj))
