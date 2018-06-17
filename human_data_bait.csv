@@ -1,0 +1,6 @@
+subject,condition,gameName,levels_won,steps,score,time
+human,no_score,expt_preconditions,1,11.0,2.0,72.528623819351196
+human,no_score,expt_preconditions,1,9.0,2.0,3.3388218879699707
+human,no_score,expt_preconditions,1,9.0,2.0,2.3824081420898438
+human,no_score,expt_preconditions,2,38.0,4.0,9.0361599922180176
+human,no_score,expt_preconditions,3,81.0,6.0,24.018975973129272
