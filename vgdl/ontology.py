@@ -376,10 +376,14 @@ class SpawnPoint(SpriteProducer):
             return
         self.lastrect = self.rect.copy()
 
-        if ((game.time+1) % self.spawnCooldown == 3 and random.random() < self.prob):
-            game._createSprite([self.stype], (self.rect.left, self.rect.top))
-            self.counter += 1
-
+        if self.spawnCooldown < 11:
+            if ((game.time+1) % self.spawnCooldown == 0 and random.random() < self.prob):
+                game._createSprite([self.stype], (self.rect.left, self.rect.top))
+                self.counter += 1
+        else:
+             if ((game.time+1) % self.spawnCooldown == 3 and random.random() < self.prob):
+                game._createSprite([self.stype], (self.rect.left, self.rect.top))
+                self.counter += 1
         self.lastmove += 1
         self.lastdisplacement += 1
 
@@ -2312,7 +2316,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
         position_options = {next_pos: 1.}
         stype = getStype(params)
         cooldown = getCooldown(params)
-        if (game.time+1)%cooldown==3:
+        if (game.time+1)%cooldown==0:
             appearance_predictions = [(stype, current_sprite.rect.left, current_sprite.rect.top)]
         else:
             appearance_predictions = []
