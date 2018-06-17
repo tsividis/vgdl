@@ -275,7 +275,7 @@ class SpawnPoint(SpriteProducer):
             killSprite(self, None, game)
             return
 
-        if ((game.time+1) % self.spawnCooldown == 0 and random.random() < self.prob):
+        if ((game.time+1) % self.spawnCooldown == 3 and random.random() < self.prob):
             game._createSprite([self.stype], (self.rect.left, self.rect.top))
             self.counter += 1
 
