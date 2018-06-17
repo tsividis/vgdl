@@ -10,8 +10,8 @@ BasicGame
         portalLeft > SpawnPoint color=IOQEEF spawnCooldown=67 total=20 stype=bleft
         portalRight > SpawnPoint color=LBLFCJ spawnCooldown=67 total=20 stype=bright
 
-        bleft > Bomber orientation=UP color=LRSPUS  prob=0.1 spawnCooldown=6 speed=0.5 stype=missileL 
-        bright > Bomber orientation=UP color=TDLEMS  prob=0.1 spawnCooldown=6 speed=0.5 stype=missileR
+        bleft > Bomber orientation=UP color=LRSPUS  prob=0.05 spawnCooldown=6 speed=0.1 stype=missileL 
+        bright > Bomber orientation=UP color=TDLEMS  prob=0.05 spawnCooldown=6 speed=0.1 stype=missileR
 
         villain  > Resource color=YOYTZM limit=8 value=0
         villaingang > Resource color=KSXCRX limit=1 value=0
