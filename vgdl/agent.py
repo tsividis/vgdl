@@ -787,8 +787,8 @@ class Agent:
 		self.statesEncountered.append(self.rle._game.getFullState())
 		self.rle._game.sprite_appearances = []
 
-		print 'end of executeStep'
-		embed()
+		# print 'end of executeStep'
+		# embed()
 		return bestScoresAndHypotheses
 
 ########################################################################
