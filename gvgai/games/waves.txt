@@ -3,7 +3,7 @@ BasicGame
         background > Immovable color=BLACK
         asteroid > Immovable color=BROWN
 
-        rock > Missile orientation=LEFT speed=0.95 color=BLUE
+        rock > Missile orientation=LEFT speed=0.6 color=BLUE
         sam  > Missile orientation=RIGHT color=GREEN speed=1.0
         laser > Missile orientation=LEFT speed=0.3 color=RED
 

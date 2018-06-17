@@ -5,10 +5,10 @@ BasicGame
         shovel > Flicker color=BROWN limit=1 singleton=True 
 
         entrance > SpawnPoint total=20 spawnCooldown=50 stype=lemming color=PURPLE 
-        goal > Immovable color=GREEN #This is actually the goal, but Chaser only works when stype=goal for some reason
+        goal > Immovable color=GREEN
 
         avatar  > ShootAvatar stype=shovel color=DARKBLUE
-        lemming > Chaser  stype=goal speed=0.1 color=RED
+        lemming > Chaser  stype=goal speed=1 cooldown=5 color=RED
 
         wall > Immovable color=GRAY 
     LevelMapping
