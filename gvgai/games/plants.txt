@@ -47,7 +47,7 @@ BasicGame
         . > floor
 
     TerminationSet
-        Timeout limit=1000 win=True
+        Timeout timeout=1000 win=True
         MultiSpriteCounter stype1=eatenBrains limit=1 win=False
         MultiSpriteCounter stype1=eatenBrains limit=2 win=False
         MultiSpriteCounter stype1=eatenBrains limit=3 win=False

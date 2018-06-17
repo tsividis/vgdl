@@ -3,7 +3,7 @@ BasicGame
         background > Immovable color=BLACK
         asteroid > Immovable color=BROWN
 
-        rock > Missile orientation=LEFT speed=0.9 color=BLUE
+        rock > Missile orientation=LEFT speed=0.95 color=BLUE
         sam  > Missile orientation=RIGHT color=GREEN speed=1.0
         laser > Missile orientation=LEFT speed=0.3 color=RED
 
@@ -24,7 +24,7 @@ BasicGame
 
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
-        Timeout limit=500 win=True
+        Timeout timeout=500 win=True
         
     InteractionSet
         avatar  EOS  > stepBack

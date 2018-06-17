@@ -40,7 +40,7 @@ BasicGame
 
     TerminationSet
         SpriteCounter stype=target limit=0 win=True
-        Timeout limit=1000 win=False
+        Timeout timeout=1000 win=False
         
     InteractionSet
         inWhite EOS > stepBack
