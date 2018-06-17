@@ -700,9 +700,7 @@ class Agent:
 		actionHistories[episode_num].append(action)
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
-		if sum([len(episode) for episode in rleHistories]) <= OBSERVATION_PERIOD_LENGTH:
-			# have to save extra info since we deal with the error maps after the step they occur
-			copyGameInferenceInfo(envReal, self.rle)
+
 
 		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action)
 
@@ -713,6 +711,10 @@ class Agent:
 		_, new_sprites, _ = matchEnvs(envReal, envRealPrev)
 		self.rle._game.sprite_appearances = new_sprites
 
+		if sum([len(episode) for episode in rleHistories]) <= OBSERVATION_PERIOD_LENGTH:
+			# have to save extra info since we deal with the error maps after the step they occur
+			copyGameInferenceInfo(envReal, self.rle)
+			
 		print ""
 		print keyPresses[action]
 		print self.rle.show(color='blue')
@@ -2456,14 +2458,14 @@ def copyGameInferenceInfo(envReal, rle):
 if __name__ == "__main__":
 
 	##simpleGame_missile: no support for learning that it can shoot things.
-	filename = "examples.gridphysics.frogs"
+	# filename = "examples.gridphysics.frogs"
 
 	# filename = "examples.gridphysics.collect_resource"
 
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 	# filename = "examples.gridphysics.expt_push_boulders2"
-	# filename = "examples.gridphysics.avatar_inference"
+	filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.testAll"
 	
 	# filename = "examples.gridphysics.expt_antagonist"
