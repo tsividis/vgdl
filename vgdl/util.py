@@ -87,7 +87,7 @@ def make_random_name(chars):
 
 def write_to_csv(foldername, filename, game):
 	if filename not in os.listdir('model_results/'+foldername+'/'):
-		f = open('model_results/'+foldername+'/'+filename, 'w+') #write
+		f = open('model_results/'+foldername+'/'+filename, 'w+') #newfile and write
 		writer = csv.writer(f)
 		writer.writerow(('subject', 'condition', 'gameName', 'levels_won', 'steps', 'planner_steps', 'score'))
 	else:

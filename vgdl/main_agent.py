@@ -287,9 +287,9 @@ class Agent:
         episodes = []
         allEffectsEncountered = []
 
-        if 'images' in os.listdir('.') and 'tmp' in os.listdir('images'):
-            shutil.rmtree("images/tmp")
-        os.makedirs("images/tmp")
+        # if 'images' in os.listdir('.') and 'tmp' in os.listdir('images'):
+            # shutil.rmtree("images/tmp")
+        # os.makedirs("images/tmp")
         j=0
         flexible_goals = False
 
