@@ -376,7 +376,7 @@ class SpawnPoint(SpriteProducer):
             return
         self.lastrect = self.rect.copy()
 
-        if self.spawnCooldown == 1:
+        if self.spawnCooldown < 11:
             if ((game.time+1) % self.spawnCooldown == 0 and random.random() < self.prob):
                 game._createSprite([self.stype], (self.rect.left, self.rect.top))
                 self.counter += 1
