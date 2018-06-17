@@ -3,12 +3,12 @@ BasicGame
         water > Immovable color=LIGHTBLUE 
         sharkhole  > SpawnPoint color=LKLWDD stype=shark  prob=0.025 total=1  
         whalehole  > SpawnPoint color=DLLJEV stype=whale  prob=0.1 spawnCooldown=10 
-        piranhahole  >  SpawnPoint color=GREEN stype=piranha  prob=0.1 spawnCooldown=10 whirlpool2 
+        piranhahole  >  SpawnPoint color=GREEN stype=piranha  prob=0.1 spawnCooldown=10  
 
 
         avatar  > ShootAvatar color=JHXDKF  stype=torpedo 
-        torpedo > Missile color=WHITE  img=oryx/orb2
-        shark  > Chaser speed=0.1 color=ORANGE  stype=avatar
+        torpedo > Missile color=WHITE 
+        shark  > Chaser speed=0.1 cooldown=2 color=ORANGE  stype=avatar
         whale  > Missile  orientation=RIGHT  speed=0.1 color=BROWN 
         piranha > Missile orientation=LEFT speed=0.1 color=RED 
 

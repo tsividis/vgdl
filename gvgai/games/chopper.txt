@@ -7,12 +7,12 @@ BasicGame
         satellite   > RandomNPC    color=LIGHTGRAY  cons=1
         avatar   > ShootAvatar orientation=DOWN color=YELLOW ammo=bullet stype=bomb  rotateInPlace=False
 
-        sam  > Missile orientation=UP color=LIGHTRED speed=0.25 
-        bomb > Missile orientation=DOWN color=RED speed=0.75  singleton=True
+        sam  > Missile orientation=UP color=LIGHTRED speed=0.3 
+        bomb > Missile orientation=DOWN color=RED speed=0.8  singleton=True
         
-        leftCloud  > Missile orientation=LEFT speed=0.05  color=RSQPUS 
+        leftCloud  > Missile orientation=LEFT speed=0.1  color=RSQPUS 
         fastLeftCloud  > Missile orientation=LEFT speed=0.2  color=LMZTUO 
-        rightCloud  > Missile  orientation=RIGHT speed=0.05  color=VYPDQP 
+        rightCloud  > Missile  orientation=RIGHT speed=0.1  color=VYPDQP 
         fastRightCloud  > Missile  orientation=RIGHT speed=0.2  color=VNUJQV 
 
         tank   > Bomber color=BROWN stype=sam  prob=0.03  spawnCooldown=5 speed=0.2 
@@ -20,7 +20,7 @@ BasicGame
         portalBase  > SpawnPoint  color=BLACK  stype=tank  spawnCooldown=40   total=20 
         portalAmmo  > SpawnPoint  color=DARKBLUE  stype=supply spawnCooldown=10 prob=0.15
 
-        supply > Missile  color=GOLD orientation=LEFT speed=0.25 
+        supply > Missile  color=GOLD orientation=LEFT speed=0.3 
         bullet > Resource color=GREEN limit=20
     
     LevelMapping
