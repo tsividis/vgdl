@@ -307,9 +307,9 @@ class Agent:
             first_time_playing_level = True
 
             while not win and i<10:
-                gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
-                episode_results = (n_level, steps, win, score, self.total_planner_steps)
-                # episode_results = [1,2,3,4,5] # bypassing playEpisode for csv-testing
+                # gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
+                # episode_results = (n_level, steps, win, score, self.total_planner_steps)
+                episode_results = [1,2,3,4,5] # bypassing playEpisode for csv-testing
                 episodes.append(episode_results)
                 output = {'modelType':self.modelType,
                             'gameName': self.gameFilename,
