@@ -159,8 +159,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             try:
                 mappedState[k[0]][k[1]] = symbol
             except:
-                print "mappedState problem in rlenvironmentNonStatic"
-                print mappedState
+                continue
+                # print "mappedState problem in rlenvironmentNonStatic"
+                # print mappedState
                 # embed()
         if binary:
             gameString = []

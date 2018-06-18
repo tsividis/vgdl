@@ -16,9 +16,8 @@ BasicGame
         Timeout limit=1000 win=True
 
     InteractionSet
-        #quiet george > transformTo stype=annoyed
-        avatar quiet > killSprite
-	avatar george > killSprite 
+        quiet george > transformTo stype=annoyed
+        avatar george > killSprite 
         avatar george > changeScore value=-1
         annoyed cigarette > transformTo stype=quiet 
         annoyed cigarette > changeScore value=1

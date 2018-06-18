@@ -10,9 +10,9 @@ game_names = ['angelsdemons', 'avoidgeorge', 'bait', 'boulderchase', \
 
 mapping = dict()
 
-# for k in game_names:
-#     if k not in ['infection', 'lemmings', 'modality', 'plants', 'shipwreck', 'tercio', 'waves']: # ignore these for now
-#         mapping[k] = [0,2]
+for k in game_names:
+    if k not in ['bait', 'jaws', 'myAliens']+['infection', 'lemmings', 'modality', 'plants', 'shipwreck', 'tercio', 'waves']: #[need a little debugging] [need much looking into]
+        mapping[k] = [0,2]
 
-for k in ['avoidgeorge', 'bait']:
-    mapping[k] = [0,2]
+# for k in ['avoidgeorge', 'bait']:
+    # mapping[k] = [0,2]

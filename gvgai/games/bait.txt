@@ -19,9 +19,8 @@ BasicGame
     InteractionSet
         avatar wall > stepBack
         avatar hole > killSprite
-        #box avatar > bounceForward
-        avatar box > killSprite
-	box wall > undoAll
+        box avatar > bounceForward
+        box wall > undoAll
         box box > undoAll
         box mushroom > undoAll
 
