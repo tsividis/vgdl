@@ -1035,6 +1035,7 @@ class Node():
 			return factor * self.WBP.visited_positions[x, y]
 		except IndexError:
 			print "index error in position score"
+			# embed()
 			return 0
 	"""
 	def getTo_profiler(self):

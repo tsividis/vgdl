@@ -841,8 +841,6 @@ class Agent:
                         ignored_negative_change = True
             self.rle.agentStatePrev = agentState
 
-
-
         hypotheses = self.manageNewObjects(hypotheses)
 
         statesEncountered.append(self.rle._game.getFullState())
