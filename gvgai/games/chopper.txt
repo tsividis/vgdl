@@ -5,7 +5,7 @@ BasicGame
         troposphere > Immovable hidden=True clor=GRAY 
 
         satellite   > RandomNPC    color=LIGHTGRAY  cons=1
-        avatar   > ShootAvatar orientation=DOWN color=YELLOW ammo=bullet stype=bomb  rotateInPlace=False
+        avatar   > ShootAvatar orientation=DOWN color=DARKBLUE ammo=bullet stype=bomb  rotateInPlace=False
 
         sam  > Missile orientation=UP color=LIGHTRED speed=0.3 
         bomb > Missile orientation=DOWN color=RED speed=0.8  singleton=True
@@ -18,7 +18,7 @@ BasicGame
         tank   > Bomber color=BROWN stype=sam  prob=0.03  spawnCooldown=5 speed=0.2 
             
         portalBase  > SpawnPoint  color=ORANGE  stype=tank  spawnCooldown=40   total=20 
-        portalAmmo  > SpawnPoint  color=DARKBLUE  stype=supply spawnCooldown=10 prob=0.15
+        portalAmmo  > SpawnPoint  color=YELLOW  stype=supply spawnCooldown=10 prob=0.15
 
         supply > Missile  color=GOLD orientation=LEFT speed=0.3 
         bullet > Resource color=GREEN limit=20

@@ -5,7 +5,7 @@ BasicGame
         piranhahole  >  SpawnPoint color=GREEN stype=piranha  prob=0.1 spawnCooldown=10  
 
 
-        avatar  > ShootAvatar color=JHXDKF  stype=torpedo 
+        avatar  > ShootAvatar color=DARKBLUE  stype=torpedo 
         torpedo > Missile color=WHITE 
         shark  > Chaser speed=0.1 cooldown=2 color=ORANGE  stype=avatar
         whale  > Missile  orientation=RIGHT  speed=0.1 color=BROWN 

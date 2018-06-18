@@ -22,7 +22,7 @@ BasicGame
         missileL > Missile speed=0.6 color=CDMHFV orientation=LEFT
         missileR > Missile speed=0.6 color=ENKXEZ orientation=RIGHT
 
-        avatar > MovingAvatar color=RED frameRate=8
+        avatar > MovingAvatar color=DARKBLUE frameRate=8
 
         wall > Immovable color=BLACK
 
