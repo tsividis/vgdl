@@ -2,7 +2,7 @@ BasicGame
     SpriteSet
         stratosphere > Immovable hidden=True color=LIGHTBLUE 
         thermosphere > Immovable hidden=True color=BLUE 
-        troposphere > Immovable hidden=True clor=GRAY 
+        troposphere > Immovable hidden=True color=GRAY 
 
         satellite   > RandomNPC    color=LIGHTGRAY  cons=1
         avatar   > ShootAvatar orientation=DOWN color=DARKBLUE ammo=bullet stype=bomb  rotateInPlace=False

@@ -359,6 +359,7 @@ class WBP():
 				if (current.rle._game.getAvatars() and hasattr(current.rle._game.getAvatars()[0], 'stype') and
 						'Missile' in str(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].vgdlType) and
 						self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
+						'singleton' in self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args and
 						bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
 						len([s for s in current.rle._game.sprite_groups[current.rle._game.getAvatars()[0].stype] if s not in current.rle._game.kill_list])>0):
 					current_actions = [0]					
