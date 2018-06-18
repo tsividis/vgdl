@@ -1,7 +1,5 @@
 BasicGame
     SpriteSet
-
-        sky > Immovable color=LIGHTGRAY hidden=True
         building > Immovable color=PURPLE
         street > Immovable color=ORANGE
         emptyspace > Immovable color=WHITE invisible=True
@@ -68,15 +66,14 @@ BasicGame
 
     LevelMapping
         A > avatar street
-        b > building sky
+        b > building 
         s > street
-        l > bleft sky
-        r > bright sky
-        c > standingcivilian sky
+        l > bleft 
+        r > bright 
+        c > standingcivilian 
         p > portalRight street
         q > portalLeft street
         j > jail
-        . > sky
 
     TerminationSet
         MultiSpriteCounter stype1=hurtcivilian limit=1 win=False

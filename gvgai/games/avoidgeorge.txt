@@ -1,6 +1,5 @@
 BasicGame
     SpriteSet
-        floor > Immovable color=GRAY  hidden=True
         
         annoyed > RandomNPC speed=0.25 cons=2 color=PURPLE
         citizen >    
@@ -28,8 +27,7 @@ BasicGame
         avatar wall > stepBack
 
     LevelMapping
-        g > floor george
-        c > floor quiet
-        A > floor avatar
-        . > floor
+        g >  george
+        c >  quiet
+        A >  avatar
         w > wall

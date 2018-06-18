@@ -1,7 +1,5 @@
 BasicGame square_size=30
     SpriteSet
-
-        water > Immovable color=LIGHTBLUE
         land > Immovable color=BROWN 
 
         portGold > Immovable color=GOLD
@@ -28,14 +26,13 @@ BasicGame square_size=30
 
 
     LevelMapping
-        . > water
-        x > water land
-        A > water avatar
-        1 > water portGold
-        2 > water portGems
-        3 > water portDiamonds
-        w > water whirlpool
-        s > water shipwreck goldhole gemshole diamondshole
+        x >  land
+        A >  avatar
+        1 >  portGold
+        2 >  portGems
+        3 >  portDiamonds
+        w >  whirlpool
+        s >  shipwreck goldhole gemshole diamondshole
 
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False

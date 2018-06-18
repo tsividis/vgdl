@@ -1,6 +1,5 @@
 BasicGame
     SpriteSet
-        floor > Immovable color=LIGHTGRAY hidden=True 
         randomCamel > RandomNPC speed=0.25 cons=8 color=GREEN frameRate=7 cooldown=6
         fastR > Missile speed=1 cooldown=5 orientation=RIGHT color=BLUE
         fastL > Missile speed=1 cooldown=5 orientation=LEFT color=LIGHTBLUE
@@ -42,17 +41,16 @@ BasicGame
         avatar wall > stepBack
 
     LevelMapping
-        g > goal floor
-        r > randomCamel floor
-        h > fastR floor
-        n > mediumR floor
-        t > slowR floor
-        f > fastL floor
-        m > mediumL floor
-        s > slowL floor
-        . > floor
-        A > avatar floor
-        B > avatar floor
+        g > goal
+        r > randomCamel
+        h > fastR
+        n > mediumR
+        t > slowR
+        f > fastL
+        m > mediumL
+        s > slowL
+        A > avatar
+        B > avatar
 
     TerminationSet
         MultiSpriteCounter stype1=winnerPlayer limit=1 win=True

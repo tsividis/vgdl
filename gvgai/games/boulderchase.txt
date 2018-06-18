@@ -1,6 +1,5 @@
 BasicGame
 	SpriteSet
-		background > Immovable color=LIGHTGRAY  hidden=True
 		wall > Immovable color=GRAY 
 		sword > Flicker color=YELLOW limit=1 singleton=True 
 		dirt > Immovable color=BROWN 
@@ -13,14 +12,13 @@ BasicGame
                 butterfly > Chaser stype=avatar speed=0.07 color=BLUE 
 
 	LevelMapping
-		. > background dirt
-		e > background exitdoor
-		o > background boulder
-		x > background diamond
-		c > background crab
-		b > background butterfly
-		- > background
-		A > background avatar
+		. >  dirt
+		e >  exitdoor
+		o >  boulder
+		x >  diamond
+		c >  crab
+		b >  butterfly
+		A >  avatar
 
 	InteractionSet
                 dirt avatar > killSprite 

@@ -1,6 +1,5 @@
 BasicGame
     SpriteSet
-        background > Immovable color=GRAY
         door > Passive color=BROWN
         wall > Immovable color=BLACK
         water > Immovable color=LIGHTBLUE
@@ -21,9 +20,8 @@ BasicGame
         door avatar > killSprite
 
     LevelMapping
-        A > background avatar
+        A >  avatar
         w > wall
-        x > background water
-        c > background box
-        o > background door
-        . > background
+        x >  water
+        c >  box
+        o >  door

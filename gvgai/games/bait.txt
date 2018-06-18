@@ -1,6 +1,5 @@
 BasicGame
     SpriteSet
-        floor > Immovable color=GRAY hidden=True
         hole > Immovable color=BLACK
         avatar > MovingAvatar color=DARKBLUE
         mushroom > Immovable color=RED
@@ -10,13 +9,12 @@ BasicGame
         wall > Immovable color=LIGHTGRAY 
 
     LevelMapping
-        A > avatar floor
-        0 > hole floor
-        1 > box floor
-        k > key floor
-        g > goal floor
-        m > mushroom floor
-        . > floor
+        A > avatar 
+        0 > hole 
+        1 > box 
+        k > key 
+        g > goal 
+        m > mushroom 
 
     InteractionSet
         avatar wall > stepBack

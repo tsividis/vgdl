@@ -1,6 +1,5 @@
 BasicGame
     SpriteSet
-        sky > Immovable color=LIGHTBLUE 
         trunk > Immovable color=WHITE 
         cursed > Immovable color=GRAY 
 
@@ -67,12 +66,11 @@ BasicGame
         blessed output > killSprite
 
     LevelMapping
-        d > sky demon
-        a > sky angel 
-        t > sky trunk
-        x > sky box
-        i > sky input
-        o > sky output
-        . > sky
+        d >  demon
+        a >  angel 
+        t >  trunk
+        x >  box
+        i >  input
+        o >  output
         w > wall
-        A > sky avatar
+        A >  avatar

@@ -1,6 +1,5 @@
 BasicGame
     SpriteSet
-        floor > Immovable color=LIGHTGRAY 
         castlef > Immovable color=BLACK 
         marsh > Immovable color=BROWN 
         goal  > Immovable color=GREEN
@@ -31,11 +30,10 @@ BasicGame
         SpriteCounter stype=avatar limit=0 win=False
 
     LevelMapping
-        g > floor castlef goal
-        . > floor marsh
-        0 > floor gold
-        1 > floor random
-        s > floor weapon
-        + > floor
-        A > floor avatar
-        w > floor wall
+        g >  castlef goal
+        . >  marsh
+        0 >  gold
+        1 >  random
+        s >  weapon
+        A >  avatar
+        w >  wall
