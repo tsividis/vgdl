@@ -1,6 +1,6 @@
 BasicGame
     SpriteSet
-        sword > Flicker color=BLACK limit=5 singleton=True
+        sword > Flicker color=GRAY limit=5 singleton=True
         entrance > SpawnPoint total=5 color=PINK cooldown=100 stype=doctor portal=True
         virus > Immovable color=RED 
 
@@ -9,7 +9,7 @@ BasicGame
         host     > RandomNPC speed=0.25  cons=1 color=GREEN 
         infected > RandomNPC speed=0.25  cons=1 color=ORANGE speed=0.5  frameRate=8
         doctor > RandomNPC speed=0.25  cons=1 color=BLUE speed=0.2 
-        wall > Immovable color=GRAY  autotiling=True
+        wall > Immovable color=BLACK  autotiling=True
 
     TerminationSet
         SpriteCounter stype=host   win=True

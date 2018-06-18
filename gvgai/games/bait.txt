@@ -1,12 +1,12 @@
 BasicGame
     SpriteSet
-        hole > Immovable color=BLACK
+        hole > Immovable color=BLUE
         avatar > MovingAvatar color=DARKBLUE
         mushroom > Immovable color=RED
         key > Resource color=ORANGE limit=1
         goal > Immovable color=GREEN
         box > Passive color=BROWN
-        wall > Immovable color=LIGHTGRAY 
+        wall > Immovable color=BLACK 
 
     LevelMapping
         A > avatar 

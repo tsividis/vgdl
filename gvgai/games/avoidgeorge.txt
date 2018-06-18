@@ -8,7 +8,7 @@ BasicGame
 
         george > Chaser color=YELLOW stype=citizen speed=0.15 frameRate=8
         cigarette > Flicker color=BROWN limit=5 singleton=True 
-        wall > Immovable color=LIGHTGRAY
+        wall > Immovable color=BLACK
 
     TerminationSet
         SpriteCounter stype=avatar  win=False
