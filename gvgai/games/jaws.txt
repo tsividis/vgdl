@@ -1,6 +1,5 @@
 BasicGame
-    SpriteSet
-        water > Immovable color=LIGHTBLUE 
+    SpriteSet 
         sharkhole  > SpawnPoint color=LKLWDD stype=shark  prob=0.025 total=1  
         whalehole  > SpawnPoint color=DLLJEV stype=whale  prob=0.1 spawnCooldown=10 
         piranhahole  >  SpawnPoint color=GREEN stype=piranha  prob=0.1 spawnCooldown=10  
@@ -17,11 +16,10 @@ BasicGame
 
 
     LevelMapping
-        1 > water piranhahole
-        2 > water whalehole
-        3 > water sharkhole
-        . > water
-        A > water avatar
+        1 >  piranhahole
+        2 >  whalehole
+        3 >  sharkhole
+        A >  avatar
 
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False

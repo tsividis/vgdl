@@ -2,9 +2,6 @@
 
 BasicGame
     SpriteSet
-
-        floor > Immovable color=LIGHTGRAY
-
         avatar > MovingAvatar frameRate=8 color=DARKBLUE
 
         key > Resource color=GREEN limit=1
@@ -24,14 +21,13 @@ BasicGame
         wall > Immovable color=DARKGRAY 
 
     LevelMapping
-        s > floor base
-        b > floor body
-        c > floor chest
-        h > floor head
-        k > floor key
-        l > floor lock
-        . > floor
-        A > floor avatar
+        s >  base
+        b >  body
+        c >  chest
+        h >  head
+        k >  key
+        l >  lock
+        A >  avatar
 
     InteractionSet
         avatar wall > stepBack

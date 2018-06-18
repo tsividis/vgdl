@@ -1,7 +1,6 @@
 BasicGame key_handler=Pulse
     SpriteSet
 
-        floor > Immovable hidden=True color=LIGHTGRAY
         hole   > Immovable color=DARKBLUE 
 
         blueblock > Immovable color=LIGHTBLUE
@@ -18,18 +17,16 @@ BasicGame key_handler=Pulse
         wall > Immovable color=GRAY
 
     LevelMapping
-            A > avatar floor
-            h > hole floor
+            A > avatar 
+            h > hole 
 
-            1 > bluebox floor
-            2 > redbox floor
-            3 > greenbox floor
+            1 > bluebox 
+            2 > redbox 
+            3 > greenbox 
 
-            a > blueblock floor
-            b > redblock floor
-            c > greenblock floor
-
-            . > floor
+            a > blueblock 
+            b > redblock 
+            c > greenblock 
 
 
     InteractionSet

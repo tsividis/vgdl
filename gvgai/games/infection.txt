@@ -1,6 +1,5 @@
 BasicGame
     SpriteSet
-        floor > Immovable color=LIGHTGRAY hidden=True
         sword > Flicker color=BLACK limit=5 singleton=True
         entrance > SpawnPoint total=5 color=PINK cooldown=100 stype=doctor portal=True
         virus > Immovable color=RED 
@@ -38,9 +37,8 @@ BasicGame
         doctor virus    > killSprite
 
     LevelMapping
-        1 > floor doctor
-        0 > floor host
-        x > floor virus
-        A > floor normal
-        e > floor entrance
-        . > floor
+        1 >  doctor
+        0 >  host
+        x >  virus
+        A >  normal
+        e >  entrance

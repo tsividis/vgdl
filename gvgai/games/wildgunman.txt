@@ -1,6 +1,5 @@
 BasicGame
   SpriteSet
-    floor > Immovable color=LIGHTGRAY
     city  > Immovable color=PURPLE
     bullet > Flicker limit=5 color=GOLD
     avatar > ShootAvatar stype=bullet color=DARKBLUE
@@ -14,12 +13,11 @@ BasicGame
     wall > Immovable color=GRAY
 
   LevelMapping
-    c > city floor
-    m > enemySlowPortal floor
-    f > enemyFastPortal floor
-    n > niceGuyPortal floor
-    . > floor
-    A > avatar floor
+    c > city 
+    m > enemySlowPortal 
+    f > enemyFastPortal 
+    n > niceGuyPortal 
+    A > avatar 
 
   InteractionSet
     avatar EOS    > stepBack

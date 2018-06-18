@@ -1,6 +1,5 @@
 BasicGame
     SpriteSet
-        floor > Immovable color=LIGHTGRAY 
         hole   > Immovable color=LIGHTBLUE 
         shovel > Flicker color=BROWN limit=1 singleton=True 
 
@@ -10,14 +9,13 @@ BasicGame
         avatar  > ShootAvatar stype=shovel color=DARKBLUE
         lemming > Chaser  stype=goal speed=1 cooldown=5 color=RED
 
-        wall > Immovable color=GRAY 
+        wall > Immovable color=BLACK 
     LevelMapping
-        x > floor goal
-        e > floor entrance
-        h > floor hole
-        . > floor
-        A > floor avatar
-        w > floor wall
+        x >  goal
+        e >  entrance
+        h >  hole
+        A >  avatar
+        w >  wall
 
     TerminationSet
         SpriteCounter  stype=avatar  limit=0 win=False

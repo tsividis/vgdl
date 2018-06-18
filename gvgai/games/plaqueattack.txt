@@ -1,6 +1,5 @@
 BasicGame square_size=25
   SpriteSet
-    floor > Immovable color=WHITE hidden=True 
     fullMolarInf > Immovable color=YELLOW
     fullMolarSup > Immovable color=RED
     deadMolarInf > Immovable color=GREEN
@@ -14,18 +13,17 @@ BasicGame square_size=25
     burgerhole > SpawnPoint color=ZFZCIB portal=True stype=burger  prob=0.15 spawnCooldown=8 total=5 color=PINK
 
     fluor > Missile color=LIGHTBLUE img=oryx/slime1
-    wall > Immovable color=GRAY img=oryx/wall6
+    wall > Immovable color=DARKGRAY img=oryx/wall6
 
 
   LevelMapping
-    h > hotdog floor
-    d > hotdoghole floor
-    b > burger floor
-    v > burgerhole floor
-    n > fullMolarSup floor
-    m > fullMolarInf floor
-    . > floor
-    A > avatar floor
+    h > hotdog 
+    d > hotdoghole 
+    b > burger 
+    v > burgerhole 
+    n > fullMolarSup 
+    m > fullMolarInf 
+    A > avatar 
 
   InteractionSet
     avatar wall > stepBack

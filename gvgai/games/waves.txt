@@ -1,8 +1,6 @@
 BasicGame
     SpriteSet
-        background > Immovable color=BLACK
         asteroid > Immovable color=BROWN
-
         rock > Missile orientation=LEFT speed=0.6 color=BLUE
         sam  > Missile orientation=RIGHT color=GREEN speed=1.0
         laser > Missile orientation=LEFT speed=0.3 color=RED
@@ -16,11 +14,10 @@ BasicGame
         alien > Bomber color=ORANGE speed=0.1 orientation=LEFT stype=laser prob=0.01
     
     LevelMapping
-        1 > background portalSlow
-        2 > background rockPortal
-        A > background avatar shield
-        s > background asteroid
-        . > background
+        1 >  portalSlow
+        2 >  rockPortal
+        A >  avatar shield
+        s >  asteroid
 
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False

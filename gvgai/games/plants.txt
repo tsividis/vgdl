@@ -1,6 +1,5 @@
 BasicGame
     SpriteSet
-        floor > Immovable color=WHITE
         marsh > Immovable color=BROWN 
         eatenBrains > Immovable color=RED
         tomb > Immovable color=GRAY
@@ -36,15 +35,14 @@ BasicGame
         pea EOS > killSprite
 
     LevelMapping
-        g > floor goal
-        h > floor slowHell
-        f > floor fastHell
-        z > floor zombie
-        x > floor marsh
-        t > floor tomb
-        A > floor avatar marsh
-        w > floor wall
-        . > floor
+        g >  goal
+        h >  slowHell
+        f >  fastHell
+        z >  zombie
+        x >  marsh
+        t >  tomb
+        A >  avatar marsh
+        w >  wall
 
     TerminationSet
         Timeout limit=1000 win=True
