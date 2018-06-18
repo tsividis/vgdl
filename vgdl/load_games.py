@@ -52,6 +52,17 @@ hyperparameter_sets = [
      'novelty_first_alpha': 5000,
      'novelty_second_alpha': 50,
      }
+    {'idx'           : 3,
+     'short_horizon' : True,
+     'first_order_horizon': True,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': .1,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     }
 ]
 
 def gen_color():
