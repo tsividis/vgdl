@@ -1,6 +1,6 @@
 BasicGame key_handler=Pulse  square_size=50
     SpriteSet
-        black > Immovable color=BLACK 
+        black > Immovable color=LIGHTBLUE 
         white > Immovable color=WHITE 
         grey > Immovable color=GRAY 
         target > Passive color=ORANGE  
@@ -11,7 +11,7 @@ BasicGame key_handler=Pulse  square_size=50
         inBlack > MovingAvatar color=PURPLE
         inWhite > MovingAvatar color=GOLD
 
-        wall > Immovable color=LIGHTGRAY 
+        wall > Immovable color=BLACK 
     
     LevelMapping
         . > black

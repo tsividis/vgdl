@@ -13,9 +13,9 @@ BasicGame key_handler=Pulse
         pastainplace > Passive color=GOLD
         sauceinplace > Passive color=ORANGE
 
-        wrongplace  > Immovable color=BLACK  
+        wrongplace  > Immovable color=BLUE  
         plateinplace > Immovable color=WHITE 
-	wall > Immovable color=GRAY 
+	wall > Immovable color=BLACK 
 
 
     LevelMapping

@@ -6,11 +6,11 @@ BasicGame
     enemy_slow > Chaser stype=city color=GREEN speed=0.1
     enemy_fast  > Chaser stype=city color=RED speed=0.3
     niceGuy > Chaser stype=city color=ORANGE speed=0.1
-    death   > Immovable color=BLACK
+    death   > Immovable color=GRAY
     enemySlowPortal > SpawnPoint stype=enemy_slow spawnCooldown=100  total=2 color=QTLHNJ
     enemyFastPortal > SpawnPoint stype=enemy_fast spawnCooldown=100  total=2 color=CVHTTO
     niceGuyPortal   > SpawnPoint stype=niceGuy spawnCooldown=100  total=2 color=WLMEZR
-    wall > Immovable color=GRAY
+    wall > Immovable color=BLACK
 
   LevelMapping
     c > city 

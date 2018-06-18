@@ -8,7 +8,7 @@ BasicGame
         citizen > Chaser stype=output color=RED speed=0.4
         blessed > Chaser stype=output color=ORANGE speed=0.4
             
-        avatar > MovingAvatar color=DARKGRAY frameRate=10
+        avatar > MovingAvatar color=DARKBLUE frameRate=10
 
         input > SpawnPoint color=YELLOW stype=citizen spawnCooldown=16 
         output > Immovable color=GOLD 
@@ -17,7 +17,7 @@ BasicGame
         bolt > Missile orientation=DOWN color=PURPLE speed=0.2 
         salvation > Missile orientation=DOWN color=PINK speed=0.2 
         
-        wall > Immovable color=LIGHTGRAY 
+        wall > Immovable color=BLACK 
 
     TerminationSet
 	    MultiSpriteCounter stype1=cursed limit=1 win=False

@@ -17,7 +17,7 @@ BasicGame
 
         tank   > Bomber color=BROWN stype=sam  prob=0.03  spawnCooldown=5 speed=0.2 
             
-        portalBase  > SpawnPoint  color=BLACK  stype=tank  spawnCooldown=40   total=20 
+        portalBase  > SpawnPoint  color=ORANGE  stype=tank  spawnCooldown=40   total=20 
         portalAmmo  > SpawnPoint  color=DARKBLUE  stype=supply spawnCooldown=10 prob=0.15
 
         supply > Missile  color=GOLD orientation=LEFT speed=0.3 

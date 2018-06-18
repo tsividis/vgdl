@@ -2,7 +2,7 @@
 
 BasicGame
     SpriteSet
-        black > Immovable color=BLACK
+        black > Immovable color=GRAY
         white > Immovable color=WHITE
         blue > Immovable color=BLUE
 
@@ -16,7 +16,7 @@ BasicGame
         inWhite > MovingAvatar color=GOLD
         inBlue > MovingAvatar color=LIGHTGREEN
 
-        wall > Immovable color=GRAY 
+        wall > Immovable color=BLACK 
     
     LevelMapping
         . > black

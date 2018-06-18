@@ -1,12 +1,12 @@
 BasicGame square_size=30
     SpriteSet
-        land > Immovable color=BROWN 
+        land > Immovable color=BLACK 
 
         portGold > Immovable color=GOLD
         portGems > Immovable color=YELLOW
         portDiamonds > Immovable color=BLUE
 
-        shipwreck > Immovable color=BLACK
+        shipwreck > Immovable color=BROWN
 
         goldhole  > SpawnPoint color=TDLEMS  stype=gold  prob=0.01
         gemshole  > SpawnPoint color=YOYTZM  stype=gems  prob=0.01
@@ -16,7 +16,7 @@ BasicGame square_size=30
         gems > Resource limit=1 singleton=True color=RED
         diamonds > Resource limit=1 singleton=True color=PURPLE
 
-        whirlpool > Immovable color=DARKGRAY
+        whirlpool > Immovable color=LIGHTBLUE
 
         t10 > Resource color=CDMHFV
         t5 > Resource color=ENKXEZ

@@ -1,6 +1,6 @@
 BasicGame
     SpriteSet
-        castlef > Immovable color=BLACK 
+        castlef > Immovable color=LIGHTBLUE 
         marsh > Immovable color=BROWN 
         goal  > Immovable color=GREEN
         avatar > ShootAvatar color=BLUE ammo=weapon stype=sword 
@@ -9,7 +9,7 @@ BasicGame
         weapon > Resource color=PINK value=10000 limit=10000 
         gold  > Resource color=GOLD limit=11  # this limit is only used for visualizing progress
 
-        wall > Immovable color=GRAY 
+        wall > Immovable color=BLACK 
 
     InteractionSet
         weapon avatar   > collectResource 

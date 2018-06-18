@@ -6,7 +6,7 @@ BasicGame
         ghost > Missile orientation=DOWN speed=0.8 color=PURPLE
         portalAlien  > SpawnPoint orientation=RIGHT   stype=alien  color=CCKQQB spawnCooldown=16  prob=0.08 total=20 
         portalGhost  > SpawnPoint orientation=RIGHT   stype=ghost  color=BVUTFD spawnCooldown=12  prob=0.08 total=20 
-
+	wall > Immovable color=BLACK
     LevelMapping
         0 > base
         1 > portalAlien
