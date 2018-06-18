@@ -1,7 +1,7 @@
 BasicGame
     SpriteSet
         base    > Immovable    color=WHITE 
-        avatar  > HorizontalAvatar color=SQYLIY
+        avatar  > HorizontalAvatar color=DARKBLUE
         alien   > Missile  orientation=DOWN  speed=0.8 color=ORANGE
         ghost > Missile orientation=DOWN speed=0.8 color=PURPLE
         portalAlien  > SpawnPoint orientation=RIGHT   stype=alien  color=CCKQQB spawnCooldown=16  prob=0.08 total=20 

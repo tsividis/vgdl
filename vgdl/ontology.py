@@ -2040,8 +2040,11 @@ def distributionInitSetup(game, sprite):
     Does setup for initializing distribution
     'sprite' is an object ID
     """
-    objectColors = [colorDict[str(game.sprite_constr[k][1]['color'])] for k in game.sprite_constr.keys() if game.sprite_constr[k] and
-        colorDict[str(game.sprite_constr[k][1]['color'])] not in ['BLACK', 'DARKGRAY']]
+    try:
+        objectColors = [colorDict[str(game.sprite_constr[k][1]['color'])] for k in game.sprite_constr.keys() if game.sprite_constr[k] and
+            colorDict[str(game.sprite_constr[k][1]['color'])] not in ['BLACK', 'DARKGRAY']]
+    except:
+        embed()
     objectColors = list(set(objectColors))
     # for k in game.sprite_constr.keys():
         # if colorDict[str(game.sprite_constr[k][1]['color'])] not in objectColors:

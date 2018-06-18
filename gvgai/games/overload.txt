@@ -3,8 +3,8 @@ BasicGame
         castlef > Immovable color=LIGHTBLUE 
         marsh > Immovable color=BROWN 
         goal  > Immovable color=GREEN
-        avatar > ShootAvatar color=BLUE ammo=weapon stype=sword 
-        random > RandomNPC color=DARKBLUE speed=1 cooldown=4  cons=8
+        avatar > ShootAvatar color=DARKBLUE ammo=weapon stype=sword 
+        random > RandomNPC color=BLUE speed=1 cooldown=4  cons=8
         sword > Flicker color=RED limit=5 singleton=True 
         weapon > Resource color=PINK value=10000 limit=10000 
         gold  > Resource color=GOLD limit=11  # this limit is only used for visualizing progress

@@ -7,7 +7,7 @@ BasicGame
 		diamond > Resource color=GOLD limit=10
 		boulder > Missile orientation=DOWN color=PURPLE speed=0.2
 
-                avatar  > ShootAvatar  color=WHITE stype=sword frameRate=8 
+                avatar  > ShootAvatar  color=DARKBLUE stype=sword frameRate=8 
                 crab > Chaser stype=avatar speed=0.07 color=RED 
                 butterfly > Chaser stype=avatar speed=0.07 color=BLUE 
 

@@ -1,7 +1,7 @@
 BasicGame key_handler=Pulse
     SpriteSet
 
-        hole   > Immovable color=DARKBLUE 
+        hole   > Immovable color=GOLD 
 
         blueblock > Immovable color=LIGHTBLUE
         redblock > Immovable color=LIGHTRED
@@ -13,7 +13,7 @@ BasicGame key_handler=Pulse
         greenbox > Passive  color=GREEN
         brokenbox > Passive  color=BROWN
 
-        avatar > MovingAvatar color=GOLD
+        avatar > MovingAvatar color=DARKBLUE
         wall > Immovable color=BLACK
 
     LevelMapping
