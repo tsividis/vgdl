@@ -16,6 +16,7 @@ from collections import defaultdict
 import argparse
 from IPython import embed
 import random
+import ipdb
 import math
 import time
 import importlib
@@ -117,6 +118,33 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # self.colorMapping = colorMapping
         return
 
+
+    def show_binary(self):
+        """
+        symbolDict = a dict mapping each sprite name to its symbol.
+        If there's no sprite overlap, then returns a string. Else returns numpy array.
+        """
+        ## faster version, but need to figure out how to display 
+
+        
+        #mappedState = [[1 for x in range(self.outdim[1])] for y in range(self.outdim[0])]
+        mappedState = np.ones((self.outdim[1]*self.outdim[0]))#[1 for x in range(self.outdim[1]*self.outdim[0])]
+        #ipdb.set_trace()
+        kl_set = set(self._game.kill_list)
+        for lst in self._game.sprite_groups.values():
+            for sprite in lst:
+                if sprite not in kl_set:
+                    y,x = sprite.rect.top/30, sprite.rect.left/30
+                    try:
+                        mappedState[x+self.outdim[1]*y] = 0
+                    except:
+                        pass
+            
+        #gameString = []
+        #for mappedRow in mappedState:
+        #    gameString.extend(mappedRow)
+        return mappedState
+
     def show(self, indent=False, showArrays=False, binary=False, color='grey'):
         """
         symbolDict = a dict mapping each sprite name to its symbol.
@@ -129,6 +157,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             mappedState = [[1 for x in range(self.outdim[1])] for y in range(self.outdim[0])]
         else:
             mappedState = [[' ' for x in range(self.outdim[1])] for y in range(self.outdim[0])]
+
         for lst in self._game.sprite_groups.values():
             for sprite in lst:
                 if sprite not in self._game.kill_list:
@@ -365,37 +394,48 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         if onlyavatar:
             if action != 0:
                 self._avatar.update(self._game)
-
         else:
             for s in self._game:
-                if s == self._avatar and action == 0:
-                    continue
-                if s not in self._game.kill_list:
-                    s.update(self._game)
+                if s.colorName != 'DARKGRAY':
+                    if action == 0 and s == self._avatar:
+                            continue
+                    if s not in self._game.kill_list:
+                            s.update(self._game)
 
         events = self._game._eventHandling()
+
         ## get events (e.g., (stepBack obj1ID, obj2ID))
 
         # self._gravepoints[(skey, self._rect2pos(s.rect))] = True
 
 
-        ## Added 5/2, to correct for the fact that some gmaes don't have _gravepoints by default
+        ## Added 5/2, to correct for the fact that some games don't have _gravepoints by default
         if not hasattr(self, '_gravepoints'):
             self._gravepoints = {}
 
         # ### BEGINNING OF CHANGES
         for skey in self._other_types:
             ss = self._game.sprite_groups[skey]
-            self._obstypes[skey] = [self._sprite2state(sprite, oriented=False)
+            # self._obstypes[skey] = [self._sprite2state(sprite)
+            #                             for sprite in ss]
+            self._obstypes[skey] = [self._rect2pos(sprite.rect)
                                         for sprite in ss]
 
         ## Added 4/31
         ## Logic (I think) was to make sure everything that could exist was in gravepoints because
         ## getState (defined in stateobsnonstatic) uses it to populate getState, getSensors, etc.
+        #embed()
         for k in self._game.sprite_groups:
             for sprite in self._game.sprite_groups[k]:
-                if (k, self._rect2pos(sprite.rect)) not in self._gravepoints.keys():
-                    self._gravepoints[(k, self._rect2pos(sprite.rect))] = True
+                self._gravepoints[(k, self._rect2pos(sprite.rect))] = True
+
+        # for k in self._game.sprite_groups:
+        #     for sprite in self._game.sprite_groups[k]:
+        #         if (k, self._rect2pos(sprite.rect)) not in self._gravepoints.keys():
+        #             self._gravepoints[(k, self._rect2pos(sprite.rect))] = True
+
+        # print "after adding gravepoints"
+        # embed()
         return events
 
         # if self.visualize:
@@ -423,7 +463,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         return output
     """
 
-    def step(self, action):
+    def step(self, action, return_obs=True):
         if action == ('space'):
             self._game.keystate[32] = True
             action = (0,0)
@@ -431,7 +471,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         events = self._performAction(action)
         # observation = self._getSensors()
 
-        observation = self._getSensors()
+        observation = self._getSensors() if return_obs else None
         (ended, won) = self._isDone()
         self._game.time+=1
 

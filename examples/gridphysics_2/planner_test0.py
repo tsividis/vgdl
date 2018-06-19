@@ -1,5 +1,3 @@
-
-
 level0 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
