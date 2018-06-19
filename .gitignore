@@ -6,3 +6,5 @@
 .spyderproject
 venv
 examples/gridphysics/theorytest.py
+human_data.csv
+temp_data.npy

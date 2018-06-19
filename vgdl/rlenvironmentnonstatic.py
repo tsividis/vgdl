@@ -100,7 +100,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         alnum = numbers + 'abcdefghijklmnopqrstuvwxyz'
         idx = 0
         OLD_GOAL = "oldGl"
-        # embed()
         for s in self._obstypes.keys():
             # colorMapping[s] = colorDict[str(self._game.sprite_constr[s][1]['color'])].lower()
             if not s == "goal":
@@ -189,11 +188,10 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             try:
                 mappedState[k[0]][k[1]] = symbol
             except:
-                pass
-                #print k[0], k[1]
-                #print "mappedState problem in rlenvironmentNonStatic"
-                #print mappedState
-                # embed()
+                # print "mappedState problem in rlenvironmentNonStatic"
+                ## if you define rules poorly, objects can go off screen, in which case they can't be assigned to an on-screen loc!
+                continue
+
         if binary:
             gameString = []
             for mappedRow in mappedState:
@@ -471,7 +469,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             action = (0,0)
         pre_step_score = self._game.score
         events = self._performAction(action)
-        # embed()
         # observation = self._getSensors()
 
         observation = self._getSensors() if return_obs else None

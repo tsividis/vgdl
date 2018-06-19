@@ -1,5 +1,3 @@
-
-
 level0 = """
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 w                              w
@@ -103,7 +101,7 @@ BasicGame frame_rate=30
 # level_game_pairs = [[game, level0], [game, level1], [game, level2],
 #                     [game, level3]]
 
-level_game_pairs = [[game, level]]
+level_game_pairs = [[game, level], [game, level2]]
 
 if __name__ == "__main__":
     from vgdl.core import VGDLParser
