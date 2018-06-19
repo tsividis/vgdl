@@ -9,6 +9,20 @@ ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~
 CHARS = 'bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM'
 CAPCHARS = 'QWERTYUIOPSDFHJKLZXCVBNM'
 
+def profile(func):
+    from functools import wraps
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        from line_profiler import LineProfiler
+        prof = LineProfiler()
+        try:
+            return prof(func)(*args, **kwargs)
+        finally:
+            prof.print_stats()
+
+    return wrapper
+    
 def softmax(w, t = 1.0):
 	e = np.exp(np.array(w) / t)
 	dist = e / np.sum(e)
