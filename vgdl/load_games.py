@@ -51,7 +51,7 @@ hyperparameter_sets = [
      'multisprite_second_alpha': 100,
      'novelty_first_alpha': 5000,
      'novelty_second_alpha': 50,
-     }
+     },
     {'idx'           : 3,
      'short_horizon' : True,
      'first_order_horizon': True,
