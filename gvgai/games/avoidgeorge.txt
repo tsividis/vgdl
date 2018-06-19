@@ -19,15 +19,31 @@ BasicGame
         quiet george > transformTo stype=annoyed
         avatar george > killSprite 
         avatar george > changeScore value=-1
-	avatar cigarette >nothing
-	cigarette wall > nothing
-	avatar quiet > nothing
+
         annoyed cigarette > transformTo stype=quiet 
         annoyed cigarette > changeScore value=1
 
         annoyed wall > stepBack
         quiet wall > stepBack
         avatar wall > stepBack
+
+	annoyed quiet > nothing
+	quiet annoyed > nothing
+	annoyed avatar > nothing
+	avatar annoyed > nothing
+	annoyed george > nothing
+	george annoyed > nothing
+	avatar cigarette >nothing
+	cigarette avatar > nothing
+	cigarette wall > nothing
+	wall cigarette > nothing
+	avatar quiet > nothing
+	cigarette quiet > nothing
+	quiet cigarette > nothing
+	george cigarette > nothing
+	cigarette george > nothing
+	wall george > nothing
+	george wall > nothing
 
     LevelMapping
         g >  george

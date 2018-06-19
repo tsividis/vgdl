@@ -21,7 +21,7 @@ from pathos.helpers import mp
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
 import pickle
 
-
+actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none'}
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
@@ -517,7 +517,9 @@ class Agent:
             if solution and not p.quitting:
                 print "============================================="
                 print "got solution of length", len(solution)
-                for g in p.gameString_array:
+                print colored(p.gameString_array[0], 'green')
+                for i,g in enumerate(p.gameString_array[1:]):
+                    print actionDict[solution[i]]
                     print colored(g, 'green')
                 print "============================================="
 

@@ -6,7 +6,7 @@ BasicGame
 
 
         avatar  > ShootAvatar color=DARKBLUE  stype=torpedo 
-        torpedo > Missile color=WHITE 
+        torpedo > Missile color=WHITE
         shark  > Chaser speed=0.1 cooldown=2 color=ORANGE  stype=avatar
         whale  > Missile  orientation=RIGHT  speed=0.1 color=BROWN 
         piranha > Missile orientation=LEFT speed=0.1 color=RED 

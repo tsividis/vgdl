@@ -1692,6 +1692,7 @@ class Game(object):
 
 			if not timesteps:
 				# If timesteps is an empty list, do nothing
+				self.hypothesisSpace.append(theory)
 				return
 
 			if verbose:
@@ -1887,6 +1888,8 @@ class Game(object):
 
 		timesteps=unique_timesteps
 
+		# if len(timesteps)==0:
+			# embed()
 		if not existingTheories:
 			# Start with fake theory (generic prior)
 			T = self.buildGenericTheory(spriteSample)
