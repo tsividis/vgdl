@@ -24,6 +24,7 @@ from IPython import embed
 import time
 import os
 import uuid
+from util import *
 
 # ---------------------------------------------------------------------
 #     Constants
@@ -1287,6 +1288,11 @@ class VGDLSprite(object):
 
     def __repr__(self):
         return str(self.name)+" at (%s,%s)"%(self.rect.left, self.rect.top)
+
+    def __eq__ (self, other):
+        if other == None:
+            return False
+        return self.ID == other.ID
 
 class EOS(VGDLSprite):
     color = ENDOFSCREEN
