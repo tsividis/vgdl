@@ -36,3 +36,55 @@ BasicGame
 	avatar EOS > stepBack
         lemming goal > killSprite 
 	lemming goal > changeScore value=2
+
+        shovel hole > nothing
+        hole shovel > nothing
+        entrance hole > nothing
+        hole entrance > nothing
+        goal hole > nothing
+        hole goal > nothing
+        wall hole > nothing
+        hole wall > nothing
+        EOS hole > nothing
+        hole EOS > nothing
+        entrance shovel > nothing
+        shovel entrance > nothing
+        goal shovel > nothing
+        shovel goal > nothing
+        avatar shovel > nothing
+        shovel avatar > nothing
+        lemming shovel > nothing
+        shovel lemming > nothing
+        EOS shovel > nothing
+        shovel EOS > nothing
+        entrance goal > nothing
+        goal entrance > nothing
+        avatar entrance > nothing
+        entrance avatar > nothing
+        entrance lemming > nothing
+        lemming entrance > nothing
+        entrance wall > nothing
+        wall entrance > nothing
+        entrance EOS > nothing
+        EOS entrance > nothing
+        avatar goal > nothing
+        goal avatar > nothing
+        wall goal > nothing
+        goal wall > nothing
+        EOS goal > nothing
+        goal EOS > nothing
+        avatar lemming > nothing
+        lemming avatar > nothing
+        wall EOS > nothing
+        EOS wall > nothing
+
+        hole hole > nothing
+        shovel shovel > nothing
+        entrance entrance > nothing
+        goal goal > nothing
+        avatar avatar > nothing
+        lemming lemming > nothing
+        wall wall > nothing
+        EOS EOS > nothing
+
+

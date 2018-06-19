@@ -92,6 +92,60 @@ BasicGame key_handler=Pulse
         brokenbox hole > transformTo stype=brokenbox
 
 
+        blueblock hole > nothing
+        hole blueblock > nothing
+        redblock hole > nothing
+        hole redblock > nothing
+        greenblock hole > nothing
+        hole greenblock > nothing
+        wall hole > nothing
+        hole wall > nothing
+        EOS hole > nothing
+        hole EOS > nothing
+        redblock blueblock > nothing
+        blueblock redblock > nothing
+        greenblock blueblock > nothing
+        blueblock greenblock > nothing
+        brokenbox blueblock > nothing
+        blueblock brokenbox > nothing
+        wall blueblock > nothing
+        blueblock wall > nothing
+        blueblock EOS > nothing
+        EOS blueblock > nothing
+        greenblock redblock > nothing
+        redblock greenblock > nothing
+        redblock brokenbox > nothing
+        brokenbox redblock > nothing
+        redblock wall > nothing
+        wall redblock > nothing
+        redblock EOS > nothing
+        EOS redblock > nothing
+        greenblock brokenbox > nothing
+        brokenbox greenblock > nothing
+        greenblock wall > nothing
+        wall greenblock > nothing
+        greenblock EOS > nothing
+        EOS greenblock > nothing
+        bluebox EOS > nothing
+        EOS bluebox > nothing
+        EOS redbox > nothing
+        redbox EOS > nothing
+        greenbox EOS > nothing
+        EOS greenbox > nothing
+        avatar brokenbox > nothing
+        brokenbox avatar > nothing
+        brokenbox EOS > nothing
+        EOS brokenbox > nothing
+        avatar EOS > nothing
+        EOS avatar > nothing
+        wall EOS > nothing
+        EOS wall > nothing
+
+        hole hole > nothing
+        avatar avatar > nothing
+        wall wall > nothing
+        EOS EOS > nothing
+
 
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False

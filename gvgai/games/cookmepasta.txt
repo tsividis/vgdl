@@ -28,7 +28,6 @@ BasicGame key_handler=Pulse
         A > avatar 
 
     InteractionSet
-
         boilingwater avatar > bounceForward
         rawpasta avatar > bounceForward
         tomato avatar > bounceForward
@@ -100,6 +99,101 @@ BasicGame key_handler=Pulse
 
         avatar wall > stepBack 
         lock avatar > undoAll
+
+        wrongplace avatar > nothing
+        avatar wrongplace > nothing
+        plateinplace avatar > nothing
+        avatar plateinplace > nothing
+        avatar EOS > nothing
+        EOS avatar > nothing
+        key lock > nothing
+        lock key > nothing
+        key wrongplace > nothing
+        wrongplace key > nothing
+        key plateinplace > nothing
+        plateinplace key > nothing
+        key wall > nothing
+        wall key > nothing
+        key EOS > nothing
+        EOS key > nothing
+        wrongplace lock > nothing
+        lock wrongplace > nothing
+        plateinplace lock > nothing
+        lock plateinplace > nothing
+        lock wall > nothing
+        wall lock > nothing
+        lock EOS > nothing
+        EOS lock > nothing
+        boilingwater pastainplace > nothing
+        pastainplace boilingwater > nothing
+        wrongplace boilingwater > nothing
+        boilingwater wrongplace > nothing
+        plateinplace boilingwater > nothing
+        boilingwater plateinplace > nothing
+        boilingwater EOS > nothing
+        EOS boilingwater > nothing
+        pastainplace rawpasta > nothing
+        rawpasta pastainplace > nothing
+        wrongplace rawpasta > nothing
+        rawpasta wrongplace > nothing
+        plateinplace rawpasta > nothing
+        rawpasta plateinplace > nothing
+        EOS rawpasta > nothing
+        rawpasta EOS > nothing
+        sauceinplace tomato > nothing
+        tomato sauceinplace > nothing
+        wrongplace tomato > nothing
+        tomato wrongplace > nothing
+        plateinplace tomato > nothing
+        tomato plateinplace > nothing
+        tomato EOS > nothing
+        EOS tomato > nothing
+        sauceinplace tuna > nothing
+        tuna sauceinplace > nothing
+        wrongplace tuna > nothing
+        tuna wrongplace > nothing
+        plateinplace tuna > nothing
+        tuna plateinplace > nothing
+        tuna EOS > nothing
+        EOS tuna > nothing
+        wrongplace pastainplace > nothing
+        pastainplace wrongplace > nothing
+        plateinplace pastainplace > nothing
+        pastainplace plateinplace > nothing
+        EOS pastainplace > nothing
+        pastainplace EOS > nothing
+        wrongplace sauceinplace > nothing
+        sauceinplace wrongplace > nothing
+        sauceinplace plateinplace > nothing
+        plateinplace sauceinplace > nothing
+        sauceinplace EOS > nothing
+        EOS sauceinplace > nothing
+        wrongplace plateinplace > nothing
+        plateinplace wrongplace > nothing
+        wrongplace wall > nothing
+        wall wrongplace > nothing
+        wrongplace EOS > nothing
+        EOS wrongplace > nothing
+        plateinplace wall > nothing
+        wall plateinplace > nothing
+        plateinplace EOS > nothing
+        EOS plateinplace > nothing
+        wall EOS > nothing
+        EOS wall > nothing
+
+        avatar avatar > nothing
+        key key > nothing
+        lock lock > nothing
+        boilingwater boilingwater > nothing
+        rawpasta rawpasta > nothing
+        tomato tomato > nothing
+        tuna tuna > nothing
+        pastainplace pastainplace > nothing
+        sauceinplace sauceinplace > nothing
+        wrongplace wrongplace > nothing
+        plateinplace plateinplace > nothing
+        wall wall > nothing
+        EOS EOS > nothing
 
     TerminationSet
         MultiSpriteCounter stype1=wrongplace limit=1 win=False

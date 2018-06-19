@@ -2,7 +2,8 @@ BasicGame
     SpriteSet
         
         annoyed > RandomNPC speed=0.25 cons=2 color=PURPLE
-        citizen >    
+        
+        citizen >
             quiet > RandomNPC speed=0.25 cons=1 color=GREEN
             avatar > ShootAvatar stype=cigarette rotateInPlace=False color=DARKBLUE
 
@@ -19,7 +20,9 @@ BasicGame
         quiet george > transformTo stype=annoyed
         avatar george > killSprite 
         avatar george > changeScore value=-1
-
+	avatar cigarette >nothing
+	cigarette wall > nothing
+	avatar quiet > nothing
         annoyed cigarette > transformTo stype=quiet 
         annoyed cigarette > changeScore value=1
 
@@ -27,23 +30,38 @@ BasicGame
         quiet wall > stepBack
         avatar wall > stepBack
 
-	annoyed quiet > nothing
-	quiet annoyed > nothing
-	annoyed avatar > nothing
-	avatar annoyed > nothing
-	annoyed george > nothing
-	george annoyed > nothing
-	avatar cigarette >nothing
-	cigarette avatar > nothing
-	cigarette wall > nothing
-	wall cigarette > nothing
-	avatar quiet > nothing
-	cigarette quiet > nothing
-	quiet cigarette > nothing
-	george cigarette > nothing
-	cigarette george > nothing
-	wall george > nothing
-	george wall > nothing
+        annoyed quiet > nothing
+        quiet annoyed > nothing
+        annoyed avatar > nothing
+        avatar annoyed > nothing
+        annoyed george > nothing
+        george annoyed > nothing
+        annoyed EOS > nothing
+        EOS annoyed > nothing
+        quiet cigarette > nothing
+        cigarette quiet > nothing
+        EOS quiet > nothing
+        quiet EOS > nothing
+        avatar EOS > nothing
+        EOS avatar > nothing
+        cigarette george > nothing
+        george cigarette > nothing
+        wall george > nothing
+        george wall > nothing
+        EOS george > nothing
+        george EOS > nothing
+        EOS cigarette > nothing
+        cigarette EOS > nothing
+        wall EOS > nothing
+        EOS wall > nothing
+
+        annoyed annoyed > nothing
+        quiet quiet > nothing
+        avatar avatar > nothing
+        george george > nothing
+        cigarette cigarette > nothing
+        wall wall > nothing
+        EOS EOS > nothing
 
     LevelMapping
         g >  george
