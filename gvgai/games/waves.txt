@@ -58,3 +58,75 @@ BasicGame
         alien asteroid > killSprite
         laser asteroid > killSprite
         avatar asteroid > stepBack
+
+        portalSlow asteroid > nothing
+        asteroid portalSlow > nothing
+        rockPortal asteroid > nothing
+        asteroid rockPortal > nothing
+        shield asteroid > nothing
+        asteroid shield > nothing
+        asteroid EOS > nothing
+        EOS asteroid > nothing
+        sam rock > nothing
+        rock sam > nothing
+        laser rock > nothing
+        rock laser > nothing
+        portalSlow rock > nothing
+        rock portalSlow > nothing
+        rockPortal rock > nothing
+        rock rockPortal > nothing
+        shield rock > nothing
+        rock shield > nothing
+        alien rock > nothing
+        rock alien > nothing
+        portalSlow sam > nothing
+        sam portalSlow > nothing
+        rockPortal sam > nothing
+        sam rockPortal > nothing
+        shield sam > nothing
+        sam shield > nothing
+        avatar sam > nothing
+        sam avatar > nothing
+        portalSlow laser > nothing
+        laser portalSlow > nothing
+        rockPortal laser > nothing
+        laser rockPortal > nothing
+        shield laser > nothing
+        laser shield > nothing
+        laser alien > nothing
+        alien laser > nothing
+        rockPortal portalSlow > nothing
+        portalSlow rockPortal > nothing
+        shield portalSlow > nothing
+        portalSlow shield > nothing
+        portalSlow avatar > nothing
+        avatar portalSlow > nothing
+        portalSlow alien > nothing
+        alien portalSlow > nothing
+        portalSlow EOS > nothing
+        EOS portalSlow > nothing
+        rockPortal shield > nothing
+        shield rockPortal > nothing
+        rockPortal avatar > nothing
+        avatar rockPortal > nothing
+        rockPortal alien > nothing
+        alien rockPortal > nothing
+        rockPortal EOS > nothing
+        EOS rockPortal > nothing
+        shield alien > nothing
+        alien shield > nothing
+        shield EOS > nothing
+        EOS shield > nothing
+
+        asteroid asteroid > nothing
+        rock rock > nothing
+        sam sam > nothing
+        laser laser > nothing
+        portalSlow portalSlow > nothing
+        rockPortal rockPortal > nothing
+        shield shield > nothing
+        avatar avatar > nothing
+        alien alien > nothing
+        EOS EOS > nothing
+
+

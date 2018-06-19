@@ -36,6 +36,53 @@ BasicGame
         mushroom avatar > killSprite
         mushroom avatar > changeScore value=1
 
+        mushroom hole > nothing
+        hole mushroom > nothing
+        key hole > nothing
+        hole key > nothing
+        goal hole > nothing
+        hole goal > nothing
+        wall hole > nothing
+        hole wall > nothing
+        EOS hole > nothing
+        hole EOS > nothing
+        avatar EOS > nothing
+        EOS avatar > nothing
+        key mushroom > nothing
+        mushroom key > nothing
+        goal mushroom > nothing
+        mushroom goal > nothing
+        wall mushroom > nothing
+        mushroom wall > nothing
+        EOS mushroom > nothing
+        mushroom EOS > nothing
+        key goal > nothing
+        goal key > nothing
+        key box > nothing
+        box key > nothing
+        key wall > nothing
+        wall key > nothing
+        key EOS > nothing
+        EOS key > nothing
+        box goal > nothing
+        goal box > nothing
+        wall goal > nothing
+        goal wall > nothing
+        EOS goal > nothing
+        goal EOS > nothing
+        box EOS > nothing
+        EOS box > nothing
+        wall EOS > nothing
+        EOS wall > nothing
+
+        hole hole > nothing
+        avatar avatar > nothing
+        mushroom mushroom > nothing
+        key key > nothing
+        goal goal > nothing
+        wall wall > nothing
+        EOS EOS > nothing
+
     TerminationSet
         SpriteCounter stype=goal limit=0 win=True
         SpriteCounter stype=avatar limit=0 win=False
