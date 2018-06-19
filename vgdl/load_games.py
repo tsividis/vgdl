@@ -15,8 +15,8 @@ game_number = args.game_number
 game_name = args.game_name
 hyperparameter_index = args.hyperparameter_index
 
-# gameFileString = 'training_set_1'
-gameFileString = 'gvgai/games'
+gameFileString = 'training_set_1'
+# gameFileString = 'gvgai/games'
 
 hyperparameter_sets = [
     {'idx'           : 0,

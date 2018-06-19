@@ -1,8 +1,8 @@
 from collections import defaultdict
 
-game_names = ['angelsdemons', 'avoidgeorge', 'bait', 'boulderchase', \
+game_names = ['aliens', 'angelsdemons', 'avoidgeorge', 'bait', 'boulderchase', \
              'boulderdash', 'butterflies', 'camelRace', 'chase', \
-             'chopper', 'clusters', 'cookmepasta', 'infection',\
+             'chopper', 'clusters', 'cookmepasta', 'frogs', 'infection',\
              'jaws', 'lemmings', 'modality', 'myAliens',\
              'overload', 'plants', 'plaqueattack', 'shipwreck',\
              'superman', 'tercio', 'thesnowman', \
@@ -10,9 +10,10 @@ game_names = ['angelsdemons', 'avoidgeorge', 'bait', 'boulderchase', \
 
 mapping = dict()
 
-for k in game_names:
-    if k not in ['boulderdash', 'butterflies', 'chase']+['bait', 'jaws', 'myAliens', 'shipwreck', 'plaqueattack', 'wildgunman']+['infection', 'lemmings', 'modality', 'plants', 'tercio', 'waves']: #[need a little debugging] [need much looking into]
-        mapping[k] = [0,2,3]
+# for k in game_names:
+#     if k not in ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs', 'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']+\
+#                     ['infection', 'lemmings', 'modality', 'plants', 'tercio', 'waves']: #[need a little debugging] [need much looking into]
+#         mapping[k] = [0,2,3]
 
-# for k in ['avoidgeorge', 'bait']:
-    # mapping[k] = [0,2]
+for k in ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs', 'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']:
+    mapping[k] = [2]
