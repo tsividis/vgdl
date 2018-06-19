@@ -72,7 +72,7 @@ class WBP():
 		self.allowRollouts = True
 		self.quitting = False
 		self.gameString_array = []
-		self.rleTemplate = self.initializeRLEFromGame()
+		# self.rleTemplate = self.initializeRLEFromGame()
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 		self.display = True
 		if theory == None:
@@ -132,7 +132,7 @@ class WBP():
 				self.starting_stype_n[tuple(stypes)] = n_stypes
 
 	def initializeRLEFromGame(self):
-		gameString, levelString = defInputGame(self.gameFilename)
+		gameString, levelString = defInputGame(self.WBP.gameFilename)
 		rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
 		rle = rleCreateFunc()
 		return rle
@@ -506,7 +506,7 @@ class Node():
 		self.reconstructed=False
 		self.expanded = False
 		self.rolloutDepth = 13#max(rle.outdim)
-		self.RLEtemplate = WBP.rleTemplate
+		# self.RLEtemplate = WBP.rleTemplate
 		if self.parent is not None:
 			self.rolloutArray = parent.rolloutArray[1:]
 		else:
