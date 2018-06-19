@@ -26,6 +26,8 @@ BasicGame
     InteractionSet
         demon wall > reverseDirection
         demon wall > stepBack
+	demon citizen > nothing
+	demon blessed > nothing
         angel wall > reverseDirection
         angel wall > stepBack
         citizen wall > reverseDirection
