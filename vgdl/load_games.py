@@ -1,4 +1,5 @@
 from main_agent import Agent
+from games_to_hyperparameters import *
 import time
 import dill
 import os
@@ -17,7 +18,7 @@ hyperparameter_index = args.hyperparameter_index
 
 # gameFileString = 'training_set_1'
 # gameFileString = 'gvgai/games'
-gameFileString = 'challenge_games'
+gameFileString = 'all_games'
 
 hyperparameter_sets = [
     {'idx'           : 0,

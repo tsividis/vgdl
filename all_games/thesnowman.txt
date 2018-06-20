@@ -1,0 +1,225 @@
+#The Citadel: http://www.mobygames.com/game/citadel__
+
+BasicGame
+    SpriteSet
+        avatar > MovingAvatar frameRate=8 color=DARKBLUE
+
+        key > Resource color=GREEN limit=1
+        lock > Immovable color=GOLD
+
+        base > Passive color=WHITE
+        body > Passive color=LRSPUS
+        chest > Passive color=LIGHTBLUE
+        head > Passive color=LIGHTGREEN
+
+        baseinplace > Immovable color=BROWN
+        bodyinplace > Immovable color=YELLOW
+        chestinplace > Immovable color=ORANGE
+        headinplace > Immovable color=RED
+        wrongplace  > Immovable color=PINK
+
+        wall > Immovable color=DARKGRAY 
+
+    LevelMapping
+        s >  base
+        b >  body
+        c >  chest
+        h >  head
+        k >  key
+        l >  lock
+        A >  avatar
+
+    InteractionSet
+        avatar wall > stepBack
+
+        body avatar > bounceForward
+        chest avatar > bounceForward
+        head avatar > bounceForward
+
+
+        base lock > undoAll
+        base key > undoAll
+        base wall > undoAll
+        body key > undoAll
+        body wall > undoAll
+        body lock > undoAll
+        chest key > undoAll
+        chest wall > undoAll
+        chest lock > undoAll
+        head key > undoAll
+        head wall > undoAll
+        head lock > undoAll
+
+        avatar baseinplace > stepBack
+        avatar bodyinplace > stepBack
+        avatar chestinplace > stepBack
+        avatar headinplace > stepBack
+
+        body base > transformTo stype=bodyinplace
+        body base > changeScore value=2
+        body head  > transformTo stype=wrongplace
+        body head  > changeScore value=-1
+        body chest > transformTo stype=wrongplace
+        body chest > changeScore value=-1
+
+        chest bodyinplace > transformTo stype=chestinplace
+        chest bodyinplace > changeScore value=5
+        chest base > transformTo stype=wrongplace
+        chest base > changeScore value=-1
+        chest head > transformTo stype=wrongplace
+        chest head > changeScore value=-1
+
+        head chestinplace > transformTo stype=headinplace
+        head chestinplace > changeScore value=13
+        head base > transformTo stype=wrongplace
+        head base > changeScore value=-1
+        head bodyinplace > transformTo stype=wrongplace
+        head bodyinplace > changeScore value=-1
+
+        avatar key > changeResource resource=key value=1 
+        avatar key > changeScore value=1
+        key avatar > killSprite
+
+        lock avatar > killIfOtherHasMore resource=key limit=1
+	lock avatarWithKey > killSprite
+        lock avatar > undoAll
+
+        base avatar > nothing
+        avatar base > nothing
+        wrongplace avatar > nothing
+        avatar wrongplace > nothing
+        avatar EOS > nothing
+        EOS avatar > nothing
+        key lock > nothing
+        lock key > nothing
+        key baseinplace > nothing
+        baseinplace key > nothing
+        key bodyinplace > nothing
+        bodyinplace key > nothing
+        key chestinplace > nothing
+        chestinplace key > nothing
+        key headinplace > nothing
+        headinplace key > nothing
+        key wrongplace > nothing
+        wrongplace key > nothing
+        key wall > nothing
+        wall key > nothing
+        key EOS > nothing
+        EOS key > nothing
+        lock baseinplace > nothing
+        baseinplace lock > nothing
+        lock bodyinplace > nothing
+        bodyinplace lock > nothing
+        lock chestinplace > nothing
+        chestinplace lock > nothing
+        headinplace lock > nothing
+        lock headinplace > nothing
+        wrongplace lock > nothing
+        lock wrongplace > nothing
+        lock wall > nothing
+        wall lock > nothing
+        lock EOS > nothing
+        EOS lock > nothing
+        base baseinplace > nothing
+        baseinplace base > nothing
+        base bodyinplace > nothing
+        bodyinplace base > nothing
+        base chestinplace > nothing
+        chestinplace base > nothing
+        headinplace base > nothing
+        base headinplace > nothing
+        wrongplace base > nothing
+        base wrongplace > nothing
+        base EOS > nothing
+        EOS base > nothing
+        body baseinplace > nothing
+        baseinplace body > nothing
+        body bodyinplace > nothing
+        bodyinplace body > nothing
+        body chestinplace > nothing
+        chestinplace body > nothing
+        headinplace body > nothing
+        body headinplace > nothing
+        wrongplace body > nothing
+        body wrongplace > nothing
+        body EOS > nothing
+        EOS body > nothing
+        baseinplace chest > nothing
+        chest baseinplace > nothing
+        chestinplace chest > nothing
+        chest chestinplace > nothing
+        headinplace chest > nothing
+        chest headinplace > nothing
+        wrongplace chest > nothing
+        chest wrongplace > nothing
+        chest EOS > nothing
+        EOS chest > nothing
+        head baseinplace > nothing
+        baseinplace head > nothing
+        headinplace head > nothing
+        head headinplace > nothing
+        wrongplace head > nothing
+        head wrongplace > nothing
+        head EOS > nothing
+        EOS head > nothing
+        baseinplace bodyinplace > nothing
+        bodyinplace baseinplace > nothing
+        baseinplace chestinplace > nothing
+        chestinplace baseinplace > nothing
+        headinplace baseinplace > nothing
+        baseinplace headinplace > nothing
+        wrongplace baseinplace > nothing
+        baseinplace wrongplace > nothing
+        baseinplace wall > nothing
+        wall baseinplace > nothing
+        baseinplace EOS > nothing
+        EOS baseinplace > nothing
+        bodyinplace chestinplace > nothing
+        chestinplace bodyinplace > nothing
+        headinplace bodyinplace > nothing
+        bodyinplace headinplace > nothing
+        wrongplace bodyinplace > nothing
+        bodyinplace wrongplace > nothing
+        bodyinplace wall > nothing
+        wall bodyinplace > nothing
+        bodyinplace EOS > nothing
+        EOS bodyinplace > nothing
+        headinplace chestinplace > nothing
+        chestinplace headinplace > nothing
+        wrongplace chestinplace > nothing
+        chestinplace wrongplace > nothing
+        chestinplace wall > nothing
+        wall chestinplace > nothing
+        chestinplace EOS > nothing
+        EOS chestinplace > nothing
+        headinplace wrongplace > nothing
+        wrongplace headinplace > nothing
+        headinplace wall > nothing
+        wall headinplace > nothing
+        headinplace EOS > nothing
+        EOS headinplace > nothing
+        wrongplace wall > nothing
+        wall wrongplace > nothing
+        wrongplace EOS > nothing
+        EOS wrongplace > nothing
+        wall EOS > nothing
+        EOS wall > nothing
+
+        avatar avatar > nothing
+        key key > nothing
+        lock lock > nothing
+        base base > nothing
+        body body > nothing
+        chest chest > nothing
+        head head > nothing
+        baseinplace baseinplace > nothing
+        bodyinplace bodyinplace > nothing
+        chestinplace chestinplace > nothing
+        headinplace headinplace > nothing
+        wrongplace wrongplace > nothing
+        wall wall > nothing
+        EOS EOS > nothing
+
+    TerminationSet
+        MultiSpriteCounter stype1=wrongplace limit=1 win=False
+        MultiSpriteCounter stype1=headinplace limit=1 win=True

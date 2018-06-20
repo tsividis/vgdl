@@ -1,0 +1,170 @@
+BasicGame
+  SpriteSet
+    city  > Immovable color=PURPLE
+    bullet > Flicker limit=5 color=GOLD
+    avatar > ShootAvatar stype=bullet color=DARKBLUE
+    enemy_slow > Chaser stype=city color=GREEN speed=0.1
+    enemy_fast  > Chaser stype=city color=RED speed=0.3
+    niceGuy > Chaser stype=city color=ORANGE speed=0.1
+    death   > Immovable color=GRAY
+    enemySlowPortal > SpawnPoint stype=enemy_slow spawnCooldown=100  total=2 color=QTLHNJ
+    enemyFastPortal > SpawnPoint stype=enemy_fast spawnCooldown=100  total=2 color=CVHTTO
+    niceGuyPortal   > SpawnPoint stype=niceGuy spawnCooldown=100  total=2 color=WLMEZR
+    wall > Immovable color=BLACK
+
+  LevelMapping
+    c > city 
+    m > enemySlowPortal 
+    f > enemyFastPortal 
+    n > niceGuyPortal 
+    A > avatar 
+
+  InteractionSet
+    avatar EOS    > stepBack
+    avatar wall   > stepBack
+    enemy_slow EOS    > stepBack
+    enemy_slow wall   > stepBack
+    enemy_fast EOS    > stepBack
+    enemy_fast wall   > stepBack
+    niceGuy EOS    > stepBack
+    niceGuy wall   > stepBack
+    enemy_slow city > killSprite
+    city enemy_slow > killSprite
+    enemy_fast city > killSprite
+    city enemy_fast  > killSprite
+    enemy_slow city > changeScore value=-1
+    enemy_fast city > changeScore value=-1
+    niceGuy bullet > transformTo stype=death
+    niceGuy bullet > changeScore value=-1
+    enemy_slow bullet > killSprite
+    enemy_slow bullet > changeScore value=2
+    enemy_fast bullet > killSprite
+    enemy_fast bullet > changeScore value=2
+    niceGuy city > killSprite
+    niceGuy city > changeScore value=2
+
+    city bullet > nothing
+    bullet city > nothing
+    city avatar > nothing
+    avatar city > nothing
+    city death > nothing
+    death city > nothing
+    city enemySlowPortal > nothing
+    enemySlowPortal city > nothing
+    city enemyFastPortal > nothing
+    enemyFastPortal city > nothing
+    city niceGuyPortal > nothing
+    niceGuyPortal city > nothing
+    city wall > nothing
+    wall city > nothing
+    city EOS > nothing
+    EOS city > nothing
+    bullet avatar > nothing
+    avatar bullet > nothing
+    bullet death > nothing
+    death bullet > nothing
+    bullet enemySlowPortal > nothing
+    enemySlowPortal bullet > nothing
+    bullet enemyFastPortal > nothing
+    enemyFastPortal bullet > nothing
+    bullet niceGuyPortal > nothing
+    niceGuyPortal bullet > nothing
+    bullet wall > nothing
+    wall bullet > nothing
+    bullet EOS > nothing
+    EOS bullet > nothing
+    avatar enemy_slow > nothing
+    enemy_slow avatar > nothing
+    avatar enemy_fast > nothing
+    enemy_fast avatar > nothing
+    avatar niceGuy > nothing
+    niceGuy avatar > nothing
+    death avatar > nothing
+    avatar death > nothing
+    avatar enemySlowPortal > nothing
+    enemySlowPortal avatar > nothing
+    avatar enemyFastPortal > nothing
+    enemyFastPortal avatar > nothing
+    avatar niceGuyPortal > nothing
+    niceGuyPortal avatar > nothing
+    enemy_fast enemy_slow > nothing
+    enemy_slow enemy_fast > nothing
+    niceGuy enemy_slow > nothing
+    enemy_slow niceGuy > nothing
+    death enemy_slow > nothing
+    enemy_slow death > nothing
+    enemySlowPortal enemy_slow > nothing
+    enemy_slow enemySlowPortal > nothing
+    enemyFastPortal enemy_slow > nothing
+    enemy_slow enemyFastPortal > nothing
+    niceGuyPortal enemy_slow > nothing
+    enemy_slow niceGuyPortal > nothing
+    niceGuy enemy_fast > nothing
+    enemy_fast niceGuy > nothing
+    death enemy_fast > nothing
+    enemy_fast death > nothing
+    enemy_fast enemySlowPortal > nothing
+    enemySlowPortal enemy_fast > nothing
+    enemyFastPortal enemy_fast > nothing
+    enemy_fast enemyFastPortal > nothing
+    niceGuyPortal enemy_fast > nothing
+    enemy_fast niceGuyPortal > nothing
+    death niceGuy > nothing
+    niceGuy death > nothing
+    niceGuy enemySlowPortal > nothing
+    enemySlowPortal niceGuy > nothing
+    enemyFastPortal niceGuy > nothing
+    niceGuy enemyFastPortal > nothing
+    niceGuyPortal niceGuy > nothing
+    niceGuy niceGuyPortal > nothing
+    death enemySlowPortal > nothing
+    enemySlowPortal death > nothing
+    death enemyFastPortal > nothing
+    enemyFastPortal death > nothing
+    death niceGuyPortal > nothing
+    niceGuyPortal death > nothing
+    death wall > nothing
+    wall death > nothing
+    death EOS > nothing
+    EOS death > nothing
+    enemyFastPortal enemySlowPortal > nothing
+    enemySlowPortal enemyFastPortal > nothing
+    niceGuyPortal enemySlowPortal > nothing
+    enemySlowPortal niceGuyPortal > nothing
+    wall enemySlowPortal > nothing
+    enemySlowPortal wall > nothing
+    EOS enemySlowPortal > nothing
+    enemySlowPortal EOS > nothing
+    niceGuyPortal enemyFastPortal > nothing
+    enemyFastPortal niceGuyPortal > nothing
+    wall enemyFastPortal > nothing
+    enemyFastPortal wall > nothing
+    EOS enemyFastPortal > nothing
+    enemyFastPortal EOS > nothing
+    wall niceGuyPortal > nothing
+    niceGuyPortal wall > nothing
+    niceGuyPortal EOS > nothing
+    EOS niceGuyPortal > nothing
+    wall EOS > nothing
+    EOS wall > nothing
+    
+    city city > nothing
+    bullet bullet > nothing
+    avatar avatar > nothing
+    enemy_slow enemy_slow > nothing
+    enemy_fast enemy_fast > nothing
+    niceGuy niceGuy > nothing
+    death death > nothing
+    enemySlowPortal enemySlowPortal > nothing
+    enemyFastPortal enemyFastPortal > nothing
+    niceGuyPortal niceGuyPortal > nothing
+    wall wall > nothing
+    EOS EOS > nothing
+
+  TerminationSet
+    SpriteCounter stype=city   win=False
+    MultiSpriteCounter stype1=enemy_slow stype2=enemy_fast stype3=niceGuy stype4=enemySlowPortal stype5=enemyFastPortal stype6=niceGuyPortal limit=0 win=True
+    MultiSpriteCounter stype=death limit=1 win=False
+    MultiSpriteCounter stype=death limit=2 win=False
+    MultiSpriteCounter stype=death limit=3 win=False
+    MultiSpriteCounter stype=death limit=4 win=False
