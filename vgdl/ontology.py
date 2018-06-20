@@ -1559,7 +1559,7 @@ def killIfOtherHasMore(sprite, partner, game, resource, limit=1):
 
 def killIfHasLess(sprite, partner, game, resource, limit=1):
     """ If 'sprite' has less than a limit of the resource type given, it dies. """
-    # print sprite.resources[resource], limit
+    # print "agent has", sprite.resources[resource], "limit is", limit
     if sprite.resources[resource] <= limit:
         return killSprite(sprite, partner, game)
         # return ('killIfHasLess' , sprite.ID, partner.ID)
