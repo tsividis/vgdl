@@ -263,7 +263,7 @@ class Agent:
         previous_colors = [o['type']['color'] for o in self.previous_objects.values()]
         current_colors = [o['type']['color'] for o in allObjects.values()]
         if all([c in previous_colors for c in current_colors]):
-            observe(self.rle, 0, self.bestSpriteTypeDict) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
+            observe(self.rle, 5, self.bestSpriteTypeDict) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
         else:
             observe(self.rle, 5, self.bestSpriteTypeDict) ## observe many steps so that you're not completely clueless about object movements for the new level
 
