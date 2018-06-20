@@ -1,4 +1,5 @@
 from main_agent import Agent
+from games_to_hyperparameters import *
 import time
 import dill
 import os
@@ -15,6 +16,11 @@ game_number = args.game_number
 game_name = args.game_name
 hyperparameter_index = args.hyperparameter_index
 
+if game_name==str(0):
+    game_name = game_names[game_number]
+
+# gameFileString = 'training_set_1'
+# gameFileString = 'gvgai/games'
 gameFileString = 'all_games'
 
 hyperparameter_sets = [
