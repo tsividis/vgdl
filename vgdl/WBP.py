@@ -323,7 +323,7 @@ class WBP():
 			# print('passed here')
 			# current = self.noveltySelection(QNovelty, QReward)
 			current = self.rewardSelection(QReward, QNovelty)
-			print "visited:", i
+			# print "visited:", i
 			# print("node chosen has position score {}".format(current.position_score()))
 			# print embed()
 			if current in [None, 'pickMaxNode']:
