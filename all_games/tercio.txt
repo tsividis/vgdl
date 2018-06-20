@@ -1,0 +1,199 @@
+#Modality: #http://www.puzzlescript.net/play.html?p=6888061
+
+BasicGame
+    SpriteSet
+        black > Immovable color=GRAY
+        white > Immovable color=WHITE
+        blue > Immovable color=BLUE
+
+        grey > Immovable color=LBLFCJ
+
+        target > Immovable color=GREEN
+        winTarget > Immovable color=RED
+        crate > Passive color=BROWN
+        inGrey > MovingAvatar color=PINK
+        inBlack > MovingAvatar color=PURPLE
+        inWhite > MovingAvatar color=GOLD
+        inBlue > MovingAvatar color=LIGHTGREEN
+
+        wall > Immovable color=BLACK 
+    
+    LevelMapping
+        . > black
+        + > white
+        - > blue
+        g > grey
+
+        B > inBlack black
+        A > inWhite white
+        L > inBlue blue
+
+        * > crate black
+        @ > crate white
+        $ > crate blue
+
+        t > target black
+        u > target white
+        r > target blue
+
+        w > wall
+
+    TerminationSet
+        SpriteCounter stype=target limit=0 win=True
+        Timeout limit=1000 win=False
+        
+    InteractionSet
+        inWhite EOS > stepBack
+        inBlack EOS > stepBack
+        inBlue EOS > stepBack
+        inGrey EOS > stepBack
+
+        inBlack blue > stepBack
+        inWhite blue > stepBack
+        inBlue white > stepBack
+        inBlack white > stepBack
+        inWhite black > stepBack
+        inBlue black > stepBack
+
+        inWhite black > transformTo stype=inBlack
+        inBlue black > transformTo stype=inBlack
+        inGrey black > transformTo stype=inBlack
+        inBlack white > transformTo stype=inWhite
+        inBlue white > transformTo stype=inWhite
+        inGrey white > transformTo stype=inWhite
+        inWhite blue > transformTo stype=inBlue
+        inBlack blue > transformTo stype=inBlue
+        inGrey blue > transformTo stype=inBlue
+        inWhite grey > transformTo stype=inGrey
+        inBlack grey > transformTo stype=inGrey
+        inBlue grey > transformTo stype=inGrey
+
+        crate inWhite > bounceForward
+        crate inBlack > bounceForward
+        crate inBlue > bounceForward
+        crate inGrey > bounceForward
+        crate wall > undoAll
+        target wall > undoAll
+        inWhite wall > stepBack
+        inBlack wall > stepBack
+        inBlue wall > stepBack
+        inGrey wall > stepBack
+        target crate > transformTo stype=winTarget
+        target crate > changeScore value=1
+
+        black white > nothing
+        white black > nothing
+        blue black > nothing
+        black blue > nothing
+        grey black > nothing
+        black grey > nothing
+        black target > nothing
+        target black > nothing
+        black winTarget > nothing
+        winTarget black > nothing
+        crate black > nothing
+        black crate > nothing
+        inBlack black > nothing
+        black inBlack > nothing
+        black wall > nothing
+        wall black > nothing
+        black EOS > nothing
+        EOS black > nothing
+        blue white > nothing
+        white blue > nothing
+        grey white > nothing
+        white grey > nothing
+        target white > nothing
+        white target > nothing
+        winTarget white > nothing
+        white winTarget > nothing
+        crate white > nothing
+        white crate > nothing
+        inWhite white > nothing
+        white inWhite > nothing
+        wall white > nothing
+        white wall > nothing
+        EOS white > nothing
+        white EOS > nothing
+        blue grey > nothing
+        grey blue > nothing
+        blue target > nothing
+        target blue > nothing
+        blue winTarget > nothing
+        winTarget blue > nothing
+        crate blue > nothing
+        blue crate > nothing
+        inBlue blue > nothing
+        blue inBlue > nothing
+        blue wall > nothing
+        wall blue > nothing
+        blue EOS > nothing
+        EOS blue > nothing
+        grey target > nothing
+        target grey > nothing
+        grey winTarget > nothing
+        winTarget grey > nothing
+        crate grey > nothing
+        grey crate > nothing
+        grey inGrey > nothing
+        inGrey grey > nothing
+        grey wall > nothing
+        wall grey > nothing
+        grey EOS > nothing
+        EOS grey > nothing
+        winTarget target > nothing
+        target winTarget > nothing
+        inGrey target > nothing
+        target inGrey > nothing
+        inBlack target > nothing
+        target inBlack > nothing
+        target inWhite > nothing
+        inWhite target > nothing
+        inBlue target > nothing
+        target inBlue > nothing
+        target EOS > nothing
+        EOS target > nothing
+        crate winTarget > nothing
+        winTarget crate > nothing
+        winTarget inGrey > nothing
+        inGrey winTarget > nothing
+        inBlack winTarget > nothing
+        winTarget inBlack > nothing
+        winTarget inWhite > nothing
+        inWhite winTarget > nothing
+        inBlue winTarget > nothing
+        winTarget inBlue > nothing
+        winTarget wall > nothing
+        wall winTarget > nothing
+        winTarget EOS > nothing
+        EOS winTarget > nothing
+        crate EOS > nothing
+        EOS crate > nothing
+        inBlack inGrey > nothing
+        inGrey inBlack > nothing
+        inGrey inWhite > nothing
+        inWhite inGrey > nothing
+        inBlue inGrey > nothing
+        inGrey inBlue > nothing
+        inBlack inWhite > nothing
+        inWhite inBlack > nothing
+        inBlack inBlue > nothing
+        inBlue inBlack > nothing
+        inBlue inWhite > nothing
+        inWhite inBlue > nothing
+        wall EOS > nothing
+        EOS wall > nothing
+
+        black black > nothing
+        white white > nothing
+        blue blue > nothing
+        grey grey > nothing
+        target target > nothing
+        winTarget winTarget > nothing
+        crate crate > nothing
+        inGrey inGrey > nothing
+        inBlack inBlack > nothing
+        inWhite inWhite > nothing
+        inBlue inBlue > nothing
+        wall wall > nothing
+        EOS EOS > nothing
