@@ -354,7 +354,7 @@ class WBP():
 
 			self.statesEncountered.append(current.rle._game.getFullState())
 
-			print current.rle.show(indent=True)
+			# print current.rle.show(indent=True)
 
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
@@ -448,16 +448,16 @@ class WBP():
 							gameString_array.append(node.rle.show(color='green'))
 							object_positions_array.append(node.rle)
 							node = node.parent
-						print child.rle.show()
+						# print child.rle.show()
 						self.gameString_array = gameString_array[::-1]
 						self.object_positions_array = object_positions_array[::-1]
 
 						ended, win, t = child.rle._isDone(getTermination=True)
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
-						print "win"
-						if t:
-							print t.__dict__
+						# print "win"
+						# if t:
+							# print t.__dict__
 						if not child.rle._game.getAvatars():
 							print "Think we won but no avatars!?!?"
 							embed()
@@ -468,7 +468,7 @@ class WBP():
 			self.total_nodes = i
 
 			if self.winning_states:
-				print "we have {} winning states".format(len(self.winning_states))
+				# print "we have {} winning states".format(len(self.winning_states))
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
 				bestNode = bestNodes[0]
 				# gameString_array.append(bestNode.rle.show())
@@ -479,11 +479,11 @@ class WBP():
 		self.solution = []#Node(self.rle, self, [], None)
 		if i>=self.max_nodes:
 			if self.short_horizon:
-				print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
+				# print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
 				node = max(visited, key=lambda n:n.intrinsic_reward)
 				parentNode = copy.deepcopy(node)
 				self.solution = node.actionSeq
-				print self.solution
+				# print self.solution
 				gameString_array, object_positions_array = [], []
 				while parentNode is not None:
 					gameString_array.append(parentNode.rle.show())
@@ -543,7 +543,7 @@ class Node():
 					first_alpha=sprite_first_alpha, second_alpha=sprite_second_alpha,
 					negative_mult=sprite_negative_mult)
 
-		print(self.reward_unit)
+		# print(self.reward_unit)
 
 		# metabolic_cost = 1./n
 		metabolic_cost = -.2 * self.reward_unit # multiplying second order incentive
@@ -575,7 +575,7 @@ class Node():
 			rolloutArray = []
 			i=0
 			terminal, win = vrle._isDone()
-			print "in rollout"
+			# print "in rollout"
 			while i<self.rolloutDepth and not terminal:
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
 				# print a
@@ -602,7 +602,7 @@ class Node():
 			## Take up to 100 samples but don't get caught in an infinite loop.
 			if terminal and not win and j<100:
 				successfulRollout = False
-				print "rolling out again"
+				# print "rolling out again"
 				j+=1
 				# embed()
 			else:
@@ -730,7 +730,7 @@ class Node():
 					 for obj in stype_positions]
 
 				distance = min(possiblePairList)
-				print("second order distance is {}".format(distance))
+				# print("second order distance is {}".format(distance))
 			except (ValueError, TypeError) as e:
 				distance = 100
 
@@ -739,7 +739,7 @@ class Node():
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
 				self.reward_unit = min(self.reward_unit, abs(float(mult*second_alpha)/n_sprites**2))
-				print("reward unit is {}".format(self.reward_unit))
+				# print("reward unit is {}".format(self.reward_unit))
 
 	def spritecounter_val(self, theory, term, stype, rle, first_alpha=10000.,
 						  second_alpha=100, negative_mult=.1):
@@ -875,7 +875,7 @@ class Node():
 					 for obj in stype_positions]
 
 				distance = min(possiblePairList)
-				print("second order distance is {}".format(distance))
+				# print("second order distance is {}".format(distance))
 			except (ValueError, TypeError) as e:
 				distance = 100
 
@@ -1107,17 +1107,17 @@ class Node():
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=sprite_first_alpha, second_alpha=sprite_second_alpha,
 					negative_mult=sprite_negative_mult)
-				if spritecounter_val!=0:
-					print("spritecounter_val for {} is equal to {}".format(
-						term.termination.stype, spritecounter_val))
+				# if spritecounter_val!=0:
+					# print("spritecounter_val for {} is equal to {}".format(
+						# term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
 				multispritecounter_val = self.multispritecounter_val(theory, term, rle,
 						first_alpha=multisprite_first_alpha, second_alpha=multisprite_second_alpha)  #500, 5 (normally)
-				if multispritecounter_val!=0:
-					print("multispritecounter_val for {} is equal to {}".format(
-						term.termination.stypes, multispritecounter_val))
+				# if multispritecounter_val!=0:
+					# print("multispritecounter_val for {} is equal to {}".format(
+						# term.termination.stypes, multispritecounter_val))
 				heuristicVal += multispritecounter_val
 
 			elif isinstance(term, TimeoutRule):
@@ -1129,9 +1129,9 @@ class Node():
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=novelty_first_alpha, second_alpha=novelty_second_alpha)
-				if noveltytermination_val!=0:
-					print("noveltytermination_val for {} and {} is equal to {}".format(
-						term.termination.s1, term.termination.s2, noveltytermination_val))
+				# if noveltytermination_val!=0:
+					# print("noveltytermination_val for {} and {} is equal to {}".format(
+						# term.termination.s1, term.termination.s2, noveltytermination_val))
 
 				# if self.parent and self.parent.rle._game.score==0 and term.termination.args and term.termination.s1=='c6' and term.termination.s2=='avatar' and noveltytermination_val!=-5000:
 					# ipdb.set_trace()
@@ -1244,7 +1244,7 @@ class Node():
 		# print self.rle._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost, self.position_score()
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
-		print("metabolic cost is {}".format(self.metabolic_cost))
+		# print("metabolic cost is {}".format(self.metabolic_cost))
 		self.intrinsic_reward = self.heuristicVal # + self.position_score(0) + self.metabolic_cost
 
 		## Debug printouts
@@ -1252,9 +1252,9 @@ class Node():
 		# print("intrinsic_reward {}".format(self.intrinsic_reward))
 		try:
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
-			for k in self.rle._game.getAvatars()[0].resources.keys():
-				if k not in self.WBP.seen_limits:
-					print("Current resource={}, limit={}".format(self.rle._game.getAvatars()[0].resources[k], self.WBP.theory.resource_limits[k]))
+			# for k in self.rle._game.getAvatars()[0].resources.keys():
+				# if k not in self.WBP.seen_limits:
+					# print("Current resource={}, limit={}".format(self.rle._game.getAvatars()[0].resources[k], self.WBP.theory.resource_limits[k]))
 			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
 				self.win=True
 		except IndexError:
