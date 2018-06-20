@@ -76,6 +76,8 @@ class WBP():
 			self.theory.updateTerminations()
 
 		print 'max nodes', self.max_nodes
+		# if 'changeResource' in [rule.interaction for rule in self.theory.interactionSet]:
+			# embed()
 		i=1
 		for k in rle._game.all_objects.keys():
 			self.objIDs[k] = i * 100 * (rle.outdim[0]*rle.outdim[1]+self.padding)
