@@ -13,7 +13,8 @@ BasicGame
         wall > Immovable autotiling=true color=DARKGRAY
 
     InteractionSet
-        honey avatar    > collectResource scoreChange=1
+        honey avatar    > collectResource 
+	honey avatar > changeScore value=1
         honey avatar    > killSprite
 
         avatar wall     > stepBack
@@ -27,8 +28,10 @@ BasicGame
         zombie bee      > transformTo stype=dying_zombie
         bee dying_zombie      > transformTo stype=honey
         dying_zombie honey      > killSprite
-        avatar slowHell     > killSprite scoreChange=-1
-        avatar fastHell     > killSprite scoreChange=-1
+        avatar slowHell     > killSprite 
+	avatar slowHell > changeScore value=-1
+        avatar fastHell     > killSprite
+	avatar fastHell > changeScore value=-1
 
         avatar bee > nothing
         avatar flower > nothing
