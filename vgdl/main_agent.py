@@ -37,7 +37,7 @@ def playCurriculum(agent, level_game_pairs):
 
 
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameter_sets={}, parallel_planning=False):
+    def __init__(self, modelType, gameFilename, hyperparameter_sets=[], parallel_planning=False):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.gameString = None
@@ -1005,7 +1005,7 @@ if __name__ == "__main__":
     # filename = "examples.gridphysics.pick_apples"
     # filename = "examples.gridphysics.expt_exploration_exploitation_debugging"
 
-    filename = "examples.gridphysics.expt_preconditions"
+    filename = "examples.gridphysics_new.expt_preconditions"
 
     level_game_pairs = None
     # Playing GVG-AI games
@@ -1046,7 +1046,16 @@ if __name__ == "__main__":
     ##uncomment this line to run local games
     gameName = filename
 
-    agent = Agent('full', gameName)
+    hyperparameter_sets = [{'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': .1,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     }]
+
+    agent = Agent('full', gameName, hyperparameter_sets)
 
     ##then pass this down for multiple episodes
     gameObject = None
