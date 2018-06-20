@@ -40,15 +40,15 @@ BasicGame
         avatar shield > changeResource resource=shield value=1
         shield avatar > killSprite
 
-        avatar rock > killIfHasLess resource=shield limit=0
+        avatar rock > killIfHasLess resource=shield limit=-1
         avatar rock > changeResource resource=shield value=-1
         rock avatar > killSprite
 
-        avatar alien > killIfHasLess resource=shield limit=0
+        avatar alien > killIfHasLess resource=shield limit=-1
         avatar alien > changeResource resource=shield value=-1
         alien avatar > killSprite
 
-        avatar laser > killIfHasLess resource=shield limit=0
+        avatar laser > killIfHasLess resource=shield limit=-1
         avatar laser > changeResource resource=shield value=-1
         laser avatar > killSprite
 
