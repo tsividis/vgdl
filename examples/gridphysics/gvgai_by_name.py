@@ -5,7 +5,7 @@ parser.add_argument('--game_name', type=str, default=str(0), help='game name')
 
 args = parser.parse_args()
 game_name = args.game_name
-gameFileString = 'gvgai/games'
+gameFileString = 'all_games'
 
 def read_gvgai_game(filename):
     with open(filename, 'r') as f:
