@@ -1,6 +1,7 @@
 # from IPython import embed
 from util import *
 from core import colorDict, VGDLParser, sys, keyPresses
+import sys
 from ontology import *
 from theory_template import Precondition, InteractionRule, TerminationRule, TimeoutRule, \
 SpriteCounterRule, MultiSpriteCounterRule, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
@@ -542,6 +543,8 @@ class Agent:
 
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
                         run_induction = not flexible_goals)
+
+                    sys.stdout.flush()
 
                     self.rle._game.nextPositions = {}
                     for k, v in self.rle._game.all_objects.iteritems():
