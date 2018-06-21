@@ -74,7 +74,7 @@ class WBP():
 		print("exta atom is {}".format(self.extra_atom))
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = False
+		self.display = True
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -101,7 +101,6 @@ class WBP():
 
 		self.short_horizon = shortHorizon
 		self.winning_states = []
-		# self.trueAtomsIW1 = []
 		self.total_nodes = 0
 
 		## Ignore objects we don't want to track (i.e., non-moving immovables.)
@@ -139,8 +138,6 @@ class WBP():
 				self.starting_stype_n[tuple(stypes)] = n_stypes
 
 	def findObjectsInRLE(self, rle, objName):
-		
-
 		try:
 			objLocs = [rle._rect2pos(element.rect) for element in rle._game.sprite_groups[objName]
 			if element not in rle._game.kill_list]
@@ -291,7 +288,7 @@ class WBP():
 			QNovelty.remove(current)
 		except:
 			pass
-		# self.trueAtomsIW1.append(current.stateIW1)
+
 		return current
 
 	"""
@@ -611,8 +608,7 @@ class Node():
 		successfulRollout = False
 		j=0
 		while not successfulRollout:
-			vrle = copy.deepcopy(Vrle)
-			# vrle = ccopy(Vrle)
+			vrle = self.fastcopy(Vrle)
 
 			prevHeuristicVal = self.heuristics(vrle, **self.WBP.rolloutHyperparameters)
 			rolloutArray = []
@@ -944,8 +940,9 @@ class Node():
 				resource_names = [list(resource[1])[0].item for resource in avatar_preconditions]
 
 				try:
-					resource_yielder_names = [[inter.slot2 if (inter.interaction=='changeResource' and inter.args['resource']==res) else inter.slot1 if (inter.interaction=='collectResource' and res==inter.args['resource']==res) else None
-					for inter in theory.interactionSet] for res in resource_names]
+					resource_yielder_names = [[inter.slot2 if (inter.interaction=='changeResource' and inter.args['resource']==res) else 
+							inter.slot1 if (inter.interaction=='collectResource' and res==inter.args['resource']==res) else None
+							for inter in theory.interactionSet] for res in resource_names]
 				except:
 					print "failure with resource_yielder_names"
 					embed()
@@ -1313,13 +1310,6 @@ class Node():
 			self.novelty = min([len(c) for c in self.candidates])
 		return self.novelty
 
-	def updateNoveltyIW1(self):
-		for state in self.WBP.trueAtomsIW1:
-			if self.stateIW1 == state:
-				return self.novelty
-		self.novelty = 0
-		return self.novelty
-
 	def updateNoveltyDict(self, QNovelty, QReward):
 		jointSet = list(set(QNovelty+QReward))
 		for c in self.candidates:
@@ -1330,12 +1320,6 @@ class Node():
 						n.candidates.remove(c)
 		for n in jointSet:
 			n.novelty = n.updateNovelty()
-		return
-
-	def updateNoveltyDictIW1(self, QNovelty, QReward):
-		jointSet = list(set(QNovelty+QReward))
-		for n in jointSet:
-			n.novelty = n.updateNoveltyIW1()
 		return
 
 	def updateObjIDs(self, vrle):
