@@ -4,10 +4,10 @@
 #SBATCH --job-name=run_vgdl_model
 #SBATCH --array=0-13%30
 #SBATCH --output=slurm_logs/array_%A_%a.out
-#SBATCH --time=120
-#SBATCH --qos=tenenbaum
+#SBATCH --time=480
+#SBATCH --qos=normal
 #SBTACH --cpus-per-task=2
-#SBATCH --mem=4G
+#SBATCH --mem=8G
 
 # --array=0-2%30 tells it to run array instances 0-2 and to never run more than 30 jobs at a time.
 # if i'm using qos=tenenbaum i shouldn't exceed 30.
@@ -25,7 +25,7 @@ SRC=""
 DST=""
 
 # Figure out which game and hyperparameter
-N_GAMES=14
+N_GAMES=30
 N_PARAMS=3
 GAME_NUMBER=$(($SLURM_ARRAY_TASK_ID % $N_GAMES))
 HYPER_IDX=$(($SLURM_ARRAY_TASK_ID % $N_PARAMS))

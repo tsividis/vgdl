@@ -1,5 +1,5 @@
 
-game_names = ['expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_push_boulders', #0-3
+game_names = ['expt_antagonist', 'expt_helper', 'expt_push_boulders', #0-3   'expt_preconditions',
 
                 'aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',                   #5-8
                 'missilecommand', 'portals', 'sokoban', 'survivezombies',                   #9-12

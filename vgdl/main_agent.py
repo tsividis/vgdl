@@ -889,6 +889,7 @@ class Agent:
             terminationCondition = {'ended': False, 'win':False, 'time':self.rle._game.time}
             trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState'], e['rle']) \
                 for e in self.finalEventList], terminationCondition)
+
             hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
             verbose=False, existingTheories=hypotheses))
 
