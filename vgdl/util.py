@@ -1,5 +1,6 @@
 from IPython import embed
 import itertools
+import os
 import random
 import csv
 import cPickle
@@ -46,7 +47,7 @@ def factorize(rle, n):
 def findNearestSprite(sprite, spriteList):
 	## returns the sprite in spriteList whose location best matches the location of sprite.
 	return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
-
+		
 def objectsToSymbol(rle, objects, symbolDict):
 	objects = [rle._game.sprite_groups[o][0].colorName for o in objects]
 	try:
@@ -65,7 +66,7 @@ def objectsToSymbol(rle, objects, symbolDict):
 			symbolDict[tuple(objects)] = ALNUM[idx]
 			return ALNUM[idx]
 	except:
-		import ipdb; ipdb.set_trace()
+		# import ipdb; ipdb.set_trace()
 		print "objectsToSymbol problem."
 		embed()
 
@@ -84,12 +85,14 @@ def make_random_name(chars):
 		name+=random.choice(chars)
 	return name
 
-def write_to_csv(filename, game):
-
-	f = open(filename, 'a+') ##append, but also read.
-	writer = csv.writer(f)
-	if len(f.readlines())==0:
+def write_to_csv(foldername, filename, game):
+	if filename not in os.listdir('model_results_oldWBP/'+foldername+'/'):
+		f = open('model_results_oldWBP/'+foldername+'/'+filename, 'w+') #newfile and write
+		writer = csv.writer(f)
 		writer.writerow(('subject', 'condition', 'gameName', 'levels_won', 'steps', 'planner_steps', 'score'))
+	else:
+		f = open('model_results_oldWBP/'+foldername+'/'+filename, 'a+') ##append, but also read.
+		writer = csv.writer(f)
 	episodes = game['episodes']
 	steps, levels_won, score, planner_steps = 0, 0, 0, 0
 	for episode in episodes:
@@ -102,6 +105,5 @@ def write_to_csv(filename, game):
 			score = None
 		writer.writerow((game['modelType'], game['condition'], game['gameName'], levels_won, steps, planner_steps, score))
 	f.close()
-
 def ccopy(obj):
 	return cPickle.loads(cPickle.dumps(obj))

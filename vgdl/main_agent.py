@@ -19,7 +19,8 @@ from pathos.helpers import mp
 # import multiprocess as mp
 # from line_profiler import LineProfiler
 
-
+MAX_STEPS = 1000
+actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none'}
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
@@ -37,22 +38,21 @@ def playCurriculum(agent, level_game_pairs):
 
 
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameter_sets=[], parallel_planning=False):
+    def __init__(self, modelType, gameFilename, hyperparameters, parallel_planning=False):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.gameString = None
         self.levelString = None
-        self.hyperparameter_sets = hyperparameter_sets
+        self.hyperparameters = hyperparameters
         self.parallel_planning = parallel_planning
         self.annealingFactor = 1.
-        self.shortHorizon = False
-        if self.shortHorizon == True:
+        self.shortHorizon = hyperparameters['short_horizon']#False
+        self.firstOrderHorizon = hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)        if self.shortHorizon == True:
             self.starting_max_nodes = 1000
             self.max_nodes_annealing = 1.05
         else:
             self.starting_max_nodes = 10000
             self.max_nodes_annealing = 10.
-        self.firstOrderHorizon = False ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
         self.regrounding = 1
         self.selective_regrounding = True
         self.avoid_danger = True
@@ -68,8 +68,6 @@ class Agent:
         self.bestSpriteTypeDict = defaultdict(lambda : {})
         self.spriteUpdateDict = defaultdict(lambda : 0)
         self.best_params = None
-        ## To track how many times we have run spriteType updates to each particular object
-        # self.bestSpriteTypeDict = defaultdict(lambda: {'count':0, 'distribution':None})
         self.seen_resources = []
         self.seen_limits = []
         self.new_objects = {}
@@ -266,12 +264,12 @@ class Agent:
             level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
         episodes = []
         allEffectsEncountered = []
-        shutil.rmtree("images/tmp")
-        os.makedirs("images/tmp")
+        # if 'images' in os.listdir('.') and 'tmp' in os.listdir('images'):
+            # shutil.rmtree("images/tmp")
+        # os.makedirs("images/tmp")
         j=0
         flexible_goals = False
 
-        pool = mp.Pool(processes=len(self.hyperparameter_sets)) if self.parallel_planning else None
         for n_level, level_game in enumerate(level_game_pairs):
 
             print("Playing level {}".format(n_level))
@@ -287,6 +285,7 @@ class Agent:
 
             while not win and i<10:
                 gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level, pool=pool)
+                
                 self.total_game_steps += steps
 
                 episode_results = (n_level, steps, win, score, self.total_planner_steps)
@@ -294,17 +293,19 @@ class Agent:
 
                 # write progressively to file
                 output = {'modelType':self.modelType,
-                            # 'gameName': self.gameFilename[self.gameFilename.find('expt'):],
                             'gameName': self.gameFilename,
                             'condition': 'normal',
                             'episodes' : [episode_results]}
+                write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+'.csv', output)
 
-                write_to_csv(str(self.gameFilename)+'.csv', output)
-
-                allStatesEncountered.extend(statesEncountered)
-                levelEffectsEncountered.append(effectsEncountered)
+                # allStatesEncountered.extend(statesEncountered)
+                # levelEffectsEncountered.append(effectsEncountered)
                 # VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
                 # persist_movie=False, make_images=False, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
+                
+                # if self.total_game_steps > MAX_STEPS:
+                    # return
+
                 first_time_playing_level = False
                 i += 1
                 print "Finished in ", time.time() - t1
@@ -489,72 +490,11 @@ class Agent:
 
             quitting = False
 
-            if self.parallel_planning:
-                def WBP_wrapper(l):
-                    hyperparameters, theory, queue = l
-                    p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=theory, fakeInteractionRules = self.fakeInteractionRules,
-                        seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                        firstOrderHorizon=self.firstOrderHorizon, hyperparameters=hyperparameters)
-
-                    # Put the WBP object in a shared queue to facilitate manipulation
-                    # queue.put(p)
-                    return p
-
-                # # start planners
-                # planners = []
-                print('#1')
-                result_queue = None
-                # result_queue = mp.Queue()
-                print('#2')
-                #
-                # # Currently parallelizing over hyperparameters but not theories
-                # # (we have to be more careful about things like "hypotheses[0]"
-                # #  if we are gonna do both)
-                # planners = [mp.Process(
-                #     target=WBP_wrapper, args=(hyperparameter_set, self.hypotheses[0], result_queue))
-                #     for hyperparameter_set in self.hyperparameter_sets]
-                #
-                # # start planners
-                # for planner in planners:
-                #     planner.start()
-                #
-                # # check if any planner has finished
-                # finished_one_planner = False
-                # while not finished_one_planner:
-                #     for number, planner in enumerate(planners):
-                #         if not planner.is_alive():
-                #             # import ipdb; ipdb.set_trace()
-                #             finished_one_planner = True
-                #             break
-                #
-                # # kill all processes
-                # for planner in planners:
-                #     planner.terminate()
-                #     planner.join()
-                #
-                print('#3')
-                res = pool.map(WBP_wrapper, [(h_set, self.hypotheses[0], result_queue) for h_set in self.hyperparameter_sets])
-                print('#4')
-                # pool.close()
-                print('#5')
-                # pool.join()
-                print('#6')
-                # import ipdb; ipdb.set_trace()
-
-                # p = result_queue.get()
-                # print('#1')
-            	best_index = np.argmin([p.total_nodes for p in res._value])
-            	p = res._value[best_index]
-
-                best_index = np.argmin([p.total_nodes for p in res])
-                print('passed here')
-                p = res[best_index]
-
-            else:
-                p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
-                    seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                    firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0], extra_atom=self.extra_atom)
-
+            ## Initialize planner
+            p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
+                seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+                firstOrderHorizon=self.firstOrderHorizon, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
+            
             p_quitting = p.quitting
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes
@@ -566,17 +506,14 @@ class Agent:
             else:
                 solution = []
 
-
-
-            if solution and not p_quitting:
+            if solution and not p.quitting:
                 print "============================================="
                 print "got solution of length", len(solution)
-                for g in p.gameString_array:
+                print colored(p.gameString_array[0], 'green')
+                for i,g in enumerate(p.gameString_array[1:]):
+                    print actionDict[solution[i]]
                     print colored(g, 'green')
                 print "============================================="
-
-            if self.parallel_planning:
-                del res
 
             if self.shortHorizon:
                 if not solution:
@@ -610,6 +547,7 @@ class Agent:
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
                         run_induction = not flexible_goals)
 
+                    sys.stdout.flush()
                     self.rle._game.nextPositions = {}
                     for k, v in self.rle._game.all_objects.iteritems():
                         self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
@@ -621,22 +559,8 @@ class Agent:
                         except KeyError:
                             pass
                     self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
-                    # self.rle._game.previousPositions = ccopy(self.rle._game.nextPositions)
-
-
-                    # pinkID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['features']['color']=='PINK'][0]
-                    # print "prev position", self.rle._game.previousPositions[pinkID]
-                    # print "memoryDict", self.rle._game.objectMemoryDict[pinkID]
-                    # print "curr position", self.rle._game.all_objects[pinkID]['sprite'].rect
-
 
                     ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
-
-                    # for k,v in self.best_params.items():
-                        # print k,v
-
-                    # print "theory_change_flag", theory_change_flag
-                    # if theory_change_flag:
 
                     effectsEncountered.extend(effects)
                     steps +=1
@@ -646,6 +570,10 @@ class Agent:
                     ended, win = self.rle._isDone()
                     if ended:
                         break
+                    # if self.total_game_steps > MAX_STEPS:
+                        # score = self.rle._game.score
+                        # return gameObject, win, score, steps, statesEncountered, effectsEncountered
+                    
 
                     ## Make sure you're far enough from unpredictable dangerous objects.
 
@@ -1055,7 +983,7 @@ if __name__ == "__main__":
      'novelty_second_alpha': 50,
      }]
 
-    agent = Agent('full', gameName, hyperparameter_sets)
+    agent = Agent('full', gameName, hyperparameter_sets[0])
 
     ##then pass this down for multiple episodes
     gameObject = None
