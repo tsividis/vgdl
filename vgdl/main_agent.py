@@ -600,7 +600,7 @@ class Agent:
                     if ended:
                         break
                     if self.total_game_steps > MAX_STEPS:
-                        embed()
+                        score = self.rle._game.score
                         return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
                     ## Make sure you're far enough from unpredictable dangerous objects.
