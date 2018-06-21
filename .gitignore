@@ -5,3 +5,5 @@
 /videos
 .spyderproject
 venv
+.DS_Store
+examples/gridphysics/theorytest*
