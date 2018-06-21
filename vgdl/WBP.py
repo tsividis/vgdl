@@ -69,6 +69,7 @@ class WBP():
 		print("exta atom is {}".format(self.extra_atom))
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
+		self.display = False
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -79,9 +80,6 @@ class WBP():
 
 		print 'max nodes', self.max_nodes
 
-		# for rule in self.theory.interactionSet:
-		# 	if 'stepBack'==rule.interaction:
-		# 		ipdb.set_trace()
 		i=1
 		for k in rle._game.all_objects.keys():
 			self.objIDs[k] = i * 100 * (rle.outdim[0]*rle.outdim[1]+self.padding)
@@ -365,9 +363,10 @@ class WBP():
 				# If there's already a Missile on the screen
 				# and the projectile class is a singleton
 				# and the action chosen is shooting
-				if (hasattr(current.rle._game.getAvatars()[0], 'stype') and
-						self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
+				if (current.rle._game.getAvatars() and hasattr(current.rle._game.getAvatars()[0], 'stype') and
 						'Missile' in str(self.theory.classes[current.rle._game.getAvatars()[0].stype][0]) and
+						self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
+						'singleton' in self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args and
 						bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
 						len([s for s in current.rle._game.sprite_groups[current.rle._game.getAvatars()[0].stype] if s not in current.rle._game.kill_list])>0):
 					current_actions = [0]
@@ -390,31 +389,14 @@ class WBP():
 
 			for a in current_actions:
 				skipAction = False
-				# try:
-				# 	# If there's already a projectile on the screen
-				# 	# and the projectile class is a singleton
-				# 	# and the action chosen is shooting
-				# 	shoot_type = current.rle._game.getAvatars()[0].stype
-
-				# 	if (self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
-				# 		bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
-				# 		# a == K_SPACE):
-				# 		len([s for s in current.rle._game.sprite_groups[shoot_type] if s not in current.rle._game.kill_list])>0):
-				# 		# embed()
-				# 			# Then skip the action
-				# 			skipAction = True
-
-				# except (IndexError, AttributeError, TypeError) as e:
-				# 	# embed()
-				# 	pass
 
 				if not skipAction:
 					child = Node(self.rle, self, current.actionSeq+[a], current)
 					child.eval()
 
 					if self.firstOrderHorizon:
-							# Return plan if first-order progress was made towards
-							# a win condition
+						# Return plan if first-order progress was made towards
+						# a win condition
 						# ended, win = child.rle._isDone()
 						# if not ended:
 						foundWin = False
@@ -645,7 +627,7 @@ class Node():
 
 		## If you can shoot a Flicker, give yourself credit for being close to things it kills, but remove credit for that Flicker being close to those things.
 		try:
-			if rle._game.getAvatars()[0].stype in killer_types:
+			if rle._game.getAvatars() and hasattr(rle._game.getAvatars()[0], 'stype') and rle._game.getAvatars()[0].stype in killer_types:
 				if rle._game.getAvatars()[0].stype in theory.classes:
 					color = theory.classes[rle._game.getAvatars()[0].stype][0].color
 				else:
