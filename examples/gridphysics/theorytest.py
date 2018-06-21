@@ -4,17 +4,17 @@ level="""
 3                              3
 3                              3
 3                              3
-3             2                3
 3                              3
-3 5           4                3
-333                           03
+3                              3
+3  5          2                3
+333           4               03
 33333333333333333333333333333333
 """
 game = """
 BasicGame
 	SpriteSet
 		avatar > MovingAvatar color=DARKBLUE
-		c3 > Chaser color=DARKGRAY fleeing=False cooldown=5 stype=c5
+		c3 > Chaser color=DARKGRAY fleeing=True cooldown=3
 		c2 > ResourcePack color=PINK
 		c5 > ResourcePack color=LIGHTGREEN
 		c4 > ResourcePack color=YELLOW
@@ -22,20 +22,20 @@ BasicGame
 		c2 avatar > killSprite
 		c2 c5 > nothing
 		c5 c2 > nothing
-		c4 c5 > nothing
-		c5 c4 > nothing
 		c2 c4 > nothing
 		c4 c2 > nothing
 		c2 c3 > nothing
 		c3 c2 > nothing
 		c2 c2 > nothing
+		c4 avatar > bounceForward
 		c5 avatar > killSprite
 		c3 c3 > nothing
 		avatar EOS > stepBack
 		c3 c4 > nothing
 		c4 c3 > nothing
 		c5 c5 > nothing
-		c4 avatar > killSprite
+		c4 c5 > nothing
+		c5 c4 > nothing
 		c3 c5 > nothing
 		c5 c3 > nothing
 		c4 c4 > nothing
@@ -54,7 +54,6 @@ BasicGame
 		NoveltyTermination s1=c3 s2=c3 win=True
 		NoveltyTermination s1=c3 s2=c4 win=True
 		NoveltyTermination s1=c3 s2=c5 win=True
-		NoveltyTermination s1=c4 s2=avatar win=True
 		NoveltyTermination s1=c4 s2=c4 win=True
 		NoveltyTermination s1=c4 s2=c5 win=True
 		NoveltyTermination s1=c5 s2=avatar win=True
