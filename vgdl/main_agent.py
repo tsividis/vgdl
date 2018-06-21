@@ -463,7 +463,7 @@ class Agent:
         annealing = 1
         ## Start storing encountered states.
         effectsEncountered = []
-        # statesEncountered = [self.rle._game.getFullState()]
+        statesEncountered = [self.rle._game.getFullState()]
         # self.statesEncountered.append(self.rle._game.getFullState())
 
         ## Initialize memory of object positions
