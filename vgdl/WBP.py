@@ -78,7 +78,8 @@ class WBP():
 			self.theory.interactionSet.extend(fakeInteractionRules)
 			self.theory.updateTerminations()
 
-		print 'max nodes', self.max_nodes
+		if self.display:
+			print 'max nodes', self.max_nodes
 
 		i=1
 		for k in rle._game.all_objects.keys():
@@ -90,7 +91,7 @@ class WBP():
 			self.pixel_size)
 
 		self.killer_types = [inter.slot2 for inter in self.theory.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
-		if self.killer_types:
+		if self.display and self.killer_types:
 			print 'killer types', self.killer_types
 
 		self.short_horizon = shortHorizon
@@ -116,8 +117,9 @@ class WBP():
 
 		# self.classesWhosePresenceWeIgnore = []
 		# self.classesWhoseLocationsWeIgnore = []
-		print "ignoring presences for", self.classesWhosePresenceWeIgnore
-		print "ignoring locations for", self.classesWhoseLocationsWeIgnore
+		if self.display:
+			print "ignoring presences for", self.classesWhosePresenceWeIgnore
+			print "ignoring locations for", self.classesWhoseLocationsWeIgnore
 		# Compute starting number of each SpriteCounter stype
 		self.firstOrderHorizon = firstOrderHorizon
 		self.starting_stype_n = {}
@@ -272,13 +274,7 @@ class WBP():
 
 	def rewardSelection(self, QReward, QNovelty):
 		acceptableNodes = QReward
-		# acceptableNodes = filter(lambda n:n.novelty<3, QReward)
 		acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
-		# print "accetable:", len(acceptableNodes)
-		# if len(acceptableNodes)==0:
-			# acceptableNodes = QReward
-			# print "Removed filter"
-			# embed()
 		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
 		try:
 			current = bestNodes.pop(0)
@@ -314,16 +310,7 @@ class WBP():
 		i=0
 
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
-			"""
-			if i%2==0:
-			else:
-			"""
-			# print('passed here')
-			# current = self.noveltySelection(QNovelty, QReward)
 			current = self.rewardSelection(QReward, QNovelty)
-			# print "visited:", i
-			# print("node chosen has position score {}".format(current.position_score()))
-			# print embed()
 			if current in [None, 'pickMaxNode']:
 				node = max(visited, key=lambda n:n.intrinsic_reward)
 
@@ -352,7 +339,8 @@ class WBP():
 
 			self.statesEncountered.append(current.rle._game.getFullState())
 
-			# print current.rle.show(indent=True)
+			if self.display:
+				print current.rle.show(indent=True)
 
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
@@ -378,8 +366,9 @@ class WBP():
 							current_actions = [0]
 						else:
 							current_actions = [0, K_LEFT, K_RIGHT, K_UP, K_DOWN]
-							print "didn't change current_actions; will plan normally"
-							print "nearest dangerous sprite:", manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))
+							if self.display:
+								print "didn't change current_actions; will plan normally"
+								print "nearest dangerous sprite:", manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))
 
 			except (IndexError, AttributeError, TypeError) as e:
 				print "got triple except."
@@ -405,14 +394,16 @@ class WBP():
 								stype = term.termination.stype
 								n_stypes = len([0 for sprite in self.findObjectsInRLE(child.rle, stype)])
 								if stype in self.starting_stype_n.keys() and self.starting_stype_n[stype] > n_stypes:
-									print "exiting early because progress was made toward", stype
+									if self.display:
+										print "exiting early because progress was made toward", stype
 									child.terminal, child.win = True, True
 									foundWin = True
 							elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
 								stypes = term.termination.stypes
 								n_stypes = sum([len(self.findObjectsInRLE(child.rle, stype)) for stype in stypes if self.findObjectsInRLE(child.rle, stype)])
 								if tuple(stypes) in self.starting_stype_n.keys() and self.starting_stype_n[tuple(stypes)] > n_stypes:
-									print "exiting early because progress was made toward", stypes
+									if self.display:
+										print "exiting early because progress was made toward", stypes
 									child.terminal, child.win = True, True
 									foundWin = True
 							if foundWin:
@@ -478,7 +469,8 @@ class WBP():
 				return node, gameString_array, object_positions_array
 			else:
 				# self.quitting = True
-				print "Got no plan after searching {} nodes".format(self.max_nodes)
+				if self.display:
+					print "Got no plan after searching {} nodes".format(self.max_nodes)
 		return None, None, None
 
 class Node():
@@ -562,7 +554,8 @@ class Node():
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
 				# print a
 				vrle.step(a)
-				print vrle.show(indent=True, color='cyan')
+				if self.WBP.display:
+					print vrle.show(indent=True, color='cyan')
 				currHeuristicVal = self.heuristics(vrle, **self.WBP.rolloutHyperparameters)
 				heuristicVal = currHeuristicVal-prevHeuristicVal
 				rolloutArray.append(heuristicVal)
@@ -669,7 +662,8 @@ class Node():
 				current_resource = rle._game.sprite_groups[avatar[0]][0].resources[precondition.item]
 				## If we satisfy the precondiiton, append to tmp_list, then to killer_types (meaning we are capable of killing stype now)
 				if eval("{}{}{}".format(current_resource, true_operator, num)):
-					print "reached resource limit"
+					if self.WBP.display:
+						print "reached resource limit"
 					tmp_list.append(avatar)
 			except (IndexError, KeyError) as e:
 				pass
@@ -796,7 +790,8 @@ class Node():
 				current_resource = rle._game.sprite_groups[avatar[0]][0].resources[precondition.item]
 				## If we satisfy the precondiiton, append to tmp_list, then to killer_types (meaning we are capable of killing stype now)
 				if eval("{}{}{}".format(current_resource, true_operator, num)):
-					print "reached resource limit"
+					if self.WBP.display:
+						print "reached resource limit"
 					tmp_list.append(avatar)
 			except (IndexError, KeyError) as e:
 				pass
@@ -1173,7 +1168,7 @@ class Node():
 					self.terminal, self.win = vrle._isDone()
 			except:
 				print "conditions met but copy failed"
-				import ipdb; ipdb.set_trace()
+				embed()
 		else:
 			self.reconstructed=True
 			# print "copy failed; replaying from top"
