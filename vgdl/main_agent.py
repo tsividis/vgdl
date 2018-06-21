@@ -27,7 +27,7 @@ AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, Aimed
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
-MAX_STEPS = 600
+MAX_STEPS = 1000
 
 # orientationPairs = {(0, 1):(0, -1), DOWN:UP, LEFT:RIGHT, RIGHT:LEFT}
 
@@ -601,7 +601,6 @@ class Agent:
                         break
                     if self.total_game_steps > MAX_STEPS:
                         score = self.rle._game.score
-                        embed()
                         return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
                     ## Make sure you're far enough from unpredictable dangerous objects.
