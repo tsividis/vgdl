@@ -244,12 +244,12 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             # Breaking convention here
             ended, win = t.isDone(self._game)
             if ended:
-                if t.name=='noveltyTermination':
-                    print t.s1, t.s2
-                elif t.name=='spriteCounter':
-                    print t.stype
-                elif t.name=='multiSpriteCounter':
-                    print t.stypes
+                # if t.name=='NoveltyTermination':
+                #     print t.s1, t.s2
+                # elif t.name=='SpriteCounter':
+                #     print t.stype
+                # elif t.name=='MultiSpriteCounter':
+                #     print t.stypes
                 if getTermination:
                     return ended, win, t
                 else:

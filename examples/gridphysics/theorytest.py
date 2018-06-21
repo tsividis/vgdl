@@ -4,10 +4,10 @@ level="""
 3                              3
 3                              3
 3                              3
-3             2                3
-35                             3
-3             4                3
-333                           03
+3                              3
+3   5                          3
+3              2               3
+333           4               03
 33333333333333333333333333333333
 """
 game = """
@@ -34,12 +34,13 @@ BasicGame
 		avatar c3 > stepBack
 		c5 c5 > nothing
 		c4 avatar > bounceForward
+		c3 c5 > nothing
+		c5 c3 > nothing
 		c4 c4 > nothing
 		c4 EOS > stepBack
 		c5 EOS > stepBack
 		c2 EOS > stepBack
 		c3 EOS > stepBack
-		c5 c3 > stepBack
 		c4 c3 > stepBack
 	TerminationSet
 		NoveltyTermination s1=c2 s2=avatar win=True
@@ -48,6 +49,7 @@ BasicGame
 		NoveltyTermination s1=c2 s2=c4 win=True
 		NoveltyTermination s1=c2 s2=c5 win=True
 		NoveltyTermination s1=c3 s2=c3 win=True
+		NoveltyTermination s1=c3 s2=c5 win=True
 		NoveltyTermination s1=c4 s2=c4 win=True
 		NoveltyTermination s1=c5 s2=c5 win=True
 		NoveltyTermination s1=c2 s2=EOS win=True
