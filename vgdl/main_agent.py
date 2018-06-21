@@ -463,8 +463,8 @@ class Agent:
         annealing = 1
         ## Start storing encountered states.
         effectsEncountered = []
-        statesEncountered = [self.rle._game.getFullState()]
-        self.statesEncountered.append(self.rle._game.getFullState())
+        # statesEncountered = [self.rle._game.getFullState()]
+        # self.statesEncountered.append(self.rle._game.getFullState())
 
         ## Initialize memory of object positions
         self.rle._game.objectMemoryDict, self.rle._game.previousPositions = {}, {}
@@ -822,8 +822,8 @@ class Agent:
         # embed()
         hypotheses = self.manageNewObjects(hypotheses)
 
-        statesEncountered.append(self.rle._game.getFullState())
-        self.statesEncountered.append(self.rle._game.getFullState())
+        # statesEncountered.append(self.rle._game.getFullState())
+        # self.statesEncountered.append(self.rle._game.getFullState())
         terminal = self.rle._isDone()[0]
 
         distributionsHaveChanged = spriteInduction(self.rle._game, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
