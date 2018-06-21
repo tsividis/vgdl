@@ -256,19 +256,21 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
     def _isDone(self, getTermination=False):
         # remember reward if the final state ends the game
-        # self._game.terminations.sort(key=lambda x: 0 if (x.name=='noveltyTermination' and 'avatar' in [x.s1, x.s2]) else 1 if (x.name=='SpriteCounter' and x.stype=='avatar' and x.win==False) else 2 if x.name=='SpriteCounter' else 3)
+        # self._game.terminations.sort(key=lambda x: 0 if (x.name=='NoveltyTermination' and 'avatar' in [x.s1, x.s2]) else 1 if (x.name=='SpriteCounter' and x.stype=='avatar' and x.win==False) else 2 if x.name=='SpriteCounter' else 3)
         self._game.terminations.sort(key=lambda x: 0 if (x.name=='SpriteCounter' and x.stype=='avatar' and x.win==False) else 2 if x.name=='SpriteCounter' else 3)
         for t in self._game.terminations:
             # Convention: the first criterion is for keyboard-interrupt termination
             # Breaking convention here
             ended, win = t.isDone(self._game)
+            # if t.name=='NoveltyTermination':
+                # print t.s1, t.s2
             if ended:
-                if t.name=='noveltyTermination':
-                    print t.s1, t.s2
-                elif t.name=='spriteCounter':
-                    print t.stype
-                elif t.name=='multiSpriteCounter':
-                    print t.stypes
+                # if t.name=='NoveltyTermination':
+                #     print t.s1, t.s2
+                # elif t.name=='SpriteCounter':
+                #     print t.stype
+                # elif t.name=='MultiSpriteCounter':
+                #     print t.stypes
                 if getTermination:
                     return ended, win, t
                 else:
