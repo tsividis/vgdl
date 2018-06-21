@@ -86,12 +86,12 @@ def make_random_name(chars):
 	return name
 
 def write_to_csv(foldername, filename, game):
-	if filename not in os.listdir('model_results_oldWBP/'+foldername+'/'):
-		f = open('model_results_oldWBP/'+foldername+'/'+filename, 'w+') #newfile and write
+	if filename not in os.listdir('model_results_hyperopt_boulderdash/'+foldername+'/'):
+		f = open('model_results_hyperopt_boulderdash/'+foldername+'/'+filename, 'w+') #newfile and write
 		writer = csv.writer(f)
 		writer.writerow(('subject', 'condition', 'gameName', 'levels_won', 'steps', 'planner_steps', 'score'))
 	else:
-		f = open('model_results_oldWBP/'+foldername+'/'+filename, 'a+') ##append, but also read.
+		f = open('model_results_hyperopt_boulderdash/'+foldername+'/'+filename, 'a+') ##append, but also read.
 		writer = csv.writer(f)
 	episodes = game['episodes']
 	steps, levels_won, score, planner_steps = 0, 0, 0, 0

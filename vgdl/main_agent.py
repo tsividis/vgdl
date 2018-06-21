@@ -15,8 +15,8 @@ import copy
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
-from pathos.helpers import mp
-# import multiprocess as mp
+from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
+
 # from line_profiler import LineProfiler
 
 MAX_STEPS = 1000
@@ -48,6 +48,7 @@ class Agent:
         self.annealingFactor = 1.
         self.shortHorizon = hyperparameters['short_horizon']#False
         self.firstOrderHorizon = hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)        if self.shortHorizon == True:
+        if self.shortHorizon == True:
             self.starting_max_nodes = 1000
             self.max_nodes_annealing = 1.05
         else:
@@ -284,7 +285,7 @@ class Agent:
             first_time_playing_level = True
 
             while not win and i<10:
-                gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level, pool=pool)
+                gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
                 
                 self.total_game_steps += steps
 
@@ -489,6 +490,8 @@ class Agent:
             theoryRLEs = self.VrleInitPhase(flexible_goals)
 
             quitting = False
+
+            planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
 
             ## Initialize planner
             p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
