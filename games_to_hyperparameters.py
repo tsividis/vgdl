@@ -12,7 +12,7 @@
 #                 'shipwreck','superman', 'tercio', 'thesnowman',                             #30-33
 #                 'watergame', 'waves', 'wildgunman']                                         #34-36
 
-game_names = ['aliens', 'butterflies', 'expt_helper', 'expt_push_boulders', 'frogs', 'portals', 'survivezombies', 'zelda']
+game_names = ['expt_push_boulders', 'aliens', 'butterflies', 'expt_helper', 'frogs', 'portals', 'survivezombies', 'zelda']
 
 mapping = dict()
 
