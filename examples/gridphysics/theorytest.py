@@ -18,7 +18,7 @@ BasicGame
 		c2 > ResourcePack color=PINK
 		c7 > ResourcePack color=ORANGE
 		c6 > ResourcePack color=GREEN
-		c5 > ResourcePack color=DARKGRAY
+		c5 > Chaser color=DARKGRAY fleeing=True cooldown=6 stype=c3
 		c4 > ResourcePack color=GOLD
 	InteractionSet
 		c2 avatar > killSprite
@@ -26,7 +26,7 @@ BasicGame
 		c7 c6 > nothing
 		c2 c4 > nothing
 		c4 c2 > nothing
-		c6 avatar > bounceForward
+		c6 avatar > killSprite
 		c4 c5 > nothing
 		c5 c4 > nothing
 		c3 c5 > nothing
@@ -35,7 +35,7 @@ BasicGame
 		c4 c3 > nothing
 		c2 c5 > nothing
 		c5 c2 > nothing
-		avatar c7 > killSprite
+		c7 avatar > killSprite
 		c5 c7 > nothing
 		c7 c5 > nothing
 		avatar EOS > stepBack
@@ -47,6 +47,8 @@ BasicGame
 		c3 c7 > nothing
 		c7 c3 > nothing
 		c2 c2 > nothing
+		c5 c6 > nothing
+		c6 c5 > nothing
 		c3 c3 > nothing
 		c2 c7 > nothing
 		c7 c2 > nothing
@@ -58,13 +60,12 @@ BasicGame
 		c2 c3 > nothing
 		c3 c2 > nothing
 		c7 c7 > nothing
-		avatar c5 > stepBack
-		avatar c4 > killSprite
+		c5 avatar > killSprite
+		c4 avatar > killSprite
 		c5 c5 > nothing
 		c4 c4 > nothing
 		c5 EOS > stepBack
 		c4 EOS > stepBack
-		c6 c5 > stepBack
 		c7 EOS > stepBack
 		c3 EOS > stepBack
 		c6 EOS > stepBack
@@ -77,19 +78,25 @@ BasicGame
 		NoveltyTermination s1=c2 s2=c5 win=True
 		NoveltyTermination s1=c2 s2=c6 win=True
 		NoveltyTermination s1=c2 s2=c7 win=True
+		NoveltyTermination s1=c3 s2=avatar win=True
 		NoveltyTermination s1=c3 s2=c3 win=True
 		NoveltyTermination s1=c3 s2=c4 win=True
 		NoveltyTermination s1=c3 s2=c5 win=True
 		NoveltyTermination s1=c3 s2=c6 win=True
 		NoveltyTermination s1=c3 s2=c7 win=True
+		NoveltyTermination s1=c4 s2=avatar win=True
 		NoveltyTermination s1=c4 s2=c4 win=True
 		NoveltyTermination s1=c4 s2=c5 win=True
 		NoveltyTermination s1=c4 s2=c6 win=True
 		NoveltyTermination s1=c4 s2=c7 win=True
+		NoveltyTermination s1=c5 s2=avatar win=True
 		NoveltyTermination s1=c5 s2=c5 win=True
+		NoveltyTermination s1=c5 s2=c6 win=True
 		NoveltyTermination s1=c5 s2=c7 win=True
+		NoveltyTermination s1=c6 s2=avatar win=True
 		NoveltyTermination s1=c6 s2=c6 win=True
 		NoveltyTermination s1=c6 s2=c7 win=True
+		NoveltyTermination s1=c7 s2=avatar win=True
 		NoveltyTermination s1=c7 s2=c7 win=True
 		NoveltyTermination s1=c2 s2=EOS win=True
 		NoveltyTermination s1=c3 s2=EOS win=True
@@ -99,7 +106,6 @@ BasicGame
 		NoveltyTermination s1=c7 s2=EOS win=True
 		NoveltyTermination s1=avatar s2=EOS win=True
 		SpriteCounter stype=avatar limit=0 win=False
-		SpriteCounter stype=c3 limit=0 win=True
 	LevelMapping
 		0 > c2
 		1 > c3
