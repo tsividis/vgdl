@@ -540,6 +540,9 @@ class Agent:
                     else:
                         quitting = True
 
+            # delete planner instance
+            # del p
+
             if emptyPlans > self.emptyPlansLimit:
                 observe(self.rle, 5, self.bestSpriteTypeDict)
 
