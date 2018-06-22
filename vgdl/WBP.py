@@ -273,7 +273,6 @@ class WBP():
 		return current
 
 	def rewardSelection(self, QReward, QNovelty):
-		acceptableNodes = QReward
 		acceptableNodes = filter(lambda n:n.novelty<3, QReward)
 		## Use this for IW lesion
 		#acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
