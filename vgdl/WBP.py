@@ -274,7 +274,9 @@ class WBP():
 
 	def rewardSelection(self, QReward, QNovelty):
 		acceptableNodes = QReward
-		acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
+		acceptableNodes = filter(lambda n:n.novelty<3, QReward)
+		## Use this for IW lesion
+		#acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
 		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
 		try:
 			current = bestNodes.pop(0)
