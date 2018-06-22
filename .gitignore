@@ -7,3 +7,4 @@
 venv
 .DS_Store
 examples/gridphysics/theorytest*
+temp_data.npy

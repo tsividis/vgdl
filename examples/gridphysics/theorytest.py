@@ -1,13 +1,13 @@
 level="""
 4444444444444444444444
-4    5 3 5  6 5  4   4
-4  5 44444444   5    4
-4        6    1 6 55 4
+4    5   6    4  4 4 4
+4  5 4 6      45  5 44
+4 0  4     6  5   55 4
 4444444444444444444 44
-44   6    4 44   4  44
-44444   4   5   44   4
-4   41   44  4   44 44
-4  0     1444  6    44
+4   4  6  4 4    4  44
+4444 2    4 5 4  4   4
+4 3  544 2    4  44 44
+4  4  4 4 4   4     44
 4444444444444444444444
 """
 game = """
@@ -69,6 +69,7 @@ BasicGame
 		c6 EOS > stepBack
 		c2 EOS > stepBack
 	TerminationSet
+		MultiSpriteCounter stype0=c4 stype1=c3 limit=0 win=True
 		NoveltyTermination s1=c2 s2=c2 win=True
 		NoveltyTermination s1=c2 s2=c3 win=True
 		NoveltyTermination s1=c2 s2=c4 win=True
@@ -97,7 +98,6 @@ BasicGame
 		NoveltyTermination s1=c7 s2=EOS win=True
 		NoveltyTermination s1=avatar s2=EOS win=True
 		SpriteCounter stype=avatar limit=0 win=False
-		SpriteCounter stype=c3 limit=0 win=True
 		SpriteCounter stype=c2 limit=0 win=True
 		SpriteCounter stype=c7 limit=0 win=True
 	LevelMapping
