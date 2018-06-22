@@ -2,7 +2,7 @@
 
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-7%30
+#SBATCH --array=0-1
 #SBATCH --output=slurm_logs/hyperopt_boulderdash_optimized/array_%A_%a.out
 #SBATCH --time=480
 #SBATCH --qos=tenenbaum
@@ -30,7 +30,6 @@ N_PARAMS=3
 GAME_NUMBER=$(($SLURM_ARRAY_TASK_ID % $N_GAMES))
 HYPER_IDX=$(($SLURM_ARRAY_TASK_ID % $N_PARAMS))
 
-# CMD="echo \"-m vgdl.load_games --game_name ${GAME_NAME} --hyperparameter_index ${HYPER_IDX}\""
 
 # if we are running on OpenMind, add the singularity module
 . /etc/os-release
@@ -40,10 +39,11 @@ if [ "$OS" = "CentOS Linux" ]; then
 fi
 
 # make log path if not already present
-if [ ! -d "slurm_logs/hyperopt_boulderdash_optimized" ]; then
-    mkdir "slurm_logs/hyperopt_boulderdash_optimized"
+if [ ! -d "${ROOT}/slurm_logs/hyperopt_boulderdash_optimized" ]; then
+    mkdir "${ROOT}/slurm_logs/hyperopt_boulderdash_optimized"
 fi
 
 # finally, run the model
 # singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index $HYPER_IDX
-singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 2
+singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number 0 --hyperparameter_index 2
+#echo "-m vgdl.load_games --game_name ${GAME_NAME} --hyperparameter_index ${HYPER_IDX}"
