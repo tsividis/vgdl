@@ -40,8 +40,8 @@ if [ "$OS" = "CentOS Linux" ]; then
 fi
 
 # make log path if not already present
-if [ ! -d "slurm_logs/hyperopt_boulderdash_optimized" ]; then
-    mkdir "slurm_logs/hyperopt_boulderdash_optimized"
+if [ ! -d "${ROOT}/slurm_logs/hyperopt_boulderdash_optimized" ]; then
+    mkdir "${ROOT}/slurm_logs/hyperopt_boulderdash_optimized"
 fi
 
 # finally, run the model
