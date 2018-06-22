@@ -3,7 +3,7 @@
 
 #SBATCH --job-name=run_vgdl_model
 #SBATCH --array=0-7%30
-#SBATCH --output=slurm_logs/array_%A_%a.out
+#SBATCH --output=slurm_logs/hyperopt_boulderdash_optimized/array_%A_%a.out
 #SBATCH --time=480
 #SBATCH --qos=tenenbaum
 #SBTACH --cpus-per-task=2
@@ -40,8 +40,8 @@ if [ "$OS" = "CentOS Linux" ]; then
 fi
 
 # make log path if not already present
-if [ ! -d "slurm_logs" ]; then
-    mkdir "slurm_logs"
+if [ ! -d "slurm_logs/hyperopt_boulderdash_optimized" ]; then
+    mkdir "slurm_logs/hyperopt_boulderdash_optimized"
 fi
 
 # finally, run the model
