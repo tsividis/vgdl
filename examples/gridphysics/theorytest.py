@@ -1,13 +1,13 @@
 level="""
 4444444444444444444444
-435   4    6       0 4
-44  5 4      6       4
-4     6      1  4   44
-44444445        4   44
-44            2      4
-4    6    2        5 4
-4     1              4
-4         1          4
+4    5 3 5  6 5  4   4
+4  5 44444444   5    4
+4        6    1 6 55 4
+4444444444444444444 44
+44   6    4 44   4  44
+44444   4   5   44   4
+4   41   44  4   44 44
+4  0     1444  6    44
 4444444444444444444444
 """
 game = """
@@ -23,8 +23,7 @@ BasicGame
 	InteractionSet
 		c3 c5 > nothing
 		c5 c3 > nothing
-		c6 c7 > nothing
-		c7 c6 > nothing
+		c7 c6 > killSprite
 		c2 c4 > nothing
 		c4 c2 > nothing
 		c6 avatar > bounceForward
@@ -51,7 +50,6 @@ BasicGame
 		c7 c2 > nothing
 		c4 c7 > nothing
 		c7 c4 > nothing
-		c3 c6 > nothing
 		c6 c3 > nothing
 		c2 c3 > nothing
 		c3 c2 > nothing
@@ -79,7 +77,6 @@ BasicGame
 		NoveltyTermination s1=c3 s2=c3 win=True
 		NoveltyTermination s1=c3 s2=c4 win=True
 		NoveltyTermination s1=c3 s2=c5 win=True
-		NoveltyTermination s1=c3 s2=c6 win=True
 		NoveltyTermination s1=c3 s2=c7 win=True
 		NoveltyTermination s1=c4 s2=c4 win=True
 		NoveltyTermination s1=c4 s2=c5 win=True
@@ -87,7 +84,6 @@ BasicGame
 		NoveltyTermination s1=c4 s2=c7 win=True
 		NoveltyTermination s1=c5 s2=c5 win=True
 		NoveltyTermination s1=c5 s2=c7 win=True
-		NoveltyTermination s1=c6 s2=c7 win=True
 		NoveltyTermination s1=c7 s2=c7 win=True
 		NoveltyTermination s1=c2 s2=EOS win=True
 		NoveltyTermination s1=c3 s2=EOS win=True
@@ -99,12 +95,14 @@ BasicGame
 		SpriteCounter stype=avatar limit=0 win=False
 		SpriteCounter stype=c3 limit=0 win=True
 		SpriteCounter stype=c2 limit=0 win=True
+		SpriteCounter stype=c7 limit=0 win=True
 	LevelMapping
 		0 > c2
 		1 > c3
 		2 > c4
 		3 > avatar
 		4 > c5
+		7 > c6 c3
 		5 > c6
 		6 > c7
 """
