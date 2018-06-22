@@ -16,7 +16,6 @@ import time
 import ipdb
 import copy
 from threading import Lock
-from termcolor import colored
 from Queue import Queue
 from util import *
 # import multiprocessing
@@ -34,16 +33,15 @@ NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', NONE: 'wait'}
 
-## Base class for width-based planners (IW(k) and 2BFS)
-
 #############################################
 # Sprites with 'DARKGRAY' colorName are not
 # updated in _performAction and fastcopy
 #############################################
 
+## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
-		firstOrderHorizon=False, hyperparameters={}):
+		firstOrderHorizon=False, hyperparameters={}, extra_atom=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.hyperparameters = hyperparameters
@@ -71,10 +69,13 @@ class WBP():
 		self.classesWhosePresenceWeIgnore = []
 		self.allowRollouts = True
 		self.quitting = False
+		self.exhausted_novelty = False
+		self.extra_atom = extra_atom
+		print("exta atom is {}".format(self.extra_atom))
 		self.gameString_array = []
-		# self.rleTemplate = self.initializeRLEFromGame()
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 		self.display = True
+
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
@@ -84,6 +85,7 @@ class WBP():
 
 		if self.display:
 			print 'max nodes', self.max_nodes
+
 		i=1
 		for k in rle._game.all_objects.keys():
 			self.objIDs[k] = i * 100 * (rle.outdim[0]*rle.outdim[1]+self.padding)
@@ -117,6 +119,8 @@ class WBP():
 			if len(rle._game.sprite_groups[k])>self.objectLocationTrackingLimit:
 				self.classesWhoseLocationsWeIgnore.append(k)
 
+		# self.classesWhosePresenceWeIgnore = []
+		# self.classesWhoseLocationsWeIgnore = []
 		if self.display:
 			print "ignoring presences for", self.classesWhosePresenceWeIgnore
 			print "ignoring locations for", self.classesWhoseLocationsWeIgnore
@@ -130,14 +134,8 @@ class WBP():
 				self.starting_stype_n[stype] = n_stypes
 			elif isinstance(term, MultiSpriteCounterRule):
 				stypes = term.termination.stypes
-				n_stypes = sum([len(self.findObjectsInRLE(self.rle, stype)) for stype in stypes])
+				n_stypes = sum([len(self.findObjectsInRLE(self.rle, stype)) for stype in stypes if self.findObjectsInRLE(self.rle, stype)])
 				self.starting_stype_n[tuple(stypes)] = n_stypes
-
-	def initializeRLEFromGame(self):
-		gameString, levelString = defInputGame(self.WBP.gameFilename)
-		rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
-		rle = rleCreateFunc()
-		return rle
 
 	def findObjectsInRLE(self, rle, objName):
 		try:
@@ -176,50 +174,44 @@ class WBP():
 		
 		kl_set = set(rle._game.kill_list)
 		for k in self.objectsToTrack:
-			#ipdb.set_trace()
 			## Don't track Flicker in atoms. The point is that the Flicker should have an effect on other objects, so atom novelty that would have been
 			## a function of the Flicker's presence is being taken care of by that. Otherwise the agent can keep exploring states that have no actual effect
 			## on the game state.
-			# if ((len(rle._game.sprite_groups[k])>0 and
-			# 		rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and
-			# 		any([obj in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) for obj in self.objectsWhoseLocationsWeIgnore])) or
-			# 	k in self.classesWhoseLocationsWeIgnore):
+			if ((len(rle._game.sprite_groups[k])>0 and
+					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and
+					any([obj in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) for obj in self.objectsWhoseLocationsWeIgnore])) or
+				k in self.classesWhoseLocationsWeIgnore):
 
-			# 	pass
-			# else:
-			# if rle._game.sprite_groups[k]:
-				# print rle._game.sprite_groups[k][0].colorName
-			#if rle._game.kill_list:
-				# import ipdb; ipdb.set_trace()
-			#	pass
-			for o in rle._game.sprite_groups[k]:
-				if o not in kl_set:
-					## turn location into vector position (rows appended one after the other.)
-					# pos = rle._rect2pos(o.rect) #x,y
-					# vecValue = pos[1] + pos[0]*rle.outdim[0] + 1
-					pos = float(o.rect.left)/rle._game.block_size, float(o.rect.top)/rle._game.block_size
-					vecValue = 10*pos[1] + 10*pos[0]*rle.outdim[0] + 10
-				else:
-					vecValue = 0
-					# import ipdb; ipdb.set_trace()
-				try:
-					if k == rle._game.getAvatars()[0].stype:
-						# Add avatar orientation to atom
-						orientation = rle._game.sprite_groups[k][0].orientation
-						if orientation[0] < 0 and orientation[1] == 0:
-							vecValue += 0
-						elif orientation[0] > 0 and orientation[1] == 0:
-							vecValue += 100000
-						elif orientation[0] == 0 and orientation[1] < 0:
-							vecValue += 200000
-						elif orientation[0] == 0 and orientation[1] > 0:
-							vecValue += 300000
-				except (IndexError, AttributeError) as e:
-					pass
+				pass
+			else:
+				for o in rle._game.sprite_groups[k]:
+					if o not in kl_set:
+						## turn location into vector position (rows appended one after the other.)
+						# pos = rle._rect2pos(o.rect) #x,y
+						# vecValue = pos[1] + pos[0]*rle.outdim[0] + 1
+						pos = float(o.rect.left)/rle._game.block_size, float(o.rect.top)/rle._game.block_size
+						vecValue = 10*pos[1] + 10*pos[0]*rle.outdim[0] + 10
+					else:
+						vecValue = 0
+						# import ipdb; ipdb.set_trace()
+					try:
+						if k == rle._game.getAvatars()[0].stype:
+							# Add avatar orientation to atom
+							orientation = rle._game.sprite_groups[k][0].orientation
+							if orientation[0] < 0 and orientation[1] == 0:
+								vecValue += 0
+							elif orientation[0] > 0 and orientation[1] == 0:
+								vecValue += 100000
+							elif orientation[0] == 0 and orientation[1] < 0:
+								vecValue += 200000
+							elif orientation[0] == 0 and orientation[1] > 0:
+								vecValue += 300000
+					except (IndexError, AttributeError) as e:
+						pass
 
-				objPosCombination = self.objIDs[o.ID] + vecValue
-				# print("ObjId = {}, vecValue = {}".format(self.objIDs[o.ID], vecValue))
-				lst.append(objPosCombination)
+					objPosCombination = self.objIDs[o.ID] + vecValue
+					# print("ObjId = {}, vecValue = {}".format(self.objIDs[o.ID], vecValue))
+					lst.append(objPosCombination)
 
 		## Track present/absent objects
 		present = []
@@ -245,20 +237,18 @@ class WBP():
 			self.vecSize = len(lst)
 			# print "Vector is length {}".format(self.vecSize)
 
-		try:
-			avatar_pos = self.findAvatarInRLE(rle)
-			vecValue = avatar_pos[1] + avatar_pos[0]*rle.outdim[0] + 1
+		if self.extra_atom:
 
-		except:
-			vecValue = [0]
+			try:
+				avatar_pos = self.findAvatarInRLE(rle)
+				vecValue = avatar_pos[1] + avatar_pos[0]*rle.outdim[0] + 1
 
-		#stateIW1 = [vecValue] + [1 if char==' ' else 0 for char in rle.show(binary=False)]
-		stateIW1 = [vecValue] + rle.show_binary()
-		#stateIW1 = [vecValue] + rle.show(binary=True)
+			except:
+				vecValue = [0]
 
-		# embed()
-		# print(id(stateIW1))
-		lst.append(hash(tuple(stateIW1)))
+
+			stateIW1 = [vecValue] + rle.show_binary()
+			lst.append(hash(tuple(stateIW1)))
 
 		return set(lst)
 
@@ -284,20 +274,17 @@ class WBP():
 		return current
 
 	def rewardSelection(self, QReward, QNovelty):
+		## Use this for IW lesion
 		# acceptableNodes = QReward
+		#acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
+		
 		acceptableNodes = filter(lambda n:n.novelty<3, QReward)
-		acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
-		# print "accetable:", len(acceptableNodes)
-		# if len(acceptableNodes)==0:
-			# acceptableNodes = QReward
-			# print "Removed filter"
-			# embed()
 		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
+
 		try:
 			current = bestNodes.pop(0)
 		except:
-			if self.display:
-				print('reward selection error')
+			print('reward selection error')
 			# embed()
 			return 'pickMaxNode'
 		QReward.remove(current)
@@ -305,8 +292,17 @@ class WBP():
 			QNovelty.remove(current)
 		except:
 			pass
-		# self.trueAtomsIW1.append(current.stateIW1)
+
 		return current
+
+	"""
+	def BFS_profiler(self):
+		lp = LineProfiler()
+		lp_wrapper = lp(self.BFS)
+		lp_wrapper()
+		lp.print_stats()
+	"""
+
 	def BFS(self):
 		QNovelty, QReward = [], []
 		visited, rejected = [], []
@@ -315,21 +311,13 @@ class WBP():
 		visited.append(start)
 		start.eval()
 		start.updateObjIDs(self.rle)
+
 		QNovelty.append(start)
 		QReward.append(start)
 		i=0
 
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
-			"""
-			if i%2==0:
-			else:
-			"""
-			# print('passed here')
-			# current = self.noveltySelection(QNovelty, QReward)
 			current = self.rewardSelection(QReward, QNovelty)
-			# print "visited:", len(visited)
-			# print("node chosen has position score {}".format(current.position_score()))
-			# print embed()
 			if current in [None, 'pickMaxNode']:
 				node = max(visited, key=lambda n:n.intrinsic_reward)
 
@@ -345,6 +333,7 @@ class WBP():
 				self.object_positions_array = object_positions_array[::-1]
 
 				self.quitting = True
+				self.exhausted_novelty = True
 				# return None
 				return node, gameString_array, object_positions_array
 
@@ -366,16 +355,16 @@ class WBP():
 
 			current_actions = self.actions
 			try:
-				# If there's already a projectile on the screen
+				# If there's already a Missile on the screen
 				# and the projectile class is a singleton
 				# and the action chosen is shooting
 				if (current.rle._game.getAvatars() and hasattr(current.rle._game.getAvatars()[0], 'stype') and
-						'Missile' in str(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].vgdlType) and
+						'Missile' in str(self.theory.classes[current.rle._game.getAvatars()[0].stype][0]) and
 						self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
-						hasattr(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args, 'singleton') and
+						'singleton' in self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args and
 						bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
 						len([s for s in current.rle._game.sprite_groups[current.rle._game.getAvatars()[0].stype] if s not in current.rle._game.kill_list])>0):
-					current_actions = [0]					
+					current_actions = [0]
 					avatar = current.rle._game.getAvatars()[0]
 					killer_sprites = [s for k in self.killer_types for s in current.rle._game.sprite_groups[k]]
 					if killer_sprites:
@@ -383,7 +372,7 @@ class WBP():
 						if manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))>3:
 							current_actions = [0]
 						else:
-							current_actions = [0, K_LEFT, K_RIGHT]
+							current_actions = [0, K_LEFT, K_RIGHT, K_UP, K_DOWN]
 							if self.display:
 								print "didn't change current_actions; will plan normally"
 								print "nearest dangerous sprite:", manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))
@@ -404,28 +393,28 @@ class WBP():
 					if self.firstOrderHorizon:
 						# Return plan if first-order progress was made towards
 						# a win condition
-						ended, win = child.rle._isDone()
-						if not (ended and not win):
-							foundWin = False
-							for term in self.theory.terminationSet:
-								if isinstance(term, SpriteCounterRule) and term.termination.win==True:
-									stype = term.termination.stype
-									n_stypes = len([0 for sprite in self.findObjectsInRLE(child.rle, stype)])
-									if stype in self.starting_stype_n.keys() and self.starting_stype_n[stype] > n_stypes:
-										if self.display:
-											print "exiting early because progress was made toward", stype
-										child.terminal, child.win = True, True
-										foundWin = True
-								elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
-									stypes = term.termination.stypes
-									n_stypes = sum([len(self.findObjectsInRLE(child.rle, stype)) for stype in stypes])
-									if tuple(stypes) in self.starting_stype_n.keys() and self.starting_stype_n[tuple(stypes)] > n_stypes:
-										if self.display:
-											print "exiting early because progress was made toward", stypes
-										child.terminal, child.win = True, True
-										foundWin = True
-								if foundWin:
-									break
+						# ended, win = child.rle._isDone()
+						# if not ended:
+						foundWin = False
+						for term in self.theory.terminationSet:
+							if isinstance(term, SpriteCounterRule) and term.termination.win==True:
+								stype = term.termination.stype
+								n_stypes = len([0 for sprite in self.findObjectsInRLE(child.rle, stype)])
+								if stype in self.starting_stype_n.keys() and self.starting_stype_n[stype] > n_stypes:
+									if self.display:
+										print "exiting early because progress was made toward", stype
+									child.terminal, child.win = True, True
+									foundWin = True
+							elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
+								stypes = term.termination.stypes
+								n_stypes = sum([len(self.findObjectsInRLE(child.rle, stype)) for stype in stypes if self.findObjectsInRLE(child.rle, stype)])
+								if tuple(stypes) in self.starting_stype_n.keys() and self.starting_stype_n[tuple(stypes)] > n_stypes:
+									if self.display:
+										print "exiting early because progress was made toward", stypes
+									child.terminal, child.win = True, True
+									foundWin = True
+							if foundWin:
+								break
 
 					if child.win:
 						# Get the gameString representation of the RLE at each
@@ -439,25 +428,19 @@ class WBP():
 							gameString_array.append(node.rle.show(color='green'))
 							object_positions_array.append(node.rle)
 							node = node.parent
-						if self.display:
-							print child.rle.show()
+						# print child.rle.show()
 						self.gameString_array = gameString_array[::-1]
 						self.object_positions_array = object_positions_array[::-1]
 
 						ended, win, t = child.rle._isDone(getTermination=True)
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
-						if self.display:
-							print "win"
-						if self.display and t:
-							print t.__dict__
-							# print t.name, t.s1, t.s2
+						# print "win"
+						# if t:
+							# print t.__dict__
 						if not child.rle._game.getAvatars():
 							print "Think we won but no avatars!?!?"
 							embed()
-						# if t and t.name=='NoveltyTermination' and ended:
-							# print 'Novelty', t.s1, t.s2
-							# embed()
 					else:
 						QNovelty.append(child)
 						QReward.append(child)
@@ -465,8 +448,7 @@ class WBP():
 			self.total_nodes = i
 
 			if self.winning_states:
-				if self.display:
-					print "we have {} winning states".format(len(self.winning_states))
+				# print "we have {} winning states".format(len(self.winning_states))
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
 				bestNode = bestNodes[0]
 				# gameString_array.append(bestNode.rle.show())
@@ -477,13 +459,11 @@ class WBP():
 		self.solution = []#Node(self.rle, self, [], None)
 		if i>=self.max_nodes:
 			if self.short_horizon:
-				if self.display:
-					print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
+				# print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
 				node = max(visited, key=lambda n:n.intrinsic_reward)
 				parentNode = copy.deepcopy(node)
 				self.solution = node.actionSeq
-				if self.display:
-					print self.solution
+				# print self.solution
 				gameString_array, object_positions_array = [], []
 				while parentNode is not None:
 					gameString_array.append(parentNode.rle.show())
@@ -491,6 +471,8 @@ class WBP():
 					parentNode = parentNode.parent
 				self.gameString_array = gameString_array[::-1]
 				self.object_positions_array = object_positions_array[::-1]
+				# print "win"
+				# embed()
 				return node, gameString_array, object_positions_array
 			else:
 				# self.quitting = True
@@ -515,7 +497,6 @@ class Node():
 		self.reconstructed=False
 		self.expanded = False
 		self.rolloutDepth = 13#max(rle.outdim)
-		# self.RLEtemplate = WBP.rleTemplate
 		if self.parent is not None:
 			self.rolloutArray = parent.rolloutArray[1:]
 		else:
@@ -553,131 +534,89 @@ class Node():
 					newRle._game.__dict__[k] = v[:]
 				else:
 					newRle._game.kill_list = v[:]
-			elif 'defaultdict' in ctype:
+			elif 'defaultdict' in ctype or 'dict' in ctype:
 				if k != 'sprite_groups':
 					newRle._game.__dict__[k] = v.copy()
 				else:
+					#embed()
 					new_sprite_groups = defaultdict(list)
 					for group_name, group in rle._game.sprite_groups.iteritems():
 						for sprite in group:
 							if sprite.colorName == 'DARKGRAY':
 								new_sprite_groups[group_name].append(sprite)
 							else:
-								# 1. store the rle sprites into rle._game.spriteDict
-								# 2. when we return to parent, we need to restore
-								#		sprites with the info in spriteDict.
 								new_sprite = self.empty_copy(sprite)
 								new_sprite.__dict__ = sprite.__dict__.copy()
-								# for attr, value in sprite.__dict__.iteritems():
-								# 	if attr == 'resources':
-								# 		setattr(new_sprite, attr, value)
-								# 	else:
-								# 		setattr(new_sprite, attr, value)
 								new_sprite_groups[group_name].append(new_sprite)
-					newRle._game.sprite_groups = new_sprite_groups
 					# newRle._game.sprite_groups = ccopy(v)
+					newRle._game.sprite_groups = new_sprite_groups
 			elif 'vgdl' in ctype:
 				newRle._game.__dict__[k] = ccopy(v)
 			elif 'dict' in ctype:
+				#print k
 				newRle._game.__dict__[k] = v.copy()
 			else:
 				newRle._game.__dict__[k] = v
-
+		#newRle._game = ccopy(rle._game)
 		return newRle
 
-
-	def setVrleState(self, rle, Vrle, hypothesis, makeInitialVrle=False, debug=False):
-		## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
-
-		## This is now playing a dual role. Instead of building in theory-laden perception, we
-		## are passing that functionality here. For example: processFrame() will never update the orientation of a sprite
-		## but will remember its last displacement. When we set a state here, we can interpret that previous
-		## observed displacement as a function of our hypothesis. E.g., if our last observed displacement for a
-		## RotatingAvatar was UP but we know that our last action was RIGHT, setVrleState() can 'infer' that
-		## this means the RotatingAvatar's orientation is actually RIGHT now, and can set it to that.
-		## IMPORTANT: This means that each sprite's orientation will only be correct if this function is called between each time-step.
-		if debug:
-			print "in setVrleState"
-			embed()
-		if not makeInitialVrle:
-			tmp_kill_list = []
-			# note: there should at this point be no mismatch between the keys
-			for classKey in Vrle._game.sprite_groups:
-				if classKey=='wall':
-					continue
-				color = hypothesis.classes[classKey][0].colorName if hasattr(hypothesis.classes[classKey][0], 'colorName') else 'grey'
-				# first make the new (vrle) env have the correct number of each thing
-				vrleSpriteCount = len(Vrle._game.sprite_groups[classKey]) - len([s for s in Vrle._game.kill_list if s.colorName==color])
-				rleSpriteCount = len(rle._game.observation['trackedObjects'][color])
-
-				if vrleSpriteCount > rleSpriteCount:
-					# just delete extraneous ones from the end by adding them to the kill_list
-					tmp_kill_list.extend(Vrle._game.sprite_groups[classKey][rleSpriteCount:])
-				elif vrleSpriteCount < rleSpriteCount:
-					# have to duplicate Vrle sprites so we have enough to copy all the rle sprites into
-					try:
-						## Make as many new sprites as you need and put them at (0,0); we'll set their position and state below.
-						[Vrle._game._createSprite([classKey], (0,0)) for n in range(rleSpriteCount-vrleSpriteCount)]
-					except:
-						print "problem in setVrleState"
-						embed()
-				# Now copy over sprite state (if we have any left of that type)
-				if not Vrle._game.sprite_groups[classKey]:
-					continue
-
-				for i in range(min(len(Vrle._game.sprite_groups[classKey]), rleSpriteCount)):
-					setSpriteState(Vrle._game.sprite_groups[classKey][i], rle._game.observation['trackedObjects'][color][i], hypothesis)
-
-			Vrle._game.kill_list = tmp_kill_list
-			Vrle._game._eventHandling(UNOBSERVABLE_PREDICATES)
-		Vrle._game.time = int(rle._game.time)
-		Vrle._game.score = int(rle._game.score)
-		Vrle._game.observation = buildTracker(Vrle)
-		Vrle._game.observation['lastscore'] = rle._game.observation['lastscore']
-
-		# Make sure that all_objects has the same IDs as the parent RLE.
-		Vrle._game.all_objects = Vrle._game.getAllObjects()
-		return
-
-	# when to trigger rollouts, if any
-	# rollout length
-	# repeating rollouts if death? e.g., are they optimistic?
-	# multiple samples??
+## when to trigger rollouts, if any
+## rollout length
+## repeating rollouts if death? e.g., are they optimistic?
+## multiple samples??
 	def metabolics(self, rle, events, action, n=10, mult=.3):
 
+		# Computing reward unit to be used in metabolics
+		sprite_first_alpha = self.WBP.hyperparameters['sprite_first_alpha']
+		sprite_second_alpha = self.WBP.hyperparameters['sprite_second_alpha']
+		sprite_negative_mult = self.WBP.hyperparameters['sprite_negative_mult']
+		self.reward_unit = sprite_second_alpha
+		if rle==None:
+			rle = self.rle
+
+		theory = self.WBP.theory
+		for term in theory.terminationSet:
+			if isinstance(term, SpriteCounterRule):
+				self.compute_reward_unit(theory, term, term.termination.stype, rle,
+					first_alpha=sprite_first_alpha, second_alpha=sprite_second_alpha,
+					negative_mult=sprite_negative_mult)
+
+		# print(self.reward_unit)
+
 		# metabolic_cost = 1./n
-		metabolic_cost = 0
+		metabolic_cost = -.2 * self.reward_unit # multiplying second order incentive
 		# if action==32:
 		if action!=NONE or action!=32:
-			metabolic_cost += 20#1./n
+			metabolic_cost -= .0#1./n
 			pass
+		if action==32:
+			metabolic_cost -= 0
 		if len(events)>0:
 			# metabolic_cost = .3
 			if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='bounceForward' for e in events]):
+				metabolic_cost = -.3 * self.reward_unit # multiplying second order incentive
 				# metabolic_cost += .3#(1-1./n)*mult
 				pass
 			# if any([rle._game.sprite_groups['avatar'][0].ID in e and e[0]=='killSprite' for e in events]):
 			# 	metabolic_cost += 0.3
-		# metabolic_cost = 0
+		metabolic_cost = 0
 		return metabolic_cost
 
 	def rollout(self, Vrle):
 		successfulRollout = False
 		j=0
 		while not successfulRollout:
-			#vrle = copy.deepcopy(Vrle)
-			# vrle = ccopy(Vrle)
-			vrle = self.fastcopy(Vrle)
-
+			# vrle = self.fastcopy(Vrle)
+			vrle = copy.deepcopy(Vrle)
 			prevHeuristicVal = self.heuristics(vrle, **self.WBP.rolloutHyperparameters)
 			rolloutArray = []
 			i=0
 			terminal, win = vrle._isDone()
-			if self.WBP.display:
-				print "in rollout"
+			# print "in rollout"
 			while i<self.rolloutDepth and not terminal:
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
-				vrle.step(a, return_obs=False)
+				# print a
+				vrle.step(a)
 				if self.WBP.display:
 					print vrle.show(indent=True, color='cyan')
 				currHeuristicVal = self.heuristics(vrle, **self.WBP.rolloutHyperparameters)
@@ -697,26 +636,31 @@ class Node():
 						# Avatar is dead or doesn't have projectile
 						pass
 				i+=1
-			## we want optimistic estimates of the future value of a shot. 
+			## we want optimistic estimates of the future value of a shot.
 			## Take up to 100 samples but don't get caught in an infinite loop.
 			if terminal and not win and j<100:
 				successfulRollout = False
-				if self.WBP.display:
-					print "rolling out again"
+				# print "rolling out again"
 				j+=1
 				# embed()
 			else:
 				successfulRollout = True
+		# print sum(rolloutArray)
+		# embed()
 		if win:
 			self.terminal = terminal
 			self.win = win
 		return rolloutArray
 
-	def spritecounter_val(self, theory, term, stype, rle, first_alpha=10000.,
+	def compute_reward_unit(self, theory, term, stype, rle, first_alpha=10000.,
 						  second_alpha=100, negative_mult=.1):
 
 		# First order: progress in terms of number of sprites remaining.
 		# Second order: distance to the closest instance of a target sprite type.
+
+		# theory.interactionSet[16].generic=False
+		# theory.interactionSet[16].rule='killSprite'
+		# reward unit to be used for metabolic_cost; gets updated on compute_second_order
 
 		val = 0
 		compute_second_order = True
@@ -744,13 +688,13 @@ class Node():
 					color = theory.classes[rle._game.getAvatars()[0].stype][0].color
 				else:
 					color = rle._game.sprite_groups[rle._game.getAvatars()[0].stype][0].colorName
-			
+
 				if 'Flicker' in str(theory.spriteObjects[color].vgdlType):
 					killer_types.append(rle._game.getAvatars()[0].name)
 					killer_types.remove(rle._game.getAvatars()[0].stype)
+
 		except (IndexError, AttributeError) as e:
-			print "try/except in spritecounter_val"
-			embed()
+			# print "got exception in trying to assign Flicker bonus to avatar"
 			pass
 
 		# This list comprehension checks whether the avatar kills the stype with a preconditioned
@@ -784,7 +728,135 @@ class Node():
 					if self.WBP.display:
 						print "reached resource limit"
 					tmp_list.append(avatar)
-			except IndexError:
+			except (IndexError, KeyError) as e:
+				pass
+
+		for t in tmp_list:
+			killer_types.append(t[0])
+			avatar_preconditions.remove(t)
+
+		else:
+			## Normal case
+			n_stypes = len([0 for sprite in self.WBP.findObjectsInRLE(rle, stype)]) if self.WBP.findObjectsInRLE(rle, stype) else 0
+
+
+		# print "stype, n_stypes, distance_to_goal, val", stype, n_stypes, distance_to_goal, val
+		if compute_second_order:
+			## Get all positions of objects whose type is in killer_types; compute minimum distance
+			## of each to the stypes we have to destroy. Return min over all mins.
+			# embed()
+			objs = [self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types]
+			objs = [obj for obj in objs if obj]
+
+			try:
+				if len(objs)>0:
+					kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
+				else:
+					kill_positions = np.array(objs)
+			except:
+				import ipdb; ipdb.set_trace()
+
+			possiblePairList = []
+			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
+			try:
+				# A consequence of the two-way generic interactions in the
+				# theory is that minimum-distance object pairs whose interactions
+				# were not yet observed will have their distance penalized twice
+				# as much when none of those objects is an avatar. This implies
+				# that avatar novel interactions will be favored over other ones
+				possiblePairList = [manhattanDist(obj, pos)
+					 for pos in kill_positions
+					 for obj in stype_positions]
+
+				distance = min(possiblePairList)
+				# print("second order distance is {}".format(distance))
+			except (ValueError, TypeError) as e:
+				distance = 100
+
+			if possiblePairList:
+				n_sprites = len(possiblePairList) ## TODO: you're normalizing by the number of possible pairs of killer_sprites and target_sprites; you should just normalize by the number of targets
+				# Normalize by number of sprites, enforcing a prior that encourages
+				# goals that involve killing fewer objects
+				self.reward_unit = min(self.reward_unit, abs(float(mult*second_alpha)/n_sprites**2))
+				# print("reward unit is {}".format(self.reward_unit))
+
+	def spritecounter_val(self, theory, term, stype, rle, first_alpha=10000.,
+						  second_alpha=100, negative_mult=.1):
+
+		# First order: progress in terms of number of sprites remaining.
+		# Second order: distance to the closest instance of a target sprite type.
+
+		# theory.interactionSet[16].generic=False
+		# theory.interactionSet[16].rule='killSprite'
+		# reward unit to be used for metabolic_cost; gets updated on compute_second_order
+
+		val = 0
+		compute_second_order = True
+
+		# Check if condition is win or loss and multiply accordingly
+		if term.termination.win:
+			mult = -1
+		else:
+			compute_second_order = False
+			mult = negative_mult
+
+		# Get all types that kill or transform stype (the target)
+		killer_types = [
+			inter.slot2 for inter in theory.interactionSet
+			if ((inter.interaction == 'killSprite' or
+				 inter.interaction == 'transformTo') and
+				 not inter.generic and
+				 not inter.preconditions
+				and inter.slot1 == stype)]
+
+		## If you can shoot a Flicker, give yourself credit for being close to things it kills, but remove credit for that Flicker being close to those things.
+		try:
+			if rle._game.getAvatars()[0].stype in killer_types:
+				if rle._game.getAvatars()[0].stype in theory.classes:
+					color = theory.classes[rle._game.getAvatars()[0].stype][0].color
+				else:
+					color = rle._game.sprite_groups[rle._game.getAvatars()[0].stype][0].colorName
+
+				if 'Flicker' in str(theory.spriteObjects[color].vgdlType):
+					killer_types.append(rle._game.getAvatars()[0].name)
+					killer_types.remove(rle._game.getAvatars()[0].stype)
+
+		except (IndexError, AttributeError) as e:
+			# print "got exception in trying to assign Flicker bonus to avatar"
+			pass
+
+		# This list comprehension checks whether the avatar kills the stype with a preconditioned
+		# interaction, and if so adds 'avatar' to the list as well as the precondition for that rule
+		avatar_preconditions = [
+			(inter.slot2, inter.preconditions) for inter in theory.interactionSet
+			if ((inter.interaction == 'killSprite' or
+				inter.interaction == 'killIfOtherHasMore' or
+				 inter.interaction == 'transformTo') and
+				 not inter.generic
+				 and inter.preconditions
+				and inter.slot1 == stype)]
+
+		tmp_list = []
+
+		## If we have preconditions, find the objects that we should go to given that we satisfy the relevant preconditions. E.g., if we have a key and want to know what
+		## happens with item x, go to it.
+		for avatar in avatar_preconditions:
+
+			precondition = list(avatar[1])[0]
+			item, num, negated, operator_name = precondition.item, precondition.num, precondition.negated, precondition.operator_name
+			if negated:
+				oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
+				true_operator = oppositeOperatorMap[operator_name]
+			else:
+				true_operator = operator_name
+			try:
+				current_resource = rle._game.sprite_groups[avatar[0]][0].resources[precondition.item]
+				## If we satisfy the precondiiton, append to tmp_list, then to killer_types (meaning we are capable of killing stype now)
+				if eval("{}{}{}".format(current_resource, true_operator, num)):
+					if self.WBP.display:
+						print "reached resource limit"
+					tmp_list.append(avatar)
+			except (IndexError, KeyError) as e:
 				pass
 
 		for t in tmp_list:
@@ -807,6 +879,7 @@ class Node():
 			n_stypes = len([0 for sprite in self.WBP.findObjectsInRLE(rle, stype)]) if self.WBP.findObjectsInRLE(rle, stype) else 0
 
 			distance_to_goal = abs(n_stypes - limit)
+			# print("distance to goal {} is {}".format(stype, distance_to_goal))
 
 		if distance_to_goal!=0:
 			val -= float(mult * first_alpha) / distance_to_goal**2 ## Penalize quadratically for classes for which we'd have to kill many instances.
@@ -820,10 +893,14 @@ class Node():
 			# embed()
 			objs = [self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types]
 			objs = [obj for obj in objs if obj]
-			if len(objs)>0:
-				kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
-			else:
-				kill_positions = np.array(objs)
+
+			try:
+				if len(objs)>0:
+					kill_positions = np.concatenate([o for o in objs if len(o)==max([len(obj) for obj in objs])])
+				else:
+					kill_positions = np.array(objs)
+			except TypeError:
+				kill_positions = np.array([])
 
 			possiblePairList = []
 			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
@@ -838,14 +915,17 @@ class Node():
 					 for obj in stype_positions]
 
 				distance = min(possiblePairList)
+				# print("second order distance is {}".format(distance))
 			except (ValueError, TypeError) as e:
-				distance = 0
+				distance = 100
 
 			if possiblePairList:
 				n_sprites = len(possiblePairList) ## TODO: you're normalizing by the number of possible pairs of killer_sprites and target_sprites; you should just normalize by the number of targets
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
 				val += float(mult * second_alpha * distance)/n_sprites**2
+
+
 			else:
 				# This helps in cases in which either the stype or the killer_type is not always on the screen
 				# Then, you should not be disincentivized to create it, which can be achieved through this high penalty
@@ -858,8 +938,9 @@ class Node():
 				resource_names = [list(resource[1])[0].item for resource in avatar_preconditions]
 
 				try:
-					resource_yielder_names = [[inter.slot2 if (inter.interaction=='changeResource' and inter.args['resource']==res) else res if (inter.interaction=='collectResource' and res==inter.slot1) else None
-					for inter in theory.interactionSet] for res in resource_names]
+					resource_yielder_names = [[inter.slot2 if (inter.interaction=='changeResource' and inter.args['resource']==res) else 
+							inter.slot1 if (inter.interaction=='collectResource' and res==inter.args['resource']==res) else None
+							for inter in theory.interactionSet] for res in resource_names]
 				except:
 					print "failure with resource_yielder_names"
 					embed()
@@ -960,10 +1041,10 @@ class Node():
 			compute_second_order = False
 			mult = 1
 
-		## Don't give heuristic bonus for using the flicker. But the agent is still incentivized to try to make the flicker interact with other objects
-		## because of noveltyTerminationConditions.
+		# ## Don't give heuristic bonus for using the flicker. But the agent is still incentivized to try to make the flicker interact with other objects
+		# ## because of noveltyTerminationConditions.
 		# if 'Flicker' in str(theory.classes[s1][0].vgdlType) or 'Flicker' in str(theory.classes[s2][0].vgdlType):
-			# return 0, 10000
+		# 	return 0, 10000
 
 		## If the terminationRule is precondition-dependent, check that first. Don't give heuristic val if the preconditions aren't fulfilled.
 		if term.termination.args:
@@ -983,20 +1064,25 @@ class Node():
 				return 2 * mult * first_alpha, 10000
 
 
+
 		if compute_second_order:
 			## Get all positions of objects whose type is in killer_types; compute minimum distance
 			## of each to the stypes we have to destroy. Return min over all mins.
+			# if 'Flicker' in str(theory.classes[s1][0].vgdlType) or 'Flicker' in str(theory.classes[s2][0].vgdlType):
+				# embed()
 
+			###JOAO
 			if 'Flicker' in str(theory.classes[s1][0].vgdlType) and not ('Flicker' in str(theory.classes[s2][0].vgdlType) or s2=='avatar'):
 				s1 = s2
 				s2 = 'avatar'
+				print("replaced flicker with avatar")
 
 			s2_positions = self.WBP.findObjectsInRLE(rle, s2)
 			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
 
 			# Second order lesion
 			# if s1 != 'avatar' and s2 != 'avatar':
-				# return 0, 10000
+			# 	return 0, 10000
 
 			n_sprites = len(s1_positions) if s1_positions else 0
 			possiblePairList = []
@@ -1054,14 +1140,9 @@ class Node():
 		if rle==None:
 			rle = self.rle
 
-		if sprite_first_alpha==10:
-			print("PASSED HERE")
-			embed()
-
 		theory = self.WBP.theory
 		heuristicVal = 0
 		avatarNoveltyVals = []
-
 		for term in theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
@@ -1115,7 +1196,7 @@ class Node():
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
 
 		heuristicVal += sum(self.rolloutArray)
-		
+
 		return heuristicVal
 
 	def position_score(self, factor=1.):
@@ -1124,8 +1205,7 @@ class Node():
 				self.rle._game.getAvatars()[0].rect.y))/self.WBP.pixel_size
 			return factor * self.WBP.visited_positions[x, y]
 		except IndexError:
-			if self.WBP.display:
-				print "index error in position score"
+			print "index error in position score"
 			return 0
 
 	def empty_copy(self, obj):
@@ -1140,25 +1220,24 @@ class Node():
 			## try to copy parent lastState. Then take action and store as current lastState.
 			## if that fails, replay from beginning and store as current lastState
 			try:
-				#vrle = cPickle.loads(cPickle.dumps(self.parent.rle, -1))
-				#vrle = ccopy(self.parent.rle)
-				vrle = self.fastcopy(self.parent.rle)
-				# vrle = copy.deepcopy(self.parent.rle)
+
+				# vrle = self.fastcopy(self.parent.rle)
+				vrle = copy.deepcopy(self.parent.rle)
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
+					# print a
 					res = vrle.step(a, return_obs=False)
 					relevantEvents = [t for t in res['effectList'] if t[0] == 'changeResource']
 					self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
 					self.terminal, self.win = vrle._isDone()
-			except Exception as e:
-				if self.WBP.display:
-					print "conditions met but copy failed"
+			except:
+				print "conditions met but copy failed"
+				embed()
 		else:
 			self.reconstructed=True
-			#vrle = cPickle.loads(cPickle.dumps(self.rle, -1))
-			#vrle = ccopy(self.rle)
-			vrle = self.fastcopy(self.rle)
-			#vrle = copy.deepcopy(self.rle)
+			# print "copy failed; replaying from top"
+			# vrle = self.fastcopy(self.rle)
+			vrle = copy.deepcopy(self.rle)
 			self.terminal, self.win = vrle._isDone()
 			i=0
 			while not self.terminal and len(self.actionSeq)>i:
@@ -1169,23 +1248,25 @@ class Node():
 				i += 1
 		return vrle, self.win
 
+	"""
+	def eval_profiler(self):
+		lp = LineProfiler()
+		lp_wrapper = lp(self.eval)
+		lp_wrapper()
+		lp.print_stats()
+	"""
+
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
 
 		self.rle, self.win = self.getToCurrentState()
 
-		if self.parent and self.rle._game.num_sprites > self.parent.rle._game.num_sprites:
-			#print "New sprite"
-			self.updateObjIDs(self.rle)
-		else:
-			pass
-			#self.updateObjIDs(self.rle)
+		self.updateObjIDs(self.rle)
 
 		self.state = self.WBP.calculateAtoms(self.rle)
 
 		for i in range(1,3):
 			for c in itertools.combinations(self.state, i):
-
 				c = tuple(sorted(c))
 				if self.WBP.trueAtoms[c] == 0:
 					self.candidates.add(c)
@@ -1204,14 +1285,17 @@ class Node():
 		# print self.rle._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost, self.position_score()
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
-
-		self.intrinsic_reward = self.heuristicVal + self.position_score(0)
+		# print("metabolic cost is {}".format(self.metabolic_cost))
+		self.intrinsic_reward = self.heuristicVal # + self.position_score(0) + self.metabolic_cost
 
 		## Debug printouts
 		# print("heuristicVal {}".format(self.heuristicVal))
 		# print("intrinsic_reward {}".format(self.intrinsic_reward))
 		try:
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
+			# for k in self.rle._game.getAvatars()[0].resources.keys():
+				# if k not in self.WBP.seen_limits:
+					# print("Current resource={}, limit={}".format(self.rle._game.getAvatars()[0].resources[k], self.WBP.theory.resource_limits[k]))
 			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
 				self.win=True
 		except IndexError:
@@ -1226,27 +1310,8 @@ class Node():
 			self.novelty = min([len(c) for c in self.candidates])
 		return self.novelty
 
-	def updateNoveltyIW1(self):
-		for state in self.WBP.trueAtomsIW1:
-			if self.stateIW1 == state:
-				return self.novelty
-		self.novelty = 0
-		return self.novelty
-
 	def updateNoveltyDict(self, QNovelty, QReward):
-		# remove all the candidates in each node in jointset that is in self.candidates
-		jointSet = set(QNovelty+QReward)
-		# temp_candidates = set()
-		# for c in self.candidates:
-		# 	if self.WBP.trueAtoms[c] == 0:
-		# 		self.WBP.trueAtoms[c] = 1
-		# 		temp_candidates.add(c)
-
-		# for n in jointSet:
-		# 	removes = n.candidates.intersection(self.candidates)
-		# 	n.candidates.difference(removes)
-		# 	n.novelty = n.updateNovelty()
-
+		jointSet = list(set(QNovelty+QReward))
 		for c in self.candidates:
 			if self.WBP.trueAtoms[c] == 0:
 				self.WBP.trueAtoms[c] = 1
@@ -1257,17 +1322,10 @@ class Node():
 			n.novelty = n.updateNovelty()
 		return
 
-	def updateNoveltyDictIW1(self, QNovelty, QReward):
-		jointSet = list(set(QNovelty+QReward))
-		for n in jointSet:
-			n.novelty = n.updateNoveltyIW1()
-		return
-
 	def updateObjIDs(self, vrle):
 		i = 0
 		for objType in vrle._game.sprite_groups:
 			for s in vrle._game.sprite_groups[objType]:
-				#ipdb.set_trace()
 				if s.ID not in self.WBP.objIDs.keys():
 					if s.name=='bullet':
 						s.ID = len([o for o in vrle._game.sprite_groups[objType] if o not in vrle._game.kill_list])
@@ -1289,14 +1347,14 @@ class Node():
 		self.finalStatesEncountered = []
 		terminal = vrle._isDone()[0]
 		i=0
-		if not make_movie and self.display:
+		if not make_movie:
 			print vrle.show()
 		while not terminal and i<len(self.actionSeq):
 			a = self.actionSeq[i]
 			vrle.step(a)
 			if not make_movie:
 				print actionDict[a]
-				if self.display: print vrle.show()
+				print vrle.show()
 			else:
 				self.finalStatesEncountered.append(vrle._game.getFullState())
 			terminal = vrle._isDone()[0]
@@ -1309,40 +1367,27 @@ if __name__ == "__main__":
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
-	#gameFilename = "examples.gridphysics.theorytest"
-	#gameFilename = "examples.gridphysics.boulderdash"
-	#gameFilename = "examples.gridphysics_2.theorytest2"
-	gameFilename = "examples.gridphysics_2.demo_helper"
-
+	# gameFilename = "examples.gridphysics.theorytest"
+	# gameFilename = "examples.gridphysics.boulderdash"
+	gameFilename = "examples.gridphysics.theorytest"
 	# gameFilename = "examples.continuousphysics.breakout_big"
-	gameString, levelString = defInputGame(gameFilename)
-	rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
-	rle = rleCreateFunc()
 
-	hyperparameters = {
-	 'sprite_first_alpha': 10000,
-	 'sprite_second_alpha': 100,
-	 'sprite_negative_mult': 10,
-	 'multisprite_first_alpha': 10000,
-	 'multisprite_second_alpha': 100,
-	 'novelty_first_alpha': 5000,
-	 'novelty_second_alpha': 50,
-	 }
-	 
-	# embed()
-	# p = WBP(rle, gameFilename)
-	p = WBP(rle, gameFilename, annealing=1, max_nodes=10000, shortHorizon=False, firstOrderHorizon=False, hyperparameters=hyperparameters)
+	gameString, levelString = defInputGame(gameFilename, randomize=True)
+	rleCreateFunc = lambda: createRLInputGame(gameFilename)
+	rle = rleCreateFunc()
+	embed()
+	p = WBP(rle, gameFilename)
+
 
 	# embed()
 	t1 = time.time()
-	node, gameString_array, object_positions_array = p.BFS()
-	for g in p.gameString_array:
-		print colored(g, 'green')
-	# from core import VGDLParser
+	last, gameString_array = p.BFS()
+	from core import VGDLParser
 	# embed()
-	# last.playBack(make_movie=True)
+	last.playBack(make_movie=True)
 	# VGDLParser.playGame(gameString, levelString, p.statesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
 	# VGDLParser.playGame(gameString, levelString, last.finalStatesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
+
 
 	print time.time()-t1
 	# embed()
