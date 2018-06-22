@@ -553,7 +553,7 @@ class Agent:
             else:
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                    firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0], extra_atom=self.extra_atom)
+                    firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[2], extra_atom=self.extra_atom)
 
             p_quitting = p.quitting
             bestNode, gameStringArray, objectPositionsArray = p.BFS()

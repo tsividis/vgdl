@@ -274,8 +274,8 @@ class WBP():
 
 	def rewardSelection(self, QReward, QNovelty):
 		acceptableNodes = QReward
-		# acceptableNodes = filter(lambda n:n.novelty<3, QReward)
-		acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
+		acceptableNodes = filter(lambda n:n.novelty<3, QReward)
+		# acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
 		# print "accetable:", len(acceptableNodes)
 		# if len(acceptableNodes)==0:
 			# acceptableNodes = QReward
@@ -354,7 +354,7 @@ class WBP():
 
 			self.statesEncountered.append(current.rle._game.getFullState())
 
-			# print current.rle.show(indent=True)
+			print current.rle.show(indent=True)
 
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
