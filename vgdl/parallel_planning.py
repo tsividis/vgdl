@@ -71,7 +71,7 @@ def play_trainset(hyperparameters):
         level_game_pairs = None
         gameName = 'examples.gridphysics_new.{}'.format(local_games[game_number-6])
 
-    agent = Agent('full', gameName, hyperparameter_sets=hyperparameters, parallel_planning=True)
+    agent = Agent('full', gameName, hyperparameter_sets=hyperparameters, parallel_planning=False)
 
     ##then pass this down for multiple episodes
     gameObject = None
