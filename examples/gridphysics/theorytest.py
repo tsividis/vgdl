@@ -1,115 +1,115 @@
 level="""
-                              
-                              
-                              
-  6                           
-                              
-                              
-    0                         
-                              
-                              
-                              
-    7                         
+4444444444444444444444
+4   5    5  6 5  4   4
+4  5 44444444   5    4
+4        6    1 6 55 4
+4444444444444444444 44
+44   6    4 44   4  44
+44444   4   5   44   4
+4   4    44  4   44 44
+4  0 3   1444  6    44
+4444444444444444444444
 """
 game = """
 BasicGame
 	SpriteSet
-		sam > Missile color=PINK singleton=True orientation=UP
-		avatar > FlakAvatar color=DARKBLUE stype=sam
-		c3 > ResourcePack color=LIGHTGRAY
-		c7 > Missile color=LIGHTGREEN speed=0.8 orientation=RIGHT cooldown=3
-		c6 > Missile color=RED speed=0.5 orientation=DOWN cooldown=1
-		c5 > Missile color=GOLD speed=0.8 orientation=RIGHT cooldown=3
-		c4 > ResourcePack color=WHITE
+		avatar > MovingAvatar color=DARKBLUE
+		c3 > ResourcePack color=LIGHTBLUE
+		c2 > ResourcePack color=PINK
+		c7 > ResourcePack color=ORANGE
+		c6 > ResourcePack color=GREEN
+		c5 > Chaser color=DARKGRAY fleeing=True cooldown=6 stype=c3
+		c4 > ResourcePack color=GOLD
 	InteractionSet
-		sam EOS > killSprite
-		c7 c6 > nothing
-		c6 c7 > nothing
-		c5 c3 > nothing
 		c3 c5 > nothing
-		sam c3 > nothing
-		c3 sam > nothing
-		avatar c6 > killSprite
-		c4 c5 > killSprite
-		c3 avatar > killSprite
-		c5 sam > killSprite
-		c6 sam > nothing
-		sam c6 > nothing
-		c7 avatar > killSprite
-		sam sam > nothing
-		c7 c5 > nothing
-		c5 c7 > nothing
-		avatar EOS > stepBack
+		c5 c3 > nothing
+		c7 c6 > killSprite
+		c2 c4 > nothing
+		c4 c2 > nothing
+		c6 avatar > bounceForward
+		c4 c5 > nothing
+		c5 c4 > nothing
 		c3 c4 > nothing
 		c4 c3 > nothing
-		c5 EOS > turnAround
-		c4 sam > killSprite
-		sam c4 > killSprite
-		c4 c6 > killSprite
-		c6 c4 > killSprite
-		c7 c3 > nothing
+		c2 c5 > nothing
+		c5 c2 > nothing
+		avatar c7 > killSprite
+		c5 c7 > nothing
+		c7 c5 > nothing
+		avatar EOS > stepBack
+		c3 avatar > killSprite
+		c4 c6 > nothing
+		c6 c4 > nothing
 		c3 c7 > nothing
-		c6 c5 > nothing
+		c7 c3 > nothing
+		c2 c2 > nothing
 		c5 c6 > nothing
-		c7 EOS > turnAround
-		c4 avatar > killSprite
-		c4 c7 > killSprite
-		c6 c3 > nothing
-		c3 c6 > nothing
-		c6 EOS > killSprite
-		c7 sam > killSprite
-		c5 avatar > killSprite
+		c6 c5 > nothing
 		c3 c3 > nothing
-		sam avatar > nothing
+		c2 c7 > nothing
+		c7 c2 > nothing
+		c4 c7 > nothing
+		c7 c4 > nothing
+		c3 c6 > nothing
+		c6 c3 > nothing
+		c6 c6 > nothing
+		c2 c3 > nothing
+		c3 c2 > nothing
+		c7 c7 > nothing
+		c5 avatar > killSprite
+		avatar c4 > killSprite
+		c5 c5 > nothing
+		c2 avatar > killSprite
 		c4 c4 > nothing
+		c5 EOS > stepBack
 		c4 EOS > stepBack
+		c2 c6 > stepBack
+		c7 EOS > stepBack
 		c3 EOS > stepBack
+		c6 EOS > stepBack
+		c2 EOS > stepBack
 	TerminationSet
-		MultiSpriteCounter stype0=c4 stype1=c7 limit=0 win=True
-		MultiSpriteCounter stype0=c7 stype1=c3 stype2=c5 limit=0 win=True
-		MultiSpriteCounter stype0=c7 stype1=c3 stype2=c4 limit=0 win=True
-		MultiSpriteCounter stype0=c6 stype1=c7 stype2=c4 limit=0 win=True
-		MultiSpriteCounter stype0=c5 stype1=c7 stype2=c4 limit=0 win=True
-		MultiSpriteCounter stype0=c7 stype1=c3 stype2=c5 stype3=c6 limit=0 win=True
-		MultiSpriteCounter stype0=c7 stype1=c3 stype2=c4 stype3=c6 limit=0 win=True
-		MultiSpriteCounter stype0=c7 stype1=c3 stype2=c4 stype3=c5 limit=0 win=True
-		MultiSpriteCounter stype0=c6 stype1=c7 stype2=c4 stype3=c5 limit=0 win=True
-		MultiSpriteCounter stype0=c7 stype1=c3 stype2=c5 stype3=c6 stype4=c4 limit=0 win=True
-		NoveltyTermination s1=sam s2=sam win=True
-		NoveltyTermination s1=sam s2=c3 win=True
-		NoveltyTermination s1=c3 s2=avatar win=True
+		NoveltyTermination s1=c2 s2=c2 win=True
+		NoveltyTermination s1=c2 s2=c3 win=True
+		NoveltyTermination s1=c2 s2=c4 win=True
+		NoveltyTermination s1=c2 s2=c5 win=True
+		NoveltyTermination s1=c2 s2=c7 win=True
 		NoveltyTermination s1=c3 s2=c3 win=True
 		NoveltyTermination s1=c3 s2=c4 win=True
-		NoveltyTermination s1=c4 s2=avatar win=True
+		NoveltyTermination s1=c3 s2=c5 win=True
+		NoveltyTermination s1=c3 s2=c6 win=True
+		NoveltyTermination s1=c3 s2=c7 win=True
 		NoveltyTermination s1=c4 s2=c4 win=True
+		NoveltyTermination s1=c4 s2=c5 win=True
+		NoveltyTermination s1=c4 s2=c6 win=True
+		NoveltyTermination s1=c4 s2=c7 win=True
+		NoveltyTermination s1=c5 s2=avatar win=True
+		NoveltyTermination s1=c5 s2=c5 win=True
+		NoveltyTermination s1=c5 s2=c6 win=True
+		NoveltyTermination s1=c5 s2=c7 win=True
+		NoveltyTermination s1=c6 s2=c6 win=True
+		NoveltyTermination s1=c7 s2=c7 win=True
+		NoveltyTermination s1=c2 s2=EOS win=True
 		NoveltyTermination s1=c3 s2=EOS win=True
 		NoveltyTermination s1=c4 s2=EOS win=True
-		NoveltyTermination s1=c5 s2=avatar win=True
-		NoveltyTermination s1=c5 s2=c3 win=True
-		NoveltyTermination s1=c6 s2=sam win=True
-		NoveltyTermination s1=c6 s2=c3 win=True
-		NoveltyTermination s1=c6 s2=c5 win=True
-		NoveltyTermination s1=c7 s2=avatar win=True
-		NoveltyTermination s1=c7 s2=c6 win=True
-		NoveltyTermination s1=c7 s2=c5 win=True
-		NoveltyTermination s1=c7 s2=c3 win=True
+		NoveltyTermination s1=c5 s2=EOS win=True
+		NoveltyTermination s1=c6 s2=EOS win=True
+		NoveltyTermination s1=c7 s2=EOS win=True
+		NoveltyTermination s1=avatar s2=EOS win=True
 		SpriteCounter stype=avatar limit=0 win=False
+		SpriteCounter stype=c3 limit=0 win=True
+		SpriteCounter stype=c2 limit=0 win=True
+		SpriteCounter stype=c7 limit=0 win=True
 	LevelMapping
-		0 > sam
+		0 > c2
 		1 > c3
-		e > c5 c4
-		h > c6 sam
-		2 > c5
-		f > c5 sam
-		j > c7 c6
-		c > avatar sam
-		i > c7 c3
-		b > c5 c3
+		2 > c4
+		3 > avatar
+		4 > c5
+		8 > c6 c2
+		7 > avatar c5
+		5 > c6
 		6 > c7
-		7 > avatar
-		8 > c4
-		d > c5 c6
-		9 > c6
 """
 if __name__ == "__main__":
 	from vgdl.core import VGDLParser
