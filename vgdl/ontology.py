@@ -1342,6 +1342,7 @@ def triggerOnLanding(sprite, partner, game, strigger=None):
 def stepBack(sprite, partner, game):
     """ Revert last move. """
     sprite.rect = sprite.lastrect
+    print 'stepBack'
 
     if partner:
         try:
