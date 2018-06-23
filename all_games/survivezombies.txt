@@ -27,10 +27,8 @@ BasicGame
         zombie bee      > transformTo stype=dying_zombie
         bee dying_zombie      > transformTo stype=honey
         dying_zombie honey      > killSprite
-        avatar slowHell     > killSprite 
-	avatar slowHell > changeScore value=-1
-        avatar fastHell     > killSprite 
-	avatar fastHell > changeScore value=-1
+        avatar slowHell     > killSprite scoreChange=-1
+        avatar fastHell     > killSprite scoreChange=-1
 
         avatar bee > nothing
         avatar flower > nothing

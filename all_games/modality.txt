@@ -47,8 +47,8 @@ BasicGame key_handler=Pulse  square_size=50
         inWhite wall > stepBack
         inBlack wall > stepBack
         inGrey wall > stepBack
-        target crate > transformTo stype=winTarget 
-	target crate > changeScore value=1
+        target crate > transformTo stype=winTarget scoreChange=1 
+	#target crate > changeScore value=1
 
         black white > nothing
         white black > nothing
