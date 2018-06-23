@@ -55,30 +55,45 @@ BasicGame
         avatar chestinplace > stepBack
         avatar headinplace > stepBack
 
-        body base > transformTo stype=bodyinplace
         body base > changeScore value=2
+        base body > killSprite
+        body base > transformTo stype=bodyinplace
+        
+	body head  > changeScore value=-1
+	head body  > killSprite
         body head  > transformTo stype=wrongplace
-        body head  > changeScore value=-1
-        body chest > transformTo stype=wrongplace
+       
         body chest > changeScore value=-1
+ 	chest body > killSprite
+	body chest > transformTo stype=wrongplace
 
-        chest bodyinplace > transformTo stype=chestinplace
         chest bodyinplace > changeScore value=5
-        chest base > transformTo stype=wrongplace
-        chest base > changeScore value=-1
-        chest head > transformTo stype=wrongplace
-        chest head > changeScore value=-1
+        bodyinplace chest > killSprite
+        chest bodyinplace > transformTo stype=chestinplace
 
-        head chestinplace > transformTo stype=headinplace
+        chest base > changeScore value=-1
+        base chest > killSprite
+        chest base > transformTo stype=wrongplace
+
+        chest head > changeScore value=-1
+        head chest > killSprite
+        chest head > transformTo stype=wrongplace
+
         head chestinplace > changeScore value=13
-        head base > transformTo stype=wrongplace
+        chestinplace head > killSprite
+        head chestinplace > transformTo stype=headinplace
+
         head base > changeScore value=-1
-        head bodyinplace > transformTo stype=wrongplace
+        base head > killSprite
+        head base > transformTo stype=wrongplace
+
         head bodyinplace > changeScore value=-1
+        bodyinplace head > killSprite
+        head bodyinplace > transformTo stype=wrongplace
 
         avatar key > changeResource resource=key value=1 
-        avatar key > changeScore value=1
         key avatar > killSprite
+        avatar key > changeScore value=1
 
         lock avatar > killIfOtherHasMore resource=key limit=1
 	lock avatarWithKey > killSprite

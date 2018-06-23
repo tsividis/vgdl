@@ -57,38 +57,50 @@ BasicGame key_handler=Pulse
         pastainplace key > undoAll
         sauceinplace key > undoAll
 
-        rawpasta boilingwater > transformTo stype=pastainplace 
-        rawpasta boilingwater > changeScore value=4 
-	boilingwater rawpasta > killSprite
-        rawpasta tuna  > transformTo stype=wrongplace 
-        rawpasta tuna > changeScore value=-1 
+	#rawpasta boilingwater > changeScore value=4
+        boilingwater rawpasta > killSprite
+	rawpasta boilingwater > transformTo stype=pastainplace scoreChange=4
+        
+        #rawpasta tuna > changeScore value=-1 
 	tuna rawpasta > killSprite
-        rawpasta tomato > transformTo stype=wrongplace 
-        rawpasta tomato > changeScore value=-1  
+	rawpasta tuna  > transformTo stype=wrongplace scoreChange=-1
+        
+        #rawpasta tomato > changeScore value=-1  
 	tomato rawpasta > killSprite
-        rawpasta sauceinplace > transformTo stype=wrongplace 
-        rawpasta sauceinplace > changeScore value=-1 
+	rawpasta tomato > transformTo stype=wrongplace scoreChange=-1
+        
+        #rawpasta sauceinplace > changeScore value=-1 
 	sauceinplace rawpasta > killSprite
+	rawpasta sauceinplace > transformTo stype=wrongplace scoreChange=-1 
 
-        tomato tuna > transformTo stype=sauceinplace 
-        tomato tuna > changeScore value=4 
-	tuna tomato > killSprite
-        tomato boilingwater > transformTo stype=wrongplace 
-        tomato boilingwater > changeScore value=-1 
+        #tomato tuna > changeScore value=4 
+        # added killSprite interactions for testing
+        tomato tuna > killSprite
+        tuna tomato > killSprite
+        tomato tuna > transformTo stype=sauceinplace scoreChange=4
+        
+        #tomato boilingwater > changeScore value=-1 
         boilingwater tomato > killSprite
-	tomato pastainplace > transformTo stype=wrongplace 
-        tomato pastainplace > changeScore value=-1 
+	tomato boilingwater > transformTo stype=wrongplace scoreChange=-1
+	
+        #tomato pastainplace > changeScore value=-1 
         pastainplace tomato > killSprite
-	boilingwater sauceinplace > transformTo stype=wrongplace 
-        boilingwater sauceinplace > changeScore value=-1  
+	tomato pastainplace > transformTo stype=wrongplace scoreChange=-1
+	
+        #boilingwater sauceinplace > changeScore value=-1 
+        #this one 
 	sauceinplace boilingwater > killSprite
+	boilingwater sauceinplace > transformTo stype=wrongplace scoreChange=-1
 
-        tuna boilingwater > transformTo stype=wrongplace 
-        tuna boilingwater > changeScore value=-1 
+        #tuna boilingwater > changeScore value=-1 
 	boilingwater tuna > killSprite
-        tuna pastainplace > transformTo stype=wrongplace 
-        tuna pastainplace > changeScore value=-1
+        tuna boilingwater > transformTo stype=wrongplace scoreChange=-1
+        
+        #tuna pastainplace > changeScore value=-1
+        # and this one
 	pastainplace tuna > killSprite
+	tuna pastainplace > transformTo stype=wrongplace scoreChange=-1
+
         pastainplace sauceinplace > transformTo stype=plateinplace scoreChange=17 
 	sauceinplace pastainplace > killSprite
 
