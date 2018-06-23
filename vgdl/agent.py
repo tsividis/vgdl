@@ -88,15 +88,16 @@ class errorMapEntry:
 			return False
 
 class Agent:
-	def __init__(self, modelType, gameFilename, hyperparameter_sets={}, parallel_planning=False):
+	def __init__(self, modelType, gameFilename, hyperparameters={}, parallel_planning=False):
 		self.modelType = modelType
 		self.gameFilename = gameFilename
 		self.gameString = None
 		self.levelString = None
-		self.hyperparameter_sets = hyperparameter_sets
+		self.hyperparameters = hyperparameters
 		self.parallel_planning = parallel_planning
 		self.annealingFactor = 1.
-		self.shortHorizon = False # How much do we search for a good plan before giving up?
+		self.shortHorizon = hyperparameters['short_horizon']#False
+		self.firstOrderHorizon = hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
 		if self.shortHorizon == True:
 			self.starting_max_nodes = 1000
 			self.max_nodes_annealing = 1.05
@@ -268,12 +269,12 @@ class Agent:
 				self.total_game_steps += steps
 				episodes.append((n_level, steps, win, score))
 				
-                # write progressively to file
-                output = {'modelType':self.modelType,
-                            'gameName': self.gameFilename,
-                            'condition': 'normal',
-                            'episodes' : [episode_results]}
-                write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+'.csv', output)
+				# write progressively to file
+				output = {'modelType':self.modelType,
+							'gameName': self.gameFilename,
+							'condition': 'normal',
+							'episodes' : [episode_results]}
+				write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+'.csv', output)
 
 				episodes_played += 1
 				if win:
@@ -341,58 +342,61 @@ class Agent:
 			hypothesesToPlanWith = [convertTheoryToSubgoalTheory(h) for h in selectedHypotheses]
 
 			## Create fake incentives to reexplore previously-explored items while possessing resources
- 			for h in hypothesesToPlanWith:
- 				avatarColor = h.classes['avatar'][0].colorName
- 				try:
- 					a = envReal._game.observation['trackedObjects'][avatarColor][0]
- 				except:
- 					print "Didn't find avatar"
- 					embed()
+			for h in hypothesesToPlanWith:
+				avatarColor = h.classes['avatar'][0].colorName
+				try:
+					a = envReal._game.observation['trackedObjects'][avatarColor][0]
+				except:
+					print "Didn't find avatar"
+					embed()
 
- 				for k,v in envReal._game.observation['trackedObjects'][avatarColor][0].inventory.items():
- 					resourceClass = h.spriteObjects[k].className
- 					resourceAmount, limit = v[0], v[1]
- 					resourceClass = h.spriteObjects[k].className
- 					h.resource_limits[resourceClass] = limit
+				for k,v in envReal._game.observation['trackedObjects'][avatarColor][0].inventory.items():
+					resourceClass = h.spriteObjects[k].className
+					resourceAmount, limit = v[0], v[1]
+					resourceClass = h.spriteObjects[k].className
+					h.resource_limits[resourceClass] = limit
 
- 					if resourceAmount>0:
- 						h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass))
- 					if resourceAmount==limit:
- 						h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass, limit))
+					if resourceAmount>0:
+						h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass))
+					if resourceAmount==limit:
+						h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass, limit))
 
- 					
- 					if k not in self.seen_resources[avatarColor]:
- 						self.seen_resources[avatarColor].append(k)
- 					elif resourceClass not in self.seen_limits[avatarColor] and resourceAmount==limit:
- 			 			self.seen_limits[avatarColor].append(resourceClass)
+					
+					if k not in self.seen_resources[avatarColor]:
+						self.seen_resources[avatarColor].append(k)
+					elif resourceClass not in self.seen_limits[avatarColor] and resourceAmount==limit:
+						self.seen_limits[avatarColor].append(resourceClass)
 
- 					# if k not in self.seen_resources[avatarColor]:
- 					# 	resourceClass = h.spriteObjects[k].className
- 					# 	h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass))
- 					# 	h.resource_limits[resourceClass] = limit
- 					# 	self.seen_resources[avatarColor].append(k)
- 					# elif resourceClass not in self.seen_limits[avatarColor] and resourceAmount==limit:
- 			 	# 		h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass, limit))
- 			 	# 		self.seen_limits[avatarColor].append(resourceClass)
+					# if k not in self.seen_resources[avatarColor]:
+					# 	resourceClass = h.spriteObjects[k].className
+					# 	h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass))
+					# 	h.resource_limits[resourceClass] = limit
+					# 	self.seen_resources[avatarColor].append(k)
+					# elif resourceClass not in self.seen_limits[avatarColor] and resourceAmount==limit:
+				# 		h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass, limit))
+				# 		self.seen_limits[avatarColor].append(resourceClass)
 
 			# embed()
- 			[h.updateTerminations(addNoveltyRules=True) for h in hypothesesToPlanWith]
+			[h.updateTerminations(addNoveltyRules=True) for h in hypothesesToPlanWith]
 
- 			# Only initialize as many planner theories as you are using parallel planners
+			# Only initialize as many planner theories as you are using parallel planners
 			plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal)
 
- 			# if envReal._game.observation['trackedObjects'][avatarColor][0].inventory:
- 				# print "found inventory"
- 				# embed()
+			# if envReal._game.observation['trackedObjects'][avatarColor][0].inventory:
+				# print "found inventory"
+				# embed()
 			# embed()
 
 			quitting = False
 
 			avatarColor = hypothesesToPlanWith[0].classes['avatar'][0].colorName
 
+			planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
+
+			## Initialize planner
 			p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=hypothesesToPlanWith[0], fakeInteractionRules = self.fakeInteractionRules,
 				seen_limits = self.seen_limits[avatarColor], annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-				firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
+				firstOrderHorizon=self.firstOrderHorizon, hyperparameters=planner_hyperparameters)
 			
 			bestNode, gameStringArray, predictedEnvs = p.BFS()
 
@@ -408,7 +412,9 @@ class Agent:
 			if solution and not p.quitting:
 				print "============================================="
 				print "got solution of length", len(solution)
-				for g in p.gameString_array:
+				print colored(p.gameString_array[0], 'green')
+				for i,g in enumerate(p.gameString_array[1:]):
+					print actionDict[solution[i]]
 					print colored(g, 'green')
 				print "============================================="
 
@@ -2449,10 +2455,10 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.theorytest"
 	# filename = "examples.continuousphysics.breakout_new"
 	# filename = "examples.gridphysics.expt_push_boulders2"
-	filename = "examples.gridphysics.avatar_inference"
+	# filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.testAll"
 	
-	# filename = "examples.gridphysics.expt_antagonist"
+	filename = "examples.gridphysics.expt_push_boulders"
 
 	# filename = "examples.gridphysics.basics"
 
