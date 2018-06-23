@@ -4,7 +4,7 @@
 #SBATCH --job-name=run_vgdl_model
 #SBATCH --array=0-7
 #SBATCH --output=slurm_logs/planner_integration_optimized/array_%A_%a.out
-#SBATCH --time=480
+#SBATCH --time=960
 #SBATCH --qos=tenenbaum
 #SBTACH --cpus-per-task=2
 #SBATCH --mem=32G
