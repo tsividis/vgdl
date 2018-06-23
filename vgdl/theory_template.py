@@ -1686,7 +1686,8 @@ class Game(object):
 			ts_index = min(theory.depth, len(timesteps)-1) ## don't try to access nonexistent timesteps.
 
 			if not timesteps:
-				# If timesteps is an empty list, do nothing
+				# If timesteps is an empty list, do nothing and return the original theory
+				self.hypothesisSpace.append(theory)
 				return
 
 			if verbose:
