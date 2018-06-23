@@ -1,0 +1,343 @@
+BasicGame
+    SpriteSet
+        stratosphere > Immovable hidden=True color=LIGHTBLUE 
+        thermosphere > Immovable hidden=True color=BLUE 
+        troposphere > Immovable hidden=True color=GRAY 
+
+        satellite   > RandomNPC    color=LIGHTGRAY  cons=1
+        avatar   > ShootAvatar orientation=DOWN color=DARKBLUE ammo=bullet stype=bomb  rotateInPlace=False
+
+        sam  > Missile orientation=UP color=LIGHTRED speed=0.3 
+        bomb > Missile orientation=DOWN color=RED speed=0.8  singleton=True
+        
+        leftCloud  > Missile orientation=LEFT speed=0.1  color=RSQPUS 
+        fastLeftCloud  > Missile orientation=LEFT speed=0.2  color=LMZTUO 
+        rightCloud  > Missile  orientation=RIGHT speed=0.1  color=VYPDQP 
+        fastRightCloud  > Missile  orientation=RIGHT speed=0.2  color=VNUJQV 
+
+        tank   > Bomber color=BROWN stype=sam  prob=0.03  spawnCooldown=5 speed=0.2 
+            
+        portalBase  > SpawnPoint  color=ORANGE  stype=tank  spawnCooldown=40   total=20 
+        portalAmmo  > SpawnPoint  color=YELLOW  stype=supply spawnCooldown=10 prob=0.15
+
+        supply > Missile  color=GOLD orientation=LEFT speed=0.3 
+        bullet > Resource color=GREEN limit=20
+	wall > Immovable color=DARKGRAY
+    
+    LevelMapping
+        A > avatar stratosphere
+        c > satellite thermosphere
+        b > portalBase troposphere
+        a > portalAmmo stratosphere
+        t > thermosphere
+        s > stratosphere
+        p > troposphere
+        l > leftCloud stratosphere
+        d > fastLeftCloud stratosphere
+        r > rightCloud stratosphere
+        e > fastRightCloud stratosphere
+        w > wall
+
+    TerminationSet
+        SpriteCounter      stype=avatar               limit=0 win=False
+        SpriteCounter      stype=satellite               limit=0 win=False
+        MultiSpriteCounter stype1=portalBase stype2=tank limit=0 win=True
+        
+    InteractionSet
+        #avatar wall > stepBack 
+	avatar EOS > stepBack
+        avatar sam > killSprite
+        sam avatar > killSprite 
+	sam wall > killSprite
+	sam EOS > killSprite
+
+        tank bomb > killSprite 
+        tank bomb > changeScore value=1
+        bomb tank > killSprite 
+	bomb wall > killSprite
+	bomb EOS > killSprite
+
+        bomb sam > killSprite
+	sam bomb > killSprite
+
+        tank wall  > reverseDirection
+	tank EOS  > reverseDirection
+        # tank wall > stepBack
+	# tank EOS  > stepBack
+
+        satellite sam > killSprite 
+        satellite sam > changeScore value=-1 
+        sam satellite > killSprite 
+        sam satellite > changeScore value=-1
+	satellite wall > stepBack 
+	satellite EOS > stepBack
+
+        avatar supply > changeResource resource=bullet value=5
+        supply avatar > killSprite
+        supply wall > killSprite 
+	supply EOS > killSprite
+
+        avatar portalBase > stepBack 
+        avatar portalAmmo > stepBack 
+
+	avatar thermosphere > stepBack
+	avatar troposphere > stepBack
+        satellite stratosphere > stepBack
+
+        leftCloud sam > killSprite
+        fastLeftCloud sam > killSprite
+        rightCloud sam > killSprite
+        fastRightCloud sam > killSprite
+
+	sam leftCloud > killSprite
+        sam fastLeftCloud > killSprite
+        sam rightCloud > killSprite
+        sam fastRightCloud > killSprite
+
+        leftCloud EOS > wrapAround
+        fastLeftCloud EOS > wrapAround
+        rightCloud EOS > wrapAround
+        fastRightCloud EOS > wrapAround
+
+        stratosphere thermosphere > nothing
+        thermosphere stratosphere > nothing
+        stratosphere troposphere > nothing
+        troposphere stratosphere > nothing
+        stratosphere avatar > nothing
+        avatar stratosphere > nothing
+        stratosphere sam > nothing
+        sam stratosphere > nothing
+        stratosphere bomb > nothing
+        bomb stratosphere > nothing
+        stratosphere leftCloud > nothing
+        leftCloud stratosphere > nothing
+        stratosphere fastLeftCloud > nothing
+        fastLeftCloud stratosphere > nothing
+        stratosphere rightCloud > nothing
+        rightCloud stratosphere > nothing
+        stratosphere fastRightCloud > nothing
+        fastRightCloud stratosphere > nothing
+        stratosphere tank > nothing
+        tank stratosphere > nothing
+        stratosphere portalBase > nothing
+        portalBase stratosphere > nothing
+        portalAmmo stratosphere > nothing
+        stratosphere portalAmmo > nothing
+        stratosphere supply > nothing
+        supply stratosphere > nothing
+        bullet stratosphere > nothing
+        stratosphere bullet > nothing
+        stratosphere EOS > nothing
+        EOS stratosphere > nothing
+        thermosphere troposphere > nothing
+        troposphere thermosphere > nothing
+        thermosphere satellite > nothing
+        satellite thermosphere > nothing
+        sam thermosphere > nothing
+        thermosphere sam > nothing
+        thermosphere bomb > nothing
+        bomb thermosphere > nothing
+        thermosphere leftCloud > nothing
+        leftCloud thermosphere > nothing
+        fastLeftCloud thermosphere > nothing
+        thermosphere fastLeftCloud > nothing
+        rightCloud thermosphere > nothing
+        thermosphere rightCloud > nothing
+        fastRightCloud thermosphere > nothing
+        thermosphere fastRightCloud > nothing
+        tank thermosphere > nothing
+        thermosphere tank > nothing
+        portalBase thermosphere > nothing
+        thermosphere portalBase > nothing
+        portalAmmo thermosphere > nothing
+        thermosphere portalAmmo > nothing
+        supply thermosphere > nothing
+        thermosphere supply > nothing
+        bullet thermosphere > nothing
+        thermosphere bullet > nothing
+        EOS thermosphere > nothing
+        thermosphere EOS > nothing
+        satellite troposphere > nothing
+        troposphere satellite > nothing
+        sam troposphere > nothing
+        troposphere sam > nothing
+        bomb troposphere > nothing
+        troposphere bomb > nothing
+        leftCloud troposphere > nothing
+        troposphere leftCloud > nothing
+        fastLeftCloud troposphere > nothing
+        troposphere fastLeftCloud > nothing
+        rightCloud troposphere > nothing
+        troposphere rightCloud > nothing
+        fastRightCloud troposphere > nothing
+        troposphere fastRightCloud > nothing
+        tank troposphere > nothing
+        troposphere tank > nothing
+        portalBase troposphere > nothing
+        troposphere portalBase > nothing
+        portalAmmo troposphere > nothing
+        troposphere portalAmmo > nothing
+        supply troposphere > nothing
+        troposphere supply > nothing
+        bullet troposphere > nothing
+        troposphere bullet > nothing
+        EOS troposphere > nothing
+        troposphere EOS > nothing
+        avatar satellite > nothing
+        satellite avatar > nothing
+        bomb satellite > nothing
+        satellite bomb > nothing
+        leftCloud satellite > nothing
+        satellite leftCloud > nothing
+        fastLeftCloud satellite > nothing
+        satellite fastLeftCloud > nothing
+        rightCloud satellite > nothing
+        satellite rightCloud > nothing
+        fastRightCloud satellite > nothing
+        satellite fastRightCloud > nothing
+        tank satellite > nothing
+        satellite tank > nothing
+        portalBase satellite > nothing
+        satellite portalBase > nothing
+        portalAmmo satellite > nothing
+        satellite portalAmmo > nothing
+        supply satellite > nothing
+        satellite supply > nothing
+        bullet satellite > nothing
+        satellite bullet > nothing
+        avatar bomb > nothing
+        bomb avatar > nothing
+        avatar leftCloud > nothing
+        leftCloud avatar > nothing
+        avatar fastLeftCloud > nothing
+        fastLeftCloud avatar > nothing
+        rightCloud avatar > nothing
+        avatar rightCloud > nothing
+        avatar fastRightCloud > nothing
+        fastRightCloud avatar > nothing
+        tank avatar > nothing
+        avatar tank > nothing
+        bullet avatar > nothing
+        avatar bullet > nothing
+        tank sam > nothing
+        sam tank > nothing
+        portalBase sam > nothing
+        sam portalBase > nothing
+        portalAmmo sam > nothing
+        sam portalAmmo > nothing
+        supply sam > nothing
+        sam supply > nothing
+        bullet sam > nothing
+        sam bullet > nothing
+        leftCloud bomb > nothing
+        bomb leftCloud > nothing
+        fastLeftCloud bomb > nothing
+        bomb fastLeftCloud > nothing
+        rightCloud bomb > nothing
+        bomb rightCloud > nothing
+        fastRightCloud bomb > nothing
+        bomb fastRightCloud > nothing
+        portalBase bomb > nothing
+        bomb portalBase > nothing
+        portalAmmo bomb > nothing
+        bomb portalAmmo > nothing
+        supply bomb > nothing
+        bomb supply > nothing
+        bullet bomb > nothing
+        bomb bullet > nothing
+        fastLeftCloud leftCloud > nothing
+        leftCloud fastLeftCloud > nothing
+        rightCloud leftCloud > nothing
+        leftCloud rightCloud > nothing
+        fastRightCloud leftCloud > nothing
+        leftCloud fastRightCloud > nothing
+        tank leftCloud > nothing
+        leftCloud tank > nothing
+        portalBase leftCloud > nothing
+        leftCloud portalBase > nothing
+        portalAmmo leftCloud > nothing
+        leftCloud portalAmmo > nothing
+        supply leftCloud > nothing
+        leftCloud supply > nothing
+        bullet leftCloud > nothing
+        leftCloud bullet > nothing
+        rightCloud fastLeftCloud > nothing
+        fastLeftCloud rightCloud > nothing
+        fastLeftCloud fastRightCloud > nothing
+        fastRightCloud fastLeftCloud > nothing
+        tank fastLeftCloud > nothing
+        fastLeftCloud tank > nothing
+        fastLeftCloud portalBase > nothing
+        portalBase fastLeftCloud > nothing
+        portalAmmo fastLeftCloud > nothing
+        fastLeftCloud portalAmmo > nothing
+        fastLeftCloud supply > nothing
+        supply fastLeftCloud > nothing
+        bullet fastLeftCloud > nothing
+        fastLeftCloud bullet > nothing
+        rightCloud fastRightCloud > nothing
+        fastRightCloud rightCloud > nothing
+        rightCloud tank > nothing
+        tank rightCloud > nothing
+        rightCloud portalBase > nothing
+        portalBase rightCloud > nothing
+        portalAmmo rightCloud > nothing
+        rightCloud portalAmmo > nothing
+        rightCloud supply > nothing
+        supply rightCloud > nothing
+        bullet rightCloud > nothing
+        rightCloud bullet > nothing
+        tank fastRightCloud > nothing
+        fastRightCloud tank > nothing
+        portalBase fastRightCloud > nothing
+        fastRightCloud portalBase > nothing
+        portalAmmo fastRightCloud > nothing
+        fastRightCloud portalAmmo > nothing
+        supply fastRightCloud > nothing
+        fastRightCloud supply > nothing
+        bullet fastRightCloud > nothing
+        fastRightCloud bullet > nothing
+        tank portalBase > nothing
+        portalBase tank > nothing
+        portalAmmo tank > nothing
+        tank portalAmmo > nothing
+        tank supply > nothing
+        supply tank > nothing
+        bullet tank > nothing
+        tank bullet > nothing
+        portalAmmo portalBase > nothing
+        portalBase portalAmmo > nothing
+        portalBase supply > nothing
+        supply portalBase > nothing
+        bullet portalBase > nothing
+        portalBase bullet > nothing
+        portalBase EOS > nothing
+        EOS portalBase > nothing
+        portalAmmo supply > nothing
+        supply portalAmmo > nothing
+        bullet portalAmmo > nothing
+        portalAmmo bullet > nothing
+        portalAmmo EOS > nothing
+        EOS portalAmmo > nothing
+        bullet supply > nothing
+        supply bullet > nothing
+        bullet EOS > nothing
+        EOS bullet > nothing
+
+        stratosphere stratosphere > nothing
+        thermosphere thermosphere > nothing
+        troposphere troposphere > nothing
+        satellite satellite > nothing
+        avatar avatar > nothing
+        sam sam > nothing
+        bomb bomb > nothing
+        leftCloud leftCloud > nothing
+        fastLeftCloud fastLeftCloud > nothing
+        rightCloud rightCloud > nothing
+        fastRightCloud fastRightCloud > nothing
+        tank tank > nothing
+        portalBase portalBase > nothing
+        portalAmmo portalAmmo > nothing
+        supply supply > nothing
+        bullet bullet > nothing
+        EOS EOS > nothing
