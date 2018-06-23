@@ -8,4 +8,5 @@ theorytest.py
 venv
 .DS_Store
 /avatar_inference.py
+temp_data.npy
 human_data*
