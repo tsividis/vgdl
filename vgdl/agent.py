@@ -449,6 +449,8 @@ class Agent:
 
 			if not quitting:
 				for action_num, action in enumerate(solution):
+					
+					# embed()
 					bestScoresAndHypotheses = \
 							self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses)
 					
