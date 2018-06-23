@@ -1839,8 +1839,6 @@ def singleTheoryExperienceReplay(
 	## How often will a new modification make something old far worse? Maybe this is just completely unnecessary.
 	try:
 		key = (method, targetColor, rleHistory[0].ID, len(rleHistory))
-		print "in singleTheoryExperienceReplay"
-		embed()
 	except:
 		print "key for singleTheoryExperienceReplay failed"
 		embed()

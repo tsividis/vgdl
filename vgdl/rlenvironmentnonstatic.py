@@ -11,7 +11,7 @@ from numpy import zeros
 import pygame
 from ontology import BASEDIRS
 from core import VGDLSprite
-from stateobsnonstatic import StateObsHandlerNonStatic
+from stateobsnonstatic import StateObsHandlerNonStatic, processFrame
 from collections import defaultdict
 import argparse
 from IPython import embed
@@ -22,7 +22,7 @@ from colors import *
 from util import factorize, objectsToSymbol
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from termcolor import colored
-
+import uuid
 import cPickle
 # from line_profiler import LineProfiler
 
@@ -80,6 +80,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self._game.keystate = defaultdict(bool)
         self._game.metabolic_score = 0
         self.game_name = None
+        self.ID = uuid.uuid1()
 
     # Get definition of the observation data expected
     def observationSpec(self):
@@ -435,6 +436,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             reward = dScore
         for k in self._game.keystate:
             self._game.keystate[k] = False
+
+        self._game.observation = processFrame(self._game.observation, self._game)
 
         # print "reward", reward
         return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
