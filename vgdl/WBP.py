@@ -987,6 +987,13 @@ class Node():
 		except IndexError:
 			print "index error in position score"
 			return 0
+			
+	def empty_copy(self, obj):
+		class Empty(obj.__class__):
+			def __init__(self): pass
+		newcopy = Empty()
+		newcopy.__class__ = obj.__class__
+		return newcopy
 
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
