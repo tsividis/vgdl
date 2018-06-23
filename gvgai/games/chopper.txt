@@ -58,7 +58,7 @@ BasicGame
         bomb sam > killSprite
 	sam bomb > killSprite
 
-        tank wall  > reverseDirection
+        tank wall  > reverseDirection 
 	tank EOS  > reverseDirection
         # tank wall > stepBack
 	# tank EOS  > stepBack
