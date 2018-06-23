@@ -504,8 +504,12 @@ class Node():
 	def fastcopy(self, rle):
 		newRle = self.empty_copy(rle)
 		#embed()
+		for k,v in rle.__dict__.iteritems():
+			try:
+				newRle.__dict__[k] = v.copy()
+			except:
+				newRle.__dict__[k] = v
 		newRle._obstypes = rle._obstypes.copy()
-		newRle.observationType = rle.observationType
 		if hasattr(rle, '_gravepoints'):
 			newRle._gravepoints = rle._gravepoints.copy()
 		newRle.outdim = rle.outdim
@@ -557,10 +561,7 @@ class Node():
 				newRle._game.__dict__[k] = v.copy()
 			else:
 				newRle._game.__dict__[k] = v
-		# if rle._game.time>100:
-			# embed()
 		#newRle._game = ccopy(rle._game)
-		embed()
 		return newRle
 
 ## when to trigger rollouts, if any
