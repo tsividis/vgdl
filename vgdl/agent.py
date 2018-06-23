@@ -551,6 +551,7 @@ class Agent:
 				self.initializeHypotheses()
 
 			envReal = self.fastcopy(self.rle)
+
 			self.rleHistory[episode_num].append(envReal)
 
 			for num, action in enumerate(actions):
@@ -602,7 +603,6 @@ class Agent:
 		newRle._game.observation = ccopy(rle._game.observation)
 		newRle.symbolDict = ccopy(rle.symbolDict)
 		newRle._game.sprite_groups['avatar'][0].resources = ccopy(rle._game.sprite_groups['avatar'][0].resources)
-		newRle.ID = rle.ID
 		return newRle
 
 	def scoreAndFilterTheories(self, newTheories, episode_num, displayTheories=False):
@@ -1839,6 +1839,8 @@ def singleTheoryExperienceReplay(
 	## How often will a new modification make something old far worse? Maybe this is just completely unnecessary.
 	try:
 		key = (method, targetColor, rleHistory[0].ID, len(rleHistory))
+		print "in singleTheoryExperienceReplay"
+		embed()
 	except:
 		print "key for singleTheoryExperienceReplay failed"
 		embed()
@@ -1929,7 +1931,7 @@ def singleTheoryExperienceReplay(
 							print 'resourceDict problem'
 							embed()
 
-					imaginedEffects = env.step(action)['effectList']
+					imaginedEffects = env.step(action, return_obs=True)['effectList']
 					for effect in imaginedEffects:
 						eff1Class = env._game.all_objects[effect[1]].name if effect[1] in env._game.all_objects else 'EOS'
 						eff2Class = env._game.all_objects[effect[2]].name if effect[2] in env._game.all_objects else 'EOS'
@@ -2509,6 +2511,17 @@ if __name__ == "__main__":
 	##uncomment this line to run local games
 	gameName = filename
 
+	hyperparameters = {'idx' : 2,
+	 'short_horizon' : False,
+	 'first_order_horizon': False,
+	 'sprite_first_alpha': 10000,
+	 'sprite_second_alpha': 100,
+	 'sprite_negative_mult': .1,
+	 'multisprite_first_alpha': 10000,
+	 'multisprite_second_alpha': 100,
+	 'novelty_first_alpha': 5000,
+	 'novelty_second_alpha': 50,
+	 }
 
 	module = importlib.import_module(gameName)
 	level_game_pairs = module.level_game_pairs
@@ -2527,7 +2540,7 @@ if __name__ == "__main__":
 	if multiTesting:
 		# have to make a new agent each time since they're really different games all in one
 		for num in xrange(len(level_game_pairs)):
-			agent = Agent('full', gameName)
+			agent = Agent('full', gameName, hyperparameters)
 
 			try:
 				results += agent.testCurriculum([level_game_pairs[num]], [actionSequences[num]])
@@ -2537,7 +2550,7 @@ if __name__ == "__main__":
 	else:
 		# normal mode
 
-		agent = Agent('full', gameName)
+		agent = Agent('full', gameName, hyperparameters)
 
 		##For GVGAI games, use this line
 		# agent.playCurriculum(level_game_pairs=level_game_pairs)
