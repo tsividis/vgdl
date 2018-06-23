@@ -267,6 +267,14 @@ class Agent:
 				win, score, steps = self.playEpisode(n_level, episodes_played, win=win, first_time_playing_level=first_time_playing_level)
 				self.total_game_steps += steps
 				episodes.append((n_level, steps, win, score))
+				
+                # write progressively to file
+                output = {'modelType':self.modelType,
+                            'gameName': self.gameFilename,
+                            'condition': 'normal',
+                            'episodes' : [episode_results]}
+                write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+'.csv', output)
+
 				episodes_played += 1
 				if win:
 					print 'won'
