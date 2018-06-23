@@ -504,7 +504,6 @@ class Node():
 
 	def fastcopy(self, rle):
 		newRle = self.empty_copy(rle)
-		embed()
 		for k,v in rle.__dict__.iteritems():
 			try:
 				newRle.__dict__[k] = v.copy()
