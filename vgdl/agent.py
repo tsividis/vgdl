@@ -43,7 +43,7 @@ ERRORCUTOFF = .3
 # Not active now
 NUM_SAMPLES_PER_HYPOTHESIS = 20
 # how long to just watch before theorizing about the game
-OBSERVATION_PERIOD_LENGTH = 12
+OBSERVATION_PERIOD_LENGTH = 3
 initialErrorBuildup = []
 
 class errorMapEntry:
@@ -379,65 +379,72 @@ class Agent:
 			# embed()
 			[h.updateTerminations(addNoveltyRules=True) for h in hypothesesToPlanWith]
 
-			# Only initialize as many planner theories as you are using parallel planners
-			plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal)
-
-			# if envReal._game.observation['trackedObjects'][avatarColor][0].inventory:
-				# print "found inventory"
-				# embed()
-			# embed()
-
 			quitting = False
 
-			avatarColor = hypothesesToPlanWith[0].classes['avatar'][0].colorName
-
-			planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
-
-			## Initialize planner
-			p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=hypothesesToPlanWith[0], fakeInteractionRules = self.fakeInteractionRules,
-				seen_limits = self.seen_limits[avatarColor], annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-				firstOrderHorizon=self.firstOrderHorizon, hyperparameters=planner_hyperparameters)
-			
-			bestNode, gameStringArray, predictedEnvs = p.BFS()
-
-			self.total_planner_steps = p.total_nodes
-
-			if bestNode is not None:
-				solution = p.solution
-				gameString_array = p.gameString_array
-				predictedEnvs = predictedEnvs[::-1]
+			if sum([len(episode) for episode in self.rleHistory]) <= OBSERVATION_PERIOD_LENGTH:
+				## take however many non-actions as remain in the observation period
+				solution = [0]*(OBSERVATION_PERIOD_LENGTH-sum([len(episode) for episode in self.rleHistory]))
+				print "observing. taking actions", solution
 			else:
-				solution = []
+				## Otherwise plan normally
 
-			if solution and not p.quitting:
-				print "============================================="
-				print "got solution of length", len(solution)
-				print colored(p.gameString_array[0], 'green')
-				for i,g in enumerate(p.gameString_array[1:]):
-					print actionDict[solution[i]]
-					print colored(g, 'green')
-				print "============================================="
+				# Only initialize as many planner theories as you are using parallel planners
+				plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal)
 
-			if self.shortHorizon:
-				if not solution:
-					emptyPlans +=1
-				else:
-					emptyPlans = 0
-			else:
-				if (not solution) or p.quitting:
-					if self.longHorizonObservations<self.longHorizonObservationLimit:
-						print "Didn't get solution or decided to quit. Observing, then replanning."
-						# embed()
-						self.observe(self.rle, episode_num, num_steps=5)
-						solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
-						self.longHorizonObservations += 1
-					else:
-						quitting = True
-
-			if emptyPlans > self.emptyPlansLimit:
-				print "observing"
+				# if envReal._game.observation['trackedObjects'][avatarColor][0].inventory:
+					# print "found inventory"
+					# embed()
 				# embed()
-				self.observe(self.rle, episode_num, num_steps=5)
+
+				avatarColor = hypothesesToPlanWith[0].classes['avatar'][0].colorName
+
+				planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
+
+				## Initialize planner
+				p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=hypothesesToPlanWith[0], fakeInteractionRules = self.fakeInteractionRules,
+					seen_limits = self.seen_limits[avatarColor], annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+					firstOrderHorizon=self.firstOrderHorizon, hyperparameters=planner_hyperparameters)
+				
+				bestNode, gameStringArray, predictedEnvs = p.BFS()
+
+				self.total_planner_steps = p.total_nodes
+
+				if bestNode is not None:
+					solution = p.solution
+					gameString_array = p.gameString_array
+					predictedEnvs = predictedEnvs[::-1]
+				else:
+					solution = []
+
+				if solution and not p.quitting:
+					print "============================================="
+					print "got solution of length", len(solution)
+					print colored(p.gameString_array[0], 'green')
+					for i,g in enumerate(p.gameString_array[1:]):
+						print actionDict[solution[i]]
+						print colored(g, 'green')
+					print "============================================="
+
+				if self.shortHorizon:
+					if not solution:
+						emptyPlans +=1
+					else:
+						emptyPlans = 0
+				else:
+					if (not solution) or p.quitting:
+						if self.longHorizonObservations<self.longHorizonObservationLimit:
+							print "Didn't get solution or decided to quit. Observing, then replanning."
+							# embed()
+							self.observe(self.rle, episode_num, num_steps=5)
+							solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
+							self.longHorizonObservations += 1
+						else:
+							quitting = True
+
+				if emptyPlans > self.emptyPlansLimit:
+					print "observing"
+					# embed()
+					self.observe(self.rle, episode_num, num_steps=5)
 
 			if not quitting:
 				for action_num, action in enumerate(solution):

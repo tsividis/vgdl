@@ -412,13 +412,13 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         return output
     """
 
-    def step(self, action, return_obs=True):
+    def step(self, action, return_obs=False):
         if action == ('space'):
             self._game.keystate[32] = True
             action = (0,0)
         pre_step_score = self._game.score
         events = self._performAction(action)
-        observation = self._getSensors() if return_obs else None
+        observation = self._getSensors() if not return_obs else None
         (ended, won) = self._isDone()
         self._game.time+=1
 
