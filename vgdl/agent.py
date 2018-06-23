@@ -388,8 +388,6 @@ class Agent:
 			
 			bestNode, gameStringArray, predictedEnvs = p.BFS()
 
-			# best_index = np.argmin([p.total_nodes for p in res._value])
-			# bestNode, gameStringArray, predictedEnvs = res._value[best_index].BFS()
 			self.total_planner_steps = p.total_nodes
 
 			if bestNode is not None:
