@@ -35,6 +35,8 @@ from termcolor import colored
 from pathos.helpers import mp
 
 ACTIONDICT = {K_UP: (0,1), K_DOWN: (0,-1),K_LEFT: (-1,0), K_RIGHT: (1,0), K_SPACE: (0,0), 0: (0,0)}
+actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'wait'}
+
 
 # This makes experience replay score a theory on all the one-step transitions we've seen
 EXPERIENCE_REPLAY_METHOD = 'all'
@@ -43,7 +45,7 @@ ERRORCUTOFF = .3
 # Not active now
 NUM_SAMPLES_PER_HYPOTHESIS = 20
 # how long to just watch before theorizing about the game
-OBSERVATION_PERIOD_LENGTH = 3
+OBSERVATION_PERIOD_LENGTH = 12
 initialErrorBuildup = []
 
 class errorMapEntry:
@@ -383,7 +385,7 @@ class Agent:
 
 			if sum([len(episode) for episode in self.rleHistory]) <= OBSERVATION_PERIOD_LENGTH:
 				## take however many non-actions as remain in the observation period
-				solution = [0]*(OBSERVATION_PERIOD_LENGTH-sum([len(episode) for episode in self.rleHistory]))
+				solution = [0]*(OBSERVATION_PERIOD_LENGTH+1-sum([len(episode) for episode in self.rleHistory]))
 				print "observing. taking actions", solution
 				predictedEnvs = None
 			else:

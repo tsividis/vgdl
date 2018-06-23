@@ -92,6 +92,7 @@ class WBP():
 		self.winning_states = []
 		self.trueAtomsIW1 = []
 		self.total_nodes = 0
+		self.display = False
 
 		## Ignore objects we don't want to track (i.e., non-moving immovables.)
 		self.objectsToTrack = []
@@ -109,8 +110,9 @@ class WBP():
 			if len(rle._game.sprite_groups[k])>self.objectLocationTrackingLimit:
 				self.classesWhoseLocationsWeIgnore.append(k)
 
-		print "ignoring presences for", self.classesWhosePresenceWeIgnore
-		print "ignoring locations for", self.classesWhoseLocationsWeIgnore
+		if self.display:
+			print "ignoring presences for", self.classesWhosePresenceWeIgnore
+			print "ignoring locations for", self.classesWhoseLocationsWeIgnore
 		# Compute starting number of each SpriteCounter stype
 		self.firstOrderHorizon = firstOrderHorizon
 		self.starting_stype_n = {}
@@ -249,7 +251,8 @@ class WBP():
 		try:
 			current = bestNodes.pop(0)
 		except:
-			print('reward selection error')
+			if self.display:
+				print('reward selection error')
 			# embed()
 			return 'pickMaxNode'
 		QReward.remove(current)
@@ -316,7 +319,8 @@ class WBP():
 
 			self.statesEncountered.append(current.rle._game.getFullState())
 
-			print current.rle.show(indent=True)
+			if self.display:
+				print current.rle.show(indent=True)
 
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
@@ -393,7 +397,8 @@ class WBP():
 			self.total_nodes = i
 
 			if self.winning_states:
-				print "we have {} winning states".format(len(self.winning_states))
+				if self.display:
+					print "we have {} winning states".format(len(self.winning_states))
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
 				bestNode = bestNodes[0]
 				# embed()
@@ -405,11 +410,13 @@ class WBP():
 		self.solution = []#Node(self.rle, self, [], None)
 		if i>=self.max_nodes:
 			if self.short_horizon:
-				print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
+				if self.display:
+					print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
 				node = max(visited, key=lambda n:n.intrinsic_reward)
 				parentNode = copy.deepcopy(node)
 				self.solution = node.actionSeq
-				print self.solution
+				if self.display:
+					print self.solution
 				gameString_array, object_positions_array = [], []
 				while parentNode is not None:
 					gameString_array.append(parentNode.rle.show())
@@ -417,12 +424,11 @@ class WBP():
 					parentNode = parentNode.parent
 				self.gameString_array = gameString_array[::-1]
 				self.object_positions_array = object_positions_array[::-1]
-				# print "win"
-				# embed()
 				return node, gameString_array, object_positions_array
 			else:
 				# self.quitting = True
-				print "Got no plan after searching {} nodes".format(self.max_nodes)
+				if self.display:
+					print "Got no plan after searching {} nodes".format(self.max_nodes)
 		return None, None, None
 
 class Node():
@@ -479,12 +485,14 @@ class Node():
 			rolloutArray = []
 			i=0
 			terminal, win = vrle._isDone()
-			print "in rollout"
+			if self.WBP.display:
+				print "in rollout"
 			while i<self.rolloutDepth and not terminal:
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
 				# print a
 				vrle.step(a)
-				print vrle.show(indent=True)
+				if self.WBP.display:
+					print vrle.show(indent=True)
 				currHeuristicVal = self.heuristics(vrle, **self.WBP.hyperparameters)
 				heuristicVal = currHeuristicVal-prevHeuristicVal
 				rolloutArray.append(heuristicVal)
@@ -507,7 +515,8 @@ class Node():
 			## we want optimistic estimates of the future value of a shot. Take up to 100 samples but don't get caught in an infinite loop.
 			if terminal and not win and j<100:
 				successfulRollout = False
-				print "rolling out again"
+				if self.WBP.display:
+					print "rolling out again"
 				j+=1
 				# embed()
 			else:
@@ -580,7 +589,8 @@ class Node():
 				current_resource = rle._game.sprite_groups[avatar[0]][0].resources[precondition.item]
 				## If we satisfy the precondiiton, append to tmp_list, then to killer_types (meaning we are capable of killing stype now)
 				if eval("{}{}{}".format(current_resource, true_operator, num)):
-					print "reached resource limit"
+					if self.WBP.display:
+						print "reached resource limit"
 					tmp_list.append(avatar)
 			except IndexError:
 				pass
@@ -669,7 +679,8 @@ class Node():
 					if list(resource[1])[0].operator_name == '>'
 					else list(resource[1])[0].num
 					for resource in avatar_preconditions])
-				print "resource limits", resource_limits
+				if self.WBP.display:
+					print "resource limits", resource_limits
 				try:
 					avatar_resource_quantities = np.array([rle._game.getAvatars()[0].resources[res] for res in resource_names])
 				except IndexError:
