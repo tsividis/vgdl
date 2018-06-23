@@ -504,15 +504,20 @@ class Node():
 
 	def fastcopy(self, rle):
 		newRle = self.empty_copy(rle)
-		#embed()
+		embed()
+		for k,v in rle.__dict__.iteritems():
+			try:
+				newRle.__dict__[k] = v.copy()
+			except:
+				newRle.__dict__[k] = v
 		newRle._obstypes = rle._obstypes.copy()
-		newRle.observationType = rle.observationType
 		if hasattr(rle, '_gravepoints'):
 			newRle._gravepoints = rle._gravepoints.copy()
 		newRle.outdim = rle.outdim
 		#ipdb.set_trace()
 		newRle.symbolDict = rle.symbolDict.copy()
 		newRle._other_types = rle._other_types[:]
+		
 		newRle._game = self.empty_copy(rle._game)
 		ignoreKeys = ['spriteDistribution',
 					  'object_token_spriteDistribution',
