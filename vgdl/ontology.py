@@ -19,7 +19,6 @@ from util import normalizeVec
 import core
 import copy
 import ipdb
-from line_profiler import LineProfiler
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
 

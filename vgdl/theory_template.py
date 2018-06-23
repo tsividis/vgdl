@@ -13,7 +13,6 @@ import operator
 import time, math
 from util import factorize, objectsToSymbol, ccopy
 from rlenvironmentnonstatic import createMindEnv
-from line_profiler import LineProfiler
 
 
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
