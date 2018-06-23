@@ -462,7 +462,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         return output
     """
 
-    def step(self, action, return_obs=True):
+    def step(self, action, return_obs=False):
         if action == ('space'):
             self._game.keystate[32] = True
             action = (0,0)
