@@ -456,6 +456,8 @@ class Agent:
 					bestScoresAndHypotheses = \
 							self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses)
 					
+					sys.stdout.flush()
+
 					## TODO: Prediction error only corresponds to self.hypotheses[0]. What you actually want is
 					## checking for the predictions made by *each* of the hypotheses, and then if any give you prediction error,
 					## you reground based on that.
