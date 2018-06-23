@@ -301,7 +301,8 @@ class WBP():
 				gameString_array, object_positions_array = [], []
 				while parentNode is not None:
 					gameString_array.append(parentNode.rle.show())
-					object_positions_array.append(copy.deepcopy(parentNode.rle))
+					# object_positions_array.append(copy.deepcopy(parentNode.rle))
+					object_positions_array.append(parentNode.fastcopy(parentNode.rle))
 					parentNode = parentNode.parent
 				self.gameString_array = gameString_array[::-1]
 				self.object_positions_array = object_positions_array[::-1]
@@ -420,7 +421,8 @@ class WBP():
 				gameString_array, object_positions_array = [], []
 				while parentNode is not None:
 					gameString_array.append(parentNode.rle.show())
-					object_positions_array.append(copy.deepcopy(parentNode.rle))
+					# object_positions_array.append(copy.deepcopy(parentNode.rle))
+					object_positions_array.append(parentnode.fastcopy(parentNode.rle))
 					parentNode = parentNode.parent
 				self.gameString_array = gameString_array[::-1]
 				self.object_positions_array = object_positions_array[::-1]
@@ -541,7 +543,8 @@ class Node():
 		successfulRollout = False
 		j=0
 		while not successfulRollout:
-			vrle = copy.deepcopy(Vrle)
+			# vrle = copy.deepcopy(Vrle)
+			vrle = self.fastcopy(Vrle)
 			prevHeuristicVal = self.heuristics(vrle, **self.WBP.hyperparameters)
 			rolloutArray = []
 			i=0
@@ -990,8 +993,8 @@ class Node():
 			## try to copy parent lastState. Then take action and store as current lastState.
 			## if that fails, replay from beginning and store as current lastState
 			try:
-				vrle = cPickle.loads(cPickle.dumps(self.parent.rle, -1))
-				# vrle = copy.deepcopy(self.parent.rle)
+				# vrle = cPickle.loads(cPickle.dumps(self.parent.rle, -1))
+				vrle = self.fastcopy(self.parent.rle)
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
 					# print a
@@ -1005,8 +1008,8 @@ class Node():
 		else:
 			self.reconstructed=True
 			# print "copy failed; replaying from top"
-			vrle = cPickle.loads(cPickle.dumps(self.rle, -1))
-			# vrle = copy.deepcopy(self.rle)
+			# vrle = cPickle.loads(cPickle.dumps(self.rle, -1))
+			vrle = self.fastcopy(self.rle)
 			self.terminal, self.win = vrle._isDone()
 			i=0
 			while not self.terminal and len(self.actionSeq)>i:
@@ -1128,7 +1131,8 @@ class Node():
 		return self.rle._isDone()[1]
 
 	def playBack(self, make_movie=False):
-		vrle = copy.deepcopy(self.rle)
+		# vrle = copy.deepcopy(self.rle)
+		vrle = self.fastcopy(self.rle)
 		self.finalStatesEncountered = []
 		terminal = vrle._isDone()[0]
 		i=0
