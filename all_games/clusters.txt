@@ -31,22 +31,27 @@ BasicGame key_handler=Pulse
 
     InteractionSet
         avatar wall > stepBack
-        avatar hole > killSprite 
         avatar hole > changeScore value=-1
+        avatar hole > killSprite 
 
         bluebox avatar > bounceForward
         redbox avatar > bounceForward
         greenbox avatar > bounceForward
         brokenBox avatar > bounceForward
 
-        bluebox blueblock > transformTo stype=blueblock 
         bluebox blueblock > changeScore value=1
+        bluebox blueblock > killSprite
+        #bluebox blueblock > transformTo stype=blueblock 
         blueblock blueblock > stepBack
-        redbox redblock > transformTo stype=redblock 
+        
         redbox redblock > changeScore value=1
+	redbox redblock > killSprite
+        #redbox redblock > transformTo stype=redblock 
         redblock redblock > stepBack
-        greenbox greenblock > transformTo stype=greenblock 
+        
         greenbox greenblock > changeScore value=1
+	greenbox greenblock > killSprite
+        #greenbox greenblock > transformTo stype=greenblock 
         greenblock greenblock > stepBack
 
         avatar blueblock > stepBack
