@@ -1,7 +1,7 @@
 BasicGame
     SpriteSet
         sword > Flicker color=GRAY limit=5 singleton=True
-        entrance > SpawnPoint total=5 color=PINK cooldown=100 stype=doctor portal=True
+        entrance > SpawnPoint total=5 color=PINK  spawnCooldown=100 stype=doctor portal=True
         virus > Immovable color=RED 
 
         normal   > ShootAvatar stype=sword color=WHITE 
