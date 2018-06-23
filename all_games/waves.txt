@@ -34,8 +34,8 @@ BasicGame
         sam alien > killSprite
         alien sam > changeScore value=2
 
-        sam laser > transformTo stype=shield
         laser sam > killSprite
+        sam laser > transformTo stype=shield
 
         avatar shield > changeResource resource=shield value=1
         shield avatar > killSprite
