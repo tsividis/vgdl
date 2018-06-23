@@ -1230,7 +1230,7 @@ class Node():
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
 					# print a
-					res = vrle.step(a, return_obs=False)
+					res = vrle.step(a, return_obs=True)
 					relevantEvents = [t for t in res['effectList'] if t[0] == 'changeResource']
 					self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
 					self.terminal, self.win = vrle._isDone()
@@ -1246,7 +1246,7 @@ class Node():
 			i=0
 			while not self.terminal and len(self.actionSeq)>i:
 				a = self.actionSeq[i]
-				res = vrle.step(a)
+				res = vrle.step(a, return_obs=True)
 				self.metabolic_cost += self.metabolics(vrle, res['effectList'], a)
 				self.terminal, self.win = vrle._isDone()
 				i += 1
