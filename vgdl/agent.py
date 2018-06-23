@@ -379,34 +379,12 @@ class Agent:
 			# embed()
 
 			quitting = False
-			if self.parallel_planning:
-				pass
-				# def WBP_wrapper(l):
-				# 	hyperparameters, theory, queue = l
-				# 	p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=theory, fakeInteractionRules = self.fakeInteractionRules,
-				# 		seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-				# 		firstOrderHorizon=self.firstOrderHorizon, hyperparameters=hyperparameters)
-				# 	return p
-				# # # start planners
-				# # print('#1')
-				# result_queue = None
-				# # print('#2')
-				# pool = mp.Pool()
-				# # print('#3')
-				# res = pool.map_async(WBP_wrapper, [(h_set, self.hypotheses[0], result_queue) for h_set in self.hyperparameter_sets])
-				# # print('#4')
-				# pool.close()
-				# # print('#5')
-				# pool.join()
-				# # print('#6')
-				# best_index = np.argmin([p.total_nodes for p in res._value])
-				# p = res._value[best_index]
-			else:
-				avatarColor = hypothesesToPlanWith[0].classes['avatar'][0].colorName
 
-				p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=hypothesesToPlanWith[0], fakeInteractionRules = self.fakeInteractionRules,
-					seen_limits = self.seen_limits[avatarColor], annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-					firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
+			avatarColor = hypothesesToPlanWith[0].classes['avatar'][0].colorName
+
+			p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=hypothesesToPlanWith[0], fakeInteractionRules = self.fakeInteractionRules,
+				seen_limits = self.seen_limits[avatarColor], annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+				firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
 			
 			bestNode, gameStringArray, predictedEnvs = p.BFS()
 
