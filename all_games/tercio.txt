@@ -78,8 +78,8 @@ BasicGame
         inBlack wall > stepBack
         inBlue wall > stepBack
         inGrey wall > stepBack
-        target crate > transformTo stype=winTarget
-        target crate > changeScore value=1
+        target crate > transformTo stype=winTarget scoreChange=1 
+        #target crate > changeScore value=1
 
         black white > nothing
         white black > nothing
