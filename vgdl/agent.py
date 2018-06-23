@@ -385,6 +385,7 @@ class Agent:
 				## take however many non-actions as remain in the observation period
 				solution = [0]*(OBSERVATION_PERIOD_LENGTH-sum([len(episode) for episode in self.rleHistory]))
 				print "observing. taking actions", solution
+				predictedEnvs = None
 			else:
 				## Otherwise plan normally
 
@@ -601,7 +602,7 @@ class Agent:
 		newRle._game.observation = ccopy(rle._game.observation)
 		newRle.symbolDict = ccopy(rle.symbolDict)
 		newRle._game.sprite_groups['avatar'][0].resources = ccopy(rle._game.sprite_groups['avatar'][0].resources)
-
+		newRle.ID = rle.ID
 		return newRle
 
 	def scoreAndFilterTheories(self, newTheories, episode_num, displayTheories=False):
