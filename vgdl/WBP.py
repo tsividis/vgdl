@@ -506,6 +506,7 @@ class Node():
 		newRle = self.empty_copy(rle)
 		#embed()
 		newRle._obstypes = rle._obstypes.copy()
+		newRle.observationType = rle.observationType
 		if hasattr(rle, '_gravepoints'):
 			newRle._gravepoints = rle._gravepoints.copy()
 		newRle.outdim = rle.outdim
