@@ -939,7 +939,7 @@ class Node():
 			i=0
 			while not self.terminal and len(self.actionSeq)>i:
 				a = self.actionSeq[i]
-				res = vrle.step(a, return_obs=True)
+				vrle.step(a)
 				self.metabolic_cost += self.metabolics(vrle, res['effectList'], a)
 				self.terminal, self.win = vrle._isDone()
 				i += 1
