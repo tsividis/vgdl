@@ -137,7 +137,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                         mappedState[x+self.outdim[1]*y] = 0
                     except:
                         pass
-            
         #gameString = []
         #for mappedRow in mappedState:
         #    gameString.extend(mappedRow)
