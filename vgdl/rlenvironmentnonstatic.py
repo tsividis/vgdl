@@ -10,6 +10,7 @@ import numpy as np
 from numpy import zeros
 import pygame
 from ontology import BASEDIRS
+from core import VGDLSprite
 from stateobsnonstatic import StateObsHandlerNonStatic
 from collections import defaultdict
 import argparse
@@ -21,16 +22,14 @@ from colors import *
 from util import factorize, objectsToSymbol
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from termcolor import colored
+
 import cPickle
-from line_profiler import LineProfiler
-from stateobsnonstatic import processFrame
-import uuid
-from vgdl.core import VGDLParser
+# from line_profiler import LineProfiler
 
 OBSERVATION_LOCAL = 'local'
 OBSERVATION_GLOBAL = 'global'
 
-class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
+class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     """ Wrapping a VGDL game with a generic interface suitable for reinforcement learning.
     """
 
@@ -46,11 +45,8 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
     # Recording events (in slightly redundant format state-action-nextstate)
     recordingEnabled = False
 
-    def __init__(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, actionset=BASEDIRS, positions=None, **kwargs):
-        if positions is not None:
-            game = _createVGDLGameFromPos(gameDef,positions)
-        else:
-            game = _createVGDLGame( gameDef, levelDef )
+    def __init__(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, actionset=BASEDIRS, **kwargs):
+        game = _createVGDLGame( gameDef, levelDef )
         StateObsHandlerNonStatic.__init__(self, game, **kwargs)
         self._actionset = actionset
         self.visualize = visualize
@@ -77,14 +73,13 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
                     self.nsAllCells.append( (x, y) )
         self._postInitReset()
         self._game.reset()
-        self._game.all_objects = self._game.getAllObjects() #self._game.getObjects() # Save all objects, some which may be killed in game
+        self._game.all_objects = self._game.getObjects() # Save all objects, some which may be killed in game
         self._game.exceptedObjects = []
         self.makeSymbolDict()
         self._game.ignoreList = [] ## another way to mark objects that shouldn't be processed when doing induction (that is, collision objects)
         self._game.keystate = defaultdict(bool)
         self._game.metabolic_score = 0
         self.game_name = None
-        self.ID = uuid.uuid1()
 
     # Get definition of the observation data expected
     def observationSpec(self):
@@ -95,6 +90,7 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         allItems = ['avatar']+sorted(self._obstypes.keys())[::-1]
         return [allItems[i] for i in indices]
 
+
     def makeSymbolDict(self):
         inverseMapping = dict()
         colorMapping = dict()
@@ -102,7 +98,9 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         alnum = numbers + 'abcdefghijklmnopqrstuvwxyz'
         idx = 0
         OLD_GOAL = "oldGl"
+        # embed()
         for s in self._obstypes.keys():
+            # colorMapping[s] = colorDict[str(self._game.sprite_constr[s][1]['color'])].lower()
             if not s == "goal":
                 inverseMapping[s] = alnum[idx]
                 idx+=1
@@ -112,48 +110,94 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
                 inverseMapping[OLD_GOAL] = "O" # old goal
 
         inverseMapping['avatar'] = 'A'
-        
+        # if "goal" in self._obstypes:
+        #     inverseMapping["goal"] = "G"
+
         self.symbolDict = inverseMapping
+        # self.colorMapping = colorMapping
         return
 
-    def show(self, symbolDict=None, indent=False, showArrays=False, color='grey'):
+    def show_binary(self):
         """
         symbolDict = a dict mapping each sprite name to its symbol.
         If there's no sprite overlap, then returns a string. Else returns numpy array.
         """
-        if symbolDict is None:
-            symbolDict = self.symbolDict
-        gameString = ""
-        spriteOverlap = False # represents whether 2 sprites are on same location
-        state = np.reshape(self._getSensors(), self.outdim)
-        #print state
-        for i in range(self.outdim[0]):
-            if indent:
-                gameString += "     "
-            for j in range(self.outdim[1]):
-                if state[i][j] == 0:
-                    gameString += " "
-                elif state[i][j] == 1:
-                    gameString += colored(symbolDict['avatar'], 'red')
-                else:
-                    spriteIndex = int(round(math.log(state[i][j],2)))-1
-                    if state[i][j]%2 == 1:
-                        gameString += colored("X", 'red')
-                    elif state[i][j] != 2**(spriteIndex+1):
-                        gameString += colored("$", color)
-                    else:
-                        spriteType = sorted(self._obstypes.keys())[::-1][spriteIndex]
-                        gameString += colored(symbolDict[spriteType], color)
+        ## faster version, but need to figure out how to display 
 
-            gameString += "\n"
-            if spriteOverlap:
-                break
+        
+        #mappedState = [[1 for x in range(self.outdim[1])] for y in range(self.outdim[0])]
+        mappedState = np.ones((self.outdim[1]*self.outdim[0]))#[1 for x in range(self.outdim[1]*self.outdim[0])]
+        #ipdb.set_trace()
+        kl_set = set(self._game.kill_list)
+        for lst in self._game.sprite_groups.values():
+            for sprite in lst:
+                if sprite not in kl_set:
+                    y,x = sprite.rect.top/30, sprite.rect.left/30
+                    try:
+                        mappedState[x+self.outdim[1]*y] = 0
+                    except:
+                        pass
+        #gameString = []
+        #for mappedRow in mappedState:
+        #    gameString.extend(mappedRow)
+        return mappedState
 
-        if showArrays and spriteOverlap:
-            print "There were overlapping sprites while doing rle.show! Returning an array representation instead."
-            return np.reshape(self._getSensors(), self.outdim)
+    def show(self, indent=False, showArrays=False, binary=False, color='grey'):
+        """
+        symbolDict = a dict mapping each sprite name to its symbol.
+        If there's no sprite overlap, then returns a string. Else returns numpy array.
+        """
+        ## faster version, but need to figure out how to display 
+
+        locs = defaultdict(lambda:[])
+        if binary:
+            mappedState = [[1 for x in range(self.outdim[1])] for y in range(self.outdim[0])]
         else:
-            return gameString
+            mappedState = [[' ' for x in range(self.outdim[1])] for y in range(self.outdim[0])]
+
+        for lst in self._game.sprite_groups.values():
+            for sprite in lst:
+                if sprite not in self._game.kill_list:
+                    y,x = sprite.rect.top/30, sprite.rect.left/30
+                    locs[(y,x)].append(sprite.name)
+
+        for k,v in locs.iteritems():
+            if binary:
+                symbol = 0
+            else:
+                if len(v)>1:
+                    if 'avatar' in v:
+                        symbol = 'X'
+                    else:
+                        symbol = '$'
+                else:
+                    if 'avatar' in v:
+                        symbol = 'A'
+                    else:
+                        symbol = objectsToSymbol(self, v, self.symbolDict)
+                
+                if symbol in ['A', 'X']:
+                    symbol = colored(symbol, 'red')
+                else:
+                    if color != 'grey':
+                        symbol = colored(symbol, color)
+
+            try:
+                mappedState[k[0]][k[1]] = symbol
+            except:
+                # print "mappedState problem in rlenvironmentNonStatic"
+                ## if you define rules poorly, objects can go off screen, in which case they can't be assigned to an on-screen loc!
+                continue
+
+        if binary:
+            gameString = []
+            for mappedRow in mappedState:
+                gameString.extend(mappedRow)
+        else:
+            gameString = ""
+            for mappedRow in mappedState:
+                gameString += reduce(lambda a,b: a+b, mappedRow) + "\n"
+        return gameString
 
     # Get definition of the actions that are accepted
     def actionSpec(self):
@@ -198,21 +242,20 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
     def close():
         pass
 
-
-
     def _isDone(self, getTermination=False):
         # remember reward if the final state ends the game
+        self._game.terminations.sort(key=lambda x: 0 if (x.name=='SpriteCounter' and x.stype=='avatar' and x.win==False) else 1 if x.name=='SpriteCounter' else 2)
         for t in self._game.terminations:
             # Convention: the first criterion is for keyboard-interrupt termination
             # Breaking convention here
             ended, win = t.isDone(self._game)
             if ended:
-                if t.name=='noveltyTermination':
-                    print 'noveltyTermination', t.s1, t.s2
-                elif t.name=='spriteCounter':
-                    print 'spriteCounter', t.stype
-                elif t.name=='multiSpriteCounter':
-                    print 'multiSpriteCounter', t.stypes
+                # if t.name=='NoveltyTermination':
+                #     print t.s1, t.s2
+                # elif t.name=='SpriteCounter':
+                #     print t.stype
+                # elif t.name=='MultiSpriteCounter':
+                #     print t.stypes
                 if getTermination:
                     return ended, win, t
                 else:
@@ -221,6 +264,16 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
             return False, False, None
         else:
             return False, False
+
+    """
+    def sensors_profiler(self, state=None):
+        lp = LineProfiler()
+        lp_wrapper = lp(self._getSensors)
+        output = lp_wrapper(state)
+        lp.print_stats()
+
+        return output
+    """
 
     def _getSensors(self, state=None):
         # Get position and orientation
@@ -262,7 +315,6 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
             # 200002
             # 210002
             # 222222
-            
             ns = self.nsAllCells
             for i, n in enumerate(ns):
                 # check if the avatar is here
@@ -286,45 +338,53 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         # if action != (0,0) and self._avatar:
         #     self._avatar._readMultiActions = lambda *x: [action]
 
-
+        # self._avatar._readMultiActions = lambda *x: [self._actionset[action]] # old
         possible_actions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
-        
+
         if action in possible_actions:
             self._game.keystate[action] = True
 
 
         if self.visualize:
             self._game._clearAll(self.visualize)
-        
+
         # update sprites
         if onlyavatar:
-            self._avatar.update(self._game)
-        else:
-            for s in list(self._game):
-                if s not in self._game.kill_list:
-                    s.update(self._game)
+            if action != 0:
+                self._avatar.update(self._game)
 
-    
+        else:
+            for s in self._game:
+                if action == 0 and s == self._avatar:
+                        continue
+                if s not in self._game.kill_list:
+                        s.update(self._game)
+
         events = self._game._eventHandling()
         ## get events (e.g., (stepBack obj1ID, obj2ID))
 
-        ## Added 5/2, to correct for the fact that some games don't have _gravepoints by default
+        # self._gravepoints[(skey, self._rect2pos(s.rect))] = True
+
+
+        ## Added 5/2, to correct for the fact that some gmaes don't have _gravepoints by default
         if not hasattr(self, '_gravepoints'):
             self._gravepoints = {}
-        
+
         # ### BEGINNING OF CHANGES
         for skey in self._other_types:
             ss = self._game.sprite_groups[skey]
             self._obstypes[skey] = [self._sprite2state(sprite, oriented=False)
                                         for sprite in ss]
-                ## Added 4/31
+
+        ## Added 4/31
         ## Logic (I think) was to make sure everything that could exist was in gravepoints because
         ## getState (defined in stateobsnonstatic) uses it to populate getState, getSensors, etc.
         for k in self._game.sprite_groups:
             for sprite in self._game.sprite_groups[k]:
                 if (k, self._rect2pos(sprite.rect)) not in self._gravepoints.keys():
                     self._gravepoints[(k, self._rect2pos(sprite.rect))] = True
-
+        # print "after adding gravepoints"
+        # embed()
         return events
 
         # if self.visualize:
@@ -342,18 +402,23 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         #     self._last_state = self.getState()
         #     self._allEvents.append((self._previous_state, action, self._last_state))
 
-    def step(self, action):
-        #print self._game.sprite_groups['avatar']
+    """
+    def step_profiler(self, action):
+        lp = LineProfiler()
+        lp_wrapper = lp(self.step)
+        output = lp_wrapper(action)
+        lp.print_stats()
+
+        return output
+    """
+
+    def step(self, action, return_obs=True):
         if action == ('space'):
             self._game.keystate[32] = True
             action = (0,0)
         pre_step_score = self._game.score
-        #print("start action")
         events = self._performAction(action)
-
-        # observation = self._getSensors() ## Consider commenting this out and not getting an observation.
-        observation = 0
-
+        observation = self._getSensors() if return_obs else None
         (ended, won) = self._isDone()
         self._game.time+=1
 
@@ -371,12 +436,8 @@ class RLEnvironmentNonStatic(StateObsHandlerNonStatic):
         for k in self._game.keystate:
             self._game.keystate[k] = False
 
-        self._game.observation = processFrame(self._game.observation, self._game)
-
-        return {'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
-
-    def __repr__(self):
-        return self.show()
+        # print "reward", reward
+        return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
 
 ## the game in the agent's 'head'
 def defTheoryTest():
@@ -457,7 +518,6 @@ def natcasecmp(a, b):
 
 def defInputGame(filename, randomize=False, index=None):
     game_file = importlib.import_module(filename)
-    print(game_file)
     levels = [k for k in game_file.__dict__.keys() if 'level' in k]
     levels.sort(natcasecmp)
     # print levels
@@ -475,19 +535,11 @@ def defInputGame(filename, randomize=False, index=None):
         return (game_file.game, game_file.level)
 
 def _createVGDLGame( gameSpec, levelSpec ):
-    # parse, run and play.
-    game = VGDLParser().parseGame(gameSpec)
-    game.buildLevel(levelSpec)
-    game.uiud = uuid.uuid4()
-    return game
-
-def _createVGDLGameFromPos(gameSpec, positions):
     import uuid
     from vgdl.core import VGDLParser
     # parse, run and play.
     game = VGDLParser().parseGame(gameSpec)
-    #game.buildLevel(levelSpec)
-    game.buildLevelFromPos(positions)
+    game.buildLevel(levelSpec)
     game.uiud = uuid.uuid4()
     return game
 
@@ -567,11 +619,8 @@ def createMindEnv(game, level, output=False, obsType=OBSERVATION_GLOBAL ):
     if output:
         print game
         print level
-    try:
-        return RLEnvironmentNonStatic( game, level, observationType=obsType )
-    except:
-        return None
-        
+    return RLEnvironmentNonStatic( game, level, observationType=obsType )
+
 def createRLVirtualGame( obsType=OBSERVATION_GLOBAL ):
     return RLEnvironmentNonStatic( *defVirtualGame(), observationType=obsType )
 
@@ -613,25 +662,9 @@ def createRLAliens( obsType=OBSERVATION_LOCAL ):
 
 def createRLInputGame(filename, obsType=OBSERVATION_GLOBAL):
     game_file = importlib.import_module(filename)
-    #embed()
-    try:    
-        return RLEnvironmentNonStatic(game_file.game, game_file.level, \
-                observationType = obsType)
-    except:
-        return RLEnvironmentNonStatic(game_file.game, game_file.level1, \
+    return RLEnvironmentNonStatic(game_file.game, game_file.level, \
             observationType = obsType)
 
-def createRLInputGameChangeLevel(filename, level):
-    game_file = importlib.import_module(filename)
-    return RLEnvironmentNonStatic(game_file.game, level, \
-                observationType = OBSERVATION_GLOBAL)
-
-def createRLInputGameFromPositions(filename, positions=None):
-    game_file = importlib.import_module(filename)
-    #embed()
-    if positions is None:
-        positions = game_file.positions
-    return RLEnvironmentNonStatic(game_file.game, None, positions = positions, observationType= OBSERVATION_GLOBAL)
 
 def createRLInputGameFromStrings(game, level):
     return RLEnvironmentNonStatic(game, level, \
