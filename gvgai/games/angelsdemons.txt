@@ -1,5 +1,6 @@
 BasicGame
     SpriteSet
+        sky > Immovable color=LIGHTBLUE 
         trunk > Immovable color=WHITE 
         cursed > Immovable color=GRAY 
 
@@ -235,3 +236,4 @@ BasicGame
         o >  output
         w > wall
         A >  avatar
+        . >  sky
