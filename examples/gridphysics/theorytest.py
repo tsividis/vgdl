@@ -2,11 +2,11 @@ level="""
 5555555555555
 84       5  5
 5  5        5
-5   5   5 755
-555 50  55555
+5   50  5 755
+555 5   55555
 5       5 6 5
-5     0     5
-5  0        5
+5    0      5
+5   0       5
 5555555555555
 """
 game = """
@@ -14,7 +14,7 @@ BasicGame
 	SpriteSet
 		avatar > ShootAvatar color=DARKBLUE stype=sword
 		sword > OrientedFlicker color=BLUE singleton=True
-		c3 > Chaser color=PINK fleeing=True cooldown=4 stype=sword
+		c3 > Chaser color=PINK fleeing=True cooldown=4
 		c6 > ResourcePack color=ORANGE
 		c5 > ResourcePack color=GREEN
 		c4 > ResourcePack color=DARKGRAY
