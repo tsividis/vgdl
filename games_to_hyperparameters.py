@@ -18,16 +18,19 @@ game_names = [ 'expt_helper', 'expt_push_boulders', 'zelda', 'angelsdemons', 'av
 			'bait', 'camelRace', 'chopper', 'clusters','infection', 
 			'jaws', 'lemmings', 'myAliens', 'overload', 'plants', 
 			'plaqueattack', 'shipwreck','superman','watergame', 'waves',
-			 'wildgunman']
+			 'wildgunman', 'aliens', 'boulderchase', 'modality', 'tercio']
 
 #skipped: , cookmepasta, thesnowman, shipwreck
 # run w/ different params: boulderchase, modality, tercio
 
 mapping = dict()
 
-# for k in game_names:
-#     if k not in ['infection', 'lemmings', 'modality', 'plants', 'tercio', 'waves']: #[need much looking into]
-#         mapping[k] = [0,2,3]
-
 for k in game_names:
-    mapping[k] = [2]
+    if k in ['aliens', 'myAliens']:
+        mapping[k] = [2,3]
+    else:
+    	mapping[k] = [2]
+
+
+# for k in game_names:
+#     mapping[k] = [2]
