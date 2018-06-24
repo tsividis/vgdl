@@ -1014,7 +1014,7 @@ class Node():
 			if 'Flicker' in str(theory.classes[s1][0].vgdlType) and not ('Flicker' in str(theory.classes[s2][0].vgdlType) or s2=='avatar'):
 				s1 = s2
 				s2 = 'avatar'
-				print("replaced flicker with avatar")
+				# print("replaced flicker with avatar")
 
 			s2_positions = self.WBP.findObjectsInRLE(rle, s2)
 			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
