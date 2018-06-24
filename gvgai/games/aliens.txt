@@ -1,0 +1,55 @@
+BasicGame
+    SpriteSet
+        base    > Immovable    color=WHITE
+        avatar  > FlakAvatar   stype=sam color=DARKBLUE
+        sam  > Missile orientation=UP    color=PINK singleton=True
+        bomb > Missile orientation=DOWN  color=RED  speed=0.5
+        alienGreen > Bomber stype=bomb spawnCooldown=3 prob=.01 speed=0.2 color=LIGHTGREEN
+        alienBlue > Bomber stype=bomb spawnCooldown=3 prob=.01 speed=0.2 color=GOLD
+        portalSlow  > SpawnPoint stype=alienBlue  spawnCooldown=16  total=20 color=ORANGE
+        portalFast  > SpawnPoint invisible=True hidden=True stype=alienGreen  spawnCooldown=12   total=20 color=LIGHTGRAY
+
+    LevelMapping
+        0 > base
+        1 > portalSlow
+        2 > portalFast
+        b > alienBlue
+        g > alienGreen
+        A > avatar
+
+    TerminationSet
+        SpriteCounter      stype=avatar               limit=0 win=False
+        MultiSpriteCounter stype1=portalSlow stype2=portalFast stype3=alienGreen stype4=alienBlue limit=0 win=True
+
+    InteractionSet
+        avatar  EOS  > stepBack
+        alienGreen alienGreen > nothing
+        alienGreen alienBlue > nothing
+        alienBlue alienGreen > nothing
+        alienBlue alienBlue > nothing
+        alienGreen   EOS  > turnAround
+        alienBlue   EOS  > turnAround
+        sam EOS  > killSprite
+        bomb EOS  > killSprite
+
+        base bomb > killSprite
+        bomb base > killSprite
+        base sam > killSprite 
+        base sam > changeScore value=1
+        sam base > killSprite
+
+        base   alienBlue > killSprite
+        base   alienGreen > killSprite
+        avatar alienBlue > killSprite 
+        avatar alienBlue > changeScore value=-1
+        avatar alienGreen > killSprite 
+        avatar alienGreen > changeScore value=-1
+        avatar bomb  > killSprite 
+        avatar bomb > changeScore value=-1
+        alienGreen  sam   > killSprite 
+        alienGreen bomb > changeScore value=2
+        alienBlue  sam   > killSprite 
+        alienBlue sam  >  changeScore value=2
+        sam avatar > nothing
+        sam portalSlow > nothing
+        sam portalFast > nothing
