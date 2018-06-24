@@ -346,8 +346,6 @@ class Agent:
         #
         # write_to_csv(str(self.gameFilename)+'.csv', output)
 
-        self.makeMovie()
-
     def makeHeatmap(self, statesEncountered, filename):
         from vgdl.plotting import featurePlot
         import matplotlib.pyplot as plt
