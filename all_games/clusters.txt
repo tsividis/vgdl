@@ -14,7 +14,7 @@ BasicGame key_handler=Pulse
         brokenbox > Passive  color=BROWN
 
         avatar > MovingAvatar color=DARKBLUE
-        wall > Immovable color=BLACK
+        wall > Immovable color=DARKGRAY
 
     LevelMapping
             A > avatar 

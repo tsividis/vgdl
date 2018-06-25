@@ -12,7 +12,7 @@ BasicGame
         winnerPlayer > MovingAvatar color=PINK 
         avatar > MovingAvatar color=DARKBLUE frameRate=8
 
-        wall > Immovable color=GRAY  
+        wall > Immovable color=DARKGRAY  
 
     InteractionSet
         avatar goal > transformTo stype=winnerPlayer 
