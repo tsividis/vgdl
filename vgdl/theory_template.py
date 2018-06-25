@@ -804,7 +804,7 @@ class Theory(object):
 			obj1 = self.spriteObjects[event[1]]
 			obj2 = self.spriteObjects[event[2]]
 		except:
-			print "couldn't find event[2] in interpret()"
+			print "couldn't find event[1] or event[2] in interpret()"
 			embed()
 
 		c1, c2 = self.getClass(obj1), self.getClass(obj2)
