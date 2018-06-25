@@ -1229,7 +1229,7 @@ class NoveltyTermination(Termination):
                         # name1, name2))
                     # if name1=='c7' and name2=='avatar':
                     #     ipdb.set_trace()
-                    print("Classes are {} and {}".format(class1, class2))
+                    # print("Classes are {} and {}".format(class1, class2))
                     return True, self.win
             elif len(e) > 2 and e[2]=='ENDOFSCREEN':
                 name2 = 'EOS'
