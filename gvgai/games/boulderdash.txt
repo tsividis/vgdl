@@ -17,12 +17,13 @@ BasicGame
 		x > diamond
 		c > crab
 		b > butterfly
+		A > avatar 
 
 	InteractionSet
 		dirt avatar > killSprite
 		dirt sword  > killSprite
 
-		diamond avatar > changeResource resource=diamond value=1
+		diamond avatar > collectResource 
 		diamond avatar > changeScore value=2
 
 		avatar wall > stepBack

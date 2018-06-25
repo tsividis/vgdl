@@ -40,8 +40,8 @@ BasicGame
                 avatar crab > killSprite 
                 avatar crab > changeScore value=-1 
 
-                crab boulder > killIfFromAbove scoreChange=5 
-                butterfly boulder > killIfFromAbove scoreChange=5
+                crab boulder > killIfFromAbove 
+                butterfly boulder > killIfFromAbove 
 
 		boulder dirt > stepBack 
 		boulder wall > stepBack
