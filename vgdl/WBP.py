@@ -436,6 +436,7 @@ class WBP():
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
 						# print "win"
+						# embed()
 						# if t:
 							# print t.__dict__
 						if not child.rle._game.getAvatars():
