@@ -6,7 +6,7 @@ BasicGame
         key > Resource color=ORANGE limit=1
         goal > Immovable color=GREEN
         box > Passive color=BROWN
-        wall > Immovable color=BLACK 
+        wall > Immovable color=DARKGRAY
 
     LevelMapping
         A > avatar 
