@@ -14,12 +14,13 @@
 
 # game_names = ['aliens', 'butterflies', 'expt_helper', 'expt_push_boulders', 'frogs', 'portals', 'survivezombies', 'zelda']
 
-game_names = [ 'expt_helper', 'expt_push_boulders', 'zelda', 'angelsdemons', 'avoidgeorge', 
-			'bait', 'camelRace', 'chopper', 'clusters',
-			'jaws', 'lemmings', 'myAliens', 'overload', 'plants', 
-			'plaqueattack', 'shipwreck','superman','watergame', 'waves',
-			 'wildgunman', 'aliens', 'boulderchase', 'modality', 'tercio']
+# game_names = [ 'expt_helper', 'expt_push_boulders', 'zelda', 'angelsdemons', 'avoidgeorge', 
+# 			'bait', 'camelRace', 'chopper', 'clusters',
+# 			'jaws', 'lemmings', 'myAliens', 'overload', 'plants', 
+# 			'plaqueattack', 'shipwreck','superman','watergame', 'waves',
+# 			 'wildgunman', 'aliens', 'boulderchase', 'modality', 'tercio']
 
+game_names = ['lemmings', 'expt_helper']
 #skipped: , cookmepasta, thesnowman, shipwreck
 # run w/ different params: boulderchase, modality, tercio
 
