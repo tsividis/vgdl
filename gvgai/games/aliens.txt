@@ -23,10 +23,6 @@ BasicGame
 
     InteractionSet
         avatar  EOS  > stepBack
-        alienGreen alienGreen > nothing
-        alienGreen alienBlue > nothing
-        alienBlue alienGreen > nothing
-        alienBlue alienBlue > nothing
         alienGreen   EOS  > turnAround
         alienBlue   EOS  > turnAround
         sam EOS  > killSprite
@@ -50,6 +46,11 @@ BasicGame
         alienGreen bomb > changeScore value=2
         alienBlue  sam   > killSprite 
         alienBlue sam  >  changeScore value=2
+
         sam avatar > nothing
         sam portalSlow > nothing
         sam portalFast > nothing
+        alienGreen alienGreen > nothing
+        alienGreen alienBlue > nothing
+        alienBlue alienGreen > nothing
+        alienBlue alienBlue > nothing

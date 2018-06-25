@@ -1,0 +1,376 @@
+BasicGame
+    SpriteSet
+        building > Immovable color=PURPLE
+        street > Immovable color=ORANGE
+        emptyspace > Immovable color=WHITE invisible=True
+        jail > Immovable color=BROWN
+
+        portalLeft > SpawnPoint color=IOQEEF spawnCooldown=67 total=20 stype=bleft
+        portalRight > SpawnPoint color=LBLFCJ spawnCooldown=67 total=20 stype=bright
+
+        bleft > Bomber orientation=UP color=LRSPUS  prob=0.05 spawnCooldown=6 speed=0.1 stype=missileL 
+        bright > Bomber orientation=UP color=TDLEMS  prob=0.05 spawnCooldown=6 speed=0.1 stype=missileR
+
+        villain  > Resource color=YOYTZM limit=8 value=0
+        villaingang > Resource color=KSXCRX limit=1 value=0
+
+        standingcivilian > Missile orientation=DOWN color=CVHTTO speed=0.2
+        hurtcivilian > Immovable color=LIGHTRED
+        fallingcivilian > Missile orientation=DOWN color=WLMEZR speed=0.2
+
+
+        missileL > Missile speed=0.6 color=CDMHFV orientation=LEFT
+        missileR > Missile speed=0.6 color=ENKXEZ orientation=RIGHT
+
+        avatar > MovingAvatar color=DARKBLUE frameRate=8
+
+        wall > Immovable color=BLACK
+
+    InteractionSet
+        avatar wall > stepBack
+        avatar EOS > stepBack 
+        avatar portal > stepBack
+
+        bleft wall > reverseDirection
+        bleft wall > stepBack
+        bright wall > reverseDirection
+        bright wall > stepBack
+        missileL EOS > killSprite
+        missileR EOS > killSprite
+
+        building missileL > transformTo stype=emptyspace
+        missileL building > killSprite
+        building missileR > transformTo stype=emptyspace
+        missileR building > killSprite
+
+        standingcivilian building > stepBack
+        standingcivilian emptyspace > transformTo stype=fallingcivilian
+        fallingcivilian building > transformTo stype=standingcivilian
+
+        fallingcivilian wall > transformTo stype=hurtcivilian
+        fallingcivilian avatar > killSprite 
+        fallingcivilian avatar > changeScore value=1
+
+        avatar bleft > changeResource resource=villain value=1 
+        avatar bleft > changeScore value=1
+        bleft avatar > killSprite
+        avatar bright > changeResource resource=villain value=1 
+        avatar bright > changeScore value=1
+        bright avatar > killSprite
+
+        avatar jail > spawnIfHasMore resource=villain stype=villaingang limit=8
+        avatar jail > changeResource resource=villain value=-8
+        villaingang jail > killSprite 
+        villaingang jail > changeScore value=1000
+
+
+        street building > nothing
+        building street > nothing
+        emptyspace building > nothing
+        building emptyspace > nothing
+        jail building > nothing
+        building jail > nothing
+        portalLeft building > nothing
+        building portalLeft > nothing
+        portalRight building > nothing
+        building portalRight > nothing
+        bleft building > nothing
+        building bleft > nothing
+        building bright > nothing
+        bright building > nothing
+        building villain > nothing
+        villain building > nothing
+        building villaingang > nothing
+        villaingang building > nothing
+        hurtcivilian building > nothing
+        building hurtcivilian > nothing
+        avatar building > nothing
+        building avatar > nothing
+        building wall > nothing
+        wall building > nothing
+        building EOS > nothing
+        EOS building > nothing
+        emptyspace street > nothing
+        street emptyspace > nothing
+        jail street > nothing
+        street jail > nothing
+        portalLeft street > nothing
+        street portalLeft > nothing
+        portalRight street > nothing
+        street portalRight > nothing
+        bleft street > nothing
+        street bleft > nothing
+        street bright > nothing
+        bright street > nothing
+        street villain > nothing
+        villain street > nothing
+        street villaingang > nothing
+        villaingang street > nothing
+        street standingcivilian > nothing
+        standingcivilian street > nothing
+        hurtcivilian street > nothing
+        street hurtcivilian > nothing
+        street fallingcivilian > nothing
+        fallingcivilian street > nothing
+        street missileL > nothing
+        missileL street > nothing
+        missileR street > nothing
+        street missileR > nothing
+        avatar street > nothing
+        street avatar > nothing
+        street wall > nothing
+        wall street > nothing
+        street EOS > nothing
+        EOS street > nothing
+        jail emptyspace > nothing
+        emptyspace jail > nothing
+        portalLeft emptyspace > nothing
+        emptyspace portalLeft > nothing
+        portalRight emptyspace > nothing
+        emptyspace portalRight > nothing
+        emptyspace bleft > nothing
+        bleft emptyspace > nothing
+        emptyspace bright > nothing
+        bright emptyspace > nothing
+        emptyspace villain > nothing
+        villain emptyspace > nothing
+        emptyspace villaingang > nothing
+        villaingang emptyspace > nothing
+        hurtcivilian emptyspace > nothing
+        emptyspace hurtcivilian > nothing
+        emptyspace fallingcivilian > nothing
+        fallingcivilian emptyspace > nothing
+        emptyspace missileL > nothing
+        missileL emptyspace > nothing
+        missileR emptyspace > nothing
+        emptyspace missileR > nothing
+        emptyspace avatar > nothing
+        avatar emptyspace > nothing
+        emptyspace wall > nothing
+        wall emptyspace > nothing
+        emptyspace EOS > nothing
+        EOS emptyspace > nothing
+        portalLeft jail > nothing
+        jail portalLeft > nothing
+        portalRight jail > nothing
+        jail portalRight > nothing
+        jail bleft > nothing
+        bleft jail > nothing
+        jail bright > nothing
+        bright jail > nothing
+        jail villain > nothing
+        villain jail > nothing
+        jail standingcivilian > nothing
+        standingcivilian jail > nothing
+        hurtcivilian jail > nothing
+        jail hurtcivilian > nothing
+        jail fallingcivilian > nothing
+        fallingcivilian jail > nothing
+        jail missileL > nothing
+        missileL jail > nothing
+        jail missileR > nothing
+        missileR jail > nothing
+        jail wall > nothing
+        wall jail > nothing
+        jail EOS > nothing
+        EOS jail > nothing
+        portalLeft portalRight > nothing
+        portalRight portalLeft > nothing
+        portalLeft bleft > nothing
+        bleft portalLeft > nothing
+        portalLeft bright > nothing
+        bright portalLeft > nothing
+        portalLeft villain > nothing
+        villain portalLeft > nothing
+        portalLeft villaingang > nothing
+        villaingang portalLeft > nothing
+        portalLeft standingcivilian > nothing
+        standingcivilian portalLeft > nothing
+        portalLeft hurtcivilian > nothing
+        hurtcivilian portalLeft > nothing
+        portalLeft fallingcivilian > nothing
+        fallingcivilian portalLeft > nothing
+        portalLeft missileL > nothing
+        missileL portalLeft > nothing
+        portalLeft missileR > nothing
+        missileR portalLeft > nothing
+        portalLeft avatar > nothing
+        avatar portalLeft > nothing
+        portalLeft wall > nothing
+        wall portalLeft > nothing
+        portalLeft EOS > nothing
+        EOS portalLeft > nothing
+        portalRight bleft > nothing
+        bleft portalRight > nothing
+        portalRight bright > nothing
+        bright portalRight > nothing
+        portalRight villain > nothing
+        villain portalRight > nothing
+        portalRight villaingang > nothing
+        villaingang portalRight > nothing
+        portalRight standingcivilian > nothing
+        standingcivilian portalRight > nothing
+        hurtcivilian portalRight > nothing
+        portalRight hurtcivilian > nothing
+        portalRight fallingcivilian > nothing
+        fallingcivilian portalRight > nothing
+        portalRight missileL > nothing
+        missileL portalRight > nothing
+        portalRight missileR > nothing
+        missileR portalRight > nothing
+        portalRight avatar > nothing
+        avatar portalRight > nothing
+        portalRight wall > nothing
+        wall portalRight > nothing
+        portalRight EOS > nothing
+        EOS portalRight > nothing
+        bleft bright > nothing
+        bright bleft > nothing
+        bleft villain > nothing
+        villain bleft > nothing
+        bleft villaingang > nothing
+        villaingang bleft > nothing
+        bleft standingcivilian > nothing
+        standingcivilian bleft > nothing
+        hurtcivilian bleft > nothing
+        bleft hurtcivilian > nothing
+        bleft fallingcivilian > nothing
+        fallingcivilian bleft > nothing
+        bleft missileL > nothing
+        missileL bleft > nothing
+        missileR bleft > nothing
+        bleft missileR > nothing
+        bleft EOS > nothing
+        EOS bleft > nothing
+        villain bright > nothing
+        bright villain > nothing
+        villaingang bright > nothing
+        bright villaingang > nothing
+        standingcivilian bright > nothing
+        bright standingcivilian > nothing
+        hurtcivilian bright > nothing
+        bright hurtcivilian > nothing
+        bright fallingcivilian > nothing
+        fallingcivilian bright > nothing
+        missileL bright > nothing
+        bright missileL > nothing
+        missileR bright > nothing
+        bright missileR > nothing
+        bright EOS > nothing
+        EOS bright > nothing
+        villaingang villain > nothing
+        villain villaingang > nothing
+        standingcivilian villain > nothing
+        villain standingcivilian > nothing
+        hurtcivilian villain > nothing
+        villain hurtcivilian > nothing
+        villain fallingcivilian > nothing
+        fallingcivilian villain > nothing
+        missileL villain > nothing
+        villain missileL > nothing
+        missileR villain > nothing
+        villain missileR > nothing
+        avatar villain > nothing
+        villain avatar > nothing
+        wall villain > nothing
+        villain wall > nothing
+        villain EOS > nothing
+        EOS villain > nothing
+        standingcivilian villaingang > nothing
+        villaingang standingcivilian > nothing
+        hurtcivilian villaingang > nothing
+        villaingang hurtcivilian > nothing
+        villaingang fallingcivilian > nothing
+        fallingcivilian villaingang > nothing
+        missileL villaingang > nothing
+        villaingang missileL > nothing
+        missileR villaingang > nothing
+        villaingang missileR > nothing
+        avatar villaingang > nothing
+        villaingang avatar > nothing
+        wall villaingang > nothing
+        villaingang wall > nothing
+        villaingang EOS > nothing
+        EOS villaingang > nothing
+        hurtcivilian standingcivilian > nothing
+        standingcivilian hurtcivilian > nothing
+        standingcivilian fallingcivilian > nothing
+        fallingcivilian standingcivilian > nothing
+        standingcivilian missileL > nothing
+        missileL standingcivilian > nothing
+        missileR standingcivilian > nothing
+        standingcivilian missileR > nothing
+        avatar standingcivilian > nothing
+        standingcivilian avatar > nothing
+        standingcivilian wall > nothing
+        wall standingcivilian > nothing
+        standingcivilian EOS > nothing
+        EOS standingcivilian > nothing
+        hurtcivilian fallingcivilian > nothing
+        fallingcivilian hurtcivilian > nothing
+        hurtcivilian missileL > nothing
+        missileL hurtcivilian > nothing
+        hurtcivilian missileR > nothing
+        missileR hurtcivilian > nothing
+        hurtcivilian avatar > nothing
+        avatar hurtcivilian > nothing
+        hurtcivilian wall > nothing
+        wall hurtcivilian > nothing
+        hurtcivilian EOS > nothing
+        EOS hurtcivilian > nothing
+        missileL fallingcivilian > nothing
+        fallingcivilian missileL > nothing
+        missileR fallingcivilian > nothing
+        fallingcivilian missileR > nothing
+        EOS fallingcivilian > nothing
+        fallingcivilian EOS > nothing
+        missileR missileL > nothing
+        missileL missileR > nothing
+        avatar missileL > nothing
+        missileL avatar > nothing
+        missileL wall > nothing
+        wall missileL > nothing
+        missileR avatar > nothing
+        avatar missileR > nothing
+        missileR wall > nothing
+        wall missileR > nothing
+        wall EOS > nothing
+        EOS wall > nothing
+
+        building building > nothing
+        street street > nothing
+        emptyspace emptyspace > nothing
+        jail jail > nothing
+        portalLeft portalLeft > nothing
+        portalRight portalRight > nothing
+        bleft bleft > nothing
+        bright bright > nothing
+        villain villain > nothing
+        villaingang villaingang > nothing
+        standingcivilian standingcivilian > nothing
+        hurtcivilian hurtcivilian > nothing
+        fallingcivilian fallingcivilian > nothing
+        missileL missileL > nothing
+        missileR missileR > nothing
+        avatar avatar > nothing
+        wall wall > nothing
+        EOS EOS > nothing
+
+
+
+
+    LevelMapping
+        A > avatar street
+        b > building 
+        s > street
+        l > bleft 
+        r > bright 
+        c > standingcivilian 
+        p > portalRight street
+        q > portalLeft street
+        j > jail
+
+    TerminationSet
+        MultiSpriteCounter stype1=hurtcivilian limit=1 win=False
+        SpriteCounter stype=avatar limit=0  win=False
+        MultiSpriteCounter stype1=portalLeft stype2=portalRight stype3=bleft stype4=bright limit=0 win=True

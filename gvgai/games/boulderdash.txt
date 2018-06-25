@@ -21,27 +21,40 @@ BasicGame
 	InteractionSet
 		dirt avatar > killSprite
 		dirt sword  > killSprite
+
 		diamond avatar > changeResource resource=diamond value=1
-		diamond avatar > changeScore value=5
+		diamond avatar > changeScore value=2
+
 		avatar wall > stepBack
 		crab wall > stepBack
 		butterfly wall > stepBack
 		avatar boulder > stepBack
 		crab boulder > stepBack
 		butterfly boulder > stepBack
+
 		avatar boulder > killIfFromAbove
+		avatar boulder > changeScore value=-1
+
 		avatar butterfly > killSprite
+		avatar butterfly > changeScore value=-1
+
 		avatar crab > killSprite
+		avatar crab > changeScore value=-1
+
 		boulder dirt > stepBack
 		boulder wall > stepBack
 		boulder diamond > stepBack
 		boulder boulder > stepBack
+
 		crab dirt > stepBack
 		butterfly dirt > stepBack
+		crab diamond > stepBack
+		butterfly diamond > stepBack
+
 		crab butterfly > killSprite
 		butterfly crab > transformTo stype=diamond scoreChange=1
 		#butterfly crab > changeScore value=1
-		exitdoor avatar > killIfOtherHasMore resource=diamond limit=9 scoreChange=100
+		exitdoor avatar > killIfOtherHasMore resource=diamond limit=9 
 		exitdoor avatar > nothing
 
 		sword crab > nothing

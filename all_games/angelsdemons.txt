@@ -1,0 +1,237 @@
+BasicGame
+    SpriteSet
+        trunk > Immovable color=WHITE 
+        cursed > Immovable color=GRAY 
+
+        demon > Bomber stype=bolt color=BLUE  prob=0.15 spawnCooldown=6 speed=0.4 frameRate=8
+        angel > Bomber stype=salvation color=GREEN prob=0.05 spawnCooldown=6 speed=0.45 frameRate=8
+        citizen > Chaser stype=output color=RED speed=0.4
+        blessed > Chaser stype=output color=ORANGE speed=0.4
+            
+        avatar > MovingAvatar color=DARKBLUE frameRate=10
+
+        input > SpawnPoint color=YELLOW stype=citizen spawnCooldown=16 
+        output > Immovable color=GOLD 
+        box > Passive color=BROWN  
+
+        bolt > Missile orientation=DOWN color=PURPLE speed=0.2 
+        salvation > Missile orientation=DOWN color=PINK speed=0.2 
+        
+        wall > Immovable color=BLACK 
+
+    TerminationSet
+	    MultiSpriteCounter stype1=cursed limit=1 win=False
+            Timeout limit=1000 win=True
+
+    InteractionSet
+        demon wall > reverseDirection
+        demon wall > stepBack
+	demon citizen > nothing
+	demon blessed > nothing
+        angel wall > reverseDirection
+        angel wall > stepBack
+        citizen wall > reverseDirection
+        citizen wall > stepBack
+        blessed wall > reverseDirection
+        blessed wall > stepBack
+        
+
+        avatar wall > stepBack
+        avatar EOS > stepBack
+
+        box avatar > bounceForward
+        box box > bounceForward
+        box wall > killSprite
+
+        bolt wall > killSprite 
+        bolt wall > changeScore value=-1
+        bolt box > killSprite 
+        bolt box > changeScore value=1
+
+        citizen bolt > transformTo stype=cursed
+        bolt citizen > killSprite
+        citizen bolt > changeScore value=-1
+
+        bolt avatar > killSprite 
+        bolt avatar > changeScore value=-5 
+
+        salvation wall > killSprite 
+        salvation wall > changeScore value=1
+        salvation box > killSprite 
+        salvation box > changeScore value=-1
+
+        citizen salvation > transformTo stype=blessed 
+        salvation citizen > killSprite
+        citizen salvation > changeScore value=100
+
+        citizen output > killSprite
+        blessed output > killSprite
+
+        trunk cursed > nothing
+        cursed trunk > nothing
+        trunk demon > nothing
+        demon trunk > nothing
+        trunk angel > nothing
+        angel trunk > nothing
+        trunk citizen > nothing
+        citizen trunk > nothing
+        trunk blessed > nothing
+        blessed trunk > nothing
+        trunk avatar > nothing
+        avatar trunk > nothing
+        trunk input > nothing
+        input trunk > nothing
+        trunk output > nothing
+        output trunk > nothing
+        trunk box > nothing
+        box trunk > nothing
+        trunk bolt > nothing
+        bolt trunk > nothing
+        trunk salvation > nothing
+        salvation trunk > nothing
+        trunk wall > nothing
+        wall trunk > nothing
+        trunk EOS > nothing
+        EOS trunk > nothing
+        cursed demon > nothing
+        demon cursed > nothing
+        angel cursed > nothing
+        cursed angel > nothing
+        citizen cursed > nothing
+        cursed citizen > nothing
+        blessed cursed > nothing
+        cursed blessed > nothing
+        avatar cursed > nothing
+        cursed avatar > nothing
+        cursed input > nothing
+        input cursed > nothing
+        output cursed > nothing
+        cursed output > nothing
+        box cursed > nothing
+        cursed box > nothing
+        bolt cursed > nothing
+        cursed bolt > nothing
+        cursed salvation > nothing
+        salvation cursed > nothing
+        cursed wall > nothing
+        wall cursed > nothing
+        cursed EOS > nothing
+        EOS cursed > nothing
+        angel demon > nothing
+        demon angel > nothing
+        avatar demon > nothing
+        demon avatar > nothing
+        demon input > nothing
+        input demon > nothing
+        output demon > nothing
+        demon output > nothing
+        box demon > nothing
+        demon box > nothing
+        bolt demon > nothing
+        demon bolt > nothing
+        salvation demon > nothing
+        demon salvation > nothing
+        EOS demon > nothing
+        demon EOS > nothing
+        angel citizen > nothing
+        citizen angel > nothing
+        angel blessed > nothing
+        blessed angel > nothing
+        angel avatar > nothing
+        avatar angel > nothing
+        angel input > nothing
+        input angel > nothing
+        angel output > nothing
+        output angel > nothing
+        angel box > nothing
+        box angel > nothing
+        angel bolt > nothing
+        bolt angel > nothing
+        angel salvation > nothing
+        salvation angel > nothing
+        angel EOS > nothing
+        EOS angel > nothing
+        blessed citizen > nothing
+        citizen blessed > nothing
+        avatar citizen > nothing
+        citizen avatar > nothing
+        citizen input > nothing
+        input citizen > nothing
+        box citizen > nothing
+        citizen box > nothing
+        citizen EOS > nothing
+        EOS citizen > nothing
+        blessed avatar > nothing
+        avatar blessed > nothing
+        blessed input > nothing
+        input blessed > nothing
+        box blessed > nothing
+        blessed box > nothing
+        bolt blessed > nothing
+        blessed bolt > nothing
+        blessed salvation > nothing
+        salvation blessed > nothing
+        blessed EOS > nothing
+        EOS blessed > nothing
+        avatar input > nothing
+        input avatar > nothing
+        output avatar > nothing
+        avatar output > nothing
+        avatar salvation > nothing
+        salvation avatar > nothing
+        output input > nothing
+        input output > nothing
+        box input > nothing
+        input box > nothing
+        bolt input > nothing
+        input bolt > nothing
+        salvation input > nothing
+        input salvation > nothing
+        wall input > nothing
+        input wall > nothing
+        EOS input > nothing
+        input EOS > nothing
+        output box > nothing
+        box output > nothing
+        output bolt > nothing
+        bolt output > nothing
+        output salvation > nothing
+        salvation output > nothing
+        output wall > nothing
+        wall output > nothing
+        output EOS > nothing
+        EOS output > nothing
+        box EOS > nothing
+        EOS box > nothing
+        bolt salvation > nothing
+        salvation bolt > nothing
+        bolt EOS > nothing
+        EOS bolt > nothing
+        salvation EOS > nothing
+        EOS salvation > nothing
+        wall EOS > nothing
+        EOS wall > nothing
+
+        trunk trunk > nothing
+        cursed cursed > nothing
+        demon demon > nothing
+        angel angel > nothing
+        citizen citizen > nothing
+        blessed blessed > nothing
+        avatar avatar > nothing
+        input input > nothing
+        output output > nothing
+        bolt bolt > nothing
+        salvation salvation > nothing
+        wall wall > nothing
+        EOS EOS > nothing
+
+    LevelMapping
+        d >  demon
+        a >  angel 
+        t >  trunk
+        x >  box
+        i >  input
+        o >  output
+        w > wall
+        A >  avatar

@@ -1,0 +1,118 @@
+BasicGame
+    SpriteSet
+        sword > Flicker color=GRAY limit=5 singleton=True
+        entrance > SpawnPoint total=5 color=PINK  spawnCooldown=100 stype=doctor portal=True
+        virus > Immovable color=RED 
+
+        normal   > ShootAvatar stype=sword color=WHITE 
+        carrier  > ShootAvatar stype=sword color=BROWN  frameRate=8
+        host     > RandomNPC speed=0.25  cons=1 color=GREEN 
+        infected > RandomNPC speed=0.25  cons=1 color=ORANGE speed=0.5  frameRate=8
+        doctor > RandomNPC speed=0.25  cons=1 color=BLUE speed=0.2 
+        wall > Immovable color=BLACK  autotiling=True
+
+    TerminationSet
+        SpriteCounter stype=host   win=True
+
+    InteractionSet
+        doctor sword    > killSprite 
+	doctor sword  > changeScore value=2
+    
+        normal wall       > stepBack
+        carrier wall       > stepBack
+        host  wall       > stepBack
+        infected wall       > stepBack
+        doctor wall       > stepBack
+
+
+        carrier doctor  > transformTo stype=normal  
+	carrier doctor > changeScore value=-1
+        host carrier      > transformTo stype=infected 
+	host carrier > changeScore value=2
+        infected doctor > transformTo stype=host
+        normal infected > transformTo stype=carrier 
+	normal virus  > transformTo stype=carrier
+        host infected > transformTo stype=infected 
+	host virus    > transformTo stype=infected
+        doctor virus    > killSprite
+
+        sword entrance > nothing
+        entrance sword > nothing
+        sword virus > nothing
+        virus sword > nothing
+        sword normal > nothing
+        normal sword > nothing
+        sword carrier > nothing
+        carrier sword > nothing
+        host sword > nothing
+        sword host > nothing
+        sword infected > nothing
+        infected sword > nothing
+        sword wall > nothing
+        wall sword > nothing
+        sword EOS > nothing
+        EOS sword > nothing
+        entrance virus > nothing
+        virus entrance > nothing
+        entrance normal > nothing
+        normal entrance > nothing
+        entrance carrier > nothing
+        carrier entrance > nothing
+        host entrance > nothing
+        entrance host > nothing
+        entrance infected > nothing
+        infected entrance > nothing
+        doctor entrance > nothing
+        entrance doctor > nothing
+        entrance wall > nothing
+        wall entrance > nothing
+        entrance EOS > nothing
+        EOS entrance > nothing
+        carrier virus > nothing
+        virus carrier > nothing
+        infected virus > nothing
+        virus infected > nothing
+        wall virus > nothing
+        virus wall > nothing
+        EOS virus > nothing
+        virus EOS > nothing
+        normal carrier > nothing
+        carrier normal > nothing
+        host normal > nothing
+        normal host > nothing
+        doctor normal > nothing
+        normal doctor > nothing
+        normal EOS > nothing
+        EOS normal > nothing
+        infected carrier > nothing
+        carrier infected > nothing
+        EOS carrier > nothing
+        carrier EOS > nothing
+        doctor host > nothing
+        host doctor > nothing
+        host EOS > nothing
+        EOS host > nothing
+        infected EOS > nothing
+        EOS infected > nothing
+        doctor EOS > nothing
+        EOS doctor > nothing
+        wall EOS > nothing
+        EOS wall > nothing
+
+        sword sword > nothing
+        entrance entrance > nothing
+        virus virus > nothing
+        normal normal > nothing
+        carrier carrier > nothing
+        host host > nothing
+        infected infected > nothing
+        doctor doctor > nothing
+        wall wall > nothing
+        EOS EOS > nothing
+
+    LevelMapping
+        1 >  doctor
+        0 >  host
+        x >  virus
+        A >  normal
+        e >  entrance
