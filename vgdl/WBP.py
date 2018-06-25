@@ -431,6 +431,7 @@ class WBP():
 						ended, win, t = child.rle._isDone(getTermination=True)
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
+						# embed()
 						# print "win"
 						# if t:
 							# print t.__dict__

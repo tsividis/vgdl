@@ -882,7 +882,8 @@ class Agent:
                 resource = change_resource_effect['resource']
                 val = change_resource_effect['value']
                 limit = change_resource_effect['limit']
-
+                # print "got resource change"
+                # embed()
                 # print "adding fake rules"
                 # import ipdb; ipdb.set_trace()
                 # ipdb.set_trace()
@@ -903,7 +904,7 @@ class Agent:
                                               # win=True)
                     # hypotheses[0].terminationSet.append(spritecounter)
 
-                elif agentState[resource]==limit and resource not in self.seen_limits:
+                if agentState[resource]==limit and resource not in self.seen_limits:
                     self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
                     self.fakeInteractionRules = list(set(self.fakeInteractionRules))
                     # resourceColor = self.rle._game.sprite_groups[resource][0].colorName
