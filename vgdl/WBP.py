@@ -33,11 +33,6 @@ NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', NONE: 'wait'}
 
-#############################################
-# Sprites with 'DARKGRAY' colorName are not
-# updated in _performAction and fastcopy
-#############################################
-
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
@@ -74,7 +69,7 @@ class WBP():
 		print("exta atom is {}".format(self.extra_atom))
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = True
+		self.display = False
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -101,6 +96,7 @@ class WBP():
 
 		self.short_horizon = shortHorizon
 		self.winning_states = []
+		# self.trueAtomsIW1 = []
 		self.total_nodes = 0
 
 		## Ignore objects we don't want to track (i.e., non-moving immovables.)
@@ -171,8 +167,6 @@ class WBP():
 		lst = []
 
 		## Track specific locations of objects
-		
-		kl_set = set(rle._game.kill_list)
 		for k in self.objectsToTrack:
 			## Don't track Flicker in atoms. The point is that the Flicker should have an effect on other objects, so atom novelty that would have been
 			## a function of the Flicker's presence is being taken care of by that. Otherwise the agent can keep exploring states that have no actual effect
@@ -184,8 +178,13 @@ class WBP():
 
 				pass
 			else:
+				# if rle._game.sprite_groups[k]:
+					# print rle._game.sprite_groups[k][0].colorName
+				if rle._game.kill_list:
+					# import ipdb; ipdb.set_trace()
+					pass
 				for o in rle._game.sprite_groups[k]:
-					if o not in kl_set:
+					if o not in rle._game.kill_list:
 						## turn location into vector position (rows appended one after the other.)
 						# pos = rle._rect2pos(o.rect) #x,y
 						# vecValue = pos[1] + pos[0]*rle.outdim[0] + 1
@@ -227,7 +226,7 @@ class WBP():
 				pass
 			else:
 				for o in sorted(rle._game.sprite_groups[k], key=lambda s:s.ID):
-					if o not in kl_set:
+					if o not in rle._game.kill_list:
 						present.append(1)
 					else:
 						present.append(0)
@@ -247,7 +246,7 @@ class WBP():
 				vecValue = [0]
 
 
-			stateIW1 = [vecValue] + rle.show_binary()
+			stateIW1 = [vecValue] + [1 if char==' ' else 0 for pos, char in enumerate(rle.show())]
 			lst.append(hash(tuple(stateIW1)))
 
 		return set(lst)
@@ -280,7 +279,6 @@ class WBP():
 		
 		acceptableNodes = filter(lambda n:n.novelty<3, QReward)
 		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
-
 		try:
 			current = bestNodes.pop(0)
 		except:
@@ -292,7 +290,7 @@ class WBP():
 			QNovelty.remove(current)
 		except:
 			pass
-
+		# self.trueAtomsIW1.append(current.stateIW1)
 		return current
 
 	"""
@@ -310,7 +308,6 @@ class WBP():
 		start.rle = self.rle
 		visited.append(start)
 		start.eval()
-
 		QNovelty.append(start)
 		QReward.append(start)
 		i=0
@@ -427,16 +424,16 @@ class WBP():
 							gameString_array.append(node.rle.show(color='green'))
 							object_positions_array.append(node.rle)
 							node = node.parent
-						if self.display:
-							print child.rle.show()
+						# print child.rle.show()
 						self.gameString_array = gameString_array[::-1]
 						self.object_positions_array = object_positions_array[::-1]
 
 						ended, win, t = child.rle._isDone(getTermination=True)
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
-						# print "win"
+
 						# embed()
+						# print "win"
 						# if t:
 							# print t.__dict__
 						if not child.rle._game.getAvatars():
@@ -488,7 +485,7 @@ class Node():
 		self.actionSeq = actionSeq
 		self.parent = parent
 		self.state = {}
-		self.candidates = set()
+		self.candidates = []
 		self.novelty = None
 		self.reward = None
 		self.intrinsic_reward = 0
@@ -503,68 +500,6 @@ class Node():
 		else:
 			self.rolloutArray = []
 
-	def fastcopy(self, rle):
-		newRle = self.empty_copy(rle)
-		#embed()
-		for k,v in rle.__dict__.iteritems():
-			try:
-				newRle.__dict__[k] = v.copy()
-			except:
-				newRle.__dict__[k] = v
-		newRle._obstypes = rle._obstypes.copy()
-		if hasattr(rle, '_gravepoints'):
-			newRle._gravepoints = rle._gravepoints.copy()
-		newRle.outdim = rle.outdim
-		#ipdb.set_trace()
-		newRle.symbolDict = rle.symbolDict.copy()
-		newRle._other_types = rle._other_types[:]
-		newRle._game = self.empty_copy(rle._game)
-		ignoreKeys = ['spriteDistribution',
-					  'object_token_spriteDistribution',
-					  'spriteUpdateDict',
-					  'movement_options',
-					  'object_token_movement_options',
-					  #'all_objects',
-					  'uiud']
-		sprite_attrs = ['name','resources','rect','x','y',
-						'lastrect','lastmove','stypes',
-						'speed','cooldown','direction','color','colorName']
-		for k,v in rle._game.__dict__.iteritems():
-
-			if k in ignoreKeys: continue
-
-			ctype = str(type(getattr(rle._game,k)))
-
-			if 'list' in ctype:
-				if k != 'kill_list':
-					newRle._game.__dict__[k] = v[:]
-				else:
-					newRle._game.kill_list = v[:]
-			elif 'defaultdict' in ctype or 'dict' in ctype:
-				if k != 'sprite_groups':
-					newRle._game.__dict__[k] = v.copy()
-				else:
-					#embed()
-					new_sprite_groups = defaultdict(list)
-					for group_name, group in rle._game.sprite_groups.iteritems():
-						for sprite in group:
-							if sprite.colorName == 'DARKGRAY':
-								new_sprite_groups[group_name].append(sprite)
-							else:
-								new_sprite = self.empty_copy(sprite)
-								new_sprite.__dict__ = sprite.__dict__.copy()
-								new_sprite_groups[group_name].append(new_sprite)
-					# newRle._game.sprite_groups = ccopy(v)
-					newRle._game.sprite_groups = new_sprite_groups
-			elif 'vgdl' in ctype:
-				newRle._game.__dict__[k] = ccopy(v)
-			elif 'dict' in ctype:
-				#print k
-				newRle._game.__dict__[k] = v.copy()
-			else:
-				newRle._game.__dict__[k] = v
-		#newRle._game = ccopy(rle._game)
-		return newRle
 
 ## when to trigger rollouts, if any
 ## rollout length
@@ -612,8 +547,9 @@ class Node():
 		successfulRollout = False
 		j=0
 		while not successfulRollout:
-			vrle = self.fastcopy(Vrle)
-			# vrle = copy.deepcopy(Vrle)
+			vrle = copy.deepcopy(Vrle)
+			# vrle = ccopy(Vrle)
+
 			prevHeuristicVal = self.heuristics(vrle, **self.WBP.rolloutHyperparameters)
 			rolloutArray = []
 			i=0
@@ -944,9 +880,8 @@ class Node():
 				resource_names = [list(resource[1])[0].item for resource in avatar_preconditions]
 
 				try:
-					resource_yielder_names = [[inter.slot2 if (inter.interaction=='changeResource' and inter.args['resource']==res) else 
-							inter.slot1 if (inter.interaction=='collectResource' and res==inter.args['resource']==res) else None
-							for inter in theory.interactionSet] for res in resource_names]
+					resource_yielder_names = [[inter.slot2 if (inter.interaction=='changeResource' and inter.args['resource']==res) else inter.slot1 if (inter.interaction=='collectResource' and res==inter.args['resource']==res) else None
+					for inter in theory.interactionSet] for res in resource_names]
 				except:
 					print "failure with resource_yielder_names"
 					embed()
@@ -1081,7 +1016,7 @@ class Node():
 			if 'Flicker' in str(theory.classes[s1][0].vgdlType) and not ('Flicker' in str(theory.classes[s2][0].vgdlType) or s2=='avatar'):
 				s1 = s2
 				s2 = 'avatar'
-				print("replaced flicker with avatar")
+				# print("replaced flicker with avatar")
 
 			s2_positions = self.WBP.findObjectsInRLE(rle, s2)
 			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
@@ -1213,26 +1148,26 @@ class Node():
 		except IndexError:
 			print "index error in position score"
 			return 0
-
-	def empty_copy(self, obj):
-	    class Empty(obj.__class__):
-	        def __init__(self): pass
-	    newcopy = Empty()
-	    newcopy.__class__ = obj.__class__
-	    return newcopy
+	"""
+	def getTo_profiler(self):
+		lp = LineProfiler()
+		lp_wrapper = lp(self.getToCurrentState)
+		output = lp_wrapper()
+		lp.print_stats()
+		return output
+	"""
 
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
 			## try to copy parent lastState. Then take action and store as current lastState.
 			## if that fails, replay from beginning and store as current lastState
 			try:
-
-				vrle = self.fastcopy(self.parent.rle)
+				vrle = cPickle.loads(cPickle.dumps(self.parent.rle, -1))
 				# vrle = copy.deepcopy(self.parent.rle)
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
 					# print a
-					res = vrle.step(a, return_obs=True)
+					res = vrle.step(a)
 					relevantEvents = [t for t in res['effectList'] if t[0] == 'changeResource']
 					self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
 					self.terminal, self.win = vrle._isDone()
@@ -1242,13 +1177,13 @@ class Node():
 		else:
 			self.reconstructed=True
 			# print "copy failed; replaying from top"
-			vrle = self.fastcopy(self.rle)
+			vrle = cPickle.loads(cPickle.dumps(self.rle, -1))
 			# vrle = copy.deepcopy(self.rle)
 			self.terminal, self.win = vrle._isDone()
 			i=0
 			while not self.terminal and len(self.actionSeq)>i:
 				a = self.actionSeq[i]
-				res = vrle.step(a, return_obs=True)
+				res = vrle.step(a)
 				self.metabolic_cost += self.metabolics(vrle, res['effectList'], a)
 				self.terminal, self.win = vrle._isDone()
 				i += 1
@@ -1275,7 +1210,7 @@ class Node():
 			for c in itertools.combinations(self.state, i):
 				c = tuple(sorted(c))
 				if self.WBP.trueAtoms[c] == 0:
-					self.candidates.add(c)
+					self.candidates.append(c)
 		self.updateNovelty()
 
 		## Try rollouts for aliens?
@@ -1316,6 +1251,13 @@ class Node():
 			self.novelty = min([len(c) for c in self.candidates])
 		return self.novelty
 
+	def updateNoveltyIW1(self):
+		for state in self.WBP.trueAtomsIW1:
+			if self.stateIW1 == state:
+				return self.novelty
+		self.novelty = 0
+		return self.novelty
+
 	def updateNoveltyDict(self, QNovelty, QReward):
 		jointSet = list(set(QNovelty+QReward))
 		for c in self.candidates:
@@ -1326,6 +1268,12 @@ class Node():
 						n.candidates.remove(c)
 		for n in jointSet:
 			n.novelty = n.updateNovelty()
+		return
+
+	def updateNoveltyDictIW1(self, QNovelty, QReward):
+		jointSet = list(set(QNovelty+QReward))
+		for n in jointSet:
+			n.novelty = n.updateNoveltyIW1()
 		return
 
 	def updateObjIDs(self, vrle):
