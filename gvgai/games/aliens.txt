@@ -47,10 +47,54 @@ BasicGame
         alienBlue  sam   > killSprite 
         alienBlue sam  >  changeScore value=2
 
+        base avatar > nothing
+        avatar base > nothing
+        portalSlow base > nothing
+        base portalSlow > nothing
+        base portalFast > nothing
+        portalFast base > nothing
+        base EOS > nothing
+        EOS base > nothing
+        avatar sam > nothing
         sam avatar > nothing
+        portalSlow avatar > nothing
+        avatar portalSlow > nothing
+        avatar portalFast > nothing
+        portalFast avatar > nothing
+        bomb sam > nothing
+        sam bomb > nothing
+        portalSlow sam > nothing
         sam portalSlow > nothing
+        portalFast sam > nothing
         sam portalFast > nothing
-        alienGreen alienGreen > nothing
-        alienGreen alienBlue > nothing
+        alienBlue bomb > nothing
+        bomb alienBlue > nothing
+        portalSlow bomb > nothing
+        bomb portalSlow > nothing
+        bomb portalFast > nothing
+        portalFast bomb > nothing
         alienBlue alienGreen > nothing
+        alienGreen alienBlue > nothing
+        portalSlow alienGreen > nothing
+        alienGreen portalSlow > nothing
+        alienGreen portalFast > nothing
+        portalFast alienGreen > nothing
+        alienBlue portalSlow > nothing
+        portalSlow alienBlue > nothing
+        alienBlue portalFast > nothing
+        portalFast alienBlue > nothing
+        portalSlow portalFast > nothing
+        portalFast portalSlow > nothing
+        portalSlow EOS > nothing
+        EOS portalSlow > nothing
+        portalFast EOS > nothing
+        EOS portalFast > nothing
+        base base > nothing
+        avatar avatar > nothing
+        sam sam > nothing
+        bomb bomb > nothing
+        alienGreen alienGreen > nothing
         alienBlue alienBlue > nothing
+        portalSlow portalSlow > nothing
+        portalFast portalFast > nothing
+        EOS EOS > nothing

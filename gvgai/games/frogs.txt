@@ -4,17 +4,16 @@ BasicGame
 
         forestDense > SpawnPoint stype=log prob=0.4  spawnCooldown=10 color=BLUE
         forestSparse > SpawnPoint stype=log prob=0.1  spawnCooldown=5 color=BLUE
-        structure > Immovable
-            water > color=BLUE
-            goal  > color=GREEN
+
+        water > Immovable color=BLUE
+        goal  > Immovable color=GREEN
         log    > Missile   orientation=LEFT  speed=0.2 color=BROWN
-        truck  >
-            rightTruck  > Missile   orientation=RIGHT
-                fastRtruck  > speed=0.2  color=ORANGE
-                slowRtruck  > speed=0.1  color=RED
-            leftTruck  > Missile   orientation=LEFT
-                fastLtruck  > speed=0.2  color=LIGHTORANGE
-                slowLtruck  > speed=0.1  color=LIGHTRED
+
+        fastRtruck  > Missile   orientation=RIGHT speed=0.2  color=ORANGE
+        slowRtruck  > Missile   orientation=RIGHT speed=0.1  color=RED
+
+        fastLtruck  > Missile   orientation=LEFT speed=0.2  color=LIGHTORANGE
+        slowLtruck  > Missile   orientation=LEFT speed=0.1  color=LIGHTRED
 
         avatar > MovingAvatar color=DARKBLUE
         wall > Immovable color=DARKGRAY
@@ -63,6 +62,113 @@ BasicGame
         avatar slowLtruck > killSprite
         slowLtruck  EOS   > wrapAround
         fastLtruck  EOS   > wrapAround
+
+        safety forestDense > nothing
+        forestDense safety > nothing
+        safety forestSparse > nothing
+        forestSparse safety > nothing
+        safety water > nothing
+        water safety > nothing
+        safety goal > nothing
+        goal safety > nothing
+        safety log > nothing
+        log safety > nothing
+        safety fastRtruck > nothing
+        fastRtruck safety > nothing
+        safety slowRtruck > nothing
+        slowRtruck safety > nothing
+        fastLtruck safety > nothing
+        safety fastLtruck > nothing
+        slowLtruck safety > nothing
+        safety slowLtruck > nothing
+        safety avatar > nothing
+        avatar safety > nothing
+        safety wall > nothing
+        wall safety > nothing
+        safety EOS > nothing
+        EOS safety > nothing
+        forestDense forestSparse > nothing
+        forestSparse forestDense > nothing
+        goal forestDense > nothing
+        forestDense goal > nothing
+        fastRtruck forestDense > nothing
+        forestDense fastRtruck > nothing
+        slowRtruck forestDense > nothing
+        forestDense slowRtruck > nothing
+        fastLtruck forestDense > nothing
+        forestDense fastLtruck > nothing
+        slowLtruck forestDense > nothing
+        forestDense slowLtruck > nothing
+        forestDense avatar > nothing
+        avatar forestDense > nothing
+        wall forestDense > nothing
+        forestDense wall > nothing
+        forestDense EOS > nothing
+        EOS forestDense > nothing
+        goal forestSparse > nothing
+        forestSparse goal > nothing
+        fastRtruck forestSparse > nothing
+        forestSparse fastRtruck > nothing
+        slowRtruck forestSparse > nothing
+        forestSparse slowRtruck > nothing
+        fastLtruck forestSparse > nothing
+        forestSparse fastLtruck > nothing
+        slowLtruck forestSparse > nothing
+        forestSparse slowLtruck > nothing
+        forestSparse avatar > nothing
+        avatar forestSparse > nothing
+        wall forestSparse > nothing
+        forestSparse wall > nothing
+        forestSparse EOS > nothing
+        EOS forestSparse > nothing
+        water goal > nothing
+        goal water > nothing
+        fastRtruck water > nothing
+        water fastRtruck > nothing
+        slowRtruck water > nothing
+        water slowRtruck > nothing
+        fastLtruck water > nothing
+        water fastLtruck > nothing
+        slowLtruck water > nothing
+        water slowLtruck > nothing
+        water wall > nothing
+        wall water > nothing
+        water EOS > nothing
+        EOS water > nothing
+        log goal > nothing
+        goal log > nothing
+        fastRtruck goal > nothing
+        goal fastRtruck > nothing
+        slowRtruck goal > nothing
+        goal slowRtruck > nothing
+        fastLtruck goal > nothing
+        goal fastLtruck > nothing
+        slowLtruck goal > nothing
+        goal slowLtruck > nothing
+        wall goal > nothing
+        goal wall > nothing
+        goal EOS > nothing
+        EOS goal > nothing
+        fastRtruck log > nothing
+        log fastRtruck > nothing
+        slowRtruck log > nothing
+        log slowRtruck > nothing
+        fastLtruck log > nothing
+        log fastLtruck > nothing
+        slowLtruck log > nothing
+        log slowLtruck > nothing
+        fastLtruck slowRtruck > nothing
+        slowRtruck fastLtruck > nothing
+        wall EOS > nothing
+        EOS wall > nothing
+        safety safety > nothing
+        forestDense forestDense > nothing
+        forestSparse forestSparse > nothing
+        water water > nothing
+        goal goal > nothing
+        avatar avatar > nothing
+        wall wall > nothing
+        EOS EOS > nothing
 
     TerminationSet
         SpriteCounter stype=goal   limit=0 win=True

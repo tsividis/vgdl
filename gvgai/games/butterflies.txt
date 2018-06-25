@@ -1,27 +1,42 @@
 BasicGame
     SpriteSet
         cocoon > Immovable color=GREEN
-        animal >
-            avatar    > MovingAvatar color=DARKBLUE frameRate=8
-            butterfly > RandomNPC speed=0.6 color=PINK cons=1 frameRate=5
-
+        avatar    > MovingAvatar color=DARKBLUE frameRate=8
+        butterfly > RandomNPC speed=0.6 color=PINK cons=1 frameRate=5
         wall > Immovable color=DARKGRAY
 
     TerminationSet
         SpriteCounter stype=butterfly win=True
-        SpriteCounter stype=cocoon    win=False
+        SpriteCounter stype=cocoon   win=False
 
     InteractionSet
-        animal    wall   > stepBack
+        avatar   wall   > stepBack
+        butterfly  wall  > stepBack
+        butterfly avatar > changeScore value=2
         butterfly avatar > killSprite 
-	    butterfly avatar > changeScore value=2
         butterfly cocoon > cloneSprite
         butterfly butterfly > nothing
         avatar cocoon > nothing
         butterfly wall > nothing
         cocoon butterfly > killSprite
+        
+        wall cocoon > nothing
+        cocoon wall > nothing
+        EOS cocoon > nothing
+        cocoon EOS > nothing
+        avatar EOS > nothing
+        EOS avatar > nothing
+        butterfly EOS > nothing
+        EOS butterfly > nothing
+        wall EOS > nothing
+        EOS wall > nothing
+        cocoon cocoon > nothing
+        avatar avatar > nothing
+        wall wall > nothing
+        EOS EOS > nothing
 
     LevelMapping
         1 > butterfly
         0 > cocoon
         w > wall
+        A > avatar
