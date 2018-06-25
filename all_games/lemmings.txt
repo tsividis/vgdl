@@ -7,9 +7,9 @@ BasicGame
         goal > Immovable color=GREEN
 
         avatar  > ShootAvatar stype=shovel color=DARKBLUE
-        lemming > Chaser  stype=goal speed=1 cooldown=1 color=RED
+        lemming > Chaser  stype=goal speed=1 cooldown=5 color=RED
 
-        wall > Immovable color=BLACK 
+        wall > Immovable color=DARKGRAY 
     LevelMapping
         x >  goal
         e >  entrance

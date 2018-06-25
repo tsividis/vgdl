@@ -12,7 +12,7 @@ BasicGame
         slowHell > SpawnPoint stype=zombie color=BLUE prob=0.005
         shovel > OrientedFlicker limit=2 color=LIGHTGRAY
         avatar  > ShootAvatar stype=shovel color=DARKBLUE
-        wall > Immovable color=BLACK
+        wall > Immovable color=DARKGRAY
 
     InteractionSet
         shovel marsh > transformTo stype=plant 
