@@ -1,7 +1,7 @@
 BasicGame
     SpriteSet
         door > Passive color=BROWN
-        wall > Immovable color=BLACK
+        wall > Immovable color=DARKGRAY
         water > Immovable color=LIGHTBLUE
         box > Passive color=PURPLE
         avatar > MovingAvatar color=DARKBLUE
