@@ -13,7 +13,7 @@
 #                 'watergame', 'waves', 'wildgunman']                                         #34-36
 
 # game_names = ['expt_push_boulders', 'aliens', 'butterflies', 'expt_helper', 'frogs', 'portals', 'survivezombies', 'zelda']
-game_names = ['aliens', 'butterflies']
+game_names = ['boulderchase', 'jaws', 'myAliens', 'overload', 'avoidgeorge']
 mapping = dict()
 
 # for k in game_names:
