@@ -7,21 +7,22 @@
                     
 #                 'angelsdemons', 'avoidgeorge', 'bait', 'boulderchase',                      #14-17
 #                 'camelRace', 'chopper', 'clusters', 'cookmepasta',                          #18-21
-#                 'infection', 'jaws', 'lemmings', 'modality',                                #22-25
-#                 'myAliens', 'overload', 'plants', 'plaqueattack',                           #26-29
-#                 'shipwreck','superman', 'tercio', 'thesnowman',                             #30-33
-#                 'watergame', 'waves', 'wildgunman']                                         #34-36
+#                 'jaws', 'lemmings', 'modality', 'myAliens',                                 #22-25
+#                 'overload', 'plants', 'plaqueattack',  'shipwreck',                         #26-29
+#                 'superman', 'tercio', 'thesnowman', 'watergame',                            #30-33
+#                 'waves', 'wildgunman']                                         		      #34-36
 
 # game_names = ['aliens', 'butterflies', 'expt_helper', 'expt_push_boulders', 'frogs', 'portals', 'survivezombies', 'zelda']
 
 game_names = [ 'expt_helper', 'expt_push_boulders', 'zelda', 'angelsdemons', 'avoidgeorge', 
-			'bait', 'camelRace', 'chopper', 'clusters','infection', 
+			'bait', 'camelRace', 'chopper', 'clusters',
 			'jaws', 'lemmings', 'myAliens', 'overload', 'plants', 
 			'plaqueattack', 'shipwreck','superman','watergame', 'waves',
 			 'wildgunman', 'aliens', 'boulderchase', 'modality', 'tercio']
 
 #skipped: , cookmepasta, thesnowman, shipwreck
 # run w/ different params: boulderchase, modality, tercio
+
 
 mapping = dict()
 
