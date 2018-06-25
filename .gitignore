@@ -6,4 +6,5 @@
 .spyderproject
 venv
 .DS_Store
+temp_data.npy
 examples/gridphysics/theorytest*
