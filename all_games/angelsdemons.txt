@@ -17,7 +17,7 @@ BasicGame
         bolt > Missile orientation=DOWN color=PURPLE speed=0.2 
         salvation > Missile orientation=DOWN color=PINK speed=0.2 
         
-        wall > Immovable color=BLACK 
+        wall > Immovable color=DARKGRAY 
 
     TerminationSet
 	    MultiSpriteCounter stype1=cursed limit=1 win=False
