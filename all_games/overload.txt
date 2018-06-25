@@ -9,7 +9,7 @@ BasicGame
         weapon > Resource color=PINK value=10000 limit=10000 
         gold  > Resource color=GOLD limit=11  # this limit is only used for visualizing progress
 
-        wall > Immovable color=BLACK 
+        wall > Immovable color=DARKGRAY 
 
     InteractionSet
         weapon avatar   > collectResource 

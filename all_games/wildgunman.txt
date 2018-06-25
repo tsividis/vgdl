@@ -10,7 +10,7 @@ BasicGame
     enemySlowPortal > SpawnPoint stype=enemy_slow spawnCooldown=100  total=2 color=QTLHNJ
     enemyFastPortal > SpawnPoint stype=enemy_fast spawnCooldown=100  total=2 color=CVHTTO
     niceGuyPortal   > SpawnPoint stype=niceGuy spawnCooldown=100  total=2 color=WLMEZR
-    wall > Immovable color=BLACK
+    wall > Immovable color=DARKGRAY
 
   LevelMapping
     c > city 
