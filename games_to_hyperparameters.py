@@ -12,8 +12,8 @@
 #                 'shipwreck','superman', 'tercio', 'thesnowman',                             #30-33
 #                 'watergame', 'waves', 'wildgunman']                                         #34-36
 
-game_names = ['expt_push_boulders', 'aliens', 'butterflies', 'expt_helper', 'frogs', 'portals', 'survivezombies', 'zelda']
-
+# game_names = ['expt_push_boulders', 'aliens', 'butterflies', 'expt_helper', 'frogs', 'portals', 'survivezombies', 'zelda']
+game_names = ['aliens', 'butterflies']
 mapping = dict()
 
 # for k in game_names:
@@ -21,4 +21,4 @@ mapping = dict()
 #         mapping[k] = [0,2,3]
 
 for k in game_names:
-    mapping[k] = [2]
+    mapping[k] = [3]
