@@ -10,7 +10,7 @@ BasicGame
         bee    > RandomNPC speed=1   cooldown=3  color=YELLOW
         zombie > Chaser stype=avatar cooldown=6 speed=0.5 color=BROWN
         dying_zombie > Chaser stype=avatar cooldown=6 speed=0.5 color=BROWN
-        wall > Immovable autotiling=true color=DARKGRAY
+        wall > Immovable color=DARKGRAY
 
     InteractionSet
         honey avatar    > collectResource 
