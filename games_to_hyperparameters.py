@@ -15,16 +15,20 @@
 # game_names = ['expt_push_boulders', 'aliens', 'butterflies', 'expt_helper', 'frogs', 'portals', 'survivezombies', 'zelda']
 # game_names = ['boulderchase', 'jaws', 'myAliens', 'overload', 'avoidgeorge']
 
-## running overnight w/ hyperparams 2
+##running with hyperparams2
 # game_names = ['avoidgeorge', 'bait', 'boulderchase', 'chopper', 'clusters',
-# 				'infection', 'jaws', 'lemmings', 'modality',
+# 				jaws', 'lemmings',
 # 				'myAliens', 'overload', 'plants', 'plaqueattack', 
-# 				'superman', 'tercio', 'watergame', 'waves', 'wildgunman']
+# 				'superman', 'watergame', 'waves', 'wildgunman']
 
-game_names = ['avoidgeorge', 'boulderchase', 'chopper', 
-				'infection', 'jaws', 'myAliens', 'overload', 'plants', 'plaqueattack', 
-				'superman', 'waves', 'wildgunman']
+## running with hyperparams3
+game_names = ['chopper', 'jaws', 'plaqueattack', 'wildgunman']
+# game_names = ['avoidgeorge', 'bait', 'chopper', 
+# 				'infection', 'jaws', 'myAliens', 'overload', 'plants', 'plaqueattack', 
+# 				'superman', 'waves', 'wildgunman']
 
+## to run after local debugging:
+# ['boulderchase']
 mapping = dict()
 
 # for k in game_names:
