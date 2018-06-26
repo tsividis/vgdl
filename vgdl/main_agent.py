@@ -895,6 +895,7 @@ class Agent:
 
 
                     hypotheses[0].resource_limits[resource] = limit
+                    theory_change_flag = True
 
                     ## go through everything that can be killed and add a SpriteCounterRule for it?
                     # spritecounter = SpriteCounterRule(limit=limit,
