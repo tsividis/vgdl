@@ -31,6 +31,12 @@ BasicGame key_handler=Pulse square_size=40
         avatar avatar > nothing
         wall wall > nothing
         EOS EOS > nothing
+
+        hole avatar > nothing
+        hole box > nothing
+        avatar box > nothing
+        wall avatar > nothing
+        wall box > nothing
         
     TerminationSet
         SpriteCounter stype=box    limit=0 win=True

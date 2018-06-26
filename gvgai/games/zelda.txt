@@ -95,6 +95,27 @@ BasicGame
     wall wall > nothing
     EOS EOS > nothing
 
+    goal sword > nothing
+    key sword > nothing
+    key monsterQuick > nothing
+    key monsterNormal > nothing
+    key monsterSlow > nothing
+    sword monsterQuick > nothing
+    sword monsterNormal > nothing
+    sword monsterSlow > nothing
+    avatar sword > nothing
+    monsterQuick avatar > nothing
+    monsterQuick monsterSlow > nothing
+    monsterNormal avatar > nothing
+    monsterNormal monsterQuick > nothing
+    monsterNormal monsterSlow > nothing
+    monsterSlow avatar > nothing
+    wall sword > nothing
+    wall avatar > nothing
+    wall monsterQuick > nothing
+    wall monsterNormal > nothing
+    wall monsterSlow > nothing
+
   TerminationSet
     SpriteCounter stype=goal   win=True
     SpriteCounter stype=avatar win=False

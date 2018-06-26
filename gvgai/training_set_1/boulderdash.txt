@@ -17,31 +17,45 @@ BasicGame
 		x > diamond
 		c > crab
 		b > butterfly
+		A > avatar 
 
 	InteractionSet
 		dirt avatar > killSprite
 		dirt sword  > killSprite
-		diamond avatar > changeResource resource=diamond value=1
-		diamond avatar > changeScore value=5
+
+		diamond avatar > collectResource 
+		diamond avatar > changeScore value=2
+
 		avatar wall > stepBack
 		crab wall > stepBack
 		butterfly wall > stepBack
 		avatar boulder > stepBack
 		crab boulder > stepBack
 		butterfly boulder > stepBack
+
 		avatar boulder > killIfFromAbove
+		avatar boulder > changeScore value=-1
+
 		avatar butterfly > killSprite
+		avatar butterfly > changeScore value=-1
+
 		avatar crab > killSprite
+		avatar crab > changeScore value=-1
+
 		boulder dirt > stepBack
 		boulder wall > stepBack
 		boulder diamond > stepBack
 		boulder boulder > stepBack
+
 		crab dirt > stepBack
 		butterfly dirt > stepBack
+		crab diamond > stepBack
+		butterfly diamond > stepBack
+
 		crab butterfly > killSprite
-		butterfly crab > transformTo stype=diamond
-		butterfly crab > changeScore value=1
-		exitdoor avatar > killIfOtherHasMore resource=diamond limit=9 scoreChange=100
+		butterfly crab > transformTo stype=diamond scoreChange=1
+		#butterfly crab > changeScore value=1
+		exitdoor avatar > killIfOtherHasMore resource=diamond limit=9 
 		exitdoor avatar > nothing
 
 		sword crab > nothing
@@ -51,6 +65,78 @@ BasicGame
 		sword exitdoor > nothing
 		sword diamond > nothing
 		sword wall > nothing
+
+        wall wall > nothing
+        wall sword > nothing
+        wall exitdoor > nothing
+        wall diamond > nothing
+        wall avatar > nothing
+        wall crab > nothing
+        wall butterfly > nothing
+        wall boulder > nothing
+        wall dirt > nothing
+        wall EOS > nothing
+        sword sword > nothing
+        sword dirt > nothing
+        sword EOS > nothing
+        exitdoor wall > nothing
+        exitdoor sword > nothing
+        exitdoor exitdoor > nothing
+        exitdoor diamond > nothing
+        exitdoor crab > nothing
+        exitdoor butterfly > nothing
+        exitdoor boulder > nothing
+        exitdoor dirt > nothing
+        exitdoor EOS > nothing
+        diamond wall > nothing
+        diamond sword > nothing
+        diamond exitdoor > nothing
+        diamond diamond > nothing
+        diamond crab > nothing
+        diamond butterfly > nothing
+        diamond boulder > nothing
+        diamond dirt > nothing
+        diamond EOS > nothing
+        avatar sword > nothing
+        avatar exitdoor > nothing
+        avatar diamond > nothing
+        avatar avatar > nothing
+        avatar dirt > nothing
+        avatar EOS > nothing
+        crab sword > nothing
+        crab exitdoor > nothing
+        crab avatar > nothing
+        crab crab > nothing
+        crab EOS > nothing
+        butterfly sword > nothing
+        butterfly exitdoor > nothing
+        butterfly avatar > nothing
+        butterfly butterfly > nothing
+        butterfly EOS > nothing
+        boulder sword > nothing
+        boulder exitdoor > nothing
+        boulder avatar > nothing
+        boulder crab > nothing
+        boulder butterfly > nothing
+        boulder EOS > nothing
+        dirt wall > nothing
+        dirt exitdoor > nothing
+        dirt diamond > nothing
+        dirt crab > nothing
+        dirt butterfly > nothing
+        dirt boulder > nothing
+        dirt dirt > nothing
+        dirt EOS > nothing
+        EOS wall > nothing
+        EOS sword > nothing
+        EOS exitdoor > nothing
+        EOS diamond > nothing
+        EOS avatar > nothing
+        EOS crab > nothing
+        EOS butterfly > nothing
+        EOS boulder > nothing
+        EOS dirt > nothing
+        EOS EOS > nothing
 
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False

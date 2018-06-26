@@ -107,6 +107,27 @@ BasicGame
         wall wall > nothing
         EOS EOS > nothing
 
+        flower honey > nothing
+        flower avatar > nothing
+        flower bee > nothing
+        flower zombie > nothing
+        fastHell honey > nothing
+        fastHell avatar > nothing
+        fastHell zombie > nothing
+        slowHell honey > nothing
+        slowHell avatar > nothing
+        slowHell zombie > nothing
+        honey dying_zombie > nothing
+        avatar honey > nothing
+        bee honey > nothing
+        bee avatar > nothing
+        bee zombie > nothing
+        zombie honey > nothing
+        dying_zombie bee > nothing
+        wall avatar > nothing
+        wall bee > nothing
+        wall zombie > nothing
+
     TerminationSet
         Timeout limit=1000 win=True
         SpriteCounter stype=avatar limit=0 win=False

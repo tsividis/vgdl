@@ -68,6 +68,12 @@ BasicGame
     wall wall > nothing
     EOS EOS > nothing
 
+    explosion incoming_slow > nothing
+    explosion incoming_fast > nothing
+    wall avatar > nothing
+    wall incoming_slow > nothing
+    wall incoming_fast > nothing
+
   TerminationSet
     SpriteCounter stype=city   win=False
     MultiSpriteCounter stype1=incoming_slow stype2=incoming_fast limit=0 win=True

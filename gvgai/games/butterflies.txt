@@ -35,6 +35,11 @@ BasicGame
         wall wall > nothing
         EOS EOS > nothing
 
+        cocoon avatar > nothing
+        avatar butterfly > nothing
+        wall avatar > nothing
+        wall butterfly > nothing
+
     LevelMapping
         1 > butterfly
         0 > cocoon

@@ -2,17 +2,14 @@ BasicGame
   SpriteSet
     city  > Immovable color=GREEN randomtiling=0.5
     explosion > Flicker limit=5 color=PINK
-
-    movable >
-      avatar  > ShootAvatar stype=explosion color=DARKBLUE
-      incoming >
-        incoming_slow  > Chaser stype=city color=RED speed=0.1
-        incoming_fast  > Chaser stype=city color=GOLD speed=0.3
-	#incoming_slow > Immovable color=RED
-	#incoming_fast > Immovable color=GOLD
+    avatar  > ShootAvatar stype=explosion color=DARKBLUE
+    incoming_slow  > Chaser stype=city color=RED speed=0.1
+    incoming_fast  > Chaser stype=city color=GOLD speed=0.3
     wall > Immovable color=DARKGRAY
 
   LevelMapping
+    w > wall
+    A > avatar
     c > city
     m > incoming_slow
     f > incoming_fast
@@ -21,28 +18,62 @@ BasicGame
     incoming_slow wall  > stepBack
     incoming_fast wall  > stepBack
     avatar wall  > stepBack
+
     incoming_slow city > killSprite 
     incoming_slow city > changeScore value=-1
     city incoming_slow > killSprite
+
     incoming_fast city > killSprite
     incoming_fast city > changeScore value=-1
     city incoming_fast > killSprite
-    avatar city > nothing
-    avatar explosion > nothing
+
     incoming_slow explosion > killSprite
     incoming_slow explosion > changeScore value=2
     incoming_fast explosion > killSprite
     incoming_fast explosion > changeScore value=2
-    explosion explosion > nothing
-    explosion wall > nothing
+    
     city explosion > nothing
-    incoming_fast incoming_fast > nothing
-    incoming_fast incoming_slow > nothing
-    incoming_slow incoming_slow > nothing
-    avatar incoming_fast > nothing
+    explosion city > nothing
+    city avatar > nothing
+    avatar city > nothing
+    wall city > nothing
+    city wall > nothing
+    city EOS > nothing
+    EOS city > nothing
+    avatar explosion > nothing
+    explosion avatar > nothing
+    wall explosion > nothing
+    explosion wall > nothing
+    explosion EOS > nothing
+    EOS explosion > nothing
     avatar incoming_slow > nothing
-    #incoming_fast avatar > killSprite
-    #incoming_slow avatar > killSprite
+    incoming_slow avatar > nothing
+    avatar incoming_fast > nothing
+    incoming_fast avatar > nothing
+    avatar EOS > nothing
+    EOS avatar > nothing
+    incoming_slow incoming_fast > nothing
+    incoming_fast incoming_slow > nothing
+    incoming_slow EOS > nothing
+    EOS incoming_slow > nothing
+    incoming_fast EOS > nothing
+    EOS incoming_fast > nothing
+    wall EOS > nothing
+    EOS wall > nothing
+    city city > nothing
+    explosion explosion > nothing
+    avatar avatar > nothing
+    incoming_slow incoming_slow > nothing
+    incoming_fast incoming_fast > nothing
+    wall wall > nothing
+    EOS EOS > nothing
+
+    explosion incoming_slow > nothing
+    explosion incoming_fast > nothing
+    wall avatar > nothing
+    wall incoming_slow > nothing
+    wall incoming_fast > nothing
+
   TerminationSet
     SpriteCounter stype=city   win=False
-    SpriteCounter stype=incoming win=True
+    MultiSpriteCounter stype1=incoming_slow stype2=incoming_fast limit=0 win=True
