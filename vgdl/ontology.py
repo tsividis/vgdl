@@ -1179,6 +1179,9 @@ class NoveltyTermination(Termination):
                 except IndexError:
                     print("IndexError in game.all_objects")
                     embed()
+                except TypeError:
+                    print("TypeError in game.all_objects")
+                    embed()
                 try:
                     name2 = game.all_objects[e[2]]['sprite'].name
                     # Don't get a noveltyTermination from RandomNPCs
@@ -1221,7 +1224,9 @@ class NoveltyTermination(Termination):
                 except IndexError:
                     print("IndexError in game.all_objects")
                     embed()
-
+                except IndexError:
+                    print("TypeError in game.all_objects")
+                    embed()
                 if name1==self.s1 and name2==self.s2:
                     if id_not_found:
                         pass
