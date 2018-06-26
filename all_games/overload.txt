@@ -1,6 +1,5 @@
 BasicGame
     SpriteSet
-        #castlef > Immovable color=LIGHTBLUE 
         marsh > Immovable color=BROWN 
         goal  > Immovable color=GREEN
         avatar > ShootAvatar color=DARKBLUE ammo=weapon stype=sword 
@@ -109,6 +108,15 @@ BasicGame
         gold gold > nothing
         wall wall > nothing
         EOS EOS > nothing
+
+        marsh random > nothing
+        avatar goal > nothing
+        avatar weapon > nothing
+        avatar gold > nothing
+        random gold > nothing
+        sword marsh > nothing
+        wall avatar > nothing
+        wall random > nothing
 
     TerminationSet
         SpriteCounter stype=goal   limit=0 win=True

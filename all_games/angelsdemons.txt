@@ -226,6 +226,24 @@ BasicGame
         wall wall > nothing
         EOS EOS > nothing
 
+        citizen demon > nothing
+        blessed demon > nothing
+        avatar box > nothing
+        avatar bolt > nothing
+        output citizen > nothing
+        output blessed > nothing
+        box bolt > nothing
+        box salvation > nothing
+        wall demon > nothing
+        wall angel > nothing
+        wall citizen > nothing
+        wall blessed > nothing
+        wall avatar > nothing
+        wall box > nothing
+        wall bolt > nothing
+        wall salvation > nothing
+        EOS avatar > nothing
+
     LevelMapping
         d >  demon
         a >  angel 

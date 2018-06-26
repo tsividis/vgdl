@@ -63,6 +63,31 @@ BasicGame
         wall wall > nothing
         EOS EOS > nothing
 
+        annoyed citizen > nothing
+        citizen annoyed > nothing
+        citizen citizen > nothing
+        citizen quiet > nothing
+        citizen avatar > nothing
+        citizen george > nothing
+        citizen cigarette > nothing
+        citizen wall > nothing
+        citizen EOS > nothing
+        quiet citizen > nothing
+        quiet avatar > nothing
+        avatar citizen > nothing
+        george citizen > nothing
+        george quiet > nothing
+        george avatar > nothing
+        cigarette annoyed > nothing
+        cigarette citizen > nothing
+        cigarette avatar > nothing
+        wall annoyed > nothing
+        wall citizen > nothing
+        wall quiet > nothing
+        wall avatar > nothing
+        wall cigarette > nothing
+        EOS citizen > nothing
+
     LevelMapping
         g >  george
         c >  quiet

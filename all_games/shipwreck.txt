@@ -347,3 +347,16 @@ BasicGame square_size=30
         t1 t1 > nothing
         avatar avatar > nothing
         EOS EOS > nothing
+
+        land avatar > nothing
+        portGold avatar > nothing
+        portGems avatar > nothing
+        portDiamonds avatar > nothing
+        whirlpool avatar > nothing
+        t10 avatar > nothing
+        t5 avatar > nothing
+        t1 avatar > nothing
+        avatar gold > nothing
+        avatar gems > nothing
+        avatar diamonds > nothing
+        EOS avatar > nothing

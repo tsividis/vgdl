@@ -40,8 +40,8 @@ BasicGame
                 avatar crab > killSprite 
                 avatar crab > changeScore value=-1 
 
-                enemy boulder > killIfFromAbove 
-                enemy boulder > changeScore value=5 
+                crab boulder > killIfFromAbove 
+                butterfly boulder > killIfFromAbove
 
 		boulder dirt > stepBack 
 		boulder wall > stepBack
@@ -51,7 +51,7 @@ BasicGame
 		dirt butterfly > killSprite
 		dirt crab > transformTo stype=diamond
 		crab butterfly > killSprite
-		butterfly crab > transformTo stype=diamond 
+		butterfly crab > transformTo stype=diamond scoreChange=1
                 butterfly crab > changeScore value=1
 		exitdoor avatar > killIfOtherHasMore resource=diamond limit=9
 
@@ -119,6 +119,24 @@ BasicGame
                 crab crab > nothing
                 butterfly butterfly > nothing
                 EOS EOS > nothing
+
+                wall boulder > nothing
+                wall avatar > nothing
+                wall crab > nothing
+                wall butterfly > nothing
+                sword dirt > nothing
+                dirt boulder > nothing
+                diamond boulder > nothing
+                boulder avatar > nothing
+                boulder crab > nothing
+                boulder butterfly > nothing
+                avatar dirt > nothing
+                avatar exitdoor > nothing
+                avatar diamond > nothing
+                crab dirt > nothing
+                crab avatar > nothing
+                butterfly dirt > nothing
+                butterfly avatar > nothing
 
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False
