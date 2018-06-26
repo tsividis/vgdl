@@ -21,8 +21,10 @@
 # 				'myAliens', 'overload', 'plants', 'plaqueattack', 
 # 				'superman', 'watergame', 'waves', 'wildgunman']
 
+# game_names = ['bait', 'clusters']
 ## running with hyperparams3
-game_names = ['chopper', 'jaws', 'plaqueattack', 'wildgunman']
+game_names = ['myAliens']
+# game_names = ['chopper', 'jaws', 'plaqueattack', 'wildgunman']
 # game_names = ['avoidgeorge', 'bait', 'chopper', 
 # 				'infection', 'jaws', 'myAliens', 'overload', 'plants', 'plaqueattack', 
 # 				'superman', 'waves', 'wildgunman']
