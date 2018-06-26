@@ -129,4 +129,14 @@ BasicGame
         alien alien > nothing
         EOS EOS > nothing
 
+        asteroid rock > nothing
+        asteroid avatar > nothing
+        asteroid alien > nothing
+        sam asteroid > nothing
+        EOS rock > nothing
+        EOS sam > nothing
+        EOS laser > nothing
+        EOS avatar > nothing
+        EOS alien > nothing
+
 

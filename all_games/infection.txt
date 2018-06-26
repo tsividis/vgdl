@@ -6,9 +6,9 @@ BasicGame
 
         normal   > ShootAvatar stype=sword color=WHITE 
         carrier  > ShootAvatar stype=sword color=BROWN  frameRate=8
-        host     > RandomNPC speed=0.25  cons=1 color=GREEN 
-        infected > RandomNPC speed=0.25  cons=1 color=ORANGE speed=0.5  frameRate=8
-        doctor > RandomNPC speed=0.25  cons=1 color=BLUE speed=0.2 
+        host     > RandomNPC speed=0.3  cons=1 color=GREEN 
+        infected > RandomNPC speed=0.3  cons=1 color=ORANGE speed=0.5  frameRate=8
+        doctor > RandomNPC speed=0.3  cons=1 color=BLUE speed=0.2 
         wall > Immovable color=DARKGRAY  autotiling=True
 
     TerminationSet
@@ -109,6 +109,21 @@ BasicGame
         doctor doctor > nothing
         wall wall > nothing
         EOS EOS > nothing
+
+        sword doctor > nothing
+        virus normal > nothing
+        virus host > nothing
+        virus doctor > nothing
+        carrier host > nothing
+        infected normal > nothing
+        infected host > nothing
+        doctor carrier > nothing
+        doctor infected > nothing
+        wall normal > nothing
+        wall carrier > nothing
+        wall host > nothing
+        wall infected > nothing
+        wall doctor > nothing
 
     LevelMapping
         1 >  doctor

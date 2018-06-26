@@ -197,3 +197,31 @@ BasicGame
         inBlue inBlue > nothing
         wall wall > nothing
         EOS EOS > nothing
+
+        black inGrey > nothing
+        black inWhite > nothing
+        black inBlue > nothing
+        white inGrey > nothing
+        white inBlack > nothing
+        white inBlue > nothing
+        blue inGrey > nothing
+        blue inBlack > nothing
+        blue inWhite > nothing
+        grey inBlack > nothing
+        grey inWhite > nothing
+        grey inBlue > nothing
+        crate target > nothing
+        inGrey crate > nothing
+        inBlack crate > nothing
+        inWhite crate > nothing
+        inBlue crate > nothing
+        wall target > nothing
+        wall crate > nothing
+        wall inGrey > nothing
+        wall inBlack > nothing
+        wall inWhite > nothing
+        wall inBlue > nothing
+        EOS inGrey > nothing
+        EOS inBlack > nothing
+        EOS inWhite > nothing
+        EOS inBlue > nothing
