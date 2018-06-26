@@ -356,7 +356,19 @@ BasicGame
         wall wall > nothing
         EOS EOS > nothing
 
-
+        building standingcivilian > nothing
+        building fallingcivilian > nothing
+        emptyspace standingcivilian > nothing
+        jail villaingang > nothing
+        jail avatar > nothing
+        avatar fallingcivilian > nothing
+        wall bleft > nothing
+        wall bright > nothing
+        wall fallingcivilian > nothing
+        wall avatar > nothing
+        EOS missileL > nothing
+        EOS missileR > nothing
+        EOS avatar > nothing
 
 
     LevelMapping

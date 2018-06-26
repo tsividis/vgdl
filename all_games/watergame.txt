@@ -44,6 +44,11 @@ BasicGame
         avatar avatar > nothing
         EOS EOS > nothing
 
+        wall avatar > nothing
+        water avatar > nothing
+        avatar door > nothing
+        avatar box > nothing
+
     LevelMapping
         A >  avatar
         w > wall

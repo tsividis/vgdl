@@ -87,4 +87,13 @@ BasicGame
         wall wall > nothing
         EOS EOS > nothing
 
+        hole avatar > nothing
+        hole lemming > nothing
+        shovel wall > nothing
+        goal lemming > nothing
+        wall avatar > nothing
+        wall lemming > nothing
+        EOS avatar > nothing
+        EOS lemming > nothing
+
 

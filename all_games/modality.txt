@@ -136,3 +136,22 @@ BasicGame key_handler=Pulse  square_size=50
         inWhite inWhite > nothing
         wall wall > nothing
         EOS EOS > nothing
+
+        black inGrey > nothing
+        black inWhite > nothing
+        white inGrey > nothing
+        white inBlack > nothing
+        grey inBlack > nothing
+        grey inWhite > nothing
+        crate target > nothing
+        inGrey crate > nothing
+        inBlack crate > nothing
+        inWhite crate > nothing
+        wall target > nothing
+        wall crate > nothing
+        wall inGrey > nothing
+        wall inBlack > nothing
+        wall inWhite > nothing
+        EOS inGrey > nothing
+        EOS inBlack > nothing
+        EOS inWhite > nothing

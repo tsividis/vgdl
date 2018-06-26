@@ -4,7 +4,7 @@ BasicGame
         cursed > Immovable color=GRAY 
 
         demon > Bomber stype=bolt color=BLUE  prob=0.15 spawnCooldown=6 speed=0.4 frameRate=8
-        angel > Bomber stype=salvation color=GREEN prob=0.05 spawnCooldown=6 speed=0.45 frameRate=8
+        angel > Bomber stype=salvation color=GREEN prob=0.05 spawnCooldown=6 speed=0.5 frameRate=8
         citizen > Chaser stype=output color=RED speed=0.4
         blessed > Chaser stype=output color=ORANGE speed=0.4
             
@@ -225,6 +225,24 @@ BasicGame
         salvation salvation > nothing
         wall wall > nothing
         EOS EOS > nothing
+
+        citizen demon > nothing
+        blessed demon > nothing
+        avatar box > nothing
+        avatar bolt > nothing
+        output citizen > nothing
+        output blessed > nothing
+        box bolt > nothing
+        box salvation > nothing
+        wall demon > nothing
+        wall angel > nothing
+        wall citizen > nothing
+        wall blessed > nothing
+        wall avatar > nothing
+        wall box > nothing
+        wall bolt > nothing
+        wall salvation > nothing
+        EOS avatar > nothing
 
     LevelMapping
         d >  demon
