@@ -1,6 +1,6 @@
 BasicGame
     SpriteSet
-        randomCamel > RandomNPC speed=0.25 cons=8 color=GREEN frameRate=7 cooldown=6
+        randomCamel > RandomNPC speed=0.3 cons=8 color=GREEN frameRate=7 cooldown=6
         fastR > Missile speed=1 cooldown=5 orientation=RIGHT color=BLUE
         fastL > Missile speed=1 cooldown=5 orientation=LEFT color=LIGHTBLUE
         mediumR > Missile speed=1 cooldown=4 orientation=RIGHT color=ORANGE
