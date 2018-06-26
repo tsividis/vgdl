@@ -24,7 +24,7 @@ BasicGame
 
         avatar > MovingAvatar color=DARKBLUE frameRate=8
 
-        wall > Immovable color= DARKGRAY
+        wall > Immovable color=DARKGRAY
 
     InteractionSet
         avatar wall > stepBack
