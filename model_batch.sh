@@ -2,9 +2,9 @@
 
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0
+#SBATCH --array=0-3
 #SBATCH --output=slurm_logs/hyperopt_boulderdash_optimized2/array_%A_%a.out
-#SBATCH --time=800
+#SBATCH --time=720
 #SBATCH --qos=tenenbaum
 #SBTACH --cpus-per-task=2
 #SBATCH --mem=32G
