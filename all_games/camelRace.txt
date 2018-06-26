@@ -1,6 +1,6 @@
 BasicGame
     SpriteSet
-        randomCamel > RandomNPC speed=0.25 cons=8 color=GREEN frameRate=7 cooldown=6
+        randomCamel > RandomNPC speed=0.3 cons=8 color=GREEN frameRate=7 cooldown=6
         fastR > Missile speed=1 cooldown=5 orientation=RIGHT color=BLUE
         fastL > Missile speed=1 cooldown=5 orientation=LEFT color=LIGHTBLUE
         mediumR > Missile speed=1 cooldown=4 orientation=RIGHT color=ORANGE
@@ -178,6 +178,23 @@ BasicGame
         avatar avatar > nothing
         wall wall > nothing
         EOS EOS > nothing
+
+        goal randomCamel > nothing
+        goal fastR > nothing
+        goal fastL > nothing
+        goal mediumR > nothing
+        goal mediumL > nothing
+        goal slowR > nothing
+        goal slowL > nothing
+        goal avatar > nothing
+        wall randomCamel > nothing
+        wall fastR > nothing
+        wall fastL > nothing
+        wall mediumR > nothing
+        wall mediumL > nothing
+        wall slowR > nothing
+        wall slowL > nothing
+        wall avatar > nothing
 
     LevelMapping
         g > goal
