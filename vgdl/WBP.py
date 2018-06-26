@@ -505,20 +505,23 @@ class Node():
 		else:
 			self.rolloutArray = []
 
-	def fastcopy(self, rle):
+def fastcopy(self, rle):
 		newRle = self.empty_copy(rle)
 		for k,v in rle.__dict__.iteritems():
-			try:
+			ctype = str(type(getattr(rle,k)))
+			if 'defaultdict' in ctype or 'dict' in ctype:
 				newRle.__dict__[k] = v.copy()
-			except:
+			elif 'list' in ctype:
+				newRle.__dict__[k] = v[:]
+			else:
 				newRle.__dict__[k] = v
-		newRle._obstypes = rle._obstypes.copy()
-		if hasattr(rle, '_gravepoints'):
-			newRle._gravepoints = rle._gravepoints.copy()
-		newRle.outdim = rle.outdim
+		# newRle._obstypes = rle._obstypes.copy()
+		# if hasattr(rle, '_gravepoints'):
+		# 	newRle._gravepoints = rle._gravepoints.copy()
+		# newRle.outdim = rle.outdim
 		#ipdb.set_trace()
-		newRle.symbolDict = rle.symbolDict.copy()
-		newRle._other_types = rle._other_types[:]
+		# newRle.symbolDict = rle.symbolDict.copy()
+		#newRle._other_types = rle._other_types[:]
 
 		newRle._game = self.empty_copy(rle._game)
 		ignoreKeys = ['spriteDistribution',
@@ -532,7 +535,6 @@ class Node():
 						'lastrect','lastmove','stypes', 'lastdisplacement',
 						'speed','cooldown','direction','color','colorName']
 		for k,v in rle._game.__dict__.iteritems():
-
 			if k in ignoreKeys: continue
 
 			ctype = str(type(getattr(rle._game,k)))
@@ -570,12 +572,8 @@ class Node():
 					newRle._game.sprite_groups = new_sprite_groups
 			elif 'vgdl' in ctype:
 				newRle._game.__dict__[k] = ccopy(v)
-			elif 'dict' in ctype:
-				#print k
-				newRle._game.__dict__[k] = ccopy(v)
 			else:
-				#print k
-				setattr(newRle._game, k, v)#.__dict__[k] = v
+				setattr(newRle._game, k, ccopy(v))
 		#newRle._game = ccopy(rle._game)
 		return newRle
 
