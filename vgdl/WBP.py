@@ -625,8 +625,8 @@ class Node():
 		successfulRollout = False
 		j=0
 		while not successfulRollout:
-			# vrle = self.fastcopy(Vrle)
-			vrle = copy.deepcopy(Vrle)
+			vrle = self.fastcopy(Vrle)
+			# vrle = copy.deepcopy(Vrle)
 			prevHeuristicVal = self.heuristics(vrle, **self.WBP.rolloutHyperparameters)
 			rolloutArray = []
 			i=0
@@ -1243,8 +1243,8 @@ class Node():
 			## if that fails, replay from beginning and store as current lastState
 			try:
 
-				# vrle = self.fastcopy(self.parent.rle)
-				vrle = copy.deepcopy(self.parent.rle)
+				vrle = self.fastcopy(self.parent.rle)
+				# vrle = copy.deepcopy(self.parent.rle)
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
 					# print a
@@ -1258,8 +1258,8 @@ class Node():
 		else:
 			self.reconstructed=True
 			# print "copy failed; replaying from top"
-			# vrle = self.fastcopy(self.rle)
-			vrle = copy.deepcopy(self.rle)
+			vrle = self.fastcopy(self.rle)
+			# vrle = copy.deepcopy(self.rle)
 			self.terminal, self.win = vrle._isDone()
 			i=0
 			while not self.terminal and len(self.actionSeq)>i:
