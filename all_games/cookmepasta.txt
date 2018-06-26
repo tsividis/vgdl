@@ -195,6 +195,34 @@ BasicGame key_handler=Pulse
         wall wall > nothing
         EOS EOS > nothing
 
+        avatar key > nothing
+        avatar lock > nothing
+        avatar boilingwater > nothing
+        avatar rawpasta > nothing
+        avatar tomato > nothing
+        avatar tuna > nothing
+        avatar pastainplace > nothing
+        avatar sauceinplace > nothing
+        key boilingwater > nothing
+        key rawpasta > nothing
+        key tomato > nothing
+        key tuna > nothing
+        key pastainplace > nothing
+        key sauceinplace > nothing
+        lock boilingwater > nothing
+        lock rawpasta > nothing
+        lock tomato > nothing
+        lock tuna > nothing
+        lock pastainplace > nothing
+        lock sauceinplace > nothing
+        wall avatar > nothing
+        wall boilingwater > nothing
+        wall rawpasta > nothing
+        wall tomato > nothing
+        wall tuna > nothing
+        wall pastainplace > nothing
+        wall sauceinplace > nothing
+
     TerminationSet
         MultiSpriteCounter stype1=wrongplace limit=1 win=False
         MultiSpriteCounter stype1=plateinplace limit=1 win=True

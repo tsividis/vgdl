@@ -81,3 +81,9 @@ BasicGame
         portalGhost portalGhost > nothing
         wall wall > nothing
         EOS EOS > nothing
+
+        avatar alien > nothing
+        alien base > nothing
+        ghost avatar > nothing
+        wall avatar > nothing
+        EOS alien > nothing

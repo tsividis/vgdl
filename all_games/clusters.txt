@@ -151,6 +151,32 @@ BasicGame key_handler=Pulse
         wall wall > nothing
         EOS EOS > nothing
 
+        hole bluebox > nothing
+        hole redbox > nothing
+        hole greenbox > nothing
+        hole brokenbox > nothing
+        hole avatar > nothing
+        blueblock bluebox > nothing
+        blueblock redbox > nothing
+        blueblock greenbox > nothing
+        blueblock avatar > nothing
+        redblock bluebox > nothing
+        redblock redbox > nothing
+        redblock greenbox > nothing
+        redblock avatar > nothing
+        greenblock bluebox > nothing
+        greenblock redbox > nothing
+        greenblock greenbox > nothing
+        greenblock avatar > nothing
+        avatar bluebox > nothing
+        avatar redbox > nothing
+        avatar greenbox > nothing
+        wall bluebox > nothing
+        wall redbox > nothing
+        wall greenbox > nothing
+        wall brokenbox > nothing
+        wall avatar > nothing
+
 
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False

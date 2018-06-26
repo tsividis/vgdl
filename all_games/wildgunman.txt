@@ -161,6 +161,19 @@ BasicGame
     wall wall > nothing
     EOS EOS > nothing
 
+    city niceGuy > nothing
+    bullet enemy_slow > nothing
+    bullet enemy_fast > nothing
+    bullet niceGuy > nothing
+    wall avatar > nothing
+    wall enemy_slow > nothing
+    wall enemy_fast > nothing
+    wall niceGuy > nothing
+    EOS avatar > nothing
+    EOS enemy_slow > nothing
+    EOS enemy_fast > nothing
+    EOS niceGuy > nothing
+
   TerminationSet
     SpriteCounter stype=city   win=False
     MultiSpriteCounter stype1=enemy_slow stype2=enemy_fast stype3=niceGuy stype4=enemySlowPortal stype5=enemyFastPortal stype6=niceGuyPortal limit=0 win=True

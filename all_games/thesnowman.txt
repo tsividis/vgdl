@@ -220,6 +220,37 @@ BasicGame
         wall wall > nothing
         EOS EOS > nothing
 
+        avatar lock > nothing
+        avatar body > nothing
+        avatar chest > nothing
+        avatar head > nothing
+        key base > nothing
+        key body > nothing
+        key chest > nothing
+        key head > nothing
+        lock base > nothing
+        lock body > nothing
+        lock chest > nothing
+        lock head > nothing
+        base body > nothing
+        base chest > nothing
+        base head > nothing
+        chest body > nothing
+        head body > nothing
+        head chest > nothing
+        baseinplace avatar > nothing
+        bodyinplace avatar > nothing
+        bodyinplace chest > nothing
+        bodyinplace head > nothing
+        chestinplace avatar > nothing
+        chestinplace head > nothing
+        headinplace avatar > nothing
+        wall avatar > nothing
+        wall base > nothing
+        wall body > nothing
+        wall chest > nothing
+        wall head > nothing
+
     TerminationSet
         MultiSpriteCounter stype1=wrongplace limit=1 win=False
         MultiSpriteCounter stype1=headinplace limit=1 win=True

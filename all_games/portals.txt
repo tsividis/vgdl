@@ -3,7 +3,7 @@ BasicGame
 
         bullet >
             sitting  > Immovable color=LIGHTGREEN
-            random   > RandomNPC speed=0.25 cons=1 color=BROWN
+            random   > RandomNPC speed=0.3 cons=1 color=BROWN
             straight > Missile   speed=0.5
                 vertical   > orientation=UP color=PINK
                 horizontal > orientation=LEFT color=LIGHTRED
