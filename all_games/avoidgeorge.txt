@@ -3,7 +3,7 @@ BasicGame
         
         annoyed > RandomNPC speed=0.25 cons=2 color=PURPLE
         
-        citizen >
+        citizen > 
             quiet > RandomNPC speed=0.25 cons=1 color=GREEN
             avatar > ShootAvatar stype=cigarette rotateInPlace=False color=DARKBLUE
 
@@ -30,63 +30,47 @@ BasicGame
         quiet wall > stepBack
         avatar wall > stepBack
 
-        annoyed quiet > nothing
-        quiet annoyed > nothing
-        annoyed avatar > nothing
-        avatar annoyed > nothing
-        annoyed george > nothing
-        george annoyed > nothing
-        annoyed EOS > nothing
-        EOS annoyed > nothing
-        quiet cigarette > nothing
-        cigarette quiet > nothing
-        EOS quiet > nothing
-        quiet EOS > nothing
-        avatar EOS > nothing
-        EOS avatar > nothing
-        cigarette george > nothing
-        george cigarette > nothing
-        wall george > nothing
-        george wall > nothing
-        EOS george > nothing
-        george EOS > nothing
-        EOS cigarette > nothing
-        cigarette EOS > nothing
-        wall EOS > nothing
-        EOS wall > nothing
-
         annoyed annoyed > nothing
+        annoyed quiet > nothing
+        annoyed avatar > nothing
+        annoyed george > nothing
+        annoyed EOS > nothing
+        quiet annoyed > nothing
         quiet quiet > nothing
-        avatar avatar > nothing
-        george george > nothing
-        cigarette cigarette > nothing
-        wall wall > nothing
-        EOS EOS > nothing
-
-        annoyed citizen > nothing
-        citizen annoyed > nothing
-        citizen citizen > nothing
-        citizen quiet > nothing
-        citizen avatar > nothing
-        citizen george > nothing
-        citizen cigarette > nothing
-        citizen wall > nothing
-        citizen EOS > nothing
-        quiet citizen > nothing
         quiet avatar > nothing
-        avatar citizen > nothing
-        george citizen > nothing
+        quiet cigarette > nothing
+        quiet EOS > nothing
+        avatar annoyed > nothing
+        avatar avatar > nothing
+        avatar EOS > nothing
+        george annoyed > nothing
         george quiet > nothing
         george avatar > nothing
+        george george > nothing
+        george cigarette > nothing
+        george wall > nothing
+        george EOS > nothing
         cigarette annoyed > nothing
-        cigarette citizen > nothing
+        cigarette quiet > nothing
         cigarette avatar > nothing
+        cigarette george > nothing
+        cigarette cigarette > nothing
+        cigarette EOS > nothing
         wall annoyed > nothing
-        wall citizen > nothing
         wall quiet > nothing
         wall avatar > nothing
+        wall george > nothing
         wall cigarette > nothing
-        EOS citizen > nothing
+        wall wall > nothing
+        wall EOS > nothing
+        EOS annoyed > nothing
+        EOS quiet > nothing
+        EOS avatar > nothing
+        EOS george > nothing
+        EOS cigarette > nothing
+        EOS wall > nothing
+        EOS EOS > nothing
+
 
     LevelMapping
         g >  george
