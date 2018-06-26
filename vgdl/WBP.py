@@ -1215,7 +1215,9 @@ class Node():
 		## Try rollouts for aliens?
 		if self.WBP.allowRollouts and len(self.actionSeq)>0 and self.actionSeq[-1]==32:
 
-			self.rolloutArray = self.rollout(self.rle)
+			thingWeShoot = self.WBP.theory.classes['avatar'][0].args['stype']
+			if 'Missile' in str(self.WBP.theory.classes[thingWeShoot][0].vgdlType):
+				self.rolloutArray = self.rollout(self.rle)
 			# print self.rolloutArray
 			# print "in rollout"
 
