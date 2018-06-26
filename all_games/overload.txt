@@ -21,6 +21,7 @@ BasicGame
         gold random     > collectResource
         avatar wall     > stepBack
         random wall     > stepBack
+	marsh avatar 	> nothing
         avatar marsh    > killIfHasMore      resource=gold limit=11
         random marsh    > killIfHasMore      resource=gold limit=11
         goal avatar     > killIfOtherHasMore resource=gold limit=10

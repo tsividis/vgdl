@@ -452,6 +452,8 @@ class WBP():
 				# print "we have {} winning states".format(len(self.winning_states))
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
 				bestNode = bestNodes[0]
+				# print "winning states"
+				# embed()
 				# gameString_array.append(bestNode.rle.show())
 				# object_positions_array.append(copy.deepcopy(bestNode.rle))
 				return bestNode, gameString_array, object_positions_array
@@ -654,8 +656,9 @@ class Node():
 		# print sum(rolloutArray)
 		# embed()
 		if win:
-			print "rolloutwin"
-			embed()
+			if self.display:
+				print "rolloutwin"
+			# embed()
 			self.terminal = terminal
 			self.win = win
 		return rolloutArray
@@ -1083,7 +1086,7 @@ class Node():
 			if 'Flicker' in str(theory.classes[s1][0].vgdlType) and not ('Flicker' in str(theory.classes[s2][0].vgdlType) or s2=='avatar'):
 				s1 = s2
 				s2 = 'avatar'
-				print("replaced flicker with avatar")
+				#print("replaced flicker with avatar")
 
 			s2_positions = self.WBP.findObjectsInRLE(rle, s2)
 			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
@@ -1283,7 +1286,10 @@ class Node():
 		## Try rollouts for aliens?
 		if self.WBP.allowRollouts and len(self.actionSeq)>0 and self.actionSeq[-1]==32:
 
-			self.rolloutArray = self.rollout(self.rle)
+			## if the thing we shoot is a missile, do a rollout
+			thingWeShoot = self.WBP.theory.classes['avatar'][0].args['stype']
+			if 'Missile' in str(self.WBP.theory.classes[thingWeShoot][0].vgdlType):
+				self.rolloutArray = self.rollout(self.rle)
 			# print self.rolloutArray
 			# print "in rollout"
 
@@ -1305,6 +1311,8 @@ class Node():
 				# if k not in self.WBP.seen_limits:
 					# print("Current resource={}, limit={}".format(self.rle._game.getAvatars()[0].resources[k], self.WBP.theory.resource_limits[k]))
 			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
+				if self.display:
+					print "resource limit win"
 				self.win=True
 		except IndexError:
 			pass
