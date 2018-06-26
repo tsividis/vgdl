@@ -1,6 +1,6 @@
 BasicGame
 	SpriteSet
-		wall > Immovable color=BLACK 
+		wall > Immovable color=DARKGRAY 
 		sword > Flicker color=YELLOW limit=1 singleton=True 
 		dirt > Immovable color=BROWN 
 		exitdoor > Immovable color=GREEN 

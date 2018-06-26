@@ -6,7 +6,7 @@ BasicGame
         key > Resource color=ORANGE limit=1
         goal > Immovable color=GREEN
         box > Passive color=BROWN
-        wall > Immovable color=BLACK 
+        wall > Immovable color=DARKGRAY
 
     LevelMapping
         A > avatar 
@@ -20,9 +20,9 @@ BasicGame
         avatar wall > stepBack
         avatar hole > killSprite
 	box avatar > bounceForward
-        box wall > undoAll
-        box box > undoAll
-        box mushroom > undoAll
+        box wall > stepBack
+        box box > stepBack
+        box mushroom > stepBack
 
         hole box > killSprite
         hole box > changeScore value=1

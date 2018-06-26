@@ -1,6 +1,6 @@
 BasicGame
     SpriteSet
-        castlef > Immovable color=LIGHTBLUE 
+        #castlef > Immovable color=LIGHTBLUE 
         marsh > Immovable color=BROWN 
         goal  > Immovable color=GREEN
         avatar > ShootAvatar color=DARKBLUE ammo=weapon stype=sword 
@@ -9,7 +9,7 @@ BasicGame
         weapon > Resource color=PINK value=10000 limit=10000 
         gold  > Resource color=GOLD limit=11  # this limit is only used for visualizing progress
 
-        wall > Immovable color=BLACK 
+        wall > Immovable color=DARKGRAY 
 
     InteractionSet
         weapon avatar   > collectResource 
@@ -21,28 +21,29 @@ BasicGame
         gold random     > collectResource
         avatar wall     > stepBack
         random wall     > stepBack
+	marsh avatar 	> nothing
         avatar marsh    > killIfHasMore      resource=gold limit=11
         random marsh    > killIfHasMore      resource=gold limit=11
         goal avatar     > killIfOtherHasMore resource=gold limit=10
 
-        marsh castlef > nothing
-        castlef marsh > nothing
-        goal castlef > nothing
-        castlef goal > nothing
-        avatar castlef > nothing
-        castlef avatar > nothing
-        random castlef > nothing
-        castlef random > nothing
-        sword castlef > nothing
-        castlef sword > nothing
-        castlef weapon > nothing
-        weapon castlef > nothing
-        gold castlef > nothing
-        castlef gold > nothing
-        wall castlef > nothing
-        castlef wall > nothing
-        EOS castlef > nothing
-        castlef EOS > nothing
+        #marsh castlef > nothing
+        #castlef marsh > nothing
+        #goal castlef > nothing
+        #castlef goal > nothing
+        #avatar castlef > nothing
+        #castlef avatar > nothing
+        #random castlef > nothing
+        #castlef random > nothing
+        #sword castlef > nothing
+        #castlef sword > nothing
+        #castlef weapon > nothing
+        #weapon castlef > nothing
+        #gold castlef > nothing
+        #castlef gold > nothing
+        #wall castlef > nothing
+        #castlef wall > nothing
+        #EOS castlef > nothing
+        #castlef EOS > nothing
         marsh goal > nothing
         goal marsh > nothing
         marsh weapon > nothing
@@ -98,7 +99,7 @@ BasicGame
         wall EOS > nothing
         EOS wall > nothing
 
-        castlef castlef > nothing
+        #castlef castlef > nothing
         marsh marsh > nothing
         goal goal > nothing
         avatar avatar > nothing
@@ -114,8 +115,9 @@ BasicGame
         SpriteCounter stype=avatar limit=0 win=False
 
     LevelMapping
-        g >  castlef goal
-        . >  marsh
+        #g >  castlef goal
+        g > goal
+	. >  marsh
         0 >  gold
         1 >  random
         s >  weapon
