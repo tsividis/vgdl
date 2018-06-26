@@ -505,7 +505,7 @@ class Node():
 		else:
 			self.rolloutArray = []
 
-def fastcopy(self, rle):
+	def fastcopy(self, rle):
 		newRle = self.empty_copy(rle)
 		for k,v in rle.__dict__.iteritems():
 			ctype = str(type(getattr(rle,k)))
