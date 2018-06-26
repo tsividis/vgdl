@@ -179,6 +179,23 @@ BasicGame
         wall wall > nothing
         EOS EOS > nothing
 
+        goal randomCamel > nothing
+        goal fastR > nothing
+        goal fastL > nothing
+        goal mediumR > nothing
+        goal mediumL > nothing
+        goal slowR > nothing
+        goal slowL > nothing
+        goal avatar > nothing
+        wall randomCamel > nothing
+        wall fastR > nothing
+        wall fastL > nothing
+        wall mediumR > nothing
+        wall mediumL > nothing
+        wall slowR > nothing
+        wall slowL > nothing
+        wall avatar > nothing
+
     LevelMapping
         g > goal
         r > randomCamel

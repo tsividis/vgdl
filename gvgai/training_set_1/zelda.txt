@@ -7,8 +7,7 @@ BasicGame
     monsterQuick > RandomNPC cooldown=2 cons=6 color=BROWN
     monsterNormal > RandomNPC cooldown=4 cons=8 color=PINK
     monsterSlow > RandomNPC cooldown=8 cons=12 color=GOLD
-    wall > Immovable autotiling=true color=DARKGRAY
-
+    wall > Immovable color=DARKGRAY
 
   LevelMapping
     g > goal
@@ -61,6 +60,61 @@ BasicGame
     sword wall > nothing
     sword avatar > nothing
     sword sword > nothing
+
+    goal key > nothing
+    key goal > nothing
+    goal monsterQuick > nothing
+    monsterQuick goal > nothing
+    monsterNormal goal > nothing
+    goal monsterNormal > nothing
+    monsterSlow goal > nothing
+    goal monsterSlow > nothing
+    wall goal > nothing
+    goal wall > nothing
+    goal EOS > nothing
+    EOS goal > nothing
+    wall key > nothing
+    key wall > nothing
+    key EOS > nothing
+    EOS key > nothing
+    sword EOS > nothing
+    EOS sword > nothing
+    avatar EOS > nothing
+    EOS avatar > nothing
+    monsterQuick EOS > nothing
+    EOS monsterQuick > nothing
+    monsterNormal EOS > nothing
+    EOS monsterNormal > nothing
+    monsterSlow EOS > nothing
+    EOS monsterSlow > nothing
+    wall EOS > nothing
+    EOS wall > nothing
+    goal goal > nothing
+    key key > nothing
+    avatar avatar > nothing
+    wall wall > nothing
+    EOS EOS > nothing
+
+    goal sword > nothing
+    key sword > nothing
+    key monsterQuick > nothing
+    key monsterNormal > nothing
+    key monsterSlow > nothing
+    sword monsterQuick > nothing
+    sword monsterNormal > nothing
+    sword monsterSlow > nothing
+    avatar sword > nothing
+    monsterQuick avatar > nothing
+    monsterQuick monsterSlow > nothing
+    monsterNormal avatar > nothing
+    monsterNormal monsterQuick > nothing
+    monsterNormal monsterSlow > nothing
+    monsterSlow avatar > nothing
+    wall sword > nothing
+    wall avatar > nothing
+    wall monsterQuick > nothing
+    wall monsterNormal > nothing
+    wall monsterSlow > nothing
 
   TerminationSet
     SpriteCounter stype=goal   win=True

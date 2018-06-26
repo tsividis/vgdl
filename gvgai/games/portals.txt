@@ -130,6 +130,47 @@ BasicGame
         wall wall > nothing
         EOS EOS > nothing
 
+        sitting avatar > nothing
+        random sitting > nothing
+        random avatar > nothing
+        vertical sitting > nothing
+        vertical random > nothing
+        vertical horizontal > nothing
+        vertical avatar > nothing
+        horizontal sitting > nothing
+        horizontal random > nothing
+        horizontal avatar > nothing
+        goal sitting > nothing
+        goal random > nothing
+        goal vertical > nothing
+        goal horizontal > nothing
+        entry1 sitting > nothing
+        entry1 random > nothing
+        entry1 vertical > nothing
+        entry1 horizontal > nothing
+        entry1 avatar > nothing
+        entry2 sitting > nothing
+        entry2 random > nothing
+        entry2 vertical > nothing
+        entry2 horizontal > nothing
+        entry2 avatar > nothing
+        exit1 sitting > nothing
+        exit1 random > nothing
+        exit1 vertical > nothing
+        exit1 horizontal > nothing
+        exit1 avatar > nothing
+        exit2 sitting > nothing
+        exit2 random > nothing
+        exit2 vertical > nothing
+        exit2 horizontal > nothing
+        exit2 avatar > nothing
+        avatar goal > nothing
+        wall sitting > nothing
+        wall random > nothing
+        wall vertical > nothing
+        wall horizontal > nothing
+        wall avatar > nothing
+
     TerminationSet
         SpriteCounter stype=goal   limit=0 win=True
         SpriteCounter stype=avatar limit=0 win=False

@@ -98,3 +98,17 @@ BasicGame
         portalSlow portalSlow > nothing
         portalFast portalFast > nothing
         EOS EOS > nothing
+
+        sam alienGreen > nothing
+        sam alienBlue > nothing
+        bomb avatar > nothing
+        bomb alienGreen > nothing
+        alienGreen base > nothing
+        alienGreen avatar > nothing
+        alienBlue base > nothing
+        alienBlue avatar > nothing
+        EOS avatar > nothing
+        EOS sam > nothing
+        EOS bomb > nothing
+        EOS alienGreen > nothing
+        EOS alienBlue > nothing

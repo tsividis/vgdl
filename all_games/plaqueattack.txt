@@ -179,6 +179,13 @@ BasicGame square_size=25
     wall wall > nothing
     EOS EOS > nothing
 
+    avatar deadMolarInf > nothing
+    avatar deadMolarSup > nothing
+    wall avatar > nothing
+    wall hotdog > nothing
+    wall burger > nothing
+    wall fluor > nothing
+
   TerminationSet
     MultiSpriteCounter stype1=fullMolarInf stype2=fullMolarSup win=False
     MultiSpriteCounter stype1=hotdoghole stype2=hotdog stype3=burger stype4=burgerhole limit=0 win=True

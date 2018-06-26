@@ -1,22 +1,22 @@
 BasicGame
     SpriteSet
 
-        bullet >
-            sitting  > Immovable color=LIGHTGREEN
-            random   > RandomNPC speed=0.3 cooldown=1 color=BROWN
-            straight > Missile   speed=0.5
-                vertical   > orientation=UP color=PINK
-                horizontal > orientation=LEFT color=LIGHTRED
-        structure > Immovable
-            goal  > color=GREEN
-            portalentry > Portal
-                entry1 > stype=exit1 color=LIGHTBLUE
-                entry2 > stype=exit2 color=BLUE
-            portalexit  >
-                exit1  > color=ORANGE
-                exit2  > color=LIGHTORANGE
+        sitting  > Immovable color=LIGHTGREEN
+        random   > RandomNPC speed=0.3 cooldown=1 color=BROWN
+        vertical   > Missile   speed=0.5 orientation=UP color=PINK
+        horizontal > Missile   speed=0.5 orientation=LEFT color=LIGHTRED
+
+        goal  > Immovable color=GREEN
+
+        entry1 > Portal stype=exit1 color=LIGHTBLUE
+        entry2 > Portal stype=exit2 color=BLUE
+
+        exit1  > Immovable  color=ORANGE
+        exit2  > Immovable  color=LIGHTORANGE
+
         avatar > MovingAvatar color=DARKBLUE
-        wall > Immovable color=DARKGRAY autotiling=True
+        wall > Immovable color=DARKGRAY 
+
     InteractionSet
         random wall > stepBack
         random goal > stepBack
@@ -55,7 +55,8 @@ BasicGame
         vertical vertical > nothing
 
         avatar wall      > stepBack
-        goal   avatar    > killSprite scoreChange=1
+        goal   avatar    > killSprite 
+        goal   avatar    > changeScore value=1
         avatar sitting    > killSprite
         avatar random    > killSprite
         avatar vertical    > killSprite
@@ -66,6 +67,109 @@ BasicGame
         avatar exit1 > nothing
         avatar entry2 > teleportToExit
         avatar exit2 > nothing
+
+        sitting EOS > nothing
+        EOS sitting > nothing
+        random EOS > nothing
+        EOS random > nothing
+        EOS vertical > nothing
+        vertical EOS > nothing
+        horizontal EOS > nothing
+        EOS horizontal > nothing
+        goal entry1 > nothing
+        entry1 goal > nothing
+        goal entry2 > nothing
+        entry2 goal > nothing
+        goal exit1 > nothing
+        exit1 goal > nothing
+        goal exit2 > nothing
+        exit2 goal > nothing
+        wall goal > nothing
+        goal wall > nothing
+        goal EOS > nothing
+        EOS goal > nothing
+        entry1 entry2 > nothing
+        entry2 entry1 > nothing
+        exit1 entry1 > nothing
+        entry1 exit1 > nothing
+        exit2 entry1 > nothing
+        entry1 exit2 > nothing
+        wall entry1 > nothing
+        entry1 wall > nothing
+        entry1 EOS > nothing
+        EOS entry1 > nothing
+        exit1 entry2 > nothing
+        entry2 exit1 > nothing
+        exit2 entry2 > nothing
+        entry2 exit2 > nothing
+        wall entry2 > nothing
+        entry2 wall > nothing
+        entry2 EOS > nothing
+        EOS entry2 > nothing
+        exit2 exit1 > nothing
+        exit1 exit2 > nothing
+        wall exit1 > nothing
+        exit1 wall > nothing
+        exit1 EOS > nothing
+        EOS exit1 > nothing
+        wall exit2 > nothing
+        exit2 wall > nothing
+        exit2 EOS > nothing
+        EOS exit2 > nothing
+        avatar EOS > nothing
+        EOS avatar > nothing
+        wall EOS > nothing
+        EOS wall > nothing
+        sitting sitting > nothing
+        goal goal > nothing
+        entry1 entry1 > nothing
+        entry2 entry2 > nothing
+        exit1 exit1 > nothing
+        exit2 exit2 > nothing
+        avatar avatar > nothing
+        wall wall > nothing
+        EOS EOS > nothing
+
+        sitting avatar > nothing
+        random sitting > nothing
+        random avatar > nothing
+        vertical sitting > nothing
+        vertical random > nothing
+        vertical horizontal > nothing
+        vertical avatar > nothing
+        horizontal sitting > nothing
+        horizontal random > nothing
+        horizontal avatar > nothing
+        goal sitting > nothing
+        goal random > nothing
+        goal vertical > nothing
+        goal horizontal > nothing
+        entry1 sitting > nothing
+        entry1 random > nothing
+        entry1 vertical > nothing
+        entry1 horizontal > nothing
+        entry1 avatar > nothing
+        entry2 sitting > nothing
+        entry2 random > nothing
+        entry2 vertical > nothing
+        entry2 horizontal > nothing
+        entry2 avatar > nothing
+        exit1 sitting > nothing
+        exit1 random > nothing
+        exit1 vertical > nothing
+        exit1 horizontal > nothing
+        exit1 avatar > nothing
+        exit2 sitting > nothing
+        exit2 random > nothing
+        exit2 vertical > nothing
+        exit2 horizontal > nothing
+        exit2 avatar > nothing
+        avatar goal > nothing
+        wall sitting > nothing
+        wall random > nothing
+        wall vertical > nothing
+        wall horizontal > nothing
+        wall avatar > nothing
 
     TerminationSet
         SpriteCounter stype=goal   limit=0 win=True

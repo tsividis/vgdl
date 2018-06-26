@@ -110,6 +110,21 @@ BasicGame
         wall wall > nothing
         EOS EOS > nothing
 
+        sword doctor > nothing
+        virus normal > nothing
+        virus host > nothing
+        virus doctor > nothing
+        carrier host > nothing
+        infected normal > nothing
+        infected host > nothing
+        doctor carrier > nothing
+        doctor infected > nothing
+        wall normal > nothing
+        wall carrier > nothing
+        wall host > nothing
+        wall infected > nothing
+        wall doctor > nothing
+
     LevelMapping
         1 >  doctor
         0 >  host

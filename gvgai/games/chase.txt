@@ -38,6 +38,15 @@ BasicGame
         wall wall > nothing
         EOS EOS > nothing
 
+        carcass angry > nothing
+        angry avatar > nothing
+        scared angry > nothing
+        avatar carcass > nothing
+        avatar scared > nothing
+        wall angry > nothing
+        wall scared > nothing
+        wall avatar > nothing
+
     LevelMapping
         0 > scared
         w > wall

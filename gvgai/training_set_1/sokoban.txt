@@ -3,7 +3,7 @@ BasicGame key_handler=Pulse square_size=40
         hole   > Immovable color=RED
         avatar > MovingAvatar color=DARKBLUE
         box    > Passive color=GREEN
-        wall > Immovable color=DARKGRAY autotiling=True
+        wall > Immovable color=DARKGRAY 
     LevelMapping
         0 > hole
         1 > box
@@ -14,6 +14,29 @@ BasicGame key_handler=Pulse square_size=40
         box wall > stepBack
         box box > stepBack
         avatar hole > nothing
-        box hole    > killSprite scoreChange=1
+        box hole    > killSprite 
+        box hole   > changeScore value=1
+
+        wall hole > nothing
+        hole wall > nothing
+        EOS hole > nothing
+        hole EOS > nothing
+        avatar EOS > nothing
+        EOS avatar > nothing
+        box EOS > nothing
+        EOS box > nothing
+        wall EOS > nothing
+        EOS wall > nothing
+        hole hole > nothing
+        avatar avatar > nothing
+        wall wall > nothing
+        EOS EOS > nothing
+
+        hole avatar > nothing
+        hole box > nothing
+        avatar box > nothing
+        wall avatar > nothing
+        wall box > nothing
+        
     TerminationSet
         SpriteCounter stype=box    limit=0 win=True
