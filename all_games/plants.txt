@@ -213,6 +213,13 @@ BasicGame
         wall wall > nothing
         EOS EOS > nothing
 
+        tomb pea > nothing
+        goal zombie > nothing
+        wall zombie > nothing
+        wall avatar > nothing
+        EOS axe > nothing
+        EOS pea > nothing
+
     LevelMapping
         g >  goal
         h >  slowHell
