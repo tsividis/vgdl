@@ -507,7 +507,6 @@ class Node():
 
 	def fastcopy(self, rle):
 		newRle = self.empty_copy(rle)
-		#embed()
 		for k,v in rle.__dict__.iteritems():
 			try:
 				newRle.__dict__[k] = v.copy()
@@ -520,6 +519,7 @@ class Node():
 		#ipdb.set_trace()
 		newRle.symbolDict = rle.symbolDict.copy()
 		newRle._other_types = rle._other_types[:]
+
 		newRle._game = self.empty_copy(rle._game)
 		ignoreKeys = ['spriteDistribution',
 					  'object_token_spriteDistribution',
@@ -528,8 +528,8 @@ class Node():
 					  'object_token_movement_options',
 					  #'all_objects',
 					  'uiud']
-		sprite_attrs = ['name','resources','rect','x','y',
-						'lastrect','lastmove','stypes',
+		sprite_attrs = ['ID', 'name','rect','x','y','orientation','stypes',
+						'lastrect','lastmove','stypes', 'lastdisplacement',
 						'speed','cooldown','direction','color','colorName']
 		for k,v in rle._game.__dict__.iteritems():
 
@@ -544,17 +544,27 @@ class Node():
 					newRle._game.kill_list = v[:]
 			elif 'defaultdict' in ctype or 'dict' in ctype:
 				if k != 'sprite_groups':
-					newRle._game.__dict__[k] = v.copy()
+					newRle._game.__dict__[k] = ccopy(v)
 				else:
-					#embed()
+					#print "embed"
 					new_sprite_groups = defaultdict(list)
 					for group_name, group in rle._game.sprite_groups.iteritems():
 						for sprite in group:
+							#embed()
 							if sprite.colorName == 'DARKGRAY':
 								new_sprite_groups[group_name].append(sprite)
 							else:
 								new_sprite = self.empty_copy(sprite)
-								new_sprite.__dict__ = sprite.__dict__.copy()
+								try:
+									for attr in sprite.__dict__.keys():
+										if hasattr(sprite, attr):
+											setattr(new_sprite, attr, getattr(sprite, attr))
+										#else:
+											#print attr
+									#new_sprite.__dict__ = sprite.__dict__.copy()
+									setattr(new_sprite, 'resources', ccopy(sprite.__dict__['resources']))
+								except:
+									embed()
 								new_sprite_groups[group_name].append(new_sprite)
 					# newRle._game.sprite_groups = ccopy(v)
 					newRle._game.sprite_groups = new_sprite_groups
@@ -562,9 +572,10 @@ class Node():
 				newRle._game.__dict__[k] = ccopy(v)
 			elif 'dict' in ctype:
 				#print k
-				newRle._game.__dict__[k] = v.copy()
+				newRle._game.__dict__[k] = ccopy(v)
 			else:
-				newRle._game.__dict__[k] = v
+				#print k
+				setattr(newRle._game, k, v)#.__dict__[k] = v
 		#newRle._game = ccopy(rle._game)
 		return newRle
 
