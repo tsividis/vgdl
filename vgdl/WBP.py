@@ -656,7 +656,7 @@ class Node():
 		# print sum(rolloutArray)
 		# embed()
 		if win:
-			if self.display:
+			if self.WBP.display:
 				print "rolloutwin"
 			# embed()
 			self.terminal = terminal
