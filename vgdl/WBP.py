@@ -388,7 +388,8 @@ class WBP():
 				if not skipAction:
 					child = Node(self.rle, self, current.actionSeq+[a], current)
 					child.eval()
-
+					if a == K_SPACE:
+						embed()
 					if self.firstOrderHorizon:
 						# Return plan if first-order progress was made towards
 						# a win condition

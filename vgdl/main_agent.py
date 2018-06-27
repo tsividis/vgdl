@@ -453,6 +453,7 @@ class Agent:
 
         ## Initialize external environment
         self.initializeEnvironment()
+        # embed()
         print "initializing RLE"
         steps = 0
         self.quits = 0

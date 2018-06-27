@@ -1132,19 +1132,25 @@ class NoveltyTermination(Termination):
             # else:
             #     print "found correct preconditions"
                 # embed()
-
         for e in game.effectList:
             id_not_found = False
             class1, class2 = 'none', 'none'
             if (e[0] in ['killSprite', 'transformTo', 'nothing']) and len(e) > 2:
+                # try:
+                #     name1 = game.all_objects[e[1]]['sprite'].name
+                #     # Don't get a noveltyTermination from RandomNPCs
+                #     class1 = str(game.all_objects[e[1]]['sprite'].__class__)
+                #     if 'RandomNPC' in class1  and e[2]  != 'avatar':
+                #         return False, None
+                #     if 'Flicker' in class1  and e[2]  == 'avatar':
+                #         return False, None
                 try:
-                    name1 = game.all_objects[e[1]]['sprite'].name
-                    # Don't get a noveltyTermination from RandomNPCs
-                    class1 = str(game.all_objects[e[1]]['sprite'].__class__)
+                    name1 = game.getAllObjects()[e[1]].name
+                    class1 = str(game.getAllObjects()[e[1]].__class__)
                     if 'RandomNPC' in class1  and e[2]  != 'avatar':
                         return False, None
                     if 'Flicker' in class1  and e[2]  == 'avatar':
-                        return False, None
+                        return False, None       
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
                         name1 = 'EOS'
@@ -1177,19 +1183,26 @@ class NoveltyTermination(Termination):
                             # Avatar dead or doesn't have stype
                             name1 = ''
                 except IndexError:
-                    print("IndexError in game.all_objects")
+                    print("IndexError in game.all_objects (1)")
                     embed()
                 except TypeError:
-                    print("TypeError in game.all_objects")
+                    print("TypeError in game.all_objects (1)")
                     embed()
+                # try:
+                #     name2 = game.all_objects[e[2]]['sprite'].name
+                #     # Don't get a noveltyTermination from RandomNPCs
+                #     class2 = str(game.all_objects[e[2]]['sprite'].__class__)
+                #     if 'RandomNPC' in class2  and e[1]  != 'avatar':
+                #         return False, None
+                #     if 'Flicker' in class2  and e[1]  == 'avatar':
+                #         return False, None
                 try:
-                    name2 = game.all_objects[e[2]]['sprite'].name
-                    # Don't get a noveltyTermination from RandomNPCs
-                    class2 = str(game.all_objects[e[2]]['sprite'].__class__)
+                    name2 = game.getAllObjects()[e[2]].name
+                    class2 = str(game.getAllObjects()[e[2]].__class__)
                     if 'RandomNPC' in class2  and e[1]  != 'avatar':
                         return False, None
                     if 'Flicker' in class2  and e[1]  == 'avatar':
-                        return False, None
+                        return False, None   
                 except KeyError:
                     if e[2]=='ENDOFSCREEN':
                         name2 = 'EOS'
@@ -1222,16 +1235,16 @@ class NoveltyTermination(Termination):
                             # Avatar dead or doesn't have stype
                             name2 = ''
                 except IndexError:
-                    print("IndexError in game.all_objects")
+                    print("IndexError in game.all_objects (2)")
                     embed()
-                except IndexError:
-                    print("TypeError in game.all_objects")
+                except TypeError:
+                    print("TypeError in game.all_objects (2)")
                     embed()
                 if name1==self.s1 and name2==self.s2:
                     if id_not_found:
                         pass
-                    # print("NoveltyTermination with {} and {}".format(
-                        # name1, name2))
+                    print("NoveltyTermination with {} and {}".format(
+                        name1, name2))
                     # if name1=='c7' and name2=='avatar':
                     #     ipdb.set_trace()
                     # print("Classes are {} and {}".format(class1, class2))
