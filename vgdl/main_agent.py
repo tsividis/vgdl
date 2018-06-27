@@ -453,7 +453,6 @@ class Agent:
 
         ## Initialize external environment
         self.initializeEnvironment()
-        # embed()
         print "initializing RLE"
         steps = 0
         self.quits = 0
@@ -499,6 +498,8 @@ class Agent:
                 seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                 firstOrderHorizon=self.firstOrderHorizon, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
             
+            # embed()
+
             p_quitting = p.quitting
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes
