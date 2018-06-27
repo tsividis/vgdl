@@ -273,7 +273,8 @@ class BasicGame(object):
         self.sprite_appearance_predictions = {}
         self.object_token_movement_options = {}
         self.sprite_appearances = [] ## New sprites that appear at any given step. This gets cleared at the end of each time-step.
-        self.all_objects = None
+        self.all_objects = {}
+        # self.new_sprites = []
         self.observation = None
         self.EOS = EOS((-1, -1))
         self.reset()
@@ -421,7 +422,8 @@ class BasicGame(object):
             if s.is_stochastic:
                 self.is_stochastic = True
             res.append(s)
-
+            self.all_objects[s.ID] = s
+            # self.new_sprites.append(s)
         return res
 
     def _createSprite_cheap(self, key, pos):
