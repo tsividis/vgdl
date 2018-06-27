@@ -422,8 +422,8 @@ class BasicGame(object):
             if s.is_stochastic:
                 self.is_stochastic = True
             res.append(s)
-            self.all_objects[s.ID] = s
-            # self.new_sprites.append(s)
+            # self.all_objects[s.ID] = s
+
         return res
 
     def _createSprite_cheap(self, key, pos):
