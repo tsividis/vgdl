@@ -400,16 +400,26 @@ class WBP():
 									stype = term.termination.stype
 									n_stypes = len([0 for sprite in self.findObjectsInRLE(child.rle, stype)])
 									if stype in self.starting_stype_n.keys() and self.starting_stype_n[stype] > n_stypes:
-										print "exiting early because progress was made toward", stype
-										child.terminal, child.win = True, True
-										foundWin = True
+										if ended and not win:
+											child.win, foundWin = False, False
+										else:
+											child.terminal = True
+											child.win, foundWin = True, True
+											if self.display:
+												print "exiting early because progress was made toward", stype
+												# embed()
 								elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
 									stypes = term.termination.stypes
-									n_stypes = sum([len(self.findObjectsInRLE(child.rle, stype)) for stype in stypes])
+									n_stypes = sum([len(self.findObjectsInRLE(child.rle, stype)) for stype in stypes if self.findObjectsInRLE(child.rle, stype)])
 									if tuple(stypes) in self.starting_stype_n.keys() and self.starting_stype_n[tuple(stypes)] > n_stypes:
-										print "exiting early because progress was made toward", stypes
-										child.terminal, child.win = True, True
-										foundWin = True
+										if ended and not win:
+											child.win, foundWin = False, False
+										else:
+											child.terminal = True
+											child.win, foundWin = True, True
+											if self.display:
+												print "exiting early because progress was made toward", stypes
+												# embed()
 								if foundWin:
 									break
 
