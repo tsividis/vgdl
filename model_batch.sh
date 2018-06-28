@@ -2,9 +2,9 @@
 
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-7
-#SBATCH --output=slurm_logs/hyperopt_boulderdash_optimized2/array_%A_%a.out
-#SBATCH --time=480
+#SBATCH --array=0-5
+#SBATCH --output=slurm_logs/planner_integration/array_%A_%a.out
+#SBATCH --time=600
 #SBATCH --qos=tenenbaum
 #SBTACH --cpus-per-task=2
 #SBATCH --mem=32G
@@ -39,11 +39,11 @@ if [ "$OS" = "CentOS Linux" ]; then
 fi
 
 # make log path if not already present
-if [ ! -d "${ROOT}/slurm_logs/hyperopt_boulderdash_optimized2" ]; then
-    mkdir "${ROOT}/slurm_logs/hyperopt_boulderdash_optimized2"
+if [ ! -d "${ROOT}/slurm_logs/planner_integration" ]; then
+    mkdir "${ROOT}/slurm_logs/planner_integration"
 fi
 
 # finally, run the model
 # singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index $HYPER_IDX
-singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 2
+singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3
 #echo "-m vgdl.load_games --game_name ${GAME_NAME} --hyperparameter_index ${HYPER_IDX}"
