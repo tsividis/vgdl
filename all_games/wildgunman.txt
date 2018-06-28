@@ -3,9 +3,9 @@ BasicGame
     city  > Immovable color=PURPLE
     bullet > Flicker limit=5 color=GOLD
     avatar > ShootAvatar stype=bullet color=DARKBLUE
-    enemy_slow > Chaser stype=city color=GREEN speed=0.1
-    enemy_fast > Chaser stype=city color=RED speed=0.3
-    niceGuy > Chaser stype=city color=ORANGE speed=0.1
+    enemy_slow > Missile orientation=DOWN speed=.2 color=GREEN#Chaser stype=city color=GREEN speed=0.1
+    enemy_fast > Missile orientation=DOWN speed=.2 color=RED#Chaser stype=city color=RED speed=0.3
+    niceGuy > Missile orientation=DOWN speed=.2 color=ORANGE#Chaser stype=city color=ORANGE speed=0.1
     death   > Immovable color=GRAY
     enemySlowPortal > SpawnPoint stype=enemy_slow spawnCooldown=100  total=2 color=QTLHNJ
     enemyFastPortal > SpawnPoint stype=enemy_fast spawnCooldown=100  total=2 color=CVHTTO
