@@ -5,9 +5,9 @@
 #                 'zelda',                                                                    #13
                     
 #                 'angelsdemons', 'bait', 'boulderchase', 'camelRace',                   #14-17
-#                 'camelRace', 'chopper', 'clusters', 'jaws',		                     #18-21
-#                 'myAliens', 'overload', 'plaqueattack', 'superman', 		    		 #22-25
-#                  'watergame', 'waves',  'wildgunman']                               	 #26-29
+#                 'camelRace', 'chopper', jaws','myAliens',		                     	 #18-21
+#                  'overload', 'plaqueattack', 'superman',	'watergame',	    		 #22-25
+#                   'waves',  'wildgunman']                               	 #26-27
 
 # game_names = ['expt_push_boulders', 'aliens', 'butterflies', 'expt_helper', 'frogs', 'portals', 'survivezombies', 'zelda']
 # game_names = ['boulderchase', 'jaws', 'myAliens', 'overload', 'avoidgeorge']
