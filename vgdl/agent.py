@@ -269,8 +269,8 @@ class Agent:
 			while not win and i < num_episodes_per_level:
 				win, score, steps = self.playEpisode(n_level, episodes_played, win=win, first_time_playing_level=first_time_playing_level)
 				self.total_game_steps += steps
-				episodes.append((n_level, steps, win, score))
-				
+				episode_results = (n_level, steps, win, score, self.total_planner_steps)
+				episodes.append(episode_results)				
 				# write progressively to file
 				output = {'modelType':self.modelType,
 							'gameName': self.gameFilename,
