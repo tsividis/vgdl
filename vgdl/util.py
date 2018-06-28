@@ -1,5 +1,5 @@
 from IPython import embed
-from line_profiler import LineProfiler
+# from line_profiler import LineProfiler
 import itertools
 import random
 import csv
