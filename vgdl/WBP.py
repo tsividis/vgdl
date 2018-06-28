@@ -370,7 +370,6 @@ class WBP():
 								stype = term.termination.stype
 								n_stypes = len([0 for sprite in self.findObjectsInRLE(child.rle, stype)])
 								if stype in self.starting_stype_n.keys() and self.starting_stype_n[stype] > n_stypes:
-									ended, win = child.rle._isDone()
 									if ended and not win:
 										child.win, foundWin = False, False
 									else:
@@ -383,7 +382,6 @@ class WBP():
 								stypes = term.termination.stypes
 								n_stypes = sum([len(self.findObjectsInRLE(child.rle, stype)) for stype in stypes if self.findObjectsInRLE(child.rle, stype)])
 								if tuple(stypes) in self.starting_stype_n.keys() and self.starting_stype_n[tuple(stypes)] > n_stypes:
-									ended, win = child.rle._isDone()
 									if ended and not win:
 										child.win, foundWin = False, False
 									else:
