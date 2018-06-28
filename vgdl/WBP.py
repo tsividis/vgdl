@@ -366,20 +366,32 @@ class WBP():
 						# a win condition
 						foundWin = False
 						for term in self.theory.terminationSet:
-							if isinstance(term, SpriteCounterRule) and term.termination.win==True: #and rule.verified
-								stypes = [term.termination.stype]
-							elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True: #and rule.verified
-								stypes = term.termination.stypes
-							else:
-								stypes = []
-							for stype in stypes:
+							if isinstance(term, SpriteCounterRule) and term.termination.win==True:
+								stype = term.termination.stype
 								n_stypes = len([0 for sprite in self.findObjectsInRLE(child.rle, stype)])
 								if stype in self.starting_stype_n.keys() and self.starting_stype_n[stype] > n_stypes:
-									child.terminal, child.win = True, True
-									foundWin = True
-									# print "in weird found win condition in wbp"
-									# embed()
-									break
+									ended, win = child.rle._isDone()
+									if ended and not win:
+										child.win, foundWin = False, False
+									else:
+										child.terminal = True
+										child.win, foundWin = True, True
+										if self.display:
+											print "exiting early because progress was made toward", stype
+											# embed()
+							elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
+								stypes = term.termination.stypes
+								n_stypes = sum([len(self.findObjectsInRLE(child.rle, stype)) for stype in stypes if self.findObjectsInRLE(child.rle, stype)])
+								if tuple(stypes) in self.starting_stype_n.keys() and self.starting_stype_n[tuple(stypes)] > n_stypes:
+									ended, win = child.rle._isDone()
+									if ended and not win:
+										child.win, foundWin = False, False
+									else:
+										child.terminal = True
+										child.win, foundWin = True, True
+										if self.display:
+											print "exiting early because progress was made toward", stypes
+											# embed()
 							if foundWin:
 								break
 
