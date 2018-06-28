@@ -28,7 +28,7 @@ from colors import colorDict
 import copy_reg
 import types
 import heapq
-from tqdm import tqdm, trange
+# from tqdm import tqdm, trange
 
 import WBP
 from termcolor import colored
@@ -1988,7 +1988,8 @@ def experienceReplay(
 	# if len(hypotheses)>100:
 		# print ">100 hypotheses"
 		# embed()
-	itr = trange(len(hypotheses)) if len(hypotheses) > 20 else range(len(hypotheses))
+	# itr = trange(len(hypotheses)) if len(hypotheses) > 20 else range(len(hypotheses))
+	itr = range(len(hypotheses))
 	for num in itr:
 		h = hypotheses[num]
 		if displayTheories:
