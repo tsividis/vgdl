@@ -25,10 +25,11 @@ SRC=""
 DST=""
 
 # Figure out which game and hyperparameter
-N_GAMES=14
-N_PARAMS=3
-GAME_NUMBER=$(($SLURM_ARRAY_TASK_ID % $N_GAMES))
-HYPER_IDX=$(($SLURM_ARRAY_TASK_ID % $N_PARAMS))
+# N_GAMES=14
+# N_PARAMS=3
+# GAME_NUMBER=$(($SLURM_ARRAY_TASK_ID % $N_GAMES))
+# HYPER_IDX=$(($SLURM_ARRAY_TASK_ID % $N_PARAMS))
+GAME_NUMBER=$SLURM_ARRAY_TASK_ID
 
 
 # if we are running on OpenMind, add the singularity module
