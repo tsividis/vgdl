@@ -64,6 +64,7 @@ class WBP():
 		self.allowRollouts = True
 		self.quitting = False
 		self.gameString_array = []
+		self.display = False
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 			print "made WBP with no theory passed to it!"
