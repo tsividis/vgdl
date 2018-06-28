@@ -332,11 +332,25 @@ class WBP():
 					# If there's already a projectile on the screen
 					# and the projectile class is a singleton
 					# and the action chosen is shooting
-					if (self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
-						bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
-						a == K_SPACE):
-						# Then skip the action
-						skipAction = True
+					if (current.rle._game.getAvatars() and hasattr(current.rle._game.getAvatars()[0], 'stype') and
+							'Missile' in str(self.theory.classes[current.rle._game.getAvatars()[0].stype][0]) and
+							self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
+							'singleton' in self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args and
+							bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
+							len([s for s in current.rle._game.sprite_groups[current.rle._game.getAvatars()[0].stype] if s not in current.rle._game.kill_list])>0):
+						current_actions = [0]
+						avatar = current.rle._game.getAvatars()[0]
+						killer_sprites = [s for k in self.killer_types for s in current.rle._game.sprite_groups[k]]
+						if killer_sprites:
+							nearest = findNearestSprite(avatar, killer_sprites)
+							if manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))>3:
+								current_actions = [0]
+							else:
+								current_actions = [0, K_LEFT, K_RIGHT, K_UP, K_DOWN]
+								if self.display:
+									print "didn't change current_actions; will plan normally"
+									print "nearest dangerous sprite:", manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))
+
 
 				except (IndexError, AttributeError, TypeError) as e:
 					# embed()
