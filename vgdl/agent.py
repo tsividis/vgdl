@@ -21,7 +21,7 @@ import warnings
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from stateobsnonstatic import buildTracker, UNOBSERVABLE_PREDICATES
 from termcolor import colored
-from line_profiler import LineProfiler
+# from line_profiler import LineProfiler
 from vgdl.util import manhattanDist, manhattanDist2, LinkedDict
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from colors import colorDict
