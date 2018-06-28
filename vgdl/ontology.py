@@ -1272,13 +1272,13 @@ class OnStart(Conditional):
 Termination = core.Termination
 
 class Timeout(Termination):
-    def __init__(self, timeout=0, win=False):
-        self.timeout = timeout
+    def __init__(self, limit=0, win=False):
+        self.limit = limit
         self.win = win
         self.name = 'Timeout'
 
     def isDone(self, game):
-        if game.time >= self.timeout:
+        if game.time >= self.limit:
             return True, self.win
         else:
             return False, None
