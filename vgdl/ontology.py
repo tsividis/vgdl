@@ -1137,24 +1137,18 @@ class NoveltyTermination(Termination):
             #     print "found correct preconditions"
                 # embed()
         for e in game.effectList:
+
             id_not_found = False
             class1, class2 = 'none', 'none'
             if (e[0] in ['killSprite', 'transformTo', 'nothing']) and len(e) > 2:
-                # try:
-                #     name1 = game.all_objects[e[1]]['sprite'].name
-                #     # Don't get a noveltyTermination from RandomNPCs
-                #     class1 = str(game.all_objects[e[1]]['sprite'].__class__)
-                #     if 'RandomNPC' in class1  and e[2]  != 'avatar':
-                #         return False, None
-                #     if 'Flicker' in class1  and e[2]  == 'avatar':
-                #         return False, None
+
                 try:
                     name1 = game.getAllObjects()[e[1]].name
                     class1 = str(game.getAllObjects()[e[1]].__class__)
-                    if 'RandomNPC' in class1  and e[2]  != 'avatar':
-                        return False, None
-                    if 'Flicker' in class1  and e[2]  == 'avatar':
-                        return False, None       
+                    # if 'RandomNPC' in class1  and e[2]  != 'avatar':
+                        # return False, None
+                    # if 'Flicker' in class1  and e[2]  == 'avatar':
+                        # return False, None       
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
                         name1 = 'EOS'
@@ -1163,17 +1157,17 @@ class NoveltyTermination(Termination):
                             if obj.ID==e[1]][0]
                         class1 = str([obj.__class__ for obj in game.kill_list
                             if obj.ID==e[1]][0])
-                        if 'RandomNPC' in class1  and e[2]  != 'avatar':
-                            return False, None
-                        if 'Flicker' in class1  and e[2]  == 'avatar':
-                            return False, None
+                        # if 'RandomNPC' in class1  and e[2]  != 'avatar':
+                            # return False, None
+                        # if 'Flicker' in class1  and e[2]  == 'avatar':
+                            # return False, None
                     elif e[1] in game.getObjects().keys():
                         name1 = game.getObjects()[e[1]]['sprite'].name
                         class1 =  str(game.getObjects()[e[1]]['sprite'].__class__)
-                        if 'RandomNPC' in class1  and e[2]  != 'avatar':
-                            return False, None
-                        if 'Flicker' in class1  and e[2]  == 'avatar':
-                            return False, None
+                        # if 'RandomNPC' in class1  and e[2]  != 'avatar':
+                            # return False, None
+                        # if 'Flicker' in class1  and e[2]  == 'avatar':
+                            # return False, None
                     else:
                         id_not_found = True
                         # embed()
@@ -1192,21 +1186,13 @@ class NoveltyTermination(Termination):
                 except TypeError:
                     print("TypeError in game.all_objects (1)")
                     embed()
-                # try:
-                #     name2 = game.all_objects[e[2]]['sprite'].name
-                #     # Don't get a noveltyTermination from RandomNPCs
-                #     class2 = str(game.all_objects[e[2]]['sprite'].__class__)
-                #     if 'RandomNPC' in class2  and e[1]  != 'avatar':
-                #         return False, None
-                #     if 'Flicker' in class2  and e[1]  == 'avatar':
-                #         return False, None
                 try:
                     name2 = game.getAllObjects()[e[2]].name
                     class2 = str(game.getAllObjects()[e[2]].__class__)
-                    if 'RandomNPC' in class2  and e[1]  != 'avatar':
-                        return False, None
-                    if 'Flicker' in class2  and e[1]  == 'avatar':
-                        return False, None   
+                    # if 'RandomNPC' in class2  and e[1]  != 'avatar':
+                        # return False, None
+                    # if 'Flicker' in class2  and e[1]  == 'avatar':
+                        # return False, None   
                 except KeyError:
                     if e[2]=='ENDOFSCREEN':
                         name2 = 'EOS'
@@ -1216,17 +1202,17 @@ class NoveltyTermination(Termination):
                             if obj.ID==e[2]][0]
                         class2 = str([obj.__class__ for obj in game.kill_list
                             if obj.ID==e[2]][0])
-                        if 'RandomNPC' in class2  and e[1]  != 'avatar':
-                            return False, None
-                        if 'Flicker' in class2  and e[1]  == 'avatar':
-                            return False, None
+                        # if 'RandomNPC' in class2  and e[1]  != 'avatar':
+                            # return False, None
+                        # if 'Flicker' in class2  and e[1]  == 'avatar':
+                            # return False, None
                     elif e[2] in game.getObjects().keys():
                         name2 = game.getObjects()[e[2]]['sprite'].name
                         class2 =  str(game.getObjects()[e[2]]['sprite'].__class__)
-                        if 'RandomNPC' in class2  and e[1]  != 'avatar':
-                            return False, None
-                        if 'Flicker' in class2  and e[1]  == 'avatar':
-                            return False, None
+                        # if 'RandomNPC' in class2  and e[1]  != 'avatar':
+                            # return False, None
+                        # if 'Flicker' in class2  and e[1]  == 'avatar':
+                            # return False, None
                     else:
                         id_not_found = True
                         # embed()
@@ -1247,8 +1233,8 @@ class NoveltyTermination(Termination):
                 if name1==self.s1 and name2==self.s2:
                     if id_not_found:
                         pass
-                    print("NoveltyTermination with {} and {}".format(
-                        name1, name2))
+                    # print("NoveltyTermination with {} and {}".format(
+                        # name1, name2))
                     # if name1=='c7' and name2=='avatar':
                     #     ipdb.set_trace()
                     # print("Classes are {} and {}".format(class1, class2))
@@ -1258,10 +1244,10 @@ class NoveltyTermination(Termination):
                 try:
                     name1 = game.all_objects[e[1]]['sprite'].name
                     # Don't get a noveltyTermination from RandomNPCs
-                    if 'RandomNPC' in str(game.all_objects[e[1]]['sprite'].__class__) and e[2]  != 'avatar':
-                        return False, None
-                    if 'Flicker' in str(game.all_objects[e[1]]['sprite'].__class__)  and e[2]  == 'avatar':
-                        return False, None
+                    # if 'RandomNPC' in str(game.all_objects[e[1]]['sprite'].__class__) and e[2]  != 'avatar':
+                        # return False, None
+                    # if 'Flicker' in str(game.all_objects[e[1]]['sprite'].__class__)  and e[2]  == 'avatar':
+                        # return False, None
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
                         name1 = 'EOS'

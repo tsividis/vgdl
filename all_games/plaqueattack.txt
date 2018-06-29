@@ -6,14 +6,14 @@ BasicGame square_size=25
     deadMolarSup > Immovable color=BLUE
 
     avatar  > ShootAvatar stype=fluor color=DARKBLUE frameRate=8
-    hotdog > Chaser speed=0.1 stype=fullMolarInf color=ORANGE
+    hotdog > Chaser speed=1 cooldown=5 stype=fullMolarInf color=ORANGE
     burger > Chaser speed=0.1 stype=fullMolarSup color=BROWN
 
-    hotdoghole > SpawnPoint color=LIGHTGRAY portal=True stype=hotdog  prob=0.15 spawnCooldown=8 total=5 color=PURPLE
-    burgerhole > SpawnPoint color=ZFZCIB portal=True stype=burger  prob=0.15 spawnCooldown=8 total=5 color=PINK
+    hotdoghole > SpawnPoint color=LIGHTGRAY portal=True stype=hotdog  prob=0.15 spawnCooldown=2 total=5 color=PURPLE #spawnCooldown should be 8
+    burgerhole > SpawnPoint color=ZFZCIB portal=True stype=burger  prob=0.15 spawnCooldown=2 total=5 color=PINK
 
-    fluor > Missile color=LIGHTBLUE img=oryx/slime1
-    wall > Immovable color=DARKGRAY img=oryx/wall6
+    fluor > Missile color=LIGHTBLUE
+    wall > Immovable color=DARKGRAY
 
 
   LevelMapping
@@ -161,7 +161,7 @@ BasicGame square_size=25
     wall burgerhole > nothing
     burgerhole EOS > nothing
     EOS burgerhole > nothing
-    fluor EOS > nothing
+    fluor EOS > killSprite
     EOS fluor > nothing
     wall EOS > nothing
     EOS wall > nothing

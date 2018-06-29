@@ -63,7 +63,7 @@ class WBP():
 		self.objectNumberTrackingLimit = 50
 		self.objectLocationTrackingLimit = 8
 		self.max_nodes = max_nodes
-		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random']
+		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random', 'Missile']
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
 		self.classesWhoseLocationsWeIgnore = []
 		self.classesWhosePresenceWeIgnore = []
@@ -130,7 +130,9 @@ class WBP():
 		for term in self.theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
 				stype = term.termination.stype
-				n_stypes = len([0 for sprite in self.findObjectsInRLE(self.rle, stype)])
+				objs = self.findObjectsInRLE(self.rle, stype)
+				n_stypes = len(objs) if objs is not None else 0
+				# n_stypes = len([0 for sprite in self.findObjectsInRLE(self.rle, stype) if self.findObjectsInRLE(self.rle, stype) is not None])
 				self.starting_stype_n[stype] = n_stypes
 			elif isinstance(term, MultiSpriteCounterRule):
 				stypes = term.termination.stypes
@@ -358,7 +360,7 @@ class WBP():
 				# and the projectile class is a singleton
 				# and the action chosen is shooting
 				if (current.rle._game.getAvatars() and hasattr(current.rle._game.getAvatars()[0], 'stype') and
-						'Missile' in str(self.theory.classes[current.rle._game.getAvatars()[0].stype][0]) and
+						'Missile' in str(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].vgdlType) and
 						self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
 						'singleton' in self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args and
 						bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
@@ -381,13 +383,12 @@ class WBP():
 				embed()
 				pass
 
-
 			for a in current_actions:
 				skipAction = False
-
 				if not skipAction:
 					child = Node(self.rle, self, current.actionSeq+[a], current)
 					child.eval()
+					ended, win = child.rle._isDone()
 					# if a == K_SPACE:
 						# embed()
 					if self.firstOrderHorizon:
@@ -436,16 +437,24 @@ class WBP():
 							gameString_array.append(node.rle.show(color='green'))
 							object_positions_array.append(node.rle)
 							node = node.parent
-						if self.display:
-							print child.rle.show()
 						self.gameString_array = gameString_array[::-1]
 						self.object_positions_array = object_positions_array[::-1]
-
 						ended, win, t = child.rle._isDone(getTermination=True)
+						if self.display:
+							print child.rle.show()
+							# if t:
+								# print t.__dict__
+							# embed()
+							# embed()
+						# if a == K_RIGHT:
+							# if t:
+								# print t.__dict__
+							# embed()
 						self.solution = child.actionSeq
 						self.statesEncountered.append(child.rle._game.getFullState())
-						# print "win"
-						# embed()
+						# if len(self.solution)>10:
+							# print "got long solution. look into this."
+							# embed()
 						# if t:
 							# print t.__dict__
 						if not child.rle._game.getAvatars():
@@ -459,6 +468,7 @@ class WBP():
 
 			if self.winning_states:
 				# print "we have {} winning states".format(len(self.winning_states))
+				# embed()
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
 				bestNode = bestNodes[0]
 				# print "winning states"
@@ -628,18 +638,21 @@ class Node():
 		metabolic_cost = 0
 		return metabolic_cost
 
-	def rollout(self, Vrle):
+	def rollout(self, Vrle, thingWeShoot):
 		successfulRollout = False
 		j=0
 		while not successfulRollout:
 			vrle = self.fastcopy(Vrle)
+			# embed()
+			potentialProjectiles = [s for s in vrle._game.sprite_groups[thingWeShoot] if vrle._game.sprite_groups[thingWeShoot] and s.lastmove==0]
+			thingWeShot = potentialProjectiles[0] if potentialProjectiles else None
 			# vrle = copy.deepcopy(Vrle)
 			prevHeuristicVal = self.heuristics(vrle, **self.WBP.rolloutHyperparameters)
 			rolloutArray = []
 			i=0
 			terminal, win = vrle._isDone()
 			# print "in rollout"
-			while i<self.rolloutDepth and not terminal:
+			while i<self.rolloutDepth and thingWeShot not in vrle._game.kill_list and not terminal:
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
 				# print a
 				vrle.step(a)
@@ -652,12 +665,15 @@ class Node():
 				terminal, win, t = vrle._isDone(getTermination=True)
 				if terminal:
 					try:
-						if (t.name=='noveltyTermination' and
+						if (t.name=='NoveltyTermination' and
 							self.rle._game.getAvatars()[0].stype
 							not in [t.s1, t.s2]):
 							# If we have a novelty termination not involving
 							# the projectile, ignore it
 							terminal = False
+							win = False
+						else:
+							print t.name, t.s1, t.s2
 					except (IndexError, AttributeError) as e:
 						# Avatar is dead or doesn't have projectile
 						pass
@@ -1307,7 +1323,7 @@ class Node():
 			## if the thing we shoot is a missile, do a rollout
 			thingWeShoot = self.WBP.theory.classes['avatar'][0].args['stype']
 			if 'Missile' in str(self.WBP.theory.classes[thingWeShoot][0].vgdlType):
-				self.rolloutArray = self.rollout(self.rle)
+				self.rolloutArray = self.rollout(self.rle, thingWeShoot)
 			# print self.rolloutArray
 			# print "in rollout"
 

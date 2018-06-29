@@ -454,6 +454,7 @@ class Agent:
         ## Initialize external environment
         self.initializeEnvironment()
         print "initializing RLE"
+        # embed()
         steps = 0
         self.quits = 0
         self.longHorizonObservations = 0
@@ -548,7 +549,9 @@ class Agent:
             if not quitting:
                 for i, action in enumerate(solution):
                     self.hypotheses[0].dryingPaint = set()
-
+                    # if action==K_SPACE:
+                        # print "about to take a shot"
+                        # embed()
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
                         run_induction = not flexible_goals)
 
@@ -939,7 +942,7 @@ if __name__ == "__main__":
     # filename = "examples.gridphysics.pick_apples"
     # filename = "examples.gridphysics.expt_exploration_exploitation_debugging"
 
-    filename = "examples.gridphysics_new.expt_preconditions"
+    filename = "examples.gridphysics.theorytest"
 
     level_game_pairs = None
     # Playing GVG-AI games
@@ -980,7 +983,10 @@ if __name__ == "__main__":
     ##uncomment this line to run local games
     gameName = filename
 
-    hyperparameter_sets = [{'sprite_first_alpha': 10000,
+    hyperparameter_sets = [{'idx'           : 2,
+     'short_horizon' : False,
+     'first_order_horizon': False,
+     'sprite_first_alpha': 10000,
      'sprite_second_alpha': 100,
      'sprite_negative_mult': .1,
      'multisprite_first_alpha': 10000,
@@ -990,7 +996,7 @@ if __name__ == "__main__":
      }]
 
     agent = Agent('full', gameName, hyperparameter_sets[0])
-
+    embed()
     ##then pass this down for multiple episodes
     gameObject = None
     agent.playCurriculum(level_game_pairs=level_game_pairs)
