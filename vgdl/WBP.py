@@ -63,7 +63,7 @@ class WBP():
 		self.objectNumberTrackingLimit = 50
 		self.objectLocationTrackingLimit = 8
 		self.max_nodes = max_nodes
-		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random', 'Missile']
+		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random']
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
 		self.classesWhoseLocationsWeIgnore = []
 		self.classesWhosePresenceWeIgnore = []
@@ -389,6 +389,7 @@ class WBP():
 					child = Node(self.rle, self, current.actionSeq+[a], current)
 					child.eval()
 					ended, win = child.rle._isDone()
+					# print actionDict[a]
 					# if a == K_SPACE:
 						# embed()
 					if self.firstOrderHorizon:
@@ -862,9 +863,10 @@ class Node():
 				else:
 					color = rle._game.sprite_groups[rle._game.getAvatars()[0].stype][0].colorName
 
-				if 'Flicker' in str(theory.spriteObjects[color].vgdlType):
+				if 'Flicker' in str(theory.spriteObjects[color].vgdlType) or 'Missile' in str(theory.spriteObjects[color].vgdlType):
 					killer_types.append(rle._game.getAvatars()[0].name)
 					killer_types.remove(rle._game.getAvatars()[0].stype)
+					print "made killer_type transition"
 
 		except (IndexError, AttributeError) as e:
 			# print "got exception in trying to assign Flicker bonus to avatar"
@@ -1128,6 +1130,15 @@ class Node():
 			# Second order lesion
 			# if s1 != 'avatar' and s2 != 'avatar':
 			# 	return 0, 10000
+			
+			## Don't return a value
+			if theory.classes['avatar'][0].args and 'stype' in theory.classes['avatar'][0].args:
+				thingWeShoot = theory.classes['avatar'][0].args['stype']
+			else:
+				thingWeShoot = None
+			
+			if 'Flicker' not in str(theory.classes[thingWeShoot][0].vgdlType) and thingWeShoot in [s1,s2]:
+				return 0, 10000
 
 			n_sprites = len(s1_positions) if s1_positions else 0
 			possiblePairList = []

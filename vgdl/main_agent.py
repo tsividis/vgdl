@@ -783,7 +783,6 @@ class Agent:
 
         spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
         spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
-
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
             # agentState = ccopy(self.rle._game.getAvatars()[0].resources)
