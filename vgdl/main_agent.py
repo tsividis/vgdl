@@ -544,6 +544,7 @@ class Agent:
                         quitting = True
 
             if emptyPlans > self.emptyPlansLimit:
+                print "got too many empty plans"
                 observe(self.rle, 5, self.bestSpriteTypeDict)
 
             if not quitting:

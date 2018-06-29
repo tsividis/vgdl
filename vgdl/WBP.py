@@ -74,7 +74,7 @@ class WBP():
 		print("exta atom is {}".format(self.extra_atom))
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = False
+		self.display = True
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -122,7 +122,7 @@ class WBP():
 			## Also don't track projectiles we generate
 			if (len(rle._game.sprite_groups[k])>self.objectNumberTrackingLimit) or k==self.thingWeShoot:
 				self.classesWhosePresenceWeIgnore.append(k)
-			if (len(rle._game.sprite_groups[k])>self.objectLocationTrackingLimit) or k==self.thingWeShoot:
+			if (len(rle._game.sprite_groups[k])>self.objectLocationTrackingLimit):
 				self.classesWhoseLocationsWeIgnore.append(k)
 
 		if self.display:
@@ -290,7 +290,8 @@ class WBP():
 		try:
 			current = bestNodes.pop(0)
 		except:
-			print('reward selection error')
+			if self.display:
+				print('reward selection error')
 			# embed()
 			return 'pickMaxNode'
 		QReward.remove(current)
@@ -391,9 +392,10 @@ class WBP():
 				skipAction = False
 				if not skipAction:
 					child = Node(self.rle, self, current.actionSeq+[a], current)
-					child.eval()
-					ended, win = child.rle._isDone()
 					# print actionDict[a]
+					child.eval()
+					# print ""
+					ended, win = child.rle._isDone()
 					# if a == K_SPACE:
 						# embed()
 					if self.firstOrderHorizon:
@@ -523,7 +525,7 @@ class Node():
 		# self.lastState = None
 		self.reconstructed=False
 		self.expanded = False
-		self.rolloutDepth = 13#max(rle.outdim)
+		self.rolloutDepth = max(rle.outdim)
 		if self.parent is not None:
 			self.rolloutArray = parent.rolloutArray[1:]
 		else:
@@ -660,7 +662,7 @@ class Node():
 			while i<self.rolloutDepth and thingWeShot not in vrle._game.kill_list and not terminal:
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
 				# print a
-				vrle.step(a)
+				res = vrle.step(a)
 				if self.WBP.display:
 					print vrle.show(indent=True, color='cyan')
 				currHeuristicVal = self.heuristics(vrle, **self.WBP.rolloutHyperparameters)
@@ -671,14 +673,19 @@ class Node():
 				if terminal:
 					try:
 						if (t.name=='NoveltyTermination' and
-							self.rle._game.getAvatars()[0].stype
-							not in [t.s1, t.s2]):
+								self.rle._game.getAvatars()[0].stype
+								not in [t.s1, t.s2]):
 							# If we have a novelty termination not involving
 							# the projectile, ignore it
-							terminal = False
-							win = False
-						else:
-							print t.name, t.s1, t.s2
+							terminal, win = False, False
+						## if the thing we shot wasn't involved in any interaction, ignore it.
+						if thingWeShot is not None:
+							if not any([thingWeShot.ID in e for e in res['effectList']]):
+								# print "ignoring rollout termination because it didn't have to do with our recent projectile"
+								terminal, win = False, False
+						if terminal:
+							if self.WBP.display:
+								print t.name, t.s1, t.s2
 					except (IndexError, AttributeError) as e:
 						# Avatar is dead or doesn't have projectile
 						pass
@@ -1243,14 +1250,14 @@ class Node():
 					# heuristicVal += 1000 * self.WBP.annealing * noveltytermination_val
 
 		if avatarNoveltyVals:
-			# print noveltyVals
+			# print avatarNoveltyVals
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
 		# print "sum:", heuristicVal
 
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
 
-		heuristicVal += sum(self.rolloutArray)
+		# heuristicVal += sum(self.rolloutArray)
 
 		return heuristicVal
 
