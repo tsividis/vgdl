@@ -1001,6 +1001,10 @@ class Theory(object):
 						for color in color_combination]
 					self.multi_falsified.append(MultiSpriteCounterRule(stypes=class_combination))
 
+		if self.classes['avatar'][0].args and 'stype' in self.classes['avatar'][0].args:
+			thingWeShoot = self.classes['avatar'][0].args['stype']
+		else:
+			thingWeShoot = None
 		for rule in self.interactionSet:
 
 			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'nothing', 'collectResource']:
@@ -1013,7 +1017,14 @@ class Theory(object):
 						self.terminationSet.append(terminationRule)
 				elif rule.generic and not rule.preconditions:
 					## Omit noveltytermination for randoms bumping into objects in the game; makes us disrupt plans even though we shouldnt't.
-					if ('Random' not in str(self.classes[rule.slot1][0].vgdlType)) and ('Random' not in str(self.classes[rule.slot2][0].vgdlType)) or rule.asTuple()[0]!='nothing':
+					# if ('Random' not in str(self.classes[rule.slot1][0].vgdlType)) and ('Random' not in str(self.classes[rule.slot2][0].vgdlType)) 
+					if (    (rule.asTuple()[0]!='nothing' and not (rule.slot1==thingWeShoot and rule.slot2=='avatar')) or 
+							( ('Random' in str(self.classes[rule.slot1][0].vgdlType)) and rule.slot2 == 'avatar') or
+							( ('Random' in str(self.classes[rule.slot1][0].vgdlType)) and rule.slot2 == thingWeShoot) or
+							( ('Random' in str(self.classes[rule.slot2][0].vgdlType)) and rule.slot1 == 'avatar') or
+							( ('Random' in str(self.classes[rule.slot2][0].vgdlType)) and rule.slot1 == thingWeShoot)):
+							# ( rule.slot1 == 'avatar' and rule.slot2 == thingWeShoot ) or
+							# ( rule.slot2 == 'avatar' and rule.slot1 == thingWeShoot )))):
 						terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
 						if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
 								for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
@@ -1026,9 +1037,10 @@ class Theory(object):
 						all([not terminationRule.__eq__(t) for t in self.falsified])):
 						self.terminationSet.append(terminationRule)
 
-			if rule.slot2 == 'EOS' and rule.generic:
-				terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
-				self.terminationSet.append(terminationRule)
+			# if rule.slot2 == 'EOS' and rule.generic:
+				# if not ('Random' in str(self.classes[rule.slot1][0].vgdlType)):
+					# terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
+					# self.terminationSet.append(terminationRule)
 
 		falsified_win_stypes = set([sprite_rule.termination.stype for sprite_rule in self.falsified
 			if (sprite_rule.termination.win and sprite_rule.termination.stype != 'EOS' and sprite_rule.termination.stype !='avatar')])
