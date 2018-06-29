@@ -866,7 +866,7 @@ class Node():
 				if 'Flicker' in str(theory.spriteObjects[color].vgdlType) or 'Missile' in str(theory.spriteObjects[color].vgdlType):
 					killer_types.append(rle._game.getAvatars()[0].name)
 					killer_types.remove(rle._game.getAvatars()[0].stype)
-					print "made killer_type transition"
+					# print "made killer_type transition"
 
 		except (IndexError, AttributeError) as e:
 			# print "got exception in trying to assign Flicker bonus to avatar"
