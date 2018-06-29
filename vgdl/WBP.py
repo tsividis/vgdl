@@ -83,6 +83,11 @@ class WBP():
 			self.theory.interactionSet.extend(fakeInteractionRules)
 			self.theory.updateTerminations()
 
+		if theory.classes['avatar'][0].args and 'stype' in theory.classes['avatar'][0].args:
+			self.thingWeShoot = theory.classes['avatar'][0].args['stype']
+		else:
+			self.thingWeShoot = None
+
 		if self.display:
 			print 'max nodes', self.max_nodes
 
@@ -114,13 +119,12 @@ class WBP():
 				self.objectsToTrack.append(k)
 
 			## Don't track (in either way) objects that are very numerous; completely breaks calculateAtoms()
-			if len(rle._game.sprite_groups[k])>self.objectNumberTrackingLimit:
+			## Also don't track projectiles we generate
+			if (len(rle._game.sprite_groups[k])>self.objectNumberTrackingLimit) or k==self.thingWeShoot:
 				self.classesWhosePresenceWeIgnore.append(k)
-			if len(rle._game.sprite_groups[k])>self.objectLocationTrackingLimit:
+			if (len(rle._game.sprite_groups[k])>self.objectLocationTrackingLimit) or k==self.thingWeShoot:
 				self.classesWhoseLocationsWeIgnore.append(k)
 
-		# self.classesWhosePresenceWeIgnore = []
-		# self.classesWhoseLocationsWeIgnore = []
 		if self.display:
 			print "ignoring presences for", self.classesWhosePresenceWeIgnore
 			print "ignoring locations for", self.classesWhoseLocationsWeIgnore
@@ -1130,14 +1134,9 @@ class Node():
 			# Second order lesion
 			# if s1 != 'avatar' and s2 != 'avatar':
 			# 	return 0, 10000
-			
-			## Don't return a value
-			if theory.classes['avatar'][0].args and 'stype' in theory.classes['avatar'][0].args:
-				thingWeShoot = theory.classes['avatar'][0].args['stype']
-			else:
-				thingWeShoot = None
-			
-			if thingWeShoot in theory.classes and 'Flicker' not in str(theory.classes[thingWeShoot][0].vgdlType) and thingWeShoot in [s1,s2]:
+		
+			## Don't return a value for novelty for the mere existence of a projectile that has novelty bonuses
+			if self.WBP.thingWeShoot in theory.classes and 'Flicker' not in str(theory.classes[self.WBP.thingWeShoot][0].vgdlType) and self.WBP.thingWeShoot in [s1,s2]:
 				return 0, 10000
 
 			n_sprites = len(s1_positions) if s1_positions else 0
@@ -1332,9 +1331,8 @@ class Node():
 		if self.WBP.allowRollouts and len(self.actionSeq)>0 and self.actionSeq[-1]==32:
 
 			## if the thing we shoot is a missile, do a rollout
-			thingWeShoot = self.WBP.theory.classes['avatar'][0].args['stype']
-			if 'Missile' in str(self.WBP.theory.classes[thingWeShoot][0].vgdlType):
-				self.rolloutArray = self.rollout(self.rle, thingWeShoot)
+			if 'Missile' in str(self.WBP.theory.classes[self.WBP.thingWeShoot][0].vgdlType):
+				self.rolloutArray = self.rollout(self.rle, self.WBP.thingWeShoot)
 			# print self.rolloutArray
 			# print "in rollout"
 
