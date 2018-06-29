@@ -71,10 +71,10 @@ class WBP():
 		self.quitting = False
 		self.exhausted_novelty = False
 		self.extra_atom = extra_atom
-		print("exta atom is {}".format(self.extra_atom))
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 		self.display = True
+
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -90,6 +90,8 @@ class WBP():
 
 		if self.display:
 			print 'max nodes', self.max_nodes
+			print "exta atom is {}".format(self.extra_atom)
+
 
 		i=1
 		for k in rle._game.all_objects.keys():
