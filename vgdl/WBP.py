@@ -74,7 +74,7 @@ class WBP():
 		print("exta atom is {}".format(self.extra_atom))
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = True
+		self.display = False
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -1137,7 +1137,7 @@ class Node():
 			else:
 				thingWeShoot = None
 			
-			if 'Flicker' not in str(theory.classes[thingWeShoot][0].vgdlType) and thingWeShoot in [s1,s2]:
+			if thingWeShoot in theory.classes and 'Flicker' not in str(theory.classes[thingWeShoot][0].vgdlType) and thingWeShoot in [s1,s2]:
 				return 0, 10000
 
 			n_sprites = len(s1_positions) if s1_positions else 0
