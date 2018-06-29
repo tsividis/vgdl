@@ -3,7 +3,7 @@ from WBP import *
 from mcts import *
 from qlearner import *
 from aStar import *
-
+import time
 
 def translateEvents(events, all_objects, rle):
 	if events is None:
@@ -71,8 +71,10 @@ def observe(rle, obsSteps, bestSpriteTypeDict):
 	if obsSteps>0:
 		for i in range(obsSteps):
 			# print rle.show()
+			# t1 = time.time()
 			spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
 			spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
+			# print "steps 1 and 2 took {} seconds".format(time.time()-t1)
 
 			rle.step((0,0))
 
@@ -90,8 +92,9 @@ def observe(rle, obsSteps, bestSpriteTypeDict):
 			# print "prev position", rle._game.previousPositions[pinkID]
 			# print "memoryDict", rle._game.objectMemoryDict[pinkID]
 			# print "curr position", rle._game.all_objects[pinkID]['sprite'].rect
-
+			# t1 = time.time()
 			spriteInduction(rle._game, step=3, bestSpriteTypeDict=bestSpriteTypeDict)
+			# print "step 3 took {} seconds".format(time.time()-t1)
 	else:
 		spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
 		spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)

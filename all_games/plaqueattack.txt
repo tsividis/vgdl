@@ -6,7 +6,7 @@ BasicGame square_size=25
     deadMolarSup > Immovable color=BLUE
 
     avatar  > ShootAvatar stype=fluor color=DARKBLUE frameRate=8
-    hotdog > Chaser speed=1 cooldown=5 stype=fullMolarInf color=ORANGE
+    hotdog > Chaser speed=0.1 stype=fullMolarInf color=ORANGE
     burger > Chaser speed=0.1 stype=fullMolarSup color=BROWN
 
     hotdoghole > SpawnPoint color=LIGHTGRAY portal=True stype=hotdog  prob=0.15 spawnCooldown=2 total=5 color=PURPLE #spawnCooldown should be 8
