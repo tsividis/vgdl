@@ -2271,6 +2271,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
     import random
     import numpy as np
     from class_theory_template import Sprite
+    from ontology import ResourcePack
 
     distributionsHaveChanged = False
 
@@ -2312,6 +2313,12 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                                                                                                     ## and not doing inference about it.
     best_params = {}
     for obj_type in types:
+        
+        if obj_type == 'DARKGRAY':
+            s = Sprite(vgdlType=ResourcePack, color=obj_type)
+            sample.append(s)
+            continue
+
         ## Integrate evidence across all episodes; pick best hypothesis.
         try:
             param_product = {k:0 for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
@@ -2378,7 +2385,6 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         if sprite_type=='OTHER':
             # from ontology import RandomNPC
             # sprite_type = RandomNPC
-            from ontology import ResourcePack
             sprite_type = ResourcePack
 
         s = Sprite(vgdlType=sprite_type, color=color)
@@ -2426,7 +2432,6 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
 
         param = dict(best_param[1:])
         setSpriteParams(param, s) # set the parameters for sprite s
-
         sample.append(s)
 
     return sample, exceptions, distributionsHaveChanged, best_params
@@ -2501,10 +2506,13 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
     setting of its attributes (e.g. specific values for speed, orientation, etc.) and also given sprite type.
     """
     distributionsHaveChanged = False
+    # embed()
     if step==0:
     ## Prep for sprite induction
-        for sprite in game.getObjects():
-            distributionInitSetup(game, sprite)
+        objects = game.getObjects()
+        for sprite in objects:
+            if objects[sprite]['sprite'].colorName != 'DARKGRAY':
+                distributionInitSetup(game, sprite)
     elif step==1:
         ## Sprite Induction Part 1:
         ## every time you act, make sure there aren't new objects
@@ -2514,14 +2522,14 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
         # print "step1"
         # print objects.keys()
         for sprite in objects:
-            if sprite not in game.spriteDistribution:
+            if objects[sprite]['sprite'].colorName != 'DARKGRAY' and sprite not in game.spriteDistribution:
                 game.all_objects[sprite] = objects[sprite]
                 distributionInitSetup(game, sprite)
 
     elif step == 2:
         ## See the update options for each sprite type the sprite could be
         objects = game.getObjects()
-        notUpdated = [s for s in objects.keys() if s not in game.spriteDistribution.keys()]
+        notUpdated = [s for s in objects.keys() if objects[s]['sprite'].colorName!='DARKGRAY' and s not in game.spriteDistribution.keys()]
         if notUpdated:
             print "step 2: not in sprite distribution:", notUpdated
             embed()
@@ -2551,7 +2559,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
     elif step==3:
         ## Update sprite distribution based on observations
         objects = game.getObjects()
-        notUpdated = [s for s in objects.keys() if s not in game.spriteDistribution.keys()]
+        notUpdated = [s for s in objects.keys() if objects[s]['sprite'].colorName!='DARKGRAY' and s not in game.spriteDistribution.keys()]
 
         # distributionAtT1 = copy.deepcopy(game.spriteDistribution)
 
