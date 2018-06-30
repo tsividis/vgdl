@@ -274,7 +274,7 @@ class BasicGame(object):
         self.object_token_movement_options = {}
         self.sprite_appearances = [] ## New sprites that appear at any given step. This gets cleared at the end of each time-step.
         self.all_objects = {}
-        # self.new_sprites = []
+        self.new_sprites = []
         self.observation = None
         self.EOS = EOS((-1, -1))
         self.reset()
@@ -422,6 +422,8 @@ class BasicGame(object):
             if s.is_stochastic:
                 self.is_stochastic = True
             res.append(s)
+            if s.lastmove==0:
+                self.new_sprites.append(s)
             # self.all_objects[s.ID] = s
 
         return res
@@ -645,6 +647,7 @@ class BasicGame(object):
         collision_set = set()
         new_collisions = True
         self.effectList = []
+        spriteLocationDict = defaultdict(lambda:[])
         dead = self.kill_list[:] # copy kill list
 
         self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack','wallStop']
@@ -671,7 +674,7 @@ class BasicGame(object):
                         ## Note: This may cause serious problems
                         ## You're going to not resolve collisions for any newly-created sprites.
                         ## But the bet is that the way this is populated is such that
-                        sprite_group = [s for s in sprite_group if s.lastmove>0]
+                        # sprite_group = [s for s in sprite_group if s.lastmove>0]
 
                         self.lastcollisions[sprite_class] = (sprite_group[:], len(sprite_group))
 
@@ -707,6 +710,8 @@ class BasicGame(object):
 
                 # do collision detection
                 for sprite1 in sprite_list1:
+                    if sprite1 not in spriteLocationDict[(sprite1.rect.left, sprite1.rect.top)]:
+                        spriteLocationDict[(sprite1.rect.left, sprite1.rect.top)].append(sprite1)
                     for collision_index in sprite1.rect.collidelistall(sprite_list2):
                         sprite2 = sprite_list2[collision_index]
                         if (sprite1 == sprite2
@@ -776,6 +781,26 @@ class BasicGame(object):
 
         self.kill_list = list(set(self.kill_list))
 
+
+        # for sprite in self.new_sprites:
+        #     colliding_sprites = spriteLocationDict[(sprite.rect.left, sprite.rect.top)]
+        #     if len(colliding_sprites)>1:
+        #         print "More than one overlapping sprite with a new sprite in eventHandling"
+        #         embed()
+        #     elif colliding_sprites:
+        #         sprite2 = colliding_sprites[0]
+        #         for e in effectSubset:
+        #             if (sprite.name, sprite2.name)==(e[0],e[1]):
+        #                 self.effectList.append((e[2].__name__, sprite.ID, sprite2.ID))
+        #             if (sprite2.name, sprite.name)==(e[0],e[1]):
+        #                 self.effectList.append((e[2].__name__, sprite2.ID, sprite1.ID))
+
+        # if self.new_sprites:
+            # print "neww_sprites"
+            # embed()
+        # if self.effectList:
+            # print "effects"
+            # embed()
         ## Remove duplicates
         new_collision_eff = []
         for element in self.effectList:
@@ -964,6 +989,7 @@ class BasicGame(object):
             self.time += 1
 
             self._clearAll()
+            self.new_sprites = []
 
             # gather events
             pygame.event.pump()
