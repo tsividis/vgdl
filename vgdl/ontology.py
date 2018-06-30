@@ -1170,6 +1170,7 @@ class NoveltyTermination(Termination):
                             # return False, None
                     else:
                         id_not_found = True
+                        # print "id_not_found 1"
                         # embed()
                         ## This happens when we shoot an object and IDs are mismatched; default to the thing we shoot.
                         ## We've confirmed that this isn't due to other objects shot by other objects.
@@ -1215,8 +1216,8 @@ class NoveltyTermination(Termination):
                             # return False, None
                     else:
                         id_not_found = True
+                        # print "id_not_found 2"
                         # embed()
-
                         ## This happens when we shoot an object and IDs are mismatched; default to the thing we shoot.
                         ## We've confirmed that this isn't due to other objects shot by other objects.
                         try:
@@ -1231,8 +1232,10 @@ class NoveltyTermination(Termination):
                     print("TypeError in game.all_objects (2)")
                     embed()
                 if name1==self.s1 and name2==self.s2:
-                    if id_not_found:
-                        pass
+                    # if id_not_found:
+                        # print "id_not_found"
+                        # embed()
+                        # pass
                     # print("NoveltyTermination with {} and {}".format(
                         # name1, name2))
                     # if name1=='c7' and name2=='avatar':
@@ -1273,6 +1276,8 @@ class NoveltyTermination(Termination):
                 # check has to be performed like this
                 if name1==self.s1 and name2 in str(self.s2):
                     if id_not_found:
+                        print "id_not_found"
+                        embed()
                         pass
                     # print("NoveltyTermination with {} and {}".format(
                         # name1, name2))

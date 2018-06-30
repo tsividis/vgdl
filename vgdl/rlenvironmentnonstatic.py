@@ -348,6 +348,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         if self.visualize:
             self._game._clearAll(self.visualize)
 
+        self._game.new_sprites = []
         # update sprites
         if onlyavatar:
             if action != 0:
@@ -361,6 +362,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                         s.update(self._game)
 
         events = self._game._eventHandling()
+
         ## get events (e.g., (stepBack obj1ID, obj2ID))
 
         # self._gravepoints[(skey, self._rect2pos(s.rect))] = True
@@ -417,6 +419,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             self._game.keystate[32] = True
             action = (0,0)
         pre_step_score = self._game.score
+
         events = self._performAction(action)
         # embed()
         # observation = self._getSensors()

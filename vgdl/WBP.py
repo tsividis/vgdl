@@ -73,7 +73,7 @@ class WBP():
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = True
+		self.display = False
 
 
 		if theory == None:
@@ -88,6 +88,7 @@ class WBP():
 		else:
 			self.thingWeShoot = None
 
+		print "Planning..."
 		if self.display:
 			print 'max nodes', self.max_nodes
 			print "exta atom is {}".format(self.extra_atom)
@@ -390,6 +391,9 @@ class WBP():
 				embed()
 				pass
 
+			if self.display:
+				print "________________"
+				print current.rle.show()
 			for a in current_actions:
 				skipAction = False
 				if not skipAction:
@@ -449,8 +453,8 @@ class WBP():
 						self.gameString_array = gameString_array[::-1]
 						self.object_positions_array = object_positions_array[::-1]
 						ended, win, t = child.rle._isDone(getTermination=True)
-						if self.display:
-							print child.rle.show()
+						# if self.display:
+							# print child.rle.show()
 							# if t:
 								# print t.__dict__
 							# embed()
@@ -1145,7 +1149,7 @@ class Node():
 			# 	return 0, 10000
 		
 			## Don't return a value for novelty for the mere existence of a projectile that has novelty bonuses
-			if self.WBP.thingWeShoot in theory.classes and 'Flicker' not in str(theory.classes[self.WBP.thingWeShoot][0].vgdlType) and self.WBP.thingWeShoot in [s1,s2]:
+			if self.WBP.thingWeShoot in theory.classes and self.WBP.thingWeShoot in [s1,s2]: #and 'Flicker' not in str(theory.classes[self.WBP.thingWeShoot][0].vgdlType)
 				return 0, 10000
 
 			n_sprites = len(s1_positions) if s1_positions else 0

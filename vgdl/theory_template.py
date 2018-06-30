@@ -1019,8 +1019,8 @@ class Theory(object):
 					## Omit noveltytermination for randoms bumping into objects in the game; makes us disrupt plans even though we shouldnt't.
 					# if ('Random' not in str(self.classes[rule.slot1][0].vgdlType)) and ('Random' not in str(self.classes[rule.slot2][0].vgdlType)) 
 					if (    (rule.asTuple()[0]!='nothing' and not (rule.slot1==thingWeShoot and rule.slot2=='avatar')) or 
-							( rule.interaction == 'nothing' and not (rule.slot1==thingWeShoot and rule.slot2==thingWeShoot) and not ('Random' in str(self.classes[rule.slot1][0].vgdlType)) and rule.slot2 in ['avatar', thingWeShoot]) or
-							( rule.interaction == 'nothing' and not (rule.slot2==thingWeShoot and rule.slot1==thingWeShoot) and not ('Random' in str(self.classes[rule.slot2][0].vgdlType)) and rule.slot1 in ['avatar', thingWeShoot])
+							( rule.interaction == 'nothing' and not (rule.slot1==thingWeShoot and rule.slot2==thingWeShoot) and not ('Random' in str(self.classes[rule.slot1][0].vgdlType)) and rule.slot2 not in ['avatar', thingWeShoot]) or
+							( rule.interaction == 'nothing' and not (rule.slot2==thingWeShoot and rule.slot1==thingWeShoot) and not ('Random' in str(self.classes[rule.slot2][0].vgdlType)) and rule.slot1 not in ['avatar', thingWeShoot])
 							):
 						terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
 						if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
