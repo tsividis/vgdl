@@ -3,6 +3,7 @@ from IPython import embed
 import itertools
 import random
 import csv
+import os
 import cPickle
 from math import sqrt
 
