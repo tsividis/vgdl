@@ -1,8 +1,8 @@
 BasicGame
     SpriteSet
         cocoon > Immovable color=GREEN
-        avatar    > MovingAvatar color=DARKBLUE frameRate=8
-        butterfly > RandomNPC speed=0.6 color=PINK cons=1 frameRate=5
+        avatar    > MovingAvatar color=DARKBLUE
+        butterfly > RandomNPC speed=0.6 color=PINK
         wall > Immovable color=DARKGRAY
 
     TerminationSet
