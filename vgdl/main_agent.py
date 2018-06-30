@@ -49,7 +49,7 @@ class Agent:
         self.shortHorizon = hyperparameters['short_horizon']#False
         self.firstOrderHorizon = hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)        if self.shortHorizon == True:
         if self.shortHorizon == True:
-            self.starting_max_nodes = 1000
+            self.starting_max_nodes = 100#1000
             self.max_nodes_annealing = 1.05
         else:
             self.starting_max_nodes = 10000
@@ -521,9 +521,18 @@ class Agent:
                     print colored(g, 'green')
                 print "============================================="
 
+            # if self.shortHorizon:
+            #     if not solution:
+            #         emptyPlans +=1
+            #     else:
+            #         emptyPlans = 0
+            
             if self.shortHorizon:
+                ## new 6/30/18
                 if not solution:
                     emptyPlans +=1
+                    print "got an empty plan; observing for a while."
+                    observe(self.rle, 30*emptyPlans, self.bestSpriteTypeDict)
                 else:
                     emptyPlans = 0
             else:
@@ -543,9 +552,14 @@ class Agent:
                     else:
                         quitting = True
 
+            ##new 6/30/18
             if emptyPlans > self.emptyPlansLimit:
-                print "got too many empty plans"
-                observe(self.rle, 5, self.bestSpriteTypeDict)
+                self.max_nodes *= self.max_nodes_annealing
+                print "reached emptyPlansLimit of {}. Annealing max nodes to {}".format(self.emptyPlansLimit, self.max_nodes)
+
+            # if emptyPlans > self.emptyPlansLimit:
+                # print "got too many empty plans"
+                # observe(self.rle, 5, self.bestSpriteTypeDict)
 
             if not quitting:
                 for i, action in enumerate(solution):
@@ -681,8 +695,8 @@ class Agent:
                             pass
 
 
-                if self.shortHorizon:
-                    self.max_nodes *= self.max_nodes_annealing
+                # if self.shortHorizon:
+                    # self.max_nodes *= self.max_nodes_annealing
             else:
                 ## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
                 ## Search more deeply next time.

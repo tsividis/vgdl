@@ -29,12 +29,16 @@ BasicGame square_size=32
 
         base bomb > killSprite
         bomb base > killSprite
-        base sam > killSprite scoreChange=1
+	base sam > changeScore value=1
+        base sam > killSprite
         sam base > killSprite
 
         base   alien > killSprite
-        avatar alien > killSprite scoreChange=-1
-        avatar bomb  > killSprite scoreChange=-1
-        alien  sam   > killSprite scoreChange=2
+	avatar alien > changeScore value=-1
+        avatar alien > killSprite
+	avatar bomb > changeScore value=-1
+        avatar bomb  > killSprite
+	alien sam > changeScore value=2
+        alien  sam   > killSprite
         sam avatar > nothing
         sam portal > nothing
