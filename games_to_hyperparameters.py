@@ -19,14 +19,14 @@
 # 				'superman', 'watergame', 'waves', 'wildgunman']
 
 ## running with hyperparams2
-# game_names = ['bait', 'clusters']
+# game_names = ['bait', 'camelRace', 'lemmings', 'watergame','boulderchase', 'boulderdash']
 
 ## running with hyperparams3
 # game_names = ['myAliens'] ##running for longer
-game_names = ['chopper', 'jaws', 'plaqueattack', 'wildgunman']
+game_names = ['avoidgeorge', 'jaws','boulderchase', 'boulderdash', 'chopper', 'myAliens', 'plaqueattack', 'waves', 'overload', 'missilecommand', 'lemmings', 'superman']
 # game_names = ['avoidgeorge', 'bait', 'chopper', 
-# 				'infection', 'jaws', 'myAliens', 'overload', 'plants', 'plaqueattack', 
-# 				'superman', 'waves', 'wildgunman']
+				# 'infection', 'jaws', 'myAliens', 'overload', 'plants', 'plaqueattack', 
+				# 'superman', 'waves', 'wildgunman']
 
 ## to run after local debugging:
 # ['boulderchase']
