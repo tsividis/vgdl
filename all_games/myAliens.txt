@@ -86,4 +86,5 @@ BasicGame
         alien base > nothing
         ghost avatar > nothing
         wall avatar > nothing
+	avatar wall > nothing
         EOS alien > nothing
