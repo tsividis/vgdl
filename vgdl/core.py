@@ -118,6 +118,9 @@ class VGDLParser(object):
                 self.game.collision_eff.append(tuple([class1, class2, eclass, args]))
                 if self.verbose:
                     print "Collision", pair, "has effect:", edef
+        
+        if 'cloneSprite' in [e[2].__name__ for e in self.game.collision_eff]:
+            self.has_clonesprite = True
         #print self.game.collision_eff
 
     def parseTerminations(self, tnodes):
@@ -276,6 +279,7 @@ class BasicGame(object):
         self.all_objects = {}
         self.new_sprites = []
         self.observation = None
+        self.has_clonesprite = False
         self.EOS = EOS((-1, -1))
         self.reset()
 
@@ -674,7 +678,8 @@ class BasicGame(object):
                         ## Note: This may cause serious problems
                         ## You're going to not resolve collisions for any newly-created sprites.
                         ## But the bet is that the way this is populated is such that
-                        # sprite_group = [s for s in sprite_group if s.lastmove>0]
+                        if self.has_clonesprite:
+                            sprite_group = [s for s in sprite_group if s.lastmove>0]
 
                         self.lastcollisions[sprite_class] = (sprite_group[:], len(sprite_group))
 
