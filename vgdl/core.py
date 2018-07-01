@@ -677,7 +677,7 @@ class BasicGame(object):
                                     sprite_group.extend(sprite)
                         ## Note: This may cause serious problems
                         ## You're going to not resolve collisions for any newly-created sprites.
-                        ## But the bet is that the way this is populated is such that
+                        ## You're only doing this for games with cloneSprite. Otherwise you process everything normally.
                         if self.has_clonesprite:
                             sprite_group = [s for s in sprite_group if s.lastmove>0]
 
