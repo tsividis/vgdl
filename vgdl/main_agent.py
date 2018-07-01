@@ -765,7 +765,7 @@ class Agent:
                 self.rle._game.ignoreList.append(k)
                 self.new_objects[spriteName] = 0
 
-                embed()
+                # embed()
 
 
         # for k in self.new_objects.keys():
