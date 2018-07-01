@@ -1245,7 +1245,7 @@ class NoveltyTermination(Termination):
             elif len(e) > 2 and e[2]=='ENDOFSCREEN':
                 name2 = 'EOS'
                 try:
-                    name1 = game.all_objects[e[1]]['sprite'].name
+                    name1 = game.getAllObjects()[e[1]].name
                     # Don't get a noveltyTermination from RandomNPCs
                     # if 'RandomNPC' in str(game.all_objects[e[1]]['sprite'].__class__) and e[2]  != 'avatar':
                         # return False, None
@@ -1272,6 +1272,9 @@ class NoveltyTermination(Termination):
                     print("IndexError in game.all_objects")
                     # embed()
                     pass
+                except:
+                    print("AttributeError in game.all_objects")
+                    embed()
                 # self.s2 returns a type for the EOS for some reason, so the
                 # check has to be performed like this
                 if name1==self.s1 and name2 in str(self.s2):
