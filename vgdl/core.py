@@ -678,8 +678,8 @@ class BasicGame(object):
                         ## Note: This may cause serious problems
                         ## You're going to not resolve collisions for any newly-created sprites.
                         ## You're only doing this for games with cloneSprite. Otherwise you process everything normally.
-                        if self.has_clonesprite:
-                            sprite_group = [s for s in sprite_group if s.lastmove>0]
+                        # if self.has_clonesprite:
+                            # sprite_group = [s for s in sprite_group if s.lastmove>0]
 
                         self.lastcollisions[sprite_class] = (sprite_group[:], len(sprite_group))
 
