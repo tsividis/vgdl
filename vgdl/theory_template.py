@@ -789,12 +789,12 @@ class Theory(object):
 
 
 	def getNewClassName(self, color):
-        existing_classes = [key for key in theory.classes if key[0] == 'c']
-        max_num = max([int(c[1:]) for c in existing_classes])
-        class_num = max_num+1
-        newClassName = 'c'+str(class_num)
-        return newClassName
-        #     theory.addSpriteToTheory(newClassName, color, vgdlType=Resource, args={'limit':errorMap.targetToken.inventory[k][1]})
+		existing_classes = [key for key in theory.classes if key[0] == 'c']
+		max_num = max([int(c[1:]) for c in existing_classes])
+		class_num = max_num+1
+		newClassName = 'c'+str(class_num)
+		return newClassName
+		#     theory.addSpriteToTheory(newClassName, color, vgdlType=Resource, args={'limit':errorMap.targetToken.inventory[k][1]})
 
 	"""Helper functions"""
 	def interpret(self, event):
