@@ -3,8 +3,8 @@ BasicGame
         trunk > Immovable color=WHITE 
         cursed > Immovable color=GRAY 
 
-        demon > Bomber stype=bolt color=BLUE  prob=0.15 spawnCooldown=6 speed=0.4 frameRate=8
-        angel > Bomber stype=salvation color=GREEN prob=0.05 spawnCooldown=6 speed=0.5 frameRate=8
+        demon > Bomber stype=bolt color=BLUE  prob=0.15 spawnCooldown=6 speed=0.4
+        angel > Bomber stype=salvation color=GREEN prob=0.05 spawnCooldown=6 speed=0.5
         citizen > Chaser stype=output color=RED speed=0.4
         blessed > Chaser stype=output color=ORANGE speed=0.4
             

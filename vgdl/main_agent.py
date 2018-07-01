@@ -454,7 +454,7 @@ class Agent:
         ## Initialize external environment
         self.initializeEnvironment()
         print "initializing RLE"
-        embed()
+
         steps = 0
         self.quits = 0
         self.longHorizonObservations = 0
@@ -764,6 +764,8 @@ class Agent:
                 ## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep.
                 self.rle._game.ignoreList.append(k)
                 self.new_objects[spriteName] = 0
+
+                embed()
 
 
         # for k in self.new_objects.keys():
