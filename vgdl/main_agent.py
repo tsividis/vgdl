@@ -49,7 +49,7 @@ class Agent:
         self.shortHorizon = hyperparameters['short_horizon']#False
         self.firstOrderHorizon = hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)        if self.shortHorizon == True:
         if self.shortHorizon == True:
-            self.starting_max_nodes = 500
+            self.starting_max_nodes = 100
             self.max_nodes_annealing = 1.05
         else:
             self.starting_max_nodes = 10000
@@ -767,6 +767,13 @@ class Agent:
 
                 # embed()
 
+            # if k not in theory.spriteObjects.keys():
+            #     color = k
+            #     existing_classes = [key for key in theory.classes if key[0] == 'c']
+            #     max_num = max([int(c[1:]) for c in existing_classes])
+            #     class_num = max_num+1
+            #     newClassName = 'c'+str(class_num)
+            #     theory.addSpriteToTheory(newClassName, color, vgdlType=Resource, args={'limit':errorMap.targetToken.inventory[k][1]})
 
         # for k in self.new_objects.keys():
         #     self.new_objects[k] += 1
