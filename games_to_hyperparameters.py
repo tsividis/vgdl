@@ -23,10 +23,11 @@
 
 ## running with hyperparams3
 # game_names = ['myAliens'] ##running for longer
-game_names = ['avoidgeorge', 'jaws','boulderchase', 'boulderdash', 'chopper', 'myAliens', 'plaqueattack', 'waves', 'overload', 'missilecommand', 'lemmings', 'superman']
+# game_names = ['avoidgeorge', 'jaws','boulderchase', 'boulderdash', 'chopper', 'myAliens', 'plaqueattack', 'waves', 'overload', 'missilecommand', 'lemmings', 'superman']
 # game_names = ['avoidgeorge', 'bait', 'chopper', 
 				# 'infection', 'jaws', 'myAliens', 'overload', 'plants', 'plaqueattack', 
 				# 'superman', 'waves', 'wildgunman']
+game_names = ['angelsdemons', 'waves', 'chopper', 'boulderchase']
 
 ## to run after local debugging:
 # ['boulderchase']
