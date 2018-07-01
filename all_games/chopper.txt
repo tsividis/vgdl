@@ -62,8 +62,6 @@ BasicGame
 
         tank wall  > reverseDirection
 	tank EOS  > reverseDirection
-        # tank wall > stepBack
-	# tank EOS  > stepBack
 
         satellite sam > killSprite 
         satellite sam > changeScore value=-1 

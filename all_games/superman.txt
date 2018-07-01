@@ -32,9 +32,7 @@ BasicGame
         avatar portal > stepBack
 
         bleft wall > reverseDirection
-        bleft wall > stepBack
         bright wall > reverseDirection
-        bright wall > stepBack
         missileL EOS > killSprite
         missileR EOS > killSprite
 

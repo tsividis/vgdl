@@ -1,10 +1,11 @@
 BasicGame
     SpriteSet
+        sky > Immovable color=LIGHTBLUE 
         trunk > Immovable color=WHITE 
         cursed > Immovable color=GRAY 
 
-        demon > Bomber stype=bolt color=BLUE  prob=0.15 spawnCooldown=6 speed=0.4
-        angel > Bomber stype=salvation color=GREEN prob=0.05 spawnCooldown=6 speed=0.5
+        demon > Bomber stype=bolt color=BLUE  prob=0.15 spawnCooldown=6 speed=0.4 frameRate=8
+        angel > Bomber stype=salvation color=GREEN prob=0.05 spawnCooldown=6 speed=0.45 frameRate=8
         citizen > Chaser stype=output color=RED speed=0.4
         blessed > Chaser stype=output color=ORANGE speed=0.4
             
@@ -17,7 +18,7 @@ BasicGame
         bolt > Missile orientation=DOWN color=PURPLE speed=0.2 
         salvation > Missile orientation=DOWN color=PINK speed=0.2 
         
-        wall > Immovable color=DARKGRAY 
+        wall > Immovable color=BLACK 
 
     TerminationSet
 	    MultiSpriteCounter stype1=cursed limit=1 win=False
@@ -25,15 +26,11 @@ BasicGame
 
     InteractionSet
         demon wall > reverseDirection
-        demon wall > stepBack
 	demon citizen > nothing
 	demon blessed > nothing
         angel wall > reverseDirection
-        angel wall > stepBack
         citizen wall > reverseDirection
-        citizen wall > stepBack
         blessed wall > reverseDirection
-        blessed wall > stepBack
         
 
         avatar wall > stepBack
@@ -226,24 +223,6 @@ BasicGame
         wall wall > nothing
         EOS EOS > nothing
 
-        citizen demon > nothing
-        blessed demon > nothing
-        avatar box > nothing
-        avatar bolt > nothing
-        output citizen > nothing
-        output blessed > nothing
-        box bolt > nothing
-        box salvation > nothing
-        wall demon > nothing
-        wall angel > nothing
-        wall citizen > nothing
-        wall blessed > nothing
-        wall avatar > nothing
-        wall box > nothing
-        wall bolt > nothing
-        wall salvation > nothing
-        EOS avatar > nothing
-
     LevelMapping
         d >  demon
         a >  angel 
@@ -253,3 +232,4 @@ BasicGame
         o >  output
         w > wall
         A >  avatar
+        . >  sky
