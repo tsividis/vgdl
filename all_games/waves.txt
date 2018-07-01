@@ -10,7 +10,7 @@ BasicGame
 
         shield > Resource color=GOLD limit=4
 
-        avatar  > ShootAvatar color=DARKBLUE stype=sam speed=1.0 rotateInPlace=False
+        avatar  > ShootAvatar color=DARKBLUE stype=sam speed=1.0
         alien > Bomber color=ORANGE speed=0.1 orientation=LEFT stype=laser prob=0.01
     
     LevelMapping
