@@ -1737,8 +1737,9 @@ class Game(object):
 				except IndexError:
 					# timesteps is an empty list
 					max_likelihood = 0
-					print "max_likelihood failed"
-					embed()
+					print "WARNING: max_likelihood failed"
+					# embed()
+					self.hypothesisSpace = [theory]
 				if verbose:
 					print "New theories that passed likelihood tests: ", newTheoriesCount
 					print "New hyp space length: ", len(self.hypothesisSpace)
