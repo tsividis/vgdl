@@ -89,7 +89,6 @@ class WBP():
 		else:
 			self.thingWeShoot = None
 
-		print "Planning..."
 		if self.display:
 			print 'max nodes', self.max_nodes
 			print "exta atom is {}".format(self.extra_atom)
@@ -114,8 +113,9 @@ class WBP():
 
 		if self.conservative:
 			self.hyperparameters['sprite_negative_mult'] = 1000
-			print "Running conservatively. Switched sprite_negative_mult to {}".format(self.hyperparameters['sprite_negative_mult'])
-
+			print "Planning conservatively. Switched sprite_negative_mult to {}".format(self.hyperparameters['sprite_negative_mult'])
+		else:
+			print "Planning normally."
 		## Ignore objects we don't want to track (i.e., non-moving immovables.)
 		self.objectsToTrack = []
 		for k in rle._game.sprite_groups.keys():
@@ -550,6 +550,12 @@ class WBP():
 				node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 				parentNode = copy.deepcopy(node)
 				self.solution = node.actionSeq
+
+				if self.conservative and not self.solution:
+					node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+					parentNode = copy.deepcopy(node)
+					self.solution = node.actionSeq
+
 				# print self.solution
 				gameString_array, object_positions_array = [], []
 				while parentNode is not None:
