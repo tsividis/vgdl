@@ -809,6 +809,13 @@ class Theory(object):
 		that corresponds to (bounceForward, c1, c2)
 		"""
 
+		try:
+			obj1 = self.spriteObjects[event[1]]
+			obj2 = self.spriteObjects[event[2]]
+		except:
+			print "couldn't find spriteObjects[event[k]] in interpret()"
+			embed()
+			
 		if event[1] in self.spriteObjects:
 			obj1 = self.spriteObjects[event[1]]
 		else:
@@ -820,13 +827,6 @@ class Theory(object):
 		else:
 			self.addSpriteToTheory(event[2])
 			# obj2 = self.spriteObjects[event[2]]
-
-		try:
-			obj1 = self.spriteObjects[event[1]]
-			obj2 = self.spriteObjects[event[2]]
-		except:
-			print "couldn't find spriteObjects[event[k]] in interpret()"
-			embed()
 
 		c1, c2 = self.getClass(obj1), self.getClass(obj2)
 

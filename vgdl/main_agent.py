@@ -454,7 +454,7 @@ class Agent:
         ## Initialize external environment
         self.initializeEnvironment()
         print "initializing RLE"
-
+        # embed()
         steps = 0
         self.quits = 0
         self.longHorizonObservations = 0
@@ -604,7 +604,9 @@ class Agent:
                     # (e.g. stochastic effects)
                     # if self.rle._game.is_stochastic and i>self.regrounding:
                     if (i+1)%self.regrounding==0:
-                    # if True:
+
+                        # if self.checkForDanger(self.rle, self.hypotheses[0]):
+                            # break
                         try:
                             rlePositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in self.rle._game.sprite_groups.values() for item in sublist])
                             hypPositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in objectPositionsArray[i+1]._game.sprite_groups.values() for item in sublist])
@@ -734,6 +736,54 @@ class Agent:
 
 
         return gameObject, win, score, steps, statesEncountered, effectsEncountered
+
+    def checkForDanger(self, rle, hypothesis):
+        try:
+            rlePositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in rle._game.sprite_groups.values() for item in sublist])
+            hypPositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in objectPositionsArray[i+1]._game.sprite_groups.values() for item in sublist])
+            rlePositionsTuples, hypPositionsTuples = [(p[0], p[1]) for p in rlePositions], [(p[0], p[1]) for p in hypPositions]
+
+            killer_types = [inter.slot2 for inter in hypothesis.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
+            # print "killer types", killer_types
+            regroundingFlag = False
+            for objPos in hypPositions:
+                if not regroundingFlag and (objPos[0], objPos[1]) not in rlePositionsTuples:
+                    # print "found object position difference", colored(objPos, 'white', 'on_magenta')
+                    # print 'regrounding because of', objPos[2].colorName, objPos[2], "position:", self.rle._rect2pos(objPos[2].rect)
+                    # try:
+                        # print "orientation:", objPos[2].orientation
+                    # except AttributeError:
+                        # pass
+                    nearest = self.findNearestSprite(objPos[2], [h[2] for h in rlePositions])
+                    # print "Nearest sprite:", nearest.colorName, nearest, "position:", self.rle._rect2pos(nearest.rect)
+                    # try:
+                        # print "orientation:", nearest.orientation
+                    # except AttributeError:
+                        # pass
+                    # print ""
+                    # embed()
+                    if self.selective_regrounding:
+                        if ((objPos[2].name=='avatar') or
+                            (objPos[2].name in killer_types and manhattanDist(rle._rect2pos(objPos[2].rect), rle._rect2pos(rle._game.getAvatars()[0].rect)) < self.safeDistance)):
+
+                            # if objPos[2].name=='avatar':
+                                # embed()
+                            regroundingFlag = True
+                            # embed()
+                            break
+                    else:
+                        regroundingFlag = True
+                        break
+
+            if regroundingFlag:
+                print "regrounding"
+                return regroundingFlag
+        except:
+            # Mismatch in gamestring lengths
+            print ""
+            print 'regrounding problem'
+            embed()
+
 
     def matchEventToRuleByIDAndSpriteName(self, event, rule):
         # Check if the two objects involved in the
