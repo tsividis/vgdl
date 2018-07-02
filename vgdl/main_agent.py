@@ -54,6 +54,7 @@ class Agent:
         else:
             self.starting_max_nodes = 10000
             self.max_nodes_annealing = 10.
+        self.conservative = False
         self.regrounding = 1
         self.selective_regrounding = True
         self.avoid_danger = True
@@ -497,7 +498,7 @@ class Agent:
             ## Initialize planner
             p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                 seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                firstOrderHorizon=self.firstOrderHorizon, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
+                firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
             
             # embed()
 
@@ -509,6 +510,7 @@ class Agent:
                 solution = p.solution
                 gameString_array = p.gameString_array
                 objectPositionsArray = objectPositionsArray[::-1]
+                print "got solution"
             else:
                 solution = []
 
@@ -530,6 +532,7 @@ class Agent:
             if self.shortHorizon:
                 ## new 6/30/18
                 if not solution:
+                    ## initialize another planner in conservative mode, meaning you use safe heuristics. Come up with a short plan.
                     emptyPlans +=1
                     print "got an empty plan; observing for a while."
                     observe(self.rle, 10*emptyPlans**2, self.bestSpriteTypeDict)
@@ -789,8 +792,12 @@ class Agent:
         # Check if the two objects involved in the
         # event are the same as those in the novelty
         # termination rule (invariant by order)
-        hypSlot1 = self.hypotheses[0].spriteObjects[event[1]].className
-        hypSlot2 = self.hypotheses[0].spriteObjects[event[2]].className
+        try:
+            hypSlot1 = self.hypotheses[0].spriteObjects[event[1]].className
+            hypSlot2 = self.hypotheses[0].spriteObjects[event[2]].className
+        except:
+            print "hypslot problem in main agent"
+            embed()
         if set([hypSlot1, hypSlot2]) == set([rule.slot1, rule.slot2]):
             if not rule.preconditions:
                 return True
