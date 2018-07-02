@@ -226,13 +226,13 @@ class Agent:
 
             tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
             if not flexible_goals:
+                print "updateTerminations() modifying hypothesis within RLE in VrleInitPhase"
                 tempHypothesis.updateTerminations()
             # print "fake hypotheses"
             # if self.fakeInteractionRules:/
                 # tempHypothesis.display()
             VRLEs.append(self.initializeVrle(tempHypothesis))
         # print("wrote theory to text")
-
 
         return VRLEs
 
@@ -367,7 +367,15 @@ class Agent:
                 i += 1
                 print "Finished in ", time.time() - t1
                 # embed()
-            # if i >=10:
+        
+        
+        
+        
+        
+        
+        
+        
+       # if i >=10:
             #     return
             
             
@@ -546,6 +554,7 @@ class Agent:
             # If theory is being carried over, falsify termination hypotheses
             # given new level state
             if not flexible_goals:
+                print "updateTerminations() on agent hypothesis in init section of playEpisode"
                 [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
         emptyPlans = 0
@@ -1038,7 +1047,12 @@ class Agent:
                     # print "reached resource limit for", resource
 
         if event['effectList'] and run_induction:
+            
+            print "updateTerminations() on hypothesis that executeStep returns"
             [t.updateTerminations(event=event) for t in hypotheses]
+        
+        
+        
         if theory_change_flag and not distributionsHaveChanged:
             print "changed theory:"
             # hypotheses[0].display()
