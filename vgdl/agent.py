@@ -580,7 +580,6 @@ class Agent:
 		return (totalTime, zip(self.scores, self.hypotheses))
 
 	def manageNewObjects(self, episode_num, hypotheses, envRealPrev, action):
-		# embed()
 		## Add newly-seen objects.
 		current_objects = self.rle._game.getAllObjects()
 		newObjects = [k for k in current_objects if k not in self.rle._game.movement_options]
@@ -754,7 +753,7 @@ class Agent:
 			if len(bestScoresAndHypotheses) == 0:	
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
 				# print "Addressing remaining error maps for {} theories".format(len(newTheories))
-				# embed()
+				embed()
 
 				newerTheories = []
 
@@ -1055,6 +1054,17 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		print "Warning: got ungrammatical theory"
 		e = errorMapEntry()
 		e.diagnosis.append('ungrammatical theory')
+		e.targetToken = None
+		e.targetClass = None
+		e.targetColor = None
+		errorMap.append(e)
+		total_penalty = 1. #likelihood version
+		return total_penalty, errorMap
+
+	if envA._game.num_sprites > envA._game.MAX_SPRITES - 100:
+		print "Warning: theory produces too many sprites"
+		e = errorMapEntry()
+		e.diagnosis.append('prolific theory')
 		e.targetToken = None
 		e.targetClass = None
 		e.targetColor = None
@@ -2189,7 +2199,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 
 			count = 0
 
-			# # embed()
+			# embed()
 			while count == 0 or len(scoreAndTheoryTuples) > tooManyTheoriesCutoff:
 
 				scoreAndTheoryTuples = filterByPrior(scoreAndTheoryTuples, numPerLevel=theoriesPerErrorLevel, granularity=2, targetColor=errorMap.targetColor)
@@ -2197,7 +2207,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 
 				# update error threshold for this color
 				med = scoreAndTheoryTuples[int(ceil(len(scoreAndTheoryTuples)/medianDivisor))][0] + .000001 # to allow all infinitestimals
-				print 'new baseline:' , med
+				print 'new {} baseline:'.format(errorMap.targetColor) , med
 				perColorErrorBaselines[errorMap.targetColor] = med
 				scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
 				print "{} theories after filtering with new baseline".format(len(scoreAndTheoryTuples))
@@ -2290,8 +2300,6 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 	## If there are unknown colors in an inventory, add them to the theory here.
 	if 'inventoryChange' in errorMap.diagnosis:
 		from vgdl.ontology import Resource
-		# print "got inventoryChange"
-		# embed()
 		for k in errorMap.targetToken.inventory:
 			if k not in theory.spriteObjects.keys():
 				color = k

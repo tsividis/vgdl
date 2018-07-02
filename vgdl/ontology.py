@@ -2086,9 +2086,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, action=None, params={
             else:
                 position_options[(left, top)] = 1.0/len(BASEDIRS)
 
-        # if current_sprite.colorName=='DARKBLUE' and cooldown==10:
-            # print "got randomNPC darkblue"
-            # embed()
         current_sprite.cooldown = realCooldown
         # current_sprite.lastmove += 1
         return position_options, position_options, orientation_options, appearance_predictions
@@ -2349,7 +2346,7 @@ def initializeDistributionArgs(sprite_type, objectColors):
     def initializeSpeed():
         # speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.,
         # 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1]
-        speedValues = [.3, .5, 1.0, 2.0]
+        speedValues = [.3, .5, .6, 1.0, 2.0]
         return [('speed', v) for v in speedValues]
 
     def initializeOrientation():
@@ -2447,9 +2444,9 @@ def updateAllOptions(game, gamePrev, action=None):
     game.lastUpdateOptionsTime=game.time
 
     objects = gamePrev.getAllObjects()
-    for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:         # Keys are the IDs of the game objects
-        for param_combination in game.spriteDistribution[sprite].keys():                      # Check each potential sprite type
-            if game.spriteDistribution[sprite][param_combination]> 0:                         # Make sure sprite_type is an option for sprite, and sprite is not killed
+    for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]: # Keys are the IDs of the game objects
+        for param_combination in game.spriteDistribution[sprite].keys():              # Check each potential sprite type
+            if game.spriteDistribution[sprite][param_combination]> 0:                 # Make sure sprite_type is an option for sprite, and sprite is not killed
                 # sprite_obj = objects[sprite]["sprite"]
                 sprite_obj = objects[sprite]
 
@@ -2474,8 +2471,7 @@ def updateAllOptions(game, gamePrev, action=None):
 
                 if param_combination in game.sprite_appearance_predictions[sprite].keys():
                     game.sprite_appearance_predictions[sprite][param_combination].extend(appearance_prediction)
-    # print "updatedAllOptions"
-    # embed()
+
 def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
     """
     An explanation of important data structures used in this function:
@@ -2511,6 +2507,9 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
         ## to their current positions
         scoreAndTheoryTuples = []
 
+        # print 'spriteInduction step 4'
+        # embed()
+
         for sprite in specificSpritesToUpdate:
             left, top = sprite.rect.left, sprite.rect.top
             neighbors = [(left, top), (left-30, top), (left+30, top), (left, top-30), (left, top+30)]
@@ -2539,7 +2538,6 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
                 embed()
                     
         reasonableHypotheses = list(set([s[1] for s in scoreAndTheoryTuples]))
-        # embed()
         return reasonableHypotheses
 
     ## Reset ignoreList so that next time around you do inference.
