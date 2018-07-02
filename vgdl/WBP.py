@@ -113,7 +113,7 @@ class WBP():
 		self.total_nodes = 0
 
 		if self.conservative:
-			self.hyperparameters['sprite_negative_mult'] = 50
+			self.hyperparameters['sprite_negative_mult'] = 1000
 			print "Running conservatively. Switched sprite_negative_mult to {}".format(self.hyperparameters['sprite_negative_mult'])
 
 		## Ignore objects we don't want to track (i.e., non-moving immovables.)
@@ -292,8 +292,15 @@ class WBP():
 		# acceptableNodes = QReward
 		#acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
 		
-		acceptableNodes = filter(lambda n:n.novelty<3, QReward)
-		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
+		## normal mode
+		if not self.conservative:
+			acceptableNodes = filter(lambda n:n.novelty<3, QReward)
+			## sort max to min for pop()
+			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
+		else:
+			acceptableNodes = QReward
+			## sort max to min for pop()
+			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, len(n.actionSeq)))
 
 		try:
 			current = bestNodes.pop(0)
@@ -333,10 +340,30 @@ class WBP():
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
 			current = self.rewardSelection(QReward, QNovelty)
 			if current in [None, 'pickMaxNode']:
-				node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+
+				if not self.conservative:
+					node = max(visited, key=lambda n:n.intrinsic_reward)
+				else:
+					node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+					# embed()
+				# node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+
+				## if we didn't get any novelty-fulfilling nodes, just pick the best node 
+				## sorted by reward and action-sequence length.
+				# node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 
 				parentNode = copy.deepcopy(node)
 				self.solution = node.actionSeq
+
+				if self.conservative and not self.solution:
+					print "in conservative mode. didn't get solution; trying to filter less aggressively"
+					node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+					parentNode = copy.deepcopy(node)
+
+					self.solution = node.actionSeq
+					if not self.solution:
+						print "in conservative mode. didn't get solution on second attempt."
+						embed()
 
 				gameString_array, object_positions_array = [], []
 				while parentNode is not None:
@@ -349,8 +376,9 @@ class WBP():
 				self.quitting = True
 				self.exhausted_novelty = True
 				# return None
-				print "current node is in None or pickMaxNode"
-				# embed()
+				# if self.conservative not self.solution:
+					# print "current node is in None or pickMaxNode"
+					# embed()
 				return node, gameString_array, object_positions_array
 
 			try:
@@ -500,21 +528,21 @@ class WBP():
 			# print i
 		self.solution = []#Node(self.rle, self, [], None)
 		
-		if i>=self.small_max_nodes and self.conservative:
-			print "picking small plann"
-			node = max(visited, key=lambda n:n.intrinsic_reward)
-			parentNode = copy.deepcopy(node)
-			self.solution = node.actionSeq
-			gameString_array, object_positions_array = [], []
-			while parentNode is not None:
-				gameString_array.append(parentNode.rle.show())
-				object_positions_array.append(copy.deepcopy(parentNode.rle))
-				parentNode = parentNode.parent
-			self.gameString_array = gameString_array[::-1]
-			self.object_positions_array = object_positions_array[::-1]
-			print "conservative mode"
-			embed()
-			return node, gameString_array, object_positions_array
+		# if i>=self.small_max_nodes and self.conservative:
+		# 	print "picking small plann"
+		# 	node = max(visited, key=lambda n:n.intrinsic_reward)
+		# 	parentNode = copy.deepcopy(node)
+		# 	self.solution = node.actionSeq
+		# 	gameString_array, object_positions_array = [], []
+		# 	while parentNode is not None:
+		# 		gameString_array.append(parentNode.rle.show())
+		# 		object_positions_array.append(copy.deepcopy(parentNode.rle))
+		# 		parentNode = parentNode.parent
+		# 	self.gameString_array = gameString_array[::-1]
+		# 	self.object_positions_array = object_positions_array[::-1]
+		# 	print "conservative mode"
+		# 	embed()
+		# 	return node, gameString_array, object_positions_array
 		
 		if i>=self.max_nodes:
 			if self.short_horizon:
@@ -887,7 +915,7 @@ class Node():
 		if term.termination.win:
 			mult = -1
 		else:
-			compute_second_order = False
+			compute_second_order = False if not self.WBP.conservative else True
 			mult = negative_mult
 
 		# Get all types that kill or transform stype (the target)
@@ -1015,13 +1043,18 @@ class Node():
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
 				val += float(mult * second_alpha * distance)/n_sprites**2
-
-
-			else:
+			elif stype!='avatar':
+				# embed()
 				# This helps in cases in which either the stype or the killer_type is not always on the screen
 				# Then, you should not be disincentivized to create it, which can be achieved through this high penalty
 				distance = 100
 				val += float(mult * second_alpha * distance)
+			else:
+				val += -float('inf')
+
+			# if self.WBP.conservative:
+				# print distance, val
+				# print rle.show()
 
 			if avatar_preconditions:
 				avatars = [self.WBP.findObjectsInRLE(rle, ktype[0]) for ktype in avatar_preconditions]
