@@ -795,7 +795,7 @@ class Theory(object):
 		newClassName = 'c'+str(class_num)
 		return newClassName
 
-	def addSpriteToTheory(self, vgdlType='default', args=None):
+	def addSpriteToTheory(self, color, vgdlType='default', args=None):
 		
 		newSpriteName = self.getNewClassName(color)
 		if vgdlType=='default':
