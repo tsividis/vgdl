@@ -7,7 +7,7 @@ BasicGame
             quiet > RandomNPC speed=0.2 cons=1 color=GREEN
             avatar > ShootAvatar stype=cigarette rotateInPlace=False color=DARKBLUE
 
-        george > Chaser color=YELLOW stype=quiet speed=0.3 frameRate=8
+        george > Chaser color=YELLOW stype=quiet speed=0.1 frameRate=8
         cigarette > Flicker color=BROWN limit=5 singleton=True 
         wall > Immovable color=DARKGRAY
 
