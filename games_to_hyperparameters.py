@@ -27,7 +27,8 @@
 # game_names = ['avoidgeorge', 'bait', 'chopper', 
 				# 'infection', 'jaws', 'myAliens', 'overload', 'plants', 'plaqueattack', 
 				# 'superman', 'waves', 'wildgunman']
-game_names = ['angelsdemons', 'waves', 'chopper', 'boulderchase']
+
+game_names = ['angelsdemons', 'waves', 'myAliens', 'jaws']
 
 ## to run after local debugging:
 # ['boulderchase']
