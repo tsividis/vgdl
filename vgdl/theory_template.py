@@ -789,12 +789,30 @@ class Theory(object):
 
 
 	def getNewClassName(self, color):
-		existing_classes = [key for key in theory.classes if key[0] == 'c']
+		existing_classes = [key for key in self.classes if key[0] == 'c']
 		max_num = max([int(c[1:]) for c in existing_classes])
 		class_num = max_num+1
 		newClassName = 'c'+str(class_num)
 		return newClassName
-		#     theory.addSpriteToTheory(newClassName, color, vgdlType=Resource, args={'limit':errorMap.targetToken.inventory[k][1]})
+
+	def addSpriteToTheory(self, vgdlType='default', args=None):
+		
+		newSpriteName = self.getNewClassName(color)
+		if vgdlType=='default':
+			vgdlType = ResourcePack
+		sprite = Sprite(vgdlType, color, className=newSpriteName)
+		self.classes[newSpriteName] = [sprite]
+		self.spriteSet.append(sprite)
+		self.spriteObjects[color] = sprite
+		for (o1,o2) in itertools.product([newSpriteName], self.classes.keys()):
+			if o2=='avatar':
+				rule1 = InteractionRule('killSprite', o1, o2, {}, set(), generic=True)
+			else:
+				rule1 = InteractionRule('nothing', o1, o2, {}, set(), generic=True)
+			rule2 = InteractionRule('nothing', o2, o1, {}, set(), generic=True)
+			self.interactionSet.append(rule1)
+			self.interactionSet.append(rule2)
+		return
 
 	"""Helper functions"""
 	def interpret(self, event):
@@ -809,24 +827,24 @@ class Theory(object):
 		that corresponds to (bounceForward, c1, c2)
 		"""
 
-		try:
-			obj1 = self.spriteObjects[event[1]]
-			obj2 = self.spriteObjects[event[2]]
-		except:
-			print "couldn't find spriteObjects[event[k]] in interpret()"
-			embed()
-			
+		# try:
+		# 	obj1 = self.spriteObjects[event[1]]
+		# 	obj2 = self.spriteObjects[event[2]]
+		# except:
+		# 	print "couldn't find spriteObjects[event[k]] in interpret()"
+		# 	embed()
+
 		if event[1] in self.spriteObjects:
 			obj1 = self.spriteObjects[event[1]]
 		else:
 			self.addSpriteToTheory(event[1])
-			# obj1 = self.spriteObjects[event[1]]
+			obj1 = self.spriteObjects[event[1]]
 
 		if event[2] in self.spriteObjects:
 			obj2 = self.spriteObjects[event[2]]
 		else:
 			self.addSpriteToTheory(event[2])
-			# obj2 = self.spriteObjects[event[2]]
+			obj2 = self.spriteObjects[event[2]]
 
 		c1, c2 = self.getClass(obj1), self.getClass(obj2)
 
@@ -1856,25 +1874,6 @@ class Game(object):
 
 		T.updateTerminations()
 		return T
-
-	def addSpriteToTheory(self, vgdlType='default', args=None):
-		
-		newSpriteName = self.getNewClassName(color)
-		if vgdlType=='default':
-			vgdlType = ResourcePack
-		sprite = Sprite(vgdlType, color, className=newSpriteName, args=args)
-		self.classes[newSpriteName] = [sprite]
-		self.spriteSet.append(sprite)
-		self.spriteObjects[color] = sprite
-		for (o1,o2) in itertools.product([newSpriteName], self.classes.keys()):
-			if o2=='avatar':
-				rule1 = InteractionRule('killSprite', o1, o2, {}, set(), generic=True)
-			else:
-				rule1 = InteractionRule('nothing', o1, o2, {}, set(), generic=True)
-			rule2 = InteractionRule('nothing', o2, o1, {}, set(), generic=True)
-			self.interactionSet.append(rule1)
-			self.interactionSet.append(rule2)
-		return
 
 	def addNewObjectsToTheory(self, theory, spriteSample):
 		# Get the important objects in the theory names
