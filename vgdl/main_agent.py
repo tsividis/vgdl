@@ -510,7 +510,8 @@ class Agent:
                 solution = p.solution
                 gameString_array = p.gameString_array
                 objectPositionsArray = objectPositionsArray[::-1]
-                print "got solution"
+                if solution:
+                    print "got solution"
             else:
                 solution = []
 
