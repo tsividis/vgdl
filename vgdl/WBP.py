@@ -41,7 +41,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
-		firstOrderHorizon=False, hyperparameters={}, extra_atom=False):
+		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.hyperparameters = hyperparameters
@@ -63,6 +63,7 @@ class WBP():
 		self.objectNumberTrackingLimit = 50
 		self.objectLocationTrackingLimit = 8
 		self.max_nodes = max_nodes
+		self.small_max_nodes = 100
 		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random']
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
 		self.classesWhoseLocationsWeIgnore = []
@@ -93,7 +94,6 @@ class WBP():
 			print 'max nodes', self.max_nodes
 			print "exta atom is {}".format(self.extra_atom)
 
-
 		i=1
 		for k in rle._game.all_objects.keys():
 			self.objIDs[k] = i * 100 * (rle.outdim[0]*rle.outdim[1]+self.padding)
@@ -108,8 +108,13 @@ class WBP():
 			print 'killer types', self.killer_types
 
 		self.short_horizon = shortHorizon
+		self.conservative = conservative
 		self.winning_states = []
 		self.total_nodes = 0
+
+		if self.conservative:
+			self.hyperparameters['sprite_negative_mult'] = 50
+			print "Running conservatively. Switched sprite_negative_mult to {}".format(self.hyperparameters['sprite_negative_mult'])
 
 		## Ignore objects we don't want to track (i.e., non-moving immovables.)
 		self.objectsToTrack = []
@@ -328,7 +333,7 @@ class WBP():
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
 			current = self.rewardSelection(QReward, QNovelty)
 			if current in [None, 'pickMaxNode']:
-				node = max(visited, key=lambda n:n.intrinsic_reward)
+				node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 
 				parentNode = copy.deepcopy(node)
 				self.solution = node.actionSeq
@@ -344,6 +349,8 @@ class WBP():
 				self.quitting = True
 				self.exhausted_novelty = True
 				# return None
+				print "current node is in None or pickMaxNode"
+				# embed()
 				return node, gameString_array, object_positions_array
 
 			try:
@@ -492,10 +499,27 @@ class WBP():
 
 			# print i
 		self.solution = []#Node(self.rle, self, [], None)
+		
+		if i>=self.small_max_nodes and self.conservative:
+			print "picking small plann"
+			node = max(visited, key=lambda n:n.intrinsic_reward)
+			parentNode = copy.deepcopy(node)
+			self.solution = node.actionSeq
+			gameString_array, object_positions_array = [], []
+			while parentNode is not None:
+				gameString_array.append(parentNode.rle.show())
+				object_positions_array.append(copy.deepcopy(parentNode.rle))
+				parentNode = parentNode.parent
+			self.gameString_array = gameString_array[::-1]
+			self.object_positions_array = object_positions_array[::-1]
+			print "conservative mode"
+			embed()
+			return node, gameString_array, object_positions_array
+		
 		if i>=self.max_nodes:
 			if self.short_horizon:
 				# print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
-				node = max(visited, key=lambda n:n.intrinsic_reward)
+				node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 				parentNode = copy.deepcopy(node)
 				self.solution = node.actionSeq
 				# print self.solution
@@ -508,11 +532,14 @@ class WBP():
 				self.object_positions_array = object_positions_array[::-1]
 				# print "win"
 				# embed()
+				# print "in WBP, within short horizon"
+				# embed()
 				return node, gameString_array, object_positions_array
 			else:
 				# self.quitting = True
 				if self.display:
 					print "Got no plan after searching {} nodes".format(self.max_nodes)
+
 		return None, None, None
 
 class Node():
