@@ -2190,7 +2190,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 
 			count = 0
 
-			while count == 0 or len(scoreAndTheoryTuples) > tooManyTheoriesCutoff:
+			while (count == 0 or len(scoreAndTheoryTuples) > tooManyTheoriesCutoff) and len(scoreAndTheoryTuples) > 3:
 
 				scoreAndTheoryTuples = filterByPrior(scoreAndTheoryTuples, numPerLevel=theoriesPerErrorLevel, granularity=2, targetColor=errorMap.targetColor)
 				print "{} theories after filtering by prior".format(len(scoreAndTheoryTuples))
