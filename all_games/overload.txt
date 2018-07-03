@@ -11,8 +11,8 @@ BasicGame
         wall > Immovable color=DARKGRAY 
 
     InteractionSet
-        weapon avatar   > collectResource 
         weapon avatar   > changeScore value=2
+        weapon avatar   > collectResource 
 	marsh sword     > killSprite 
 	marsh sword     > changeScore value=1
         gold avatar     > collectResource 

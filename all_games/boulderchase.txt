@@ -23,8 +23,8 @@ BasicGame
 	InteractionSet
                 dirt avatar > killSprite 
                 dirt sword > killSprite
-                diamond avatar > collectResource 
                 diamond avatar > changeScore value=2
+                diamond avatar > collectResource 
 
                 avatar wall > stepBack 
                 avatar boulder > stepBack
@@ -34,11 +34,10 @@ BasicGame
                 butterfly boulder > stepBack
 
                 avatar boulder > killIfFromAbove 
-                avatar boulder > changeScore value=-1
-                avatar butterfly > killSprite 
                 avatar butterfly > changeScore value=-1 
-                avatar crab > killSprite 
+                avatar butterfly > killSprite 
                 avatar crab > changeScore value=-1 
+                avatar crab > killSprite 
 
                 crab boulder > killIfFromAbove 
                 butterfly boulder > killIfFromAbove
