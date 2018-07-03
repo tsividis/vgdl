@@ -514,9 +514,11 @@ class Agent:
             return gameObject, win, score, steps, statesEncountered, effectsEncountered
         """
 
-    def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None):
-        from vgdl.util import manhattanDist
 
+
+    def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None):
+
+        from vgdl.util import manhattanDist
 
         # FOR EXPLORATION LESION *****
         doRandomMoves = False
@@ -558,6 +560,11 @@ class Agent:
                 [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
         emptyPlans = 0
+
+
+        #######################################
+        ######## LOOP FOR THIS EPISODE ########
+        #######################################
         while not ended:
             ## initialize one or many VRLEs according to hypothesis-selection method
 
@@ -573,15 +580,25 @@ class Agent:
 
             quitting = False
 
+            ##############################
+            ##### IF MOVING RANDOMLY #####
+            ##############################
             if doRandomMoves:
+
                 # do random moves
                 action = np.random.choice(legalActions)
 
                 self.hypotheses[0].dryingPaint = set()
 
+                ##############################################
+                ############### step #########################
+                ##############################################
                 hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
                     run_induction = not flexible_goals)
 
+                ##############################################
+                ##### STORE EFFECTS OF TAKING STEP ###########
+                ##############################################
                 self.rle._game.nextPositions = {}
                 for k, v in self.rle._game.all_objects.iteritems():
                     self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
@@ -599,6 +616,10 @@ class Agent:
                 ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
 
                 effectsEncountered.extend(effects)
+                
+                ###############################################
+                ########### UPDATE CURRENT HYPOTHESIS #########
+                ###############################################
                 steps +=1
                 print '{} steps'.format(self.total_game_steps)
                 if theory_change_flag:
@@ -615,9 +636,16 @@ class Agent:
                     self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps)
                     # break
                 ended, win = self.rle._isDone()
-
+            
+            ##################################
+            ##### IF NOT MOVING RANDOMLY #####
+            ##################################
             else:
 
+
+                ################################################
+                ####### A BUNCH OF PLANNING STUFF TO IGNORE ####
+                ################################################
                 planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
 
                 ## Initialize planner
@@ -673,14 +701,24 @@ class Agent:
                 if emptyPlans > self.emptyPlansLimit:
                     observe(self.rle, 5, self.bestSpriteTypeDict)
 
+                ###########################################################
+                ############ IF PLANNER DOES NOT TELL YOU TO QUIT #########
+                ############# THEN EXECUTE PLAN ###########################
+                ##########################################################
                 if not quitting:
                     for i, action in enumerate(solution):
                         self.hypotheses[0].dryingPaint = set()
-
+                        ##############################################
+                        ############### step #########################
+                        ##############################################
                         hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
                             run_induction = not flexible_goals)
 
                         sys.stdout.flush()
+
+                       ##############################################
+                       ##### STORE EFFECTS OF TAKING STEP ###########
+                       ##############################################
                         self.rle._game.nextPositions = {}
                         for k, v in self.rle._game.all_objects.iteritems():
                             self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
@@ -699,12 +737,24 @@ class Agent:
 
                         effectsEncountered.extend(effects)
                         steps +=1
+                        
+                        
+                        ###############################################
+                        ########### UPDATE CURRENT HYPOTHESIS #########
+                        ###############################################
+
                         if theory_change_flag:
                             self.hypotheses = hypotheses
                             break
                         ended, win = self.rle._isDone()
                         if ended:
                             break
+
+
+                        ################################################
+                        ####### EVEN IF DID NOT UPDATE HYPOTHESIS  #####
+                        ####### MAYBE REPLAN ###########################
+                        ################################################
 
                         ## Make sure you're far enough from unpredictable dangerous objects.
 
@@ -725,7 +775,6 @@ class Agent:
                                     if not regroundingFlag and (objPos[0], objPos[1]) not in rlePositionsTuples:
                                         # print "found object position difference", colored(objPos, 'white', 'on_magenta')
                                         # print 'regrounding because of', objPos[2].colorName, objPos[2], "position:", self.rle._rect2pos(objPos[2].rect)
-                                        # try:
                                             # print "orientation:", objPos[2].orientation
                                         # except AttributeError:
                                             # pass
@@ -805,6 +854,10 @@ class Agent:
 
                     if self.shortHorizon:
                         self.max_nodes *= self.max_nodes_annealing
+                
+                ###################################
+                #### IF PLANNER SAYS QUIT #########
+                ###################################
                 else:
                     ## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
                     ## Search more deeply next time.
@@ -814,6 +867,12 @@ class Agent:
                     return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered
 
 
+
+
+            ###########################################
+            ######### HAPPENS REGARDLESS OF WHETHER ###
+            ######### AGENT IS MOVING RANDOMLY ########
+            ###########################################
             annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
             # if ended and not win:
@@ -824,6 +883,11 @@ class Agent:
         ## Update global memory of updates
         # for k in game.spriteUpdateDict:
             # self.spriteUpdateDict[k] = game.spriteUpdateDict[k]
+
+
+        ################################################
+        ######## DONE WITH MAIN LOOP OF THIS EPISODE ###
+        ################################################
 
         score = self.rle._game.score
         # self.updateMemory(self.rle)
