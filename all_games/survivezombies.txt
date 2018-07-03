@@ -13,26 +13,26 @@ BasicGame
         wall > Immovable color=DARKGRAY
 
     InteractionSet
-        honey avatar    > collectResource 
         honey avatar    > changeScore value=1
+        honey avatar    > collectResource 
         honey avatar    > killSprite
 
         avatar wall     > stepBack
         bee wall > stepBack
         zombie wall > stepBack
 
-        avatar zombie   > killIfHasLess resource=honey limit=-1
         avatar zombie   > changeScore value=-1
+        avatar zombie   > killIfHasLess resource=honey limit=-1
         avatar zombie   > changeResource resource=honey value=-1
         zombie avatar   > killSprite
 
         zombie bee      > transformTo stype=dying_zombie
         bee dying_zombie      > transformTo stype=honey
         dying_zombie honey      > killSprite
-        avatar slowHell     > killSprite 
         avatar slowHell     > changeScore value=-1
-        avatar fastHell     > killSprite 
+        avatar slowHell     > killSprite 
         avatar fastHell     > changeScore value=-1 
+        avatar fastHell     > killSprite 
 
         avatar bee > nothing
         avatar flower > nothing

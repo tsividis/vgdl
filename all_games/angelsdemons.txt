@@ -21,7 +21,7 @@ BasicGame
 
     TerminationSet
 	    MultiSpriteCounter stype1=cursed limit=1 win=False
-            Timeout limit=1000 win=True
+            Timeout limit=500 win=True
 
     InteractionSet
         demon wall > reverseDirection
