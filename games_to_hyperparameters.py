@@ -4,10 +4,24 @@
 #                 'missilecommand', 'portals', 'sokoban', 'survivezombies',                   #9-12
 #                 'zelda',                                                                    #13
                     
-#                 'angelsdemons', 'bait', 'boulderchase', 'camelRace',                   #14-17
-#                 'camelRace', 'chopper', jaws','myAliens',		                     	 #18-21
-#                  'overload', 'plaqueattack', 'superman',	'watergame',	    		 #22-25
-#                   'waves',  'wildgunman']                               	 #26-27
+#                 'bait', 'boulderchase',                   #14-17
+#                 'camelRace', 'chopper', 'jaws', 'lemmings', 'myAliens',		                     	 #18-21
+#                  'overload', 'plaqueattack','watergame',	    		 #22-25
+#                  'waves']                               	 #26-27
+
+
+## idx 2:
+game_names = ['expt_push_boulders', 'zelda']
+
+## idx 2, more memory:
+# game_names = ['boulderdash', 'frogs', 'sokoban', 'bait', 'boulderchase', 'overload', 'watergame']
+
+# ## idx 3
+# game_names = ['aliens', 'butterflies', 'chase', 'expt_helper', 'expt_antagonist', 'missilecommand', 'portals', 
+# 			'survivezombies', 'zelda', 'camelRace', 'jaws', 'lemmings', 'myAliens', 'overload', 'plaqueattack', 'waves']
+
+# ## idx 3, more memory
+# game_names = ['chopper']
 
 # game_names = ['expt_push_boulders', 'aliens', 'butterflies', 'expt_helper', 'frogs', 'portals', 'survivezombies', 'zelda']
 # game_names = ['boulderchase', 'jaws', 'myAliens', 'overload', 'avoidgeorge']
@@ -28,7 +42,7 @@
 				# 'infection', 'jaws', 'myAliens', 'overload', 'plants', 'plaqueattack', 
 				# 'superman', 'waves', 'wildgunman']
 
-game_names = ['angelsdemons', 'waves', 'myAliens', 'jaws']
+# game_names = ['angelsdemons', 'waves', 'myAliens', 'jaws']
 
 ## to run after local debugging:
 # ['boulderchase']
