@@ -1153,12 +1153,14 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 					## in the VGDL description
 					sA_speed = 1
 
+				sA_speed *= d
+
 				if sPrev is None:
 					continue
-				xB = sB.rect.left/d
-				yB = sB.rect.top/d
-				xPrev = sPrev.rect.left/d
-				yPrev = sPrev.rect.top/d
+				xB = sB.rect.left
+				yB = sB.rect.top
+				xPrev = sPrev.rect.left
+				yPrev = sPrev.rect.top
 
 				## if the sprite was allowed to move according to the theory
 				if sA.lastmove%theory.spriteObjects[sA.colorName].args['cooldown']==0:
@@ -1464,15 +1466,11 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			if all([not(e.diagnosis == l.diagnosis and e.targetClass == l.targetClass) for l in lst]):
 			# if all([not(e.diagnosis == l.diagnosis and e.targetClass == l.targetClass and e.targetToken == l.targetToken) for l in lst]):
 				lst.append(e)
-		# print "filtered errorMap"
-		# embed()
 		errorMap = lst
 
 		## Sort so that you fix errors involving any new classes first when you build theories.
 		errorMap = sorted(errorMap, key=lambda x: (x.targetClass!='unknown', 'inventoryChange' not in x.diagnosis) )
 
-	# print "at end of errorSignal"
-	# embed()
 	return total_penalty, errorMap
 
 def neighboringSpritesColors(env, sprite):
@@ -1995,9 +1993,7 @@ def experienceReplay(
 
 	t1 = time.time()
 	results, imaginedEffects = [], []
-	# if len(hypotheses)>100:
-		# print ">100 hypotheses"
-		# embed()
+
 	# itr = trange(len(hypotheses)) if len(hypotheses) > 20 else range(len(hypotheses))
 	itr = range(len(hypotheses))
 	for num in itr:
@@ -2008,8 +2004,6 @@ def experienceReplay(
 		mean_penalties, setOfImaginedEffects = \
 				singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h],  assumeZeroErrorTheoryExists=assumeZeroErrorTheoryExists, errorCutoff=errorCutoff)
 		# print "ran experienceReplay on {}. error: {}".format(num, mean_penalties[0])
-		# if len(hypotheses)>400:
-			# embed()
 
 		results.append(mean_penalties)
 		imaginedEffects.append(setOfImaginedEffects)
@@ -2017,8 +2011,6 @@ def experienceReplay(
 	# if len(hypotheses)>10:
 		# print "Serial experience replay on {} theories and {} time-steps took {} seconds".format(len(hypotheses), len(rleHistory), time.time()-t1)
 
-	# print "ran experienceReplay"
-	# embed()
 	mean_penalties = [r[0] for r in results]
 	return mean_penalties, imaginedEffects
 
@@ -2158,7 +2150,6 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 			prevAction = actionHistories[errorMap.episodeStepGenerated[0]][errorMap.episodeStepGenerated[1] - 1]
 
 		# print "now dealing with errorMap"
-		# embed()
 
 		# print "In base case. Correcting error for {} for {} theories".format(errorMap.targetClass, len(theories))
 		# t1 = time.time()
@@ -2171,7 +2162,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 
 		t1 = time.time()
 		# print "beforeFilter"
-		# embed()
+
 		newTheories = list(set(newTheories))
 		if sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
 			cutCorners = len(newTheories) > 750 and scoreAndTheoryTuples[0][0] < .000001
@@ -2199,7 +2190,6 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 
 			count = 0
 
-			# embed()
 			while count == 0 or len(scoreAndTheoryTuples) > tooManyTheoriesCutoff:
 
 				scoreAndTheoryTuples = filterByPrior(scoreAndTheoryTuples, numPerLevel=theoriesPerErrorLevel, granularity=2, targetColor=errorMap.targetColor)
@@ -2369,7 +2359,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 		## SpriteSet induction step
 		if eM.targetClass not in theoryCopy.expandedSprites:
 			className, theories = expandSprites(envRealCurrent._game, theoryCopy, eM, 
-					envRealPrev, envRealCurrent, action, percentile=20, max_num=30)
+					envRealPrev, envRealCurrent, action)
 			theories = list(set(theories))
 			# TODO: since we're not actually going to build on these, we haven't necessarily addressed the error
 			# tomorrow: not sure if this is actually the problem

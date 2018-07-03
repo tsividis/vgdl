@@ -2507,9 +2507,6 @@ def spriteInduction(game, step, action=None, specificSpritesToUpdate=[]):
         ## to their current positions
         scoreAndTheoryTuples = []
 
-        # print 'spriteInduction step 4'
-        # embed()
-
         for sprite in specificSpritesToUpdate:
             left, top = sprite.rect.left, sprite.rect.top
             neighbors = [(left, top), (left-30, top), (left+30, top), (left, top-30), (left, top+30)]
