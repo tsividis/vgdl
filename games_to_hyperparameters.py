@@ -15,9 +15,9 @@
 
 ## idx 2, more memory:
 # game_names = [ 'sokoban', 'bait', 'watergame']
-game_names = ['sokoban', 'bait', 'watergame']
+# game_names = ['sokoban', 'bait', 'watergame']
 # ## idx 3
-#game_names = ['aliens', 'butterflies', 'chase', 'expt_helper', 'expt_antagonist', 'missilecommand', 'portals', 'survivezombies', 'zelda', 'camelRace', 'jaws', 'lemmings', 'myAliens', 'overload', 'plaqueattack', 'waves']
+game_names = ['aliens', 'butterflies', 'chase', 'expt_helper', 'expt_antagonist', 'missilecommand', 'portals', 'survivezombies', 'zelda', 'camelRace', 'jaws', 'lemmings', 'myAliens', 'overload', 'plaqueattack', 'waves']
 
 # ## idx 3, more memory
 #game_names = ['chopper']
@@ -45,11 +45,11 @@ game_names = ['sokoban', 'bait', 'watergame']
 
 ## to run after local debugging:
 # ['boulderchase']
-mapping = dict()
+# mapping = dict()
 
 # for k in game_names:
 #     if k not in ['infection', 'lemmings', 'modality', 'plants', 'tercio', 'waves']: #[need much looking into]
 #         mapping[k] = [0,2,3]
 
-for k in game_names:
-    mapping[k] = [3]
+# for k in game_names:
+    # mapping[k] = [3]
