@@ -94,6 +94,10 @@ class Agent:
 
         self.pickle_file = None
 
+        # MARK, EXPLORATION
+        self.doRandomMoves = False
+        self.maxRandomSteps = 0
+
     def initializeEnvironment(self):
         if self.gameString==None or self.levelString==None:
             self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
@@ -225,7 +229,7 @@ class Agent:
             # tmpFakeInteractionRules = ccopy(self.fakeInteractionRules)
 
             tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
-            if not flexible_goals:
+            if not flexible_goals and not self.doRandomMoves:
                 print "updateTerminations() modifying hypothesis within RLE in VrleInitPhase"
                 tempHypothesis.updateTerminations()
             # print "fake hypotheses"
@@ -520,8 +524,10 @@ class Agent:
 
         from vgdl.util import manhattanDist
 
-        # FOR EXPLORATION LESION *****
-        doRandomMoves = False
+        # MARK, EXPLORATION LESION *****
+        self.doRandomMoves = False
+        self.maxRandomSteps = 0
+
         # step #s where we want to save our progress
         # whereToSave = {0,50,100,1000,5000, 10000}
 
@@ -555,7 +561,7 @@ class Agent:
             print "had hypotheses -- completing them."
             # If theory is being carried over, falsify termination hypotheses
             # given new level state
-            if not flexible_goals:
+            if not flexible_goals and not self.doRandomMoves:
                 print "updateTerminations() on agent hypothesis in init section of playEpisode"
                 [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
@@ -583,7 +589,7 @@ class Agent:
             ##############################
             ##### IF MOVING RANDOMLY #####
             ##############################
-            if doRandomMoves:
+            if self.doRandomMoves and steps < self.maxRandomSteps:
 
                 # do random moves
                 action = np.random.choice(legalActions)
@@ -1033,8 +1039,10 @@ class Agent:
             self.finalEventList.append(event)
 
         ## EXPLORATION LESION: skip event learning if we're running with a pickle_file (which is the theory we freeze on)
+        ### MARK, CLARIFICATION: This is not about running the random moves. This is about running a particular hypothesis without learning
         if self.pickle_file is not None:
             print "skipping induction because we have a frozen theory!"
+        
         if ((event['effectList'] and run_induction) or distributionsHaveChanged):
             print "running induction"
             print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
@@ -1110,8 +1118,8 @@ class Agent:
                     theory_change_flag = True
                     # print "reached resource limit for", resource
 
-        if event['effectList'] and run_induction:
-            
+        # MARK, EXPLORATION LESION, DO NOT MODIFY HYPOTHESIS WITH CURIOSITY BONUS
+        if event['effectList'] and run_induction and steps < self.maxRandomSteps: 
             print "updateTerminations() on hypothesis that executeStep returns"
             [t.updateTerminations(event=event) for t in hypotheses]
         
@@ -1189,6 +1197,7 @@ if __name__ == "__main__":
      }]
 
     agent = Agent('full', gameName, hyperparameter_sets[0])
+
 
     ##then pass this down for multiple episodes
     gameObject = None
