@@ -229,8 +229,8 @@ class Agent:
             # tmpFakeInteractionRules = ccopy(self.fakeInteractionRules)
 
             tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
-            if not flexible_goals and not self.doRandomMoves:
-                print "updateTerminations() modifying hypothesis within RLE in VrleInitPhase"
+            if not flexible_goals:
+                #print "updateTerminations() modifying hypothesis within RLE in VrleInitPhase"
                 tempHypothesis.updateTerminations()
             # print "fake hypotheses"
             # if self.fakeInteractionRules:/
@@ -524,9 +524,6 @@ class Agent:
 
         from vgdl.util import manhattanDist
 
-        # MARK, EXPLORATION LESION *****
-        self.doRandomMoves = False
-        self.maxRandomSteps = 0
 
         # step #s where we want to save our progress
         # whereToSave = {0,50,100,1000,5000, 10000}
@@ -561,8 +558,8 @@ class Agent:
             print "had hypotheses -- completing them."
             # If theory is being carried over, falsify termination hypotheses
             # given new level state
-            if not flexible_goals and not self.doRandomMoves:
-                print "updateTerminations() on agent hypothesis in init section of playEpisode"
+            if not flexible_goals:
+                #print "updateTerminations() on agent hypothesis in init section of playEpisode"
                 [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
         emptyPlans = 0
@@ -643,9 +640,11 @@ class Agent:
                     # break
                 ended, win = self.rle._isDone()
             
-            ##################################
-            ##### IF NOT MOVING RANDOMLY #####
-            ##################################
+            ###########################################
+            ##### IF self.doRandomMoves = False #######
+            ##### OR IF self.doRandomMoves = True #####
+            ##### BUT steps >= self.maxRandomSteps ####
+            ###########################################
             else:
 
 
@@ -1119,8 +1118,8 @@ class Agent:
                     # print "reached resource limit for", resource
 
         # MARK, EXPLORATION LESION, DO NOT MODIFY HYPOTHESIS WITH CURIOSITY BONUS
-        if event['effectList'] and run_induction and steps < self.maxRandomSteps: 
-            print "updateTerminations() on hypothesis that executeStep returns"
+        if event['effectList'] and run_induction: 
+            #print "updateTerminations() on hypothesis that executeStep returns"
             [t.updateTerminations(event=event) for t in hypotheses]
         
         
