@@ -161,6 +161,10 @@ def make_random_name(chars):
 	return name
 
 def write_to_csv(foldername, filename, game):
+    try:
+        os.makedirs('model_results_planner_integration/'+foldername+'/')
+    except:
+        pass
 	if filename not in os.listdir('model_results_planner_integration/'+foldername+'/'):
 		f = open('model_results_planner_integration/'+foldername+'/'+filename, 'w+') #newfile and write
 		writer = csv.writer(f)

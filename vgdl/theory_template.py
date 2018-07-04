@@ -1208,6 +1208,8 @@ def expandSprites(game, theory, errorMap, envRealPrev, envRealCurrent, action=No
 				if args['stype'] not in newTheory.spriteObjects:
 					return targetClass, []
 				args['stype'] = newTheory.spriteObjects[args['stype']].className
+				if 'SpawnPoint' in str(vgdlType) and targetClass == args['stype']:
+					break # to prevent infinite self-spawning
 			except:
 				print "got new stype as an arg but the theory doesn't have the object. In expandSprites()"
 				embed()

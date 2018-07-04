@@ -1061,7 +1061,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		total_penalty = 1. #likelihood version
 		return total_penalty, errorMap
 
-	if envA._game.num_sprites > envA._game.MAX_SPRITES - 100:
+	if envA._game.num_sprites > 300:
 		print "Warning: theory produces too many sprites"
 		e = errorMapEntry()
 		e.diagnosis.append('prolific theory')
@@ -1958,6 +1958,10 @@ def singleTheoryExperienceReplay(
 				try:
 					penalty, errorList = errorSignal(env, rleHistory[idx+n+1], hypotheses[num], 
 						rleHistory[idx+n], targetColor=targetColor, penalty_only=True, earlyStopping=assumeZeroErrorTheoryExists)
+					if type(errorList) != list:
+						if errorList.diagnosis in ['ungrammatical theory', 'prolific theory']:
+							print 'removing ungrammatical/prolific theory'
+							theoryRLEs[num] = None
 					penalties.append(penalty)
 				except:
 					print "exception in experienceReplay"
