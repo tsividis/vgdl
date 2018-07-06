@@ -83,6 +83,12 @@ class WBP():
 			self.theory.interactionSet.extend(fakeInteractionRules)
 			self.theory.updateTerminations()
 
+
+        ##### MARK ANY FUTURE PLANNING (LIKE WHEN BFS IS CALLED) DEPENDS ON
+        ##### self.theory()'s CURRENT STATE
+        
+
+
 		if self.display:
 			print 'max nodes', self.max_nodes
 
@@ -397,6 +403,8 @@ class WBP():
 						# if not ended:
 						foundWin = False
 						for term in self.theory.terminationSet:
+                            # Mark, noveltyTerminations should not be found here.
+
 							if isinstance(term, SpriteCounterRule) and term.termination.win==True:
 								stype = term.termination.stype
 								n_stypes = len([0 for sprite in self.findObjectsInRLE(child.rle, stype)])
