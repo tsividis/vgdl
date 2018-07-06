@@ -1326,8 +1326,8 @@ class NoveltyTermination(Termination):
             elif type(self.args) == dict:
                 # embed()
                 pass
-
     def isDone(self, game):
+
         ## self.args lets us do precondition-dependent terminations.
         if self.args:
             if type(self.args)==dict:
@@ -1347,43 +1347,91 @@ class NoveltyTermination(Termination):
             if not eval(resource_str+true_operator+str(num)):
                 return False, None
 
+            # else:
+            #     print "found correct preconditions"
+                # embed()
         for e in game.effectList:
+
             id_not_found = False
-            if (e[0] in ['killSprite', 'transformTo', 'nothing']) and len(e) > 2:
+            class1, class2 = 'none', 'none'
+            if (e[0] in ['killSprite', 'transformTo', 'nothing', 'stepBack']) and len(e) > 2:
+
                 try:
-                    name1 = game.all_objects[e[1]].name
+                    name1 = game.getAllObjects()[e[1]].name
+                    class1 = str(game.getAllObjects()[e[1]].__class__)
+                    # if 'RandomNPC' in class1  and e[2]  != 'avatar':
+                        # return False, None
+                    # if 'Flicker' in class1  and e[2]  == 'avatar':
+                        # return False, None       
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
                         name1 = 'EOS'
                     elif e[1] in [obj.ID for obj in game.kill_list]:
                         name1 = [obj.name for obj in game.kill_list
                             if obj.ID==e[1]][0]
-                    elif e[1] in game.getAllObjects().keys():
-                        name1 = game.getAllObjects()[e[1]].name
+                        class1 = str([obj.__class__ for obj in game.kill_list
+                            if obj.ID==e[1]][0])
+                        # if 'RandomNPC' in class1  and e[2]  != 'avatar':
+                            # return False, None
+                        # if 'Flicker' in class1  and e[2]  == 'avatar':
+                            # return False, None
+                    elif e[1] in game.getObjects().keys():
+                        name1 = game.getObjects()[e[1]]['sprite'].name
+                        class1 =  str(game.getObjects()[e[1]]['sprite'].__class__)
+                        # if 'RandomNPC' in class1  and e[2]  != 'avatar':
+                            # return False, None
+                        # if 'Flicker' in class1  and e[2]  == 'avatar':
+                            # return False, None
                     else:
                         id_not_found = True
+                        # print "id_not_found 1"
+                        # embed()
                         ## This happens when we shoot an object and IDs are mismatched; default to the thing we shoot.
                         ## We've confirmed that this isn't due to other objects shot by other objects.
                         try:
                             name1 = game.getAvatars()[0].stype
+                            if e[2] == 'avatar':
+                                return False, None
                         except (AttributeError, IndexError) as err:
                             # Avatar dead or doesn't have stype
                             name1 = ''
                 except IndexError:
-                    print("IndexError in game.all_objects")
+                    print("IndexError in game.all_objects (1)")
+                    embed()
+                except TypeError:
+                    print("TypeError in game.all_objects (1)")
                     embed()
                 try:
-                    name2 = game.all_objects[e[2]].name
+                    name2 = game.getAllObjects()[e[2]].name
+                    class2 = str(game.getAllObjects()[e[2]].__class__)
+                    # if 'RandomNPC' in class2  and e[1]  != 'avatar':
+                        # return False, None
+                    # if 'Flicker' in class2  and e[1]  == 'avatar':
+                        # return False, None   
                 except KeyError:
                     if e[2]=='ENDOFSCREEN':
                         name2 = 'EOS'
                     elif e[2] in [obj.ID for obj in game.kill_list]:
+                        # candidates = [obj for obj in game.kill_list]
                         name2 = [obj.name for obj in game.kill_list
                             if obj.ID==e[2]][0]
-                    elif e[2] in game.getAllObjects().keys():
-                        name2 = game.getAllObjects()[e[2]].name
+                        class2 = str([obj.__class__ for obj in game.kill_list
+                            if obj.ID==e[2]][0])
+                        # if 'RandomNPC' in class2  and e[1]  != 'avatar':
+                            # return False, None
+                        # if 'Flicker' in class2  and e[1]  == 'avatar':
+                            # return False, None
+                    elif e[2] in game.getObjects().keys():
+                        name2 = game.getObjects()[e[2]]['sprite'].name
+                        class2 =  str(game.getObjects()[e[2]]['sprite'].__class__)
+                        # if 'RandomNPC' in class2  and e[1]  != 'avatar':
+                            # return False, None
+                        # if 'Flicker' in class2  and e[1]  == 'avatar':
+                            # return False, None
                     else:
                         id_not_found = True
+                        # print "id_not_found 2"
+                        # embed()
                         ## This happens when we shoot an object and IDs are mismatched; default to the thing we shoot.
                         ## We've confirmed that this isn't due to other objects shot by other objects.
                         try:
@@ -1392,26 +1440,39 @@ class NoveltyTermination(Termination):
                             # Avatar dead or doesn't have stype
                             name2 = ''
                 except IndexError:
-                    print("IndexError in game.all_objects")
+                    print("IndexError in game.all_objects (2)")
                     embed()
-
-                if (name1==self.s1 and name2==self.s2) or (name2==self.s1 and name1==self.s2):
-                    if id_not_found:
-                        pass
-                    # print 'noveltyrule', self.s1, self.s2, self.args
+                except TypeError:
+                    print("TypeError in game.all_objects (2)")
+                    embed()
+                if name1==self.s1 and name2==self.s2:
+                    # if id_not_found:
+                        # print "id_not_found"
+                        # embed()
+                        # pass
+                    # print("NoveltyTermination with {} and {}".format(
+                        # name1, name2))
+                    # if name1=='c7' and name2=='avatar':
+                    #     ipdb.set_trace()
+                    # print("Classes are {} and {}".format(class1, class2))
                     return True, self.win
             elif len(e) > 2 and e[2]=='ENDOFSCREEN':
                 name2 = 'EOS'
                 try:
-                    name1 = game.all_objects[e[1]].name
+                    name1 = game.getAllObjects()[e[1]].name
+                    # Don't get a noveltyTermination from RandomNPCs
+                    # if 'RandomNPC' in str(game.all_objects[e[1]]['sprite'].__class__) and e[2]  != 'avatar':
+                        # return False, None
+                    # if 'Flicker' in str(game.all_objects[e[1]]['sprite'].__class__)  and e[2]  == 'avatar':
+                        # return False, None
                 except KeyError:
                     if e[1]=='ENDOFSCREEN':
                         name1 = 'EOS'
                     elif e[1] in [obj.ID for obj in game.kill_list]:
                         name1 = [obj.name for obj in game.kill_list
                             if obj.ID==e[1]][0]
-                    elif e[1] in game.getAllObjects().keys():
-                        name1 = game.getAllObjects()[e[1]].name
+                    elif e[1] in game.getObjects().keys():
+                        name1 = game.getObjects()[e[1]]['sprite'].name
                     else:
                         # print "Couldn't find object in NoveltyTermination"
                         id_not_found = True
@@ -1425,15 +1486,131 @@ class NoveltyTermination(Termination):
                     print("IndexError in game.all_objects")
                     # embed()
                     pass
+                except:
+                    print("AttributeError in game.all_objects")
+                    embed()
                 # self.s2 returns a type for the EOS for some reason, so the
                 # check has to be performed like this
-                # if (name1==self.s1 and name2 in str(self.s2) or name2==self.s1 and name1 in str(self.s2)):
                 if name1==self.s1 and name2 in str(self.s2):
                     if id_not_found:
+                        print "id_not_found"
+                        embed()
                         pass
-                    # print 'noveltyrule', self.s1, self.s2, self.args
+                    # print("NoveltyTermination with {} and {}".format(
+                        # name1, name2))
+                    # if name1=='c7' and name2=='avatar':
+                    #     ipdb.set_trace()
                     return True, self.win
         return False, None
+
+
+    # def isDone(self, game):
+    #     ## self.args lets us do precondition-dependent terminations.
+    #     if self.args:
+    #         if type(self.args)==dict:
+    #             item, num, negated, operator_name = self.args['item'], self.args['num'], eval(self.args['negated']), self.args['operator_name']
+    #         else:
+    #             item, num, negated, operator_name = self.args.item, self.args.num, self.args.negated, self.args.operator_name
+    #         if negated:
+    #             oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
+    #             true_operator = oppositeOperatorMap[operator_name]
+    #         else:
+    #             true_operator = operator_name
+    #         try:
+    #             resource_str = str(game.getAvatars()[0].resources[item])
+    #         except IndexError:
+    #             return False, None
+
+    #         if not eval(resource_str+true_operator+str(num)):
+    #             return False, None
+
+    #     for e in game.effectList:
+    #         id_not_found = False
+    #         if (e[0] in ['killSprite', 'transformTo', 'nothing']) and len(e) > 2:
+    #             try:
+    #                 name1 = game.all_objects[e[1]].name
+    #             except KeyError:
+    #                 if e[1]=='ENDOFSCREEN':
+    #                     name1 = 'EOS'
+    #                 elif e[1] in [obj.ID for obj in game.kill_list]:
+    #                     name1 = [obj.name for obj in game.kill_list
+    #                         if obj.ID==e[1]][0]
+    #                 elif e[1] in game.getAllObjects().keys():
+    #                     name1 = game.getAllObjects()[e[1]].name
+    #                 else:
+    #                     id_not_found = True
+    #                     ## This happens when we shoot an object and IDs are mismatched; default to the thing we shoot.
+    #                     ## We've confirmed that this isn't due to other objects shot by other objects.
+    #                     try:
+    #                         name1 = game.getAvatars()[0].stype
+    #                     except (AttributeError, IndexError) as err:
+    #                         # Avatar dead or doesn't have stype
+    #                         name1 = ''
+    #             except IndexError:
+    #                 print("IndexError in game.all_objects")
+    #                 embed()
+    #             try:
+    #                 name2 = game.all_objects[e[2]].name
+    #             except KeyError:
+    #                 if e[2]=='ENDOFSCREEN':
+    #                     name2 = 'EOS'
+    #                 elif e[2] in [obj.ID for obj in game.kill_list]:
+    #                     name2 = [obj.name for obj in game.kill_list
+    #                         if obj.ID==e[2]][0]
+    #                 elif e[2] in game.getAllObjects().keys():
+    #                     name2 = game.getAllObjects()[e[2]].name
+    #                 else:
+    #                     id_not_found = True
+    #                     ## This happens when we shoot an object and IDs are mismatched; default to the thing we shoot.
+    #                     ## We've confirmed that this isn't due to other objects shot by other objects.
+    #                     try:
+    #                         name2 = game.getAvatars()[0].stype
+    #                     except (AttributeError, IndexError) as err:
+    #                         # Avatar dead or doesn't have stype
+    #                         name2 = ''
+    #             except IndexError:
+    #                 print("IndexError in game.all_objects")
+    #                 embed()
+
+    #             if (name1==self.s1 and name2==self.s2) or (name2==self.s1 and name1==self.s2):
+    #                 if id_not_found:
+    #                     pass
+    #                 # print 'noveltyrule', self.s1, self.s2, self.args
+    #                 return True, self.win
+    #         elif len(e) > 2 and e[2]=='ENDOFSCREEN':
+    #             name2 = 'EOS'
+    #             try:
+    #                 name1 = game.all_objects[e[1]].name
+    #             except KeyError:
+    #                 if e[1]=='ENDOFSCREEN':
+    #                     name1 = 'EOS'
+    #                 elif e[1] in [obj.ID for obj in game.kill_list]:
+    #                     name1 = [obj.name for obj in game.kill_list
+    #                         if obj.ID==e[1]][0]
+    #                 elif e[1] in game.getAllObjects().keys():
+    #                     name1 = game.getAllObjects()[e[1]].name
+    #                 else:
+    #                     # print "Couldn't find object in NoveltyTermination"
+    #                     id_not_found = True
+    #                     # embed()
+    #                     try:
+    #                         name1 = game.getAvatars()[0].stype
+    #                     except (AttributeError, IndexError) as err:
+    #                         # Avatar dead or doesn't have stype
+    #                         name1 = ''
+    #             except IndexError:
+    #                 print("IndexError in game.all_objects")
+    #                 # embed()
+    #                 pass
+    #             # self.s2 returns a type for the EOS for some reason, so the
+    #             # check has to be performed like this
+    #             # if (name1==self.s1 and name2 in str(self.s2) or name2==self.s1 and name1 in str(self.s2)):
+    #             if name1==self.s1 and name2 in str(self.s2):
+    #                 if id_not_found:
+    #                     pass
+    #                 # print 'noveltyrule', self.s1, self.s2, self.args
+    #                 return True, self.win
+    #     return False, None
 
 # ---------------------------------------------------------------------
 #     Helper functions
