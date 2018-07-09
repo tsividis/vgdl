@@ -1566,13 +1566,14 @@ def killIfAlive(sprite, partner, game):
 
 def collectResource(sprite, partner, game, resource=None, value=1, limit=None): # FLAG
     """ Adds/increments the resource type of sprite in partner """
-    # assert isinstance(sprite, Resource)
-    if not isinstance(sprite, Resource):
-        print "problem in collectResource"
-        embed()
-    r = sprite.resourceType
-    partner.resources[r] = max(-1, min(partner.resources[r]+sprite.value, game.resources_limits[r]))
-    # game.kill_list.append(sprite)
+    if isinstance(sprite, Resource):
+        r = sprite.resourceType
+        partner.resources[r] = max(-1, min(partner.resources[r]+sprite.value, game.resources_limits[r]))
+    else:
+        r = partner.resources.keys()[0]
+        value=1
+        partner.resources[r] = max(-1, min(partner.resources[r]+value, game.resources_limits[r]))
+
     killSprite(sprite, partner, game)
     args = {'resource':sprite.name, 'value':value, 'limit':game.resources_limits[sprite.name]}
     #print 'Collected ', colorDict[str(sprite.color)]#partner.resources[r]
