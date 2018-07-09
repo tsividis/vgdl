@@ -73,9 +73,10 @@ def observe(rle, obsSteps, bestSpriteTypeDict):
 			# print rle.show()
 			# t1 = time.time()
 			spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
+			# print "step 1 took {} seconds".format(time.time()-t1)
+			# t1 = time.time()
 			spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
-			# print "steps 1 and 2 took {} seconds".format(time.time()-t1)
-
+			# print "step 2 took {} seconds".format(time.time()-t1)
 			rle.step((0,0))
 
 			rle._game.nextPositions = {}
