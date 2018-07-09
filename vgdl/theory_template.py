@@ -1048,12 +1048,16 @@ class Theory(object):
 
 			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'nothing', 'collectResource']:
 				if rule.generic and rule.preconditions:
-					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, copy.deepcopy(rule.preconditions))
-					if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
-							for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
-						all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
-						all([not terminationRule.__eq__(t) for t in self.falsified])):
-						self.terminationSet.append(terminationRule)
+					if (    (rule.asTuple()[0]!='nothing' and not (rule.slot1==thingWeShoot and rule.slot2=='avatar')) or 
+							( rule.interaction == 'nothing' and not (rule.slot1==thingWeShoot and rule.slot2==thingWeShoot) and not ('Random' in str(self.classes[rule.slot1][0].vgdlType)) and rule.slot2 not in ['avatar', thingWeShoot]) or
+							( rule.interaction == 'nothing' and not (rule.slot2==thingWeShoot and rule.slot1==thingWeShoot) and not ('Random' in str(self.classes[rule.slot2][0].vgdlType)) and rule.slot1 not in ['avatar', thingWeShoot])
+							):
+						terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, copy.deepcopy(rule.preconditions))
+						if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
+								for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
+							all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
+							all([not terminationRule.__eq__(t) for t in self.falsified])):
+							self.terminationSet.append(terminationRule)
 				elif rule.generic and not rule.preconditions:
 					## Omit noveltytermination for randoms bumping into objects in the game; makes us disrupt plans even though we shouldnt't.
 					# if ('Random' not in str(self.classes[rule.slot1][0].vgdlType)) and ('Random' not in str(self.classes[rule.slot2][0].vgdlType)) 
@@ -2333,8 +2337,9 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 						argsString += " %s=%s"%(k, v)
 
 			else:
-				print "buildArgsString got called but no precondition"
-				embed()
+				# print "buildArgsString got called but no precondition"
+				argsString = ""
+				# embed()
 
 		return argsString, newInteractionName
 

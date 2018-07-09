@@ -55,10 +55,10 @@ class Agent:
             self.starting_max_nodes = 10000
             self.max_nodes_annealing = 10.
         self.conservative = False
-        self.regrounding = 1
+        self.regrounding = 6
         self.selective_regrounding = True
         self.avoid_danger = True
-        self.safeDistance = 3
+        self.safeDistance = 6
         self.emptyPlansLimit = 5
         self.longHorizonObservationLimit = 2
         self.hypotheses = []
@@ -705,6 +705,7 @@ class Agent:
                             # print "random distances", min(possiblePairList)
                             if min(possiblePairList) < self.safeDistance:
                                 print("Close to RandomNPC, regrounding")
+                                embed()
                                 break
 
                         except ValueError:

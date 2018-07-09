@@ -2097,7 +2097,7 @@ def distributionInitSetup(game, sprite):
     objectColors = set()
     for k in game.sprite_constr.keys():
         try:
-            if game.sprite_constr[k][1]['color'] not in ['BLACK', 'DARKGRAY']:
+            if game.sprite_constr[k][1]['color'] not in ['BLACK', 'DARKGRAY', 'MPUYEI']:
                 objectColors.add(colorDict[str(game.sprite_constr[k][1]['color'])])
         except KeyError:
             continue
