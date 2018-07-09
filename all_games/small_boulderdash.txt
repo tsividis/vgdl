@@ -4,7 +4,7 @@ BasicGame
 		dirt > Immovable color=MPUYEI
 		sword > Flicker color=PINK limit=5 singleton=True
 		exitdoor > Immovable color=GREEN
-		diamond > Resource color=YELLOW limit=10
+		diamond > Resource color=YELLOW limit=4
 		avatar  > ShootAvatar   stype=sword frameRate=8 color=DARKBLUE
 		crab > RandomNPC cooldown=5 color=GOLD
 		butterfly > RandomNPC cooldown=5 color=RED
@@ -34,6 +34,7 @@ BasicGame
 		butterfly boulder > stepBack
 
 		avatar boulder > killIfFromAbove
+		avatar boulder > changeScore value=-1
 
 		avatar butterfly > killSprite
 		avatar butterfly > changeScore value=-1
@@ -54,7 +55,7 @@ BasicGame
 		crab butterfly > killSprite
 		butterfly crab > transformTo stype=diamond scoreChange=1
 		#butterfly crab > changeScore value=1
-		exitdoor avatar > killIfOtherHasMore resource=diamond limit=9 
+		exitdoor avatar > killIfOtherHasMore resource=diamond limit=4 
 		exitdoor avatar > nothing
 
 		sword crab > nothing
