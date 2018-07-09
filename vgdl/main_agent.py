@@ -504,6 +504,7 @@ class Agent:
 
             p_quitting = p.quitting
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
+            print "planning with safeDistance={}, regrounding={}".format(self.safeDistance, self.regrounding)
             self.total_planner_steps += p.total_nodes
 
             if bestNode is not None:
