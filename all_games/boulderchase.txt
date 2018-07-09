@@ -2,7 +2,7 @@ BasicGame
 	SpriteSet
 		wall > Immovable color=DARKGRAY 
 		sword > Flicker color=YELLOW limit=1 singleton=True 
-		dirt > Immovable color=BROWN 
+		dirt > Immovable color= MPUYEI 
 		exitdoor > Immovable color=GREEN 
 		diamond > Resource color=GOLD limit=10
 		boulder > Missile orientation=DOWN color=PURPLE speed=0.2
