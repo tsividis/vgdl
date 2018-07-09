@@ -567,10 +567,16 @@ class Theory(object):
 		# ruleSetToUpdate += [rule for rule in self.fakeInteractionRules if (rule.slot1, rule.slot2) not in imaginedEffectTuples]
 		# embed()
 		## WARNING: hard-coding avatar color here.
-		if self.spriteObjects['DARKBLUE'].args and 'stype' in self.classes['DARKBLUE'].args:
-			thingWeShoot = self.classes['DARKBLUE'].args['stype']
+		if 'avatar' in self.classes:
+			if self.classes['avatar'][0].args and 'stype' in self.classes['avatar'][0].args:
+				thingWeShoot = self.classes['avatar'][0].args['stype']
+			else:
+				thingWeShoot = None			
 		else:
-			thingWeShoot = None
+			if self.spriteObjects['DARKBLUE'].args and 'stype' in self.spriteObjects['DARKBLUE'].args:
+				thingWeShoot = self.spriteObjects['DARKBLUE'].args['stype']
+			else:
+				thingWeShoot = None
 
 		for rule in ruleSetToUpdate:
 			if rule.asTuple()[0] in ['stepBack', 'killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore', 'transformTo', 'nothing']:
