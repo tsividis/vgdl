@@ -1331,6 +1331,8 @@ class Node():
 
 		# heuristicVal += sum(self.rolloutArray)
 
+		heuristicVal += self.rle._game.score*abs(heuristicVal)
+		
 		return heuristicVal
 
 	def position_score(self, factor=1.):
