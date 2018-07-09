@@ -1040,10 +1040,17 @@ class Theory(object):
 						for color in color_combination]
 					self.multi_falsified.append(MultiSpriteCounterRule(stypes=class_combination))
 
-		if self.classes['avatar'][0].args and 'stype' in self.classes['avatar'][0].args:
-			thingWeShoot = self.classes['avatar'][0].args['stype']
+		if 'avatar' in self.classes:
+			if self.classes['avatar'][0].args and 'stype' in self.classes['avatar'][0].args:
+				thingWeShoot = self.classes['avatar'][0].args['stype']
+			else:
+				thingWeShoot = None			
 		else:
-			thingWeShoot = None
+			if self.spriteObjects['DARKBLUE'].args and 'stype' in self.spriteObjects['DARKBLUE'].args:
+				thingWeShoot = self.spriteObjects['DARKBLUE'].args['stype']
+			else:
+				thingWeShoot = None
+			
 		for rule in self.interactionSet:
 
 			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'nothing', 'collectResource']:
