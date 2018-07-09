@@ -18,6 +18,7 @@ from IPython import embed
 import core
 import copy
 import ipdb
+import time
 # from line_profiler import LineProfiler
 
 UP = (0, -1)
@@ -1565,7 +1566,10 @@ def killIfAlive(sprite, partner, game):
 
 def collectResource(sprite, partner, game, resource=None, value=1, limit=None): # FLAG
     """ Adds/increments the resource type of sprite in partner """
-    assert isinstance(sprite, Resource)
+    # assert isinstance(sprite, Resource)
+    if not isinstance(sprite, Resource):
+        print "problem in collectResource"
+        embed()
     r = sprite.resourceType
     partner.resources[r] = max(-1, min(partner.resources[r]+sprite.value, game.resources_limits[r]))
     # game.kill_list.append(sprite)
@@ -2322,7 +2326,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
     best_params = {}
     for obj_type in types:
         
-        if obj_type == 'DARKGRAY':
+        if obj_type in ['DARKGRAY', 'MPUYEI']:
             s = Sprite(vgdlType=ResourcePack, color=obj_type)
             sample.append(s)
             continue
@@ -2373,8 +2377,14 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             except ZeroDivisionError:
                 pass
 
+        null_hypothesis = [k for k in param_product.keys() if 'Resource' in str(k[0][1])][0]
         best_param = max(param_product, key=param_product.get)
-        best_params[obj_type] = best_param
+        if best_param!=null_hypothesis and (param_product[best_param]/param_product[null_hypothesis] > 2.):
+            best_params[obj_type] = best_param
+        else:
+            best_params[obj_type] = null_hypothesis
+        # if obj_type=='GOLD':
+            # embed()
 
         ## Use for debugging sprite-type inference.
         # if obj_type=='GOLD':
@@ -2519,7 +2529,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
     ## Prep for sprite induction
         objects = game.getObjects()
         for sprite in objects:
-            if objects[sprite]['sprite'].colorName != 'DARKGRAY':
+            if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI']:
                 distributionInitSetup(game, sprite)
     elif step==1:
         ## Sprite Induction Part 1:
@@ -2530,29 +2540,33 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
         # print "step1"
         # print objects.keys()
         for sprite in objects:
-            if objects[sprite]['sprite'].colorName != 'DARKGRAY' and sprite not in game.spriteDistribution:
+            if objects[sprite]['sprite'].colorName not in  ['DARKGRAY', 'MPUYEI'] and sprite not in game.spriteDistribution:
                 game.all_objects[sprite] = objects[sprite]
                 distributionInitSetup(game, sprite)
 
     elif step == 2:
         ## See the update options for each sprite type the sprite could be
         objects = game.getObjects()
-        notUpdated = [s for s in objects.keys() if objects[s]['sprite'].colorName!='DARKGRAY' and s not in game.spriteDistribution.keys()]
-        if notUpdated:
-            print "step 2: not in sprite distribution:", notUpdated
-            embed()
+        notUpdated = [s for s in objects.keys() if objects[s]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI'] and s not in game.spriteDistribution.keys()]
+        # if notUpdated:
+            # print "step 2: not in sprite distribution:", notUpdated
+            # embed()
 
         game = game                                               # Save game state
+        sprite_count, param_count=0, 0
         for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:                  # Keys are the IDs of the game objects
+            sprite_count +=1
             for param_combination in game.spriteDistribution[sprite].keys(): # Check each potential sprite type
                 if game.spriteDistribution[sprite][param_combination]> 0:    # Make sure sprite_type is an option for sprite, and sprite is not killed
+                    param_count +=1
                     sprite_obj = objects[sprite]["sprite"]
 
                     sprite_type = param_combination[0]
                     attributeDict = {k:v for k,v in param_combination[1:]}
 
                     # Get potential next positions for sprite if it were that sprite type
-                    if sprite_obj.name != 'avatar':
+                    if (sprite_obj.lastmove==0 or (sprite_obj.lastrect != sprite_obj.rect)) and sprite_obj.name != 'avatar':
+                    # if sprite_obj.name!='avatar':
                         ##we are sprite_obj, and we are updating the options for where it could be next contingent on its being 'sprite_type'
                         # given a set of potential attribute values, update the movement options
                         # for this attribute tuple (i.e. candidate set of parameters)
@@ -2562,30 +2576,33 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                         ## objects
                         game.object_token_movement_options[sprite][param_combination], game.movement_options[sprite][param_combination] = \
                         updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
-
+        # print "step 2 updated {} sprites and {} param combinations".format(sprite_count, param_count)
 
     elif step==3:
         ## Update sprite distribution based on observations
         objects = game.getObjects()
-        notUpdated = [s for s in objects.keys() if objects[s]['sprite'].colorName!='DARKGRAY' and s not in game.spriteDistribution.keys()]
+        notUpdated = [s for s in objects.keys() if objects[s]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI'] and s not in game.spriteDistribution.keys()]
 
-        # distributionAtT1 = copy.deepcopy(game.spriteDistribution)
-
+        # sprite_count, calls_to_update_distribution=0, 0
+        t1 = time.time()
         for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:        # Keys are the IDs of the game objects
             sprite_obj = objects[sprite]["sprite"]
+            # sprite_count +=1
 
             if all([sprite not in e for e in game.effectList if e[0]!='nothing']) and sprite not in game.ignoreList and sprite_obj.name != 'avatar':
                 # only update the distribution in this fashion if there are no events for this
                 # time step involving this sprite.
-
+                # calls_to_update_distribution +=1
                 outcome = objects[sprite]["position"]
+                # if sprite_obj.lastmove>0:
+                    # embed()
                 game.spriteDistribution = updateDistribution(game, sprite, game.spriteDistribution, \
                                           game.movement_options, outcome, missileOrientationClustering=True)
                 game.object_token_spriteDistribution = updateDistribution(game, sprite, game.object_token_spriteDistribution, \
                                           game.object_token_movement_options, outcome)
 
                 game.spriteUpdateDict[sprite] += 1
-
+        # print "step 3 updated {} sprites and {} param combinations, took {} seconds.".format(sprite_count, calls_to_update_distribution, t1-time.time())
         ## Update the global memory
         for k in game.spriteDistribution.keys():
             try:
@@ -2595,8 +2612,9 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                 embed()
             bestSpriteTypeDict[color][k] = game.spriteDistribution[k]
 
+        # t1 = time.time()
         sample, exceptions, distributionsHaveChanged, _ = sampleFromDistribution(game, game.spriteDistribution, game.all_objects, game.spriteUpdateDict, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
-
+        # print "sampleFromDistribution took {} seconds".format(t1-time.time())
     ## Reset ignoreList so that next time around you do inference.
     game.ignoreList = []
     return distributionsHaveChanged
