@@ -10,8 +10,13 @@
 #                  'waves']                               	 #26-27
 
 
+
+game_names = ['boulderdash']
+
+
+
 ## idx 2:
-game_names = ['expt_push_boulders', 'zelda', 'frogs', 'overload'] #boulderdash, boulderchase
+# game_names = ['expt_push_boulders', 'zelda', 'frogs', 'overload'] #boulderdash, boulderchase
 
 ## idx 2, more memory:
 # game_names = ['sokoban', 'bait', 'watergame']
