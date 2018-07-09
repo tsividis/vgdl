@@ -2380,7 +2380,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
 
         null_hypothesis = [k for k in param_product.keys() if 'Resource' in str(k[0][1])][0]
         best_param = max(param_product, key=param_product.get)
-        if best_param!=null_hypothesis and (param_product[best_param]/param_product[null_hypothesis] > 2.):
+        if best_param!=null_hypothesis param_product[null_hypothesis]!=0 and (param_product[best_param]/param_product[null_hypothesis] > 2.):
             best_params[obj_type] = best_param
         else:
             best_params[obj_type] = null_hypothesis
