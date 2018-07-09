@@ -11,7 +11,7 @@
 
 
 
-game_names = ['boulderdash']
+game_names = ['butterflies', 'jaws', 'myAliens']
 
 
 
