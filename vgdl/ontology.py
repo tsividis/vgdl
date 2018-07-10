@@ -19,7 +19,7 @@ import core
 import copy
 import ipdb
 import time
-# from line_profiler import LineProfiler
+from line_profiler import LineProfiler
 
 UP = (0, -1)
 DOWN = (0, 1)
@@ -131,8 +131,12 @@ class GridPhysics():
     # No, seriously... I don't want to break anything
     def distance(self, r1, r2):
         """Euclidean distances. """
-        return sqrt((r1.top - r2.top) ** 2
-                    + (r1.left - r2.left) ** 2)
+        if hasattr(r1, 'top'):
+            return sqrt((r1.top - r2.top) ** 2
+                        + (r1.left - r2.left) ** 2)
+        else:
+            return sqrt((r1[1]-r2[1])**2
+                        + (r1[0]-r2[0])**2)
 
     # def distance(self, r1, r2):
     #     """ Grid physics use Hamming distances. """
@@ -1774,10 +1778,18 @@ def chaserMovesToward(sprite, game, target, fleeing):
     the target. """
     res = []
     basedist = sprite.physics.distance(sprite.rect, target.rect)
+    # embed()
+
     for a in BASEDIRS:
         r = sprite.rect.copy()
         r = r.move(a)
         newdist = sprite.physics.distance(r, target.rect)
+
+        # targetloc = (target.rect.left, target.rect.top)
+        # newloc = (sprite.rect.left+a[0], sprite.rect.top+a[1])
+        # newdist = sprite.physics.distance(newloc, targetloc)
+
+
         if fleeing and basedist < newdist:
             res.append(a)
         if not fleeing and basedist > newdist:
@@ -1801,14 +1813,14 @@ def setSpriteParams(param, sprite):
         elif p == "cooldown":
             sprite.cooldown = param[p]
 
-"""
+
 def updateOptionsProfiler(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False):
     lp = LineProfiler()
     lp_wrapper = lp(updateOptions)
     d1, d2 = lp_wrapper(game, sprite_type_tuple, current_sprite, params, missileOrientationClustering)
     lp.print_stats()
     return d1, d2
-"""
+
 
 def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False):
     """
@@ -1916,8 +1928,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
 
     # Random NPC
     elif sprite_type == RandomNPC:
-
-
 
         realCooldown = int(current_sprite.cooldown)
         speed, cooldown = getSpeed(params), getCooldown(params)
@@ -2048,9 +2058,8 @@ def initializeDistributionArgs(sprite_type, objectColors):
     """
 
     def initializeSpeed():
-        speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
-        # 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1]
-
+        # speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+        speedValues = [0.2, 0.4, 1.]
         return [('speed', v) for v in speedValues]
         # initializeProperty(args, 'speed', speedValues)
 
@@ -2072,7 +2081,8 @@ def initializeDistributionArgs(sprite_type, objectColors):
         # initializeProperty(args, 'stype', stypeValues)
 
     def initializeCooldown():
-        stypeValues = [1, 2, 3, 4, 5, 6]
+        # stypeValues = [1, 2, 3, 4, 5, 6]
+        stypeValues = [1,5]
         return [('cooldown', v) for v in stypeValues]
         # initializeProperty(args, 'cooldown', stypeValues)
 
@@ -2588,7 +2598,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                         ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving
                         ## objects
                         game.object_token_movement_options[sprite][param_combination], game.movement_options[sprite][param_combination] = \
-                        updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
+                        updateOptionsProfiler(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
                 # if sprite_obj.colorName=='RED':
                 #     randKey = [k for k in game.object_token_movement_options[sprite].keys() if 'Random' in str(k[0][1]) and k[1][1]==1 and k[2][1]==1][0]
                 #     print game.object_token_movement_options[sprite][randKey]
