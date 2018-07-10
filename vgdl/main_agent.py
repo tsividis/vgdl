@@ -349,6 +349,8 @@ class Agent:
                 episode_results = (n_level, steps, win, score, self.total_planner_steps)
                 episodes.append(episode_results)
 
+
+                # MARK, DONT ASSUME MAX_RANDOM_STEPS set to 0 if do_random_moves = False
                 if self.total_game_steps >= self.max_random_steps:
                     # write progressively to file
                     output = {'modelType':self.modelType,
@@ -643,9 +645,6 @@ class Agent:
                     f.close()
                     self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps)
                     # break
-
-                ## MARK, EXPLORATION
-                ended, win = self.rle._isDone()
             
             ###########################################
             ##### IF self.do_random_moves = False #######
@@ -766,8 +765,6 @@ class Agent:
 
                         ## MARK, EXPLORATION
         
-
-
                         if theory_change_flag:
                             self.hypotheses = hypotheses
                             print 'theory changed'
@@ -784,7 +781,6 @@ class Agent:
                             #self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps)
                             break
 
-                        # MARK, QUESTIONABLE
                         ended, win = self.rle._isDone()
                         if ended:
                             break
