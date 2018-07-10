@@ -19,7 +19,7 @@ import core
 import copy
 import ipdb
 import time
-from line_profiler import LineProfiler
+# from line_profiler import LineProfiler
 
 UP = (0, -1)
 DOWN = (0, 1)
@@ -1814,12 +1814,12 @@ def setSpriteParams(param, sprite):
             sprite.cooldown = param[p]
 
 
-def updateOptionsProfiler(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False):
-    lp = LineProfiler()
-    lp_wrapper = lp(updateOptions)
-    d1, d2 = lp_wrapper(game, sprite_type_tuple, current_sprite, params, missileOrientationClustering)
-    lp.print_stats()
-    return d1, d2
+# def updateOptionsProfiler(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False):
+#     lp = LineProfiler()
+#     lp_wrapper = lp(updateOptions)
+#     d1, d2 = lp_wrapper(game, sprite_type_tuple, current_sprite, params, missileOrientationClustering)
+#     lp.print_stats()
+#     return d1, d2
 
 
 def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False):
@@ -2598,7 +2598,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                         ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving
                         ## objects
                         game.object_token_movement_options[sprite][param_combination], game.movement_options[sprite][param_combination] = \
-                        updateOptionsProfiler(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
+                        updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
                 # if sprite_obj.colorName=='RED':
                 #     randKey = [k for k in game.object_token_movement_options[sprite].keys() if 'Random' in str(k[0][1]) and k[1][1]==1 and k[2][1]==1][0]
                 #     print game.object_token_movement_options[sprite][randKey]
