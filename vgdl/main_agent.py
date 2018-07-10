@@ -95,8 +95,8 @@ class Agent:
         self.pickle_file = None
 
         # MARK, EXPLORATION
-        self.doRandomMoves = False
-        self.maxRandomSteps = 0
+        self.do_random_moves = True
+        self.max_random_steps = 5
 
     def initializeEnvironment(self):
         if self.gameString==None or self.levelString==None:
@@ -349,12 +349,13 @@ class Agent:
                 episode_results = (n_level, steps, win, score, self.total_planner_steps)
                 episodes.append(episode_results)
 
-                # write progressively to file
-                output = {'modelType':self.modelType,
+                if self.total_game_steps >= self.max_random_steps:
+                    # write progressively to file
+                    output = {'modelType':self.modelType,
                             'gameName': self.gameFilename,
                             'condition': 'normal',
                             'episodes' : [episode_results]}
-                write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+'.csv', output)
+                    write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+'.csv', output)
 
                 allStatesEncountered.extend(statesEncountered)
                 levelEffectsEncountered.append(effectsEncountered)
@@ -574,7 +575,6 @@ class Agent:
             # if self.total_game_steps in whereToSave:
                 # self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps)
 
-
             if self.total_game_steps > MAX_STEPS:
                 embed()
                 return gameObject, win, score, steps, statesEncountered, effectsEncountered
@@ -583,10 +583,15 @@ class Agent:
 
             quitting = False
 
+            ## MARK, EXPLORATION
+            print "Random mode True/False:",self.do_random_moves
+            print "Still in Random Phase",self.total_game_steps < self.max_random_steps
+
+
             ##############################
             ##### IF MOVING RANDOMLY #####
             ##############################
-            if self.doRandomMoves and steps < self.maxRandomSteps:
+            if self.do_random_moves and self.total_game_steps < self.max_random_steps:
 
                 # do random moves
                 action = np.random.choice(legalActions)
@@ -624,7 +629,7 @@ class Agent:
                 ########### UPDATE CURRENT HYPOTHESIS #########
                 ###############################################
                 steps +=1
-                print '{} steps'.format(self.total_game_steps)
+                print "{} steps this episode".format(steps)
                 if theory_change_flag:
                     self.hypotheses = hypotheses
                     print 'theory changed'
@@ -638,15 +643,23 @@ class Agent:
                     f.close()
                     self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps)
                     # break
+
+                ## MARK, EXPLORATION
                 ended, win = self.rle._isDone()
             
             ###########################################
-            ##### IF self.doRandomMoves = False #######
-            ##### OR IF self.doRandomMoves = True #####
-            ##### BUT steps >= self.maxRandomSteps ####
+            ##### IF self.do_random_moves = False #######
+            ##### OR IF self.do_random_moves = True #####
+            ##### BUT self.total_game_steps >= self.max_random_steps ####
             ###########################################
             else:
 
+                #embed()
+
+                ## MARK, EXPLORATION
+                filter_novelty = False
+                if self.do_random_moves:
+                    filter_novelty = True
 
                 ################################################
                 ####### A BUNCH OF PLANNING STUFF TO IGNORE ####
@@ -654,9 +667,11 @@ class Agent:
                 planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
 
                 ## Initialize planner
+                ## MARK, EXPLORATION
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                    firstOrderHorizon=self.firstOrderHorizon, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
+                    firstOrderHorizon=self.firstOrderHorizon, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom,
+                    filter_novelty=filter_novelty)
             
                 # embed()
 
@@ -742,15 +757,34 @@ class Agent:
 
                         effectsEncountered.extend(effects)
                         steps +=1
+                        print "{} steps this episode".format(steps)
                         
                         
                         ###############################################
                         ########### UPDATE CURRENT HYPOTHESIS #########
                         ###############################################
 
+                        ## MARK, EXPLORATION
+        
+
+
                         if theory_change_flag:
                             self.hypotheses = hypotheses
+                            print 'theory changed'
+                            #hypotheses[0].display()
+                            #print 'theory changed'
+                            #hypotheses[0].display()
+                            #f = open('theoryChanges.txt', 'a')
+                            #f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps))
+                            #oldout = sys.stdout
+                            #sys.stdout = f
+                            #hypotheses[0].display()
+                            #sys.stdout = oldout
+                            #f.close()
+                            #self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps)
                             break
+
+                        # MARK, QUESTIONABLE
                         ended, win = self.rle._isDone()
                         if ended:
                             break

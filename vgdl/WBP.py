@@ -41,7 +41,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
-		firstOrderHorizon=False, hyperparameters={}, extra_atom=False):
+		firstOrderHorizon=False, hyperparameters={}, extra_atom=False,filter_novelty=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.hyperparameters = hyperparameters
@@ -75,6 +75,7 @@ class WBP():
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 		self.display = True
+		self.filter_novelty = filter_novelty
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -84,9 +85,15 @@ class WBP():
 			self.theory.updateTerminations()
 
 
-        ##### MARK ANY FUTURE PLANNING (LIKE WHEN BFS IS CALLED) DEPENDS ON
-        ##### self.theory()'s CURRENT STATE
-        
+		##### MARK, EXPLORATION
+		##### ANY FUTURE PLANNING (LIKE WHEN BFS IS CALLED) DEPENDS ON
+		##### THEORY'S CURRENT STATE
+		if self.filter_novelty:
+			def is_not_novelty_rule(rule):
+				return not isinstance(rule,NoveltyRule)
+			self.theory.terminationSet = filter(is_not_novelty_rule,self.theory.terminationSet)
+
+		#embed()
 
 
 		if self.display:
@@ -403,7 +410,7 @@ class WBP():
 						# if not ended:
 						foundWin = False
 						for term in self.theory.terminationSet:
-                            # Mark, noveltyTerminations should not be found here.
+							## MARK EXPLORATION, noveltyRules should not be found here.
 
 							if isinstance(term, SpriteCounterRule) and term.termination.win==True:
 								stype = term.termination.stype
@@ -1248,11 +1255,11 @@ class Node():
 			return 0
 
 	def empty_copy(self, obj):
-	    class Empty(obj.__class__):
-	        def __init__(self): pass
-	    newcopy = Empty()
-	    newcopy.__class__ = obj.__class__
-	    return newcopy
+		class Empty(obj.__class__):
+			def __init__(self): pass
+		newcopy = Empty()
+		newcopy.__class__ = obj.__class__
+		return newcopy
 
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
