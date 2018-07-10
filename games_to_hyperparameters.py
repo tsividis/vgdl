@@ -11,8 +11,8 @@
 
 
 
-game_names = ['butterflies', 'jaws', 'myAliens']
-
+# game_names = ['butterflies', 'jaws', 'myAliens']
+game_names = ['boulderdash']
 
 ## idx 2:
 # game_names = ['expt_push_boulders', 'zelda', 'frogs', 'overload'] #boulderdash, boulderchase
