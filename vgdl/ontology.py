@@ -1237,8 +1237,8 @@ class NoveltyTermination(Termination):
                         # print "id_not_found"
                         # embed()
                         # pass
-                    # print("NoveltyTermination with {} and {}".format(
-                        # name1, name2))
+                    print("NoveltyTermination with {} and {}".format(
+                        name1, name2))
                     # if name1=='c7' and name2=='avatar':
                     #     ipdb.set_trace()
                     # print("Classes are {} and {}".format(class1, class2))
@@ -1283,8 +1283,8 @@ class NoveltyTermination(Termination):
                         print "id_not_found"
                         embed()
                         pass
-                    # print("NoveltyTermination with {} and {}".format(
-                        # name1, name2))
+                    print("NoveltyTermination with {} and {}".format(
+                        name1, name2))
                     # if name1=='c7' and name2=='avatar':
                     #     ipdb.set_trace()
                     return True, self.win
@@ -2380,22 +2380,31 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
 
         null_hypothesis = [k for k in param_product.keys() if 'Resource' in str(k[0][1])][0]
         best_param = max(param_product, key=param_product.get)
-        if best_param!=null_hypothesis and param_product[null_hypothesis]!=0 and (param_product[best_param]/param_product[null_hypothesis] > 2.):
-            best_params[obj_type] = best_param
+        if param_product[null_hypothesis]==0 and param_product[best_param]==0:
+            best_param = null_hypothesis
+            # print "setting {} to null: {}".format(obj_type, null_hypothesis)
         else:
-            best_params[obj_type] = null_hypothesis
+            if best_param!=null_hypothesis and param_product[null_hypothesis]!=0 and (param_product[best_param]/param_product[null_hypothesis] > 2.):
+                # print best_param, param_product[best_param]
+                best_param = best_param
+            else:
+                # if obj_type=='RED':
+                    # embed()
+                    # print best_param, param_product[best_param], null_hypothesis, param_product[null_hypothesis]
+                # print "setting {} to null, case 2: {}".format(obj_type, null_hypothesis)
+                best_param = null_hypothesis
         # if obj_type=='GOLD':
             # embed()
 
         ## Use for debugging sprite-type inference.
-        # if obj_type=='GOLD':
-        #     goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='GOLD']
-        #     print [g.rect for g in goldobjs[0]]
-        #     for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
-        #         print(k, param_product[k])
-        #         if i>10:
-        #             break
-        #     print ""
+        if obj_type=='RED':
+            goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='RED']
+            print [g.rect for g in goldobjs[0]]
+            for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
+                print(k, param_product[k])
+                if i>10:
+                    break
+            print ""
 
         sprite_type = best_param[0][1]
 
@@ -2557,17 +2566,20 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
         sprite_count, param_count=0, 0
         for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:                  # Keys are the IDs of the game objects
             sprite_count +=1
-            for param_combination in game.spriteDistribution[sprite].keys(): # Check each potential sprite type
-                if game.spriteDistribution[sprite][param_combination]> 0:    # Make sure sprite_type is an option for sprite, and sprite is not killed
-                    param_count +=1
-                    sprite_obj = objects[sprite]["sprite"]
+            sprite_obj = objects[sprite]["sprite"]
 
-                    sprite_type = param_combination[0]
-                    attributeDict = {k:v for k,v in param_combination[1:]}
+            if sprite_obj.name !='avatar':
+                # print "Updating {} because it moved. Lastrect:{}, rect: {}".format(sprite_obj.colorName, sprite_obj.lastrect, sprite_obj.rect)
+                for param_combination in game.spriteDistribution[sprite].keys(): # Check each potential sprite type
+                    if game.spriteDistribution[sprite][param_combination]> 0:    # Make sure sprite_type is an option for sprite, and sprite is not killed
+                        param_count +=1
+                        # sprite_obj = objects[sprite]["sprite"]
 
-                    # Get potential next positions for sprite if it were that sprite type
-                    if (sprite_obj.lastmove==0 or (sprite_obj.lastrect != sprite_obj.rect)) and sprite_obj.name != 'avatar':
-                    # if sprite_obj.name!='avatar':
+                        sprite_type = param_combination[0]
+                        attributeDict = {k:v for k,v in param_combination[1:]}
+
+                        # Get potential next positions for sprite if it were that sprite type
+                        # if sprite_obj.name!='avatar':
                         ##we are sprite_obj, and we are updating the options for where it could be next contingent on its being 'sprite_type'
                         # given a set of potential attribute values, update the movement options
                         # for this attribute tuple (i.e. candidate set of parameters)
@@ -2577,6 +2589,10 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                         ## objects
                         game.object_token_movement_options[sprite][param_combination], game.movement_options[sprite][param_combination] = \
                         updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
+                # if sprite_obj.colorName=='RED':
+                #     randKey = [k for k in game.object_token_movement_options[sprite].keys() if 'Random' in str(k[0][1]) and k[1][1]==1 and k[2][1]==1][0]
+                #     print game.object_token_movement_options[sprite][randKey]
+                #     embed()
         # print "step 2 updated {} sprites and {} param combinations".format(sprite_count, param_count)
 
     elif step==3:

@@ -1,5 +1,5 @@
-wwwwwwwwwwwwwwwwwwwwwwwwww
-w------x..A.ooxxo-x.oow--w
-wc--.....x.......-....w--w
-w---..e.--------.b-------w
-wwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwwwww
+w------x..A.ooxxo-x.oow----w
+wc--.....x.......-....w--b-w
+w---..e.--------.-----w----w
+wwwwwwwwwwwwwwwwwwwwwwwwwwww

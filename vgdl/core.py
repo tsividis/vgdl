@@ -1076,6 +1076,7 @@ class BasicGame(object):
 
                         self.win = True
                         print time.time()-t1, len(self.actions), win, self.score
+                        print "Termination", t.__dict__
                         print "Game won, with score %s" % self.score
                     else:
                         self.win = False
@@ -1274,7 +1275,7 @@ class VGDLSprite(object):
         self.rect = pygame.Rect(pos, size)
         self.x = pos[0]
         self.y = pos[1]
-        self.lastrect = self.rect
+        self.lastrect = self.rect.copy()
         self.physicstype = physicstype or self.physicstype or GridPhysics
         self.physics = self.physicstype()
         self.physics.gridsize = size
