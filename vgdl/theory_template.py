@@ -580,23 +580,29 @@ class Theory(object):
 
 				if addNoveltyRules and rule.generic and rule.preconditions:
 					# if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
-					terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, copy.deepcopy(rule.preconditions))
-					# print "got novelty termination with preconditions"
-					# embed()
-					if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
-							for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
-						all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
-						all([not terminationRule.__eq__(t) for t in self.falsified])):
-						self.terminationSet.add(terminationRule)
+					# if (    (rule.asTuple()[0]!='nothing' and not (rule.slot1==thingWeShoot and rule.slot2=='avatar')) or 
+					# 		( rule.interaction == 'nothing' and not (rule.slot1==thingWeShoot and rule.slot2==thingWeShoot) and not ('Random' in str(self.classes[rule.slot1][0].vgdlType)) and rule.slot2 not in ['avatar', thingWeShoot]) or
+					# 		( rule.interaction == 'nothing' and not (rule.slot2==thingWeShoot and rule.slot1==thingWeShoot) and not ('Random' in str(self.classes[rule.slot2][0].vgdlType)) and rule.slot1 not in ['avatar', thingWeShoot])
+					# 		):
+					if self.doWeMakeANoveltyRule(rule, thingWeShoot):
+						terminationRule = NoveltyRule(rule.slot1, rule.slot2, True, copy.deepcopy(rule.preconditions))
+						# print "got novelty termination with preconditions"
+						# embed()
+						if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
+								for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
+							all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
+							all([not terminationRule.__eq__(t) for t in self.falsified])):
+							self.terminationSet.add(terminationRule)
 				elif addNoveltyRules and rule.generic and not rule.preconditions:
 					if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
 						## Omit noveltytermination for randoms bumping into objects in the game; makes us disrupt plans even though we shouldnt't.
 					# if ((rule.slot1, rule.slot2) not in imaginedEffectTuples) or (rule.generic and random.random()<.2):
-						if (    (rule.asTuple()[0]!='nothing' and not (rule.slot1==thingWeShoot and rule.slot2=='avatar')) or 
-								( rule.interaction == 'nothing' and not (rule.slot1==thingWeShoot and rule.slot2==thingWeShoot) and not ('Random' in str(self.classes[rule.slot1][0].vgdlType)) and rule.slot2 not in ['avatar', thingWeShoot]) or
-								( rule.interaction == 'nothing' and not (rule.slot2==thingWeShoot and rule.slot1==thingWeShoot) and not ('Random' in str(self.classes[rule.slot2][0].vgdlType)) and rule.slot1 not in ['avatar', thingWeShoot])
-								):
+						# if (    (rule.asTuple()[0]!='nothing' and not (rule.slot1==thingWeShoot and rule.slot2=='avatar')) or 
+						# 		( rule.interaction == 'nothing' and not (rule.slot1==thingWeShoot and rule.slot2==thingWeShoot) and not ('Random' in str(self.classes[rule.slot1][0].vgdlType)) and rule.slot2 not in ['avatar', thingWeShoot]) or
+						# 		( rule.interaction == 'nothing' and not (rule.slot2==thingWeShoot and rule.slot1==thingWeShoot) and not ('Random' in str(self.classes[rule.slot2][0].vgdlType)) and rule.slot1 not in ['avatar', thingWeShoot])
+						# 		):
 						# if ('Random' not in str(self.classes[rule.slot1][0].vgdlType)) and ('Random' not in str(self.classes[rule.slot2][0].vgdlType)) or rule.asTuple()[0]!='nothing':
+						if self.doWeMakeANoveltyRule(rule, thingWeShoot):
 							terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
 							if ( all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
 									for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
@@ -649,6 +655,16 @@ class Theory(object):
 		self.terminationSet = sorted(self.terminationSet, key=lambda t:t.ruleType)
 
 		return self.terminationSet, self.falsified, self.multi_falsified
+
+	def doWeMakeANoveltyRule(self, rule, thingWeShoot):
+		if rule.asTuple()[0]!='nothing' and not (rule.slot1==thingWeShoot and rule.slot2=='avatar'):
+			return True
+		if rule.interaction == 'nothing':
+			if (rule.slot1==thingWeShoot and rule.slot2 not in [thingWeShoot, 'avatar']) or (rule.slot2==thingWeShoot and rule.slot1 not in [thingWeShoot, 'avatar']) :
+				return True
+			if any([k in str(self.classes[rule.slot1][0].vgdlType) for k in ['Resource', 'Immovable']]) and any([k in str(self.classes[rule.slot2][0].vgdlType) for k in ['Resource', 'Immovable']]):
+				return True
+		return False
 
 	def getClassFromColor(self, color):
 		for c in self.classes:
@@ -1557,8 +1573,9 @@ def buildArgsString(interactionRule, theory, rle):
 			argsString = " resource=%s limit=%s"%(precondition.item, str(limit))
 
 		else:
-			print "buildArgsString got called but no precondition"
-			embed()
+			argsString = ""
+			# print "buildArgsString got called but no precondition"
+			# embed()
 
 	return argsString, newInteractionName
 
