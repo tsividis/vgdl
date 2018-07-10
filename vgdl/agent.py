@@ -748,7 +748,8 @@ class Agent:
 			bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
 			self.assumeZeroErrorTheoryExists = prev
 			# print time.time()-t1
-			# embed()
+			print 'just got some new theories'
+			embed()
 
 			if len(bestScoresAndHypotheses) == 0:	
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
@@ -1228,6 +1229,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 				reportError = False
 			else:
 				total_penalty += np.log(e_dist)
+				# total_penalty += np.log(e_dist/t[2])
 
 		try:
 			if reportError:
@@ -1238,7 +1240,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			print "reportError problem"
 			embed()
 
-		if penalty_only and earlyStopping and 1.-np.exp(total_penalty) > 0.0001:
+		if penalty_only and earlyStopping and 1.-np.exp(total_penalty) > 0.001:
 			# print "CUT OFF"
 			return 1. , []
 
@@ -1432,11 +1434,12 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		e = errorMapEntry()
 		e.diagnosis.append('scoreChange')
 		avatar_color = theory.classes['avatar'][0].colorName
-		sA = envA._game.observation['trackedObjects'][avatar_color][0]
 		sB = envB._game.observation['trackedObjects'][avatar_color][0]
-		e.targetToken = sA
-		e.targetClass = sA.colorName
-		e.targetColor = sA.colorName
+		if envA._game.observation['trackedObjects'][avatar_color]:
+			sA = envA._game.observation['trackedObjects'][avatar_color][0]
+			e.targetToken = sA
+		e.targetClass = avatar_color
+		e.targetColor = avatar_color
 		sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
 		neighbors_prev = neighboringSpritesColors(envPrev, sPrev)
 		e.intPairs.extend([(e.targetClass, n) for n in neighbors_prev])
@@ -1830,7 +1833,7 @@ def singleTheoryExperienceReplay(
 	if not hypotheses[0]:
 		return [1.] , set()
 
-	cutoffThreshold = max(1, floor(errorCutoff * len(rleHistory)))+.0001 # aka n strikes, you're out
+	cutoffThreshold = max(1, floor(errorCutoff * len(rleHistory)))+.001 # aka n strikes, you're out
 	if assumeZeroErrorTheoryExists:
 		cutoffThreshold = .00001 # aka one strike you're out
 	subsamplePercentage = .2
@@ -1962,6 +1965,9 @@ def singleTheoryExperienceReplay(
 						if errorList.diagnosis in ['ungrammatical theory', 'prolific theory']:
 							print 'removing ungrammatical/prolific theory'
 							theoryRLEs[num] = None
+						else:
+							print 'bad output from errorSignal! ah!'
+							embed()
 					penalties.append(penalty)
 				except:
 					print "exception in experienceReplay"
@@ -2169,7 +2175,7 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 
 		newTheories = list(set(newTheories))
 		if sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
-			cutCorners = len(newTheories) > 750 and scoreAndTheoryTuples[0][0] < .000001
+			cutCorners = len(newTheories) > 750 and scoreAndTheoryTuples[0][0] < .00001
 			if cutCorners:
 				print '*warning* too many theories, cutting some corners'
 			penalties, _ = MultiEpisodeExperienceReplay(newTheories, rleHistories, \
@@ -2348,7 +2354,11 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 				newPair = tuple([p if p!='unknown' else e.targetClass for p in list(pair)])
 				newPairs.append(newPair)
 			e.intPairs = newPairs
-			e.targetClass = theory.spriteObjects[neighbor.colorName].className
+			try:
+				e.targetClass = theory.spriteObjects[neighbor.colorName].className
+			except:
+				print 'error in expandTheoryForOneErrorMap -- this is the one you are looking for'
+				embed()
 			newErrorMaps.append(e)
 
 	for eM in newErrorMaps:

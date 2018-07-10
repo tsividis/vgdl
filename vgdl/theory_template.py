@@ -567,10 +567,13 @@ class Theory(object):
 		# ruleSetToUpdate += [rule for rule in self.fakeInteractionRules if (rule.slot1, rule.slot2) not in imaginedEffectTuples]
 		# embed()
 		## WARNING: hard-coding avatar color here.
-		if self.spriteObjects['DARKBLUE'].args and 'stype' in self.classes['DARKBLUE'].args:
-			thingWeShoot = self.classes['DARKBLUE'].args['stype']
+		thingWeShoot = None
+		if 'avatar' in self.classes and self.classes['avatar'][0].args and 'stype' in self.classes['avatar'][0].args:
+			thingWeShoot = self.classes['avatar'][0].args['stype']
 		else:
-			thingWeShoot = None
+			if self.spriteObjects['DARKBLUE'].args and 'stype' in self.classes['DARKBLUE'].args:
+				print 'THIS SHOULD NEVER HAPPEN except at the beginning'
+				thingWeShoot = self.classes['DARKBLUE'].args['stype']
 
 		for rule in ruleSetToUpdate:
 			if rule.asTuple()[0] in ['stepBack', 'killSprite', 'killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore', 'transformTo', 'nothing']:
@@ -1137,7 +1140,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 	## Destruction/appearance/transformation
 	'objectDestruction': 		['killSprite', 'removeStepBack'], ## removeStepBack is a special predicate that causes us to remove the stepBack interaction for a particular class pair
 																  ## this allows us to make rules that are either killSprite+stepBack or just killSprite
-	'newObjectAppeared': 		[],	#'cloneSprite'
+	'newObjectAppeared': 		[],#'cloneSprite'],
 	'transformation': 			['transformTo'],
 	'conditionalKill': 			['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore'],
 								 # 'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
