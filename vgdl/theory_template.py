@@ -597,7 +597,7 @@ class Theory(object):
 							all([not terminationRule.__eq__(t) for t in self.falsified])):
 							self.terminationSet.add(terminationRule)
 				elif addNoveltyRules and rule.generic and not rule.preconditions:
-					if (rule.slot1, rule.slot2) not in imaginedEffectTuples:
+					if (rule.slot1, rule.slot2) not in imaginedEffectTuples or (rule.generic and random.random()<.2):
 						## Omit noveltytermination for randoms bumping into objects in the game; makes us disrupt plans even though we shouldnt't.
 					# if ((rule.slot1, rule.slot2) not in imaginedEffectTuples) or (rule.generic and random.random()<.2):
 						# if (    (rule.asTuple()[0]!='nothing' and not (rule.slot1==thingWeShoot and rule.slot2=='avatar')) or 
