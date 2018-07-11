@@ -1325,7 +1325,9 @@ class NoveltyTermination(Termination):
                 self.args = list(self.args)[0]
             elif type(self.args) == dict:
                 # embed()
-                pass    def isDone(self, game):
+                pass    
+
+    def isDone(self, game):
 
         ## self.args lets us do precondition-dependent terminations.
         if self.args:
