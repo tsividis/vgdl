@@ -4,7 +4,7 @@
 #                 'missilecommand', 'portals', 'sokoban', 'survivezombies',                   #9-12
 #                 'zelda',                                                                    #13
                     
-#                 'bait', 'boulderchase',                   #14-17
+#                 'avoidgeorge', 'bait', 'boulderchase',                   #14-17
 #                 'camelRace', 'chopper', 'jaws', 'lemmings', 'myAliens',		                     	 #18-21
 #                  'overload', 'plaqueattack','watergame',	    		 #22-25
 #                  'waves']                               	 #26-27
