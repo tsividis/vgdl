@@ -124,6 +124,7 @@ class Agent:
 		self.seen_resources = defaultdict(lambda : []) #key: a hypothesized avatar color. Value: list of colors of resources seen by that avatar.
 		self.seen_limits = defaultdict(lambda: [])
 		self.new_objects = {}
+		self.extra_atom = False
 		self.memory = []
 		self.rleHistory = []
 		self.actionHistory = []
@@ -406,7 +407,7 @@ class Agent:
 				## Initialize planner
 				p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=hypothesesToPlanWith[0], fakeInteractionRules = self.fakeInteractionRules,
 					seen_limits = self.seen_limits[avatarColor], annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-					firstOrderHorizon=self.firstOrderHorizon, hyperparameters=planner_hyperparameters)
+					firstOrderHorizon=self.firstOrderHorizon, conservative=False, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
 				
 				bestNode, gameStringArray, predictedEnvs = p.BFS()
 				# embed()
