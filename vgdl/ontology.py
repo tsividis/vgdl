@@ -1325,8 +1325,7 @@ class NoveltyTermination(Termination):
                 self.args = list(self.args)[0]
             elif type(self.args) == dict:
                 # embed()
-                pass
-    def isDone(self, game):
+                pass    def isDone(self, game):
 
         ## self.args lets us do precondition-dependent terminations.
         if self.args:
@@ -1354,7 +1353,7 @@ class NoveltyTermination(Termination):
 
             id_not_found = False
             class1, class2 = 'none', 'none'
-            if (e[0] in ['killSprite', 'transformTo', 'nothing', 'stepBack']) and len(e) > 2:
+            if (e[0] in ['killSprite', 'transformTo', 'nothing']) and len(e) > 2:
 
                 try:
                     name1 = game.getAllObjects()[e[1]].name
@@ -1450,8 +1449,8 @@ class NoveltyTermination(Termination):
                         # print "id_not_found"
                         # embed()
                         # pass
-                    # print("NoveltyTermination with {} and {}".format(
-                        # name1, name2))
+                    print("NoveltyTermination with {} and {}".format(
+                        name1, name2))
                     # if name1=='c7' and name2=='avatar':
                     #     ipdb.set_trace()
                     # print("Classes are {} and {}".format(class1, class2))
@@ -1496,8 +1495,8 @@ class NoveltyTermination(Termination):
                         print "id_not_found"
                         embed()
                         pass
-                    # print("NoveltyTermination with {} and {}".format(
-                        # name1, name2))
+                    print("NoveltyTermination with {} and {}".format(
+                        name1, name2))
                     # if name1=='c7' and name2=='avatar':
                     #     ipdb.set_trace()
                     return True, self.win
