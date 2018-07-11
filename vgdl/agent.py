@@ -407,10 +407,11 @@ class Agent:
 				## Initialize planner
 				p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=hypothesesToPlanWith[0], fakeInteractionRules = self.fakeInteractionRules,
 					seen_limits = self.seen_limits[avatarColor], annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-					firstOrderHorizon=self.firstOrderHorizon, conservative=False, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
+					firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
 				
 				bestNode, gameStringArray, predictedEnvs = p.BFS()
 				# embed()
+				print "planning with safeDistance={}, regrounding={}".format(self.safeDistance, self.regrounding)
 				self.total_planner_steps = p.total_nodes
 
 				if bestNode is not None:
@@ -419,6 +420,38 @@ class Agent:
 					predictedEnvs = predictedEnvs[::-1]
 				else:
 					solution = []
+
+				if self.shortHorizon:
+					if not solution:
+						p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=hypothesesToPlanWith[0], fakeInteractionRules = self.fakeInteractionRules,
+							seen_limits = self.seen_limits[avatarColor], annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+							firstOrderHorizon=self.firstOrderHorizon, conservative=True, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
+						p_quitting = p.quitting
+						bestNode, gameStringArray, objectPositionsArray = p.BFS()
+						self.total_planner_steps += p.total_nodes
+						if bestNode is not None:
+							solution = p.solution
+							gameString_array = p.gameString_array
+							objectPositionsArray = objectPositionsArray[::-1]
+					else:
+						emptyPlans = 0
+				else:
+					if (not solution) or p.quitting:
+						# Here we make a distinction between quitting because you've
+						# exhausted the number of nodes you can visit or because you
+						# ran out of novelty. In the first case, you only wait longer,
+						# in the second case, you also add a new atom to IW
+						if p.exhausted_novelty:
+							self.extra_atom = True
+
+						if self.longHorizonObservations<self.longHorizonObservationLimit:
+							print "Didn't get solution or decided to quit. Observing, then replanning."
+							# embed()
+							self.observe(self.rle, episode_num, num_steps=5)
+							solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
+							self.longHorizonObservations += 1
+						else:
+							quitting = True
 
 				if solution and not p.quitting:
 					print "============================================="
@@ -429,26 +462,15 @@ class Agent:
 						print colored(g, 'green')
 					print "============================================="
 
-				if self.shortHorizon:
-					if not solution:
-						emptyPlans +=1
-					else:
-						emptyPlans = 0
-				else:
-					if (not solution) or p.quitting:
-						if self.longHorizonObservations<self.longHorizonObservationLimit:
-							print "Didn't get solution or decided to quit. Observing, then replanning."
-							# embed()
-							self.observe(self.rle, episode_num, num_steps=5)
-							solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
-							self.longHorizonObservations += 1
-						else:
-							quitting = True
-
+				##new 6/30/18
 				if emptyPlans > self.emptyPlansLimit:
-					print "observing"
-					# embed()
-					self.observe(self.rle, episode_num, num_steps=5)
+					self.max_nodes *= self.max_nodes_annealing
+					print "reached emptyPlansLimit of {}. Annealing max nodes to {}".format(self.emptyPlansLimit, self.max_nodes)
+
+				# if emptyPlans > self.emptyPlansLimit:
+				# 	print "observing"
+				# 	# embed()
+				# 	self.observe(self.rle, episode_num, num_steps=5)
 
 			if not quitting:
 				for action_num, action in enumerate(solution):
