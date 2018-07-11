@@ -106,6 +106,7 @@ class Agent:
 		else:
 			self.starting_max_nodes = 10000
 			self.max_nodes_annealing = 10
+		self.conservative = False
 		self.firstOrderHorizon = False # Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
 		self.regrounding = 3
 		self.reground_for_killer_types = True # encourages safe behavior
