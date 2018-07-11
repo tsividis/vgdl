@@ -748,8 +748,8 @@ class Agent:
 			bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
 			self.assumeZeroErrorTheoryExists = prev
 			# print time.time()-t1
-			print 'just got some new theories'
-			embed()
+			# print 'just got some new theories'
+			# embed()
 
 			if len(bestScoresAndHypotheses) == 0:	
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
