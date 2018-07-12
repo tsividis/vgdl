@@ -3,11 +3,11 @@ w   o.xx.o     w
 w   oooooo     w
 w   .xxx..     w
 wx...          w
-wwwwwwwwww     w
-wb-...co       w
-w--.....   Ao  w
-wooo           w
-w...   x    wwww
-wc--.    x  ooxw
-w---. e     .. w
+wwwwwwwwwww    w
+w -    o       w
+w--    .   Ao  w
+w              w
+w      x    wwww
+w --     x  ooxw
+w---  e     .. w
 wwwwwwwwwwwwwwww

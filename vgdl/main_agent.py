@@ -58,7 +58,7 @@ class Agent:
         self.regrounding = 6
         self.selective_regrounding = True
         self.avoid_danger = True
-        self.safeDistance = 2
+        self.safeDistance = 3
         self.emptyPlansLimit = 5
         self.longHorizonObservationLimit = 2
         self.hypotheses = []
@@ -551,8 +551,7 @@ class Agent:
                     if p.exhausted_novelty:
                         self.extra_atom = True
                     if self.longHorizonObservations<self.longHorizonObservationLimit:
-                        print "Didn't get solution or decided to quit. Observing, then replanning."
-                        print('passed here')
+                        print "Didn't get solution. Observing, then replanning."
                         observe(self.rle, 5, self.bestSpriteTypeDict)
                         solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
                         self.longHorizonObservations += 1
@@ -706,7 +705,7 @@ class Agent:
                             # print "random distances", min(possiblePairList)
                             if min(possiblePairList) < self.safeDistance:
                                 print("Close to RandomNPC, regrounding")
-                                embed()
+                                # embed()
                                 break
 
                         except ValueError:
