@@ -165,8 +165,10 @@ class Agent:
 
     def initializeVrle(self, hypothesis):
         ## World in agent's head given 'hypothesis', including object goal
+        # gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
+        #          "./examples/gridphysics/theorytest.py")
         gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
-                 "./examples/gridphysics/theorytest.py")
+                 "./theory_files_short_horizon/hyperparameter_idx_{}/{}.py".format(self.hyperparameters['idx'], self.gameFilename))
         Vrle = createMindEnv(gameString, levelString, output=False)
 
         self.setSpritePositions(self.rle, Vrle, hypothesis)
