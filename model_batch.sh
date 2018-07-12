@@ -3,7 +3,7 @@
 
 #SBATCH --job-name=run_vgdl_model
 #SBATCH --array=0-3
-#SBATCH --output=slurm_logs/planner_integration/array_%A_%a.out
+#SBATCH --output=slurm_logs/planner_integration2/array_%A_%a.out
 #SBATCH --time=960
 #SBATCH --qos=tenenbaum
 #SBTACH --cpus-per-task=2
@@ -40,8 +40,8 @@ if [ "$OS" = "CentOS Linux" ]; then
 fi
 
 # make log path if not already present
-if [ ! -d "${ROOT}/slurm_logs/planner_integration" ]; then
-    mkdir "${ROOT}/slurm_logs/planner_integration"
+if [ ! -d "${ROOT}/slurm_logs/planner_integration2" ]; then
+    mkdir "${ROOT}/slurm_logs/planner_integration2"
 fi
 
 # finally, run the model
