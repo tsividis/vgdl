@@ -23,8 +23,8 @@ BasicGame
 		dirt avatar > killSprite
 		dirt sword  > killSprite
 
-		diamond avatar > collectResource 
 		diamond avatar > changeScore value=2
+		diamond avatar > collectResource 
 
 		avatar wall > stepBack
 		crab wall > stepBack
@@ -35,11 +35,11 @@ BasicGame
 
 		avatar boulder > killIfFromAbove
 
-		avatar butterfly > killSprite
 		avatar butterfly > changeScore value=-1
+		avatar butterfly > killSprite
 
-		avatar crab > killSprite
 		avatar crab > changeScore value=-1
+		avatar crab > killSprite
 
 		boulder dirt > stepBack
 		boulder wall > stepBack
@@ -52,8 +52,8 @@ BasicGame
 		butterfly diamond > stepBack
 
 		crab butterfly > killSprite
-		butterfly crab > transformTo stype=diamond scoreChange=1
-		#butterfly crab > changeScore value=1
+		butterfly crab > changeScore value=1
+		butterfly crab > transformTo stype=diamond
 		exitdoor avatar > killIfOtherHasMore resource=diamond limit=9 
 		exitdoor avatar > nothing
 
