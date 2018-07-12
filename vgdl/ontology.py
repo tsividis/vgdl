@@ -1119,8 +1119,11 @@ class NoveltyTermination(Termination):
 
     def isDone(self, game):
 
+        resourcePassed = False
         ## self.args lets us do precondition-dependent terminations.
         if self.args:
+            # print "got noveltytermination args"
+            # embed()
             if type(self.args)==dict:
                 item, num, negated, operator_name = self.args['item'], self.args['num'], eval(self.args['negated']), self.args['operator_name']
             else:
@@ -1136,17 +1139,23 @@ class NoveltyTermination(Termination):
                 return False, None
 
             if not eval(resource_str+true_operator+str(num)):
+                # print "precondition for {} is {} and failed".format((self.s1,self.s2), self.args)
+                # print game.getAvatars()[0].resources
                 return False, None
+            else:
+                # print "precondition for {} is {} and PASSED".format((self.s1,self.s2), self.args)
+                resourcePassed = True
+                # print ""
+                # embed()
 
             # else:
             #     print "found correct preconditions"
                 # embed()
-        for e in game.effectList:
 
+        for e in game.effectList:
             id_not_found = False
             class1, class2 = 'none', 'none'
             if (e[0] in ['killSprite', 'transformTo', 'nothing']) and len(e) > 2:
-
                 try:
                     name1 = game.getAllObjects()[e[1]].name
                     class1 = str(game.getAllObjects()[e[1]].__class__)
@@ -1570,13 +1579,16 @@ def killIfAlive(sprite, partner, game):
 
 def collectResource(sprite, partner, game, resource=None, value=1, limit=None): # FLAG
     """ Adds/increments the resource type of sprite in partner """
-    if isinstance(sprite, Resource):
-        r = sprite.resourceType
-        partner.resources[r] = max(-1, min(partner.resources[r]+sprite.value, game.resources_limits[r]))
+    if resource is None:
+        if isinstance(sprite, Resource) or isinstance(sprite, ResourcePack):
+            r = sprite.resourceType
+            partner.resources[r] = max(-1, min(partner.resources[r]+sprite.value, game.resources_limits[r]))
+        else:
+            r = partner.resources.keys()[0]
+            value=1
+            partner.resources[r] = max(-1, min(partner.resources[r]+value, game.resources_limits[r]))
     else:
-        r = partner.resources.keys()[0]
-        value=1
-        partner.resources[r] = max(-1, min(partner.resources[r]+value, game.resources_limits[r]))
+        partner.resources[resource] = max(-1, min(partner.resources[resource]+sprite.value, game.resources_limits[resource]))
 
     killSprite(sprite, partner, game)
     args = {'resource':sprite.name, 'value':value, 'limit':game.resources_limits[sprite.name]}
