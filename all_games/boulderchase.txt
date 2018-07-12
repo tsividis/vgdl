@@ -2,12 +2,11 @@ BasicGame
 	SpriteSet
 		wall > Immovable color=DARKGRAY 
 		sword > Flicker color=YELLOW limit=1 singleton=True 
-		dirt > Immovable color= MPUYEI 
+		dirt > Immovable color=MPUYEI 
 		exitdoor > Immovable color=GREEN 
-		diamond > Resource color=GOLD limit=10
+		diamond > Resource color=GOLD limit=9
 		boulder > Missile orientation=DOWN color=PURPLE speed=0.2
-
-                avatar  > ShootAvatar  color=DARKBLUE stype=sword frameRate=8 
+                avatar  > ShootAvatar color=DARKBLUE stype=sword
                 crab > Chaser stype=avatar speed=0.1 color=RED 
                 butterfly > Chaser stype=avatar speed=0.1 color=BLUE 
 
@@ -50,8 +49,8 @@ BasicGame
 		dirt butterfly > killSprite
 		dirt crab > transformTo stype=diamond
 		crab butterfly > killSprite
-		butterfly crab > transformTo stype=diamond scoreChange=1
                 butterfly crab > changeScore value=1
+		butterfly crab > transformTo stype=diamond
 		exitdoor avatar > killIfOtherHasMore resource=diamond limit=9
 
                 sword wall > nothing
