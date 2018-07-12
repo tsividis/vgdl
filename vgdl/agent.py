@@ -509,8 +509,22 @@ class Agent:
 				## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
 				## Search more deeply next time.
 				self.max_nodes *= self.max_nodes_annealing
+				win=False
 				print "You got quitting==True from planner. Embedding to debug."
 				# embed()
+				score = self.rle._game.score
+				output = "ended episode. Win={}                   						  ".format(win)
+				if win:
+					print colored('________________________________________________________________', 'white', 'on_green')
+					print colored('________________________________________________________________', 'white', 'on_green')
+
+					print colored(output, 'white', 'on_green')
+					print colored('________________________________________________________________', 'white', 'on_green')
+				else:
+					print colored('________________________________________________________________', 'white', 'on_red')
+					print colored(output, 'white', 'on_red')
+					print colored('________________________________________________________________', 'white', 'on_red')
+			
 				return False, self.rle._game.score, steps
 		
 			annealing *= self.annealingFactor
@@ -2497,7 +2511,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.testAll"
 	
-	filename = "examples.gridphysics.expt_push_boulders"
+	filename = "examples.gridphysics.theorytest3"
 
 	# filename = "examples.gridphysics.basics"
 
@@ -2582,13 +2596,13 @@ if __name__ == "__main__":
 		agent = Agent('full', gameName, hyperparameters)
 
 		##For GVGAI games, use this line
-		# agent.playCurriculum(level_game_pairs=level_game_pairs)
+		agent.playCurriculum(level_game_pairs=level_game_pairs)
 
 		##For local games, use this line
 		# agent.playCurriculum(level_game_pairs=None)
 
 		## For testing, use this line
-		results = agent.testCurriculum(level_game_pairs, actionSequences)
+		# results = agent.testCurriculum(level_game_pairs, actionSequences)
 
 	for num,res in enumerate(results):
 		print '\n--------test {} produced the following:--------'.format(num+1)

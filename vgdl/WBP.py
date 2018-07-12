@@ -75,7 +75,6 @@ class WBP():
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 		self.display = False
 
-
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
@@ -83,6 +82,7 @@ class WBP():
 			self.theory.interactionSet.extend(fakeInteractionRules)
 			self.theory.updateTerminations()
 
+		# embed()
 		if theory.classes['avatar'][0].args and 'stype' in theory.classes['avatar'][0].args:
 			self.thingWeShoot = theory.classes['avatar'][0].args['stype']
 		else:

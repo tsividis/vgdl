@@ -765,7 +765,6 @@ class BasicGame(object):
                                         effect(sprite, sprite2, self, **kwargs) # apply push back to all sprites in that set
                             else: # if there were no sprites in the collision, do normal thing
                                 new_effects.append(effect(sprite1, sprite2, self, **kwargs))
-
                         else:
                             new_effects.append(effect(sprite1, sprite2, self, **kwargs))
 
