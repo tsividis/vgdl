@@ -1,6 +1,6 @@
 BasicGame square_size=32
     SpriteSet
-        base    > Immovable    color=WHITE
+        base    > Immovable    color=MPUYEI
         avatar  > FlakAvatar   stype=sam color=DARKBLUE
         missile > Missile
             sam  > orientation=UP    color=PINK singleton=True

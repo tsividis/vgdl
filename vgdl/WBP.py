@@ -74,7 +74,7 @@ class WBP():
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = False
+		self.display = True
 
 
 		if theory == None:
@@ -98,6 +98,7 @@ class WBP():
 			self.objIDs[k] = i * 100 * (rle.outdim[0]*rle.outdim[1]+self.padding)
 			i+=1
 		self.addSpaceBarToActions()
+		print "available actions:", self.actions
 		self.pixel_size = self.rle._game.screensize[0]/self.rle._game.width
 		self.visited_positions = np.zeros(np.array(self.rle._game.screensize)/
 			self.pixel_size)
