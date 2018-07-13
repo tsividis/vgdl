@@ -23,6 +23,9 @@ from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chas
 from ontology import initializeDistribution, updateDistribution, updateOptions, sampleFromDistribution, spriteInduction, selectObjectGoal
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, \
 NoveltyRule, generateSymbolDict, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryFromGame
+from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
+	RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
+		AimedFlakAvatar
 from rlenvironmentnonstatic import createRLInputGame
 
 # from line_profiler import LineProfiler
@@ -74,7 +77,7 @@ class WBP():
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = True
+		self.display = False
 
 
 		if theory == None:
@@ -97,8 +100,9 @@ class WBP():
 		for k in rle._game.all_objects.keys():
 			self.objIDs[k] = i * 100 * (rle.outdim[0]*rle.outdim[1]+self.padding)
 			i+=1
-		self.addSpaceBarToActions()
+		self.getAvailableActions()
 		print "available actions:", self.actions
+
 		self.pixel_size = self.rle._game.screensize[0]/self.rle._game.width
 		self.visited_positions = np.zeros(np.array(self.rle._game.screensize)/
 			self.pixel_size)
@@ -164,22 +168,28 @@ class WBP():
 		avatar_loc = rle._rect2pos(rle._game.sprite_groups['avatar'][0].rect)
 		return avatar_loc
 
-	def addSpaceBarToActions(self):
+	def getAvailableActions(self):
 		## Note: if an object that isn't instantiated in the beginning is of a class that
 		## spacebar applies to, we won't pick up on it here.
-		shootingClasses = ['MarioAvatar', 'ClimbingAvatar', 'ShootAvatar', 'Switch', 'FlakAvatar']
-		classes = [str(o[0].__class__) for o in self.rle._game.sprite_groups.values() if len(o)>0]
-		spacebarAvailable = False
-		for sc in shootingClasses:
-			if any([sc in c for c in classes]):
-				spacebarAvailable = True
-				break
-		if spacebarAvailable:
-			self.actions = [NONE, K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
-		else:
-			self.actions = [NONE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
+		# shootingClasses = ['MarioAvatar', 'ClimbingAvatar', 'ShootAvatar', 'Switch', 'FlakAvatar']
+		# classes = [str(o[0].__class__) for o in self.rle._game.sprite_groups.values() if len(o)>0]
+		# spacebarAvailable = False
+		# for sc in shootingClasses:
+		# 	if any([sc in c for c in classes]):
+		# 		spacebarAvailable = True
+		# 		break
+		# embed()
+		# if spacebarAvailable:
+		# 	self.actions = [NONE, K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
+		# else:
+		# 	self.actions = [NONE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
+		
+		## get actions from avatar-type definition
+		self.actions = self.rle._game.getAvatars()[0].declare_possible_actions().values()
 		if self.addWaitAction:
 			self.actions.append(NONE)
+		self.actions = sorted(self.actions)		
+
 		return
 
 	def calculateAtoms(self, rle):
@@ -1346,11 +1356,11 @@ class Node():
 			return 0
 
 	def empty_copy(self, obj):
-	    class Empty(obj.__class__):
-	        def __init__(self): pass
-	    newcopy = Empty()
-	    newcopy.__class__ = obj.__class__
-	    return newcopy
+		class Empty(obj.__class__):
+			def __init__(self): pass
+		newcopy = Empty()
+		newcopy.__class__ = obj.__class__
+		return newcopy
 
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
