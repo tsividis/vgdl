@@ -2434,14 +2434,15 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             # embed()
 
         ## Use for debugging sprite-type inference.
-        # if obj_type=='RED':
-        #     goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='RED']
-        #     print [g.rect for g in goldobjs[0]]
-        #     for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
-        #         print(k, param_product[k])
-        #         if i>10:
-        #             break
-        #     print ""
+        if obj_type=='LIGHTGREEN':
+            goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='LIGHTGREEN']
+            print [g.rect for g in goldobjs[0]]
+            for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
+                print(k, param_product[k])
+                if i>10:
+                    break
+            print ""
+            # embed()
 
         sprite_type = best_param[0][1]
 
@@ -2454,6 +2455,9 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
 
         s = Sprite(vgdlType=sprite_type, color=color)
 
+        param = dict(best_param[1:])
+        setSpriteParams(param, s) # set the parameters for sprite s
+        sample.append(s)
         ## Find matching object in the existing hypothesis
         try:
             if oldSpriteSet:
@@ -2495,9 +2499,9 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             print "failed to find matching object in sampleFromDistribution"
             embed()
 
-        param = dict(best_param[1:])
-        setSpriteParams(param, s) # set the parameters for sprite s
-        sample.append(s)
+        # param = dict(best_param[1:])
+        # setSpriteParams(param, s) # set the parameters for sprite s
+        # sample.append(s)
 
     return sample, exceptions, distributionsHaveChanged, best_params
 
