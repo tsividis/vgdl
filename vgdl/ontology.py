@@ -2350,7 +2350,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
 
                 except AttributeError:
                     print "tried and failed to add a shooting avatar type"
-                    embed()
+                    # embed()
                     # No args in avatar
                     sample.append(Sprite(vgdlType=MovingAvatar, color=all_objects[k]['type']['color']))
             else:

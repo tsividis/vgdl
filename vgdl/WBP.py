@@ -67,7 +67,7 @@ class WBP():
 		self.objectLocationTrackingLimit = 8
 		self.max_nodes = max_nodes
 		self.small_max_nodes = 100
-		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random']
+		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random', 'Chaser']
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
 		self.classesWhoseLocationsWeIgnore = []
 		self.classesWhosePresenceWeIgnore = []
@@ -77,7 +77,7 @@ class WBP():
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = True
+		self.display = False
 
 
 		if theory == None:
@@ -565,7 +565,6 @@ class WBP():
 		if i>=self.max_nodes:
 			if self.short_horizon:
 				print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
-				embed()
 				node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 				# parentNode = copy.deepcopy(node)
 				parentNode = node
@@ -1530,7 +1529,7 @@ if __name__ == "__main__":
 	## objects.
 	# gameFilename = "examples.gridphysics.theorytest"
 	# gameFilename = "examples.gridphysics.boulderdash"
-	gameFilename = "examples.gridphysics.theorytest"
+	gameFilename = "examples.gridphysics.portals2"
 	# gameFilename = "examples.continuousphysics.breakout_big"
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
