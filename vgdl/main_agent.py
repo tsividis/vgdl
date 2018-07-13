@@ -55,10 +55,10 @@ class Agent:
             self.starting_max_nodes = 10000
             self.max_nodes_annealing = 10.
         self.conservative = False
-        self.regrounding = 3
+        self.regrounding = 1
         self.selective_regrounding = True
         self.avoid_danger = True
-        self.safeDistance = 3
+        self.safeDistance = 6
         self.emptyPlansLimit = 5
         self.longHorizonObservationLimit = 2
         self.hypotheses = []
@@ -209,7 +209,7 @@ class Agent:
 
     def initializeHypotheses(self, allObjects, learnSprites=True):
         if learnSprites:
-            observe(self.rle, 15, self.bestSpriteTypeDict)
+            observe(self.rle, 5, self.bestSpriteTypeDict)
             spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
                 self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
             self.rle._game.exceptedObjects = exceptedObjects
@@ -601,7 +601,7 @@ class Agent:
                             pass
                     self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
 
-                    ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
+                    # ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
 
                     effectsEncountered.extend(effects)
                     steps +=1
@@ -631,12 +631,12 @@ class Agent:
                             rlePositionsTuples, hypPositionsTuples = [(p[0], p[1]) for p in rlePositions], [(p[0], p[1]) for p in hypPositions]
 
                             killer_types = [inter.slot2 for inter in hypotheses[0].interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
-                            # print "killer types", killer_types
+                            print "killer types", killer_types
                             regroundingFlag = False
                             for objPos in hypPositions:
                                 if not regroundingFlag and (objPos[0], objPos[1]) not in rlePositionsTuples:
-                                    # print "found object position difference", colored(objPos, 'white', 'on_magenta')
-                                    # print 'regrounding because of', objPos[2].colorName, objPos[2], "position:", self.rle._rect2pos(objPos[2].rect)
+                                    print "found object position difference", colored(objPos, 'white', 'on_magenta')
+                                    print 'considering regrounding because of', objPos[2].colorName, objPos[2], "position:", self.rle._rect2pos(objPos[2].rect)
                                     # try:
                                         # print "orientation:", objPos[2].orientation
                                     # except AttributeError:

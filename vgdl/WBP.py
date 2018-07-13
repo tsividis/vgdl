@@ -100,8 +100,6 @@ class WBP():
 		for k in rle._game.all_objects.keys():
 			self.objIDs[k] = i * 100 * (rle.outdim[0]*rle.outdim[1]+self.padding)
 			i+=1
-		self.getAvailableActions()
-		print "available actions:", self.actions
 
 		self.pixel_size = self.rle._game.screensize[0]/self.rle._game.width
 		self.visited_positions = np.zeros(np.array(self.rle._game.screensize)/
@@ -115,6 +113,9 @@ class WBP():
 		self.conservative = conservative
 		self.winning_states = []
 		self.total_nodes = 0
+
+		self.getAvailableActions()
+		print "available actions:", self.actions
 
 		if self.conservative:
 			self.hyperparameters['sprite_negative_mult'] = 1000
@@ -186,7 +187,7 @@ class WBP():
 		
 		## get actions from avatar-type definition
 		self.actions = self.rle._game.getAvatars()[0].declare_possible_actions().values()
-		if self.addWaitAction:
+		if self.conservative or self.addWaitAction:
 			self.actions.append(NONE)
 		self.actions = sorted(self.actions)		
 
@@ -395,6 +396,7 @@ class WBP():
 				# if self.conservative not self.solution:
 					# print "current node is in None or pickMaxNode"
 					# embed()
+				print "was in None or PickMaxNode"
 				return node, gameString_array, object_positions_array
 
 			try:
@@ -537,7 +539,7 @@ class WBP():
 				# embed()
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
 				bestNode = bestNodes[0]
-				# print "winning states"
+				print "found winning states"
 				# embed()
 				# gameString_array.append(bestNode.rle.show())
 				# object_positions_array.append(copy.deepcopy(bestNode.rle))
@@ -545,55 +547,52 @@ class WBP():
 
 			# print i
 		self.solution = []#Node(self.rle, self, [], None)
-		
-		# if i>=self.small_max_nodes and self.conservative:
-		# 	print "picking small plann"
-		# 	node = max(visited, key=lambda n:n.intrinsic_reward)
-		# 	parentNode = copy.deepcopy(node)
-		# 	self.solution = node.actionSeq
-		# 	gameString_array, object_positions_array = [], []
-		# 	while parentNode is not None:
-		# 		gameString_array.append(parentNode.rle.show())
-		# 		object_positions_array.append(copy.deepcopy(parentNode.rle))
-		# 		parentNode = parentNode.parent
-		# 	self.gameString_array = gameString_array[::-1]
-		# 	self.object_positions_array = object_positions_array[::-1]
-		# 	print "conservative mode"
-		# 	embed()
-		# 	return node, gameString_array, object_positions_array
-		
-		if i>=self.max_nodes:
-			if self.short_horizon:
-				print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
-				node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+
+
+		if self.short_horizon:
+			node = max(visited, key=lambda n:(len(n.actionSeq)>0, n.intrinsic_reward, len(n.actionSeq)))
+			# parentNode = copy.deepcopy(node)
+			parentNode = node
+			self.solution = node.actionSeq
+
+			if self.conservative and not self.solution:
+				if QReward:
+					node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+				else:
+					print "No nodes in QReward; can't pick max. DEBUG"
+					embed()
+					start = Node(self.rle, self, [], None)
+					start.rle = self.rle
+					child = Node(self.rle, self, start.actionSeq+[a], start)
+					# print actionDict[a]
+					child.eval()
+					node = child
+
 				# parentNode = copy.deepcopy(node)
 				parentNode = node
 				self.solution = node.actionSeq
 
-				if self.conservative and not self.solution:
-					node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
-					# parentNode = copy.deepcopy(node)
-					parentNode = node
-					self.solution = node.actionSeq
+			# print self.solution
+			gameString_array, object_positions_array = [], []
+			while parentNode is not None:
+				gameString_array.append(parentNode.rle.show())
+				object_positions_array.append(copy.deepcopy(parentNode.rle))
+				parentNode = parentNode.parent
+			self.gameString_array = gameString_array[::-1]
+			self.object_positions_array = object_positions_array[::-1]
+			# print "win"
+			# embed()
+			# print "in WBP, within short horizon"
+			# embed()
+			print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
 
-				# print self.solution
-				gameString_array, object_positions_array = [], []
-				while parentNode is not None:
-					gameString_array.append(parentNode.rle.show())
-					object_positions_array.append(copy.deepcopy(parentNode.rle))
-					parentNode = parentNode.parent
-				self.gameString_array = gameString_array[::-1]
-				self.object_positions_array = object_positions_array[::-1]
-				# print "win"
-				# embed()
-				# print "in WBP, within short horizon"
-				# embed()
-				return node, gameString_array, object_positions_array
-			else:
-				# self.quitting = True
+			return node, gameString_array, object_positions_array
+		else:
+			if i>=self.max_nodes:
 				if self.display:
 					print "Got no plan after searching {} nodes".format(self.max_nodes)
-
+		print "reached end of BFS"
+		embed()
 		return None, None, None
 
 class Node():
