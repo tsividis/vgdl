@@ -10,11 +10,15 @@ parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
 parser.add_argument('--game_name', type=str, default=str(0), help='game name')
 parser.add_argument('--hyperparameter_index', type=int, default=0, help='hyperparameter_index')
+parser.add_argument('--pickled_theory_path',type=str,default="",help='pickled theory')
+
+
 
 args = parser.parse_args()
 game_number = args.game_number
 game_name = args.game_name
 hyperparameter_index = args.hyperparameter_index
+picked_theory_path = args.pickled_theory_path
 
 if game_name==str(0):
     game_name = game_names[game_number]
@@ -89,7 +93,7 @@ def read_gvgai_game(filename):
         new_doc = "\n".join(new_doc)
     return new_doc
 
-def play_trainset(hyperparameters):
+def play_trainset(hyperparameters,pickled_theory_path=None):
     start_time = time.time()
 
     gvgname = "./{}/{}".format(gameFileString,game_name)
@@ -101,7 +105,7 @@ def play_trainset(hyperparameters):
     	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
     		level_game_pairs.append([gameString, level.read()])
 
-    agent = Agent('full', game_name, hyperparameters=hyperparameters, parallel_planning=False)
+    agent = Agent('full', game_name, hyperparameters=hyperparameters, parallel_planning=False,pickled_theory_path=pickled_theory_path)
 
     ##then pass this down for multiple episodes
     gameObject = None

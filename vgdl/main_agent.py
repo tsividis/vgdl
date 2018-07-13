@@ -49,7 +49,7 @@ def playCurriculum(agent, level_game_pairs):
 
 
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameters, parallel_planning=False):
+    def __init__(self, modelType, gameFilename, hyperparameters, parallel_planning=False,pickled_theory_path=None):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.gameString = None
@@ -97,6 +97,7 @@ class Agent:
         # MARK, EXPLORATION
         self.do_random_moves = True
         self.max_random_steps = 10000
+        self.pickled_theory_path = pickled_theory_path
 
     def initializeEnvironment(self):
         if self.gameString==None or self.levelString==None:
@@ -244,7 +245,11 @@ class Agent:
         if self.pickle_file:
             file = open(self.pickle_file, 'r')
             initialTheory = pickle.load(file)
-            self.hypotheses = [initialTheory]
+            file.close()
+            gameObject = Game(self.gameString)
+        elif self.pickled_theory_path:
+            file = open(self.pickled_theory_path,'r')
+            initialTheory = pickle.load(file)
             file.close()
             gameObject = Game(self.gameString)
         else:
@@ -327,6 +332,9 @@ class Agent:
         if pickle_file:
             print "got pickle file", pickle_file
             self.pickle_file = pickle_file
+
+        if self.pickled_theory_path:
+            print "got pickled theory path",self.pickled_theory_path
         
         for n_level, level_game in enumerate(level_game_pairs):
 
@@ -558,6 +566,9 @@ class Agent:
             self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
 
         ## initialize theory if necessary.
+
+
+        # MARK, initializeHypotheses has been editted to use self.pickled_theory_path if it is not None
         if len(self.hypotheses) == 0:
             gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True)
             print "initializing hypotheses"
@@ -1153,7 +1164,6 @@ class Agent:
                     theory_change_flag = True
                     # print "reached resource limit for", resource
 
-        # MARK, EXPLORATION LESION, DO NOT MODIFY HYPOTHESIS WITH CURIOSITY BONUS
         if event['effectList'] and run_induction: 
             #print "updateTerminations() on hypothesis that executeStep returns"
             [t.updateTerminations(event=event) for t in hypotheses]
