@@ -363,15 +363,15 @@ class WBP():
 				## sorted by reward and action-sequence length.
 				# node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 
-				# parentNode = copy.deepcopy(node)
-				parentNode = node
+				parentNode = copy.deepcopy(node)
+				# parentNode = node
 				self.solution = node.actionSeq
 
 				if self.conservative and not self.solution:
 					print "in conservative mode. didn't get solution; trying to filter less aggressively"
 					node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
-					# parentNode = copy.deepcopy(node)
-					parentNode = node
+					parentNode = copy.deepcopy(node)
+					# parentNode = node
 					self.solution = node.actionSeq
 					if not self.solution:
 						print "in conservative mode. didn't get solution on second attempt."
@@ -562,14 +562,14 @@ class WBP():
 				print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
 				embed()
 				node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
-				# parentNode = copy.deepcopy(node)
-				parentNode = node
+				parentNode = copy.deepcopy(node)
+				# parentNode = node
 				self.solution = node.actionSeq
 
 				if self.conservative and not self.solution:
 					node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
-					# parentNode = copy.deepcopy(node)
-					parentNode = node
+					parentNode = copy.deepcopy(node)
+					# parentNode = node
 					self.solution = node.actionSeq
 
 				# print self.solution
