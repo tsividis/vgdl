@@ -17,8 +17,8 @@
 # game_names = ['expt_push_boulders', 'portals', 'frogs', 'overload', 'expt_antagonist'] #boulderdash, boulderchase
 
 ## idx 2, more memory:
-game_names = ['expt_push_boulders', 'sokoban', 'bait', 'watergame']
-# game_names = ['boulderdash', 'boulderchase']
+# game_names = ['expt_push_boulders', 'sokoban', 'bait', 'watergame']
+game_names = ['boulderdash', 'boulderchase']
 
 # ## idx 3
 # game_names = ['aliens', 'butterflies', 'chase', 'expt_helper', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'jaws', 'lemmings', 'myAliens', 'overload', 'plaqueattack', 'waves']

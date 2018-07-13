@@ -55,7 +55,7 @@ class Agent:
             self.starting_max_nodes = 10000
             self.max_nodes_annealing = 10.
         self.conservative = False
-        self.regrounding = 1
+        self.regrounding = 3
         self.selective_regrounding = True
         self.avoid_danger = True
         self.safeDistance = 3
