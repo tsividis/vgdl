@@ -2,7 +2,7 @@ BasicGame
     SpriteSet
         marsh > Immovable color=BROWN 
         goal  > Immovable color=GREEN
-        avatar > ShootAvatar color=DARKBLUE ammo=weapon stype=sword 
+        avatar > ShootAvatar color=DARKBLUE stype=sword 
         random > RandomNPC color=BLUE speed=1 cooldown=4  cons=8
         sword > Flicker color=RED limit=5 singleton=True 
         weapon > Resource color=PINK value=10000 limit=10000 
@@ -25,24 +25,6 @@ BasicGame
         random marsh    > killIfHasMore      resource=gold limit=11
         goal avatar     > killIfOtherHasMore resource=gold limit=10
 
-        #marsh castlef > nothing
-        #castlef marsh > nothing
-        #goal castlef > nothing
-        #castlef goal > nothing
-        #avatar castlef > nothing
-        #castlef avatar > nothing
-        #random castlef > nothing
-        #castlef random > nothing
-        #sword castlef > nothing
-        #castlef sword > nothing
-        #castlef weapon > nothing
-        #weapon castlef > nothing
-        #gold castlef > nothing
-        #castlef gold > nothing
-        #wall castlef > nothing
-        #castlef wall > nothing
-        #EOS castlef > nothing
-        #castlef EOS > nothing
         marsh goal > nothing
         goal marsh > nothing
         marsh weapon > nothing

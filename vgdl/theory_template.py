@@ -1074,6 +1074,7 @@ class Theory(object):
 					# 		( rule.interaction == 'nothing' and not (rule.slot2==thingWeShoot and rule.slot1==thingWeShoot) and not ('Random' in str(self.classes[rule.slot2][0].vgdlType) or 'Chaser' in str(self.classes[rule.slot2][0].vgdlType)) and rule.slot1 not in ['avatar', thingWeShoot])
 					# 		):
 					if self.doWeMakeANoveltyRule(rule, thingWeShoot):
+						
 						terminationRule = NoveltyRule(rule.slot1, rule.slot2, True)
 						if (all([not ((t.termination.s2==rule.slot1) and (t.termination.s1==rule.slot2))
 								for t in self.terminationSet if t.ruleType=='NoveltyRule']) and
