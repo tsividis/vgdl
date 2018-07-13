@@ -20,6 +20,7 @@ from pathos.helpers import mp
 # import multiprocess as mp
 # from line_profiler import LineProfiler
 import pickle
+import sys
 
 # from line_profiler import LineProfiler
 
@@ -27,8 +28,6 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
-
-MAX_STEPS = 1000
 
 # which games have which legal moves
 left_right = ['aliens',]
@@ -49,7 +48,7 @@ def playCurriculum(agent, level_game_pairs):
 
 
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameters, parallel_planning=False,pickled_theory_path=None):
+    def __init__(self, modelType, gameFilename, hyperparameters, parallel_planning=False,max_steps=1000,pickled_theory_path=None):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.gameString = None
@@ -89,6 +88,8 @@ class Agent:
         self.total_game_steps = 0
         self.total_planner_steps = 0
         self.levels_won = 0
+
+        self.max_steps = max_steps
 
         self.todo_delete = True
 
@@ -252,6 +253,9 @@ class Agent:
             initialTheory = pickle.load(file)
             file.close()
             gameObject = Game(self.gameString)
+            print "initialized hypotheses with file",self.pickled_theory_path
+            print "hypotheses:",initialTheory
+            sys.exit()
         else:
             if learnSprites:
                 observe(self.rle, 15, self.bestSpriteTypeDict)
@@ -333,8 +337,6 @@ class Agent:
             print "got pickle file", pickle_file
             self.pickle_file = pickle_file
 
-        if self.pickled_theory_path:
-            print "got pickled theory path",self.pickled_theory_path
         
         for n_level, level_game in enumerate(level_game_pairs):
 
@@ -375,7 +377,7 @@ class Agent:
                 levelEffectsEncountered.append(effectsEncountered)
                 
                 # MARK, Pedro said to comment this out
-                #if self.total_game_steps > MAX_STEPS:
+                #if self.total_game_steps > self.max_steps:
                 #    return
                 
                 
@@ -593,7 +595,7 @@ class Agent:
             # if self.total_game_steps in whereToSave:
                 # self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps)
 
-            if self.total_game_steps > MAX_STEPS:
+            if self.total_game_steps > self.max_steps:
                 score = self.rle._game.score
                 return gameObject, win, score, steps, statesEncountered, effectsEncountered
 

@@ -661,3 +661,89 @@ Class assignments:
 	c5: ['GREEN']: <class 'vgdl.ontology.ResourcePack'>
 	c4: ['BLACK']: <class 'vgdl.ontology.ResourcePack'>
 
+
+
+new theory change at step 11
+_______
+
+InteractionSet:
+killSprite c3 c2 {}
+
+Class assignments:
+	c3: ['WHITE']: <class 'vgdl.ontology.ResourcePack'>
+	c2: ['ORANGE']: <class 'vgdl.ontology.Chaser'>
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>
+	c4: ['BLACK']: <class 'vgdl.ontology.ResourcePack'>
+
+
+
+new theory change at step 27
+_______
+
+InteractionSet:
+killSprite c3 c2 {}
+
+Class assignments:
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>
+	c3: ['WHITE']: <class 'vgdl.ontology.ResourcePack'>
+	c2: ['ORANGE']: <class 'vgdl.ontology.Chaser'>
+	c5: ['GREEN']: <class 'vgdl.ontology.ResourcePack'>
+	c4: ['BLACK']: <class 'vgdl.ontology.ResourcePack'>
+
+
+
+new theory change at step 42
+_______
+
+InteractionSet:
+killSprite c3 c2 {}
+killSprite c5 avatar {}
+
+Class assignments:
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>
+	c3: ['WHITE']: <class 'vgdl.ontology.ResourcePack'>
+	c2: ['ORANGE']: <class 'vgdl.ontology.Chaser'>
+	c5: ['GREEN']: <class 'vgdl.ontology.ResourcePack'>
+	c4: ['BLACK']: <class 'vgdl.ontology.ResourcePack'>
+
+
+
+new theory change at step 63
+_______
+
+InteractionSet:
+killSprite c3 c2 {}
+killSprite c5 avatar {}
+stepBack c2 c6 {}
+
+Class assignments:
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>
+	c3: ['WHITE']: <class 'vgdl.ontology.ResourcePack'>
+	c2: ['ORANGE']: <class 'vgdl.ontology.Chaser'>
+	c6: ['PURPLE']: <class 'vgdl.ontology.Missile'>
+	c5: ['GREEN']: <class 'vgdl.ontology.ResourcePack'>
+	c4: ['BLACK']: <class 'vgdl.ontology.ResourcePack'>
+
+
+
+new theory change at step 67
+_______
+
+InteractionSet:
+killSprite c3 c2 {}
+killSprite c5 avatar {}
+stepBack c2 c6 {}
+
+Class assignments:
+	EOS: ['ENDOFSCREEN']: <class 'vgdl.core.EOS'>
+	avatar: ['DARKBLUE']: <class 'vgdl.ontology.MovingAvatar'>
+	c3: ['WHITE']: <class 'vgdl.ontology.ResourcePack'>
+	c2: ['ORANGE']: <class 'vgdl.ontology.Chaser'>
+	c6: ['PURPLE']: <class 'vgdl.ontology.ResourcePack'>
+	c5: ['GREEN']: <class 'vgdl.ontology.ResourcePack'>
+	c4: ['BLACK']: <class 'vgdl.ontology.ResourcePack'>
+
