@@ -96,7 +96,7 @@ class Agent:
 
         # MARK, EXPLORATION
         self.do_random_moves = True
-        self.max_random_steps = 5
+        self.max_random_steps = 10000
 
     def initializeEnvironment(self):
         if self.gameString==None or self.levelString==None:
@@ -136,12 +136,12 @@ class Agent:
         # where s=steps and n=a counter so we don't overwrite earlier runs
 
         try:
-            os.makedirs('./lesions/exploration/{}'.format(self.gameFilename))
+            os.makedirs('./lesions/rand_exploration/{}'.format(self.gameFilename))
         except:
             # already exists, yay
             pass
 
-        form = './lesions/exploration/{}/{:06}steps_{}.pkl'
+        form = './lesions/rand_exploration/{}/{:06}steps_{}.pkl'
         n = 0
         while os.path.exists(form.format(self.gameFilename, steps, n)):
             n += 1
@@ -350,20 +350,25 @@ class Agent:
                 episodes.append(episode_results)
 
 
-                # MARK, DONT ASSUME MAX_RANDOM_STEPS set to 0 if do_random_moves = False
+                # MARK
+                rand_string = ""
+                if self.do_random_moves:
+                    rand_string = "_rand"
+
                 if self.total_game_steps >= self.max_random_steps:
                     # write progressively to file
                     output = {'modelType':self.modelType,
                             'gameName': self.gameFilename,
                             'condition': 'normal',
                             'episodes' : [episode_results]}
-                    write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+'.csv', output)
+                    write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+rand_string+'.csv', output)
 
                 allStatesEncountered.extend(statesEncountered)
                 levelEffectsEncountered.append(effectsEncountered)
                 
-                if self.total_game_steps > MAX_STEPS:
-                    return
+                # MARK, Pedro said to comment this out
+                #if self.total_game_steps > MAX_STEPS:
+                #    return
                 
                 
                 # VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
@@ -578,7 +583,7 @@ class Agent:
                 # self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps)
 
             if self.total_game_steps > MAX_STEPS:
-                embed()
+                score = self.rle._game.score
                 return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
             theoryRLEs = self.VrleInitPhase(flexible_goals)
@@ -630,6 +635,9 @@ class Agent:
                 ###############################################
                 ########### UPDATE CURRENT HYPOTHESIS #########
                 ###############################################
+
+
+
                 steps +=1
                 print "{} steps this episode".format(steps)
                 if theory_change_flag:
@@ -768,17 +776,15 @@ class Agent:
                         if theory_change_flag:
                             self.hypotheses = hypotheses
                             print 'theory changed'
-                            #hypotheses[0].display()
-                            #print 'theory changed'
-                            #hypotheses[0].display()
-                            #f = open('theoryChanges.txt', 'a')
-                            #f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps))
-                            #oldout = sys.stdout
-                            #sys.stdout = f
-                            #hypotheses[0].display()
-                            #sys.stdout = oldout
-                            #f.close()
-                            #self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps)
+                            hypotheses[0].display()
+                            f = open('theoryChanges.txt', 'a')
+                            f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps))
+                            oldout = sys.stdout
+                            sys.stdout = f
+                            hypotheses[0].display()
+                            sys.stdout = oldout
+                            f.close()
+                            self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps)
                             break
 
                         ended, win = self.rle._isDone()
