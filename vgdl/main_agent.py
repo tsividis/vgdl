@@ -937,8 +937,8 @@ class Agent:
         distributionsHaveChanged = spriteInduction(self.rle._game, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 
         effects = translateEvents(res['effectList'], self.all_objects, self.rle)
+        print "score: {}, game tick: {}".format(self.rle._game.score, self.rle._game.time)
         print self.rle.show(color='blue')
-        print self.rle._game.score
 
         all_effects = [item for sublist in [e['effectList'] for e in self.finalEventList] for item in sublist]
 
