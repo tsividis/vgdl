@@ -794,6 +794,12 @@ class ShootAvatar(OrientedAvatar, SpriteProducer):
                 newones[0].orientation = unitVector(self.orientation)
             self._reduceAmmo()
 
+    def declare_possible_actions(self):
+        from pygame.locals import K_SPACE
+        actions = MovingAvatar.declare_possible_actions(self)
+        actions["SPACE"] = K_SPACE
+        return actions
+
 
 class AimedAvatar(ShootAvatar):
     """ Can change the direction of firing, but not move. """
@@ -2323,25 +2329,34 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         else:
             from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
                 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
-                    AimedFlakAvatar, InertialAvatar, MarioAvatar
+                    AimedFlakAvatar
 
-            try:
-                ## Add avatar, and add the attached arguments, i.e., what the avatar shoots.
-                sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
+            avatar_type = all_objects[k]['sprite'].__class__
+            if avatar_type in [FlakAvatar, AimedFlakAvatar, ShootAvatar, AimedAvatar, AimedFlakAvatar]:
+                try:
+                    ## Add avatar, and add the attached arguments, i.e., what the avatar shoots.
+                    sample.append(Sprite(vgdlType=all_objects[k]['sprite'].__class__, color=all_objects[k]['type']['color'], args={'stype':all_objects[k]['sprite'].stype}))
 
-                ## Get the object the Avatar shoots, add that.
-                projectile_name = all_objects[k]['sprite'].stype
-                ao = game.sprite_constr[projectile_name]
-                ao_vgdl_type = ao[0]
-                ao_color = colorDict[str(ao[1]['color'])]
-                ao_args = ao[1]
-                if projectile_name in game.singletons:
-                    ao_args.update({'singleton': 'True'})
-                sample.append(Sprite(vgdlType=ao_vgdl_type, color=ao_color, className=all_objects[k]['sprite'].stype, args=ao_args))
-                exceptions.append(ao_color)
-            except AttributeError:
-                # No args in avatar
-                sample.append(Sprite(vgdlType=MovingAvatar, color=all_objects[k]['type']['color']))
+                    ## Get the object the Avatar shoots, add that.
+                    projectile_name = all_objects[k]['sprite'].stype
+                    ao = game.sprite_constr[projectile_name]
+                    ao_vgdl_type = ao[0]
+                    ao_color = colorDict[str(ao[1]['color'])]
+                    ao_args = ao[1]
+                    if projectile_name in game.singletons:
+                        ao_args.update({'singleton': 'True'})
+                    sample.append(Sprite(vgdlType=ao_vgdl_type, color=ao_color, className=all_objects[k]['sprite'].stype, args=ao_args))
+                    exceptions.append(ao_color)
+
+                except AttributeError:
+                    print "tried and failed to add a shooting avatar type"
+                    embed()
+                    # No args in avatar
+                    sample.append(Sprite(vgdlType=MovingAvatar, color=all_objects[k]['type']['color']))
+            else:
+                sample.append(Sprite(vgdlType=avatar_type, color=all_objects[k]['type']['color']))
+
+
 
     ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
     types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions)) ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately
