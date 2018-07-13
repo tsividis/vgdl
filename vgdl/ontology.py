@@ -2130,7 +2130,7 @@ def distributionInitSetup(game, sprite):
     objectColors = set()
     for k in game.sprite_constr.keys():
         try:
-            if game.sprite_constr[k][1]['color'] not in ['BLACK', 'DARKGRAY', 'MPUYEI']:
+            if game.sprite_constr[k][1]['color'] not in ['BLACK', 'DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']:
                 objectColors.add(colorDict[str(game.sprite_constr[k][1]['color'])])
         except KeyError:
             continue
@@ -2364,7 +2364,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
     best_params = {}
     for obj_type in types:
         
-        if obj_type in ['DARKGRAY', 'MPUYEI']:
+        if obj_type in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']:
             s = Sprite(vgdlType=ResourcePack, color=obj_type)
             sample.append(s)
             continue
@@ -2580,7 +2580,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
     ## Prep for sprite induction
         objects = game.getObjects()
         for sprite in objects:
-            if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI']:
+            if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']:
                 distributionInitSetup(game, sprite)
     elif step==1:
         ## Sprite Induction Part 1:
@@ -2591,14 +2591,14 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
         # print "step1"
         # print objects.keys()
         for sprite in objects:
-            if objects[sprite]['sprite'].colorName not in  ['DARKGRAY', 'MPUYEI'] and sprite not in game.spriteDistribution:
+            if objects[sprite]['sprite'].colorName not in  ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and sprite not in game.spriteDistribution:
                 game.all_objects[sprite] = objects[sprite]
                 distributionInitSetup(game, sprite)
 
     elif step == 2:
         ## See the update options for each sprite type the sprite could be
         objects = game.getObjects()
-        notUpdated = [s for s in objects.keys() if objects[s]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI'] and s not in game.spriteDistribution.keys()]
+        notUpdated = [s for s in objects.keys() if objects[s]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and s not in game.spriteDistribution.keys()]
         # if notUpdated:
             # print "step 2: not in sprite distribution:", notUpdated
             # embed()
@@ -2639,7 +2639,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
     elif step==3:
         ## Update sprite distribution based on observations
         objects = game.getObjects()
-        notUpdated = [s for s in objects.keys() if objects[s]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI'] and s not in game.spriteDistribution.keys()]
+        notUpdated = [s for s in objects.keys() if objects[s]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and s not in game.spriteDistribution.keys()]
 
         # sprite_count, calls_to_update_distribution=0, 0
         t1 = time.time()
