@@ -409,6 +409,7 @@ class WBP():
 			visited.append(current)
 
 			current_actions = self.actions
+
 			try:
 				# If there's already a Missile on the screen
 				# and the projectile class is a singleton
@@ -557,7 +558,8 @@ class WBP():
 		
 		if i>=self.max_nodes:
 			if self.short_horizon:
-				# print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
+				print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
+				embed()
 				node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 				parentNode = copy.deepcopy(node)
 				self.solution = node.actionSeq
