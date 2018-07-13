@@ -463,7 +463,6 @@ class Agent:
         self.longHorizonObservations = 0
         self.previous_objects = self.all_objects if self.all_objects else {}
         self.all_objects= self.rle._game.getObjects()
-        ended, win = self.rle._isDone()
         annealing = 1
         ## Start storing encountered states.
         effectsEncountered = []
@@ -488,6 +487,8 @@ class Agent:
             if not flexible_goals:
                 [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
+        ended, win = self.rle._isDone()
+
         emptyPlans = 0
         while not ended:
             ## initialize one or many VRLEs according to hypothesis-selection method
@@ -505,8 +506,8 @@ class Agent:
             # embed()
 
             p_quitting = p.quitting
-            bestNode, gameStringArray, objectPositionsArray = p.BFS()
             print "planning with safeDistance={}, regrounding={}".format(self.safeDistance, self.regrounding)
+            bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes
 
             if bestNode is not None:
@@ -523,7 +524,7 @@ class Agent:
             #         emptyPlans +=1
             #     else:
             #         emptyPlans = 0
-            
+            # embed()
             if self.shortHorizon:
                 ## new 6/30/18
                 if not solution:

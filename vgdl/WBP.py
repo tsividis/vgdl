@@ -77,7 +77,7 @@ class WBP():
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = False
+		self.display = True
 
 
 		if theory == None:
@@ -305,7 +305,7 @@ class WBP():
 		
 		## normal mode
 		if not self.conservative:
-			acceptableNodes = filter(lambda n:n.novelty<3, QReward)
+			acceptableNodes = filter(lambda n: n.novelty<3, QReward)
 			## sort max to min for pop()
 			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
 		else:
@@ -315,6 +315,10 @@ class WBP():
 
 		try:
 			current = bestNodes.pop(0)
+			ended, win = current.rle._isDone()
+			if ended and not win:
+				print "rewardSelection picked a loss node!!"
+				embed()
 		except:
 			if self.display:
 				print('reward selection error')
@@ -363,15 +367,15 @@ class WBP():
 				## sorted by reward and action-sequence length.
 				# node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 
-				parentNode = copy.deepcopy(node)
-				# parentNode = node
+				# parentNode = copy.deepcopy(node)
+				parentNode = node
 				self.solution = node.actionSeq
 
 				if self.conservative and not self.solution:
 					print "in conservative mode. didn't get solution; trying to filter less aggressively"
 					node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
-					parentNode = copy.deepcopy(node)
-					# parentNode = node
+					# parentNode = copy.deepcopy(node)
+					parentNode = node
 					self.solution = node.actionSeq
 					if not self.solution:
 						print "in conservative mode. didn't get solution on second attempt."
@@ -522,8 +526,9 @@ class WBP():
 							print "Think we won but no avatars!?!?"
 							embed()
 					else:
-						QNovelty.append(child)
-						QReward.append(child)
+						if not (child.terminal and not child.win):
+							QNovelty.append(child)
+							QReward.append(child)
 			i+=1
 			self.total_nodes = i
 
@@ -562,14 +567,14 @@ class WBP():
 				print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
 				embed()
 				node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
-				parentNode = copy.deepcopy(node)
-				# parentNode = node
+				# parentNode = copy.deepcopy(node)
+				parentNode = node
 				self.solution = node.actionSeq
 
 				if self.conservative and not self.solution:
 					node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
-					parentNode = copy.deepcopy(node)
-					# parentNode = node
+					# parentNode = copy.deepcopy(node)
+					parentNode = node
 					self.solution = node.actionSeq
 
 				# print self.solution
