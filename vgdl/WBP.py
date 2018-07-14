@@ -322,7 +322,7 @@ class WBP():
 				embed()
 		except:
 			if self.display:
-				print('reward selection error')
+				print("RewardSelection didn't find a node that satisfied novelty criteria.")
 			# embed()
 			return 'pickMaxNode'
 		QReward.remove(current)
@@ -358,10 +358,12 @@ class WBP():
 			if current in [None, 'pickMaxNode']:
 
 				if not self.conservative:
-					node = max(visited, key=lambda n:n.intrinsic_reward)
+					## Node has to have an actionseq
+					node = max(visited, key=lambda n:(n.actionSeq, n.intrinsic_reward))
 				else:
 					node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 					# embed()
+
 				# node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 
 				## if we didn't get any novelty-fulfilling nodes, just pick the best node 
@@ -373,14 +375,25 @@ class WBP():
 				self.solution = node.actionSeq
 
 				if self.conservative and not self.solution:
-					print "in conservative mode. didn't get solution; trying to filter less aggressively"
-					node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+					if self.display:
+						print "in conservative mode. didn't get solution; trying to filter less aggressively"
+					# embed()
+					if QReward:
+						node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+					else:
+						## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break
+						## This is a plan of taking a single 'wait' action.
+						if self.display:
+							print "QReward was empty -- returning a futile plan of a single 'none' action"
+						start = Node(self.rle, self, [], None)
+						start.rle = self.rle
+						child = Node(self.rle, self, start.actionSeq+[0], start)
+						child.eval()
+						node = child
+
 					# parentNode = copy.deepcopy(node)
 					parentNode = node
 					self.solution = node.actionSeq
-					if not self.solution:
-						print "in conservative mode. didn't get solution on second attempt."
-						embed()
 
 				gameString_array, object_positions_array = [], []
 				while parentNode is not None:
@@ -396,7 +409,9 @@ class WBP():
 				# if self.conservative not self.solution:
 					# print "current node is in None or pickMaxNode"
 					# embed()
-				print "was in None or PickMaxNode"
+				if self.display:
+					print "was in None or PickMaxNode"
+				# embed()
 				return node, gameString_array, object_positions_array
 
 			try:
@@ -539,7 +554,8 @@ class WBP():
 				# embed()
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
 				bestNode = bestNodes[0]
-				print "found winning states"
+				if self.display:
+					print "found winning states"
 				# embed()
 				# gameString_array.append(bestNode.rle.show())
 				# object_positions_array.append(copy.deepcopy(bestNode.rle))
@@ -550,27 +566,34 @@ class WBP():
 
 
 		if self.short_horizon:
-			node = max(visited, key=lambda n:(len(n.actionSeq)>0, n.intrinsic_reward, len(n.actionSeq)))
+			# ## Selecting such that it has an actionSeq, and then by intrinsic reward and by its length
+			# node = max(QReward, key=lambda n:(n.actionSeq, n.intrinsic_reward, len(n.actionSeq)))
+			# if len(node.actionSeq)>20:
+			# 	print "got long actionSeq"
+			# 	embed()
+			# # parentNode = copy.deepcopy(node)
+			# parentNode = node
+			# self.solution = node.actionSeq
+
+			# if self.conservative and not self.solution:
+			if QReward:
+				if self.display:
+					print "In conservative mode; selecting highest-reward longest sequence"
+				node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+			else:
+				## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break
+				## This is a plan of taking a single 'wait' action.
+				if self.display:
+					print "QReward was empty -- returning a futile plan of a single 'none' action"
+				start = Node(self.rle, self, [], None)
+				start.rle = self.rle
+				child = Node(self.rle, self, start.actionSeq+[0], start)
+				child.eval()
+				node = child
+
 			# parentNode = copy.deepcopy(node)
 			parentNode = node
 			self.solution = node.actionSeq
-
-			if self.conservative and not self.solution:
-				if QReward:
-					node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
-				else:
-					print "No nodes in QReward; can't pick max. DEBUG"
-					embed()
-					start = Node(self.rle, self, [], None)
-					start.rle = self.rle
-					child = Node(self.rle, self, start.actionSeq+[a], start)
-					# print actionDict[a]
-					child.eval()
-					node = child
-
-				# parentNode = copy.deepcopy(node)
-				parentNode = node
-				self.solution = node.actionSeq
 
 			# print self.solution
 			gameString_array, object_positions_array = [], []
@@ -584,15 +607,16 @@ class WBP():
 			# embed()
 			# print "in WBP, within short horizon"
 			# embed()
-			print "playing with short horizon; reached max of {} nodes".format(self.max_nodes)
+			if not self.conservative and self.display:
+				print "End of shorthorizon plan"
 
 			return node, gameString_array, object_positions_array
 		else:
 			if i>=self.max_nodes:
 				if self.display:
 					print "Got no plan after searching {} nodes".format(self.max_nodes)
-		print "reached end of BFS"
-		embed()
+		# print "reached end of BFS"
+		# embed()
 		return None, None, None
 
 class Node():

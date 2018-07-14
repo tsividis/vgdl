@@ -58,7 +58,7 @@ class Agent:
         self.regrounding = 1
         self.selective_regrounding = True
         self.avoid_danger = True
-        self.safeDistance = 6
+        self.safeDistance = 3
         self.emptyPlansLimit = 5
         self.longHorizonObservationLimit = 2
         self.hypotheses = []
@@ -528,7 +528,8 @@ class Agent:
             if self.shortHorizon:
                 ## new 6/30/18
                 if not solution:
-                    print "initializing conservative planner"
+                    # print "initializing conservative planner"
+                    # embed()
                     ## initialize another planner in conservative mode, meaning you use safe heuristics. Come up with a short plan.
                     p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                         seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
@@ -626,17 +627,44 @@ class Agent:
                         # if self.checkForDanger(self.rle, self.hypotheses[0]):
                             # break
                         try:
-                            rlePositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in self.rle._game.sprite_groups.values() for item in sublist])
+                            rlePositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list])
                             hypPositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in objectPositionsArray[i+1]._game.sprite_groups.values() for item in sublist])
                             rlePositionsTuples, hypPositionsTuples = [(p[0], p[1]) for p in rlePositions], [(p[0], p[1]) for p in hypPositions]
 
                             killer_types = [inter.slot2 for inter in hypotheses[0].interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
                             print "killer types", killer_types
+                            # if len([k for k in self.rle._game.sprite_groups['ghost'] if k not in self.rle._game.kill_list])>0:
+                                # print "there are killer types on the screen"
+                                # embed()
                             regroundingFlag = False
+
+                            # for rlePos in rlePositions:
+                            #     if not regroundingFlag and (rlePos[0], rlePos[1]) not in hypPositionsTuples:
+                            #         nearest = self.findNearestSprite(rlePos[2], [h[2] for h in hypPositions])
+
+                            #         if self.selective_regrounding:
+                            #             if ((nearest.name=='avatar') or
+                            #                 (nearest.name in killer_types and manhattanDist(self.rle._rect2pos(nearest.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance)):
+
+                            #                 # if objPos[2].name=='avatar':
+                            #                     # embed()
+                            #                 regroundingFlag = True
+                            #                 # embed()
+                            #                 break
+                            #         else:
+                            #             regroundingFlag = True
+                            #             break
+
+                            # if regroundingFlag:
+                            #     # print "regrounding"
+                            #     print colored('Regrounding because of {} {} position: {}'.format(nearest.colorName, nearest, self.rle._rect2pos(nearest.rect)), 'white', 'on_magenta')
+                            #     embed()
+                            #     break
+
                             for objPos in hypPositions:
                                 if not regroundingFlag and (objPos[0], objPos[1]) not in rlePositionsTuples:
-                                    print "found object position difference", colored(objPos, 'white', 'on_magenta')
-                                    print 'considering regrounding because of', objPos[2].colorName, objPos[2], "position:", self.rle._rect2pos(objPos[2].rect)
+                                    # print "found object position difference", colored(objPos, 'white', 'on_magenta')
+                                    # print 'considering regrounding because of', objPos[2].colorName, objPos[2], "position:", self.rle._rect2pos(objPos[2].rect)
                                     # try:
                                         # print "orientation:", objPos[2].orientation
                                     # except AttributeError:
@@ -663,7 +691,9 @@ class Agent:
                                         break
 
                             if regroundingFlag:
-                                print "regrounding"
+                                # print "regrounding"
+                                print colored('Regrounding because of {} {} position: {}'.format(objPos[2].colorName, objPos[2], self.rle._rect2pos(objPos[2].rect)), 'white', 'on_magenta')
+                                embed()
                                 break
                             # if tuple(rlePositions) != tuple(hypPositions):
                             # # if any(np.where(list(gameString_array[i+1]))[0] !=
