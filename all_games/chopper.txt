@@ -44,43 +44,75 @@ BasicGame
         MultiSpriteCounter stype1=portalBase stype2=tank limit=0 win=True
         
     InteractionSet
-        #avatar wall > stepBack 
+        avatar wall > stepBack 
+        wall avatar > stepBack
+
 	avatar EOS > stepBack
+    	EOS avatar > nothing
+
         avatar sam > killSprite
         sam avatar > killSprite 
+
 	sam wall > killSprite
+    	wall sam > nothing 
+
 	sam EOS > killSprite
+    	EOS sam > nothing
 
         tank bomb > killSprite 
         tank bomb > changeScore value=1
         bomb tank > killSprite 
+
+
 	bomb wall > killSprite
+    	wall bomb > nothing 
+
 	bomb EOS > killSprite
+    	EOS bomb > nothing 
 
         bomb sam > killSprite
 	sam bomb > killSprite
 
         tank wall  > reverseDirection
+        wall tank > nothing 
+
 	tank EOS  > reverseDirection
+    	EOS tank > nothing
 
         satellite sam > killSprite 
         satellite sam > changeScore value=-1 
         sam satellite > killSprite 
         sam satellite > changeScore value=-1
+
 	satellite wall > stepBack 
+    	wall satellite > nothing
+
 	satellite EOS > stepBack
+    	EOS satellite > nothing 
 
         avatar supply > changeResource resource=bullet value=5
         supply avatar > killSprite
-        supply wall > killSprite 
-	supply EOS > killSprite
 
-        avatar portalBase > stepBack 
+        supply wall > killSprite 
+        wall supply > nothing 
+
+	supply EOS > killSprite
+    	EOS supply > nothing
+
+        avatar portalBase > stepBack
+        portalBase avatar > nothing
+
         avatar portalAmmo > stepBack 
+        portalAmmo avatar > nothing 
 
 	avatar thermosphere > stepBack
+    	thermosphere avatar > nothing
+
 	avatar troposphere > stepBack
+    	troposphere avatar > nothing
+
         satellite stratosphere > stepBack
+        stratosphere satellite > nothing
 
         leftCloud sam > killSprite
         fastLeftCloud sam > killSprite
@@ -93,6 +125,92 @@ BasicGame
         sam fastRightCloud > killSprite
 
         leftCloud EOS > wrapAround
+        EOS leftCloud > nothing
+
         fastLeftCloud EOS > wrapAround
+        EOS fastLeftCloud > nothing
+
         rightCloud EOS > wrapAround
+        EOS rightCloud > wrapAround
+
         fastRightCloud EOS > wrapAround
+        EOS fastRightCloud > wrapAround
+
+
+        thermosphere satellite > nothing
+        satellite thermosphere > nothing
+        bomb thermosphere > nothing
+        thermosphere bomb > nothing
+
+        supply stratosphere > nothing
+        stratosphere supply > nothing
+        leftCloud stratosphere > nothing
+        stratosphere leftCloud > nothing
+        fastLeftCloud stratosphere > nothing
+        stratosphere fastLeftCloud > nothing
+        rightCloud stratosphere > nothing
+        stratosphere rightCloud > nothing
+        fastRightCloud stratosphere > nothing
+        stratosphere fastRightCloud > nothing
+        bomb stratosphere > nothing
+        stratosphere bomb > nothing
+        avatar stratosphere > nothing
+        stratosphere avatar > nothing
+
+        tank troposphere > nothing
+        troposphere tank > nothing
+        bomb troposphere > nothing
+        troposphere bomb > nothing
+
+        thermosphere sam > nothing
+        sam thermosphere > nothing
+        stratosphere sam > nothing
+        sam stratosphere > nothing
+        troposphere sam > nothing
+        sam troposphere > nothing
+        sam portalAmmo > nothing
+        portalAmmo sam > nothing
+
+        sam supply > nothing
+        supply sam > nothing
+        bomb supply > nothing
+        supply bomb > nothing
+
+        supply leftCloud > nothing
+        leftCloud supply > nothing
+        supply fastLeftCloud > nothing
+        fastLeftCloud supply > nothing
+        supply rightCloud > nothing
+        rightCloud supply > nothing
+        supply fastRightCloud > nothing
+        fastRightCloud supply > nothing
+
+        leftCloud fastLeftCloud > nothing
+        fastLeftCloud leftCloud > nothing
+        leftCloud rightCloud > nothing
+        rightCloud leftCloud > nothing
+        leftCloud fastRightCloud > nothing
+        fastRightCloud leftCloud > nothing
+
+        fastLeftCloud rightCloud > nothing
+        rightCloud fastLeftCloud > nothing
+        fastLeftCloud fastRightCloud > nothing
+        fastRightCloud fastLeftCloud > nothing
+
+        rightCloud fastRightCloud > nothing
+        fastRightCloud rightCloud > nothing
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
