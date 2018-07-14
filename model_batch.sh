@@ -2,12 +2,12 @@
 
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-4
+#SBATCH --array=0-14
 #SBATCH --output=slurm_logs/short_horizon/array_%A_%a.out
 #SBATCH --time=960
 #SBATCH --qos=tenenbaum
 #SBTACH --cpus-per-task=2
-#SBATCH --mem=632
+#SBATCH --mem=32G
 
 # --array=0-2%30 tells it to run array instances 0-2 and to never run more than 30 jobs at a time.
 # if i'm using qos=tenenbaum i shouldn't exceed 30.
@@ -45,5 +45,5 @@ fi
 
 # finally, run the model
 # singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index $HYPER_IDX
-singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 4
+singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3
 #echo "-m vgdl.load_games --game_name ${GAME_NAME} --hyperparameter_index ${HYPER_IDX}"
