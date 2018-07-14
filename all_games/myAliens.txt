@@ -51,13 +51,13 @@ BasicGame
         alien portalGhost > nothing
         portalGhost alien > nothing
         wall alien > nothing
-        alien wall > nothing
+        alien wall > killSprite
         ghost portalAlien > nothing
         portalAlien ghost > nothing
         ghost portalGhost > nothing
         portalGhost ghost > nothing
         wall ghost > nothing
-        ghost wall > nothing
+        ghost wall > killSprite
         ghost EOS > nothing
         EOS ghost > nothing
         portalGhost portalAlien > nothing
