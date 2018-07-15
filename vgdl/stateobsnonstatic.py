@@ -429,6 +429,7 @@ def processFrame(memory, gameObject):
 
 				if sprite.resources:
 					newSprite.inventory = {}
+					color = None
 					try:
 						for key in sprite.resources:
 							try:

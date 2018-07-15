@@ -986,15 +986,6 @@ def generateSymbolDict(rle):
 
 	return inverseMapping
 
-
-## TODO: check and complete list of predicates
-# predicates = 
-# ['attractGaze','bounceForward', 'bounceDirection', 'changeResource', 
-# 'changeScore', 'killSprite', 'killIfHasMore', 'killIfHasLess', 
-# 'killOtherHasMore', 'killOtherHasLess' 'killIfSlow', 'nothing', 
-# 'spawnIfHasMore', 'transformTo', 'transformToOnLanding', 'triggerOnLanding', 
-# 'slipForward', 'wallBounce', 'wrapAround']
-
 def getKeywordsFromOntology(interactionName):
 	ontologyKeywordDict = \
 	{'changeResource': ['resource', 'value', 'limit'],\

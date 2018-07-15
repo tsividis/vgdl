@@ -786,6 +786,7 @@ class Agent:
 			bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
 			self.assumeZeroErrorTheoryExists = prev
 			# print time.time()-t1
+			# print 'just got some new theories'
 			# embed()
 
 			if len(bestScoresAndHypotheses) == 0:	
@@ -1135,7 +1136,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		
 		sA, sB = t[0], t[1] #sprites in envA, envB      
 		dist = t[2] #distance to sprite in envB
-		sPrev, dist_ts = find_sPrev(sB, envB, envPrev) #Previous location of our sprite
+		sPrev, dist_ts = find_sPrev(sB, envPrev) #Previous location of our sprite
 
 		sA_type = theory.spriteObjects[sA.colorName].vgdlType
 		sA_class = theory.spriteObjects[sA.colorName].className
@@ -1297,7 +1298,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 	appeared_sprites_envB = []
 	for sB in lonely_sprites_envB:
 		# Find sprite corresponding to sB in previous time step
-		sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
+		sPrev, dist_ts = find_sPrev(sB, envPrev)
 		if sPrev == None: #sB has no match in envPrev
 			appeared_sprites_envB.append(sB)
 			continue 
@@ -1383,9 +1384,8 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			sB = sB[0]
 			e.diagnosis.append('objectDestruction')
 			e.targetToken = sB
-			# Find the sprite that was destroyed in envB from the kill_list
-			# Find neighbors of target sprite in the previous time step
-			sPrev = sB #sprite was destroyed but hasn't moved
+			# believe it or not, the dead sprite may have moved (smh vgdl), so we have to look for it in envPrev
+			sPrev = find_sPrev(sB, envPrev)[0]
 
 		neighbors_prev = neighboringSpritesColors(envPrev, sPrev)
 		neighbors_prev = [c for c in neighbors_prev if c!=sA.colorName]
@@ -1439,14 +1439,14 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 			e.targetToken = sB
 			e.targetClass = sA.colorName
 			e.targetColor = sB.colorName
-			sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
+			sPrev, dist_ts = find_sPrev(sB, envPrev)
 			neighbors_prev = neighboringSpritesColors(envPrev, sPrev)
 			e.intPairs.extend([(e.targetClass, n) for n in neighbors_prev])
 			errorMap.append(e)
 
 	for sB in lonely_sprites_envB:
 		inventory_penalty = 0
-		sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
+		sPrev, dist_ts = find_sPrev(sB, envPrev)
 		if not sPrev:
 			continue
 		keys = list(set(sB.inventory.keys()+sPrev.inventory.keys()))
@@ -1475,7 +1475,7 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 		e.targetToken = sA
 		e.targetClass = sA.colorName
 		e.targetColor = sA.colorName
-		sPrev, dist_ts = find_sPrev(sB, envB, envPrev)
+		sPrev, dist_ts = find_sPrev(sB, envPrev)
 		neighbors_prev = neighboringSpritesColors(envPrev, sPrev)
 		e.intPairs.extend([(e.targetClass, n) for n in neighbors_prev])
 		errorMap.append(e)
@@ -1533,22 +1533,29 @@ def neighboringSprites(env, sprite, distanceThreshold=2):
 	neighbors = [s for s in all_sprites if manhattanDist2(s, sprite)<=np.sqrt(distanceThreshold) and s!=sprite]
 	return neighbors
 
-def find_sPrev(sB, envB, envPrev):
+def find_sPrev(sB, envPrev):
 	"""
 	Find sprite in envPrev (previous environment) corresponding to a sprite in
 	envB (current environment), and the distance that the sprite has traveled
 	in the time step
 	"""
-	matched_ts, _, _ = matchEnvs(envB, envPrev) #matches real env across timestep
-	dist_ts = [matched_ts[i][2] for i in range(len(matched_ts)) if matched_ts[i][0] == sB] #distance that sB has moved over timestep
-	sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0] == sB] #sB in previous step
-	if sPrev == []:
-		sPrev = None
-		dist_ts = None
-	else:
-		sPrev = sPrev[0]
-		dist_ts = dist_ts[0]
-	return sPrev, dist_ts
+	# OLD version -- very inefficient
+	# matched_ts, _, _ = matchEnvs(envB, envPrev) #matches real env across timestep
+	# dist_ts = [matched_ts[i][2] for i in range(len(matched_ts)) if matched_ts[i][0] == sB] #distance that sB has moved over timestep
+	# sPrev = [matched_ts[i][1] for i in range(len(matched_ts)) if matched_ts[i][0] == sB] #sB in previous step
+	# if sPrev == []:
+	# 	sPrev = None
+	# 	dist_ts = None
+	# else:
+	# 	sPrev = sPrev[0]
+	# 	dist_ts = dist_ts[0]
+
+	for lst in envPrev._game.observation['trackedObjects'].values():
+		for s in lst:
+			if s.ID == sB.ID:
+				return s, manhattanDist2(s, sB)
+
+	return None , None
 
 def diagnosePosMismatch(sA, sB, sPrev, envA, envB, envPrev, dist_ts, theory):
 	"""
@@ -2470,17 +2477,10 @@ def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, a
 	
 	if len(theories)==1 and theories[0]==hypothesis:
 		theories[0].experienceReplayRecord = hypothesis.experienceReplayRecord
-	
-	# if errorList:
-		# hypothesis.display()
-		# for e in errorList:
-			# e.display()
-			# print ""
-	# else:
-		# hypothesis.display()
-		# print "No error"
-		# embed()
-	# print "expanding theories"
+		
+
+	print 'just tested and expanded'
+	embed()
 
 	return theories
 
