@@ -649,7 +649,7 @@ class Agent:
                                         # embed()
                                         break
                                     if s.rect!=hypDict[s.ID].rect and manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance:
-                                        print colored("Regrounding because distance between {} and {} is {}, which is greater than {}. We thought it would be at {}".format(
+                                        print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
                                                 s, self.rle._game.getAvatars()[0], manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)), self.safeDistance, hypDict[s.ID]),
                                                 'white', 'on_magenta')
                                         regroundingFlag=True
@@ -743,7 +743,6 @@ class Agent:
                             #     # embed()
                             #     break
                         except:
-                            # Mismatch in gamestring lengths
                             print ""
                             print 'regrounding problem'
                             embed()
