@@ -21,10 +21,10 @@
 # game_names = ['boulderdash', 'boulderchase']
 
 # ## idx 3
-# game_names = ['aliens', 'butterflies', 'chase', 'expt_helper', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'jaws', 'lemmings', 'myAliens', 'overload', 'plaqueattack', 'waves', 'chopper']
+game_names = ['aliens', 'avoidgeorge', 'butterflies', 'chase', 'expt_helper', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'jaws', 'lemmings', 'myAliens', 'overload', 'plaqueattack', 'waves', 'chopper']
 # game_names = ['aliens', 'survivezombies', 'jaws', 'plaqueattack', 'waves']
 # game_names = ['myAliens']
-game_names = ['jaws', 'waves']
+# game_names = ['jaws', 'waves']
 # ## idx 3, more memory
 # game_names = ['chopper']
 
