@@ -9,7 +9,10 @@
 #                  'overload', 'plaqueattack', 'superman',	'watergame',	    		 #22-25
 #                   'waves',  'wildgunman']                               	 #26-27
 
-game_names = ['expt_push_boulders', 'expt_antagonist', 'portals', 'zelda']
+#idx_2
+game_names = ['expt_push_boulders', 'portals']
+#idx_4
+# game_names = ['expt_antagonist', 'zelda']
 # game_names = ['boulderchase', 'jaws', 'myAliens', 'overload', 'avoidgeorge']
 
 ##running with hyperparams2
