@@ -2479,8 +2479,8 @@ def testAndExpand(env, hypothesis, action, envReal, envRealPrev, rleHistories, a
 		theories[0].experienceReplayRecord = hypothesis.experienceReplayRecord
 		
 
-	print 'just tested and expanded'
-	embed()
+	# print 'just tested and expanded'
+	# embed()
 
 	return theories
 

@@ -277,6 +277,7 @@ class BasicGame(object):
         self.observation = None
         self.EOS = EOS((-1, -1))
         self.reset()
+        self.embedPlease = False
 
     def reset(self):
         self.score = 0
@@ -636,9 +637,14 @@ class BasicGame(object):
                 del self.lastcollisions[key]
 
     def _eventHandling(self, predicateSubset=[]):
+        if self.embedPlease:
+            print '_eventHandling'
+            embed()
         self.lastcollisions = {}
         push_effect = 'bounceForward'
         back_effect = 'stepBack'
+        # this should probably also have collectResource but I'm not totally sure about that one
+        fatal_effects = ['killSprite', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess', 'killIfTooFast', 'killIfSlow']
         force_collisions = []
         collision_set = set()
         new_collisions = True
@@ -742,11 +748,21 @@ class BasicGame(object):
                             new_effects.append(effect(sprite1, sprite2, resource_color, self, **kwargs))
 
                         elif effect.__name__ == 'transformTo':
-
                             new_effects.append(effect(sprite1, sprite2, self, **kwargs))
                             new_sprite = self.getSprites(kwargs['stype'])[-1]
                             new_collisions.add((sprite1, new_sprite))
                             dead.append(sprite1)
+
+
+                        ## <note_to_pedro>
+                        ## HEY PEDRO THIS IS THE PART WHICH BREAKS IT (makes the planner run forever)
+                        # not sure why, but it happens in expt_antagonist and not zelda
+                        # commenting out this elif block makes it back to normal
+                        elif effect.__name__ in fatal_effects:
+                            new_effects.append(effect(sprite1, sprite2, self, **kwargs))
+                            dead.append(sprite1)
+                        ## </note_to_pedro>
+
 
                         # Deal with push effects
                         elif effect.__name__ == push_effect:
