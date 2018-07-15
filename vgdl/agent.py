@@ -108,10 +108,10 @@ class Agent:
 			self.max_nodes_annealing = 10
 		self.conservative = False
 		self.firstOrderHorizon = False # Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
-		self.regrounding = 3
+		self.regrounding = 1
 		self.reground_for_killer_types = True # encourages safe behavior
 		self.reground_for_stochastic_types = True # encourages replanning more often as these agents deviate from prediction
-		self.safeDistance = 6
+		self.safeDistance = 3
 		self.emptyPlansLimit = 1#should be 5
 		self.longHorizonObservationLimit = 2
 		self.scores = []
