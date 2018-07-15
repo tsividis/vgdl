@@ -1283,6 +1283,7 @@ class VGDLSprite(object):
         self.cooldown = cooldown or self.cooldown
         # self.ID = id(self) # TODO: Make sure that these are unique, maintained during the lifetime of the object
         self.ID = uuid.uuid1()
+        self.ID2 = self.ID ## we use ID2 when setting the state.
         self.direction = None
         #TODO: change the choice to be from colors that are not taken?
         self.color = color or self.color or PURPLE#(140, 20, 140)
