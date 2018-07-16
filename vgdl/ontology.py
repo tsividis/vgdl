@@ -1140,21 +1140,24 @@ class NoveltyTermination(Termination):
             else:
                 true_operator = operator_name
             try:
-                resource_str = str(game.getAvatars()[0].resources[item])
+                # resource_str = str(game.getAvatars()[0].resources[item])
+                if item in game.lastAvatarResources:
+                    resource_str = str(game.lastAvatarResources[item])
+                else:
+                    resource_str = str(0)
             except IndexError:
                 return False, None
 
             if not eval(resource_str+true_operator+str(num)):
-                if self.s1=='c5' and self.s2=='avatar':
-                    print "precondition for {} is {} and failed".format((self.s1,self.s2), self.args)
-                    print game.getAvatars()[0].resources
+                # if self.s1=='c5' and self.s2=='avatar':
+                    # print "precondition for {} is {} and failed".format((self.s1,self.s2), self.args)
+                    # print game.getAvatars()[0].resources
                 return False, None
             else:
-                if self.s1=='c5' and self.s2=='avatar':
-                    print "precondition for {} is {} and PASSED".format((self.s1,self.s2), self.args)
+                # if self.s1=='c5' and self.s2=='avatar':
+                    # print "precondition for {} is {} and PASSED".format((self.s1,self.s2), self.args)
                 resourcePassed = True
                 # print ""
-                # embed()
 
             # else:
             #     print "found correct preconditions"
@@ -1635,7 +1638,7 @@ def killIfHasMore(sprite, partner, game, resource, limit=1):
 
 def killIfOtherHasMore(sprite, partner, game, resource, limit=1):
     """ If 'partner' has more than a limit of the resource type given, sprite dies. """
-    print partner.resources, limit
+    # print partner.resources, limit
     if partner.resources[resource] >= limit:
         return killSprite(sprite, partner, game)
         # return ('killIfOtherHasMore' , sprite.ID, partner.ID)
