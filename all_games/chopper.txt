@@ -115,14 +115,22 @@ BasicGame
         stratosphere satellite > nothing
 
         leftCloud sam > killSprite
+        sam leftCloud > nothing
         fastLeftCloud sam > killSprite
+        sam fastLeftCloud > nothing
         rightCloud sam > killSprite
+        sam rightCloud > nothing
         fastRightCloud sam > killSprite
+        sam fastRightCloud > nothing
 
 	sam leftCloud > killSprite
+        leftCloud sam > nothing
         sam fastLeftCloud > killSprite
+        fastLeftCloud sam > nothing
         sam rightCloud > killSprite
+        rightCloud sam > nothing
         sam fastRightCloud > killSprite
+        fastRightCloud sam > nothing
 
         leftCloud EOS > wrapAround
         EOS leftCloud > nothing
@@ -131,16 +139,20 @@ BasicGame
         EOS fastLeftCloud > nothing
 
         rightCloud EOS > wrapAround
-        EOS rightCloud > wrapAround
+        EOS rightCloud > nothing
 
         fastRightCloud EOS > wrapAround
-        EOS fastRightCloud > wrapAround
+        EOS fastRightCloud > nothing
 
 
         thermosphere satellite > nothing
         satellite thermosphere > nothing
         bomb thermosphere > nothing
         thermosphere bomb > nothing
+        avatar satellite > nothing
+        satellite avatar > nothing
+        bomb satellite > nothing
+        satellite bomb > nothing
 
         supply stratosphere > nothing
         stratosphere supply > nothing
@@ -157,10 +169,27 @@ BasicGame
         avatar stratosphere > nothing
         stratosphere avatar > nothing
 
+        bomb leftCloud > nothing
+        leftCloud bomb > nothing
+        bomb fastLeftCloud > nothing
+        fastLeftCloud bomb > nothing
+        bomb rightCloud > nothing
+        rightCloud bomb > nothing
+        bomb fastRightCloud > nothing
+        fastRightCloud bomb > nothing
+
         tank troposphere > nothing
         troposphere tank > nothing
         bomb troposphere > nothing
         troposphere bomb > nothing
+        bomb portalBase > nothing
+        portalBase bomb > nothing
+        bomb portalAmmo > nothing
+        portalAmmo bomb > nothing
+
+        tank portalBase > nothing
+        portalBase tank > nothing
+
 
         thermosphere sam > nothing
         sam thermosphere > nothing
@@ -171,10 +200,40 @@ BasicGame
         sam portalAmmo > nothing
         portalAmmo sam > nothing
 
+        avatar leftCloud > nothing
+        leftCloud avatar > nothing
+        avatar fastLeftCloud > nothing
+        fastLeftCloud avatar > nothing
+        avatar rightCloud > nothing
+        rightCloud avatar > nothing
+        avatar fastRightCloud > nothing
+        fastRightCloud avatar > nothing
+
         sam supply > nothing
         supply sam > nothing
         bomb supply > nothing
         supply bomb > nothing
+
+        leftCloud portalAmmo > nothing
+        portalAmmo leftCloud > nothing
+        leftCloud wall > nothing
+        wall leftCloud > nothing
+
+        rightCloud portalAmmo > nothing
+        portalAmmo rightCloud > nothing
+        rightCloud wall > nothing
+        wall rightCloud > nothing
+
+        fastLeftCloud portalAmmo > nothing
+        portalAmmo fastLeftCloud > nothing
+        fastLeftCloud wall > nothing
+        wall fastLeftCloud > nothing
+
+        fastRightCloud portalAmmo > nothing
+        portalAmmo fastRightCloud > nothing
+        fastRightCloud wall > nothing
+        wall fastRightCloud > nothing
+
 
         supply leftCloud > nothing
         leftCloud supply > nothing

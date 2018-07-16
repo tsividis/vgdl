@@ -77,7 +77,7 @@ class WBP():
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = False
+		self.display = True
 
 
 		if theory == None:
@@ -313,7 +313,8 @@ class WBP():
 			acceptableNodes = QReward
 			## sort max to min for pop()
 			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, len(n.actionSeq)))
-
+			print "in conservative mode in reward selection"
+			embed()
 		try:
 			current = bestNodes.pop(0)
 			ended, win = current.rle._isDone()
@@ -423,8 +424,8 @@ class WBP():
 
 			self.statesEncountered.append(current.rle._game.getFullState())
 
-			if self.display:
-				print current.rle.show(indent=True)
+			# if self.display:
+				# print current.rle.show(indent=True)
 
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
@@ -578,7 +579,7 @@ class WBP():
 			# if self.conservative and not self.solution:
 			if QReward:
 				if self.display:
-					print "In conservative mode; selecting highest-reward longest sequence"
+					print "In short-horizon mode; selecting highest-reward longest sequence"
 				node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 			else:
 				## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break

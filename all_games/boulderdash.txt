@@ -38,7 +38,7 @@ BasicGame
 		avatar butterfly > changeScore value=-1
 		avatar butterfly > killSprite
 
-		avatar crab > changeScore value=-1
+		#avatar crab > changeScore value=-1
 		avatar crab > killSprite
 
 		boulder dirt > stepBack

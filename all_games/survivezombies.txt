@@ -21,7 +21,7 @@ BasicGame
         bee wall > stepBack
         zombie wall > stepBack
 
-        avatar zombie   > changeScore value=-1
+        #avatar zombie   > changeScore value=-1
         avatar zombie   > killIfHasLess resource=honey limit=-1
         avatar zombie   > changeResource resource=honey value=-1
         zombie avatar   > killSprite
