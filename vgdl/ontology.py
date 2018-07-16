@@ -1145,11 +1145,13 @@ class NoveltyTermination(Termination):
                 return False, None
 
             if not eval(resource_str+true_operator+str(num)):
-                # print "precondition for {} is {} and failed".format((self.s1,self.s2), self.args)
-                # print game.getAvatars()[0].resources
+                if self.s1=='c5' and self.s2=='avatar':
+                    print "precondition for {} is {} and failed".format((self.s1,self.s2), self.args)
+                    print game.getAvatars()[0].resources
                 return False, None
             else:
-                # print "precondition for {} is {} and PASSED".format((self.s1,self.s2), self.args)
+                if self.s1=='c5' and self.s2=='avatar':
+                    print "precondition for {} is {} and PASSED".format((self.s1,self.s2), self.args)
                 resourcePassed = True
                 # print ""
                 # embed()
@@ -1633,6 +1635,7 @@ def killIfHasMore(sprite, partner, game, resource, limit=1):
 
 def killIfOtherHasMore(sprite, partner, game, resource, limit=1):
     """ If 'partner' has more than a limit of the resource type given, sprite dies. """
+    print partner.resources, limit
     if partner.resources[resource] >= limit:
         return killSprite(sprite, partner, game)
         # return ('killIfOtherHasMore' , sprite.ID, partner.ID)
@@ -1673,8 +1676,11 @@ def pullWithIt(sprite, partner, game):
 
     tmp = sprite.lastrect
     v = unitVector(partner.lastdirection)
-    sprite._updatePos(v, partner.speed * sprite.physics.gridsize[0])
-
+    try:
+        sprite._updatePos(v, partner.speed * sprite.physics.gridsize[0])
+    except:
+        print "problem in pullwithit"
+        embed()
     if isinstance(sprite.physics, ContinuousPhysics):
         sprite.speed = partner.speed
         sprite.orientation = partner.lastdirection
@@ -2076,8 +2082,8 @@ def initializeDistributionArgs(sprite_type, objectColors):
     """
 
     def initializeSpeed():
-        speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
-        # speedValues = [0.2, 1.]
+        # speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+        speedValues = [0.1, 0.2, 1.]
         return [('speed', v) for v in speedValues]
         # initializeProperty(args, 'speed', speedValues)
 
@@ -2099,8 +2105,9 @@ def initializeDistributionArgs(sprite_type, objectColors):
         # initializeProperty(args, 'stype', stypeValues)
 
     def initializeCooldown():
-        stypeValues = [1, 2, 3, 4, 5, 6]
+        # stypeValues = [1, 2, 3, 4, 5, 6]
         # stypeValues = [1,5]
+        stypeValues = [1]
         return [('cooldown', v) for v in stypeValues]
         # initializeProperty(args, 'cooldown', stypeValues)
 
@@ -2434,8 +2441,8 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             # embed()
 
         ## Use for debugging sprite-type inference.
-        # if obj_type=='LIGHTGREEN':
-        #     goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='LIGHTGREEN']
+        # if obj_type=='BROWN':
+        #     goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='BROWN']
         #     print [g.rect for g in goldobjs[0]]
         #     for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
         #         print(k, param_product[k])
