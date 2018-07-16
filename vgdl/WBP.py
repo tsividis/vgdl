@@ -541,9 +541,9 @@ class WBP():
 							# embed()
 						# if t:
 							# print t.__dict__
-						if not child.rle._game.getAvatars():
-							print "Think we won but no avatars!?!?"
-							embed()
+						# if not child.rle._game.getAvatars():
+							# print "Think we won but no avatars!?!?"
+							# embed()
 					else:
 						if not (child.terminal and not child.win):
 							QNovelty.append(child)

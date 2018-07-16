@@ -2333,12 +2333,12 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					if true_operator == "<":
 						limit = precondition.num - 1 ## used to be -2
 					else:
-						limit = precondition.num #- 1 ## used to be -1
+						limit = precondition.num ## used to be -1
 
 				elif true_operator in {">", ">="}:
 					newInteractionName = 'killIfOtherHasMore'
 					if true_operator == ">":
-						limit = precondition.num #+ 1
+						limit = precondition.num + 1
 					else:
 						limit = precondition.num
 
