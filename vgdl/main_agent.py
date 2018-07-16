@@ -616,7 +616,8 @@ class Agent:
                     # if self.total_game_steps > MAX_STEPS:
                         # score = self.rle._game.score
                         # return gameObject, win, score, steps, statesEncountered, effectsEncountered
-                    
+                    # if self.rle._game.time>13:
+                        # embed()
 
                     ## Make sure you're far enough from unpredictable dangerous objects.
 
@@ -982,6 +983,7 @@ class Agent:
                         agentState[changes['resource']] -= changes['value']
                         break
             self.rle.agentStatePrev = agentState
+
         # If agent is killed before we get agentState
         except (IndexError, AttributeError) as e:
             # agentState = defaultdict(lambda:0)
@@ -1063,7 +1065,6 @@ class Agent:
                 # print "adding fake rules"
                 # import ipdb; ipdb.set_trace()
                 # ipdb.set_trace()
-
                 if (resource not in self.seen_resources and val>0):
                     self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
                     self.fakeInteractionRules = list(set(self.fakeInteractionRules))

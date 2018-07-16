@@ -655,7 +655,10 @@ class BasicGame(object):
         dead = self.kill_list[:] # copy kill list
 
         self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack','wallStop']
-            else (2 if x[2].__name__ in ['killSprite', 'killIfTooFast', 'collectResource'] else (3 if x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource'] else 0)), reverse=True)
+                else 2 if x[2].__name__ in ['killSprite', 'killIfTooFast', 'collectResource']
+                else 3 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']<=0))
+                else 3.5 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']>0))
+                else 0, reverse=True)
 
         effectSubset = [eff for eff in self.collision_eff if eff[2].__name__ in predicateSubset] if predicateSubset else self.collision_eff
 

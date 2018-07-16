@@ -59,7 +59,7 @@ class WBP():
 		self.solution = None
 		self.trackTokens = False
 		self.vecSize = None
-		self.addWaitAction = False
+		self.addWaitAction = True
 		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
@@ -77,7 +77,7 @@ class WBP():
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = False
+		self.display = True
 
 
 		if theory == None:
@@ -470,6 +470,7 @@ class WBP():
 					child = Node(self.rle, self, current.actionSeq+[a], current)
 					# print actionDict[a]
 					child.eval()
+
 					# print ""
 					ended, win = child.rle._isDone()
 					# if a == K_SPACE:
@@ -1553,7 +1554,7 @@ if __name__ == "__main__":
 	## objects.
 	# gameFilename = "examples.gridphysics.theorytest"
 	# gameFilename = "examples.gridphysics.boulderdash"
-	gameFilename = "examples.gridphysics.portals2"
+	gameFilename = "examples.gridphysics.expt_preconditions2"
 	# gameFilename = "examples.continuousphysics.breakout_big"
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)

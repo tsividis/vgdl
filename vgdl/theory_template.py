@@ -482,7 +482,7 @@ class Theory(object):
 		return likelihood
 
 	def updateInteractionsPreconditions(self, resource, limit=None):
-		if not limit:
+		if not limit: 
 			new_precond = Precondition(
 			text='new precondition for '+resource,
 			item=resource, operator_name='>', num=0)
@@ -2331,18 +2331,19 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				if true_operator in {"<", "<="}:
 					newInteractionName = 'killIfHasLess' #example
 					if true_operator == "<":
-						limit = precondition.num - 2
+						limit = precondition.num - 1 ## used to be -2
 					else:
-						limit = precondition.num - 1
+						limit = precondition.num #- 1 ## used to be -1
 
 				elif true_operator in {">", ">="}:
 					newInteractionName = 'killIfOtherHasMore'
 					if true_operator == ">":
-						limit = precondition.num + 1
+						limit = precondition.num #+ 1
 					else:
 						limit = precondition.num
 
 				argsString = " resource=%s limit=%s"%(precondition.item, str(limit))
+
 		elif interactionRule.interaction=='teleportToExit':
 			argsString = ""
 		elif interactionRule.interaction == 'killIfFromAbove' or interactionRule.interaction == 'killIfFromBelow':
