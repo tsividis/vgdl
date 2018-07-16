@@ -313,8 +313,8 @@ class WBP():
 			acceptableNodes = QReward
 			## sort max to min for pop()
 			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, len(n.actionSeq)))
-			print "in conservative mode in reward selection"
-			embed()
+			# print "in conservative mode in reward selection"
+			# embed()
 		try:
 			current = bestNodes.pop(0)
 			ended, win = current.rle._isDone()
