@@ -2,9 +2,9 @@
 
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-1
+#SBATCH --array=0-2
 #SBATCH --output=slurm_logs/short_horizon/array_%A_%a.out
-#SBATCH --time=960
+#SBATCH --time=1440
 #SBATCH --qos=tenenbaum
 #SBTACH --cpus-per-task=2
 #SBATCH --mem=64G
@@ -45,5 +45,5 @@ fi
 
 # finally, run the model
 # singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index $HYPER_IDX
-singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 4
+singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 2
 #echo "-m vgdl.load_games --game_name ${GAME_NAME} --hyperparameter_index ${HYPER_IDX}"
