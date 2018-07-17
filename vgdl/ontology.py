@@ -2085,8 +2085,8 @@ def initializeDistributionArgs(sprite_type, objectColors):
     """
 
     def initializeSpeed():
-        # speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
-        speedValues = [0.1, 0.2, 1.]
+        speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+        # speedValues = [0.1, 0.2, 1.]
         return [('speed', v) for v in speedValues]
         # initializeProperty(args, 'speed', speedValues)
 
@@ -2108,9 +2108,9 @@ def initializeDistributionArgs(sprite_type, objectColors):
         # initializeProperty(args, 'stype', stypeValues)
 
     def initializeCooldown():
-        # stypeValues = [1, 2, 3, 4, 5, 6]
+        stypeValues = [1, 2, 3, 4, 5, 6]
         # stypeValues = [1,5]
-        stypeValues = [1]
+        # stypeValues = [1]
         return [('cooldown', v) for v in stypeValues]
         # initializeProperty(args, 'cooldown', stypeValues)
 
