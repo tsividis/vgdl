@@ -18,7 +18,7 @@
 
 ## idx 2, more memory:
 # game_names = ['expt_push_boulders', 'sokoban', 'bait', 'watergame']
-game_names = ['frogs', 'expt_preconditions', 'sokoban', 'watergame']
+game_names = ['bait', 'expt_push_boulders', 'frogs', 'expt_preconditions', 'sokoban', 'watergame']
 # game_names = ['boulderdash', 'boulderchase']
 
 # ## idx 3
