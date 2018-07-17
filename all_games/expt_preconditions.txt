@@ -4,9 +4,9 @@ BasicGame frame_rate=30
         goal > Passive color=GOLD
         box > Passive color=ORANGE
         medicine > Resource limit=4 color=WHITE
-        poison > Resource limit=3 color=PINK
+        poison > Resource limit=3 color=MPUYEI
         suit > Resource limit=1 color=GREEN
-        wall > Immovable color=BLACK
+        wall > Immovable color=DARKGRAY
     LevelMapping
         0 > hole
         b > box
