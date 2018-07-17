@@ -485,7 +485,7 @@ class Theory(object):
 		if not limit: 
 			new_precond = Precondition(
 			text='new precondition for '+resource,
-			item=resource, operator_name='>', num=0)
+			item=resource, operator_name='>', num=-1)
 		else:
 			new_precond = Precondition(
 			text='new precondition for '+resource,
@@ -2331,9 +2331,10 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				if true_operator in {"<", "<="}:
 					newInteractionName = 'killIfHasLess' #example
 					if true_operator == "<":
-						limit = precondition.num - 1 ## used to be -2
+						limit = precondition.num - 2 ## used to be -2
 					else:
-						limit = precondition.num -1## used to be -1
+						limit = precondition.num -1 ## used to be -1
+					# embed()
 
 				elif true_operator in {">", ">="}:
 					newInteractionName = 'killIfOtherHasMore'

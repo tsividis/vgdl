@@ -2145,7 +2145,9 @@ def distributionInitSetup(game, sprite):
         except KeyError:
             continue
     objectColors = list(objectColors)
-
+    if 'DTIZDF' in objectColors:
+        print "found DTIZDF"
+        embed()
     game.spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
     game.object_token_spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
     if sprite not in game.all_objects.keys():
@@ -2597,7 +2599,6 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
         ## every time you act, make sure there aren't new objects
         ## if there are, update spriteDistribution etc.
         objects = game.getObjects()
-
         # print "step1"
         # print objects.keys()
         for sprite in objects:

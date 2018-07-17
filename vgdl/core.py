@@ -122,6 +122,13 @@ class VGDLParser(object):
         if 'cloneSprite' in [e[2].__name__ for e in self.game.collision_eff]:
             self.has_clonesprite = True
         #print self.game.collision_eff
+        
+        self.game.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack','wallStop']
+                else 2 if x[2].__name__ in ['killSprite', 'killIfTooFast', 'collectResource']
+                else 3 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']<=0))
+                else 3.5 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']>0))
+                else 0, reverse=True)
+        # embed()
 
     def parseTerminations(self, tnodes):
         # if any(['Multi' in tnode.content for tnode in tnodes]):
@@ -281,6 +288,8 @@ class BasicGame(object):
         self.new_sprites = []
         self.observation = None
         self.has_clonesprite = False
+        self.isInternalEnv = False
+        self.genericNothingRules = []
         self.EOS = EOS((-1, -1))
         self.reset()
 
@@ -659,11 +668,15 @@ class BasicGame(object):
         spriteLocationDict = defaultdict(lambda:[])
         dead = self.kill_list[:] # copy kill list
 
-        self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack','wallStop']
-                else 2 if x[2].__name__ in ['killSprite', 'killIfTooFast', 'collectResource']
-                else 3 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']<=0))
-                else 3.5 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']>0))
-                else 0, reverse=True)
+        ## Checking each collision_eff is expensive, and doing so for 'nothing' effects is useless
+        ## unless we want to return that a collision happened. So when we're doing eventHandling
+        ## for internally-simulated worlds, don't process 'nothing' interactions.
+
+        # self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack','wallStop']
+        #         else 2 if x[2].__name__ in ['killSprite', 'killIfTooFast', 'collectResource']
+        #         else 3 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']<=0))
+        #         else 3.5 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']>0))
+        #         else 0, reverse=True)
 
         effectSubset = [eff for eff in self.collision_eff if eff[2].__name__ in predicateSubset] if predicateSubset else self.collision_eff
 
