@@ -244,7 +244,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
     def _isDone(self, getTermination=False):
         # remember reward if the final state ends the game
-        # self._game.terminations.sort(key=lambda x: 0 if (x.name=='SpriteCounter' and x.stype=='avatar' and x.win==  False) else 1 if x.name=='SpriteCounter' else 2)
+        self._game.terminations.sort(key=lambda x: 0 if (x.name=='SpriteCounter' and x.stype=='avatar' and x.win==  False) else 1 if x.name=='SpriteCounter' else 2)
         for t in self._game.terminations:
             # Convention: the first criterion is for keyboard-interrupt termination
             # Breaking convention here
