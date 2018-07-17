@@ -210,7 +210,7 @@ class Agent:
 
     def initializeHypotheses(self, allObjects, learnSprites=True):
         if learnSprites:
-            observe(self.rle, 15, self.bestSpriteTypeDict)
+            observe(self.rle, 5, self.bestSpriteTypeDict)
             spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
                 self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
             self.rle._game.exceptedObjects = exceptedObjects
@@ -507,6 +507,7 @@ class Agent:
             # embed()
 
             p_quitting = p.quitting
+
             print "planning with safeDistance={}, regrounding={}".format(self.safeDistance, self.regrounding)
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes
@@ -517,6 +518,7 @@ class Agent:
                 objectPositionsArray = objectPositionsArray[::-1]
                 if solution:
                     print "got solution"
+                    # embed()
             else:
                 solution = []
 
@@ -793,7 +795,9 @@ class Agent:
                 ## Search more deeply next time.
                 self.max_nodes *= self.max_nodes_annealing
                 # self.updateMemory(self.rle)
-
+                print colored('________________________________________________________________', 'white', 'on_red')
+                print colored("Quitting", 'white', 'on_red')
+                print colored('________________________________________________________________', 'white', 'on_red')
                 return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered
 
 

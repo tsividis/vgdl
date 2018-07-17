@@ -120,6 +120,8 @@ def play_trainset(hyperparameters):
 
     agent.playCurriculum(level_game_pairs=level_game_pairs)
 
+    print game_levels
+
     total_time = time.time() - start_time
 
     return total_time
