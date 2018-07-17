@@ -899,8 +899,9 @@ class Node():
 				current_resource = rle._game.sprite_groups[avatar[0]][0].resources[precondition.item]
 				## If we satisfy the precondiiton, append to tmp_list, then to killer_types (meaning we are capable of killing stype now)
 				if eval("{}{}{}".format(current_resource, true_operator, num)):
-					if self.WBP.display:
-						print "reached resource limit"
+					# if self.WBP.display:
+						# print "reached resource limit"
+						# embed()
 					tmp_list.append(avatar)
 			except (IndexError, KeyError) as e:
 				pass
@@ -1028,8 +1029,8 @@ class Node():
 				current_resource = rle._game.sprite_groups[avatar[0]][0].resources[precondition.item]
 				## If we satisfy the precondiiton, append to tmp_list, then to killer_types (meaning we are capable of killing stype now)
 				if eval("{}{}{}".format(current_resource, true_operator, num)):
-					if self.WBP.display:
-						print "reached resource limit"
+					# if self.WBP.display:
+						# print "reached resource limit"
 					tmp_list.append(avatar)
 			except (IndexError, KeyError) as e:
 				pass
