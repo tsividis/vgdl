@@ -646,7 +646,10 @@ class BasicGame(object):
 
     def _eventHandling(self, predicateSubset=[]):
         self.lastcollisions = {}
-        self.lastAvatarResources = dict(self.getAvatars()[0].resources)
+        if self.getAvatars():
+            self.lastAvatarResources = dict(self.getAvatars()[0].resources)
+        else:
+            self.lastAvatarResources = defaultdict(int)
         push_effect = 'bounceForward'
         back_effect = 'stepBack'
         force_collisions = []
