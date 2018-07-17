@@ -59,7 +59,7 @@ class WBP():
 		self.solution = None
 		self.trackTokens = False
 		self.vecSize = None
-		self.addWaitAction = True
+		self.addWaitAction = False
 		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
