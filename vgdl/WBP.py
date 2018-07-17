@@ -59,7 +59,7 @@ class WBP():
 		self.solution = None
 		self.trackTokens = False
 		self.vecSize = None
-		self.addWaitAction = False
+		self.addWaitAction = True
 		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
@@ -77,7 +77,7 @@ class WBP():
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = False
+		self.display = True
 
 
 		if theory == None:

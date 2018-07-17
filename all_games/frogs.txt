@@ -10,11 +10,11 @@ BasicGame
         log    > Missile   orientation=LEFT  speed=0.1 color=BROWN
         truck  >
             rightTruck  > Missile   orientation=RIGHT
-                fastRtruck  > speed=0.2  color=ORANGE img=newset/car3R
-                slowRtruck  > speed=0.1  color=RED img=newset/car4R
+                fastRtruck  > speed=0.2  color=ORANGE
+                slowRtruck  > speed=0.1  color=RED
             leftTruck  > Missile   orientation=LEFT
-                fastLtruck  > speed=0.2  color=LIGHTORANGE img=newset/car3
-                slowLtruck  > speed=0.1  color=LIGHTRED img=newset/car4
+                fastLtruck  > speed=0.2  color=LIGHTORANGE
+                slowLtruck  > speed=0.1  color=LIGHTRED
 
         avatar > MovingAvatar color=DARKBLUE
         wall > Immovable color=DARKGRAY
