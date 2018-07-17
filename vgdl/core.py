@@ -668,10 +668,6 @@ class BasicGame(object):
         spriteLocationDict = defaultdict(lambda:[])
         dead = self.kill_list[:] # copy kill list
 
-        ## Checking each collision_eff is expensive, and doing so for 'nothing' effects is useless
-        ## unless we want to return that a collision happened. So when we're doing eventHandling
-        ## for internally-simulated worlds, don't process 'nothing' interactions.
-
         # self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack','wallStop']
         #         else 2 if x[2].__name__ in ['killSprite', 'killIfTooFast', 'collectResource']
         #         else 3 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']<=0))
