@@ -339,12 +339,17 @@ class WBP():
 			current = self.rewardSelection(QReward, QNovelty)
 			if current in [None, 'pickMaxNode']:
 
-				if not self.conservative:
-					## Node has to have an actionseq
-					node = max(visited, key=lambda n:(n.actionSeq, n.intrinsic_reward))
+				if self.short_horizon:
+					if not self.conservative:
+						## Node has to have an actionseq
+						node = max(visited, key=lambda n:(n.actionSeq, n.intrinsic_reward))
+					else:
+						node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+						# embed()
 				else:
-					node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
-					# embed()
+					if self.display:
+						print "Failed to find a novel node. Quitting"
+					node = start
 
 				# node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 
@@ -405,8 +410,8 @@ class WBP():
 
 			self.statesEncountered.append(current.rle._game.getFullState())
 
-			if self.display:
-				print current.rle.show(indent=True)
+			# if self.display:
+				# print current.rle.show(indent=True)
 
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
@@ -451,6 +456,7 @@ class WBP():
 					child = Node(self.rle, self, current.actionSeq+[a], current)
 					# print actionDict[a]
 					child.eval()
+
 					# print ""
 					ended, win = child.rle._isDone()
 					# if a == K_SPACE:
@@ -521,9 +527,9 @@ class WBP():
 							# embed()
 						# if t:
 							# print t.__dict__
-						if not child.rle._game.getAvatars():
-							print "Think we won but no avatars!?!?"
-							embed()
+						# if not child.rle._game.getAvatars():
+							# print "Think we won but no avatars!?!?"
+							# embed()
 					else:
 						if not (child.terminal and not child.win):
 							QNovelty.append(child)
@@ -560,7 +566,7 @@ class WBP():
 			# if self.conservative and not self.solution:
 			if QReward:
 				if self.display:
-					print "In conservative mode; selecting highest-reward longest sequence"
+					print "In short-horizon mode; selecting highest-reward longest sequence"
 				node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 			else:
 				## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break
