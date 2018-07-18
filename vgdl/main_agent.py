@@ -531,11 +531,11 @@ class Agent:
             if self.shortHorizon:
                 ## new 6/30/18
                 if not solution:
-                    # print "initializing conservative planner"
+                    print "initializing conservative planner"
                     # embed()
-                    ## initialize another planner in conservative mode, meaning you use safe heuristics. Come up with a short plan.
+                    ## initialize another planner in conservative mode, meaning you use safe heuristics. Plan for a short time, and return the longest safe plan you find.
                     p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
-                        seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+                        seen_limits = self.seen_limits, annealing=annealing, max_nodes=50, shortHorizon=self.shortHorizon,
                         firstOrderHorizon=self.firstOrderHorizon, conservative=True, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
                     p_quitting = p.quitting
                     bestNode, gameStringArray, objectPositionsArray = p.BFS()
@@ -1067,8 +1067,8 @@ class Agent:
                 limit = change_resource_effect['limit']
 
                 # print "adding fake rules"
-                # import ipdb; ipdb.set_trace()
-                # ipdb.set_trace()
+                # print "got resource"
+                # embed()
                 if (resource not in self.seen_resources and val>0):
                     self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
                     self.fakeInteractionRules = list(set(self.fakeInteractionRules))

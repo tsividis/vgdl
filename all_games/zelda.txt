@@ -57,6 +57,10 @@ BasicGame
     monsterQuick key > nothing
     monsterNormal key > nothing
 
+    monsterSlow goal > nothing
+    monsterNormal goal > nothing
+    monsterFast goal > nothing
+
     sword goal > nothing
     sword key > nothing
     sword wall > nothing
