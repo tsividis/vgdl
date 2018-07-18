@@ -758,9 +758,9 @@ class BasicGame(object):
                         ## HEY PEDRO THIS IS THE PART WHICH BREAKS IT (makes the planner run forever)
                         # not sure why, but it happens in expt_antagonist and not zelda
                         # commenting out this elif block makes it back to normal
-                        elif effect.__name__ in fatal_effects:
-                            new_effects.append(effect(sprite1, sprite2, self, **kwargs))
-                            dead.append(sprite1)
+                        # elif effect.__name__ in fatal_effects:
+                            # new_effects.append(effect(sprite1, sprite2, self, **kwargs))
+                            # dead.append(sprite1)
                         ## </note_to_pedro>
 
 
