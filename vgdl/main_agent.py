@@ -533,6 +533,8 @@ class Agent:
                 if not solution:
                     print "initializing conservative planner"
                     # embed()
+                    print self.rle._game.getAvatars()[0].resources
+
                     ## initialize another planner in conservative mode, meaning you use safe heuristics. Plan for a short time, and return the longest safe plan you find.
                     p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                         seen_limits = self.seen_limits, annealing=annealing, max_nodes=50, shortHorizon=self.shortHorizon,
