@@ -358,17 +358,27 @@ class WBP():
 			current = self.rewardSelection(QReward, QNovelty)
 			if current in [None, 'pickMaxNode']:
 
-				if self.short_horizon:
-					if not self.conservative:
-						## Node has to have an actionseq
-						node = max(visited, key=lambda n:(n.actionSeq, n.intrinsic_reward))
-					else:
-						node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+				if self.conservative:
+					node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 						# embed()
 				else:
 					if self.display:
 						print "Failed to find a novel node. Quitting"
 					node = start
+
+				# if self.short_horizon:
+				# 	if not self.conservative:
+				# 		## Node has to have an actionseq
+				# 		node = max(visited, key=lambda n:(n.actionSeq, n.intrinsic_reward))
+				# 	else:
+				# 		print "got pickMaxNode in shortHorizon"
+				# 		embed()
+				# 		node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+				# 		# embed()
+				# else:
+				# 	if self.display:
+				# 		print "Failed to find a novel node. Quitting"
+				# 	node = start
 
 				# node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 
