@@ -1540,7 +1540,7 @@ if __name__ == "__main__":
 	## objects.
 	# gameFilename = "examples.gridphysics.theorytest"
 	# gameFilename = "examples.gridphysics.boulderdash"
-	gameFilename = "examples.gridphysics.theorytest"
+	gameFilename = "examples.gridphysics.test_pushkill"
 	# gameFilename = "examples.continuousphysics.breakout_big"
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)

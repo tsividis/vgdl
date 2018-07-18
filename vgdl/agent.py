@@ -2511,7 +2511,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.testAll"
 	
-	filename = "examples.gridphysics.theorytest3"
+	filename = "examples.gridphysics.test_pushkill"
 
 	# filename = "examples.gridphysics.basics"
 

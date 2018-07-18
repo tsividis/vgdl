@@ -650,7 +650,7 @@ class BasicGame(object):
         new_collisions = True
         self.effectList = []
         dead = self.kill_list[:] # copy kill list
-
+        new_dead = [] # we don't want the eventHandler to apply effects like 'push' to things that have been killed in this step; we use this list to handle that.
         self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack','wallStop']
             else (2 if x[2].__name__ in ['killSprite', 'killIfTooFast', 'collectResource'] else (3 if x[2].__name__ in ['changeResource', 'changeScore', 'conveySprite'] else 0)), reverse=True)
 
@@ -713,9 +713,11 @@ class BasicGame(object):
                 for sprite1 in sprite_list1:
                     for collision_index in sprite1.rect.collidelistall(sprite_list2):
                         sprite2 = sprite_list2[collision_index]
-                        if (sprite1 == sprite2
+
+                        if ( sprite1 == sprite2
                             or sprite1 in dead
                             or sprite2 in dead
+                            or  (effect.__name__ not in fatal_effects) and (sprite1 in new_dead or sprite2 in new_dead)
                             or (sprite1, sprite2) in collision_set):
                             continue
                         new_collisions.add((sprite1, sprite2))
@@ -758,9 +760,9 @@ class BasicGame(object):
                         ## HEY PEDRO THIS IS THE PART WHICH BREAKS IT (makes the planner run forever)
                         # not sure why, but it happens in expt_antagonist and not zelda
                         # commenting out this elif block makes it back to normal
-                        # elif effect.__name__ in fatal_effects:
-                            # new_effects.append(effect(sprite1, sprite2, self, **kwargs))
-                            # dead.append(sprite1)
+                        elif effect.__name__ in fatal_effects:
+                            new_effects.append(effect(sprite1, sprite2, self, **kwargs))
+                            new_dead.append(sprite1)
                         ## </note_to_pedro>
 
 
