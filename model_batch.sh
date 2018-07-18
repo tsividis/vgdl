@@ -2,8 +2,8 @@
 
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0
-#SBATCH --output=slurm_logs/short_horizon2/array_%A_%a.out
+#SBATCH --array=0-15
+#SBATCH --output=slurm_logs/short_horizon/array_%A_%a.out
 #SBATCH --time=960
 #SBATCH --qos=tenenbaum
 #SBTACH --cpus-per-task=2
@@ -39,11 +39,11 @@ if [ "$OS" = "CentOS Linux" ]; then
 fi
 
 # make log path if not already present
-if [ ! -d "${ROOT}/slurm_logs/short_horizon2" ]; then
-    mkdir "${ROOT}/slurm_logs/short_horizon2"
+if [ ! -d "${ROOT}/slurm_logs/short_horizon" ]; then
+    mkdir "${ROOT}/slurm_logs/short_horizon"
 fi
 
 # finally, run the model
 # singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index $HYPER_IDX
-singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 2
+singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3
 #echo "-m vgdl.load_games --game_name ${GAME_NAME} --hyperparameter_index ${HYPER_IDX}"
