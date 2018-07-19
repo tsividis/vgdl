@@ -60,6 +60,7 @@ class WBP():
 		self.trackTokens = False
 		self.vecSize = None
 		self.addWaitAction = True
+		self.safeDistance = 3
 		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
@@ -77,7 +78,7 @@ class WBP():
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = True
+		self.display = False
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -317,6 +318,9 @@ class WBP():
 		try:
 			current = bestNodes.pop(0)
 			ended, win = current.rle._isDone()
+			if (current.terminal, current.win) == (True, False):
+				print "rewardSelection picked a loss node!!"
+				embed()
 			if ended and not win:
 				print "rewardSelection picked a loss node!!"
 				embed()
@@ -1416,16 +1420,49 @@ class Node():
 			## try to copy parent lastState. Then take action and store as current lastState.
 			## if that fails, replay from beginning and store as current lastState
 			try:
-
+				multipleSamples = False
 				vrle = self.fastcopy(self.parent.rle)
 				# vrle = copy.deepcopy(self.parent.rle)
+				
+				if self.WBP.killer_types:
+					for k in self.WBP.killer_types:
+						for s in vrle._game.sprite_groups[k]:
+							if manhattanDist(vrle._rect2pos(s.rect), vrle._rect2pos(vrle._game.getAvatars()[0].rect)) < self.WBP.safeDistance:
+								# print "closer than safeDistance away from dangerous item. need to sample"
+								multipleSamples = True
+								break
+
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
-					# print a
-					res = vrle.step(a, return_obs=True)
-					relevantEvents = [t for t in res['effectList'] if t[0] == 'changeResource']
-					self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
-					self.terminal, self.win = vrle._isDone()
+					if multipleSamples:
+						badOutcomeLimit = 0
+						okOutcomes, badOutcomes = [], []
+						for i in range(10):
+							vrle = self.fastcopy(self.parent.rle)
+							res = vrle.step(a, return_obs=True)
+							metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
+							terminal, win = vrle._isDone()
+							if (terminal, win) == (True, False):
+								badOutcomes.append((vrle, terminal, win, metabolic_cost))
+							else:
+								okOutcomes.append((vrle, terminal, win, metabolic_cost))
+							if len(badOutcomes)>badOutcomeLimit:
+								break
+						# if len(badOutcomes)>badOutcomeLimit:
+							# print "too many bad outcomes"
+							# embed()
+						if len(badOutcomes)>badOutcomeLimit:
+							self.terminal, self.win, self.metabolic_cost = badOutcomes[0][1], badOutcomes[0][2], badOutcomes[0][3]
+							return badOutcomes[0][0], badOutcomes[0][2] #vrle, win
+						else:
+							self.terminal, self.win, self.metabolic_cost = okOutcomes[0][1], okOutcomes[0][2], okOutcomes[0][3]
+							return okOutcomes[0][0], okOutcomes[0][2]#vrle, win
+					else:
+
+						res = vrle.step(a, return_obs=True)
+						# relevantEvents = [t for t in res['effectList'] if t[0] == 'changeResource']
+						self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
+						self.terminal, self.win = vrle._isDone()
 			except:
 				print "conditions met but copy failed"
 				embed()
