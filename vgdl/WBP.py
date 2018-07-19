@@ -77,8 +77,7 @@ class WBP():
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = False
-
+		self.display = True
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -87,8 +86,8 @@ class WBP():
 			self.theory.interactionSet.extend(fakeInteractionRules)
 			self.theory.updateTerminations()
 
-		if theory.classes['avatar'][0].args and 'stype' in theory.classes['avatar'][0].args:
-			self.thingWeShoot = theory.classes['avatar'][0].args['stype']
+		if self.theory.classes['avatar'][0].args and 'stype' in self.theory.classes['avatar'][0].args:
+			self.thingWeShoot = self.theory.classes['avatar'][0].args['stype']
 		else:
 			self.thingWeShoot = None
 
@@ -1492,9 +1491,6 @@ class Node():
 		# print("intrinsic_reward {}".format(self.intrinsic_reward))
 		try:
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
-			# for k in self.rle._game.getAvatars()[0].resources.keys():
-				# if k not in self.WBP.seen_limits:
-					# print("Current resource={}, limit={}".format(self.rle._game.getAvatars()[0].resources[k], self.WBP.theory.resource_limits[k]))
 			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
 				if self.WBP.display:
 					print "resource limit win"
@@ -1560,37 +1556,161 @@ class Node():
 				self.finalStatesEncountered.append(vrle._game.getFullState())
 			terminal = vrle._isDone()[0]
 			i+=1
+def gen_color():
+	from vgdl.colors import colorDict
+	color_list = colorDict.values()
+	color_list = [c for c in color_list if c not in ['UUWSWF']]
+	for color in color_list:
+		yield color
+	
+def read_gvgai_game(filename):
+	with open(filename, 'r') as f:
+		new_doc = []
+		g = gen_color()
+		for line in f.readlines():
+			new_line = (" ".join([string if string[:4]!="img="
+				else "color={}".format(next(g))
+				for string in line.split(" ")]))
+			new_doc.append(new_line)
+		new_doc = "\n".join(new_doc)
+	return new_doc
+
+hyperparameter_sets = [
+	{'idx'           : 0,
+	 'short_horizon' : False,
+	 'first_order_horizon': True,
+	 'sprite_first_alpha': 10000,
+	 'sprite_second_alpha': 100,
+	 'sprite_negative_mult': .1,
+	 'multisprite_first_alpha': 10000,
+	 'multisprite_second_alpha': 100,
+	 'novelty_first_alpha': 5000,
+	 'novelty_second_alpha': 50,
+	 },
+	{'idx'           : 1,
+	 'short_horizon' : False,
+	 'first_order_horizon': True,
+	 'sprite_first_alpha': 10000,
+	 'sprite_second_alpha': 100,
+	 'sprite_negative_mult': 10.,
+	 'multisprite_first_alpha': 10000,
+	 'multisprite_second_alpha': 100,
+	 'novelty_first_alpha': 5000,
+	 'novelty_second_alpha': 50,
+	 },
+	{'idx'           : 2,
+	 'short_horizon' : False,
+	 'first_order_horizon': False,
+	 'sprite_first_alpha': 10000,
+	 'sprite_second_alpha': 100,
+	 'sprite_negative_mult': .1,
+	 'multisprite_first_alpha': 10000,
+	 'multisprite_second_alpha': 100,
+	 'novelty_first_alpha': 5000,
+	 'novelty_second_alpha': 50,
+	 },
+	{'idx'           : 3,
+	 'short_horizon' : True,
+	 'first_order_horizon': True,
+	 'sprite_first_alpha': 10000,
+	 'sprite_second_alpha': 100,
+	 'sprite_negative_mult': .1, #normally .1
+	 'multisprite_first_alpha': 10000,
+	 'multisprite_second_alpha': 100,
+	 'novelty_first_alpha': 5000,
+	 'novelty_second_alpha': 50,
+	 },
+	{'idx'           : 4,
+	 'short_horizon' : True,
+	 'first_order_horizon': True,
+	 'sprite_first_alpha': 10000,
+	 'sprite_second_alpha': 100,
+	 'sprite_negative_mult': 10, #normally .1
+	 'multisprite_first_alpha': 10000,
+	 'multisprite_second_alpha': 100,
+	 'novelty_first_alpha': 5000,
+	 'novelty_second_alpha': 50,
+	 }
+
+]
+
 
 
 if __name__ == "__main__":
-
+	import argparse
 
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of
 	## objects.
 	# gameFilename = "examples.gridphysics.theorytest"
 	# gameFilename = "examples.gridphysics.boulderdash"
-	gameFilename = "examples.gridphysics.expt_preconditions2"
+	gameFilename = "examples.gridphysics.frogs"
 	# gameFilename = "examples.continuousphysics.breakout_big"
 
-	gameString, levelString = defInputGame(gameFilename, randomize=True)
-	rleCreateFunc = lambda: createRLInputGame(gameFilename)
+
+	gameFileString = 'all_games'
+
+
+	parser = argparse.ArgumentParser(description='Process game number.')
+	parser.add_argument('--game_name', type=str, default=str(0), help='game name')
+	parser.add_argument('--hyperparameter_index', type=int, default=0, help='hyperparameter_index')
+	parser.add_argument('--level', type=int, default=0, help='level')
+
+		
+	args = parser.parse_args()
+	game_name = args.game_name
+	hyperparameter_index = args.hyperparameter_index
+	level_num = args.level
+	gvgname = "./{}/{}".format(gameFileString,game_name)
+	gameString = read_gvgai_game('{}.txt'.format(gvgname))
+	game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
+	print game_levels
+	level_game_pairs = []
+	for level_number in range(len(game_levels)):
+		with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
+			level_game_pairs.append([gameString, level.read()])
+
+	hyperparameters = hyperparameter_sets[hyperparameter_index]
+	planner_hyperparameters = dict((k, hyperparameters[k]) for k in hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
+
+	gameString, levelString = level_game_pairs[level_num]
+	rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
+
+	# gameString, levelString = defInputGame(gameFilename, randomize=True)
+	# rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
-	embed()
-	p = WBP(rle, gameFilename)
 
-
+	max_nodes = 500 if hyperparameters['short_horizon'] else 10000
+	## Initialize planner
+	p = WBP(rle, gameFilename, max_nodes=max_nodes, shortHorizon=hyperparameters['short_horizon'],
+			firstOrderHorizon=hyperparameters['first_order_horizon'], conservative=False, 
+			hyperparameters=planner_hyperparameters, extra_atom=False)
 	# embed()
 	t1 = time.time()
-	last, gameString_array = p.BFS()
-	from core import VGDLParser
+	bestNode, gameStringArray, objectPositionsArray = p.BFS()
+	print time.time()-t1
+
+	if bestNode is not None:
+		solution = p.solution
+		gameString_array = p.gameString_array
+		objectPositionsArray = objectPositionsArray[::-1]
+	if solution and not p.quitting:
+		print "============================================="
+		print "got solution of length", len(solution)
+		print colored(p.gameString_array[0], 'green')
+		for i,g in enumerate(p.gameString_array[1:]):
+			print actionDict[solution[i]]
+			print colored(g, 'green')
+		print "============================================="
+
+				
+	# from core import VGDLParser
 	# embed()
-	last.playBack(make_movie=True)
+	# last.playBack(make_movie=True)
 	# VGDLParser.playGame(gameString, levelString, p.statesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
 	# VGDLParser.playGame(gameString, levelString, last.finalStatesEncountered, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+gameFilename, padding=0)
 
 
-	print time.time()-t1
 	# embed()
 
 
