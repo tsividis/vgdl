@@ -1179,9 +1179,9 @@ class Node():
 
 					# print distance
 				except (ValueError, TypeError) as e:
-					if avatar_preconditions and avatars[0]:
-						print "valueError in spritecounter_val"
-						embed()
+					# if avatar_preconditions and avatars[0]:
+						# print "valueError in spritecounter_val"
+						# embed()
 					pass
 					# effective_distance = 0
 
@@ -1426,11 +1426,13 @@ class Node():
 				
 				if self.WBP.killer_types:
 					for k in self.WBP.killer_types:
-						for s in vrle._game.sprite_groups[k]:
-							if manhattanDist(vrle._rect2pos(s.rect), vrle._rect2pos(vrle._game.getAvatars()[0].rect)) < self.WBP.safeDistance:
-								# print "closer than safeDistance away from dangerous item. need to sample"
-								multipleSamples = True
-								break
+						## if we think it's stochastic
+						if [t in str(self.WBP.theory.classes[k][0].vgdlType) for t in ['Random', 'Chaser']]:
+							for s in vrle._game.sprite_groups[k]:
+								if manhattanDist(vrle._rect2pos(s.rect), vrle._rect2pos(vrle._game.getAvatars()[0].rect)) < self.WBP.safeDistance:
+									# print "closer than safeDistance away from dangerous item. need to sample"
+									multipleSamples = True
+									break
 
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
@@ -1717,7 +1719,7 @@ if __name__ == "__main__":
 	# rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
 
-	max_nodes = 500 if hyperparameters['short_horizon'] else 10000
+	max_nodes = 50 if hyperparameters['short_horizon'] else 10000
 	## Initialize planner
 	p = WBP(rle, gameFilename, max_nodes=max_nodes, shortHorizon=hyperparameters['short_horizon'],
 			firstOrderHorizon=hyperparameters['first_order_horizon'], conservative=False, 
