@@ -824,13 +824,13 @@ class BasicGame(object):
         # if self.effectList:
             # print "effects"
             # embed()
-        ## Remove duplicates
+        
+        ## Remove duplicates from effectList, and store a separate set that contains (effect, class1, class2)
+        ## so we can easily check NoveltyTerminations.
         new_collision_eff = []
         new_collision_eff_by_class = set()
-
         for element in self.effectList:
-            c1 = self.all_objects[element[1]]['sprite'].name if element[1]!='ENDOFSCREEN' else element[1]
-            c2 = self.all_objects[element[2]]['sprite'].name if element[2]!='ENDOFSCREEN' else element[2]
+            c1, c2 = self.getSpriteClass(element[1]), self.getSpriteClass(element[2])
             element_tuple = (element[0], c1, c2)
             new_collision_eff_by_class.add(element_tuple)
             if element not in new_collision_eff:
@@ -839,6 +839,24 @@ class BasicGame(object):
         self.effectListByClass = new_collision_eff_by_class
 
         return self.effectList
+
+    def getSpriteClass(self, spriteID):
+        spriteClass = None
+
+        if spriteID=='ENDOFSCREEN':
+            spriteClass = spriteID
+        elif spriteID in self.all_objects:
+            spriteClass = self.all_objects[spriteID]['sprite'].name
+        else:
+            for s in self.new_sprites:
+                if s.ID==spriteID:
+                    spriteClass = s.name
+        
+        if spriteClass is None:
+            print "failed to find sprite class"
+            embed()
+
+        return spriteClass
 
     def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0):
         """
