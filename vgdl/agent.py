@@ -148,6 +148,13 @@ class Agent:
 		self.levels_won = 0
 		self.assumeZeroErrorTheoryExists = False
 
+		pathname = "theory_files_planner_integration2"
+		if pathname not in os.listdir('.'):
+			os.makedirs(pathname)
+		if "hyperparameter_idx_{}".format(self.hyperparameters['idx']) not in os.listdir(pathname):
+			os.makedirs(pathname+"/hyperparameter_idx_{}".format(self.hyperparameters['idx']))
+		self.filenameToWriteTheoryTo = pathname+"/hyperparameter_idx_{}/{}".format(self.hyperparameters['idx'], self.gameFilename)
+		embed()
 	def initializeEnvironment(self):
 		if self.gameString == None or self.levelString == None:
 			self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
@@ -955,11 +962,10 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False, debug=False):
 	Vrle._game.all_objects = Vrle._game.getAllObjects()
 	return
 
-def initializeVrle(hypothesis, stateToSet, theoryRLE=None, makeInitialVrle=False, writeFile=False):
+def initializeVrle(hypothesis, stateToSet, theoryRLE=None, makeInitialVrle=False, writeFile=False, filename="examples/gridphysics/theorytest.py"):
 
 	## World in agent's mind given 'hypothesis', including object goal
-	gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis,\
-		 "./examples/gridphysics/theorytest.py", writeFile=writeFile, addAllObjects=makeInitialVrle)
+	gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, filename, writeFile=writeFile, addAllObjects=makeInitialVrle)
 
 	try:
 		# Vrle = theoryRLE if theoryRLE else createMindEnv(gameString, levelString, output=False)
@@ -998,12 +1004,12 @@ def convertTheoryToSubgoalTheory(theory):
 
 	return T
 
-def VrleInitPhase(hypotheses, stateToSet, theoryRLEs=None, makeInitialVrle=False):
+def VrleInitPhase(hypotheses, stateToSet, theoryRLEs=None, makeInitialVrle=False, filename="examples/gridphysics/theorytest.py"):
 	## Initialize multiple VRLEs, each corresponding to one hypothesis in theories
 	## Set their state to that of the provided RLE
 	realVRLEs = []
 	for num, hypothesis in enumerate(hypotheses):
-		realVRLE = initializeVrle(hypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True)
+		realVRLE = initializeVrle(hypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True, filename=filename)
 		realVRLEs.append(realVRLE)
 	return realVRLEs
 
