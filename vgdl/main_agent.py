@@ -57,7 +57,7 @@ class Agent:
         self.conservative = False
         self.regrounding = 1
         self.selective_regrounding = True
-        self.avoid_danger = True
+        self.reground_for_npcs = False
         self.safeDistance = 3
         self.emptyPlansLimit = 5
         self.longHorizonObservationLimit = 2
@@ -753,7 +753,7 @@ class Agent:
                             embed()
                             break
 
-                    if self.avoid_danger: ## this is just exercising caution when near random objects, irrespective of whether they kill us or not
+                    if self.reground_for_npcs: ## this is just exercising caution when near random objects, irrespective of whether they kill us or not
                         try:
                             random_npc_colors = [self.hypotheses[0].classes[k][0].color for k in self.hypotheses[0].classes.keys() if self.hypotheses[0].classes[k] and 'Random' in str(self.hypotheses[0].classes[k][0].vgdlType)]
                             random_npc_classes = [k for k in self.rle._game.sprite_groups.keys() if self.rle._game.sprite_groups[k] and self.rle._game.sprite_groups[k][0].colorName in random_npc_colors]
