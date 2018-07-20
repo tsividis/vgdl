@@ -1920,5 +1920,5 @@ def writeTheoryToTxt(rle, theory, txtFile, writeFile=False, debug=False, goalLoc
 
 	levelString = levelString[levelString.find('"""')+3:-4]
 	theoryString = theoryString[theoryString.find('"""')+3:-4]
-	return theoryString, levelString, symbolDict
+	return theoryString, levelString, symbolDict, gameString
 

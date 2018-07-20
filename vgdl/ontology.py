@@ -1354,6 +1354,13 @@ class NoveltyTermination(Termination):
         # if self.s1=='avatar' and self.s2=='c3' and game.effectList:
             # print game.effectList
             # embed()
+        """NOTE:
+        If you simplify terminations here as you did in the shortHorizon branch keep in mind that you have to take care of the
+        EOS termination, as you use them in this branch.
+        """
+        # if ((self.s1, self.s2) in [('c5', 'avatar'), ('avatar', 'c5')]) and game.effectList:
+        #     print game.effectList
+        #     embed()
         for e in game.effectList:
 
             id_not_found = False
@@ -1449,7 +1456,7 @@ class NoveltyTermination(Termination):
                 except TypeError:
                     print("TypeError in game.all_objects (2)")
                     embed()
-                if name1==self.s1 and name2==self.s2:
+                if (name1==self.s1 and name2==self.s2) or (name1==self.s2 and name2==self.s1):
                     # if id_not_found:
                         # print "id_not_found"
                         # embed()

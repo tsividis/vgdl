@@ -148,13 +148,6 @@ class Agent:
 		self.levels_won = 0
 		self.assumeZeroErrorTheoryExists = False
 
-		pathname = "theory_files_planner_integration2"
-		if pathname not in os.listdir('.'):
-			os.makedirs(pathname)
-		if "hyperparameter_idx_{}".format(self.hyperparameters['idx']) not in os.listdir(pathname):
-			os.makedirs(pathname+"/hyperparameter_idx_{}".format(self.hyperparameters['idx']))
-		self.filenameToWriteTheoryTo = pathname+"/hyperparameter_idx_{}/{}".format(self.hyperparameters['idx'], self.gameFilename)
-		embed()
 	def initializeEnvironment(self):
 		if self.gameString == None or self.levelString == None:
 			self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
@@ -401,7 +394,7 @@ class Agent:
 				## Otherwise plan normally
 
 				# Only initialize as many planner theories as you are using parallel planners
-				plannerRLEs = VrleInitPhase(hypothesesToPlanWith, envReal)
+				plannerRLEs, gameStrings = VrleInitPhase(hypothesesToPlanWith, envReal)
 
 				# if envReal._game.observation['trackedObjects'][avatarColor][0].inventory:
 					# print "found inventory"
@@ -410,12 +403,12 @@ class Agent:
 
 				avatarColor = hypothesesToPlanWith[0].classes['avatar'][0].colorName
 
-				planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
+				planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
 
 				## Initialize planner
 				p = WBP.WBP(plannerRLEs[0], self.gameFilename, theory=hypothesesToPlanWith[0], fakeInteractionRules = self.fakeInteractionRules,
 					seen_limits = self.seen_limits[avatarColor], annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-					firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
+					firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom, gameString=gameStrings[0])
 				
 				bestNode, gameStringArray, predictedEnvs = p.BFS()
 				# embed()
@@ -609,7 +602,7 @@ class Agent:
 					break
 				print ">>> Step", num+1, "of", len(actions), "<<<"
 				## initialize VRLEs
-				theoryRLEs = VrleInitPhase(self.hypotheses, self.rle)
+				theoryRLEs, _ = VrleInitPhase(self.hypotheses, self.rle)
 				t2 = time.time()
 				scoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses)
 				print ""
@@ -744,7 +737,7 @@ class Agent:
 
 	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses):
 
-		theoryRLEs = VrleInitPhase(hypotheses, self.rle)
+		theoryRLEs, _ = VrleInitPhase(hypotheses, self.rle)
 		envRealPrev = self.fastcopy(self.rle)
 		actionHistories[episode_num].append(action)
 		self.rle.step(action)
@@ -962,10 +955,11 @@ def setVrleState(rle, Vrle, hypothesis, makeInitialVrle=False, debug=False):
 	Vrle._game.all_objects = Vrle._game.getAllObjects()
 	return
 
-def initializeVrle(hypothesis, stateToSet, theoryRLE=None, makeInitialVrle=False, writeFile=False, filename="examples/gridphysics/theorytest.py"):
+def initializeVrle(hypothesis, stateToSet, theoryRLE=None, makeInitialVrle=False, writeFile=False):
 
 	## World in agent's mind given 'hypothesis', including object goal
-	gameString, levelString, symbolDict = writeTheoryToTxt(stateToSet, hypothesis, filename, writeFile=writeFile, addAllObjects=makeInitialVrle)
+	gameString, levelString, symbolDict, fullString = writeTheoryToTxt(stateToSet, hypothesis,\
+		 "./examples/gridphysics/theorytest.py", writeFile=writeFile, addAllObjects=makeInitialVrle)
 
 	try:
 		# Vrle = theoryRLE if theoryRLE else createMindEnv(gameString, levelString, output=False)
@@ -989,7 +983,7 @@ def initializeVrle(hypothesis, stateToSet, theoryRLE=None, makeInitialVrle=False
 	## Initialize imaginary state to match real state.
 	setVrleState(stateToSet, Vrle, hypothesis, makeInitialVrle)
 
-	return Vrle
+	return Vrle, fullString
 
 def convertTheoryToSubgoalTheory(theory):
 	T = theory.copy()
@@ -1004,14 +998,15 @@ def convertTheoryToSubgoalTheory(theory):
 
 	return T
 
-def VrleInitPhase(hypotheses, stateToSet, theoryRLEs=None, makeInitialVrle=False, filename="examples/gridphysics/theorytest.py"):
+def VrleInitPhase(hypotheses, stateToSet, theoryRLEs=None, makeInitialVrle=False):
 	## Initialize multiple VRLEs, each corresponding to one hypothesis in theories
 	## Set their state to that of the provided RLE
-	realVRLEs = []
+	realVRLEs, gameStrings = [], []
 	for num, hypothesis in enumerate(hypotheses):
-		realVRLE = initializeVrle(hypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True, filename=filename)
+		realVRLE, gameString = initializeVrle(hypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True)
 		realVRLEs.append(realVRLE)
-	return realVRLEs
+		gameStrings.append(gameString)
+	return realVRLEs, gameStrings
 
 def findNearestSprite(sprite, spriteList):
 	## returns the sprites in spriteList whose locations best match the location of sprite.
@@ -1943,7 +1938,7 @@ def singleTheoryExperienceReplay(
 	elif method == 'salient':
 		indices, actionsPerIndex = getSalientStates(subsamplePercentage, actionsPerIndex, rleHistory)
 
-	initialRLEs = VrleInitPhase(hypotheses, rleHistory[0], makeInitialVrle=True)
+	initialRLEs, _ = VrleInitPhase(hypotheses, rleHistory[0], makeInitialVrle=True)
 	theoryRLEs = [[]]
 	for idx in indices:
 		## 1. set imagined states to historical states  2. match IDs between real and theory RLEs
@@ -1961,7 +1956,7 @@ def singleTheoryExperienceReplay(
 			# theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], theoryRLEs=initialRLEs)
 		# else:
 			# print "got same states; not making new theoryRLE"
-		theoryRLEs = VrleInitPhase(hypotheses, rleHistory[idx], theoryRLEs=initialRLEs)
+		theoryRLEs, _ = VrleInitPhase(hypotheses, rleHistory[idx], theoryRLEs=initialRLEs)
 
 		## Take a predetermined number of actions starting from idx
 		end = min(idx+actionsPerIndex, len(actionHistory))

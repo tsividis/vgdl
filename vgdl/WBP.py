@@ -40,10 +40,11 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
-		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False):
+		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, gameString = None):
 		self.rle = rle
 		self.gameFilename = gameFilename
-		self.hyperparameters = hyperparameters
+		self.hyperparameter_idx_ = hyperparameters['idx']
+		self.hyperparameters = dict((k, hyperparameters[k]) for k in hyperparameters.keys() if k not in ['idx'])
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
 		self.vecDim = [rle.outdim[0]*rle.outdim[1], 2, self.T]
 		self.trueAtoms = defaultdict(lambda:0) #set() ## set of atoms that have been true at some point thus far in the planner.
@@ -73,7 +74,9 @@ class WBP():
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
+		self.gameString = gameString
 		self.display = False
+
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -83,8 +86,8 @@ class WBP():
 			self.theory.updateTerminations()
 
 		# embed()
-		if theory.classes['avatar'][0].args and 'stype' in theory.classes['avatar'][0].args:
-			self.thingWeShoot = theory.classes['avatar'][0].args['stype']
+		if self.theory.classes['avatar'][0].args and 'stype' in self.theory.classes['avatar'][0].args:
+			self.thingWeShoot = self.theory.classes['avatar'][0].args['stype']
 		else:
 			self.thingWeShoot = None
 
@@ -149,6 +152,20 @@ class WBP():
 				stypes = term.termination.stypes
 				n_stypes = sum([len(self.findObjectsInRLE(self.rle, stype)) for stype in stypes if self.findObjectsInRLE(self.rle, stype)])
 				self.starting_stype_n[tuple(stypes)] = n_stypes
+
+		self.writeTheoryFile()
+
+	def writeTheoryFile(self):
+		if self.gameString is not None:
+			pathname = "theory_files_planner_integration2"
+			if pathname not in os.listdir('.'):
+				os.makedirs(pathname)
+			if "hyperparameter_idx_{}".format(self.hyperparameter_idx_) not in os.listdir(pathname):
+				os.makedirs(pathname+"/hyperparameter_idx_{}".format(self.hyperparameter_idx_))
+			filenameToWriteTheoryTo = pathname+"/hyperparameter_idx_{}/{}.py".format(self.hyperparameter_idx_, self.gameFilename)
+			with open(filenameToWriteTheoryTo, 'w') as f:
+				f.write(self.gameString)
+			f.close()
 
 	def findObjectsInRLE(self, rle, objName):
 		try:
@@ -1386,11 +1403,11 @@ class Node():
 			return 0
 
 	def empty_copy(self, obj):
-	    class Empty(obj.__class__):
-	        def __init__(self): pass
-	    newcopy = Empty()
-	    newcopy.__class__ = obj.__class__
-	    return newcopy
+		class Empty(obj.__class__):
+			def __init__(self): pass
+		newcopy = Empty()
+		newcopy.__class__ = obj.__class__
+		return newcopy
 
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
@@ -1550,19 +1567,86 @@ if __name__ == "__main__":
 	## objects.
 	# gameFilename = "examples.gridphysics.theorytest"
 	# gameFilename = "examples.gridphysics.boulderdash"
-	gameFilename = "examples.gridphysics.test_pushkill"
+	gameFilename = "examples.gridphysics.theory_expt_antagonist"
 	# gameFilename = "examples.continuousphysics.breakout_big"
+
+	hyperparameter_sets = [
+		{'idx'           : 0,
+		 'short_horizon' : False,
+		 'first_order_horizon': True,
+		 'sprite_first_alpha': 10000,
+		 'sprite_second_alpha': 100,
+		 'sprite_negative_mult': .1,
+		 'multisprite_first_alpha': 10000,
+		 'multisprite_second_alpha': 100,
+		 'novelty_first_alpha': 5000,
+		 'novelty_second_alpha': 50,
+		 },
+		{'idx'           : 1,
+		 'short_horizon' : False,
+		 'first_order_horizon': True,
+		 'sprite_first_alpha': 10000,
+		 'sprite_second_alpha': 100,
+		 'sprite_negative_mult': 10.,
+		 'multisprite_first_alpha': 10000,
+		 'multisprite_second_alpha': 100,
+		 'novelty_first_alpha': 5000,
+		 'novelty_second_alpha': 50,
+		 },
+		{'idx'           : 2,
+		 'short_horizon' : False,
+		 'first_order_horizon': False,
+		 'sprite_first_alpha': 10000,
+		 'sprite_second_alpha': 100,
+		 'sprite_negative_mult': .1,
+		 'multisprite_first_alpha': 10000,
+		 'multisprite_second_alpha': 100,
+		 'novelty_first_alpha': 5000,
+		 'novelty_second_alpha': 50,
+		 },
+		{'idx'           : 3,
+		 'short_horizon' : True,
+		 'first_order_horizon': True,
+		 'sprite_first_alpha': 10000,
+		 'sprite_second_alpha': 100,
+		 'sprite_negative_mult': .1,
+		 'multisprite_first_alpha': 10000,
+		 'multisprite_second_alpha': 100,
+		 'novelty_first_alpha': 5000,
+		 'novelty_second_alpha': 50,
+		 },
+		{'idx'           : 4,
+		 'short_horizon' : True,
+		 'first_order_horizon': True,
+		 'sprite_first_alpha': 10000,
+		 'sprite_second_alpha': 100,
+		 'sprite_negative_mult': .1,
+		 'multisprite_first_alpha': 10000,
+		 'multisprite_second_alpha': 100,
+		 'novelty_first_alpha': 5000,
+		 'novelty_second_alpha': 50,
+		 }
+	]
 
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
+	# embed()
+
+
+	hyperparameters = hyperparameter_sets[4]
+	planner_hyperparameters = dict((k, hyperparameters[k]) for k in hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
+	max_nodes = 500 if hyperparameters['short_horizon'] else 10000
+
+	p = WBP(rle, gameFilename, max_nodes=max_nodes, shortHorizon=hyperparameters['short_horizon'],
+			firstOrderHorizon=hyperparameters['first_order_horizon'], conservative=False, 
+			hyperparameters=planner_hyperparameters)
 	embed()
-	p = WBP(rle, gameFilename)
 
 
 	# embed()
 	t1 = time.time()
-	last, gameString_array = p.BFS()
+	# last, gameString_array = p.BFS()
 	from core import VGDLParser
 	# embed()
 	last.playBack(make_movie=True)
