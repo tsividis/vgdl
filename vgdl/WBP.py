@@ -566,6 +566,10 @@ class WBP():
 						if not (child.terminal and not child.win):
 							QNovelty.append(child)
 							QReward.append(child)
+					# if current.rle._game.time==0 and self.killer_types:
+						# print child.rle.show()
+						# print child.terminal, child.win
+						# embed()
 			i+=1
 			self.total_nodes = i
 
@@ -1415,6 +1419,55 @@ class Node():
 		newcopy.__class__ = obj.__class__
 		return newcopy
 
+	# def sampleTransitions(self, vrle):
+
+	# 	multipleSamples = False
+
+	# 	if len(self.actionSeq)>0:
+	# 		a = self.actionSeq[-1]
+
+	# 		if self.WBP.killer_types:
+	# 			for k in self.WBP.killer_types:
+	# 				## if we think it's stochastic
+	# 				if [t in str(self.WBP.theory.classes[k][0].vgdlType) for t in ['Random', 'Chaser']]:
+	# 					for s in vrle._game.sprite_groups[k]:
+	# 						if manhattanDist(vrle._rect2pos(s.rect), vrle._rect2pos(vrle._game.getAvatars()[0].rect)) < self.WBP.safeDistance:
+	# 							# print "closer than safeDistance away from dangerous item. need to sample"
+	# 							multipleSamples = True
+	# 							break
+
+	# 		if multipleSamples:
+	# 			badOutcomeLimit = 0
+	# 			okOutcomes, badOutcomes = [], []
+	# 			for i in range(10):
+	# 				vrle = self.fastcopy(self.parent.rle)
+	# 				res = vrle.step(a, return_obs=True)
+	# 				metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
+	# 				terminal, win = vrle._isDone()
+	# 				if (terminal, win) == (True, False):
+	# 					badOutcomes.append((vrle, terminal, win, metabolic_cost))
+	# 				else:
+	# 					okOutcomes.append((vrle, terminal, win, metabolic_cost))
+	# 				if len(badOutcomes)>badOutcomeLimit:
+	# 					break
+	# 			# if len(badOutcomes)>badOutcomeLimit:
+	# 				# print "too many bad outcomes"
+	# 				# embed()
+	# 			if len(badOutcomes)>badOutcomeLimit:
+	# 				print "got badoutcomes"
+	# 				self.terminal, self.win, self.metabolic_cost = badOutcomes[0][1], badOutcomes[0][2], badOutcomes[0][3]
+	# 				return badOutcomes[0][0], badOutcomes[0][2] #vrle, win
+	# 			else:
+	# 				self.terminal, self.win, self.metabolic_cost = okOutcomes[0][1], okOutcomes[0][2], okOutcomes[0][3]
+	# 				return okOutcomes[0][0], okOutcomes[0][2]#vrle, win
+	# 		else:
+	# 			res = vrle.step(a, return_obs=True)
+	# 			# relevantEvents = [t for t in res['effectList'] if t[0] == 'changeResource']
+	# 			self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
+	# 			self.terminal, self.win = vrle._isDone()
+
+
+
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
 			## try to copy parent lastState. Then take action and store as current lastState.
@@ -1454,13 +1507,13 @@ class Node():
 							# print "too many bad outcomes"
 							# embed()
 						if len(badOutcomes)>badOutcomeLimit:
+							print "got badoutcomes"
 							self.terminal, self.win, self.metabolic_cost = badOutcomes[0][1], badOutcomes[0][2], badOutcomes[0][3]
 							return badOutcomes[0][0], badOutcomes[0][2] #vrle, win
 						else:
 							self.terminal, self.win, self.metabolic_cost = okOutcomes[0][1], okOutcomes[0][2], okOutcomes[0][3]
 							return okOutcomes[0][0], okOutcomes[0][2]#vrle, win
 					else:
-
 						res = vrle.step(a, return_obs=True)
 						# relevantEvents = [t for t in res['effectList'] if t[0] == 'changeResource']
 						self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
@@ -1469,6 +1522,8 @@ class Node():
 				print "conditions met but copy failed"
 				embed()
 		else:
+			print "in a reconstructed node"
+			# embed()
 			self.reconstructed=True
 			# print "copy failed; replaying from top"
 			vrle = self.fastcopy(self.rle)
@@ -1533,7 +1588,7 @@ class Node():
 			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
 				if self.WBP.display:
 					print "resource limit win"
-				self.win=True
+				# self.win=True
 		except IndexError:
 			pass
 
@@ -1683,7 +1738,6 @@ if __name__ == "__main__":
 	## objects.
 	# gameFilename = "examples.gridphysics.theorytest"
 	# gameFilename = "examples.gridphysics.boulderdash"
-	gameFilename = "examples.gridphysics.frogs"
 	# gameFilename = "examples.continuousphysics.breakout_big"
 
 
@@ -1715,8 +1769,10 @@ if __name__ == "__main__":
 	gameString, levelString = level_game_pairs[level_num]
 	rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
 
-	# gameString, levelString = defInputGame(gameFilename, randomize=True)
-	# rleCreateFunc = lambda: createRLInputGame(gameFilename)
+
+	gameFilename = "examples.gridphysics.theory_antagonist"
+	gameString, levelString = defInputGame(gameFilename, randomize=True)
+	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
 
 	max_nodes = 50 if hyperparameters['short_horizon'] else 10000
@@ -1727,7 +1783,6 @@ if __name__ == "__main__":
 	# embed()
 	t1 = time.time()
 	bestNode, gameStringArray, objectPositionsArray = p.BFS()
-	print time.time()-t1
 
 	if bestNode is not None:
 		solution = p.solution
@@ -1742,7 +1797,8 @@ if __name__ == "__main__":
 			print colored(g, 'green')
 		print "============================================="
 
-				
+	print time.time()-t1
+	
 	# from core import VGDLParser
 	# embed()
 	# last.playBack(make_movie=True)
