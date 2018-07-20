@@ -685,8 +685,11 @@ class Agent:
 			print "warning! empty predictedEnvs in regroundOrNot!"
 			return False , False , False
 
-		matchedEnvs, la, lb = matchEnvs(self.rle, predictedEnvs[step_number+1])
-
+		try:
+			matchedEnvs, la, lb = matchEnvs(self.rle, predictedEnvs[step_number+1])
+		except:
+			print "not enough envs"
+			embed()
 		if la:
 			return True, False, False
 		if lb:

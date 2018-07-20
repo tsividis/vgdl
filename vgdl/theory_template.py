@@ -726,7 +726,7 @@ class Theory(object):
 	def displayClasses(self):
 		print self._stringClasses()
 
-	def _stringTerminations(self, ignore_novelty_terminations=True, color_names=False):
+	def _stringTerminations(self, ignore_novelty_terminations=False, color_names=False):
 		string = "\nTerminationSet:"
 		for tc in self.terminationSet:
 			if ignore_novelty_terminations and tc.ruleType == 'NoveltyRule':
