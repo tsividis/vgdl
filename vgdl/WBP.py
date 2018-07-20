@@ -78,7 +78,7 @@ class WBP():
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = False
+		self.display = True
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -1480,10 +1480,10 @@ class Node():
 				if self.WBP.killer_types:
 					for k in self.WBP.killer_types:
 						## if we think it's stochastic
-						if [t in str(self.WBP.theory.classes[k][0].vgdlType) for t in ['Random', 'Chaser']]:
+						if any([t in str(self.WBP.theory.classes[k][0].vgdlType) for t in ['Random', 'Chaser']]):
 							for s in vrle._game.sprite_groups[k]:
 								if manhattanDist(vrle._rect2pos(s.rect), vrle._rect2pos(vrle._game.getAvatars()[0].rect)) < self.WBP.safeDistance:
-									# print "closer than safeDistance away from dangerous item. need to sample"
+									print "closer than safeDistance away from {} {}. need to sample".format(k, self.WBP.theory.classes[k][0].vgdlType)
 									multipleSamples = True
 									break
 
@@ -1780,7 +1780,7 @@ if __name__ == "__main__":
 	p = WBP(rle, gameFilename, max_nodes=max_nodes, shortHorizon=hyperparameters['short_horizon'],
 			firstOrderHorizon=hyperparameters['first_order_horizon'], conservative=False, 
 			hyperparameters=planner_hyperparameters, extra_atom=False)
-	# embed()
+	embed()
 	t1 = time.time()
 	bestNode, gameStringArray, objectPositionsArray = p.BFS()
 
