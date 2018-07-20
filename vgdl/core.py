@@ -274,6 +274,7 @@ class BasicGame(object):
         self._lastsaved = None
         self.win = None
         self.effectList = [] # list of effects that happened this current timestep
+        self.effectListByClass = set()
         self.spriteDistribution = {}
         self.object_token_spriteDistribution = {}
         self.lastUpdateOptionsTime = None
@@ -825,10 +826,17 @@ class BasicGame(object):
             # embed()
         ## Remove duplicates
         new_collision_eff = []
+        new_collision_eff_by_class = set()
+
         for element in self.effectList:
+            c1 = self.all_objects[element[1]]['sprite'].name if element[1]!='ENDOFSCREEN' else element[1]
+            c2 = self.all_objects[element[2]]['sprite'].name if element[2]!='ENDOFSCREEN' else element[2]
+            element_tuple = (element[0], c1, c2)
+            new_collision_eff_by_class.add(element_tuple)
             if element not in new_collision_eff:
                 new_collision_eff.append(element)
         self.effectList = new_collision_eff
+        self.effectListByClass = new_collision_eff_by_class
 
         return self.effectList
 
