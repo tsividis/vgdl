@@ -843,15 +843,21 @@ class BasicGame(object):
     def getSpriteClass(self, spriteID):
         spriteClass = None
 
-        if spriteID=='ENDOFSCREEN':
-            spriteClass = spriteID
-        elif spriteID in self.all_objects:
-            spriteClass = self.all_objects[spriteID]['sprite'].name
-        else:
-            for s in self.new_sprites:
-                if s.ID==spriteID:
-                    spriteClass = s.name
-        
+        try:
+            if spriteID=='ENDOFSCREEN':
+                spriteClass = spriteID
+            elif spriteID in self.all_objects:
+                if hasattr(self.all_objects[spriteID], 'name'):
+                    spriteClass = self.all_objects[spriteID].name
+                elif'sprite' in self.all_objects[spriteID]:
+                    spriteClass = self.all_objects[spriteID]['sprite'].name
+            else:
+                for s in self.new_sprites:
+                    if s.ID==spriteID:
+                        spriteClass = s.name
+        except:
+            print "getSpriteClass problem"
+            embed()
         if spriteClass is None:
             print "failed to find sprite class"
             embed()
