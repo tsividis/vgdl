@@ -10,3 +10,5 @@ venv
 examples/gridphysics/theorytest.py
 examples/gridphysics/theorytest2.py
 /avatar_inference.py
+model_results*
+theory_files*
