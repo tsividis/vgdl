@@ -12,7 +12,8 @@
 #idx_2
 # game_names = ['expt_push_boulders', 'portals']
 #idx_4
-game_names = ['expt_antagonist', 'zelda']
+# game_names = ['expt_antagonist', 'zelda']
+game_names = ['expt_antagonist']
 # game_names = ['boulderchase', 'jaws', 'myAliens', 'overload', 'avoidgeorge']
 
 ##running with hyperparams2
