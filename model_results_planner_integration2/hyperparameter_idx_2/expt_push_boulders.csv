@@ -1,0 +1,5 @@
+subject,condition,gameName,levels_won,steps,planner_steps,score
+full,normal,expt_push_boulders,0,14,4,0
+full,normal,expt_push_boulders,1,61,3,0
+full,normal,expt_push_boulders,1,24,7,0
+full,normal,expt_push_boulders,1,160,2436,0

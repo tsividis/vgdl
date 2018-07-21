@@ -672,7 +672,7 @@ class Agent:
 		for num, sh in enumerate(scoresAndHypotheses):
 			print "Theory: {} | Error: {}".format(num, sh[0])
 		print ""
-		print "{} survived".format(len(scoresAndHypotheses))
+		# print "{} survived".format(len(scoresAndHypotheses))
 
 		return scoresAndHypotheses, scoreAndTheoryTuples
 
@@ -2074,6 +2074,13 @@ def MultiEpisodeExperienceReplay(hypotheses, rleHistories, actionHistories, meth
 	'''
 	assert len(rleHistories) == len(actionHistories), 'rleHistories and actionHistories need to match'
 
+	totalSteps = sum([len(episode) for episode in rleHistories])
+	# sometimes it's just infeasible...
+	tooMany = len(hypotheses) * totalSteps > 30000
+	if tooMany and not assumeZeroErrorTheoryExists:
+		print "WARNING: wayyyy to many theories and steps. cutting corners and setting assumeZeroErrorTheoryExists=True"
+	assumeZeroErrorTheoryExists = assumeZeroErrorTheoryExists or tooMany
+
 	hypotheses = hypotheses[:] # so we can replace some with None if they're not worth continuing with (and not modify the list passed in)
 
 	if sum([len(r) for r in rleHistories]) > 10 or len(hypotheses)>10:
@@ -2213,11 +2220,20 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 					theory, classPairPlusPredicateToRuleSets))
 		# print "Expanding {} theories took {} seconds".format(len(theories), time.time()-t1)
 
+		totalSteps = sum([len(episode) for episode in rleHistories])
+
 		t1 = time.time()
 		# print "beforeFilter"
 
+
+		# hyperparameters here:
+		theoriesPerErrorLevel = 4 # note: goes down if desperate
+		medianDivisor = 3.0
+		tooManyTheoriesCutoff = 30
+
+
 		newTheories = list(set(newTheories))
-		if sum([len(episode) for episode in rleHistories]) == OBSERVATION_PERIOD_LENGTH:
+		if totalSteps == OBSERVATION_PERIOD_LENGTH:
 			cutCorners = len(newTheories) > 750 and scoreAndTheoryTuples[0][0] < .000001
 			if cutCorners:
 				print '*warning* too many theories, cutting some corners'
@@ -2229,17 +2245,6 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 			scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < perColorErrorBaselines[errorMap.targetColor]]
 			print "{} theories after first filter".format(len(scoreAndTheoryTuples))
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior(targetColor=errorMap.targetColor)))
-
-			# errorMap.display()
-			# # looking for chasers
-			# for s, t in scoreAndTheoryTuples:
-			# 	if 'Chaser' in str(t.classes['c2'][0].vgdlType):
-			# 		print "got one! " + str(s)
-
-			# hyperparameters here:
-			theoriesPerErrorLevel = 4
-			medianDivisor = 3.0
-			tooManyTheoriesCutoff = 30
 
 			count = 0
 
@@ -2264,20 +2269,18 @@ def expandTheories(theories, errorList, envRealPrev, envRealCurrent, prevAction,
 					#give up, it's unavoidable
 					break
 
-			# # looking for chasers
-			# for s, t in scoreAndTheoryTuples:
-			# 	if 'Chaser' in str(t.classes['c2'][0].vgdlType):
-			# 		print "still here... " + str(s)
-
-
 			print 'scores:' , [t[0] for t in scoreAndTheoryTuples]
 
 		else:
+
 			rleHistory, actionHistory = rleHistories[episode_num], actionHistories[episode_num]
 			penalties, _ = MultiEpisodeExperienceReplay(newTheories, [rleHistory[-2:]], \
 					[actionHistory[-1:]], method=EXPERIENCE_REPLAY_METHOD, targetColor = errorMap.targetColor)
 			scoreAndTheoryTuples = zip(penalties, newTheories)
 			scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: (x[0], x[1].prior()))
+
+			# if True: #self.assumeZeroErrorTheoryExists:
+				# scoreAndTheoryTuples = [tup for tup in scoreAndTheoryTuples if tup[0] < .0001]
 		
 		newTheories = [s[1] for s in scoreAndTheoryTuples]
 		theories = newTheories
