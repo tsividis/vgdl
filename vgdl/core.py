@@ -829,6 +829,7 @@ class BasicGame(object):
         ## so we can easily check NoveltyTerminations.
         new_collision_eff = []
         new_collision_eff_by_class = set()
+        self.all_objects = self.getAllObjects()
         for element in self.effectList:
             c1, c2 = self.getSpriteClass(element[1]), self.getSpriteClass(element[2])
             element_tuple = (element[0], c1, c2)
