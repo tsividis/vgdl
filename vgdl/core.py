@@ -829,9 +829,9 @@ class BasicGame(object):
         ## so we can easily check NoveltyTerminations.
         new_collision_eff = []
         new_collision_eff_by_class = set()
-        self.all_objects = self.getAllObjects()
+        all_objects = self.getAllObjects()
         for element in self.effectList:
-            c1, c2 = self.getSpriteClass(element[1]), self.getSpriteClass(element[2])
+            c1, c2 = self.getSpriteClass(element[1], all_objects), self.getSpriteClass(element[2], all_objects)
             element_tuple = (element[0], c1, c2)
             new_collision_eff_by_class.add(element_tuple)
             if element not in new_collision_eff:
@@ -841,17 +841,17 @@ class BasicGame(object):
 
         return self.effectList
 
-    def getSpriteClass(self, spriteID):
+    def getSpriteClass(self, spriteID, all_objects):
         spriteClass = None
 
         try:
             if spriteID=='ENDOFSCREEN':
                 spriteClass = spriteID
-            elif spriteID in self.all_objects:
-                if hasattr(self.all_objects[spriteID], 'name'):
-                    spriteClass = self.all_objects[spriteID].name
-                elif'sprite' in self.all_objects[spriteID]:
-                    spriteClass = self.all_objects[spriteID]['sprite'].name
+            elif spriteID in all_objects:
+                if hasattr(all_objects[spriteID], 'name'):
+                    spriteClass = all_objects[spriteID].name
+                elif'sprite' in all_objects[spriteID]:
+                    spriteClass = all_objects[spriteID]['sprite'].name
             else:
                 for s in self.new_sprites:
                     if s.ID==spriteID:
