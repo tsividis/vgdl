@@ -110,7 +110,7 @@ class Agent:
 		self.firstOrderHorizon = False # Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
 		self.regrounding = 1
 		self.reground_for_killer_types = True # encourages safe behavior
-		self.reground_for_stochastic_types = True # encourages replanning more often as these agents deviate from prediction
+		self.reground_for_stochastic_types = False # encourages replanning more often as these agents deviate from prediction
 		self.safeDistance = 3
 		self.emptyPlansLimit = 1#should be 5
 		self.longHorizonObservationLimit = 2
@@ -480,10 +480,9 @@ class Agent:
 					bestScoresAndHypotheses = \
 							self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses)
 					
-					## TODO: Prediction error only corresponds to self.hypotheses[0]. What you actually want is
-					## checking for the predictions made by *each* of the hypotheses, and then if any give you prediction error,
-					## you reground based on that.
-					predictionError, regroundForKillerTypes, regroundForStochasticTypes = self.regroundOrNot(action_num, predictedEnvs, self.hypotheses[0])
+					## TODO: avatar prediction error only corresponds to self.hypotheses[0]. This is telling you whether the avatar
+					## is somewhere other than where it would be based on the hypothesis that generated your plan.
+					avatarPredictionError, regroundForKillerTypes, regroundForStochasticTypes = self.regroundOrNot(action_num, predictedEnvs, self.hypotheses[0])
 
 					print bestScoresAndHypotheses
 					self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
@@ -496,10 +495,16 @@ class Agent:
 					steps +=1
 
 					ended, win = self.rle._isDone()
-					if regroundForKillerTypes or regroundForStochasticTypes: 
-						print "got reground for killer or stochastic type. Replanning"
-						break
 
+					if avatarPredictionError:
+						print "got reground because of avatar-position prediction error. Replanning"
+						break
+					if regroundForKillerTypes:
+						print "got reground for killer type. Replanning"
+						break
+					if regroundForStochasticTypes: 
+						print "got reground for stochastic type. Replanning"
+						break
 					if ended:
 						break
 
@@ -677,8 +682,8 @@ class Agent:
 		return scoresAndHypotheses, scoreAndTheoryTuples
 
 	def regroundOrNot(self, step_number, predictedEnvs, hypothesis):
-		## Returns predictionError=True/False, regroundForKillerTypes=True/False, regroundForKillerTypes=True/False
-		## NOTE: If predictionError=True, we aren't evaluating regroundForX
+		## Returns avatarPredictionError=True/False, regroundForKillerTypes=True/False, regroundForKillerTypes=True/False
+		## NOTE: If avatarPredictionError=True, we aren't evaluating regroundForX
 		## because we end up replanning no matter what.
 
 		if not predictedEnvs:
@@ -690,13 +695,18 @@ class Agent:
 		except:
 			print "not enough envs"
 			embed()
-		if la:
-			return True, False, False
-		if lb:
-			return True, False, False
+
+		avatarColor = self.hypotheses[0].classes['avatar'][0].colorName
+
 		for match in matchedEnvs:
-			if match[2]!=0:
+			if match[0].colorName==avatarColor and match[2]!=0:
 				return True, False, False
+
+		# if la:
+		# 	return True, False, False, False
+		# if lb:
+		# 	return True, False, False, False
+
 		if self.reground_for_killer_types or self.reground_for_stochastic_types:
 			killer_colors = [hypothesis.classes[killerType][0].colorName for killerType in hypothesis.killerTypes if \
 					any([t in str(hypothesis.classes[killerType][0].vgdlType) for t in ['Random', 'Chaser', 'Missile']])]
