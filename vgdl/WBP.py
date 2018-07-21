@@ -400,7 +400,8 @@ class WBP():
 						if self.display:
 							print "QReward was empty -- returning a futile plan of a single 'none' action"
 						start = Node(self.rle, self, [], None)
-						start.rle = self.rle
+						start.eval()
+						# start.rle = self.rle
 						child = Node(self.rle, self, start.actionSeq+[0], start)
 						child.eval()
 						node = child
