@@ -13,8 +13,9 @@
 # game_names = ['expt_push_boulders', 'portals']
 # game_names = ['expt_push_boulders']
 # game_names = ['portals']
+game_names = ['expt_preconditions']
 #idx_4
-game_names = ['zelda', 'expt_helper']
+# game_names = ['zelda', 'expt_helper']
 # game_names = ['expt_antagonist']
 # game_names = ['boulderchase', 'jaws', 'myAliens', 'overload', 'avoidgeorge']
 
