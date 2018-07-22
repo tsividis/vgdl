@@ -89,6 +89,7 @@ def gen_color():
         yield color
 
 def read_gvgai_game(filename):
+
     with open(filename, 'r') as f:
         new_doc = []
         g = gen_color()
@@ -103,14 +104,22 @@ def read_gvgai_game(filename):
 def play_trainset(hyperparameters):
     start_time = time.time()
 
-    gvgname = "./{}/{}".format(gameFileString,game_name)
-    gameString = read_gvgai_game('{}.txt'.format(gvgname))
     game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
-    print game_levels
+
+    if "{}.txt".format(game_name) in os.listdir(gameFileString):
+        gvgname = "./{}/{}".format(gameFileString, game_name)
+        game_description = read_gvgai_game('{}.txt'.format(gvgname))
+        game_descriptions = [game_description]*len(game_levels)
+    else:
+        game_descriptions = [read_gvgai_game("./{}/{}".format(gameFileString, d)) for d in os.listdir(gameFileString) if (game_name in d and 'desc' in d)]
+    # embed()
+
     level_game_pairs = []
+    gvgname = "./{}/{}".format(gameFileString, game_name)
     for level_number in range(len(game_levels)):
-    	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
-    		level_game_pairs.append([gameString, level.read()])
+        with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
+            level_game_pairs.append([game_descriptions[level_number], level.read()])
+
 
     agent = Agent('full', game_name, hyperparameters=hyperparameters, parallel_planning=False)
 
@@ -122,6 +131,7 @@ def play_trainset(hyperparameters):
     total_time = time.time() - start_time
 
     return total_time
+
 
 play_trainset(hyperparameter_sets[hyperparameter_index])
 

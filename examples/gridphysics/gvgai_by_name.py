@@ -8,40 +8,47 @@ game_name = args.game_name
 gameFileString = 'all_games'
 
 def read_gvgai_game(filename):
-    with open(filename, 'r') as f:
-        game=f.read()
-    return game
+	with open(filename, 'r') as f:
+		game=f.read()
+	return game
 
 def create_level_game_pairs(game_name):
-    gvgname = "./{}/{}".format(gameFileString, game_name)
-    gameString = read_gvgai_game('{}.txt'.format(gvgname))
-    game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
+	game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
 
-    level_game_pairs = []
-    for level_number in range(len(game_levels)):
-    	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
-    		level_game_pairs.append([gameString, level.read()])
+	if "{}.txt".format(game_name) in os.listdir(gameFileString):
+		gvgname = "./{}/{}".format(gameFileString, game_name)
+		game_description = read_gvgai_game('{}.txt'.format(gvgname))
+		game_descriptions = [game_description]*len(game_levels)
+	else:
+		game_descriptions = [read_gvgai_game("./{}/{}".format(gameFileString, d)) for d in os.listdir(gameFileString) if (game_name in d and 'desc' in d)]
+	# embed()
 
-    return level_game_pairs
+	level_game_pairs = []
+	gvgname = "./{}/{}".format(gameFileString, game_name)
+	for level_number in range(len(game_levels)):
+		with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
+			level_game_pairs.append([game_descriptions[level_number], level.read()])
+
+	return level_game_pairs
 
 if __name__ == "__main__":
-    from vgdl.core import VGDLParser
-    import random, sys, time
-    import numpy as np
-    import csv
-    from IPython import embed
+	from vgdl.core import VGDLParser
+	import random, sys, time
+	import numpy as np
+	import csv
+	from IPython import embed
 
-    # if len(sys.argv)>=2:
-    #     game_n = int(sys.argv[1])
+	# if len(sys.argv)>=2:
+	#     game_n = int(sys.argv[1])
 
-    # else:
-    #     game_n = 0
+	# else:
+	#     game_n = 0
 
-    level_game_pairs = create_level_game_pairs(game_name)
-    # if len(sys.argv)>=3:
-         # level_n = int(sys.argv[2])
-         # level_game_pairs = [level_game_pairs[level_n]]
-         
-    for index, level in enumerate(level_game_pairs):
-        VGDLParser.playGame(*level)
+	level_game_pairs = create_level_game_pairs(game_name)
+	# if len(sys.argv)>=3:
+		 # level_n = int(sys.argv[2])
+		 # level_game_pairs = [level_game_pairs[level_n]]
+		 
+	for index, level in enumerate(level_game_pairs):
+		VGDLParser.playGame(*level)
 

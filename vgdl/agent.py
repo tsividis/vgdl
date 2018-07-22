@@ -1012,10 +1012,14 @@ def VrleInitPhase(hypotheses, stateToSet, theoryRLEs=None, makeInitialVrle=False
 	## Initialize multiple VRLEs, each corresponding to one hypothesis in theories
 	## Set their state to that of the provided RLE
 	realVRLEs, gameStrings = [], []
-	for num, hypothesis in enumerate(hypotheses):
-		realVRLE, gameString = initializeVrle(hypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=False)
-		realVRLEs.append(realVRLE)
-		gameStrings.append(gameString)
+	try:
+		for num, hypothesis in enumerate(hypotheses):
+			realVRLE, gameString = initializeVrle(hypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=False)
+			realVRLEs.append(realVRLE)
+			gameStrings.append(gameString)
+	except:
+		print "prob in vrleinitphase"
+		embed()
 	return realVRLEs, gameStrings
 
 def findNearestSprite(sprite, spriteList):
