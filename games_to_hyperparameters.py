@@ -42,3 +42,18 @@ mapping = dict()
 
 for k in game_names:
     mapping[k] = [3]
+
+
+
+''' section made by nate *****
+idk what's going on with this whole file, but it seems like a good place for these notes-to-self
+also, I think it's out of date fyi
+
+
+expt_antagonist -- 4
+expt_push_boulders -- 2 -- worked! commit: e91e76c2fe40de80cd80f913991731dbef096bf5 (on planner_integration2)
+portals -- 2
+small_portals -- 2
+
+
+'''

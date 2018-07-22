@@ -2796,12 +2796,12 @@ def distributionInitSetup(game, spriteID):
     # TODO: do we need to be specific to Avatar like this? Try not doing that and see if it breaks
     game.orientation_options[spriteID] = {k:{} for k in game.spriteDistribution[spriteID].keys() if 'Avatar' in str(k[0][1])}
 
-def filterTheories(scoreAndTheoryTuples, percentile, max_num):
-    import numpy as np
-    ## Returns the max_num theories that are at percentile or greater, given their score.
-    scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0], reverse=True)
-    cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
-    return [s for s in scoreAndTheoryTuples if s[0]>=cutoff][0:max_num]
+# def filterTheories(scoreAndTheoryTuples, percentile, max_num):
+#     import numpy as np
+#     ## Returns the max_num theories that are at percentile or greater, given their score.
+#     scoreAndTheoryTuples = sorted(scoreAndTheoryTuples, key=lambda x: x[0], reverse=True)
+#     cutoff = np.percentile([s[0] for s in scoreAndTheoryTuples], percentile)
+#     return [s for s in scoreAndTheoryTuples if s[0]>=cutoff][0:max_num]
 
 def updateAllOptions(game, gamePrev, action=None):
     # was spriteInduction step 2

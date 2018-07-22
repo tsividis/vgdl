@@ -20,7 +20,7 @@ from colors import *
 
 # predicates whose effects are not immediately observable by the "CV system"
 #  (used in setVrleState)
-UNOBSERVABLE_PREDICATES = ['reverseDirection', 'flipDirection', 'stepBack', 'wrapAround']
+UNOBSERVABLE_PREDICATES = ['reverseDirection', 'flipDirection']#, 'stepBack', 'wrapAround']
 
 class StateObsHandlerNonStatic(object):
 	""" Managing different types of state representations,

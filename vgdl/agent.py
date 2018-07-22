@@ -484,7 +484,7 @@ class Agent:
 					## is somewhere other than where it would be based on the hypothesis that generated your plan.
 					avatarPredictionError, regroundForKillerTypes, regroundForStochasticTypes = self.regroundOrNot(action_num, predictedEnvs, self.hypotheses[0])
 
-					print bestScoresAndHypotheses
+					# print bestScoresAndHypotheses
 					self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
 					
 					if selectedHypotheses[0]!=self.hypotheses[0]:
@@ -652,7 +652,6 @@ class Agent:
 		return newRle
 
 	def scoreAndFilterTheories(self, newTheories, episode_num, displayTheories=False):
-		# print "top of scoreAndFilterTheories"
 
 		penalties, imaginedEffectsPerTheory = MultiEpisodeExperienceReplay(newTheories, self.rleHistory[:episode_num+1], \
 				self.actionHistory[:episode_num+1], method=EXPERIENCE_REPLAY_METHOD, displayTheories=False, assumeZeroErrorTheoryExists=self.assumeZeroErrorTheoryExists)
@@ -668,7 +667,7 @@ class Agent:
 				continue
 			print "Theory: {} | Error: {}".format(num, sh[0])
 			sh[1].display()
-		scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
+		# scoreAndTheoryTuples = [s for s in scoreAndTheoryTuples if not hasattr(s[1],'trueTheory')]      
 
 		scoresAndHypotheses = [(h[0],h[1]) for h in filterTheories(scoreAndTheoryTuples, percentile=30, max_num=30,
 			proportionOfSpriteTheories=None, errorCutoff=ERRORCUTOFF, usePrior=True)]
@@ -799,6 +798,7 @@ class Agent:
 			bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
 			self.assumeZeroErrorTheoryExists = prev
 			# print time.time()-t1
+
 			# print 'just got some new theories'
 			# embed()
 
@@ -1013,7 +1013,7 @@ def VrleInitPhase(hypotheses, stateToSet, theoryRLEs=None, makeInitialVrle=False
 	## Set their state to that of the provided RLE
 	realVRLEs, gameStrings = [], []
 	for num, hypothesis in enumerate(hypotheses):
-		realVRLE, gameString = initializeVrle(hypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=True)
+		realVRLE, gameString = initializeVrle(hypothesis, stateToSet, theoryRLEs[num] if theoryRLEs else None, makeInitialVrle=makeInitialVrle, writeFile=False)
 		realVRLEs.append(realVRLE)
 		gameStrings.append(gameString)
 	return realVRLEs, gameStrings
@@ -2064,6 +2064,8 @@ def experienceReplay(
 		if displayTheories:
 			print "running experienceReplay on {}:".format(num)
 			h.display()
+		if (num + 1) % 100 == 0:
+			print "still going... on", num
 		mean_penalties, setOfImaginedEffects = \
 				singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h],  assumeZeroErrorTheoryExists=assumeZeroErrorTheoryExists, errorCutoff=errorCutoff)
 		# print "ran experienceReplay on {}. error: {}".format(num, mean_penalties[0])
@@ -2170,13 +2172,13 @@ def filterTheories(scoreAndTheoryTuples, percentile, max_num, proportionOfSprite
 	# print "METHOD TWO FILTER:", [t[0] for t in filtered]
 
 	if usePrior:
-		filtered = filterByPrior(filtered)
+		filtered = filterByPrior(filtered, numPerLevel=2)
 	return filtered
 
 def filterByPrior(scoreAndTheoryTuples, numPerLevel=1, granularity=1, targetColor=None):
 	# filter out any theory after the first numPerLevel whose added complexity does not improve its error
 	#	i.e. between two theories of equal perfomance, ignore the less likely/more complex one
-	precision = 16
+	precision = 14
 	errorLevelToMinPrior = dict()
 	for score, theory in scoreAndTheoryTuples:
 		score = round(score, precision)

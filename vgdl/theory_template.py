@@ -1164,7 +1164,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 	'unexpectedPosition': 		['bounceForward', 'nothing'],
 									# , 'pullWithIt', 'windGust', 'slipForward',\
 									# 'wallBounce', 'wallStop'], #real sprite moves and doesn't overlap
-	'unexpectedOverlap':		['nothing', 'reverseDirection'],#, 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
+	'unexpectedOverlap':		['nothing', 'reverseDirection', 'teleportToExit'],#, 'onRope', 'onLadder'], #real sprite moved and now overlaps with another
 	'orientationChange': 		['flipDirection'], #'reverseDirection', 
 									#'turn', 'turnAround', 
 	'wrapAround':				['wrapAround'], # no offsets
@@ -1538,8 +1538,8 @@ def buildArgsString(interactionRule, theory, rle):
 
 				argsString = " resource=%s limit=%s"%(precondition.item, str(limit))
 	elif interactionRule.interaction=='teleportToExit':
-		print "implement teleportToExit argsstring"
-		embed()
+		# print "implement teleportToExit argsstring"
+		# embed()
 		argsString = ""
 	elif interactionRule.interaction in ['killIfFromAbove', 'killIfFromBelow']:
 		print "implement killIfFromAbove argsstring"
@@ -1618,15 +1618,15 @@ def writeTheoryToTxt(rle, theory, txtFile, writeFile=False, debug=False, goalLoc
 				if interactionRule.interaction == 'teleportToExit':
 					## second element in teleport tuple is the entrance; stype is the exit
 					portalEntry = interactionRule.slot2
-					portalExit = getClassNameFromSpriteString(interactionRule.args['stype'], theory, rle)
-
+					portalExit = theory.classes[portalEntry][0].args['stype']
 					theory.classes[portalEntry][0].vgdlType = Portal
+
 					if theory.classes[portalEntry][0].args is None:
 						theory.classes[portalEntry][0].args = {'stype':portalExit}
 					else:
 						theory.classes[portalEntry][0].args['stype'] = portalExit
 
-					theory.classes[portalExit][0].vgdlType = Portal
+					theory.classes[portalExit][0].vgdlType = ResourcePack
 
 	########### generating theory string
 	theoryString = 'game = """\n'
