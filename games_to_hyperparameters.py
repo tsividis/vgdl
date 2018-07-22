@@ -14,7 +14,7 @@
 # game_names = ['expt_push_boulders']
 # game_names = ['portals']
 # game_names = ['expt_preconditions']
-game_names = ['expt_ee']
+game_names = ['expt_ee', 'expt_helper']
 
 #idx_4
 
