@@ -1626,7 +1626,7 @@ def writeTheoryToTxt(rle, theory, txtFile, writeFile=False, debug=False, goalLoc
 					else:
 						theory.classes[portalEntry][0].args['stype'] = portalExit
 
-					theory.classes[portalExit][0].vgdlType = Portal
+					theory.classes[portalExit][0].vgdlType = ResourcePack
 
 	########### generating theory string
 	theoryString = 'game = """\n'
