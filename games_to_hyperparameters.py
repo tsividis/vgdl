@@ -11,8 +11,8 @@
 
 #idx_2
 # game_names = ['expt_push_boulders', 'portals']
-# game_names = ['expt_push_boulders']
-game_names = ['portals']
+game_names = ['expt_push_boulders']
+# game_names = ['portals']
 #idx_4
 # game_names = ['expt_antagonist', 'zelda']
 # game_names = ['expt_antagonist']
