@@ -428,12 +428,12 @@ class Agent:
 							seen_limits = self.seen_limits[avatarColor], annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
 							firstOrderHorizon=self.firstOrderHorizon, conservative=True, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
 						p_quitting = p.quitting
-						bestNode, gameStringArray, objectPositionsArray = p.BFS()
+						bestNode, gameStringArray, predictedEnvs = p.BFS()
 						self.total_planner_steps += p.total_nodes
 						if bestNode is not None:
 							solution = p.solution
 							gameString_array = p.gameString_array
-							objectPositionsArray = objectPositionsArray[::-1]
+							predictedEnvs = predictedEnvs[::-1]
 					else:
 						emptyPlans = 0
 				else:
@@ -1481,18 +1481,25 @@ def errorSignal(envA, envB, theory, envPrev, p_dist=1, p_speed=1, p_miss=10, p_s
 
 	# 4) Score change
 	if envA._game.observation['score'] != envB._game.observation['score']:
-		e = errorMapEntry()
-		e.diagnosis.append('scoreChange')
-		avatar_color = theory.classes['avatar'][0].colorName
-		sA = envA._game.observation['trackedObjects'][avatar_color][0]
-		sB = envB._game.observation['trackedObjects'][avatar_color][0]
-		e.targetToken = sA
-		e.targetClass = sA.colorName
-		e.targetColor = sA.colorName
-		sPrev, dist_ts = find_sPrev(sB, envPrev)
-		neighbors_prev = neighboringSpritesColors(envPrev, sPrev)
-		e.intPairs.extend([(e.targetClass, n) for n in neighbors_prev])
-		errorMap.append(e)
+		## Note: The way we're doing this is wrong, as it corresponds to the assumption
+		## that only avatar interactions can change the score.
+		## As score tends to not be that significant, not fixing this for now.
+		try:
+			e = errorMapEntry()
+			e.diagnosis.append('scoreChange')
+			avatar_color = theory.classes['avatar'][0].colorName
+			sA = envA._game.observation['trackedObjects'][avatar_color][0]
+			sB = envB._game.observation['trackedObjects'][avatar_color][0]
+			e.targetToken = sA
+			e.targetClass = sA.colorName
+			e.targetColor = sA.colorName
+			sPrev, dist_ts = find_sPrev(sB, envPrev)
+			neighbors_prev = neighboringSpritesColors(envPrev, sPrev)
+			e.intPairs.extend([(e.targetClass, n) for n in neighbors_prev])
+			errorMap.append(e)
+		except:
+			print "problem with getting score in errorSignal (likely due to avatar death)"
+			# pass
 
 	## Share information across errorMap items and make a unique list
 	# if len(errorMap) > 1:
