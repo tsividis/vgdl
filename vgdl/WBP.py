@@ -482,6 +482,8 @@ class WBP():
 			if self.display:
 				print "________________"
 				print current.rle.show()
+			# if self.killer_types:
+				# embed()
 			for a in current_actions:
 				skipAction = False
 				if not skipAction:
@@ -1341,7 +1343,7 @@ class Node():
 		novelty_first_alpha=1000, novelty_second_alpha=10, time_alpha=10):
 		if rle==None:
 			rle = self.rle
-
+		# print rle.show()
 		theory = self.WBP.theory
 		heuristicVal = 0
 		avatarNoveltyVals = []
@@ -1480,10 +1482,11 @@ class Node():
 				if self.WBP.killer_types:
 					for k in self.WBP.killer_types:
 						## if we think it's stochastic
-						if any([t in str(self.WBP.theory.classes[k][0].vgdlType) for t in ['Random', 'Chaser']]):
+						# if any([t in str(self.WBP.theory.classes[k][0].vgdlType) for t in ['Random', 'Chaser']]):
+						if True:
 							for s in vrle._game.sprite_groups[k]:
 								if manhattanDist(vrle._rect2pos(s.rect), vrle._rect2pos(vrle._game.getAvatars()[0].rect)) < self.WBP.safeDistance:
-									print "closer than safeDistance away from {} {}. need to sample".format(k, self.WBP.theory.classes[k][0].vgdlType)
+									# print "closer than safeDistance away from {} {}. need to sample".format(k, self.WBP.theory.classes[k][0].vgdlType)
 									multipleSamples = True
 									break
 
@@ -1507,7 +1510,7 @@ class Node():
 							# print "too many bad outcomes"
 							# embed()
 						if len(badOutcomes)>badOutcomeLimit:
-							print "got badoutcomes"
+							# print "got badoutcomes"
 							self.terminal, self.win, self.metabolic_cost = badOutcomes[0][1], badOutcomes[0][2], badOutcomes[0][3]
 							return badOutcomes[0][0], badOutcomes[0][2] #vrle, win
 						else:
@@ -1522,7 +1525,7 @@ class Node():
 				print "conditions met but copy failed"
 				embed()
 		else:
-			print "in a reconstructed node"
+			# print "in a reconstructed node"
 			# embed()
 			self.reconstructed=True
 			# print "copy failed; replaying from top"
