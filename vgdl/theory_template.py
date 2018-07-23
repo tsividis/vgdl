@@ -391,6 +391,7 @@ class Theory(object):
 			# print event
 			# print "\tFail case: ", failCase
 			# print ""
+			# embed()
 
 			# This particular event is explained. Don't change anything.
 			if failCase == 0:
@@ -699,7 +700,8 @@ class Theory(object):
 				# self.terminationSet = [rule for rule in self.terminationSet if rule not in terminationsToRemove]
 
 				interaction = InteractionRule(event[0], assignment[0], assignment[1], args) #This isn't strictly necessary, but follows createChild requirements.
-
+				# print "about to posit interactionRule"
+				# embed()
 				classAssignments = [(assignment[0], obj1), (assignment[1], obj2)]
 				newTheory = self.createChild([interaction, classAssignments], override)
 				# Checks and only adds to newTheories if the created theory was actually different.
@@ -707,6 +709,7 @@ class Theory(object):
 					newTheories.append(newTheory)
 
 		# print "adding {} theories with new assignments".format(len(newTheories))
+		# embed()
 		return newTheories
 
 	def addPreconditions(self, event, timestep, timesteps):
@@ -2526,16 +2529,27 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	theoryString += "\tInteractionSet\n"
 	added_rules = []
 	sortedInteractionDict = {}
+
+	## There's no reason to write 'nothing' interactions in the theory, except that we need
+	## to use the eventHandler to detect collisions for collisions that we've never witnessed.
+	## So, only write 'nothing' interactions if they're (a) generic, (b) you haven't seen the reversed classPair interaction already
+	## The 'continue' statements below take care of this.
+
 	# create a dict mapping interacting class pairs to their list of interactions
 	for interactionRule in theory.interactionSet:
+		
 		c1 = interactionRule.slot1
 		c2 = interactionRule.slot2
 		if c1 > c2:
 			c1, c2 = c2, c1 # flip order
 
 		if not (c1,c2) in sortedInteractionDict:
+			if interactionRule.interaction=='nothing' and not interactionRule.generic:
+				continue
 			sortedInteractionDict[(c1, c2)] = [interactionRule]
 		else:
+			if interactionRule.interaction=='nothing':
+				continue
 			sortedInteractionDict[(c1, c2)].append(interactionRule)
 
 	sortedInteractions = []
@@ -2570,13 +2584,12 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 		# EDIT: made killIfHasLess be processed first
 
 	sortedInteractions += nonAvatarStepBackInteractions
-
 	for interactionRule in sortedInteractions:
+
 		if all([not interactionRule.__eq__(r) for r in added_rules]): ## don't duplicate rules.
 
 			c1 = interactionRule.slot1
 			c2 = interactionRule.slot2
-
 
 			# if c2=='EOS' or c1=='EOS': ## 'EOS stepBack' is always being written at the end. Don't handle it here.
 			# 	continue

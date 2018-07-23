@@ -22,7 +22,7 @@ from colors import *
 from util import factorize, objectsToSymbol
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from termcolor import colored
-
+import time
 import cPickle
 # from line_profiler import LineProfiler
 
@@ -414,18 +414,22 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         return output
     """
 
-    def step(self, action, return_obs=False):
+    def step(self, action, return_obs=False, getTermination=False, getEffectList=False):
         if action == ('space'):
             self._game.keystate[32] = True
             action = (0,0)
         pre_step_score = self._game.score
-
+        # t1 = time.time()
         events = self._performAction(action)
         # embed()
         # observation = self._getSensors()
 
         observation = self._getSensors() if return_obs else None
-        (ended, won) = self._isDone()
+        if getTermination:
+            (ended, won, termination) = self._isDone(getTermination=True)
+        else:
+            (ended, won) = self._isDone()
+            termination = []
         self._game.time+=1
 
         dScore = self._game.score - pre_step_score
@@ -442,8 +446,12 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         for k in self._game.keystate:
             self._game.keystate[k] = False
 
-        # print "reward", reward
-        return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
+        # print time.time()-t1
+        # if getEffectList:
+            # return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events}
+        # else:
+            # return {}
+        return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events, 'ended':ended, 'win':won, 'termination':termination}
 
 ## the game in the agent's 'head'
 def defTheoryTest():

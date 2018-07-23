@@ -317,11 +317,11 @@ class WBP():
 			# embed()
 		try:
 			current = bestNodes.pop(0)
-			ended, win = current.rle._isDone()
+			# current.ended, current.win = current.rle._isDone()
 			if (current.terminal, current.win) == (True, False):
 				print "rewardSelection picked a loss node!!"
 				embed()
-			if ended and not win:
+			if current.terminal and not current.win:
 				print "rewardSelection picked a loss node!!"
 				embed()
 		except:
@@ -490,16 +490,16 @@ class WBP():
 					child = Node(self.rle, self, current.actionSeq+[a], current)
 					# print actionDict[a]
 					child.eval()
+					# embed()
 
 					# print ""
-					ended, win = child.rle._isDone()
+					# ended, win = child.rle._isDone()
+					ended, win = child.terminal, child.win
 					# if a == K_SPACE:
 						# embed()
 					if self.firstOrderHorizon:
 						# Return plan if first-order progress was made towards
 						# a win condition
-						# ended, win = child.rle._isDone()
-						# if not ended:
 						foundWin = False
 						for term in self.theory.terminationSet:
 							if isinstance(term, SpriteCounterRule) and term.termination.win==True:
@@ -798,7 +798,8 @@ class Node():
 			while i<self.rolloutDepth and thingWeShot not in vrle._game.kill_list and not terminal:
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT])
 				# print a
-				res = vrle.step(a)
+				res = vrle.step(a, getTermination=True, getEffectList=True)
+				# ended, win, t = res['ended'], res['win'], res['termination']
 				if self.WBP.display:
 					print vrle.show(indent=True, color='cyan')
 				currHeuristicVal = self.heuristics(vrle, **self.WBP.rolloutHyperparameters)
@@ -1489,17 +1490,22 @@ class Node():
 									# print "closer than safeDistance away from {} {}. need to sample".format(k, self.WBP.theory.classes[k][0].vgdlType)
 									multipleSamples = True
 									break
-
+				multipleSamples = False
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
 					if multipleSamples:
 						badOutcomeLimit = 0
 						okOutcomes, badOutcomes = [], []
 						for i in range(10):
+							print "multiple samples"
 							vrle = self.fastcopy(self.parent.rle)
 							res = vrle.step(a, return_obs=True)
-							metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
-							terminal, win = vrle._isDone()
+							terminal, win = res['ended'], res['win']
+							
+							# metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
+							metabolic_cost = 0
+
+							# terminal, win = vrle._isDone()
 							if (terminal, win) == (True, False):
 								badOutcomes.append((vrle, terminal, win, metabolic_cost))
 							else:
@@ -1512,20 +1518,23 @@ class Node():
 						if len(badOutcomes)>badOutcomeLimit:
 							# print "got badoutcomes"
 							self.terminal, self.win, self.metabolic_cost = badOutcomes[0][1], badOutcomes[0][2], badOutcomes[0][3]
-							return badOutcomes[0][0], badOutcomes[0][2] #vrle, win
+							return badOutcomes[0][0], self.terminal, badOutcomes[0][2] #vrle, terminal, win
 						else:
 							self.terminal, self.win, self.metabolic_cost = okOutcomes[0][1], okOutcomes[0][2], okOutcomes[0][3]
-							return okOutcomes[0][0], okOutcomes[0][2]#vrle, win
+							return okOutcomes[0][0], self.terminal, okOutcomes[0][2]#vrle, terminal, win
 					else:
 						res = vrle.step(a, return_obs=True)
+						self.terminal, self.win = res['ended'], res['win']
+						# embed()
 						# relevantEvents = [t for t in res['effectList'] if t[0] == 'changeResource']
-						self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
-						self.terminal, self.win = vrle._isDone()
+						# self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
+						self.metabolic_cost = 0
+						# self.terminal, self.win = vrle._isDone()
 			except:
 				print "conditions met but copy failed"
 				embed()
 		else:
-			# print "in a reconstructed node"
+			print "in a reconstructed node"
 			# embed()
 			self.reconstructed=True
 			# print "copy failed; replaying from top"
@@ -1536,10 +1545,12 @@ class Node():
 			while not self.terminal and len(self.actionSeq)>i:
 				a = self.actionSeq[i]
 				res = vrle.step(a, return_obs=True)
-				self.metabolic_cost += self.metabolics(vrle, res['effectList'], a)
-				self.terminal, self.win = vrle._isDone()
+				# self.metabolic_cost += self.metabolics(vrle, res['effectList'], a)
+				self.metabolic_cost = 0
+				self.terminal, self.win = res['ended'], res['win']
+				# self.terminal, self.win = vrle._isDone()
 				i += 1
-		return vrle, self.win
+		return vrle, self.terminal, self.win
 
 	"""
 	def eval_profiler(self):
@@ -1552,7 +1563,7 @@ class Node():
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
 
-		self.rle, self.win = self.getToCurrentState()
+		self.rle, self.terminal, self.win = self.getToCurrentState()
 
 		self.updateObjIDs(self.rle)
 
@@ -1628,12 +1639,6 @@ class Node():
 					self.WBP.objIDs[s.ID] = (len(self.WBP.objIDs.keys())+1) * 100 * (self.rle.outdim[0]*self.rle.outdim[1]+self.WBP.padding)
 					i+=1
 		return
-
-	def isTerminal(self):
-		return self.rle._isDone()[0]
-
-	def isWin(self):
-		return self.rle._isDone()[1]
 
 	def playBack(self, make_movie=False):
 		vrle = copy.deepcopy(self.rle)
@@ -1752,7 +1757,7 @@ if __name__ == "__main__":
 	parser.add_argument('--hyperparameter_index', type=int, default=0, help='hyperparameter_index')
 	parser.add_argument('--level', type=int, default=0, help='level')
 
-		
+
 	args = parser.parse_args()
 	game_name = args.game_name
 	hyperparameter_index = args.hyperparameter_index
@@ -1769,11 +1774,12 @@ if __name__ == "__main__":
 	hyperparameters = hyperparameter_sets[hyperparameter_index]
 	planner_hyperparameters = dict((k, hyperparameters[k]) for k in hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
 
+
 	gameString, levelString = level_game_pairs[level_num]
 	rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
 
 
-	gameFilename = "examples.gridphysics.theory_antagonist"
+	gameFilename = "examples.gridphysics.theory_frogs"
 	gameString, levelString = defInputGame(gameFilename, randomize=True)
 	rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
@@ -1783,7 +1789,7 @@ if __name__ == "__main__":
 	p = WBP(rle, gameFilename, max_nodes=max_nodes, shortHorizon=hyperparameters['short_horizon'],
 			firstOrderHorizon=hyperparameters['first_order_horizon'], conservative=False, 
 			hyperparameters=planner_hyperparameters, extra_atom=False)
-	embed()
+	# embed()
 	t1 = time.time()
 	bestNode, gameStringArray, objectPositionsArray = p.BFS()
 

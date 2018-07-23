@@ -1164,6 +1164,7 @@ class NoveltyTermination(Termination):
                 # embed()
         # if game.effectList:
             # embed()
+        # print len(game.effectListByClass), self.s1, self.s2
         for e in game.effectListByClass:
             if (e[0] in ['killSprite', 'transformTo', 'nothing']) and len(e) > 2:
                 if (e[1], e[2]) in [(self.s1, self.s2), (self.s2, self.s1)]:
@@ -2093,8 +2094,8 @@ def initializeDistributionArgs(sprite_type, objectColors):
     """
 
     def initializeSpeed():
-        speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
-        # speedValues = [0.1, 0.2, 1.]
+        # speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+        speedValues = [0.1, 0.2, 1.]
         return [('speed', v) for v in speedValues]
         # initializeProperty(args, 'speed', speedValues)
 
@@ -2116,8 +2117,8 @@ def initializeDistributionArgs(sprite_type, objectColors):
         # initializeProperty(args, 'stype', stypeValues)
 
     def initializeCooldown():
-        stypeValues = [1, 2, 3, 4, 5, 6]
-        # stypeValues = [1,5]
+        # stypeValues = [1, 2, 3, 4, 5, 6]
+        stypeValues = [1,5]
         # stypeValues = [1]
         return [('cooldown', v) for v in stypeValues]
         # initializeProperty(args, 'cooldown', stypeValues)
