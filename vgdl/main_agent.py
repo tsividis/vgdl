@@ -96,8 +96,8 @@ class Agent:
         self.pickle_file = None
 
         # MARK, EXPLORATION
-        self.do_random_moves = True
-        self.max_random_steps = 10000
+        self.do_random_moves = False
+        self.max_random_steps = 0
         self.pickled_theory_path = pickled_theory_path
 
     def initializeEnvironment(self):
@@ -390,12 +390,7 @@ class Agent:
                 print "Finished in ", time.time() - t1
                 # embed()
         
-        
-        
-        
-        
-        
-        
+
         
        # if i >=10:
             #     return
@@ -1243,6 +1238,8 @@ if __name__ == "__main__":
      'novelty_second_alpha': 50,
      }]
 
+   
+
     agent = Agent('full', gameName, hyperparameter_sets[0])
 
 
@@ -1252,3 +1249,5 @@ if __name__ == "__main__":
 
     ##and use this line
     # agent.playCurriculum(level_game_pairs=None)
+
+
