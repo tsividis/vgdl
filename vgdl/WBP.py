@@ -1160,8 +1160,11 @@ class Node():
 
 				resource_yielder_names = [[r for r in ryn if r] for ryn in resource_yielder_names] ## Remove 'None' yielded by last else condition above
 
-				resource_positions = [np.concatenate([self.WBP.findObjectsInRLE(rle, yielder) for yielder in yielders]) for yielders in resource_yielder_names]
-
+				try:
+					resource_positions = [np.concatenate([self.WBP.findObjectsInRLE(rle, yielder) for yielder in yielders]) for yielders in resource_yielder_names]
+				except:
+					print "problem with resource positions"
+					embed()
 				resource_limits = np.array([list(resource[1])[0].num + 1
 					if list(resource[1])[0].operator_name == '>'
 					else list(resource[1])[0].num
