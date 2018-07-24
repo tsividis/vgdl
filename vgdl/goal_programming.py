@@ -122,7 +122,7 @@ class GoalAgent(Agent):
 
         return h, newenv
 
-    def playGoalCurriculum(self, level_game_pairs=None, num_episodes_per_level=10):
+    def playGoalCurriculum(self, level_game_pairs=None, num_episodes_per_level=3):
         """ Plays a game with modified goals based on the agent's understanding of the original game """
         print("-----------------------------------------------------------------------")
         print("-----------------------------------------------------------------------")
@@ -208,7 +208,7 @@ class GoalAgent(Agent):
         print "INSIDE OF PLAY GOAL EPISODE"
 
         self.initializeEnvironment()
-        
+
         steps, self.quits, self.longHorizonObservations = 0,0,0
         self.all_objects[episode_num] = self.rle._game.getAllObjects()
         ended, win = self.rle._isDone()
