@@ -59,7 +59,7 @@ class Agent:
         self.shortHorizon = hyperparameters['short_horizon']#False
         self.firstOrderHorizon = hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)        if self.shortHorizon == True:
         if self.shortHorizon == True:
-            self.starting_max_nodes = 1000
+            self.starting_max_nodes = 200
             self.max_nodes_annealing = 1.05
         else:
             self.starting_max_nodes = 10000
@@ -83,7 +83,7 @@ class Agent:
         self.seen_limits = []
         self.new_objects = {}
         self.extra_atom = False
-
+        self.conservative = False
         # Hyperopt output
         self.total_game_steps = 0
         self.total_planner_steps = 0

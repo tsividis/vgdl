@@ -144,6 +144,8 @@ class GoalAgent(Agent):
             self.rle = createRLInputGameFromStrings(self.gameString, self.levelString)
             self.rle._game.spriteUpdateDict = self.spriteUpdateDict
 
+            self.symbolDict = generateSymbolDict(self.rle)
+
             ### MARK: get's the correct theory for the game from the rle, so that this series of experiments
             ### can be run without running the regular playCurriculum first.
             oracle_theory = generateTheoryFromGame(self.rle,alterGoal=False)
@@ -160,10 +162,10 @@ class GoalAgent(Agent):
             ## between the environment we use for planning and the one we act in.
 
             alt_rle, killself_theory = self.constructKillSelfTheory(oracle_theory, self.rle)
+            self.theory = killself_theory
             # move_theory, newenv = constructTouchNothingEverywhereTheory(self.hypotheses[0], rle)
 
             # self.theory, alt_rle = self.constructTouchNothingEverywhereTheory(oracle_theory, self.rle)
-
 
 
             episodes = []
@@ -210,17 +212,13 @@ class GoalAgent(Agent):
 
         self.statesEncountered.append(self.rle._game.getFullState())
         
-        envReal = self.fastcopy(self.rle)
-
-        self.rleHistory[episode_num].append(envReal)
+        # envReal = self.fastcopy(self.rle)
+        # self.rleHistory[episode_num].append(envReal)
 
         emptyPlans = 0
         while not ended:
             quitting = False
-            avatarColor = self.theory.classes['avatar'][0].colorName
-
-            print "embedding in playGoalEpsiode"
-            embed()
+            avatarColor = self.theory.classes['avatar'][0].color
 
             ### MARK: if an alt_rle was passed in, plan with that one. executeStep will still act on self.rle.
             ### Otherwise, plan and act on self.rle.
@@ -228,11 +226,15 @@ class GoalAgent(Agent):
                 plan_rle = alt_rle
             else:
                 plan_rle = self.rle
-            p = WBP(plan_rle, self.gameFilename, theory=self.theory, fakeInteractionRules = self.fakeInteractionRules,
-                seen_limits = self.seen_limits[avatarColor], annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                firstOrderHorizon=self.firstOrderHorizon, hyperparameters=self.hyperparameter_sets[0])
 
-            # embed()
+            planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
+
+            ## Initialize planner
+            p = WBP(plan_rle, self.gameFilename, theory=self.theory, fakeInteractionRules = self.fakeInteractionRules,
+                seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+                firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
+
+            embed()
 
             bestNode, gameStringArray, predictedEnvs = p.BFS()
 

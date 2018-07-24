@@ -1,82 +1,61 @@
 level="""
-44444444444444444444444444444444
-4                              4
-4                              4
-4                              4
-4                              4
-4                              4
-4                             54
-4      4                 3   664
-444    4                 5   674
-44444444444444444444444444444444
+4444444444444444444444
+4  5    6            4
+4    1    6          4
+43  2     1   4     44
+4    45       4 4    4
+44          2        4
+4   6    2      5    4
+4    1        0      4
+4         1          4
+4444444444444444444444
 """
 game = """
 BasicGame
 	SpriteSet
+		goal > ResourcePack color=PINK
+		wall > Immovable color=DARKGRAY
+		poison3 > ResourcePack color=DARKGRAY
+		poison2 > ResourcePack color=GOLD
+		poison1 > ResourcePack color=ORANGE
 		avatar > MovingAvatar color=DARKBLUE
-		c3 > ResourcePack color=WHITE
-		c2 > Chaser color=ORANGE fleeing=False cooldown=1 stype=c3
-		c6 > ResourcePack color=PURPLE
-		c5 > ResourcePack color=GREEN
-		c4 > ResourcePack color=BLACK
+		box1 > ResourcePack color=GREEN
+		box2 > ResourcePack color=LIGHTBLUE
 	InteractionSet
-		c5 c3 > nothing
-		c3 c5 > nothing
-		c2 c4 > nothing
-		c4 c2 > nothing
-		avatar c6 > nothing
-		c5 c4 > nothing
-		c4 c5 > nothing
-		c3 avatar > bounceForward
-		avatar EOS > stepBack
-		c6 c4 > nothing
-		c4 c6 > nothing
-		c2 c2 > nothing
-		c6 c5 > nothing
-		c5 c6 > nothing
-		c3 c3 > nothing
-		c3 c6 > nothing
-		c3 c2 > killSprite
-		c5 avatar > killSprite
-		avatar c4 > stepBack
-		avatar c2 > nothing
-		c4 c4 > nothing
-		c5 EOS > stepBack
-		c2 c5 > stepBack
-		c4 EOS > stepBack
-		c3 c4 > stepBack
-		c2 c6 > stepBack
-		c3 EOS > stepBack
-		c6 EOS > stepBack
-		c2 EOS > stepBack
+		avatar wall > stepBack
+		avatar poison1 > killSprite
+		box1 avatar > bounceForward
+		poison2 box1 > bounceForward
+		box1 box2 > nothing
+		box2 avatar > killSprite
+		poison1 box1 > killSprite
+		avatar poison3 > killSprite
+		avatar poison2 > killSprite
+		goal avatar > killSprite
+		poison2 box2 > stepBack
+		poison1 wall > stepBack
+		goal wall > stepBack
+		poison3 wall > stepBack
+		goal box1 > stepBack
+		goal box2 > stepBack
+		box1 wall > stepBack
+		goal poison1 > stepBack
+		poison2 wall > stepBack
+		box2 wall > stepBack
+		poison1 box2 > stepBack
+		box1 box1 > stepBack
+		goal poison2 > stepBack
 	TerminationSet
-		MultiSpriteCounter stype0=c5 stype1=c6 limit=0 win=True
-		NoveltyTermination s1=c2 s2=c2 win=True
-		NoveltyTermination s1=c2 s2=c4 win=True
-		NoveltyTermination s1=c3 s2=c3 win=True
-		NoveltyTermination s1=c4 s2=c4 win=True
-		NoveltyTermination s1=c2 s2=EOS win=True
-		NoveltyTermination s1=c3 s2=EOS win=True
-		NoveltyTermination s1=c4 s2=EOS win=True
-		NoveltyTermination s1=avatar s2=EOS win=True
-		NoveltyTermination s1=c5 s2=EOS win=True
-		NoveltyTermination s1=c5 s2=c3 win=True
-		NoveltyTermination s1=c5 s2=c4 win=True
-		NoveltyTermination s1=c6 s2=EOS win=True
-		NoveltyTermination s1=c6 s2=c4 win=True
-		NoveltyTermination s1=c6 s2=c5 win=True
-		SpriteCounter stype=avatar limit=0 win=False
-		SpriteCounter stype=c3 limit=0 win=True
+		SpriteCounter stype=goal limit=0 win=True
+		SpriteCounter stype=avatar limit=0 win=True
 	LevelMapping
-		9 > avatar c2
-		b > c3 c6
-		1 > c6
+		0 > goal
+		1 > box2
+		2 > poison2
 		3 > avatar
-		8 > avatar c6
-		4 > c4
-		5 > c2
-		6 > c5
-		7 > c3
+		4 > poison3
+		5 > box1
+		6 > poison1
 """
 if __name__ == "__main__":
 	from vgdl.core import VGDLParser
