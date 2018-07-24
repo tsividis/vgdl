@@ -1,12 +1,12 @@
 level="""
 4444444444444444444444
-4  5    6            4
-4    1    6          4
-43  2     1   4     44
-4    45       4 4    4
-44          2        4
-4   6    2      5    4
-4    1        0      4
+435   4    6       0 4
+44  5 4      6       4
+4     6      1  4   44
+44444445        4   44
+44            2      4
+4    6    2        5 4
+4     1              4
 4         1          4
 4444444444444444444444
 """
@@ -15,7 +15,7 @@ BasicGame
 	SpriteSet
 		goal > ResourcePack color=PINK
 		wall > Immovable color=DARKGRAY
-		poison3 > ResourcePack color=DARKGRAY
+		poison3 > ResourcePack color=PURPLE
 		poison2 > ResourcePack color=GOLD
 		poison1 > ResourcePack color=ORANGE
 		avatar > MovingAvatar color=DARKBLUE
@@ -53,7 +53,7 @@ BasicGame
 		1 > box2
 		2 > poison2
 		3 > avatar
-		4 > poison3
+		4 > wall
 		5 > box1
 		6 > poison1
 """

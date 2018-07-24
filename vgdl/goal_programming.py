@@ -144,11 +144,13 @@ class GoalAgent(Agent):
             self.rle = createRLInputGameFromStrings(self.gameString, self.levelString)
             self.rle._game.spriteUpdateDict = self.spriteUpdateDict
 
+            ### PEDRO: For the sake of efficiency the correct theory for the game from the rle, 
+            ## so that this code can be developed without running the regular playCurriculum first.
+            ## For the actual experiments, we will use playCurriculum first.
+            oracle_theory = generateTheoryFromGame(self.rle,alterGoal=False)
+
             self.symbolDict = generateSymbolDict(self.rle)
 
-            ### MARK: get's the correct theory for the game from the rle, so that this series of experiments
-            ### can be run without running the regular playCurriculum first.
-            oracle_theory = generateTheoryFromGame(self.rle,alterGoal=False)
 
             ### MARK: constrcutTouchNothingEverywhereTheory returns an "imagined rle". It is called
             ### alt_rle here. The alt_rle is passed to playGoalEpisode. If alt_rle is not None,
@@ -205,6 +207,8 @@ class GoalAgent(Agent):
         print "INSIDE OF PLAY GOAL EPISODE"
         print "INSIDE OF PLAY GOAL EPISODE"
 
+        self.initializeEnvironment()
+        
         steps, self.quits, self.longHorizonObservations = 0,0,0
         self.all_objects[episode_num] = self.rle._game.getAllObjects()
         ended, win = self.rle._isDone()
@@ -233,8 +237,6 @@ class GoalAgent(Agent):
             p = WBP(plan_rle, self.gameFilename, theory=self.theory, fakeInteractionRules = self.fakeInteractionRules,
                 seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                 firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
-
-            embed()
 
             bestNode, gameStringArray, predictedEnvs = p.BFS()
 
@@ -281,14 +283,15 @@ class GoalAgent(Agent):
                 for action_num, action in enumerate(solution):
                     self.executeStep(episode_num, action)
                     
-                    _, regroundForKillerTypes, _ = self.regroundOrNot(action_num, predictedEnvs, self.theory)
+                    ## To fix when we merge
+                    # _, regroundForKillerTypes, _ = self.regroundOrNot(action_num, predictedEnvs, self.theory)
 
                     steps +=1
 
                     ended, win = self.rle._isDone()
-                    if regroundForKillerTypes: 
-                        print "got reground for killer type. Replanning"
-                        break
+                    # if regroundForKillerTypes: 
+                    #     print "got reground for killer type. Replanning"
+                    #     break
 
                     if ended:
                         break
@@ -322,10 +325,10 @@ class GoalAgent(Agent):
         return win, score, steps
 
     def executeStep(self, episode_num, action):
-        self.actionHistory[episode_num].append(action)
         self.rle.step(action)
+        print "Game score: {}. Game tick: {}".format(self.rle._game.score, self.rle._game.time)
+        print self.rle.show(color='blue')
         envReal = self.fastcopy(self.rle)
-        self.rleHistory[episode_num].append(envReal)
         self.statesEncountered.append(self.rle._game.getFullState())
 
     def wait(self, episode_num, num_steps=1):
