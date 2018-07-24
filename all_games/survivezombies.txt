@@ -9,7 +9,7 @@ BasicGame
         avatar > MovingAvatar frameRate=8 color=DARKBLUE
         bee    > RandomNPC speed=1   cooldown=3  color=YELLOW
         zombie > Chaser stype=avatar cooldown=6 speed=0.5 color=BROWN
-        dying_zombie > Chaser stype=avatar cooldown=6 speed=0.5 color=BROWN
+        dying_zombie > Chaser stype=avatar cooldown=6 speed=0.5 color=PURPLE
         wall > Immovable color=DARKGRAY
 
     InteractionSet

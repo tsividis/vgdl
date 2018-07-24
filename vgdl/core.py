@@ -841,6 +841,30 @@ class BasicGame(object):
 
         return self.effectList
 
+    # def getSpriteColor(self, spriteID, all_objects):
+    #     spriteClass = None
+
+    #     try:
+    #         if spriteID=='ENDOFSCREEN':
+    #             spriteColor= 'ENDOFSCREEN'
+    #         elif spriteID in all_objects:
+    #             if hasattr(all_objects[spriteID], 'name'):
+    #                 spriteClass = all_objects[spriteID].name
+    #             elif'sprite' in all_objects[spriteID]:
+    #                 spriteClass = all_objects[spriteID]['sprite'].name
+    #         else:
+    #             for s in self.new_sprites:
+    #                 if s.ID==spriteID:
+    #                     spriteClass = s.name
+    #     except:
+    #         print "getSpriteClass problem"
+    #         embed()
+    #     if spriteClass is None:
+    #         print "failed to find sprite class"
+    #         embed()
+
+    #     return spriteClass
+
     def getSpriteClass(self, spriteID, all_objects):
         spriteClass = None
 
