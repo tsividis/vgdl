@@ -22,7 +22,7 @@ from colors import *
 from util import factorize, objectsToSymbol
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from termcolor import colored
-
+import time
 import cPickle
 # from line_profiler import LineProfiler
 
@@ -244,7 +244,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
     def _isDone(self, getTermination=False):
         # remember reward if the final state ends the game
-        self._game.terminations.sort(key=lambda x: 0 if (x.name=='SpriteCounter' and x.stype=='avatar' and x.win==False) else 1 if x.name=='SpriteCounter' else 2)
+        # self._game.terminations.sort(key=lambda x: 0 if (x.name=='SpriteCounter' and x.stype=='avatar' and x.win==  False) else 1 if x.name=='SpriteCounter' else 2)
         for t in self._game.terminations:
             # Convention: the first criterion is for keyboard-interrupt termination
             # Breaking convention here
@@ -348,6 +348,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         if self.visualize:
             self._game._clearAll(self.visualize)
 
+        self._game.new_sprites = []
         # update sprites
         if onlyavatar:
             if action != 0:
@@ -361,6 +362,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                         s.update(self._game)
 
         events = self._game._eventHandling()
+
         ## get events (e.g., (stepBack obj1ID, obj2ID))
 
         # self._gravepoints[(skey, self._rect2pos(s.rect))] = True
@@ -412,17 +414,22 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         return output
     """
 
-    def step(self, action, return_obs=False):
+    def step(self, action, return_obs=False, getTermination=False, getEffectList=False):
         if action == ('space'):
             self._game.keystate[32] = True
             action = (0,0)
         pre_step_score = self._game.score
+        # t1 = time.time()
         events = self._performAction(action)
         # embed()
         # observation = self._getSensors()
 
         observation = self._getSensors() if return_obs else None
-        (ended, won) = self._isDone()
+        if getTermination:
+            (ended, won, termination) = self._isDone(getTermination=True)
+        else:
+            (ended, won) = self._isDone()
+            termination = []
         self._game.time+=1
 
         dScore = self._game.score - pre_step_score
@@ -439,8 +446,12 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         for k in self._game.keystate:
             self._game.keystate[k] = False
 
-        # print "reward", reward
-        return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
+        # print time.time()-t1
+        # if getEffectList:
+            # return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events}
+        # else:
+            # return {}
+        return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events, 'ended':ended, 'win':won, 'termination':termination}
 
 ## the game in the agent's 'head'
 def defTheoryTest():
