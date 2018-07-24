@@ -617,8 +617,6 @@ class Agent:
                         break
                     ended, win = self.rle._isDone()
                     if ended:
-                        print "died. embedding"
-                        embed()
                         break
                     # if self.total_game_steps > MAX_STEPS:
                         # score = self.rle._game.score
