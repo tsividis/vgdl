@@ -69,9 +69,9 @@ class GoalAgent(Agent):
         h.interactionSet.append(InteractionRule('killSprite', new_name, 'avatar', {}, set()))
         h.terminationSet.append(SpriteCounterRule(new_name, 0, True))
 
-        newenv = initializeVrle(h, rle)
+        newenv = self.initializeVrle(h)
         addNewSprite(newenv, new_name, (loc[0], loc[1]))
-        return newenv, h
+        return h, newenv
 
 
     def constructKillSelfTheory(self, theory, rle):
@@ -82,7 +82,7 @@ class GoalAgent(Agent):
         h.terminationSet.append(SpriteCounterRule('avatar', 0, True))
         newenv = self.initializeVrle(h)
 
-        return newenv, h
+        return h, newenv
 
 
     def constructTouchNothingEverywhereTheory(self, theory, rle):
@@ -110,7 +110,7 @@ class GoalAgent(Agent):
         h.terminationSet.append(SpriteCounterRule('avatar', 0, False))
         h.terminationSet.append(SpriteCounterRule(new_name, 0, True))
 
-        newenv = initializeVrle(h, rle, writeFile=True)
+        newenv = self.initializeVrle(h)
         board = numpy.zeros(newenv.outdim)
         for locs in newenv._game.sprite_groups.itervalues():
             for loc in locs:
@@ -163,9 +163,7 @@ class GoalAgent(Agent):
             ## PEDRO: alt_rle should never be none, as I think it's better to be clear about the separation
             ## between the environment we use for planning and the one we act in.
 
-            alt_rle, killself_theory = self.constructKillSelfTheory(oracle_theory, self.rle)
-            self.theory = killself_theory
-            # move_theory, newenv = constructTouchNothingEverywhereTheory(self.hypotheses[0], rle)
+            self.theory, alt_rle = self.constructKillSelfTheory(oracle_theory, self.rle)
 
             # self.theory, alt_rle = self.constructTouchNothingEverywhereTheory(oracle_theory, self.rle)
 
