@@ -2116,7 +2116,7 @@ def initializeDistributionArgs(sprite_type, objectColors):
 
     def initializeCooldown():
         # stypeValues = [1, 2, 3, 4, 5, 6]
-        stypeValues = [1,5]
+        stypeValues = [1,2,5]
         return [('cooldown', v) for v in stypeValues]
 
     paramList = []
