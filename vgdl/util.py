@@ -70,6 +70,30 @@ def objectsToSymbol(rle, objects, symbolDict):
 		print "objectsToSymbol problem."
 		embed()
 
+def getObjectColor(objectID, all_objects, game, colorDict):
+	if objectID is None:
+		return None
+	elif objectID == 'EOS':
+		return 'ENDOFSCREEN'
+	elif objectID in all_objects.keys():
+		return all_objects[objectID]['type']['color']
+	elif objectID in game.getObjects().keys():
+		return game.getObjects()[objectID]['type']['color']
+	elif objectID in [colorDict[k] for k in colorDict.keys()]:
+		# If we were passed a color to begin with (i.e., in the case of EOS)
+		return objectID
+	elif objectID in game.sprite_groups.keys():
+		return colorDict[str(game.sprite_groups[objectID][0].color)]
+	elif objectID in [obj.ID for obj in game.kill_list]:
+		objectColor = [obj.color for obj in ame.kill_list
+			if obj.ID==objectID][0]
+		return colorDict[str(objectColor)]
+	else:
+		# for some reason we haven't been passed an ID but rather a sprite object
+		objectName = objectID.name
+		color = [all_objects[k]['type']['color'] for k in all_objects.keys() if all_objects[k]['sprite'].name==objectName][0]
+		return color
+
 def extendColorDict(num):
 	for i in range(num):
 		colorName = make_random_name(CAPCHARS)

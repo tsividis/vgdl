@@ -24,6 +24,7 @@ from IPython import embed
 import time
 import os
 import uuid
+from util import getObjectColor
 
 # ---------------------------------------------------------------------
 #     Constants
@@ -275,6 +276,7 @@ class BasicGame(object):
         self.win = None
         self.effectList = [] # list of effects that happened this current timestep
         self.effectListByClass = set()
+        self.effectListByColor = []
         self.spriteDistribution = {}
         self.object_token_spriteDistribution = {}
         self.lastUpdateOptionsTime = None
@@ -829,65 +831,65 @@ class BasicGame(object):
         ## so we can easily check NoveltyTerminations.
         new_collision_eff = []
         new_collision_eff_by_class = set()
+        new_collision_eff_by_color = set()
+        full_collision_eff_by_color = []
+
         all_objects = self.getAllObjects()
+
         for element in self.effectList:
-            c1, c2 = self.getSpriteClass(element[1], all_objects), self.getSpriteClass(element[2], all_objects)
+            c1, color1 = self.getSpriteClassAndColor(element[1], all_objects)
+            c2, color2 = self.getSpriteClassAndColor(element[2], all_objects)
+            
+            # c1 = self.getSpriteClassAndColor(element[1], all_objects)
+            # c2 = self.getSpriteClassAndColor(element[2], all_objects)
+
             element_tuple = (element[0], c1, c2)
+            color_tuple = (element[0], color1, color2)
+            if color_tuple not in new_collision_eff_by_color:
+                new_collision_eff_by_color.add(color_tuple)
+                if len(element)==3:
+                    colorTuple = (element[0], color1, color2)
+                elif len(element)>3:
+                    for k in element[3].keys():
+                        if k=='stype':
+                            element[3][k] = getObjectColor(element[3][k], all_objects, self, colorDict)
+                    colorTuple = (element[0], color1, color2, element[3])
+                full_collision_eff_by_color.append(colorTuple)
             new_collision_eff_by_class.add(element_tuple)
             if element not in new_collision_eff:
                 new_collision_eff.append(element)
         self.effectList = new_collision_eff
         self.effectListByClass = new_collision_eff_by_class
-
+        self.effectListByColor = full_collision_eff_by_color
         return self.effectList
 
-    # def getSpriteColor(self, spriteID, all_objects):
-    #     spriteClass = None
-
-    #     try:
-    #         if spriteID=='ENDOFSCREEN':
-    #             spriteColor= 'ENDOFSCREEN'
-    #         elif spriteID in all_objects:
-    #             if hasattr(all_objects[spriteID], 'name'):
-    #                 spriteClass = all_objects[spriteID].name
-    #             elif'sprite' in all_objects[spriteID]:
-    #                 spriteClass = all_objects[spriteID]['sprite'].name
-    #         else:
-    #             for s in self.new_sprites:
-    #                 if s.ID==spriteID:
-    #                     spriteClass = s.name
-    #     except:
-    #         print "getSpriteClass problem"
-    #         embed()
-    #     if spriteClass is None:
-    #         print "failed to find sprite class"
-    #         embed()
-
-    #     return spriteClass
-
-    def getSpriteClass(self, spriteID, all_objects):
-        spriteClass = None
+    def getSpriteClassAndColor(self, spriteID, all_objects):
+        spriteClass, spriteColor = None, None
 
         try:
             if spriteID=='ENDOFSCREEN':
                 spriteClass = spriteID
+                spriteColor = 'ENDOFSCREEN'
             elif spriteID in all_objects:
                 if hasattr(all_objects[spriteID], 'name'):
                     spriteClass = all_objects[spriteID].name
+                    spriteColor = all_objects[spriteID].colorName
                 elif'sprite' in all_objects[spriteID]:
                     spriteClass = all_objects[spriteID]['sprite'].name
+                    spriteColor = all_objects[spriteID]['sprite'].colorName
             else:
                 for s in self.new_sprites:
                     if s.ID==spriteID:
                         spriteClass = s.name
+                        spriteColor = s.colorName
         except:
             print "getSpriteClass problem"
             embed()
-        if spriteClass is None:
-            print "failed to find sprite class"
+        if None in [spriteClass, spriteColor]:
+            print "failed to find sprite class or spriteColor"
             embed()
 
-        return spriteClass
+        return spriteClass, spriteColor
 
     def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0):
         """

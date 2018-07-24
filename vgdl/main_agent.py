@@ -975,7 +975,7 @@ class Agent:
 
         theory_change_flag = False
 
-        t1 = time.time()
+        # t1 = time.time()
         spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
         spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
         try:
@@ -985,20 +985,20 @@ class Agent:
         except IndexError:
             agentState = defaultdict(lambda: 0)
 
-        print ""
-        print ""
-        print "#############"
-        print "induction steps 1 and 2 took {} seconds".format(time.time()-t1)
+        # print ""
+        # print ""
+        # print "#############"
+        # print "induction steps 1 and 2 took {} seconds".format(time.time()-t1)
         
-        t1 = time.time()
+        # t1 = time.time()
         envPrev = copy.deepcopy(self.rle)
         res = self.rle.step(action)
-        print "step took {} seconds".format(time.time()-t1)
+        # print "step took {} seconds".format(time.time()-t1)
 
         print ""
         print keyPresses[action]
 
-        t1 = time.time()
+        # t1 = time.time()
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
             # agentState = ccopy(self.rle._game.getAvatars()[0].resources)
@@ -1027,38 +1027,43 @@ class Agent:
                         ignored_negative_change = True
             self.rle.agentStatePrev = agentState
 
-        print "agentState stuff: {}".format(time.time()-t1)
+        # print "agentState stuff: {}".format(time.time()-t1)
         # embed()
 
-        t1 = time.time()
+        # t1 = time.time()
         hypotheses = self.manageNewObjects(hypotheses)
 
         # statesEncountered.append(self.rle._game.getFullState())
         self.statesEncountered.append(self.rle._game.getFullState())
 
-        print "manage new objects and getFullState: {}".format(time.time()-t1)
+        # print "manage new objects and getFullState: {}".format(time.time()-t1)
 
-        t1 = time.time()
+        # t1 = time.time()
         distributionsHaveChanged = spriteInduction(self.rle._game, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
-        print "sprite induction step 3: {}".format(time.time()-t1)
-
-        t1 = time.time()
-        effects = translateEvents(res['effectList'], self.all_objects, self.rle)
+        # print "sprite induction step 3: {}".format(time.time()-t1)
+ 
+        # t1 = time.time()
+        # effects = translateEvents(res['effectList'], self.all_objects, self.rle)
+        effects = self.rle._game.effectListByColor
+        # if effects:
+        #     print effects
+        #     print alternateEffects
+        #     embed()
         print "score: {}, game tick: {}".format(self.rle._game.score, self.rle._game.time)
         print self.rle.show(color='blue')
+
+        # print colored("translateEvents and making of event: {}".format(time.time()-t1), "green")
 
         event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, \
             'gameState': self.rle._game.getFullStateColorized(), 'rle': self.rle}
 
-        print "translateEvents and making of event: {}".format(time.time()-t1)
-
         # if len(effects)>4:
             # embed()
-        t1 = time.time()
+        # t1 = time.time()
         newEffects = False
-        print "{} effects in this time-step".format(len(effects))
-        print "finalEffectList:"
-        print self.finalEffectList
+        # print "{} effects in this time-step".format(len(effects))
+        # print "finalEffectList:"
+        # print self.finalEffectList
         if effects:
             self.finalEventList.append(event)
             newTimeStep = TimeStep(event['agentAction'], event['agentState'], event['effectList'], event['gameState'], event['rle'])
@@ -1067,10 +1072,10 @@ class Agent:
                 compactEvent = (e[0], e[1], e[2])
                 if compactEvent not in self.finalEffectList:
                     self.finalEffectList.add(compactEvent)
-                    print "{} not in finalEffectList".format(compactEvent)
+                    print "New event: {}".format(compactEvent)
                     newEffects = True
-        print "finalEffectList length: {}".format(len(self.finalEffectList))
-        print "set prep took {} seconds".format(time.time()-t1)
+        # print "finalEffectList length: {}".format(len(self.finalEffectList))
+        # print "set prep took {} seconds".format(time.time()-t1)
 
         # if (event['effectList'] and run_induction) or distributionsHaveChanged:
         if (newEffects and run_induction) or distributionsHaveChanged:
@@ -1133,13 +1138,13 @@ class Agent:
                     theory_change_flag = True
                     # print "reached resource limit for", resource
 
-        t1 = time.time()
+        ## We need to update termination conditions even when we haven't seen a new event,
+        ## because the state is informative about termination conditions.
         if event['effectList'] and run_induction:
             [t.updateTerminations(event=event) for t in hypotheses]
         if theory_change_flag and not distributionsHaveChanged:
             print "changed theory:"
             hypotheses[0].display()
-        print "updateTerminations took {} seconds".format(time.time()-t1)
 
         return hypotheses, theory_change_flag, effects
 
