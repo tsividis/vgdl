@@ -1920,6 +1920,9 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
             if current_sprite.colorName == 'GOLD':
                 print "problem in movementOtions"
                 embed()
+
+        # if current_sprite.colorName=='RED' and speed==0.1 and fleeing==False and cooldown==1 and targetColor=='RED':
+        #     embed()
         current_sprite.cooldown = realCooldown
         return position_options, position_options
 
@@ -2040,7 +2043,8 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
             #     print "Missile"
             #     print current_sprite.rect
             #     print position_options
-
+            # if current_sprite.colorName=='RED' and speed==0.1 and cooldown==1:
+                # embed()
             current_sprite.cooldown = realCooldown
             return position_options, clustered_position_options
 
@@ -2097,31 +2101,23 @@ def initializeDistributionArgs(sprite_type, objectColors):
         # speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
         speedValues = [0.1, 0.2, 1.]
         return [('speed', v) for v in speedValues]
-        # initializeProperty(args, 'speed', speedValues)
 
     def initializeOrientation():
         orientationValues = [LEFT, RIGHT, UP, DOWN]
         return [('orientation', v) for v in orientationValues]
 
-        # initializeProperty(args, 'orientation', orientationValues)
-
     def initializeFleeing():
         fleeingValues = [True, False]
         return [('fleeing', v) for v in fleeingValues]
-        # initializeProperty(args, 'fleeing', fleeingValues)
 
-    # print sprite_types
     def initializeStype():
         stypeValues = objectColors
         return [('stype', v) for v in stypeValues]
-        # initializeProperty(args, 'stype', stypeValues)
 
     def initializeCooldown():
         # stypeValues = [1, 2, 3, 4, 5, 6]
         stypeValues = [1,5]
-        # stypeValues = [1]
         return [('cooldown', v) for v in stypeValues]
-        # initializeProperty(args, 'cooldown', stypeValues)
 
     paramList = []
     spriteParams = spriteToParams[sprite_type.__name__]
@@ -2195,13 +2191,21 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
     #   p(o_t|p_j)
     #   sum_i(p(o_1, .., o_t-1|p_i) * p(o_t|p_i)) / sum_k(p(o_1, .., o_t-1|p_k))
 
-    # if game.all_objects[sprite]['features']['color']=='GOLD':
-    #     print game.all_objects[sprite]['position']
-    #     print movement_options[sprite][(('vgdlType', RandomNPC), ('cooldown', 3), ('speed', 0.2))]
-    #     print movement_options[sprite][(('vgdlType', Missile), ('cooldown', 3), ('orientation', (1,0)), ('speed', 0.2))]
-    #     embed()
+# (('vgdlType', <class 'vgdl.ontology.Chaser'>), ('cooldown', 1), ('fleeing', False), ('speed', 0.1), ('stype', 'RED')
+
     normalization_ratio = 0
     alpha = 1.
+
+    # if missileOrientationClustering and game.all_objects[sprite]['features']['color']=='RED' and game.all_objects[sprite]['position'][0]<250:
+    #     print "BEFORE UPDATE"
+    #     print game.all_objects[sprite]['position'], outcome
+    #     # print movement_options[sprite][(('vgdlType', RandomNPC), ('cooldown', 3), ('speed', 0.2))]
+    #     print "missile", movement_options[sprite][(('vgdlType', Missile), ('cooldown', 1), ('orientation', (1,0)), ('speed', 0.1))]
+    #     print "missile prob", curr_distribution[sprite][(('vgdlType', Missile), ('cooldown', 1), ('orientation', (1,0)), ('speed', 0.1))]
+    #     print "chaser", movement_options[sprite][(('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))]
+    #     print "chaser prob", curr_distribution[sprite][(('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))]
+    #     embed()
+
     if sprite in curr_distribution.keys():
         for param_combination in curr_distribution[sprite].keys():
             if outcome in movement_options[sprite][param_combination].keys():
@@ -2222,6 +2226,15 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
             else:
                 curr_distribution[sprite][param_combination] *= (epsilon_prob / normalization_ratio)
 
+    # if missileOrientationClustering and game.all_objects[sprite]['features']['color']=='RED' and game.all_objects[sprite]['position'][0]<250:
+    #     print "AFTER UPDATE"
+    #     print game.all_objects[sprite]['position'], outcome
+    #     # print movement_options[sprite][(('vgdlType', RandomNPC), ('cooldown', 3), ('speed', 0.2))]
+    #     print "missile", movement_options[sprite][(('vgdlType', Missile), ('cooldown', 1), ('orientation', (1,0)), ('speed', 0.1))]
+    #     print "missile prob", curr_distribution[sprite][(('vgdlType', Missile), ('cooldown', 1), ('orientation', (1,0)), ('speed', 0.1))]
+    #     print "chaser", movement_options[sprite][(('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))]
+    #     print "chaser prob", curr_distribution[sprite][(('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))]
+    #     embed()
     return curr_distribution
 
 # def updateDistribution(game, sprite, curr_distribution, movement_options, outcome, specialID=None, missileOrientationClustering=False):
@@ -2402,8 +2415,15 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
 
             param_product = {k:0 for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
 
+
+        # if obj_type=='RED':
+            # embed()
         z = 0.
         for k in bestSpriteTypeDict[obj_type].keys():
+            # if obj_type == 'RED':
+            #     k1 = (('vgdlType', Missile), ('cooldown', 1), ('orientation', (1,0)), ('speed', 0.1))
+            #     k2 = (('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))
+            #     embed()
             for param in param_product.keys():
                 try:
                     param_product[param] += spriteUpdateDict[k]*bestSpriteTypeDict[obj_type][k][param]
@@ -2430,6 +2450,10 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
 
             z += spriteUpdateDict[k]
 
+        # if obj_type == 'RED':
+            # k1 = (('vgdlType', Missile), ('cooldown', 1), ('orientation', (1,0)), ('speed', 0.1))
+            # k2 = (('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))
+            # embed()
         for k in param_product:
             try:
                 param_product[k] /= z
@@ -2454,16 +2478,16 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         # if obj_type=='GOLD':
             # embed()
 
-        ## Use for debugging sprite-type inference.
-        # if obj_type=='BROWN':
-        #     goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='BROWN']
+        # Use for debugging sprite-type inference.
+        # if obj_type=='RED':
+        #     goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='RED']
         #     print [g.rect for g in goldobjs[0]]
         #     for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
         #         print(k, param_product[k])
         #         if i>10:
         #             break
         #     print ""
-            # embed()
+        #     embed()
 
         sprite_type = best_param[0][1]
 
@@ -2662,7 +2686,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
         notUpdated = [s for s in objects.keys() if objects[s]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and s not in game.spriteDistribution.keys()]
 
         # sprite_count, calls_to_update_distribution=0, 0
-        t1 = time.time()
+        # t1 = time.time()
         for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:        # Keys are the IDs of the game objects
             sprite_obj = objects[sprite]["sprite"]
             # sprite_count +=1
@@ -2680,6 +2704,11 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                                           game.object_token_movement_options, outcome)
 
                 game.spriteUpdateDict[sprite] += 1
+        
+                # if game.all_objects[sprite]['features']['color']=='RED':
+                #     print "missile prob", game.spriteDistribution[sprite][(('vgdlType', Missile), ('cooldown', 1), ('orientation', (1,0)), ('speed', 0.1))]
+                #     print "chaser prob", game.spriteDistribution[sprite][(('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))]
+                #     embed()
         # print "step 3 updated {} sprites and {} param combinations, took {} seconds.".format(sprite_count, calls_to_update_distribution, t1-time.time())
         ## Update the global memory
         for k in game.spriteDistribution.keys():

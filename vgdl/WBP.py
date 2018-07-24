@@ -309,6 +309,11 @@ class WBP():
 			acceptableNodes = filter(lambda n: n.novelty<3, QReward)
 			## sort max to min for pop()
 			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
+
+			# if self.killer_types:
+				# print "in reward selection"
+				# embed()
+
 		else:
 			acceptableNodes = QReward
 			## sort max to min for pop()
@@ -323,6 +328,9 @@ class WBP():
 				embed()
 			if current.terminal and not current.win:
 				print "rewardSelection picked a loss node!!"
+				embed()
+			if current.badOutcomes:
+				print "picked a node with >0 badoutcomes"
 				embed()
 		except:
 			if self.display:
@@ -666,6 +674,8 @@ class Node():
 			self.rolloutArray = parent.rolloutArray[1:]
 		else:
 			self.rolloutArray = []
+		self.okOutcomes = None
+		self.badOutcomes = None
 
 	def fastcopy(self, rle):
 		newRle = self.empty_copy(rle)
@@ -992,7 +1002,7 @@ class Node():
 		if term.termination.win:
 			mult = -1
 		else:
-			compute_second_order = False if not self.WBP.conservative else True
+			# compute_second_order = False if not self.WBP.conservative else True
 			mult = negative_mult
 
 		# Get all types that kill or transform stype (the target)
@@ -1422,55 +1432,6 @@ class Node():
 		newcopy.__class__ = obj.__class__
 		return newcopy
 
-	# def sampleTransitions(self, vrle):
-
-	# 	multipleSamples = False
-
-	# 	if len(self.actionSeq)>0:
-	# 		a = self.actionSeq[-1]
-
-	# 		if self.WBP.killer_types:
-	# 			for k in self.WBP.killer_types:
-	# 				## if we think it's stochastic
-	# 				if [t in str(self.WBP.theory.classes[k][0].vgdlType) for t in ['Random', 'Chaser']]:
-	# 					for s in vrle._game.sprite_groups[k]:
-	# 						if manhattanDist(vrle._rect2pos(s.rect), vrle._rect2pos(vrle._game.getAvatars()[0].rect)) < self.WBP.safeDistance:
-	# 							# print "closer than safeDistance away from dangerous item. need to sample"
-	# 							multipleSamples = True
-	# 							break
-
-	# 		if multipleSamples:
-	# 			badOutcomeLimit = 0
-	# 			okOutcomes, badOutcomes = [], []
-	# 			for i in range(10):
-	# 				vrle = self.fastcopy(self.parent.rle)
-	# 				res = vrle.step(a, return_obs=True)
-	# 				metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
-	# 				terminal, win = vrle._isDone()
-	# 				if (terminal, win) == (True, False):
-	# 					badOutcomes.append((vrle, terminal, win, metabolic_cost))
-	# 				else:
-	# 					okOutcomes.append((vrle, terminal, win, metabolic_cost))
-	# 				if len(badOutcomes)>badOutcomeLimit:
-	# 					break
-	# 			# if len(badOutcomes)>badOutcomeLimit:
-	# 				# print "too many bad outcomes"
-	# 				# embed()
-	# 			if len(badOutcomes)>badOutcomeLimit:
-	# 				print "got badoutcomes"
-	# 				self.terminal, self.win, self.metabolic_cost = badOutcomes[0][1], badOutcomes[0][2], badOutcomes[0][3]
-	# 				return badOutcomes[0][0], badOutcomes[0][2] #vrle, win
-	# 			else:
-	# 				self.terminal, self.win, self.metabolic_cost = okOutcomes[0][1], okOutcomes[0][2], okOutcomes[0][3]
-	# 				return okOutcomes[0][0], okOutcomes[0][2]#vrle, win
-	# 		else:
-	# 			res = vrle.step(a, return_obs=True)
-	# 			# relevantEvents = [t for t in res['effectList'] if t[0] == 'changeResource']
-	# 			self.metabolic_cost = self.parent.metabolic_cost + self.metabolics(vrle, res['effectList'], a)
-	# 			self.terminal, self.win = vrle._isDone()
-
-
-
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
 			## try to copy parent lastState. Then take action and store as current lastState.
@@ -1515,6 +1476,8 @@ class Node():
 						# if len(badOutcomes)>badOutcomeLimit:
 							# print "too many bad outcomes"
 							# embed()
+						self.okOutcomes = okOutcomes
+						self.badOutcomes = badOutcomes
 						if len(badOutcomes)>badOutcomeLimit:
 							# print "got badoutcomes"
 							self.terminal, self.win, self.metabolic_cost = badOutcomes[0][1], badOutcomes[0][2], badOutcomes[0][3]

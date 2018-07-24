@@ -591,6 +591,7 @@ class Agent:
                     # if action==K_SPACE:
                         # print "about to take a shot"
                         # embed()
+                    envPrev = copy.deepcopy(self.rle)
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
                         run_induction = not flexible_goals)
 
@@ -616,6 +617,8 @@ class Agent:
                         break
                     ended, win = self.rle._isDone()
                     if ended:
+                        print "died. embedding"
+                        embed()
                         break
                     # if self.total_game_steps > MAX_STEPS:
                         # score = self.rle._game.score
@@ -648,15 +651,21 @@ class Agent:
                                 ## If the object isn't in our predicted environment or the positions vary
                                 ## if it's an object we're worried about
                                 if s.name=='avatar' or s.colorName in killer_colors:
-                                    if s.ID not in hypDict and manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance:
+                                    # if s.ID not in hypDict and manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance:
+                                    if s.ID not in hypDict and manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+
                                         regroundingFlag=True
                                         print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_magenta')
                                         # embed()
                                         break
-                                    if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance:
+                                    if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
                                         print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
-                                                s, self.rle._game.getAvatars()[0], manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)), self.safeDistance, hypDict[s.ID]),
+                                                s, self.rle._game.getAvatars()[0], manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
                                                 'white', 'on_magenta')
+                                    # if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance:
+                                        # print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
+                                        #         s, self.rle._game.getAvatars()[0], manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)), self.safeDistance, hypDict[s.ID]),
+                                        #         'white', 'on_magenta')
                                         regroundingFlag=True
                                         # embed()
                                         break

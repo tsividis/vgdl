@@ -2551,7 +2551,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 			if interactionRule.interaction=='nothing':
 				continue
 			sortedInteractionDict[(c1, c2)].append(interactionRule)
-
+	# embed()
 	sortedInteractions = []
 	# For some games (e.g. boulderdash), the order of 'stepBack' interactions
 	# matters: this list puts those that don't involve the avatar at the end
