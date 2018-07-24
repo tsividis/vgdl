@@ -106,9 +106,7 @@ def play_trainset(hyperparameters,max_steps,pickled_theory_path=None):
     	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
     		level_game_pairs.append([gameString, level.read()])
 
-    agent = Agent('full', game_name, hyperparameters=hyperparameters, parallel_planning=False,max_steps=max_steps,pickled_theory_path=pickled_theory_path)
-
-
+    agent = Agent('full', game_name, hyperparameters=hyperparameters, parallel_planning=False, max_steps=max_steps, pickled_theory_path=pickled_theory_path)
 
     ### MARK: This code is currently setup to run playGoalCurriculum and not playCurriculum.
     ### We don't need playCurriculum first because playGoalCurriculm gets an oracle theory to use
@@ -121,7 +119,8 @@ def play_trainset(hyperparameters,max_steps,pickled_theory_path=None):
     print "About to do goal programming"
     from goal_programming import *
     new_agent = GoalAgent(agent)
-    new_agent.playGoalCurriculum(agent,level_game_pairs=level_game_pairs) # uses constructTouchNothingEverywhereTheory()
+
+    new_agent.playGoalCurriculum(level_game_pairs=level_game_pairs) # uses constructTouchNothingEverywhereTheory()
 
 
     total_time = time.time() - start_time

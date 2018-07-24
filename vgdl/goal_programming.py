@@ -1,17 +1,16 @@
 """Module for modifying hypotheses with alternative goals"""
 import itertools
 import numpy
+import copy
 from IPython import embed
 from vgdl.ontology import Resource, ResourcePack, Passive
 from vgdl.colors import colorDict
 from vgdl.util import ALNUM
 from vgdl.theory_template import (Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule,
                                   MultiSpriteCounterRule, Theory, Game, writeTheoryToTxt, generateSymbolDict,
-                                  generateTheoryFromGame, expandLine, expandSprites, proposePredicates,
-                                  getRuleSetsForClassPairPredicate, interateThresholds)
-from vgdl.agent import Agent, initializeVrle
+                                  generateTheoryFromGame)
+from vgdl.main_agent import Agent
 from vgdl.rlenvironmentnonstatic import createRLInputGameFromStrings
-from vgdl.stateobsnonstatic import buildTracker
 from vgdl.WBP import WBP
 from termcolor import colored
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
@@ -53,19 +52,18 @@ class GoalAgent(Agent):
     """An agent that runs games based on another agent's understandning of the game, but
         with modified theories and RLEs to achieve different goals within the game"""
     def __init__(self, agent):
-        Agent.__init__(self, agent.modelType, agent.gameFilename, agent.hyperparameter_sets, agent.parallel_planning)
+        Agent.__init__(self, agent.modelType, agent.gameFilename, agent.hyperparameters)
         self.shortHorizon = agent.shortHorizon
         self.starting_max_nodes = agent.starting_max_nodes
         self.max_nodes_annealing = agent.max_nodes_annealing
         self.seen_limits = agent.seen_limits
         self.firstOrderHorizon = agent.firstOrderHorizon
-        self.longHorizonObservations = agent.longHorizonObservations
         self.longHorizonObservationLimit = agent.longHorizonObservationLimit
 
 
     def constructTargetTheory(self, theory, rle, loc):
         """Creates a copy of the theory with a new class, where the avatar's goal is to collect all objects of this class"""
-        h = theory.copy()
+        h = copy.deepcopy(theory)
         new_name, color = createNewClassInfo(h)
         h.addSpriteToTheory(new_name, color, vgdlType=ResourcePack)
         h.interactionSet.append(InteractionRule('killSprite', new_name, 'avatar', {}, set()))
@@ -73,15 +71,18 @@ class GoalAgent(Agent):
 
         newenv = initializeVrle(h, rle)
         addNewSprite(newenv, new_name, (loc[0], loc[1]))
-        return h
+        return newenv, h
 
 
-    def constructKillSelfTheory(self, theory):
+    def constructKillSelfTheory(self, theory, rle):
         """Creates a copy of the theory with a new class, where the avatar's goal is to die"""
-        h = theory.copy()
+        
+        h = copy.deepcopy(theory)
         h.terminationSet.remove(SpriteCounterRule('avatar', 0, False))
         h.terminationSet.append(SpriteCounterRule('avatar', 0, True))
-        return h
+        newenv = self.initializeVrle(h)
+
+        return newenv, h
 
 
     def constructTouchNothingEverywhereTheory(self, theory, rle):
@@ -89,7 +90,7 @@ class GoalAgent(Agent):
             In the new theory, the avatar's goal is to collect all of the new objects but not touch anything old"""
         #REVIEW: Does planner try and optimize score? I think it would be more interesting to instead have it try and touch as many 
         #        blank squares as possible but still win the original game
-        h = theory.copy()
+        h = copy.deepcopy(theory)
 
         new_name, color = createNewClassInfo(h)
         h.addSpriteToTheory(new_name, color, vgdlType=Passive)
@@ -121,7 +122,7 @@ class GoalAgent(Agent):
 
         return h, newenv
 
-    def playGoalCurriculum(self, agent, level_game_pairs=None, num_episodes_per_level=10):
+    def playGoalCurriculum(self, level_game_pairs=None, num_episodes_per_level=10):
         """ Plays a game with modified goals based on the agent's understanding of the original game """
         print("-----------------------------------------------------------------------")
         print("-----------------------------------------------------------------------")
@@ -133,11 +134,6 @@ class GoalAgent(Agent):
         episodes = []
         
         num_levels = len(level_game_pairs)
-        ## for inference
-        self.rleHistory = [[] for i in range(num_levels*num_episodes_per_level)]
-        self.actionHistory = [[] for i in range(num_levels*num_episodes_per_level)]
-        self.all_objects = [{} for i in range(num_levels*num_episodes_per_level)]
-
         
         episodes_played = 0
         for n_level, level_game in enumerate(level_game_pairs):
@@ -146,9 +142,7 @@ class GoalAgent(Agent):
             if self.gameString == None or self.levelString == None:
                 self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
             self.rle = createRLInputGameFromStrings(self.gameString, self.levelString)
-            self.rle._game.observation = buildTracker(self.rle)
             self.rle._game.spriteUpdateDict = self.spriteUpdateDict
-
 
             ### MARK: get's the correct theory for the game from the rle, so that this series of experiments
             ### can be run without running the regular playCurriculum first.
@@ -161,7 +155,16 @@ class GoalAgent(Agent):
             ### and acts in self.rle. In the case that alt_rle is None, which should be the case
             ### when we use the other theory modification functions, the planner is initialized with
             ### self.rle. This means that the agent would plan and act with self.rle.
-            self.theory, alt_rle = self.constructTouchNothingEverywhereTheory(oracle_theory, self.rle)
+
+            ## PEDRO: alt_rle should never be none, as I think it's better to be clear about the separation
+            ## between the environment we use for planning and the one we act in.
+
+            alt_rle, killself_theory = self.constructKillSelfTheory(oracle_theory, self.rle)
+            # move_theory, newenv = constructTouchNothingEverywhereTheory(self.hypotheses[0], rle)
+
+            # self.theory, alt_rle = self.constructTouchNothingEverywhereTheory(oracle_theory, self.rle)
+
+
 
             episodes = []
 
@@ -218,7 +221,6 @@ class GoalAgent(Agent):
 
             print "embedding in playGoalEpsiode"
             embed()
-
 
             ### MARK: if an alt_rle was passed in, plan with that one. executeStep will still act on self.rle.
             ### Otherwise, plan and act on self.rle.

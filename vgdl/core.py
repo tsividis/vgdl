@@ -1427,19 +1427,19 @@ class Conditional(object):
         """ returns true if condition is met. default returns false"""
         return False
 
-# def makeVideo(movie_dir):
-#     import os
-#     print "Creating Movie"
-#     # self.video_file = "videos/" +  str(self.uiud) + ".mp4"
-#     if not os.path.exists(movie_dir):
-#         print movie_dir, "didn't exist. making new dir"
-#         os.makedirs(movie_dir)
-#     round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store'])
-#     video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
-#     images_dir = "images/tmp/%09d.png"
-#     com = "ffmpeg -i " +images_dir+ " -pix_fmt yuv420p -filter:v 'setpts=4.0*PTS' "+ video_dirname
-#     command = "{}".format(com)
-#     subprocess.call(command, shell=True)
-#     # empty image directory
-#     shutil.rmtree("images/tmp")
-#     os.makedirs("images/tmp")
+def makeVideo(movie_dir):
+    import os
+    print "Creating Movie"
+    # self.video_file = "videos/" +  str(self.uiud) + ".mp4"
+    if not os.path.exists(movie_dir):
+        print movie_dir, "didn't exist. making new dir"
+        os.makedirs(movie_dir)
+    round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store'])
+    video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
+    images_dir = "images/tmp/%09d.png"
+    com = "ffmpeg -i " +images_dir+ " -pix_fmt yuv420p -filter:v 'setpts=4.0*PTS' "+ video_dirname
+    command = "{}".format(com)
+    subprocess.call(command, shell=True)
+    # empty image directory
+    shutil.rmtree("images/tmp")
+    os.makedirs("images/tmp")

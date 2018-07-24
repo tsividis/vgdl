@@ -1442,7 +1442,6 @@ class Theory(object):
 		print
 
 	def displayTerminationSet(self):
-		return
 		print ""
 		print "TerminationSet:"
 		for tc in self.terminationSet:
@@ -2106,11 +2105,13 @@ def generateTheoryFromGame(rle, alterGoal=True):
 						# 'goal' is the only name that means something to all RLEs, so we're making sure to change this one.
 		sprite = Sprite(vgdlType, color, className=s, args=settings) #classname was i
 		theory.classes[s] = [sprite]
+		theory.spriteObjects[sprite.color] = sprite
 		inverseClasses[s] = i
 
 	## Add EOS as a class, too.
 	eos = Sprite(core.VGDLSprite, 'ENDOFSCREEN', None, None)
 	theory.classes['EOS'] = [eos]
+	theory.spriteObjects[eos.color] = eos
 
 	for g1, g2, effect, kwargs in rle._game.collision_eff:
 		if alterGoal:
@@ -2420,8 +2421,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 						## you can end up here.
 						# embed()
 
-
-
 				if "core" in stype:
 					stype = stype[stype.find("core.")+len("core."):]
 
@@ -2512,6 +2511,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 			for s1 in theory.classes[c1]:
 				if c2 not in theory.classes.keys():
+					print "c2 not in theory.classes.keys"
 					embed()
 				for s2 in theory.classes[c2]:
 					argsString = ""
@@ -2656,7 +2656,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 	# embed()
 	# theoryString += "\t\tG > goal\n"
 	theoryString += '"""\n'
-
 
 	parserString = 'if __name__ == "__main__":\n\tfrom vgdl.core import VGDLParser\n\tVGDLParser.playGame(game, level)\n'
 
