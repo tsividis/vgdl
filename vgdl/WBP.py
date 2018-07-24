@@ -1002,7 +1002,8 @@ class Node():
 		if term.termination.win:
 			mult = -1
 		else:
-			# compute_second_order = False if not self.WBP.conservative else True
+			# embed()
+			compute_second_order = False if not self.WBP.conservative else True
 			mult = negative_mult
 
 		# Get all types that kill or transform stype (the target)
@@ -1136,7 +1137,8 @@ class Node():
 				# Then, you should not be disincentivized to create it, which can be achieved through this high penalty
 				distance = 100
 				val += float(mult * second_alpha * distance)
-			else:
+			elif not stype_positions:
+				## If we culdn't compute a second-order distance because the avatar is dead, give infinite penalty.
 				val += -float('inf')
 
 			# if self.WBP.conservative:
