@@ -1997,8 +1997,11 @@ class Game(object):
 		# 	self.hypothesisSpace = hypothesisSpaceWithTermConditions
 
 		if len(self.hypothesisSpace)==0:
-			print "no hypotheses"
-			embed()
+			print "#################################################################"
+			print "WARNING: no hypotheses. Returning the hypotheses we started with."
+			print "#################################################################"
+			self.hypothesisSpace = init_hypotheses
+			# embed()
 
 
 		return self.hypothesisSpace
