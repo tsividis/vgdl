@@ -1570,7 +1570,7 @@ class Node():
 			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
 				if self.WBP.display:
 					print "resource limit win"
-				# self.win=True
+				self.win=True
 		except IndexError:
 			pass
 
