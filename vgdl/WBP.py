@@ -1150,13 +1150,9 @@ class Node():
 
 				resource_names = [list(resource[1])[0].item for resource in avatar_preconditions]
 
-				try:
-					resource_yielder_names = [[inter.slot2 if (inter.interaction=='changeResource' and inter.args['resource']==res) else 
-							inter.slot1 if (inter.interaction=='collectResource' and res==inter.args['resource']==res) else None
-							for inter in theory.interactionSet] for res in resource_names]
-				except:
-					print "failure with resource_yielder_names"
-					embed()
+				resource_yielder_names = [[inter.slot2 if (inter.interaction=='changeResource' and inter.args['resource']==res) else 
+						inter.slot1 if (inter.interaction=='collectResource' and res==inter.args['resource']==res) else None
+						for inter in theory.interactionSet] for res in resource_names]
 
 				resource_yielder_names = [[r for r in ryn if r] for ryn in resource_yielder_names] ## Remove 'None' yielded by last else condition above
 
