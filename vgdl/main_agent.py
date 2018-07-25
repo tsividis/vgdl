@@ -621,8 +621,8 @@ class Agent:
                         break
                     ended, win = self.rle._isDone()
                     if ended:
-                        print "episode ended"
-                        embed()
+                        # print "episode ended"
+                        # embed()
                         break
                     # if self.total_game_steps > MAX_STEPS:
                         # score = self.rle._game.score
@@ -935,7 +935,6 @@ class Agent:
                 self.rle._game.ignoreList.append(k)
                 self.new_objects[spriteName] = 0
 
-                # embed()
 
             # if k not in theory.spriteObjects.keys():
             #     color = k
@@ -985,13 +984,10 @@ class Agent:
         except IndexError:
             agentState = defaultdict(lambda: 0)
 
-        # print ""
-        # print ""
-        # print "#############"
         # print "induction steps 1 and 2 took {} seconds".format(time.time()-t1)
         
         # t1 = time.time()
-        envPrev = copy.deepcopy(self.rle)
+        # envPrev = copy.deepcopy(self.rle)
         res = self.rle.step(action)
         # print "step took {} seconds".format(time.time()-t1)
 
@@ -1042,7 +1038,6 @@ class Agent:
         distributionsHaveChanged = spriteInduction(self.rle._game, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
         # print "sprite induction step 3: {}".format(time.time()-t1)
  
-        # t1 = time.time()
         # effects = translateEvents(res['effectList'], self.all_objects, self.rle)
         effects = self.rle._game.effectListByColor
         # if effects:
@@ -1050,16 +1045,17 @@ class Agent:
         #     print alternateEffects
         #     embed()
         print "score: {}, game tick: {}".format(self.rle._game.score, self.rle._game.time)
+       
+        # t1 = time.time()
         print self.rle.show(color='blue')
-
-        # print colored("translateEvents and making of event: {}".format(time.time()-t1), "green")
-
+        # print "rle.show: {}".format(time.time()-t1)
+        
         event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, \
             'gameState': self.rle._game.getFullStateColorized(), 'rle': self.rle}
 
         # if len(effects)>4:
             # embed()
-        # t1 = time.time()
+        t1 = time.time()
         newEffects = False
         # print "{} effects in this time-step".format(len(effects))
         # print "finalEffectList:"
@@ -1083,7 +1079,7 @@ class Agent:
             print "new event", newEffects, "distributions changed", distributionsHaveChanged
 
             ## Delete fake interaction rules for events that were witnessed in this time step.
-            oldFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
+            # oldFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
 
             self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
                 not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
@@ -1092,19 +1088,21 @@ class Agent:
             if newEffects or distributionsHaveChanged:
                 theory_change_flag = True
 
+            # t1 = time.time()
             sample, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
 
             game_object = Game(spriteInductionResult=sample)
-
+            # print "sampleFromDistribution: {}".format(time.time()-t1)
+            
             terminationCondition = {'ended': False, 'win':False, 'time':self.rle._game.time}
             # trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState'], e['rle']) \
                 # for e in self.finalEventList], terminationCondition)
             trace = (self.finalTimeStepList, terminationCondition)
 
-            t1 = time.time()
+            # t1 = time.time()
             hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
             verbose=False, existingTheories=hypotheses))
-            print "induction took {} seconds".format(time.time()-t1)
+            # print "induction took {} seconds".format(time.time()-t1)
             if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
                 theory_change_flag = True
 
@@ -1140,8 +1138,10 @@ class Agent:
 
         ## We need to update termination conditions even when we haven't seen a new event,
         ## because the state is informative about termination conditions.
+        # t1 = time.time()
         if event['effectList'] and run_induction:
             [t.updateTerminations(event=event) for t in hypotheses]
+        # print "updateTerminations took {} seconds".format(time.time()-t1)
         if theory_change_flag and not distributionsHaveChanged:
             print "changed theory:"
             hypotheses[0].display()

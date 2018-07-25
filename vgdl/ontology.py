@@ -1999,7 +1999,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
     # Missile or OrientedSprite
     elif sprite_type in [Missile, OrientedSprite]:
 
-    # elif sprite_type == Missile or sprite_type==OrientedSprite:
         if not current_sprite.is_static and not current_sprite.only_active:
             # NOTE: we might want to consider having is_static and only_active be
             # parameters that we have to infer, rather than things we get for free.
@@ -2009,8 +2008,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
             cooldown = getCooldown(params)
             realCooldown = int(current_sprite.cooldown)
             current_sprite.cooldown = cooldown
-
-
 
             coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
             # If object has speed = 0 or no 'orientation' attribute
@@ -2051,29 +2048,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         # Catches objects that can't be Oriented Sprite and Missile types b/c fails the if-statement
         return {}, {}
 
-# def getAttributeTupleCombinations(game, sprite, sprite_type):
-#     """
-#     game = game object
-#     sprite = a vgdl sprite
-#     sprite_type = a proposed VGDL sprite type for this sprite
-
-#     Returns all possible combinations of parameters for a given sprite type and sprite.
-#     An attribute tuple is a tuple of form
-#      ((attribute1, value1), (attribute2, value2), ...). Each element in the attribute tuple
-#     is itself a tuple. The first element of the tuple is the attribute name (e.g. "speed")
-#     and the second is a possible value of that attribute (e.g. 0.5).
-#     """
-#     attributeValueList = []
-#     for arg in game.spriteDistribution[sprite][sprite_type]['args']:
-#         attributeValueList.append([])
-#         for value in game.spriteDistribution[sprite][sprite_type]['args'][arg]:
-#             attributeValueList[-1].append((arg, value))
-#             # if arg == 'stype' and value not in ['BLACK', 'ORANGE', 'WHITE', 'DARKBLUE']:
-#             #     print "in getattributetuple.."
-#     attributeTupleCombinations = list(itertools.product(*attributeValueList))
-#     return attributeTupleCombinations
-
-
 def initializeDistribution(sprite_types, objectColors):
     """
     Creates a uniform distribution over all parameter combinations
@@ -2098,8 +2072,8 @@ def initializeDistributionArgs(sprite_type, objectColors):
     """
 
     def initializeSpeed():
-        # speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
-        speedValues = [0.5, 1.]
+        speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+        # speedValues = [0.5, 1.]
         return [('speed', v) for v in speedValues]
 
     def initializeOrientation():
@@ -2115,8 +2089,8 @@ def initializeDistributionArgs(sprite_type, objectColors):
         return [('stype', v) for v in stypeValues]
 
     def initializeCooldown():
-        # stypeValues = [1, 2, 3, 4, 5, 6]
-        stypeValues = [1,3,6]
+        stypeValues = [1, 2, 3, 4, 5, 6]
+        # stypeValues = [1,3,6]
         return [('cooldown', v) for v in stypeValues]
 
     paramList = []
