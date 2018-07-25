@@ -414,14 +414,20 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         return output
     """
 
-    def step(self, action, return_obs=False):
+    def step(self, action, return_obs=False, getTermination=False):
         if action == ('space'):
             self._game.keystate[32] = True
             action = (0,0)
         pre_step_score = self._game.score
         events = self._performAction(action)
         observation = self._getSensors() if return_obs else None
-        (ended, won) = self._isDone()
+        
+        if getTermination:
+            (ended, won, termination) = self._isDone(getTermination=True)
+        else:
+            (ended, won) = self._isDone()
+            termination = []
+
         self._game.time+=1
 
         dScore = self._game.score - pre_step_score
@@ -441,7 +447,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self._game.observation = processFrame(self._game.observation, self._game)
 
         # print "reward", reward
-        return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
+        # return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events }
+        return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events, 'ended':ended, 'win':won, 'termination':termination}
 
 ## the game in the agent's 'head'
 def defTheoryTest():
