@@ -273,6 +273,7 @@ class BasicGame(object):
         self.sprite_appearance_predictions = {}
         self.object_token_movement_options = {}
         self.sprite_appearances = [] ## New sprites that appear at any given step. This gets cleared at the end of each time-step.
+        self.lastAvatarResources = defaultdict(int)
         self.all_objects = None
         self.observation = None
         self.EOS = EOS((-1, -1))
@@ -641,6 +642,10 @@ class BasicGame(object):
             print '_eventHandling'
             embed()
         self.lastcollisions = {}
+        if self.getAvatars():
+            self.lastAvatarResources = dict(self.getAvatars()[0].resources)
+        else:
+            self.lastAvatarResources = defaultdict(int)
         push_effect = 'bounceForward'
         back_effect = 'stepBack'
         # this should probably also have collectResource but I'm not totally sure about that one

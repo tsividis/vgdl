@@ -1339,10 +1339,19 @@ class NoveltyTermination(Termination):
                 true_operator = oppositeOperatorMap[operator_name]
             else:
                 true_operator = operator_name
+                
             try:
-                resource_str = str(game.getAvatars()[0].resources[item])
+                if item in game.lastAvatarResources:
+                    resource_str = str(game.lastAvatarResources[item])
+                else:
+                    resource_str = str(0)
             except IndexError:
                 return False, None
+
+            # try:
+            #     resource_str = str(game.getAvatars()[0].resources[item])
+            # except IndexError:
+            #     return False, None
 
             if not eval(resource_str+true_operator+str(num)):
                 return False, None
@@ -1350,10 +1359,7 @@ class NoveltyTermination(Termination):
             # else:
             #     print "found correct preconditions"
                 # embed()
-        
-        # if self.s1=='avatar' and self.s2=='c3' and game.effectList:
-            # print game.effectList
-            # embed()
+
         """NOTE:
         If you simplify terminations here as you did in the shortHorizon branch keep in mind that you have to take care of the
         EOS termination, as you use them in this branch.
@@ -2098,8 +2104,9 @@ def killIfHasMore(sprite, partner, game, resource, limit=1):
 
 def killIfOtherHasMore(sprite, partner, game, resource, limit=1):
     """ If 'partner' has more than a limit of the resource type given, sprite dies. """
+    print partner.resources, resource, limit
     if partner.resources[resource] >= limit:
-        # print "should kill sprite"
+        print "should kill sprite"
         return killSprite(sprite, partner, game)
 
 def killIfHasLess(sprite, partner, game, resource, limit=1):

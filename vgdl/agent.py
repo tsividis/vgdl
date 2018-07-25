@@ -411,7 +411,7 @@ class Agent:
 					firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom, gameString=gameStrings[0])
 				
 				bestNode, gameStringArray, predictedEnvs = p.BFS()
-				# embed()
+
 				print "planning with safeDistance={}, regrounding={}".format(self.safeDistance, self.regrounding)
 				self.total_planner_steps = p.total_nodes
 
@@ -2541,7 +2541,7 @@ if __name__ == "__main__":
 	# filename = "examples.gridphysics.avatar_inference"
 	# filename = "examples.gridphysics.testAll"
 	
-	filename = "examples.gridphysics.test_pushkill"
+	filename = "examples.gridphysics.theory_expt_preconditions"
 
 	# filename = "examples.gridphysics.basics"
 

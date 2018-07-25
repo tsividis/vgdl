@@ -75,7 +75,7 @@ class WBP():
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 		self.gameString = gameString
-		self.display = False
+		self.display = True
 
 
 		if theory == None:
@@ -1568,7 +1568,7 @@ if __name__ == "__main__":
 	## objects.
 	# gameFilename = "examples.gridphysics.theorytest"
 	# gameFilename = "examples.gridphysics.boulderdash"
-	gameFilename = "examples.gridphysics.theory_expt_antagonist"
+	gameFilename = "examples.gridphysics.theory_expt_preconditions"
 	# gameFilename = "examples.continuousphysics.breakout_big"
 
 	hyperparameter_sets = [
