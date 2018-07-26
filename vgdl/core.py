@@ -293,6 +293,7 @@ class BasicGame(object):
         self.has_clonesprite = False
         self.isInternalEnv = False
         self.genericNothingRules = []
+        self.targetColorDict = dict() ## for memoizing objects of each color once per timestep
         self.EOS = EOS((-1, -1))
         self.reset()
 
@@ -547,7 +548,6 @@ class BasicGame(object):
         obj_list = {}
         fs = self.getFullState()
         obs = fs['objects']
-
         for ob_type in obs:
             for ob in self.getSprites(ob_type):
                 features = {'color':colorDict[str(ob.color)], 'row':(ob.rect.top)}

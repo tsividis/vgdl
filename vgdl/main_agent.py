@@ -49,7 +49,7 @@ class Agent:
         self.shortHorizon = hyperparameters['short_horizon']#False
         self.firstOrderHorizon = hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)        if self.shortHorizon == True:
         if self.shortHorizon == True:
-            self.starting_max_nodes = 200
+            self.starting_max_nodes = 500
             self.max_nodes_annealing = 1.05
         else:
             self.starting_max_nodes = 10000
@@ -976,7 +976,12 @@ class Agent:
 
         # t1 = time.time()
         spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+        # print "induction step 1 took {} seconds.".format(time.time()-t1)
+        # t1 = time.time()
         spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+        # print "induction step 2 took {} seconds".format(time.time()-t1)
+
+
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
             # agentState = ccopy(self.rle._game.getAvatars()[0].resources)
@@ -984,8 +989,8 @@ class Agent:
         except IndexError:
             agentState = defaultdict(lambda: 0)
 
-        # print "induction steps 1 and 2 took {} seconds".format(time.time()-t1)
-        
+        # if self.rle._game.time in [5, 20]:
+            # embed()
         # t1 = time.time()
         # envPrev = copy.deepcopy(self.rle)
         res = self.rle.step(action)
@@ -1055,7 +1060,7 @@ class Agent:
 
         # if len(effects)>4:
             # embed()
-        t1 = time.time()
+        # t1 = time.time()
         newEffects = False
         # print "{} effects in this time-step".format(len(effects))
         # print "finalEffectList:"

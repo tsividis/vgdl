@@ -19,7 +19,8 @@ import core
 import copy
 import ipdb
 import time
-# from line_profiler import LineProfiler
+from pygame import Rect
+from line_profiler import LineProfiler
 
 UP = (0, -1)
 DOWN = (0, 1)
@@ -101,7 +102,6 @@ class GridPhysics():
         """
         Calculate where the sprite would end up in a timestep, without actually updating its position.
         """
-
          ## This is where you could make hypotheses about speed, etc. for the object.
         if action is not None:
             orientation = action
@@ -114,14 +114,7 @@ class GridPhysics():
                     speed = sprite.speed
             if speed != 0:# and action is not None:
                 speed = float(speed) * self.gridsize[0]
-                # if speed is None:
-                #     speed = sprite.speed
 
-                # orientation = action
-
-        # if not(sprite.cooldown > sprite.lastmove+1 or abs(orientation[0])+abs(orientation[1])==0):
-            # if sprite.colorName=='LIGHTORANGE':
-                # embed()
             pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
             return pos.left, pos.top
         return(sprite.rect.left, sprite.rect.top)
@@ -1849,13 +1842,26 @@ def setSpriteParams(param, sprite):
         elif p == "cooldown":
             sprite.cooldown = param[p]
 
+def getTargets(game, targetColor):
+    t1 = time.time()
+    if targetColor not in game.targetColorDict:
+        try:
+            targetName = [k for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName==targetColor][0]
+            targets = [s for s in game.sprite_groups[targetName] if s not in game.kill_list]
+            # print "target name: {}. target length: {}".format(targetName, len(targets))
+        except:
+            targets = []
+        game.targetColorDict[targetColor] = targets
+    else:
+        game.targetColorDict[targetColor] = []
+    return game.targetColorDict[targetColor]
 
-# def updateOptionsProfiler(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False):
-#     lp = LineProfiler()
-#     lp_wrapper = lp(updateOptions)
-#     d1, d2 = lp_wrapper(game, sprite_type_tuple, current_sprite, params, missileOrientationClustering)
-#     lp.print_stats()
-#     return d1, d2
+def updateOptionsProfiler(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False):
+    lp = LineProfiler()
+    lp_wrapper = lp(updateOptions)
+    d1, d2 = lp_wrapper(game, sprite_type_tuple, current_sprite, params, missileOrientationClustering)
+    lp.print_stats()
+    return d1, d2
 
 
 def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False):
@@ -1890,19 +1896,21 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         # if current_sprite.colorName=='LIGHTORANGE':
             # print 'chaser'
             # embed()
-        try:
-            targetName = [k for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName==targetColor][0]
-            targets = game.sprite_groups[targetName]
-        except:
-            targets = []
-            pass
+        
+        targets = getTargets(game, targetColor)
+        # try:
+        #     targetName = [k for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName==targetColor][0]
+        #     targets = [s for s in game.sprite_groups[targetName] if s not in game.kill_list]
+        #     # print "target name: {}. target length: {}".format(targetName, len(targets))
+        # except:
+        #     targets = []
+        #     pass
 
         options = []
         position_options = {}
 
         try:
             for target in targets:#chaserClosestTargets(current_sprite, game):
-                # print target
                 options.extend(chaserMovesToward(current_sprite, game, target, fleeing))
             if len(options) == 0:
                 options = BASEDIRS
@@ -1917,9 +1925,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         except AttributeError: # deals with following error: 'Immovable' object has no attribute 'stype'
             # position_options = {}
             position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
-            if current_sprite.colorName == 'GOLD':
-                print "problem in movementOtions"
-                embed()
 
         # if current_sprite.colorName=='RED' and speed==0.1 and fleeing==False and cooldown==1 and targetColor=='RED':
         #     embed()
@@ -2085,7 +2090,7 @@ def initializeDistributionArgs(sprite_type, objectColors):
         return [('fleeing', v) for v in fleeingValues]
 
     def initializeStype():
-        stypeValues = objectColors
+        stypeValues = [o for o in objectColors if o not in ['BLACK', 'DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']]
         return [('stype', v) for v in stypeValues]
 
     def initializeCooldown():
@@ -2134,14 +2139,6 @@ def distributionInitSetup(game, sprite):
 
     game.movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
     game.object_token_movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
-
-    # for sprite_type in sprite_types:
-    #     game.movement_options[sprite][sprite_type] = {}
-    #     game.object_token_movement_options[sprite][sprite_type] = {}
-    #     attributeTupleCombinations = getAttributeTupleCombinations(game, sprite, sprite_type)
-    #     for attributeTuple in attributeTupleCombinations:
-    #         game.movement_options[sprite][sprite_type][attributeTuple] = {}
-    #         game.object_token_movement_options[sprite][sprite_type][attributeTuple] = {}
 
 
 def updateDistribution(game, sprite, curr_distribution, movement_options, outcome, specialID=None, missileOrientationClustering=False):
@@ -2330,14 +2327,13 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
     ##remove avatar. For now let's just assume we know which one it is.
     ##TODO: You need to do avatarInduction, unless there's a generic type that can cover all types.
     non_avatar_keys = []
-
     for k in all_objects.keys():
         if all_objects[k]['sprite'].name != 'avatar':
             non_avatar_keys.append(k)
         else:
-            from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
-                RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
-                    AimedFlakAvatar
+            # from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
+            #     RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
+            #         AimedFlakAvatar
 
             avatar_type = all_objects[k]['sprite'].__class__
             if avatar_type in [FlakAvatar, AimedFlakAvatar, ShootAvatar, AimedAvatar, AimedFlakAvatar]:
@@ -2536,8 +2532,8 @@ def checkIfDistributionsHaveChanged(game, spriteUpdateDict, bestSpriteTypeDict):
     for k in all_objects.keys():
         if all_objects[k]['sprite'].name is not 'avatar':
             non_avatar_keys.append(k)
-        else:
-            exceptions.append('BLUE')
+        # else:
+            # exceptions.append('BLUE')
 
     ##unique types. TODO: Change to type index, not color. See note in runInduction_DFS for details.
     types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions)) ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately
@@ -2606,23 +2602,27 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
         ## every time you act, make sure there aren't new objects
         ## if there are, update spriteDistribution etc.
         objects = game.getObjects()
+        kill_list_keys = [s.ID for s in game.kill_list]
         # print "step1"
         # print objects.keys()
+        spritestoupdate = 0
         for sprite in objects:
-            if objects[sprite]['sprite'].colorName not in  ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and sprite not in game.spriteDistribution:
+            if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and sprite not in game.spriteDistribution:
+                spritestoupdate+=1
                 game.all_objects[sprite] = objects[sprite]
                 distributionInitSetup(game, sprite)
-
+        # print "sprites to update step 1:", spritestoupdate
     elif step == 2:
         ## See the update options for each sprite type the sprite could be
         objects = game.getObjects()
-        notUpdated = [s for s in objects.keys() if objects[s]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and s not in game.spriteDistribution.keys()]
-        # if notUpdated:
-            # print "step 2: not in sprite distribution:", notUpdated
-            # embed()
+        # notUpdated = [s for s in objects.keys() if objects[s]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and s not in game.spriteDistribution.keys()]
 
         game = game                                               # Save game state
         sprite_count, param_count=0, 0
+        kill_list_keys = [s.ID for s in game.kill_list]
+        # print "len spriteDistribution: {}, objects: {}".format(len(game.spriteDistribution.keys()), len(objects.keys()))
+        # print "len filtered keys: {}".format(len([s for s in game.spriteDistribution.keys() if s not in kill_list_keys]))
+
         for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:                  # Keys are the IDs of the game objects
             sprite_count +=1
             sprite_obj = objects[sprite]["sprite"]
@@ -2646,22 +2646,26 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                         ## missileOrientationClustering: considers left/right and up/down to be equivalent options in the likelihood
                         ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving
                         ## objects
+                        # if 'Chaser' in str(sprite_type[1]):
+                            # print param_combination
+                            # game.object_token_movement_options[sprite][param_combination], game.movement_options[sprite][param_combination] = \
+                            # updateOptionsProfiler(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
+                        # else:
                         game.object_token_movement_options[sprite][param_combination], game.movement_options[sprite][param_combination] = \
-                        updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
+                            updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
                 # if sprite_obj.colorName=='RED':
                 #     randKey = [k for k in game.object_token_movement_options[sprite].keys() if 'Random' in str(k[0][1]) and k[1][1]==1 and k[2][1]==1][0]
                 #     print game.object_token_movement_options[sprite][randKey]
                 #     embed()
+        game.targetColorDict = dict()
         # print "step 2 updated {} sprites and {} param combinations".format(sprite_count, param_count)
 
     elif step==3:
         ## Update sprite distribution based on observations
         objects = game.getObjects()
-        notUpdated = [s for s in objects.keys() if objects[s]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and s not in game.spriteDistribution.keys()]
-
-        # sprite_count, calls_to_update_distribution=0, 0
+        # notUpdated = [s for s in objects.keys() if objects[s]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and s not in game.spriteDistribution.keys()]
         # t1 = time.time()
-        for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:        # Keys are the IDs of the game objects
+        for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys() and s not in [k.ID for k in game.kill_list]]:        # Keys are the IDs of the game objects
             sprite_obj = objects[sprite]["sprite"]
             # sprite_count +=1
 

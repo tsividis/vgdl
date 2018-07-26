@@ -15,12 +15,12 @@ BasicGame
         angry angry > nothing
         carcass avatar > nothing
         avatar wall    > stepBack
-        avatar  angry  > killSprite
         avatar angry > changeScore value=-1
+        avatar  angry  > killSprite
         angry carcass > nothing
         carcass scared > killSprite
-        scared avatar  > transformTo stype=carcass
         scared avatar > changeScore value=1
+        scared avatar  > transformTo stype=carcass
         scared carcass > transformTo stype=angry
 
     LevelMapping
