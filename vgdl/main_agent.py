@@ -631,6 +631,7 @@ class Agent:
                     # Check for disparities between plan and reality
                     # (e.g. stochastic effects)
                     # if self.rle._game.is_stochastic and i>self.regrounding:
+
                     if (i+1)%self.regrounding==0:
 
                         # if self.checkForDanger(self.rle, self.hypotheses[0]):
@@ -797,7 +798,6 @@ class Agent:
                         except ValueError:
                             # print("error in avoid_danger: is the avatar dead?")
                             pass
-
 
                 # if self.shortHorizon:
                     # self.max_nodes *= self.max_nodes_annealing
