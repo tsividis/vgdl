@@ -20,7 +20,7 @@ import copy
 import ipdb
 import time
 from pygame import Rect
-from line_profiler import LineProfiler
+# from line_profiler import LineProfiler
 
 UP = (0, -1)
 DOWN = (0, 1)
@@ -1856,12 +1856,12 @@ def getTargets(game, targetColor):
         game.targetColorDict[targetColor] = []
     return game.targetColorDict[targetColor]
 
-def updateOptionsProfiler(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False):
-    lp = LineProfiler()
-    lp_wrapper = lp(updateOptions)
-    d1, d2 = lp_wrapper(game, sprite_type_tuple, current_sprite, params, missileOrientationClustering)
-    lp.print_stats()
-    return d1, d2
+# def updateOptionsProfiler(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False):
+#     lp = LineProfiler()
+#     lp_wrapper = lp(updateOptions)
+#     d1, d2 = lp_wrapper(game, sprite_type_tuple, current_sprite, params, missileOrientationClustering)
+#     lp.print_stats()
+#     return d1, d2
 
 
 def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOrientationClustering=False):
