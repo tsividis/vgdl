@@ -1640,7 +1640,7 @@ def killIfHasMore(sprite, partner, game, resource, limit=1):
 
 def killIfOtherHasMore(sprite, partner, game, resource, limit=1):
     """ If 'partner' has more than a limit of the resource type given, sprite dies. """
-    # print partner.resources, limit
+    print partner.resources, limit
     if partner.resources[resource] >= limit:
         return killSprite(sprite, partner, game)
         # return ('killIfOtherHasMore' , sprite.ID, partner.ID)

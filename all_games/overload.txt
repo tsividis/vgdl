@@ -6,7 +6,7 @@ BasicGame
         random > RandomNPC color=BLUE speed=1 cooldown=4  cons=8
         sword > Flicker color=RED limit=5 singleton=True 
         weapon > Resource color=PINK value=10000 limit=10000 
-        gold  > Resource color=GOLD limit=11  # this limit is only used for visualizing progress
+        gold  > Resource color=GOLD limit=11
 
         wall > Immovable color=DARKGRAY 
 
