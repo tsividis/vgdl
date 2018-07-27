@@ -1066,6 +1066,35 @@ class Agent:
         # print "finalEffectList:"
         # print self.finalEffectList
         if effects:
+
+            # #  PRECONDITIONS HANDLING
+            # # Current assumptions:
+            # # - Only one resource can change for each timestep
+            # # - The first time a resource changes, it goes from 0 to a positive
+            # #   value
+            # for change_resource_effect in [e[3] for e in event['effectList'] if ('changeResource' in e)] + [e[3] for e in event['effectList'] if ('collectResource' in e)]:
+            #     resource = change_resource_effect['resource']
+            #     val = change_resource_effect['value']
+            #     limit = change_resource_effect['limit']
+
+            #     if (resource not in self.seen_resources and val>0):
+            #         self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
+            #         self.fakeInteractionRules = list(set(self.fakeInteractionRules))
+            #         self.seen_resources.append(resource)
+            #         hypotheses[0].resource_limits[resource] = limit
+            #         theory_change_flag = True
+            #         newEffects = True
+            #         self.finalEffectList = set()
+
+            #     if agentState[resource]==limit and resource not in self.seen_limits:
+            #         self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
+            #         self.fakeInteractionRules = list(set(self.fakeInteractionRules))
+            #         self.seen_limits.append(resource)
+
+            #         theory_change_flag = True
+            #         newEffects = True
+            #         self.finalEffectList = set()
+
             self.finalEventList.append(event)
             newTimeStep = TimeStep(event['agentAction'], event['agentState'], event['effectList'], event['gameState'], event['rle'])
             self.finalTimeStepList.append(newTimeStep)
@@ -1075,6 +1104,7 @@ class Agent:
                     self.finalEffectList.add(compactEvent)
                     print "New event: {}".format(compactEvent)
                     newEffects = True
+            newEffects = True
         # print "finalEffectList length: {}".format(len(self.finalEffectList))
         # print "set prep took {} seconds".format(time.time()-t1)
 
@@ -1111,35 +1141,30 @@ class Agent:
             if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
                 theory_change_flag = True
 
-            #  PRECONDITIONS HANDLING
-            # Current assumptions:
-             # - Only one resource can change for each timestep
-            # - The first time a resource changes, it goes from 0 to a positive
-            #   value
-            for change_resource_effect in [e[3] for e in event['effectList'] if ('changeResource' in e)] + [e[3] for e in event['effectList'] if ('collectResource' in e)]:
-                resource = change_resource_effect['resource']
-                val = change_resource_effect['value']
-                limit = change_resource_effect['limit']
+            # #  PRECONDITIONS HANDLING
+            # # Current assumptions:
+            # # - Only one resource can change for each timestep
+            # # - The first time a resource changes, it goes from 0 to a positive
+            # #   value
+            # for change_resource_effect in [e[3] for e in event['effectList'] if ('changeResource' in e)] + [e[3] for e in event['effectList'] if ('collectResource' in e)]:
+            #     resource = change_resource_effect['resource']
+            #     val = change_resource_effect['value']
+            #     limit = change_resource_effect['limit']
 
-                # print "adding fake rules"
-                # print "got resource"
-                # embed()
-                if (resource not in self.seen_resources and val>0):
-                    self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
-                    self.fakeInteractionRules = list(set(self.fakeInteractionRules))
-                    self.seen_resources.append(resource)
+            #     if (resource not in self.seen_resources and val>0):
+            #         self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
+            #         self.fakeInteractionRules = list(set(self.fakeInteractionRules))
+            #         self.seen_resources.append(resource)
+            #         hypotheses[0].resource_limits[resource] = limit
+            #         theory_change_flag = True
 
+            #     if agentState[resource]==limit and resource not in self.seen_limits:
+            #         self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
+            #         self.fakeInteractionRules = list(set(self.fakeInteractionRules))
+            #         self.seen_limits.append(resource)
 
-                    hypotheses[0].resource_limits[resource] = limit
-                    theory_change_flag = True
-
-                if agentState[resource]==limit and resource not in self.seen_limits:
-                    self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
-                    self.fakeInteractionRules = list(set(self.fakeInteractionRules))
-                    self.seen_limits.append(resource)
-
-                    theory_change_flag = True
-                    # print "reached resource limit for", resource
+            #         theory_change_flag = True
+            #         # print "reached resource limit for", resource
 
         ## We need to update termination conditions even when we haven't seen a new event,
         ## because the state is informative about termination conditions.
