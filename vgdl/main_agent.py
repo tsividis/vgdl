@@ -606,13 +606,9 @@ class Agent:
                         try:
                             if self.rle._game.previousPositions[k] != self.rle._game.nextPositions[k]:
                                 self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.rle._game.previousPositions[k])
-                                # self.rle._game.objectMemoryDict[k] = ccopy(self.rle._game.previousPositions[k])
-
                         except KeyError:
                             pass
                     self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
-
-                    # ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
 
                     effectsEncountered.extend(effects)
                     steps +=1
@@ -828,7 +824,6 @@ class Agent:
             # self.spriteUpdateDict[k] = game.spriteUpdateDict[k]
 
         score = self.rle._game.score
-        # self.updateMemory(self.rle)
 
         output =          "ended episode. Win={}                                           ".format(win)
         if win:
@@ -1072,28 +1067,28 @@ class Agent:
             # # - Only one resource can change for each timestep
             # # - The first time a resource changes, it goes from 0 to a positive
             # #   value
-            # for change_resource_effect in [e[3] for e in event['effectList'] if ('changeResource' in e)] + [e[3] for e in event['effectList'] if ('collectResource' in e)]:
-            #     resource = change_resource_effect['resource']
-            #     val = change_resource_effect['value']
-            #     limit = change_resource_effect['limit']
+            for change_resource_effect in [e[3] for e in event['effectList'] if ('changeResource' in e)] + [e[3] for e in event['effectList'] if ('collectResource' in e)]:
+                resource = change_resource_effect['resource']
+                val = change_resource_effect['value']
+                limit = change_resource_effect['limit']
 
-            #     if (resource not in self.seen_resources and val>0):
-            #         self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
-            #         self.fakeInteractionRules = list(set(self.fakeInteractionRules))
-            #         self.seen_resources.append(resource)
-            #         hypotheses[0].resource_limits[resource] = limit
-            #         theory_change_flag = True
-            #         newEffects = True
-            #         self.finalEffectList = set()
+                if (resource not in self.seen_resources and val>0):
+                    self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
+                    self.fakeInteractionRules = list(set(self.fakeInteractionRules))
+                    self.seen_resources.append(resource)
+                    hypotheses[0].resource_limits[resource] = limit
+                    theory_change_flag = True
+                    newEffects = True
+                    self.finalEffectList = set()
 
-            #     if agentState[resource]==limit and resource not in self.seen_limits:
-            #         self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
-            #         self.fakeInteractionRules = list(set(self.fakeInteractionRules))
-            #         self.seen_limits.append(resource)
+                if agentState[resource]==limit and resource not in self.seen_limits:
+                    self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
+                    self.fakeInteractionRules = list(set(self.fakeInteractionRules))
+                    self.seen_limits.append(resource)
 
-            #         theory_change_flag = True
-            #         newEffects = True
-            #         self.finalEffectList = set()
+                    theory_change_flag = True
+                    newEffects = True
+                    self.finalEffectList = set()
 
             self.finalEventList.append(event)
             newTimeStep = TimeStep(event['agentAction'], event['agentState'], event['effectList'], event['gameState'], event['rle'])
@@ -1104,7 +1099,7 @@ class Agent:
                     self.finalEffectList.add(compactEvent)
                     print "New event: {}".format(compactEvent)
                     newEffects = True
-            newEffects = True
+            # newEffects = True
         # print "finalEffectList length: {}".format(len(self.finalEffectList))
         # print "set prep took {} seconds".format(time.time()-t1)
 
