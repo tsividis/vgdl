@@ -49,7 +49,7 @@ class Agent:
         self.shortHorizon = hyperparameters['short_horizon']#False
         self.firstOrderHorizon = hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)        if self.shortHorizon == True:
         if self.shortHorizon == True:
-            self.starting_max_nodes = 500
+            self.starting_max_nodes = 50
             self.max_nodes_annealing = 1.05
         else:
             self.starting_max_nodes = 10000
@@ -1187,7 +1187,7 @@ if __name__ == "__main__":
     # filename = "examples.gridphysics.pick_apples"
     # filename = "examples.gridphysics.expt_exploration_exploitation_debugging"
 
-    filename = "examples.gridphysics.theorytest"
+    filename = "examples.gridphysics.theory_avoidgeorge"
 
     level_game_pairs = None
     # Playing GVG-AI games
@@ -1241,7 +1241,7 @@ if __name__ == "__main__":
      }]
 
     agent = Agent('full', gameName, hyperparameter_sets[0])
-    embed()
+
     ##then pass this down for multiple episodes
     gameObject = None
     agent.playCurriculum(level_game_pairs=level_game_pairs)
