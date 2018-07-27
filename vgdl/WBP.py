@@ -78,7 +78,7 @@ class WBP():
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = True
+		self.display = False
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -1003,7 +1003,7 @@ class Node():
 			mult = -1
 		else:
 			# embed()
-			compute_second_order = False if not self.WBP.conservative else True
+			# compute_second_order = False if not self.WBP.conservative else True
 			mult = negative_mult
 
 		# Get all types that kill or transform stype (the target)
