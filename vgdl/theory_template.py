@@ -486,7 +486,7 @@ class Theory(object):
 		if not limit: 
 			new_precond = Precondition(
 			text='new precondition for '+resource,
-			item=resource, operator_name='>', num=-1)
+			item=resource, operator_name='>', num=0)
 		else:
 			new_precond = Precondition(
 			text='new precondition for '+resource,
