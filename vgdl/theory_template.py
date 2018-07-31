@@ -1454,7 +1454,7 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, action
 	relevantRulesWithArgs = [rule for rule in list(theory.dryingPaint) if rule.interaction in predicatesWithThresholds and \
 			classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and len(rule.args)>0]
 	if len(relevantRulesWithArgs)==1:
-		# print "in iterateThresholds"
+		print "in iterateThresholds ********************"
 		# theory.display()
 		rule = relevantRulesWithArgs[0]
 		penalty,_ = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 

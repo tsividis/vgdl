@@ -745,6 +745,9 @@ class Agent:
 					break		
 
 	def executeStep(self, episode_num, rleHistories, actionHistories, action, hypotheses):
+		if episode_num > 2:
+			print 'stopping now'
+			embed()
 
 		theoryRLEs, _ = VrleInitPhase(hypotheses, self.rle)
 		envRealPrev = self.fastcopy(self.rle)
@@ -2070,7 +2073,7 @@ def experienceReplay(
 			print "running experienceReplay on {}:".format(num)
 			h.display()
 		if (num + 1) % 100 == 0:
-			print "still going... on", num
+			print "still going... on", num + 1
 		mean_penalties, setOfImaginedEffects = \
 				singleTheoryExperienceReplay(rleHistory, actionHistory, method, targetColor, displayStates, [h],  assumeZeroErrorTheoryExists=assumeZeroErrorTheoryExists, errorCutoff=errorCutoff)
 		# print "ran experienceReplay on {}. error: {}".format(num, mean_penalties[0])
@@ -2441,6 +2444,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			# print "doing spriteInduction for {} generated {} theories".format(eM.targetClass, len(theories))
 			newTheories.extend(theories)	
 
+
 		## InteractionSet induction step
 		for targetClassPair in eM.intPairs:
 
@@ -2450,18 +2454,29 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			matchingRules = [rule for rule in theoryCopy.interactionSet if (rule not in list(theoryCopy.dryingPaint)) and 
 				( targetClassPair == (rule.slot1, rule.slot2) or targetClassPair == (rule.slot2, rule.slot1) )]
 
+			print 'doing interactionset induction step', eM.diagnosis
+			# @PEDRO --- never enters this if statement
 			if any([not rule.generic for rule in matchingRules]):
+				print 'got to flag 1'
+				embed()
 				if ('objectDestruction' in singleIntPairErrorMap.diagnosis
 							or any(['kill' in rule.interaction for rule in theoryCopy.interactionSet if eM.targetClass==rule.slot1]) ):
 					singleIntPairErrorMap.diagnosis.append('conditionalKill')
+
+			# @PEDRO --- never enters this if statement
+			if 'conditionalKill' in singleIntPairErrorMap.diagnosis:
+				print 'got conditional kill'
+				embed()
 
 			## Modify theory before the last step, then embed here to continue work
 			## if the diagnosis involves objectDestruction and the targetClassPair has non-generic rules,
 			## change the diagnosis here to conditionalKill such that you can propose preconditions in proposePredicates
 			predicates = proposePredicates(singleIntPairErrorMap.diagnosis, envRealCurrent._game.observation)
-			# if 'wrapAround' in eM.diagnosis:
-				# print "got unexpectedOverlap"
-				# embed()
+
+			if 'killIfHasLess' in predicates:
+				print "got killIfHasLess!!!"
+				embed()
+
 			classPair, theories = expandLine(theoryCopy, singleIntPairErrorMap, targetClassPair, predicates,
 				classPairPlusPredicateToRuleSets, envRealPrev, envRealCurrent, action, rleHistories, actionHistories, MultiEpisodeExperienceReplay, n=n, 
 				observations=envRealCurrent._game.observation, generic=False)
