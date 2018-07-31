@@ -222,6 +222,7 @@ class Agent:
 			action = 0
 			bestScoresAndHypotheses = self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses)
 			self.hypotheses = [item[1] for item in bestScoresAndHypotheses]
+
 		# for i in range(num_steps):
 			# spriteInduction(rle._game, step=1, action=None)
 			# updateAllOptions(rle._game, rle._game, action=None)
@@ -325,8 +326,8 @@ class Agent:
 			## All hypotheses have the same number of classes / know about the same colors
 			newColors = [k for k in envReal._game.observation['trackedObjects'].keys() if k not in self.hypotheses[0].spriteObjects]
 			if newColors:
-				self.observe(self.rle, episode_num, OBSERVATION_PERIOD_LENGTH)
 				from vgdl.ontology import Resource
+
 				for color in newColors:
 					for h in self.hypotheses:
 						existing_classes = [key for key in h.classes if key[0] == 'c']
@@ -334,6 +335,8 @@ class Agent:
 						class_num = max_num+1 
 						newClassName = 'c'+str(class_num)
 						h.addSpriteToTheory(newClassName, color, vgdlType=Resource)
+
+				self.observe(self.rle, episode_num, OBSERVATION_PERIOD_LENGTH)
 
 		emptyPlans = 0
 		while not ended:
@@ -380,7 +383,6 @@ class Agent:
 				# 		h.fakeInteractionRules.extend(h.updateInteractionsPreconditions(resourceClass, limit))
 				# 		self.seen_limits[avatarColor].append(resourceClass)
 
-			# embed()
 			[h.updateTerminations(addNoveltyRules=True) for h in hypothesesToPlanWith]
 
 			quitting = False
@@ -475,8 +477,7 @@ class Agent:
 
 			if not quitting:
 				for action_num, action in enumerate(solution):
-					
-					# embed()
+
 					bestScoresAndHypotheses = \
 							self.executeStep(episode_num, self.rleHistory, self.actionHistory, action, self.hypotheses)
 					
@@ -549,7 +550,6 @@ class Agent:
 			print colored('________________________________________________________________', 'white', 'on_red')
 
 		return win, score, steps
-	
 
 
 
@@ -752,7 +752,6 @@ class Agent:
 		self.rle.step(action)
 		envReal = self.fastcopy(self.rle)
 
-
 		hypotheses = self.manageNewObjects(episode_num, hypotheses, envRealPrev, action)
 
 		## We are passing the real environment, but experienceReplay filters that rle through the processFrame function (via matchEnvs()).
@@ -789,7 +788,6 @@ class Agent:
 		print "Tested and expanded {} theories to produce {} child theories".format(len(theoryRLEs), len(newTheories))
 
 		if newTheories:
-			# embed()
 			# t1 = time.time()
 			prev = self.assumeZeroErrorTheoryExists
 			if len(newTheories) > 888:# and scoreAndTheoryTuples[0][0] < .000001:
@@ -798,9 +796,6 @@ class Agent:
 			bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newTheories, episode_num)
 			self.assumeZeroErrorTheoryExists = prev
 			# print time.time()-t1
-
-			# print 'just got some new theories'
-			# embed()
 
 			if len(bestScoresAndHypotheses) == 0:	
 				print "***** WARNING ***** 0 hypotheses survived filter ***** TRYING AGAIN *****"
@@ -987,8 +982,7 @@ def initializeVrle(hypothesis, stateToSet, theoryRLE=None, makeInitialVrle=False
 	if len(stateToSet._game.observation['trackedObjects'][hypothesis.classes['avatar'][0].colorName])>1:
 		print "Warning. In initializeVrle. Got more than one avatar. Returning None as Vrle."
 		# embed()
-		Vrle = None
-		return Vrle
+		return None, None
 	
 	## Initialize imaginary state to match real state.
 	setVrleState(stateToSet, Vrle, hypothesis, makeInitialVrle)
