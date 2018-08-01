@@ -969,12 +969,12 @@ class Agent:
 
         theory_change_flag = False
 
-        t1 = time.time()
+        # t1 = time.time()
         spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
-        print "induction step 1 took {} seconds.".format(time.time()-t1)
-        t1 = time.time()
+        # print "induction step 1 took {} seconds.".format(time.time()-t1)
+        # t1 = time.time()
         spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
-        print "induction step 2 took {} seconds".format(time.time()-t1)
+        # print "induction step 2 took {} seconds".format(time.time()-t1)
 
 
         try:
@@ -1034,9 +1034,9 @@ class Agent:
 
         # print "manage new objects and getFullState: {}".format(time.time()-t1)
 
-        t1 = time.time()
+        # t1 = time.time()
         distributionsHaveChanged = spriteInduction(self.rle._game, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
-        print "sprite induction step 3: {}".format(time.time()-t1)
+        # print "sprite induction step 3: {}".format(time.time()-t1)
  
         # effects = translateEvents(res['effectList'], self.all_objects, self.rle)
         effects = self.rle._game.effectListByColor
