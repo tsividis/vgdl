@@ -2023,17 +2023,23 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
             position_options[(coords[0], coords[1])] = 1.
 
             if missileOrientationClustering:
+                # if current_sprite.colorName=='RED' and cooldown==1 and speed==.1:
+                    # embed()
 
-                epsilon_prob = 0.005
-                clustered_position_options[(coords[0], coords[1])] = .5 + epsilon_prob
+                clustered_position_options[(coords[0], coords[1])] = 1. ##8/1 hack
+
+                # epsilon_prob = 0.005
+                # clustered_position_options[(coords[0], coords[1])] = .5 + epsilon_prob
                 #flip orientation
                 orientation = (orientation[0]*-1, orientation[1]*-1)
 
                 coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
-                if (coords[0], coords[1]) in clustered_position_options.keys():
-                    clustered_position_options[(coords[0], coords[1])] += .5 - epsilon_prob
-                else:
-                    clustered_position_options[(coords[0], coords[1])] = .5 - epsilon_prob
+                clustered_position_options[(coords[0], coords[1])] = 1.    ##8/1 hack                
+
+                # if (coords[0], coords[1]) in clustered_position_options.keys():
+                #     clustered_position_options[(coords[0], coords[1])] += .5 - epsilon_prob
+                # else:
+                #     clustered_position_options[(coords[0], coords[1])] = .5 - epsilon_prob
 
             # if current_sprite.colorName=='GOLD' and speed==.2 and cooldown==3:
             #     print "position_options is {}".format(position_options)
@@ -2133,12 +2139,12 @@ def distributionInitSetup(game, sprite):
         print "found DTIZDF"
         embed()
     game.spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
-    game.object_token_spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
+    # game.object_token_spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
     if sprite not in game.all_objects.keys():
         game.all_objects[sprite] = game.getObjects()[sprite]
 
     game.movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
-    game.object_token_movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
+    # game.object_token_movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
 
 
 def updateDistribution(game, sprite, curr_distribution, movement_options, outcome, specialID=None, missileOrientationClustering=False):
@@ -2167,7 +2173,7 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
     normalization_ratio = 0
     alpha = 1.
 
-    # if missileOrientationClustering and game.all_objects[sprite]['features']['color']=='RED' and game.all_objects[sprite]['position'][0]<250:
+    # if missileOrientationClustering and game.all_objects[sprite]['features']['color']=='RED' and game.all_objects[sprite]['position'][0]>250:
     #     print "BEFORE UPDATE"
     #     print game.all_objects[sprite]['position'], outcome
     #     # print movement_options[sprite][(('vgdlType', RandomNPC), ('cooldown', 3), ('speed', 0.2))]
@@ -2197,7 +2203,7 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
             else:
                 curr_distribution[sprite][param_combination] *= (epsilon_prob / normalization_ratio)
 
-    # if missileOrientationClustering and game.all_objects[sprite]['features']['color']=='RED' and game.all_objects[sprite]['position'][0]<250:
+    # if missileOrientationClustering and game.all_objects[sprite]['features']['color']=='RED' and game.all_objects[sprite]['position'][0]>250:
     #     print "AFTER UPDATE"
     #     print game.all_objects[sprite]['position'], outcome
     #     # print movement_options[sprite][(('vgdlType', RandomNPC), ('cooldown', 3), ('speed', 0.2))]
@@ -2375,7 +2381,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
 
         ## Integrate evidence across all episodes; pick best hypothesis.
         try:
-            param_product = {k:0 for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
+            param_product = {k:1. for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
 
         except IndexError:
             # bestSpriteTypeDict has yet to be populated for this object type
@@ -2383,20 +2389,28 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                 if v['features']['color'] == obj_type:
                     bestSpriteTypeDict[obj_type][k] = game.spriteDistribution[k]
 
-            param_product = {k:0 for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
+            param_product = {k:1. for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
 
-
+        # spriteUpdateNormalizer = 0
+        # for k in bestSpriteTypeDict[obj_type].keys():
+            # spriteUpdateNormalizer += spriteUpdateDict[k]
         # if obj_type=='RED':
             # embed()
         z = 0.
+        param_z = 0.
         for k in bestSpriteTypeDict[obj_type].keys():
             # if obj_type == 'RED':
-            #     k1 = (('vgdlType', Missile), ('cooldown', 1), ('orientation', (1,0)), ('speed', 0.1))
-            #     k2 = (('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))
+            #     print "before update"
+                # k1 = (('vgdlType', Missile), ('cooldown', 1), ('orientation', (1,0)), ('speed', 0.1))
+                # k2 = (('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))
+                # print "missile", bestSpriteTypeDict['RED'][k][k1]
+                # print "chaser", bestSpriteTypeDict['RED'][k][k2]
             #     embed()
             for param in param_product.keys():
                 try:
-                    param_product[param] += spriteUpdateDict[k]*bestSpriteTypeDict[obj_type][k][param]
+                    param_product[param] *= spriteUpdateDict[k]*bestSpriteTypeDict[obj_type][k][param]
+                    param_z += param_product[param]
+
                 except KeyError:
                     print("Got key error when updating param_product")
                     # If we landed here because we're trying to update the hypothesis
@@ -2414,50 +2428,58 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                             ('cooldown', cooldown),
                             ('speed', speed)
                         )
-                        param_product[randomnpc_param] += spriteUpdateDict[k]*bestSpriteTypeDict[obj_type][k][randomnpc_param]
+                        param_product[randomnpc_param] *= spriteUpdateDict[k]*bestSpriteTypeDict[obj_type][k][randomnpc_param]
+                        param_z += param_product[randomnpc_param]
+
                     else:  # if this is not a new chaser, we shouldn't be landing here
                         embed()
-
             z += spriteUpdateDict[k]
 
-        # if obj_type == 'RED':
+        # for k in param_product:
+        #     try:
+        #         param_product[k] /= z
+        #     except ZeroDivisionError:
+        #         pass
+
+        for param,val in param_product.items():
+            param_product[param] /= param_z
+        # if obj_type == 'BROWN':
             # k1 = (('vgdlType', Missile), ('cooldown', 1), ('orientation', (1,0)), ('speed', 0.1))
             # k2 = (('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))
+            # print "after update"
             # embed()
-        for k in param_product:
-            try:
-                param_product[k] /= z
-            except ZeroDivisionError:
-                pass
 
         null_hypothesis = [k for k in param_product.keys() if 'Resource' in str(k[0][1])][0]
         best_param = max(param_product, key=param_product.get)
-        if param_product[null_hypothesis]==0 and param_product[best_param]==0:
-            best_param = null_hypothesis
-            # print "setting {} to null: {}".format(obj_type, null_hypothesis)
-        else:
-            if best_param!=null_hypothesis and param_product[null_hypothesis]!=0 and (param_product[best_param]/param_product[null_hypothesis] > 2.):
-                # print best_param, param_product[best_param]
-                best_param = best_param
-            else:
-                # if obj_type=='RED':
-                    # embed()
-                    # print best_param, param_product[best_param], null_hypothesis, param_product[null_hypothesis]
-                # print "setting {} to null, case 2: {}".format(obj_type, null_hypothesis)
-                best_param = null_hypothesis
+        
+
+        # if param_product[null_hypothesis]==0 and param_product[best_param]==0:
+        #     best_param = null_hypothesis
+        #     # print "setting {} to null: {}".format(obj_type, null_hypothesis)
+        # else:
+        #     if best_param!=null_hypothesis and param_product[null_hypothesis]!=0 and (param_product[best_param]/param_product[null_hypothesis] > 2.):
+        #         # print best_param, param_product[best_param]
+        #         best_param = best_param
+        #     else:
+        #         # if obj_type=='RED':
+        #             # embed()
+        #             # print best_param, param_product[best_param], null_hypothesis, param_product[null_hypothesis]
+        #         # print "setting {} to null, case 2: {}".format(obj_type, null_hypothesis)
+        #         best_param = null_hypothesis
         # if obj_type=='GOLD':
             # embed()
 
         # Use for debugging sprite-type inference.
-        # if obj_type=='RED':
-        #     goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='RED']
+        # if obj_type=='BROWN':
+        #     goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='BROWN']
         #     print [g.rect for g in goldobjs[0]]
         #     for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
         #         print(k, param_product[k])
         #         if i>10:
         #             break
         #     print ""
-        #     embed()
+        #     print best_param
+            # embed()
 
         sprite_type = best_param[0][1]
 
@@ -2651,8 +2673,14 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                             # game.object_token_movement_options[sprite][param_combination], game.movement_options[sprite][param_combination] = \
                             # updateOptionsProfiler(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
                         # else:
-                        game.object_token_movement_options[sprite][param_combination], game.movement_options[sprite][param_combination] = \
+
+
+                        # game.object_token_movement_options[sprite][param_combination], game.movement_options[sprite][param_combination] = \
+                            # updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
+
+                        _, game.movement_options[sprite][param_combination] = \
                             updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
+
                 # if sprite_obj.colorName=='RED':
                 #     randKey = [k for k in game.object_token_movement_options[sprite].keys() if 'Random' in str(k[0][1]) and k[1][1]==1 and k[2][1]==1][0]
                 #     print game.object_token_movement_options[sprite][randKey]
@@ -2678,8 +2706,8 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                     # embed()
                 game.spriteDistribution = updateDistribution(game, sprite, game.spriteDistribution, \
                                           game.movement_options, outcome, missileOrientationClustering=True)
-                game.object_token_spriteDistribution = updateDistribution(game, sprite, game.object_token_spriteDistribution, \
-                                          game.object_token_movement_options, outcome)
+                # game.object_token_spriteDistribution = updateDistribution(game, sprite, game.object_token_spriteDistribution, \
+                                          # game.object_token_movement_options, outcome)
 
                 game.spriteUpdateDict[sprite] += 1
         

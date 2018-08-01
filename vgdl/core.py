@@ -1164,6 +1164,7 @@ class BasicGame(object):
 
                     pygame.time.wait(10)
                     print len(self.actions), win, self.score
+                    print "ended in {} steps".format(self.time)
                     return win, self.score
                     # pygame.quit()
                     # sys.exit()
