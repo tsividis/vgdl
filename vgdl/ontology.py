@@ -2441,8 +2441,10 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         #     except ZeroDivisionError:
         #         pass
 
-        for param,val in param_product.items():
-            param_product[param] /= param_z
+        if param_z != 0:
+            for param,val in param_product.items():
+                param_product[param] /= param_z
+
         # if obj_type == 'BROWN':
             # k1 = (('vgdlType', Missile), ('cooldown', 1), ('orientation', (1,0)), ('speed', 0.1))
             # k2 = (('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))
