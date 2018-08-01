@@ -1601,7 +1601,10 @@ def collectResource(sprite, partner, game, resource=None, value=1, limit=None): 
             value=1
             partner.resources[r] = max(-1, min(partner.resources[r]+value, game.resources_limits[r]))
     else:
-        partner.resources[resource] = max(-1, min(partner.resources[resource]+sprite.value, game.resources_limits[resource]))
+        try:
+            partner.resources[resource] = max(-1, min(partner.resources[resource]+sprite.value, game.resources_limits[resource]))
+        except:
+            partner.resources[resource] = max(-1, min(partner.resources[resource]+value, game.resources_limits[resource]))
 
     killSprite(sprite, partner, game)
     args = {'resource':sprite.name, 'value':value, 'limit':game.resources_limits[sprite.name]}
