@@ -1845,6 +1845,43 @@ def setSpriteParams(param, sprite):
         elif p == "cooldown":
             sprite.cooldown = param[p]
 
+
+    # def calculateActiveMovement(self, sprite, action, speed=None):
+    #     """
+    #     Calculate where the sprite would end up in a timestep, without actually updating its position.
+    #     """
+    #      ## This is where you could make hypotheses about speed, etc. for the object.
+    #     if action is not None:
+    #         orientation = action
+    #     if (sprite.lastmove+1)%sprite.cooldown==0 and abs(orientation[0])+abs(orientation[1])!=0:
+
+    #         if speed is None:
+    #             if sprite.speed is None:
+    #                 speed = 1
+    #             else:
+    #                 speed = sprite.speed
+    #         if speed != 0:# and action is not None:
+    #             speed = float(speed) * self.gridsize[0]
+
+    #         pos = sprite.rect.move((orientation[0]*speed, orientation[1]*speed))
+    #         return pos.left, pos.top
+    #     return(sprite.rect.left, sprite.rect.top)
+
+
+
+def calculateSpriteMove(game, sprite, speed, orientation):
+    if abs(orientation[0])+abs(orientation[1])!=0:
+        if speed is None:
+            if sprite.speed is None:
+                speed = 1
+            else:
+                speed = sprite.speed
+        if speed != 0:# and action is not None:
+            speed = float(speed) * game.block_size
+        newPos = sprite.rect.left+orientation[0]*speed, sprite.rect.top+orientation[1]*speed
+        return (newPos[0], newPos[1])
+    return(sprite.rect.left, sprite.rect.top)
+
 def getTargets(game, targetColor):
     t1 = time.time()
     if targetColor not in game.targetColorDict:
@@ -1893,11 +1930,12 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         targetColor = getStype(params)
         cooldown = getCooldown(params)
 
+        if (current_sprite.lastmove+1)%cooldown!=0:
+            position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
+            return position_options, position_options
+
         realCooldown = int(current_sprite.cooldown)
         current_sprite.cooldown = cooldown
-        # if current_sprite.colorName=='LIGHTORANGE':
-            # print 'chaser'
-            # embed()
         
         targets = getTargets(game, targetColor)
         # try:
@@ -1917,9 +1955,15 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
                 options.extend(chaserMovesToward(current_sprite, game, target, fleeing))
             if len(options) == 0:
                 options = BASEDIRS
+            # option = options[0]
+            # embed()
 
             for option in options:
-                left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed)
+                left, top = calculateSpriteMove(game, current_sprite, speed, option)
+                # left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed)
+                # if left!=left1 or top!=top1:
+                    # print "got different positions"
+                    # embed()
                 if (left, top) in position_options.keys():
                     position_options[(left, top)] += 1.0/len(options)
                 else:
@@ -1934,45 +1978,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         current_sprite.cooldown = realCooldown
         return position_options, position_options
 
-    # AStarChaser
-    elif sprite_type == AStarChaser:
-        speed = getSpeed(params)
-        world = AStarWorld(game) ##how the AStarChaser makes its own calculations (see ai.py)
-
-        # If nothing to chase, then will stay in place
-        killed = [s.name for s in game.kill_list]
-        if 'avatar' in killed:
-            return {(current_sprite.rect.left, current_sprite.rect.top): 1.}, {(current_sprite.rect.left, current_sprite.rect.top): 1.}
-
-        path = world.getMoveFor(current_sprite)
-        if len(path)>1:
-            move = path[1]
-
-            nextX, nextY = world.get_sprite_tile_position(move.sprite)
-            nowX, nowY = world.get_sprite_tile_position(current_sprite)
-
-            movement = None
-
-            if nowX == nextX:
-                if nextY > nowY:
-                    #logToFile('DOWN')
-                    movement = DOWN
-                else:
-                    #logToFile('UP')
-                    movement = UP
-            else:
-                if nextX > nowX:
-                    #logToFile('RIGHT')
-                    movement = RIGHT
-                else:
-                    #logToFile('LEFT')
-                    movement = LEFT
-        else: # Not foolproof, but will catch walls that are surrounded by other walls
-            movement = DOWN
-
-        left, top = current_sprite.physics.calculateActiveMovement(current_sprite, movement, speed=speed)
-        return {(left, top): 1.}, {(left, top): 1.}
-
     # Random NPC
     elif sprite_type == RandomNPC:
 
@@ -1981,26 +1986,19 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         current_sprite.cooldown = cooldown
         position_options = {}
 
-        # if current_sprite.colorName=='GOLD' and speed==.2:# and 'Random' in str(sprite_type):
-        #     print "in updateOptions"
-        #     print current_sprite
-        #     embed()
+        if (current_sprite.lastmove+1)%cooldown!=0:
+            position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
+            return position_options, position_options
+
 
         for option in BASEDIRS:
+            # left, top = calculateSpriteMove(game, current_sprite, speed, option)
             left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed)
             if (left, top) in position_options.keys():
                 position_options[(left, top)] += 1.0/len(BASEDIRS)
             else:
                 position_options[(left, top)] = 1.0/len(BASEDIRS)
-        # if current_sprite.colorName=='GOLD' and speed == .2 and cooldown == 3:
-        #     print "Random"
-        #     print current_sprite.rect
-        #     print position_options
-        # if current_sprite.colorName == 'RED':
-            # print "in updateOptions"
-            # print current_sprite, params
-            # print position_options
-            # embed()
+
         current_sprite.cooldown = realCooldown
         return position_options, position_options
 
@@ -2646,7 +2644,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
 
         game = game                                               # Save game state
         sprite_count, param_count=0, 0
-        kill_list_keys = [s.ID for s in game.kill_list]
+        # kill_list_keys = [s.ID for s in game.kill_list]
         # print "len spriteDistribution: {}, objects: {}".format(len(game.spriteDistribution.keys()), len(objects.keys()))
         # print "len filtered keys: {}".format(len([s for s in game.spriteDistribution.keys() if s not in kill_list_keys]))
 
@@ -2691,7 +2689,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                 #     print game.object_token_movement_options[sprite][randKey]
                 #     embed()
         game.targetColorDict = dict()
-        # print "step 2 updated {} sprites and {} param combinations".format(sprite_count, param_count)
+        print "step 2 updated {} sprites and {} param combinations".format(sprite_count, param_count)
 
     elif step==3:
         ## Update sprite distribution based on observations
