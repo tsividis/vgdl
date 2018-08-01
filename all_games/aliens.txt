@@ -42,3 +42,8 @@ BasicGame square_size=32
         alien  sam   > killSprite
         sam avatar > nothing
         sam portal > nothing
+
+	sam portalSlow > nothing
+	portalSlow sam > nothing
+	sam portalFast > nothing
+	portalFast sam > nothing
