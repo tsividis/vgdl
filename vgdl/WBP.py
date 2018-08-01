@@ -162,7 +162,8 @@ class WBP():
 			objLocs = [rle._rect2pos(element.rect) for element in rle._game.sprite_groups[objName]
 			if element not in rle._game.kill_list]
 		except:
-			return None
+			# return None
+			return []
 		return objLocs
 
 	def findAvatarInRLE(self, rle):
@@ -1161,6 +1162,7 @@ class Node():
 				except:
 					print "problem with resource positions"
 					embed()
+
 				resource_limits = np.array([list(resource[1])[0].num + 1
 					if list(resource[1])[0].operator_name == '>'
 					else list(resource[1])[0].num
