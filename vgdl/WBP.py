@@ -1442,16 +1442,16 @@ class Node():
 				vrle = self.fastcopy(self.parent.rle)
 				# vrle = copy.deepcopy(self.parent.rle)
 				
-				if self.WBP.killer_types:
-					for k in self.WBP.killer_types:
-						## if we think it's stochastic
-						# if any([t in str(self.WBP.theory.classes[k][0].vgdlType) for t in ['Random', 'Chaser']]):
-						if True:
-							for s in vrle._game.sprite_groups[k]:
-								if manhattanDist(vrle._rect2pos(s.rect), vrle._rect2pos(vrle._game.getAvatars()[0].rect)) < self.WBP.safeDistance:
-									# print "closer than safeDistance away from {} {}. need to sample".format(k, self.WBP.theory.classes[k][0].vgdlType)
-									multipleSamples = True
-									break
+				# if self.WBP.killer_types:
+				# 	for k in self.WBP.killer_types:
+				# 		## if we think it's stochastic
+				# 		# if any([t in str(self.WBP.theory.classes[k][0].vgdlType) for t in ['Random', 'Chaser']]):
+				# 		if True:
+				# 			for s in vrle._game.sprite_groups[k]:
+				# 				if manhattanDist(vrle._rect2pos(s.rect), vrle._rect2pos(vrle._game.getAvatars()[0].rect)) < self.WBP.safeDistance:
+				# 					# print "closer than safeDistance away from {} {}. need to sample".format(k, self.WBP.theory.classes[k][0].vgdlType)
+				# 					multipleSamples = True
+				# 					break
 				multipleSamples = False
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
