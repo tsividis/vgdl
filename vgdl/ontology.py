@@ -2689,7 +2689,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                 #     print game.object_token_movement_options[sprite][randKey]
                 #     embed()
         game.targetColorDict = dict()
-        print "step 2 updated {} sprites and {} param combinations".format(sprite_count, param_count)
+        # print "step 2 updated {} sprites and {} param combinations".format(sprite_count, param_count)
 
     elif step==3:
         ## Update sprite distribution based on observations

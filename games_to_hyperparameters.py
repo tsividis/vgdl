@@ -23,8 +23,8 @@
 # game_names = ['boulderdash', 'boulderchase']
 # game_names = ['expt_preconditions']
 # ## idx 3
-game_names = ['jaws']
-# game_names = ['aliens', 'avoidgeorge', 'butterflies', 'chase', 'expt_helper', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'jaws', 'lemmings', 'myAliens', 'overload', 'plaqueattack', 'waves']
+# game_names = ['jaws']
+game_names = ['aliens', 'avoidgeorge', 'butterflies', 'chase', 'expt_helper', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'jaws', 'lemmings', 'myAliens', 'overload']#, 'plaqueattack', 'waves']
 # game_names = ['aliens', 'survivezombies', 'jaws', 'plaqueattack', 'waves']
 # game_names = ['chopper', 'plaqueattack']
 # game_names = ['zelda', 'jaws', 'waves', 'survivezombies']
