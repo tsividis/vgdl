@@ -74,11 +74,11 @@ class WBP():
 		self.classesWhosePresenceWeIgnore = []
 		self.allowRollouts = True
 		self.quitting = False
-		self.exhausted_novelty = False
+		self.exhausted_novelty = True
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = False
+		self.display = True
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -478,7 +478,8 @@ class WBP():
 						if manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))>3:
 							current_actions = [0]
 						else:
-							current_actions = [0, K_LEFT, K_RIGHT, K_UP, K_DOWN]
+							current_actions = self.actions
+							# current_actions = [0, K_LEFT, K_RIGHT, K_UP, K_DOWN]
 							if self.display:
 								print "didn't change current_actions; will plan normally"
 								print "nearest dangerous sprite:", manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))
@@ -818,6 +819,33 @@ class Node():
 				rolloutArray.append(heuristicVal)
 				prevHeuristicVal = currHeuristicVal
 				terminal, win, t = vrle._isDone(getTermination=True)
+
+				if self.WBP.firstOrderHorizon:
+					# Return plan if first-order progress was made towards
+					# a win condition
+					foundWin = False
+					for term in self.WBP.theory.terminationSet:
+						if isinstance(term, SpriteCounterRule) and term.termination.win==True:
+							stype = term.termination.stype
+							n_stypes = len([0 for sprite in self.WBP.findObjectsInRLE(vrle, stype)])
+							if stype in self.WBP.starting_stype_n.keys() and self.WBP.starting_stype_n[stype] > n_stypes:
+								if not (terminal and not win):
+									terminal, win = True, True
+									if self.WBP.display:
+										print "exiting rollout early because progress was made toward", stype
+										# embed()
+						elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
+							stypes = term.termination.stypes
+							n_stypes = sum([len(self.WBP.findObjectsInRLE(vrle, stype)) for stype in stypes if self.WBP.findObjectsInRLE(vrle, stype)])
+							if tuple(stypes) in self.WBP.starting_stype_n.keys() and self.WBP.starting_stype_n[tuple(stypes)] > n_stypes:
+								if not(terminal and not win):
+									terminal, win = True, True
+									if self.WBP.display:
+										print "exiting rollout early because progress was made toward", stypes
+										# embed()
+						if win:
+							break
+
 				if terminal:
 					try:
 						if (t.name=='NoveltyTermination' and
@@ -1516,6 +1544,7 @@ class Node():
 				self.terminal, self.win = res['ended'], res['win']
 				# self.terminal, self.win = vrle._isDone()
 				i += 1
+
 		return vrle, self.terminal, self.win
 
 	"""
