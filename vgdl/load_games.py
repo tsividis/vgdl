@@ -77,7 +77,7 @@ hyperparameter_sets = [
      'multisprite_first_alpha': 10000,
      'multisprite_second_alpha': 100,
      'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
+     'novelty_second_alpha': 10,
      }
 
 ]

@@ -4,13 +4,13 @@ BasicGame square_size=32
         avatar  > FlakAvatar   stype=sam color=DARKBLUE
         missile > Missile
             sam  > orientation=UP    color=PINK singleton=True
-            bomb > orientation=DOWN  color=RED  speed=0.5
+            bomb > orientation=DOWN  color=RED  cooldown=2 #speed=0.5
         alien   > Bomber       stype=bomb   prob=0.01  cooldown=3 speed=0.8
             alienGreen > color=LIGHTGREEN
             alienBlue > color=GOLD
         portal  > invisible=True hidden=True
-        	portalSlow  > SpawnPoint   stype=alienBlue  spawnCooldown=16   total=20 color=LIGHTGRAY
-        	portalFast  > SpawnPoint   stype=alienGreen  spawnCooldown=12   total=20 color=LIGHTGRAY
+        	portalSlow  > SpawnPoint   stype=alienBlue  spawnCooldown=16   total=5 color=LIGHTGRAY
+        	portalFast  > SpawnPoint   stype=alienGreen  spawnCooldown=12   total=5 color=LIGHTGRAY
 
     LevelMapping
         0 > base
@@ -42,6 +42,7 @@ BasicGame square_size=32
         alien  sam   > killSprite
         sam avatar > nothing
         sam portal > nothing
+	portal sam > nothing
 
 	portal alien > nothing
 	alien portal > nothing
@@ -49,3 +50,7 @@ BasicGame square_size=32
 	portalSlow sam > nothing
 	sam portalFast > nothing
 	portalFast sam > nothing
+	bomb sam > nothing
+	sam bomb > nothing
+	bomb alien > nothing
+	alien bomb > nothing
