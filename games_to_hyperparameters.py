@@ -18,13 +18,13 @@
 
 ## idx 2, more memory:
 # game_names = ['expt_push_boulders', 'sokoban', 'bait', 'watergame']
-# game_names = ['bait', 'expt_push_boulders', 'expt_preconditions', 'frogs', 'portals', 'sokoban', 'watergame', 'boulderdash', 'boulderchase']
+game_names = ['bait', 'expt_push_boulders', 'expt_preconditions', 'expt_antagonist', 'expt_helper', 'portals', 'sokoban', 'watergame', 'boulderdash']
 # game_names = ['frogs']
 # game_names = ['boulderdash', 'boulderchase']
 # game_names = ['expt_preconditions']
 # ## idx 3
 # game_names = ['aliens']
-game_names = ['aliens', 'avoidgeorge', 'butterflies', 'chase', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'jaws', 'lemmings', 'myAliens', 'overload', 'plaqueattack', 'waves', 'frogs']
+# game_names = ['aliens', 'avoidgeorge', 'butterflies', 'chase', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'jaws', 'lemmings', 'myAliens', 'overload', 'plaqueattack', 'waves', 'frogs']
 # game_names = ['plaqueattack', 'waves']
 # game_names = ['chopper', 'plaqueattack']
 # game_names = ['zelda', 'jaws', 'waves', 'survivezombies']
