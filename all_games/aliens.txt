@@ -43,6 +43,8 @@ BasicGame square_size=32
         sam avatar > nothing
         sam portal > nothing
 
+	portal alien > nothing
+	alien portal > nothing
 	sam portalSlow > nothing
 	portalSlow sam > nothing
 	sam portalFast > nothing
