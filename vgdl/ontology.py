@@ -1958,8 +1958,8 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
                 options = BASEDIRS
 
             for option in options:
-                left, top = calculateSpriteMove(game, current_sprite, speed, option)
-                # left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed)
+                # left, top = calculateSpriteMove(game, current_sprite, speed, option)
+                left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed)
                 # if left!=left1 or top!=top1:
                     # print "got different positions"
                     # embed()
@@ -2010,18 +2010,18 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
             cooldown = getCooldown(params)
             realCooldown = int(current_sprite.cooldown)
             current_sprite.cooldown = cooldown
-    
-            if (current_sprite.lastmove+1)%cooldown!=0:
-                position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
-                return position_options, position_options
+
+            # if (current_sprite.lastmove+1)%cooldown!=0:
+                # position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
+                # return position_options, position_options
             
             coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
             
             # If object has speed = 0 or no 'orientation' attribute
             position_options, clustered_position_options = {}, {}
             
-            # if coords == None:
-                # return position_options, position_options
+            if coords == None:
+                return position_options, position_options
 
             position_options[(coords[0], coords[1])] = 1.
 
@@ -2043,6 +2043,18 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
                 #     clustered_position_options[(coords[0], coords[1])] += .5 - epsilon_prob
                 # else:
                 #     clustered_position_options[(coords[0], coords[1])] = .5 - epsilon_prob
+
+            # if current_sprite.colorName=='RED' and cooldown==1 and speed==1 and params['orientation']==(1,0):
+            #     print "found our sprite"
+            #     print current_sprite, current_sprite.lastmove, params
+            #     print position_options, clustered_position_options
+            #     embed()
+            # if current_sprite.colorName=='RED' and cooldown==5 and speed==1 and params['orientation']==(1,0):
+            #     print "found the foil hypothesis"
+            #     print current_sprite, current_sprite.lastmove, params
+            #     print clustered_position_options
+            #     embed()
+
 
             current_sprite.cooldown = realCooldown
             return position_options, clustered_position_options
@@ -2463,16 +2475,16 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             # embed()
 
         # Use for debugging sprite-type inference.
-        # if obj_type=='BROWN':
-        #     goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='BROWN']
-        #     print [g.rect for g in goldobjs[0]]
-        #     for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
-        #         print(k, param_product[k])
-        #         if i>10:
-        #             break
-        #     print ""
-        #     print best_param
-            # embed()
+        if obj_type=='BROWN':
+            # goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='BROWN']
+            # print [g.rect for g in goldobjs[0]]
+            for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
+                print(k, param_product[k])
+                if i>10:
+                    break
+            print ""
+            print best_param
+            embed()
 
         sprite_type = best_param[0][1]
 
