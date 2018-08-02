@@ -1930,9 +1930,9 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         targetColor = getStype(params)
         cooldown = getCooldown(params)
 
-        if (current_sprite.lastmove+1)%cooldown!=0:
-            position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
-            return position_options, position_options
+        # if (current_sprite.lastmove+1)%cooldown!=0:
+            # position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
+            # return position_options, position_options
 
         realCooldown = int(current_sprite.cooldown)
         current_sprite.cooldown = cooldown
@@ -1982,9 +1982,9 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         current_sprite.cooldown = cooldown
         position_options = {}
 
-        if (current_sprite.lastmove+1)%cooldown!=0:
-            position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
-            return position_options, position_options
+        # if (current_sprite.lastmove+1)%cooldown!=0:
+            # position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
+            # return position_options, position_options
 
 
         for option in BASEDIRS:
@@ -2031,13 +2031,13 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
 
                 clustered_position_options[(coords[0], coords[1])] = 1. ##8/1 hack
 
-                # epsilon_prob = 0.005
+                epsilon_prob = 0.005
                 # clustered_position_options[(coords[0], coords[1])] = .5 + epsilon_prob
                 #flip orientation
                 orientation = (orientation[0]*-1, orientation[1]*-1)
 
                 coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
-                clustered_position_options[(coords[0], coords[1])] = 1.    ##8/1 hack                
+                clustered_position_options[(coords[0], coords[1])] = 1.-epsilon_prob   ##8/1 hack                
 
                 # if (coords[0], coords[1]) in clustered_position_options.keys():
                     # clustered_position_options[(coords[0], coords[1])] += .5 - epsilon_prob
@@ -2475,16 +2475,16 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             # embed()
 
         # Use for debugging sprite-type inference.
-        if obj_type=='BROWN':
-            # goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='BROWN']
-            # print [g.rect for g in goldobjs[0]]
-            for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
-                print(k, param_product[k])
-                if i>10:
-                    break
-            print ""
-            print best_param
-            embed()
+        # if obj_type=='BROWN':
+        #     # goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='BROWN']
+        #     # print [g.rect for g in goldobjs[0]]
+        #     for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
+        #         print(k, param_product[k])
+        #         if i>10:
+        #             break
+        #     print ""
+        #     print best_param
+        #     embed()
 
         sprite_type = best_param[0][1]
 
