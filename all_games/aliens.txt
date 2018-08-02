@@ -9,8 +9,8 @@ BasicGame square_size=32
             alienGreen > color=LIGHTGREEN
             alienBlue > color=GOLD
         portal  > invisible=True hidden=True
-        	portalSlow  > SpawnPoint   stype=alienBlue  spawnCooldown=16   total=5 color=LIGHTGRAY
-        	portalFast  > SpawnPoint   stype=alienGreen  spawnCooldown=12   total=5 color=LIGHTGRAY
+        	portalSlow  > SpawnPoint   stype=alienBlue  spawnCooldown=16   total=20 color=LIGHTGRAY
+        	portalFast  > SpawnPoint   stype=alienGreen  spawnCooldown=12   total=20 color=LIGHTGRAY
 
     LevelMapping
         0 > base
