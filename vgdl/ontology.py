@@ -2040,9 +2040,9 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
                 clustered_position_options[(coords[0], coords[1])] = 1.    ##8/1 hack                
 
                 # if (coords[0], coords[1]) in clustered_position_options.keys():
-                #     clustered_position_options[(coords[0], coords[1])] += .5 - epsilon_prob
+                    # clustered_position_options[(coords[0], coords[1])] += .5 - epsilon_prob
                 # else:
-                #     clustered_position_options[(coords[0], coords[1])] = .5 - epsilon_prob
+                    # clustered_position_options[(coords[0], coords[1])] = .5 - epsilon_prob
 
             # if current_sprite.colorName=='RED' and cooldown==1 and speed==1 and params['orientation']==(1,0):
             #     print "found our sprite"
