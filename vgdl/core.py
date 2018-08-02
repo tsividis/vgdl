@@ -294,6 +294,7 @@ class BasicGame(object):
         self.isInternalEnv = False
         self.genericNothingRules = []
         self.targetColorDict = dict() ## for memoizing objects of each color once per timestep
+        self.chaserMovesTowardDict = dict() ## for memoizing directions that make chaser closer to some target.
         self.EOS = EOS((-1, -1))
         self.reset()
 

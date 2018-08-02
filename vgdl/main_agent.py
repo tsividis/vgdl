@@ -982,9 +982,9 @@ class Agent:
         # t1 = time.time()
         spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
         # print "induction step 1 took {} seconds.".format(time.time()-t1)
-        # t1 = time.time()
+        t1 = time.time()
         spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
-        # print "induction step 2 took {} seconds".format(time.time()-t1)
+        print "induction step 2 took {} seconds".format(time.time()-t1)
 
 
         try:

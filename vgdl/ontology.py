@@ -1809,24 +1809,23 @@ def chaserClosestTargets(sprite, game):
 def chaserMovesToward(sprite, game, target, fleeing):
     """ Find the canonical direction(s) which move toward
     the target. """
+    
+    if (sprite, target) in game.chaserMovesTowardDict:
+        return game.chaserMovesTowardDict[(sprite, target)]
+
     res = []
     basedist = sprite.physics.distance(sprite.rect, target.rect)
-    # embed()
 
     for a in BASEDIRS:
         r = sprite.rect.copy()
         r = r.move(a)
         newdist = sprite.physics.distance(r, target.rect)
 
-        # targetloc = (target.rect.left, target.rect.top)
-        # newloc = (sprite.rect.left+a[0], sprite.rect.top+a[1])
-        # newdist = sprite.physics.distance(newloc, targetloc)
-
-
         if fleeing and basedist < newdist:
             res.append(a)
         if not fleeing and basedist > newdist:
             res.append(a)
+    game.chaserMovesTowardDict[(sprite, target)] = res
     return res
 
 def setSpriteParams(param, sprite):
@@ -1939,6 +1938,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         current_sprite.cooldown = cooldown
         
         targets = getTargets(game, targetColor)
+
         # try:
         #     targetName = [k for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName==targetColor][0]
         #     # targets = [s for s in game.sprite_groups[targetName]]
@@ -1952,12 +1952,10 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         position_options = {}
 
         try:
-            for target in targets:#chaserClosestTargets(current_sprite, game):
+            for target in targets:
                 options.extend(chaserMovesToward(current_sprite, game, target, fleeing))
             if len(options) == 0:
                 options = BASEDIRS
-            # option = options[0]
-            # embed()
 
             for option in options:
                 left, top = calculateSpriteMove(game, current_sprite, speed, option)
@@ -1971,11 +1969,8 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
                     position_options[(left, top)] = 1.0/len(options)
 
         except AttributeError: # deals with following error: 'Immovable' object has no attribute 'stype'
-            # position_options = {}
             position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
 
-        # if current_sprite.colorName=='RED' and speed==0.1 and fleeing==False and cooldown==1 and targetColor=='RED':
-        #     embed()
         current_sprite.cooldown = realCooldown
         return position_options, position_options
 
@@ -2015,12 +2010,18 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
             cooldown = getCooldown(params)
             realCooldown = int(current_sprite.cooldown)
             current_sprite.cooldown = cooldown
-
+    
+            if (current_sprite.lastmove+1)%cooldown!=0:
+                position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
+                return position_options, position_options
+            
             coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
+            
             # If object has speed = 0 or no 'orientation' attribute
             position_options, clustered_position_options = {}, {}
-            if coords == None:
-                return position_options, position_options
+            
+            # if coords == None:
+                # return position_options, position_options
 
             position_options[(coords[0], coords[1])] = 1.
 
@@ -2043,18 +2044,6 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
                 # else:
                 #     clustered_position_options[(coords[0], coords[1])] = .5 - epsilon_prob
 
-            # if current_sprite.colorName=='GOLD' and speed==.2 and cooldown==3:
-            #     print "position_options is {}".format(position_options)
-            #     print "sprite rect is {}".format(current_sprite.rect)
-            #     print "lastmove is {}".format(current_sprite.lastmove)
-            #     embed()
-
-            # if current_sprite.colorName=='GOLD' and speed == .2 and cooldown == 3:
-            #     print "Missile"
-            #     print current_sprite.rect
-            #     print position_options
-            # if current_sprite.colorName=='RED' and speed==0.1 and cooldown==1:
-                # embed()
             current_sprite.cooldown = realCooldown
             return position_options, clustered_position_options
 
@@ -2591,14 +2580,14 @@ def getKL(spriteDistribution1, spriteDistribution2):
     d1, d2 = [v['prob'] for v in spriteDistribution1.values()], [v['prob'] for v in spriteDistribution2.values()]
     return scipy.stats.entropy(d1,d2)
 
-"""
-def spriteInductionProfiler(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None):
-    lp = LineProfiler()
-    lp_wrapper = lp(spriteInduction)
-    distributionsHaveChanged = lp_wrapper(game, step, bestSpriteTypeDict, oldSpriteSet, old_outcome)
-    lp.print_stats()
-    return distributionsHaveChanged
-"""
+
+# def spriteInductionProfiler(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None):
+#     lp = LineProfiler()
+#     lp_wrapper = lp(spriteInduction)
+#     distributionsHaveChanged = lp_wrapper(game, step, bestSpriteTypeDict, oldSpriteSet, old_outcome)
+#     lp.print_stats()
+#     return distributionsHaveChanged
+
 
 def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None):
     """
@@ -2690,7 +2679,8 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                 #     print game.object_token_movement_options[sprite][randKey]
                 #     embed()
         game.targetColorDict = dict()
-        # print "step 2 updated {} sprites and {} param combinations".format(sprite_count, param_count)
+        game.chaserMovesTowardDict = dict()
+        print "step 2 updated {} sprites and {} param combinations".format(sprite_count, param_count)
 
     elif step==3:
         ## Update sprite distribution based on observations
