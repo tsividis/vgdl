@@ -1931,8 +1931,8 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         cooldown = getCooldown(params)
 
         # if (current_sprite.lastmove+1)%cooldown!=0:
-            # position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
-            # return position_options, position_options
+        #     position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
+        #     return position_options, position_options
 
         realCooldown = int(current_sprite.cooldown)
         current_sprite.cooldown = cooldown
@@ -1983,8 +1983,8 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         position_options = {}
 
         # if (current_sprite.lastmove+1)%cooldown!=0:
-            # position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
-            # return position_options, position_options
+        #     position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
+        #     return position_options, position_options
 
 
         for option in BASEDIRS:
@@ -2012,8 +2012,8 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
             current_sprite.cooldown = cooldown
 
             # if (current_sprite.lastmove+1)%cooldown!=0:
-                # position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
-                # return position_options, position_options
+            #     position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
+            #     return position_options, position_options
             
             coords = current_sprite.physics.calculatePassiveMovementGivenParams(current_sprite, speed, orientation)
             
