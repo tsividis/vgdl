@@ -1161,6 +1161,7 @@ class NoveltyTermination(Termination):
         for e in game.effectListByClass:
             if (e[0] in ['killSprite', 'transformTo', 'nothing']) and len(e) > 2:
                 if (e[1], e[2]) in [(self.s1, self.s2), (self.s2, self.s1)]:
+                    # print "noveltyTermination between", self.s1, self.s2
                     return True, self.win
         return False, None
 

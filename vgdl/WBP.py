@@ -1454,7 +1454,7 @@ class Node():
 				# 					# print "closer than safeDistance away from {} {}. need to sample".format(k, self.WBP.theory.classes[k][0].vgdlType)
 				# 					multipleSamples = True
 				# 					break
-				multipleSamples = False
+				# multipleSamples = False
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
 					if multipleSamples:
@@ -1500,7 +1500,7 @@ class Node():
 				print "conditions met but copy failed"
 				embed()
 		else:
-			print "in a reconstructed node"
+			# print "in a reconstructed node"
 			# embed()
 			self.reconstructed=True
 			# print "copy failed; replaying from top"
@@ -1566,12 +1566,13 @@ class Node():
 		try:
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
 			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
-				if self.WBP.display:
-					print "resource limit win"
+				# if self.WBP.display:
+				print "resource limit win"
 				self.win=True
 		except IndexError:
 			pass
-
+		# if self.win:
+			# embed()
 		return self.win
 
 	def updateNovelty(self):

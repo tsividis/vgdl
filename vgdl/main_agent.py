@@ -491,6 +491,16 @@ class Agent:
             if not flexible_goals:
                 [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
+
+        ## Do beginning-of-episode resource-management.
+        resources = self.rle._game.getAvatars()[0].resources
+        for resource, val in resources.items():
+            if resource not in self.seen_resources and val>0:
+                self.seen_resources.append(resource)
+                self.hypotheses[0].resource_limits[resource] = self.rle._game.resources_limits[resource]
+            if resource not in self.seen_limits and val==self.rle._game.resources_limits[resource]:
+                self.seen_limits.append(resource)
+
         ended, win = self.rle._isDone()
 
         emptyPlans = 0
@@ -1071,7 +1081,6 @@ class Agent:
                 resource = change_resource_effect['resource']
                 val = change_resource_effect['value']
                 limit = change_resource_effect['limit']
-
                 if (resource not in self.seen_resources and val>0):
                     self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
                     self.fakeInteractionRules = list(set(self.fakeInteractionRules))
