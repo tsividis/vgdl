@@ -56,63 +56,38 @@ BasicGame
         flower dying_zombie > nothing
         wall flower > nothing
         flower wall > nothing
-        EOS flower > nothing
-        flower EOS > nothing
-        slowHell fastHell > nothing
-        fastHell slowHell > nothing
         bee fastHell > nothing
         fastHell bee > nothing
         dying_zombie fastHell > nothing
         fastHell dying_zombie > nothing
-        wall fastHell > nothing
-        fastHell wall > nothing
-        EOS fastHell > nothing
-        fastHell EOS > nothing
         bee slowHell > nothing
         slowHell bee > nothing
         dying_zombie slowHell > nothing
         slowHell dying_zombie > nothing
-        wall slowHell > nothing
-        slowHell wall > nothing
-        slowHell EOS > nothing
-        EOS slowHell > nothing
         honey wall > nothing
         wall honey > nothing
-        honey EOS > nothing
-        EOS honey > nothing
         dying_zombie avatar > nothing
         avatar dying_zombie > nothing
-        avatar EOS > nothing
-        EOS avatar > nothing
-        bee EOS > nothing
-        EOS bee > nothing
+
         dying_zombie zombie > nothing
         zombie dying_zombie > nothing
-        zombie EOS > nothing
-        EOS zombie > nothing
+
         dying_zombie wall > nothing
         wall dying_zombie > nothing
-        dying_zombie EOS > nothing
-        EOS dying_zombie > nothing
-        wall EOS > nothing
-        EOS wall > nothing
+
         flower flower > nothing
-        fastHell fastHell > nothing
-        slowHell slowHell > nothing
+
         honey honey > nothing
         avatar avatar > nothing
         bee bee > nothing
         zombie zombie > nothing
         dying_zombie dying_zombie > nothing
-        wall wall > nothing
-        EOS EOS > nothing
 
         flower honey > nothing
         flower avatar > nothing
         flower bee > nothing
         flower zombie > nothing
         fastHell honey > nothing
-        fastHell avatar > nothing
         fastHell zombie > nothing
         slowHell honey > nothing
         slowHell avatar > nothing
