@@ -213,7 +213,7 @@ class Agent:
 
     def initializeHypotheses(self, allObjects, learnSprites=True):
         if learnSprites:
-            observe(self.rle, 5, self.bestSpriteTypeDict)
+            observe(self.rle, 15, self.bestSpriteTypeDict)
             spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
                 self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
             self.rle._game.exceptedObjects = exceptedObjects
@@ -667,13 +667,13 @@ class Agent:
                                     if s.ID not in hypDict and manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
 
                                         regroundingFlag=True
-                                        print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_magenta')
+                                        print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_yellow')
                                         # embed()
                                         break
                                     if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
                                         print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
                                                 s, self.rle._game.getAvatars()[0], manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
-                                                'white', 'on_magenta')
+                                                'white', 'on_yellow')
                                     # if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance:
                                         # print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
                                         #         s, self.rle._game.getAvatars()[0], manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)), self.safeDistance, hypDict[s.ID]),
@@ -1072,7 +1072,7 @@ class Agent:
         # print "finalEffectList:"
         # print self.finalEffectList
         if effects:
-
+            print effects
             # #  PRECONDITIONS HANDLING
             # # Current assumptions:
             # # - Only one resource can change for each timestep

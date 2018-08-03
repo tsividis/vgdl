@@ -1189,7 +1189,8 @@ class Node():
 					resource_positions = [np.concatenate([self.WBP.findObjectsInRLE(rle, yielder) for yielder in yielders]) for yielders in resource_yielder_names]
 				except:
 					print "problem with resource positions"
-					embed()
+					resource_positions = []
+					# embed()
 
 				resource_limits = np.array([list(resource[1])[0].num + 1
 					if list(resource[1])[0].operator_name == '>'
@@ -1213,7 +1214,7 @@ class Node():
 								for obj2 in obj2_positions])
 						except:
 							print "failure with obj1_positions"
-							embed()
+							# embed()
 
 						precondition_distances.append(min(possiblePairList))
 
