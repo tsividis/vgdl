@@ -1154,7 +1154,7 @@ def proposePredicates(singlePairErrorSignal, observations):
 																  ## this allows us to make rules that are either killSprite+stepBack or just killSprite
 	'newObjectAppeared': 		[],	#'cloneSprite'
 	'transformation': 			['transformTo'],
-	'conditionalKill': 			['killIfHasLess', 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore'],
+	'conditionalKill': 			['killIfHasLess'],#, 'killIfHasMore', 'killIfOtherHasLess', 'killIfOtherHasMore'],
 								 # 'killIfTooFast', 'killIfSlow', 'killIfFromAbove', 'killIfFromBelow'],
 
 	## Position difference
@@ -1449,15 +1449,18 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 
 def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, actionHistories, theory, errorMap, classPair, MultiEpisodeExperienceReplay):
 	
-	predicatesWithThresholds = ['killIfTooFast', 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
+	predicatesWithThresholds = ['killIfTooFast']#, 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
+
+	theoryCopy = theory.copy()
+
 	## used to be interactionSet
-	relevantRulesWithArgs = [rule for rule in list(theory.dryingPaint) if rule.interaction in predicatesWithThresholds and \
+	relevantRulesWithArgs = [rule for rule in list(theoryCopy.dryingPaint) if rule.interaction in predicatesWithThresholds and \
 			classPair[0] in rule.asTuple() and classPair[1] in rule.asTuple() and len(rule.args)>0]
 	if len(relevantRulesWithArgs)==1:
 		print "in iterateThresholds ********************"
 		# theory.display()
 		rule = relevantRulesWithArgs[0]
-		penalty,_ = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
+		penalty,_ = MultiEpisodeExperienceReplay([theoryCopy], rleHistories, actionHistories, 
 			method='all', targetColor=errorMap.targetColor)
 		penalty = penalty[0]
 		newPenalty = penalty
@@ -1470,8 +1473,8 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, action
 			idx = thresholdOrdering[rule.interaction].index(v)
 			if len(thresholdOrdering[rule.interaction]) > idx+1:
 				rule.args[k] = thresholdOrdering[rule.interaction][idx+1]
-				theory.experienceReplayRecord = {}
-				newPenalty,_ = MultiEpisodeExperienceReplay([theory], rleHistories, actionHistories, 
+				theoryCopy.experienceReplayRecord = {}
+				newPenalty,_ = MultiEpisodeExperienceReplay([theoryCopy], rleHistories, actionHistories, 
 					method='all', targetColor=errorMap.targetColor)
 				newPenalty = newPenalty[0]
 				# print newPenalty, rule.display()
@@ -1482,7 +1485,7 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, action
 		print "you got more than 1 relevant rule with an argument in iterateThresholds; this shouldn't happen"
 		embed()
 
-	return theory
+	return theoryCopy
 
 def getClassNameFromSpriteString(spriteName, theory, rle):
 	if spriteName in rle._game.sprite_groups and len(rle._game.sprite_groups[spriteName])>0:

@@ -826,8 +826,8 @@ class Agent:
 				self.allTheories.extend(newerTheories)
 
 				bestScoresAndHypotheses, scoreAndTheoryTuples = self.scoreAndFilterTheories(newerTheories, episode_num)
-				for s , h in bestScoresAndHypotheses:
-					h.dryingPaint = set()
+			for s , h in bestScoresAndHypotheses:
+				h.dryingPaint = set()
 			if len(bestScoresAndHypotheses) == 0:
 				print "second attempt failed, 0 theories survived filter"
 				embed()
@@ -2423,6 +2423,9 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			e.targetClass = theory.spriteObjects[neighbor.colorName].className
 			newErrorMaps.append(e)
 
+	# if any(['WHITE' == s[0].colorName for s in theory.classes.values()]):
+	# 	print 'this will happen too much'
+	# 	embed()
 	for eM in newErrorMaps:
 
 		theoryCopy = theory.copy()
@@ -2454,19 +2457,11 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 			matchingRules = [rule for rule in theoryCopy.interactionSet if (rule not in list(theoryCopy.dryingPaint)) and 
 				( targetClassPair == (rule.slot1, rule.slot2) or targetClassPair == (rule.slot2, rule.slot1) )]
 
-			print 'doing interactionset induction step', eM.diagnosis
-			# @PEDRO --- never enters this if statement
+			print 'doing interactionset induction step', 'len matchingRules:', len(matchingRules)
 			if any([not rule.generic for rule in matchingRules]):
-				print 'got to flag 1'
-				embed()
-				if ('objectDestruction' in singleIntPairErrorMap.diagnosis
+				if (any([d in ['objectDestruction', 'unexpectedPosition'] for d in singleIntPairErrorMap.diagnosis])
 							or any(['kill' in rule.interaction for rule in theoryCopy.interactionSet if eM.targetClass==rule.slot1]) ):
 					singleIntPairErrorMap.diagnosis.append('conditionalKill')
-
-			# @PEDRO --- never enters this if statement
-			if 'conditionalKill' in singleIntPairErrorMap.diagnosis:
-				print 'got conditional kill'
-				embed()
 
 			## Modify theory before the last step, then embed here to continue work
 			## if the diagnosis involves objectDestruction and the targetClassPair has non-generic rules,
@@ -2475,7 +2470,7 @@ def expandTheoryForOneErrorMap(errorMap, envRealPrev, envRealCurrent, action, rl
 
 			if 'killIfHasLess' in predicates:
 				print "got killIfHasLess!!!"
-				embed()
+				# embed()
 
 			classPair, theories = expandLine(theoryCopy, singleIntPairErrorMap, targetClassPair, predicates,
 				classPairPlusPredicateToRuleSets, envRealPrev, envRealCurrent, action, rleHistories, actionHistories, MultiEpisodeExperienceReplay, n=n, 
