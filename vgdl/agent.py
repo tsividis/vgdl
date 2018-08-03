@@ -7,7 +7,7 @@ from ontology import *
 from theory_template import Precondition, InteractionRule, TerminationRule, TimeoutRule, \
 SpriteCounterRule, MultiSpriteCounterRule, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
 generateTheoryFromGame, expandLine, expandSprites, proposePredicates, getRuleSetsForClassPairPredicate,\
-interateThresholds
+iterateThresholds
 from class_theory_template import Sprite
 import os, subprocess, shutil
 from collections import defaultdict
@@ -45,7 +45,7 @@ ERRORCUTOFF = .3
 # Not active now
 NUM_SAMPLES_PER_HYPOTHESIS = 20
 # how long to just watch before theorizing about the game
-OBSERVATION_PERIOD_LENGTH = 12
+OBSERVATION_PERIOD_LENGTH = 1
 initialErrorBuildup = []
 
 class errorMapEntry:

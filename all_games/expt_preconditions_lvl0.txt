@@ -1,10 +1,5 @@
 wwwwwwwwwwwwwwwwww
-w                w
-w     A          w
-w                w
-w                w
-w                w
-w  bb            w
-w             g  w
-w             g  w
+wbbmp   w    m   w
+w   p   w    wwwww
+wgg pA        p  w
 wwwwwwwwwwwwwwwwww

@@ -301,12 +301,12 @@ class Theory(object):
 		newTheory.expandedSprites = list(self.expandedSprites)
 		newTheory.interactionSet = [r.copy() for r in self.interactionSet]
 		newTheory.terminationSet = ccopy(self.terminationSet)
-		newTheory.dryingPaint = set(self.dryingPaint)
+		newTheory.dryingPaint = set([rule for rule in newTheory.interactionSet if rule in self.dryingPaint])
 		newTheory.errorMapHistory = list(self.errorMapHistory) # currently unused but useful for debugging.
 		newTheory.experienceReplayRecord = ccopy(self.experienceReplayRecord)
-		newTheory.falsified = set(self.falsified)
+		newTheory.falsified = set(self.falsified) ## TODO: may need to change this; pointers are wrong.
 		newTheory.setOfImaginedEffects = set(self.setOfImaginedEffects)
-		newTheory.killerTypes = set(self.killerTypes)
+		newTheory.killerTypes = set(self.killerTypes) ## TODO: may need to change this; pointers are wrong.
 		newTheory.resource_limits = defaultdict(lambda:1)
 		for k,v in self.resource_limits.items():
 			newTheory.resource_limits[k]=v
@@ -1375,6 +1375,9 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 	## For predicates that take arguments, finds the first (according to some ordering) satisfying argument and returns that.
 	## generic=True proposes all possible combinations of args instead.
 	childTheories = [theory.copy()]
+	# if 'conditionalKill' in errorMap.diagnosis:
+		# print "got conditional kill"
+		# embed()
 	##if iterating thresholds is not relevant:
 	predicatesWithThresholds = ['killIfTooFast', 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
 	relevantRulesWithArgs = [rule for rule in theory.interactionSet if rule.interaction in predicatesWithThresholds and 
@@ -1443,13 +1446,13 @@ def expandLine(theory, errorMap, classPair, predicates, classPairPlusPredicateTo
 	## Iterate thresholds. If this is not relevant for a particular theory, iterateThresholds() will just return the theory unchanged.
 	iteratedTheories = []
 	for theory in childTheories:
-		iteratedTheories.append(interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, actionHistories, theory, errorMap, classPair, MultiEpisodeExperienceReplay))
+		iteratedTheories.append(iterateThresholds(envRealPrev, envRealCurrent, action, rleHistories, actionHistories, theory, errorMap, classPair, MultiEpisodeExperienceReplay))
 
 	return classPair, iteratedTheories
 
-def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, actionHistories, theory, errorMap, classPair, MultiEpisodeExperienceReplay):
+def iterateThresholds(envRealPrev, envRealCurrent, action, rleHistories, actionHistories, theory, errorMap, classPair, MultiEpisodeExperienceReplay):
 	
-	predicatesWithThresholds = ['killIfTooFast']#, 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
+	predicatesWithThresholds = ['killIfHasLess']#, 'killIfSlow', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess']
 
 	theoryCopy = theory.copy()
 
@@ -1460,10 +1463,13 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, action
 		print "in iterateThresholds ********************"
 		# theory.display()
 		rule = relevantRulesWithArgs[0]
+		originalRule = rule.copy()
 		penalty,_ = MultiEpisodeExperienceReplay([theoryCopy], rleHistories, actionHistories, 
 			method='all', targetColor=errorMap.targetColor)
+
 		penalty = penalty[0]
 		newPenalty = penalty
+
 		while newPenalty >= penalty:
 			argsToIncrement = [(k,v) for k,v in relevantRulesWithArgs[0].args.items() if type(v)==int]
 			if len(argsToIncrement)>1:
@@ -1472,7 +1478,9 @@ def interateThresholds(envRealPrev, envRealCurrent, action, rleHistories, action
 			k,v = argsToIncrement[0]
 			idx = thresholdOrdering[rule.interaction].index(v)
 			if len(thresholdOrdering[rule.interaction]) > idx+1:
+				# theoryCopy.interactionSet.remove(rule)
 				rule.args[k] = thresholdOrdering[rule.interaction][idx+1]
+				# theoryCopy.interactionSet.append(rule)
 				theoryCopy.experienceReplayRecord = {}
 				newPenalty,_ = MultiEpisodeExperienceReplay([theoryCopy], rleHistories, actionHistories, 
 					method='all', targetColor=errorMap.targetColor)

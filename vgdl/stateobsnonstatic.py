@@ -359,13 +359,13 @@ def copySpriteStingy(sprite):
 	newSprite.lastmove = sprite.lastmove
 	newSprite.rect = pygame.Rect(sprite.rect.left, sprite.rect.top, sprite.rect.width, sprite.rect.height)
 	newSprite.lastrect = pygame.Rect(sprite.lastrect.left, sprite.lastrect.top, sprite.lastrect.width, sprite.lastrect.height)
-	
+
 	if hasattr(sprite, 'draw_arrow') and sprite.draw_arrow==True:
 		newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
 	
 	if type(sprite) == TrackedSprite:
 		newSprite.speed = sprite.speed
-		# newSprite.inventory = dict(sprite.inventory) if sprite.inventory else dict()
+		newSprite.inventory = dict(sprite.inventory) if sprite.inventory else dict()
 		# newSprite.lastinventory = dict(sprite.lastinventory)
 		newSprite.orientation = sprite.orientation # just a tuple, no need to ccopy
 		newSprite.firstorientation = sprite.firstorientation
