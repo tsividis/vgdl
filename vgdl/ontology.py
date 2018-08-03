@@ -2343,7 +2343,7 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
 
 #     return curr_distribution
 
-def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict, oldSpriteSet = None):
+def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict, oldSpriteSet = None, skipInduction=False):
 
     import random
     import numpy as np
@@ -2397,6 +2397,13 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
     types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions)) ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately
                                                                                                     ## and not doing inference about it.
     best_params = {}
+
+    if skipInduction:
+        for obj_type in types:
+            s = Sprite(vgdlType=ResourcePack, color=obj_type)
+            sample.append(s)
+        return sample, exceptions, distributionsHaveChanged, best_params
+
     for obj_type in types:
         
         if obj_type in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']:

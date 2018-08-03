@@ -16,15 +16,14 @@
 ## idx 2:
 # game_names = ['expt_push_boulders', 'portals', 'frogs', 'overload', 'expt_antagonist', 'expt_helper'] #boulderdash, boulderchase
 
-## idx 2, more memory:
-# game_names = ['expt_push_boulders', 'sokoban', 'bait', 'watergame']
-# game_names = ['bait', 'expt_push_boulders', 'expt_preconditions', 'expt_antagonist', 'expt_helper', 'portals', 'sokoban', 'watergame', 'boulderdash']
-# game_names = ['frogs']
-# game_names = ['boulderdash', 'boulderchase']
-# game_names = ['expt_preconditions']
+## idx 2, skip induction (for now):
+game_names = ['expt_push_boulders', 'expt_preconditions', 'sokoban', 'bait', 'watergame']
+## idx 2, normal
+# game_names = ['expt_antagonist', 'expt_helper', 'portals', 'boulderdash']
+
 # ## idx 3
 # game_names = ['aliens']
-game_names = ['aliens', 'avoidgeorge', 'butterflies', 'chase', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'jaws', 'lemmings', 'myAliens', 'overload', 'plaqueattack', 'waves', 'frogs']
+# game_names = ['aliens', 'avoidgeorge', 'butterflies', 'chase', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'jaws', 'lemmings', 'myAliens', 'overload', 'plaqueattack', 'waves', 'frogs']
 # game_names = ['plaqueattack', 'waves']
 # game_names = ['chopper', 'plaqueattack']
 # game_names = ['zelda', 'jaws', 'waves', 'survivezombies']
