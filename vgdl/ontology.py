@@ -20,6 +20,7 @@ import copy
 import ipdb
 import time
 from pygame import Rect
+from collections import defaultdict
 # from line_profiler import LineProfiler
 
 UP = (0, -1)
@@ -2186,6 +2187,17 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
     #     print "chaser prob", curr_distribution[sprite][(('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))]
     #     embed()
 
+
+    # if missileOrientationClustering and game.all_objects[sprite]['features']['color']=='GREEN':
+    #     print "BEFORE UPDATE"
+    #     print game.all_objects[sprite]['position'], outcome
+    #     print game.spriteUpdateDict[sprite]
+    #     # print movement_options[sprite][(('vgdlType', RandomNPC), ('cooldown', 3), ('speed', 0.2))]
+    #     print "missile", movement_options[sprite][(('vgdlType', ResourcePack),)]
+    #     print "missile prob", curr_distribution[sprite][(('vgdlType', ResourcePack),)]
+        # embed()
+
+
     if sprite in curr_distribution.keys():
         for param_combination in curr_distribution[sprite].keys():
             if outcome in movement_options[sprite][param_combination].keys():
@@ -2205,6 +2217,16 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
                     curr_distribution[sprite][param_combination] *= (movement_options[sprite][param_combination][outcome] / normalization_ratio)
             else:
                 curr_distribution[sprite][param_combination] *= (epsilon_prob / normalization_ratio)
+
+    # if missileOrientationClustering and game.all_objects[sprite]['features']['color']=='GREEN':
+    #     print "AFTER UPDATE"
+    #     print game.all_objects[sprite]['position'], outcome
+    #     print game.spriteUpdateDict[sprite]
+    #     # print movement_options[sprite][(('vgdlType', RandomNPC), ('cooldown', 3), ('speed', 0.2))]
+    #     print "missile", movement_options[sprite][(('vgdlType', ResourcePack),)]
+    #     print "missile prob", curr_distribution[sprite][(('vgdlType', ResourcePack),)]
+        # embed()
+
 
     # if missileOrientationClustering and game.all_objects[sprite]['features']['color']=='RED' and game.all_objects[sprite]['position'][0]>250:
     #     print "AFTER UPDATE"
@@ -2399,63 +2421,132 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             # spriteUpdateNormalizer += spriteUpdateDict[k]
         # if obj_type=='RED':
             # embed()
-        z = 0.
-        param_z = 0.
+        
+        ######
+
+        k1 = (('vgdlType', ResourcePack),)
+
+        numDict = defaultdict(lambda:[])
         for k in bestSpriteTypeDict[obj_type].keys():
-            # if obj_type == 'RED':
-            #     print "before update"
-                # k1 = (('vgdlType', Missile), ('cooldown', 1), ('orientation', (1,0)), ('speed', 0.1))
-                # k2 = (('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))
-                # print "missile", bestSpriteTypeDict['RED'][k][k1]
-                # print "chaser", bestSpriteTypeDict['RED'][k][k2]
-            #     embed()
-            for param in param_product.keys():
-                try:
-                    param_product[param] *= spriteUpdateDict[k]*bestSpriteTypeDict[obj_type][k][param]
-                    param_z += param_product[param]
+            numDict[spriteUpdateDict[k]].append(k)
 
-                except KeyError:
-                    print("Got key error when updating param_product")
-                    # If we landed here because we're trying to update the hypothesis
-                    # for the sprite chasing an object that wasn't around before,
-                    # this hypothesis should borrow the parameters from RandomNPC
-                    # with the same speed, as that's what Chaser behaviour defaults
-                    # to in the absence of its chasee.
-                    if 'Chaser' in str(param[0][1]):
-                        cooldown = [p[1] for p in param if p[0]=='cooldown']
-                        cooldown = cooldown[0] if cooldown else 1
-                        speed = [p[1] for p in param if p[0]=='speed']
-                        speed = speed[0] if speed else 1
-                        randomnpc_param = (
-                            ('vgdlType', RandomNPC),
-                            ('cooldown', cooldown),
-                            ('speed', speed)
-                        )
-                        param_product[randomnpc_param] *= spriteUpdateDict[k]*bestSpriteTypeDict[obj_type][k][randomnpc_param]
-                        param_z += param_product[randomnpc_param]
+        param_sum = {k:0. for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
+        param_z = 0
 
-                    else:  # if this is not a new chaser, we shouldn't be landing here
-                        embed()
-            z += spriteUpdateDict[k]
+        for num, IDs in numDict.items():
+            # param_product = {k:1. for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
+            for param in param_sum.keys():
+                param_sum[param] += num*np.prod([bestSpriteTypeDict[obj_type][ID][param] for ID in IDs])/float(len(IDs))
 
-        # for k in param_product:
-        #     try:
-        #         param_product[k] /= z
-        #     except ZeroDivisionError:
-        #         pass
+                # tmp_prod = 1.
+                # for ID in IDs:
+                    
 
+                #     if param in bestSpriteTypeDict[obj_type][ID]:
+                #         tmp_prod *= bestSpriteTypeDict[obj_type][ID][param]
+                #     elif 'Chaser' in str(param[0][1]):
+                #         cooldown = [p[1] for p in param if p[0]=='cooldown']
+                #         cooldown = cooldown[0] if cooldown else 1
+                #         speed = [p[1] for p in param if p[0]=='speed']
+                #         speed = speed[0] if speed else 1
+                #         randomnpc_param = (
+                #             ('vgdlType', RandomNPC),
+                #             ('cooldown', cooldown),
+                #             ('speed', speed)
+                #         )
+                #         tmp_prod *= bestSpriteTypeDict[obj_type][ID][randomnpc_param]
+                #     else:
+                #         print "problem in param_product"
+                #         embed()
+
+                    # param_product[param] += num*np.prod([bestSpriteTypeDict[obj_type][ID][param] for ID in IDs])
+                # param_product[param] += num*tmp_prod
+                param_z += num*np.prod([bestSpriteTypeDict[obj_type][ID][param] for ID in IDs])/float(len(IDs))
+                # param_z += param_product[param]
+                # param_sum[param] += param_product[param]
+                # param_z += param_product[param]
+        
         if param_z != 0:
-            for param,val in param_product.items():
-                param_product[param] /= param_z
+            for param,val in param_sum.items():
+                param_sum[param] /= param_z
+
+
+        best_param = max(param_sum, key=param_sum.get)
+        # if obj_type=='GREEN':
+            # embed()
+        ######
+
+        # z = 0.
+        # param_z = 0.
+        # for k in bestSpriteTypeDict[obj_type].keys():
+        #     # if obj_type == 'RED':
+        #     #     print "before update"
+        #         # k1 = (('vgdlType', Missile), ('cooldown', 1), ('orientation', (1,0)), ('speed', 0.1))
+        #         # k2 = (('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))
+        #         # print "missile", bestSpriteTypeDict['RED'][k][k1]
+        #         # print "chaser", bestSpriteTypeDict['RED'][k][k2]
+        #     #     embed()
+        #     if obj_type == 'GREEN':
+        #         print "before update"
+        #         k1 = (('vgdlType', ResourcePack),)
+        #         print spriteUpdateDict[k], bestSpriteTypeDict[obj_type][k][k1]
+        #         # print "missile", bestSpriteTypeDict['GREEN'][k][k1]
+        #         # embed()
+
+        #     for param in param_product.keys():
+        #         try:
+        #             param_product[param] *= spriteUpdateDict[k]*bestSpriteTypeDict[obj_type][k][param]
+        #             param_z += param_product[param]
+
+        #         except KeyError:
+        #             print("Got key error when updating param_product")
+        #             # If we landed here because we're trying to update the hypothesis
+        #             # for the sprite chasing an object that wasn't around before,
+        #             # this hypothesis should borrow the parameters from RandomNPC
+        #             # with the same speed, as that's what Chaser behaviour defaults
+        #             # to in the absence of its chasee.
+        #             if 'Chaser' in str(param[0][1]):
+        #                 cooldown = [p[1] for p in param if p[0]=='cooldown']
+        #                 cooldown = cooldown[0] if cooldown else 1
+        #                 speed = [p[1] for p in param if p[0]=='speed']
+        #                 speed = speed[0] if speed else 1
+        #                 randomnpc_param = (
+        #                     ('vgdlType', RandomNPC),
+        #                     ('cooldown', cooldown),
+        #                     ('speed', speed)
+        #                 )
+        #                 param_product[randomnpc_param] *= spriteUpdateDict[k]*bestSpriteTypeDict[obj_type][k][randomnpc_param]
+        #                 param_z += param_product[randomnpc_param]
+
+        #             else:  # if this is not a new chaser, we shouldn't be landing here
+        #                 embed()
+        #     z += spriteUpdateDict[k]
+
+        # # for k in param_product:
+        # #     try:
+        # #         param_product[k] /= z
+        # #     except ZeroDivisionError:
+        # #         pass
+
+        # if param_z != 0:
+        #     for param,val in param_product.items():
+        #         param_product[param] /= param_z
+
+
+        # if obj_type == 'GREEN':
+        #     k1 = (('vgdlType', ResourcePack),)
+        #     k2 = (('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))
+        #     print "after update"
+        #     embed()
 
         # if obj_type == 'BROWN':
-            # k1 = (('vgdlType', Missile), ('cooldown', 1), ('orientation', (1,0)), ('speed', 0.1))
-            # k2 = (('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))
-            # print "after update"
-            # embed()
+        #     k1 = (('vgdlType', Missile), ('cooldown', 1), ('orientation', (1,0)), ('speed', 0.1))
+        #     k2 = (('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))
+        #     print "after update"
+        #     embed()
 
-        null_hypothesis = [k for k in param_product.keys() if 'Resource' in str(k[0][1])][0]
-        best_param = max(param_product, key=param_product.get)
+        # null_hypothesis = [k for k in param_product.keys() if 'Resource' in str(k[0][1])][0]
+        # best_param = max(param_product, key=param_product.get)
         
 
         # if param_product[null_hypothesis]==0 and param_product[best_param]==0:
@@ -2475,16 +2566,16 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             # embed()
 
         # Use for debugging sprite-type inference.
-        # if obj_type=='BROWN':
+        # if obj_type=='RED':
         #     # goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='BROWN']
         #     # print [g.rect for g in goldobjs[0]]
-        #     for i,k in enumerate(sorted(param_product, key=param_product.get, reverse=True)):
-        #         print(k, param_product[k])
+        #     for i,k in enumerate(sorted(param_sum, key=param_sum.get, reverse=True)):
+        #         print(k, param_sum[k])
         #         if i>10:
         #             break
         #     print ""
         #     print best_param
-        #     embed()
+            # embed()
 
         sprite_type = best_param[0][1]
 
