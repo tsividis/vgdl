@@ -17,9 +17,9 @@
 # game_names = ['expt_push_boulders', 'portals', 'frogs', 'overload', 'expt_antagonist', 'expt_helper'] #boulderdash, boulderchase
 
 ## idx 2, skip induction (for now):
-game_names = ['expt_push_boulders', 'expt_preconditions', 'sokoban', 'bait', 'watergame']
+# game_names = ['expt_push_boulders', 'expt_preconditions', 'sokoban', 'bait', 'watergame']
 ## idx 2, normal
-# game_names = ['expt_antagonist', 'expt_helper', 'portals', 'boulderdash']
+game_names = ['expt_antagonist', 'expt_helper', 'portals', 'boulderdash']
 
 # ## idx 3
 # game_names = ['aliens']
