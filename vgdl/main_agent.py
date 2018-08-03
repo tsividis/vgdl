@@ -76,6 +76,7 @@ class Agent:
         self.seen_limits = []
         self.new_objects = {}
         self.extra_atom = False
+        self.skipInduction = True
 
         # Hyperopt output
         self.total_game_steps = 0
@@ -214,8 +215,9 @@ class Agent:
     def initializeHypotheses(self, allObjects, learnSprites=True):
         if learnSprites:
             observe(self.rle, 15, self.bestSpriteTypeDict)
+
             spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
-                self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
+                self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
             self.rle._game.exceptedObjects = exceptedObjects
             gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
             initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
@@ -257,7 +259,8 @@ class Agent:
             if k not in allObjects:
                 allObjects[k] = v
 
-        spriteTypeHypothesis, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
+        spriteTypeHypothesis, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, 
+                self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction)
         gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
         newHypotheses = []
         for hypothesis in self.hypotheses:
@@ -980,12 +983,13 @@ class Agent:
 
         theory_change_flag = False
 
-        # t1 = time.time()
-        spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
-        # print "induction step 1 took {} seconds.".format(time.time()-t1)
-        t1 = time.time()
-        spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
-        print "induction step 2 took {} seconds".format(time.time()-t1)
+        if not self.skipInduction:
+            # t1 = time.time()
+            spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+            # print "induction step 1 took {} seconds.".format(time.time()-t1)
+            t1 = time.time()
+            spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+            print "induction step 2 took {} seconds".format(time.time()-t1)
 
 
         try:
@@ -1046,7 +1050,10 @@ class Agent:
         # print "manage new objects and getFullState: {}".format(time.time()-t1)
 
         # t1 = time.time()
-        distributionsHaveChanged = spriteInduction(self.rle._game, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+        if not self.skipInduction:
+            distributionsHaveChanged = spriteInduction(self.rle._game, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+        else:
+            distributionsHaveChanged = False
         # print "sprite induction step 3: {}".format(time.time()-t1)
  
         # effects = translateEvents(res['effectList'], self.all_objects, self.rle)
@@ -1129,7 +1136,8 @@ class Agent:
                 theory_change_flag = True
 
             # t1 = time.time()
-            sample, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
+            sample, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, 
+                    self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction)
 
             game_object = Game(spriteInductionResult=sample)
             # print "sampleFromDistribution: {}".format(time.time()-t1)
