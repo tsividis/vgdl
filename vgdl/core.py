@@ -1063,8 +1063,13 @@ class BasicGame(object):
         self.sprite_appearance_predictions = {}
         allStates = [self.getFullState()]
 
-        self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack']
-            else (2 if x[2].__name__ in ['killSprite', 'changeResource'] else (3 if x[2].__name__ in ['changeScore'] else 0)), reverse=True)
+        # self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack']
+            # else (2 if x[2].__name__ in ['killSprite', 'changeResource'] else (3 if x[2].__name__ in ['changeScore'] else 0)), reverse=True)
+        self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack','wallStop']
+                else 2 if x[2].__name__ in ['killSprite', 'killIfTooFast', 'collectResource']
+                else 3 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']<=0))
+                else 3.5 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']>0))
+                else 0, reverse=True)
 
         while not self.ended:
             clock.tick(self.frame_rate)
