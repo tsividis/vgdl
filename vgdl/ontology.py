@@ -2405,16 +2405,16 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             continue
 
         ## Integrate evidence across all episodes; pick best hypothesis.
-        try:
-            param_product = {k:1. for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
+        # try:
+        #     param_product = {k:1. for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
 
-        except IndexError:
-            # bestSpriteTypeDict has yet to be populated for this object type
-            for k, v in game.getObjects().items():
-                if v['features']['color'] == obj_type:
-                    bestSpriteTypeDict[obj_type][k] = game.spriteDistribution[k]
+        # except IndexError:
+        #     # bestSpriteTypeDict has yet to be populated for this object type
+        #     for k, v in game.getObjects().items():
+        #         if v['features']['color'] == obj_type:
+        #             bestSpriteTypeDict[obj_type][k] = game.spriteDistribution[k]
 
-            param_product = {k:1. for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
+        #     param_product = {k:1. for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
 
         # spriteUpdateNormalizer = 0
         # for k in bestSpriteTypeDict[obj_type].keys():
@@ -2425,43 +2425,52 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         ######
 
         k1 = (('vgdlType', ResourcePack),)
+        
+
+        ## Integrate evidence across all episodes; pick best hypothesis.
 
         numDict = defaultdict(lambda:[])
         for k in bestSpriteTypeDict[obj_type].keys():
             numDict[spriteUpdateDict[k]].append(k)
 
-        param_sum = {k:0. for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
+        try:
+            param_sum = {k:0. for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
+        except IndexError:
+            # bestSpriteTypeDict has yet to be populated for this object type
+            for k, v in game.getObjects().items():
+                if v['features']['color'] == obj_type:
+                    bestSpriteTypeDict[obj_type][k] = game.spriteDistribution[k]
+            param_sum = {k:1. for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
+
         param_z = 0
 
         for num, IDs in numDict.items():
             # param_product = {k:1. for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
             for param in param_sum.keys():
-                param_sum[param] += num*np.prod([bestSpriteTypeDict[obj_type][ID][param] for ID in IDs])/float(len(IDs))
+                # param_sum[param] += num*np.prod([bestSpriteTypeDict[obj_type][ID][param] for ID in IDs])/float(len(IDs))
+                # param_z += num*np.prod([bestSpriteTypeDict[obj_type][ID][param] for ID in IDs])/float(len(IDs))
 
-                # tmp_prod = 1.
-                # for ID in IDs:
-                    
+                tmp_prod = 1.
+                for ID in IDs:
+                    if param in bestSpriteTypeDict[obj_type][ID]:
+                        tmp_prod *= bestSpriteTypeDict[obj_type][ID][param]
+                    elif 'Chaser' in str(param[0][1]):
+                        cooldown = [p[1] for p in param if p[0]=='cooldown']
+                        cooldown = cooldown[0] if cooldown else 1
+                        speed = [p[1] for p in param if p[0]=='speed']
+                        speed = speed[0] if speed else 1
+                        randomnpc_param = (
+                            ('vgdlType', RandomNPC),
+                            ('cooldown', cooldown),
+                            ('speed', speed)
+                        )
+                        tmp_prod *= bestSpriteTypeDict[obj_type][ID][randomnpc_param]
+                    else:
+                        print "problem in param_product"
+                        embed()
 
-                #     if param in bestSpriteTypeDict[obj_type][ID]:
-                #         tmp_prod *= bestSpriteTypeDict[obj_type][ID][param]
-                #     elif 'Chaser' in str(param[0][1]):
-                #         cooldown = [p[1] for p in param if p[0]=='cooldown']
-                #         cooldown = cooldown[0] if cooldown else 1
-                #         speed = [p[1] for p in param if p[0]=='speed']
-                #         speed = speed[0] if speed else 1
-                #         randomnpc_param = (
-                #             ('vgdlType', RandomNPC),
-                #             ('cooldown', cooldown),
-                #             ('speed', speed)
-                #         )
-                #         tmp_prod *= bestSpriteTypeDict[obj_type][ID][randomnpc_param]
-                #     else:
-                #         print "problem in param_product"
-                #         embed()
-
-                    # param_product[param] += num*np.prod([bestSpriteTypeDict[obj_type][ID][param] for ID in IDs])
-                # param_product[param] += num*tmp_prod
-                param_z += num*np.prod([bestSpriteTypeDict[obj_type][ID][param] for ID in IDs])/float(len(IDs))
+                param_sum[param] += num*tmp_prod
+                param_z += num*tmp_prod
                 # param_z += param_product[param]
                 # param_sum[param] += param_product[param]
                 # param_z += param_product[param]
@@ -2566,7 +2575,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             # embed()
 
         # Use for debugging sprite-type inference.
-        # if obj_type=='RED':
+        # if obj_type=='GREEN':
         #     # goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='BROWN']
         #     # print [g.rect for g in goldobjs[0]]
         #     for i,k in enumerate(sorted(param_sum, key=param_sum.get, reverse=True)):
