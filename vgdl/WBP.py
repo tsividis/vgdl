@@ -78,7 +78,7 @@ class WBP():
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = False
+		self.display = True
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -310,19 +310,28 @@ class WBP():
 			acceptableNodes = filter(lambda n: n.novelty<3, QReward)
 			## sort max to min for pop()
 			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
-
 			# if self.killer_types:
 				# print "in reward selection"
 				# embed()
-
 		else:
 			acceptableNodes = QReward
 			## sort max to min for pop()
 			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, len(n.actionSeq)))
 			# print "in conservative mode in reward selection"
 			# embed()
+
+		# try:
+		# 	for k,v in self.rle._game.getAvatars()[0].resources.items():
+		# 		if v>3:
+		# 			print self.rle.show()
+		# 			embed()
+		# except:
+		# 	pass
+
 		try:
+			
 			current = bestNodes.pop(0)
+			print current.intrinsic_reward
 			# current.ended, current.win = current.rle._isDone()
 			if (current.terminal, current.win) == (True, False):
 				print "rewardSelection picked a loss node!!"
@@ -338,6 +347,15 @@ class WBP():
 				print("RewardSelection didn't find a node that satisfied novelty criteria.")
 			# embed()
 			return 'pickMaxNode'
+		
+		# try:
+		# 	for k,v in self.rle._game.getAvatars()[0].resources.items():
+		# 		if v>3:
+		# 			# print self.rle.show()
+		# 			embed()
+		# except:
+		# 	pass
+
 		QReward.remove(current)
 		try:
 			QNovelty.remove(current)
@@ -491,6 +509,10 @@ class WBP():
 
 			if self.display:
 				print "________________"
+				try:
+					print current.rle._game.getAvatars()[0].resources
+				except:
+					print ""
 				print current.rle.show()
 			# if self.killer_types:
 				# embed()
@@ -1190,7 +1212,7 @@ class Node():
 				except:
 					print "problem with resource positions"
 					resource_positions = []
-					# embed()
+					embed()
 
 				resource_limits = np.array([list(resource[1])[0].num + 1
 					if list(resource[1])[0].operator_name == '>'
@@ -1214,7 +1236,7 @@ class Node():
 								for obj2 in obj2_positions])
 						except:
 							print "failure with obj1_positions"
-							# embed()
+							embed()
 
 						precondition_distances.append(min(possiblePairList))
 
@@ -1277,6 +1299,7 @@ class Node():
 		val = 0
 		compute_second_order = True
 
+		# print term.termination.win, term.termination.args
 		# Check if condition is win or loss and multiply accordingly
 		if term.termination.win:
 			mult = -1
@@ -1301,9 +1324,13 @@ class Node():
 			try:
 				resource_str = str(rle._game.getAvatars()[0].resources[item])
 			except IndexError:
+				print "checking whether avatar preconditions are fulfilled"
+				print rle._game.getAvatars()[0].resources
 				return 2 * mult * first_alpha, 10000
 
 			if not eval(resource_str+true_operator+str(num)):
+				print "checking whether avatar preconditions are fulfilled 2"
+				print rle._game.getAvatars()[0].resources				
 				return 2 * mult * first_alpha, 10000
 
 
@@ -1350,7 +1377,6 @@ class Node():
 					 # raise an error and set the distance to 0
 				# print distance
 			except (ValueError, TypeError) as e:
-				# embed()
 				distance = 0
 
 			if possiblePairList:
@@ -1358,7 +1384,18 @@ class Node():
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
 				val += (float(mult * second_alpha * distance)/n_sprites**2) + second_alpha * max(self.rle.outdim[0], self.rle.outdim[1])
+		# if s1=='c4' and s2=='avatar':
+			# print "novelty val for {}, {}: {}".format(s1, s2, val)
 
+		# if term.termination.args and s1=='c4' and s2=='avatar' and self.rle._game.getAvatars():
+		# 	for k,v in self.rle._game.getAvatars()[0].resources.items():
+		# 		if v>3:
+		# 			print "distance: {}. subtractand: {}".format(distance, (float(mult * second_alpha * distance)/n_sprites**2))
+		# 			print "novelty val for {}, {}: {}".format(s1, s2, val)
+		# 			print rle.show()
+					# embed()
+
+			# embed()
 		if n_sprites==0:
 			return val, 10000
 		return val, distance*n_sprites
@@ -1429,22 +1466,25 @@ class Node():
 				else:
 					heuristicVal += self.WBP.annealing * noveltytermination_val
 					## Lesions
+					## Warning: the tweak below for lesions isn't correct; it doesn't deal with the way we process novelty for avatar 
+					## terminations (involving avatarNoveltyVals -- see below)
 					# Exploit only
 					# heuristicVal += 0 * self.WBP.annealing * noveltytermination_val
 					# Explore only
 					# heuristicVal += 1000 * self.WBP.annealing * noveltytermination_val
 
 		if avatarNoveltyVals:
-			# print avatarNoveltyVals
+			# print "chosen avatar novelty val", min(avatarNoveltyVals, key= lambda x: x[1])[0]
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
 		# print "sum:", heuristicVal
+		# print rle.show()
 
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
 
 		# heuristicVal += sum(self.rolloutArray)
 
-		heuristicVal += self.rle._game.score*abs(heuristicVal)
+		# heuristicVal += self.rle._game.score*abs(heuristicVal)
 		
 		return heuristicVal
 
