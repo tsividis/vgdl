@@ -1212,7 +1212,7 @@ class Node():
 				except:
 					print "problem with resource positions"
 					resource_positions = []
-					embed()
+					# embed()
 
 				resource_limits = np.array([list(resource[1])[0].num + 1
 					if list(resource[1])[0].operator_name == '>'
@@ -1236,7 +1236,7 @@ class Node():
 								for obj2 in obj2_positions])
 						except:
 							print "failure with obj1_positions"
-							embed()
+							# embed()
 
 						precondition_distances.append(min(possiblePairList))
 
@@ -1325,12 +1325,12 @@ class Node():
 				resource_str = str(rle._game.getAvatars()[0].resources[item])
 			except IndexError:
 				print "checking whether avatar preconditions are fulfilled"
-				print rle._game.getAvatars()[0].resources
+				# print rle._game.getAvatars()[0].resources
 				return 2 * mult * first_alpha, 10000
 
 			if not eval(resource_str+true_operator+str(num)):
 				print "checking whether avatar preconditions are fulfilled 2"
-				print rle._game.getAvatars()[0].resources				
+				# print rle._game.getAvatars()[0].resources				
 				return 2 * mult * first_alpha, 10000
 
 
