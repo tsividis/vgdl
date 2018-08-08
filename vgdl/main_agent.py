@@ -76,7 +76,7 @@ class Agent:
         self.seen_limits = []
         self.new_objects = {}
         self.extra_atom = False
-        self.skipInduction = True
+        self.skipInduction = False
 
         # Hyperopt output
         self.total_game_steps = 0
@@ -1121,7 +1121,7 @@ class Agent:
         # print "set prep took {} seconds".format(time.time()-t1)
 
         # if (event['effectList'] and run_induction) or distributionsHaveChanged:
-        distributionsHaveChanged = False
+        # distributionsHaveChanged = False
         if (newEffects and run_induction) or distributionsHaveChanged:
             # print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
             print "new event", newEffects, "distributions changed", distributionsHaveChanged
