@@ -1121,6 +1121,7 @@ class Agent:
         # print "set prep took {} seconds".format(time.time()-t1)
 
         # if (event['effectList'] and run_induction) or distributionsHaveChanged:
+        distributionsHaveChanged = False
         if (newEffects and run_induction) or distributionsHaveChanged:
             # print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
             print "new event", newEffects, "distributions changed", distributionsHaveChanged
@@ -1205,7 +1206,7 @@ if __name__ == "__main__":
     # filename = "examples.gridphysics.pick_apples"
     # filename = "examples.gridphysics.expt_exploration_exploitation_debugging"
 
-    filename = "examples.gridphysics.theory_avoidgeorge"
+    filename = "examples.gridphysics.theory_small_boulderdash"
 
     level_game_pairs = None
     # Playing GVG-AI games

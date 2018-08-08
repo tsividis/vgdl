@@ -51,7 +51,7 @@ hyperparameter_sets = [
      'first_order_horizon': False,
      'sprite_first_alpha': 10000,
      'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1,
+     'sprite_negative_mult': 10,
      'multisprite_first_alpha': 10000,
      'multisprite_second_alpha': 100,
      'novelty_first_alpha': 5000,
