@@ -21,7 +21,7 @@ BasicGame
 
     InteractionSet
         goal avatar  > killSprite scoreChange=1
-        avatar log   > changeResource resource=safety value=1
+        avatar log   > changeResource resource=safety value=2
         avatar log   > pullWithIt   # note how one collision can have multiple effects
         avatar wall  > stepBack
         avatar EOS > stepBack
