@@ -75,10 +75,10 @@ class WBP():
 		self.allowRollouts = True
 		self.quitting = False
 		self.exhausted_novelty = True
-		self.extra_atom = extra_atom
+		self.extra_atom = True#extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = False
+		self.display = True
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -269,14 +269,14 @@ class WBP():
 			try:
 				avatar_pos = self.findAvatarInRLE(rle)
 				vecValue = avatar_pos[1] + avatar_pos[0]*rle.outdim[0] + 1
-
 			except:
 				vecValue = [0]
 
+			stateIW1 = [vecValue] #+ [1 if char==' ' else 0 for pos, char in enumerate(rle.show())]
 
-			stateIW1 = [vecValue] + rle.show_binary()
+			# stateIW1 = [vecValue] + rle.show_binary()
 			lst.append(hash(tuple(stateIW1)))
-
+			print hash(tuple(stateIW1))
 		return set(lst)
 
 	def compareDicts(self, d1,d2):
@@ -1380,7 +1380,8 @@ class Node():
 				distance = 0
 
 			if possiblePairList:
-				n_sprites = len(possiblePairList)
+				# n_sprites = len(possiblePairList)
+				n_sprites = 1
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
 				val += (float(mult * second_alpha * distance)/n_sprites**2) + second_alpha * max(self.rle.outdim[0], self.rle.outdim[1])
@@ -1477,7 +1478,7 @@ class Node():
 			# print "chosen avatar novelty val", min(avatarNoveltyVals, key= lambda x: x[1])[0]
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
 		# print "sum:", heuristicVal
-		# print rle.show()
+		print rle.show()
 
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
