@@ -1478,8 +1478,9 @@ class Node():
 			# print "chosen avatar novelty val", min(avatarNoveltyVals, key= lambda x: x[1])[0]
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
 		# print "sum:", heuristicVal
-		if self.actionSeq:
-			print actionDict[self.actionSeq[-1]]
+		
+		# if self.actionSeq:
+			# print actionDict[self.actionSeq[-1]]
 		# print rle.show()
 
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
