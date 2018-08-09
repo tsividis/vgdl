@@ -331,7 +331,7 @@ class WBP():
 		try:
 			
 			current = bestNodes.pop(0)
-			print current.intrinsic_reward
+			# print current.intrinsic_reward
 			# current.ended, current.win = current.rle._isDone()
 			if (current.terminal, current.win) == (True, False):
 				print "rewardSelection picked a loss node!!"
