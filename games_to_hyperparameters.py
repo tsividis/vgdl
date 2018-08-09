@@ -11,7 +11,7 @@
 
 
 
-game_names = ['expt_antagonist']
+game_names = ['portals']
 
 ## idx 2:
 # game_names = ['expt_push_boulders', 'portals', 'frogs', 'overload', 'expt_antagonist', 'expt_helper'] #boulderdash, boulderchase
