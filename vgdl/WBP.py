@@ -78,7 +78,7 @@ class WBP():
 		self.extra_atom = True#extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = True
+		self.display = False
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -272,11 +272,8 @@ class WBP():
 			except:
 				vecValue = [0]
 
-			stateIW1 = [vecValue] #+ [1 if char==' ' else 0 for pos, char in enumerate(rle.show())]
-
-			# stateIW1 = [vecValue] + rle.show_binary()
+			stateIW1 = [vecValue] + rle.show_binary()
 			lst.append(hash(tuple(stateIW1)))
-			print hash(tuple(stateIW1))
 		return set(lst)
 
 	def compareDicts(self, d1,d2):
@@ -386,6 +383,17 @@ class WBP():
 
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
 			current = self.rewardSelection(QReward, QNovelty)
+			
+
+			try:
+				(x, y) = np.array((current.rle._game.getAvatars()[0].rect.x,
+					current.rle._game.getAvatars()[0].rect.y))/self.pixel_size
+				self.visited_positions[x, y] += 1
+			except IndexError:
+				# print "adding to visited_positions failed"
+				# embed()
+				pass
+
 			if current in [None, 'pickMaxNode']:
 
 				if self.conservative:
@@ -460,13 +468,6 @@ class WBP():
 				# embed()
 				return node, gameString_array, object_positions_array
 
-			try:
-				(x, y) = np.array((current.rle._game.getAvatars()[0].rect.x,
-					current.rle._game.getAvatars()[0].rect.y))/self.pixel_size
-				self.visited_positions[x, y] += 1
-			except IndexError:
-				pass
-
 			self.statesEncountered.append(current.rle._game.getFullState())
 
 			# if self.display:
@@ -509,10 +510,10 @@ class WBP():
 
 			if self.display:
 				print "________________"
-				try:
-					print current.rle._game.getAvatars()[0].resources
-				except:
-					print ""
+				# try:
+					# print current.rle._game.getAvatars()[0].resources
+				# except:
+					# print ""
 				print current.rle.show()
 			# if self.killer_types:
 				# embed()
@@ -1380,8 +1381,7 @@ class Node():
 				distance = 0
 
 			if possiblePairList:
-				# n_sprites = len(possiblePairList)
-				n_sprites = 1
+				n_sprites = len(possiblePairList)
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
 				val += (float(mult * second_alpha * distance)/n_sprites**2) + second_alpha * max(self.rle.outdim[0], self.rle.outdim[1])
@@ -1478,6 +1478,8 @@ class Node():
 			# print "chosen avatar novelty val", min(avatarNoveltyVals, key= lambda x: x[1])[0]
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
 		# print "sum:", heuristicVal
+		if self.actionSeq:
+			print actionDict[self.actionSeq[-1]]
 		print rle.show()
 
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
@@ -1493,6 +1495,7 @@ class Node():
 		try:
 			(x, y) = np.array((self.rle._game.getAvatars()[0].rect.x,
 				self.rle._game.getAvatars()[0].rect.y))/self.WBP.pixel_size
+			# print factor * self.WBP.visited_positions[x, y]
 			return factor * self.WBP.visited_positions[x, y]
 		except IndexError:
 			print "index error in position score"
@@ -1629,7 +1632,7 @@ class Node():
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
 		# print("metabolic cost is {}".format(self.metabolic_cost))
-		self.intrinsic_reward = self.heuristicVal # + self.position_score(0) + self.metabolic_cost
+		self.intrinsic_reward = self.heuristicVal + self.position_score(-100) #+ self.metabolic_cost
 
 		## Debug printouts
 		# print("heuristicVal {}".format(self.heuristicVal))
