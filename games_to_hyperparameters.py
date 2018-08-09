@@ -11,7 +11,7 @@
 
 
 
-# game_names = ['butterflies', 'jaws', 'myAliens']
+game_names = ['med_boulderdash']
 
 ## idx 2:
 # game_names = ['expt_push_boulders', 'portals', 'frogs', 'overload', 'expt_antagonist', 'expt_helper'] #boulderdash, boulderchase
@@ -25,7 +25,7 @@
 # ## idx 3
 # game_names = ['frogs']
 # game_names = ['aliens', 'avoidgeorge', 'butterflies', 'chase', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'jaws', 'lemmings', 'myAliens', 'overload', 'plaqueattack', 'waves', 'frogs']
-game_names = ['survivezombies', 'jaws']
+# game_names = ['survivezombies', 'jaws']
 # game_names = ['chopper', 'plaqueattack']
 # game_names = ['zelda', 'jaws', 'waves', 'survivezombies']
 
