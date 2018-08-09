@@ -1811,8 +1811,8 @@ def chaserMovesToward(sprite, game, target, fleeing):
     """ Find the canonical direction(s) which move toward
     the target. """
     
-    if (sprite, target) in game.chaserMovesTowardDict:
-        return game.chaserMovesTowardDict[(sprite, target)]
+    if (sprite, target, fleeing) in game.chaserMovesTowardDict:
+        return game.chaserMovesTowardDict[(sprite, target, fleeing)]
 
     res = []
     basedist = sprite.physics.distance(sprite.rect, target.rect)
@@ -1826,7 +1826,7 @@ def chaserMovesToward(sprite, game, target, fleeing):
             res.append(a)
         if not fleeing and basedist > newdist:
             res.append(a)
-    game.chaserMovesTowardDict[(sprite, target)] = res
+    game.chaserMovesTowardDict[(sprite, target, fleeing)] = res
     return res
 
 def setSpriteParams(param, sprite):
@@ -2582,15 +2582,15 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             # embed()
 
         # Use for debugging sprite-type inference.
-        # if obj_type=='GREEN':
-        #     # goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='BROWN']
-        #     # print [g.rect for g in goldobjs[0]]
-        #     for i,k in enumerate(sorted(param_sum, key=param_sum.get, reverse=True)):
-        #         print(k, param_sum[k])
-        #         if i>10:
-        #             break
-        #     print ""
-        #     print best_param
+        if obj_type=='LIGHTGREEN':
+            # goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='BROWN']
+            # print [g.rect for g in goldobjs[0]]
+            for i,k in enumerate(sorted(param_sum, key=param_sum.get, reverse=True)):
+                print(k, param_sum[k])
+                if i>10:
+                    break
+            print ""
+            print best_param
             # embed()
 
         sprite_type = best_param[0][1]
