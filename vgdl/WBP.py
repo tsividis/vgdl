@@ -1480,7 +1480,7 @@ class Node():
 		# print "sum:", heuristicVal
 		if self.actionSeq:
 			print actionDict[self.actionSeq[-1]]
-		print rle.show()
+		# print rle.show()
 
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
