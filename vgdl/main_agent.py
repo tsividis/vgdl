@@ -49,20 +49,23 @@ class Agent:
         self.shortHorizon = hyperparameters['short_horizon']#False
         self.firstOrderHorizon = hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)        if self.shortHorizon == True:
         if self.shortHorizon == True:
-            self.starting_max_nodes = 1000
+            self.starting_max_nodes = 500
             self.max_nodes_annealing = 1.05
         else:
             self.starting_max_nodes = 10000
             self.max_nodes_annealing = 10.
+        self.conservative = False
         self.regrounding = 1
         self.selective_regrounding = True
-        self.avoid_danger = True
+        self.reground_for_npcs = False
         self.safeDistance = 3
         self.emptyPlansLimit = 5
         self.longHorizonObservationLimit = 2
         self.hypotheses = []
         self.symbolDict = None
         self.finalEventList = []
+        self.finalEffectList = set()
+        self.finalTimeStepList = []
         self.statesEncountered = []
         self.fakeInteractionRules = []
         self.all_objects = {}
@@ -73,6 +76,7 @@ class Agent:
         self.seen_limits = []
         self.new_objects = {}
         self.extra_atom = False
+        self.skipInduction = False
 
         # Hyperopt output
         self.total_game_steps = 0
@@ -140,13 +144,15 @@ class Agent:
                     matchingSprite = self.findNearestSprite(sprite, matchingSpritesInRLE)
                     sprite.rect = matchingSprite.rect
                     sprite.lastmove = matchingSprite.lastmove
+                    sprite.ID2 = matchingSprite.ID
                     if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and self.best_params!=None:
                         try:
                             ## Enforce consistency: inferred value for individual orientations has to be consistent with what we're saying the horizontal/vertical orientation is of the entire group.
                             # embed()
 
                             orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
-
+                            # if color=='RED':
+                                # embed()
                             if orientation == (0,0):
                                 # print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
                                 pass
@@ -164,8 +170,10 @@ class Agent:
 
     def initializeVrle(self, hypothesis):
         ## World in agent's head given 'hypothesis', including object goal
+        # gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
+        #          "./examples/gridphysics/theorytest.py")
         gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
-                 "./examples/gridphysics/theorytest.py")
+                 "./theory_files_short_horizon/hyperparameter_idx_{}/{}.py".format(self.hyperparameters['idx'], self.gameFilename))
         Vrle = createMindEnv(gameString, levelString, output=False)
 
         self.setSpritePositions(self.rle, Vrle, hypothesis)
@@ -206,13 +214,14 @@ class Agent:
 
     def initializeHypotheses(self, allObjects, learnSprites=True):
         if learnSprites:
-            observe(self.rle, 15, self.bestSpriteTypeDict)
+            observe(self.rle, 5, self.bestSpriteTypeDict)
+
             spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
-                self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict)
+                self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
             self.rle._game.exceptedObjects = exceptedObjects
             gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
             initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
-
+            # embed()
         else:
             gameObject = Game(self.gameString)
             initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
@@ -250,7 +259,8 @@ class Agent:
             if k not in allObjects:
                 allObjects[k] = v
 
-        spriteTypeHypothesis, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
+        spriteTypeHypothesis, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, 
+                self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction)
         gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
         newHypotheses = []
         for hypothesis in self.hypotheses:
@@ -345,6 +355,8 @@ class Agent:
         #
         #
         # write_to_csv(str(self.gameFilename)+'.csv', output)
+
+        # self.makeMovie()
 
     def makeHeatmap(self, statesEncountered, filename):
         from vgdl.plotting import featurePlot
@@ -452,16 +464,17 @@ class Agent:
         ## Initialize external environment
         self.initializeEnvironment()
         print "initializing RLE"
+        # embed()
         steps = 0
         self.quits = 0
         self.longHorizonObservations = 0
         self.previous_objects = self.all_objects if self.all_objects else {}
         self.all_objects= self.rle._game.getObjects()
-        ended, win = self.rle._isDone()
         annealing = 1
         ## Start storing encountered states.
         effectsEncountered = []
-        statesEncountered = [self.rle._game.getFullState()]
+        statesEncountered = []
+        # statesEncountered = [self.rle._game.getFullState()]
         self.statesEncountered.append(self.rle._game.getFullState())
 
         ## Initialize memory of object positions
@@ -482,6 +495,18 @@ class Agent:
             if not flexible_goals:
                 [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
+
+        ## Do beginning-of-episode resource-management.
+        resources = self.rle._game.getAvatars()[0].resources
+        for resource, val in resources.items():
+            if resource not in self.seen_resources and val>0:
+                self.seen_resources.append(resource)
+                self.hypotheses[0].resource_limits[resource] = self.rle._game.resources_limits[resource]
+            if resource not in self.seen_limits and val==self.rle._game.resources_limits[resource]:
+                self.seen_limits.append(resource)
+
+        ended, win = self.rle._isDone()
+
         emptyPlans = 0
         while not ended:
             ## initialize one or many VRLEs according to hypothesis-selection method
@@ -494,9 +519,13 @@ class Agent:
             ## Initialize planner
             p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                 seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                firstOrderHorizon=self.firstOrderHorizon, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
+                firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
             
+            # embed()
+
             p_quitting = p.quitting
+
+            print "planning with safeDistance={}, regrounding={}".format(self.safeDistance, self.regrounding)
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes
 
@@ -504,21 +533,39 @@ class Agent:
                 solution = p.solution
                 gameString_array = p.gameString_array
                 objectPositionsArray = objectPositionsArray[::-1]
+                if solution:
+                    print "got solution"
+                    # embed()
             else:
                 solution = []
 
-            if solution and not p.quitting:
-                print "============================================="
-                print "got solution of length", len(solution)
-                print colored(p.gameString_array[0], 'green')
-                for i,g in enumerate(p.gameString_array[1:]):
-                    print actionDict[solution[i]]
-                    print colored(g, 'green')
-                print "============================================="
-
+            # if self.shortHorizon:
+            #     if not solution:
+            #         emptyPlans +=1
+            #     else:
+            #         emptyPlans = 0
+            # embed()
             if self.shortHorizon:
+                ## new 6/30/18
                 if not solution:
-                    emptyPlans +=1
+                    print "initializing conservative planner"
+                    # embed()
+                    print self.rle._game.getAvatars()[0].resources
+
+                    ## initialize another planner in conservative mode, meaning you use safe heuristics. Plan for a short time, and return the longest safe plan you find.
+                    p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
+                        seen_limits = self.seen_limits, annealing=annealing, max_nodes=50, shortHorizon=self.shortHorizon,
+                        firstOrderHorizon=self.firstOrderHorizon, conservative=True, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
+                    p_quitting = p.quitting
+                    bestNode, gameStringArray, objectPositionsArray = p.BFS()
+                    self.total_planner_steps += p.total_nodes
+                    if bestNode is not None:
+                        solution = p.solution
+                        gameString_array = p.gameString_array
+                        objectPositionsArray = objectPositionsArray[::-1]
+                    # emptyPlans +=1
+                    # print "got an empty plan; observing for a while."
+                    # observe(self.rle, 10*emptyPlans**2, self.bestSpriteTypeDict)
                 else:
                     emptyPlans = 0
             else:
@@ -530,27 +577,42 @@ class Agent:
                     if p.exhausted_novelty:
                         self.extra_atom = True
                     if self.longHorizonObservations<self.longHorizonObservationLimit:
-                        print "Didn't get solution or decided to quit. Observing, then replanning."
-                        print('passed here')
+                        print "Didn't get solution. Observing, then replanning."
                         observe(self.rle, 5, self.bestSpriteTypeDict)
                         solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
                         self.longHorizonObservations += 1
                     else:
                         quitting = True
 
-            # delete planner instance
-            # del p
+            if solution and not p.quitting:
+                print "============================================="
+                print "got solution of length", len(solution)
+                print colored(p.gameString_array[0], 'green')
+                for i,g in enumerate(p.gameString_array[1:]):
+                    print actionDict[solution[i]]
+                    print colored(g, 'green')
+                print "============================================="
 
+            ##new 6/30/18
             if emptyPlans > self.emptyPlansLimit:
-                observe(self.rle, 5, self.bestSpriteTypeDict)
+                self.max_nodes *= self.max_nodes_annealing
+                print "reached emptyPlansLimit of {}. Annealing max nodes to {}".format(self.emptyPlansLimit, self.max_nodes)
+
+            # if emptyPlans > self.emptyPlansLimit:
+                # print "got too many empty plans"
+                # observe(self.rle, 5, self.bestSpriteTypeDict)
 
             if not quitting:
                 for i, action in enumerate(solution):
                     self.hypotheses[0].dryingPaint = set()
-
+                    # if action==K_SPACE:
+                        # print "about to take a shot"
+                        # embed()
+                    envPrev = copy.deepcopy(self.rle)
+                    t1 = time.time()
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
                         run_induction = not flexible_goals)
-
+                    print "executeStep took {} seconds".format(time.time()-t1)
                     sys.stdout.flush()
                     self.rle._game.nextPositions = {}
                     for k, v in self.rle._game.all_objects.iteritems():
@@ -558,13 +620,9 @@ class Agent:
                         try:
                             if self.rle._game.previousPositions[k] != self.rle._game.nextPositions[k]:
                                 self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.rle._game.previousPositions[k])
-                                # self.rle._game.objectMemoryDict[k] = ccopy(self.rle._game.previousPositions[k])
-
                         except KeyError:
                             pass
                     self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
-
-                    ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
 
                     effectsEncountered.extend(effects)
                     steps +=1
@@ -573,59 +631,139 @@ class Agent:
                         break
                     ended, win = self.rle._isDone()
                     if ended:
+                        # print "episode ended"
+                        # embed()
                         break
                     # if self.total_game_steps > MAX_STEPS:
                         # score = self.rle._game.score
                         # return gameObject, win, score, steps, statesEncountered, effectsEncountered
-                    
+                    # if self.rle._game.time>13:
+                        # embed()
 
                     ## Make sure you're far enough from unpredictable dangerous objects.
 
                     # Check for disparities between plan and reality
                     # (e.g. stochastic effects)
                     # if self.rle._game.is_stochastic and i>self.regrounding:
+
                     if (i+1)%self.regrounding==0:
-                    # if True:
+
+                        # if self.checkForDanger(self.rle, self.hypotheses[0]):
+                            # break
                         try:
-                            rlePositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in self.rle._game.sprite_groups.values() for item in sublist])
-                            hypPositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in objectPositionsArray[i+1]._game.sprite_groups.values() for item in sublist])
-                            rlePositionsTuples, hypPositionsTuples = [(p[0], p[1]) for p in rlePositions], [(p[0], p[1]) for p in hypPositions]
+                            regroundingFlag = False
+
+                            rleDict, hypDict = {}, {}
+
+                            for s in [item for sublist in objectPositionsArray[i+1]._game.sprite_groups.values() for item in sublist if item not in objectPositionsArray[i+1]._game.kill_list]:
+                                hypDict[s.ID2] = s
 
                             killer_types = [inter.slot2 for inter in hypotheses[0].interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
-                            # print "killer types", killer_types
-                            regroundingFlag = False
-                            for objPos in hypPositions:
-                                if not regroundingFlag and (objPos[0], objPos[1]) not in rlePositionsTuples:
-                                    # print "found object position difference", colored(objPos, 'white', 'on_magenta')
-                                    # print 'regrounding because of', objPos[2].colorName, objPos[2], "position:", self.rle._rect2pos(objPos[2].rect)
-                                    # try:
-                                        # print "orientation:", objPos[2].orientation
-                                    # except AttributeError:
-                                        # pass
-                                    nearest = self.findNearestSprite(objPos[2], [h[2] for h in rlePositions])
-                                    # print "Nearest sprite:", nearest.colorName, nearest, "position:", self.rle._rect2pos(nearest.rect)
-                                    # try:
-                                        # print "orientation:", nearest.orientation
-                                    # except AttributeError:
-                                        # pass
-                                    # print ""
-                                    # embed()
-                                    if self.selective_regrounding:
-                                        if ((objPos[2].name=='avatar') or
-                                            (objPos[2].name in killer_types and manhattanDist(self.rle._rect2pos(objPos[2].rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance)):
+                            killer_colors = [hypotheses[0].classes[k][0].color for k in killer_types]
 
-                                            # if objPos[2].name=='avatar':
-                                                # embed()
-                                            regroundingFlag = True
-                                            # embed()
-                                            break
-                                    else:
-                                        regroundingFlag = True
+                            for s in [item for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list]:
+                                # rleDict[s.ID] = s
+                                ## If the object isn't in our predicted environment or the positions vary
+                                ## if it's an object we're worried about
+                                if s.name=='avatar' or s.colorName in killer_colors:
+                                    # if s.ID not in hypDict and manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance:
+                                    if s.ID not in hypDict and manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+
+                                        regroundingFlag=True
+                                        print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_yellow')
+                                        # embed()
                                         break
+                                    if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+                                        print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
+                                                s, self.rle._game.getAvatars()[0], manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
+                                                'white', 'on_yellow')
+                                    # if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance:
+                                        # print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
+                                        #         s, self.rle._game.getAvatars()[0], manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)), self.safeDistance, hypDict[s.ID]),
+                                        #         'white', 'on_magenta')
+                                        regroundingFlag=True
+                                        # embed()
+                                        break
+                                    rleDict[s.ID] = s
 
                             if regroundingFlag:
-                                print "regrounding"
+                                # print colored("Regrounding because distance between {} and {} is {}, which is greater than {} and not what we predicted".format(
+                                        # s, self.rle._game.getAvatars()[0], manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)), self.safeDistance),
+                                        # 'white', 'on_magenta')
                                 break
+                            # rlePositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list])
+                            # hypPositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in objectPositionsArray[i+1]._game.sprite_groups.values() for item in sublist])
+                            # rlePositionsTuples, hypPositionsTuples = [(p[0], p[1]) for p in rlePositions], [(p[0], p[1]) for p in hypPositions]
+
+                            # killer_types = [inter.slot2 for inter in hypotheses[0].interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
+                            # print "killer types", killer_types
+
+                            # if len([k for k in self.rle._game.sprite_groups['ghost'] if k not in self.rle._game.kill_list])>0:
+                            #     embed()
+
+                            # regroundingFlag = False
+
+                            # for rlePos in rlePositions:
+                            #     if not regroundingFlag and (rlePos[0], rlePos[1]) not in hypPositionsTuples:
+                            #         nearest = self.findNearestSprite(rlePos[2], [h[2] for h in hypPositions])
+
+                            #         if self.selective_regrounding:
+                            #             if ((nearest.name=='avatar') or
+                            #                 (nearest.name in killer_types and manhattanDist(self.rle._rect2pos(nearest.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance)):
+
+                            #                 # if objPos[2].name=='avatar':
+                            #                     # embed()
+                            #                 regroundingFlag = True
+                            #                 # embed()
+                            #                 break
+                            #         else:
+                            #             regroundingFlag = True
+                            #             break
+                            # if not regroundingFlag and killer_types and len([k for k in self.rle._game.sprite_groups['ghost'] if k not in self.rle._game.kill_list])>0:
+                                # print "there are killer types on the screen but we didn't catch them"
+                                # embed()
+
+                            # if regroundingFlag:
+                            #     # print "regrounding"
+                            #     ghosts = [r for r in rlePositions if r[2].name=='ghost']
+                            #     print colored('Regrounding because of {} {} position: {}'.format(nearest.colorName, nearest, self.rle._rect2pos(nearest.rect)), 'white', 'on_magenta')
+                            #     embed()
+                            #     break
+
+                            # for objPos in hypPositions:
+                            #     if not regroundingFlag and (objPos[0], objPos[1]) not in rlePositionsTuples:
+                            #         # print "found object position difference", colored(objPos, 'white', 'on_magenta')
+                            #         # print 'considering regrounding because of', objPos[2].colorName, objPos[2], "position:", self.rle._rect2pos(objPos[2].rect)
+                            #         # try:
+                            #             # print "orientation:", objPos[2].orientation
+                            #         # except AttributeError:
+                            #             # pass
+                            #         nearest = self.findNearestSprite(objPos[2], [h[2] for h in rlePositions])
+                            #         # print "Nearest sprite:", nearest.colorName, nearest, "position:", self.rle._rect2pos(nearest.rect)
+                            #         # try:
+                            #             # print "orientation:", nearest.orientation
+                            #         # except AttributeError:
+                            #             # pass
+                            #         # print ""
+                            #         # embed()
+                            #         if self.selective_regrounding:
+                            #             if ((objPos[2].name=='avatar') or
+                            #                 (objPos[2].name in killer_types and manhattanDist(self.rle._rect2pos(objPos[2].rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance)):
+
+                            #                 # if objPos[2].name=='avatar':
+                            #                     # embed()
+                            #                 regroundingFlag = True
+                            #                 # embed()
+                            #                 break
+                            #         else:
+                            #             regroundingFlag = True
+                            #             break
+
+                            # if regroundingFlag:
+                            #     # print "regrounding"
+                            #     print colored('Regrounding because of {} {} position: {}'.format(objPos[2].colorName, objPos[2], self.rle._rect2pos(objPos[2].rect)), 'white', 'on_magenta')
+                            #     embed()
+                            #     break
                             # if tuple(rlePositions) != tuple(hypPositions):
                             # # if any(np.where(list(gameString_array[i+1]))[0] !=
                             # #        np.where(list(self.rle.show()))[0]):
@@ -634,13 +772,12 @@ class Agent:
                             #     # embed()
                             #     break
                         except:
-                            # Mismatch in gamestring lengths
                             print ""
                             print 'regrounding problem'
                             embed()
                             break
 
-                    if self.avoid_danger: ## this is just exercising caution when near random objects, irrespective of whether they kill us or not
+                    if self.reground_for_npcs: ## this is just exercising caution when near random objects, irrespective of whether they kill us or not
                         try:
                             random_npc_colors = [self.hypotheses[0].classes[k][0].color for k in self.hypotheses[0].classes.keys() if self.hypotheses[0].classes[k] and 'Random' in str(self.hypotheses[0].classes[k][0].vgdlType)]
                             random_npc_classes = [k for k in self.rle._game.sprite_groups.keys() if self.rle._game.sprite_groups[k] and self.rle._game.sprite_groups[k][0].colorName in random_npc_colors]
@@ -669,21 +806,23 @@ class Agent:
                             # print "random distances", min(possiblePairList)
                             if min(possiblePairList) < self.safeDistance:
                                 print("Close to RandomNPC, regrounding")
+                                # embed()
                                 break
 
                         except ValueError:
                             # print("error in avoid_danger: is the avatar dead?")
                             pass
 
-
-                if self.shortHorizon:
-                    self.max_nodes *= self.max_nodes_annealing
+                # if self.shortHorizon:
+                    # self.max_nodes *= self.max_nodes_annealing
             else:
                 ## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
                 ## Search more deeply next time.
                 self.max_nodes *= self.max_nodes_annealing
                 # self.updateMemory(self.rle)
-
+                print colored('________________________________________________________________', 'white', 'on_red')
+                print colored("Quitting", 'white', 'on_red')
+                print colored('________________________________________________________________', 'white', 'on_red')
                 return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered
 
 
@@ -699,7 +838,6 @@ class Agent:
             # self.spriteUpdateDict[k] = game.spriteUpdateDict[k]
 
         score = self.rle._game.score
-        # self.updateMemory(self.rle)
 
         output =          "ended episode. Win={}                                           ".format(win)
         if win:
@@ -716,12 +854,72 @@ class Agent:
 
         return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
+    def checkForDanger(self, rle, hypothesis):
+        try:
+            rlePositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in rle._game.sprite_groups.values() for item in sublist])
+            hypPositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in objectPositionsArray[i+1]._game.sprite_groups.values() for item in sublist])
+            rlePositionsTuples, hypPositionsTuples = [(p[0], p[1]) for p in rlePositions], [(p[0], p[1]) for p in hypPositions]
+
+            killer_types = [inter.slot2 for inter in hypothesis.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
+            # print "killer types", killer_types
+            regroundingFlag = False
+            for objPos in hypPositions:
+                if not regroundingFlag and (objPos[0], objPos[1]) not in rlePositionsTuples:
+                    # print "found object position difference", colored(objPos, 'white', 'on_magenta')
+                    # print 'regrounding because of', objPos[2].colorName, objPos[2], "position:", self.rle._rect2pos(objPos[2].rect)
+                    # try:
+                        # print "orientation:", objPos[2].orientation
+                    # except AttributeError:
+                        # pass
+                    nearest = self.findNearestSprite(objPos[2], [h[2] for h in rlePositions])
+                    # print "Nearest sprite:", nearest.colorName, nearest, "position:", self.rle._rect2pos(nearest.rect)
+                    # try:
+                        # print "orientation:", nearest.orientation
+                    # except AttributeError:
+                        # pass
+                    # print ""
+                    # embed()
+                    if self.selective_regrounding:
+                        if ((objPos[2].name=='avatar') or
+                            (objPos[2].name in killer_types and manhattanDist(rle._rect2pos(objPos[2].rect), rle._rect2pos(rle._game.getAvatars()[0].rect)) < self.safeDistance)):
+
+                            # if objPos[2].name=='avatar':
+                                # embed()
+                            regroundingFlag = True
+                            # embed()
+                            break
+                    else:
+                        regroundingFlag = True
+                        break
+
+            if regroundingFlag:
+                print "regrounding"
+                return regroundingFlag
+        except:
+            # Mismatch in gamestring lengths
+            print ""
+            print 'regrounding problem'
+            embed()
+
+
     def matchEventToRuleByIDAndSpriteName(self, event, rule):
         # Check if the two objects involved in the
         # event are the same as those in the novelty
         # termination rule (invariant by order)
-        hypSlot1 = self.hypotheses[0].spriteObjects[event[1]].className
-        hypSlot2 = self.hypotheses[0].spriteObjects[event[2]].className
+
+        if event[1] not in self.hypotheses[0].spriteObjects:
+            self.hypotheses[0].addSpriteToTheory(event[1])
+        if event[2] not in self.hypotheses[0].spriteObjects:
+            self.hypotheses[0].addSpriteToTheory(event[2])
+    
+        try:
+            hypSlot1 = self.hypotheses[0].spriteObjects[event[1]].className
+            hypSlot2 = self.hypotheses[0].spriteObjects[event[2]].className
+        except:
+            print "hypslot problem in main agent"
+            embed()
+
+
         if set([hypSlot1, hypSlot2]) == set([rule.slot1, rule.slot2]):
             if not rule.preconditions:
                 return True
@@ -746,6 +944,14 @@ class Agent:
                 self.rle._game.ignoreList.append(k)
                 self.new_objects[spriteName] = 0
 
+
+            # if k not in theory.spriteObjects.keys():
+            #     color = k
+            #     existing_classes = [key for key in theory.classes if key[0] == 'c']
+            #     max_num = max([int(c[1:]) for c in existing_classes])
+            #     class_num = max_num+1
+            #     newClassName = 'c'+str(class_num)
+            #     theory.addSpriteToTheory(newClassName, color, vgdlType=Resource, args={'limit':errorMap.targetToken.inventory[k][1]})
 
         # for k in self.new_objects.keys():
         #     self.new_objects[k] += 1
@@ -777,8 +983,14 @@ class Agent:
 
         theory_change_flag = False
 
-        spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
-        spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+        if not self.skipInduction:
+            # t1 = time.time()
+            spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+            # print "induction step 1 took {} seconds.".format(time.time()-t1)
+            t1 = time.time()
+            spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+            print "induction step 2 took {} seconds".format(time.time()-t1)
+
 
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
@@ -787,11 +999,17 @@ class Agent:
         except IndexError:
             agentState = defaultdict(lambda: 0)
 
+        # if self.rle._game.time in [5, 20]:
+            # embed()
+        t1 = time.time()
+        # envPrev = copy.deepcopy(self.rle)
         res = self.rle.step(action)
+        print "step took {} seconds".format(time.time()-t1)
 
         print ""
         print keyPresses[action]
 
+        t1 = time.time()
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
             # agentState = ccopy(self.rle._game.getAvatars()[0].resources)
@@ -805,6 +1023,7 @@ class Agent:
                         agentState[changes['resource']] -= changes['value']
                         break
             self.rle.agentStatePrev = agentState
+
         # If agent is killed before we get agentState
         except (IndexError, AttributeError) as e:
             # agentState = defaultdict(lambda:0)
@@ -819,108 +1038,156 @@ class Agent:
                         ignored_negative_change = True
             self.rle.agentStatePrev = agentState
 
-
+        print "agentState stuff: {}".format(time.time()-t1)
         # embed()
+
+        t1 = time.time()
         hypotheses = self.manageNewObjects(hypotheses)
 
-        statesEncountered.append(self.rle._game.getFullState())
+        # statesEncountered.append(self.rle._game.getFullState())
         self.statesEncountered.append(self.rle._game.getFullState())
-        terminal = self.rle._isDone()[0]
+        print "manage new objects and getFullState: {}".format(time.time()-t1)
 
-        distributionsHaveChanged = spriteInduction(self.rle._game, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
-
-        effects = translateEvents(res['effectList'], self.all_objects, self.rle)
+        t1 = time.time()
+        if not self.skipInduction:
+            distributionsHaveChanged = spriteInduction(self.rle._game, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+        else:
+            distributionsHaveChanged = False
+        print "sprite induction step 3: {}".format(time.time()-t1)
+ 
+        # effects = translateEvents(res['effectList'], self.all_objects, self.rle)
+        effects = self.rle._game.effectListByColor
+        # if effects:
+        #     print effects
+        #     print alternateEffects
+        #     embed()
+        print "score: {}, game tick: {}".format(self.rle._game.score, self.rle._game.time)
+       
+        t1 = time.time()
         print self.rle.show(color='blue')
-        print self.rle._game.score
-
-        all_effects = [item for sublist in [e['effectList'] for e in self.finalEventList] for item in sublist]
-
+        print "rle.show: {}".format(time.time()-t1)
+        
         event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, \
             'gameState': self.rle._game.getFullStateColorized(), 'rle': self.rle}
-        if event['effectList']:
-            self.finalEventList.append(event)
 
-        if (event['effectList'] and run_induction) or distributionsHaveChanged:
-
-            print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
-
-            ## Delete fake interaction rules for events that were witnessed in this time step.
-            oldFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
-            # oldFakeInteractionRules = ccopy(self.fakeInteractionRules)
-
-            self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
-                not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
-
-            if (not all([e in all_effects for e in effects])) or distributionsHaveChanged:
-                theory_change_flag = True
-
-            sample, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
-
-            # for s in sample:
-                # s.display()
+        # if len(effects)>4:
             # embed()
-            game_object = Game(spriteInductionResult=sample)
-
-            terminationCondition = {'ended': False, 'win':False, 'time':self.rle._game.time}
-            trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState'], e['rle']) \
-                for e in self.finalEventList], terminationCondition)
-            hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
-            verbose=False, existingTheories=hypotheses))
-
-            if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
-                theory_change_flag = True
-
-            # if len(hypotheses)>1:
-            #     print "more than one hypothesis"
-
-            #  PRECONDITIONS HANDLING
-            # Current assumptions:
-             # - Only one resource can change for each timestep
-            # - The first time a resource changes, it goes from 0 to a positive
-            #   value
+        t1 = time.time()
+        newEffects = False
+        # print "{} effects in this time-step".format(len(effects))
+        # print "finalEffectList:"
+        # print self.finalEffectList
+        if effects:
+            print effects
+            # #  PRECONDITIONS HANDLING
+            # # Current assumptions:
+            # # - Only one resource can change for each timestep
+            # # - The first time a resource changes, it goes from 0 to a positive
+            # #   value
             for change_resource_effect in [e[3] for e in event['effectList'] if ('changeResource' in e)] + [e[3] for e in event['effectList'] if ('collectResource' in e)]:
                 resource = change_resource_effect['resource']
                 val = change_resource_effect['value']
                 limit = change_resource_effect['limit']
-                # print "got resource change"
-                # embed()
-                # print "adding fake rules"
-                # import ipdb; ipdb.set_trace()
-                # ipdb.set_trace()
-
                 if (resource not in self.seen_resources and val>0):
                     self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
                     self.fakeInteractionRules = list(set(self.fakeInteractionRules))
-                    # resourceColor = self.rle._game.sprite_groups[resource][0].colorName
-                    # Add resource change to seen_resources list
                     self.seen_resources.append(resource)
-
-
                     hypotheses[0].resource_limits[resource] = limit
-
-                    ## go through everything that can be killed and add a SpriteCounterRule for it?
-                    # spritecounter = SpriteCounterRule(limit=limit,
-                                              # stype=resource,
-                                              # win=True)
-                    # hypotheses[0].terminationSet.append(spritecounter)
+                    theory_change_flag = True
+                    newEffects = True
+                    self.finalEffectList = set()
 
                 if agentState[resource]==limit and resource not in self.seen_limits:
                     self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
                     self.fakeInteractionRules = list(set(self.fakeInteractionRules))
-                    # resourceColor = self.rle._game.sprite_groups[resource][0].colorName
                     self.seen_limits.append(resource)
 
-
-
                     theory_change_flag = True
-                    # print "reached resource limit for", resource
+                    newEffects = True
+                    self.finalEffectList = set()
 
+            self.finalEventList.append(event)
+            newTimeStep = TimeStep(event['agentAction'], event['agentState'], event['effectList'], event['gameState'], event['rle'])
+            self.finalTimeStepList.append(newTimeStep)
+            for e in effects:
+                compactEvent = (e[0], e[1], e[2])
+                if compactEvent not in self.finalEffectList:
+                    self.finalEffectList.add(compactEvent)
+                    print "New event: {}".format(compactEvent)
+                    newEffects = True
+            # newEffects = True
+        # print "finalEffectList length: {}".format(len(self.finalEffectList))
+        print "set prep took {} seconds".format(time.time()-t1)
+
+        # if (event['effectList'] and run_induction) or distributionsHaveChanged:
+        # distributionsHaveChanged = False
+        if (newEffects and run_induction) or distributionsHaveChanged:
+            # print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
+            print "new event", newEffects, "distributions changed", distributionsHaveChanged
+
+            ## Delete fake interaction rules for events that were witnessed in this time step.
+            # oldFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
+
+            self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
+                not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
+
+            # if (not all([e in all_effects for e in effects])) or distributionsHaveChanged:
+            if newEffects or distributionsHaveChanged:
+                theory_change_flag = True
+
+            t1 = time.time()
+            sample, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, 
+                    self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction)
+
+            game_object = Game(spriteInductionResult=sample)
+            print "sampleFromDistribution: {}".format(time.time()-t1)
+            
+            terminationCondition = {'ended': False, 'win':False, 'time':self.rle._game.time}
+            # trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState'], e['rle']) \
+                # for e in self.finalEventList], terminationCondition)
+            trace = (self.finalTimeStepList, terminationCondition)
+
+            t1 = time.time()
+            hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
+            verbose=False, existingTheories=hypotheses))
+            print "induction took {} seconds".format(time.time()-t1)
+            if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
+                theory_change_flag = True
+
+            # #  PRECONDITIONS HANDLING
+            # # Current assumptions:
+            # # - Only one resource can change for each timestep
+            # # - The first time a resource changes, it goes from 0 to a positive
+            # #   value
+            # for change_resource_effect in [e[3] for e in event['effectList'] if ('changeResource' in e)] + [e[3] for e in event['effectList'] if ('collectResource' in e)]:
+            #     resource = change_resource_effect['resource']
+            #     val = change_resource_effect['value']
+            #     limit = change_resource_effect['limit']
+
+            #     if (resource not in self.seen_resources and val>0):
+            #         self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
+            #         self.fakeInteractionRules = list(set(self.fakeInteractionRules))
+            #         self.seen_resources.append(resource)
+            #         hypotheses[0].resource_limits[resource] = limit
+            #         theory_change_flag = True
+
+            #     if agentState[resource]==limit and resource not in self.seen_limits:
+            #         self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
+            #         self.fakeInteractionRules = list(set(self.fakeInteractionRules))
+            #         self.seen_limits.append(resource)
+
+            #         theory_change_flag = True
+            #         # print "reached resource limit for", resource
+
+        ## We need to update termination conditions even when we haven't seen a new event,
+        ## because the state is informative about termination conditions.
+        # t1 = time.time()
         if event['effectList'] and run_induction:
             [t.updateTerminations(event=event) for t in hypotheses]
+        # print "updateTerminations took {} seconds".format(time.time()-t1)
         if theory_change_flag and not distributionsHaveChanged:
             print "changed theory:"
             hypotheses[0].display()
-
 
         return hypotheses, theory_change_flag, effects
 
@@ -938,7 +1205,7 @@ if __name__ == "__main__":
     # filename = "examples.gridphysics.pick_apples"
     # filename = "examples.gridphysics.expt_exploration_exploitation_debugging"
 
-    filename = "examples.gridphysics_new.expt_preconditions"
+    filename = "examples.gridphysics.theory_small_boulderdash"
 
     level_game_pairs = None
     # Playing GVG-AI games
@@ -964,21 +1231,22 @@ if __name__ == "__main__":
     gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
         'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
 
-    gameName = gvggames[6]
+    # gameName = gvggames[5]
 
-    gvgname = "gvgai/training_set_1/{}".format(gameName)
+    # gvgname = "../gvgai/training_set_1/{}".format(gameName)
 
-    gameString = read_gvgai_game('{}.txt'.format(gvgname))
+    # gameString = read_gvgai_game('{}.txt'.format(gvgname))
 
-    level_game_pairs = []
-    for level_number in range(5):
-        with open('{}_lvl{}.txt'.format(    gvgname, level_number), 'r') as level:
-            level_game_pairs.append([gameString, level.read()])
+
+    # level_game_pairs = []
+    # for level_number in range(5):
+        # with open('{}_lvl{}.txt'.format(    gvgname, level_number), 'r') as level:
+            # level_game_pairs.append([gameString, level.read()])
 
     ##uncomment this line to run local games
-    # gameName = filename
+    gameName = filename
 
-    hyperparameter_sets = [    {'idx'           : 2,
+    hyperparameter_sets = [{'idx'           : 2,
      'short_horizon' : False,
      'first_order_horizon': False,
      'sprite_first_alpha': 10000,
