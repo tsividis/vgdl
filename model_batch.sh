@@ -2,7 +2,7 @@
 
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-4
+#SBATCH --array=0-5
 #SBATCH --output=slurm_logs/short_horizon2/array_%A_%a.out
 #SBATCH --time=1480
 #SBATCH --qos=tenenbaum
