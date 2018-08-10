@@ -76,7 +76,7 @@ class Agent:
         self.seen_limits = []
         self.new_objects = {}
         self.extra_atom = False
-        self.skipInduction = True
+        self.skipInduction = False
 
         # Hyperopt output
         self.total_game_steps = 0
@@ -173,7 +173,7 @@ class Agent:
         # gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
         #          "./examples/gridphysics/theorytest.py")
         gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
-                 "./theory_files_short_horizon/hyperparameter_idx_{}/{}.py".format(self.hyperparameters['idx'], self.gameFilename))
+                 "./theory_files_short_horizon2/hyperparameter_idx_{}/{}.py".format(self.hyperparameters['idx'], self.gameFilename))
         Vrle = createMindEnv(gameString, levelString, output=False)
 
         self.setSpritePositions(self.rle, Vrle, hypothesis)
