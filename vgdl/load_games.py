@@ -37,7 +37,7 @@ hyperparameter_sets = [
      },
     {'idx'           : 1,
      'short_horizon' : False,
-     'first_order_horizon': True,
+     'first_order_horizon': False,
      'sprite_first_alpha': 10000,
      'sprite_second_alpha': 100,
      'sprite_negative_mult': 10.,

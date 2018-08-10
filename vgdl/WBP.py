@@ -78,7 +78,7 @@ class WBP():
 		self.extra_atom = True#extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = False
+		self.display = True
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -384,16 +384,6 @@ class WBP():
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
 			current = self.rewardSelection(QReward, QNovelty)
 			
-
-			try:
-				(x, y) = np.array((current.rle._game.getAvatars()[0].rect.x,
-					current.rle._game.getAvatars()[0].rect.y))/self.pixel_size
-				self.visited_positions[x, y] += 1
-			except IndexError:
-				# print "adding to visited_positions failed"
-				# embed()
-				pass
-
 			if current in [None, 'pickMaxNode']:
 
 				if self.conservative:
@@ -472,6 +462,15 @@ class WBP():
 
 			# if self.display:
 				# print current.rle.show(indent=True)
+
+			try:
+				(x, y) = np.array((current.rle._game.getAvatars()[0].rect.x,
+					current.rle._game.getAvatars()[0].rect.y))/self.pixel_size
+				self.visited_positions[x, y] += 1
+			except IndexError:
+				# print "adding to visited_positions failed"
+				# embed()
+				pass
 
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
@@ -1633,7 +1632,7 @@ class Node():
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
 		# print("metabolic cost is {}".format(self.metabolic_cost))
-		self.intrinsic_reward = self.heuristicVal + self.position_score(-100) #+ self.metabolic_cost
+		self.intrinsic_reward = self.heuristicVal + self.position_score(-1000) #+ self.metabolic_cost
 
 		## Debug printouts
 		# print("heuristicVal {}".format(self.heuristicVal))
