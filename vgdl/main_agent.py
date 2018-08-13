@@ -607,7 +607,7 @@ class Agent:
                     # if action==K_SPACE:
                         # print "about to take a shot"
                         # embed()
-                    envPrev = copy.deepcopy(self.rle)
+                    # envPrev = copy.deepcopy(self.rle)
                     t1 = time.time()
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
                         run_induction = not flexible_goals)
@@ -661,115 +661,25 @@ class Agent:
                             killer_colors = [hypotheses[0].classes[k][0].color for k in killer_types]
 
                             for s in [item for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list]:
-                                # rleDict[s.ID] = s
                                 ## If the object isn't in our predicted environment or the positions vary
                                 ## if it's an object we're worried about
                                 if s.name=='avatar' or s.colorName in killer_colors:
-                                    # if s.ID not in hypDict and manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance:
                                     if s.ID not in hypDict and manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
 
                                         regroundingFlag=True
                                         print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_yellow')
-                                        # embed()
                                         break
                                     if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
                                         print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
                                                 s, self.rle._game.getAvatars()[0], manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
                                                 'white', 'on_yellow')
-                                    # if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance:
-                                        # print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
-                                        #         s, self.rle._game.getAvatars()[0], manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)), self.safeDistance, hypDict[s.ID]),
-                                        #         'white', 'on_magenta')
                                         regroundingFlag=True
-                                        # embed()
                                         break
                                     rleDict[s.ID] = s
 
                             if regroundingFlag:
-                                # print colored("Regrounding because distance between {} and {} is {}, which is greater than {} and not what we predicted".format(
-                                        # s, self.rle._game.getAvatars()[0], manhattanDist(self.rle._rect2pos(s.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)), self.safeDistance),
-                                        # 'white', 'on_magenta')
                                 break
-                            # rlePositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list])
-                            # hypPositions = sorted([(int(item.rect.x), int(item.rect.y), item) for sublist in objectPositionsArray[i+1]._game.sprite_groups.values() for item in sublist])
-                            # rlePositionsTuples, hypPositionsTuples = [(p[0], p[1]) for p in rlePositions], [(p[0], p[1]) for p in hypPositions]
 
-                            # killer_types = [inter.slot2 for inter in hypotheses[0].interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
-                            # print "killer types", killer_types
-
-                            # if len([k for k in self.rle._game.sprite_groups['ghost'] if k not in self.rle._game.kill_list])>0:
-                            #     embed()
-
-                            # regroundingFlag = False
-
-                            # for rlePos in rlePositions:
-                            #     if not regroundingFlag and (rlePos[0], rlePos[1]) not in hypPositionsTuples:
-                            #         nearest = self.findNearestSprite(rlePos[2], [h[2] for h in hypPositions])
-
-                            #         if self.selective_regrounding:
-                            #             if ((nearest.name=='avatar') or
-                            #                 (nearest.name in killer_types and manhattanDist(self.rle._rect2pos(nearest.rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance)):
-
-                            #                 # if objPos[2].name=='avatar':
-                            #                     # embed()
-                            #                 regroundingFlag = True
-                            #                 # embed()
-                            #                 break
-                            #         else:
-                            #             regroundingFlag = True
-                            #             break
-                            # if not regroundingFlag and killer_types and len([k for k in self.rle._game.sprite_groups['ghost'] if k not in self.rle._game.kill_list])>0:
-                                # print "there are killer types on the screen but we didn't catch them"
-                                # embed()
-
-                            # if regroundingFlag:
-                            #     # print "regrounding"
-                            #     ghosts = [r for r in rlePositions if r[2].name=='ghost']
-                            #     print colored('Regrounding because of {} {} position: {}'.format(nearest.colorName, nearest, self.rle._rect2pos(nearest.rect)), 'white', 'on_magenta')
-                            #     embed()
-                            #     break
-
-                            # for objPos in hypPositions:
-                            #     if not regroundingFlag and (objPos[0], objPos[1]) not in rlePositionsTuples:
-                            #         # print "found object position difference", colored(objPos, 'white', 'on_magenta')
-                            #         # print 'considering regrounding because of', objPos[2].colorName, objPos[2], "position:", self.rle._rect2pos(objPos[2].rect)
-                            #         # try:
-                            #             # print "orientation:", objPos[2].orientation
-                            #         # except AttributeError:
-                            #             # pass
-                            #         nearest = self.findNearestSprite(objPos[2], [h[2] for h in rlePositions])
-                            #         # print "Nearest sprite:", nearest.colorName, nearest, "position:", self.rle._rect2pos(nearest.rect)
-                            #         # try:
-                            #             # print "orientation:", nearest.orientation
-                            #         # except AttributeError:
-                            #             # pass
-                            #         # print ""
-                            #         # embed()
-                            #         if self.selective_regrounding:
-                            #             if ((objPos[2].name=='avatar') or
-                            #                 (objPos[2].name in killer_types and manhattanDist(self.rle._rect2pos(objPos[2].rect), self.rle._rect2pos(self.rle._game.getAvatars()[0].rect)) < self.safeDistance)):
-
-                            #                 # if objPos[2].name=='avatar':
-                            #                     # embed()
-                            #                 regroundingFlag = True
-                            #                 # embed()
-                            #                 break
-                            #         else:
-                            #             regroundingFlag = True
-                            #             break
-
-                            # if regroundingFlag:
-                            #     # print "regrounding"
-                            #     print colored('Regrounding because of {} {} position: {}'.format(objPos[2].colorName, objPos[2], self.rle._rect2pos(objPos[2].rect)), 'white', 'on_magenta')
-                            #     embed()
-                            #     break
-                            # if tuple(rlePositions) != tuple(hypPositions):
-                            # # if any(np.where(list(gameString_array[i+1]))[0] !=
-                            # #        np.where(list(self.rle.show()))[0]):
-                            #     print 'regrounding'
-                            #     embed()
-                            #     # embed()
-                            #     break
                         except:
                             print ""
                             print 'regrounding problem'
@@ -786,14 +696,6 @@ class Agent:
                                 for element in self.rle._game.sprite_groups[c]:
                                     if element not in self.rle._game.kill_list:
                                         random_npc_positions.append(self.rle._rect2pos(element.rect))
-
-                            # random_npc_positions = [self.rle._rect2pos(element.rect)
-                            #     for objName in self.rle._game.sprite_groups.keys()
-                            #     for element in self.rle._game.sprite_groups[objName]
-                            #     if element not in self.rle._game.kill_list and
-                            #     'RandomNPC' in str(self.hypotheses[0].classes[
-                            #         self.hypotheses[0].colorToClassMapper(
-                            #         element.colorName)][0].__class__)]
 
                             avatar_positions = [self.rle._rect2pos(avatar.rect)
                                  for avatar in self.rle._game.getAvatars()]
