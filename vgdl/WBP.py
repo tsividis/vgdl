@@ -1115,6 +1115,7 @@ class Node():
 						# print "reached resource limit"
 					tmp_list.append(avatar)
 			except (IndexError, KeyError) as e:
+				print "print problem in avatar preconditions in spritecounter_val"
 				pass
 
 		for t in tmp_list:
@@ -1250,8 +1251,8 @@ class Node():
 
 					# print distance
 				except (ValueError, TypeError) as e:
-					# if avatar_preconditions and avatars[0]:
-						# print "valueError in spritecounter_val"
+					if avatar_preconditions and avatars[0]:
+						print "valueError in spritecounter_val"
 						# embed()
 					pass
 					# effective_distance = 0
@@ -1326,12 +1327,14 @@ class Node():
 			except IndexError:
 				print "checking whether avatar preconditions are fulfilled"
 				# print rle._game.getAvatars()[0].resources
-				return 2 * mult * first_alpha, 10000
+				return 0, 10000
+				# return 2 * mult * first_alpha, 10000
 
 			if not eval(resource_str+true_operator+str(num)):
 				print "checking whether avatar preconditions are fulfilled 2"
-				# print rle._game.getAvatars()[0].resources				
-				return 2 * mult * first_alpha, 10000
+				# print rle._game.getAvatars()[0].resources		
+				return 0, 10000		
+				# return 2 * mult * first_alpha, 10000
 
 
 

@@ -39,8 +39,8 @@ if [ "$OS" = "CentOS Linux" ]; then
 fi
 
 # make log path if not already present
-if [ ! -d "${ROOT}/slurm_logs/short_horizon2" ]; then
-    mkdir "${ROOT}/slurm_logs/short_horizon2"
+if [ ! -d "${ROOT}/slurm_logs/short_horizon" ]; then
+    mkdir "${ROOT}/slurm_logs/short_horizon"
 fi
 
 # finally, run the model
