@@ -100,6 +100,8 @@ class Agent:
         self.gameFilename = gameFilename
         self.gameString = None
         self.levelString = None
+        self.hyperparameter_sets = hyperparameter_sets
+        self.hyperparameter_index = hyperparameter_index
         self.hyperparameters = hyperparameter_sets[hyperparameter_index]
         self.annealingFactor = 1.
         self.shortHorizon = self.hyperparameters['short_horizon']#False
@@ -141,6 +143,22 @@ class Agent:
         self.levels_won = 0
 
         self.todo_delete = True
+
+    def hyperparameterSwitch(self, new_index):
+        ratio = self.actionSeqLength/len(self.statesEncountered)
+        print "solution to action ratio: {}".format(ratio)
+        if ratio>5 and new_index!=self.hyperparameter_index:
+            self.hyperparameter_index = new_index
+            self.hyperparameters = self.hyperparameter_sets[new_index]
+            self.shortHorizon = self.hyperparameters['short_horizon']#False
+            self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)        if self.shortHorizon == True:
+            if self.shortHorizon == True:
+                self.starting_max_nodes = 500
+                self.max_nodes_annealing = 1.05
+            else:
+                self.starting_max_nodes = 10000
+                self.max_nodes_annealing = 10.    
+            print "Switching hyperparameters to {}".format(new_index)
 
     def initializeEnvironment(self):
         if self.gameString==None or self.levelString==None:
@@ -565,6 +583,10 @@ class Agent:
 
         emptyPlans = 0
         while not ended:
+            
+            self.hyperparameterSwitch(new_index=3)
+            print "playing with hyperparameter index {}".format(self.hyperparameter_index)
+
             ## initialize one or many VRLEs according to hypothesis-selection method
             theoryRLEs = self.VrleInitPhase(flexible_goals)
 
@@ -596,8 +618,7 @@ class Agent:
                 solution = []
 
             self.actionSeqLength += len(solution)
-            print "solution to action ratio: {}".format(self.actionSeqLength/len(self.statesEncountered))
-            embed()
+
             if self.shortHorizon:
                 ## new 6/30/18
                 if not solution:
