@@ -1327,14 +1327,14 @@ class Node():
 			except IndexError:
 				print "checking whether avatar preconditions are fulfilled"
 				# print rle._game.getAvatars()[0].resources
-				return 0, 10000
-				# return 2 * mult * first_alpha, 10000
+				# return 0, 10000
+				return 2 * mult * first_alpha, 10000
 
 			if not eval(resource_str+true_operator+str(num)):
 				print "checking whether avatar preconditions are fulfilled 2"
 				# print rle._game.getAvatars()[0].resources		
-				return 0, 10000		
-				# return 2 * mult * first_alpha, 10000
+				# return 0, 10000		
+				return 2 * mult * first_alpha, 10000
 
 
 
