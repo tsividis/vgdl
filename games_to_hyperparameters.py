@@ -10,8 +10,13 @@
 #                  'waves']                               	 #26-27
 
 
+game_names = ['aliens', 'avoidgeorge', 'butterflies', 'chase', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'jaws', 'lemmings', 
+			 'myAliens', 'overload', 'plaqueattack', 'waves', 'frogs', 'portals', 'overload', 'expt_antagonist', 'expt_helper','expt_push_boulders',
+			 'expt_preconditions', 'sokoban', 'bait', 'watergame']
 
-game_names = ['expt_helper']
+
+
+# game_names = ['expt_helper']
 
 ## idx 1:
 # game_names = ['expt_push_boulders', 'portals', 'frogs', 'overload', 'expt_antagonist', 'expt_helper'] 
