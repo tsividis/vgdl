@@ -11,10 +11,10 @@
 
 
 
-# game_names = ['frogs']
+# game_names = ['med_boulderdash']
 
 ## idx 1:
-game_names = ['expt_push_boulders', 'portals', 'frogs', 'overload', 'expt_antagonist', 'expt_helper'] 
+# game_names = ['expt_push_boulders', 'portals', 'frogs', 'overload', 'expt_antagonist', 'expt_helper'] 
 
 ## idx 2:
 # game_names = ['expt_push_boulders', 'portals', 'frogs', 'overload', 'expt_antagonist', 'expt_helper'] #boulderdash, boulderchase
