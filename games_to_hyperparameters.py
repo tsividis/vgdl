@@ -11,7 +11,7 @@
 
 
 
-game_names = ['expt_preconditions']
+game_names = ['frogs']
 
 ## idx 1:
 # game_names = ['expt_push_boulders', 'portals', 'frogs', 'overload', 'expt_antagonist', 'expt_helper'] 
