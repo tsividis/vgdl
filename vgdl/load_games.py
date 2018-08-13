@@ -79,7 +79,6 @@ hyperparameter_sets = [
      'novelty_first_alpha': 5000,
      'novelty_second_alpha': 10,
      }
-
 ]
 
 def gen_color():
@@ -101,7 +100,7 @@ def read_gvgai_game(filename):
         new_doc = "\n".join(new_doc)
     return new_doc
 
-def play_trainset(hyperparameters):
+def play_trainset(hyperparameters_sets, hyperparameter_index):
     start_time = time.time()
 
     gvgname = "./{}/{}".format(gameFileString,game_name)
@@ -113,7 +112,7 @@ def play_trainset(hyperparameters):
     	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
     		level_game_pairs.append([gameString, level.read()])
 
-    agent = Agent('full', game_name, hyperparameters=hyperparameters, parallel_planning=False)
+    agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index)
 
     ##then pass this down for multiple episodes
     gameObject = None
@@ -126,7 +125,7 @@ def play_trainset(hyperparameters):
 
     return total_time
 
-play_trainset(hyperparameter_sets[hyperparameter_index])
+play_trainset(hyperparameter_sets, hyperparameter_index)
 
 
 

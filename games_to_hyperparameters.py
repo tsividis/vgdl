@@ -27,7 +27,7 @@ game_names = ['expt_helper']
 
 # ## idx 3
 # game_names = ['frogs']
-# game_names = ['aliens', 'avoidgeorge', 'butterflies', 'chase', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'jaws', 'lemmings', 'myAliens', 'overload', 'plaqueattack', 'waves', 'frogs']
+# game_names = ['aliens', 'avoidgeorge', 'butterflies', 'chase', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'jaws', 'lemmings', 'myAliens', 'overload', 'plaqueattack', 'waves', 'frogs', 'portals']
 # game_names = ['survivezombies', 'jaws']
 # game_names = ['chopper', 'plaqueattack']
 # game_names = ['zelda', 'jaws', 'waves', 'survivezombies']
