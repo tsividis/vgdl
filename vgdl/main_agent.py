@@ -35,19 +35,75 @@ def playCurriculum(agent, level_game_pairs):
     end_time = time() - start_time
 
     return end_time
+hyperparameter_sets = [
+    {'idx'           : 0,
+     'short_horizon' : False,
+     'first_order_horizon': True,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': .1,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {'idx'           : 1,
+     'short_horizon' : False,
+     'first_order_horizon': False,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': 10.,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {'idx'           : 2,
+     'short_horizon' : False,
+     'first_order_horizon': False,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': .1,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {'idx'           : 3,
+     'short_horizon' : True,
+     'first_order_horizon': True,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': 10, #normally .1
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {'idx'           : 4,
+     'short_horizon' : True,
+     'first_order_horizon': True,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': .1, #normally .1
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 10,
+     }
+]
 
 
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameters, parallel_planning=False):
+    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=0):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.gameString = None
         self.levelString = None
-        self.hyperparameters = hyperparameters
-        self.parallel_planning = parallel_planning
+        self.hyperparameters = hyperparameter_sets[hyperparameter_index]
         self.annealingFactor = 1.
-        self.shortHorizon = hyperparameters['short_horizon']#False
-        self.firstOrderHorizon = hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)        if self.shortHorizon == True:
+        self.shortHorizon = self.hyperparameters['short_horizon']#False
+        self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)        if self.shortHorizon == True:
         if self.shortHorizon == True:
             self.starting_max_nodes = 500
             self.max_nodes_annealing = 1.05
@@ -75,6 +131,7 @@ class Agent:
         self.seen_resources = []
         self.seen_limits = []
         self.new_objects = {}
+        self.actionSeqLength = 0.
         self.extra_atom = False
         self.skipInduction = False
 
@@ -538,12 +595,9 @@ class Agent:
             else:
                 solution = []
 
-            # if self.shortHorizon:
-            #     if not solution:
-            #         emptyPlans +=1
-            #     else:
-            #         emptyPlans = 0
-            # embed()
+            self.actionSeqLength += len(solution)
+            print "solution to action ratio: {}".format(self.actionSeqLength/len(self.statesEncountered))
+            embed()
             if self.shortHorizon:
                 ## new 6/30/18
                 if not solution:
