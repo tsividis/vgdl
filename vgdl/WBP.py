@@ -1188,7 +1188,7 @@ class Node():
 			elif stype!='avatar':
 				# This helps in cases in which either the stype or the killer_type is not always on the screen
 				# Then, you should not be disincentivized to create it, which can be achieved through this high penalty
-				print "didn't find pair list"
+				# print "didn't find pair list"
 				# if stype=='c5':
 					# embed()
 				distance = 100
@@ -1512,7 +1512,7 @@ class Node():
 			# print factor * self.WBP.visited_positions[x, y]
 			return factor * self.WBP.visited_positions[x, y]
 		except IndexError:
-			print "index error in position score"
+			# print "index error in position score"
 			return 0
 
 	def empty_copy(self, obj):
