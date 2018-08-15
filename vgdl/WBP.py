@@ -78,7 +78,9 @@ class WBP():
 		self.extra_atom = True#extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.display = False
+		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
+		self.display = True
+
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -513,6 +515,8 @@ class WBP():
 					# print current.rle._game.getAvatars()[0].resources
 				# except:
 					# print ""
+				if current.actionSeq:
+					print actionDict[current.actionSeq[-1]]
 				print current.rle.show()
 			# if self.killer_types:
 				# embed()
@@ -1060,8 +1064,7 @@ class Node():
 		# Get all types that kill or transform stype (the target)
 		killer_types = [
 			inter.slot2 for inter in theory.interactionSet
-			if ((inter.interaction == 'killSprite' or
-				 inter.interaction == 'transformTo') and
+			if (inter.interaction in ['killSprite', 'transformTo', 'collectResource'] and
 				 not inter.generic and
 				 not inter.preconditions
 				and inter.slot1 == stype)]
@@ -1087,9 +1090,7 @@ class Node():
 		# interaction, and if so adds 'avatar' to the list as well as the precondition for that rule
 		avatar_preconditions = [
 			(inter.slot2, inter.preconditions) for inter in theory.interactionSet
-			if ((inter.interaction == 'killSprite' or
-				inter.interaction == 'killIfOtherHasMore' or
-				 inter.interaction == 'transformTo') and
+			if (inter.interaction in ['killSprite', 'killIfOtherHasMore', 'transformTo']  and
 				 not inter.generic
 				 and inter.preconditions
 				and inter.slot1 == stype)]
@@ -1182,15 +1183,18 @@ class Node():
 				n_sprites = len(possiblePairList) ## TODO: you're normalizing by the number of possible pairs of killer_sprites and target_sprites; you should just normalize by the number of targets
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
+				# val += max(self.WBP.rle.outdim[0],self.WBP.rle.outdim[1])*float(mult * second_alpha * distance**2)/(n_sprites**2 * self.WBP.hypotenuse_squared)
 				val += float(mult * second_alpha * distance)/n_sprites**2
 			elif stype!='avatar':
-				# embed()
 				# This helps in cases in which either the stype or the killer_type is not always on the screen
 				# Then, you should not be disincentivized to create it, which can be achieved through this high penalty
+				print "didn't find pair list"
+				# if stype=='c5':
+					# embed()
 				distance = 100
 				val += float(mult * second_alpha * distance)
 			elif not stype_positions:
-				## If we culdn't compute a second-order distance because the avatar is dead, give infinite penalty.
+				## If we couldn't compute a second-order distance because the avatar is dead, give infinite penalty.
 				val += -float('inf')
 
 			# if self.WBP.conservative:
@@ -1236,7 +1240,7 @@ class Node():
 								for obj1 in obj1_positions
 								for obj2 in obj2_positions])
 						except:
-							print "failure with obj1_positions"
+							# print "failure with obj1_positions"
 							# embed()
 
 						precondition_distances.append(min(possiblePairList))
@@ -1248,16 +1252,19 @@ class Node():
 					# goals that involve killing fewer objects
 					val += float(mult * second_alpha * (physical_distance / 10.)) - 10000
 					val += float(mult * second_alpha * sprite_n_distance) - 10000
+					# print "doing precondition stuff for resources"
+					# embed()
 
 					# print distance
 				except (ValueError, TypeError) as e:
 					if avatar_preconditions and avatars[0]:
-						print "valueError in spritecounter_val"
+						# print "valueError in spritecounter_val"
 						# embed()
 					pass
 					# effective_distance = 0
 
 				if not resource_positions:
+					# print "didn't find resource positions"
 					# This helps in cases in which either the stype or the killer_type is not always on the screen
 					# Then, you should not be disincentivized to create it, which can be achieved through this high penalty
 					distance = 100
@@ -1325,13 +1332,13 @@ class Node():
 			try:
 				resource_str = str(rle._game.getAvatars()[0].resources[item])
 			except IndexError:
-				print "checking whether avatar preconditions are fulfilled"
+				# print "checking whether avatar preconditions are fulfilled"
 				# print rle._game.getAvatars()[0].resources
 				# return 0, 10000
 				return 2 * mult * first_alpha, 10000
 
 			if not eval(resource_str+true_operator+str(num)):
-				print "checking whether avatar preconditions are fulfilled 2"
+				# print "checking whether avatar preconditions are fulfilled 2"
 				# print rle._game.getAvatars()[0].resources		
 				# return 0, 10000		
 				return 2 * mult * first_alpha, 10000
@@ -1386,7 +1393,9 @@ class Node():
 				n_sprites = len(possiblePairList)
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
-				val += (float(mult * second_alpha * distance)/n_sprites**2) + second_alpha * max(self.rle.outdim[0], self.rle.outdim[1])
+				# val += 100*(float(mult * second_alpha * distance**2)/(n_sprites**2 * self.WBP.hypotenuse_squared)) + second_alpha * max(self.rle.outdim[0], self.rle.outdim[1])
+				val += float(mult * second_alpha * distance)/n_sprites**2 + second_alpha * max(self.rle.outdim[0], self.rle.outdim[1])
+
 		# if s1=='c4' and s2=='avatar':
 			# print "novelty val for {}, {}: {}".format(s1, s2, val)
 
@@ -1479,8 +1488,9 @@ class Node():
 		if avatarNoveltyVals:
 			# print "chosen avatar novelty val", min(avatarNoveltyVals, key= lambda x: x[1])[0]
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
-		# print "sum:", heuristicVal
 		
+		# print "position", self.position_score(-1000) 
+		# print "sum:", heuristicVal+self.position_score(-1000) 
 		# if self.actionSeq:
 			# print actionDict[self.actionSeq[-1]]
 		# print rle.show()

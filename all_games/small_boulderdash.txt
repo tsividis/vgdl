@@ -9,7 +9,7 @@ BasicGame
 		crab > RandomNPC cooldown=5 color=GOLD
 		butterfly > RandomNPC cooldown=5 color=RED
 		boulder > Missile orientation=DOWN color=ORANGE speed=0.2
-
+		poison > Immovable color=RED
 	LevelMapping
 		e > exitdoor
 		o > boulder
@@ -18,8 +18,11 @@ BasicGame
 		c > crab
 		b > butterfly
 		A > avatar 
+		p > poison
 
 	InteractionSet
+		avatar poison > killSprite
+		sword poison > nothing
 		dirt avatar > killSprite
 		dirt sword  > killSprite
 
