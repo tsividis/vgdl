@@ -145,9 +145,7 @@ class Agent:
         self.todo_delete = True
 
     def hyperparameterSwitch(self, new_index):
-        ratio = self.actionSeqLength/len(self.statesEncountered)
-        print "solution to action ratio: {}".format(ratio)
-        if ratio>5 and new_index!=self.hyperparameter_index:
+        if new_index!=self.hyperparameter_index:
             self.hyperparameter_index = new_index
             self.hyperparameters = self.hyperparameter_sets[new_index]
             self.shortHorizon = self.hyperparameters['short_horizon']#False
@@ -159,6 +157,8 @@ class Agent:
                 self.starting_max_nodes = 10000
                 self.max_nodes_annealing = 10.    
             print "Switching hyperparameters to {}".format(new_index)
+        planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
+        return planner_hyperparameters
 
     def initializeEnvironment(self):
         if self.gameString==None or self.levelString==None:
@@ -538,6 +538,7 @@ class Agent:
         ## Initialize external environment
         self.initializeEnvironment()
         print "initializing RLE"
+        print self.rle.show(color='blue')
         # embed()
         steps = 0
         self.quits = 0
@@ -584,7 +585,11 @@ class Agent:
         emptyPlans = 0
         while not ended:
             
-            print "playing with hyperparameter index {}".format(self.hyperparameter_index)
+            ## Modify: If your plan-to-action ratio is too high, switch to short-term planning.
+            # ratio = self.actionSeqLength/len(self.statesEncountered)
+            # planner_hyperparameters = self.hyperparameterSwitch(new_index=3)
+
+            print "planning with hyperparameter index {}".format(self.hyperparameter_index)
 
             ## initialize one or many VRLEs according to hypothesis-selection method
             theoryRLEs = self.VrleInitPhase(flexible_goals)
@@ -593,14 +598,14 @@ class Agent:
 
             planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
 
+            ## also, you commented out the bottom part of the planner, where it will still return a high-reward sequence in shortHorizon. This could have a very detrimental effect on short-horizon games...
+            ## you've deprecated annealing; this could be problematic.
+
             ## Initialize planner
             p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                 seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                 firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
-
             p_quitting = p.quitting
-
-            print "planning with safeDistance={}, regrounding={}".format(self.safeDistance, self.regrounding)
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes
 
@@ -610,61 +615,93 @@ class Agent:
                 objectPositionsArray = objectPositionsArray[::-1]
                 if solution:
                     print "got solution"
-                    # embed()
             else:
                 solution = []
 
+            if not solution:
+                if not self.checkForMovingKillerTypes(self.rle, self.hypotheses[0]):
+                    print "switching to long-range planning"
+                    ## switch to long-range planning
+                    planner_hyperparameters = self.hyperparameterSwitch(new_index=1)
+                    conservative = False
+                    self.max_nodes = self.starting_max_nodes
+                else:
+                    print "planning conservatively"
+                    conservative = True
+                    self.max_nodes = 50
 
-            # if not solution and self.shortHorizon and 
+                ## Replan in new mode
+                p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
+                    seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+                    firstOrderHorizon=self.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
+                p_quitting = p.quitting
+                bestNode, gameStringArray, objectPositionsArray = p.BFS()
+                self.total_planner_steps += p.total_nodes
+                if bestNode is not None:
+                    solution = p.solution
+                    gameString_array = p.gameString_array
+                    objectPositionsArray = objectPositionsArray[::-1]
+                    if solution:
+                        print "got solution"
+                else:
+                    solution = []
 
+            if (not solution) or p_quitting:
+                # Here we make a distinction between quitting because you've
+                # exhausted the number of nodes you can visit or because you
+                # ran out of novelty. In the first case, you only wait longer,
+                # in the second case, you also add a new atom to IW
+                if p.exhausted_novelty:
+                    self.extra_atom = True
+                if self.longHorizonObservations<self.longHorizonObservationLimit:
+                    print "Didn't get solution. Observing, then replanning."
+                    observe(self.rle, 5, self.bestSpriteTypeDict)
+                    solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
+                    self.longHorizonObservations += 1
+                else:
+                    quitting = True
 
-            # self.hyperparameterSwitch(new_index=3)
-            # planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
-
-
-
-
-
+            
             self.actionSeqLength += len(solution)
 
-            if self.shortHorizon:
-                ## new 6/30/18
-                if not solution:
-                    print "initializing conservative planner"
-                    # embed()
-                    print self.rle._game.getAvatars()[0].resources
+            # if self.shortHorizon:
+            #     ## new 6/30/18
+            #     if not solution:
+            #         print "initializing conservative planner"
+            #         # embed()
+            #         print self.rle._game.getAvatars()[0].resources
 
-                    ## initialize another planner in conservative mode, meaning you use safe heuristics. Plan for a short time, and return the longest safe plan you find.
-                    p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
-                        seen_limits = self.seen_limits, annealing=annealing, max_nodes=50, shortHorizon=self.shortHorizon,
-                        firstOrderHorizon=self.firstOrderHorizon, conservative=True, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
-                    p_quitting = p.quitting
-                    bestNode, gameStringArray, objectPositionsArray = p.BFS()
-                    self.total_planner_steps += p.total_nodes
-                    if bestNode is not None:
-                        solution = p.solution
-                        gameString_array = p.gameString_array
-                        objectPositionsArray = objectPositionsArray[::-1]
-                    # emptyPlans +=1
-                    # print "got an empty plan; observing for a while."
-                    # observe(self.rle, 10*emptyPlans**2, self.bestSpriteTypeDict)
-                else:
-                    emptyPlans = 0
-            else:
-                if (not solution) or p_quitting:
-                    # Here we make a distinction between quitting because you've
-                    # exhausted the number of nodes you can visit or because you
-                    # ran out of novelty. In the first case, you only wait longer,
-                    # in the second case, you also add a new atom to IW
-                    if p.exhausted_novelty:
-                        self.extra_atom = True
-                    if self.longHorizonObservations<self.longHorizonObservationLimit:
-                        print "Didn't get solution. Observing, then replanning."
-                        observe(self.rle, 5, self.bestSpriteTypeDict)
-                        solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
-                        self.longHorizonObservations += 1
-                    else:
-                        quitting = True
+            #         ## initialize another planner in conservative mode, meaning you use safe heuristics. Plan for a short time, and return the longest safe plan you find.
+            #         p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
+            #             seen_limits = self.seen_limits, annealing=annealing, max_nodes=50, shortHorizon=self.shortHorizon,
+            #             firstOrderHorizon=self.firstOrderHorizon, conservative=True, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
+            #         p_quitting = p.quitting
+            #         bestNode, gameStringArray, objectPositionsArray = p.BFS()
+            #         self.total_planner_steps += p.total_nodes
+            #         if bestNode is not None:
+            #             solution = p.solution
+            #             gameString_array = p.gameString_array
+            #             objectPositionsArray = objectPositionsArray[::-1]
+            #         # emptyPlans +=1
+            #         # print "got an empty plan; observing for a while."
+            #         # observe(self.rle, 10*emptyPlans**2, self.bestSpriteTypeDict)
+            #     else:
+            #         emptyPlans = 0
+            # else:
+            #     if (not solution) or p_quitting:
+            #         # Here we make a distinction between quitting because you've
+            #         # exhausted the number of nodes you can visit or because you
+            #         # ran out of novelty. In the first case, you only wait longer,
+            #         # in the second case, you also add a new atom to IW
+            #         if p.exhausted_novelty:
+            #             self.extra_atom = True
+            #         if self.longHorizonObservations<self.longHorizonObservationLimit:
+            #             print "Didn't get solution. Observing, then replanning."
+            #             observe(self.rle, 5, self.bestSpriteTypeDict)
+            #             solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
+            #             self.longHorizonObservations += 1
+            #         else:
+            #             quitting = True
 
             if solution and not p.quitting:
                 print "============================================="
@@ -676,9 +713,9 @@ class Agent:
                 print "============================================="
 
             ##new 6/30/18
-            if emptyPlans > self.emptyPlansLimit:
-                self.max_nodes *= self.max_nodes_annealing
-                print "reached emptyPlansLimit of {}. Annealing max nodes to {}".format(self.emptyPlansLimit, self.max_nodes)
+            # if emptyPlans > self.emptyPlansLimit:
+            #     self.max_nodes *= self.max_nodes_annealing
+            #     print "reached emptyPlansLimit of {}. Annealing max nodes to {}".format(self.emptyPlansLimit, self.max_nodes)
 
             # if emptyPlans > self.emptyPlansLimit:
                 # print "got too many empty plans"
@@ -793,6 +830,16 @@ class Agent:
 
 
         return gameObject, win, score, steps, statesEncountered, effectsEncountered
+
+    def checkForMovingKillerTypes(self, rle, hypothesis):
+        killer_types = [inter.slot2 for inter in hypothesis.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
+        moving_killer_types = [k for k in killer_types if any([t in str(hypothesis.classes[k][0].vgdlType) for t in ['Missile', 'Random', 'Chaser']])]
+        killer_colors = [hypothesis.classes[k][0].color for k in moving_killer_types]
+        if killer_colors:
+            for s in [item for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list]:
+                if s.colorName in killer_colors:
+                    return True
+        return False
 
     def checkForDangerOrAvatarMisLocation(self, rle, hypothesis, objectPositionsArray, i):
         regroundingFlag = False

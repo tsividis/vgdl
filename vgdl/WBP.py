@@ -421,9 +421,9 @@ class WBP():
 				self.solution = node.actionSeq
 
 				if self.conservative and not self.solution:
-					if self.display:
-						print "in conservative mode. didn't get solution; trying to filter less aggressively"
-					# embed()
+					# if self.display:
+					print "in conservative mode. didn't get solution; trying to filter less aggressively"
+					embed()
 					if QReward:
 						node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 					else:
@@ -618,26 +618,14 @@ class WBP():
 				bestNode = bestNodes[0]
 				if self.display:
 					print "found winning states"
-				# embed()
-				# gameString_array.append(bestNode.rle.show())
-				# object_positions_array.append(copy.deepcopy(bestNode.rle))
 				return bestNode, gameString_array, object_positions_array
 
 			# print i
-		self.solution = []#Node(self.rle, self, [], None)
+		self.solution = []
 
 
-		if self.short_horizon:
-			# ## Selecting such that it has an actionSeq, and then by intrinsic reward and by its length
-			# node = max(QReward, key=lambda n:(n.actionSeq, n.intrinsic_reward, len(n.actionSeq)))
-			# if len(node.actionSeq)>20:
-			# 	print "got long actionSeq"
-			# 	embed()
-			# # parentNode = copy.deepcopy(node)
-			# parentNode = node
-			# self.solution = node.actionSeq
-
-			# if self.conservative and not self.solution:
+		# if self.short_horizon:
+		if self.conservative:
 			if QReward:
 				if self.display:
 					print "In short-horizon mode; selecting highest-reward longest sequence"
@@ -653,7 +641,6 @@ class WBP():
 				child.eval()
 				node = child
 
-			# parentNode = copy.deepcopy(node)
 			parentNode = node
 			self.solution = node.actionSeq
 
@@ -671,12 +658,15 @@ class WBP():
 			# embed()
 			if not self.conservative and self.display:
 				print "End of shorthorizon plan"
-
+			elif self.conservative and self.display:
+				print "End of conservative plan"
+			# print "ended conservative plan"
+			# embed()
 			return node, gameString_array, object_positions_array
-		else:
-			if i>=self.max_nodes:
-				if self.display:
-					print "Got no plan after searching {} nodes".format(self.max_nodes)
+		# else:
+		# 	if i>=self.max_nodes:
+		# 		if self.display:
+		# 			print "Got no plan after searching {} nodes".format(self.max_nodes)
 		# print "reached end of BFS"
 		# embed()
 		return None, None, None
