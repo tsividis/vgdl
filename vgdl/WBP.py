@@ -79,7 +79,7 @@ class WBP():
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
-		self.display = True
+		self.display = False
 
 
 		if theory == None:
@@ -1240,6 +1240,7 @@ class Node():
 								for obj1 in obj1_positions
 								for obj2 in obj2_positions])
 						except:
+							pass
 							# print "failure with obj1_positions"
 							# embed()
 
@@ -1257,7 +1258,7 @@ class Node():
 
 					# print distance
 				except (ValueError, TypeError) as e:
-					if avatar_preconditions and avatars[0]:
+					# if avatar_preconditions and avatars[0]:
 						# print "valueError in spritecounter_val"
 						# embed()
 					pass

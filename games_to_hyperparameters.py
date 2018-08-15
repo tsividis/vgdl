@@ -11,8 +11,8 @@
 
 
 game_names = ['aliens', 'avoidgeorge', 'butterflies', 'chase', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'jaws', 'lemmings', 
-			 'myAliens', 'overload', 'plaqueattack', 'waves', 'frogs', 'portals', 'overload', 'expt_antagonist', 'expt_helper','expt_push_boulders',
-			 'expt_preconditions', 'sokoban', 'bait', 'watergame']
+			 'myAliens', 'overload', 'plaqueattack', 'waves', 'frogs', 'portals', 'expt_antagonist', 'expt_helper','expt_push_boulders','expt_preconditions',
+			 'sokoban', 'bait', 'watergame']
 
 
 
