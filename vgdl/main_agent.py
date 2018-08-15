@@ -368,7 +368,7 @@ class Agent:
             t1 = time.time()
             first_time_playing_level = True
 
-            while not win and i<10:
+            while not win and i<15:
                 gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
                 
                 self.total_game_steps += steps
