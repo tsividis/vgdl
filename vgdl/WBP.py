@@ -421,8 +421,8 @@ class WBP():
 				self.solution = node.actionSeq
 
 				if self.conservative and not self.solution:
-					# if self.display:
 					print "in conservative mode. didn't get solution; trying to filter less aggressively"
+					print "you should never actually end up here"
 					embed()
 					if QReward:
 						node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
@@ -451,13 +451,8 @@ class WBP():
 
 				self.quitting = True
 				self.exhausted_novelty = True
-				# return None
-				# if self.conservative not self.solution:
-					# print "current node is in None or pickMaxNode"
-					# embed()
-				if self.display:
-					print "was in None or PickMaxNode"
-				# embed()
+				# if self.display:
+				print "was in None or PickMaxNode"
 				return node, gameString_array, object_positions_array
 
 			self.statesEncountered.append(current.rle._game.getFullState())

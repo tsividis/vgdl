@@ -125,6 +125,8 @@ class Agent:
         self.finalEffectList = set()
         self.finalTimeStepList = []
         self.statesEncountered = []
+        self.rleHistory = []
+        self.episodeRecord = []
         self.fakeInteractionRules = []
         self.all_objects = {}
         self.bestSpriteTypeDict = defaultdict(lambda : {})
@@ -148,8 +150,8 @@ class Agent:
         if new_index!=self.hyperparameter_index:
             self.hyperparameter_index = new_index
             self.hyperparameters = self.hyperparameter_sets[new_index]
-            self.shortHorizon = self.hyperparameters['short_horizon']#False
-            self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)        if self.shortHorizon == True:
+            self.shortHorizon = self.hyperparameters['short_horizon']
+            self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
             if self.shortHorizon == True:
                 self.starting_max_nodes = 500
                 self.max_nodes_annealing = 1.05
@@ -256,34 +258,21 @@ class Agent:
         try:
             Vrle._game.getAvatars()[0].resources = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
             Vrle._game.getAvatars()[0].orientation = copy.deepcopy(self.rle._game.getAvatars()[0].orientation)
-            # Vrle._game.getAvatars()[0].resources = ccopy(self.rle._game.getAvatars()[0].resources)
-            # Vrle._game.getAvatars()[0].orientation = ccopy(self.rle._game.getAvatars()[0].orientation)
         except (IndexError, AttributeError) as e:
             pass
-        # Vrle.immovables, Vrle.killerObjects = immovables, killerObjects
         return Vrle
 
     def VrleInitPhase(self, flexible_goals=False):
         ## Initialize multiple VRLEs, each corresponding to one hypothesis in self.hypotheses
         VRLEs = []
-        # print "in VrleInitPhase.", len(self.hypotheses), "hypotheses"
-        # if len(self.hypotheses)>1:
-        #     print "more than one hypothesis"
 
         for hypothesis in self.hypotheses[0:1]:
             tempHypothesis = copy.deepcopy(hypothesis)
             tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
-            # tmpFakeInteractionRules = ccopy(self.fakeInteractionRules)
-
             tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
             if not flexible_goals:
                 tempHypothesis.updateTerminations()
-            # print "fake hypotheses"
-            # if self.fakeInteractionRules:/
-                # tempHypothesis.display()
             VRLEs.append(self.initializeVrle(tempHypothesis))
-        # print("wrote theory to text")
-
 
         return VRLEs
 
@@ -302,22 +291,8 @@ class Agent:
 
         # Handle wall vs. projectile interaction (hacky)
         avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
-        """
-        if 'stype' in avatar.args.keys():
-            # old_rule1 = InteractionRule('killSprite', avatar.args['stype'], 'c4', {}, set(), generic=True)
-            # old_rule2 = InteractionRule('killSprite', avatar.args['stype'], 'avatar', {}, set(), generic=True)
-            # new_rule = InteractionRule('nothing', avatar.args['stype'], 'avatar', {}, set())
-
-            # initialTheory.interactionSet.remove(old_rule1)
-            # initialTheory.interactionSet.remove(old_rule2)
-            # initialTheory.interactionSet.append(new_rule)
-            pass
-        """
-
         self.hypotheses = [initialTheory]
-
         self.symbolDict = generateSymbolDict(self.rle)
-
         return gameObject
 
     def completeHypotheses(self, allObjects, first_time_playing_level):
@@ -549,7 +524,8 @@ class Agent:
         ## Start storing encountered states.
         effectsEncountered = []
         statesEncountered = []
-        # statesEncountered = [self.rle._game.getFullState()]
+
+        # self.rleHistory.append(copy.deepcopy(self.rle._game))
         self.statesEncountered.append(self.rle._game.getFullState())
 
         ## Initialize memory of object positions
@@ -590,6 +566,7 @@ class Agent:
             # planner_hyperparameters = self.hyperparameterSwitch(new_index=3)
 
             print "planning with hyperparameter index {}".format(self.hyperparameter_index)
+            print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
 
             ## initialize one or many VRLEs according to hypothesis-selection method
             theoryRLEs = self.VrleInitPhase(flexible_goals)
@@ -619,7 +596,7 @@ class Agent:
                 solution = []
 
             if not solution:
-                if not self.checkForMovingKillerTypes(self.rle, self.hypotheses[0]):
+                if not self.checkForMovingKillerTypes(self.rle, self.hypotheses[0]) and self.noNewObjectsInAWhile(self.rle, 20) or self.checkForRepeatedDeaths(self.episodeRecord, 2):
                     print "switching to long-range planning"
                     ## switch to long-range planning
                     planner_hyperparameters = self.hyperparameterSwitch(new_index=1)
@@ -630,6 +607,8 @@ class Agent:
                     conservative = True
                     self.max_nodes = 50
 
+                print "planning with hyperparameter index {}".format(self.hyperparameter_index)
+                print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
                 ## Replan in new mode
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
@@ -729,6 +708,7 @@ class Agent:
                         # embed()
                     # envPrev = copy.deepcopy(self.rle)
                     t1 = time.time()
+                    effects = []
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
                         run_induction = not flexible_goals)
                     print "executeStep took {} seconds".format(time.time()-t1)
@@ -805,6 +785,9 @@ class Agent:
 
             annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
+            
+            if ended:
+                self.episodeRecord.insert(0, (win, effects))
             # if ended and not win:
             #     print "lost game. embedding"
             #     embed()
@@ -830,6 +813,24 @@ class Agent:
 
 
         return gameObject, win, score, steps, statesEncountered, effectsEncountered
+
+    def checkForRepeatedDeaths(self, episodeRecord, cutoff):
+        count = 1
+        for i in range(1, len(episodeRecord)):
+            if episodeRecord[i][0]==False and episodeRecord[i][1]==episodeRecord[i-1][1]:
+                count+=1
+            else:
+                break
+        if count>cutoff:
+            return True
+        else:
+            return False
+    def noNewObjectsInAWhile(self, rle, age_cutoff):
+        min_age = min([item.lastmove for sublist in self.rle._game.sprite_groups.values() for item in sublist])
+        if min_age > age_cutoff:
+            return True
+        else:
+            return False
 
     def checkForMovingKillerTypes(self, rle, hypothesis):
         killer_types = [inter.slot2 for inter in hypothesis.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
@@ -972,6 +973,7 @@ class Agent:
         t1 = time.time()
         # envPrev = copy.deepcopy(self.rle)
         res = self.rle.step(action)
+        # self.rleHistory.append(copy.deepcopy(self.rle._game))
         print "step took {} seconds".format(time.time()-t1)
 
         print ""
