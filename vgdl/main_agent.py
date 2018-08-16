@@ -278,7 +278,10 @@ class Agent:
 
     def initializeHypotheses(self, allObjects, learnSprites=True):
         if learnSprites:
-            observe(self.rle, 15, self.bestSpriteTypeDict)
+            if not self.skipInduction:
+                observe(self.rle, 15, self.bestSpriteTypeDict)
+            else:
+                observe(self.rle, 1, self.bestSpriteTypeDict)                
             spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
                 self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
             self.rle._game.exceptedObjects = exceptedObjects
@@ -602,10 +605,12 @@ class Agent:
                     planner_hyperparameters = self.hyperparameterSwitch(new_index=1)
                     conservative = False
                     self.max_nodes = self.starting_max_nodes
+                    embed()
                 else:
                     print "planning conservatively"
                     conservative = True
                     self.max_nodes = 50
+                    embed()
 
                 print "planning with hyperparameter index {}".format(self.hyperparameter_index)
                 print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
@@ -825,9 +830,11 @@ class Agent:
             return True
         else:
             return False
+            
     def noNewObjectsInAWhile(self, rle, age_cutoff):
-        min_age = min([item.lastmove for sublist in self.rle._game.sprite_groups.values() for item in sublist])
-        if min_age > age_cutoff:
+        min_age = min([item.lastmove for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list])
+        time_since_last_kill = self.rle._game.time - max([item.lastmove for item in self.rle._game.kill_list])
+        if (min_age > age_cutoff) and (time_since_last_kill > age_cutoff):
             return True
         else:
             return False

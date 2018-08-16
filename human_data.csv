@@ -27,3 +27,16 @@ human,no_score,expt_preconditions,3,19.0,1.0,3.7329740524291992
 human,no_score,expt_preconditions,1,14.0,1.0,3.0055820941925049
 human,no_score,expt_preconditions,2,14.0,1.0,2.6076221466064453
 human,no_score,expt_preconditions,3,18.0,1.0,4.4857170581817627
+human,no_score,expt_relational,1,57.0,1.0,10.370728015899658
+human,no_score,expt_relational,1,43.0,1.0,8.0566661357879639
+human,no_score,expt_relational,3,61.0,1.0,11.243245840072632
+human,no_score,expt_relational,5,86.0,1.0,15.673386812210083
+human,no_score,expt_relational,7,70.0,1.0,24.419334173202515
+human,no_score,expt_relational,1,43.0,1.0,10.10119104385376
+human,no_score,expt_relational,3,64.0,1.0,24.573723077774048
+human,no_score,expt_relational,1,43.0,1.0,9.8792901039123535
+human,no_score,expt_relational,1,39.0,1.0,8.2171549797058105
+human,no_score,expt_relational,1,47.0,1.0,8.2066938877105713
+human,no_score,expt_relational,1,62.0,1.0,10.978586912155151
+human,no_score,expt_relational,3,96.0,1.0,18.090139150619507
+human,no_score,expt_relational,5,78.0,1.0,16.87991189956665
