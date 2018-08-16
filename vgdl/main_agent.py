@@ -830,7 +830,7 @@ class Agent:
             return True
         else:
             return False
-            
+
     def noNewObjectsInAWhile(self, rle, age_cutoff):
         min_age = min([item.lastmove for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list])
         time_since_last_kill = self.rle._game.time - max([item.lastmove for item in self.rle._game.kill_list])
