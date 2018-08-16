@@ -1,66 +1,54 @@
 
 level0 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwA                   wwwwww
-wwwwww    a    x          wwwwww
-wwwwww              f     wwwwww
-wwwwww                    wwwwww
-wwwwww      f             wwwwww
-wwwwww                 x  wwwwww
-wwwwww          a         wwwwww
-wwwwww                    wwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwww
+wA                   w
+w    a    x          w
+w              f     w
+w                    w
+w      f             w
+w                 x  w
+w          a         w
+w                    w
+wwwwwwwwwwwwwwwwwwwwww
 """
 
 level1 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwA                   wwwwww
-wwwwww    a    x          wwwwww
-wwwwww                    wwwwww
-wwwwww                    wwwwww
-wwwwww              z     wwwwww
-wwwwww   x    z           wwwwww
-wwwwww          a         wwwwww
-wwwwww                    wwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwww
+wA                   w
+w    a    x          w
+w                    w
+w                    w
+w              z     w
+w   x    z           w
+w          a         w
+w                    w
+wwwwwwwwwwwwwwwwwwwwww
 """
 
 level2 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwww                    wwwwww
-wwwwww    a    x          wwwwww
-wwwwww                    wwwwww
-wwwwww                    wwwwww
-wwwwww              y     wwwwww
-wwwwww   x    y           wwwwww
-wwwwww          a         wwwwww
-wwwwww          A         wwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwww
+w                    w
+w    a    x          w
+w                    w
+w                    w
+w              y     w
+w   x    y           w
+w          a         w
+w          A         w
+wwwwwwwwwwwwwwwwwwwwww
 """
 
 level3 = """
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwww                    wwwwww
-wwwwww         x          wwwwww
-wwwwww            y       wwwwww
-wwwwww                    wwwwww
-wwwwww          y   z     wwwwww
-wwwwww   x    z           wwwwww
-wwwwww                    wwwwww
-wwwwww          A         wwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwww
+w                    w
+w         x          w
+w            y       w
+w                    w
+w          y   z     w
+w   x    z           w
+w                    w
+w          A         w
+wwwwwwwwwwwwwwwwwwwwww
 """
 
 
@@ -106,7 +94,7 @@ BasicGame frame_rate=30
         converter1 avatar > transformTo stype=fire
         probe fire > killSprite
         fire probe > killSprite
-        avatar converter > stepBack
+        avatar converter > nothing
         avatar poison > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
@@ -134,7 +122,6 @@ BasicGame frame_rate=30
         b > box2
         f > fire
         x > probe
-        z > converter1
         y > converter2
         z > converter3
         p > poison
@@ -160,13 +147,64 @@ BasicGame frame_rate=30
         converter1 avatar > transformTo stype=fire
         probe fire > killSprite
         fire probe > killSprite
-        avatar converter > stepBack
+        avatar converter1 > nothing
+        avatar converter2 > nothing
+        avatar converter3 > nothing
         avatar poison > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=probe limit=0 win=True
 """
 
+game3 = """
+BasicGame frame_rate=30
+    SpriteSet
+        probe > Immovable color=BLUE
+        converter > Immovable
+            converter1 > color=RED
+            converter2 > color=PURPLE
+            converter3 > color=PINK
+        box > Immovable
+            box1 > color=ORANGE
+        fire > Immovable color=YELLOW
+        avatar > MovingAvatar color=WHITE
+        poison > Immovable color=BLACK
+        wall > Immovable color=BLACK
+    LevelMapping
+        w > wall
+        a > box1
+        b > box2
+        f > fire
+        x > probe
+        z > converter3
+        y > converter2
+        p > poison
+    InteractionSet
+        avatar wall > stepBack
+        avatar fire > stepBack
+        box avatar > bounceForward
+        box probe > stepBack
+        probe box > stepBack
+        box box > stepBack
+        box wall > stepBack
+        probe wall > stepBack
+        converter wall > stepBack
+        probe converter > stepBack
+        converter1 box > bounceForward
+        box converter2 > transformTo stype=fire
+        converter2 fire > killSprite
+        box fire > stepBack
+        probe probe > stepBack
+        probe avatar > bounceForward
+        converter3 avatar > transformTo stype=box1
+        probe fire > killSprite
+        fire probe > killSprite
+        avatar converter > nothing
+        avatar poison > killSprite
+    TerminationSet
+        SpriteCounter stype=avatar  limit=0 win=False
+        SpriteCounter stype=probe limit=0 win=True
+"""
 
 # level_game_pairs = [[game0, level2], [game3, level3]]
 level_game_pairs = [[game0, level0], [game0, level1], [game0, level2],[game3, level3]]
