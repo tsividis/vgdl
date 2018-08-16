@@ -10,7 +10,7 @@
 #                  'waves']                               	 #26-27
 
 
-game_names = ['aliens', 'avoidgeorge', 'boulderdash',  'butterflies', 'chase', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'jaws', 
+game_names = ['aliens', 'avoidgeorge', 'med_boulderdash',  'butterflies', 'chase', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'jaws', 
 			'lemmings', 'myAliens', 'overload', 'plaqueattack', 'waves', 'frogs', 'portals', 'expt_antagonist', 'expt_ee', 'expt_helper',
 			'expt_push_boulders','expt_preconditions', 'expt_relational', 'sokoban', 'bait', 'watergame']
 
