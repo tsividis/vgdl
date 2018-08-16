@@ -3,7 +3,7 @@
 
 #SBATCH --job-name=run_vgdl_model
 #SBATCH --array=0-25
-#SBATCH --output=slurm_logs/short_horizon/array_%A_%a.out
+#SBATCH --output=slurm_logs/short_horizon2/array_%A_%a.out
 #SBATCH --time=1480
 #SBATCH --qos=tenenbaum
 #SBTACH --cpus-per-task=2
@@ -39,8 +39,8 @@ if [ "$OS" = "CentOS Linux" ]; then
 fi
 
 # make log path if not already present
-if [ ! -d "${ROOT}/slurm_logs/short_horizon" ]; then
-    mkdir "${ROOT}/slurm_logs/short_horizon"
+if [ ! -d "${ROOT}/slurm_logs/short_horizon2" ]; then
+    mkdir "${ROOT}/slurm_logs/short_horizon2"
 fi
 
 # finally, run the model
