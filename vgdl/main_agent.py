@@ -250,7 +250,7 @@ class Agent:
         # gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
         #          "./examples/gridphysics/theorytest.py")
         gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
-                 "./theory_files_short_horizon2/hyperparameter_idx_{}/{}.py".format(self.hyperparameters['idx'], self.gameFilename))
+                 "./theory_files_short_horizon/hyperparameter_idx_{}/{}.py".format(self.hyperparameters['idx'], self.gameFilename))
         Vrle = createMindEnv(gameString, levelString, output=False)
 
         self.setSpritePositions(self.rle, Vrle, hypothesis)
@@ -516,8 +516,8 @@ class Agent:
         ## Initialize external environment
         self.initializeEnvironment()
         print "initializing RLE"
+        print self.gameFilename
         print self.rle.show(color='blue')
-        # embed()
         steps = 0
         self.quits = 0
         self.longHorizonObservations = 0
@@ -599,18 +599,19 @@ class Agent:
                 solution = []
 
             if not solution:
-                if not self.checkForMovingKillerTypes(self.rle, self.hypotheses[0]) and self.noNewObjectsInAWhile(self.rle, 20) or self.checkForRepeatedDeaths(self.episodeRecord, 2):
+                if not self.checkForMovingKillerTypes(self.rle, self.hypotheses[0]) and self.noNewObjectsInAWhile(self.rle, 55) or self.checkForRepeatedDeaths(self.episodeRecord, 2):
                     print "switching to long-range planning"
                     ## switch to long-range planning
                     planner_hyperparameters = self.hyperparameterSwitch(new_index=1)
                     conservative = False
                     self.max_nodes = self.starting_max_nodes
-                    embed()
+                    # embed()
                 else:
                     print "planning conservatively"
+                    planner_hyperparameters = self.hyperparameterSwitch(new_index=3)
                     conservative = True
                     self.max_nodes = 50
-                    embed()
+                    # embed()
 
                 print "planning with hyperparameter index {}".format(self.hyperparameter_index)
                 print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
@@ -833,7 +834,11 @@ class Agent:
 
     def noNewObjectsInAWhile(self, rle, age_cutoff):
         min_age = min([item.lastmove for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list])
-        time_since_last_kill = self.rle._game.time - max([item.lastmove for item in self.rle._game.kill_list])
+        if self.rle._game.kill_list:
+            time_since_last_kill = self.rle._game.time - max([item.lastmove for item in self.rle._game.kill_list])
+        else:
+            time_since_last_kill = self.rle._game.time
+
         if (min_age > age_cutoff) and (time_since_last_kill > age_cutoff):
             return True
         else:
