@@ -44,7 +44,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
-		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False):
+		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, display=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.hyperparameters = hyperparameters
@@ -79,7 +79,7 @@ class WBP():
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
-		self.display = False
+		self.display = display
 
 
 		if theory == None:
