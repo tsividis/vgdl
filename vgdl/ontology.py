@@ -17,7 +17,7 @@ from ai import AStarWorld
 from IPython import embed
 import core
 import copy
-import ipdb
+# import ipdb
 import time
 from pygame import Rect
 from collections import defaultdict
