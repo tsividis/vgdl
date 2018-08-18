@@ -7,7 +7,7 @@ import os
 import uuid
 import subprocess
 import glob
-import ipdb
+# import ipdb
 from IPython import embed
 from core import *
 from tools import roundedPoints

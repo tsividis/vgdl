@@ -7,7 +7,7 @@ from taxonomy import *
 from IPython import embed
 from ontology import *
 from collections import defaultdict
-import ipdb
+# import ipdb
 import operator
 import time, math
 from util import factorize, objectsToSymbol
