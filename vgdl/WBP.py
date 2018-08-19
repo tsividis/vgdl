@@ -384,6 +384,9 @@ class WBP():
 		i=0
 
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
+			if self.display and i%100==0:
+				print "Searching node {}".format(i)
+
 			current = self.rewardSelection(QReward, QNovelty)
 			
 			if current in [None, 'pickMaxNode']:

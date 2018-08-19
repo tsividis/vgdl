@@ -598,7 +598,7 @@ class Agent:
             else:
                 solution = []
 
-            if not solution:
+            if not solution and self.hyperparameter_index==3:
                 if not self.checkForMovingKillerTypes(self.rle, self.hypotheses[0]) and self.noNewObjectsInAWhile(self.rle, 55) or self.checkForRepeatedDeaths(self.episodeRecord, 2):
                     print "switching to long-range planning"
                     ## switch to long-range planning
