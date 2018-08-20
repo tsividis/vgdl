@@ -79,7 +79,7 @@ class WBP():
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
-		self.display = display
+		self.display = False
 
 
 		if theory == None:
@@ -1133,7 +1133,8 @@ class Node():
 		else:
 			val -= mult*first_alpha ## we shouldn't go in here, as if we've actually destroyed the relevant sprite we'll trigger a win condition.
 
-		# print "stype, n_stypes, distance_to_goal, val", stype, n_stypes, distance_to_goal, val
+		# if self.WBP.theory.classes[stype][0].color=='BLUE':
+			# print "stype, n_stypes, distance_to_goal, val", stype, n_stypes, distance_to_goal, val
 		if compute_second_order:
 			## Get all positions of objects whose type is in killer_types; compute minimum distance
 			## of each to the stypes we have to destroy. Return min over all mins.
@@ -1167,11 +1168,12 @@ class Node():
 				distance = 100
 
 			if possiblePairList:
-				n_sprites = len(possiblePairList) ## TODO: you're normalizing by the number of possible pairs of killer_sprites and target_sprites; you should just normalize by the number of targets
+				n_sprites = len(stype_positions)
+				# n_sprites = len(possiblePairList) ## TODO: you're normalizing by the number of possible pairs of killer_sprites and target_sprites; you should just normalize by the number of targets
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
 				# val += max(self.WBP.rle.outdim[0],self.WBP.rle.outdim[1])*float(mult * second_alpha * distance**2)/(n_sprites**2 * self.WBP.hypotenuse_squared)
-				val += float(mult * second_alpha * distance)/n_sprites**2
+				added_val = float(mult * second_alpha * distance)/n_sprites**2
 			elif stype!='avatar':
 				# This helps in cases in which either the stype or the killer_type is not always on the screen
 				# Then, you should not be disincentivized to create it, which can be achieved through this high penalty
@@ -1179,11 +1181,17 @@ class Node():
 				# if stype=='c5':
 					# embed()
 				distance = 100
-				val += float(mult * second_alpha * distance)
+				added_val = float(mult * second_alpha * distance)
 			elif not stype_positions:
 				## If we couldn't compute a second-order distance because the avatar is dead, give infinite penalty.
-				val += -float('inf')
+				added_val = -float('inf')
+			else:
+				added_val = 0.
 
+			val += added_val
+			# if self.WBP.theory.classes[stype][0].color=='BLUE':
+				# print "found blue: {}".format(added_val)
+				# embed()
 			# if self.WBP.conservative:
 				# print distance, val
 				# print rle.show()
@@ -1477,8 +1485,8 @@ class Node():
 			# print "chosen avatar novelty val", min(avatarNoveltyVals, key= lambda x: x[1])[0]
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
 		
-		# print "position", self.position_score(-1000) 
-		# print "sum:", heuristicVal+self.position_score(-1000) 
+		# print "position", self.position_score(-100) 
+		# print "sum:", heuristicVal+self.position_score(-100) 
 		# if self.actionSeq:
 			# print actionDict[self.actionSeq[-1]]
 		# print rle.show()
