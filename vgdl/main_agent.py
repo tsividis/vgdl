@@ -157,7 +157,8 @@ class Agent:
                 self.max_nodes_annealing = 1.05
             else:
                 self.starting_max_nodes = 10000
-                self.max_nodes_annealing = 10.    
+                self.max_nodes_annealing = 10. 
+            self.max_nodes = self.starting_max_nodes
             print "Switching hyperparameters to {}".format(new_index)
         planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
         return planner_hyperparameters
@@ -598,20 +599,46 @@ class Agent:
             else:
                 solution = []
 
-            if not solution and self.hyperparameter_index==3:
-                if not self.checkForMovingKillerTypes(self.rle, self.hypotheses[0]) and self.noNewObjectsInAWhile(self.rle, 55) or self.checkForRepeatedDeaths(self.episodeRecord, 2):
-                    print "switching to long-range planning"
-                    ## switch to long-range planning
-                    planner_hyperparameters = self.hyperparameterSwitch(new_index=1)
-                    conservative = False
-                    self.max_nodes = self.starting_max_nodes
-                    # embed()
+            # if not solution and self.hyperparameter_index==3:
+            #     if not self.checkForMovingKillerTypes(self.rle, self.hypotheses[0]) and self.noNewObjectsInAWhile(self.rle, 55) or self.checkForRepeatedDeaths(self.episodeRecord, 2):
+            #         print "switching to long-range planning"
+            #         ## switch to long-range planning
+            #         planner_hyperparameters = self.hyperparameterSwitch(new_index=1)
+            #         conservative = False
+            #         self.max_nodes = self.starting_max_nodes
+            #         # embed()
+            #     else:
+            #         print "planning conservatively"
+            #         planner_hyperparameters = self.hyperparameterSwitch(new_index=3)
+            #         conservative = True
+            #         self.max_nodes = 50
+            #         # embed()
+            if not solution:
+                ## If we're repeatedly dying in the same way, just switch hyperparameters blindly.
+                if self.checkForRepeatedDeaths(self.episodeRecord, 2):
+                    if self.hyperparameter_index == 1:
+                        print "Repeated deaths. Switching to short-range planning"
+                        new_index = 3 
+                    elif self.hyperparameter_index == 3: 
+                        print "Repeated deaths. Switching to long-range planning"
+                        new_index = 1
+                    planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
+
+                elif self.hyperparameter_index == 3:
+                    if not self.checkForMovingKillerTypes(self.rle, self.hypotheses[0]) and self.noNewObjectsInAWhile(self.rle, 55):
+                        print "switching to long-range planning"
+                        ## switch to long-range planning
+                        planner_hyperparameters = self.hyperparameterSwitch(new_index=1)
+                        conservative = False
+                        # embed()
+                    else:
+                        print "planning conservatively"
+                        planner_hyperparameters = self.hyperparameterSwitch(new_index=3)
+                        conservative = True
+                        self.max_nodes = 50
+                        # embed()
                 else:
-                    print "planning conservatively"
-                    planner_hyperparameters = self.hyperparameterSwitch(new_index=3)
-                    conservative = True
-                    self.max_nodes = 50
-                    # embed()
+                    conservative = False
 
                 print "planning with hyperparameter index {}".format(self.hyperparameter_index)
                 print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
@@ -782,6 +809,8 @@ class Agent:
                 ## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
                 ## Search more deeply next time.
                 self.max_nodes *= self.max_nodes_annealing
+                win, effects = False, []
+                self.episodeRecord.insert(0, (win, effects))
                 # self.updateMemory(self.rle)
                 print colored('________________________________________________________________', 'white', 'on_red')
                 print colored("Quitting", 'white', 'on_red')
