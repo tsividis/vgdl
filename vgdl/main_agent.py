@@ -137,7 +137,7 @@ class Agent:
         self.new_objects = {}
         self.actionSeqLength = 0.
         self.extra_atom = False
-        self.skipInduction = True
+        self.skipInduction = False
 
         # Hyperopt output
         self.total_game_steps = 0
