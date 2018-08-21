@@ -620,9 +620,11 @@ class Agent:
                     if self.hyperparameter_index == 1:
                         print "Repeated deaths. Switching to short-range planning"
                         new_index = 3 
+                        conservative = False
                     elif self.hyperparameter_index == 3: 
                         print "Repeated deaths. Switching to long-range planning"
                         new_index = 1
+                        conservative = False
                     planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
 
                 elif self.hyperparameter_index == 3:
