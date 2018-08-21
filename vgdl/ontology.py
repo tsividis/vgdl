@@ -1610,6 +1610,7 @@ def collectResource(sprite, partner, game, resource=None, value=1, limit=None): 
 
     killSprite(sprite, partner, game)
     args = {'resource':sprite.name, 'value':value, 'limit':game.resources_limits[sprite.name]}
+    print "collectResource", partner.resources
     #print 'Collected ', colorDict[str(sprite.color)]#partner.resources[r]
     # return ('collectResource', colorDict[str(partner.color)], colorDict[str(sprite.color)])
     return ('collectResource' , sprite.ID, partner.ID, args)
