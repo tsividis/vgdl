@@ -14,9 +14,9 @@
 			# 'myAliens', 'overload', 'plaqueattack', 'waves', 'frogs', 'portals', 'expt_ee','expt_push_boulders', 'sokoban', 'bait']
 
 ## more memory
-game_names = ['expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'jaws', 'boulderdash', 'watergame']
+# game_names = ['expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'jaws', 'boulderdash', 'watergame']
 
-
+game_names = ['overload']
 # game_names = ['expt_helper']
 
 ## idx 1:
