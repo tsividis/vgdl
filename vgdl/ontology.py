@@ -1342,6 +1342,7 @@ def nothing(sprite, partner, game):
 def killSprite(sprite, partner, game):
     """ Kill command """
     game.kill_list.append(sprite)
+    sprite.deathage = game.time
     if not None in {sprite, partner}:
         return ("killSprite", sprite.ID, partner.ID) # partner = agent, sprite = what's being killed
 
