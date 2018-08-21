@@ -110,7 +110,7 @@ def make_random_name(chars):
 	return name
 
 def write_to_csv(foldername, filename, game):
-	dirname = 'model_results_short_horizon/'
+	dirname = 'model_results_short_horizon2/'
 	
 	if filename not in os.listdir(dirname+foldername+'/'):
 		f = open(dirname+foldername+'/'+filename, 'w+') #newfile and write
