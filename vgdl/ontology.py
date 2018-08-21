@@ -106,7 +106,7 @@ class GridPhysics():
          ## This is where you could make hypotheses about speed, etc. for the object.
         if action is not None:
             orientation = action
-        if (sprite.lastmove+1)%sprite.cooldown==0 and abs(orientation[0])+abs(orientation[1])!=0:
+        if (sprite.lastmove+2)%sprite.cooldown==0 and abs(orientation[0])+abs(orientation[1])!=0:
 
             if speed is None:
                 if sprite.speed is None:
@@ -451,7 +451,6 @@ class Chaser(RandomNPC): ##
         if len(options) == 0:
             options = BASEDIRS
         # self.physics.activeMovement(self, options[0])
-
         self.physics.activeMovement(self, random.choice(options))
 
 
@@ -1646,7 +1645,7 @@ def killIfHasMore(sprite, partner, game, resource, limit=1):
 
 def killIfOtherHasMore(sprite, partner, game, resource, limit=1):
     """ If 'partner' has more than a limit of the resource type given, sprite dies. """
-    print partner.resources, limit
+    # print partner.resources, limit
     if partner.resources[resource] >= limit:
         return killSprite(sprite, partner, game)
         # return ('killIfOtherHasMore' , sprite.ID, partner.ID)
@@ -1932,23 +1931,10 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         targetColor = getStype(params)
         cooldown = getCooldown(params)
 
-        # if (current_sprite.lastmove+1)%cooldown!=0:
-        #     position_options = {(current_sprite.rect.left, current_sprite.rect.top): 1.}
-        #     return position_options, position_options
-
         realCooldown = int(current_sprite.cooldown)
         current_sprite.cooldown = cooldown
         
         targets = getTargets(game, targetColor)
-
-        # try:
-        #     targetName = [k for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName==targetColor][0]
-        #     # targets = [s for s in game.sprite_groups[targetName]]
-        #     targets = [s for s in game.sprite_groups[targetName] if s not in game.kill_list]
-        #     # print "target name: {}. target length: {}".format(targetName, len(targets))
-        # except:
-        #     targets = []
-        #     pass
 
         options = []
         position_options = {}
@@ -2188,12 +2174,11 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
     #     print "chaser prob", curr_distribution[sprite][(('vgdlType', Chaser), ('cooldown', 1),  ('fleeing', False), ('speed', 0.1), ('stype', 'RED'))]
     #     embed()
 
-
-    # if missileOrientationClustering and game.all_objects[sprite]['features']['color']=='GREEN':
-    #     print "BEFORE UPDATE"
-    #     print game.all_objects[sprite]['position'], outcome
-    #     print game.spriteUpdateDict[sprite]
-    #     # print movement_options[sprite][(('vgdlType', RandomNPC), ('cooldown', 3), ('speed', 0.2))]
+    # if game.all_objects[sprite]['features']['color']=='ORANGE':
+        # print "BEFORE UPDATE"
+        # print game.all_objects[sprite]['position'], outcome
+        # print game.spriteUpdateDict[sprite]
+        # print movement_options[sprite][(('vgdlType', Chaser),('cooldown', 2),('fleeing', False), ('speed', 0.1), ('stype', 'DARKBLUE'))]
     #     print "missile", movement_options[sprite][(('vgdlType', ResourcePack),)]
     #     print "missile prob", curr_distribution[sprite][(('vgdlType', ResourcePack),)]
         # embed()
@@ -2583,16 +2568,16 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             # embed()
 
         # Use for debugging sprite-type inference.
-        # if obj_type=='LIGHTGREEN':
+        # if obj_type=='RED':
         #     # goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='BROWN']
         #     # print [g.rect for g in goldobjs[0]]
-        #     for i,k in enumerate(sorted(param_sum, key=param_sum.get, reverse=True)):
-        #         print(k, param_sum[k])
-        #         if i>10:
-        #             break
-        #     print ""
-        #     print best_param
-            # embed()
+            # for i,k in enumerate(sorted(param_sum, key=param_sum.get, reverse=True)):
+                # print(k, param_sum[k])
+                # if i>10:
+                    # break
+            # print ""
+            # print best_param
+        #     embed()
 
         sprite_type = best_param[0][1]
 

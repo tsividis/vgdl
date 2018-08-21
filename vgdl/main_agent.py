@@ -1010,11 +1010,24 @@ class Agent:
         except IndexError:
             agentState = defaultdict(lambda: 0)
 
-        # if self.rle._game.time in [5, 20]:
-            # embed()
         t1 = time.time()
         # envPrev = copy.deepcopy(self.rle)
+        
+        # prevPos, currPos = (0,0), (0,0)
+        # if self.rle._game.sprite_groups['shark']:
+            # envPrev = copy.deepcopy(self.rle)
+            # prevPos = (self.rle._game.sprite_groups['shark'][0].rect.left, self.rle._game.sprite_groups['shark'][0].rect.top)
+
         res = self.rle.step(action)
+        
+        # if self.rle._game.sprite_groups['shark']:
+            # currPos = (self.rle._game.sprite_groups['shark'][0].rect.left, self.rle._game.sprite_groups['shark'][0].rect.top)
+
+        # if prevPos != (0,0) and (currPos[0]-prevPos[0] != 0) and ((currPos[1] - prevPos[1]) != 0):
+            # print "shark took two steps"
+            # embed()
+
+        # embed()
         # self.rleHistory.append(copy.deepcopy(self.rle._game))
         print "step took {} seconds".format(time.time()-t1)
 
