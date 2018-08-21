@@ -251,7 +251,7 @@ class Agent:
         # gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
         #          "./examples/gridphysics/theorytest.py")
         gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
-                 "./theory_files_short_horizon2/hyperparameter_idx_{}/{}.py".format(self.hyperparameters['idx'], self.gameFilename))
+                 "./theory_files_short_horizon/hyperparameter_idx_{}/{}.py".format(self.hyperparameters['idx'], self.gameFilename))
         Vrle = createMindEnv(gameString, levelString, output=False)
 
         self.setSpritePositions(self.rle, Vrle, hypothesis)
@@ -633,7 +633,6 @@ class Agent:
                         ## switch to long-range planning
                         planner_hyperparameters = self.hyperparameterSwitch(new_index=1)
                         conservative = False
-                        # embed()
                     else:
                         print "planning conservatively"
                         planner_hyperparameters = self.hyperparameterSwitch(new_index=3)
@@ -644,7 +643,11 @@ class Agent:
                     conservative = False
 
                 print "planning with hyperparameter index {}".format(self.hyperparameter_index)
-                print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
+                print "max_nodes: {}, short_horizon: {}, conservative: {}".format(self.max_nodes, self.shortHorizon, conservative)
+                # embed()
+
+
+
                 ## Replan in new mode
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
@@ -867,7 +870,7 @@ class Agent:
     def noNewObjectsInAWhile(self, rle, age_cutoff):
         min_age = min([item.lastmove for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list])
         if self.rle._game.kill_list:
-            time_since_last_kill = self.rle._game.time - max([item.lastmove for item in self.rle._game.kill_list])
+            time_since_last_kill = self.rle._game.time - max([item.deathage for item in self.rle._game.kill_list])
         else:
             time_since_last_kill = self.rle._game.time
 
