@@ -519,6 +519,7 @@ class Agent:
         print "initializing RLE"
         print self.gameFilename
         print self.rle.show(color='blue')
+
         steps = 0
         self.quits = 0
         self.longHorizonObservations = 0
@@ -1216,7 +1217,7 @@ if __name__ == "__main__":
     # filename = "examples.gridphysics.pick_apples"
     # filename = "examples.gridphysics.expt_exploration_exploitation_debugging"
 
-    filename = "examples.gridphysics.theory_small_boulderdash"
+    filename = "examples.gridphysics.theory_overload"
 
     level_game_pairs = None
     # Playing GVG-AI games
