@@ -10,17 +10,20 @@
 #                  'waves']                               	 #26-27
 
 
+## low memory
 # game_names = ['aliens', 'avoidgeorge', 'med_boulderdash',  'butterflies', 'chase', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'lemmings', 
 			# 'myAliens', 'plaqueattack', 'waves', 'frogs', 'portals', 'expt_ee','expt_push_boulders', 'sokoban', 'bait']
+
+## more memory
+game_names = ['expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'jaws', 'watergame']
+
 
 ##low-memory games where position_score seems to affect results
 # game_names = ['avoidgeorge', 'med_boulderdash', 'survivezombies', 'zelda', 'frogs']
 ##high-memory games where position_score seems to affect results
-# game_names = ['expt_relational', 'overload', 'jaws', 'watergame', 'bait']
-# game_names = ['lemmings', 'myAliens']
-game_names = ['zelda', 'bait']
-## more memory
-# game_names = ['expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'overload', 'jaws', 'watergame']
+# game_names = ['expt_relational', 'jaws', 'watergame', 'bait', 'portals']
+
+# game_names = ['zelda', 'bait']
 
 # game_names = ['expt_helper']
 

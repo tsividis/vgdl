@@ -47,7 +47,8 @@ class WBP():
 		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, display=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
-		self.hyperparameters = hyperparameters
+		self.hyperparameter_index = hyperparameters['idx']
+		self.hyperparameters = dict((k, hyperparameters[k]) for k in hyperparameters.keys() if k not in ['idx'])
 		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
 		self.vecDim = [rle.outdim[0]*rle.outdim[1], 2, self.T]
 		self.trueAtoms = defaultdict(lambda:0) #set() ## set of atoms that have been true at some point thus far in the planner.
@@ -79,6 +80,16 @@ class WBP():
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
+		
+		if self.hyperparameter_index == 1:
+			self.position_score_multiplier = -1000
+		elif self.hyperparameter_index == 3:
+			self.position_score_multiplier = random.choice([-100, -1000])
+		else:
+			print "Warning: haven't thought about position_score_multiplier for idx {}".format(self.hyperparameter_index)
+			self.position_score_multiplier = -1000
+
+		print "In planner; planning with idx {} and position_multiplier {}".format(self.hyperparameter_index, self.position_score_multiplier)
 		self.display = False
 
 
@@ -1641,7 +1652,8 @@ class Node():
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
 		# print("metabolic cost is {}".format(self.metabolic_cost))
-		self.intrinsic_reward = self.heuristicVal + self.position_score(-100) #+ self.metabolic_cost
+
+		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) #+ self.metabolic_cost
 
 		## Debug printouts
 		# print("heuristicVal {}".format(self.heuristicVal))
