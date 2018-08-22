@@ -160,7 +160,7 @@ class Agent:
                 self.max_nodes_annealing = 10. 
             self.max_nodes = self.starting_max_nodes
             print "Switching hyperparameters to {}".format(new_index)
-        planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
+        planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
         return planner_hyperparameters
 
     def initializeEnvironment(self):
@@ -251,7 +251,7 @@ class Agent:
         # gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
         #          "./examples/gridphysics/theorytest.py")
         gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
-                 "./theory_files_short_horizon2/hyperparameter_idx_{}/{}.py".format(self.hyperparameters['idx'], self.gameFilename))
+                 "./theory_files_short_horizon/hyperparameter_idx_{}/{}.py".format(self.hyperparameters['idx'], self.gameFilename))
         Vrle = createMindEnv(gameString, levelString, output=False)
 
         self.setSpritePositions(self.rle, Vrle, hypothesis)
@@ -578,7 +578,7 @@ class Agent:
 
             quitting = False
 
-            planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
+            planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
 
             ## also, you commented out the bottom part of the planner, where it will still return a high-reward sequence in shortHorizon. This could have a very detrimental effect on short-horizon games...
             ## you've deprecated annealing; this could be problematic.
