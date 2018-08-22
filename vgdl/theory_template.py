@@ -2342,7 +2342,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 					# embed()
 
 				elif true_operator in {">", ">="}:
-					newInteractionName = 'killIfHasMore'
+					newInteractionName = 'killIfOtherHasMore'
 					if true_operator == ">":
 						limit = precondition.num + 1
 					else:
