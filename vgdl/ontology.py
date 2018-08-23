@@ -99,14 +99,15 @@ class GridPhysics():
         if speed != 0 and action is not None:
             sprite._updatePos(action, speed * self.gridsize[0])
 
-    def calculateActiveMovement(self, sprite, action, speed=None):
+    def calculateActiveMovement(self, sprite, action, speed=None, is_chaser=False):
         """
         Calculate where the sprite would end up in a timestep, without actually updating its position.
         """
          ## This is where you could make hypotheses about speed, etc. for the object.
         if action is not None:
             orientation = action
-        if (sprite.lastmove+2)%sprite.cooldown==0 and abs(orientation[0])+abs(orientation[1])!=0:
+        num = 1 if not is_chaser else 2
+        if (sprite.lastmove+num)%sprite.cooldown==0 and abs(orientation[0])+abs(orientation[1])!=0:
 
             if speed is None:
                 if sprite.speed is None:
@@ -1948,7 +1949,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
 
             for option in options:
                 # left, top = calculateSpriteMove(game, current_sprite, speed, option)
-                left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed)
+                left, top = current_sprite.physics.calculateActiveMovement(current_sprite, option, speed=speed, is_chaser=True)
                 # if left!=left1 or top!=top1:
                     # print "got different positions"
                     # embed()
@@ -2572,13 +2573,13 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
         # if obj_type=='RED':
         #     # goldobjs = [game.sprite_groups[k] for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName=='BROWN']
         #     # print [g.rect for g in goldobjs[0]]
-            # for i,k in enumerate(sorted(param_sum, key=param_sum.get, reverse=True)):
-                # print(k, param_sum[k])
-                # if i>10:
-                    # break
-            # print ""
-            # print best_param
-        #     embed()
+        #     for i,k in enumerate(sorted(param_sum, key=param_sum.get, reverse=True)):
+        #         print(k, param_sum[k])
+        #         if i>10:
+        #             break
+        #     print ""
+        #     print best_param
+            # embed()
 
         sprite_type = best_param[0][1]
 
