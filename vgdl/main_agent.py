@@ -600,20 +600,6 @@ class Agent:
             else:
                 solution = []
 
-            # if not solution and self.hyperparameter_index==3:
-            #     if not self.checkForMovingKillerTypes(self.rle, self.hypotheses[0]) and self.noNewObjectsInAWhile(self.rle, 55) or self.checkForRepeatedDeaths(self.episodeRecord, 2):
-            #         print "switching to long-range planning"
-            #         ## switch to long-range planning
-            #         planner_hyperparameters = self.hyperparameterSwitch(new_index=1)
-            #         conservative = False
-            #         self.max_nodes = self.starting_max_nodes
-            #         # embed()
-            #     else:
-            #         print "planning conservatively"
-            #         planner_hyperparameters = self.hyperparameterSwitch(new_index=3)
-            #         conservative = True
-            #         self.max_nodes = 50
-            #         # embed()
             if not solution:
                 ## If we're repeatedly dying in the same way, just switch hyperparameters blindly.
                 if self.checkForRepeatedDeaths(self.episodeRecord, 2):
@@ -638,7 +624,7 @@ class Agent:
                         planner_hyperparameters = self.hyperparameterSwitch(new_index=3)
                         conservative = True
                         self.max_nodes = 50
-                        # embed()
+                        embed()
                 else:
                     conservative = False
 
@@ -1042,6 +1028,7 @@ class Agent:
         t1 = time.time()
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+            print agentState
             # agentState = ccopy(self.rle._game.getAvatars()[0].resources)
 
             for e in res['effectList']:
