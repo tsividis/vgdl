@@ -16,7 +16,7 @@
 
 ## more memory
 # game_names = ['expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'jaws', 'med_boulderdash', 'watergame']
-game_names = ['boulderdash']
+game_names = ['med_boulderdash', 'boulderdash']
 
 ##low-memory games where position_score seems to affect results
 # game_names = ['avoidgeorge', 'med_boulderdash', 'survivezombies', 'zelda', 'frogs']
