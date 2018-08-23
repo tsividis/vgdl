@@ -15,8 +15,8 @@
 			# 'plaqueattack', 'waves', 'frogs', 'portals', 'expt_ee','expt_push_boulders', 'sokoban', 'bait']
 
 ## more memory
-game_names = ['expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'jaws', 'med_boulderdash', 'watergame']
-
+# game_names = ['expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'jaws', 'med_boulderdash', 'watergame']
+game_names = ['boulderdash']
 
 ##low-memory games where position_score seems to affect results
 # game_names = ['avoidgeorge', 'med_boulderdash', 'survivezombies', 'zelda', 'frogs']
