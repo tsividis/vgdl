@@ -128,9 +128,9 @@ class InteractionRule(object):
 
 	def display(self):
 		if not self.preconditions:
-			print self.interaction, self.slot1, self.slot2, self.args
+			print self.interaction, self.slot1, self.slot2, self.args, "generic: {}".format(self.generic)
 		else:
-			print self.interaction, self.slot1, self.slot2, self.args, [p.text for p in self.preconditions]
+			print self.interaction, self.slot1, self.slot2, self.args, [p.text for p in self.preconditions], "generic: {}".format(self.generic)
 		return
 
 	def asTuple(self):
