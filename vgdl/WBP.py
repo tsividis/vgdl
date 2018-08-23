@@ -82,15 +82,16 @@ class WBP():
 		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
 		
 		if self.hyperparameter_index == 1:
-			self.position_score_multiplier = -1000
+			self.position_score_multiplier = -100
 		elif self.hyperparameter_index == 3:
-			self.position_score_multiplier = random.choice([-100, -1000])
+			self.position_score_multiplier = -100
+			# self.position_score_multiplier = random.choice([-100, -1000])
 		else:
 			print "Warning: haven't thought about position_score_multiplier for idx {}".format(self.hyperparameter_index)
-			self.position_score_multiplier = -1000
-
+			self.position_score_multiplier = -100
+		self.position_score_multiplier = -10
 		print "In planner; planning with idx {} and position_multiplier {}".format(self.hyperparameter_index, self.position_score_multiplier)
-		self.display = False
+		self.display = True
 
 
 		if theory == None:
@@ -1140,11 +1141,11 @@ class Node():
 			# print("distance to goal {} is {}".format(stype, distance_to_goal))
 
 		if distance_to_goal!=0:
-			val -= float(mult * first_alpha) / distance_to_goal**2 ## Penalize quadratically for classes for which we'd have to kill many instances.
+			val -= float(mult * first_alpha) / distance_to_goal ## Penalize quadratically for classes for which we'd have to kill many instances.
 		else:
 			val -= mult*first_alpha ## we shouldn't go in here, as if we've actually destroyed the relevant sprite we'll trigger a win condition.
 
-		# if self.WBP.theory.classes[stype][0].color=='BLUE':
+		# if self.WBP.theory.classes[stype][0].color=='SCJPNE':
 			# print "stype, n_stypes, distance_to_goal, val", stype, n_stypes, distance_to_goal, val
 		if compute_second_order:
 			## Get all positions of objects whose type is in killer_types; compute minimum distance
@@ -1178,8 +1179,10 @@ class Node():
 			except (ValueError, TypeError) as e:
 				distance = 100
 
+			# if objs and stype=='avatar':
+				# embed()
 			if possiblePairList:
-				n_sprites = len(stype_positions)
+				n_sprites = len(stype_positions) if stype!='avatar' else 20
 				# n_sprites = len(possiblePairList) ## TODO: you're normalizing by the number of possible pairs of killer_sprites and target_sprites; you should just normalize by the number of targets
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
@@ -1496,8 +1499,8 @@ class Node():
 			# print "chosen avatar novelty val", min(avatarNoveltyVals, key= lambda x: x[1])[0]
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
 		
-		# print "position", self.position_score(-100) 
-		# print "sum:", heuristicVal+self.position_score(-100) 
+		# print "position", self.position_score(self.WBP.position_score_multiplier) 
+		# print "sum:", heuristicVal+self.position_score(self.WBP.position_score_multiplier) 
 		# if self.actionSeq:
 			# print actionDict[self.actionSeq[-1]]
 		# print rle.show()
@@ -1516,7 +1519,7 @@ class Node():
 			(x, y) = np.array((self.rle._game.getAvatars()[0].rect.x,
 				self.rle._game.getAvatars()[0].rect.y))/self.WBP.pixel_size
 			# print factor * self.WBP.visited_positions[x, y]
-			return factor * self.WBP.visited_positions[x, y]
+			return factor * self.WBP.visited_positions[x, y]**2
 		except IndexError:
 			# print "index error in position score"
 			return 0
