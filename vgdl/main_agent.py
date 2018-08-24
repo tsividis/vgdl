@@ -10,6 +10,7 @@ from collections import defaultdict
 import WBP
 import importlib
 import numpy as np
+import random
 import time
 import copy
 from metaplanner import translateEvents, observe
@@ -599,7 +600,6 @@ class Agent:
                     print "got solution"
             else:
                 solution = []
-
             if not solution:
                 ## If we're repeatedly dying in the same way, just switch hyperparameters blindly.
                 if self.checkForRepeatedDeaths(self.episodeRecord, 2):
@@ -624,7 +624,6 @@ class Agent:
                         planner_hyperparameters = self.hyperparameterSwitch(new_index=3)
                         conservative = True
                         self.max_nodes = 50
-                        embed()
                 else:
                     conservative = False
 
@@ -664,6 +663,8 @@ class Agent:
                     self.longHorizonObservations += 1
                 else:
                     quitting = True
+            # if K_SPACE in solution:
+                # embed()
 
             
             self.actionSeqLength += len(solution)
@@ -854,9 +855,13 @@ class Agent:
             return False
 
     def noNewObjectsInAWhile(self, rle, age_cutoff):
-        min_age = min([item.lastmove for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list])
+        if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
+            thingWeShoot = self.hypotheses[0].classes['avatar'][0].args['stype']
+        else:
+            thingWeShoot = None         
+        min_age = min([item.lastmove for sublist in self.rle._game.sprite_groups.values() for item in sublist if (item not in self.rle._game.kill_list and item.name!=thingWeShoot)])
         if self.rle._game.kill_list:
-            time_since_last_kill = self.rle._game.time - max([item.deathage for item in self.rle._game.kill_list])
+            time_since_last_kill = self.rle._game.time - max([item.deathage for item in self.rle._game.kill_list if item.name!=thingWeShoot])
         else:
             time_since_last_kill = self.rle._game.time
 
@@ -869,11 +874,16 @@ class Agent:
         killer_types = [inter.slot2 for inter in hypothesis.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
         moving_killer_types = [k for k in killer_types if any([t in str(hypothesis.classes[k][0].vgdlType) for t in ['Missile', 'Random', 'Chaser']])]
         killer_colors = [hypothesis.classes[k][0].color for k in moving_killer_types]
+        danger = False
         if killer_colors:
             for s in [item for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list]:
                 if s.colorName in killer_colors:
-                    return True
-        return False
+                    danger = True
+                    break
+        if danger and random.random()>.5:
+            return True
+        else:
+            return False
 
     def checkForDangerOrAvatarMisLocation(self, rle, hypothesis, objectPositionsArray, i):
         regroundingFlag = False
@@ -1136,6 +1146,10 @@ class Agent:
         # print "finalEffectList length: {}".format(len(self.finalEffectList))
         print "set prep took {} seconds".format(time.time()-t1)
 
+        ## For games with moving objects you should do a quick-and-dirty evaluation of whether to change theories.
+        ## For the games where we're the only ones to cause effects, we can afford to do the full thing.
+        if not any([t in str(s.vgdlType) for s in self.hypotheses[0].spriteObjects.values() for t in ['Random', 'Missile', 'Chaser']]):
+            newEffects = len(event['effectList'])
         # if (event['effectList'] and run_induction) or distributionsHaveChanged:
         # distributionsHaveChanged = False
         if (newEffects and run_induction) or distributionsHaveChanged:

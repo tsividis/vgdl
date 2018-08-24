@@ -2000,7 +2000,7 @@ class Game(object):
 			print "WARNING: no hypotheses. Returning the hypotheses we started with."
 			print "#################################################################"
 			self.hypothesisSpace = init_hypotheses
-			# embed()
+			embed()
 
 
 		return self.hypothesisSpace
