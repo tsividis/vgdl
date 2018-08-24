@@ -20,39 +20,6 @@ BasicGame
 		A >  avatar
 
 	InteractionSet
-                dirt avatar > killSprite 
-                dirt sword > killSprite
-                diamond avatar > changeScore value=2
-                diamond avatar > collectResource 
-
-                avatar wall > stepBack 
-                avatar boulder > stepBack
-                crab wall > stepBack 
-                crab boulder > stepBack
-                butterfly wall > stepBack 
-                butterfly boulder > stepBack
-
-                avatar boulder > killIfFromAbove 
-                avatar butterfly > changeScore value=-1 
-                avatar butterfly > killSprite 
-                #avatar crab > changeScore value=-1 
-                avatar crab > killSprite 
-
-                crab boulder > killIfFromAbove 
-                butterfly boulder > killIfFromAbove
-
-		boulder dirt > stepBack 
-		boulder wall > stepBack
-		boulder diamond > stepBack
-		boulder boulder > stepBack
-
-		dirt butterfly > killSprite
-		dirt crab > transformTo stype=diamond
-		crab butterfly > killSprite
-                butterfly crab > changeScore value=1
-		butterfly crab > transformTo stype=diamond
-		exitdoor avatar > killIfOtherHasMore resource=diamond limit=9
-
                 sword wall > nothing
                 wall sword > nothing
                 dirt wall > nothing
@@ -135,6 +102,40 @@ BasicGame
                 crab avatar > nothing
                 butterfly dirt > nothing
                 butterfly avatar > nothing
+
+                dirt avatar > killSprite 
+                dirt sword > killSprite
+                diamond avatar > changeScore value=2
+                diamond avatar > collectResource 
+
+                avatar wall > stepBack 
+                avatar boulder > stepBack
+                crab wall > stepBack 
+                crab boulder > stepBack
+                butterfly wall > stepBack 
+                butterfly boulder > stepBack
+
+                avatar boulder > killIfFromAbove 
+                avatar butterfly > changeScore value=-1 
+                avatar butterfly > killSprite 
+                #avatar crab > changeScore value=-1 
+                avatar crab > killSprite 
+
+                crab boulder > killIfFromAbove 
+                butterfly boulder > killIfFromAbove
+
+		boulder dirt > stepBack 
+		boulder wall > stepBack
+		boulder diamond > stepBack
+		boulder boulder > stepBack
+
+		dirt butterfly > killSprite
+		dirt crab > transformTo stype=diamond
+		crab butterfly > killSprite
+                butterfly crab > changeScore value=1
+		butterfly crab > transformTo stype=diamond
+		exitdoor avatar > killIfOtherHasMore resource=diamond limit=9
+
 
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False

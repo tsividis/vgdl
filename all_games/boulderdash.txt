@@ -20,43 +20,6 @@ BasicGame
 		A > avatar 
 
 	InteractionSet
-		dirt avatar > killSprite
-		dirt sword  > killSprite
-
-		diamond avatar > changeScore value=2
-		diamond avatar > collectResource 
-
-		avatar wall > stepBack
-		crab wall > stepBack
-		butterfly wall > stepBack
-		avatar boulder > stepBack
-		crab boulder > stepBack
-		butterfly boulder > stepBack
-
-		avatar boulder > killIfFromAbove
-
-		avatar butterfly > changeScore value=-1
-		avatar butterfly > killSprite
-
-		#avatar crab > changeScore value=-1
-		avatar crab > killSprite
-
-		boulder dirt > stepBack
-		boulder wall > stepBack
-		boulder diamond > stepBack
-		boulder boulder > stepBack
-
-		crab dirt > stepBack
-		butterfly dirt > stepBack
-		crab diamond > stepBack
-		butterfly diamond > stepBack
-
-		crab butterfly > killSprite
-		butterfly crab > changeScore value=1
-		butterfly crab > transformTo stype=diamond
-		exitdoor avatar > killIfOtherHasMore resource=diamond limit=9 
-		exitdoor avatar > nothing
-
 		sword crab > nothing
 		sword butterfly > nothing
 		sword boulder > nothing
@@ -103,6 +66,44 @@ BasicGame
                 dirt crab > nothing
                 dirt butterfly > nothing
                 dirt boulder > nothing
+
+		dirt avatar > killSprite
+		dirt sword  > killSprite
+
+		diamond avatar > changeScore value=2
+		diamond avatar > collectResource 
+
+		avatar wall > stepBack
+		crab wall > stepBack
+		butterfly wall > stepBack
+		avatar boulder > stepBack
+		crab boulder > stepBack
+		butterfly boulder > stepBack
+
+		avatar boulder > killIfFromAbove
+
+		avatar butterfly > changeScore value=-1
+		avatar butterfly > killSprite
+
+		#avatar crab > changeScore value=-1
+		avatar crab > killSprite
+
+		boulder dirt > stepBack
+		boulder wall > stepBack
+		boulder diamond > stepBack
+		boulder boulder > stepBack
+
+		crab dirt > stepBack
+		butterfly dirt > stepBack
+		crab diamond > stepBack
+		butterfly diamond > stepBack
+
+		crab butterfly > killSprite
+		butterfly crab > changeScore value=1
+		butterfly crab > transformTo stype=diamond
+		exitdoor avatar > killIfOtherHasMore resource=diamond limit=9 
+		exitdoor avatar > nothing
+
 
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False
