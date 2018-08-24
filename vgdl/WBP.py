@@ -590,10 +590,10 @@ class WBP():
 						self.gameString_array = gameString_array[::-1]
 						self.object_positions_array = object_positions_array[::-1]
 						ended, win, t = child.rle._isDone(getTermination=True)
-						# if self.display:
+						if self.display:
 							# print child.rle.show()
-							# if t:
-								# print t.__dict__
+							if t:
+								print t.__dict__
 							# embed()
 							# embed()
 						# if a == K_RIGHT:
@@ -1656,7 +1656,7 @@ class Node():
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
 		# print("metabolic cost is {}".format(self.metabolic_cost))
 
-		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) #+ self.metabolic_cost
+		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
 
 		## Debug printouts
 		# print("heuristicVal {}".format(self.heuristicVal))

@@ -12,7 +12,7 @@
 
 ## low memory
 # game_names = ['aliens', 'avoidgeorge',  'butterflies', 'chase', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'lemmings', 'myAliens', 
-			# 'plaqueattack', 'waves', 'frogs', 'portals', 'expt_ee','expt_push_boulders', 'sokoban', 'bait']
+			# 'plaqueattack', 'waves', 'frogs', 'portals', 'expt_ee','expt_push_boulders', 'sokoban', 'bait', 'd2']
 
 ## more memory
 game_names = ['expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'jaws', 'med_boulderdash', 'watergame']

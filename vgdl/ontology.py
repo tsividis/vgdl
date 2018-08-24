@@ -1365,8 +1365,8 @@ def transformTo(sprite, partner, game, stype='wall'):
         if isinstance(sprite, OrientedSprite) and isinstance(newones[0], OrientedSprite):
             newones[0].orientation = sprite.orientation
             newones[0].resources = sprite.resources
+        sprite.deathage = game.time
         game.kill_list.append(sprite)
-        # game.dead.append(sprite)
     args = {'stype':stype}
     return ("transformTo", sprite.ID, partner.ID, args)
 

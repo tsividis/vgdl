@@ -9,7 +9,7 @@ import argparse
 parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
 parser.add_argument('--game_name', type=str, default=str(0), help='game name')
-parser.add_argument('--hyperparameter_index', type=int, default=0, help='hyperparameter_index')
+parser.add_argument('--hyperparameter_index', type=int, default=3, help='hyperparameter_index')
 
 args = parser.parse_args()
 game_number = args.game_number
