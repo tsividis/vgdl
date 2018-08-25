@@ -1502,18 +1502,18 @@ class Node():
 		print "position", self.position_score(self.WBP.position_score_multiplier) 
 		print "sum:", heuristicVal+self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
 
-		# resource_bonus = 0
-		# if self.parent:
-		# 	try:
-		# 		for k,v in self.rle._game.getAvatars()[0].resources.items():
-		# 			if v > self.parent.rle._game.getAvatars()[0].resources[k]:
-		# 				resource_bonus += 100
-		# 	except:
-		# 		pass
-		# if resource_bonus>0:
-		# 	print "got resource bonus"
-		# 	print  "sum with resource: ", heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score + resource_bonus
-		# 	embed()
+		resource_bonus = 0
+		if self.parent:
+			try:
+				for k,v in self.rle._game.getAvatars()[0].resources.items():
+					if v > self.parent.rle._game.getAvatars()[0].resources[k]:
+						resource_bonus += 1000
+			except:
+				pass
+		if resource_bonus>0:
+			print "got resource bonus"
+			print  "sum with resource: ", heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score + resource_bonus
+			embed()
 
 		if self.actionSeq:
 			print actionDict[self.actionSeq[-1]]
@@ -1670,7 +1670,16 @@ class Node():
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
 		# print("metabolic cost is {}".format(self.metabolic_cost))
 
-		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
+		resource_bonus = 0
+		if self.parent:
+			try:
+				for k,v in self.rle._game.getAvatars()[0].resources.items():
+					if v > self.parent.rle._game.getAvatars()[0].resources[k]:
+						resource_bonus += 1000
+			except:
+				pass
+
+		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score + resource_bonus
 
 		## Debug printouts
 		# print("heuristicVal {}".format(self.heuristicVal))
