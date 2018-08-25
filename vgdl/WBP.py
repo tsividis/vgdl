@@ -1344,8 +1344,8 @@ class Node():
 			except IndexError:
 				# print "checking whether avatar preconditions are fulfilled"
 				# print rle._game.getAvatars()[0].resources
-				return 0, 10000
-				# return 2 * mult * first_alpha, 10000
+				# return 0, 10000
+				return 2 * mult * first_alpha, 10000
 
 			if not eval(resource_str+true_operator+str(num)):
 				# print "checking whether avatar preconditions are fulfilled 2"
@@ -1454,9 +1454,9 @@ class Node():
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=sprite_first_alpha, second_alpha=sprite_second_alpha,
 					negative_mult=sprite_negative_mult)
-				if spritecounter_val!=0:
-					print("spritecounter_val for {} is equal to {}".format(
-						term.termination.stype, spritecounter_val))
+				# if spritecounter_val!=0:
+					# print("spritecounter_val for {} is equal to {}".format(
+						# term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
@@ -1476,9 +1476,9 @@ class Node():
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=novelty_first_alpha, second_alpha=novelty_second_alpha)
-				if noveltytermination_val!=0:
-					print("noveltytermination_val for {} and {} is equal to {}".format(
-						term.termination.s1, term.termination.s2, noveltytermination_val))
+				# if noveltytermination_val!=0:
+					# print("noveltytermination_val for {} and {} is equal to {}".format(
+						# term.termination.s1, term.termination.s2, noveltytermination_val))
 
 				# if self.parent and self.parent.rle._game.score==0 and term.termination.args and term.termination.s1=='c6' and term.termination.s2=='avatar' and noveltytermination_val!=-5000:
 					# ipdb.set_trace()
@@ -1496,24 +1496,24 @@ class Node():
 					# heuristicVal += 1000 * self.WBP.annealing * noveltytermination_val
 
 		if avatarNoveltyVals:
-			print "chosen avatar novelty val", min(avatarNoveltyVals, key= lambda x: x[1])[0]
+			# print "chosen avatar novelty val", min(avatarNoveltyVals, key= lambda x: x[1])[0]
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
 		
-		print "position", self.position_score(self.WBP.position_score_multiplier) 
-		print "sum:", heuristicVal+self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
+		# print "position", self.position_score(self.WBP.position_score_multiplier) 
+		# print "sum:", heuristicVal+self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
 
-		resource_bonus = 0
-		if self.parent:
-			try:
-				for k,v in self.rle._game.getAvatars()[0].resources.items():
-					if v > self.parent.rle._game.getAvatars()[0].resources[k]:
-						resource_bonus += 1000
-			except:
-				pass
-		if resource_bonus>0:
-			print "got resource bonus"
-			print  "sum with resource: ", heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score + resource_bonus
-			embed()
+		# resource_bonus = 0
+		# if self.parent:
+		# 	try:
+		# 		for k,v in self.rle._game.getAvatars()[0].resources.items():
+		# 			if v==1 and self.parent.rle._game.getAvatars()[0].resources[k]==0:
+		# 				resource_bonus += 5000
+		# 	except:
+		# 		pass
+		# if resource_bonus>0:
+		# 	print "got resource bonus"
+		# 	print  "sum with resource: ", heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score + resource_bonus
+		# 	embed()
 
 		if self.actionSeq:
 			print actionDict[self.actionSeq[-1]]
@@ -1670,16 +1670,16 @@ class Node():
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
 		# print("metabolic cost is {}".format(self.metabolic_cost))
 
-		resource_bonus = 0
-		if self.parent:
-			try:
-				for k,v in self.rle._game.getAvatars()[0].resources.items():
-					if v > self.parent.rle._game.getAvatars()[0].resources[k]:
-						resource_bonus += 1000
-			except:
-				pass
+		# resource_bonus = 0
+		# if self.parent:
+		# 	try:
+		# 		for k,v in self.rle._game.getAvatars()[0].resources.items():
+		# 			if v==1 and self.parent.rle._game.getAvatars()[0].resources[k]==0:
+		# 				resource_bonus += 5000
+		# 	except:
+		# 		pass
 
-		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score + resource_bonus
+		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score #+ resource_bonus
 
 		## Debug printouts
 		# print("heuristicVal {}".format(self.heuristicVal))
