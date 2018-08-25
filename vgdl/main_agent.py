@@ -857,10 +857,12 @@ class Agent:
             thingWeShoot = self.hypotheses[0].classes['avatar'][0].args['stype']
         else:
             thingWeShoot = None         
+        
         min_age = min([item.lastmove for sublist in self.rle._game.sprite_groups.values() for item in sublist if (item not in self.rle._game.kill_list and item.name!=thingWeShoot)])
-        if self.rle._game.kill_list:
+
+        try:
             time_since_last_kill = self.rle._game.time - max([item.deathage for item in self.rle._game.kill_list if item.name!=thingWeShoot])
-        else:
+        except:
             time_since_last_kill = self.rle._game.time
 
         if (min_age > age_cutoff) and (time_since_last_kill > age_cutoff):
