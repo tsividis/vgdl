@@ -1148,8 +1148,8 @@ class Agent:
 
         ## For games with moving objects you should do a quick-and-dirty evaluation of whether to change theories.
         ## For the games where we're the only ones to cause effects, we can afford to do the full thing.
-        if not any([t in str(s.vgdlType) for s in self.hypotheses[0].spriteObjects.values() for t in ['Random', 'Missile', 'Chaser']]):
-            newEffects = len(event['effectList'])
+        # if not any([t in str(s.vgdlType) for s in self.hypotheses[0].spriteObjects.values() for t in ['Random', 'Missile', 'Chaser']]):
+            # newEffects = len(event['effectList'])
         # if (event['effectList'] and run_induction) or distributionsHaveChanged:
         # distributionsHaveChanged = False
         if (newEffects and run_induction) or distributionsHaveChanged:
