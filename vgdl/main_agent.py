@@ -1019,6 +1019,7 @@ class Agent:
             # envPrev = copy.deepcopy(self.rle)
             # prevPos = (self.rle._game.sprite_groups['shark'][0].rect.left, self.rle._game.sprite_groups['shark'][0].rect.top)
 
+        print "pre-step agentState: {}".format(agentState)
         res = self.rle.step(action)
         
         # if self.rle._game.sprite_groups['shark']:
@@ -1035,7 +1036,7 @@ class Agent:
         print ""
         print keyPresses[action]
 
-        t1 = time.time()
+        # t1 = time.time()
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
             print agentState
@@ -1049,6 +1050,7 @@ class Agent:
                         # undo one negative change to account for eventhandler ordering
                         agentState[changes['resource']] -= changes['value']
                         break
+
             self.rle.agentStatePrev = agentState
 
         # If agent is killed before we get agentState
@@ -1064,8 +1066,10 @@ class Agent:
                         agentState[changes['resource']] += 0
                         ignored_negative_change = True
             self.rle.agentStatePrev = agentState
-
-        print "agentState stuff: {}".format(time.time()-t1)
+        for k,v in agentState.items():
+            agentState[k] = max(0, v)
+        print "post-step understanding of pre-step agentState (passed to induction): {}".format(agentState)
+        # print "agentState stuff: {}".format(time.time()-t1)
         # embed()
 
         t1 = time.time()
@@ -1124,7 +1128,7 @@ class Agent:
                     newEffects = True
                     self.finalEffectList = set()
 
-                if agentState[resource]==limit and resource not in self.seen_limits:
+                if agentState[resource]>=limit and resource not in self.seen_limits:
                     self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
                     self.fakeInteractionRules = list(set(self.fakeInteractionRules))
                     self.seen_limits.append(resource)
