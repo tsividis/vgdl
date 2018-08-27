@@ -132,7 +132,7 @@ class WBP():
 		print "available actions:", self.actions
 
 		if self.conservative:
-			self.hyperparameters['sprite_negative_mult'] = 1000
+			self.hyperparameters['sprite_negative_mult'] = 100
 			print "Planning conservatively. Switched sprite_negative_mult to {}".format(self.hyperparameters['sprite_negative_mult'])
 		else:
 			print "Planning normally."
@@ -596,7 +596,7 @@ class WBP():
 								print t.__dict__
 							# embed()
 							# embed()
-						# if a == K_RIGHT:
+						# if a == K_LEFT:
 							# if t:
 								# print t.__dict__
 							# embed()
@@ -1515,9 +1515,9 @@ class Node():
 		# 	print  "sum with resource: ", heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score + resource_bonus
 		# 	embed()
 
-		if self.actionSeq:
-			print actionDict[self.actionSeq[-1]]
-		print rle.show()
+		# if self.actionSeq:
+			# print actionDict[self.actionSeq[-1]]
+		# print rle.show()
 
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)

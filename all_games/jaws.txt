@@ -118,6 +118,8 @@ BasicGame
         sharkFang whale > nothing
         piranha shell > nothing
         shell piranha > nothing
+	shell piranhahole > nothing
+	piranhahole shell > nothing
         piranha sharkFang > nothing
         sharkFang piranha > nothing
         sharkFang shell > nothing
