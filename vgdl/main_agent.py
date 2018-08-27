@@ -132,6 +132,7 @@ class Agent:
         self.all_objects = {}
         self.bestSpriteTypeDict = defaultdict(lambda : {})
         self.spriteUpdateDict = defaultdict(lambda : 0)
+        self.max_game_time_observed = 0
         self.best_params = None
         self.seen_resources = []
         self.seen_limits = []
@@ -614,7 +615,9 @@ class Agent:
                     planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
 
                 elif self.hyperparameter_index == 3:
-                    if not self.checkForMovingKillerTypes(self.rle, self.hypotheses[0]) and self.noNewObjectsInAWhile(self.rle, 55):
+                    movingTypes = self.checkForMovingTypes(self.rle, self.hypotheses[0])
+                    if not self.checkForMovingKillerTypes(self.rle, self.hypotheses[0]) and self.noNewObjectsInAWhile(self.rle, 55) and \
+                            (not movingTypes or (movingTypes and self.max_game_time_observed>501)):
                         print "switching to long-range planning"
                         ## switch to long-range planning
                         planner_hyperparameters = self.hyperparameterSwitch(new_index=1)
@@ -717,6 +720,7 @@ class Agent:
                         self.hypotheses = hypotheses
                         break
                     ended, win = self.rle._isDone()
+                    self.max_game_time_observed = max(self.max_game_time_observed, self.rle._game.time)
                     if ended:
                         # print "episode ended"
                         # embed()
@@ -833,6 +837,17 @@ class Agent:
             return True
         else:
             return False
+
+    def checkForMovingTypes(self, rle, hypothesis):
+        moving_types = [k for k in hypothesis.classes.keys() if any([t in str(hypothesis.classes[k][0].vgdlType) for t in ['Missile', 'Random', 'Chaser']])]
+        moving_colors = [hypothesis.classes[k][0].color for k in moving_types]
+        movingTypes = False
+        if moving_colors:
+            for s in [item for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list]:
+                if s.colorName in moving_colors:
+                    movingTypes = True
+                    break
+        return movingTypes
 
     def checkForMovingKillerTypes(self, rle, hypothesis):
         killer_types = [inter.slot2 for inter in hypothesis.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
