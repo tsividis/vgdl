@@ -619,6 +619,7 @@ class Agent:
                         ## switch to long-range planning
                         planner_hyperparameters = self.hyperparameterSwitch(new_index=1)
                         conservative = False
+                        # embed()
                     else:
                         print "planning conservatively"
                         planner_hyperparameters = self.hyperparameterSwitch(new_index=3)
@@ -667,45 +668,6 @@ class Agent:
             
             self.actionSeqLength += len(solution)
 
-            # if self.shortHorizon:
-            #     ## new 6/30/18
-            #     if not solution:
-            #         print "initializing conservative planner"
-            #         # embed()
-            #         print self.rle._game.getAvatars()[0].resources
-
-            #         ## initialize another planner in conservative mode, meaning you use safe heuristics. Plan for a short time, and return the longest safe plan you find.
-            #         p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
-            #             seen_limits = self.seen_limits, annealing=annealing, max_nodes=50, shortHorizon=self.shortHorizon,
-            #             firstOrderHorizon=self.firstOrderHorizon, conservative=True, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom)
-            #         p_quitting = p.quitting
-            #         bestNode, gameStringArray, objectPositionsArray = p.BFS()
-            #         self.total_planner_steps += p.total_nodes
-            #         if bestNode is not None:
-            #             solution = p.solution
-            #             gameString_array = p.gameString_array
-            #             objectPositionsArray = objectPositionsArray[::-1]
-            #         # emptyPlans +=1
-            #         # print "got an empty plan; observing for a while."
-            #         # observe(self.rle, 10*emptyPlans**2, self.bestSpriteTypeDict)
-            #     else:
-            #         emptyPlans = 0
-            # else:
-            #     if (not solution) or p_quitting:
-            #         # Here we make a distinction between quitting because you've
-            #         # exhausted the number of nodes you can visit or because you
-            #         # ran out of novelty. In the first case, you only wait longer,
-            #         # in the second case, you also add a new atom to IW
-            #         if p.exhausted_novelty:
-            #             self.extra_atom = True
-            #         if self.longHorizonObservations<self.longHorizonObservationLimit:
-            #             print "Didn't get solution. Observing, then replanning."
-            #             observe(self.rle, 5, self.bestSpriteTypeDict)
-            #             solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
-            #             self.longHorizonObservations += 1
-            #         else:
-            #             quitting = True
-
             if solution and not p.quitting:
                 print "============================================="
                 print "got solution of length", len(solution)
@@ -724,6 +686,8 @@ class Agent:
                 # print "got too many empty plans"
                 # observe(self.rle, 5, self.bestSpriteTypeDict)
 
+            # if len(solution)==1 and K_LEFT in solution:
+                # embed()
             if not quitting:
                 for i, action in enumerate(solution):
                     self.hypotheses[0].dryingPaint = set()
@@ -1147,6 +1111,10 @@ class Agent:
                     print "New event: {}".format(compactEvent)
                     newEffects = True
             # newEffects = True
+        
+        self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
+            not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
+
         # print "finalEffectList length: {}".format(len(self.finalEffectList))
         print "set prep took {} seconds".format(time.time()-t1)
 
@@ -1163,8 +1131,8 @@ class Agent:
             ## Delete fake interaction rules for events that were witnessed in this time step.
             # oldFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
 
-            self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
-                not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
+            # self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
+            #     not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
 
             # if (not all([e in all_effects for e in effects])) or distributionsHaveChanged:
             if newEffects or distributionsHaveChanged:
@@ -1217,8 +1185,19 @@ class Agent:
         ## We need to update termination conditions even when we haven't seen a new event,
         ## because the state is informative about termination conditions.
         # t1 = time.time()
+        # oldhypothesis = copy.deepcopy(hypotheses[0])
+        oldTerminationSet = set(hypotheses[0].terminationSet)
         if event['effectList'] and run_induction:
             [t.updateTerminations(event=event) for t in hypotheses]
+
+        # if hypotheses[0].__dict__ != oldhypothesis.__dict__:
+        if set(hypotheses[0].terminationSet) != oldTerminationSet:
+            print "terminationSet Change"
+            theory_change_flag = True
+            # embed()
+
+        # if action == K_LEFT:
+            # embed()
         # print "updateTerminations took {} seconds".format(time.time()-t1)
         if theory_change_flag and not distributionsHaveChanged:
             print "changed theory:"
