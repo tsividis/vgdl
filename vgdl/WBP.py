@@ -82,7 +82,7 @@ class WBP():
 		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
 		
 		if self.hyperparameter_index == 1:
-			self.position_score_multiplier = -1
+			self.position_score_multiplier = -100
 		elif self.hyperparameter_index == 3:
 			self.position_score_multiplier = -100
 			# self.position_score_multiplier = random.choice([-100, -1000])
@@ -91,7 +91,7 @@ class WBP():
 			self.position_score_multiplier = -100
 		# self.position_score_multiplier = -10
 		print "In planner; planning with idx {} and position_multiplier {}".format(self.hyperparameter_index, self.position_score_multiplier)
-		self.display = False
+		self.display = True
 
 
 		if theory == None:
