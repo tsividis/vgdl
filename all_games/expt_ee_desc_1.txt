@@ -8,7 +8,7 @@ BasicGame frame_rate=30
         eel > Immovable color=PINK
         fruit > Immovable color=RED
         avatar > MovingAvatar color=DARKBLUE
-        wall > Immovable color=BLACK
+        wall > Immovable color=DARKGRAY
     LevelMapping
         w > wall
         a > apple

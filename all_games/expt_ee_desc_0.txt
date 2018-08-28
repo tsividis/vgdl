@@ -9,7 +9,7 @@ BasicGame frame_rate=30
         fruit > Immovable color=RED
         avatar > MovingAvatar color=DARKBLUE
         missile > Missile color=RED speed=.5 orientation=RIGHT
-        wall > Immovable color=BLACK
+        wall > Immovable color=DARKGRAY
     LevelMapping
         w > wall
         a > apple
