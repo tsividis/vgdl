@@ -82,9 +82,9 @@ class WBP():
 		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
 		
 		if self.hyperparameter_index == 1:
-			self.position_score_multiplier = -100
+			self.position_score_multiplier = -10
 		elif self.hyperparameter_index == 3:
-			self.position_score_multiplier = -100
+			self.position_score_multiplier = -10
 			# self.position_score_multiplier = random.choice([-100, -1000])
 		else:
 			print "Warning: haven't thought about position_score_multiplier for idx {}".format(self.hyperparameter_index)
@@ -1404,11 +1404,14 @@ class Node():
 				# Normalize by number of sprites, enforcing a prior that encourages
 				# goals that involve killing fewer objects
 				# val += 100*(float(mult * second_alpha * distance**2)/(n_sprites**2 * self.WBP.hypotenuse_squared)) + second_alpha * max(self.rle.outdim[0], self.rle.outdim[1])
-				val += float(mult * second_alpha * distance)/n_sprites**2 + second_alpha * max(self.rle.outdim[0], self.rle.outdim[1])
+				
+				## as you get closer to the item, this quantity increases, contributing to a higher overall score
+				# val += float(mult * second_alpha * distance)/n_sprites**2 + second_alpha * max(self.rle.outdim[0], self.rle.outdim[1])
+				val += float(mult * second_alpha * distance /max(self.rle.outdim[0], self.rle.outdim[1]) )#/n_sprites**2 #+ second_alpha * max(self.rle.outdim[0], self.rle.outdim[1])
 
-		# if s1=='c4' and s2=='avatar':
+		# if s1=='c6' and s2=='avatar':
 			# print "novelty val for {}, {}: {}".format(s1, s2, val)
-
+			# embed()
 		# if term.termination.args and s1=='c4' and s2=='avatar' and self.rle._game.getAvatars():
 		# 	for k,v in self.rle._game.getAvatars()[0].resources.items():
 		# 		if v>3:
@@ -1501,7 +1504,9 @@ class Node():
 		
 		# print "position", self.position_score(self.WBP.position_score_multiplier) 
 		# print "sum:", heuristicVal+self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
-
+		# if self.actionSeq:
+			# print actionDict[self.actionSeq[-1]]
+		# print rle.show()
 		# resource_bonus = 0
 		# if self.parent:
 		# 	try:
@@ -1515,9 +1520,7 @@ class Node():
 		# 	print  "sum with resource: ", heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score + resource_bonus
 		# 	embed()
 
-		# if self.actionSeq:
-		# 	print actionDict[self.actionSeq[-1]]
-		# print rle.show()
+
 
 		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
 		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
