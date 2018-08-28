@@ -1071,6 +1071,7 @@ class BasicGame(object):
                 else 2 if x[2].__name__ in ['killSprite', 'killIfTooFast', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess', 'collectResource']
                 else 3 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']<=0))
                 else 3.5 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']>0))
+                else 4 if x[2].__name__ in ['nothing']
                 else 0, reverse=True)
 
         while not self.ended:
