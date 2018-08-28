@@ -91,7 +91,7 @@ class WBP():
 			self.position_score_multiplier = -100
 		# self.position_score_multiplier = -10
 		print "In planner; planning with idx {} and position_multiplier {}".format(self.hyperparameter_index, self.position_score_multiplier)
-		self.display = False
+		self.display = True
 
 
 		if theory == None:

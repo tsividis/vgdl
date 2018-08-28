@@ -411,6 +411,7 @@ class Theory(object):
 					# interpretation = self.interpret(event)
 					theories.extend(self.addRules(event))
 				else:
+					embed()
 					theories.extend(self.addPreconditions(event, timestep, timesteps))
 			# Add new rule
 			elif failCase == 4:
