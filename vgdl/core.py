@@ -810,42 +810,23 @@ class BasicGame(object):
         self.kill_list = list(set(self.kill_list))
 
 
-        # for sprite in self.new_sprites:
-        #     colliding_sprites = spriteLocationDict[(sprite.rect.left, sprite.rect.top)]
-        #     if len(colliding_sprites)>1:
-        #         print "More than one overlapping sprite with a new sprite in eventHandling"
-        #         embed()
-        #     elif colliding_sprites:
-        #         sprite2 = colliding_sprites[0]
-        #         for e in effectSubset:
-        #             if (sprite.name, sprite2.name)==(e[0],e[1]):
-        #                 self.effectList.append((e[2].__name__, sprite.ID, sprite2.ID))
-        #             if (sprite2.name, sprite.name)==(e[0],e[1]):
-        #                 self.effectList.append((e[2].__name__, sprite2.ID, sprite1.ID))
-
-        # if self.new_sprites:
-            # print "neww_sprites"
-            # embed()
-        # if self.effectList:
-            # print "effects"
-            # embed()
-        
         ## Remove duplicates from effectList, and store a separate set that contains (effect, class1, class2)
         ## so we can easily check NoveltyTerminations.
         new_collision_eff = []
         new_collision_eff_by_class = set()
         new_collision_eff_by_color = set()
         full_collision_eff_by_color = []
-
+        class_to_color_mapping = dict()
+        classPairEffects = defaultdict(lambda: [])
         all_objects = self.getAllObjects()
 
         for element in self.effectList:
             c1, color1 = self.getSpriteClassAndColor(element[1], all_objects)
             c2, color2 = self.getSpriteClassAndColor(element[2], all_objects)
+            class_to_color_mapping[c1] = color1
+            class_to_color_mapping[c2] = color2
+            classPairEffects[(c1, c2)].extend([element[0]])
             
-            # c1 = self.getSpriteClassAndColor(element[1], all_objects)
-            # c2 = self.getSpriteClassAndColor(element[2], all_objects)
-
             element_tuple = (element[0], c1, c2)
             color_tuple = (element[0], color1, color2)
             if color_tuple not in new_collision_eff_by_color:
@@ -861,9 +842,33 @@ class BasicGame(object):
             new_collision_eff_by_class.add(element_tuple)
             if element not in new_collision_eff:
                 new_collision_eff.append(element)
+
+        ## Sometimes VGDL resolves collisions in weird ways, leading to reporting only one of the two effects that should occur
+        ## for a particular classPair. Make sure we're reporting the other one, too.
+        unaccountedForOrderedPairs = []
+        effectsToAdd = []
+        for k, v in classPairEffects.items():
+            if (k[1], k[0]) not in classPairEffects.keys():
+                missingOrderedPair = (k[1], k[0])
+                unaccountedForOrderedPairs.append(missingOrderedPair)
+
+        for eff in self.collision_eff:
+            if (eff[0], eff[1]) in unaccountedForOrderedPairs:
+                effectsToAdd.append((eff[2].__name__, eff[0], eff[1]))
+
+        for eff in effectsToAdd:
+            new_collision_eff_by_class.add((eff))
+            color1, color2 = class_to_color_mapping[eff[1]], class_to_color_mapping[eff[2]]
+            colorTuple = (eff[0], color1, color2)
+            if colorTuple not in full_collision_eff_by_color:
+                full_collision_eff_by_color.append(colorTuple)
+
         self.effectList = new_collision_eff
         self.effectListByClass = new_collision_eff_by_class
         self.effectListByColor = full_collision_eff_by_color
+        # for e in self.effectListByColor:
+            # print e
+        # embed()
         return self.effectList
 
     def getSpriteClassAndColor(self, spriteID, all_objects):
