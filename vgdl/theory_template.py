@@ -749,9 +749,9 @@ class Theory(object):
 			generatedPreconditions = self.makePreconditions(concepts)
 			for p in generatedPreconditions:
 
-				tmp_theory = copy.deepcopy(self)
+				# tmp_theory = copy.deepcopy(self)
 				
-				# tmp_theory = self
+				tmp_theory = self
 
 				interpretation = tmp_theory.interpret(event)
 
