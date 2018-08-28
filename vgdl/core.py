@@ -779,11 +779,7 @@ class BasicGame(object):
                         elif effect.__name__ == 'transformTo':
 
                             new_effects.append(effect(sprite1, sprite2, self, **kwargs))
-                            try:
-                                new_sprite = self.getSprites(kwargs['stype'])[-1]
-                            except:
-                                print "problem with transformto in eventHandling"
-                                embed()
+                            new_sprite = self.getSprites(kwargs['stype'])[-1]
                             new_collisions.add((sprite1, new_sprite))
                             dead.append(sprite1)
 
