@@ -779,7 +779,11 @@ class BasicGame(object):
                         elif effect.__name__ == 'transformTo':
 
                             new_effects.append(effect(sprite1, sprite2, self, **kwargs))
-                            new_sprite = self.getSprites(kwargs['stype'])[-1]
+                            try:
+                                new_sprite = self.getSprites(kwargs['stype'])[-1]
+                            except:
+                                print "problem with transformto in eventHandling"
+                                embed()
                             new_collisions.add((sprite1, new_sprite))
                             dead.append(sprite1)
 
@@ -853,9 +857,11 @@ class BasicGame(object):
                 unaccountedForOrderedPairs.append(missingOrderedPair)
 
         for eff in self.collision_eff:
-            if (eff[0], eff[1]) in unaccountedForOrderedPairs:
+            if (eff[0], eff[1]) in unaccountedForOrderedPairs and len(eff)==3:
                 effectsToAdd.append((eff[2].__name__, eff[0], eff[1]))
 
+        # if effectsToAdd:
+            # embed()
         for eff in effectsToAdd:
             new_collision_eff_by_class.add((eff))
             color1, color2 = class_to_color_mapping[eff[1]], class_to_color_mapping[eff[2]]
