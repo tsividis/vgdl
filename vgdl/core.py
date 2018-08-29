@@ -853,7 +853,7 @@ class BasicGame(object):
                 unaccountedForOrderedPairs.append(missingOrderedPair)
 
         for eff in self.collision_eff:
-            if (eff[0], eff[1]) in unaccountedForOrderedPairs and len(eff)==3:
+            if (eff[0], eff[1]) in unaccountedForOrderedPairs and (len(eff)==3 or len(eff[3])==0):
                 effectsToAdd.append((eff[2].__name__, eff[0], eff[1]))
 
         # if effectsToAdd:

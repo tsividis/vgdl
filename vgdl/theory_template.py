@@ -406,15 +406,15 @@ class Theory(object):
 			if failCase == 0:
 				theories.append(self)
 			# Add preconditions
-			elif failCase in [1,2,3]:
-				if failCase == 2 and event[0]=='killIfFromAbove': ## we're forgoing the process of doing proper precondition reasoning here; would be straightforward to do it.
+			elif failCase in [1,3]:
+				# if failCase == 2 and event[0]=='killIfFromAbove': ## we're forgoing the process of doing proper precondition reasoning here; would be straightforward to do it.
 					# interpretation = self.interpret(event)
-					theories.extend(self.addRules(event))
-				else:
+					# theories.extend(self.addRules(event))
+				# else:
 					# embed()
-					theories.extend(self.addPreconditions(event, timestep, timesteps))
+				theories.extend(self.addPreconditions(event, timestep, timesteps))
 			# Add new rule
-			elif failCase == 4:
+			elif failCase in [2,4]:
 				theories.extend(self.addRules(event))
 
 		return theories
@@ -1990,6 +1990,10 @@ class Game(object):
 				theory.display()
 			self.DFSinduction(theory, timesteps, maxNumTheories, override=True, verbose=verbose) ##override anything that was in the original set.
 
+
+		# if any([self.hypothesisSpace[0].likelihood(ts)==0 for ts in timesteps]):
+			# print "found 0 likelihood timestep"
+			# embed()
 		try:
 			max_likelihood = np.unique([sum([h.likelihood(ts) for ts in timesteps]) for h in self.hypothesisSpace])[-1]
 			self.hypothesisSpace = [h for h in self.hypothesisSpace if sum([h.likelihood(ts) for ts in timesteps]) == max_likelihood]
@@ -2012,7 +2016,7 @@ class Game(object):
 			print "WARNING: no hypotheses. Returning the hypotheses we started with."
 			print "#################################################################"
 			self.hypothesisSpace = init_hypotheses
-			embed()
+			# embed()
 
 
 		return self.hypothesisSpace
