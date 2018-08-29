@@ -89,6 +89,7 @@ BasicGame
         flower zombie > nothing
         fastHell honey > nothing
         fastHell zombie > nothing
+	fastHell avatar > nothing
         slowHell honey > nothing
         slowHell avatar > nothing
         slowHell zombie > nothing
