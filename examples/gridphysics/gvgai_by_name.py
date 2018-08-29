@@ -2,6 +2,7 @@ import argparse, os
 
 parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_name', type=str, default=str(0), help='game name')
+parser.add_argument('--level', type=str, default=None, help='level')
 
 args = parser.parse_args()
 game_name = args.game_name
@@ -58,6 +59,8 @@ if __name__ == "__main__":
     #     game_n = 0
 
     level_game_pairs = create_level_game_pairs(game_name)
+    if args.level is not None:
+        level_game_pairs = [level_game_pairs[int(args.level)]]
     # if len(sys.argv)>=3:
          # level_n = int(sys.argv[2])
          # level_game_pairs = [level_game_pairs[level_n]]
