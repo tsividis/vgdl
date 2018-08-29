@@ -1503,9 +1503,10 @@ class Node():
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
 		
 		# print "position", self.position_score(self.WBP.position_score_multiplier) 
+		# print "game score", self.rle._game.score
 		# print "sum:", heuristicVal+self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
 		# if self.actionSeq:
-			# print actionDict[self.actionSeq[-1]]
+		# 	print actionDict[self.actionSeq[-1]]
 		# print rle.show()
 		# resource_bonus = 0
 		# if self.parent:
