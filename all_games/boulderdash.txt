@@ -4,7 +4,7 @@ BasicGame
 		dirt > Immovable color=MPUYEI
 		sword > Flicker color=PINK limit=5 singleton=True
 		exitdoor > Immovable color=GREEN
-		diamond > Resource color=SCJPNE limit=10
+		diamond > Resource color=SCJPNE limit=9
 		avatar  > ShootAvatar   stype=sword color=DARKBLUE
 		crab > RandomNPC cooldown=5 color=GOLD
 		butterfly > RandomNPC cooldown=5 color=RED
@@ -20,53 +20,6 @@ BasicGame
 		A > avatar 
 
 	InteractionSet
-		sword crab > nothing
-		sword butterfly > nothing
-		sword boulder > nothing
-		sword avatar > nothing
-		sword exitdoor > nothing
-		sword diamond > nothing
-		sword wall > nothing
-
-                wall sword > nothing
-                wall avatar > nothing
-                wall crab > nothing
-                wall butterfly > nothing
-                wall boulder > nothing
-                wall EOS > nothing
-                sword sword > nothing
-                sword dirt > nothing
-                exitdoor sword > nothing
-                exitdoor crab > nothing
-                exitdoor butterfly > nothing
-                exitdoor boulder > nothing
-                diamond sword > nothing
-                diamond crab > nothing
-                diamond butterfly > nothing
-                diamond boulder > nothing
-                diamond dirt > nothing
-                avatar sword > nothing
-                avatar exitdoor > nothing
-                avatar diamond > nothing
-                avatar avatar > nothing
-                avatar dirt > nothing
-                crab sword > nothing
-                crab exitdoor > nothing
-                crab avatar > nothing
-                crab crab > nothing
-                butterfly sword > nothing
-                butterfly exitdoor > nothing
-                butterfly avatar > nothing
-                butterfly butterfly > nothing
-                boulder sword > nothing
-                boulder exitdoor > nothing
-                boulder avatar > nothing
-                boulder crab > nothing
-                boulder butterfly > nothing
-                dirt crab > nothing
-                dirt butterfly > nothing
-                dirt boulder > nothing
-
 		dirt avatar > killSprite
 		dirt sword  > killSprite
 
@@ -104,6 +57,51 @@ BasicGame
 		exitdoor avatar > killIfOtherHasMore resource=diamond limit=9 
 		exitdoor avatar > nothing
 
+		sword crab > nothing
+		sword butterfly > nothing
+		sword boulder > nothing
+		sword avatar > nothing
+		sword exitdoor > nothing
+		sword diamond > nothing
+		sword wall > nothing
+
+                wall sword > nothing
+                wall avatar > nothing
+                wall crab > nothing
+                wall butterfly > nothing
+                wall boulder > nothing
+                wall EOS > nothing
+                sword sword > nothing
+                #sword dirt > nothing
+                exitdoor sword > nothing
+                exitdoor crab > nothing
+                exitdoor butterfly > nothing
+                exitdoor boulder > nothing
+                diamond sword > nothing
+                diamond crab > nothing
+                diamond butterfly > nothing
+                diamond boulder > nothing
+                diamond dirt > nothing
+                avatar sword > nothing
+                avatar exitdoor > nothing
+                avatar diamond > nothing
+                #avatar dirt > nothing
+                #crab sword > nothing
+                crab exitdoor > nothing
+                #crab avatar > nothing
+                crab crab > nothing
+                butterfly sword > nothing
+                butterfly exitdoor > nothing
+                #butterfly avatar > nothing
+                butterfly butterfly > nothing
+                boulder sword > nothing
+                boulder exitdoor > nothing
+                boulder avatar > nothing
+                boulder crab > nothing
+                boulder butterfly > nothing
+                dirt crab > nothing
+                dirt butterfly > nothing
+                dirt boulder > nothing
 
 	TerminationSet
 		SpriteCounter stype=avatar limit=0 win=False

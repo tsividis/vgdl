@@ -406,15 +406,14 @@ class Theory(object):
 			if failCase == 0:
 				theories.append(self)
 			# Add preconditions
-			elif failCase in [1,3]:
-				# if failCase == 2 and event[0]=='killIfFromAbove': ## we're forgoing the process of doing proper precondition reasoning here; would be straightforward to do it.
-					# interpretation = self.interpret(event)
-					# theories.extend(self.addRules(event))
-				# else:
-					# embed()
-				theories.extend(self.addPreconditions(event, timestep, timesteps))
+			elif failCase in [1,2,3]:
+				if failCase == 2 and event[0]=='killIfFromAbove': ## we're forgoing the process of doing proper precondition reasoning here; would be straightforward to do it.
+					interpretation = self.interpret(event)
+					theories.extend(self.addRules(event))
+				else:
+					theories.extend(self.addPreconditions(event, timestep, timesteps))
 			# Add new rule
-			elif failCase in [2,4]:
+			elif failCase in [4]:
 				theories.extend(self.addRules(event))
 
 		return theories
@@ -619,9 +618,8 @@ class Theory(object):
 					 (False, ()):    [4, "Event likelihood failed because interactionSet hasn't seen the event."+
 					 "Solution: AddRule()"]}
 
+
 		(eventInRules, predictionsHappened) = self.checkEvents(self.interpret(event), timestep), self.checkPredictions(event, timestep)
-
-
 
 		# print (eventInRules, predictionsHappened)
 		# self.display()
