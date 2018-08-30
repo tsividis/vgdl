@@ -12,11 +12,11 @@
 
 ## low memory
 # game_names = ['aliens', 'butterflies', 'chase', 'missilecommand', 'survivezombies', 'zelda', 'camelRace', 'lemmings', 'myAliens', 'plaqueattack',
-			 # 'frogs', 'expt_ee','expt_push_boulders', 'sokoban', 'bait', 'd2']
+			 # 'frogs', 'expt_ee','expt_push_boulders', 'sokoban', 'd2']
 
 ## more memory
-# game_names = ['avoidgeorge', 'expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'd3', 'jaws', 'med_boulderdash', 'portals', 'watergame']
-game_names = ['med_boulderdash']
+# game_names = ['avoidgeorge', 'expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'd3', 'jaws', 'med_boulderdash', 'portals']
+game_names = ['watergame', 'bait']
 ##low-memory games where position_score seems to affect results
 # game_names = ['avoidgeorge', 'med_boulderdash', 'survivezombies', 'zelda', 'frogs']
 ##high-memory games where position_score seems to affect results
