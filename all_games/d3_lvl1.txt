@@ -1,13 +1,7 @@
 wwwwwwwwwwwwwwwwwwwwwwww
-w    w    w    w    w  w
-w  4 w  4 w  5 w  5 w  w
-w    w    w    w    w  w
-w    w    w    w    w  w
-w    w    w    w    w  w
+w    1    2    1    2  w
+w  4 1  4 2  5 1  5 2  w
 w A  1    2    1    2 gw
-w    w    w    w    w  w
-w    w    w    w    w  w
-w    w    w    w    w  w
-w  5 w  5 w  4 w  4 w  w
-w    w    w    w    w  w
+w  5 1  5 2  4 1  4 2  w
+w    1    2    1    2  w
 wwwwwwwwwwwwwwwwwwwwwwww
