@@ -82,7 +82,7 @@ class WBP():
 		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
 		
 		if self.hyperparameter_index == 1:
-			self.position_score_multiplier = 0#-10
+			self.position_score_multiplier = -10
 		elif self.hyperparameter_index == 3:
 			self.position_score_multiplier = -10
 			# self.position_score_multiplier = random.choice([-100, -1000])
