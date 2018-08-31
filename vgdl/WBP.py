@@ -82,7 +82,7 @@ class WBP():
 		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
 		
 		if self.hyperparameter_index == 1:
-			self.position_score_multiplier = -10
+			self.position_score_multiplier = -1
 		elif self.hyperparameter_index == 3:
 			self.position_score_multiplier = -10
 			# self.position_score_multiplier = random.choice([-100, -1000])
@@ -91,7 +91,7 @@ class WBP():
 			self.position_score_multiplier = -100
 		# self.position_score_multiplier = -10
 		print "In planner; planning with idx {} and position_multiplier {}".format(self.hyperparameter_index, self.position_score_multiplier)
-		self.display = False
+		self.display = True
 
 
 		if theory == None:
@@ -1313,7 +1313,7 @@ class Node():
 			val += self.spritecounter_val(theory, term, stype, rle,
 				first_alpha=first_alpha, second_alpha=second_alpha)
 			# print stype, val
-		val /= 10**len(term.termination.stypes)
+		val /= 10**len(term.termination.stypes)**2
 		return val
 
 	def noveltytermination_val(self, theory, term, s1, s2, rle, first_alpha=1000,
@@ -1461,17 +1461,17 @@ class Node():
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=sprite_first_alpha, second_alpha=sprite_second_alpha,
 					negative_mult=sprite_negative_mult)
-				# if spritecounter_val!=0:
-					# print("spritecounter_val for {} is equal to {}".format(
-						# term.termination.stype, spritecounter_val))
+				if spritecounter_val!=0:
+					print("spritecounter_val for {} is equal to {}".format(
+						term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
 				multispritecounter_val = self.multispritecounter_val(theory, term, rle,
 						first_alpha=multisprite_first_alpha, second_alpha=multisprite_second_alpha)  #500, 5 (normally)
-				# if multispritecounter_val!=0:
-					# print("multispritecounter_val for {} is equal to {}".format(
-						# term.termination.stypes, multispritecounter_val))
+				if multispritecounter_val!=0:
+					print("multispritecounter_val for {} is equal to {}".format(
+						term.termination.stypes, multispritecounter_val))
 				heuristicVal += multispritecounter_val
 
 			elif isinstance(term, TimeoutRule):
@@ -1483,9 +1483,9 @@ class Node():
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=novelty_first_alpha, second_alpha=novelty_second_alpha)
-				# if noveltytermination_val!=0:
-					# print("noveltytermination_val for {} and {} is equal to {}".format(
-						# term.termination.s1, term.termination.s2, noveltytermination_val))
+				if noveltytermination_val!=0:
+					print("noveltytermination_val for {} and {} is equal to {}".format(
+						term.termination.s1, term.termination.s2, noveltytermination_val))
 
 				# if self.parent and self.parent.rle._game.score==0 and term.termination.args and term.termination.s1=='c6' and term.termination.s2=='avatar' and noveltytermination_val!=-5000:
 					# ipdb.set_trace()
@@ -1502,28 +1502,28 @@ class Node():
 					# Explore only
 					# heuristicVal += 1000 * self.WBP.annealing * noveltytermination_val
 
-		boxpenalty = 0
-		for boxType in self.WBP.boxes:
-			locs = self.WBP.findObjectsInRLE(rle, boxType)
-			for loc in locs:
-				transformedLoc = (loc[0]*30, loc[1]*30)
-				neighbors = [(transformedLoc[0]+30, transformedLoc[1]), (transformedLoc[0]-30, transformedLoc[1]), (transformedLoc[0], transformedLoc[1]+30), (transformedLoc[0], transformedLoc[1]-30)]
-				for neighbor in neighbors:
-					if neighbor in rle._game.positionDict.keys() and any([n.colorName=='DARKGRAY' for n in rle._game.positionDict[neighbor]]):
-						boxpenalty += 1
+		# boxpenalty = 0
+		# for boxType in self.WBP.boxes:
+		# 	locs = self.WBP.findObjectsInRLE(rle, boxType)
+		# 	for loc in locs:
+		# 		transformedLoc = (loc[0]*30, loc[1]*30)
+		# 		neighbors = [(transformedLoc[0]+30, transformedLoc[1]), (transformedLoc[0]-30, transformedLoc[1]), (transformedLoc[0], transformedLoc[1]+30), (transformedLoc[0], transformedLoc[1]-30)]
+		# 		for neighbor in neighbors:
+		# 			if neighbor in rle._game.positionDict.keys() and any([n.colorName=='DARKGRAY' for n in rle._game.positionDict[neighbor]]):
+		# 				boxpenalty += 1
 
 		if avatarNoveltyVals:
-			# print "chosen avatar novelty val", min(avatarNoveltyVals, key= lambda x: x[1])[0]
+			print "chosen avatar novelty val", min(avatarNoveltyVals, key= lambda x: x[1])[0]
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
 		
 		# boxpenalty_mult = 50
 		# print "boxpenalty", boxpenalty*boxpenalty_mult
-		# print "position", self.position_score(self.WBP.position_score_multiplier) 
-		# print "game score", self.rle._game.score
-		# print "sum:", heuristicVal+self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score + boxpenalty*boxpenalty_mult
-		# if self.actionSeq:
-			# print actionDict[self.actionSeq[-1]]
-		# print rle.show()
+		print "position", self.position_score(self.WBP.position_score_multiplier) 
+		print "game score", self.rle._game.score
+		print "sum:", heuristicVal+self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score #+ boxpenalty*boxpenalty_mult
+		if self.actionSeq:
+			print actionDict[self.actionSeq[-1]]
+		print rle.show()
 		# resource_bonus = 0
 		# if self.parent:
 		# 	try:
