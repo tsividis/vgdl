@@ -447,6 +447,15 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         for k in self._game.keystate:
             self._game.keystate[k] = False
 
+        self._game.positionDict = dict()
+        for k,v in self._game.sprite_groups.items():
+            for sprite in v:
+                if sprite not in self._game.kill_list:
+                    loc = (sprite.rect.left, sprite.rect.top)
+                    if loc in self._game.positionDict.keys():
+                        self._game.positionDict[loc].append(sprite)
+                    else:
+                        self._game.positionDict[loc] = [sprite]
         # print time.time()-t1
         # if getEffectList:
             # return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events}

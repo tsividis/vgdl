@@ -82,7 +82,7 @@ class WBP():
 		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
 		
 		if self.hyperparameter_index == 1:
-			self.position_score_multiplier = -10
+			self.position_score_multiplier = 0#-10
 		elif self.hyperparameter_index == 3:
 			self.position_score_multiplier = -10
 			# self.position_score_multiplier = random.choice([-100, -1000])
@@ -105,6 +105,11 @@ class WBP():
 			self.thingWeShoot = self.theory.classes['avatar'][0].args['stype']
 		else:
 			self.thingWeShoot = None
+
+		self.boxes = []
+		for rule in self.theory.interactionSet:
+			if rule.interaction == 'bounceForward':
+				self.boxes.append(rule.slot1)
 
 		if self.display:
 			print 'max nodes', self.max_nodes
@@ -734,6 +739,7 @@ class Node():
 		sprite_attrs = ['ID', 'name','rect','x','y','orientation','stypes',
 						'lastrect','lastmove','stypes', 'lastdisplacement',
 						'speed','cooldown','direction','color','colorName']
+
 		for k,v in rle._game.__dict__.iteritems():
 			if k in ignoreKeys: continue
 
@@ -1201,7 +1207,8 @@ class Node():
 				added_val = -float('inf')
 			else:
 				added_val = 0.
-
+			# if self.WBP.theory.classes[stype][0].color=='BROWN':
+				# added_val=0
 			val += added_val
 			# if self.WBP.theory.classes[stype][0].color=='BLUE':
 				# print "found blue: {}".format(added_val)
@@ -1280,25 +1287,21 @@ class Node():
 					distance = 100
 					val += float(mult * second_alpha * distance) - 20000
 
-
-			# if stype == 'avatar':
-			# 	# if the avatar's death depends on a precondition
-			# 	preconditions = [inter.preconditions for inter in theory.interactionSet if ((inter.interaction == 'killSprite') and (not inter.generic) and (inter.slot1 == stype) and (inter.preconditions))]
-			# 	for precondition_set in preconditions:
-			# 		precondition = list(precondition_set)[0]
-			# 		# Give intrinsic reward based on resource distance to kill value
-			# 		if precondition.negated:
-			# 			oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
-			# 			true_operator = oppositeOperatorMap[precondition.operator_name]
-			# 		else:
-			# 			true_operator = precondition.operator_name
-			# 		resource = precondition.item
-			# 		current_val = self.WBP.rle._game.getAvatars()[0].resources[resource]
-			# 		if true_operator in {"<", "<="}:
-			# 			val += mult * second_alpha * (precondition.num-current_val)
-			# 		elif true_operator in {">", ">="}:
-			# 			val += mult * second_alpha * (current_val-precondition.num)
-
+		## empty space bonus
+		# if stype!='avatar':
+		# 	openspace_bonus = 0
+		# 	locs = self.WBP.findObjectsInRLE(rle, stype)
+		# 	for loc in locs:
+		# 		transformedLoc = (loc[0]*30, loc[1]*30)
+		# 		neighbors = [(transformedLoc[0]+30, transformedLoc[1]), (transformedLoc[0]-30, transformedLoc[1]), (transformedLoc[0], transformedLoc[1]+30), (transformedLoc[0], transformedLoc[1]-30)]
+		# 		for neighbor in neighbors:
+		# 			if neighbor not in rle._game.positionDict.keys() or (any([n.name in killer_types for n in rle._game.positionDict[neighbor]])):
+		# 				openspace_bonus += 1
+		# 	# if openspace_bonus==2:
+		# 		# embed()
+		# 	# print "openspace_bonus: {}".format(openspace_bonus*1000)
+		# 	if locs:
+		# 		val += (openspace_bonus*1000)/len(locs)**2
 		return val
 
 	def multispritecounter_val(self, theory, term, rle, first_alpha=10000,
@@ -1310,6 +1313,7 @@ class Node():
 			val += self.spritecounter_val(theory, term, stype, rle,
 				first_alpha=first_alpha, second_alpha=second_alpha)
 			# print stype, val
+		val /= 10**len(term.termination.stypes)
 		return val
 
 	def noveltytermination_val(self, theory, term, s1, s2, rle, first_alpha=1000,
@@ -1498,15 +1502,27 @@ class Node():
 					# Explore only
 					# heuristicVal += 1000 * self.WBP.annealing * noveltytermination_val
 
+		boxpenalty = 0
+		for boxType in self.WBP.boxes:
+			locs = self.WBP.findObjectsInRLE(rle, boxType)
+			for loc in locs:
+				transformedLoc = (loc[0]*30, loc[1]*30)
+				neighbors = [(transformedLoc[0]+30, transformedLoc[1]), (transformedLoc[0]-30, transformedLoc[1]), (transformedLoc[0], transformedLoc[1]+30), (transformedLoc[0], transformedLoc[1]-30)]
+				for neighbor in neighbors:
+					if neighbor in rle._game.positionDict.keys() and any([n.colorName=='DARKGRAY' for n in rle._game.positionDict[neighbor]]):
+						boxpenalty += 1
+
 		if avatarNoveltyVals:
 			# print "chosen avatar novelty val", min(avatarNoveltyVals, key= lambda x: x[1])[0]
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
 		
+		# boxpenalty_mult = 50
+		# print "boxpenalty", boxpenalty*boxpenalty_mult
 		# print "position", self.position_score(self.WBP.position_score_multiplier) 
 		# print "game score", self.rle._game.score
-		# print "sum:", heuristicVal+self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
+		# print "sum:", heuristicVal+self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score + boxpenalty*boxpenalty_mult
 		# if self.actionSeq:
-		# 	print actionDict[self.actionSeq[-1]]
+			# print actionDict[self.actionSeq[-1]]
 		# print rle.show()
 		# resource_bonus = 0
 		# if self.parent:

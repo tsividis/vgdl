@@ -1063,7 +1063,9 @@ class Theory(object):
 				thingWeShoot = self.spriteObjects['DARKBLUE'].args['stype']
 			else:
 				thingWeShoot = None
-			
+		
+
+		thingsThatCanBeKilled = []
 		for rule in self.interactionSet:
 
 			if rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'nothing', 'collectResource']:
@@ -1094,6 +1096,8 @@ class Theory(object):
 							all([not terminationRule.__eq__(t) for t in self.falsified])):
 							self.terminationSet.append(terminationRule)
 				elif rule.asTuple()[0] in ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'collectResource']:
+					if rule.slot1 != 'avatar':
+						thingsThatCanBeKilled.append(rule.slot1)
 					terminationRule = SpriteCounterRule(rule.slot1, 0, True)
 					if (all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 						all([not terminationRule.__eq__(t) for t in self.falsified])):
@@ -1111,12 +1115,16 @@ class Theory(object):
 			falsified_win_stypes.remove(self.classes['avatar'][0].args['stype'])
 		except:
 			pass
+
 		# if self.classes['avatar'][0].args and 'stype' in self.classes['avatar'][0].args.keys():
 		# 	if sel
 		# if any([rule.termination.stype=='explosion' for rule in self.falsified]):
 		# 	embed()
+
 		for n in range(2, len(falsified_win_stypes) + 1):
 			for sprite_combination in itertools.combinations(falsified_win_stypes, n):
+		# for n in range(2, len(thingsThatCanBeKilled) + 1):
+			# for sprite_combination in itertools.combinations(thingsThatCanBeKilled, n):
 				terminationRule = MultiSpriteCounterRule(stypes=sprite_combination)
 				if (all([not terminationRule.__eq__(t) for t in self.terminationSet]) and
 					all([not terminationRule.__eq__(t) for t in self.multi_falsified])):
