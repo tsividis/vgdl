@@ -245,6 +245,14 @@ class Agent:
                             print "Failed to get params for Missile in main_agent"
                             # embed()
                             pass
+        for k,v in Vrle._game.sprite_groups.items():
+            for sprite in v:
+                if sprite not in Vrle._game.kill_list:
+                    loc = (sprite.rect.left, sprite.rect.top)
+                    if loc in Vrle._game.positionDict.keys():
+                        Vrle._game.positionDict[loc].append(sprite)
+                    else:
+                        Vrle._game.positionDict[loc] = [sprite]
         return
 
 
@@ -253,7 +261,7 @@ class Agent:
         # gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
         #          "./examples/gridphysics/theorytest.py")
         gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
-                 "./theory_files_short_horizon/hyperparameter_idx_{}/{}.py".format(self.hyperparameters['idx'], self.gameFilename))
+                 "./theory_files_short_horizon2/hyperparameter_idx_{}/{}.py".format(self.hyperparameters['idx'], self.gameFilename))
         Vrle = createMindEnv(gameString, levelString, output=False)
 
         self.setSpritePositions(self.rle, Vrle, hypothesis)
