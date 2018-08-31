@@ -133,10 +133,22 @@ class Agent:
 
         return newRle
 
+
+
+    # MARK, EXPLORATION
+    # NOTE: this function is hard-coded to write to rand_exploration directory.
+    # If you use this code to save theories not collected from random exploration
+    # then you might dynamically set the directory/filenames to reflect whether or not
+    # randomness was used
+
+    # TODO: Rearrange file-writing so that the structure is game_name/batch_number/theory_rand_N 
     def outputLesionSnapshot(self, theory, steps):
+
+        print "see TODO above."
+        embed()
+
         # pickles the theory and saves it in the gameName folder as {s}steps{n}
         # where s=steps and n=a counter so we don't overwrite earlier runs
-
         try:
             os.makedirs('./lesions/rand_exploration/{}'.format(self.gameFilename))
         except:
@@ -371,6 +383,13 @@ class Agent:
                 if self.max_rand_steps > 0:
                     rand_string = "_rand"
 
+
+                # MARK, EXPLORATION
+                # TODO: write_to_csv is not writing the step number. Fix this.
+
+                print "fix the write_to_csv TODO above"
+                embed()
+
                 if self.total_game_steps >= self.max_rand_steps:
                     # write progressively to file
                     output = {'modelType':self.modelType,
@@ -388,7 +407,6 @@ class Agent:
                 if self.max_rand_steps > 0 and self.total_game_steps > self.max_rand_steps:
                     print "done moving around randomly to collect theories"
                     return
-                
                 
                 # VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
                 # persist_movie=False, make_images=False, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
@@ -667,13 +685,13 @@ class Agent:
                     print 'theory changed'
                     hypotheses[0].display()
                     f = open('theoryChanges.txt', 'a')
-                    f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps))
+                    f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps+steps))
                     oldout = sys.stdout
                     sys.stdout = f
                     hypotheses[0].display()
                     sys.stdout = oldout
                     f.close()
-                    self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps)
+                    self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps+steps)
                     # break
             
             ###########################################
@@ -691,7 +709,7 @@ class Agent:
                 ## noveltyTerminations after the random step phase.
                 ## This flag is passed to the planner.
                 filter_novelty = False
-                if self.max_rand_steps > 0:
+                if self.max_rand_steps > 0 or self.pickled_theory_path is not None:
                     filter_novelty = True
 
                 ################################################
@@ -804,13 +822,13 @@ class Agent:
                             print 'theory changed'
                             hypotheses[0].display()
                             f = open('theoryChanges.txt', 'a')
-                            f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps))
+                            f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps+steps))
                             oldout = sys.stdout
                             sys.stdout = f
                             hypotheses[0].display()
                             sys.stdout = oldout
                             f.close()
-                            self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps)
+                            self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps+steps)
                             break
 
                         ended, win = self.rle._isDone()
