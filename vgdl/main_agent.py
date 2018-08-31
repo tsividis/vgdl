@@ -48,7 +48,7 @@ def playCurriculum(agent, level_game_pairs):
 
 
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameters, parallel_planning=False,max_steps=1000,pickled_theory_path=None):
+    def __init__(self, modelType, gameFilename, hyperparameters, parallel_planning=False,max_steps=1000,max_rand_steps=0,pickled_theory_path=None):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.gameString = None
@@ -93,11 +93,11 @@ class Agent:
 
         self.todo_delete = True
 
-        self.pickle_file = None
+        # MARK, EXPLORATION: THIS IS LEFTOVER. DO NOT SET THIS WHILE RUNNING RANDOM EXPERIMENTS 
+        self.frozen_theory = None
 
         # MARK, EXPLORATION
-        self.do_random_moves = True
-        self.max_random_steps = 10000
+        self.max_rand_steps = max_rand_steps
         self.pickled_theory_path = pickled_theory_path
 
     def initializeEnvironment(self):
@@ -242,12 +242,19 @@ class Agent:
 
         return VRLEs
 
+
+
     def initializeHypotheses(self, allObjects, learnSprites=True):
-        if self.pickle_file:
-            file = open(self.pickle_file, 'r')
+        if self.frozen_theory:
+            print "DO NOT RUN THIS. THIS IS INCOMPLETE CODE"
+            embed()
+            file = open(self.frozen_theory, 'r')
             initialTheory = pickle.load(file)
             file.close()
             gameObject = Game(self.gameString)
+        # MARK, EXPLORATION
+        ## This will load a particular theory (e.g., theory learned after N random steps), and will then play/learn after that.
+        ## Reminder, initializeHypotheses() is only called when len(self.hypotheses) == 0
         elif self.pickled_theory_path:
             file = open(self.pickled_theory_path,'r')
             initialTheory = pickle.load(file)
@@ -255,7 +262,6 @@ class Agent:
             gameObject = Game(self.gameString)
             print "initialized hypotheses with file",self.pickled_theory_path
             print "hypotheses:",initialTheory
-            sys.exit()
         else:
             if learnSprites:
                 observe(self.rle, 15, self.bestSpriteTypeDict)
@@ -310,7 +316,7 @@ class Agent:
         self.hypotheses = newHypotheses
 
 
-    def playCurriculum(self, heatmap=False, level_game_pairs=None, pickle_file=None):
+    def playCurriculum(self, heatmap=False, level_game_pairs=None, frozen_theory=None):
         """ Plays a game level until it wins, then moves to the next one until
         completion. """
         global legalActions
@@ -333,10 +339,11 @@ class Agent:
         j=0
         flexible_goals = False
 
-        if pickle_file:
-            print "got pickle file", pickle_file
-            self.pickle_file = pickle_file
-
+        if frozen_theory:
+            print "got frozen theory pickle file", frozen_theory
+            self.frozen_theory = frozen_theory
+            print "THIS CODE SHOULD NOT BE RUN. INCOMPLETE"
+            embed()
         
         for n_level, level_game in enumerate(level_game_pairs):
 
@@ -359,13 +366,12 @@ class Agent:
                 episode_results = (n_level, steps, win, score, self.total_planner_steps)
                 episodes.append(episode_results)
 
-
-                # MARK
+                # MARK, EXPLORATION
                 rand_string = ""
-                if self.do_random_moves:
+                if self.max_rand_steps > 0:
                     rand_string = "_rand"
 
-                if self.total_game_steps >= self.max_random_steps:
+                if self.total_game_steps >= self.max_rand_steps:
                     # write progressively to file
                     output = {'modelType':self.modelType,
                             'gameName': self.gameFilename,
@@ -376,9 +382,12 @@ class Agent:
                 allStatesEncountered.extend(statesEncountered)
                 levelEffectsEncountered.append(effectsEncountered)
                 
-                # MARK, Pedro said to comment this out
+                # MARK, EXPLORATION: Pedro said to comment this out
                 #if self.total_game_steps > self.max_steps:
                 #    return
+                if self.max_rand_steps > 0 and self.total_game_steps > self.max_rand_steps:
+                    print "done moving around randomly to collect theories"
+                    return
                 
                 
                 # VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
@@ -604,14 +613,14 @@ class Agent:
             quitting = False
 
             ## MARK, EXPLORATION
-            print "Random mode True/False:",self.do_random_moves
-            print "Still in Random Phase",self.total_game_steps < self.max_random_steps
-
+            print "Random mode True/False:",(self.max_rand_steps > 0)
+            if self.max_rand_steps > 0:
+                print "Still in Random Phase",self.total_game_steps < self.max_rand_steps
 
             ##############################
             ##### IF MOVING RANDOMLY #####
             ##############################
-            if self.do_random_moves and self.total_game_steps < self.max_random_steps:
+            if self.max_rand_steps > 0 and self.total_game_steps < self.max_rand_steps:
 
                 # do random moves
                 action = np.random.choice(legalActions)
@@ -668,17 +677,21 @@ class Agent:
                     # break
             
             ###########################################
-            ##### IF self.do_random_moves = False #######
-            ##### OR IF self.do_random_moves = True #####
-            ##### BUT self.total_game_steps >= self.max_random_steps ####
+            ##### IF NOT MOVING RANDOM ################
+            ###########################################
+            ##### IF self.max_rand_steps = 0 #########
+            ##### OR self.total_game_steps >= self.max_rand_steps ####
             ###########################################
             else:
 
                 #embed()
 
                 ## MARK, EXPLORATION
+                ## When you're running the random-steps experiment, we want to remove
+                ## noveltyTerminations after the random step phase.
+                ## This flag is passed to the planner.
                 filter_novelty = False
-                if self.do_random_moves:
+                if self.max_rand_steps > 0:
                     filter_novelty = True
 
                 ################################################
@@ -1086,9 +1099,11 @@ class Agent:
         if event['effectList']:
             self.finalEventList.append(event)
 
-        ## EXPLORATION LESION: skip event learning if we're running with a pickle_file (which is the theory we freeze on)
+        ## EXPLORATION LESION: skip event learning if we're running with a frozen_theory (which is the theory we freeze on)
         ### MARK, CLARIFICATION: This is not about running the random moves. This is about running a particular hypothesis without learning
-        if self.pickle_file is not None:
+        if self.frozen_theory is not None:
+            print "THIS SHOULD NOT BE RUN. INCOMPLETE"
+            embed()
             print "skipping induction because we have a frozen theory!"
         
         if ((event['effectList'] and run_induction) or distributionsHaveChanged):

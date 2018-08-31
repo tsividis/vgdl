@@ -11,14 +11,18 @@ parser.add_argument('--game_number', type=int, default=0, help='game number')
 parser.add_argument('--game_name', type=str, default=str(0), help='game name')
 parser.add_argument('--hyperparameter_index', type=int, default=0, help='hyperparameter_index')
 parser.add_argument('--pickled_theory_path',type=str,default=str(0),help='pickled theory path')
-parser.add_argument('--max_steps',type=int,default=1000,help='MAX STEPS')
+parser.add_argument('--max_rand_steps',type=int,default=1000,help='MAX STEPS')
+
+
+
+
 
 args = parser.parse_args()
 game_number = args.game_number
 game_name = args.game_name
 hyperparameter_index = args.hyperparameter_index
 pickled_theory_path = args.pickled_theory_path
-max_steps = args.max_steps
+max_rand_steps = args.max_rand_steps
 
 
 if game_name==str(0):
@@ -94,7 +98,7 @@ def read_gvgai_game(filename):
         new_doc = "\n".join(new_doc)
     return new_doc
 
-def play_trainset(hyperparameters,max_steps,pickled_theory_path=None):
+def play_trainset(hyperparameters,max_rand_steps,pickled_theory_path=None):
     start_time = time.time()
 
     gvgname = "./{}/{}".format(gameFileString,game_name)
@@ -106,7 +110,7 @@ def play_trainset(hyperparameters,max_steps,pickled_theory_path=None):
     	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
     		level_game_pairs.append([gameString, level.read()])
 
-    agent = Agent('full', game_name, hyperparameters=hyperparameters, parallel_planning=False,max_steps=max_steps,pickled_theory_path=pickled_theory_path)
+    agent = Agent('full', game_name, hyperparameters=hyperparameters, parallel_planning=False,max_rand_steps=max_rand_steps,pickled_theory_path=pickled_theory_path)
 
     ##then pass this down for multiple episodes
     gameObject = None
@@ -118,7 +122,7 @@ def play_trainset(hyperparameters,max_steps,pickled_theory_path=None):
     return total_time
 
 if pickled_theory_path != str(0):
-    play_trainset(hyperparameter_sets[hyperparameter_index],max_steps,pickled_theory_path)
+    play_trainset(hyperparameter_sets[hyperparameter_index],max_rand_steps,pickled_theory_path)
 else:
-    play_trainset(hyperparameter_sets[hyperparameter_index],max_steps)
+    play_trainset(hyperparameter_sets[hyperparameter_index],max_rand_steps)
 
