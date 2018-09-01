@@ -1047,7 +1047,7 @@ class Node():
 				# print("reward unit is {}".format(self.reward_unit))
 
 	def spritecounter_val(self, theory, term, stype, rle, first_alpha=10000.,
-						  second_alpha=100, negative_mult=.1):
+						  second_alpha=100, negative_mult=.1, surrogate_multisprite_counter=False):
 
 		# First order: progress in terms of number of sprites remaining.
 		# Second order: distance to the closest instance of a target sprite type.
@@ -1057,7 +1057,10 @@ class Node():
 		# reward unit to be used for metabolic_cost; gets updated on compute_second_order
 
 		val = 0
-		compute_second_order = True
+		if not surrogate_multisprite_counter:
+			compute_second_order = True
+		else:
+			compute_second_order = False
 
 		# Check if condition is win or loss and multiply accordingly
 		if term.termination.win:
@@ -1200,7 +1203,7 @@ class Node():
 				# print "didn't find pair list"
 				# if stype=='c5':
 					# embed()
-				distance = 100
+				distance = 101
 				added_val = float(mult * second_alpha * distance)
 			elif not stype_positions:
 				## If we couldn't compute a second-order distance because the avatar is dead, give infinite penalty.
@@ -1306,14 +1309,19 @@ class Node():
 
 	def multispritecounter_val(self, theory, term, rle, first_alpha=10000,
 							   second_alpha=100):
+		##WARNING: THis will only work if term.termination.limit==0. Otherwise you could
+		## end up with, say, count(stype)==1 for each constituent stype, meaning the terminations
+		## would all be fulfilled, even though sum([count(stype) for stype in stypes]) != 1.
+
 		val = 0
 		# print "in multispritecounter"
 		# embed()
 		for stype in term.termination.stypes:
 			val += self.spritecounter_val(theory, term, stype, rle,
-				first_alpha=first_alpha, second_alpha=second_alpha)
+				first_alpha=first_alpha, second_alpha=second_alpha, surrogate_multisprite_counter=True)
+		val /= len(term.termination.stypes)
 			# print stype, val
-		val /= 10**len(term.termination.stypes)**2
+		# val /= 10**len(term.termination.stypes)**2
 		return val
 
 	def noveltytermination_val(self, theory, term, s1, s2, rle, first_alpha=1000,
@@ -1461,17 +1469,17 @@ class Node():
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=sprite_first_alpha, second_alpha=sprite_second_alpha,
 					negative_mult=sprite_negative_mult)
-				if spritecounter_val!=0:
-					print("spritecounter_val for {} is equal to {}".format(
-						term.termination.stype, spritecounter_val))
+				# if spritecounter_val!=0:
+					# print("spritecounter_val for {} is equal to {}".format(
+						# term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
 				multispritecounter_val = self.multispritecounter_val(theory, term, rle,
 						first_alpha=multisprite_first_alpha, second_alpha=multisprite_second_alpha)  #500, 5 (normally)
-				if multispritecounter_val!=0:
-					print("multispritecounter_val for {} is equal to {}".format(
-						term.termination.stypes, multispritecounter_val))
+				# if multispritecounter_val!=0:
+					# print("multispritecounter_val for {} is equal to {}".format(
+						# term.termination.stypes, multispritecounter_val))
 				heuristicVal += multispritecounter_val
 
 			elif isinstance(term, TimeoutRule):
@@ -1483,9 +1491,9 @@ class Node():
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=novelty_first_alpha, second_alpha=novelty_second_alpha)
-				if noveltytermination_val!=0:
-					print("noveltytermination_val for {} and {} is equal to {}".format(
-						term.termination.s1, term.termination.s2, noveltytermination_val))
+				# if noveltytermination_val!=0:
+					# print("noveltytermination_val for {} and {} is equal to {}".format(
+						# term.termination.s1, term.termination.s2, noveltytermination_val))
 
 				# if self.parent and self.parent.rle._game.score==0 and term.termination.args and term.termination.s1=='c6' and term.termination.s2=='avatar' and noveltytermination_val!=-5000:
 					# ipdb.set_trace()
@@ -1513,17 +1521,18 @@ class Node():
 		# 				boxpenalty += 1
 
 		if avatarNoveltyVals:
-			print "chosen avatar novelty val", min(avatarNoveltyVals, key= lambda x: x[1])[0]
+			# print "chosen avatar novelty val", min(avatarNoveltyVals, key= lambda x: x[1])[0]
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
 		
 		# boxpenalty_mult = 50
 		# print "boxpenalty", boxpenalty*boxpenalty_mult
-		print "position", self.position_score(self.WBP.position_score_multiplier) 
-		print "game score", self.rle._game.score
-		print "sum:", heuristicVal+self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score #+ boxpenalty*boxpenalty_mult
-		if self.actionSeq:
-			print actionDict[self.actionSeq[-1]]
-		print rle.show()
+		# print "position", self.position_score(self.WBP.position_score_multiplier) 
+		# print "game score", self.rle._game.score
+		# print "sum:", heuristicVal+self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score #+ boxpenalty*boxpenalty_mult
+		# if self.actionSeq:
+			# print actionDict[self.actionSeq[-1]]
+		# print rle.show()
+		
 		# resource_bonus = 0
 		# if self.parent:
 		# 	try:
