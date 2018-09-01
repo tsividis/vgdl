@@ -1147,7 +1147,7 @@ class Agent:
             # newEffects = len(event['effectList'])
         # if (event['effectList'] and run_induction) or distributionsHaveChanged:
         # distributionsHaveChanged = False
-        if (newEffects and run_induction) or distributionsHaveChanged:
+        if ((newEffects or (random.random()<.2 and len(self.finalTimeStepList)<300)) and run_induction) or distributionsHaveChanged:
             # print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
             print "new event", newEffects, "distributions changed", distributionsHaveChanged
 
