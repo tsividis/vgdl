@@ -15,9 +15,9 @@
 			 # 'frogs', 'expt_ee','expt_push_boulders', 'sokoban', 'd2']
 
 ## variants -- low memory
-game_names = ['variant_aliens_1', 'variant_aliens_2', 'variant_aliens_3', 'variant_aliens_4', 
-			  'variant_butterflies_1', 'variant_butterflies_2', 'variant_chase_1', 'variant_myAliens_1'
-			  'variant_frogs_1']
+# game_names = ['variant_aliens_1', 'variant_aliens_2', 'variant_aliens_3', 'variant_aliens_4', 
+			  # 'variant_butterflies_1', 'variant_butterflies_2', 'variant_chase_1', 'variant_myAliens_1'
+			  # 'variant_frogs_1']
 
 ## more memory
 # game_names = ['avoidgeorge', 'expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'jaws', 'boulderdash', 'portals', 'watergame', 'bait']

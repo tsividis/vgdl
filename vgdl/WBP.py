@@ -105,7 +105,7 @@ class WBP():
 			self.position_score_multiplier = -10
 
 		print "In planner; MovingTypesInGame: {}. Planning with idx {} and position_multiplier {}".format(movingTypesInGame, self.hyperparameter_index, self.position_score_multiplier)
-		self.display = True
+		self.display = False
 
 		if self.theory.classes['avatar'][0].args and 'stype' in self.theory.classes['avatar'][0].args:
 			self.thingWeShoot = self.theory.classes['avatar'][0].args['stype']
