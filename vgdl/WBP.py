@@ -80,19 +80,6 @@ class WBP():
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
-		
-		if self.hyperparameter_index == 1:
-			self.position_score_multiplier = -10
-		elif self.hyperparameter_index == 3:
-			self.position_score_multiplier = -10
-			# self.position_score_multiplier = random.choice([-100, -1000])
-		else:
-			print "Warning: haven't thought about position_score_multiplier for idx {}".format(self.hyperparameter_index)
-			self.position_score_multiplier = -100
-		# self.position_score_multiplier = -10
-		print "In planner; planning with idx {} and position_multiplier {}".format(self.hyperparameter_index, self.position_score_multiplier)
-		self.display = True
-
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -100,6 +87,25 @@ class WBP():
 			self.theory=copy.deepcopy(theory)
 			self.theory.interactionSet.extend(fakeInteractionRules)
 			self.theory.updateTerminations()
+	
+		if any([t in str(s.vgdlType) for s in self.theory.spriteObjects.values() for t in ['Missile', 'Random', 'Chaser']]):
+			movingTypesInGame = True
+		else:
+			movingTypesInGame = False
+		
+		if self.hyperparameter_index == 1:
+			if movingTypesInGame:
+				self.position_score_multiplier = -10
+			else:
+				self.position_score_multiplier = 0
+		elif self.hyperparameter_index == 3:
+			self.position_score_multiplier = -10
+		else:
+			print "Warning: haven't thought about position_score_multiplier for idx {}".format(self.hyperparameter_index)
+			self.position_score_multiplier = -10
+
+		print "In planner; MovingTypesInGame: {}. Planning with idx {} and position_multiplier {}".format(movingTypesInGame, self.hyperparameter_index, self.position_score_multiplier)
+		self.display = True
 
 		if self.theory.classes['avatar'][0].args and 'stype' in self.theory.classes['avatar'][0].args:
 			self.thingWeShoot = self.theory.classes['avatar'][0].args['stype']
