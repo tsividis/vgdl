@@ -14,7 +14,7 @@ BasicGame
 
     fluor > Missile color=LIGHTBLUE
     wall > Immovable color=DARKGRAY
-    adversary > Chaser stype=avatar cooldown=6 fleeing=False
+    adversary > Chaser stype=avatar color=LIGHTRED cooldown=6 fleeing=False
 
   LevelMapping
     h > hotdog 
