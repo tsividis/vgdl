@@ -17,9 +17,8 @@
 ## variants -- low memory
 # game_names = ['variant_aliens_1', 'variant_aliens_2', 'variant_aliens_3', 'variant_aliens_4', 
 			  # 'variant_butterflies_1', 'variant_butterflies_2', 'variant_chase_1', 'variant_lemmings_1', 
-			  # 'variant_missilecommand_1', 'variant_missilecommand_2']
-
-# game_names = ['variant_myAliens_1', 'variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3', 'variant_plaqueattack_1']
+			  # 'variant_missilecommand_1', 'variant_missilecommand_2', 'variant_myAliens_1', 'variant_zelda_1', 
+			  #'variant_zelda_2', 'variant_zelda_3', 'variant_plaqueattack_1']
 
 
 ## more memory
@@ -27,11 +26,9 @@
 
 ## variants -- more memory
 # game_names = ['variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4', 
-			# 'variant_boulderdash_1', 'variant_jaws_1', 'variant_watergame_1', 'variant_watergame_2']
-
-# game_names = ['variant_frogs_1', 'variant_frogs_2', 'variant_portals_1', 'variant_sokoban_1']
-
-game_names = ['variant_sokoban_1']
+			# 'variant_boulderdash_1', 'variant_jaws_1', 'variant_watergame_1', 'variant_watergame_2',
+			#'variant_frogs_1', 'variant_frogs_2', 'variant_portals_1', 'variant_sokoban_1']
+game_names = ['variant_jaws_2']
 
 # game_names = ['watergame', 'bait', 'sokoban']
 ##low-memory games where position_score seems to affect results
