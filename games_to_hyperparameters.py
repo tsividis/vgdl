@@ -29,7 +29,9 @@
 # game_names = ['variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4', 
 			# 'variant_boulderdash_1', 'variant_jaws_1', 'variant_watergame_1', 'variant_watergame_2']
 
-game_names = ['variant_frogs_1', 'variant_frogs_2', 'variant_portals_1', 'variant_sokoban_1']
+# game_names = ['variant_frogs_1', 'variant_frogs_2', 'variant_portals_1', 'variant_sokoban_1']
+
+game_names = ['variant_sokoban_1']
 
 # game_names = ['watergame', 'bait', 'sokoban']
 ##low-memory games where position_score seems to affect results
