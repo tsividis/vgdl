@@ -4,38 +4,47 @@ BasicGame
         structure > Immovable
             water > color=MPUYEI
             goal  > color=GREEN
-        forestDense > SpawnPoint stype=log prob=.4  spawnCooldown=10 color=MPUYEI
-        forestSparse > SpawnPoint stype=log prob=.1  spawnCooldown=5 color=MPUYEI
-        log    > Missile   orientation=LEFT  speed=.2 color=BROWN
         truck  >
             rightTruck  > Missile   orientation=RIGHT
-                fastRtruck  > speed=0.7  color=ORANGE
+                fastRtruck  > speed=0.6  color=ORANGE
                 slowRtruck  > speed=0.3  color=RED
             leftTruck  > Missile   orientation=LEFT
-                fastLtruck  > speed=0.7  color=LIGHTORANGE
+                fastLtruck  > speed=0.6  color=LIGHTORANGE
                 slowLtruck  > speed=0.3  color=LIGHTRED
-
         avatar > MovingAvatar color=DARKBLUE
         wall > Immovable color=DARKGRAY
+	bridge > Immovable color=YELLOW
+	mud > Immovable color=PURPLE
 
     InteractionSet
+	avatar bridge > nothing
+	bridge avatar > nothing
+	mud bridge > nothing
+	bridge mud > nothing
+	mud mud > nothing
+	mud avatar > bounceForward
+	avatar mud > nothing
+	mud wall > stepBack
+	wall mud > nothing
+	mud goal > nothing
+	goal mud > nothing
+	mud water > transformTo stype=bridge
+	water bridge > killSprite
+        fastRtruck mud > nothing
+        slowRtruck mud > nothing
+	mud fastRtruck > nothing
+	mud slowRtruck > nothing
+
+        fastLtruck mud > nothing
+        slowLtruck mud > nothing
+	mud fastLtruck > nothing
+	mud slowLtruck > nothing
+
         goal avatar  > killSprite scoreChange=1
-        avatar log   > changeResource resource=safety value=2
-        avatar log   > pullWithIt   # note how one collision can have multiple effects
         avatar wall  > stepBack
         avatar EOS > wrapAround
-	log EOS > wrapAround
-	EOS log > nothing
-        log wall > nothing
-        water log > nothing
-        log log > nothing
         avatar water > killIfHasLess  resource=safety limit=-1
         avatar water > changeResource resource=safety value=-1
-        log    EOS   > wrapAround
-        forestDense log > nothing
-        forestSparse log > nothing
-        forestDense water > nothing
-        forestSparse water > nothing
 
         fastRtruck wall > nothing
         slowRtruck wall > nothing
@@ -45,8 +54,6 @@ BasicGame
         fastRtruck fastRtruck > nothing
         slowRtruck slowRtruck > nothing
         fastRtruck slowRtruck > nothing
-        fastRtruck wall > nothing
-        slowRtruck wall > nothing
         avatar fastRtruck > killSprite
         avatar slowRtruck > killSprite
         slowRtruck  wall   > reverseDirection
@@ -57,8 +64,6 @@ BasicGame
         fastLtruck fastLtruck > nothing
         slowLtruck slowLtruck > nothing
         fastLtruck slowLtruck > nothing
-        fastLtruck wall > nothing
-        slowLtruck wall > nothing
         avatar fastLtruck > killSprite
         avatar slowLtruck > killSprite
         slowLtruck  wall   > reverseDirection
@@ -71,18 +76,10 @@ BasicGame
     LevelMapping
         g > goal
         0 > water
-        1 > forestDense water       # note how a single character can spawn multiple sprites
-        # 1 > water       # note how a single character can spawn multiple sprites
-        2 > forestDense log
-        # 2 > log
-        3 > forestSparse water       # note how a single character can spawn multiple sprites
-        # 3 > water       # note how a single character can spawn multiple sprites
-        4 > forestSparse log
-        # 4 > log
         - > slowRtruck
         x > fastRtruck
         _ > slowLtruck
         l > fastLtruck
-        = > log water
         w > wall
-	B > water log avatar
+	b > bridge
+	m > mud
