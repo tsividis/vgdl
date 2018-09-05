@@ -97,7 +97,7 @@ class WBP():
 			if movingTypesInGame:
 				self.position_score_multiplier = -10
 			else:
-				self.position_score_multiplier = 0
+				self.position_score_multiplier = -1
 		elif self.hyperparameter_index == 3:
 			self.position_score_multiplier = -10
 		else:
