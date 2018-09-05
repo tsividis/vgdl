@@ -2,14 +2,14 @@ BasicGame
     SpriteSet
         flower > SpawnPoint stype=bee    prob=0.02 color=PINK
  
-        fastHell   > SpawnPoint stype=zombie prob=0.05 color=GREEN
-        slowHell   > SpawnPoint stype=zombie prob=0.03 color=RED
-        honey  > Resource color=GOLD limit=10
+        fastHell   > SpawnPoint stype=zombie prob=0.05 total=10 color=GREEN
+        slowHell   > SpawnPoint stype=zombie prob=0.03 total=10 color=RED
 
         avatar > MovingAvatar frameRate=8 color=DARKBLUE
         bee    > RandomNPC speed=1   cooldown=3  color=YELLOW
         zombie > Chaser stype=avatar cooldown=6 speed=0.5 color=BROWN
         dying_zombie > Chaser stype=avatar cooldown=6 speed=0.5 color=PURPLE
+        honey  > Resource color=GOLD limit=10
         wall > Immovable color=DARKGRAY
 
     InteractionSet
@@ -30,9 +30,9 @@ BasicGame
         bee dying_zombie      > transformTo stype=honey
         dying_zombie honey      > killSprite
         avatar slowHell     > changeScore value=-1
-        avatar slowHell     > killSprite 
+        avatar slowHell     > nothing 
         avatar fastHell     > changeScore value=-1 
-        avatar fastHell     > killSprite 
+        avatar fastHell     > nothing 
 
         avatar bee > nothing
         avatar flower > nothing
@@ -105,7 +105,7 @@ BasicGame
         wall zombie > nothing
 
     TerminationSet
-        Timeout limit=500 win=True
+	SpriteCounter stype=zombie limit=0 win=True
         SpriteCounter stype=avatar limit=0 win=False
 
     LevelMapping

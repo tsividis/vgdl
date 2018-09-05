@@ -6,8 +6,8 @@ BasicGame
         bee > RandomNPC color=YELLOW cooldown=4
         fence > Immovable color=PURPLE
         sparrow > Chaser
-		sparrow1 > stype=obstacle color=LIGHTGREEN cooldown=1
-		sparrow2 > stype=bee color=LIGHTRED cooldown=1
+		sparrow1 > stype=obstacle color=LIGHTGREEN cooldown=4
+		sparrow2 > stype=bee color=LIGHTRED cooldown=4
 	lightfence > Immovable color=LIGHTBLUE
 	obstacle > Immovable color=ORANGE
     InteractionSet
