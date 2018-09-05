@@ -1727,7 +1727,7 @@ def teleportToExit(sprite, partner, game):
         ## and so there is no game.sprite_groups[partner.stype]. send avatar to the goal.
         e = random.choice(game.sprite_groups['goal'])
     sprite.rect = e.rect
-    sprite.lastmove = 0
+    #sprite.lastmove = 0
     args = {'stype':partner.stype}
     return ('teleportToExit', sprite.ID, partner.ID, args)
 
