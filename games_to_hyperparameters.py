@@ -23,7 +23,7 @@
 # game_names = ['variant_survivezombies_1', 'variant_survivezombies_2', 'variant_chase_2', 'variant_lemmings_2',
 			# 'variant_lemmings_3', 'd2']
 
-game_names = ['variant_expt_ee_1']
+# game_names = ['variant_expt_ee_1']
 ## more memory
 # game_names = ['avoidgeorge', 'expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'jaws', 'boulderdash', 'portals', 'watergame', 'bait']
 
@@ -32,6 +32,9 @@ game_names = ['variant_expt_ee_1']
 			# 'variant_boulderdash_1', 'variant_jaws_1', 'variant_watergame_1', 'variant_watergame_2',
 			#'variant_frogs_1', 'variant_frogs_2', 'variant_portals_1', 'variant_sokoban_1']
 # game_names = ['variant_jaws_2']
+
+game_names = ['variant_lemmings_3', 'variant_chase_2', 'variant_plaqueattack_1', 'variant_expt_antagonist_1',
+			  'variant_expt_helper_1', 'variant_expt_preconditions_1', 'variant_expt_push_boulders_1', 'variant_expt_relational_1']
 
 # game_names = ['watergame', 'bait', 'sokoban']
 ##low-memory games where position_score seems to affect results
