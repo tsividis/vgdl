@@ -1,10 +1,10 @@
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w  a      fm f                 w
-w     a   f  f     a      a    w
-w       a ffff                 w
-w               a              w
-w         m    A   b           w
-w     a     a            ffffffw
-w     a   a              feeeeew
-www                  a   fe    w
+w  a                      3    w
+w     a            a      3    w
+w       a                 3  3 w
+w               a         3333 w
+w              A   b           w
+w     a     a                  w
+w     a   a                    w
+www         m        a         w
 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww

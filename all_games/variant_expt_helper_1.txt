@@ -4,27 +4,33 @@ BasicGame frame_rate=30
         mover > VGDLSprite
             rand > RandomNPC color=LIGHTBLUE cooldown=12 #for humans, 2 for Planner
             chaser > Chaser
-                chaser1 > stype=box1 color=ORANGE cooldown=6 #for humans
-                chaser2 > stype=box3 color=LIGHTBLUE cooldown=6 #for humans
+                chaser1 > stype=box1 color=ORANGE  cooldown=6 #for humans
         wall > Immovable color=DARKGRAY
         forcefield > Passive color=PURPLE
+	forcefield2 > Passive color=LIGHTRED
         box > Passive
             box1 > color=WHITE
             box2 > color=GREEN
-            box3 > color=YELLOW
+	    box3 > color=YELLOW
     LevelMapping
         w > wall
         a > box1
         b > box2
-        c > box3
         f > forcefield
+	g > forcefield2
         x > chaser1
         z > chaser2
         r > rand
         z > chaser2
-        1 > missile1
-        2 > missile2
     InteractionSet
+	box1 forcefield2 > killSprite
+	forcefield2 box1 > nothing
+	avatar forcefield2 > nothing
+	forcefield2 avatar > nothing
+	chaser forcefield2 > stepBack
+	forcefield2 chaser > nothing
+	box3 avatar > killSprite
+	avatar box3 > nothing
         avatar wall > stepBack
         mover wall > stepBack
         box wall > stepBack
@@ -34,11 +40,9 @@ BasicGame frame_rate=30
         box1 box1 > bounceForward
         avatar chaser > nothing
         box2 avatar > killSprite
-        box1 chaser > killSprite
+        chaser box1 > transformTo stype=box3
+	box1 box3 > killSprite
         box1 rand > killSprite
-        box1 box3 > nothing
-        avatar box3 > nothing
-        box3 chaser > killSprite
         box1 forcefield > nothing
         box2 forcefield > nothing
         rand forcefield > stepBack
@@ -49,10 +53,7 @@ BasicGame frame_rate=30
         chaser wall > stepBack
         chaser box2 > stepBack
         chaser chaser > nothing
-        missile EOS > wrapAround
-        missile avatar > killSprite
-        missile missile > reverseDirection
         mover mover > stepBack
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
-        SpriteCounter stype=box1 limit=0 win=True
+        MultiSpriteCounter stype1=box3 stype2=chaser1 limit=0 win=True
