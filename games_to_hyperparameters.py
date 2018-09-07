@@ -33,8 +33,10 @@
 			#'variant_frogs_1', 'variant_frogs_2', 'variant_portals_1', 'variant_sokoban_1']
 # game_names = ['variant_jaws_2']
 
-game_names = ['variant_lemmings_3', 'variant_chase_2', 'variant_plaqueattack_1', 'variant_expt_antagonist_1',
-			  'variant_expt_helper_1', 'variant_expt_preconditions_1', 'variant_expt_push_boulders_1', 'variant_expt_relational_1']
+# game_names = ['variant_lemmings_3', 'variant_chase_2', 'variant_plaqueattack_1', 'variant_expt_antagonist_1',
+			  # 'variant_expt_helper_1', 'variant_expt_preconditions_1', 'variant_expt_push_boulders_1', 'variant_expt_relational_1']
+
+game_names = ['variant_lemmings_3']
 
 # game_names = ['watergame', 'bait', 'sokoban']
 ##low-memory games where position_score seems to affect results
