@@ -1063,7 +1063,6 @@ class Agent:
         hypotheses = self.manageNewObjects(hypotheses)
 
         # statesEncountered.append(self.rle._game.getFullState())
-        self.statesEncountered.append(self.rle._game.getFullState())
         print "manage new objects and getFullState: {}".format(time.time()-t1)
 
         t1 = time.time()
@@ -1085,9 +1084,10 @@ class Agent:
         print self.rle.show(color='blue')
         print "rle.show: {}".format(time.time()-t1)
         
+        # event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, \
+        #     'gameState': self.rle._game.getFullStateColorized(), 'rle': self.rle}
         event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, \
-            'gameState': self.rle._game.getFullStateColorized(), 'rle': self.rle}
-
+            'gameState': None, 'rle': self.rle}
         # if len(effects)>4:
             # embed()
         t1 = time.time()
