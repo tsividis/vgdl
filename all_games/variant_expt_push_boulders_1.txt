@@ -19,6 +19,7 @@ BasicGame frame_rate=30
         z > poison3
 	d > dynamite
     InteractionSet
+	dynamite dynamite > stepBack
 	dynamite avatar > bounceForward
 	dynamite avatar > nothing
 	dynamite poison2 > killSprite
