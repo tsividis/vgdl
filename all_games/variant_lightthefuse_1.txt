@@ -1,6 +1,8 @@
 BasicGame
     SpriteSet
-        wall > Immovable color=DARKGRAY
+        wallsuper > Immovable 
+		wall > color=DARKGRAY
+		deadbrick > color=FUSCHA
         avatar > MovingAvatar color=DARKBLUE
         goal > Immovable color=PURPLE
 	fuse > Immovable
@@ -14,21 +16,21 @@ BasicGame
 		downLit > color=GOLD orientation=DOWN
 		upLit > color=YELLOW orientation=UP
 	fence > Immovable color=WHITE
-	brick > Immovable color=FUSCHA
+	brick > Immovable color=LIGHTFUSCHA
 	
     InteractionSet
 	avatar fence > stepBack
 	fence avatar > nothing
 	litfuse fence > nothing
 	fence litfuse > nothing
-	fence wall > nothing
-	wall fence > nothing
+	fence wallsuper > nothing
+	wallsuper fence > nothing
 	fence fuse > nothing
 	fuse fence > nothing
 	goal avatar > nothing
 	avatar goal > nothing
-	avatar wall > stepBack
-	wall avatar > nothing
+	avatar wallsuper > stepBack
+	wallsuper avatar > nothing
 
 	goal litfuse > killSprite
 	litfuse goal > killSprite
@@ -36,10 +38,10 @@ BasicGame
 
 	litfuse avatar > nothing
 	nothing litfuse > nothing
-	litfuse wall > killSprite
-	wall litfuse > nothing
+	litfuse wallsuper > killSprite
+	wallsuper litfuse > nothing
 
-	brick litfuse > transformTo stype=wall
+	brick litfuse > transformTo stype=deadbrick
 	litfuse brick > nothing
 	avatar brick > stepBack
 	brick avatar stepBack
@@ -56,8 +58,8 @@ BasicGame
 	downFuse litfuse > transformTo stype=downLit
 	upFuse litfuse > transformTo stype=upLit
 
-	fuse wall > nothing
-	wall fuse > nothing
+	fuse wallsuper > nothing
+	wallsuper fuse > nothing
 	fuse fuse > nothing
 	fuse goal > nothing
 	goal fuse > nothing

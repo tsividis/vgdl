@@ -1,6 +1,11 @@
-wwwwwwwwwwwwwwwwwwwwwwww
-wr       b d b    b   gw
-wu  b    b  lb        bw
-w        bdA b        uw
-w   u    brr b    uw  uw
-wwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwwwww
+wr Ab       d           lw
+wr  b                    w
+wr  b    d   wb  r      dw
+wr  b                    w
+wr  b                    w
+wr  b       b    uw     bw
+wr  b                    w
+wr  b                    w
+wr  b       uw          gw
+wwwwwwwwwwwwwwwwwwwwwwwwww
