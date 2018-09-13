@@ -1,13 +1,12 @@
 BasicGame
   SpriteSet
     city  > Immovable color=GREEN randomtiling=0.5
-    explosion > Flicker limit=5 color=PINK
-
     avatar  > ShootAvatar stype=explosion color=DARKBLUE
     incoming_slow  > Chaser stype=city color=RED speed=0.1
     incoming_fast  > Chaser stype=city color=GOLD speed=0.3
     hologram > Immovable color=LIGHTBLUE
     laser > Immovable color=PURPLE
+    explosion > Flicker limit=5 color=PINK
     wall > Immovable color=DARKGRAY
 
   LevelMapping
@@ -19,6 +18,13 @@ BasicGame
     A > avatar
 
   InteractionSet
+    laser explosion > nothing
+    explosion laser > nothing
+    laser hologram > nothing
+    hologram laser > nothing
+    explosion hologram > nothing
+    hologram explosion > nothing
+
     incoming_slow hologram > nothing
     hologram incoming_slow > nothing
     incoming_fast hologram > nothing
@@ -62,5 +68,6 @@ BasicGame
     avatar incoming_slow > nothing
 
   TerminationSet
+    SpriteCounter stype=avatar win=False
     SpriteCounter stype=city   win=False
     MultiSpriteCounter stype1=incoming_slow stype2=incoming_fast win=True

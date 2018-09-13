@@ -29,6 +29,9 @@ BasicGame
     l > laser
 
   InteractionSet
+    laser laser > nothing
+    laser adversary > nothing
+    adversary laser > nothing 
     fluor laser > nothing
     laser fluor > nothing
     avatar laser > killSprite
@@ -162,5 +165,6 @@ BasicGame
     wall fluor > nothing
 
   TerminationSet
+    SpriteCounter stype=avatar win=False
     MultiSpriteCounter stype1=fullMolarInf stype2=fullMolarSup win=False
     MultiSpriteCounter stype1=hotdoghole stype2=hotdog stype3=burger stype4=burgerhole limit=0 win=True

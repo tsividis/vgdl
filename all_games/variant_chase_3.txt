@@ -39,6 +39,8 @@ BasicGame
         scared avatar > changeScore value=1
         scared avatar  > transformTo stype=carcass
         scared carcass > transformTo stype=angry
+	carcass wall > nothing
+	wall carcass > nothing
 
     LevelMapping
         0 > scared

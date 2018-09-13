@@ -25,6 +25,8 @@ BasicGame
 	wall fence > nothing
 	fence fuse > nothing
 	fuse fence > nothing
+	fuse goal > nothing
+	goal fuse > nothing
 	goal avatar > nothing
 	avatar goal > nothing
 	avatar wall > stepBack
@@ -50,11 +52,8 @@ BasicGame
 	downFuse avatar > transformTo stype=downLit
 	upFuse avatar > transformTo stype=upLit
 
-	#litfuse fuse > nothing
-	#leftFuse litfuse > transformTo stype=leftLit
-	#rightFuse litfuse > transformTo stype=rightLit
-	#downFuse litfuse > transformTo stype=downLit
-	#upFuse litfuse > transformTo stype=upLit
+	fuse litfuse > nothing
+	litfuse fuse > nothing
 
 	fuse wall > nothing
 	wall fuse > nothing

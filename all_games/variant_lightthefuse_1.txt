@@ -59,6 +59,8 @@ BasicGame
 	fuse wall > nothing
 	wall fuse > nothing
 	fuse fuse > nothing
+	fuse goal > nothing
+	goal fuse > nothing
 
     TerminationSet
         SpriteCounter stype=goal   limit=0 win=True
