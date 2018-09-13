@@ -135,6 +135,7 @@ def play_trainset(hyperparameter_sets, hyperparameter_index):
 
     ##then pass this down for multiple episodes
     gameObject = None
+    print game_levels
 
     agent.playCurriculum(level_game_pairs=level_game_pairs)
 
