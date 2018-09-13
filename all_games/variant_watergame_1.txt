@@ -18,6 +18,9 @@ BasicGame
 	water antibox > nothing
 	antibox avatar > bounceForward
 	avatar antibox > nothing
+	antibox door > nothing
+	door antibox > nothing
+	antibox antibox > nothing
         avatar wall > stepBack
         box avatar > bounceForward
         box wall > undoAll
@@ -36,6 +39,7 @@ BasicGame
         box door > nothing
         door EOS > nothing
         EOS door > nothing
+	door door > nothing
         water wall > nothing
         wall water > nothing
         wall EOS > nothing

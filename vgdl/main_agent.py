@@ -624,7 +624,7 @@ class Agent:
 
                 elif self.hyperparameter_index == 3:
                     movingTypes = self.checkForMovingTypes(self.rle, self.hypotheses[0])
-                    if not self.checkForMovingKillerTypes(self.rle, self.hypotheses[0]) and self.noNewObjectsInAWhile(self.rle, 55) and \
+                    if not movingTypes and self.noNewObjectsInAWhile(self.rle, 55) and \
                             (not movingTypes or (movingTypes and self.max_game_time_observed>501)):
                         print "switching to long-range planning"
                         ## switch to long-range planning

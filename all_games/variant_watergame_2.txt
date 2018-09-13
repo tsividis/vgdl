@@ -13,12 +13,14 @@ BasicGame
     InteractionSet
 	part1 wall > stepBack
 	wall part1 > nothing
-	#box part1 > killSprite
+	box part1 > nothing
 	part1 box > killSprite
 	part1 water > killSprite
 	water part1 > nothing
 	part1 avatar > bounceForward
 	avatar part1 > nothing
+	part1 door > stepBack
+	door part1 > stepBack
 
 	part2 wall > stepBack
 	wall part2 > nothing
@@ -28,9 +30,10 @@ BasicGame
 	water part2 > nothing
 	part2 avatar > bounceForward
 	avatar part2 > nothing
-
+	part2 door > stepBack
+	door part2 > stepBack
 	part2 part1 > transformTo stype=box
-	part1 box > killSprite
+	part1 part2 > nothing
 
         avatar wall > stepBack
         box avatar > bounceForward
