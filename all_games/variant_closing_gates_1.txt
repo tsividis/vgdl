@@ -1,0 +1,42 @@
+BasicGame
+    SpriteSet
+        wall > Immovable color=DARKGRAY
+        avatar > ShootAvatar color=DARKBLUE stype=bullet
+        goal > Immovable color=GREEN
+	forcefield > Immovable color=PINK
+        cannonup > SpawnPoint stype=up limit=5 spawnCooldown=10 prob=.5 color=DARKGRAY
+        cannondown > SpawnPoint stype=down limit=5 spawnCooldown=10 prob=.5 color=DARKGRAY
+        missile > Missile speed=1 cooldown=12
+            up > orientation=UP color=ORANGE
+            down > orientation=DOWN color=RED
+	bullet > Missile color=LIGHTGREEN
+	boulder > Immovable color=BLUE
+    InteractionSet
+	bullet forcefield > transformTo stype=boulder
+	avatar forcefield > nothing
+	forcefield avatar > nothing
+	bullet missile > stepBack
+	missile bullet stepBack
+	boulder avatar > bounceForward
+	missile boulder > stepBack
+	boulder missile > stepBack
+	boulder wall > stepBack
+        avatar missile > stepBack
+        missile avatar > stepBack
+        avatar wall > stepBack
+        missile wall > stepBack
+        missile missile > stepBack
+        goal avatar > killSprite
+
+    TerminationSet
+        SpriteCounter stype=goal   limit=0 win=True
+        SpriteCounter stype=avatar limit=0 win=False
+
+    LevelMapping
+        g > goal
+        1 > cannondown
+        2 > cannonup
+        d > down
+        u > up
+	b > boulder
+	f > forcefield

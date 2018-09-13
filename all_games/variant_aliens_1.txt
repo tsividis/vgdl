@@ -25,7 +25,7 @@ BasicGame square_size=32
         avatar  EOS  > stepBack
         alien   EOS  > turnAround
         sam EOS  > killSprite
-        bomb EOS  > killSprite
+        bomb EOS  > stepBack
 
         base bomb > killSprite
         bomb base > killSprite
