@@ -21,6 +21,19 @@ BasicGame
         wall > Immovable color=DARKGRAY  
 
     InteractionSet
+	bullet padding > nothing
+	padding bullet > nothing
+	bullet goal > nothing
+	goal bullet > nothing
+	bullet bullet > nothing
+	bullet avatar > nothing
+	avatar bullet > nothing
+	bullet EOS > killSprite
+	EOS bullet > nothing
+	bullet spawn > nothing
+	spawn bullet > nothing
+	bullet wall > killSprite
+	wall bullet > nothing
 	avatar padding > nothing
 	padding avatar > nothing
 	mover padding > killSprite

@@ -35,6 +35,8 @@ BasicGame
 	sparrow bee > nothing
         sparrow fence > stepBack
 	fence sparrow > nothing
+	sparrow lightfence > nothing
+	lightfence sparrow > nothing
         sparrow wall > stepBack
 	wall sparrow > nothing
         goal avatar > killSprite

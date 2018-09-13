@@ -31,6 +31,9 @@ BasicGame
     g > goal
 
   InteractionSet
+    laser laser nothing
+    laser adversary > nothing
+    adversary laser > nothing
     goal avatar > killSprite
     avatar goal > nothing
     goal fluor > killSprite
@@ -49,6 +52,9 @@ BasicGame
     burger laser > nothing
     laser wall > reverseDirection
     wall laser > nothing
+    goal laser > nothing
+    laser goal > nothing
+
     avatar adversary > killSprite
     adversary avatar > killSprite
     adversary wall > stepBack
@@ -172,5 +178,6 @@ BasicGame
     wall fluor > nothing
 
   TerminationSet
+    SpriteCounter stype=avatar win=False
     MultiSpriteCounter stype1=fullMolarInf stype2=fullMolarSup win=False
     SpriteCounter stype=goal win=True

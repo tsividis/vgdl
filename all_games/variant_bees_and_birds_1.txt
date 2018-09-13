@@ -23,6 +23,8 @@ BasicGame
 	lightfence avatar > nothing
 	bee lightfence > stepBack
 	lightfence bee > nothing
+	sparrow lightfence > nothing
+	lightfence sparrow > nothing
         fence avatar > killSprite
 	avatar fence > nothing
         avatar wall > stepBack
