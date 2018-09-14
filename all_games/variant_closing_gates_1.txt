@@ -46,6 +46,7 @@ BasicGame
         missile wall > stepBack
         missile missile > stepBack
         goal avatar > killSprite
+	avatar goal > nothing
 	forcefield forcefield > nothing
     TerminationSet
         SpriteCounter stype=goal   limit=0 win=True
