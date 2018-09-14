@@ -4,7 +4,7 @@ BasicGame
     avatar  > ShootAvatar stype=explosion color=DARKBLUE
     incoming_slow  > Chaser stype=city color=RED speed=0.1
     incoming_fast  > Chaser stype=city color=GOLD speed=0.3
-    explosion > Flicker limit=5 color=PINK
+    explosion > Flicker limit=5 color=PINK	    
     wall > Immovable color=DARKGRAY
 
   LevelMapping
