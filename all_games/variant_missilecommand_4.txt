@@ -37,9 +37,9 @@ BasicGame
     avatar hologram >nothing
     avatar laser > nothing
     laser avatar > nothing
-    avatar incoming_slow > killSprite
+    avatar incoming_slow > nothing
     incoming_slow avatar > nothing
-    avatar incoming_fast > killSprite
+    avatar incoming_fast > nothing
     incoming_fast avatar > nothing
     
     incoming_slow wall  > stepBack
