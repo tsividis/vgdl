@@ -27,7 +27,9 @@
 			# 'bees_and_birds', 'variant_bees_and_birds_1', 'variant_closing_gates_1','variant_corridor_1',
 			  # 'lightthefuse', 'variant_lightthefuse_1', 'variant_lightthefuse_2']
 # game_names = ['variant_watergame_1', 'variant_watergame_2']
-game_names = ['variant_lightthefuse_2', 'variant_plaqueattack_4', 'variant_closing_gates_1']
+
+game_names = ['variant_closing_gates_1', 'variant_missilecommand_3', 'variant_missilecommand_4']
+
 ## more memory
 # game_names = ['avoidgeorge', 'expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'jaws', 'boulderdash', 'portals', 'watergame', 'bait']
 

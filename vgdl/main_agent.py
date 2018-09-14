@@ -161,6 +161,7 @@ class Agent:
                 self.starting_max_nodes = 10000
                 self.max_nodes_annealing = 10. 
             self.max_nodes = self.starting_max_nodes
+            self.stored_max_nodes = self.max_nodes
             print "Switching hyperparameters to {}".format(new_index)
         planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
         return planner_hyperparameters
@@ -349,6 +350,7 @@ class Agent:
             print("Playing level {}".format(n_level))
             (self.gameString, self.levelString) = level_game
             self.max_nodes = self.starting_max_nodes
+            self.stored_max_nodes = self.max_nodes
             win = False
             gameObject = None
             i=0
@@ -580,6 +582,8 @@ class Agent:
             # ratio = self.actionSeqLength/len(self.statesEncountered)
             # planner_hyperparameters = self.hyperparameterSwitch(new_index=3)
 
+            self.max_nodes = self.stored_max_nodes
+
             print "planning with hyperparameter index {}".format(self.hyperparameter_index)
             print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
 
@@ -628,13 +632,16 @@ class Agent:
                             (not movingTypes or (movingTypes and self.max_game_time_observed>501)):
                         print "switching to long-range planning"
                         ## switch to long-range planning
-                        planner_hyperparameters = self.hyperparameterSwitch(new_index=1)
+                        new_index = 1
+                        planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
                         conservative = False
                         # embed()
                     else:
                         print "planning conservatively"
-                        planner_hyperparameters = self.hyperparameterSwitch(new_index=3)
+                        new_index = 3
+                        planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
                         conservative = True
+                        self.stored_max_nodes = self.max_nodes ##taking annealing into account
                         self.max_nodes = 50
                 else:
                     conservative = False
