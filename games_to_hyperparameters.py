@@ -28,7 +28,9 @@
 			  # 'lightthefuse', 'variant_lightthefuse_1', 'variant_lightthefuse_2']
 # game_names = ['variant_watergame_1', 'variant_watergame_2']
 
-game_names = ['variant_closing_gates_1', 'variant_missilecommand_3', 'variant_missilecommand_4']
+game_names = ['variant_expt_ee_2', 'variant_expt_ee_3', 'variant_closing_gates_1', 'variant_missilecommand_3', 
+			'variant_missilecommand_4', 'variant_corridor_1', 'variant_avoidgeorge_2', 'variant_plaqueattack_1',
+			'lightthefuse', 'variant_lightthefuse_1', 'variant_lightthefuse_2']
 
 ## more memory
 # game_names = ['avoidgeorge', 'expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'jaws', 'boulderdash', 'portals', 'watergame', 'bait']
@@ -42,6 +44,10 @@ game_names = ['variant_closing_gates_1', 'variant_missilecommand_3', 'variant_mi
 			#'variant_expt_relational_1', 'variant_lemmings_3']
 
 # game_names = ['variant_frogs_4', 'variant_expt_push_boulders_2', 'variant_expt_relational_2']
+
+# game_names = ['variant_expt_helper_2', 'variant_expt_preconditions_2', 'variant_watergame_1', 'variant_watergame_2', 
+# 			   'expt_push_boulders', 'variant_expt_push_boulders_1', 'variant_expt_push_boulders_2', 'variant_frogs_2', 
+# 			   'expt_antagonist', 'bees_and_birds', 'variant_boulderdash_1']
 
 ##128GB!
 # game_names = ['variant_sokoban_1', 'variant_expt_push_boulders_1', 'variant_expt_helper_1']
