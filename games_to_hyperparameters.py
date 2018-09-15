@@ -45,9 +45,7 @@
 
 # game_names = ['variant_frogs_4', 'variant_expt_push_boulders_2', 'variant_expt_relational_2']
 
-game_names = ['variant_expt_helper_2', 'variant_expt_preconditions_2', 'variant_watergame_1', 'variant_watergame_2', 
-			   'expt_push_boulders', 'variant_expt_push_boulders_1', 'variant_expt_push_boulders_2', 'variant_frogs_2', 
-			   'expt_antagonist', 'bees_and_birds', 'variant_boulderdash_1']
+game_names = ['variant_expt_helper_2', 'variant_plaqueattack_1']
 
 ##128GB!
 # game_names = ['variant_sokoban_1', 'variant_expt_push_boulders_1', 'variant_expt_helper_1']
