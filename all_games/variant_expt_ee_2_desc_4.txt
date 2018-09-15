@@ -32,6 +32,8 @@ BasicGame frame_rate=30
 	orange chaser > nothing
 	chaser cranberry > nothing
 	cranberry chaser > nothing
+	avatar cranberry > nothing
+	cranberry avatar > nothing
 	chaser dough > nothing
 	dough chaser > nothing
 	chaser eel > nothing
