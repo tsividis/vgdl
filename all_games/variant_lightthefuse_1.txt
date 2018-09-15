@@ -37,7 +37,7 @@ BasicGame
 	litfuse litfuse > nothing
 
 	litfuse avatar > nothing
-	nothing litfuse > nothing
+	avatar litfuse > nothing
 	litfuse wallsuper > killSprite
 	wallsuper litfuse > nothing
 

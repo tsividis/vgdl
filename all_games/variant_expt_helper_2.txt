@@ -38,11 +38,14 @@ BasicGame frame_rate=30
 	forcefield2 bridge > nothing
 	box1 forcefield2 > stepBack
 	forcefield2 box1 > nothing
+	box2 forcefield2 > nothing
+	forcefield2 box2 > nothing
 	avatar forcefield2 > nothing
 	forcefield2 avatar > nothing
 	chaser forcefield2 > stepBack
 	forcefield2 chaser > nothing
 	box3 forcefield2 > transformTo stype=bridge
+	forcefield2 box3 > nothing
 	forcefield2 bridge > killSprite
 	box3 avatar > bounceForward
 	avatar box3 > nothing
@@ -59,7 +62,11 @@ BasicGame frame_rate=30
 	box1 box3 > killSprite
         box1 rand > killSprite
         box1 forcefield > nothing
+	forcefield box1 > nothing
         box2 forcefield > nothing
+	forcefield box2 > nothing
+	box3 forcefield > nothing
+	forcefield box3 > nothing
         rand forcefield > stepBack
         forcefield rand > stepBack
         chaser forcefield > stepBack

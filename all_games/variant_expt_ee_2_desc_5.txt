@@ -45,7 +45,8 @@ BasicGame frame_rate=30
         avatar wall > stepBack
         box avatar > bounceForward
         blueberry avatar > killSprite
-        avatar cranberry > stepBack
+        avatar cranberry > nothing
+	cranberry avatar > nothing
         dough avatar > killSprite
         eel avatar > killSprite
         fruit avatar > killSprite
