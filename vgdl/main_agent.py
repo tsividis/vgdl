@@ -632,7 +632,7 @@ class Agent:
                     print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, 55))
                     print "self.max_game_time_observed>501: {}".format(self.max_game_time_observed>501)
                     if not movingTypes and self.noNewObjectsInAWhile(self.rle, 55) and \
-                            (not movingTypes or (movingTypes and self.max_game_time_observed>60)):#501
+                            (not movingTypes or (movingTypes and self.max_game_time_observed>501)):
                         print "switching to long-range planning"
                         ## switch to long-range planning
                         new_index = 1
