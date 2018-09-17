@@ -28,8 +28,7 @@
 			  # 'lightthefuse', 'variant_lightthefuse_1', 'variant_lightthefuse_2']
 # game_names = ['variant_watergame_1', 'variant_watergame_2']
 
-game_names = ['variant_expt_ee_2', 'closing_gates', 'variant_closing_gates_1', 'variant_avoidgeorge_2',
-			'lightthefuse', 'variant_lightthefuse_1', 'variant_lightthefuse_2']
+game_names = ['variant_expt_helper_2', 'variant_closing_gates_1', 'lightthefuse', 'variant_lightthefuse_1', 'variant_lightthefuse_2']
 
 ## more memory
 # game_names = ['avoidgeorge', 'expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'jaws', 'boulderdash', 'portals', 'watergame', 'bait']

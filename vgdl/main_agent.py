@@ -632,7 +632,7 @@ class Agent:
                     print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, 55))
                     print "self.max_game_time_observed>501: {}".format(self.max_game_time_observed>501)
                     if not movingTypes and self.noNewObjectsInAWhile(self.rle, 55) and \
-                            (not movingTypes or (movingTypes and self.max_game_time_observed>501)):
+                            (not movingTypes or (movingTypes and self.max_game_time_observed>60)):#501
                         print "switching to long-range planning"
                         ## switch to long-range planning
                         new_index = 1
@@ -1161,6 +1161,7 @@ class Agent:
             # newEffects = len(event['effectList'])
         # if (event['effectList'] and run_induction) or distributionsHaveChanged:
         # distributionsHaveChanged = False
+
         if ((newEffects or (random.random()<.2 and len(self.finalTimeStepList)<300)) and run_induction) or distributionsHaveChanged:
             # print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
             print "new event", newEffects, "distributions changed", distributionsHaveChanged

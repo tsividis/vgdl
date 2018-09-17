@@ -15,7 +15,7 @@ BasicGame
 		rightLit > color=LIGHTBLUE orientation=RIGHT
 		downLit > color=GOLD orientation=DOWN
 		upLit > color=YELLOW orientation=UP
-	fence > Immovable color=WHITE
+	fence > Immovable color=MPUYEI
 	brick > Immovable color=LIGHTFUSCHA
 	
     InteractionSet
