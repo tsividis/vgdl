@@ -628,6 +628,9 @@ class Agent:
 
                 elif self.hyperparameter_index == 3:
                     movingTypes = self.checkForMovingTypes(self.rle, self.hypotheses[0])
+                    print "moving types: {}".format(movingTypes)
+                    print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, 55))
+                    print "self.max_game_time_observed>501: {}".format(self.max_game_time_observed>501)
                     if not movingTypes and self.noNewObjectsInAWhile(self.rle, 55) and \
                             (not movingTypes or (movingTypes and self.max_game_time_observed>501)):
                         print "switching to long-range planning"
@@ -854,7 +857,11 @@ class Agent:
             return False
 
     def checkForMovingTypes(self, rle, hypothesis):
-        moving_types = [k for k in hypothesis.classes.keys() if any([t in str(hypothesis.classes[k][0].vgdlType) for t in ['Missile', 'Random', 'Chaser']])]
+        if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
+            thingWeShoot = self.hypotheses[0].classes['avatar'][0].args['stype']
+        else:
+            thingWeShoot = None    
+        moving_types = [k for k in hypothesis.classes.keys() if k!=thingWeShoot and any([t in str(hypothesis.classes[k][0].vgdlType) for t in ['Missile', 'Random', 'Chaser']])]
         moving_colors = [hypothesis.classes[k][0].color for k in moving_types]
         movingTypes = False
         if moving_colors:

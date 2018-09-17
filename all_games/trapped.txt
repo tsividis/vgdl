@@ -2,7 +2,8 @@ BasicGame
   SpriteSet
     goal  > Immovable color=GREEN
     key   > Resource color=ORANGE limit=10
-    sword > OrientedFlicker singleton=True color=BLUE
+    #sword > OrientedFlicker singleton=True color=BLUE
+    sword > Missile color=BLUE
     avatar  > ShootAvatar   stype=sword frameRate=8 color=DARKBLUE
     enemy >
       monsterQuick > RandomNPC cooldown=2 cons=6 color=BROWN
@@ -59,7 +60,7 @@ BasicGame
 
     sword goal > nothing
     sword key > nothing
-    sword wall > nothing
+    sword wall > killSprite
     sword avatar > nothing
     sword sword > nothing
 
