@@ -9,7 +9,7 @@ BasicGame
     hotdog > Chaser speed=0.1 stype=fullMolarInf color=ORANGE
     burger > Chaser speed=0.1 stype=fullMolarSup color=BROWN
 
-    hotdoghole > SpawnPoint color=LIGHTGRAY portal=True stype=hotdog  prob=0.15 spawnCooldown=2 total=5 color=PURPLE #spawnCooldown should be 8
+    hotdoghole > SpawnPoint color=LIGHTGRAY portal=True stype=hotdog  prob=0.15 spawnCooldown=2 total=5 color=PURPLE
     burgerhole > SpawnPoint color=ZFZCIB portal=True stype=burger  prob=0.15 spawnCooldown=2 total=5 color=PINK
 
     fluor > Missile color=LIGHTBLUE
@@ -56,11 +56,9 @@ BasicGame
     fluor hotdog > killSprite
     fluor hotdog > changeScore value=1
     hotdog fluor   > killSprite 
-    hotdog fluor  > changeScore value=1
     fluor burger > killSprite
     fluor burger > changeScore value=1
     burger fluor   > killSprite
-    burger fluor  > changeScore value=1
     fluor wall   > killSprite
 
     fullMolarInf hotdog > transformTo stype=deadMolarInf
@@ -133,8 +131,8 @@ BasicGame
     EOS burger > nothing
     fluor hotdoghole > nothing
     hotdoghole fluor > nothing
-    burgerhole fluor > nothing
     fluor burgerhole > nothing
+    burgerhole fluor > nothing
     fluor EOS > killSprite
     EOS fluor > nothing
 
