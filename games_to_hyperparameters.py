@@ -32,8 +32,8 @@
 
 ## more memory
 # game_names = ['avoidgeorge', 'expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'jaws', 'boulderdash', 'portals', 'watergame', 'bait']
-# game_names = ['variant_closing_gates_1']
-game_names = ['plaqueattack', 'variant_plaqueattack_1', 'variant_plaqueattack_2', 'variant_plaqueattack_3']
+game_names = ['expt_preconditions']
+# game_names = ['plaqueattack', 'variant_plaqueattack_1', 'variant_plaqueattack_2', 'variant_plaqueattack_3']
 
 ## variants -- more memory
 # game_names = ['variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4', 
@@ -60,14 +60,7 @@ game_names = ['plaqueattack', 'variant_plaqueattack_1', 'variant_plaqueattack_2'
 
 # game_names = ['expt_helper']
 
-## idx 1:
-# game_names = ['expt_push_boulders', 'portals', 'frogs', 'overload', 'expt_antagonist', 'expt_helper'] 
 
-## idx 2:
-# game_names = ['expt_push_boulders', 'portals', 'frogs', 'overload', 'expt_antagonist', 'expt_helper'] #boulderdash, boulderchase
-
-## idx 2, skip induction (for now):
-# game_names = ['expt_push_boulders', 'expt_preconditions', 'sokoban', 'bait', 'watergame']
 
 ## idx 2, normal
 # game_names = ['expt_antagonist', 'expt_helper', 'portals', 'med_boulderdash']
