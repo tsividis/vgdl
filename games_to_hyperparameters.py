@@ -32,7 +32,8 @@
 
 ## more memory
 # game_names = ['avoidgeorge', 'expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'jaws', 'boulderdash', 'portals', 'watergame', 'bait']
-game_names = ['variant_closing_gates_1']
+# game_names = ['variant_closing_gates_1']
+game_names = ['plaqueattack', 'variant_plaqueattack_1', 'variant_plaqueattack_2', 'variant_plaqueattack_3']
 
 ## variants -- more memory
 # game_names = ['variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4', 
