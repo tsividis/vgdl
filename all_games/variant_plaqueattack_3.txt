@@ -9,8 +9,8 @@ BasicGame
     hotdog > Chaser speed=0.1 stype=fullMolarInf color=ORANGE
     burger > Chaser speed=0.1 stype=fullMolarSup color=BROWN
 
-    hotdoghole > SpawnPoint color=LIGHTGRAY portal=True stype=hotdog  prob=0.15 spawnCooldown=8 total=5 color=PURPLE #spawnCooldown should be 8
-    burgerhole > SpawnPoint color=ZFZCIB portal=True stype=burger  prob=0.15 spawnCooldown=8 total=5 color=PINK
+    hotdoghole > SpawnPoint color=LIGHTGRAY portal=True stype=hotdog  prob=0.15 spawnCooldown=2 total=5 color=PURPLE #spawnCooldown should be 8
+    burgerhole > SpawnPoint color=ZFZCIB portal=True stype=burger  prob=0.15 spawnCooldown=2 total=5 color=PINK
 
     fluor > Missile color=LIGHTBLUE
     wall > Immovable color=DARKGRAY
