@@ -108,7 +108,7 @@ class WBP():
 		
 		#################
 		#################
-		self.display = True
+		self.display = False
 
 		if self.theory.classes['avatar'][0].args and 'stype' in self.theory.classes['avatar'][0].args:
 			self.thingWeShoot = self.theory.classes['avatar'][0].args['stype']
@@ -1328,7 +1328,7 @@ class Node():
 		for stype in term.termination.stypes:
 			val += self.spritecounter_val(theory, term, stype, rle,
 				first_alpha=first_alpha, second_alpha=second_alpha, surrogate_multisprite_counter=True)
-		val /= len(term.termination.stypes)**2
+		val /= len(term.termination.stypes)#**2
 			# print stype, val
 		# val /= 10**len(term.termination.stypes)**2
 		return val
