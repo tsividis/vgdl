@@ -1146,7 +1146,7 @@ class Theory(object):
 		if rule.interaction == 'nothing':
 			if (rule.slot1==thingWeShoot and rule.slot2 not in [thingWeShoot, 'avatar']) or (rule.slot2==thingWeShoot and rule.slot1 not in [thingWeShoot, 'avatar']) :
 				return True
-			if any([k in str(self.classes[rule.slot1][0].vgdlType) for k in ['Resource', 'Immovable']]) and any([k in str(self.classes[rule.slot2][0].vgdlType) for k in ['Resource', 'Immovable']]):
+			if any([k in str(self.classes[rule.slot1][0].vgdlType) for k in ['Resource', 'Immovable', 'Missile']]) and any([k in str(self.classes[rule.slot2][0].vgdlType) for k in ['Resource', 'Immovable', 'Missile']]):
 				return True
 		return False
 
