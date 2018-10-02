@@ -41,7 +41,11 @@ BasicGame
 	litfuse wallsuper > killSprite
 	wallsuper litfuse > nothing
 
-	brick litfuse > transformTo stype=deadbrick
+	brick leftLit > transformTo stype=deadbrick
+	brick rightLit > transformTo stype=deadbrick
+	brick upLit > transformTo stype=deadbrick
+	brick downLit > transformTo stype=deadbrick
+
 	litfuse brick > nothing
 	avatar brick > stepBack
 	brick avatar stepBack
