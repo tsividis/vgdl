@@ -44,7 +44,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
-		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, display=False):
+		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, IW_k=2, display=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.hyperparameter_index = hyperparameters['idx']
@@ -56,7 +56,7 @@ class WBP():
 		self.objectTypes.sort()
 		self.phiSize = sum([len(rle._game.sprite_groups[k]) for k in rle._game.sprite_groups.keys() if k not in ['wall', 'avatar']])
 		self.seen_limits = seen_limits
-		self.IW_K = 2
+		self.IW_k = IW_k
 		self.objIDs = {}
 		self.solution = None
 		self.trackTokens = False
@@ -105,11 +105,13 @@ class WBP():
 			print "Warning: haven't thought about position_score_multiplier for idx {}".format(self.hyperparameter_index)
 			self.position_score_multiplier = -10
 
-		print "In planner; MovingTypesInGame: {}. Planning with idx {} and position_multiplier {}".format(movingTypesInGame, self.hyperparameter_index, self.position_score_multiplier)
+		#################
+		#################
+		self.display = False
 		
-		#################
-		#################
-		self.display = True
+		if self.display:
+			print "In planner; MovingTypesInGame: {}. Planning with idx {} and position_multiplier {}".format(movingTypesInGame, self.hyperparameter_index, self.position_score_multiplier)
+
 
 		if self.theory.classes['avatar'][0].args and 'stype' in self.theory.classes['avatar'][0].args:
 			self.thingWeShoot = self.theory.classes['avatar'][0].args['stype']
@@ -144,13 +146,16 @@ class WBP():
 		self.total_nodes = 0
 
 		self.getAvailableActions()
-		print "available actions:", self.actions
+		if self.display:
+			print "available actions:", self.actions
 
 		if self.conservative:
 			self.hyperparameters['sprite_negative_mult'] = 100
-			print "Planning conservatively. Switched sprite_negative_mult to {}".format(self.hyperparameters['sprite_negative_mult'])
+			if self.display:
+				print "Planning conservatively. Switched sprite_negative_mult to {}".format(self.hyperparameters['sprite_negative_mult'])
 		else:
-			print "Planning normally."
+			if self.display:
+				print "Planning normally."
 		## Ignore objects we don't want to track (i.e., non-moving immovables.)
 		self.objectsToTrack = []
 		for k in rle._game.sprite_groups.keys():
@@ -333,7 +338,7 @@ class WBP():
 		
 		## normal mode
 		if not self.conservative:
-			acceptableNodes = filter(lambda n: n.novelty<self.IW_K+1, QReward)
+			acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
 			## sort max to min for pop()
 			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
 			# if self.killer_types:
@@ -1683,7 +1688,7 @@ class Node():
 
 		self.state = self.WBP.calculateAtoms(self.rle)
 
-		for i in range(1,self.WBP.IW_K+1):
+		for i in range(1,self.WBP.IW_k+1):
 			for c in itertools.combinations(self.state, i):
 				c = tuple(sorted(c))
 				if self.WBP.trueAtoms[c] == 0:
@@ -1736,7 +1741,7 @@ class Node():
 
 	def updateNovelty(self):
 		if len(self.candidates)==0:
-			self.novelty = self.WBP.IW_K+1
+			self.novelty = self.WBP.IW_k+1
 		else:
 			self.novelty = min([len(c) for c in self.candidates])
 		return self.novelty

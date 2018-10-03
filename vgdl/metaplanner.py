@@ -67,8 +67,9 @@ def translateEvents(events, all_objects, rle):
 	return uniqueEventList
 
 
-def observe(rle, obsSteps, bestSpriteTypeDict):
-	print "observing for {} steps".format(obsSteps)
+def observe(rle, obsSteps, bestSpriteTypeDict, display=False):
+	if display:
+		print "observing for {} steps".format(obsSteps)
 	if obsSteps>0:
 		for i in range(obsSteps):
 			# print rle.show()
@@ -79,8 +80,9 @@ def observe(rle, obsSteps, bestSpriteTypeDict):
 			spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
 			# print "step 2 took {} seconds".format(time.time()-t1)
 			rle.step((0,0))
-			print "score: {}, game tick: {}".format(rle._game.score, rle._game.time)
-			print rle.show(color='blue')
+			if display:
+				print "score: {}, game tick: {}".format(rle._game.score, rle._game.time)
+				print rle.show(color='blue')
 
 			rle._game.nextPositions = {}
 			for k, v in rle._game.all_objects.iteritems():

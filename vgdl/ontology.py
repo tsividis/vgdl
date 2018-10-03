@@ -1162,7 +1162,7 @@ class NoveltyTermination(Termination):
         for e in game.effectListByClass:
             if (e[0] in ['killSprite', 'transformTo', 'nothing']) and len(e) > 2:
                 if (e[1], e[2]) in [(self.s1, self.s2), (self.s2, self.s1)]:
-                    print "noveltyTermination between", self.s1, self.s2
+                    # print "noveltyTermination between", self.s1, self.s2
                     return True, self.win
         return False, None
 
@@ -2331,7 +2331,7 @@ def updateDistribution(game, sprite, curr_distribution, movement_options, outcom
 
 #     return curr_distribution
 
-def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict, oldSpriteSet = None, skipInduction=False):
+def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDict, bestSpriteTypeDict, oldSpriteSet = None, skipInduction=False, display=False):
 
     import random
     import numpy as np
@@ -2603,13 +2603,15 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                     # If types are different, distributionsHaveChanged is true
                     if s.vgdlType!=matchingSprite.vgdlType:
                         distributionsHaveChanged = True
-                        print ("Distributions for {} have changed from sprite type {} to {}".format(s.color, matchingSprite.vgdlType, s.vgdlType))
+                        if display:
+                            print ("Distributions for {} have changed from sprite type {} to {}".format(s.color, matchingSprite.vgdlType, s.vgdlType))
                     # If one of the args is None but not the other,
                     # distributionsHaveChanged is true
                     elif ((s.args==None and matchingSprite.args!=None) or
                         (s.args!=None and matchingSprite.args==None)):
                         distributionsHaveChanged = True
-                        print ("Distribution args for {} have changed from {} to {}".format(s.color, s.args, matchingSprite.args))
+                        if display:
+                            print ("Distribution args for {} have changed from {} to {}".format(s.color, s.args, matchingSprite.args))
                     elif (s.args and matchingSprite.args) != None:
                         # If args are different, except for the case where only an
                         # orientation is reversed (e.g. turnAround), then
@@ -2620,13 +2622,15 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
                                     in ([LEFT, RIGHT] or [UP, DOWN])):
                                     if s.args[key] != matchingSprite.args[key]:
                                         distributionsHaveChanged = True
-                                    print ("Distribution args for {} have changed from {} to {}".format(s.color, s.args, matchingSprite.args))
+                                    if display:
+                                        print ("Distribution args for {} have changed from {} to {}".format(s.color, s.args, matchingSprite.args))
                             except KeyError:
                                 # If the new sprite has an arg that the old one
                                 # doesn't, or vice-versa, then
                                 # distributionsHaveChanged is true
                                 distributionsHaveChanged = True
-                                print ("Distribution args for {} have changed from {} to {}".format(s.color, s.args, matchingSprite.args))
+                                if display:
+                                    print ("Distribution args for {} have changed from {} to {}".format(s.color, s.args, matchingSprite.args))
 
                 else:
                     # print s.color, oldSpriteSet
@@ -2787,7 +2791,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
                 #     embed()
         game.targetColorDict = dict()
         game.chaserMovesTowardDict = dict()
-        print "step 2 updated {} sprites and {} param combinations".format(sprite_count, param_count)
+        # print "step 2 updated {} sprites and {} param combinations".format(sprite_count, param_count)
 
     elif step==3:
         ## Update sprite distribution based on observations
