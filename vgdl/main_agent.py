@@ -11,7 +11,9 @@ import WBP
 import importlib
 import numpy as np
 import random
+import cPickle
 import time
+from datetime import datetime
 import copy
 from metaplanner import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
@@ -101,6 +103,7 @@ class Agent:
         self.levelString = None
         self.display_text = False
         self.display_states = True
+        self.record_states = True
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = hyperparameter_index
         self.hyperparameters = hyperparameter_sets[hyperparameter_index]
@@ -110,6 +113,7 @@ class Agent:
         self.IW_k = IW_k
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
         self.extra_atom = False
+        self.param_ID = "params__IW={}__ea={}".format(self.IW_k, self.extra_atom_allowed)
         if self.shortHorizon == True:
             self.starting_max_nodes = 500
             self.max_nodes_annealing = 1.05
@@ -344,9 +348,9 @@ class Agent:
         allEffectsEncountered = []
 
         if make_movie:
-            if 'images' in os.listdir('.') and 'tmp' in os.listdir('images'):
-                shutil.rmtree("images/tmp")
-            os.makedirs("images/tmp")
+            if 'images' in os.listdir('.') and 'tmp' in os.listdir('images') and self.gameFilename in os.listdir('images/tmp'):
+                shutil.rmtree("images/tmp/"+self.gameFilename)
+            os.makedirs("images/tmp/"+self.gameFilename)
 
         j=0
         flexible_goals = False
@@ -362,14 +366,15 @@ class Agent:
             i=0
             levelEffectsEncountered = []
             allStatesEncountered = []
+            allCompactStates = []
             t1 = time.time()
             first_time_playing_level = True
 
             while not win and i<15:
-                gameObject, win, score, steps, statesEncountered, effectsEncountered = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level, make_movie=make_movie)
+                gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level, make_movie=make_movie)
                 
                 self.total_game_steps += steps
-
+                allCompactStates.append(compactStates)
                 episode_results = (n_level, steps, win, score, self.total_planner_steps)
                 episodes.append(episode_results)
 
@@ -416,9 +421,34 @@ class Agent:
                 print "in main_agent; playing with flexible_goals"
                 embed()
 
+        if self.record_states:
+
+            ## put timestamp on filename
+            timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M')
+            dirname = "results/{}/".format(self.gameFilename)
+            filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
+            
+            if not os.path.exists(dirname):
+                os.makedirs(dirname)
+
+            with open(filename, 'wb') as f:
+                cPickle.dump(allCompactStates, f)
+            f.close()
+
         if make_movie:
             self.makeMovie()
 
+    def compactify(self, rle):
+        gameObject = rle._game
+        ended, win = rle._isDone()
+        state = {'timestep': gameObject.time,
+                 'score': gameObject.score,
+                 'ended': ended,
+                 'win': win,
+                 'objects': [(colorDict[str(s.color)], (s.rect.left/gameObject.block_size, s.rect.top/gameObject.block_size), s.resources if s.name=='avatar' else {}) 
+                        for sublist in gameObject.sprite_groups.values() for s in sublist if s not in gameObject.kill_list]
+                 }
+        return state
 
     def makeHeatmap(self, statesEncountered, filename):
         from vgdl.plotting import featurePlot
@@ -478,27 +508,25 @@ class Agent:
 
     def makeImages(self):
         VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
-            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
+            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, gameName = self.gameFilename, padding=10)
 
     def makeMovie(self):
-        # VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
-            # persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
 
         print "Creating Movie"
-        movie_dir = "videos/"+self.gameFilename
+        movie_dir = "videos/{}/{}".format(self.param_ID, self.gameFilename)
 
         if not os.path.exists(movie_dir):
             print movie_dir, "didn't exist. making new dir"
             os.makedirs(movie_dir)
         round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store'])
         video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
-        images_dir = "images/tmp/%09d.png"
+        images_dir = "images/tmp/{}/%09d.png".format(self.gameFilename)
         com = "ffmpeg -i " +images_dir+ " -pix_fmt yuv420p -filter:v 'setpts=4.0*PTS' "+ video_dirname
         command = "{}".format(com)
         subprocess.call(command, shell=True)
         # empty image directory
-        shutil.rmtree("images/tmp")
-        os.makedirs("images/tmp")
+        shutil.rmtree("images/tmp/"+self.gameFilename)
+        os.makedirs("images/tmp/"+self.gameFilename)
         return
 
     def playMultipleEpisodes(self, num_episodes):
@@ -529,6 +557,7 @@ class Agent:
 
         ## Initialize external environment
         self.initializeEnvironment()
+
         if self.display_text:
             print "initializing RLE"
         print "Game name:", self.gameFilename
@@ -543,11 +572,14 @@ class Agent:
         ## Start storing encountered states.
         effectsEncountered = []
         statesEncountered = []
+        compactStates = [] ## for analysis
 
         # self.rleHistory.append(copy.deepcopy(self.rle._game))
-        self.statesEncountered.append(self.rle._game.getFullState())
+        # self.statesEncountered.append(self.rle._game.getFullState())
         statesEncountered.append(self.rle._game.getFullState())
         
+        if self.record_states:
+            compactStates.append(self.compactify(self.rle))
         ## Initialize memory of object positions
         self.rle._game.objectMemoryDict, self.rle._game.previousPositions = {}, {}
         for k, v in self.rle._game.all_objects.iteritems():
@@ -732,7 +764,7 @@ class Agent:
                     if self.display_text:
                         t1 = time.time()
                     effects = []
-                    hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
+                    hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates,
                         run_induction = not flexible_goals, make_movie=make_movie)
                     
                     if self.display_text:
@@ -809,7 +841,7 @@ class Agent:
                 print colored('________________________________________________________________', 'white', 'on_red')
                 print colored("Quitting", 'white', 'on_red')
                 print colored('________________________________________________________________', 'white', 'on_red')
-                return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered
+                return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered, compactStates
 
 
             annealing *= self.annealingFactor
@@ -841,7 +873,7 @@ class Agent:
             print colored('________________________________________________________________', 'white', 'on_red')
 
 
-        return gameObject, win, score, steps, statesEncountered, effectsEncountered
+        return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates
 
     def checkForRepeatedDeaths(self, episodeRecord, cutoff):
         count = 1
@@ -1010,7 +1042,7 @@ class Agent:
     """
 
 
-    def executeStep(self, action, hypotheses, statesEncountered, run_induction=True, make_movie=False):
+    def executeStep(self, action, hypotheses, statesEncountered, compactStates, run_induction=True, make_movie=False):
 
         theory_change_flag = False
 
@@ -1096,6 +1128,9 @@ class Agent:
 
         if make_movie:
             statesEncountered.append(self.rle._game.getFullState())
+        if self.record_states:
+            compactStates.append(self.compactify(self.rle))
+
         # print "manage new objects and getFullState: {}".format(time.time()-t1)
 
         t1 = time.time()
