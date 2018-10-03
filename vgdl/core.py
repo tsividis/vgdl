@@ -45,7 +45,7 @@ class VGDLParser(object):
     verbose = False
 
     @staticmethod
-    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", padding=0,positions=None):
+    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", gameName='', padding=0,positions=None):
         """ Parses the game and level map strings, and starts the game. """
         g = VGDLParser().parseGame(game_str)
         if positions is not None:
@@ -60,7 +60,7 @@ class VGDLParser(object):
             #g.startGame(headless,persist_movie)
         else:
             if playback_states:
-                g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding)
+                g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName)
             else:
                 g.startGame(headless, persist_movie)
 
@@ -917,7 +917,7 @@ class BasicGame(object):
 
         return spriteClass, spriteColor
 
-    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0):
+    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName=''):
         """
         Main method to run game.
         """
@@ -999,7 +999,7 @@ class BasicGame(object):
             allStates.append(self.getFullState())
 
             if(make_images):
-                tmp_dir = "images/tmp/"
+                tmp_dir = "images/tmp/"+gameName+"/"
                 # tmpl = '{tmp_dir}%09d-{name}-{g_id}.png'.format(i, tmp_dir = tmp_dir, name="VGDL-GAME", g_id=self.uiud)
                 img_index = len([d for d in os.listdir(tmp_dir) if d != '.DS_Store'])
                 tmpl = '{tmp_dir}%09d.png'.format(img_index, tmp_dir = tmp_dir)
