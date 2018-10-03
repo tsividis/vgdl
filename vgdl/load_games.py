@@ -6,15 +6,29 @@ import os
 from IPython import embed
 import argparse
 
+def str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
 parser.add_argument('--game_name', type=str, default=str(0), help='game name')
 parser.add_argument('--hyperparameter_index', type=int, default=3, help='hyperparameter_index')
-
+parser.add_argument('--IW_k', type=int, default=2, help='IW_k')
+parser.add_argument('--extra_atom_allowed', type=bool, default=True, help='extra_atom_allowed')
+parser.add_argument('--make_movie', type=str2bool, default=False, help='make_movie')
 args = parser.parse_args()
 game_number = args.game_number
 game_name = args.game_name
 hyperparameter_index = args.hyperparameter_index
+IW_k = args.IW_k
+extra_atom_allowed = args.extra_atom_allowed
+make_movie = args.make_movie
 
 if game_name==str(0):
     game_name = game_names[game_number]
@@ -131,13 +145,13 @@ def play_trainset(hyperparameter_sets, hyperparameter_index):
 #     	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
 #     		level_game_pairs.append([gameString, level.read()])
 
-    agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index)
+    agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, IW_k=IW_k, extra_atom_allowed=extra_atom_allowed)
 
     ##then pass this down for multiple episodes
     gameObject = None
     print game_levels
 
-    agent.playCurriculum(level_game_pairs=level_game_pairs)
+    agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie)
 
     print game_levels
 

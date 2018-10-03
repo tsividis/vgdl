@@ -921,9 +921,10 @@ class BasicGame(object):
         """
         Main method to run game.
         """
-        # ----------- Initialization ----------
-
+        # ----------- Initialization ---------- #
         self._initScreen(self.screensize,headless)
+        
+        
         pygame.display.flip()
         self.reset()
         clock = pygame.time.Clock()
@@ -997,7 +998,6 @@ class BasicGame(object):
             pygame.display.update(VGDLSprite.dirtyrects)
             allStates.append(self.getFullState())
 
-            #if(headless):
             if(make_images):
                 tmp_dir = "images/tmp/"
                 # tmpl = '{tmp_dir}%09d-{name}-{g_id}.png'.format(i, tmp_dir = tmp_dir, name="VGDL-GAME", g_id=self.uiud)
