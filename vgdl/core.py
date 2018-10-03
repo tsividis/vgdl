@@ -123,10 +123,10 @@ class VGDLParser(object):
         if 'cloneSprite' in [e[2].__name__ for e in self.game.collision_eff]:
             self.has_clonesprite = True
         
-        for k,v in self.game.alt_sprite_constr.items():
-            for subclass in v[2]:
-                if subclass not in self.game.alt_sprite_constr.keys():
-                    self.game.alt_sprite_constr[subclass] = v
+        # for k,v in self.game.alt_sprite_constr.items():
+        #     for subclass in v[2]:
+        #         if subclass not in self.game.alt_sprite_constr.keys():
+        #             self.game.alt_sprite_constr[subclass] = v
 
         # self.game.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack','wallStop']
         #         else 2 if x[2].__name__ in ['killSprite', 'killIfTooFast', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess', 'collectResource']
@@ -139,8 +139,8 @@ class VGDLParser(object):
         else 3 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']<=0))
         else 3.5 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']>0))
         else 4 if x[2].__name__ in ['nothing']
-        else 0,
-        ('ENDOFSCREEN' if x[1]=='EOS' else colorDict[str(self.game.alt_sprite_constr[x[1]][1]['color'])]) ), reverse=True)
+        else 0), reverse=True)
+        # ('ENDOFSCREEN' if x[1]=='EOS' else colorDict[str(self.game.alt_sprite_constr[x[1]][1]['color'])]) ), reverse=True)
         # x[1] ), reverse=True)
 
         # embed()
@@ -1088,18 +1088,18 @@ class BasicGame(object):
         self.sprite_appearance_predictions = {}
         allStates = [self.getFullState()]
 
-        for k,v in self.alt_sprite_constr.items():
-            for subclass in v[2]:
-                if subclass not in self.alt_sprite_constr.keys():
-                    self.alt_sprite_constr[subclass] = v
+        # for k,v in self.alt_sprite_constr.items():
+        #     for subclass in v[2]:
+        #         if subclass not in self.alt_sprite_constr.keys():
+        #             self.alt_sprite_constr[subclass] = v
 
         self.collision_eff.sort(key=lambda x:(1 if x[2].__name__ in ['bounceForward','stepBack','wallStop']
         else 2 if x[2].__name__ in ['killSprite', 'killIfTooFast', 'killIfHasMore', 'killIfHasLess', 'killIfOtherHasMore', 'killIfOtherHasLess', 'collectResource']
         else 3 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']<=0))
         else 3.5 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']>0))
         else 4 if x[2].__name__ in ['nothing']
-        else 0,
-        ('ENDOFSCREEN' if x[1]=='EOS' else colorDict[str(self.game.alt_sprite_constr[x[1]][1]['color'])]) ), reverse=True)
+        else 0), reverse=True)
+        # ('ENDOFSCREEN' if x[1]=='EOS' else colorDict[str(self.alt_sprite_constr[x[1]][1]['color'])]) ), reverse=True)
         # x[1] ), reverse=True)
 
         while not self.ended:
