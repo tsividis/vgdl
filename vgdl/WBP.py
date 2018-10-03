@@ -56,6 +56,7 @@ class WBP():
 		self.objectTypes.sort()
 		self.phiSize = sum([len(rle._game.sprite_groups[k]) for k in rle._game.sprite_groups.keys() if k not in ['wall', 'avatar']])
 		self.seen_limits = seen_limits
+		self.IW_K = 2
 		self.objIDs = {}
 		self.solution = None
 		self.trackTokens = False
@@ -76,7 +77,7 @@ class WBP():
 		self.allowRollouts = True
 		self.quitting = False
 		self.exhausted_novelty = True
-		self.extra_atom = True#extra_atom
+		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
@@ -108,7 +109,7 @@ class WBP():
 		
 		#################
 		#################
-		self.display = False
+		self.display = True
 
 		if self.theory.classes['avatar'][0].args and 'stype' in self.theory.classes['avatar'][0].args:
 			self.thingWeShoot = self.theory.classes['avatar'][0].args['stype']
@@ -332,7 +333,7 @@ class WBP():
 		
 		## normal mode
 		if not self.conservative:
-			acceptableNodes = filter(lambda n: n.novelty<3, QReward)
+			acceptableNodes = filter(lambda n: n.novelty<self.IW_K+1, QReward)
 			## sort max to min for pop()
 			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
 			# if self.killer_types:
@@ -1682,11 +1683,12 @@ class Node():
 
 		self.state = self.WBP.calculateAtoms(self.rle)
 
-		for i in range(1,3):
+		for i in range(1,self.WBP.IW_K+1):
 			for c in itertools.combinations(self.state, i):
 				c = tuple(sorted(c))
 				if self.WBP.trueAtoms[c] == 0:
 					self.candidates.add(c)
+
 		self.updateNovelty()
 
 		## Try rollouts for aliens?
@@ -1734,7 +1736,7 @@ class Node():
 
 	def updateNovelty(self):
 		if len(self.candidates)==0:
-			self.novelty = 3
+			self.novelty = self.WBP.IW_K+1
 		else:
 			self.novelty = min([len(c) for c in self.candidates])
 		return self.novelty
