@@ -424,7 +424,7 @@ class Agent:
         if self.record_states:
 
             ## put timestamp on filename
-            timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M')
+            timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M')
             dirname = "results/{}/".format(self.gameFilename)
             filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
             
