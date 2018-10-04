@@ -38,14 +38,12 @@ actionToKeyPress = {(-1,0): pygame.K_LEFT, (1,0): pygame.K_RIGHT,
 keyPresses = {273: 'up', 274: 'down', 276: 'left', 275: 'right', 32: 'spacebar', 0:'none'}
 emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
 
-
-
 class VGDLParser(object):
     """ Parses a string into a Game object. """
     verbose = False
 
     @staticmethod
-    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", gameName='', padding=0,positions=None):
+    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", gameName='', parameter_string='', padding=0,positions=None):
         """ Parses the game and level map strings, and starts the game. """
         g = VGDLParser().parseGame(game_str)
         if positions is not None:
@@ -60,7 +58,7 @@ class VGDLParser(object):
             #g.startGame(headless,persist_movie)
         else:
             if playback_states:
-                g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName)
+                g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string)
             else:
                 g.startGame(headless, persist_movie)
 
@@ -926,10 +924,14 @@ class BasicGame(object):
         largeText = pygame.font.Font('freesansbold.ttf',fontsize)
         TextSurf, TextRect = self.text_objects(text, largeText, color)
         # embed()
-        if location=='bottom_right':
-            TextRect.right, TextRect.bottom = self.screensize[0]-5, self.screensize[1]
+        if location=='top_left':
+            TextRect.left, TextRect.top = 5, 5
+        elif location=='bottom_left':
+            TextRect.left, TextRect.bottom = 5, self.screensize[1]
         elif location=='top_right':
-            TextRect.right, TextRect.top = self.screensize[0]-5, self.screensize[0]
+            TextRect.right, TextRect.top = self.screensize[0]-5, 5
+        elif location=='bottom_right':
+            TextRect.right, TextRect.bottom = self.screensize[0]-5, self.screensize[1]
         elif location=='center':
             TextRect.center = ((self.screensize[0]/2),(self.screensize[1]/2))
         elif location=='bottom_center':
@@ -938,7 +940,7 @@ class BasicGame(object):
         pygame.display.update()
 
 
-    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName=''):
+    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName='', parameter_string=''):
         """
         Main method to run game.
         """
@@ -1017,7 +1019,9 @@ class BasicGame(object):
 
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
-            self.message_display('hello!')
+            self.message_display(gameName, fontsize=20, location='top_left')
+            self.message_display(parameter_string, location='bottom_right')
+            self.message_display(str(current_state['score']), fontsize=20, location='top_right')
             if current_state['ended']:
                 if current_state['win']:
                     self.message_display('WIN', fontsize=30, color=GREEN, location='center')
@@ -1043,7 +1047,6 @@ class BasicGame(object):
             allStates.append(self.getFullState())
 
             self.playback_index += 1
-
 
         # Print entire history of effects
         terminationCondition = {'ended': True, 'win':win, 'time':self.time}

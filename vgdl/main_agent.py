@@ -508,7 +508,7 @@ class Agent:
 
     def makeImages(self):
         VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
-            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, gameName = self.gameFilename, padding=10)
+            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, gameName = self.gameFilename, parameter_string=self.param_ID, padding=10)
 
     def makeMovie(self):
 
