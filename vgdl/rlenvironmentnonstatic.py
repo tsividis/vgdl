@@ -431,6 +431,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         else:
             (ended, won) = self._isDone()
             termination = []
+        
+        self._game.ended, self._game.win = ended, won
         self._game.time+=1
 
         dScore = self._game.score - pre_step_score
