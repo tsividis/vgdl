@@ -6,3 +6,5 @@ ipdb
 termcolor
 pygame
 gdata
+joblib
+psutil

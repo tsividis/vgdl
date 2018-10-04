@@ -425,7 +425,7 @@ class Agent:
 
             ## put timestamp on filename
             timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M')
-            dirname = "results/{}/".format(self.gameFilename)
+            dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
             filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
             
             if not os.path.exists(dirname):
