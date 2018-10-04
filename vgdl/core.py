@@ -994,6 +994,7 @@ class BasicGame(object):
 
         while self.playback_index < len(self.playback_states):
             clock.tick(self.frame_rate)
+            self.screen.fill(LIGHTGRAY)
             self.time += 1
 
             self._clearAll()
