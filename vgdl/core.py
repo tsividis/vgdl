@@ -290,6 +290,7 @@ class BasicGame(object):
 
         self.is_stochastic = False
         self._lastsaved = None
+        self.ended = None
         self.win = None
         self.effectList = [] # list of effects that happened this current timestep
         self.effectListByClass = set()
@@ -917,13 +918,32 @@ class BasicGame(object):
 
         return spriteClass, spriteColor
 
+    def text_objects(self, text, font, color):
+        textSurface = font.render(text, True, color)
+        return textSurface, textSurface.get_rect()
+
+    def message_display(self, text, fontsize=15, color=WHITE, location='bottom_right'):
+        largeText = pygame.font.Font('freesansbold.ttf',fontsize)
+        TextSurf, TextRect = self.text_objects(text, largeText, color)
+        # embed()
+        if location=='bottom_right':
+            TextRect.right, TextRect.bottom = self.screensize[0]-5, self.screensize[1]
+        elif location=='top_right':
+            TextRect.right, TextRect.top = self.screensize[0]-5, self.screensize[0]
+        elif location=='center':
+            TextRect.center = ((self.screensize[0]/2),(self.screensize[1]/2))
+        elif location=='bottom_center':
+            TextRect.center = ((self.screensize[0]/2),(self.screensize[1]))
+        self.screen.blit(TextSurf, TextRect)
+        pygame.display.update()
+
+
     def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName=''):
         """
         Main method to run game.
         """
         # ----------- Initialization ---------- #
         self._initScreen(self.screensize,headless)
-        
         
         pygame.display.flip()
         self.reset()
@@ -977,6 +997,7 @@ class BasicGame(object):
             self._clearAll()
             try:
                 self.setFullState(self.playback_states[self.playback_index])
+                current_state = self.playback_states[self.playback_index]
             except:
                 print "playback is failing"
                 embed()
@@ -996,6 +1017,13 @@ class BasicGame(object):
 
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
+            self.message_display('hello!')
+            if current_state['ended']:
+                if current_state['win']:
+                    self.message_display('WIN', fontsize=30, color=GREEN, location='center')
+                elif not current_state['win']:
+                    self.message_display('LOSS', fontsize=30, color=RED, location='center')
+
             allStates.append(self.getFullState())
 
             if(make_images):
