@@ -8,3 +8,4 @@ pygame
 gdata
 joblib
 psutil
+ffmpeg
