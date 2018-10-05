@@ -1506,7 +1506,7 @@ class VGDLSprite(object):
             pygame.draw.lines(screen, LIGHTGREEN, True, rounded, 2)
             '''
             pygame.draw.rect(screen, self.color, shrunk)
-            pygame.draw.lines(screen, LIGHTGREEN, True, rounded, 2)
+            # pygame.draw.lines(screen, LIGHTGREEN, True, shrunk, 2)
             r = self.rect.copy()
         elif not self.is_static:
             #rounded = roundedPoints(shrunk)
