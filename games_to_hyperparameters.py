@@ -9,14 +9,13 @@ game_names = ['aliens', 'variant_aliens_1', 'variant_aliens_2', 'variant_aliens_
 'expt_ee', 'variant_expt_ee_1', 'variant_expt_ee_2', 'variant_expt_ee_3', 
 'frogs', 
 'lemmings', 'variant_lemmings_1',  'variant_lemmings_2', 'variant_lemmings_3',
-
 'missilecommand', 'variant_missilecommand_1', 'variant_missilecommand_2', 'variant_missilecommand_3', 'variant_missilecommand_4',
  'myAliens', 'variant_myAliens_1', 'variant_myAliens_2',
 'survivezombies', 'variant_survivezombies_1', 'variant_survivezombies_2',
- 'zelda','variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3']
+ 'zelda','variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3'] ##41
 
 ## more memory -- 64gb
-game_names= ['avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4',
+game_names1= ['avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4',
 'bait', 'variant_bait_1', 'variant_bait_2',
 'boulderdash', 'variant_boulderdash_1',
 'variant_chase_3', 
@@ -27,11 +26,10 @@ game_names= ['avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'v
 'expt_relational', 'variant_expt_relational_1', 'variant_expt_relational_2',
 'variant_frogs_1', 'variant_frogs_2', 'variant_frogs_3',
 'jaws', 'variant_jaws_1', 'variant_jaws_2',
-
 'portals', 'variant_portals_1', 'variant_portals_2',
 'plaqueattack', 'variant_plaqueattack_1', 'variant_plaqueattack_2', 'variant_plaqueattack_3',
 'sokoban', 'variant_sokoban_1', 'variant_sokoban_2',
-'watergame', 'variant_watergame_1', 'variant_watergame_2']
+'watergame', 'variant_watergame_1', 'variant_watergame_2'] ##45
 
 ## lots of memory -- 128gb??
 # game_names = ['bait','sokoban', 'variant_sokoban_1', 'variant_expt_push_boulders_1', 'variant_expt_helper_1', 'watergame']
