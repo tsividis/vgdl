@@ -104,6 +104,7 @@ class Agent:
         self.display_text = False
         self.display_states = True
         self.record_states = True
+        self.record_video_info = True
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = hyperparameter_index
         self.hyperparameters = hyperparameter_sets[hyperparameter_index]
@@ -388,6 +389,10 @@ class Agent:
                 if self.make_movie:
                     self.statesEncountered = statesEncountered
                     self.makeImages()
+                
+                if self.record_video_info:
+                    allStatesEncountered.extend(statesEncountered)
+
                 # if make_movie:
                     # allStatesEncountered.extend(statesEncountered)
                     # VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
@@ -422,23 +427,30 @@ class Agent:
                 print "in main_agent; playing with flexible_goals"
                 embed()
 
+        ## put timestamp on filenames
+        timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M')
         if self.record_states:
-
-            embed()
-            ## put timestamp on filename
-            timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M')
             dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
             filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
-            
             if not os.path.exists(dirname):
                 os.makedirs(dirname)
-
+            gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
             with open(filename, 'wb') as f:
-                cPickle.dump(allCompactStates, f)
+                cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'states':allCompactStates}, f)
             f.close()
 
-        if self.make_movie:
-            self.makeMovie()
+        if self.record_video_info:
+            dirname = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
+            if not os.path.exists(dirname):
+                os.makedirs(dirname)
+            filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
+            gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
+            with open(filename, 'wb') as f:
+                cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'states':allStatesEncountered}, f)
+            f.close()
+
+        # if self.make_movie:
+            # self.makeMovie()
 
     def compactify(self, rle, planner_nodes=0):
         gameObject = rle._game
@@ -512,7 +524,7 @@ class Agent:
 
     def makeImages(self):
         VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
-            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, gameName = self.gameFilename, parameter_string=self.param_ID, padding=10)
+            persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, gameName = self.gameFilename, parameter_string=self.param_ID, padding=10)
 
     def makeMovie(self):
 
@@ -544,7 +556,7 @@ class Agent:
             scores.append(score)
             i+=1
         VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
-            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
+            persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
         print "Won {} out of {} episodes.".format(sum(wins), i)
 
         """
