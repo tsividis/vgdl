@@ -8,7 +8,7 @@ BasicGame
 	part2 > Passive color=YELLOW
         avatar > MovingAvatar color=DARKBLUE
     TerminationSet
-        SpriteCounter stype=door limit=0 win=True
+        SpriteCounter stype=door limit=0 win=True bonus=10
         SpriteCounter stype=avatar limit=0 win=False
     InteractionSet
 	part1 wall > stepBack

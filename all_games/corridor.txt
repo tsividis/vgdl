@@ -80,4 +80,4 @@ BasicGame
 
     TerminationSet
 	SpriteCounter stype=avatar win=False
-	SpriteCounter stype=goal win=True
+	SpriteCounter stype=goal win=True bonus=10

@@ -56,4 +56,4 @@ BasicGame frame_rate=30
         mover mover > stepBack
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
-        MultiSpriteCounter stype1=box3 stype2=chaser1 limit=0 win=True
+        MultiSpriteCounter stype1=box3 stype2=chaser1 limit=0 win=True bonus=10

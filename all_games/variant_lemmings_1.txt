@@ -19,7 +19,7 @@ BasicGame
 
     TerminationSet
         SpriteCounter  stype=avatar  limit=0 win=False
-        MultiSpriteCounter stype1=entrance stype2=lemming limit=0 win=True
+        MultiSpriteCounter stype1=entrance stype2=lemming limit=0 win=True bonus=10
 
     InteractionSet
 	avatar hole > changeScore value=-5

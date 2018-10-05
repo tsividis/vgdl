@@ -19,7 +19,7 @@ BasicGame square_size=32
 
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
-	SpriteCounter stype=base limit=0 win=True
+	SpriteCounter stype=base limit=0 win=True bonus=20
 
     InteractionSet
         avatar  EOS  > stepBack

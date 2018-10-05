@@ -45,4 +45,4 @@ BasicGame
 
   TerminationSet
     SpriteCounter stype=city   win=False
-    MultiSpriteCounter stype1=incoming_slow stype2=incoming_fast win=True
+    MultiSpriteCounter stype1=incoming_slow stype2=incoming_fast win=True bonus=20

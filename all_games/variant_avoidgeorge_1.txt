@@ -14,7 +14,7 @@ BasicGame
     TerminationSet
         SpriteCounter stype=avatar  win=False
         SpriteCounter stype=quiet   win=False
-	SpriteCounter stype=annoyed win=True
+	SpriteCounter stype=annoyed win=True bonus=10
 
     InteractionSet
         quiet george > transformTo stype=annoyed

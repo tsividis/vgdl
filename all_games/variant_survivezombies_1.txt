@@ -105,7 +105,7 @@ BasicGame
         wall zombie > nothing
 
     TerminationSet
-	SpriteCounter stype=honey limit=0 win=True
+	SpriteCounter stype=honey limit=0 win=True bonus=10
         SpriteCounter stype=avatar limit=0 win=False
 
     LevelMapping
