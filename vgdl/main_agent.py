@@ -267,13 +267,12 @@ class Agent:
     def initializeVrle(self, hypothesis):
         ## World in agent's head given 'hypothesis', including object goal
         # gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
-        #          "./examples/gridphysics/theorytest.py")
+        #          "./theory_files/hyperparameter_idx_{}/{}.py".format(self.hyperparameters['idx'], self.gameFilename))
         gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
-                 "./theory_files_short_horizon/hyperparameter_idx_{}/{}.py".format(self.hyperparameters['idx'], self.gameFilename))
+                 "./theory_files/{}.py".format(self.gameFilename))
         Vrle = createMindEnv(gameString, levelString, output=False)
 
         self.setSpritePositions(self.rle, Vrle, hypothesis)
-
         try:
             Vrle._game.getAvatars()[0].resources = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
             Vrle._game.getAvatars()[0].orientation = copy.deepcopy(self.rle._game.getAvatars()[0].orientation)
@@ -379,11 +378,13 @@ class Agent:
                 episodes.append(episode_results)
 
                 # write progressively to file
-                output = {'modelType':self.modelType,
+                output = {'modelType':self.param_ID,
                             'gameName': self.gameFilename,
                             'condition': 'normal',
                             'episodes' : [episode_results]}
-                write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+'.csv', output)
+                # write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+'.csv', output)
+                write_to_csv('',str(self.gameFilename)+'.csv', output)
+
                 if self.make_movie:
                     self.statesEncountered = statesEncountered
                     self.makeImages()
@@ -423,6 +424,7 @@ class Agent:
 
         if self.record_states:
 
+            embed()
             ## put timestamp on filename
             timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M')
             dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
@@ -438,11 +440,13 @@ class Agent:
         if self.make_movie:
             self.makeMovie()
 
-    def compactify(self, rle):
+    def compactify(self, rle, planner_nodes=0):
         gameObject = rle._game
         ended, win = rle._isDone()
         state = {'timestep': gameObject.time,
                  'score': gameObject.score,
+                 'planner_settings': self.hyperparameter_index,
+                 'planner_nodes': planner_nodes, ## how many nodes were searched to determine this particular action? 0 if this is resulting from a cached plan.
                  'ended': ended,
                  'win': win,
                  'objects': [(colorDict[str(s.color)], (s.rect.left/gameObject.block_size, s.rect.top/gameObject.block_size), s.resources if s.name=='avatar' else {}) 
@@ -751,8 +755,6 @@ class Agent:
                 # print "got too many empty plans"
                 # observe(self.rle, 5, self.bestSpriteTypeDict)
 
-            # if len(solution)==1 and K_LEFT in solution:
-                # embed()
             if not quitting:
                 for i, action in enumerate(solution):
                     self.hypotheses[0].dryingPaint = set()
@@ -763,7 +765,8 @@ class Agent:
                     if self.display_text:
                         t1 = time.time()
                     effects = []
-                    hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates,
+                    plannerNodes = p.total_nodes if i==0 else 0
+                    hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                         run_induction = not flexible_goals)
                     
                     if self.display_text:
@@ -1070,7 +1073,7 @@ class Agent:
             spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
         return
 
-    def executeStep(self, action, hypotheses, statesEncountered, compactStates, run_induction=True):
+    def executeStep(self, action, hypotheses, statesEncountered, compactStates, plannerNodes, run_induction=True):
 
         theory_change_flag = False
 
@@ -1157,7 +1160,7 @@ class Agent:
         if self.make_movie:
             statesEncountered.append(self.rle._game.getFullState())
         if self.record_states:
-            compactStates.append(self.compactify(self.rle))
+            compactStates.append(self.compactify(self.rle, plannerNodes))
 
         # print "manage new objects and getFullState: {}".format(time.time()-t1)
 
