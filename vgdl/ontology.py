@@ -1063,27 +1063,35 @@ class OnStart(Conditional):
 Termination = core.Termination
 
 class Timeout(Termination):
-    def __init__(self, limit=0, win=False):
+    def __init__(self, limit=0, win=False, bonus=0):
         self.limit = limit
         self.win = win
         self.name = 'Timeout'
+        self.bonus = bonus
 
     def isDone(self, game):
         if game.time >= self.limit:
             return True, self.win
         else:
+            if game.time > game.timeout_bonus_granted_on_timestep:
+                game.score += self.bonus
+                game.timeout_bonus_granted_on_timestep = game.time
             return False, None
 
 class SpriteCounter(Termination):
     """ Game ends when the number of sprites of type 'stype' hits 'limit' (or below). """
-    def __init__(self, limit=0, stype=None, win=True):
+    def __init__(self, limit=0, stype=None, win=True, bonus=0):
         self.limit = limit
         self.stype = stype
         self.win = win
         self.name = 'SpriteCounter'
+        self.bonus=bonus
 
     def isDone(self, game):
         if game.numSprites(self.stype) <= self.limit:
+            if game.time > game.sprite_bonus_granted_on_timestep:
+                game.score += self.bonus
+                game.sprite_bonus_granted_on_timestep = game.time
             return True, self.win
         else:
             return False, None
