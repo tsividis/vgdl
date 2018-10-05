@@ -478,7 +478,7 @@ class BasicGame(object):
         self.num_sprites += 1
         return s
 
-    def _initScreen(self, size,headless):
+    def _initScreen(self, size, headless):
         if(headless):
             os.environ["SDL_VIDEODRIVER"] = "dummy"
             pygame.display.init()
@@ -1506,7 +1506,7 @@ class VGDLSprite(object):
             pygame.draw.lines(screen, LIGHTGREEN, True, rounded, 2)
             '''
             pygame.draw.rect(screen, self.color, shrunk)
-            #pygame.draw.lines(screen, LIGHTGREEN, True, shrunk, 2)
+            pygame.draw.lines(screen, LIGHTGREEN, True, rounded, 2)
             r = self.rect.copy()
         elif not self.is_static:
             #rounded = roundedPoints(shrunk)
