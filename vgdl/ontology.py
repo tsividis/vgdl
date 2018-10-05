@@ -1098,14 +1098,18 @@ class SpriteCounter(Termination):
 
 class MultiSpriteCounter(Termination):
     """ Game ends when the sum of all sprites of types 'stypes' hits 'limit'. """
-    def __init__(self, limit=0, win=True, **kwargs):
+    def __init__(self, limit=0, win=True, bonus=0, **kwargs):
         self.limit = limit
         self.win = win
+        self.bonus = bonus
         self.stypes = kwargs.values()
         self.name = 'MultiSpriteCounter'
 
     def isDone(self, game):
         if sum([game.numSprites(st) for st in self.stypes]) == self.limit:
+            if game.time > game.sprite_bonus_granted_on_timestep:
+                game.score += self.bonus
+                game.sprite_bonus_granted_on_timestep = game.time
             return True, self.win
         else:
             return False, None
