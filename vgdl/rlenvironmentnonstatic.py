@@ -425,6 +425,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # embed()
         # observation = self._getSensors()
 
+        self._game.time+=1
         observation = self._getSensors() if return_obs else None
         if getTermination:
             (ended, won, termination) = self._isDone(getTermination=True)
@@ -433,7 +434,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             termination = []
         
         self._game.ended, self._game.win = ended, won
-        self._game.time+=1
 
         dScore = self._game.score - pre_step_score
         if ended:
