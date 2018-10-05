@@ -944,11 +944,11 @@ class BasicGame(object):
 
     def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName='', parameter_string=''):
         """
-        Main method to run game.
+        Main method to display a previously-run game.
         """
         # ----------- Initialization ---------- #
         self._initScreen(self.screensize,headless)
-        
+
         pygame.display.flip()
         self.reset()
         clock = pygame.time.Clock()
@@ -1019,7 +1019,9 @@ class BasicGame(object):
                 keyPressType = keyPressPrev
 
             collision_objects = set()
-
+            
+            #### in image-making mode ####
+            print "drawing"
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
             self.message_display(gameName, fontsize=20, location='top_left')
@@ -1035,7 +1037,6 @@ class BasicGame(object):
 
             if(make_images):
                 tmp_dir = "images/tmp/"+gameName+"/"
-                # tmpl = '{tmp_dir}%09d-{name}-{g_id}.png'.format(i, tmp_dir = tmp_dir, name="VGDL-GAME", g_id=self.uiud)
                 img_index = len([d for d in os.listdir(tmp_dir) if d != '.DS_Store'])
                 tmpl = '{tmp_dir}%09d.png'.format(img_index, tmp_dir = tmp_dir)
                 if padding and (i==0 or i==len(self.playback_states)-1): ## add padding to first and last frame.
@@ -1047,7 +1048,7 @@ class BasicGame(object):
                 i+=1
 
             VGDLSprite.dirtyrects = []
-            allStates.append(self.getFullState())
+            # allStates.append(self.getFullState())
 
             self.playback_index += 1
 
@@ -1063,7 +1064,6 @@ class BasicGame(object):
             self.win = False
             print "Playback is incomplete, or game is lost. Score=%s" % self.score
 
-        # ipdb.set_trace()
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(10)
@@ -1076,6 +1076,7 @@ class BasicGame(object):
         """
         # ----------- Initialization ----------
         self._initScreen(self.screensize,headless)
+        # print "screensize: {}".format(self.screensize)
         pygame.display.flip()
         self.reset()
         t1 = time.time()
@@ -1230,7 +1231,7 @@ class BasicGame(object):
                         # self.score -=1 ## Added 3/16/17
                         print time.time()-t1, len(self.actions), win, self.score
                         print "Game lost. Score=%s" % self.score
-                    np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
+                    # np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
                     allStates.append(self.getFullState())
 
                     pygame.time.wait(10)
@@ -1268,9 +1269,10 @@ class BasicGame(object):
             if len(self.getAvatars()) == 0:
                 break
 
+            #### in manual game-play mode ####
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
-            allStates.append(self.getFullState())
+            # allStates.append(self.getFullState())
 
             #if(headless):
             if(persist_movie):
@@ -1278,8 +1280,10 @@ class BasicGame(object):
                 tmpl = '{tmp_dir}%09d-{name}-{g_id}.png'.format(i,tmp_dir = tmp_dir, name="VGDL-GAME", g_id=self.uiud)
                 pygame.image.save(self.screen, tmpl%i)
                 i+=1
+
             VGDLSprite.dirtyrects = []
-            allStates.append(self.getFullState())
+
+            # allStates.append(self.getFullState())
 
         if(persist_movie):
             print "Creating Movie"
@@ -1307,13 +1311,13 @@ class BasicGame(object):
             # self.score +=1 # Added 3/16/17
             self.win = True
             print "Game won, with score %s" % self.score
-            np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
+            # np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
 
         else:
             self.win = False
             # self.score -=1 # Added 3/16/17
             print "Game lost. Score=%s" % self.score
-            np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
+            # np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
 
 
         # pause a few frames for the player to see the final screen.
@@ -1375,6 +1379,7 @@ class BasicGame(object):
         self._eventHandling()
 
         self._drawAll()
+
         if not headless:
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
@@ -1608,19 +1613,3 @@ class Conditional(object):
         """ returns true if condition is met. default returns false"""
         return False
 
-# def makeVideo(movie_dir):
-#     import os
-#     print "Creating Movie"
-#     # self.video_file = "videos/" +  str(self.uiud) + ".mp4"
-#     if not os.path.exists(movie_dir):
-#         print movie_dir, "didn't exist. making new dir"
-#         os.makedirs(movie_dir)
-#     round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store'])
-#     video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
-#     images_dir = "images/tmp/%09d.png"
-#     com = "ffmpeg -i " +images_dir+ " -pix_fmt yuv420p -filter:v 'setpts=4.0*PTS' "+ video_dirname
-#     command = "{}".format(com)
-#     subprocess.call(command, shell=True)
-#     # empty image directory
-#     shutil.rmtree("images/tmp")
-#     os.makedirs("images/tmp")
