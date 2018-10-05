@@ -563,7 +563,6 @@ class Agent:
         print "Game name:", self.gameFilename
         print self.rle.show(color='blue')
 
-        steps = 0
         self.quits = 0
         self.longHorizonObservations = 0
         self.previous_objects = self.all_objects if self.all_objects else {}
@@ -611,7 +610,7 @@ class Agent:
                 self.seen_limits.append(resource)
 
         ended, win = self.rle._isDone()
-
+        steps = self.rle._game.time
         emptyPlans = 0
         while not ended:
             
