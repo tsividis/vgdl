@@ -295,12 +295,12 @@ class Agent:
 
         return VRLEs
 
-    def initializeHypotheses(self, allObjects, learnSprites=True):
+    def initializeHypotheses(self, allObjects, statesEncountered, compactStates, learnSprites=True):
         if learnSprites:
             if not self.skipInduction:
-                observe(self.rle, 15, self.bestSpriteTypeDict, display=self.display_states)
+                self.observe(self.rle, 15, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states)
             else:
-                observe(self.rle, 1, self.bestSpriteTypeDict, display=self.display_states)                
+                self.observe(self.rle, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states)                
             spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
                 self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
             self.rle._game.exceptedObjects = exceptedObjects
@@ -317,13 +317,13 @@ class Agent:
         self.symbolDict = generateSymbolDict(self.rle)
         return gameObject
 
-    def completeHypotheses(self, allObjects, first_time_playing_level):
+    def completeHypotheses(self, allObjects, statesEncountered, compactStates, first_time_playing_level):
         previous_colors = [o['type']['color'] for o in self.previous_objects.values()]
         current_colors = [o['type']['color'] for o in allObjects.values()]
         if all([c in previous_colors for c in current_colors]):
-            observe(self.rle, 0, self.bestSpriteTypeDict, display=self.display_states) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
+            self.observe(self.rle, 0, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
         else:
-            observe(self.rle, 5, self.bestSpriteTypeDict, display=self.display_states) ## observe many steps so that you're not completely clueless about object movements for the new level
+            self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states) ## observe many steps so that you're not completely clueless about object movements for the new level
 
         ## Make sure any objects that appeared while we were observing are reflected in allObjects
         for k,v in self.rle._game.getObjects().items():
@@ -346,8 +346,8 @@ class Agent:
             level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
         episodes = []
         allEffectsEncountered = []
-
-        if make_movie:
+        self.make_movie = make_movie
+        if self.make_movie:
             if 'images' in os.listdir('.') and 'tmp' in os.listdir('images') and self.gameFilename in os.listdir('images/tmp'):
                 shutil.rmtree("images/tmp/"+self.gameFilename)
             os.makedirs("images/tmp/"+self.gameFilename)
@@ -371,7 +371,7 @@ class Agent:
             first_time_playing_level = True
 
             while not win and i<15:
-                gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level, make_movie=make_movie)
+                gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
                 
                 self.total_game_steps += steps
                 allCompactStates.append(compactStates)
@@ -384,7 +384,7 @@ class Agent:
                             'condition': 'normal',
                             'episodes' : [episode_results]}
                 write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+'.csv', output)
-                if make_movie:
+                if self.make_movie:
                     self.statesEncountered = statesEncountered
                     self.makeImages()
                 # if make_movie:
@@ -435,7 +435,7 @@ class Agent:
                 cPickle.dump(allCompactStates, f)
             f.close()
 
-        if make_movie:
+        if self.make_movie:
             self.makeMovie()
 
     def compactify(self, rle):
@@ -552,7 +552,7 @@ class Agent:
             return gameObject, win, score, steps, statesEncountered, effectsEncountered
         """
 
-    def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None, make_movie=False):
+    def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None):
         from vgdl.util import manhattanDist
 
         ## Initialize external environment
@@ -587,11 +587,11 @@ class Agent:
 
         ## initialize theory if necessary.
         if len(self.hypotheses) == 0:
-            gameObject = self.initializeHypotheses(self.all_objects, learnSprites=True)
+            gameObject = self.initializeHypotheses(self.all_objects, statesEncountered, compactStates, learnSprites=True)
             if self.display_text:
                 print "initializing hypotheses"
         else:
-            gameObject = self.completeHypotheses(self.all_objects, first_time_playing_level)
+            gameObject = self.completeHypotheses(self.all_objects, statesEncountered, compactStates, first_time_playing_level)
             if self.display_text:
                 print "had hypotheses -- completing them."
             # If theory is being carried over, falsify termination hypotheses
@@ -722,7 +722,7 @@ class Agent:
                 if self.longHorizonObservations<self.longHorizonObservationLimit:
                     if self.display_text:
                         print "Didn't get solution. Observing, then replanning."
-                    observe(self.rle, 5, self.bestSpriteTypeDict)
+                    self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates)
                     solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
                     self.longHorizonObservations += 1
                 else:
@@ -764,7 +764,7 @@ class Agent:
                         t1 = time.time()
                     effects = []
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates,
-                        run_induction = not flexible_goals, make_movie=make_movie)
+                        run_induction = not flexible_goals)
                     
                     if self.display_text:
                         print "executeStep took {} seconds".format(time.time()-t1)
@@ -1039,9 +1039,38 @@ class Agent:
         lp.print_stats()
         return hypotheses, theory_change_flag, effects
     """
+    def observe(self, rle, obsSteps, bestSpriteTypeDict, statesEncountered, compactStates, display=False):
+        if display:
+            print "observing for {} steps".format(obsSteps)
+        if obsSteps>0:
+            for i in range(obsSteps):
+                spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
+                spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
+                rle.step((0,0))
+                if self.make_movie:
+                    statesEncountered.append(self.rle._game.getFullState())
+                if self.record_states:
+                    compactStates.append(self.compactify(self.rle))
+                if display:
+                    print "score: {}, game tick: {}".format(rle._game.score, rle._game.time)
+                    print rle.show(color='blue')
 
+                rle._game.nextPositions = {}
+                for k, v in rle._game.all_objects.iteritems():
+                    rle._game.nextPositions[k] = (int(rle._game.all_objects[k]['sprite'].rect.x), int(rle._game.all_objects[k]['sprite'].rect.y))
+                    try:
+                        if rle._game.previousPositions[k] != rle._game.nextPositions[k]:
+                            rle._game.objectMemoryDict[k] = copy.deepcopy(rle._game.previousPositions[k])
+                    except KeyError:
+                        pass
+                rle._game.previousPositions = copy.deepcopy(rle._game.nextPositions)
+                spriteInduction(rle._game, step=3, bestSpriteTypeDict=bestSpriteTypeDict)
+        else:
+            spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
+            spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
+        return
 
-    def executeStep(self, action, hypotheses, statesEncountered, compactStates, run_induction=True, make_movie=False):
+    def executeStep(self, action, hypotheses, statesEncountered, compactStates, run_induction=True):
 
         theory_change_flag = False
 
@@ -1125,7 +1154,7 @@ class Agent:
         t1 = time.time()
         hypotheses = self.manageNewObjects(hypotheses)
 
-        if make_movie:
+        if self.make_movie:
             statesEncountered.append(self.rle._game.getFullState())
         if self.record_states:
             compactStates.append(self.compactify(self.rle))
