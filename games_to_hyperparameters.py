@@ -29,7 +29,7 @@
 # game_names = ['variant_watergame_1', 'variant_watergame_2']
 
 # game_names = ['variant_expt_helper_2', 'lightthefuse', 'variant_lightthefuse_1', 'variant_lightthefuse_2', 'variant_portals_2']
-game_names = ['videotest']
+game_names = ['scoretest']
 
 ## more memory
 # game_names = ['avoidgeorge', 'expt_antagonist', 'expt_helper', 'expt_preconditions', 'expt_relational', 'jaws', 'boulderdash', 'portals', 'watergame', 'bait']

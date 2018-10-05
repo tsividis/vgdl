@@ -354,7 +354,7 @@ class Agent:
 
         j=0
         flexible_goals = False
-
+        fullStateEpisodes, episodeCompactStates = [], []
         for n_level, level_game in enumerate(level_game_pairs):
 
             print("Playing level {}".format(n_level))
@@ -405,7 +405,8 @@ class Agent:
                 first_time_playing_level = False
                 i += 1
                 print "Finished in ", time.time() - t1
-
+            fullStateEpisodes.append(allStatesEncountered)
+            episodeCompactStates.append(allCompactStates)
             if i < 10:
                 self.levels_won += 1
 
@@ -436,7 +437,7 @@ class Agent:
                 os.makedirs(dirname)
             gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
             with open(filename, 'wb') as f:
-                cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'states':allCompactStates}, f)
+                cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeCompactStates}, f)
             f.close()
 
         if self.record_video_info:
@@ -446,7 +447,7 @@ class Agent:
             filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
             gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
             with open(filename, 'wb') as f:
-                cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'states':allStatesEncountered}, f)
+                cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateEpisodes}, f)
             f.close()
 
         # if self.make_movie:
@@ -591,7 +592,8 @@ class Agent:
 
         # self.rleHistory.append(copy.deepcopy(self.rle._game))
         # self.statesEncountered.append(self.rle._game.getFullState())
-        statesEncountered.append(self.rle._game.getFullState())
+        if self.make_movie or self.record_video_info:
+            statesEncountered.append(self.rle._game.getFullState())
         
         if self.record_states:
             compactStates.append(self.compactify(self.rle))
@@ -1062,7 +1064,7 @@ class Agent:
                 spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
                 spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
                 rle.step((0,0))
-                if self.make_movie:
+                if self.make_movie or self.record_video_info:
                     statesEncountered.append(self.rle._game.getFullState())
                 if self.record_states:
                     compactStates.append(self.compactify(self.rle))
@@ -1169,7 +1171,7 @@ class Agent:
         t1 = time.time()
         hypotheses = self.manageNewObjects(hypotheses)
 
-        if self.make_movie:
+        if self.make_movie or self.record_video_info:
             statesEncountered.append(self.rle._game.getFullState())
         if self.record_states:
             compactStates.append(self.compactify(self.rle, plannerNodes))
