@@ -46,4 +46,4 @@ BasicGame frame_rate=30
         avatar poison > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
-        SpriteCounter stype=probe limit=0 win=True
+        SpriteCounter stype=probe limit=0 win=True bonus=10

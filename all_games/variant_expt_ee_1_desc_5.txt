@@ -50,10 +50,10 @@ BasicGame frame_rate=30
         orange avatar > killSprite
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
-        SpriteCounter stype=apple limit=0 win=True
-        SpriteCounter stype=blueberry limit=0 win=True
-        SpriteCounter stype=orange limit=0 win=True
-        SpriteCounter stype=cranberry limit=0 win=True
-        SpriteCounter stype=dough limit=0 win=True
-        SpriteCounter stype=eel limit=0 win=True
-        SpriteCounter stype=fruit limit=0 win=True
+        SpriteCounter stype=apple limit=0 win=True bonus=10
+        SpriteCounter stype=blueberry limit=0 win=True bonus=10
+        SpriteCounter stype=orange limit=0 win=True bonus=10
+        SpriteCounter stype=cranberry limit=0 win=True bonus=10
+        SpriteCounter stype=dough limit=0 win=True bonus=10
+        SpriteCounter stype=eel limit=0 win=True bonus=10
+        SpriteCounter stype=fruit limit=0 win=True bonus=10

@@ -25,4 +25,4 @@ BasicGame frame_rate=30
         missile wall > reverseDirection
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
-        SpriteCounter stype=apple limit=0 win=True
+        SpriteCounter stype=apple limit=0 win=True bonus=10

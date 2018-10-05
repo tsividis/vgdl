@@ -30,4 +30,4 @@ BasicGame
         avatar hole > nothing
         box hole    > killSprite scoreChange=1
     TerminationSet
-        SpriteCounter stype=box    limit=0 win=True
+        SpriteCounter stype=box    limit=0 win=True bonus=10

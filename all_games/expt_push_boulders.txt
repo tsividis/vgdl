@@ -41,5 +41,5 @@ BasicGame frame_rate=30
         poison1 box2 > stepBack
         poison2 box2 >stepBack
     TerminationSet
-        SpriteCounter stype=goal    limit=0 win=True
+        SpriteCounter stype=goal    limit=0 win=True bonus=10
         SpriteCounter stype=avatar  limit=0 win=False

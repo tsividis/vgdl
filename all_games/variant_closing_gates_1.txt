@@ -49,7 +49,7 @@ BasicGame
 	avatar goal > nothing
 	forcefield forcefield > nothing
     TerminationSet
-        SpriteCounter stype=goal   limit=0 win=True
+        SpriteCounter stype=goal   limit=0 win=True bonus=10
         SpriteCounter stype=avatar limit=0 win=False
 
     LevelMapping

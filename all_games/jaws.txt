@@ -23,7 +23,7 @@ BasicGame
 	t > torpedo
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
-        Timeout limit=500 win=True
+        Timeout limit=500 win=True bonus=1
 
     InteractionSet
         EOS avatar > stepBack

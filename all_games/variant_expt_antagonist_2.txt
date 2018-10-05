@@ -57,4 +57,4 @@ BasicGame frame_rate=30
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
         MultiSpriteCounter stype1=box2 stype2=box3  limit=0 win=False
-        SpriteCounter stype=box1 limit=0 win=True
+        SpriteCounter stype=box1 limit=0 win=True bonus=10
