@@ -1055,11 +1055,11 @@ class BasicGame(object):
         terminationCondition = {'ended': True, 'win':win, 'time':self.time}
 
         if win:
-            self.score += 1
+            # self.score += 1
             self.win = True
             print "Game won, with score %s" % self.score
         else:
-            self.score -= 1
+            # self.score -= 1
             self.win = False
             print "Playback is incomplete, or game is lost. Score=%s" % self.score
 
@@ -1216,7 +1216,7 @@ class BasicGame(object):
                 self.ended, win = t.isDone(self)
                 if self.ended:
                     if win:
-                        self.score += 1
+                        # self.score += 1
                         # winning a game always gives a positive score.
                         # if self.score <= 0:
                         #     self.score = 1
@@ -1227,7 +1227,7 @@ class BasicGame(object):
                         print "Game won, with score %s" % self.score
                     else:
                         self.win = False
-                        self.score -=1 ## Added 3/16/17
+                        # self.score -=1 ## Added 3/16/17
                         print time.time()-t1, len(self.actions), win, self.score
                         print "Game lost. Score=%s" % self.score
                     np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
@@ -1304,14 +1304,14 @@ class BasicGame(object):
             # winning a game always gives a positive score.
             # if self.score <= 0:
                 # self.score = 1
-            self.score +=1 # Added 3/16/17
+            # self.score +=1 # Added 3/16/17
             self.win = True
             print "Game won, with score %s" % self.score
             np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
 
         else:
             self.win = False
-            self.score -=1 # Added 3/16/17
+            # self.score -=1 # Added 3/16/17
             print "Game lost. Score=%s" % self.score
             np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
 
