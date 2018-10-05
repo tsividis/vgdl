@@ -7,9 +7,10 @@ def makeMovies(directory):
 	for pickleFile in [file for file in os.listdir(directory) if 'DS_Store' not in file]:
 		with open(directory+'/'+pickleFile, 'r') as f:
 			gameData = cPickle.load(f)
-			gameName, gameString, levelString, statesEncountered, param_ID = gameData['gameInfo']['gameName'], \
-					gameData['gameInfo']['gameString'], gameData['gameInfo']['levelString'], gameData['states'], gameData['modelParams']
-			makeImages(gameName, gameString, levelString, statesEncountered, param_ID)
+			gameName, gameString, levelString, episodes, param_ID = gameData['gameInfo']['gameName'], \
+					gameData['gameInfo']['gameString'], gameData['gameInfo']['levelString'], gameData['episodes'], gameData['modelParams']
+			for statesEncountered in episodes:
+				makeImages(gameName, gameString, levelString, statesEncountered, param_ID)
 			makeMovie(param_ID, gameName, pickleFile)
 	return
 
@@ -37,6 +38,15 @@ def makeMovie(param_ID, gameName, filename):
     os.makedirs("images/tmp/"+gameName)
     return
 
-## E.g.,
-#dirname = 'raw_video_info/params__IW=2__ea=True/scoretest'
-#makeMovies(dirname)
+# embed()
+## ## To convert all raw-video-data for 'scoretest' game:
+dirname = 'raw_video_info/params__IW=2__ea=True/scoretest'
+makeMovies(dirname)
+
+
+
+## For accessing game data:
+# dirname='results/params__IW=2__ea=True/scoretest'
+# file = os.listdir(dirname)[-1]
+# with open(dirname+'/'+file, 'r') as f:
+# 	data=cPickle.load(f)

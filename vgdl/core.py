@@ -993,7 +993,6 @@ class BasicGame(object):
         self.sprite_appearance_predictions = {}
         allStates = [self.getFullState()]
 
-
         while self.playback_index < len(self.playback_states):
             clock.tick(self.frame_rate)
             self.screen.fill(LIGHTGRAY)
