@@ -1021,7 +1021,6 @@ class BasicGame(object):
             collision_objects = set()
             
             #### in image-making mode ####
-            print "drawing"
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
             self.message_display(gameName, fontsize=20, location='top_left')
@@ -1063,11 +1062,32 @@ class BasicGame(object):
             # self.score -= 1
             self.win = False
             print "Playback is incomplete, or game is lost. Score=%s" % self.score
-
+        
+        # if make_movie:
+            # self.makeMovie(parameter_string, gameName)
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(10)
         return win, self.score
+    
+    # def makeMovie(self, param_ID, gameFilename):
+
+    #     print "Creating Movie"
+    #     movie_dir = "videos/{}/{}".format(param_ID, gameFilename)
+
+    #     if not os.path.exists(movie_dir):
+    #         print movie_dir, "didn't exist. making new dir"
+    #         os.makedirs(movie_dir)
+    #     round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store'])
+    #     video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
+    #     images_dir = "images/tmp/{}/%09d.png".format(gameFilename)
+    #     com = "ffmpeg -i " +images_dir+ " -pix_fmt yuv420p -filter:v 'setpts=4.0*PTS' "+ video_dirname
+    #     command = "{}".format(com)
+    #     subprocess.call(command, shell=True)
+    #     # empty image directory
+    #     shutil.rmtree("images/tmp/"+gameFilename)
+    #     os.makedirs("images/tmp/"+gameFilename)
+    #     return
 
 
     def startGame(self, headless, persist_movie, make_images=False, make_movie=False):
