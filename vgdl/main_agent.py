@@ -342,6 +342,7 @@ class Agent:
     def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False):
         """ Plays a game level until it wins, then moves to the next one until
         completion. """
+        starttime = time.time()
         if not level_game_pairs:
             level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
         episodes = []
@@ -428,6 +429,7 @@ class Agent:
                 print "in main_agent; playing with flexible_goals"
                 embed()
 
+        endtime = time.time()
         ## put timestamp on filenames
         timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M')
         if self.record_states:
@@ -437,7 +439,7 @@ class Agent:
                 os.makedirs(dirname)
             gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
             with open(filename, 'wb') as f:
-                cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeCompactStates}, f)
+                cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeCompactStates, 'time_elapsed':endtime-starttime}, f)
             f.close()
 
         if self.record_video_info:
@@ -447,7 +449,7 @@ class Agent:
             filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
             gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
             with open(filename, 'wb') as f:
-                cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateEpisodes}, f)
+                cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateEpisodes, 'time_elapsed':endtime-starttime}, f)
             f.close()
 
         # if self.make_movie:
