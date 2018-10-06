@@ -18,22 +18,11 @@ path = '{}/{}/results'.format(relative_path, date)
 def open_folder(path):
 	return [f for f in os.listdir(path) if 'DS_Store' not in f]
 
-for folder in open_folder(path):
-	for gamefolder in open_folder("{}/{}".format(path,folder)):
-		print gamefolder
-		for modelrun_ID in open_folder("{}/{}/{}".format(path, folder, gamefolder)):
-			print modelrun_ID
-			modelrun_path = "{}/{}/{}/{}".format(path, folder, gamefolder, modelrun_ID)
-			with open(modelrun_path, 'r') as o:
-				data = cPickle.load(o)
-				process_model_run(data, modelrun_ID)
-				o.close()
-
 def process_model_run(data, modelrun_ID):
 	## takes a cPickle file of a full model run
 	## writes a csv
 
-	## you need to count cumulative_score differently, as you want to show the max points someone has gotten, but you don't want to give people
+	## you need to count max_score differently, as you want to show the max points someone has gotten, but you don't want to give people
 	## points for continually almost winning a level. 
 
 	## you want to end up with one csv per game. if you want to look at things across games, you just have to merge those csvs, but this is the cleanest way to do it
@@ -49,7 +38,7 @@ def process_model_run(data, modelrun_ID):
 	if game_name not in os.listdir(data_path):
 		f = open('{}/{}'.format(data_path, game_name), 'w+') #newfile and write
 		writer = csv.writer(f)
-		writer.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 'score', 'cumulative_score', 
+		writer.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 'score', 'level_max_score', 'cumulative_max_score', 
 							'episode_end', 'win', 'cumulative_wins', 'planner_settings', 'planner_nodes', 'cumulative_planner_nodes'))
 	else:
 		f = open('{}/{}'.format(data_path, game_name), 'a+') #append and read
@@ -58,28 +47,48 @@ def process_model_run(data, modelrun_ID):
 	agent_type = data['modelParams']
 	condition = data['condition'] if 'condition' in data.keys() else 'full'
 	game_name = data['gameInfo']['gameName']
-	cumulative_timestep, cumulative_score, cumulative_wins, cumulative_planner_nodes = 0,0,0,0
+	cumulative_timestep, cumulative_max_score, cumulative_wins, cumulative_planner_nodes = 0,0,0,0
+	prev_level_number = 0
 	for level_number,level in enumerate(data['episodes']):
+		level_max_score = 0
 		for episode in level:
 			for t, state in enumerate(episode):
 				timestep, score, planner_nodes, episode_end, win, planner_settings = state['timestep'], state['score'], state['planner_nodes'], state['ended'], state['win'], state['planner_settings']
-				if cumulative_timestep > 0:
-					if t>0:
-						cumulative_score += score - episode[t-1]['score']
-					else:
-						cumulative_score += score
+				
+				## All this weird stuff needs to be done because we don't have a single-stream game.
+				if level_number > prev_level_number:
+					level_max_score = 0
+					cumulative_max_score = cumulative_max_score + score
+				else:
+					if score > level_max_score:
+						score_delta = score - level_max_score
+						level_max_score = max(score, level_max_score)
+						cumulative_max_score += score_delta
 
 				cumulative_planner_nodes += planner_nodes
 				cumulative_wins += win
 				## for a particular model, the subject_ID is just the agent_type, i.e., its parameters.
-				row = (agent_type, agent_type, modelrun_ID, condition, game_name, level_number, t, cumulative_timestep, score, cumulative_score, 
+				row = (agent_type, agent_type, modelrun_ID, condition, game_name, level_number, t, cumulative_timestep, score, level_max_score, cumulative_max_score,
 						episode_end, win, cumulative_wins, planner_settings, planner_nodes, cumulative_planner_nodes)
 				cumulative_timestep += 1
 
+				prev_level_number = level_number
 				writer.writerow(row)
-
 	f.close()
 
+def make_csvs(path):
+	for folder in open_folder(path):
+		for gamefolder in open_folder("{}/{}".format(path,folder)):
+			print gamefolder
+			for modelrun_ID in open_folder("{}/{}/{}".format(path, folder, gamefolder)):
+				print modelrun_ID
+				modelrun_path = "{}/{}/{}/{}".format(path, folder, gamefolder, modelrun_ID)
+				with open(modelrun_path, 'r') as o:
+					data = cPickle.load(o)
+					process_model_run(data, modelrun_ID)
+					o.close()
 
-embed()
+
+
+
 
