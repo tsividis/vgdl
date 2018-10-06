@@ -15,7 +15,7 @@
 #  'zelda','variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3'] ##41
 
 ## more memory -- 64gb
-game_names1= ['avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4',
+game_names = ['avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4',
 'bait', 'variant_bait_1', 'variant_bait_2',
 'boulderdash', 'variant_boulderdash_1',
 'variant_chase_3', 
