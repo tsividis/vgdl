@@ -33,16 +33,25 @@ def process_model_run(data, modelrun_ID):
 	if 'csv_data' not in os.listdir('{}/{}'.format(relative_path, date)):
 		os.makedirs(data_path)
 
+	if 'merged_data' not in os.listdir(data_path):
+		g = open('{}/merged_data'.format(data_path), 'w+')
+		mergedfilewriter = csv.writer(g)
+		mergedfilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 'score', 'level_max_score', 'cumulative_max_score', 
+							'episode_end', 'win', 'cumulative_wins', 'planner_settings', 'planner_nodes', 'cumulative_planner_nodes'))
+	else:
+		g = open('{}/merged_data'.format(data_path), 'a+')	
+		mergedfilewriter = csv.writer(g)
+
 	game_name = data['gameInfo']['gameName']
 
 	if game_name not in os.listdir(data_path):
 		f = open('{}/{}'.format(data_path, game_name), 'w+') #newfile and write
-		writer = csv.writer(f)
-		writer.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 'score', 'level_max_score', 'cumulative_max_score', 
+		gamefilewriter = csv.writer(f)
+		gamefilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 'score', 'level_max_score', 'cumulative_max_score', 
 							'episode_end', 'win', 'cumulative_wins', 'planner_settings', 'planner_nodes', 'cumulative_planner_nodes'))
 	else:
 		f = open('{}/{}'.format(data_path, game_name), 'a+') #append and read
-		writer = csv.writer(f)
+		gamefilewriter = csv.writer(f)
 	
 	agent_type = data['modelParams']
 	condition = data['condition'] if 'condition' in data.keys() else 'full'
@@ -73,8 +82,10 @@ def process_model_run(data, modelrun_ID):
 				cumulative_timestep += 1
 
 				prev_level_number = level_number
-				writer.writerow(row)
+				gamefilewriter.writerow(row)
+				mergedfilewriter.writerow(row)
 	f.close()
+	g.close()
 
 def make_csvs(path):
 	for folder in open_folder(path):
@@ -85,8 +96,15 @@ def make_csvs(path):
 				modelrun_path = "{}/{}/{}/{}".format(path, folder, gamefolder, modelrun_ID)
 				with open(modelrun_path, 'r') as o:
 					data = cPickle.load(o)
-					process_model_run(data, modelrun_ID)
+					try:
+						process_model_run(data, modelrun_ID)
+					except:
+						print "error..."
+						embed()
 					o.close()
+					# embed()
+
+make_csvs(path)
 
 
 
