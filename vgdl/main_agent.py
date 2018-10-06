@@ -348,6 +348,19 @@ class Agent:
         episodes = []
         allEffectsEncountered = []
         self.make_movie = make_movie
+
+        ## used for time-stamping data related to this particular run of the model.
+        timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M')
+
+        if self.record_states:
+            dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
+            filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
+            if not os.path.exists(dirname):
+                os.makedirs(dirname)
+        if self.record_video_info:
+            dirname = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
+            if not os.path.exists(dirname):
+                os.makedirs(dirname)
         if self.make_movie:
             if 'images' in os.listdir('.') and 'tmp' in os.listdir('images') and self.gameFilename in os.listdir('images/tmp'):
                 shutil.rmtree("images/tmp/"+self.gameFilename)
@@ -355,7 +368,7 @@ class Agent:
 
         j=0
         flexible_goals = False
-        fullStateEpisodes, episodeCompactStates = [], []
+        fullStateEpisodes, episodeCompactStates = {}, {}
         for n_level, level_game in enumerate(level_game_pairs):
 
             print("Playing level {}".format(n_level))
@@ -380,12 +393,12 @@ class Agent:
                 episodes.append(episode_results)
 
                 # write progressively to file
-                output = {'modelType':self.param_ID,
-                            'gameName': self.gameFilename,
-                            'condition': 'normal',
-                            'episodes' : [episode_results]}
-                # write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+'.csv', output)
-                write_to_csv('',str(self.gameFilename)+'.csv', output)
+                # output = {'modelType':self.param_ID,
+                #             'gameName': self.gameFilename,
+                #             'condition': 'normal',
+                #             'episodes' : [episode_results]}
+                # # write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+'.csv', output)
+                # write_to_csv('',str(self.gameFilename)+'.csv', output)
 
                 if self.make_movie:
                     self.statesEncountered = statesEncountered
@@ -406,10 +419,32 @@ class Agent:
                 first_time_playing_level = False
                 i += 1
                 print "Finished in ", time.time() - t1
-            fullStateEpisodes.append(allStatesEncountered)
-            episodeCompactStates.append(allCompactStates)
-            if i < 10:
-                self.levels_won += 1
+
+                episodeCompactStates[n_level] = allCompactStates
+                fullStateEpisodes[n_level] = allStatesEncountered
+
+                ## will write all previous episodes to the file at the end of each episode.
+                if self.record_states:
+                    gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
+                    episodeList = [v for k,v in sorted(episodeCompactStates.items())]
+                    print "n_level", n_level
+                    print len(episodeList)
+                    # embed()
+                    with open(filename, 'wb') as f:
+                        cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
+                    f.close()
+
+            ## will write video data at the end of each level
+            if self.record_video_info:
+                videofilename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
+                gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
+                fullStateList = [v for k,v in sorted(fullStateEpisodes.items())]
+                with open(videofilename, 'wb') as f:
+                    cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateList, 'time_elapsed':time.time()-starttime}, f)
+                f.close()
+
+            # if i < 10:
+                # self.levels_won += 1
 
             # if heatmap:
             #     self.makeHeatmap(allStatesEncountered, '{}_{}_level{}_heatmap.pdf'.format(
@@ -431,26 +466,25 @@ class Agent:
 
         endtime = time.time()
         ## put timestamp on filenames
-        timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M')
-        if self.record_states:
-            dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
-            filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
-            if not os.path.exists(dirname):
-                os.makedirs(dirname)
-            gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
-            with open(filename, 'wb') as f:
-                cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeCompactStates, 'time_elapsed':endtime-starttime}, f)
-            f.close()
+        # if self.record_states:
+        #     dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
+        #     filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
+        #     if not os.path.exists(dirname):
+        #         os.makedirs(dirname)
+        #     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
+        #     with open(filename, 'wb') as f:
+        #         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeCompactStates, 'time_elapsed':endtime-starttime}, f)
+        #     f.close()
 
-        if self.record_video_info:
-            dirname = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
-            if not os.path.exists(dirname):
-                os.makedirs(dirname)
-            filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
-            gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
-            with open(filename, 'wb') as f:
-                cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateEpisodes, 'time_elapsed':endtime-starttime}, f)
-            f.close()
+        # if self.record_video_info:
+        #     dirname = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
+        #     if not os.path.exists(dirname):
+        #         os.makedirs(dirname)
+        #     filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
+        #     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
+        #     with open(filename, 'wb') as f:
+        #         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateEpisodes, 'time_elapsed':endtime-starttime}, f)
+        #     f.close()
 
         # if self.make_movie:
             # self.makeMovie()
