@@ -5,6 +5,8 @@ import csv
 from vgdl.util import str2bool
 import cPickle
 
+## python -m vgdl --date oct6
+## python -m vgdl --date vgdl ## for local stuff
 
 parser = argparse.ArgumentParser(description='.')
 parser.add_argument('--date', type=str, default='oct6', help='date') ##date whose data you want to process
