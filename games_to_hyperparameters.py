@@ -32,13 +32,14 @@
 # 'watergame', 'variant_watergame_1', 'variant_watergame_2'] ##45
 
 
-game_names = ['bait', 'variant_bait_1', 'boulderdash', 'variant_boulderdash_1', 'variant_chase_2', 
-			  'variant_closing_gates_2', 'variant_corridor_1', 'variant_expt_ee_2', 'variant_expt_helper_1', 'variant_expt_helper_2',
-			  'expt_preconditions', 'variant_expt_preconditions_1', 'variant_expt_push_boulders_1', 'variant_expt_push_boulders_2', 'expt_relational',
-			  'variant_expt_relational_2', 'variant_frogs_2', 'variant_frogs_3', 'jaws', 'variant_jaws_1',
-			  'variant_jaws_2', 'variant_lemmings_3', 'variant_missilecommand_2', 'variant_myAliens_2', 'variant_portals_2',
-			  'variant_plaqueattack_1', 'variant_plaqueattack_2', 'sokoban', 'variant_sokoban_1', 'variant_sokoban_2',
-			  'survivezombies', 'watergame', 'variant_watergame_1', 'variant_watergame_2'] #34
+# game_names = ['bait', 'variant_bait_1', 'boulderdash', 'variant_boulderdash_1', 'variant_chase_2', 
+# 			  'variant_closing_gates_2', 'variant_corridor_1', 'variant_expt_ee_2', 'variant_expt_helper_1', 'variant_expt_helper_2',
+# 			  'expt_preconditions', 'variant_expt_preconditions_1', 'variant_expt_push_boulders_1', 'variant_expt_push_boulders_2', 'expt_relational',
+# 			  'variant_expt_relational_2', 'variant_frogs_2', 'variant_frogs_3', 'jaws', 'variant_jaws_1',
+# 			  'variant_jaws_2', 'variant_lemmings_3', 'variant_missilecommand_2', 'variant_myAliens_2', 'variant_portals_2',
+# 			  'variant_plaqueattack_1', 'variant_plaqueattack_2', 'sokoban', 'variant_sokoban_1', 'variant_sokoban_2',
+# 			  'survivezombies', 'watergame', 'variant_watergame_1', 'variant_watergame_2'] #34
 
+game_names = ['zelda']
 ## lots of memory -- 128gb??
 # game_names = ['bait','sokoban', 'variant_sokoban_1', 'variant_expt_push_boulders_1', 'variant_expt_helper_1', 'watergame']
