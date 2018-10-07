@@ -434,14 +434,14 @@ class Agent:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
                     f.close()
 
-            ## will write video data at the end of each level
-            if self.record_video_info:
-                videofilename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
-                gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
-                fullStateList = [v for k,v in sorted(fullStateEpisodes.items())]
-                with open(videofilename, 'wb') as f:
-                    cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateList, 'time_elapsed':time.time()-starttime}, f)
-                f.close()
+                ## will write video data at the end of each episode
+                if self.record_video_info:
+                    videofilename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
+                    gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
+                    fullStateList = [v for k,v in sorted(fullStateEpisodes.items())]
+                    with open(videofilename, 'wb') as f:
+                        cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateList, 'time_elapsed':time.time()-starttime}, f)
+                    f.close()
 
             # if i < 10:
                 # self.levels_won += 1
