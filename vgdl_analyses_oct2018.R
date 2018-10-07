@@ -53,24 +53,36 @@ all_game_names = c('avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_
                'survivezombies', 'variant_survivezombies_1', 'variant_survivezombies_2',
                'watergame', 'variant_watergame_1', 'variant_watergame_2',
                'zelda','variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3')
+
+bait, chase_2, closing_gates_1, 
+
 existing_games = list()
+missing_games = list()
+j=1
+for (i in 1:length(all_game_names)){
+  if (all_game_names[i] %in% game_names){
+    existing_games[j] = all_game_names[i] 
+    j = j+1
+  }
+}
+
 
 ## Make plots.
 plots = list()
-# for (i in 1:length(game_names)){
-for (i in 1:24){
-  game = game_names[i]
+for (i in 1:length(existing_games)){
+  game = existing_games[i]
   p=ggplot(subset(data, game_name==game), aes(x=cumulative_steps, y=score, color='agent_type')) ##color=agent_type
   p=p + geom_point(color='steelblue3') + geom_smooth(span=.5, se=FALSE, color='steelblue3') + 
-    expand_limits(y=0) +
-    ggtitle(game) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
+    # expand_limits(y=0) +
+    ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
   p 
   plots[[i]] = p
   #title = paste('~/Projects/atari/vgdl/',date,'/plots/modelcomp_', game, '.png', sep='')
   #ggsave(title, plot=p, width=15, height=10)
 }
 
-layout = matrix(c(1:24), nrow=4, byrow=TRUE)
+
+layout = matrix(c(1:length(existing_games)), ncol=6, byrow=TRUE)
 ## takes a really long time to run, for some reason.
 #m = multiplot(plotlist = plots, cols=6)
 m = multiplot(plotlist = plots, layout=layout)
