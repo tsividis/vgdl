@@ -68,5 +68,5 @@ BasicGame
     sword sword > nothing
 
   TerminationSet
-    SpriteCounter stype=goal   win=True
+    SpriteCounter stype=goal   win=True bonus=20
     SpriteCounter stype=avatar win=False
