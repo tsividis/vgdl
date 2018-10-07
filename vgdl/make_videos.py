@@ -40,15 +40,9 @@ def makeMovie(param_ID, gameName, filename):
 
 # embed()
 ## ## To convert all raw-video-data for 'scoretest' game:
-# dirname = 'raw_video_info/params__IW=2__ea=True/scoretest'
-# makeMovies(dirname)
+dirname = 'raw_video_info/params__IW=2__ea=True/scoretest'
+makeMovies(dirname)
 
 
-
-## For accessing game data:
-# dirname='results/params__IW=2__ea=True/scoretest'
-# file = os.listdir(dirname)[-1]
-# with open(dirname+'/'+file, 'r') as f:
-# 	data=cPickle.load(f)
 
 # embed()

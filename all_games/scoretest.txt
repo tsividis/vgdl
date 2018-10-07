@@ -35,6 +35,6 @@ BasicGame
 	p > poison
 
     TerminationSet
-        #SpriteCounter stype=scared win=True bonus=100
+        SpriteCounter stype=scared win=True bonus=100
         SpriteCounter stype=avatar win=False
-	Timeout limit=20 win=True bonus=1
+	#Timeout limit=20 win=True bonus=1
