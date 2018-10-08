@@ -81,6 +81,8 @@ BasicGame
     TerminationSet
         SpriteCounter stype=goal   limit=0 win=True bonus=10
         SpriteCounter stype=avatar limit=0 win=False
+        Timeout limit=2000 win=False
+
 
     LevelMapping
         h > horizontal

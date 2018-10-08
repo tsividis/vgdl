@@ -8,6 +8,8 @@ BasicGame
     TerminationSet
         SpriteCounter stype=butterfly win=True
         SpriteCounter stype=cocoon    win=False
+        Timeout limit=2000 win=False
+
 
     InteractionSet
         avatar    wall   > stepBack

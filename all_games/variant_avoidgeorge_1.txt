@@ -15,6 +15,8 @@ BasicGame
         SpriteCounter stype=avatar  win=False
         SpriteCounter stype=quiet   win=False
 	SpriteCounter stype=annoyed win=True bonus=10
+        Timeout limit=2000 win=False
+
 
     InteractionSet
         quiet george > transformTo stype=annoyed

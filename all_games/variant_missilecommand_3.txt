@@ -49,3 +49,4 @@ BasicGame
     SpriteCounter stype=city   win=False
     SpriteCounter stype=avatar win=False
     MultiSpriteCounter stype1=incoming_slow stype2=incoming_fast win=True bonus=20
+    Timeout limit=2000 win=False

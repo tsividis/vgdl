@@ -8,13 +8,15 @@ library("RColorBrewer")
 
 date = c('oct6')
 path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
-data=read.csv(path, header=TRUE)
+data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
-
+data = na.omit(data)
 data$timestep = as.numeric(as.character(data$timestep))
 data$cumulative_steps = as.numeric(as.character(data$cumulative_timestep))
 data$local_score = as.numeric(as.character(data$score))
-data$score = as.numeric(as.character(data$cumulative_max_score))
+data$all_score = as.numeric(as.character(data$cumulative_max_score))
+data$agent_type = as.factor(data$agent_type)
+data$score = as.numeric(as.character(data$sparse_score))
 
 plotpath = paste('~/Projects/atari/vgdl/',date,'/plots', sep='')
 dir.create(plotpath)
@@ -54,8 +56,6 @@ all_game_names = c('avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_
                'watergame', 'variant_watergame_1', 'variant_watergame_2',
                'zelda','variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3')
 
-bait, chase_2, closing_gates_1, 
-
 existing_games = list()
 missing_games = list()
 j=1
@@ -67,24 +67,47 @@ for (i in 1:length(all_game_names)){
 }
 
 
+## color mapping:
+agent_types = c('human', 'params__IW=1__ea=False','params__IW=1__ea=True', 
+                'params__IW=2__ea=False',  'params__IW=2__ea=True', 'DDQN')
+# colors = c('blue','lightskyblue3', 'lightskyblue1', 
+           # 'steelblue2', 'steelblue4', 'salmon3')
+##you need to make a real mapping between agent_types and colors. for now, just have
+## as many colors as you have agent_types in the plot:
+colors = c('steelblue3','steelblue1')
 ## Make plots.
 plots = list()
 for (i in 1:length(existing_games)){
   game = existing_games[i]
-  p=ggplot(subset(data, game_name==game), aes(x=cumulative_steps, y=score, color='agent_type')) ##color=agent_type
-  p=p + geom_point(color='steelblue3') + geom_smooth(span=.5, se=FALSE, color='steelblue3') + 
-    # expand_limits(y=0) +
+  p=ggplot(subset(data, game_name==game), aes(x=cumulative_steps, y=score, color=agent_type)) ##color=agent_type
+  p = p+geom_point(size=1, position=position_jitter(width=1,height=1)) + geom_smooth(spane=.5, se=FALSE, size=1, alpha=0.5)+
+    scale_color_manual(values=colors)+theme(legend.position="none")+
+
+  
+  #p=p + geom_point(color=agent_type) + geom_smooth(span=.5, se=FALSE, color=agent_type) + 
+    # 
     ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
+  
+  if (game=='lemmings'){
+    p=p+ylim(0,40)
+  }
+  if ((grepl('expt', game)) | (grepl('bees', game) )| (grepl('corridor',game))|
+      (grepl,'closing',game) | (grepl, '')){
+    p=p+ylim(0,40)
+  }
   p 
+  
   plots[[i]] = p
-  #title = paste('~/Projects/atari/vgdl/',date,'/plots/modelcomp_', game, '.png', sep='')
-  #ggsave(title, plot=p, width=15, height=10)
+  title = paste('~/Projects/atari/vgdl/',date,'/plots/modelcomp_', game, '.png', sep='')
+  ggsave(title, plot=p, width=15, height=10)
 }
 
 
+# layout = matrix(c(1:12), ncol=6, byrow=TRUE)
+
 layout = matrix(c(1:length(existing_games)), ncol=6, byrow=TRUE)
 ## takes a really long time to run, for some reason.
-#m = multiplot(plotlist = plots, cols=6)
+# m = multiplot(plotlist = plots, cols=6)
 m = multiplot(plotlist = plots, layout=layout)
 
 title = paste('~/Projects/atari/vgdl/',date,'/plots/multiplot1.png',sep='')

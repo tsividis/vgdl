@@ -8,6 +8,8 @@ BasicGame
     TerminationSet
         SpriteCounter stype=door limit=0 win=True
         SpriteCounter stype=avatar limit=0 win=False
+        Timeout limit=2000 win=False
+
     InteractionSet
         avatar wall > stepBack
         box avatar > bounceForward

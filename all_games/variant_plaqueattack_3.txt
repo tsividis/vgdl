@@ -181,3 +181,5 @@ BasicGame
     SpriteCounter stype=avatar win=False
     MultiSpriteCounter stype1=fullMolarInf stype2=fullMolarSup win=False
     SpriteCounter stype=goal win=True bonus=20
+        Timeout limit=2000 win=False
+

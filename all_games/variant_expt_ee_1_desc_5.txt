@@ -57,3 +57,4 @@ BasicGame frame_rate=30
         SpriteCounter stype=dough limit=0 win=True bonus=10
         SpriteCounter stype=eel limit=0 win=True bonus=10
         SpriteCounter stype=fruit limit=0 win=True bonus=10
+        Timeout limit=2000 win=False
