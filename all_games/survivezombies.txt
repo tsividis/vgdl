@@ -105,7 +105,7 @@ BasicGame
         wall zombie > nothing
 
     TerminationSet
-        Timeout limit=500 win=True bonus=1
+        Timeout limit=500 win=True bonus=.02
         SpriteCounter stype=avatar limit=0 win=False
 
     LevelMapping

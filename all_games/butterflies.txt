@@ -6,7 +6,7 @@ BasicGame
         wall > Immovable color=DARKGRAY
 
     TerminationSet
-        SpriteCounter stype=butterfly win=True
+        SpriteCounter stype=butterfly win=True bonus=10
         SpriteCounter stype=cocoon    win=False
         Timeout limit=2000 win=False
 

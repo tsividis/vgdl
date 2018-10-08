@@ -45,5 +45,5 @@ BasicGame
 
   TerminationSet
     SpriteCounter stype=city   win=False
-    MultiSpriteCounter stype1=incoming_slow stype2=incoming_fast win=True bonus=20
+    MultiSpriteCounter stype1=incoming_slow stype2=incoming_fast win=True bonus=10
     Timeout limit=2000 win=False

@@ -14,7 +14,7 @@ BasicGame
     TerminationSet
         SpriteCounter stype=avatar  win=False
         SpriteCounter stype=quiet   win=False
-        Timeout limit=500 win=True bonus=1
+        Timeout limit=500 win=True bonus=.02
 
     InteractionSet
         quiet george > transformTo stype=annoyed
