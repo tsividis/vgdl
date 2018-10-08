@@ -47,3 +47,4 @@ BasicGame frame_rate=30
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=probe limit=0 win=True bonus=10
+        Timeout limit=2000 win=False

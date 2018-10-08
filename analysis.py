@@ -38,7 +38,7 @@ def process_model_run(data, modelrun_ID):
 		g = open('{}/merged_data'.format(data_path), 'w+')
 		mergedfilewriter = csv.writer(g)
 		mergedfilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 'score', 'level_max_score', 'cumulative_max_score', 
-							'episode_end', 'win', 'cumulative_wins', 'planner_settings', 'planner_nodes', 'cumulative_planner_nodes'))
+							'sparse_score','episode_end', 'win', 'cumulative_wins', 'planner_settings', 'planner_nodes', 'cumulative_planner_nodes'))
 	else:
 		g = open('{}/merged_data'.format(data_path), 'a+')	
 		mergedfilewriter = csv.writer(g)
@@ -49,7 +49,7 @@ def process_model_run(data, modelrun_ID):
 		f = open('{}/{}'.format(data_path, game_name), 'w+') #newfile and write
 		gamefilewriter = csv.writer(f)
 		gamefilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 'score', 'level_max_score', 'cumulative_max_score', 
-							'episode_end', 'win', 'cumulative_wins', 'planner_settings', 'planner_nodes', 'cumulative_planner_nodes'))
+							'sparse_score', 'episode_end', 'win', 'cumulative_wins', 'planner_settings', 'planner_nodes', 'cumulative_planner_nodes'))
 	else:
 		f = open('{}/{}'.format(data_path, game_name), 'a+') #append and read
 		gamefilewriter = csv.writer(f)
@@ -57,7 +57,7 @@ def process_model_run(data, modelrun_ID):
 	agent_type = data['modelParams']
 	condition = data['condition'] if 'condition' in data.keys() else 'full'
 	game_name = data['gameInfo']['gameName']
-	cumulative_timestep, cumulative_max_score, cumulative_wins, cumulative_planner_nodes = 0,0,0,0
+	cumulative_timestep, cumulative_max_score, sparse_score, cumulative_wins, cumulative_planner_nodes = 0,0,0,0,0
 	prev_level_number = 0
 	for level_number,level in enumerate(data['episodes']):
 		level_max_score = 0
@@ -69,17 +69,31 @@ def process_model_run(data, modelrun_ID):
 				if level_number > prev_level_number:
 					level_max_score = 0
 					cumulative_max_score = cumulative_max_score + score
+					sparse_score = cumulative_max_score
 				else:
 					if score > level_max_score:
 						score_delta = score - level_max_score
 						level_max_score = max(score, level_max_score)
 						cumulative_max_score += score_delta
+						if score_delta > 0:
+							sparse_score = cumulative_max_score
+						else:
+							if cumulative_timestep%10 == 0:
+								sparse_score = cumulative_max_score
+							else:
+								sparse_score = 'NA'
+					else:
+						if t>0:
+							if cumulative_timestep%10 == 0:
+								sparse_score = cumulative_max_score
+							else:
+								sparse_score = 'NA'
 
 				cumulative_planner_nodes += planner_nodes
 				cumulative_wins += win
 				## for a particular model, the subject_ID is just the agent_type, i.e., its parameters.
 				row = (agent_type, agent_type, modelrun_ID, condition, game_name, level_number, t, cumulative_timestep, score, level_max_score, cumulative_max_score,
-						episode_end, win, cumulative_wins, planner_settings, planner_nodes, cumulative_planner_nodes)
+						sparse_score, episode_end, win, cumulative_wins, planner_settings, planner_nodes, cumulative_planner_nodes)
 				cumulative_timestep += 1
 
 				prev_level_number = level_number

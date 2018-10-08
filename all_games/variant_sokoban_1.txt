@@ -31,3 +31,5 @@ BasicGame
         box hole    > killSprite scoreChange=1
     TerminationSet
         SpriteCounter stype=box    limit=0 win=True bonus=10
+        Timeout limit=2000 win=False
+

@@ -63,3 +63,5 @@ BasicGame
     TerminationSet
         SpriteCounter stype=scared win=True
         SpriteCounter stype=avatar win=False
+        Timeout limit=2000 win=False
+

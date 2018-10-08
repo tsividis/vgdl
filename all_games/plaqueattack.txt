@@ -129,3 +129,5 @@ BasicGame square_size=25
   TerminationSet
     MultiSpriteCounter stype1=fullMolarInf stype2=fullMolarSup win=False
     MultiSpriteCounter stype1=hotdoghole stype2=hotdog stype3=burger stype4=burgerhole limit=0 win=True bonus=20
+    Timeout limit=2000 win=False
+

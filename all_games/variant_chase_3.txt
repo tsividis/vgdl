@@ -51,3 +51,5 @@ BasicGame
     TerminationSet
         MultiSpriteCounter stype1=scared stype2=missile win=True
         SpriteCounter stype=avatar win=False
+        Timeout limit=2000 win=False
+
