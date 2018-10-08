@@ -14,8 +14,7 @@ parser.add_argument('--date', type=str, default='oct6', help='date') ##date whos
 args = parser.parse_args()
 
 date = args.date
-relative_path = '..'
-path = '{}/{}/results'.format(relative_path, date)
+path = '{}/results'.format(date)
 
 def open_folder(path):
 	return [f for f in os.listdir(path) if 'DS_Store' not in f]
@@ -31,8 +30,8 @@ def process_model_run(data, modelrun_ID):
 	## and to avoid loading huge csv files.
 	## also don't process a particular run multiple times. you need a way of storing the processed model_IDs so that you don't keep appending to a long csv.
 
-	data_path = '{}/{}/{}'.format(relative_path, date, 'csv_data')
-	if 'csv_data' not in os.listdir('{}/{}'.format(relative_path, date)):
+	data_path = '{}/{}'.format(date, 'csv_data')
+	if 'csv_data' not in os.listdir('{}'.format(date)):
 		os.makedirs(data_path)
 
 	if 'merged_data' not in os.listdir(data_path):
