@@ -81,18 +81,21 @@ for (i in 1:length(existing_games)){
   game = existing_games[i]
   p=ggplot(subset(data, game_name==game), aes(x=cumulative_steps, y=score, color=agent_type)) ##color=agent_type
   p = p+geom_point(size=1, position=position_jitter(width=1,height=1)) + geom_smooth(spane=.5, se=FALSE, size=1, alpha=0.5)+
-    scale_color_manual(values=colors)+theme(legend.position="none")+
+    scale_color_manual(values=colors)+ #theme(legend.position="none")+
 
   
   #p=p + geom_point(color=agent_type) + geom_smooth(span=.5, se=FALSE, color=agent_type) + 
     # 
     ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
-  
-  if (game=='lemmings'){
+
+  if (grepl('frogs', game)){
+    p=p+ylim(0,60)
+  }  
+  if (grepl('lemmings', game)){
     p=p+ylim(0,40)
   }
-  if ((grepl('expt', game)) | (grepl('bees', game) )| (grepl('corridor',game))|
-      (grepl,'closing',game) | (grepl, '')){
+  if ( (grepl('expt', game)) | (grepl('bees', game) )| (grepl('corridor',game))|
+      (grepl('closing',game))){
     p=p+ylim(0,40)
   }
   p 
@@ -102,16 +105,21 @@ for (i in 1:length(existing_games)){
   ggsave(title, plot=p, width=15, height=10)
 }
 
+## Making two plots for now because multiplot refuses to make the first 4 plots if
+## you make the whole grid at once.
+layout = matrix(c(1:42), ncol=6, byrow=TRUE)
+m = multiplot(plotlist = plots[1:41], layout=layout)
 
-# layout = matrix(c(1:12), ncol=6, byrow=TRUE)
-
-layout = matrix(c(1:length(existing_games)), ncol=6, byrow=TRUE)
-## takes a really long time to run, for some reason.
-# m = multiplot(plotlist = plots, cols=6)
-m = multiplot(plotlist = plots, layout=layout)
+layout = matrix(c(1:48), ncol=6, byrow=TRUE)
+m = multiplot(plotlist = plots[42:length(plots)], layout=layout)
 
 title = paste('~/Projects/atari/vgdl/',date,'/plots/multiplot1.png',sep='')
 ggsave(m, file=title, dpi=600)
+
+
+
+## Make vertical plot of score/time per game/planner.
+
 
 
 # Multiple plot function
