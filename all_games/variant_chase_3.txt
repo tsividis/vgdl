@@ -49,7 +49,7 @@ BasicGame
 	1 > missile1
 	2 > missile2
     TerminationSet
-        MultiSpriteCounter stype1=scared stype2=missile win=True
+        MultiSpriteCounter stype1=scared stype2=missile win=True bonus=10
         SpriteCounter stype=avatar win=False
         Timeout limit=2000 win=False
 

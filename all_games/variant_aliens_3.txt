@@ -19,7 +19,7 @@ BasicGame square_size=32
 
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
-        MultiSpriteCounter stype1=portal stype2=alien limit=0 win=True bonus=20
+        MultiSpriteCounter stype1=portal stype2=alien limit=0 win=True bonus=10
         Timeout limit=2000 win=False
 
     InteractionSet

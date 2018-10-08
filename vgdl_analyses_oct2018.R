@@ -80,11 +80,8 @@ plots = list()
 for (i in 1:length(existing_games)){
   game = existing_games[i]
   p=ggplot(subset(data, game_name==game), aes(x=cumulative_steps, y=score, color=agent_type)) ##color=agent_type
-  p = p+geom_point(size=1, position=position_jitter(width=1,height=1)) + geom_smooth(spane=.5, se=FALSE, size=1, alpha=0.5)+
-    scale_color_manual(values=colors)+ #theme(legend.position="none")+
-
-  
-  #p=p + geom_point(color=agent_type) + geom_smooth(span=.5, se=FALSE, color=agent_type) + 
+  p=p+geom_point(size=1, position=position_jitter(width=1,height=1))+geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
+    scale_color_manual(values=colors) + #theme(legend.position="none")+
     # 
     ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
 
@@ -119,8 +116,27 @@ ggsave(m, file=title, dpi=600)
 
 
 ## Make vertical plot of score/time per game/planner.
+plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
+                          max_steps=as.numeric(), planning_time=as.numeric())
+for (i in 1:length(levels(data$game_name))){
+  for (j in 1:length(levels(data$agent_type))){
+    s = subset(data, ((game_name==levels(data$game_name)[i]) & (agent_type==levels(data$agent_type)[j])) )
+    ## the row we want
+    r = filter(s, cumulative_timestep==max(cumulative_timestep))[1,]
+    ## take only the relevant columns and put them in the new data frame
+    new = data.frame(game_name=r$game_name, agent_type=r$agent_type, max_score=r$score, 
+                     max_steps=r$cumulative_timestep, planning_time=r$cumulative_planner_nodes)
+    plantimedata = rbind(plantimedata, new)
+  }
+}
+plantimedata = na.omit(plantimedata)
+plantimedata = mutate(plantimedata, score_efficiency=max_score/max_steps)
+plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
 
-
+p = ggplot(plantimedata, aes(x=game_name, y=score_efficiency, fill=factor(agent_type))) +
+  geom_bar(position='dodge', stat='identity')+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p
 
 # Multiple plot function
 #

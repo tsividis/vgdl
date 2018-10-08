@@ -14,7 +14,9 @@ parser.add_argument('--date', type=str, default='oct6', help='date') ##date whos
 args = parser.parse_args()
 
 date = args.date
-path = '{}/results'.format(date)
+relative_path = '..'
+path = '{}/{}/results'.format(relative_path, date)
+# path = '{}/results'.format(date)
 
 def open_folder(path):
 	return [f for f in os.listdir(path) if 'DS_Store' not in f]
@@ -30,8 +32,10 @@ def process_model_run(data, modelrun_ID):
 	## and to avoid loading huge csv files.
 	## also don't process a particular run multiple times. you need a way of storing the processed model_IDs so that you don't keep appending to a long csv.
 
-	data_path = '{}/{}'.format(date, 'csv_data')
-	if 'csv_data' not in os.listdir('{}'.format(date)):
+	data_path = '{}/{}/{}'.format(relative_path, date, 'csv_data')
+ 	if 'csv_data' not in os.listdir('{}/{}'.format(relative_path, date)):
+	# data_path = '{}/{}'.format(date, 'csv_data')
+	# if 'csv_data' not in os.listdir('{}'.format(date)):
 		os.makedirs(data_path)
 
 	if 'merged_data' not in os.listdir(data_path):
@@ -64,7 +68,7 @@ def process_model_run(data, modelrun_ID):
 		for episode in level:
 			for t, state in enumerate(episode):
 				timestep, score, planner_nodes, episode_end, win, planner_settings = state['timestep'], state['score'], state['planner_nodes'], state['ended'], state['win'], state['planner_settings']
-				
+				score=round(score,2)
 				## All this weird stuff needs to be done because we don't have a single-stream game.
 				if level_number > prev_level_number:
 					level_max_score = 0

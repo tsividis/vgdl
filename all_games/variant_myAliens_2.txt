@@ -27,7 +27,6 @@ BasicGame
     TerminationSet
         SpriteCounter      stype=avatar               limit=0 win=False
 	SpriteCounter stype=gate limit=0 win=True bonus=10
-        Timeout limit=500 win=True bonus=1
 
     InteractionSet
 	missile gate > nothing
