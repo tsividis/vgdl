@@ -10,10 +10,13 @@ import cPickle
 
 parser = argparse.ArgumentParser(description='.')
 parser.add_argument('--date', type=str, default='oct6', help='date') ##date whose data you want to process
+parser.add_argument('--game', type=str, default='', help='game') ##game whose data you want to process
+
 ## add argument options for each of the different analyses?
 args = parser.parse_args()
 
 date = args.date
+game = args.game if args.game!='' else None
 relative_path = '..'
 path = '{}/{}/results'.format(relative_path, date)
 # path = '{}/results'.format(date)
@@ -64,7 +67,7 @@ def process_model_run(data, modelrun_ID):
 	cumulative_timestep, cumulative_max_score, sparse_score, cumulative_wins, cumulative_planner_nodes = 0,0,0,0,0
 	prev_level_number = 0
 	for level_number,level in enumerate(data['episodes']):
-		level_max_score = 0
+		level_max_score, accumulated_score = 0, 0
 		for episode in level:
 			for t, state in enumerate(episode):
 				timestep, score, planner_nodes, episode_end, win, planner_settings = state['timestep'], state['score'], state['planner_nodes'], state['ended'], state['win'], state['planner_settings']
@@ -94,6 +97,8 @@ def process_model_run(data, modelrun_ID):
 								sparse_score = 'NA'
 
 				cumulative_planner_nodes += planner_nodes
+				if type(win)==tuple:
+					win = win[0]
 				cumulative_wins += win
 				## for a particular model, the subject_ID is just the agent_type, i.e., its parameters.
 				row = (agent_type, agent_type, modelrun_ID, condition, game_name, level_number, t, cumulative_timestep, score, level_max_score, cumulative_max_score,
@@ -106,24 +111,27 @@ def process_model_run(data, modelrun_ID):
 	f.close()
 	g.close()
 
-def make_csvs(path):
+def make_csvs(path, game=None):
 	for folder in open_folder(path):
+
 		for gamefolder in open_folder("{}/{}".format(path,folder)):
-			print gamefolder
-			for modelrun_ID in open_folder("{}/{}/{}".format(path, folder, gamefolder)):
-				print modelrun_ID
-				modelrun_path = "{}/{}/{}/{}".format(path, folder, gamefolder, modelrun_ID)
-				with open(modelrun_path, 'r') as o:
-					data = cPickle.load(o)
-					try:
-						process_model_run(data, modelrun_ID)
-					except:
-						print "error..."
-						embed()
-					o.close()
+			if game==None or game==gamefolder:
+				print gamefolder
+				for modelrun_ID in open_folder("{}/{}/{}".format(path, folder, gamefolder)):
+					print modelrun_ID
+					modelrun_path = "{}/{}/{}/{}".format(path, folder, gamefolder, modelrun_ID)
+					with open(modelrun_path, 'r') as o:
+						data = cPickle.load(o)
+						try:
+							process_model_run(data, modelrun_ID)
+						except:
+							print "error..."
+							embed()
+						o.close()
 					# embed()
 
-make_csvs(path)
+make_csvs(path, game)
+
 
 
 
