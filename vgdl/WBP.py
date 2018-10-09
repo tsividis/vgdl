@@ -66,7 +66,7 @@ class WBP():
 		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
-		self.objectNumberTrackingLimit = 50
+		self.objectNumberTrackingLimit = 200#50
 		self.objectLocationTrackingLimit = 8
 		self.max_nodes = max_nodes
 		self.small_max_nodes = 100
@@ -107,8 +107,8 @@ class WBP():
 
 		#################
 		#################
-		self.display = False
-		
+		self.display = True
+
 		if self.display:
 			print "In planner; MovingTypesInGame: {}. Planning with idx {} and position_multiplier {}".format(movingTypesInGame, self.hyperparameter_index, self.position_score_multiplier)
 
