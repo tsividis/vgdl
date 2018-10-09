@@ -11,7 +11,7 @@ BasicGame
 	mole > Chaser stype=wall cooldown=5 color=YELLOW
 	molebox > Immovable color=BLUE
 	snake > Chaser stype=avatar cooldown=4 color=LIGHTGREEN
-        wall > Immovable color=DARKGRAY 
+        wall > Immovable color=MPUYEI 
     LevelMapping
         x >  goal
         e >  entrance

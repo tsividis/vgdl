@@ -10,7 +10,7 @@ BasicGame
         lemming > Chaser  stype=goal speed=1 cooldown=5 color=RED
 	mole > Chaser stype=wall cooldown=5 color=YELLOW
 	molebox > Immovable color=BLUE
-        wall > Immovable color=DARKGRAY 
+        wall > Immovable color=MPUYEI 
     LevelMapping
         x >  goal
         e >  entrance
