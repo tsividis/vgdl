@@ -116,7 +116,7 @@ def play_trainset(hyperparameter_sets, hyperparameter_index):
         game_description = read_gvgai_game('{}.txt'.format(gvgname))
         game_descriptions = [game_description]*len(game_levels)
     else:
-        game_descriptions = [read_gvgai_game("./{}/{}".format(gameFileString, d)) for d in os.listdir(gameFileString) if (game_name in d and 'desc' in d)]
+        game_descriptions = [read_gvgai_game("./{}/{}".format(gameFileString, d)) for d in sorted([e for e in os.listdir(gameFileString) if (game_name in e and 'desc' in e)])]
     # embed()
 
     level_game_pairs = []
@@ -124,8 +124,6 @@ def play_trainset(hyperparameter_sets, hyperparameter_index):
     for level_number in range(len(game_levels)):
         with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
             level_game_pairs.append([game_descriptions[level_number], level.read()])
-
-    embed()
 
 # def play_trainset(hyperparameters_sets, hyperparameter_index):
 #     start_time = time.time()
