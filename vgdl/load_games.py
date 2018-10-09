@@ -125,6 +125,8 @@ def play_trainset(hyperparameter_sets, hyperparameter_index):
         with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
             level_game_pairs.append([game_descriptions[level_number], level.read()])
 
+    embed()
+
 # def play_trainset(hyperparameters_sets, hyperparameter_index):
 #     start_time = time.time()
 
