@@ -79,17 +79,24 @@ colors = c('steelblue3','steelblue1')
 plots = list()
 for (i in 1:length(existing_games)){
   game = existing_games[i]
-  p=ggplot(subset(data, game_name==game), aes(x=cumulative_steps, y=score, color=agent_type)) ##color=agent_type
-  p=p+geom_point(size=1, position=position_jitter(width=1,height=1))+geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
-    scale_color_manual(values=colors) + #theme(legend.position="none")+
+  
+  if (game %in% c('lemmings', 'variant_lemmings_2', 'variant_lemmings_3')){
+    p=ggplot(subset(data, game_name==game), aes(x=cumulative_steps, y=cumulative_wins, color=agent_type)) ##color=agent_type
+    p=p+geom_point(size=1) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
+      scale_color_manual(values=colors) + #theme(legend.position="none")+
+      ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
+    p=p+ylim(0,5)
+    
+  }
+  else{
+    p=ggplot(subset(data, game_name==game), aes(x=cumulative_steps, y=score, color=agent_type)) ##color=agent_type
+    p=p+geom_point(size=1, position=position_jitter(width=1,height=1))+geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
+      scale_color_manual(values=colors) + #theme(legend.position="none")+
     # 
-    ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
-
+      ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
+}
   if (grepl('frogs', game)){
     p=p+ylim(0,60)
-  }  
-  if ( (grepl('lemmings', game))&game!='variant_lemmings_1' ){
-    p=p+ylim(0,100)
   }
   if ( (grepl('expt', game)) | (grepl('bees', game) )| (grepl('corridor',game))|
       (grepl('closing',game))){
@@ -113,6 +120,7 @@ m = multiplot(plotlist = plots[42:length(plots)], layout=layout)
 #title = paste('~/Projects/atari/vgdl/',date,'/plots/multiplot1.png',sep='')
 #ggsave(m, file=title, dpi=600)
 
+game='variant_lemmings_3'
 
 
 ## Make vertical plot of score/time per game/planner.

@@ -664,6 +664,9 @@ class Agent:
                 self.seen_limits.append(resource)
 
         ended, win = self.rle._isDone()
+        if ended and win:
+            print "ended and won 0"
+            embed()
         steps = self.rle._game.time
         emptyPlans = 0
         while not ended:
@@ -839,6 +842,10 @@ class Agent:
                         self.hypotheses = hypotheses
                         break
                     ended, win = self.rle._isDone()
+                    if ended and win:
+                        print "ended and won 1"
+                        embed()
+
                     self.max_game_time_observed = max(self.max_game_time_observed, self.rle._game.time)
                     if ended:
                         # print "episode ended"
@@ -898,6 +905,9 @@ class Agent:
 
             annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
+            if ended and win:
+                print "ended and won 2"
+                embed()
             
             if ended:
                 self.episodeRecord.insert(0, (win, effects))
