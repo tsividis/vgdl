@@ -45,6 +45,7 @@
 # 			  'zelda']
 # game_names = ['lemmings', 'variant_lemmings_2', 'variant_lemmings_3']
 game_names = ['watergame', 'variant_closing_gates_1']
+# game_names = ['boulderdash', 'variant_boulderdash_1']
 
 # game_names = ['bait', 'variant_bait_1', 'boulderdash', 'variant_boulderdash_1', 'variant_chase_2', 
 # 			  'variant_closing_gates_2', 'variant_corridor_1', 'variant_expt_ee_2', 'variant_expt_helper_1', 'variant_expt_helper_2',

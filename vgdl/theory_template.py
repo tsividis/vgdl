@@ -1822,6 +1822,7 @@ class Game(object):
 					max_likelihood = 0
 					print "WARNING: max_likelihood failed"
 					# embed()
+					
 					self.hypothesisSpace = [theory]
 				if verbose:
 					print "New theories that passed likelihood tests: ", newTheoriesCount
@@ -2022,7 +2023,7 @@ class Game(object):
 			print "WARNING: no hypotheses. Returning the hypotheses we started with."
 			print "#################################################################"
 			self.hypothesisSpace = init_hypotheses
-			# embed()
+			embed()
 
 
 		return self.hypothesisSpace
