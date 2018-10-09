@@ -36,7 +36,7 @@ BasicGame
 	g > goatgate
 
     TerminationSet
-        SpriteCounter stype=scared win=True, bonus=10
+        SpriteCounter stype=scared win=True bonus=10
         SpriteCounter stype=avatar win=False
         Timeout limit=2000 win=False
 
