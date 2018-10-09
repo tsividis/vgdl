@@ -821,7 +821,7 @@ class Agent:
                     
                     if self.display_text:
                         print "executeStep took {} seconds".format(time.time()-t1)
-                        sys.stdout.flush()
+                    sys.stdout.flush()
                     
                     self.rle._game.nextPositions = {}
                     for k, v in self.rle._game.all_objects.iteritems():
