@@ -88,8 +88,8 @@ for (i in 1:length(existing_games)){
   if (grepl('frogs', game)){
     p=p+ylim(0,60)
   }  
-  if (grepl('lemmings', game)){
-    p=p+ylim(0,40)
+  if ( (grepl('lemmings', game))&game!='variant_lemmings_1' ){
+    p=p+ylim(0,100)
   }
   if ( (grepl('expt', game)) | (grepl('bees', game) )| (grepl('corridor',game))|
       (grepl('closing',game))){
@@ -98,8 +98,8 @@ for (i in 1:length(existing_games)){
   p 
   
   plots[[i]] = p
-  title = paste('~/Projects/atari/vgdl/',date,'/plots/modelcomp_', game, '.png', sep='')
-  ggsave(title, plot=p, width=15, height=10)
+  #title = paste('~/Projects/atari/vgdl/',date,'/plots/modelcomp_', game, '.png', sep='')
+  #ggsave(title, plot=p, width=15, height=10)
 }
 
 ## Making two plots for now because multiplot refuses to make the first 4 plots if
@@ -110,8 +110,8 @@ m = multiplot(plotlist = plots[1:41], layout=layout)
 layout = matrix(c(1:48), ncol=6, byrow=TRUE)
 m = multiplot(plotlist = plots[42:length(plots)], layout=layout)
 
-title = paste('~/Projects/atari/vgdl/',date,'/plots/multiplot1.png',sep='')
-ggsave(m, file=title, dpi=600)
+#title = paste('~/Projects/atari/vgdl/',date,'/plots/multiplot1.png',sep='')
+#ggsave(m, file=title, dpi=600)
 
 
 
