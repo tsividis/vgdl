@@ -23,6 +23,8 @@ BasicGame
 		dirt avatar > killSprite
 		dirt sword  > killSprite
 
+		wall dirt > stepBack
+		dirt wall > stepBack
 		diamond avatar > changeScore value=2
 		diamond avatar > collectResource 
 
@@ -38,7 +40,7 @@ BasicGame
 		avatar butterfly > changeScore value=-1
 		avatar butterfly > killSprite
 
-		#avatar crab > changeScore value=-1
+		avatar crab > changeScore value=-1
 		avatar crab > killSprite
 
 		boulder dirt > stepBack
@@ -72,7 +74,7 @@ BasicGame
                 wall boulder > nothing
                 wall EOS > nothing
                 sword sword > nothing
-                #sword dirt > nothing
+                sword dirt > nothing
                 exitdoor sword > nothing
                 exitdoor crab > nothing
                 exitdoor butterfly > nothing
@@ -85,14 +87,14 @@ BasicGame
                 avatar sword > nothing
                 avatar exitdoor > nothing
                 avatar diamond > nothing
-                #avatar dirt > nothing
-                #crab sword > nothing
+                avatar dirt > nothing
+                crab sword > nothing
                 crab exitdoor > nothing
-                #crab avatar > nothing
+                crab avatar > nothing
                 crab crab > nothing
                 butterfly sword > nothing
                 butterfly exitdoor > nothing
-                #butterfly avatar > nothing
+                butterfly avatar > nothing
                 butterfly butterfly > nothing
                 boulder sword > nothing
                 boulder exitdoor > nothing
