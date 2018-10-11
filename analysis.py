@@ -80,7 +80,7 @@ def process_model_run(data, modelrun_ID):
 					sparse_score = cumulative_max_score
 					level_accumulated_score = accumulated_score
 				else:
-					if cumulative_timestep%5==0:
+					if cumulative_timestep%5==0 or t==len(episode)-1:
 						level_accumulated_score = accumulated_score + score
 					else:
 						level_accumulated_score = 'NA'
@@ -92,13 +92,13 @@ def process_model_run(data, modelrun_ID):
 						if score_delta > 0:
 							sparse_score = cumulative_max_score
 						else:
-							if cumulative_timestep%10 == 0:
+							if cumulative_timestep%5 == 0:
 								sparse_score = cumulative_max_score
 							else:
 								sparse_score = 'NA'
 					else:
 						if t>0:
-							if cumulative_timestep%10 == 0:
+							if cumulative_timestep%5 == 0:
 								sparse_score = cumulative_max_score
 							else:
 								sparse_score = 'NA'
@@ -109,6 +109,7 @@ def process_model_run(data, modelrun_ID):
 				cumulative_wins += win
 				if win:
 					accumulated_score = accumulated_score + score
+					level_accumulated_score = accumulated_score
 				## for a particular model, the subject_ID is just the agent_type, i.e., its parameters.
 				row = (agent_type, agent_type, modelrun_ID, condition, game_name, level_number, t, cumulative_timestep, score, level_max_score, cumulative_max_score,
 						sparse_score, level_accumulated_score, episode_end, win, cumulative_wins, planner_settings, planner_nodes, cumulative_planner_nodes)

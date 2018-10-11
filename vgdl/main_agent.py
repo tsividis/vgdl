@@ -162,10 +162,10 @@ class Agent:
             self.shortHorizon = self.hyperparameters['short_horizon']
             self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
             if self.shortHorizon == True:
-                self.starting_max_nodes = 500
+                self.starting_max_nodes = 50#500
                 self.max_nodes_annealing = 1.05
             else:
-                self.starting_max_nodes = 10000
+                self.starting_max_nodes = 100#10000
                 self.max_nodes_annealing = 10. 
             self.max_nodes = self.starting_max_nodes
             self.stored_max_nodes = self.max_nodes
@@ -251,7 +251,7 @@ class Agent:
                                 sprite.orientation = orientation
 
                         except KeyError:
-                            print "Failed to get params for Missile in main_agent"
+                            # print "Failed to get params for Missile in main_agent"
                             # embed()
                             pass
         for k,v in Vrle._game.sprite_groups.items():
