@@ -609,7 +609,6 @@ class Agent:
 
         ## Initialize external environment
         self.initializeEnvironment()
-
         if self.display_text:
             print "initializing RLE"
         print "Game name:", self.gameFilename
