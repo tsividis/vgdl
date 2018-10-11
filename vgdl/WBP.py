@@ -107,7 +107,7 @@ class WBP():
 
 		#################
 		#################
-		self.display = True
+		self.display = False
 
 		if self.display:
 			print "In planner; MovingTypesInGame: {}. Planning with idx {} and position_multiplier {}".format(movingTypesInGame, self.hyperparameter_index, self.position_score_multiplier)
@@ -241,7 +241,7 @@ class WBP():
 			if ((len(rle._game.sprite_groups[k])>0 and
 					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and
 					any([obj in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) for obj in self.objectsWhoseLocationsWeIgnore])) or
-				k in self.classesWhoseLocationsWeIgnore):
+				k in self.classesWhoseLocationsWeIgnore) or k==self.thingWeShoot:
 
 				pass
 			else:
@@ -284,7 +284,7 @@ class WBP():
 			if (len(rle._game.sprite_groups[k])>0 and
 					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and
 					any([obj in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) for obj in self.objectsWhosePresenceWeIgnore]) or
-					k in self.classesWhosePresenceWeIgnore):
+					k in self.classesWhosePresenceWeIgnore) or k==self.thingWeShoot:
 				pass
 			else:
 				for o in sorted(rle._game.sprite_groups[k], key=lambda s:s.ID):
@@ -299,7 +299,6 @@ class WBP():
 			# print "Vector is length {}".format(self.vecSize)
 
 		if self.extra_atom:
-
 			try:
 				avatar_pos = self.findAvatarInRLE(rle)
 				vecValue = avatar_pos[1] + avatar_pos[0]*rle.outdim[0] + 1
@@ -337,27 +336,18 @@ class WBP():
 		#acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
 		
 		## normal mode
-		if not self.conservative:
-			acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
-			## sort max to min for pop()
-			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
-			# if self.killer_types:
-				# print "in reward selection"
-				# embed()
-		else:
-			acceptableNodes = QReward
-			## sort max to min for pop()
-			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, len(n.actionSeq)))
-			# print "in conservative mode in reward selection"
-			# embed()
+		# if not self.conservative:
+		acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
+		## sort max to min for pop()
+		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
+		# else:
+		# 	acceptableNodes = QReward
+		# 	## sort max to min for pop()
+		# 	bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, len(n.actionSeq)))
+		# 	print "in conservative mode in reward selection"
+		# 	# embed()
 
-		# try:
-		# 	for k,v in self.rle._game.getAvatars()[0].resources.items():
-		# 		if v>3:
-		# 			print self.rle.show()
-		# 			embed()
-		# except:
-		# 	pass
+
 
 		try:
 			
@@ -374,8 +364,8 @@ class WBP():
 				print "picked a node with >0 badoutcomes"
 				embed()
 		except:
-			if self.display:
-				print("RewardSelection didn't find a node that satisfied novelty criteria.")
+			# if self.display:
+			print("RewardSelection didn't find a node that satisfied novelty criteria.")
 			# embed()
 			return 'pickMaxNode'
 		
@@ -456,9 +446,9 @@ class WBP():
 				self.solution = node.actionSeq
 
 				if self.conservative and not self.solution:
-					print "in conservative mode. didn't get solution; trying to filter less aggressively"
-					print "you should never actually end up here"
-					embed()
+					# print "in conservative mode. didn't get solution; trying to filter less aggressively"
+					# print "you should never actually end up here"
+					# embed()
 					if QReward:
 						node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 					else:
@@ -486,8 +476,9 @@ class WBP():
 
 				self.quitting = True
 				self.exhausted_novelty = True
-				# if self.display:
-				print "was in None or PickMaxNode"
+				if self.display:
+					print "was in None or PickMaxNode"
+				# embed()
 				return node, gameString_array, object_positions_array
 
 			self.statesEncountered.append(current.rle._game.getFullState())

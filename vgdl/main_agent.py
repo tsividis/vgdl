@@ -162,10 +162,10 @@ class Agent:
             self.shortHorizon = self.hyperparameters['short_horizon']
             self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
             if self.shortHorizon == True:
-                self.starting_max_nodes = 50#500
+                self.starting_max_nodes = 500
                 self.max_nodes_annealing = 1.05
             else:
-                self.starting_max_nodes = 100#10000
+                self.starting_max_nodes = 10000
                 self.max_nodes_annealing = 10. 
             self.max_nodes = self.starting_max_nodes
             self.stored_max_nodes = self.max_nodes
@@ -723,10 +723,10 @@ class Agent:
 
                 elif self.hyperparameter_index == 3:
                     movingTypes = self.checkForMovingTypes(self.rle, self.hypotheses[0])
-                    if self.display_text:
-                        print "moving types: {}".format(movingTypes)
-                        print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, 55))
-                        print "self.max_game_time_observed>501: {}".format(self.max_game_time_observed>501)
+                    # if self.display_text:
+                    print "moving types: {}".format(movingTypes)
+                    print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, 55))
+                    print "self.max_game_time_observed>501: {}".format(self.max_game_time_observed>501)
                     if self.noNewObjectsInAWhile(self.rle, 55) and \
                             (not movingTypes or (movingTypes and self.max_game_time_observed>501)):
                         if self.display_text:
@@ -752,21 +752,22 @@ class Agent:
                     print "max_nodes: {}, short_horizon: {}, conservative: {}".format(self.max_nodes, self.shortHorizon, conservative)
                 # embed()
 
-                ## Replan in new mode
-                p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
-                    seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                    firstOrderHorizon=self.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom, IW_k=self.IW_k)
-                p_quitting = p.quitting
-                bestNode, gameStringArray, objectPositionsArray = p.BFS()
-                self.total_planner_steps += p.total_nodes
-                if bestNode is not None:
-                    solution = p.solution
-                    gameString_array = p.gameString_array
-                    objectPositionsArray = objectPositionsArray[::-1]
-                    if solution and self.display_text:
-                        print "got solution"
-                else:
-                    solution = []
+                if conservative:
+                    ## Replan in new mode
+                    p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
+                        seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+                        firstOrderHorizon=self.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom, IW_k=self.IW_k)
+                    p_quitting = p.quitting
+                    bestNode, gameStringArray, objectPositionsArray = p.BFS()
+                    self.total_planner_steps += p.total_nodes
+                    if bestNode is not None:
+                        solution = p.solution
+                        gameString_array = p.gameString_array
+                        objectPositionsArray = objectPositionsArray[::-1]
+                        if solution and self.display_text:
+                            print "got solution"
+                    else:
+                        solution = []
 
             if (not solution) or p_quitting:
                 # Here we make a distinction between quitting because you've
@@ -774,6 +775,7 @@ class Agent:
                 # ran out of novelty. In the first case, you only wait longer,
                 # in the second case, you also add a new atom to IW
                 if p.exhausted_novelty and self.extra_atom_allowed:
+                    print "turning on extra atom"
                     self.extra_atom = True
                 if self.longHorizonObservations<self.longHorizonObservationLimit:
                     if self.display_text:
@@ -1174,10 +1176,6 @@ class Agent:
         # self.rleHistory.append(copy.deepcopy(self.rle._game))
         # print "step took {} seconds".format(time.time()-t1)
 
-        if self.display_text:
-            print ""
-            print keyPresses[action]
-
         # t1 = time.time()
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
@@ -1242,6 +1240,8 @@ class Agent:
         
         # t1 = time.time()
         if self.display_states:
+            print ""
+            print keyPresses[action]
             print self.rle.show(color='blue')
         # print "rle.show: {}".format(time.time()-t1)
         
