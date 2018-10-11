@@ -117,29 +117,22 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # self.colorMapping = colorMapping
         return
 
-    def show_binary(self):
+    def show_binary(self, thingWeShoot):
         """
         symbolDict = a dict mapping each sprite name to its symbol.
         If there's no sprite overlap, then returns a string. Else returns numpy array.
-        """
-        ## faster version, but need to figure out how to display 
-
-        
-        #mappedState = [[1 for x in range(self.outdim[1])] for y in range(self.outdim[0])]
-        mappedState = np.ones((self.outdim[1]*self.outdim[0]))#[1 for x in range(self.outdim[1]*self.outdim[0])]
-        #ipdb.set_trace()
+        """        
+        mappedState = np.ones((self.outdim[1]*self.outdim[0]))
         kl_set = set(self._game.kill_list)
-        for lst in self._game.sprite_groups.values():
-            for sprite in lst:
-                if sprite not in kl_set:
-                    y,x = sprite.rect.top/30, sprite.rect.left/30
-                    try:
-                        mappedState[x+self.outdim[1]*y] = 0
-                    except:
-                        pass
-        #gameString = []
-        #for mappedRow in mappedState:
-        #    gameString.extend(mappedRow)
+        for k, lst in self._game.sprite_groups.items():
+            if k!= thingWeShoot:
+                for sprite in lst:
+                    if sprite not in kl_set:
+                        y,x = sprite.rect.top/30, sprite.rect.left/30
+                        try:
+                            mappedState[x+self.outdim[1]*y] = 0
+                        except:
+                            pass
         return mappedState
 
     def show(self, indent=False, showArrays=False, binary=False, color='grey'):

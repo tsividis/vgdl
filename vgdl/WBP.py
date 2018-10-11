@@ -305,7 +305,7 @@ class WBP():
 			except:
 				vecValue = [0]
 
-			stateIW1 = [vecValue] + rle.show_binary()
+			stateIW1 = [vecValue] + rle.show_binary(self.thingWeShoot)
 			lst.append(hash(tuple(stateIW1)))
 		return set(lst)
 
