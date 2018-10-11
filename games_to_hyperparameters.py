@@ -33,20 +33,21 @@
 # 'watergame', 'variant_watergame_1', 'variant_watergame_2'] ##45
 
 
-game_names = ['variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4',
-'bait', 'variant_bait_1', 'variant_bait_2',
-'variant_chase_3',
-'expt_antagonist', 'variant_expt_antagonist_1','variant_expt_antagonist_2', 
-'expt_helper', 'variant_expt_helper_1', 'variant_expt_helper_2', 
- 'expt_preconditions', 'variant_expt_preconditions_1', 'variant_expt_preconditions_2',
- 'expt_push_boulders', 'variant_expt_push_boulders_1', 'variant_expt_push_boulders_2', 
-'expt_relational', 'variant_expt_relational_1', 'variant_expt_relational_2',
-'variant_frogs_1', 'variant_frogs_2', 'variant_frogs_3',
-'portals', 'variant_portals_1', 'variant_portals_2',
-'sokoban', 'variant_sokoban_1', 'variant_sokoban_2',
-'variant_survivezombies_1', 'variant_survivezombies_2',
-'variant_watergame_1', 'variant_watergame_2'
-'variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3']
+game_names = ['boulderdash', 'variant_boulderdash_1']
+# game_names = ['variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4',
+# 'bait', 'variant_bait_1', 'variant_bait_2',
+# 'variant_chase_3',
+# 'expt_antagonist', 'variant_expt_antagonist_1','variant_expt_antagonist_2', 
+# 'expt_helper', 'variant_expt_helper_1', 'variant_expt_helper_2', 
+#  'expt_preconditions', 'variant_expt_preconditions_1', 'variant_expt_preconditions_2',
+#  'expt_push_boulders', 'variant_expt_push_boulders_1', 'variant_expt_push_boulders_2', 
+# 'expt_relational', 'variant_expt_relational_1', 'variant_expt_relational_2',
+# 'variant_frogs_1', 'variant_frogs_2', 'variant_frogs_3',
+# 'portals', 'variant_portals_1', 'variant_portals_2',
+# 'sokoban', 'variant_sokoban_1', 'variant_sokoban_2',
+# 'variant_survivezombies_1', 'variant_survivezombies_2',
+# 'variant_watergame_1', 'variant_watergame_2'
+# 'variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3']
 
 # game_names = ['lemmings', 'variant_lemmings_2', 'variant_lemmings_3']
 # game_names = ['watergame', 'variant_closing_gates_1']

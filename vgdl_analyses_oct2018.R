@@ -10,7 +10,8 @@ date = c('oct6')
 path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
 data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
-data = na.omit(data)
+#data = na.omit(data)
+data$modelrun_ID = as.character(data$modelrun_ID)
 data$timestep = as.numeric(as.character(data$timestep))
 data$cumulative_steps = as.numeric(as.character(data$cumulative_timestep))
 data$local_score = as.numeric(as.character(data$score))
@@ -59,10 +60,15 @@ all_game_names = c('avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_
 existing_games = list()
 missing_games = list()
 j=1
+k=1
 for (i in 1:length(all_game_names)){
   if (all_game_names[i] %in% game_names){
     existing_games[j] = all_game_names[i] 
     j = j+1
+  }
+  else{
+    missing_games[k] = all_game_names[i]
+    k = k+1
   }
 }
 
@@ -76,38 +82,107 @@ agent_types = c('human', 'params__IW=1__ea=False','params__IW=1__ea=True',
 ## as many colors as you have agent_types in the plot:
 colors = c('steelblue3','steelblue1')
 ## Make plots.
+
+## plot scores
 plots = list()
 for (i in 1:length(existing_games)){
   game = existing_games[i]
-  
-  if (game %in% c('lemmings', 'variant_lemmings_2', 'variant_lemmings_3')){
-    p=ggplot(subset(data, game_name==game), aes(x=cumulative_steps, y=cumulative_wins, color=agent_type)) ##color=agent_type
-    p=p+geom_point(size=1) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
-      scale_color_manual(values=colors) + #theme(legend.position="none")+
+
+    p=ggplot(subset(data, game_name==game), aes(x=cumulative_steps, y=level_accumulated_score)) ##color=agent_type
+    p=p+geom_point(size=1, position=position_jitter(width=1,height=1),color='steelblue3')+
+      geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5, color='steelblue3')+
+      #  scale_color_manual(values=colors) + #theme(legend.position="none")+
+      #
       ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
-    p=p+ylim(0,5)
-    
-  }
-  else{
-    p=ggplot(subset(data, game_name==game), aes(x=cumulative_steps, y=score, color=agent_type)) ##color=agent_type
-    p=p+geom_point(size=1, position=position_jitter(width=1,height=1))+geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
-      scale_color_manual(values=colors) + #theme(legend.position="none")+
-    # 
-      ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
-}
+    p
+  p=p+ylim(0,max(filter(data, game_name==game)$level_accumulated_score))
   if (grepl('frogs', game)){
     p=p+ylim(0,60)
   }
-  if ( (grepl('expt', game)) | (grepl('bees', game) )| (grepl('corridor',game))|
-      (grepl('closing',game))){
+  if ( ( (grepl('bees', game) )| (grepl('corridor',game))| (grepl('closing',game))){
     p=p+ylim(0,40)
   }
-  p 
-  
+    if (grepl('expt', game)){
+      if (grepl('expt_ee',game)){
+        p=p+ylim(0,60)
+      }
+      else{
+        p=p+ylim(0,40)
+      }
+    }
+  if (game%in%c('lemmings','variant_lemmings_2','variant_lemmings_3')){
+    p=p+ylim(min(filter(data, game_name==game)$level_accumulated_score),50)
+  }
+
   plots[[i]] = p
   #title = paste('~/Projects/atari/vgdl/',date,'/plots/modelcomp_', game, '.png', sep='')
   #ggsave(title, plot=p, width=15, height=10)
 }
+
+## plot wins
+plots = list()
+for (i in 1:length(existing_games)){
+  game = existing_games[i]
+  
+    p=ggplot(subset(data, (game_name==game)&(agent_type=='params__IW=2__ea=True')&(episode_end=='True')), aes(x=cumulative_steps, y=cumulative_wins,color=modelrun_ID)) ##color=agent_type
+    p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
+      # scale_color_manual(values=colors) + #theme(legend.position="none")+
+      ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
+    p=p+ylim(0,5)
+    
+    if (grepl('expt', game)){
+      if (grepl('expt_ee',game)){
+        p=p+ylim(0,6)
+      }
+      else{
+        p=p+ylim(0,4)
+      }
+    }
+
+  plots[[i]] = p
+  #title = paste('~/Projects/atari/vgdl/',date,'/plots/modelcomp_', game, '.png', sep='')
+  #ggsave(title, plot=p, width=15, height=10)
+}
+
+
+
+# plots = list()
+# for (i in 1:length(existing_games)){
+#   game = existing_games[i]
+#   
+#   if (game %in% c('lemmings', 'variant_lemmings_2', 'variant_lemmings_3')){
+#     p=ggplot(subset(data, game_name==game), aes(x=cumulative_steps, y=cumulative_wins, color=agent_type)) ##color=agent_type
+#     p=p+geom_point(size=1) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
+#       scale_color_manual(values=colors) + #theme(legend.position="none")+
+#       ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
+#     p=p+ylim(0,5)
+#     
+#   }
+#   else{
+#     p=ggplot(subset(data, game_name==game), aes(x=cumulative_steps, y=level_accumulated_score)) ##color=agent_type
+#     p=p+geom_point(size=1, position=position_jitter(width=1,height=1),color='steelblue3')+
+#       geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5, color='steelblue3')+
+#     #  scale_color_manual(values=colors) + #theme(legend.position="none")+
+#     # 
+#       ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
+#     p
+#     }
+#   if (grepl('frogs', game)){
+#     p=p+ylim(0,60)
+#   }
+#   if ( (grepl('expt', game)) | (grepl('bees', game) )| (grepl('corridor',game))|
+#       (grepl('closing',game))){
+#     p=p+ylim(0,40)
+#   }
+#   p 
+#   
+#   
+#   plots[[i]] = p
+#   #title = paste('~/Projects/atari/vgdl/',date,'/plots/modelcomp_', game, '.png', sep='')
+#   #ggsave(title, plot=p, width=15, height=10)
+# }
+layout = matrix(c(1:90), ncol=6, byrow=TRUE)
+m = multiplot(plotlist = plots[1:86], layout=layout)
 
 ## Making two plots for now because multiplot refuses to make the first 4 plots if
 ## you make the whole grid at once.
@@ -120,8 +195,19 @@ m = multiplot(plotlist = plots[42:length(plots)], layout=layout)
 #title = paste('~/Projects/atari/vgdl/',date,'/plots/multiplot1.png',sep='')
 #ggsave(m, file=title, dpi=600)
 
-game='variant_lemmings_3'
+d = data.frame(subj=rep('s1',37),steps=c(1:37), score=c(c(0:5),c(0:10),c(10:17), c(10,14), c(10,20), c(20,30), c(30,32),
+                                       c(30,36), c(30,40)))
+d = rbind(d, data.frame(subj=rep('s2',39),steps=c(1:39), score=c(c(0:2),c(0:8),c(0:10), c(10,12), c(10,16), c(10,20), c(20,26),
+                                                                 c(20,26), c(20,30), c(30,35), c(30,40))))
+p = ggplot(d, aes(x=steps, y=score))+geom_point()+geom_smooth()
 
+p
+
+
+d = data.frame(subj=rep('s1',48),steps=c(1:48), score=c(c(0:-5),c(0:-10),c(0:-15),10, c(10,5), c(10,-2), c(10,-5),20, c(20,10),
+                                                        c(20,15), c(20,5), 30))
+d = rbind(d, data.frame(subj=rep('s2',36),steps=c(1:36), score=c(c(0:-2),c(0:-15),10,c(10,-2), c(10,-5),20, c(20,16), c(20,14), c(20,6),
+                                                                 c(20,18), c(20,5), 30)))
 
 ## Make vertical plot of score/time per game/planner.
 plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 

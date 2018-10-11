@@ -1140,7 +1140,7 @@ class Node():
 						# print "reached resource limit"
 					tmp_list.append(avatar)
 			except (IndexError, KeyError) as e:
-				print "print problem in avatar preconditions in spritecounter_val"
+				# print "print problem in avatar preconditions in spritecounter_val"
 				pass
 
 		for t in tmp_list:
