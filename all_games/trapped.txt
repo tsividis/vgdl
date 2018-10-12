@@ -4,7 +4,8 @@ BasicGame
     key   > Resource color=ORANGE limit=10
     #sword > OrientedFlicker singleton=True color=BLUE
     sword > Missile color=BLUE
-    avatar  > ShootAvatar   stype=sword frameRate=8 color=DARKBLUE
+    #avatar  > ShootAvatar   stype=sword frameRate=8 color=DARKBLUE
+    avatar > MovingAvatar color=DARKBLUE
     enemy >
       monsterQuick > RandomNPC cooldown=2 cons=6 color=BROWN
       monsterNormal > RandomNPC cooldown=4 cons=8 color=PINK
