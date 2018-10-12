@@ -34,7 +34,7 @@
 # 'watergame', 'variant_watergame_1', 'variant_watergame_2'] ##45
 
 
-# game_names = ['boulderdash', 'variant_boulderdash_1', 'boulderchase']
+game_names = ['boulderdash', 'variant_boulderdash_1', 'boulderchase', 'variant_boulderchase_1']
 # game_names = ['variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4',
 # 'bait', 'variant_bait_1', 'variant_bait_2',
 # 'variant_chase_3',
