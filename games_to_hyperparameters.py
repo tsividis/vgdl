@@ -11,6 +11,7 @@
 # 'lemmings', 'variant_lemmings_1',  'variant_lemmings_2', 'variant_lemmings_3',
 # 'missilecommand', 'variant_missilecommand_1', 'variant_missilecommand_2', 'variant_missilecommand_3', 'variant_missilecommand_4',
 #  'myAliens', 'variant_myAliens_1', 'variant_myAliens_2',
+# 'surprise', 'variant_surprise_1', 'variant_surprise_2',
 # 'survivezombies', 'variant_survivezombies_1', 'variant_survivezombies_2',
 #  'zelda','variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3',# ] ##41
 
@@ -32,9 +33,8 @@
 # 'sokoban', 'variant_sokoban_1', 'variant_sokoban_2',
 # 'watergame', 'variant_watergame_1', 'variant_watergame_2'] ##45
 
-['surprise', 'variant_surprise_1', 'variant_surprise_2']
 
-# game_names = ['boulderdash', 'variant_boulderdash_1']
+# game_names = ['boulderdash', 'variant_boulderdash_1', 'boulderchase']
 # game_names = ['variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4',
 # 'bait', 'variant_bait_1', 'variant_bait_2',
 # 'variant_chase_3',
