@@ -16,7 +16,7 @@ BasicGame
 
     TerminationSet
         SpriteCounter stype=avatar  win=False
-        SpriteCounter stype=inert   win=True
+        SpriteCounter stype=ogate   win=True
 
     InteractionSet
 	ogate avatar > nothing

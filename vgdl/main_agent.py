@@ -669,10 +669,6 @@ class Agent:
         steps = self.rle._game.time
         emptyPlans = 0
         while not ended:
-            
-            ## Modify: If your plan-to-action ratio is too high, switch to short-term planning.
-            # ratio = self.actionSeqLength/len(self.statesEncountered)
-            # planner_hyperparameters = self.hyperparameterSwitch(new_index=3)
 
             self.max_nodes = self.stored_max_nodes
 
@@ -688,7 +684,6 @@ class Agent:
             planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
 
             ## also, you commented out the bottom part of the planner, where it will still return a high-reward sequence in shortHorizon. This could have a very detrimental effect on short-horizon games...
-            ## you've deprecated annealing; this could be problematic.
 
             ## Initialize planner
             p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
@@ -724,7 +719,10 @@ class Agent:
 
                 elif self.hyperparameter_index == 3:
                     movingTypes = self.checkForMovingTypes(self.rle, self.hypotheses[0])
-                    scoreChange = self.rle._game.score!=statesEncountered[-1]['score']
+                    if self.rle._game.time>compactStates[-1]['timestep']:
+                        scoreChange = self.rle._game.score!=compactStates[-1]['score']
+                    else:
+                        scoreChange = True
                     # if self.display_text:
                     print "moving types: {}".format(movingTypes)
                     print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, 55))
@@ -732,7 +730,6 @@ class Agent:
                     # print "self.max_game_time_observed>501: {}".format(self.max_game_time_observed>501)
                     if self.noNewObjectsInAWhile(self.rle, 55) and \
                             (not movingTypes or (movingTypes and not scoreChange)):
-
                             # (not movingTypes or (movingTypes and self.max_game_time_observed>501)):
                         # if self.display_text:
                         print "switching to long-range planning"
@@ -1160,29 +1157,9 @@ class Agent:
         except IndexError:
             agentState = defaultdict(lambda: 0)
 
-        # t1 = time.time()
-        # envPrev = copy.deepcopy(self.rle)
-        
-        # prevPos, currPos = (0,0), (0,0)
-        # if self.rle._game.sprite_groups['shark']:
-            # envPrev = copy.deepcopy(self.rle)
-            # prevPos = (self.rle._game.sprite_groups['shark'][0].rect.left, self.rle._game.sprite_groups['shark'][0].rect.top)
-
-        # print "pre-step agentState: {}".format(agentState)
+        lastScore = self.rle._game.score
         res = self.rle.step(action)
-        
-        # if self.rle._game.sprite_groups['shark']:
-            # currPos = (self.rle._game.sprite_groups['shark'][0].rect.left, self.rle._game.sprite_groups['shark'][0].rect.top)
 
-        # if prevPos != (0,0) and (currPos[0]-prevPos[0] != 0) and ((currPos[1] - prevPos[1]) != 0):
-            # print "shark took two steps"
-            # embed()
-
-        # embed()
-        # self.rleHistory.append(copy.deepcopy(self.rle._game))
-        # print "step took {} seconds".format(time.time()-t1)
-
-        # t1 = time.time()
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
             # print agentState
@@ -1191,7 +1168,6 @@ class Agent:
                 if 'changeResource' in e:
                     changes = e[3]
                     if changes['value'] < 0:
-                        # ipdb.set_trace()
                         # undo one negative change to account for eventhandler ordering
                         agentState[changes['resource']] -= changes['value']
                         break
@@ -1200,7 +1176,6 @@ class Agent:
 
         # If agent is killed before we get agentState
         except (IndexError, AttributeError) as e:
-            # agentState = defaultdict(lambda:0)
             ignored_negative_change = False
             for e in res['effectList']:
                 if 'changeResource' in e:
