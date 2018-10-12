@@ -6,7 +6,7 @@ library("dplyr")
 library("colorspace")
 library("RColorBrewer")
 
-date = c('oct6')
+date = c('oct12')
 path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
 data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
@@ -53,6 +53,7 @@ all_game_names = c('avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_
                'portals', 'variant_portals_1', 'variant_portals_2',
                'plaqueattack', 'variant_plaqueattack_1', 'variant_plaqueattack_2', 'variant_plaqueattack_3',
                'sokoban', 'variant_sokoban_1', 'variant_sokoban_2',
+               'surprise', 'variant_surprise_1', 'variant_surprise_2',
                'survivezombies', 'variant_survivezombies_1', 'variant_survivezombies_2',
                'watergame', 'variant_watergame_1', 'variant_watergame_2',
                'zelda','variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3')
@@ -99,7 +100,7 @@ for (i in 1:length(existing_games)){
   if (grepl('frogs', game)){
     p=p+ylim(0,60)
   }
-  if ( (grepl('bees', game) )| (grepl('corridor',game))| (grepl('closing',game))){
+  if ( (grepl('bees', game) )| (grepl('corridor',game))| (grepl('closing',game)) | (grepl('surprise',game))){
     p=p+ylim(0,40)
   }
     if (grepl('expt', game)){

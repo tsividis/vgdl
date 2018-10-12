@@ -72,7 +72,7 @@ BasicGame
                 wall boulder > nothing
                 wall EOS > nothing
                 sword sword > nothing
-                #sword dirt > nothing
+                sword dirt > nothing
                 exitdoor sword > nothing
                 exitdoor crab > nothing
                 exitdoor butterfly > nothing

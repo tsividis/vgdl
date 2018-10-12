@@ -16,7 +16,8 @@ BasicGame
 
     TerminationSet
         SpriteCounter stype=avatar  win=False
-        SpriteCounter stype=ogate   win=True
+        SpriteCounter stype=ogate   win=True bonus=10
+        Timeout limit=2000 win=False
 
     InteractionSet
 	ogate avatar > nothing

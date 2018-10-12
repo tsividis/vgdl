@@ -16,7 +16,8 @@ BasicGame
 
     TerminationSet
         SpriteCounter stype=avatar  win=False
-        SpriteCounter stype=apple   win=True
+        SpriteCounter stype=apple   win=True bonus=10
+        Timeout limit=2000 win=False
 
     InteractionSet
 	ogate avatar > nothing
@@ -50,7 +51,7 @@ BasicGame
         quiet george > transformTo stype=annoyed
         avatar george > killSprite 
         avatar george > changeScore value=-1
-	avatar quiet > stepBack
+	avatar quiet > nothing
 
         annoyed wall > stepBack
         quiet wall > stepBack
@@ -64,7 +65,7 @@ BasicGame
         annoyed EOS > nothing
         quiet annoyed > nothing
         quiet quiet > stepBack
-        quiet avatar > stepBack
+        quiet avatar > nothing
         quiet EOS > nothing
         avatar annoyed > nothing
         avatar avatar > nothing
