@@ -116,7 +116,7 @@ class Agent:
         self.extra_atom = False
         self.param_ID = "params__IW={}__ea={}".format(self.IW_k, self.extra_atom_allowed)
         if self.shortHorizon == True:
-            self.starting_max_nodes = 200
+            self.starting_max_nodes = 500
             self.max_nodes_annealing = 1.05
         else:
             self.starting_max_nodes = 1000
@@ -162,13 +162,14 @@ class Agent:
             self.shortHorizon = self.hyperparameters['short_horizon']
             self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
             if self.shortHorizon == True:
-                self.starting_max_nodes = 200
+                self.starting_max_nodes = 500
                 self.max_nodes_annealing = 1.05
             else:
                 self.starting_max_nodes = 1000
                 self.max_nodes_annealing = 10. 
             self.max_nodes = self.starting_max_nodes
             self.stored_max_nodes = self.max_nodes
+
             if self.display_text:
                 print "Switching hyperparameters to {}".format(new_index)
         planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
@@ -675,9 +676,9 @@ class Agent:
 
             self.max_nodes = self.stored_max_nodes
 
-            if self.display_text:
-                print "planning with hyperparameter index {}".format(self.hyperparameter_index)
-                print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
+            # if self.display_text:
+            print "planning with hyperparameter index {}".format(self.hyperparameter_index)
+            print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
 
             ## initialize one or many VRLEs according to hypothesis-selection method
             theoryRLEs = self.VrleInitPhase(flexible_goals)
@@ -705,6 +706,7 @@ class Agent:
                     print "got solution"
             else:
                 solution = []
+
             if not solution:
                 ## If we're repeatedly dying in the same way, just switch hyperparameters blindly.
                 if self.checkForRepeatedDeaths(self.episodeRecord, 2):
@@ -722,22 +724,26 @@ class Agent:
 
                 elif self.hyperparameter_index == 3:
                     movingTypes = self.checkForMovingTypes(self.rle, self.hypotheses[0])
+                    scoreChange = self.rle._game.score!=statesEncountered[-1]['score']
                     # if self.display_text:
                     print "moving types: {}".format(movingTypes)
                     print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, 55))
-                    print "self.max_game_time_observed>501: {}".format(self.max_game_time_observed>501)
+                    print "scoreChange: {}".format(scoreChange)
+                    # print "self.max_game_time_observed>501: {}".format(self.max_game_time_observed>501)
                     if self.noNewObjectsInAWhile(self.rle, 55) and \
-                            (not movingTypes or (movingTypes and self.max_game_time_observed>501)):
-                        if self.display_text:
-                            print "switching to long-range planning"
+                            (not movingTypes or (movingTypes and not scoreChange)):
+
+                            # (not movingTypes or (movingTypes and self.max_game_time_observed>501)):
+                        # if self.display_text:
+                        print "switching to long-range planning"
                         ## switch to long-range planning
                         new_index = 1
                         planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
                         conservative = False
                         # embed()
                     else:
-                        if self.display_text:
-                            print "planning conservatively"
+                        # if self.display_text:
+                        print "planning conservatively"
                         new_index = 3
                         planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
                         conservative = True
@@ -894,6 +900,7 @@ class Agent:
                 ## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
                 ## Search more deeply next time.
                 self.max_nodes *= self.max_nodes_annealing
+                self.stored_max_nodes = self.max_nodes
                 win, effects = False, []
                 self.episodeRecord.insert(0, (win, effects))
                 # self.updateMemory(self.rle)
