@@ -6,7 +6,7 @@ library("dplyr")
 library("colorspace")
 library("RColorBrewer")
 
-date = c('oct12')
+date = c('oct13')
 path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
 data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
@@ -34,6 +34,7 @@ all_game_names = c('avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_
                'aliens', 'variant_aliens_1', 'variant_aliens_2', 'variant_aliens_3', 'variant_aliens_4', 
                'bait', 'variant_bait_1', 'variant_bait_2',
                'bees_and_birds','variant_bees_and_birds_1',  
+               'boulderchase', 'variant_boulderchase_1',
                'boulderdash', 'variant_boulderdash_1',
                'butterflies', 'variant_butterflies_1', 'variant_butterflies_2',
                'chase', 'variant_chase_1', 'variant_chase_2', 'variant_chase_3',
@@ -123,15 +124,16 @@ for (i in 1:length(existing_games)){
 ## plot wins
 plots = list()
 for (i in 1:length(existing_games)){
-  game = existing_games[i]
-  
+    game = existing_games[i]
     p=ggplot(subset(data, (game_name==game)&(agent_type=='params__IW=2__ea=True')), aes(x=cumulative_steps, y=cumulative_wins,color=modelrun_ID)) ##color=agent_type
-    p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
+    p=p+geom_point(size=1) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
+      
+        # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
       # scale_color_manual(values=colors) + #theme(legend.position="none")+
       ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
     p=p+ylim(0,5)
-    
-    if (grepl('expt', game)){
+    p
+    if ((grepl('expt', game)) | (grepl('surprise',game)) | (grepl('bees', game))| (grepl('corridor',game))| (grepl('closing',game))){
       if (grepl('expt_ee',game)){
         p=p+ylim(0,6)
       }
@@ -141,8 +143,8 @@ for (i in 1:length(existing_games)){
     }
 
   plots[[i]] = p
-  title = paste('~/Projects/atari/vgdl/',date,'/plots/levels_won', game, '.png', sep='')
-  ggsave(title, plot=p, width=15, height=10)
+  #title = paste('~/Projects/atari/vgdl/',date,'/plots/levels_won_', game, '.png', sep='')
+  #ggsave(title, plot=p, width=15, height=10)
 }
 
 layout = matrix(c(1:90), ncol=6, byrow=TRUE)
@@ -150,11 +152,11 @@ m = multiplot(plotlist = plots[1:86], layout=layout)
 
 ## Making two plots for now because multiplot refuses to make the first 4 plots if
 ## you make the whole grid at once.
-layout = matrix(c(1:42), ncol=6, byrow=TRUE)
-m = multiplot(plotlist = plots[1:41], layout=layout)
+layout = matrix(c(1:48), ncol=6, byrow=TRUE)
+m = multiplot(plotlist = plots[1:46], layout=layout)
 
 layout = matrix(c(1:48), ncol=6, byrow=TRUE)
-m = multiplot(plotlist = plots[42:length(plots)], layout=layout)
+m = multiplot(plotlist = plots[47:length(plots)], layout=layout)
 
 
 p = ggplot(data, aes(x=game_name))
