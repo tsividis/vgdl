@@ -28,11 +28,10 @@ BasicGame
 	quiet ogate > nothing
 	apple avatar > killSprite
 	avatar apple > nothing
-	inert wand > transformTo stype=quiet
+	inert avatar > transformTo stype=quiet
 	wand inert > nothing
 	wand quiet > nothing
 	quiet wand > nothing
-	inert avatar > nothing
 	avatar inert > nothing
 	wand wall > nothing
 	wall wand > nothing
@@ -51,7 +50,7 @@ BasicGame
         quiet george > transformTo stype=annoyed
         avatar george > killSprite 
         avatar george > changeScore value=-1
-	avatar quiet > nothing
+	avatar quiet > stepBack
 
         annoyed wall > stepBack
         quiet wall > stepBack
@@ -65,7 +64,7 @@ BasicGame
         annoyed EOS > nothing
         quiet annoyed > nothing
         quiet quiet > stepBack
-        quiet avatar > nothing
+        quiet avatar > stepBack
         quiet EOS > nothing
         avatar annoyed > nothing
         avatar avatar > nothing
@@ -88,6 +87,7 @@ BasicGame
         EOS george > nothing
         EOS wall > nothing
         EOS EOS > nothing
+
 
 
     LevelMapping
