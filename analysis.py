@@ -4,6 +4,9 @@ import argparse
 import csv
 from vgdl.util import str2bool
 import cPickle
+import os
+from shutil import copy2
+
 
 ## python -m vgdl --date oct6
 ## python -m vgdl --date vgdl ## for local stuff
@@ -34,7 +37,7 @@ def process_model_run(data, modelrun_ID):
 	## you want to end up with one csv per game. if you want to look at things across games, you just have to merge those csvs, but this is the cleanest way to do it
 	## and to avoid loading huge csv files.
 	## also don't process a particular run multiple times. you need a way of storing the processed model_IDs so that you don't keep appending to a long csv.
-
+	modelrun_ID = modelrun_ID[modelrun_ID.find('201'):modelrun_ID.find('201')+11]
 	data_path = '{}/{}/{}'.format(relative_path, date, 'csv_data')
  	if 'csv_data' not in os.listdir('{}/{}'.format(relative_path, date)):
 	# data_path = '{}/{}'.format(date, 'csv_data')
@@ -140,10 +143,24 @@ def make_csvs(path, game=None):
 						o.close()
 					# embed()
 
-make_csvs(path, game)
+def merge_results(date):
+	## converts structure from
+	## param_specification/game_name/game_pickle_file
+	## to
+	## param_specification/all_games/pickle_files
+	if 'all' not in os.listdir('../{}/results'.format(date)):
+		os.makedirs('../{}/results/all'.format(date))
+		os.makedirs('../{}/results/all/all'.format(date))
+
+	target = '../{}/results/all/all'.format(date)
+	for mod in os.listdir('../{}/results'.format(date)):
+		if 'DS_Store' not in mod and 'all' not in mod:
+			for d in os.listdir('../{}/results/{}/'.format(date, mod)):
+				if 'DS_Store' not in d and 'all' not in d:
+					for r in os.listdir('../{}/results/{}/'.format(date, mod)+d):
+						if 'DS_Store' not in r:
+							copy2('../{}/results/{}/'.format(date, mod)+d+'/'+r,target)
 
 
-
-
-
-
+# make_csvs(path, game)
+embed()

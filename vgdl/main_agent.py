@@ -429,7 +429,6 @@ class Agent:
                     episodeList = [v for k,v in sorted(episodeCompactStates.items())]
                     print "n_level", n_level
                     print len(episodeList)
-                    # embed()
                     with open(filename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
                     f.close()
@@ -691,7 +690,7 @@ class Agent:
                 firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom, IW_k=self.IW_k)
             p_quitting = p.quitting
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
-            self.total_planner_steps += p.total_nodes
+            self.total_planner_steps += p.total_nodes_opened
 
             if bestNode is not None:
                 solution = p.solution
@@ -761,7 +760,7 @@ class Agent:
                         firstOrderHorizon=self.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom, IW_k=self.IW_k)
                     p_quitting = p.quitting
                     bestNode, gameStringArray, objectPositionsArray = p.BFS()
-                    self.total_planner_steps += p.total_nodes
+                    self.total_planner_steps += p.total_nodes_opened
                     if bestNode is not None:
                         solution = p.solution
                         gameString_array = p.gameString_array
@@ -821,7 +820,7 @@ class Agent:
                     if self.display_text:
                         t1 = time.time()
                     effects = []
-                    plannerNodes = p.total_nodes if i==0 else 0
+                    plannerNodes = p.total_nodes_opened if i==0 else 0
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                         run_induction = not flexible_goals)
                     
