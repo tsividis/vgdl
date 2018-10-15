@@ -6,7 +6,7 @@ library("dplyr")
 library("colorspace")
 library("RColorBrewer")
 
-date = c('oct13')
+date = c('oct15')
 path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
 data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
@@ -21,6 +21,7 @@ data$score = as.numeric(as.character(data$sparse_score))
 
 plotpath = paste('~/Projects/atari/vgdl/',date,'/plots', sep='')
 dir.create(plotpath)
+
 
 ## TODO: normalize score by max_score for that game.
 ## TODO: bind specific colors to specific models so that it looks the way you want.
@@ -188,6 +189,10 @@ p = ggplot(plantimedata, aes(x=game_name, y=score_efficiency, fill=factor(agent_
   geom_bar(position='dodge', stat='identity')+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 p
+
+## write diff function
+## you'll need to select hte date out of the modelrun_ID to find matching models. or just make the desired modelrun_ID
+## from the supplied dates, as in: ID='2018_'+date...
 
 # Multiple plot function
 #

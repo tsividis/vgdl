@@ -107,7 +107,7 @@ class WBP():
 
 		#################
 		#################
-		self.display = False
+		self.display = True
 
 		if self.display:
 			print "In planner; MovingTypesInGame: {}. Planning with idx {} and position_multiplier {}".format(movingTypesInGame, self.hyperparameter_index, self.position_score_multiplier)
@@ -143,7 +143,7 @@ class WBP():
 		self.short_horizon = shortHorizon
 		self.conservative = conservative
 		self.winning_states = []
-		self.total_nodes = 0
+		self.total_nodes_opened, self.total_nodes_selected = 0, 0
 
 		self.getAvailableActions()
 		if self.display:
@@ -385,13 +385,13 @@ class WBP():
 
 		return current
 
-	"""
-	def BFS_profiler(self):
-		lp = LineProfiler()
-		lp_wrapper = lp(self.BFS)
-		lp_wrapper()
-		lp.print_stats()
-	"""
+
+	# def BFS_profiler(self):
+	# 	lp = LineProfiler()
+	# 	lp_wrapper = lp(self.BFS)
+	# 	lp_wrapper()
+	# 	lp.print_stats()
+
 
 	def BFS(self):
 		QNovelty, QReward = [], []
@@ -405,9 +405,11 @@ class WBP():
 		QReward.append(start)
 		i=0
 
+
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
 			if self.display and i%100==0:
 				print "Searching node {}".format(i)
+				print "Have opened {} total nodes".format(self.total_nodes_opened)
 
 			current = self.rewardSelection(QReward, QNovelty)
 			
@@ -630,7 +632,8 @@ class WBP():
 						# print child.terminal, child.win
 						# embed()
 			i+=1
-			self.total_nodes = i
+			self.total_nodes_selected = i
+			self.total_nodes_opened += len(current_actions)
 
 			if self.winning_states:
 				# print "we have {} winning states".format(len(self.winning_states))
@@ -1578,6 +1581,13 @@ class Node():
 		newcopy.__class__ = obj.__class__
 		return newcopy
 
+	# def getToCurrentStateProfiler(self):
+	# 	lp = LineProfiler()
+	# 	lp_wrapper = lp(self.getToCurrentState)
+	# 	lp_wrapper()
+	# 	lp.print_stats()
+
+
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
 			## try to copy parent lastState. Then take action and store as current lastState.
@@ -1664,13 +1674,11 @@ class Node():
 
 		return vrle, self.terminal, self.win
 
-	"""
-	def eval_profiler(self):
-		lp = LineProfiler()
-		lp_wrapper = lp(self.eval)
-		lp_wrapper()
-		lp.print_stats()
-	"""
+	# def eval_profiler(self):
+	# 	lp = LineProfiler()
+	# 	lp_wrapper = lp(self.eval)
+	# 	lp_wrapper()
+	# 	lp.print_stats()
 
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
@@ -1802,63 +1810,63 @@ def read_gvgai_game(filename):
 	return new_doc
 
 hyperparameter_sets = [
-	{'idx'           : 0,
-	 'short_horizon' : False,
-	 'first_order_horizon': True,
-	 'sprite_first_alpha': 10000,
-	 'sprite_second_alpha': 100,
-	 'sprite_negative_mult': .1,
-	 'multisprite_first_alpha': 10000,
-	 'multisprite_second_alpha': 100,
-	 'novelty_first_alpha': 5000,
-	 'novelty_second_alpha': 50,
-	 },
-	{'idx'           : 1,
-	 'short_horizon' : False,
-	 'first_order_horizon': True,
-	 'sprite_first_alpha': 10000,
-	 'sprite_second_alpha': 100,
-	 'sprite_negative_mult': 10.,
-	 'multisprite_first_alpha': 10000,
-	 'multisprite_second_alpha': 100,
-	 'novelty_first_alpha': 5000,
-	 'novelty_second_alpha': 50,
-	 },
-	{'idx'           : 2,
-	 'short_horizon' : False,
-	 'first_order_horizon': False,
-	 'sprite_first_alpha': 10000,
-	 'sprite_second_alpha': 100,
-	 'sprite_negative_mult': .1,
-	 'multisprite_first_alpha': 10000,
-	 'multisprite_second_alpha': 100,
-	 'novelty_first_alpha': 5000,
-	 'novelty_second_alpha': 50,
-	 },
-	{'idx'           : 3,
-	 'short_horizon' : True,
-	 'first_order_horizon': True,
-	 'sprite_first_alpha': 10000,
-	 'sprite_second_alpha': 100,
-	 'sprite_negative_mult': .1, #normally .1
-	 'multisprite_first_alpha': 10000,
-	 'multisprite_second_alpha': 100,
-	 'novelty_first_alpha': 5000,
-	 'novelty_second_alpha': 50,
-	 },
-	{'idx'           : 4,
-	 'short_horizon' : True,
-	 'first_order_horizon': True,
-	 'sprite_first_alpha': 10000,
-	 'sprite_second_alpha': 100,
-	 'sprite_negative_mult': 10, #normally .1
-	 'multisprite_first_alpha': 10000,
-	 'multisprite_second_alpha': 100,
-	 'novelty_first_alpha': 5000,
-	 'novelty_second_alpha': 50,
-	 }
-
+    {'idx'           : 0,
+     'short_horizon' : False,
+     'first_order_horizon': True,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': .1,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {'idx'           : 1,
+     'short_horizon' : False,
+     'first_order_horizon': False,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': 10.,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {'idx'           : 2,
+     'short_horizon' : False,
+     'first_order_horizon': False,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': .1,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {'idx'           : 3,
+     'short_horizon' : True,
+     'first_order_horizon': True,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': 10, #normally .1
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {'idx'           : 4,
+     'short_horizon' : True,
+     'first_order_horizon': True,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': .1, #normally .1
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 10,
+     }
 ]
+
 
 
 
@@ -1901,7 +1909,7 @@ if __name__ == "__main__":
 
 	gameString, levelString = level_game_pairs[level_num]
 	rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
-
+	gameFilename = game_name
 
 	# gameFilename = "examples.gridphysics.theory_frogs"
 	# gameString, levelString = defInputGame(gameFilename, randomize=True)
@@ -1909,19 +1917,28 @@ if __name__ == "__main__":
 	rle = rleCreateFunc()
 
 	# embed()
-	max_nodes = 50 if hyperparameters['short_horizon'] else 10000
+	max_nodes = 500 if hyperparameters['short_horizon'] else 10000
 	
 	# p = WBP(rle, 'sokoban', hyperparameters=planner_hyperparameters, extra_atom=True, IW_k=2)
+	# embed()
 
-
+	# max_nodes = 10
 	## Initialize planner
 	p = WBP(rle, gameFilename, max_nodes=max_nodes, shortHorizon=hyperparameters['short_horizon'],
 			firstOrderHorizon=hyperparameters['first_order_horizon'], conservative=False, 
-			hyperparameters=planner_hyperparameters, extra_atom=False)
+			hyperparameters=planner_hyperparameters, extra_atom=True)
+
+	## time pure steps per second in a game
+	# t1 = time.time()
+	# for i in range(100):
+	# 	rle.step(0)
+	# print time.time()-t1
+
 	# embed()
 	t1 = time.time()
 	bestNode, gameStringArray, objectPositionsArray = p.BFS()
-
+	t2 = time.time()-t1
+	solution = []
 	if bestNode is not None:
 		solution = p.solution
 		gameString_array = p.gameString_array
@@ -1935,7 +1952,17 @@ if __name__ == "__main__":
 			print colored(g, 'green')
 		print "============================================="
 
-	print time.time()-t1
+	print colored(rle.show(), 'blue')
+	for a in solution:
+		rle.step(a)
+		print colored(rle.show(), 'blue')
+
+	print rle._isDone()
+	print "total nodes opened: {}. total nodes selected: {}".format(p.total_nodes_opened, p.total_nodes_selected)
+	print "total time searched: {} seconds".format(t2)
+
+	embed()
+
 	
 	# from core import VGDLParser
 	# embed()
