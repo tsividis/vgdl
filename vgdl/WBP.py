@@ -5,7 +5,7 @@ from numpy import zeros
 import pygame
 from ontology import BASEDIRS
 from core import VGDLSprite, colorDict, sys
-from stateobsnonstatic import StateObsHandlerNonStatic
+from stateobsnonstatic import StateObsHandlerNonStatic, UNOBSERVABLE_PREDICATES
 from rlenvironmentnonstatic import *
 import argparse
 import random
@@ -28,7 +28,7 @@ from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar,
 		AimedFlakAvatar
 from rlenvironmentnonstatic import createRLInputGame
 
-# from line_profiler import LineProfiler
+from line_profiler import LineProfiler
 import cPickle
 
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
@@ -46,6 +46,7 @@ class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
 		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, IW_k=2, display=False):
 		self.rle = rle
+		self.globalrle = copy.deepcopy(rle)
 		self.gameFilename = gameFilename
 		self.hyperparameter_index = hyperparameters['idx']
 		self.hyperparameters = dict((k, hyperparameters[k]) for k in hyperparameters.keys() if k not in ['idx'])
@@ -309,6 +310,107 @@ class WBP():
 			lst.append(hash(tuple(stateIW1)))
 		return set(lst)
 
+	def storeCompactState(self, rle):
+		state = {}
+		state['worldstate'] = {}
+		state['sprites'] = {}
+		state['worldstate']['kill_list'] = [(s.ID2,s.name) for s in rle._game.kill_list]
+		state['worldstate']['time'] = rle._game.time
+		for k,v in rle._game.sprite_groups.items():
+			for sprite in v:
+				if sprite not in rle._game.kill_list:
+					## TODO: Turn this into a tuple rather than a dict
+					spriteState = {'name': sprite.name,
+								   'pos': (sprite.rect.left, sprite.rect.top),
+								   'orientation': sprite.orientation,
+								   'lastmove': sprite.lastmove,
+								   'lastrect': (sprite.lastrect.left, sprite.lastrect.top),
+								   'resources': defaultdict(lambda:0) ## TODO: see if you can get away with only copying resources for the avatar
+								   }
+					for key,val in sprite.resources.items():
+						spriteState['resources'][key]=val
+					spriteState['hash'] = hash((sprite.rect.left, sprite.rect.top, sprite.orientation, sprite.lastmove)) ## TODO: needs to include the rest
+					state['sprites'][sprite.ID2] = spriteState
+		return state
+
+	def setSpriteState(self, sprite, compactSpriteState):
+		if hash((sprite.rect.left, sprite.rect.top, sprite.orientation, sprite.lastmove)) != compactSpriteState['hash']:
+			sprite.rect.left, sprite.rect.top = compactSpriteState['pos'][0], compactSpriteState['pos'][1]
+			sprite.name = compactSpriteState['name']
+			sprite.orientation = compactSpriteState['orientation']
+			sprite.lastmove = compactSpriteState['lastmove']
+			sprite.lastrect.left, sprite.lastrect.top = compactSpriteState['lastrect'][0], compactSpriteState['lastrect'][1]
+			
+			## TODO: see if better way of copying defaultdict
+			if sprite.name=='avatar':
+				for k,v in compactSpriteState['resources'].items():
+					sprite.resources[k] = v
+		return
+
+	def addNewSprite(self, ID, compactSpriteState, old_kill_list):
+		if ID in [s.ID2 for s in old_kill_list]: ## do this better
+			sprite = [s for s in old_kill_list if s.ID2==ID][0] ## do this better
+		else:
+			res = rle._game._createSprite([compactSpriteState['name']], (0,0))
+			if len(res)>1:
+				print "somehow you created > 1 sprite"
+				embed()
+			sprite = res[0]
+		
+		self.setSpriteState(sprite, compactSpriteState)
+
+		return sprite
+
+	def setRLEState_profiler(self, rle, stateToSet):
+		lp = LineProfiler()
+		lp_wrapper = lp(self.setRLEState)
+		rle = lp_wrapper(rle, stateToSet)
+		lp.print_stats()
+		return rle
+
+
+	def setRLEState(self, rle, stateToSet):
+		## Sets functional RLE to the state provided
+		IDs_accounted_for = set()
+		old_kill_list = rle._game.kill_list
+
+		rle._game.kill_list = []
+		for k,v in rle._game.sprite_groups.items():
+			to_add = []
+			for sprite in v:
+				if sprite.ID2 in stateToSet['sprites']:
+					self.setSpriteState(sprite, stateToSet['sprites'][sprite.ID2])
+					IDs_accounted_for.add(sprite.ID2)
+					to_add.append(sprite)
+				# else:
+					# to_remove.append(sprite)
+					# rle._game.kill_list.append(sprite)
+			v = to_add
+		for k,v in stateToSet['sprites'].items():
+			if k not in IDs_accounted_for:
+				newSprite = self.addNewSprite(k, v, old_kill_list)
+
+		genericSpriteState = {
+					   'pos': (0,0),
+					   'orientation': (0,0),
+					   'lastmove': 0,
+					   'lastrect': (0,0),
+					   'resources': None  ## TODO: see if you can get away with only copying resources for the avatar
+					   }
+		genericSpriteState['hash'] = hash((0,0,(0,0), sprite.lastmove))
+
+		for k in stateToSet['worldstate']['kill_list']:
+			# print "found kill_list"
+			genericSpriteState['name'] = k[1]
+			# embed()
+			deadSprite = self.addNewSprite(k[0], genericSpriteState, old_kill_list)
+			rle._game.kill_list.append(deadSprite)
+
+		rle._game._eventHandling(UNOBSERVABLE_PREDICATES)
+		rle._game.time = stateToSet['worldstate']['time']
+		# embed()
+		return rle
+
 	def compareDicts(self, d1,d2):
 		## only tells us what is in d2 that isn't in d1, as well as differences in values between shared keys
 		return [k for k in d2.keys() if (k not in d1.keys() or d1[k]!=d2[k])]
@@ -412,7 +514,7 @@ class WBP():
 				print "Have opened {} total nodes".format(self.total_nodes_opened)
 
 			current = self.rewardSelection(QReward, QNovelty)
-			
+
 			if current in [None, 'pickMaxNode']:
 
 				if self.conservative:
@@ -482,6 +584,9 @@ class WBP():
 					print "was in None or PickMaxNode"
 				# embed()
 				return node, gameString_array, object_positions_array
+
+			# self.setRLEState(globalrle, current.compactState)
+			# current.rle = globalrle
 
 			self.statesEncountered.append(current.rle._game.getFullState())
 
@@ -702,6 +807,7 @@ class Node():
 		self.actionSeq = actionSeq
 		self.parent = parent
 		self.state = {}
+		self.compactState = {}
 		self.candidates = set()
 		self.novelty = None
 		self.reward = None
@@ -1594,9 +1700,8 @@ class Node():
 			## if that fails, replay from beginning and store as current lastState
 			try:
 				multipleSamples = False
-				vrle = self.fastcopy(self.parent.rle)
-				# vrle = copy.deepcopy(self.parent.rle)
-				
+				# vrle = self.fastcopy(self.parent.rle)
+				vrle = self.WBP.setRLEState(self.WBP.globalrle, self.parent.compactState)
 				# if self.WBP.killer_types:
 				# 	for k in self.WBP.killer_types:
 				# 		## if we think it's stochastic
@@ -1657,7 +1762,7 @@ class Node():
 			# embed()
 			self.reconstructed=True
 			
-			# print "copy failed; replaying from top"
+			print "copy failed; replaying from top"
 			vrle = self.fastcopy(self.rle)
 			# vrle = copy.deepcopy(self.rle)
 			self.terminal, self.win = vrle._isDone()
@@ -1680,6 +1785,7 @@ class Node():
 	# 	lp_wrapper()
 	# 	lp.print_stats()
 
+
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
 
@@ -1688,6 +1794,12 @@ class Node():
 		self.updateObjIDs(self.rle)
 
 		self.state = self.WBP.calculateAtoms(self.rle)
+		
+		self.compactState = self.WBP.storeCompactState(self.rle)
+		# newrle = copy.deepcopy(self.rle)
+		# for i in range(10):
+		# 	newrle.step(K_RIGHT)
+		# self.WBP.setRLEState(newrle, self.compactState)
 
 		for i in range(1,self.WBP.IW_k+1):
 			for c in itertools.combinations(self.state, i):
@@ -1886,7 +1998,7 @@ if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser(description='Process game number.')
 	parser.add_argument('--game_name', type=str, default=str(0), help='game name')
-	parser.add_argument('--hyperparameter_index', type=int, default=3, help='hyperparameter_index')
+	parser.add_argument('--hyperparameter_index', type=int, default=1, help='hyperparameter_index')
 	parser.add_argument('--level', type=int, default=0, help='level')
 
 

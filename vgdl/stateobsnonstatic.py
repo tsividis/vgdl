@@ -16,7 +16,9 @@ from IPython import embed
 
 from collections import defaultdict
 
-
+# predicates whose effects are not immediately observable by the "CV system"
+#  (used in setState)
+UNOBSERVABLE_PREDICATES = ['reverseDirection', 'flipDirection']
 
 class StateObsHandlerNonStatic(object):
     """ Managing different types of state representations,
