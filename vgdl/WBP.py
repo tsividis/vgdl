@@ -1630,7 +1630,7 @@ class Node():
 							return badOutcomes[0][0], self.terminal, badOutcomes[0][2] #vrle, terminal, win
 						else:
 							self.terminal, self.win, self.metabolic_cost = okOutcomes[0][1], okOutcomes[0][2], okOutcomes[0][3]
-							return okOutcomes[0][0], self.terminal, okOutcomes[0][2]#vrle, terminal, win
+							return okOutcomes[0][0], self.terminal, okOutcomes[0][2] #vrle, terminal, win
 					else:
 						res = vrle.step(a, return_obs=True)
 						self.terminal, self.win = res['ended'], res['win']
@@ -1646,13 +1646,15 @@ class Node():
 			# print "in a reconstructed node"
 			# embed()
 			self.reconstructed=True
+			
 			# print "copy failed; replaying from top"
 			vrle = self.fastcopy(self.rle)
 			# vrle = copy.deepcopy(self.rle)
 			self.terminal, self.win = vrle._isDone()
 			i=0
 			while not self.terminal and len(self.actionSeq)>i:
-				a = self.actionSeq[i]
+				# a = self.actionSeq[i]
+				a = 0
 				res = vrle.step(a, return_obs=True)
 				# self.metabolic_cost += self.metabolics(vrle, res['effectList'], a)
 				self.metabolic_cost = 0
@@ -1876,7 +1878,7 @@ if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser(description='Process game number.')
 	parser.add_argument('--game_name', type=str, default=str(0), help='game name')
-	parser.add_argument('--hyperparameter_index', type=int, default=0, help='hyperparameter_index')
+	parser.add_argument('--hyperparameter_index', type=int, default=3, help='hyperparameter_index')
 	parser.add_argument('--level', type=int, default=0, help='level')
 
 
@@ -1894,19 +1896,24 @@ if __name__ == "__main__":
 			level_game_pairs.append([gameString, level.read()])
 
 	hyperparameters = hyperparameter_sets[hyperparameter_index]
-	planner_hyperparameters = dict((k, hyperparameters[k]) for k in hyperparameters.keys() if k not in ['idx', 'short_horizon', 'first_order_horizon'])
+	planner_hyperparameters = dict((k, hyperparameters[k]) for k in hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
 
 
 	gameString, levelString = level_game_pairs[level_num]
 	rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
 
 
-	gameFilename = "examples.gridphysics.theory_frogs"
-	gameString, levelString = defInputGame(gameFilename, randomize=True)
-	rleCreateFunc = lambda: createRLInputGame(gameFilename)
+	# gameFilename = "examples.gridphysics.theory_frogs"
+	# gameString, levelString = defInputGame(gameFilename, randomize=True)
+	# rleCreateFunc = lambda: createRLInputGame(gameFilename)
 	rle = rleCreateFunc()
 
+	# embed()
 	max_nodes = 50 if hyperparameters['short_horizon'] else 10000
+	
+	# p = WBP(rle, 'sokoban', hyperparameters=planner_hyperparameters, extra_atom=True, IW_k=2)
+
+
 	## Initialize planner
 	p = WBP(rle, gameFilename, max_nodes=max_nodes, shortHorizon=hyperparameters['short_horizon'],
 			firstOrderHorizon=hyperparameters['first_order_horizon'], conservative=False, 

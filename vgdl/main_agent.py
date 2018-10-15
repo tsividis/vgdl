@@ -915,9 +915,10 @@ class Agent:
             
             if ended:
                 self.episodeRecord.insert(0, (win, effects))
-            # if ended and not win:
-            #     print "lost game. embedding"
-            #     embed()
+            
+            if ended and not win and self.rle._game.time==2000:
+                print "lost on timeout. switching hyperparameters"
+                self.hyperparameterSwitch(new_index=1)
 
 
         ## Update global memory of updates

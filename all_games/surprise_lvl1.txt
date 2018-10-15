@@ -1,7 +1,7 @@
 wwwwwwwwwwwww
-w     a     w
-w  oioioio  w
-wA o     o  w
-w  oioioio  w
-w     a     w
+wA       i  w
+w  i  i   o w
+wi      i   w
+w  o  i   i w
+w    i     aw
 wwwwwwwwwwwww
