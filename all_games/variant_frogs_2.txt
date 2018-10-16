@@ -13,32 +13,32 @@ BasicGame
                 slowLtruck  > speed=0.3  color=LIGHTRED
         avatar > MovingAvatar color=DARKBLUE
         wall > Immovable color=DARKGRAY
-	bridge > Immovable color=YELLOW
-	mud > Immovable color=PURPLE
+        bridge > Immovable color=YELLOW
+        mud > Immovable color=PURPLE
 
     InteractionSet
-	avatar bridge > nothing
-	bridge avatar > nothing
-	mud bridge > nothing
-	bridge mud > nothing
-	mud mud > nothing
-	mud avatar > bounceForward
-	avatar mud > nothing
-	mud wall > stepBack
-	wall mud > nothing
-	mud goal > nothing
-	goal mud > nothing
-	mud water > transformTo stype=bridge
-	water bridge > killSprite
+        avatar bridge > nothing
+        bridge avatar > nothing
+        mud bridge > nothing
+        bridge mud > nothing
+        mud mud > nothing
+        mud avatar > bounceForward
+        avatar mud > nothing
+        mud wall > stepBack
+        wall mud > nothing
+        mud goal > nothing
+        goal mud > nothing
+        mud water > transformTo stype=bridge
+        water bridge > killSprite
         fastRtruck mud > nothing
         slowRtruck mud > nothing
-	mud fastRtruck > nothing
-	mud slowRtruck > nothing
+        mud fastRtruck > nothing
+        mud slowRtruck > nothing
 
         fastLtruck mud > nothing
         slowLtruck mud > nothing
-	mud fastLtruck > nothing
-	mud slowLtruck > nothing
+        mud fastLtruck > nothing
+        mud slowLtruck > nothing
 
         goal avatar  > killSprite scoreChange=1
         avatar wall  > stepBack
@@ -83,5 +83,5 @@ BasicGame
         _ > slowLtruck
         l > fastLtruck
         w > wall
-	b > bridge
-	m > mud
+        b > bridge
+        m > mud

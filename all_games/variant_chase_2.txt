@@ -4,41 +4,41 @@ BasicGame
         goat > stype=avatar cooldown=4
             angry  > Chaser color=GOLD
             scared > Fleeing color=RED
-	wolf > Chaser color=BLUE stype=avatar cooldown=6
-	wolfgate > Immovable color=PURPLE
+        wolf > Chaser color=BLUE stype=avatar cooldown=6
+        wolfgate > Immovable color=PURPLE
         avatar > ShootAvatar stype=missile color=DARKBLUE
-	missile > Missile color=LIGHTGREEN
+        missile > Missile color=LIGHTGREEN
         wall > Immovable color=DARKGRAY
 
     InteractionSet
-	missile wall > killSprite
-	wall missile > nothing
-	goat missile > killSprite
-	missile goat > killSprite
-	missile carcass > killSprite
-	carcass missile > killSprite
+        missile wall > killSprite
+        wall missile > nothing
+        goat missile > killSprite
+        missile goat > killSprite
+        missile carcass > killSprite
+        carcass missile > killSprite
 
-	wolfgate missile > transformTo stype=wolf
-	missile wolf > killSprite
-	
-	wolf wolfgate > nothing
-	wolfgate wolf > nothing
-	avatar wolf > killSprite
-	wolf avatar > killSprite
-	wolf wall > stepBack
-	wall wolf > nothing
-	wolf wolf > nothing
-	wolf goat > nothing
-	goat wolf > nothing
-	wolf carcass > nothing
-	carcass wolf > nothing
+        wolfgate missile > transformTo stype=wolf
+        missile wolf > killSprite
 
-	wolfgate goat > nothing
-	goat wolfgate > nothing
-	wolfgate avatar > nothing
-	avatar wolfgate > nothing
-	wolfgate carcass > nothing
-	carcass wolfgate > nothing
+        wolf wolfgate > nothing
+        wolfgate wolf > nothing
+        avatar wolf > killSprite
+        wolf avatar > killSprite
+        wolf wall > stepBack
+        wall wolf > nothing
+        wolf wolf > nothing
+        wolf goat > nothing
+        goat wolf > nothing
+        wolf carcass > nothing
+        carcass wolf > nothing
+
+        wolfgate goat > nothing
+        goat wolfgate > nothing
+        wolfgate avatar > nothing
+        avatar wolfgate > nothing
+        wolfgate carcass > nothing
+        carcass wolfgate > nothing
 
         angry   wall   > stepBack
         scared   wall   > stepBack
@@ -58,7 +58,7 @@ BasicGame
     LevelMapping
         0 > scared
         w > wall
-	g > wolfgate
+        g > wolfgate
 
     TerminationSet
         SpriteCounter stype=scared win=True bonus=10

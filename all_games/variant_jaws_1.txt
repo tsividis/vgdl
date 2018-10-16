@@ -13,65 +13,65 @@ BasicGame
 
         shell > Resource color=YELLOW limit=20 
         sharkFang > Resource color=GOLD limit=1 
-	
-	fence > Immovable color=BLUE
+    
+        fence > Immovable color=BLUE
 
     LevelMapping
         1 >  piranhahole
         2 >  whalehole
         3 >  sharkhole
         A >  avatar
-	t > torpedo
-	f > fence
+        t > torpedo
+        f > fence
     TerminationSet
         SpriteCounter stype=avatar limit=0 win=False
         Timeout limit=500 win=True bonus=.02
 
     InteractionSet
-	piranha fence > nothing
-	fence piranha > nothing
-	shark fence > nothing
-	fence shark > nothing
-	whale fence > nothing
-	fence whale > nothing
-	torpedo fence > nothing
-	fence torpedo > nothing
-	shell fence > nothing
-	fence shell > nothing
-	sharkFang fence > nothing
-	fence sharkFang > nothing
-	avatar fence > stepBack
-	fence avatar > nothing
+        piranha fence > nothing
+        fence piranha > nothing
+        shark fence > nothing
+        fence shark > nothing
+        whale fence > nothing
+        fence whale > nothing
+        torpedo fence > nothing
+        fence torpedo > nothing
+        shell fence > nothing
+        fence shell > nothing
+        sharkFang fence > nothing
+        fence sharkFang > nothing
+        avatar fence > stepBack
+        fence avatar > nothing
 
         EOS avatar > stepBack
         avatar EOS > stepBack
-	EOS shark > stepBack
+        EOS shark > stepBack
         EOS torpedo  > killSprite
 
-	EOS shark > killSprite
+        EOS shark > killSprite
         EOS whale > killSprite
         EOS piranha > killSprite
 
         whale torpedo > transformTo stype=shell 
-	whale torpedo > changeScore value=1
+        whale torpedo > changeScore value=1
         piranha torpedo > transformTo stype=shell 
-	piranha torpedo > changeScore value=1
+        piranha torpedo > changeScore value=1
 
         torpedo shark > killSprite
         torpedo whale > killSprite
         torpedo piranha > killSprite
 
         sharkFang avatar > collectResource 
-	sharkFang avatar > changeScore value=1000
+        sharkFang avatar > changeScore value=1000
         shell avatar > collectResource 
-	shell avatar > changeScore value=1
+        shell avatar > changeScore value=1
 
         avatar shark > spawnIfHasMore resource=shell limit=15 stype=sharkFang
         shark avatar > killIfOtherHasMore resource=shell limit=15
 
         avatar shark  > killIfHasLess resource=shell limit=15
         avatar whale  > killSprite
-	avatar piranha > killSprite
+        avatar piranha > killSprite
 
         avatar sharkhole > nothing
         sharkhole avatar > nothing
@@ -135,8 +135,8 @@ BasicGame
         sharkFang whale > nothing
         piranha shell > nothing
         shell piranha > nothing
-	shell piranhahole > nothing
-	piranhahole shell > nothing
+        shell piranhahole > nothing
+        piranhahole shell > nothing
         piranha sharkFang > nothing
         sharkFang piranha > nothing
         sharkFang shell > nothing

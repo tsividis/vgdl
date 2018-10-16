@@ -4,38 +4,39 @@ BasicGame
         wall > Immovable color=DARKGRAY
         water > Immovable color=LIGHTBLUE
         box > Passive color=PURPLE
-	part1 > Passive color=LIGHTGREEN
-	part2 > Passive color=YELLOW
+        part1 > Passive color=LIGHTGREEN
+        part2 > Passive color=YELLOW
         avatar > MovingAvatar color=DARKBLUE
+
     TerminationSet
         SpriteCounter stype=door limit=0 win=True bonus=10
         SpriteCounter stype=avatar limit=0 win=False
         Timeout limit=2000 win=False
 
     InteractionSet
-	part1 wall > stepBack
-	wall part1 > nothing
-	box part1 > nothing
-	part1 box > killSprite
-	part1 water > killSprite
-	water part1 > nothing
-	part1 avatar > bounceForward
-	avatar part1 > nothing
-	part1 door > stepBack
-	door part1 > stepBack
+        part1 wall > stepBack
+        wall part1 > nothing
+        box part1 > nothing
+        part1 box > killSprite
+        part1 water > killSprite
+        water part1 > nothing
+        part1 avatar > bounceForward
+        avatar part1 > nothing
+        part1 door > stepBack
+        door part1 > stepBack
 
-	part2 wall > stepBack
-	wall part2 > nothing
-	box part2 > killSprite
-	part2 box > killSprite
-	part2 water > killSprite
-	water part2 > nothing
-	part2 avatar > bounceForward
-	avatar part2 > nothing
-	part2 door > stepBack
-	door part2 > stepBack
-	part2 part1 > transformTo stype=box
-	part1 part2 > nothing
+        part2 wall > stepBack
+        wall part2 > nothing
+        box part2 > killSprite
+        part2 box > killSprite
+        part2 water > killSprite
+        water part2 > nothing
+        part2 avatar > bounceForward
+        avatar part2 > nothing
+        part2 door > stepBack
+        door part2 > stepBack
+        part2 part1 > transformTo stype=box
+        part1 part2 > nothing
 
         avatar wall > stepBack
         box avatar > bounceForward
@@ -46,7 +47,7 @@ BasicGame
         box water > killSprite
         avatar water > killSprite
         door avatar > killSprite
-	avatar door > nothing
+        avatar door > nothing
 
         door wall > nothing
         wall door > nothing
@@ -80,8 +81,8 @@ BasicGame
 
     LevelMapping
         A >  avatar
-	p > part1
-	q > part2
+        p > part1
+        q > part2
         w > wall
         x >  water
         c >  box

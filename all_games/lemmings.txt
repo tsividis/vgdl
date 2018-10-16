@@ -24,19 +24,19 @@ BasicGame
 
     InteractionSet
         avatar hole  > killSprite 
-	avatar hole > changeScore value=-5
+        avatar hole > changeScore value=-5
         lemming hole  > killSprite 
-	lemming hole > changeScore value=-2
+        lemming hole > changeScore value=-2
 
         wall shovel  > killSprite 
-	wall shovel > changeScore value=-1
-        
+        wall shovel > changeScore value=-1
+
         lemming EOS > stepBack
         avatar wall > stepBack
         lemming wall > stepBack
-	avatar EOS > stepBack
+        avatar EOS > stepBack
         lemming goal > killSprite 
-	lemming goal > changeScore value=2
+        lemming goal > changeScore value=2
 
         shovel hole > nothing
         hole shovel > nothing

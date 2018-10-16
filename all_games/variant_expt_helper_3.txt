@@ -8,19 +8,18 @@ BasicGame frame_rate=30
         forcefield > Passive color=PURPLE
         box > Passive
             box1 > color=WHITE
-            box2 > color=GREEN
-	    
-	gate > Missile
-		downGate > orientation=DOWN color=RED
-		upGate > orientation=UP color=ORANGE
+            box2 > color=GREEN    
+        gate > Missile
+            downGate > orientation=DOWN color=RED
+            upGate > orientation=UP color=ORANGE
     LevelMapping
         w > wall
         a > box1
         b > box2
         f > forcefield
         x > chaser1
-	d > downGate
-	u > upGate
+        d > downGate
+        u > upGate
     InteractionSet
         avatar wall > stepBack
         mover wall > stepBack

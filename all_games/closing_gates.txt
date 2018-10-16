@@ -8,12 +8,13 @@ BasicGame
         missile > Missile speed=.5 cooldown=12
             up > orientation=UP color=ORANGE
             down > orientation=DOWN color=RED
-	boulder > Immovable color=BLUE
+        boulder > Immovable color=BLUE
+    
     InteractionSet
-	boulder avatar > bounceForward
-	missile boulder > stepBack
-	boulder missile > stepBack
-	boulder wall > stepBack
+        boulder avatar > bounceForward
+        missile boulder > stepBack
+        boulder missile > stepBack
+        boulder wall > stepBack
         avatar missile > stepBack
         missile avatar > stepBack
         avatar wall > stepBack
@@ -32,4 +33,4 @@ BasicGame
         2 > cannonup
         d > down
         u > up
-	b > boulder
+        b > boulder

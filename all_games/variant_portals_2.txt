@@ -9,61 +9,60 @@ BasicGame
                 horizontal > orientation=LEFT color=LIGHTRED
         structure > Immovable
             goal  > color=GREEN
-            portalentry > Portal
-                entry1 > stype=exit1 color=LIGHTBLUE
-                entry2 > stype=exit2 color=BLUE
-		entry3 > stype=exit3 color=PURPLE
-            portalexit  >
-                exit1  > color=GOLD
-                exit2  > color=LIGHTORANGE
-		exit3 > color=YELLOW
+        portalentry > Portal
+            entry1 > stype=exit1 color=LIGHTBLUE
+            entry2 > stype=exit2 color=BLUE
+            entry3 > stype=exit3 color=PURPLE
+        exit1  > Immovable color=GOLD
+        exit2  > Immovable color=LIGHTORANGE
+        exit3 > Immovable color=YELLOW
         avatar > MovingAvatar color=DARKBLUE
         wall > Immovable color=DARKGRAY
     InteractionSet
         chaser wall > nothing
-	wall chaser > nothing
+        wall chaser > nothing
         chaser goal > nothing
-	goal chaser > nothing
+        goal chaser > nothing
         chaser exit1 > nothing
-	exit1 chaser > nothing
+        exit1 chaser > nothing
         chaser exit2 > nothing
-	exit2 chaser > nothing
-	chaser exit3 > nothing
-	exit3 chaser > nothing
+        exit2 chaser > nothing
+        chaser exit3 > nothing
+        exit3 chaser > nothing
         chaser entry1 > nothing
-	entry1 chaser > nothing
+        entry1 chaser > nothing
         chaser entry2 > nothing
-	entry2 chaser > nothing
+        entry2 chaser > nothing
         chaser entry3 > nothing
-	entry3 chaser > nothing
+        entry3 chaser > nothing
 
         horizontal goal > stepBack
         horizontal exit1 > nothing
         horizontal exit2 > nothing
-	horizontal exit3 > nothing
+        horizontal exit3 > nothing
         horizontal entry1 > nothing
         horizontal entry2 > nothing
-	horizontal exit3 > nothing
+        horizontal exit3 > nothing
 
         vertical goal > stepBack
         vertical exit1 > nothing
         vertical exit2 > nothing
-	vertical exit3 > nothing
+        vertical exit3 > nothing
         vertical entry1 > nothing
         vertical entry2 > nothing
-	vertical entry3 > nothing
+        vertical entry3 > nothing
 
         sitting wall > stepBack
         sitting  goal > stepBack
         sitting exit1 > stepBack
         sitting exit2 > stepBack
-	sitting exit3 > stepBack
+        sitting exit3 > stepBack
         sitting entry1 > stepBack
         sitting entry2 > stepBack
-	sitting entry3 > stepBack
+        sitting entry3 > stepBack
 
         sitting chaser > nothing
-	chaser sitting > nothing
+        chaser sitting > nothing
         sitting horizontal > nothing
         sitting vertical > nothing
         chaser horizontal > nothing
@@ -76,9 +75,9 @@ BasicGame
         avatar wall      > stepBack
         goal   avatar    > killSprite scoreChange=1
         avatar sitting    > killSprite
-	sitting avatar > killSprite
+        sitting avatar > killSprite
         avatar chaser    > killSprite
-	chaser avatar > killSprite
+        chaser avatar > killSprite
         avatar vertical    > killSprite
         avatar horizontal    > killSprite
         vertical wall    > reverseDirection
@@ -105,6 +104,6 @@ BasicGame
         2 > entry2
         o > exit1
         3 > exit2
-	4 > entry3
-	5 > exit3
+        4 > entry3
+        5 > exit3
         w > wall

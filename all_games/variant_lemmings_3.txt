@@ -8,18 +8,18 @@ BasicGame
 
         avatar  > ShootAvatar stype=shovel color=DARKBLUE
         lemming > Chaser  stype=goal speed=1 cooldown=5 color=RED
-	mole > Chaser stype=wall cooldown=5 color=YELLOW
-	molebox > Immovable color=BLUE
-	snake > Chaser stype=avatar cooldown=4 color=LIGHTGREEN
+        mole > Chaser stype=wall cooldown=5 color=YELLOW
+        molebox > Immovable color=BLUE
+        snake > Chaser stype=avatar cooldown=4 color=LIGHTGREEN
         wall > Immovable color=MPUYEI 
     LevelMapping
         x >  goal
         e >  entrance
         h >  hole
         A >  avatar
-	m > mole
+        m > mole
         w >  wall
-	b > molebox
+        b > molebox
 
     TerminationSet
         SpriteCounter  stype=avatar  limit=0 win=False
@@ -27,50 +27,50 @@ BasicGame
         Timeout limit=2000 win=False
 
     InteractionSet
-	avatar molebox > nothing
-	molebox avatar > nothing
-	molebox shovel > transformTo stype=mole
-	molebox lemming > nothing
-	lemming molebox > nothing
-	shovel mole > nothing
-	mole shovel > nothing
-	avatar mole > killSprite
-	mole avatar > killSprite
-	wall mole > killSprite
-	mole wall > nothing
-	mole lemming > transformTo stype=snake
-	lemming snake > killSprite
-	snake lemming > nothing
-	mole goal > nothing
-	goal mole > nothing
-	mole hole > nothing
-	hole mole > nothing
-	mole EOS > stepBack
-	snake shovel > killSprite
-	shovel snake > killSprite
+        avatar molebox > nothing
+        molebox avatar > nothing
+        molebox shovel > transformTo stype=mole
+        molebox lemming > nothing
+        lemming molebox > nothing
+        shovel mole > nothing
+        mole shovel > nothing
+        avatar mole > killSprite
+        mole avatar > killSprite
+        wall mole > killSprite
+        mole wall > nothing
+        mole lemming > transformTo stype=snake
+        lemming snake > killSprite
+        snake lemming > nothing
+        mole goal > nothing
+        goal mole > nothing
+        mole hole > nothing
+        hole mole > nothing
+        mole EOS > stepBack
+        snake shovel > killSprite
+        shovel snake > killSprite
 
-	avatar snake > killSprite
-	snake avatar >killSprite
-	snake hole > nothing
-	hole snake > nothing
-	molebox snake > nothing
-	snake molebox > nothing
-	snake goal > nothing
-	goal snake > nothing
-	snake EOS > stepBack
-	avatar hole > changeScore value=-5
+        avatar snake > killSprite
+        snake avatar >killSprite
+        snake hole > nothing
+        hole snake > nothing
+        molebox snake > nothing
+        snake molebox > nothing
+        snake goal > nothing
+        goal snake > nothing
+        snake EOS > stepBack
+        avatar hole > changeScore value=-5
         avatar hole  > killSprite 
-	lemming hole > changeScore value=-2
+        lemming hole > changeScore value=-2
         lemming hole  > killSprite 
-	wall shovel > changeScore value=-1
+        wall shovel > changeScore value=-1
         wall shovel  > killSprite 
-        
+
         lemming EOS > stepBack
         avatar wall > stepBack
         lemming wall > stepBack
-	avatar EOS > stepBack
+        avatar EOS > stepBack
         lemming goal > killSprite 
-	lemming goal > changeScore value=2
+        lemming goal > changeScore value=2
 
         shovel hole > nothing
         hole shovel > nothing

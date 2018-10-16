@@ -4,17 +4,17 @@ BasicGame
         goat > stype=avatar cooldown=4
             angry  > Chaser color=GOLD
             scared > Fleeing color=RED
-	goatgate > SpawnPoint color=PURPLE spawnCooldown=20 prob=0.1 total=10 stype=scared
+        goatgate > SpawnPoint color=PURPLE spawnCooldown=20 prob=0.1 total=10 stype=scared
         avatar > MovingAvatar color=DARKBLUE
         wall > Immovable color=DARKGRAY
 
     InteractionSet
-	goatgate goat > nothing
-	goat goatgate > nothing
-	goatgate avatar > nothing
-	avatar goatgate > nothing
-	goatgate carcass > nothing
-	carcass goatgate > nothing
+        goatgate goat > nothing
+        goat goatgate > nothing
+        goatgate avatar > nothing
+        avatar goatgate > nothing
+        goatgate carcass > nothing
+        carcass goatgate > nothing
         angry   wall   > stepBack
         scared   wall   > stepBack
         angry scared > nothing
@@ -33,7 +33,7 @@ BasicGame
     LevelMapping
         0 > scared
         w > wall
-	g > goatgate
+        g > goatgate
 
     TerminationSet
         SpriteCounter stype=scared win=True bonus=10

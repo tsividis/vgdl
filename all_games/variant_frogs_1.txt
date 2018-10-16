@@ -24,8 +24,8 @@ BasicGame
         avatar log   > pullWithIt   # note how one collision can have multiple effects
         avatar wall  > stepBack
         avatar EOS > wrapAround
-	log EOS > wrapAround
-	EOS log > nothing
+        log EOS > wrapAround
+        EOS log > nothing
         log wall > nothing
         water log > nothing
         log log > nothing
@@ -86,4 +86,4 @@ BasicGame
         l > fastLtruck
         = > log water
         w > wall
-	B > water log avatar
+        B > water log avatar

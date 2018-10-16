@@ -8,17 +8,17 @@ BasicGame
 
         avatar  > ShootAvatar stype=shovel color=DARKBLUE
         lemming > Chaser  stype=goal speed=1 cooldown=5 color=RED
-	mole > Chaser stype=wall cooldown=5 color=YELLOW
-	molebox > Immovable color=BLUE
+        mole > Chaser stype=wall cooldown=5 color=YELLOW
+        molebox > Immovable color=BLUE
         wall > Immovable color=MPUYEI 
     LevelMapping
         x >  goal
         e >  entrance
         h >  hole
         A >  avatar
-	m > mole
+        m > mole
         w >  wall
-	b > molebox
+        b > molebox
 
     TerminationSet
         SpriteCounter  stype=avatar  limit=0 win=False
@@ -27,37 +27,37 @@ BasicGame
 
 
     InteractionSet
-	avatar molebox > nothing
-	molebox avatar > nothing
-	molebox shovel > transformTo stype=mole
-	molebox lemming > nothing
-	lemming molebox > nothing
-	shovel mole > nothing
-	mole shovel > nothing
-	avatar mole > killSprite
-	mole avatar > killSprite
-	wall mole > killSprite
-	mole wall > nothing
-	mole lemming > nothing
-	lemming mole > nothing
-	mole goal > nothing
-	goal mole > nothing
-	mole hole > nothing
-	hole mole > nothing
+        avatar molebox > nothing
+        molebox avatar > nothing
+        molebox shovel > transformTo stype=mole
+        molebox lemming > nothing
+        lemming molebox > nothing
+        shovel mole > nothing
+        mole shovel > nothing
+        avatar mole > killSprite
+        mole avatar > killSprite
+        wall mole > killSprite
+        mole wall > nothing
+        mole lemming > nothing
+        lemming mole > nothing
+        mole goal > nothing
+        goal mole > nothing
+        mole hole > nothing
+        hole mole > nothing
 
-	avatar hole > changeScore value=-5
+        avatar hole > changeScore value=-5
         avatar hole  > killSprite 
-	lemming hole > changeScore value=-2
+        lemming hole > changeScore value=-2
         lemming hole  > killSprite 
-	wall shovel > changeScore value=-1
+        wall shovel > changeScore value=-1
         wall shovel  > killSprite 
-        
+
         lemming EOS > stepBack
         avatar wall > stepBack
         lemming wall > stepBack
-	avatar EOS > stepBack
+        avatar EOS > stepBack
         lemming goal > killSprite 
-	lemming goal > changeScore value=2
+        lemming goal > changeScore value=2
 
         shovel hole > nothing
         hole shovel > nothing

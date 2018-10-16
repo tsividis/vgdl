@@ -7,30 +7,30 @@ BasicGame frame_rate=30
                 chaser1 > stype=box1 color=ORANGE  cooldown=6 #for humans
         wall > Immovable color=DARKGRAY
         forcefield > Passive color=PURPLE
-	forcefield2 > Passive color=LIGHTRED
+        forcefield2 > Passive color=LIGHTRED
         box > Passive
             box1 > color=WHITE
             box2 > color=GREEN
-	    box3 > color=YELLOW
+            box3 > color=YELLOW
     LevelMapping
         w > wall
         a > box1
         b > box2
         f > forcefield
-	g > forcefield2
+        g > forcefield2
         x > chaser1
         z > chaser2
         r > rand
         z > chaser2
     InteractionSet
-	box1 forcefield2 > killSprite
-	forcefield2 box1 > nothing
-	avatar forcefield2 > nothing
-	forcefield2 avatar > nothing
-	chaser forcefield2 > stepBack
-	forcefield2 chaser > nothing
-	box3 avatar > killSprite
-	avatar box3 > nothing
+        box1 forcefield2 > killSprite
+        forcefield2 box1 > nothing
+        avatar forcefield2 > nothing
+        forcefield2 avatar > nothing
+        chaser forcefield2 > stepBack
+        forcefield2 chaser > nothing
+        box3 avatar > killSprite
+        avatar box3 > nothing
         avatar wall > stepBack
         mover wall > stepBack
         box wall > stepBack
@@ -41,7 +41,7 @@ BasicGame frame_rate=30
         avatar chaser > nothing
         box2 avatar > killSprite
         chaser box1 > transformTo stype=box3
-	box1 box3 > killSprite
+        box1 box3 > killSprite
         box1 rand > killSprite
         box1 forcefield > nothing
         box2 forcefield > nothing

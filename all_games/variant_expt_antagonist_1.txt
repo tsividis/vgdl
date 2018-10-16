@@ -3,37 +3,37 @@ BasicGame frame_rate=30
         avatar > MovingAvatar color=DARKBLUE
         chaser > VGDLSprite
             randomChaser > RandomNPC color=WHITE
-	    mediumChaser > Chaser color=LIGHTGREEN cooldown=5 stype=box2
+            mediumChaser > Chaser color=LIGHTGREEN cooldown=5 stype=box2
             goodChaser > AStarChaser color=RED stype=box2
         forcefield > Passive color=LIGHTBLUE
-	forcefield2 > Passive color=SCJPNE
+        forcefield2 > Passive color=SCJPNE
         wall > Immovable color=DARKGRAY
         box > Passive
             box1 > color=MPUYEI
             box2 > color=YELLOW
-	    box3 > color=BROWN
+            box3 > color=BROWN
     LevelMapping
         w > wall
         a > box1
         b > box2
-	3 > box3
+        3 > box3
         m > mediumChaser
         r > randomChaser
         s > goodChaser
         f > forcefield
-	e > forcefield2
+        e > forcefield2
     InteractionSet
-	box3 avatar > bounceForward
-	chaser box3 > stepBack
-	box3 chaser > nothing
-	box3 wall > stepBack
-	wall box3 > stepBack
-	box3 box > stepBack
-	box box3 > stepBack
-	box3 forcefield > stepBack
-	forcefield box3 > stepBack
-	box3 forcefield2 > stepBack
-	forcefield2 box3 > stepBack
+        box3 avatar > bounceForward
+        chaser box3 > stepBack
+        box3 chaser > nothing
+        box3 wall > stepBack
+        wall box3 > stepBack
+        box3 box > stepBack
+        box box3 > stepBack
+        box3 forcefield > stepBack
+        forcefield box3 > stepBack
+        box3 forcefield2 > stepBack
+        forcefield2 box3 > stepBack
         avatar wall > stepBack
         mover wall > stepBack
         avatar mover > stepBack
@@ -48,9 +48,9 @@ BasicGame frame_rate=30
         box2 chaser > killSprite
         chaser box1 > stepBack
         chaser wall > stepBack
-	box2 forcefield2 > nothing
-	avatar forcefield2 > nothing
-	chaser forcefield2 > nothing
+        box2 forcefield2 > nothing
+        avatar forcefield2 > nothing
+        chaser forcefield2 > nothing
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=box2  limit=0 win=False
