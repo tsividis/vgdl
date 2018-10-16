@@ -3,36 +3,36 @@ BasicGame
         base    > Immovable    color=WHITE 
         avatar  > HorizontalAvatar color=DARKBLUE
         alien   > Missile  orientation=DOWN  speed=0.8 color=ORANGE
-	energy > Resource color=YELLOW limit=5
+        energy > Resource color=YELLOW limit=5
         ghost > Missile orientation=DOWN speed=0.8 color=PURPLE
         portalAlien  > SpawnPoint orientation=RIGHT   stype=alien  color=CCKQQB spawnCooldown=16  prob=0.08 total=20 
         portalGhost  > SpawnPoint orientation=RIGHT   stype=ghost  color=BVUTFD spawnCooldown=12  prob=0.08 total=20 
-	wall > Immovable color=DARKGRAY
-	gate > Immovable color=LIGHTRED
+        wall > Immovable color=DARKGRAY
+        gate > Immovable color=LIGHTRED
     LevelMapping
         0 > base
         1 > portalAlien
         2 > portalGhost
         w > wall
-	g > gate
+        g > gate
 
     TerminationSet
-        SpriteCounter      stype=avatar               limit=0 win=False
-	SpriteCounter stype=gate limit=0 win=True bonus=10
+        SpriteCounter stype=avatar limit=0 win=False
+        SpriteCounter stype=gate limit=0 win=True bonus=10
         Timeout limit=2000 win=False
 
     InteractionSet
-	alien gate > nothing
-	gate alien > nothing
-	ghost gate > nothing
-	gate ghost > nothing
-	gate avatar > killIfOtherHasMore resource=energy limit=5
-	avatar gate > nothing
+        alien gate > nothing
+        gate alien > nothing
+        ghost gate > nothing
+        gate ghost > nothing
+        gate avatar > killIfOtherHasMore resource=energy limit=5
+        avatar gate > nothing
         avatar  wall  > stepBack
         alien   EOS  > turnAround
         base   alien > killSprite
         alien avatar > changeScore value=1
-	avatar alien > changeResource resource=energy value=1
+        avatar alien > changeResource resource=energy value=1
         alien avatar > killSprite 
         avatar ghost > killSprite 
         avatar ghost > changeScore value=-10
@@ -97,5 +97,5 @@ BasicGame
         alien base > nothing
         ghost avatar > nothing
         wall avatar > nothing
-	avatar wall > nothing
+        avatar wall > nothing
         EOS alien > nothing

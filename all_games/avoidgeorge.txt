@@ -1,12 +1,9 @@
 BasicGame
     SpriteSet
-        
         annoyed > RandomNPC speed=0.2 cons=2 color=PURPLE
-        
         citizen > 
             quiet > RandomNPC speed=0.2 cons=1 color=GREEN
             avatar > ShootAvatar stype=cigarette rotateInPlace=False color=DARKBLUE
-
         george > Chaser color=YELLOW stype=quiet speed=0.1
         cigarette > Flicker color=BROWN limit=5 singleton=True 
         wall > Immovable color=DARKGRAY
@@ -20,9 +17,9 @@ BasicGame
         quiet george > transformTo stype=annoyed
         avatar george > killSprite 
         avatar george > changeScore value=-1
-	avatar cigarette >nothing
-	cigarette wall > nothing
-	avatar quiet > nothing
+        avatar cigarette >nothing
+        cigarette wall > nothing
+        avatar quiet > nothing
         annoyed cigarette > transformTo stype=quiet 
         annoyed cigarette > changeScore value=1
 

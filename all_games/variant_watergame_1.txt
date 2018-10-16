@@ -4,7 +4,7 @@ BasicGame
         wall > Immovable color=DARKGRAY
         water > Immovable color=LIGHTBLUE
         box > Passive color=PURPLE
-	antibox > Passive color=LIGHTRED
+        antibox > Passive color=LIGHTRED
         avatar > MovingAvatar color=DARKBLUE
     TerminationSet
         SpriteCounter stype=door limit=0 win=True bonus=10
@@ -12,17 +12,17 @@ BasicGame
         Timeout limit=2000 win=False
 
     InteractionSet
-	antibox wall > stepBack
-	wall antibox > nothing
-	box antibox > killSprite
-	antibox box > killSprite
-	antibox water > stepBack
-	water antibox > nothing
-	antibox avatar > bounceForward
-	avatar antibox > nothing
-	antibox door > nothing
-	door antibox > nothing
-	antibox antibox > nothing
+    	antibox wall > stepBack
+    	wall antibox > nothing
+    	box antibox > killSprite
+    	antibox box > killSprite
+    	antibox water > stepBack
+    	water antibox > nothing
+    	antibox avatar > bounceForward
+    	avatar antibox > nothing
+    	antibox door > nothing
+    	door antibox > nothing
+    	antibox antibox > nothing
         avatar wall > stepBack
         box avatar > bounceForward
         box wall > undoAll
@@ -41,7 +41,7 @@ BasicGame
         box door > nothing
         door EOS > nothing
         EOS door > nothing
-	door door > nothing
+	   door door > nothing
         water wall > nothing
         wall water > nothing
         wall EOS > nothing
@@ -66,7 +66,7 @@ BasicGame
 
     LevelMapping
         A >  avatar
-	n > antibox
+        n > antibox
         w > wall
         x >  water
         c >  box

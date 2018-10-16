@@ -9,14 +9,14 @@ BasicGame
                 horizontal > orientation=LEFT color=LIGHTRED
         structure > Immovable
             goal  > color=GREEN
-            portalentry > Portal
-                entry1 > stype=exit1 color=LIGHTBLUE
-                entry2 > stype=exit2 color=BLUE
-		entry3 > stype=exit3 color=PURPLE
-            portalexit  >
-                exit1  > color=GOLD
-                exit2  > color=LIGHTORANGE
-		exit3 > color=YELLOW
+        portalentry > Portal
+            entry1 > stype=exit1 color=LIGHTBLUE
+            entry2 > stype=exit2 color=BLUE
+            entry3 > stype=exit3 color=PURPLE
+        portalexit  > Immovable
+            exit1  > color=GOLD
+            exit2  > color=LIGHTORANGE
+            exit3 > color=YELLOW
         avatar > MovingAvatar color=DARKBLUE
         wall > Immovable color=DARKGRAY autotiling=True
     InteractionSet
@@ -24,7 +24,7 @@ BasicGame
         random goal > stepBack
         random exit1 > stepBack
         random exit2 > stepBack
-	random exit3 > stepBack
+        random exit3 > stepBack
         random entry1 > stepBack
         random entry2 > stepBack
         random entry3 > stepBack
@@ -32,27 +32,27 @@ BasicGame
         horizontal goal > stepBack
         horizontal exit1 > nothing
         horizontal exit2 > nothing
-	horizontal exit3 > nothing
+        horizontal exit3 > nothing
         horizontal entry1 > nothing
         horizontal entry2 > nothing
-	horizontal exit3 > nothing
+        horizontal exit3 > nothing
 
         vertical goal > stepBack
         vertical exit1 > nothing
         vertical exit2 > nothing
-	vertical exit3 > nothing
+        vertical exit3 > nothing
         vertical entry1 > nothing
         vertical entry2 > nothing
-	vertical entry3 > nothing
+        vertical entry3 > nothing
 
         sitting wall > stepBack
         sitting  goal > stepBack
         sitting exit1 > stepBack
         sitting exit2 > stepBack
-	sitting exit3 > stepBack
+        sitting exit3 > stepBack
         sitting entry1 > stepBack
         sitting entry2 > stepBack
-	sitting entry3 > stepBack
+        sitting entry3 > stepBack
 
         sitting random > nothing
         sitting horizontal > nothing
@@ -94,6 +94,6 @@ BasicGame
         2 > entry2
         o > exit1
         3 > exit2
-	4 > entry3
-	5 > exit3
+        4 > entry3
+        5 > exit3
         w > wall

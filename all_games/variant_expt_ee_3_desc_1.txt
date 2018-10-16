@@ -25,7 +25,7 @@ BasicGame frame_rate=30
         dough avatar > killSprite
         eel avatar > killSprite
         avatar cranberry > killSprite
-	cranberry avatar > nothing
+        cranberry avatar > nothing
         apple avatar > killSprite
         orange avatar > killSprite
     TerminationSet

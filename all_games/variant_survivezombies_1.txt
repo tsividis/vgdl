@@ -89,7 +89,7 @@ BasicGame
         flower zombie > nothing
         fastHell honey > nothing
         fastHell zombie > nothing
-	fastHell avatar > nothing
+        fastHell avatar > nothing
         slowHell honey > nothing
         slowHell avatar > nothing
         slowHell zombie > nothing
@@ -105,7 +105,7 @@ BasicGame
         wall zombie > nothing
 
     TerminationSet
-	SpriteCounter stype=honey limit=0 win=True bonus=10
+        SpriteCounter stype=honey limit=0 win=True bonus=10
         SpriteCounter stype=avatar limit=0 win=False
         Timeout limit=2000 win=False
 

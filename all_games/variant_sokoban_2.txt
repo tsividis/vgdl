@@ -4,21 +4,21 @@ BasicGame
         avatar > MovingAvatar color=DARKBLUE
         box    > Passive color=GREEN
         wall > Immovable color=DARKGRAY
-	dirt > Immovable color=BROWN
+        dirt > Immovable color=BROWN
     LevelMapping
         0 > hole
         1 > box
-	2 > dirt
+        2 > dirt
         w > wall
     InteractionSet
-	dirt wall > stepBack
-	wall dirt > stepBack
-	dirt hole > killSprite
-	hole dirt > killSprite
-	dirt avatar > bounceForward
-	avatar dirt > nothing
-	dirt box > killSprite
-	box dirt > stepBack
+        dirt wall > stepBack
+        wall dirt > stepBack
+        dirt hole > killSprite
+        hole dirt > killSprite
+        dirt avatar > bounceForward
+        avatar dirt > nothing
+        dirt box > killSprite
+        box dirt > stepBack
         avatar wall > stepBack
         box avatar  > bounceForward
         box wall > stepBack

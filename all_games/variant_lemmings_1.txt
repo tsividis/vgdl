@@ -23,19 +23,19 @@ BasicGame
         Timeout limit=2000 win=False
 
     InteractionSet
-	avatar hole > changeScore value=-5
+        avatar hole > changeScore value=-5
         avatar hole  > killSprite 
-	lemming hole > changeScore value=-2
+        lemming hole > changeScore value=-2
         lemming hole  > killSprite 
-	wall shovel > changeScore value=1
+        wall shovel > changeScore value=1
         wall shovel  > killSprite 
-        
+
         lemming EOS > stepBack
         avatar wall > stepBack
         lemming wall > stepBack
-	avatar EOS > stepBack
+        avatar EOS > stepBack
         lemming goal > killSprite 
-	lemming goal > changeScore value=2
+        lemming goal > changeScore value=2
 
         shovel hole > nothing
         hole shovel > nothing

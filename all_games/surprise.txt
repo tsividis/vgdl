@@ -2,16 +2,15 @@ BasicGame
     SpriteSet
         
         annoyed > RandomNPC speed=0.2 color=PURPLE
-	fence > Immovable color=SCJPNE        
+        fence > Immovable color=SCJPNE        
         citizen > 
             quiet > RandomNPC speed=0.6 color=GREEN
             avatar > ShootAvatar stype=wand color=DARKBLUE
-	wand > Flicker limit=5 color=LIGHTBLUE
-
+        wand > Flicker limit=5 color=LIGHTBLUE
         george > Chaser color=YELLOW stype=quiet speed=0.1
-	inert > Immovable color=MPUYEI
-	apple > Immovable color=RED
-	ogate > Immovable color=NUPHKK
+        inert > Immovable color=MPUYEI
+        apple > Immovable color=RED
+        ogate > Immovable color=NUPHKK
         wall > Immovable color=DARKGRAY
 
     TerminationSet
@@ -20,41 +19,41 @@ BasicGame
         Timeout limit=2000 win=False
 
     InteractionSet
-	ogate avatar > nothing
-	avatar ogate > nothing
-	ogate apple > nothing
-	apple ogate > nothing
-	ogate quiet > transformTo stype=quiet
-	quiet ogate > nothing
-	apple avatar > killSprite
-	avatar apple > nothing
-	inert avatar > transformTo stype=quiet
-	wand inert > nothing
-	wand quiet > nothing
-	quiet wand > nothing
-	avatar inert > nothing
-	wand wall > nothing
-	wall wand > nothing
-	wand apple > nothing
-	apple wand > nothing
-	wand ogate > nothing
-	ogate wand > nothing
-	wand fence > nothing
-	fence wand > nothing
-	quiet apple > stepBack
-	apple quiet > stepBack
-	quiet fence > nothing
-	fence quiet > nothing
-	avatar fence > stepBack
-	fence avatar > nothing
+        ogate avatar > nothing
+        avatar ogate > nothing
+        ogate apple > nothing
+        apple ogate > nothing
+        ogate quiet > transformTo stype=quiet
+        quiet ogate > nothing
+        apple avatar > killSprite
+        avatar apple > nothing
+        inert avatar > transformTo stype=quiet
+        wand inert > nothing
+        wand quiet > nothing
+        quiet wand > nothing
+        avatar inert > nothing
+        wand wall > nothing
+        wall wand > nothing
+        wand apple > nothing
+        apple wand > nothing
+        wand ogate > nothing
+        ogate wand > nothing
+        wand fence > nothing
+        fence wand > nothing
+        quiet apple > stepBack
+        apple quiet > stepBack
+        quiet fence > nothing
+        fence quiet > nothing
+        avatar fence > stepBack
+        fence avatar > nothing
         quiet george > transformTo stype=annoyed
         avatar george > killSprite 
         avatar george > changeScore value=-1
-	avatar quiet > nothing
+        avatar quiet > nothing
 
         annoyed wall > stepBack
         quiet wall > stepBack
-	quiet EOS > stepBack
+        quiet EOS > stepBack
         avatar wall > stepBack
 
         annoyed annoyed > nothing
@@ -90,11 +89,11 @@ BasicGame
 
 
     LevelMapping
-	f > fence
+        f > fence
         g >  george
         c >  quiet
-	o > ogate
+        o > ogate
         A >  avatar
-	a > apple
-	i > inert
+        a > apple
+        i > inert
         w > wall

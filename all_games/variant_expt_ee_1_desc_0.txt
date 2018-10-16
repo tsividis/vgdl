@@ -9,7 +9,7 @@ BasicGame frame_rate=30
         fruit > Immovable color=RED
         avatar > MovingAvatar color=DARKBLUE
         missile > Missile color=RED speed=.5 orientation=RIGHT
-	chaser > Chaser stype=avatar cooldown=10 color=BROWN
+        chaser > Chaser stype=avatar cooldown=10 color=BROWN
         wall > Immovable color=DARKGRAY
     LevelMapping
         w > wall
@@ -17,18 +17,18 @@ BasicGame frame_rate=30
         b > blueberry
         o > orange
         m > missile
-	x > chaser
+        x > chaser
     InteractionSet
-	avatar chaser > killSprite
-	chaser avatar > nothing
-	chaser apple > nothing
-	apple chaser > nothing
-	chaser wall > stepBack
-	wall chaser > nothing
-	chaser blueberry > nothing
-	blueberry chaser > nothing
-	chaser orange > nothing
-	orange chaser > nothing
+        avatar chaser > killSprite
+        chaser avatar > nothing
+        chaser apple > nothing
+        apple chaser > nothing
+        chaser wall > stepBack
+        wall chaser > nothing
+        chaser blueberry > nothing
+        blueberry chaser > nothing
+        chaser orange > nothing
+        orange chaser > nothing
         avatar wall > stepBack
         apple avatar > killSprite
         blueberry avatar > killSprite

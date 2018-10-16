@@ -14,7 +14,7 @@ BasicGame
     TerminationSet
         SpriteCounter stype=avatar  win=False
         SpriteCounter stype=quiet   win=False
-	SpriteCounter stype=annoyed win=True bonus=10
+        SpriteCounter stype=annoyed win=True bonus=10
         Timeout limit=2000 win=False
 
 
@@ -22,9 +22,9 @@ BasicGame
         quiet george > transformTo stype=annoyed
         avatar george > killSprite 
         avatar george > changeScore value=-1
-	avatar cigarette >nothing
-	cigarette wall > nothing
-	avatar quiet > nothing
+        avatar cigarette >nothing
+        cigarette wall > nothing
+        avatar quiet > nothing
         annoyed cigarette > killSprite
         annoyed cigarette > changeScore value=1
 
@@ -77,6 +77,6 @@ BasicGame
     LevelMapping
         g >  george
         c >  quiet
-	n > annoyed
+        n > annoyed
         A >  avatar
         w > wall

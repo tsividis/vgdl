@@ -3,10 +3,10 @@ BasicGame frame_rate=30
         avatar > MovingAvatar color=DARKBLUE
         chaser > VGDLSprite
             randomChaser > RandomNPC color=WHITE
-	    mediumChaser > Chaser color=LIGHTGREEN cooldown=5 stype=box2
+            mediumChaser > Chaser color=LIGHTGREEN cooldown=5 stype=box2
             goodChaser > AStarChaser color=RED stype=box2
         forcefield > Passive color=LIGHTBLUE
-	forcefield2 > Passive color=SCJPNE
+        forcefield2 > Passive color=SCJPNE
         wall > Immovable color=DARKGRAY
         box > Passive
             box1 > color=MPUYEI
@@ -19,7 +19,7 @@ BasicGame frame_rate=30
         r > randomChaser
         s > goodChaser
         f > forcefield
-	e > forcefield2
+        e > forcefield2
     InteractionSet
         avatar wall > stepBack
         mover wall > stepBack
@@ -35,9 +35,9 @@ BasicGame frame_rate=30
         box2 chaser > killSprite
         chaser box1 > stepBack
         chaser wall > stepBack
-	box2 forcefield2 > nothing
-	avatar forcefield2 > nothing
-	chaser forcefield2 > nothing
+        box2 forcefield2 > nothing
+        avatar forcefield2 > nothing
+        chaser forcefield2 > nothing
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=box2  limit=0 win=False

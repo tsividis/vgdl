@@ -6,12 +6,12 @@ BasicGame
         key > Resource color=ORANGE limit=1
         goal > Immovable color=GREEN
         box > Passive color=BROWN
-	pistol > Passive 
-		leftPistol > color=PINK
-		downPistol > color=LIGHTBLUE
-	bullet > Missile
-		leftBullet > color=YELLOW orientation=LEFT
-		downBullet > color=GOLD orientation=DOWN
+        pistol > Passive 
+            leftPistol > color=PINK
+            downPistol > color=LIGHTBLUE
+        bullet > Missile
+            leftBullet > color=YELLOW orientation=LEFT
+            downBullet > color=GOLD orientation=DOWN
         wall > Immovable color=DARKGRAY
 
     LevelMapping
@@ -21,50 +21,50 @@ BasicGame
         k > key 
         g > goal 
         m > mushroom 
-	b > bullet
-	d > downPistol
-	l > leftPistol
+        b > bullet
+        d > downPistol
+        l > leftPistol
     InteractionSet
-	avatar bullet > nothing
-	bullet avatar > nothing
-	bullet wall > killSprite
-	wall bullet > nothing
-	hole bullet > killSprite
-	bullet hole > nothing
-	key bullet > nothing
-	bullet key > nothing
-	goal bullet > nothing
-	bullet goal > nothing
-	box bullet > killSprite
-	bullet box > killSprite
-	mushroom bullet > killSprite
-	bullet mushroom > killSprite
-	pistol bullet > nothing
-	bullet pistol > nothing
+        avatar bullet > nothing
+        bullet avatar > nothing
+        bullet wall > killSprite
+        wall bullet > nothing
+        hole bullet > killSprite
+        bullet hole > nothing
+        key bullet > nothing
+        bullet key > nothing
+        goal bullet > nothing
+        bullet goal > nothing
+        box bullet > killSprite
+        bullet box > killSprite
+        mushroom bullet > killSprite
+        bullet mushroom > killSprite
+        pistol bullet > nothing
+        bullet pistol > nothing
         avatar wall > stepBack
         avatar hole > killSprite
-	box avatar > bounceForward
+        box avatar > bounceForward
         box wall > stepBack
         box box > stepBack
         box mushroom > stepBack
 
-	hole pistol > nothing
-	pistol hole > nothing
-	box pistol > stepBack
-	pistol box > stepBack
-	wall pistol > nothing
-	pistol wall > nothing
-	mushroom pistol > nothing
-	pistol mushroom > nothing
-	pistol key > nothing
-	key pistol > nothing
-	goal pistol > nothing
-	pistol goal > nothing
-	
-	leftPistol avatar > transformTo stype=leftBullet
-	avatar leftPistol > nothing
-	downPistol avatar > transformTo stype=downBullet
-	avatar downPistol > nothing
+        hole pistol > nothing
+        pistol hole > nothing
+        box pistol > stepBack
+        pistol box > stepBack
+        wall pistol > nothing
+        pistol wall > nothing
+        mushroom pistol > nothing
+        pistol mushroom > nothing
+        pistol key > nothing
+        key pistol > nothing
+        goal pistol > nothing
+        pistol goal > nothing
+
+        leftPistol avatar > transformTo stype=leftBullet
+        avatar leftPistol > nothing
+        downPistol avatar > transformTo stype=downBullet
+        avatar downPistol > nothing
 
         hole box > killSprite
         hole box > changeScore value=1

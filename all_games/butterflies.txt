@@ -12,8 +12,8 @@ BasicGame
 
     InteractionSet
         avatar    wall   > stepBack
-	butterfly wall > stepBack
-	butterfly avatar > changeScore value=2
+        butterfly wall > stepBack
+        butterfly avatar > changeScore value=2
         butterfly avatar > killSprite 
         butterfly cocoon > cloneSprite
         butterfly butterfly > nothing
@@ -25,4 +25,4 @@ BasicGame
         1 > butterfly
         0 > cocoon
         w > wall
-	A > avatar
+        A > avatar

@@ -6,8 +6,8 @@ BasicGame
         key > Resource color=ORANGE limit=1
         goal > Immovable color=GREEN
         box > Passive color=BROWN
-	metal > Passive color=GOLD
-	mold > Passive color=PINK
+        metal > Passive color=GOLD
+        mold > Passive color=PINK
         wall > Immovable color=DARKGRAY
 
     LevelMapping
@@ -17,41 +17,41 @@ BasicGame
         k > key 
         g > goal 
         m > mushroom 
-	b > bullet
-	u > metal
-	i > mold
+        b > bullet
+        u > metal
+        i > mold
     InteractionSet
 
-	metal avatar > bounceForward
-	avatar metal > nothing
-	metal hole > killSprite
-	hole metal > nothing
-	metal box > stepBack
-	box metal > stepBack
-	metal mushroom > stepBack
-	mushroom metal > stepBack
-	metal wall > stepBack
-	wall metal > stepBack
-	goal metal > stepBack
-	metal goal > stepBack
-	
-	mold metal > transformTo stype=key
-	metal key > killSprite
-	metal mold > nothing
-	mold avatar > nothing
-	avatar mold > nothing
-	mold hole > killSprite
-	hole mold > nothing
-	mold box > stepBack
-	box mold > stepBack
-	mold wall > nothing
-	wall mold > nothing
-	mold mushroom > nothing
-	mushroom mold > nothing
-	
+        metal avatar > bounceForward
+        avatar metal > nothing
+        metal hole > killSprite
+        hole metal > nothing
+        metal box > stepBack
+        box metal > stepBack
+        metal mushroom > stepBack
+        mushroom metal > stepBack
+        metal wall > stepBack
+        wall metal > stepBack
+        goal metal > stepBack
+        metal goal > stepBack
+
+        mold metal > transformTo stype=key
+        metal key > killSprite
+        metal mold > nothing
+        mold avatar > nothing
+        avatar mold > nothing
+        mold hole > killSprite
+        hole mold > nothing
+        mold box > stepBack
+        box mold > stepBack
+        mold wall > nothing
+        wall mold > nothing
+        mold mushroom > nothing
+        mushroom mold > nothing
+
         avatar wall > stepBack
         avatar hole > killSprite
-	box avatar > bounceForward
+        box avatar > bounceForward
         box wall > stepBack
         box box > stepBack
         box mushroom > stepBack
