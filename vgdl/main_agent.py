@@ -671,6 +671,10 @@ class Agent:
 
             self.max_nodes = self.stored_max_nodes
 
+            ## you don't need to worry about annealing, since you don't anneal up for shortHorizon planning.
+            if self.shortHorizon:
+                self.max_nodes = random.choice([200,500,1000])
+                
             # if self.display_text:
             print "planning with hyperparameter index {}".format(self.hyperparameter_index)
             print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
@@ -881,9 +885,9 @@ class Agent:
                             avatar_positions = [self.rle._rect2pos(avatar.rect)
                                  for avatar in self.rle._game.getAvatars()]
 
-                            possiblePairList = [manhattanDist(avatar, random)
+                            possiblePairList = [manhattanDist(avatar, rand)
                                 for avatar in avatar_positions
-                                for random in random_npc_positions]
+                                for rand in random_npc_positions]
                             if min(possiblePairList) < self.safeDistance:
                                 print("Close to RandomNPC, regrounding")
                                 # embed()
