@@ -107,7 +107,7 @@ class WBP():
 
 		#################
 		#################
-		self.display = True
+		self.display = False
 
 		if self.display:
 			print "In planner; MovingTypesInGame: {}. Planning with idx {} and position_multiplier {}".format(movingTypesInGame, self.hyperparameter_index, self.position_score_multiplier)
@@ -341,9 +341,9 @@ class WBP():
 		## sort max to min for pop()
 		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
 		# else:
-		# 	acceptableNodes = QReward
+			# acceptableNodes = QReward
 		# 	## sort max to min for pop()
-		# 	bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, len(n.actionSeq)))
+			# bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, len(n.actionSeq)))
 		# 	print "in conservative mode in reward selection"
 		# 	# embed()
 
@@ -417,7 +417,7 @@ class WBP():
 
 				if self.conservative:
 					node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
-						# embed()
+					# embed()
 				else:
 					if self.display:
 						print "Failed to find a novel node. Quitting"

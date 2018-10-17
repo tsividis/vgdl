@@ -11,7 +11,7 @@ path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
 data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
 #data = na.omit(data)
-data$modelrun_ID = as.character(data$modelrun_ID)
+data$modelrun_ID = as.factor(data$modelrun_ID)
 data$timestep = as.numeric(as.character(data$timestep))
 data$cumulative_steps = as.numeric(as.character(data$cumulative_timestep))
 data$local_score = as.numeric(as.character(data$score))
@@ -126,7 +126,7 @@ for (i in 1:length(existing_games)){
 plots = list()
 for (i in 1:length(existing_games)){
     game = existing_games[i]
-    p=ggplot(subset(data, (game_name==game)&(agent_type=='params__IW=2__ea=True')), aes(x=cumulative_steps, y=cumulative_wins,color=modelrun_ID)) ##color=agent_type
+    p=ggplot(subset(data, (game_name==game)&(agent_type=='params__IW=2__ea=True')&(modelrun_ID=='2018-10-11_')), aes(x=cumulative_steps, y=cumulative_wins,color=modelrun_ID)) ##color=agent_type
     p=p+geom_point(size=1) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
       
         # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
@@ -147,9 +147,8 @@ for (i in 1:length(existing_games)){
   #title = paste('~/Projects/atari/vgdl/',date,'/plots/levels_won_', game, '.png', sep='')
   #ggsave(title, plot=p, width=15, height=10)
 }
-
-layout = matrix(c(1:90), ncol=6, byrow=TRUE)
-m = multiplot(plotlist = plots[1:86], layout=layout)
+layout = matrix(c(1:96), ncol=6, byrow=TRUE)
+m = multiplot(plotlist = plots[1:91], layout=layout)
 
 ## Making two plots for now because multiplot refuses to make the first 4 plots if
 ## you make the whole grid at once.
@@ -159,28 +158,137 @@ m = multiplot(plotlist = plots[1:46], layout=layout)
 layout = matrix(c(1:48), ncol=6, byrow=TRUE)
 m = multiplot(plotlist = plots[47:length(plots)], layout=layout)
 
-
-p = ggplot(data, aes(x=game_name))
-
-## Make vertical plot of score/time per game/planner.
-plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
-                          max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric())
+###
+###
+###(old version)
+games_to_levels = data.frame(game_name=as.character(), num_levels=as.numeric())
 for (i in 1:length(levels(data$game_name))){
-  for (j in 1:length(levels(data$agent_type))){
-    s = subset(data, ((game_name==levels(data$game_name)[i]) & (agent_type==levels(data$agent_type)[j])) )
-    ## the row we want
-    r = filter(s, cumulative_timestep==max(cumulative_timestep))[1,]
-    ## take only the relevant columns and put them in the new data frame
-    new = data.frame(game_name=r$game_name, agent_type=r$agent_type, max_score=r$score, 
-                     max_steps=r$cumulative_timestep, planning_time=r$cumulative_planner_nodes, max_levels_won=max(r$cumulative_wins))
-    plantimedata = rbind(plantimedata, new)
-  }
+    game_name=levels(data$game_name)[i]
+    num_levels = 5
+    if ( (grepl('expt', game_name)) | (grepl('bees', game_name) )| (grepl('corridor',game_name))| 
+        (grepl('closing',game_name)) ){
+      num_levels=4
+    }
+    if ((grepl('expt_ee', game_name)) | (grepl('variant_expt_preconditions_1', game_name)) ){
+      num_levels=6
+    }
+    new = data.frame(game_name=game_name, num_levels=num_levels)
+    games_to_levels = rbind(games_to_levels, new)
+}
+## Make vertical plot of score/time per game/planner.
+# plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
+#                           max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric())
+# for (i in 1:length(levels(data$game_name))){
+#   for (j in 1:length(levels(data$agent_type))){
+#     s = subset(data, ((game_name==levels(data$game_name)[i]) & (agent_type==levels(data$agent_type)[j])) )
+#     ## the row we want
+#     r = filter(s, cumulative_timestep==max(cumulative_timestep))[1,]
+#     ## take only the relevant columns and put them in the new data frame
+#     new = data.frame(game_name=r$game_name, agent_type=r$agent_type, max_score=r$score, 
+#                      max_steps=r$cumulative_timestep, planning_time=r$cumulative_planner_nodes, 
+#                     max_levels_won=max(r$cumulative_wins))
+#     plantimedata = rbind(plantimedata, new)
+#   }
+# }
+# plantimedata = na.omit(plantimedata)
+# plantimedata = mutate(plantimedata, score_efficiency=max_score/max_steps)
+# plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
+
+
+## make data structure for looking at levels_won for different planner settings (corresponding to runs on different days)
+plantimedata = data.frame(game_name=as.character(), modelrun_ID=as.character(), max_score=as.numeric(), 
+                          max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric(),
+                          level_num=as.numeric())
+for (i in 1:length(levels(data$game_name))){
+  for (j in 1:length(levels(data$modelrun_ID))){
+    s = subset(data, ((game_name==levels(data$game_name)[i]) & (modelrun_ID==levels(data$modelrun_ID)[j])) )
+    if (length(s$level_max_score)>0){
+      ## the row we want
+      r = filter(s, cumulative_timestep==max(cumulative_timestep))[1,]
+      ## take only the relevant columns and put them in the new data frame
+      new = data.frame(game_name=r$game_name, modelrun_ID=r$modelrun_ID, max_score=r$score, 
+                     max_steps=r$cumulative_timestep, planning_time=r$cumulative_planner_nodes, 
+                     max_levels_won=max(r$cumulative_wins),
+                     level_num=filter(games_to_levels, game_name==r$game_name)$num_levels)
+      plantimedata = rbind(plantimedata, new)
+    }
+    }
 }
 plantimedata = na.omit(plantimedata)
+plantimedata = mutate(plantimedata, level_percentage=max_levels_won/level_num)
 plantimedata = mutate(plantimedata, score_efficiency=max_score/max_steps)
 plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
 
-p = ggplot(plantimedata, aes(x=reorder(game_name,-max_levels_won), y=max_levels_won, fill=factor(agent_type))) +
+
+p = ggplot(subset(plantimedata, modelrun_ID=='2018-10-15_'), aes(x=reorder(game_name,-level_percentage), y=level_percentage, fill=factor(modelrun_ID))) +
+  geom_bar(position='dodge', stat='identity')+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p
+
+
+model_run1 = '2018-10-15_'
+model_run2 = '2018-10-11_'
+get_diff = function(plantimedata, model_run1, model_run2){
+  plots = list()
+    p = ggplot(subset(plantimedata, modelrun_ID%in%c(model_run1, model_run2)) , aes(x=reorder(game_name,-max_levels_won), y=max_levels_won, fill=factor(modelrun_ID))) +
+  geom_bar(position='dodge', stat='identity')+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p
+}
+
+######
+######
+
+
+diffdata = data.frame(game_name=as.character(), agent_type=as.character(), model_run = as.character(), max_score=as.numeric(), 
+                          max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric())
+for (i in 1:length(levels(data$game_name))){
+  for (j in 1:length(levels(data$modelrun_ID))){
+    s = subset(data, ((game_name==levels(data$game_name)[i]) & (modelrun_ID==levels(data$modelrun_ID)[j])) )
+    ## the row we want
+    r = filter(s, cumulative_timestep==max(cumulative_timestep))[1,]
+    ## take only the relevant columns and put them in the new data frame
+    new = data.frame(game_name=r$game_name, agent_type=r$agent_type, model_run=r$modelrun_ID, max_score=r$score, 
+                     max_steps=r$cumulative_timestep, planning_time=r$cumulative_planner_nodes, max_levels_won=max(r$cumulative_wins))
+    diffdata = rbind(diffdata, new)
+  }
+}
+
+get_diff = function(diffdata, model_run1, model_run2){
+  ## makes a histogram of improvements in model_run1 over model_run2
+  
+  diff_frame = data.frame(game_name=as.character(), level_diff=as.numeric(), col=as.character())
+  
+  colors = c('red','green2')
+  for (i in 1:length(levels(diffdata$game_name))){
+    game = levels(diffdata$game_name)[i]
+    m1=subset(diffdata, game_name==game&model_run==model_run1)$max_levels_won
+    m2=subset(diffdata, game_name==game&model_run==model_run2)$max_levels_won        
+    d = m1-m2
+    if (length(d)==0){
+      d = NA
+      col=NA
+    }else{
+    if (d<0){
+        col=1
+      }else{
+        col=2
+      }
+    }
+    new = data.frame(game_name=game, level_diff=d, col=col)
+    diff_frame = rbind(diff_frame, new)
+  }
+  diff_frame$col = as.factor(diff_frame$col)
+  p = ggplot(diff_frame, aes(x=reorder(game_name,-level_diff), y=level_diff, color=col))+
+    geom_bar(position='dodge', stat='identity')+scale_color_manual(values=colors)+scale_fill_manual(values=colors)+
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  p
+  
+}
+
+
+
+p = ggplot(plantimedata, aes(x=reorder(game_name,-max_levels_won), y=max_levels_won, fill=factor(modelrun_ID))) +
   geom_bar(position='dodge', stat='identity')+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 p

@@ -33,7 +33,6 @@ def process_model_run(data, modelrun_ID):
 
 	## you need to count max_score differently, as you want to show the max points someone has gotten, but you don't want to give people
 	## points for continually almost winning a level. 
-
 	## you want to end up with one csv per game. if you want to look at things across games, you just have to merge those csvs, but this is the cleanest way to do it
 	## and to avoid loading huge csv files.
 	## also don't process a particular run multiple times. you need a way of storing the processed model_IDs so that you don't keep appending to a long csv.
@@ -126,7 +125,6 @@ def process_model_run(data, modelrun_ID):
 
 def make_csvs(path, game=None):
 	for folder in open_folder(path):
-
 		for gamefolder in open_folder("{}/{}".format(path,folder)):
 			if game==None or game==gamefolder:
 				print gamefolder
@@ -161,6 +159,6 @@ def merge_results(date):
 						if 'DS_Store' not in r:
 							copy2('../{}/results/{}/'.format(date, mod)+d+'/'+r,target)
 
-
+## take things out one level; should be in results/all, rather than results/all/all
 # make_csvs(path, game)
 embed()
