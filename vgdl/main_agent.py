@@ -162,6 +162,10 @@ class Agent:
 
         self.todo_delete = True
 
+        # MARK, EXPLORATION
+        self.max_rand_steps = max_rand_steps
+        self.pickled_theory_path = pickled_theory_path
+
     def hyperparameterSwitch(self, new_index):
         if new_index!=self.hyperparameter_index:
             self.hyperparameter_index = new_index
@@ -214,6 +218,36 @@ class Agent:
         newRle._game.sprite_groups['avatar'][0].resources = ccopy(rle._game.sprite_groups['avatar'][0].resources)
 
         return newRle
+
+    # MARK, EXPLORATION
+    # NOTE: this function is hard-coded to write to rand_exploration directory.
+    # If you use this code to save theories not collected from random exploration
+    # then you might dynamically set the directory/filenames to reflect whether or not
+    # randomness was used
+
+    # TODO: Rearrange file-writing so that the structure is game_name/batch_number/theory_rand_N 
+    def outputLesionSnapshot(self, theory, steps):
+
+        print "see TODO above."
+        embed()
+
+        # pickles the theory and saves it in the gameName folder as {s}steps{n}
+        # where s=steps and n=a counter so we don't overwrite earlier runs
+        try:
+            os.makedirs('./lesions/rand_exploration/{}'.format(self.gameFilename))
+        except:
+            # already exists, yay
+            pass
+
+        form = './lesions/rand_exploration/{}/{:06}steps_{}.pkl'
+        n = 0
+        while os.path.exists(form.format(self.gameFilename, steps, n)):
+            n += 1
+        
+        file = open(form.format(self.gameFilename, steps, n), 'wb')
+        pickle.dump(theory, file)
+        file.close()
+
 
     def getSpritesByColor(self, rle, color):
         outList = []
@@ -304,20 +338,39 @@ class Agent:
         return VRLEs
 
     def initializeHypotheses(self, allObjects, statesEncountered, compactStates, learnSprites=True):
-        if learnSprites:
-            if not self.skipInduction:
-                self.observe(self.rle, 15, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states)
-            else:
-                self.observe(self.rle, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states)                
-            spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
-                self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
-            self.rle._game.exceptedObjects = exceptedObjects
-            gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
-            initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
-            # embed()
-        else:
+        
+        if self.frozen_theory:
+            print "DO NOT RUN THIS. THIS IS INCOMPLETE CODE"
+            embed()
+            file = open(self.frozen_theory, 'r')
+            initialTheory = pickle.load(file)
+            file.close()
             gameObject = Game(self.gameString)
-            initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
+        # MARK, EXPLORATION
+        ## This will load a particular theory (e.g., theory learned after N random steps), and will then play/learn after that.
+        ## Reminder, initializeHypotheses() is only called when len(self.hypotheses) == 0
+        elif self.pickled_theory_path:
+            file = open(self.pickled_theory_path,'r')
+            initialTheory = pickle.load(file)
+            file.close()
+            gameObject = Game(self.gameString)
+            print "initialized hypotheses with file",self.pickled_theory_path
+            print "hypotheses:",initialTheory
+        else:
+            if learnSprites:
+                if not self.skipInduction:
+                    self.observe(self.rle, 15, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states)
+                else:
+                    self.observe(self.rle, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states)                
+                spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
+                    self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
+                self.rle._game.exceptedObjects = exceptedObjects
+                gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
+                initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
+                # embed()
+            else:
+                gameObject = Game(self.gameString)
+                initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
 
         # Handle wall vs. projectile interaction (hacky)
         avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
@@ -398,6 +451,27 @@ class Agent:
                 allCompactStates.append(compactStates)
                 episode_results = (n_level, steps, win, score, self.total_planner_steps)
                 episodes.append(episode_results)
+
+                # MARK, EXPLORATION
+                rand_string = ""
+                if self.max_rand_steps > 0:
+                    rand_string = "_rand"
+                # MARK, EXPLORATION
+                # TODO: write_to_csv is not writing the step number. Fix this.
+
+                print "fix the write_to_csv TODO above"
+                embed()
+                if self.total_game_steps >= self.max_rand_steps:
+                    # write progressively to file
+                    output = {'modelType':self.modelType,
+                            'gameName': self.gameFilename,
+                            'condition': 'normal',
+                            'episodes' : [episode_results]}
+                    write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+rand_string+'.csv', output)
+
+                if self.max_rand_steps > 0 and self.total_game_steps > self.max_rand_steps:
+                    print "done moving around randomly to collect theories"
+                    return
 
                 # write progressively to file
                 # output = {'modelType':self.param_ID,
@@ -645,6 +719,7 @@ class Agent:
             self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
 
         ## initialize theory if necessary.
+        # MARK, initializeHypotheses has been editted to use self.pickled_theory_path if it is not None
         if len(self.hypotheses) == 0:
             gameObject = self.initializeHypotheses(self.all_objects, statesEncountered, compactStates, learnSprites=True)
             if self.display_text:
@@ -674,6 +749,10 @@ class Agent:
         #     embed()
         steps = self.rle._game.time
         emptyPlans = 0
+        
+        #######################################
+        ######## LOOP FOR THIS EPISODE ########
+        #######################################
         while not ended:
 
             self.max_nodes = self.stored_max_nodes
@@ -691,136 +770,220 @@ class Agent:
 
             quitting = False
 
-            planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
+            ## MARK, EXPLORATION
+            print "Random mode True/False:",(self.max_rand_steps > 0)
+            if self.max_rand_steps > 0:
+                print "Still in Random Phase",self.total_game_steps < self.max_rand_steps
 
-            ## also, you commented out the bottom part of the planner, where it will still return a high-reward sequence in shortHorizon. This could have a very detrimental effect on short-horizon games...
 
-            ## Initialize planner
-            p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
-                seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom, IW_k=self.IW_k)
-            p_quitting = p.quitting
-            bestNode, gameStringArray, objectPositionsArray = p.BFS()
-            self.total_planner_steps += p.total_nodes_opened
+            ##############################
+            ##### IF MOVING RANDOMLY #####
+            ##############################
+            if self.max_rand_steps > 0 and self.total_game_steps < self.max_rand_steps:
 
-            if bestNode is not None:
-                solution = p.solution
-                gameString_array = p.gameString_array
-                objectPositionsArray = objectPositionsArray[::-1]
-                if solution and self.display_text:
-                    print "got solution"
-            else:
-                solution = []
+                # do random moves
+                action = np.random.choice(legalActions)
 
-            if not solution:
-                ## If we're repeatedly dying in the same way, just switch hyperparameters blindly.
-                if self.checkForRepeatedDeaths(self.episodeRecord, 2):
-                    if self.hyperparameter_index == 1:
-                        if self.display_text:
-                            print "Repeated deaths. Switching to short-range planning"
-                        new_index = 3 
-                        conservative = False
+                self.hypotheses[0].dryingPaint = set()
+
+                ##############################################
+                ############### step #########################
+                ##############################################
+                hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
+                    run_induction = not flexible_goals)
+
+                ##############################################
+                ##### STORE EFFECTS OF TAKING STEP ###########
+                ##############################################
+                self.rle._game.nextPositions = {}
+                for k, v in self.rle._game.all_objects.iteritems():
+                    self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+                    try:
+                        if self.rle._game.previousPositions[k] != self.rle._game.nextPositions[k]:
+                            self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.rle._game.previousPositions[k])
+                            # self.rle._game.objectMemoryDict[k] = ccopy(self.rle._game.previousPositions[k])
+
+                    except KeyError:
+                        print "THERE WAS A KEY ERROR IN playEpisode"
+                        pass
+                self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
+                # self.rle._game.previousPositions = ccopy(self.rle._game.nextPositions)
+
+                ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
+
+                effectsEncountered.extend(effects)
+                
+                ###############################################
+                ########### UPDATE CURRENT HYPOTHESIS #########
+                ###############################################
+
+                steps +=1
+                print "{} steps this episode".format(steps)
+                if theory_change_flag:
+                    self.hypotheses = hypotheses
+                    print 'theory changed'
+                    hypotheses[0].display()
+                    f = open('theoryChanges.txt', 'a')
+                    f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps+steps))
+                    oldout = sys.stdout
+                    sys.stdout = f
+                    hypotheses[0].display()
+                    sys.stdout = oldout
+                    f.close()
+                    self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps+steps)
+                    # break
+            ###########################################
+            ##### IF NOT MOVING RANDOM ################
+            ###########################################
+            ##### IF self.max_rand_steps = 0 #########
+            ##### OR self.total_game_steps >= self.max_rand_steps ####
+            ###########################################
+            else:       
+
+
+                ## MARK, EXPLORATION
+                ## When you're running the random-steps experiment, we want to remove
+                ## noveltyTerminations after the random step phase.
+                ## This flag is passed to the planner.
+                filter_novelty = False
+                if self.max_rand_steps > 0 or self.pickled_theory_path is not None:
+                    filter_novelty = True
+
+                planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
+
+                ## also, you commented out the bottom part of the planner, where it will still return a high-reward sequence in shortHorizon. This could have a very detrimental effect on short-horizon games...
+
+                ## Initialize planner
+                p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
+                    seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+                    firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, 
+                    extra_atom=self.extra_atom, IW_k=self.IW_k, filter_novelty=filter_novelty)
+                p_quitting = p.quitting
+                bestNode, gameStringArray, objectPositionsArray = p.BFS()
+                self.total_planner_steps += p.total_nodes_opened
+
+                if bestNode is not None:
+                    solution = p.solution
+                    gameString_array = p.gameString_array
+                    objectPositionsArray = objectPositionsArray[::-1]
+                    if solution and self.display_text:
+                        print "got solution"
+                else:
+                    solution = []
+
+                if not solution:
+                    ## If we're repeatedly dying in the same way, just switch hyperparameters blindly.
+                    if self.checkForRepeatedDeaths(self.episodeRecord, 2):
+                        if self.hyperparameter_index == 1:
+                            if self.display_text:
+                                print "Repeated deaths. Switching to short-range planning"
+                            new_index = 3 
+                            conservative = False
+                        elif self.hyperparameter_index == 3:
+                            if self.display_text:
+                                print "Repeated deaths. Switching to long-range planning"
+                            new_index = 1
+                            conservative = False
+                        planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
+
                     elif self.hyperparameter_index == 3:
-                        if self.display_text:
-                            print "Repeated deaths. Switching to long-range planning"
-                        new_index = 1
-                        conservative = False
-                    planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
-
-                elif self.hyperparameter_index == 3:
-                    movingTypes = self.checkForMovingTypes(self.rle, self.hypotheses[0])
-                    if self.rle._game.time>compactStates[-1]['timestep']:
-                        scoreChange = self.rle._game.score!=compactStates[-1]['score']
-                    else:
-                        scoreChange = True
-                    # if self.display_text:
-                    print "moving types: {}".format(movingTypes)
-                    print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, 55))
-                    print "scoreChange: {}".format(scoreChange)
-                    # print "self.max_game_time_observed>501: {}".format(self.max_game_time_observed>501)
-                    if self.noNewObjectsInAWhile(self.rle, 55) and \
-                            (not movingTypes or (movingTypes and not scoreChange)):
-                            # (not movingTypes or (movingTypes and self.max_game_time_observed>501)):
+                        movingTypes = self.checkForMovingTypes(self.rle, self.hypotheses[0])
+                        if self.rle._game.time>compactStates[-1]['timestep']:
+                            scoreChange = self.rle._game.score!=compactStates[-1]['score']
+                        else:
+                            scoreChange = True
                         # if self.display_text:
-                        print "switching to long-range planning"
-                        ## switch to long-range planning
-                        new_index = 1
-                        planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
+                        print "moving types: {}".format(movingTypes)
+                        print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, 55))
+                        print "scoreChange: {}".format(scoreChange)
+                        # print "self.max_game_time_observed>501: {}".format(self.max_game_time_observed>501)
+                        if self.noNewObjectsInAWhile(self.rle, 55) and \
+                                (not movingTypes or (movingTypes and not scoreChange)):
+                                # (not movingTypes or (movingTypes and self.max_game_time_observed>501)):
+                            # if self.display_text:
+                            print "switching to long-range planning"
+                            ## switch to long-range planning
+                            new_index = 1
+                            planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
+                            conservative = False
+                            # embed()
+                        else:
+                            # if self.display_text:
+                            print "planning conservatively"
+                            new_index = 3
+                            planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
+                            conservative = True
+                            self.stored_max_nodes = self.max_nodes ##taking annealing into account
+                            self.max_nodes = 50
+                    else:
                         conservative = False
-                        # embed()
-                    else:
-                        # if self.display_text:
-                        print "planning conservatively"
-                        new_index = 3
-                        planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
-                        conservative = True
-                        self.stored_max_nodes = self.max_nodes ##taking annealing into account
-                        self.max_nodes = 50
-                else:
-                    conservative = False
 
-                if self.display_text:
-                    print "planning with hyperparameter index {}".format(self.hyperparameter_index)
-                    print "max_nodes: {}, short_horizon: {}, conservative: {}".format(self.max_nodes, self.shortHorizon, conservative)
-                # embed()
-
-                if conservative:
-                    ## Replan in new mode
-                    p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
-                        seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                        firstOrderHorizon=self.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom, IW_k=self.IW_k)
-                    p_quitting = p.quitting
-                    bestNode, gameStringArray, objectPositionsArray = p.BFS()
-                    self.total_planner_steps += p.total_nodes_opened
-                    if bestNode is not None:
-                        solution = p.solution
-                        gameString_array = p.gameString_array
-                        objectPositionsArray = objectPositionsArray[::-1]
-                        if solution and self.display_text:
-                            print "got solution"
-                    else:
-                        solution = []
-
-            if (not solution) or p_quitting:
-                # Here we make a distinction between quitting because you've
-                # exhausted the number of nodes you can visit or because you
-                # ran out of novelty. In the first case, you only wait longer,
-                # in the second case, you also add a new atom to IW
-                if p.exhausted_novelty and self.extra_atom_allowed:
-                    print "turning on extra atom"
-                    self.extra_atom = True
-                if self.longHorizonObservations<self.longHorizonObservationLimit:
                     if self.display_text:
-                        print "Didn't get solution. Observing, then replanning."
-                    self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates)
-                    solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
-                    self.longHorizonObservations += 1
-                else:
-                    quitting = True
-            # if K_SPACE in solution:
-                # embed()
+                        print "planning with hyperparameter index {}".format(self.hyperparameter_index)
+                        print "max_nodes: {}, short_horizon: {}, conservative: {}".format(self.max_nodes, self.shortHorizon, conservative)
+                    # embed()
 
-            
-            self.actionSeqLength += len(solution)
+                    if conservative:
+                        ## Replan in new mode
+                        p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
+                            seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+                            firstOrderHorizon=self.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom, IW_k=self.IW_k)
+                        p_quitting = p.quitting
+                        bestNode, gameStringArray, objectPositionsArray = p.BFS()
+                        self.total_planner_steps += p.total_nodes_opened
+                        if bestNode is not None:
+                            solution = p.solution
+                            gameString_array = p.gameString_array
+                            objectPositionsArray = objectPositionsArray[::-1]
+                            if solution and self.display_text:
+                                print "got solution"
+                        else:
+                            solution = []
 
-            if solution and not p.quitting and self.display_states:
-                print "============================================="
-                print "got solution of length", len(solution)
-                print colored(p.gameString_array[0], 'green')
-                for i,g in enumerate(p.gameString_array[1:]):
-                    print actionDict[solution[i]]
-                    print colored(g, 'green')
-                print "============================================="
+                if (not solution) or p_quitting:
+                    # Here we make a distinction between quitting because you've
+                    # exhausted the number of nodes you can visit or because you
+                    # ran out of novelty. In the first case, you only wait longer,
+                    # in the second case, you also add a new atom to IW
+                    if p.exhausted_novelty and self.extra_atom_allowed:
+                        print "turning on extra atom"
+                        self.extra_atom = True
+                    if self.longHorizonObservations<self.longHorizonObservationLimit:
+                        if self.display_text:
+                            print "Didn't get solution. Observing, then replanning."
+                        self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates)
+                        solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
+                        self.longHorizonObservations += 1
+                    else:
+                        quitting = True
+                # if K_SPACE in solution:
+                    # embed()
 
-            ##new 6/30/18
-            # if emptyPlans > self.emptyPlansLimit:
-            #     self.max_nodes *= self.max_nodes_annealing
-            #     print "reached emptyPlansLimit of {}. Annealing max nodes to {}".format(self.emptyPlansLimit, self.max_nodes)
+                
+                self.actionSeqLength += len(solution)
 
-            # if emptyPlans > self.emptyPlansLimit:
-                # print "got too many empty plans"
-                # observe(self.rle, 5, self.bestSpriteTypeDict)
+                if solution and not p.quitting and self.display_states:
+                    print "============================================="
+                    print "got solution of length", len(solution)
+                    print colored(p.gameString_array[0], 'green')
+                    for i,g in enumerate(p.gameString_array[1:]):
+                        print actionDict[solution[i]]
+                        print colored(g, 'green')
+                    print "============================================="
 
+                ##new 6/30/18
+                # if emptyPlans > self.emptyPlansLimit:
+                #     self.max_nodes *= self.max_nodes_annealing
+                #     print "reached emptyPlansLimit of {}. Annealing max nodes to {}".format(self.emptyPlansLimit, self.max_nodes)
+
+                # if emptyPlans > self.emptyPlansLimit:
+                    # print "got too many empty plans"
+                    # observe(self.rle, 5, self.bestSpriteTypeDict)
+
+            ###########################################################
+            ############ IF PLANNER DOES NOT TELL YOU TO QUIT #########
+            ############# THEN EXECUTE PLAN ###########################
+            ###########################################################
             if not quitting:
                 for i, action in enumerate(solution):
                     self.hypotheses[0].dryingPaint = set()
@@ -851,9 +1014,23 @@ class Agent:
 
                     effectsEncountered.extend(effects)
                     steps +=1
+
+                    ## MARK, EXPLORATION
                     if theory_change_flag:
                         self.hypotheses = hypotheses
+                        print 'theory changed'
+                        hypotheses[0].display()
+                        f = open('theoryChanges.txt', 'a')
+                        f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps+steps))
+                        oldout = sys.stdout
+                        sys.stdout = f
+                        hypotheses[0].display()
+                        sys.stdout = oldout
+                        f.close()
+                        self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps+steps)
                         break
+
+                            
                     ended, win = self.rle._isDone()
                     # if ended and win:
                     #     print "ended and won 1"
