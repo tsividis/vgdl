@@ -6,7 +6,7 @@ library("dplyr")
 library("colorspace")
 library("RColorBrewer")
 
-date = c('oct15')
+date = c('oct18')
 path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
 data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
@@ -122,13 +122,22 @@ for (i in 1:length(existing_games)){
   #ggsave(title, plot=p, width=15, height=10)
 }
 
+colors = c('firebrick2', 'steelblue3', 'green3', 'darkslategrey3', 'mediumpurple2', 'aquamarine3', 'coral3')
+names(colors)=levels(data$modelrun_ID)
+colorScale = scale_color_manual(name="modelrun_ID", values=colors)
+# colorFrame = data.frame(modeltype=as.character(), color=as.character())
+# for (i in 1:length(levels(data$modeltype_ID))){
+#   r = data.frame(modeltype=levels(data$modelrun_ID)[i], color=colors[i])
+#   colorFrame=rbind(colorFrame, r)
+# }
 ## plot wins
 plots = list()
 for (i in 1:length(existing_games)){
     game = existing_games[i]
-    p=ggplot(subset(data, (game_name==game)&(agent_type=='params__IW=2__ea=True')&(modelrun_ID=='2018-10-11_')), aes(x=cumulative_steps, y=cumulative_wins,color=modelrun_ID)) ##color=agent_type
-    p=p+geom_point(size=1) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
-      
+    p=ggplot(subset(data, (game_name==game)&(agent_type=='params__IW=2__ea=True')), aes(x=cumulative_steps, y=cumulative_wins,color=modelrun_ID))
+    p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
+      colorScale+ 
+            # scale_color_manual(values=colors)+
         # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
       # scale_color_manual(values=colors) + #theme(legend.position="none")+
       ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
@@ -202,6 +211,8 @@ plantimedata = data.frame(game_name=as.character(), modelrun_ID=as.character(), 
 for (i in 1:length(levels(data$game_name))){
   for (j in 1:length(levels(data$modelrun_ID))){
     s = subset(data, ((game_name==levels(data$game_name)[i]) & (modelrun_ID==levels(data$modelrun_ID)[j])) )
+    print(levels(data$game_name)[i])
+    print(levels(data$modelrun_ID)[j])
     if (length(s$level_max_score)>0){
       ## the row we want
       r = filter(s, cumulative_timestep==max(cumulative_timestep))[1,]
@@ -209,7 +220,7 @@ for (i in 1:length(levels(data$game_name))){
       new = data.frame(game_name=r$game_name, modelrun_ID=r$modelrun_ID, max_score=r$score, 
                      max_steps=r$cumulative_timestep, planning_time=r$cumulative_planner_nodes, 
                      max_levels_won=max(r$cumulative_wins),
-                     level_num=filter(games_to_levels, game_name==r$game_name)$num_levels)
+                     level_num=filter(games_to_levels, (game_name==r$game_name))$num_levels)
       plantimedata = rbind(plantimedata, new)
     }
     }
@@ -219,19 +230,32 @@ plantimedata = mutate(plantimedata, level_percentage=max_levels_won/level_num)
 plantimedata = mutate(plantimedata, score_efficiency=max_score/max_steps)
 plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
 
-
-p = ggplot(subset(plantimedata, modelrun_ID=='2018-10-15_'), aes(x=reorder(game_name,-level_percentage), y=level_percentage, fill=factor(modelrun_ID))) +
-  geom_bar(position='dodge', stat='identity')+
+## plot failures across models for each game
+p = ggplot(subset(plantimedata, (modelrun_ID %in% c('2018-10-11_', '2018-10-15_', '2018-10-18_'))), aes(x=game_name, y=1-level_percentage, fill=factor(modelrun_ID))) +
+  geom_bar(position='dodge', stat='identity', alpha=.7)+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p
+
+## plot means and sd for each model. Probably the most useful figure you can make as you decide what to do.
+means = data.frame(model=as.character(), mean=as.numeric(), sd=as.numeric())
+for (i in 1:length(levels(plantimedata$modelrun_ID))){
+  num = summarise(subset(plantimedata, modelrun_ID==levels(plantimedata$modelrun_ID)[i]), 
+                  percentage_mean=mean(level_percentage), percentage_sd=sd(level_percentage))
+  r = data.frame(model=levels(plantimedata$modelrun_ID)[i], percentage_mean=num$percentage_mean, percentage_sd=num$percentage_sd)
+  means=rbind(means,r)
+  }
+p = ggplot(means, aes(x=model,y=percentage_mean, color=model))+
+  geom_pointrange(aes(ymin=percentage_mean-percentage_sd, ymax=percentage_mean+percentage_sd))+ylim(0,1.2)+
+  colorScale
 p
 
 
 model_run1 = '2018-10-15_'
-model_run2 = '2018-10-11_'
-get_diff = function(plantimedata, model_run1, model_run2){
+model_run2 = '2018-10-18_'
+plot_overlap = function(plantimedata, model_run1, model_run2){
   plots = list()
-    p = ggplot(subset(plantimedata, modelrun_ID%in%c(model_run1, model_run2)) , aes(x=reorder(game_name,-max_levels_won), y=max_levels_won, fill=factor(modelrun_ID))) +
-  geom_bar(position='dodge', stat='identity')+
+    p = ggplot(subset(plantimedata, modelrun_ID%in%c(model_run1, model_run2)) , aes(x=reorder(game_name,-level_percentage), y=level_percentage, fill=factor(modelrun_ID))) +
+  geom_bar(position='identity',stat='identity', alpha=.5)+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 p
 }
@@ -298,9 +322,6 @@ p = ggplot(plantimedata, aes(x=game_name, y=score_efficiency, fill=factor(agent_
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 p
 
-## write diff function
-## you'll need to select hte date out of the modelrun_ID to find matching models. or just make the desired modelrun_ID
-## from the supplied dates, as in: ID='2018_'+date...
 
 # Multiple plot function
 #

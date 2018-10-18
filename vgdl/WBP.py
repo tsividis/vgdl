@@ -336,14 +336,14 @@ class WBP():
 		#acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
 		
 		## normal mode
-		# if not self.conservative:
-		acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
-		## sort max to min for pop()
-		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
-		# else:
-			# acceptableNodes = QReward
-		# 	## sort max to min for pop()
-			# bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, len(n.actionSeq)))
+		if not self.conservative:
+			acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
+			## sort max to min for pop()
+			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
+		else:
+			acceptableNodes = QReward
+			## sort max to min for pop()
+			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, len(n.actionSeq)))
 		# 	print "in conservative mode in reward selection"
 		# 	# embed()
 
@@ -1663,8 +1663,7 @@ class Node():
 			self.terminal, self.win = vrle._isDone()
 			i=0
 			while not self.terminal and len(self.actionSeq)>i:
-				# a = self.actionSeq[i]
-				a = 0
+				a = self.actionSeq[i]
 				res = vrle.step(a, return_obs=True)
 				# self.metabolic_cost += self.metabolics(vrle, res['effectList'], a)
 				self.metabolic_cost = 0
