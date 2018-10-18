@@ -116,14 +116,18 @@ class Agent:
         self.extra_atom = False
         self.shortHorizonNodes = 500
         self.longHorizonNodes = 1000
+        self.shortHorizonAnnealing = 1.05
+        self.longhorizonAnnealing = 2.
         if self.shortHorizon == True:
             self.starting_max_nodes = self.shortHorizonNodes
-            self.max_nodes_annealing = 1.05
+            self.max_nodes_annealing = self.shortHorizonAnnealing
         else:
-            self.starting_max_nodes = self.longHorizonNodes
+            self.starting_max_nodes = self.longhorizonAnnealing
             self.max_nodes_annealing = 2.
         self.shortHorizonRandomChoice = [200,500,1000]
-        self.param_ID = "IW={}_ea={}_sh={}_lh={}_shr={}".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, self.shortHorizonRandomChoice)
+        self.param_ID = "IW={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, 
+                self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice)
+        print self.param_ID
         self.conservative = False
         self.regrounding = 1
         self.selective_regrounding = True
@@ -166,10 +170,10 @@ class Agent:
             self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
             if self.shortHorizon == True:
                 self.starting_max_nodes = self.shortHorizonNodes
-                self.max_nodes_annealing = 1.05
+                self.max_nodes_annealing = self.shortHorizonAnnealing
             else:
                 self.starting_max_nodes = self.longHorizonNodes
-                self.max_nodes_annealing = 2. 
+                self.max_nodes_annealing = self.longhorizonAnnealing
             self.max_nodes = self.starting_max_nodes
             self.stored_max_nodes = self.max_nodes
 
