@@ -44,7 +44,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
-		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, IW_k=2, display=False):
+		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, IW_k=2, display=False, filter_novelty=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.hyperparameter_index = hyperparameters['idx']
@@ -81,7 +81,7 @@ class WBP():
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
-
+		self.filter_novelty = filter_novelty
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
@@ -89,6 +89,15 @@ class WBP():
 			self.theory.interactionSet.extend(fakeInteractionRules)
 			self.theory.updateTerminations()
 	
+		##### MARK, EXPLORATION
+		##### ANY FUTURE PLANNING (LIKE WHEN BFS IS CALLED) DEPENDS ON
+		##### THEORY'S CURRENT STATE
+		if self.filter_novelty:
+			def is_not_novelty_rule(rule):
+				return not isinstance(rule,NoveltyRule)
+			self.theory.terminationSet = filter(is_not_novelty_rule,self.theory.terminationSet)
+
+
 		if any([t in str(s.vgdlType) for s in self.theory.spriteObjects.values() for t in ['Missile', 'Random', 'Chaser']]):
 			movingTypesInGame = True
 		else:
