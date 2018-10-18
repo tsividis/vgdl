@@ -2,7 +2,7 @@
 
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-86%30
+#SBATCH --array=0-1%30
 #SBATCH --output=slurm_logs/main/array_%A_%a.out
 #SBATCH --time=1440
 #SBATCH --qos=normal
