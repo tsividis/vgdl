@@ -96,7 +96,7 @@ hyperparameter_sets = [
 
 
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, IW_k=2, extra_atom_allowed=True):
+    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, IW_k=2, extra_atom_allowed=True, max_rand_steps=0, pickled_theory_path=None):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.gameString = None
@@ -1030,7 +1030,7 @@ class Agent:
                         self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps+steps)
                         break
 
-                            
+
                     ended, win = self.rle._isDone()
                     # if ended and win:
                     #     print "ended and won 1"

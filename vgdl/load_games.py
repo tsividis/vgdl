@@ -14,6 +14,9 @@ parser.add_argument('--hyperparameter_index', type=int, default=3, help='hyperpa
 parser.add_argument('--IW_k', type=int, default=2, help='IW_k')
 parser.add_argument('--extra_atom_allowed', type=bool, default=True, help='extra_atom_allowed')
 parser.add_argument('--make_movie', type=str2bool, default=False, help='make_movie')
+parser.add_argument('--pickled_theory_path',type=str,default=str(0),help='pickled theory path')
+parser.add_argument('--max_rand_steps',type=int,default=1000,help='MAX STEPS')
+
 args = parser.parse_args()
 game_number = args.game_number
 game_name = args.game_name
@@ -21,6 +24,8 @@ hyperparameter_index = args.hyperparameter_index
 IW_k = args.IW_k
 extra_atom_allowed = args.extra_atom_allowed
 make_movie = args.make_movie
+pickled_theory_path = args.pickled_theory_path
+max_rand_steps = args.max_rand_steps
 
 if game_name==str(0):
     game_name = game_names[game_number]
@@ -106,7 +111,7 @@ def read_gvgai_game(filename):
         new_doc = "\n".join(new_doc)
     return new_doc
 
-def play_trainset(hyperparameter_sets, hyperparameter_index):
+def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps, pickled_theory_path=None):
     start_time = time.time()
 
     game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
@@ -137,7 +142,8 @@ def play_trainset(hyperparameter_sets, hyperparameter_index):
 #     	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
 #     		level_game_pairs.append([gameString, level.read()])
 
-    agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, IW_k=IW_k, extra_atom_allowed=extra_atom_allowed)
+    agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, IW_k=IW_k, 
+            extra_atom_allowed=extra_atom_allowed, max_rand_steps=max_rand_steps, pickled_theory_path=pickled_theory_path)
 
     ##then pass this down for multiple episodes
     gameObject = None
@@ -151,7 +157,12 @@ def play_trainset(hyperparameter_sets, hyperparameter_index):
 
     return total_time
 
-play_trainset(hyperparameter_sets, hyperparameter_index)
+if pickled_theory_path != str(0):
+    play_trainset(hyperparameter_sets,max_rand_steps,pickled_theory_path)
+else:
+    play_trainset(hyperparameter_sets,max_rand_steps)
+
+
 
 
 
