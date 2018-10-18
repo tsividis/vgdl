@@ -114,13 +114,16 @@ class Agent:
         self.IW_k = IW_k
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
         self.extra_atom = False
-        self.param_ID = "params__IW={}__ea={}".format(self.IW_k, self.extra_atom_allowed)
+        self.shortHorizonNodes = 500
+        self.longHorizonNodes = 1000
         if self.shortHorizon == True:
-            self.starting_max_nodes = 500
+            self.starting_max_nodes = self.shortHorizonNodes
             self.max_nodes_annealing = 1.05
         else:
-            self.starting_max_nodes = 1000
+            self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = 2.
+        self.shortHorizonRandomChoice = [200,500,1000]
+        self.param_ID = "IW={}_ea={}_sh={}_lh={}_shr={}".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, self.shortHorizonRandomChoice)
         self.conservative = False
         self.regrounding = 1
         self.selective_regrounding = True
@@ -162,10 +165,10 @@ class Agent:
             self.shortHorizon = self.hyperparameters['short_horizon']
             self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
             if self.shortHorizon == True:
-                self.starting_max_nodes = random.choice([200, 500])
+                self.starting_max_nodes = self.shortHorizonNodes
                 self.max_nodes_annealing = 1.05
             else:
-                self.starting_max_nodes = 1000
+                self.starting_max_nodes = self.longHorizonNodes
                 self.max_nodes_annealing = 2. 
             self.max_nodes = self.starting_max_nodes
             self.stored_max_nodes = self.max_nodes
@@ -672,9 +675,9 @@ class Agent:
             self.max_nodes = self.stored_max_nodes
 
             ## you don't need to worry about annealing, since you don't anneal up for shortHorizon planning.
-            if self.shortHorizon:
-                self.max_nodes = random.choice([200,500,1000])
-                
+            if self.shortHorizon and self.shortHorizonRandomChoice:
+                self.max_nodes = random.choice(self.shortHorizonRandomChoice)
+
             # if self.display_text:
             print "planning with hyperparameter index {}".format(self.hyperparameter_index)
             print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
