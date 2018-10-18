@@ -35,7 +35,7 @@ game_names = ['aliens', 'variant_aliens_1', 'variant_aliens_2', 'variant_aliens_
 
 # game_names = ['portals', 'variant_portals_1', 'variant_jaws_1', 'variant_expt_push_boulders_1', 'variant_expt_helper_1', 'variant_expt_helper_2', 'variant_corridor_1', 'frogs', 'jaws']
 
-game_names = ['boulderdash', 'variant_boulderdash_1']
+# game_names = ['boulderdash', 'variant_boulderdash_1']
 # game_names = ['boulderdash', 'variant_boulderdash_1', 'boulderchase', 'variant_boulderchase_1']
 # game_names = ['variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4',
 # 'bait', 'variant_bait_1', 'variant_bait_2',
