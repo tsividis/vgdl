@@ -2,10 +2,10 @@
 
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-86%30
+#SBATCH --array=0-86
 #SBATCH --output=slurm_logs/main/array_%A_%a.out
 #SBATCH --time=720
-#SBATCH --qos=tenenbaum
+#SBATCH --qos=normal
 #SBTACH --cpus-per-task=2
 #SBATCH --mem=16G
 
