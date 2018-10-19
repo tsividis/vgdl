@@ -36,7 +36,9 @@ def process_model_run(data, modelrun_ID):
 	## you want to end up with one csv per game. if you want to look at things across games, you just have to merge those csvs, but this is the cleanest way to do it
 	## and to avoid loading huge csv files.
 	## also don't process a particular run multiple times. you need a way of storing the processed model_IDs so that you don't keep appending to a long csv.
-	modelrun_ID = modelrun_ID[modelrun_ID.find('201'):modelrun_ID.find('201')+11]
+	# modelrun_ID = modelrun_ID[modelrun_ID.find('201'):modelrun_ID.find('201')+11]
+	modelrun_ID = modelrun_ID[modelrun_ID.find('201'):]
+
 	data_path = '{}/{}/{}'.format(relative_path, date, 'csv_data')
  	if 'csv_data' not in os.listdir('{}/{}'.format(relative_path, date)):
 	# data_path = '{}/{}'.format(date, 'csv_data')
@@ -64,6 +66,8 @@ def process_model_run(data, modelrun_ID):
 		gamefilewriter = csv.writer(f)
 	
 	agent_type = data['modelParams']
+	# if modelrun_ID in ['2018-10-11_',  '2018-10-15_', '2018-10-18_']:
+		# agent_type = modelrun_ID
 	condition = data['condition'] if 'condition' in data.keys() else 'full'
 	game_name = data['gameInfo']['gameName']
 	cumulative_timestep, cumulative_max_score, sparse_score, cumulative_wins, cumulative_planner_nodes = 0,0,0,0,0

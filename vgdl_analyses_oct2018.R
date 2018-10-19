@@ -6,7 +6,7 @@ library("dplyr")
 library("colorspace")
 library("RColorBrewer")
 
-date = c('oct18')
+date = c('oct19')
 path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
 data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
@@ -125,16 +125,12 @@ for (i in 1:length(existing_games)){
 colors = c('firebrick2', 'steelblue3', 'green3', 'darkslategrey3', 'mediumpurple2', 'aquamarine3', 'coral3')
 names(colors)=levels(data$modelrun_ID)
 colorScale = scale_color_manual(name="modelrun_ID", values=colors)
-# colorFrame = data.frame(modeltype=as.character(), color=as.character())
-# for (i in 1:length(levels(data$modeltype_ID))){
-#   r = data.frame(modeltype=levels(data$modelrun_ID)[i], color=colors[i])
-#   colorFrame=rbind(colorFrame, r)
-# }
+
 ## plot wins
 plots = list()
 for (i in 1:length(existing_games)){
     game = existing_games[i]
-    p=ggplot(subset(data, (game_name==game)&(agent_type=='params__IW=2__ea=True')), aes(x=cumulative_steps, y=cumulative_wins,color=modelrun_ID))
+    p=ggplot(subset(data, game_name==game), aes(x=cumulative_steps, y=cumulative_wins,color=modelrun_ID))
     p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
       colorScale+ 
             # scale_color_manual(values=colors)+
@@ -211,8 +207,6 @@ plantimedata = data.frame(game_name=as.character(), modelrun_ID=as.character(), 
 for (i in 1:length(levels(data$game_name))){
   for (j in 1:length(levels(data$modelrun_ID))){
     s = subset(data, ((game_name==levels(data$game_name)[i]) & (modelrun_ID==levels(data$modelrun_ID)[j])) )
-    print(levels(data$game_name)[i])
-    print(levels(data$modelrun_ID)[j])
     if (length(s$level_max_score)>0){
       ## the row we want
       r = filter(s, cumulative_timestep==max(cumulative_timestep))[1,]
@@ -231,7 +225,7 @@ plantimedata = mutate(plantimedata, score_efficiency=max_score/max_steps)
 plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
 
 ## plot failures across models for each game
-p = ggplot(subset(plantimedata, (modelrun_ID %in% c('2018-10-11_', '2018-10-15_', '2018-10-18_'))), aes(x=game_name, y=1-level_percentage, fill=factor(modelrun_ID))) +
+p = ggplot(plantimedata, aes(x=game_name, y=1-level_percentage, fill=factor(modelrun_ID))) +
   geom_bar(position='dodge', stat='identity', alpha=.7)+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 p
