@@ -132,7 +132,7 @@ for (i in 1:length(existing_games)){
     game = existing_games[i]
     p=ggplot(subset(data, game_name==game), aes(x=cumulative_steps, y=cumulative_wins,color=modelrun_ID))
     p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
-      colorScale+ 
+      #colorScale+ 
             # scale_color_manual(values=colors)+
         # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
       # scale_color_manual(values=colors) + #theme(legend.position="none")+
