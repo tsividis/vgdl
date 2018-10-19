@@ -4,6 +4,9 @@ BasicGame
         structure > Immovable
             water > color=MPUYEI
             goal  > color=GREEN
+        forestDense > SpawnPoint stype=log prob=.4  spawnCooldown=10 color=MPUYEI
+        forestSparse > SpawnPoint stype=log prob=.1  spawnCooldown=5 color=MPUYEI
+        log    > Missile   orientation=LEFT  speed=.2 color=BROWN
         truck  >
             rightTruck  > Missile   orientation=RIGHT
                 fastRtruck  > speed=0.6  color=ORANGE
@@ -12,13 +15,29 @@ BasicGame
                 fastLtruck  > speed=0.6  color=LIGHTORANGE
                 slowLtruck  > speed=0.3  color=LIGHTRED
         avatar > MovingAvatar color=DARKBLUE
+	    entry > Portal stype=exit1 color=LIGHTBLUE
+	    exit1 > Immovable color=GOLD
         wall > Immovable color=DARKGRAY
         bridge > Immovable color=YELLOW
         mud > Immovable color=PURPLE
 
     InteractionSet
+        log EOS > wrapAround
+        EOS log > nothing
+        log wall > nothing
+        water log > nothing
+        log log > nothing
+        avatar log   > changeResource resource=safety value=2
+        avatar log   > pullWithIt  
+        log    EOS   > wrapAround
+        forestDense log > nothing
+        forestSparse log > nothing
         avatar bridge > nothing
         bridge avatar > nothing
+    	avatar entry > teleportToExit
+    	entry avatar > nothing
+    	avatar exit1 > nothing
+    	exit1 avatar > nothing
         mud bridge > nothing
         bridge mud > nothing
         mud mud > nothing
@@ -85,3 +104,12 @@ BasicGame
         w > wall
         b > bridge
         m > mud
+        0 > water
+        1 > forestDense water       # note how a single character can spawn multiple sprites
+        2 > forestDense log
+        3 > forestSparse water       # note how a single character can spawn multiple sprites
+        4 > forestSparse log
+        = > log water
+        B > water log avatar
+        p > entry
+        q > exit1
