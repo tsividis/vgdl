@@ -125,20 +125,21 @@ for (i in 1:length(existing_games)){
 colors = c('firebrick2', 'steelblue3', 'green3', 'darkslategrey3', 'mediumpurple2', 'aquamarine3', 'coral3')
 
 names(colors)=levels(data$agent_type)
-colorScale = scale_color_manual(name="modelrun_ID", values=colors)
+colorScale = scale_color_manual(name="agent_type", values=colors)
 
 ## plot wins
 plots = list()
 for (i in 1:length(existing_games)){
     game = existing_games[i]
-    p=ggplot(subset(data, game_name==game), aes(x=cumulative_steps, y=cumulative_wins,color=modelrun_ID))
+    p=ggplot(subset(data, game_name==game), aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
     p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
       #colorScale+ 
             # scale_color_manual(values=colors)+
         # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
       # scale_color_manual(values=colors) + #theme(legend.position="none")+
       ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
-    p=p+ylim(0,5)
+    p=p+ylim(0,5)+theme(legend.position='none')
+
     p
     if ((grepl('expt', game)) | (grepl('surprise',game)) | (grepl('bees', game))| (grepl('corridor',game))| (grepl('closing',game))){
       if (grepl('expt_ee',game)){
