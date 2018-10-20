@@ -6,7 +6,7 @@ library("dplyr")
 library("colorspace")
 library("RColorBrewer")
 
-date = c('oct19')
+date = c('oct20')
 path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
 data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
@@ -123,7 +123,8 @@ for (i in 1:length(existing_games)){
 }
 
 colors = c('firebrick2', 'steelblue3', 'green3', 'darkslategrey3', 'mediumpurple2', 'aquamarine3', 'coral3')
-names(colors)=levels(data$modelrun_ID)
+
+names(colors)=levels(data$agent_type)
 colorScale = scale_color_manual(name="modelrun_ID", values=colors)
 
 ## plot wins
