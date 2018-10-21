@@ -2,12 +2,12 @@
 
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-86
+#SBATCH --array=0-3
 #SBATCH --output=slurm_logs/main/array_%A_%a.out
 #SBATCH --time=720
 #SBATCH --qos=tenenbaum
 #SBTACH --cpus-per-task=2
-#SBATCH --mem=16G
+#SBATCH --mem=64G
 
 # --array=0-2%30 tells it to run array instances 0-2 and to never run more than 30 jobs at a time.
 # if i'm using qos=tenenbaum i shouldn't exceed 30.
