@@ -577,8 +577,8 @@ class WBP():
 									else:
 										child.terminal = True
 										child.win, foundWin = True, True
-										if self.display:
-											print "exiting early because progress was made toward", stype
+										# if self.display:
+										print "exiting early because progress was made toward", stype
 											# embed()
 							elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
 								stypes = term.termination.stypes
@@ -589,8 +589,8 @@ class WBP():
 									else:
 										child.terminal = True
 										child.win, foundWin = True, True
-										if self.display:
-											print "exiting early because progress was made toward", stypes
+										# if self.display:
+										print "exiting early because progress was made toward", stypes
 											# embed()
 							if foundWin:
 								break
@@ -926,8 +926,8 @@ class Node():
 		# print sum(rolloutArray)
 		# embed()
 		if win:
-			if self.WBP.display:
-				print "rolloutwin"
+			# if self.WBP.display:
+			print "rolloutwin"
 			# embed()
 			self.terminal = terminal
 			self.win = win
@@ -1677,7 +1677,6 @@ class Node():
 				self.terminal, self.win = res['ended'], res['win']
 				# self.terminal, self.win = vrle._isDone()
 				i += 1
-
 		return vrle, self.terminal, self.win
 
 	# def eval_profiler(self):
@@ -1742,8 +1741,7 @@ class Node():
 				self.win=True
 		except IndexError:
 			pass
-		# if self.win:
-			# embed()
+
 		return self.win
 
 	def updateNovelty(self):
