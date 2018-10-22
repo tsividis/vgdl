@@ -610,10 +610,10 @@ class WBP():
 						self.gameString_array = gameString_array[::-1]
 						self.object_positions_array = object_positions_array[::-1]
 						ended, win, t = child.rle._isDone(getTermination=True)
-						if self.display:
+						# if self.display:
 							# print child.rle.show()
-							if t:
-								print t.__dict__
+						if t:
+							print t.__dict__
 							# embed()
 							# embed()
 						# if a == K_LEFT:

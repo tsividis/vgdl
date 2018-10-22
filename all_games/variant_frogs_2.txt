@@ -22,16 +22,23 @@ BasicGame
         mud > Immovable color=PURPLE
 
     InteractionSet
+	water forestDense > nothing
+	forestDense water > nothing
+	water forestSparse > nothing
+	forestSparse water > nothing
         log EOS > wrapAround
         EOS log > nothing
         log wall > nothing
         water log > nothing
+	    log water > nothing
         log log > nothing
         avatar log   > changeResource resource=safety value=2
         avatar log   > pullWithIt  
         log    EOS   > wrapAround
         forestDense log > nothing
+	    log forestDense > nothing
         forestSparse log > nothing
+	    log forestSparse > nothing
         avatar bridge > nothing
         bridge avatar > nothing
     	avatar entry > teleportToExit
@@ -65,8 +72,6 @@ BasicGame
         avatar water > killIfHasLess  resource=safety limit=-1
         avatar water > changeResource resource=safety value=-1
 
-        fastRtruck wall > nothing
-        slowRtruck wall > nothing
         fastRtruck fastLtruck > nothing
         slowRtruck slowLtruck > nothing
         fastRtruck slowLtruck > nothing
@@ -77,9 +82,9 @@ BasicGame
         avatar slowRtruck > killSprite
         slowRtruck  wall   > reverseDirection
         fastRtruck  wall  > reverseDirection
+        wall slowRtruck > nothing
+        wall fastRtruck > nothing
 
-        fastLtruck wall > nothing
-        slowLtruck wall > nothing
         fastLtruck fastLtruck > nothing
         slowLtruck slowLtruck > nothing
         fastLtruck slowLtruck > nothing
@@ -87,6 +92,8 @@ BasicGame
         avatar slowLtruck > killSprite
         slowLtruck  wall   > reverseDirection
         fastLtruck  wall  > reverseDirection
+        wall slowLtruck > nothing
+        wall fastLtruck > nothing
 
     TerminationSet
         SpriteCounter stype=goal   limit=0 win=True bonus=10
