@@ -259,8 +259,7 @@ class Agent:
                                 sprite.orientation = orientation
 
                         except KeyError:
-                            # print "Failed to get params for Missile in main_agent"
-                            # embed()
+                            sprite.orientation = random.choice([(0,1), (0,-1), (1,0), (-1,0)])
                             pass
         for k,v in Vrle._game.sprite_groups.items():
             for sprite in v:
