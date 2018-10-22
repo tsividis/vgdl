@@ -23,6 +23,9 @@ BasicGame frame_rate=30
         x > chaser1
         r > rand
     InteractionSet
+    	box2 box3 > nothing
+    	box3 box2 > nothing
+    	box3 box3 > nothing
         chaser bridge > nothing
         bridge chaser > nothing
         avatar bridge > nothing
