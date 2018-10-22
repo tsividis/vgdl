@@ -82,6 +82,8 @@ BasicGame frame_rate=30
         mover mover > stepBack
         box3 wall > killSprite
         wall box3 > nothing
+        box3 chaser > nothing
+        chaser box3 > nothing
     TerminationSet
         SpriteCounter stype=avatar  limit=0 win=False
         SpriteCounter stype=box1 limit=0 win=True bonus=10

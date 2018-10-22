@@ -33,7 +33,7 @@
 # 'sokoban', 'variant_sokoban_1', 'variant_sokoban_2',
 # 'watergame', 'variant_watergame_1', 'variant_watergame_2'] ##48  87 total
 
-game_names = ['variant_frogs_2', 'variant_frogs_3']
+game_names = ['watergame', 'variant_watergame_1', 'variant_watergame_2']
 # game_names = ['portals', 'variant_portals_1', 'variant_jaws_1', 'variant_expt_push_boulders_1', 'variant_expt_helper_1', 'variant_expt_helper_2', 'variant_corridor_1', 'frogs', 'jaws']
 
 # game_names = ['boulderdash', 'variant_boulderdash_1']
