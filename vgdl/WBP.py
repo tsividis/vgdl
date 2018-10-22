@@ -338,7 +338,7 @@ class WBP():
 
 		# ## Always use novelty to filter. 
 		acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
-		# # ## sort max to min for pop()
+		# # # ## sort max to min for pop()
 		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
 		
 		## Use novelty only in normal mode. For conservative mode just try to return as many nodes as possible.

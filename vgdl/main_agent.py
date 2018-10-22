@@ -117,7 +117,7 @@ class Agent:
         self.shortHorizonNodes = 500
         self.longHorizonNodes = 1000
         self.shortHorizonAnnealing = 1.05
-        self.longhorizonAnnealing = 10.
+        self.longhorizonAnnealing = 2.
         if self.shortHorizon == True:
             self.starting_max_nodes = self.shortHorizonNodes
             self.max_nodes_annealing = self.shortHorizonAnnealing
