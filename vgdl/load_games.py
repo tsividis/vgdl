@@ -15,7 +15,7 @@ parser.add_argument('--IW_k', type=int, default=2, help='IW_k')
 parser.add_argument('--extra_atom_allowed', type=bool, default=True, help='extra_atom_allowed')
 parser.add_argument('--make_movie', type=str2bool, default=False, help='make_movie')
 # parser.add_argument('--pickled_theory_path',type=str,default=str(0),help='pickled theory path')
-parser.add_argument('--max_rand_steps',type=int,default=1000,help='MAX STEPS')
+parser.add_argument('--max_rand_steps',type=int,default=10000,help='MAX STEPS')
 parser.add_argument('--use_pickled_theories',type=str2bool, default=False)
 
 args = parser.parse_args()
