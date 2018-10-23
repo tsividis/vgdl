@@ -349,17 +349,17 @@ class Agent:
 
     def initializeHypotheses(self, allObjects, statesEncountered, compactStates, learnSprites=True):
         
-        if self.frozen_theory:
-            print "DO NOT RUN THIS. THIS IS INCOMPLETE CODE"
-            embed()
-            file = open(self.frozen_theory, 'r')
-            initialTheory = pickle.load(file)
-            file.close()
-            gameObject = Game(self.gameString)
+        # if self.frozen_theory:
+        #     print "DO NOT RUN THIS. THIS IS INCOMPLETE CODE"
+        #     embed()
+        #     file = open(self.frozen_theory, 'r')
+        #     initialTheory = pickle.load(file)
+        #     file.close()
+        #     gameObject = Game(self.gameString)
         # MARK, EXPLORATION
         ## This will load a particular theory (e.g., theory learned after N random steps), and will then play/learn after that.
         ## Reminder, initializeHypotheses() is only called when len(self.hypotheses) == 0
-        elif self.pickled_theory_path:
+        if self.pickled_theory_path:
             file = open(self.pickled_theory_path,'r')
             initialTheory = pickle.load(file)
             file.close()
@@ -690,6 +690,11 @@ class Agent:
                 [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
 
+        legalActions = [0, K_UP, K_DOWN, K_LEFT, K_RIGHT]
+        if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
+            legalActions.append(K_SPACE)
+        print "legal actions: {}".format(legalActions)
+
         ## Do beginning-of-episode resource-management.
         resources = self.rle._game.getAvatars()[0].resources
         for resource, val in resources.items():
@@ -736,14 +741,14 @@ class Agent:
 
                 # do random moves
                 action = np.random.choice(legalActions)
-                print "legalactions:", legalActions
-                embed()
 
                 self.hypotheses[0].dryingPaint = set()
 
                 ##############################################
                 ############### step #########################
                 ##############################################
+                #def executeStep(self, action, hypotheses, statesEncountered, compactStates, plannerNodes, run_induction=True):
+
                 hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
                     run_induction = not flexible_goals)
 
