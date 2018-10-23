@@ -337,20 +337,20 @@ class WBP():
 
 
 		# ## Always use novelty to filter. 
-		# acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
+		acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
 		# # # ## sort max to min for pop()
-		# bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
+		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
 		
 		## Use novelty only in normal mode. For conservative mode just try to return as many nodes as possible.
 		# # normal mode
-		if not self.conservative:
-			acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
-			## sort max to min for pop()
-			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
-		else:
-			acceptableNodes = QReward
-			## sort max to min for pop()
-			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, len(n.actionSeq)))
+		# if not self.conservative:
+		# 	acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
+		# 	## sort max to min for pop()
+		# 	bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
+		# else:
+		# 	acceptableNodes = QReward
+		# 	## sort max to min for pop()
+		# 	bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, len(n.actionSeq)))
 		# 	print "in conservative mode in reward selection"
 		# 	# embed()
 
