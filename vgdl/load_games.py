@@ -14,7 +14,7 @@ parser.add_argument('--hyperparameter_index', type=int, default=3, help='hyperpa
 parser.add_argument('--IW_k', type=int, default=2, help='IW_k')
 parser.add_argument('--extra_atom_allowed', type=bool, default=True, help='extra_atom_allowed')
 parser.add_argument('--make_movie', type=str2bool, default=False, help='make_movie')
-# parser.add_argument('--pickled_theory_path',type=str,default=str(0),help='pickled theory path')
+parser.add_argument('--pickled_theory_path',type=str,default=str(0),help='pickled theory path')
 parser.add_argument('--max_rand_steps',type=int,default=10000,help='MAX STEPS')
 parser.add_argument('--use_pickled_theories',type=str2bool, default=False)
 
@@ -25,7 +25,7 @@ hyperparameter_index = args.hyperparameter_index
 IW_k = args.IW_k
 extra_atom_allowed = args.extra_atom_allowed
 make_movie = args.make_movie
-# pickled_theory_path = args.pickled_theory_path
+pickled_theory_path = args.pickled_theory_path
 max_rand_steps = args.max_rand_steps
 use_pickled_theories = args.use_pickled_theories
 if use_pickled_theories:
@@ -165,9 +165,9 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps, pic
     return total_time
 
 if pickled_theory_path != str(0):
-    play_trainset(hyperparameter_sets,max_rand_steps,pickled_theory_path)
+    play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps, pickled_theory_path)
 else:
-    play_trainset(hyperparameter_sets,max_rand_steps)
+    play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps)
 
 
 
