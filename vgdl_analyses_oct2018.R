@@ -8,7 +8,7 @@ library("dplyr")
 library("colorspace")
 library("RColorBrewer")
 
-date = c('oct22')
+date = c('oct23')
 path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
 data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
@@ -84,15 +84,6 @@ for (i in 1:length(all_game_names)){
   }
 }
 
-
-## color mapping:
-agent_types = c('human', 'params__IW=1__ea=False','params__IW=1__ea=True', 
-                'params__IW=2__ea=False',  'params__IW=2__ea=True', 'DDQN')
-# colors = c('blue','lightskyblue3', 'lightskyblue1', 
-           # 'steelblue2', 'steelblue4', 'salmon3')
-##you need to make a real mapping between agent_types and colors. for now, just have
-## as many colors as you have agent_types in the plot:
-colors = c('steelblue3','steelblue1')
 ## Make plots.
 
 ## plot scores
@@ -131,7 +122,7 @@ for (i in 1:length(existing_games)){
   #ggsave(title, plot=p, width=15, height=10)
 }
 
-colors = c('firebrick2', 'steelblue3', 'green3', 'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
+colors = c('firebrick2', 'tomato2', 'steelblue3', 'steelblue1', 'palegreen3', 'seagreen3', 'purple2', 'mediumorchid2',  'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
 
 names(colors)=levels(data$agent_type)
 colorScale = scale_color_manual(name="agent_type", values=colors)
@@ -142,13 +133,7 @@ plots = list()
 q=list()
 for (i in 1:length(existing_games)){
     game = existing_games[i]
-    d=subset(data, game_name==game)
-    if (game=='variant_frogs_2'){
-      d = subset(d, grepl('22',d$modelrun_ID))
-    }
-    if (game=='variant_expt_relational_2'){
-      d = subset(d, grepl('21', d$modelrun_ID))
-    }
+    d=subset(data, game_name==game & agent_type!="IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=False")
 
     p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
     p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
@@ -211,11 +196,11 @@ m = multiplot(plotlist = c(plots[1:91],q[[1]]), layout=layout)
 
 ## Making two plots for now because multiplot refuses to make the first 4 plots if
 ## you make the whole grid at once.
-layout = matrix(c(c(1:43),44,45,45,c(47:48)), ncol=6, byrow=TRUE)
-m = multiplot(plotlist = c(plots[1:43],w[1],q[1]), layout=layout)
+layout = matrix(c(c(1:46),47,48), ncol=6, byrow=TRUE)
+m = multiplot(plotlist = c(plots[1:46],w[1],q[1]), layout=layout)
 
-layout = matrix(c(c(1:47),48), ncol=6, byrow=TRUE)
-m = multiplot(plotlist = c(plots[44:length(plots)], q[1]), layout=layout)
+layout = matrix(c(c(1:45),46,46,47), ncol=6, byrow=TRUE)
+m = multiplot(plotlist = c(plots[47:length(plots)], q[1]), layout=layout)
 
 ###
 ###
