@@ -122,10 +122,10 @@ class Agent:
             self.starting_max_nodes = self.shortHorizonNodes
             self.max_nodes_annealing = self.shortHorizonAnnealing
         else:
-            self.starting_max_nodes = self.longhorizonAnnealing
-            self.max_nodes_annealing = 2.
+            self.starting_max_nodes = self.longHorizonNodes
+            self.max_nodes_annealing = self.longhorizonAnnealing
         self.shortHorizonRandomChoice = [200,500,1000]
-        self.param_ID = "IW={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, 
+        self.param_ID = "IW={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, 
                 self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice)
         print self.param_ID
         self.conservative = False
