@@ -104,7 +104,7 @@ class Agent:
         self.display_text = False
         self.display_states = True
         self.record_states = True
-        self.record_video_info = True
+        self.record_video_info = False
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = hyperparameter_index
         self.hyperparameters = hyperparameter_sets[hyperparameter_index]
@@ -155,7 +155,6 @@ class Agent:
         self.actionSeqLength = 0.
         self.skipInduction = False
 
-        # Hyperopt output
         self.total_game_steps = 0
         self.total_planner_steps = 0
         self.levels_won = 0
@@ -228,23 +227,34 @@ class Agent:
     # TODO: Rearrange file-writing so that the structure is game_name/batch_number/theory_rand_N 
     def outputLesionSnapshot(self, theory, steps):
 
-        print "see TODO above."
-        embed()
-
+        gamepath = './lesions/rand_exploration/{}'.format(self.gameFilename)
         # pickles the theory and saves it in the gameName folder as {s}steps{n}
         # where s=steps and n=a counter so we don't overwrite earlier runs
         try:
-            os.makedirs('./lesions/rand_exploration/{}'.format(self.gameFilename))
+            os.makedirs(gamepath)
         except:
             # already exists, yay
             pass
 
-        form = './lesions/rand_exploration/{}/{:06}steps_{}.pkl'
-        n = 0
-        while os.path.exists(form.format(self.gameFilename, steps, n)):
-            n += 1
-        
-        file = open(form.format(self.gameFilename, steps, n), 'wb')
+        batch_number = len([f for f in os.listdir(gamepath) if 'DS_Store' not in f])
+
+        outpath = gamepath+'/{}'.format(batch_number)
+        try:
+            os.makedirs(outpath)
+        except:
+            # already exists, yay
+            pass
+
+
+        picklepath = '{}/{:06}steps.pkl'.format(outpath, steps)
+
+        print "see that you're creating directories and files with the right names as outlined above."
+        embed()
+
+        # n = 0
+        # while os.path.exists(form.format(self.gameFilename, steps, n)):
+            # n += 1
+        file = open(picklepath, 'wb')
         pickle.dump(theory, file)
         file.close()
 
@@ -452,34 +462,26 @@ class Agent:
                 episode_results = (n_level, steps, win, score, self.total_planner_steps)
                 episodes.append(episode_results)
 
-                # MARK, EXPLORATION
-                rand_string = ""
-                if self.max_rand_steps > 0:
-                    rand_string = "_rand"
-                # MARK, EXPLORATION
-                # TODO: write_to_csv is not writing the step number. Fix this.
+                # # MARK, EXPLORATION
+                # rand_string = ""
+                # if self.max_rand_steps > 0:
+                #     rand_string = "_rand"
+                # # MARK, EXPLORATION
+                # # TODO: write_to_csv is not writing the step number. Fix this.
 
-                print "fix the write_to_csv TODO above"
-                embed()
-                if self.total_game_steps >= self.max_rand_steps:
-                    # write progressively to file
-                    output = {'modelType':self.modelType,
-                            'gameName': self.gameFilename,
-                            'condition': 'normal',
-                            'episodes' : [episode_results]}
-                    write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+rand_string+'.csv', output)
+                # print "fix the write_to_csv TODO above"
+                # embed()
+                # if self.total_game_steps >= self.max_rand_steps:
+                #     # write progressively to file
+                #     output = {'modelType':self.modelType,
+                #             'gameName': self.gameFilename,
+                #             'condition': 'normal',
+                #             'episodes' : [episode_results]}
+                #     write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+rand_string+'.csv', output)
 
                 if self.max_rand_steps > 0 and self.total_game_steps > self.max_rand_steps:
                     print "done moving around randomly to collect theories"
                     return
-
-                # write progressively to file
-                # output = {'modelType':self.param_ID,
-                #             'gameName': self.gameFilename,
-                #             'condition': 'normal',
-                #             'episodes' : [episode_results]}
-                # # write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+'.csv', output)
-                # write_to_csv('',str(self.gameFilename)+'.csv', output)
 
                 if self.make_movie:
                     self.statesEncountered = statesEncountered
@@ -488,15 +490,6 @@ class Agent:
                 if self.record_video_info:
                     allStatesEncountered.extend(statesEncountered)
 
-                # if make_movie:
-                    # allStatesEncountered.extend(statesEncountered)
-                    # VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
-                    # persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
-                # levelEffectsEncountered.append(effectsEncountered)
-                
-                # if self.total_game_steps > MAX_STEPS:
-                    # return
-
                 first_time_playing_level = False
                 i += 1
                 print "Finished in ", time.time() - t1
@@ -504,8 +497,8 @@ class Agent:
                 episodeCompactStates[n_level] = allCompactStates
                 fullStateEpisodes[n_level] = allStatesEncountered
 
-                ## will write all previous episodes to the file at the end of each episode.
-                if self.record_states:
+                ## will write all previous episodes to the file at the end of each episode, after the random-exploration phase
+                if self.record_states and not (self.max_rand_steps > 0 and self.total_game_steps < self.max_rand_steps):
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
                     episodeList = [v for k,v in sorted(episodeCompactStates.items())]
                     print "n_level", n_level
@@ -523,48 +516,12 @@ class Agent:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateList, 'time_elapsed':time.time()-starttime}, f)
                     f.close()
 
-            # if i < 10:
-                # self.levels_won += 1
-
-            # if heatmap:
-            #     self.makeHeatmap(allStatesEncountered, '{}_{}_level{}_heatmap.pdf'.format(
-            #         # self.gameFilename[self.gameFilename.find('expt'):],
-            #         gvgname[gvgname.find('set_1/')+6:],
-            #         self.modelType, n_level))
-
-            # allEffectsEncountered.append(levelEffectsEncountered)
-
-            ## Uncomment if you want to run flexible goals version.
-            # j+=1
-            # if j>0:
-            #     flexible_goals=True
-
             if flexible_goals:
                 ## When you embed, you can manually input changes in theory. See flexible_goals.py for an example.
                 print "in main_agent; playing with flexible_goals"
                 embed()
 
         endtime = time.time()
-        ## put timestamp on filenames
-        # if self.record_states:
-        #     dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
-        #     filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
-        #     if not os.path.exists(dirname):
-        #         os.makedirs(dirname)
-        #     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
-        #     with open(filename, 'wb') as f:
-        #         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeCompactStates, 'time_elapsed':endtime-starttime}, f)
-        #     f.close()
-
-        # if self.record_video_info:
-        #     dirname = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
-        #     if not os.path.exists(dirname):
-        #         os.makedirs(dirname)
-        #     filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
-        #     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
-        #     with open(filename, 'wb') as f:
-        #         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateEpisodes, 'time_elapsed':endtime-starttime}, f)
-        #     f.close()
 
         # if self.make_movie:
             # self.makeMovie()
@@ -705,12 +662,11 @@ class Agent:
         statesEncountered = []
         compactStates = [] ## for analysis
 
-        # self.rleHistory.append(copy.deepcopy(self.rle._game))
-        # self.statesEncountered.append(self.rle._game.getFullState())
         if self.make_movie or self.record_video_info:
             statesEncountered.append(self.rle._game.getFullState())
         
-        if self.record_states:
+        ## if we're past the move-randomly phase, record states
+        if self.record_states and not (self.max_rand_steps > 0 and self.total_game_steps < self.max_rand_steps):
             compactStates.append(self.compactify(self.rle))
         ## Initialize memory of object positions
         self.rle._game.objectMemoryDict, self.rle._game.previousPositions = {}, {}
@@ -744,9 +700,7 @@ class Agent:
                 self.seen_limits.append(resource)
 
         ended, win = self.rle._isDone()
-        # if ended and win:
-        #     print "ended and won 0"
-        #     embed()
+
         steps = self.rle._game.time
         emptyPlans = 0
         
@@ -761,7 +715,6 @@ class Agent:
             if self.shortHorizon and self.shortHorizonRandomChoice:
                 self.max_nodes = random.choice(self.shortHorizonRandomChoice)
 
-            # if self.display_text:
             print "planning with hyperparameter index {}".format(self.hyperparameter_index)
             print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
 
@@ -771,18 +724,20 @@ class Agent:
             quitting = False
 
             ## MARK, EXPLORATION
-            print "Random mode True/False:",(self.max_rand_steps > 0)
+            print "Random mode True/False:", (self.max_rand_steps > 0)
             if self.max_rand_steps > 0:
-                print "Still in Random Phase",self.total_game_steps < self.max_rand_steps
+                print "Still in Random Phase", self.total_game_steps+steps < self.max_rand_steps
 
 
             ##############################
             ##### IF MOVING RANDOMLY #####
             ##############################
-            if self.max_rand_steps > 0 and self.total_game_steps < self.max_rand_steps:
+            if self.max_rand_steps > 0 and self.total_game_steps+steps < self.max_rand_steps:
 
                 # do random moves
                 action = np.random.choice(legalActions)
+                print "legalactions:", legalActions
+                embed()
 
                 self.hypotheses[0].dryingPaint = set()
 
@@ -801,29 +756,28 @@ class Agent:
                     try:
                         if self.rle._game.previousPositions[k] != self.rle._game.nextPositions[k]:
                             self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.rle._game.previousPositions[k])
-                            # self.rle._game.objectMemoryDict[k] = ccopy(self.rle._game.previousPositions[k])
-
                     except KeyError:
                         print "THERE WAS A KEY ERROR IN playEpisode"
                         pass
                 self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
-                # self.rle._game.previousPositions = ccopy(self.rle._game.nextPositions)
 
-                ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
+                # ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
 
                 effectsEncountered.extend(effects)
+                steps +=1
                 
+
                 ###############################################
-                ########### UPDATE CURRENT HYPOTHESIS #########
+                ########### STORE CURRENT HYPOTHESIS #########
                 ###############################################
 
-                steps +=1
                 print "{} steps this episode".format(steps)
                 if theory_change_flag:
                     self.hypotheses = hypotheses
                     print 'theory changed'
                     hypotheses[0].display()
-                    f = open('theoryChanges.txt', 'a')
+                    ## store what steps we get theory changes in
+                    f = open('theoryChanges_{}.txt'.format(self.gameFilename), 'a')
                     f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps+steps))
                     oldout = sys.stdout
                     sys.stdout = f
@@ -832,12 +786,12 @@ class Agent:
                     f.close()
                     self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps+steps)
                     # break
-            ###########################################
-            ##### IF NOT MOVING RANDOM ################
-            ###########################################
-            ##### IF self.max_rand_steps = 0 #########
+            #############################################
+            ##### IF NOT MOVING RANDOMLY ################
+            #############################################
+            ##### IF self.max_rand_steps = 0 ############
             ##### OR self.total_game_steps >= self.max_rand_steps ####
-            ###########################################
+            ##############################################
             else:       
 
 
@@ -1020,7 +974,7 @@ class Agent:
                         self.hypotheses = hypotheses
                         print 'theory changed'
                         hypotheses[0].display()
-                        f = open('theoryChanges.txt', 'a')
+                        f = open('theoryChanges_{}.txt'.format(self.gameFilename), 'a')
                         f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps+steps))
                         oldout = sys.stdout
                         sys.stdout = f
@@ -1032,9 +986,6 @@ class Agent:
 
 
                     ended, win = self.rle._isDone()
-                    # if ended and win:
-                    #     print "ended and won 1"
-                    #     embed()
 
                     self.max_game_time_observed = max(self.max_game_time_observed, self.rle._game.time)
                     if ended:
@@ -1087,7 +1038,6 @@ class Agent:
                 self.stored_max_nodes = self.max_nodes
                 win, effects = False, []
                 self.episodeRecord.insert(0, (win, effects))
-                # self.updateMemory(self.rle)
                 print colored('________________________________________________________________', 'white', 'on_red')
                 print colored("Quitting", 'white', 'on_red')
                 print colored('________________________________________________________________', 'white', 'on_red')
@@ -1096,9 +1046,6 @@ class Agent:
 
             annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
-            # if ended and win:
-            #     print "ended and won 2"
-            #     embed()
             
             if ended:
                 self.episodeRecord.insert(0, (win, effects))
@@ -1304,7 +1251,8 @@ class Agent:
                 rle.step((0,0))
                 if self.make_movie or self.record_video_info:
                     statesEncountered.append(self.rle._game.getFullState())
-                if self.record_states:
+                ## if we're past the move-randomly phase
+                if self.record_states and not (self.max_rand_steps > 0 and self.total_game_steps+rle._game.time < self.max_rand_steps):
                     compactStates.append(self.compactify(self.rle))
                 if display:
                     print "score: {}, game tick: {}".format(rle._game.score, rle._game.time)
@@ -1336,12 +1284,8 @@ class Agent:
             t1 = time.time()
             spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
             # print "induction step 2 took {} seconds".format(time.time()-t1)
-
-
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
-            # agentState = ccopy(self.rle._game.getAvatars()[0].resources)
-
         except IndexError:
             agentState = defaultdict(lambda: 0)
 
@@ -1385,10 +1329,9 @@ class Agent:
 
         if self.make_movie or self.record_video_info:
             statesEncountered.append(self.rle._game.getFullState())
-        if self.record_states:
+        ## If we're past the move-randomly phase
+        if self.record_states and not (self.max_rand_steps > 0 and self.total_game_steps+steps < self.max_rand_steps):
             compactStates.append(self.compactify(self.rle, plannerNodes))
-
-        # print "manage new objects and getFullState: {}".format(time.time()-t1)
 
         t1 = time.time()
         if not self.skipInduction:
