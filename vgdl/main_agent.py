@@ -259,7 +259,7 @@ class Agent:
                                 sprite.orientation = orientation
 
                         except KeyError:
-                            # sprite.orientation = random.choice([(0,1), (0,-1), (1,0), (-1,0)])
+                            sprite.orientation = random.choice([(0,1), (0,-1), (1,0), (-1,0)])
                             pass
         for k,v in Vrle._game.sprite_groups.items():
             for sprite in v:
