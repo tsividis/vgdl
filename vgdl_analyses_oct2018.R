@@ -183,7 +183,7 @@ for (i in 1:length(existing_games)){
       #colorScale+ 
       # scale_color_manual(values=colors)+
       # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
-      scale_color_manual(values=colors) + #theme(legend.position="none")+
+      scale_color_manual(values=colors) + theme(legend.position="right")+
       ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
     
     legend = g_legend(p) 
@@ -196,8 +196,14 @@ for (i in 1:length(existing_games)){
 }
 
 ## create blank data frame object so we can move the legend to the right.
-df <- data.frame()
-w = ggplot(df) + geom_point() +xlim(0,1) + theme_classic()
+# df <- data.frame()
+# w = ggplot(df) + geom_point() +xlim(0,1) 
+w=list()
+w[[1]] = ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type)) + geom_blank() + theme_classic() +   theme(line = element_blank(),
+                                                                                    text = element_blank(),
+                                                                                    title = element_blank())
+
+
 
 
 layout = matrix(c(1:96), ncol=6, byrow=TRUE)
@@ -205,11 +211,11 @@ m = multiplot(plotlist = c(plots[1:91],q[[1]]), layout=layout)
 
 ## Making two plots for now because multiplot refuses to make the first 4 plots if
 ## you make the whole grid at once.
-layout = matrix(c(1:48), ncol=6, byrow=TRUE)
-m = multiplot(plotlist = c(plots[1:46],q[[1]]), layout=layout)
+layout = matrix(c(c(1:43),44,45,45,c(47:48)), ncol=6, byrow=TRUE)
+m = multiplot(plotlist = c(plots[1:43],w[1],q[1]), layout=layout)
 
-layout = matrix(c(1:48), ncol=6, byrow=TRUE)
-m = multiplot(plotlist = c(plots[47:length(plots)],q[[1]]), layout=layout)
+layout = matrix(c(c(1:47),48), ncol=6, byrow=TRUE)
+m = multiplot(plotlist = c(plots[44:length(plots)], q[1]), layout=layout)
 
 ###
 ###
