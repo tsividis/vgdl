@@ -164,7 +164,16 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps, pic
 
     return total_time
 
+#######
+## To generate burn-in data, call with max_rand_steps>0 and no pickled_theory_path
+## To generate normal behavior using a pickled theory, call with a pickled_theory_path
+## To run with epsilon_greedy call w/o max_rand_steps and w/o pickled_theory_path but w/ epsilon_greedy=True
+#######
+
 if pickled_theory_path != str(0):
+    theories = os.listdir('./lesions/rand_exploration/{}/{}'.format(game_name,95))
+    pickled_theory_path = './lesions/rand_exploration/{}/{}/{}'.format(game_name,95,theories[0])
+    max_rand_steps = 0 ## don't do random exploration if you're using a previously-acquired theory
     play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps, pickled_theory_path)
 else:
     play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps)

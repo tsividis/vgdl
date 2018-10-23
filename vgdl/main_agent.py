@@ -3,7 +3,7 @@ from util import *
 from core import colorDict, VGDLParser, sys, keyPresses
 from ontology import *
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
-SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
+SpriteCounterRule, MultiSpriteCounterRule, NoveltyRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
 generateTheoryFromGame
 import os, subprocess, shutil
 from collections import defaultdict
@@ -164,6 +164,10 @@ class Agent:
         # MARK, EXPLORATION
         self.max_rand_steps = max_rand_steps
         self.pickled_theory_path = pickled_theory_path
+        if pickled_theory_path is not None:
+            self.exploration_burn_in = int(pickled_theory_path[pickled_theory_path.rfind('/')+1:pickled_theory_path.rfind('steps.pkl')])
+        else:
+            self.exploration_burn_in = 0
 
     def hyperparameterSwitch(self, new_index):
         if new_index!=self.hyperparameter_index:
@@ -338,7 +342,7 @@ class Agent:
             tempHypothesis = copy.deepcopy(hypothesis)
             tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
             tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
-            if not flexible_goals:
+            if not flexible_goals and not self.pickled_theory_path:
                 tempHypothesis.updateTerminations()
             VRLEs.append(self.initializeVrle(tempHypothesis))
 
@@ -361,12 +365,12 @@ class Agent:
             initialTheory = pickle.load(file)
             file.close()
             gameObject = Game(self.gameString)
-            print "initialized hypotheses with file",self.pickled_theory_path
-            print "hypotheses:",initialTheory
+            print "initialized hypotheses with file", self.pickled_theory_path
+            print "hypotheses:", initialTheory
         else:
             if learnSprites:
                 if not self.skipInduction:
-                    self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states)
+                    self.observe(self.rle, 15, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states)
                 else:
                     self.observe(self.rle, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states)                
                 spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
@@ -389,7 +393,7 @@ class Agent:
         previous_colors = [o['type']['color'] for o in self.previous_objects.values()]
         current_colors = [o['type']['color'] for o in allObjects.values()]
         if all([c in previous_colors for c in current_colors]):
-            self.observe(self.rle, 0, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
+            self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
         else:
             self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states) ## observe many steps so that you're not completely clueless about object movements for the new level
 
@@ -502,7 +506,7 @@ class Agent:
                     print "n_level", n_level
                     print len(episodeList)
                     with open(filename, 'wb') as f:
-                        cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
+                        cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'exploration_burn_in':self.exploration_burn_in, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
                     f.close()
 
                 ## will write video data at the end of each episode
@@ -511,7 +515,7 @@ class Agent:
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
                     fullStateList = [v for k,v in sorted(fullStateEpisodes.items())]
                     with open(videofilename, 'wb') as f:
-                        cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateList, 'time_elapsed':time.time()-starttime}, f)
+                        cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'exploration_burn_in':self.exploration_burn_in, 'episodes':fullStateList, 'time_elapsed':time.time()-starttime}, f)
                     f.close()
 
             if flexible_goals:
@@ -721,6 +725,13 @@ class Agent:
             print "planning with hyperparameter index {}".format(self.hyperparameter_index)
             print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
 
+            if self.pickled_theory_path:
+                print "removing noveltyTerminations from the theory"
+                ## Remove noveltyTerminations from the theory.
+                def is_not_novelty_rule(rule):
+                    return not isinstance(rule, NoveltyRule)
+                self.hypotheses[0].terminationSet = filter(is_not_novelty_rule, self.hypotheses[0].terminationSet)
+
             ## initialize one or many VRLEs according to hypothesis-selection method
             theoryRLEs = self.VrleInitPhase(flexible_goals)
 
@@ -810,8 +821,6 @@ class Agent:
             ##### OR self.total_game_steps >= self.max_rand_steps ####
             ##############################################
             else:       
-                print "not moving randomly"
-                embed()
 
                 ## MARK, EXPLORATION
                 ## When you're running the random-steps experiment, we want to remove
@@ -820,6 +829,7 @@ class Agent:
                 filter_novelty = False
                 if self.max_rand_steps > 0 or self.pickled_theory_path is not None:
                     filter_novelty = True
+                    print "filter novelty", filter_novelty
 
                 planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
 
@@ -899,7 +909,8 @@ class Agent:
                         ## Replan in new mode
                         p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                             seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                            firstOrderHorizon=self.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom, IW_k=self.IW_k)
+                            firstOrderHorizon=self.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, 
+                            extra_atom=self.extra_atom, IW_k=self.IW_k, filter_novelty=filter_novelty)
                         p_quitting = p.quitting
                         bestNode, gameStringArray, objectPositionsArray = p.BFS()
                         self.total_planner_steps += p.total_nodes_opened
@@ -928,9 +939,6 @@ class Agent:
                         self.longHorizonObservations += 1
                     else:
                         quitting = True
-                # if K_SPACE in solution:
-                    # embed()
-
                 
                 self.actionSeqLength += len(solution)
 
@@ -942,15 +950,6 @@ class Agent:
                         print actionDict[solution[i]]
                         print colored(g, 'green')
                     print "============================================="
-
-                ##new 6/30/18
-                # if emptyPlans > self.emptyPlansLimit:
-                #     self.max_nodes *= self.max_nodes_annealing
-                #     print "reached emptyPlansLimit of {}. Annealing max nodes to {}".format(self.emptyPlansLimit, self.max_nodes)
-
-                # if emptyPlans > self.emptyPlansLimit:
-                    # print "got too many empty plans"
-                    # observe(self.rle, 5, self.bestSpriteTypeDict)
 
                 ###########################################################
                 ############ IF PLANNER DOES NOT TELL YOU TO QUIT #########
