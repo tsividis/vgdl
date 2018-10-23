@@ -630,8 +630,6 @@ class Agent:
         statesEncountered = []
         compactStates = [] ## for analysis
 
-        # self.rleHistory.append(copy.deepcopy(self.rle._game))
-        # self.statesEncountered.append(self.rle._game.getFullState())
         if self.make_movie or self.record_video_info:
             statesEncountered.append(self.rle._game.getFullState())
         
@@ -668,9 +666,7 @@ class Agent:
                 self.seen_limits.append(resource)
 
         ended, win = self.rle._isDone()
-        # if ended and win:
-        #     print "ended and won 0"
-        #     embed()
+
         steps = self.rle._game.time
         emptyPlans = 0
         while not ended:
@@ -681,7 +677,6 @@ class Agent:
             if self.shortHorizon and self.shortHorizonRandomChoice:
                 self.max_nodes = random.choice(self.shortHorizonRandomChoice)
 
-            # if self.display_text:
             print "planning with hyperparameter index {}".format(self.hyperparameter_index)
             print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
 
@@ -854,9 +849,6 @@ class Agent:
                         self.hypotheses = hypotheses
                         break
                     ended, win = self.rle._isDone()
-                    # if ended and win:
-                    #     print "ended and won 1"
-                    #     embed()
 
                     self.max_game_time_observed = max(self.max_game_time_observed, self.rle._game.time)
                     if ended:
@@ -909,7 +901,6 @@ class Agent:
                 self.stored_max_nodes = self.max_nodes
                 win, effects = False, []
                 self.episodeRecord.insert(0, (win, effects))
-                # self.updateMemory(self.rle)
                 print colored('________________________________________________________________', 'white', 'on_red')
                 print colored("Quitting", 'white', 'on_red')
                 print colored('________________________________________________________________', 'white', 'on_red')
@@ -918,9 +909,6 @@ class Agent:
 
             annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
-            # if ended and win:
-            #     print "ended and won 2"
-            #     embed()
             
             if ended:
                 self.episodeRecord.insert(0, (win, effects))
@@ -1158,12 +1146,8 @@ class Agent:
             t1 = time.time()
             spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
             # print "induction step 2 took {} seconds".format(time.time()-t1)
-
-
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
-            # agentState = ccopy(self.rle._game.getAvatars()[0].resources)
-
         except IndexError:
             agentState = defaultdict(lambda: 0)
 
