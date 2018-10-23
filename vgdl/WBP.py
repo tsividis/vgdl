@@ -97,7 +97,6 @@ class WBP():
 				return not isinstance(rule,NoveltyRule)
 			self.theory.terminationSet = filter(is_not_novelty_rule,self.theory.terminationSet)
 
-
 		if any([t in str(s.vgdlType) for s in self.theory.spriteObjects.values() for t in ['Missile', 'Random', 'Chaser']]):
 			movingTypesInGame = True
 		else:
@@ -346,20 +345,20 @@ class WBP():
 
 
 		# ## Always use novelty to filter. 
-		# acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
+		acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
 		# # ## sort max to min for pop()
-		# bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
+		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
 		
 		## Use novelty only in normal mode. For conservative mode just try to return as many nodes as possible.
 		# # normal mode
-		if not self.conservative:
-			acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
-			## sort max to min for pop()
-			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
-		else:
-			acceptableNodes = QReward
-			## sort max to min for pop()
-			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, len(n.actionSeq)))
+		# if not self.conservative:
+		# 	acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
+		# 	## sort max to min for pop()
+		# 	bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
+		# else:
+		# 	acceptableNodes = QReward
+		# 	## sort max to min for pop()
+		# 	bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, len(n.actionSeq)))
 		# 	print "in conservative mode in reward selection"
 		# 	# embed()
 
@@ -586,8 +585,8 @@ class WBP():
 									else:
 										child.terminal = True
 										child.win, foundWin = True, True
-										if self.display:
-											print "exiting early because progress was made toward", stype
+										# if self.display:
+										print "exiting early because progress was made toward", stype
 											# embed()
 							elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
 								stypes = term.termination.stypes
@@ -598,8 +597,8 @@ class WBP():
 									else:
 										child.terminal = True
 										child.win, foundWin = True, True
-										if self.display:
-											print "exiting early because progress was made toward", stypes
+										# if self.display:
+										print "exiting early because progress was made toward", stypes
 											# embed()
 							if foundWin:
 								break
@@ -619,10 +618,10 @@ class WBP():
 						self.gameString_array = gameString_array[::-1]
 						self.object_positions_array = object_positions_array[::-1]
 						ended, win, t = child.rle._isDone(getTermination=True)
-						if self.display:
+						# if self.display:
 							# print child.rle.show()
-							if t:
-								print t.__dict__
+						if t:
+							print t.__dict__
 							# embed()
 							# embed()
 						# if a == K_LEFT:
@@ -1513,6 +1512,8 @@ class Node():
 				heuristicVal += timeout_val
 
 			elif isinstance(term, NoveltyRule):
+				print "found a novelty rule..."
+				embed()
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=novelty_first_alpha, second_alpha=novelty_second_alpha)

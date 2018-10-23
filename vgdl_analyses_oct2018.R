@@ -262,6 +262,7 @@ plantimedata = na.omit(plantimedata)
 plantimedata = mutate(plantimedata, level_percentage=max_levels_won/level_num)
 plantimedata = mutate(plantimedata, score_efficiency=max_score/max_steps)
 plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
+plantimedata = mutate(plantimedata, plan_nodes_per_step=planning_time/max_steps)
 
 ## plot failures across models for each game
 p = ggplot(plantimedata, aes(x=game_name, y=1-level_percentage, fill=factor(modelrun_ID))) +
@@ -270,6 +271,8 @@ p = ggplot(plantimedata, aes(x=game_name, y=1-level_percentage, fill=factor(mode
 p
 
 ## plot means and sd for each model. Probably the most useful figure you can make as you decide what to do.
+## But careful -- figure may be misleading because you're omitting NAs 
+## (game/model combinations that you don't yet have data for) 
 means = data.frame(model=as.character(), mean=as.numeric(), sd=as.numeric())
 for (i in 1:length(levels(plantimedata$agent_type))){
   num = summarise(subset(plantimedata, agent_type==levels(plantimedata$agent_type)[i]), 
@@ -284,6 +287,29 @@ p = ggplot(means, aes(x=reorder(model,-percentage_mean) ,y=percentage_mean, colo
                    axis.ticks.x=element_blank())
 p
 
+##plot of avg plantime per node
+plantimeplots = list()
+for (i in 1:length(levels(plantimedata$agent_type))){
+  agent = levels(plantimedata$agent_type)[i]
+  d = subset(plantimedata, agent_type==agent)
+  if (length(d$game_name)>0){
+    p = ggplot(d, aes(x=reorder(game_name, plan_nodes_per_step),y=plan_nodes_per_step,fill=level_percentage))
+    p=p+geom_bar(position='dodge',stat='identity')+ggtitle(as.character(agent)) +theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    p=p+scale_fill_gradient2(low="red",high="green",midpoint=.6)
+    p
+    plantimeplots[[i]]=p
+  }
+  }
+layout = matrix(c(1:length(plantimeplots)), ncol=1, byrow=TRUE)
+m = multiplot(plotlist = plantimeplots, layout=layout)
+## save as 32x16
+
+##plot of hyperparameter_idx_1 vs idx_3
+for (i in 1:length(levels(data$agent_type))){
+  agent = levels(data$agent_type)[i]
+  d=subset(data, agent_type==agent)
+  ## sum planner_nodes that match each planner_settings value 
+}
 
 model_run1 = '2018-10-15_'
 model_run2 = '2018-10-18_'

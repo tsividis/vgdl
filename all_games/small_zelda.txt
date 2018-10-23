@@ -34,6 +34,7 @@ BasicGame
     avatar box3 > stepBack
     box3 avatar > stepBack
     avatar wall  > stepBack
+    wall avatar > nothing
     avatar goal    > nothing
     goal avatar  > killIfOtherHasMore resource=key limit=1
     monsterSlow sword > changeScore value=2

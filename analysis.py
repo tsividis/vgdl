@@ -46,7 +46,7 @@ def process_model_run(data, modelrun_ID):
 	if 'merged_data' not in os.listdir(data_path):
 		g = open('{}/merged_data'.format(data_path), 'w+')
 		mergedfilewriter = csv.writer(g)
-		mergedfilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 'score', 'level_max_score', 'cumulative_max_score', 
+		mergedfilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'exploration_burn_in', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 'score', 'level_max_score', 'cumulative_max_score', 
 							'sparse_score', 'level_accumulated_score', 'episode_end', 'win', 'cumulative_wins', 'planner_settings', 'planner_nodes', 'cumulative_planner_nodes'))
 	else:
 		g = open('{}/merged_data'.format(data_path), 'a+')	
@@ -57,13 +57,14 @@ def process_model_run(data, modelrun_ID):
 	if game_name not in os.listdir(data_path):
 		f = open('{}/{}'.format(data_path, game_name), 'w+') #newfile and write
 		gamefilewriter = csv.writer(f)
-		gamefilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 'score', 'level_max_score', 'cumulative_max_score', 
+		gamefilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'exploration_burn_in', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 'score', 'level_max_score', 'cumulative_max_score', 
 							'sparse_score','level_accumulated_score', 'episode_end', 'win', 'cumulative_wins', 'planner_settings', 'planner_nodes', 'cumulative_planner_nodes'))
 	else:
 		f = open('{}/{}'.format(data_path, game_name), 'a+') #append and read
 		gamefilewriter = csv.writer(f)
 	
 	agent_type = data['modelParams']
+	exploration_burn_in = data['exploration_burn_in']
 	condition = data['condition'] if 'condition' in data.keys() else 'full'
 	game_name = data['gameInfo']['gameName']
 	cumulative_timestep, cumulative_max_score, sparse_score, cumulative_wins, cumulative_planner_nodes = 0,0,0,0,0
@@ -113,7 +114,7 @@ def process_model_run(data, modelrun_ID):
 					accumulated_score = accumulated_score + score
 					level_accumulated_score = accumulated_score
 				## for a particular model, the subject_ID is just the agent_type, i.e., its parameters.
-				row = (agent_type, agent_type, modelrun_ID, condition, game_name, level_number, t, cumulative_timestep, score, level_max_score, cumulative_max_score,
+				row = (agent_type, agent_type, modelrun_ID, condition, exploration_burn_in, game_name, level_number, t, cumulative_timestep, score, level_max_score, cumulative_max_score,
 						sparse_score, level_accumulated_score, episode_end, win, cumulative_wins, planner_settings, planner_nodes, cumulative_planner_nodes)
 				cumulative_timestep += 1
 
