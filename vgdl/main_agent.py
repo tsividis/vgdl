@@ -11,7 +11,7 @@ import WBP
 import importlib
 import numpy as np
 import random
-import cPickle
+import cPickle, pickle
 import time
 from datetime import datetime
 import copy
@@ -369,7 +369,7 @@ class Agent:
         else:
             if learnSprites:
                 if not self.skipInduction:
-                    self.observe(self.rle, 15, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states)
+                    self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states)
                 else:
                     self.observe(self.rle, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states)                
                 spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
@@ -747,11 +747,10 @@ class Agent:
                 ##############################################
                 ############### step #########################
                 ##############################################
-                #def executeStep(self, action, hypotheses, statesEncountered, compactStates, plannerNodes, run_induction=True):
 
-                hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered,
+                plannerNodes = 0
+                hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                     run_induction = not flexible_goals)
-
                 ##############################################
                 ##### STORE EFFECTS OF TAKING STEP ###########
                 ##############################################
@@ -798,7 +797,8 @@ class Agent:
             ##### OR self.total_game_steps >= self.max_rand_steps ####
             ##############################################
             else:       
-
+                print "not moving randomly"
+                embed()
 
                 ## MARK, EXPLORATION
                 ## When you're running the random-steps experiment, we want to remove
@@ -939,114 +939,114 @@ class Agent:
                     # print "got too many empty plans"
                     # observe(self.rle, 5, self.bestSpriteTypeDict)
 
-            ###########################################################
-            ############ IF PLANNER DOES NOT TELL YOU TO QUIT #########
-            ############# THEN EXECUTE PLAN ###########################
-            ###########################################################
-            if not quitting:
-                for i, action in enumerate(solution):
-                    self.hypotheses[0].dryingPaint = set()
-                    # if action==K_SPACE:
-                        # print "about to take a shot"
-                        # embed()
-                    # envPrev = copy.deepcopy(self.rle)
-                    if self.display_text:
-                        t1 = time.time()
-                    effects = []
-                    plannerNodes = p.total_nodes_opened if i==0 else 0
-                    hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
-                        run_induction = not flexible_goals)
-                    
-                    if self.display_text:
-                        print "executeStep took {} seconds".format(time.time()-t1)
-                    sys.stdout.flush()
-                    
-                    self.rle._game.nextPositions = {}
-                    for k, v in self.rle._game.all_objects.iteritems():
-                        self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
-                        try:
-                            if self.rle._game.previousPositions[k] != self.rle._game.nextPositions[k]:
-                                self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.rle._game.previousPositions[k])
-                        except KeyError:
-                            pass
-                    self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
+                ###########################################################
+                ############ IF PLANNER DOES NOT TELL YOU TO QUIT #########
+                ############# THEN EXECUTE PLAN ###########################
+                ###########################################################
+                if not quitting:
+                    for i, action in enumerate(solution):
+                        self.hypotheses[0].dryingPaint = set()
+                        # if action==K_SPACE:
+                            # print "about to take a shot"
+                            # embed()
+                        # envPrev = copy.deepcopy(self.rle)
+                        if self.display_text:
+                            t1 = time.time()
+                        effects = []
+                        plannerNodes = p.total_nodes_opened if i==0 else 0
+                        hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
+                            run_induction = not flexible_goals)
+                        
+                        if self.display_text:
+                            print "executeStep took {} seconds".format(time.time()-t1)
+                        sys.stdout.flush()
+                        
+                        self.rle._game.nextPositions = {}
+                        for k, v in self.rle._game.all_objects.iteritems():
+                            self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+                            try:
+                                if self.rle._game.previousPositions[k] != self.rle._game.nextPositions[k]:
+                                    self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.rle._game.previousPositions[k])
+                            except KeyError:
+                                pass
+                        self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
 
-                    effectsEncountered.extend(effects)
-                    steps +=1
+                        effectsEncountered.extend(effects)
+                        steps +=1
 
-                    ## MARK, EXPLORATION
-                    if theory_change_flag:
-                        self.hypotheses = hypotheses
-                        print 'theory changed'
-                        hypotheses[0].display()
-                        f = open('theoryChanges_{}.txt'.format(self.gameFilename), 'a')
-                        f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps+steps))
-                        oldout = sys.stdout
-                        sys.stdout = f
-                        hypotheses[0].display()
-                        sys.stdout = oldout
-                        f.close()
-                        self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps+steps)
-                        break
-
-
-                    ended, win = self.rle._isDone()
-
-                    self.max_game_time_observed = max(self.max_game_time_observed, self.rle._game.time)
-                    if ended:
-                        # print "episode ended"
-                        # embed()
-                        break
-                    # if self.total_game_steps > MAX_STEPS:
-                        # score = self.rle._game.score
-                        # return gameObject, win, score, steps, statesEncountered, effectsEncountered
-                    # if self.rle._game.time>13:
-                        # embed()
-
-                    ## Make sure you're far enough from unpredictable dangerous objects.
-                    # Check for disparities between plan and reality
-                    # (e.g. stochastic effects)
-                    if (i+1)%self.regrounding==0:
-
-                        if self.checkForDangerOrAvatarMisLocation(self.rle, hypotheses[0], objectPositionsArray, i):
+                        ## MARK, EXPLORATION
+                        if theory_change_flag:
+                            self.hypotheses = hypotheses
+                            print 'theory changed'
+                            hypotheses[0].display()
+                            f = open('theoryChanges_{}.txt'.format(self.gameFilename), 'a')
+                            f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps+steps))
+                            oldout = sys.stdout
+                            sys.stdout = f
+                            hypotheses[0].display()
+                            sys.stdout = oldout
+                            f.close()
+                            self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps+steps)
                             break
 
-                    if self.reground_for_npcs: ## this is just exercising caution when near random objects, irrespective of whether they kill us or not
-                        try:
-                            random_npc_colors = [self.hypotheses[0].classes[k][0].color for k in self.hypotheses[0].classes.keys() if self.hypotheses[0].classes[k] and 'Random' in str(self.hypotheses[0].classes[k][0].vgdlType)]
-                            random_npc_classes = [k for k in self.rle._game.sprite_groups.keys() if self.rle._game.sprite_groups[k] and self.rle._game.sprite_groups[k][0].colorName in random_npc_colors]
-                            random_npc_positions = []
 
-                            for c in random_npc_classes:
-                                for element in self.rle._game.sprite_groups[c]:
-                                    if element not in self.rle._game.kill_list:
-                                        random_npc_positions.append(self.rle._rect2pos(element.rect))
+                        ended, win = self.rle._isDone()
 
-                            avatar_positions = [self.rle._rect2pos(avatar.rect)
-                                 for avatar in self.rle._game.getAvatars()]
+                        self.max_game_time_observed = max(self.max_game_time_observed, self.rle._game.time)
+                        if ended:
+                            # print "episode ended"
+                            # embed()
+                            break
+                        # if self.total_game_steps > MAX_STEPS:
+                            # score = self.rle._game.score
+                            # return gameObject, win, score, steps, statesEncountered, effectsEncountered
+                        # if self.rle._game.time>13:
+                            # embed()
 
-                            possiblePairList = [manhattanDist(avatar, rand)
-                                for avatar in avatar_positions
-                                for rand in random_npc_positions]
-                            if min(possiblePairList) < self.safeDistance:
-                                print("Close to RandomNPC, regrounding")
-                                # embed()
+                        ## Make sure you're far enough from unpredictable dangerous objects.
+                        # Check for disparities between plan and reality
+                        # (e.g. stochastic effects)
+                        if (i+1)%self.regrounding==0:
+
+                            if self.checkForDangerOrAvatarMisLocation(self.rle, hypotheses[0], objectPositionsArray, i):
                                 break
 
-                        except ValueError:
-                            # print("error in avoid_danger: is the avatar dead?")
-                            pass
-            else:
-                ## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
-                ## Search more deeply next time.
-                self.max_nodes *= self.max_nodes_annealing
-                self.stored_max_nodes = self.max_nodes
-                win, effects = False, []
-                self.episodeRecord.insert(0, (win, effects))
-                print colored('________________________________________________________________', 'white', 'on_red')
-                print colored("Quitting", 'white', 'on_red')
-                print colored('________________________________________________________________', 'white', 'on_red')
-                return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered, compactStates
+                        if self.reground_for_npcs: ## this is just exercising caution when near random objects, irrespective of whether they kill us or not
+                            try:
+                                random_npc_colors = [self.hypotheses[0].classes[k][0].color for k in self.hypotheses[0].classes.keys() if self.hypotheses[0].classes[k] and 'Random' in str(self.hypotheses[0].classes[k][0].vgdlType)]
+                                random_npc_classes = [k for k in self.rle._game.sprite_groups.keys() if self.rle._game.sprite_groups[k] and self.rle._game.sprite_groups[k][0].colorName in random_npc_colors]
+                                random_npc_positions = []
+
+                                for c in random_npc_classes:
+                                    for element in self.rle._game.sprite_groups[c]:
+                                        if element not in self.rle._game.kill_list:
+                                            random_npc_positions.append(self.rle._rect2pos(element.rect))
+
+                                avatar_positions = [self.rle._rect2pos(avatar.rect)
+                                     for avatar in self.rle._game.getAvatars()]
+
+                                possiblePairList = [manhattanDist(avatar, rand)
+                                    for avatar in avatar_positions
+                                    for rand in random_npc_positions]
+                                if min(possiblePairList) < self.safeDistance:
+                                    print("Close to RandomNPC, regrounding")
+                                    # embed()
+                                    break
+
+                            except ValueError:
+                                # print("error in avoid_danger: is the avatar dead?")
+                                pass
+                else:
+                    ## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
+                    ## Search more deeply next time.
+                    self.max_nodes *= self.max_nodes_annealing
+                    self.stored_max_nodes = self.max_nodes
+                    win, effects = False, []
+                    self.episodeRecord.insert(0, (win, effects))
+                    print colored('________________________________________________________________', 'white', 'on_red')
+                    print colored("Quitting", 'white', 'on_red')
+                    print colored('________________________________________________________________', 'white', 'on_red')
+                    return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered, compactStates
 
 
             annealing *= self.annealingFactor
@@ -1335,7 +1335,7 @@ class Agent:
         if self.make_movie or self.record_video_info:
             statesEncountered.append(self.rle._game.getFullState())
         ## If we're past the move-randomly phase
-        if self.record_states and not (self.max_rand_steps > 0 and self.total_game_steps+steps < self.max_rand_steps):
+        if self.record_states and not (self.max_rand_steps > 0 and self.total_game_steps+self.rle._game.time < self.max_rand_steps):
             compactStates.append(self.compactify(self.rle, plannerNodes))
 
         t1 = time.time()
