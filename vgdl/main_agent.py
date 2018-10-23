@@ -248,9 +248,6 @@ class Agent:
 
         picklepath = '{}/{:06}steps.pkl'.format(outpath, steps)
 
-        print "see that you're creating directories and files with the right names as outlined above."
-        embed()
-
         # n = 0
         # while os.path.exists(form.format(self.gameFilename, steps, n)):
             # n += 1
@@ -454,6 +451,7 @@ class Agent:
             allCompactStates = []
             t1 = time.time()
             first_time_playing_level = True
+
             while not win and i<15:
                 gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
                 
@@ -479,7 +477,7 @@ class Agent:
                 #             'episodes' : [episode_results]}
                 #     write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+rand_string+'.csv', output)
 
-                if self.max_rand_steps > 0 and self.total_game_steps > self.max_rand_steps:
+                if self.max_rand_steps > 0 and self.total_game_steps >= self.max_rand_steps:
                     print "done moving around randomly to collect theories"
                     return
 
@@ -790,6 +788,21 @@ class Agent:
                     f.close()
                     self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps+steps)
                     # break
+
+            ############################################################
+            ########### IF DONE MOVING RANDOMLY, QUIT AND EXIT #########
+            ############################################################
+            elif self.max_rand_steps > 0 and not (self.total_game_steps+steps < self.max_rand_steps):
+                ## output one last lesion snapshot so that we know we actually went to max_rand_steps.
+                f = open('theoryChanges_{}.txt'.format(self.gameFilename), 'a')
+                f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps+steps))
+                oldout = sys.stdout
+                sys.stdout = f
+                self.hypotheses[0].display()
+                sys.stdout = oldout
+                f.close()
+                self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps+steps)
+                return gameObject, win, self.rle._game.score, steps, statesEncountered, effectsEncountered, compactStates
             #############################################
             ##### IF NOT MOVING RANDOMLY ################
             #############################################
