@@ -435,9 +435,6 @@ class Agent:
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
                     episodeList = [v for k,v in sorted(episodeCompactStates.items())]
                     print "n_level", n_level
-                    print len(episodeList)
-                    print "embedded in 'if self.record_states' in playCurriculum"
-                    embed()
                     with open(filename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
                     f.close()
@@ -670,6 +667,11 @@ class Agent:
 
         ended, win = self.rle._isDone()
 
+        legalActions = [0, K_UP, K_DOWN, K_LEFT, K_RIGHT]
+        if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
+            legalActions.append(K_SPACE)
+        print "legal actions: {}".format(legalActions)
+
         steps = self.rle._game.time
         emptyPlans = 0
         while not ended:
@@ -778,7 +780,7 @@ class Agent:
                             print "got solution"
                     else:
                         solution = []
-
+            takingRandomSteps = False
             if (not solution) or p_quitting:
                 # Here we make a distinction between quitting because you've
                 # exhausted the number of nodes you can visit or because you
@@ -791,7 +793,6 @@ class Agent:
                     # if self.display_text:
                     # print "Didn't get solution. Observing, then replanning."
                     print "Didn't get solution. Taking {} random steps and then replanning".format(self.random_steps_on_plan_failure)
-
                     plannerNodes = p.total_nodes_opened
                     # action = 0
                     # hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
@@ -799,16 +800,16 @@ class Agent:
                     # self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates)
                     solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
                     for i in range(self.random_steps_on_plan_failure):
-                        solution.append(random.choice(legalActions))    
+                        solution.append(random.choice(legalActions))
                     self.longHorizonObservations += 1
+                    takingRandomSteps = True
                 else:
                     plannerNodes = p.total_nodes_opened
                     action = 0
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                         run_induction = not flexible_goals)
                     quitting = True
-                print "embedded after failure to find solution in main_agent"
-                embed()
+
             # if K_SPACE in solution:
                 # embed()
 
@@ -874,7 +875,7 @@ class Agent:
                     # (e.g. stochastic effects)
                     if (i+1)%self.regrounding==0:
 
-                        if self.checkForDangerOrAvatarMisLocation(self.rle, hypotheses[0], objectPositionsArray, i):
+                        if (not takingRandomSteps) and self.checkForDangerOrAvatarMisLocation(self.rle, hypotheses[0], objectPositionsArray, i):
                             break
 
                     if self.reground_for_npcs: ## this is just exercising caution when near random objects, irrespective of whether they kill us or not
