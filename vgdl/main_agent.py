@@ -114,6 +114,7 @@ class Agent:
         self.IW_k = IW_k
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
         self.extra_atom = False
+        self.random_steps_on_plan_failure = 5
         self.shortHorizonNodes = 500
         self.longHorizonNodes = 1000
         self.shortHorizonAnnealing = 1.05
@@ -788,13 +789,17 @@ class Agent:
                     self.extra_atom = True
                 if self.longHorizonObservations<self.longHorizonObservationLimit:
                     # if self.display_text:
-                    print "Didn't get solution. Observing, then replanning."
+                    # print "Didn't get solution. Observing, then replanning."
+                    print "Didn't get solution. Taking {} random steps and then replanning".format(self.random_steps_on_plan_failure)
+
                     plannerNodes = p.total_nodes_opened
-                    action = 0
-                    hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
-                        run_induction = not flexible_goals)
-                    self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates)
+                    # action = 0
+                    # hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
+                        # run_induction = not flexible_goals)
+                    # self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates)
                     solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
+                    for i in range(self.random_steps_on_plan_failure):
+                        solution.append(random.choice(legalActions))    
                     self.longHorizonObservations += 1
                 else:
                     plannerNodes = p.total_nodes_opened
@@ -831,10 +836,7 @@ class Agent:
             if not quitting:
                 for i, action in enumerate(solution):
                     self.hypotheses[0].dryingPaint = set()
-                    # if action==K_SPACE:
-                        # print "about to take a shot"
-                        # embed()
-                    # envPrev = copy.deepcopy(self.rle)
+
                     if self.display_text:
                         t1 = time.time()
                     effects = []
@@ -865,14 +867,7 @@ class Agent:
 
                     self.max_game_time_observed = max(self.max_game_time_observed, self.rle._game.time)
                     if ended:
-                        # print "episode ended"
-                        # embed()
                         break
-                    # if self.total_game_steps > MAX_STEPS:
-                        # score = self.rle._game.score
-                        # return gameObject, win, score, steps, statesEncountered, effectsEncountered
-                    # if self.rle._game.time>13:
-                        # embed()
 
                     ## Make sure you're far enough from unpredictable dangerous objects.
                     # Check for disparities between plan and reality
@@ -907,6 +902,18 @@ class Agent:
                         except ValueError:
                             # print("error in avoid_danger: is the avatar dead?")
                             pass
+
+                # if deferred_quitting:
+                #     ## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
+                #     ## Search more deeply next time.
+                #     self.max_nodes *= self.max_nodes_annealing
+                #     self.stored_max_nodes = self.max_nodes
+                #     win, effects = False, []
+                #     self.episodeRecord.insert(0, (win, effects))
+                #     print colored('________________________________________________________________', 'white', 'on_red')
+                #     print colored("Quitting", 'white', 'on_red')
+                #     print colored('________________________________________________________________', 'white', 'on_red')
+                #     return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered, compactStates
             else:
                 ## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
                 ## Search more deeply next time.
