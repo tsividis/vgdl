@@ -414,9 +414,9 @@ class WBP():
 
 
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
-			if self.display and i%100==0:
+
+			if i%100==0:
 				print "Searching node {}".format(i)
-				print "Have opened {} total nodes".format(self.total_nodes_opened)
 
 			current = self.rewardSelection(QReward, QNovelty)
 			

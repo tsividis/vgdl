@@ -435,6 +435,8 @@ class Agent:
                     episodeList = [v for k,v in sorted(episodeCompactStates.items())]
                     print "n_level", n_level
                     print len(episodeList)
+                    print "embedded in 'if self.record_states' in playCurriculum"
+                    embed()
                     with open(filename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
                     f.close()
@@ -696,7 +698,7 @@ class Agent:
             p_quitting = p.quitting
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes_opened
-
+            print "total planner steps in main_agent:", self.total_planner_steps
             if bestNode is not None:
                 solution = p.solution
                 gameString_array = p.gameString_array
@@ -752,7 +754,7 @@ class Agent:
                         self.max_nodes = 50
                 else:
                     conservative = False
-
+                # embed()
                 if self.display_text:
                     print "planning with hyperparameter index {}".format(self.hyperparameter_index)
                     print "max_nodes: {}, short_horizon: {}, conservative: {}".format(self.max_nodes, self.shortHorizon, conservative)
@@ -766,6 +768,7 @@ class Agent:
                     p_quitting = p.quitting
                     bestNode, gameStringArray, objectPositionsArray = p.BFS()
                     self.total_planner_steps += p.total_nodes_opened
+                    print "total planner steps in main_agent:", self.total_planner_steps
                     if bestNode is not None:
                         solution = p.solution
                         gameString_array = p.gameString_array
@@ -784,13 +787,23 @@ class Agent:
                     print "turning on extra atom"
                     self.extra_atom = True
                 if self.longHorizonObservations<self.longHorizonObservationLimit:
-                    if self.display_text:
-                        print "Didn't get solution. Observing, then replanning."
+                    # if self.display_text:
+                    print "Didn't get solution. Observing, then replanning."
+                    plannerNodes = p.total_nodes_opened
+                    action = 0
+                    hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
+                        run_induction = not flexible_goals)
                     self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates)
                     solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
                     self.longHorizonObservations += 1
                 else:
+                    plannerNodes = p.total_nodes_opened
+                    action = 0
+                    hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
+                        run_induction = not flexible_goals)
                     quitting = True
+                print "embedded after failure to find solution in main_agent"
+                embed()
             # if K_SPACE in solution:
                 # embed()
 
