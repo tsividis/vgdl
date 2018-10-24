@@ -115,6 +115,7 @@ class Agent:
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
         self.extra_atom = False
         self.random_steps_on_plan_failure = 5
+        self.absolute_max_nodes = 1500
         self.shortHorizonNodes = 500
         self.longHorizonNodes = 1000
         self.shortHorizonAnnealing = 1.05
@@ -391,8 +392,9 @@ class Agent:
             allCompactStates = []
             t1 = time.time()
             first_time_playing_level = True
-            while not win and i<15:
-                gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
+            quit_level = False
+            while not win and not quit_level and i<15:
+                gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
                 
                 self.total_game_steps += steps
                 allCompactStates.append(compactStates)
@@ -413,15 +415,6 @@ class Agent:
                 
                 if self.record_video_info:
                     allStatesEncountered.extend(statesEncountered)
-
-                # if make_movie:
-                    # allStatesEncountered.extend(statesEncountered)
-                    # VGDLParser.playGame(self.gameString, self.levelString, statesEncountered,
-                    # persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
-                # levelEffectsEncountered.append(effectsEncountered)
-                
-                # if self.total_game_steps > MAX_STEPS:
-                    # return
 
                 first_time_playing_level = False
                 i += 1
@@ -448,9 +441,6 @@ class Agent:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateList, 'time_elapsed':time.time()-starttime}, f)
                     f.close()
 
-            # if i < 10:
-                # self.levels_won += 1
-
             # if heatmap:
             #     self.makeHeatmap(allStatesEncountered, '{}_{}_level{}_heatmap.pdf'.format(
             #         # self.gameFilename[self.gameFilename.find('expt'):],
@@ -470,29 +460,6 @@ class Agent:
                 embed()
 
         endtime = time.time()
-        ## put timestamp on filenames
-        # if self.record_states:
-        #     dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
-        #     filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
-        #     if not os.path.exists(dirname):
-        #         os.makedirs(dirname)
-        #     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
-        #     with open(filename, 'wb') as f:
-        #         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeCompactStates, 'time_elapsed':endtime-starttime}, f)
-        #     f.close()
-
-        # if self.record_video_info:
-        #     dirname = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
-        #     if not os.path.exists(dirname):
-        #         os.makedirs(dirname)
-        #     filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
-        #     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
-        #     with open(filename, 'wb') as f:
-        #         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateEpisodes, 'time_elapsed':endtime-starttime}, f)
-        #     f.close()
-
-        # if self.make_movie:
-            # self.makeMovie()
 
     def compactify(self, rle, planner_nodes=0):
         gameObject = rle._game
@@ -613,6 +580,7 @@ class Agent:
     def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None):
         from vgdl.util import manhattanDist
 
+        quit_level = False
         ## Initialize external environment
         self.initializeEnvironment()
         if self.display_text:
@@ -816,7 +784,7 @@ class Agent:
             
             self.actionSeqLength += len(solution)
 
-            if solution and not p.quitting and self.display_states:
+            if solution and not p.quitting and not takingRandomSteps and self.display_states:
                 print "============================================="
                 print "got solution of length", len(solution)
                 print colored(p.gameString_array[0], 'green')
@@ -920,12 +888,14 @@ class Agent:
                 ## Search more deeply next time.
                 self.max_nodes *= self.max_nodes_annealing
                 self.stored_max_nodes = self.max_nodes
+                if self.max_nodes > self.absolute_max_nodes:
+                    quit_level = True
                 win, effects = False, []
                 self.episodeRecord.insert(0, (win, effects))
                 print colored('________________________________________________________________', 'white', 'on_red')
                 print colored("Quitting", 'white', 'on_red')
                 print colored('________________________________________________________________', 'white', 'on_red')
-                return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered, compactStates
+                return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
 
             annealing *= self.annealingFactor
@@ -958,7 +928,7 @@ class Agent:
             print colored('________________________________________________________________', 'white', 'on_red')
 
 
-        return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates
+        return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
     def checkForRepeatedDeaths(self, episodeRecord, cutoff):
         count = 1
