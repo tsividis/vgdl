@@ -227,28 +227,12 @@ for (i in 1:length(levels(data$game_name))){
   if ((grepl('expt_ee', game_name)) | (grepl('expt_preconditions_1', game_name)) ){
     num_levels=6
   }
+  if (game_name %in% c('expt_preconditions', 'expt_preconditions_2')){
+    num_levels=5
+  }
   new = data.frame(game_name=game_name, num_levels=num_levels)
   games_to_levels = rbind(games_to_levels, new)
 }
-## Make vertical plot of score/time per game/planner.
-# plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
-#                           max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric())
-# for (i in 1:length(levels(data$game_name))){
-#   for (j in 1:length(levels(data$agent_type))){
-#     s = subset(data, ((game_name==levels(data$game_name)[i]) & (agent_type==levels(data$agent_type)[j])) )
-#     ## the row we want
-#     r = filter(s, cumulative_timestep==max(cumulative_timestep))[1,]
-#     ## take only the relevant columns and put them in the new data frame
-#     new = data.frame(game_name=r$game_name, agent_type=r$agent_type, max_score=r$score, 
-#                      max_steps=r$cumulative_timestep, planning_time=r$cumulative_planner_nodes, 
-#                     max_levels_won=max(r$cumulative_wins))
-#     plantimedata = rbind(plantimedata, new)
-#   }
-# }
-# plantimedata = na.omit(plantimedata)
-# plantimedata = mutate(plantimedata, score_efficiency=max_score/max_steps)
-# plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
-
 
 ## make data structure for looking at levels_won for different planner settings (corresponding to runs on different days)
 plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
@@ -275,9 +259,9 @@ for (j in 1:length(levels(data$agent_type))){
     }
   }
 }
-## grouping by games and variants
-plantimedata = transform(plantimedata,game_name=factor(game_name, levels=all_game_names))
-#plantimedata = na.omit(plantimedata)
+## grouping by games and variants is no longer necessary, because you removed 'variant' from the game_names, 
+## so they're naturally alphabetized.
+# plantimedata = transform(plantimedata,game_name=factor(game_name, levels=all_game_names))
 plantimedata = mutate(plantimedata, level_percentage=max_levels_won/level_num)
 plantimedata = mutate(plantimedata, score_efficiency=max_score/max_steps)
 plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
@@ -290,7 +274,7 @@ p = ggplot(plantimedata, aes(x=agent_type, y=level_percentage, fill=factor(agent
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank())+scale_fill_manual(values=colors)
 p
-## save as 10x12
+## save as 10x16
 
 ## same thing but not grouped by game. not easy to ready.
 # p = ggplot(plantimedata, aes(x=reorder(game_name,-level_percentage), y=level_percentage, fill=factor(agent_type))) +
