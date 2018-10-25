@@ -8,7 +8,7 @@ library("dplyr")
 library("colorspace")
 library("RColorBrewer")
 
-date = c('oct24')
+date = c('oct23')
 path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
 data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
@@ -20,6 +20,8 @@ data$local_score = as.numeric(as.character(data$score))
 data$all_score = as.numeric(as.character(data$cumulative_max_score))
 data$agent_type = as.factor(data$agent_type)
 data$score = as.numeric(as.character(data$sparse_score))
+## remove 'variant_' from names
+data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_variant_from_name)))
 
 data = transform(data,game_name=factor(game_name, levels=all_game_names))
 
@@ -33,10 +35,18 @@ g_legend <- function(a.gplot){
   legend <- tmp$grobs[[leg]] 
   return(legend)} 
 
+
 remove_variant_from_name = function(name){
-  keep = substr(name, nchar('variant_')+1, nchar(name))
-  return(keep)
+  if (grepl('variant', name)){
+    keep = substr(name, nchar('variant_')+1, nchar(name))
+  }
+  else{
+    keep=name
+  }
+    return(keep)
 }
+
+
 ## TODO: normalize score by max_score for that game.
 ## TODO: bind specific colors to specific models so that it looks the way you want.
 ## TODO: find a good layout for all the games. for now, pretend you have data for more games than you do so you can make the plots??
@@ -45,49 +55,49 @@ remove_variant_from_name = function(name){
 ## one page with 4s, 3s, and 2s
 ## one page with 5s
 ##
-all_game_names = c('aliens', 'variant_aliens_1', 'variant_aliens_2', 'variant_aliens_3', 'variant_aliens_4', 
-                   'avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4',
-                   'bait', 'variant_bait_1', 'variant_bait_2',
-                   'bees_and_birds','variant_bees_and_birds_1',  
-                   'boulderchase', 'variant_boulderchase_1',
-                   'boulderdash', 'variant_boulderdash_1',
-                   'butterflies', 'variant_butterflies_1', 'variant_butterflies_2',
-                   'chase', 'variant_chase_1', 'variant_chase_2', 'variant_chase_3',
-                   'closing_gates', 'variant_closing_gates_1',
-                   'corridor','variant_corridor_1', 
-                   'expt_antagonist', 'variant_expt_antagonist_1','variant_expt_antagonist_2',
-                   'expt_ee', 'variant_expt_ee_1', 'variant_expt_ee_2', 'variant_expt_ee_3', 
-                   'expt_helper', 'variant_expt_helper_1', 'variant_expt_helper_2',
-                   'expt_preconditions', 'variant_expt_preconditions_1', 'variant_expt_preconditions_2',
-                   'expt_push_boulders', 'variant_expt_push_boulders_1', 'variant_expt_push_boulders_2',
-                   'expt_relational', 'variant_expt_relational_1', 'variant_expt_relational_2',
-                   'frogs', 'variant_frogs_1', 'variant_frogs_2', 'variant_frogs_3',
-                   'jaws', 'variant_jaws_1', 'variant_jaws_2',
-                   'lemmings', 'variant_lemmings_1',  'variant_lemmings_2', 'variant_lemmings_3',
-                   'missilecommand', 'variant_missilecommand_1', 'variant_missilecommand_2', 'variant_missilecommand_3', 'variant_missilecommand_4',
-                   'myAliens', 'variant_myAliens_1', 'variant_myAliens_2',
-                   'portals', 'variant_portals_1', 'variant_portals_2',
-                   'plaqueattack', 'variant_plaqueattack_1', 'variant_plaqueattack_2', 'variant_plaqueattack_3',
-                   'sokoban', 'variant_sokoban_1', 'variant_sokoban_2',
-                   'surprise', 'variant_surprise_1', 'variant_surprise_2',
-                   'survivezombies', 'variant_survivezombies_1', 'variant_survivezombies_2',
-                   'watergame', 'variant_watergame_1', 'variant_watergame_2',
-                   'zelda','variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3')
-
-existing_games = list()
-missing_games = list()
-j=1
-k=1
-for (i in 1:length(all_game_names)){
-  if (all_game_names[i] %in% game_names){
-    existing_games[j] = all_game_names[i] 
-    j = j+1
-  }
-  else{
-    missing_games[k] = all_game_names[i]
-    k = k+1
-  }
-}
+# all_game_names = c('aliens', 'variant_aliens_1', 'variant_aliens_2', 'variant_aliens_3', 'variant_aliens_4', 
+#                    'avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4',
+#                    'bait', 'variant_bait_1', 'variant_bait_2',
+#                    'bees_and_birds','variant_bees_and_birds_1',  
+#                    'boulderchase', 'variant_boulderchase_1',
+#                    'boulderdash', 'variant_boulderdash_1',
+#                    'butterflies', 'variant_butterflies_1', 'variant_butterflies_2',
+#                    'chase', 'variant_chase_1', 'variant_chase_2', 'variant_chase_3',
+#                    'closing_gates', 'variant_closing_gates_1',
+#                    'corridor','variant_corridor_1', 
+#                    'expt_antagonist', 'variant_expt_antagonist_1','variant_expt_antagonist_2',
+#                    'expt_ee', 'variant_expt_ee_1', 'variant_expt_ee_2', 'variant_expt_ee_3', 
+#                    'expt_helper', 'variant_expt_helper_1', 'variant_expt_helper_2',
+#                    'expt_preconditions', 'variant_expt_preconditions_1', 'variant_expt_preconditions_2',
+#                    'expt_push_boulders', 'variant_expt_push_boulders_1', 'variant_expt_push_boulders_2',
+#                    'expt_relational', 'variant_expt_relational_1', 'variant_expt_relational_2',
+#                    'frogs', 'variant_frogs_1', 'variant_frogs_2', 'variant_frogs_3',
+#                    'jaws', 'variant_jaws_1', 'variant_jaws_2',
+#                    'lemmings', 'variant_lemmings_1',  'variant_lemmings_2', 'variant_lemmings_3',
+#                    'missilecommand', 'variant_missilecommand_1', 'variant_missilecommand_2', 'variant_missilecommand_3', 'variant_missilecommand_4',
+#                    'myAliens', 'variant_myAliens_1', 'variant_myAliens_2',
+#                    'portals', 'variant_portals_1', 'variant_portals_2',
+#                    'plaqueattack', 'variant_plaqueattack_1', 'variant_plaqueattack_2', 'variant_plaqueattack_3',
+#                    'sokoban', 'variant_sokoban_1', 'variant_sokoban_2',
+#                    'surprise', 'variant_surprise_1', 'variant_surprise_2',
+#                    'survivezombies', 'variant_survivezombies_1', 'variant_survivezombies_2',
+#                    'watergame', 'variant_watergame_1', 'variant_watergame_2',
+#                    'zelda','variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3')
+# 
+# existing_games = list()
+# missing_games = list()
+# j=1
+# k=1
+# for (i in 1:length(all_game_names)){
+#   if (all_game_names[i] %in% game_names){
+#     existing_games[j] = all_game_names[i] 
+#     j = j+1
+#   }
+#   else{
+#     missing_games[k] = all_game_names[i]
+#     k = k+1
+#   }
+# }
 
 ## Make plots.
 
@@ -118,7 +128,7 @@ for (i in 1:length(existing_games)){
       p=p+ylim(0,40)
     }
   }
-  if (game%in%c('lemmings','variant_lemmings_2','variant_lemmings_3')){
+  if (game%in%c('lemmings', 'lemmings_2','lemmings_3')){
     p=p+ylim(min(na.omit(filter(data, game_name==game)$level_accumulated_score)),50)
   }
   
@@ -214,7 +224,7 @@ for (i in 1:length(levels(data$game_name))){
        (grepl('closing',game_name)) ){
     num_levels=4
   }
-  if ((grepl('expt_ee', game_name)) | (grepl('variant_expt_preconditions_1', game_name)) ){
+  if ((grepl('expt_ee', game_name)) | (grepl('expt_preconditions_1', game_name)) ){
     num_levels=6
   }
   new = data.frame(game_name=game_name, num_levels=num_levels)
