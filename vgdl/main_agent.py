@@ -115,7 +115,7 @@ class Agent:
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
         self.extra_atom = False
         self.random_steps_on_plan_failure = 5
-        self.absolute_max_nodes = 1500
+        self.absolute_max_nodes = 50000
         self.shortHorizonNodes = 500
         self.longHorizonNodes = 1000
         self.shortHorizonAnnealing = 1.05
@@ -127,8 +127,8 @@ class Agent:
             self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = self.longhorizonAnnealing
         self.shortHorizonRandomChoice = [200,500,1000]
-        self.param_ID = "IW={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, 
-                self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice)
+        self.param_ID = "IW={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_mN={}".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, 
+                self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice,self.absolute_max_nodes)
         print self.param_ID
         self.conservative = False
         self.regrounding = 1
@@ -428,6 +428,9 @@ class Agent:
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
                     episodeList = [v for k,v in sorted(episodeCompactStates.items())]
                     print "n_level", n_level
+                    print "recording episode. check planning_nodes for this episode"
+                    print "total nodes across all episodes for this level:", sum([item['planner_nodes'] for sublist in allCompactStates for item in sublist])
+                    # embed()
                     with open(filename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
                     f.close()
@@ -453,7 +456,6 @@ class Agent:
             # j+=1
             # if j>0:
             #     flexible_goals=True
-
             if flexible_goals:
                 ## When you embed, you can manually input changes in theory. See flexible_goals.py for an example.
                 print "in main_agent; playing with flexible_goals"
@@ -683,11 +685,12 @@ class Agent:
                 ## If we're repeatedly dying in the same way, just switch hyperparameters blindly.
                 if self.checkForRepeatedDeaths(self.episodeRecord, 2):
                     if self.hyperparameter_index == 1:
-                        if self.display_text:
-                            print "Repeated deaths. Switching to short-range planning"
-                        new_index = 3 
+                        new_index = 1 ## don't switch away from idx_1
+                        # if self.display_text:
+                            # print "Repeated deaths. Switching to short-range planning"
+                        # new_index = 3 
                         conservative = False
-                    elif self.hyperparameter_index == 3:
+                    if self.hyperparameter_index == 3:
                         if self.display_text:
                             print "Repeated deaths. Switching to long-range planning"
                         new_index = 1
@@ -886,9 +889,14 @@ class Agent:
             else:
                 ## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
                 ## Search more deeply next time.
+                curr_max_nodes = self.max_nodes
                 self.max_nodes *= self.max_nodes_annealing
                 self.stored_max_nodes = self.max_nodes
+                print "annealing up from {} to {} nodes".format(curr_max_nodes, self.max_nodes)
                 if self.max_nodes > self.absolute_max_nodes:
+                    print "Exceeded absolute_max_nodes of {}. Annealing back down to {} and quitting the level".format(self.absolute_max_nodes, self.max_nodes/self.max_nodes_annealing)
+                    self.max_nodes /= self.max_nodes_annealing
+                    self.stored_max_nodes = self.max_nodes
                     quit_level = True
                 win, effects = False, []
                 self.episodeRecord.insert(0, (win, effects))
