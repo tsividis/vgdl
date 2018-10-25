@@ -268,7 +268,7 @@ plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_ti
 plantimedata = mutate(plantimedata, plan_nodes_per_step=planning_time/max_steps)
 
 ## summary plot of overall results -- easy to look at.
-p = ggplot(plantimedata, aes(x=agent_type, y=level_percentage, fill=factor(agent_type))) +
+p = ggplot(subset(plantimedata, game_name!='boulderchase_1'), aes(x=agent_type, y=level_percentage, fill=factor(agent_type))) +
   geom_bar(position='dodge', stat='identity')+facet_wrap(~game_name)+
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
