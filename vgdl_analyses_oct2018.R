@@ -8,7 +8,7 @@ library("dplyr")
 library("colorspace")
 library("RColorBrewer")
 
-date = c('oct23')
+date = c('oct24')
 path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
 data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
@@ -21,6 +21,8 @@ data$all_score = as.numeric(as.character(data$cumulative_max_score))
 data$agent_type = as.factor(data$agent_type)
 data$score = as.numeric(as.character(data$sparse_score))
 
+data = transform(data,game_name=factor(game_name, levels=all_game_names))
+
 plotpath = paste('~/Projects/atari/vgdl/',date,'/plots', sep='')
 dir.create(plotpath)
 
@@ -31,7 +33,10 @@ g_legend <- function(a.gplot){
   legend <- tmp$grobs[[leg]] 
   return(legend)} 
 
-
+remove_variant_from_name = function(name){
+  keep = substr(name, nchar('variant_')+1, nchar(name))
+  return(keep)
+}
 ## TODO: normalize score by max_score for that game.
 ## TODO: bind specific colors to specific models so that it looks the way you want.
 ## TODO: find a good layout for all the games. for now, pretend you have data for more games than you do so you can make the plots??
@@ -187,10 +192,6 @@ w=list()
 w[[1]] = ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type)) + geom_blank() + theme_classic() +   theme(line = element_blank(),
                                                                                                                            text = element_blank(),
                                                                                                                            title = element_blank())
-
-
-
-
 layout = matrix(c(1:96), ncol=6, byrow=TRUE)
 m = multiplot(plotlist = c(plots[1:91],q[1]), layout=layout)
 
@@ -243,26 +244,56 @@ for (i in 1:length(levels(data$game_name))){
 plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
                           max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric(),
                           level_num=as.numeric())
-for (i in 1:length(levels(data$game_name))){
-  for (j in 1:length(levels(data$agent_type))){
-    s = subset(data, ((game_name==levels(data$game_name)[i]) & (agent_type==levels(data$agent_type)[j])) )
-    if (length(s$level_max_score)>0){
-      ## the row we want
-      r = filter(s, cumulative_timestep==max(cumulative_timestep))[1,]
-      ## take only the relevant columns and put them in the new data frame
-      new = data.frame(game_name=r$game_name, agent_type=r$agent_type, max_score=r$score, 
+for (j in 1:length(levels(data$agent_type))){
+  agent = levels(data$agent_type)[j]
+  if (length(unique(subset(data, agent_type==agent)$game_name))<80){
+    print(paste('warning; you have fewer than 80 games for agent: ',agent, sep=''))
+  }
+  else{
+    for (i in 1:length(levels(data$game_name))){
+      s = subset(data, ((game_name==levels(data$game_name)[i]) & (agent_type==levels(data$agent_type)[j])) )
+      if (length(s$level_max_score)>0){
+        ## the row we want
+        r = filter(s, cumulative_timestep==max(cumulative_timestep))[1,]
+        ## take only the relevant columns and put them in the new data frame
+        new = data.frame(game_name=r$game_name, agent_type=r$agent_type, max_score=r$score, 
                        max_steps=r$cumulative_timestep, planning_time=r$cumulative_planner_nodes, 
                        max_levels_won=max(r$cumulative_wins),
                        level_num=filter(games_to_levels, (game_name==r$game_name))$num_levels)
-      plantimedata = rbind(plantimedata, new)
+        plantimedata = rbind(plantimedata, new)
+      }
     }
   }
 }
-plantimedata = na.omit(plantimedata)
+## grouping by games and variants
+plantimedata = transform(plantimedata,game_name=factor(game_name, levels=all_game_names))
+#plantimedata = na.omit(plantimedata)
 plantimedata = mutate(plantimedata, level_percentage=max_levels_won/level_num)
 plantimedata = mutate(plantimedata, score_efficiency=max_score/max_steps)
 plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
 plantimedata = mutate(plantimedata, plan_nodes_per_step=planning_time/max_steps)
+
+## summary plot of overall results -- easy to look at.
+p = ggplot(plantimedata, aes(x=agent_type, y=level_percentage, fill=factor(agent_type))) +
+  geom_bar(position='dodge', stat='identity')+facet_wrap(~game_name)+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+scale_fill_manual(values=colors)
+p
+## save as 10x12
+
+## same thing but not grouped by game. not easy to ready.
+# p = ggplot(plantimedata, aes(x=reorder(game_name,-level_percentage), y=level_percentage, fill=factor(agent_type))) +
+#   geom_bar(position='dodge', stat='identity')+
+#   theme(axis.text.x = element_text(angle = 90, hjust = 1))+scale_fill_manual(values=colors)
+# p
+## save as 6x72
+
+p = ggplot(plantimedata, aes(x=game_name, y=score_efficiency, fill=factor(agent_type))) +
+  geom_bar(position='dodge', stat='identity')+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p
+
 
 ## plot failures across models for each game
 p = ggplot(plantimedata, aes(x=game_name, y=1-level_percentage, fill=factor(modelrun_ID))) +
@@ -275,10 +306,16 @@ p
 ## (game/model combinations that you don't yet have data for) 
 means = data.frame(model=as.character(), mean=as.numeric(), sd=as.numeric())
 for (i in 1:length(levels(plantimedata$agent_type))){
-  num = summarise(subset(plantimedata, agent_type==levels(plantimedata$agent_type)[i]), 
+  agent = levels(plantimedata$agent_type)[i]
+  if (length(subset(plantimedata, agent_type==agent)$game_name)<80){
+    print(paste('warning; you have fewer than 80 games for agent: ',agent, sep=''))
+  }
+  else{
+    num = summarise(subset(plantimedata, agent_type==levels(plantimedata$agent_type)[i]), 
                   percentage_mean=mean(level_percentage), percentage_sd=sd(level_percentage))
-  r = data.frame(model=levels(plantimedata$agent_type)[i], percentage_mean=num$percentage_mean, percentage_sd=num$percentage_sd)
-  means=rbind(means,r)
+    r = data.frame(model=levels(plantimedata$agent_type)[i], percentage_mean=num$percentage_mean, percentage_sd=num$percentage_sd)
+    means=rbind(means,r)
+  }
 }
 means = na.omit(means)
 p = ggplot(means, aes(x=reorder(model,-percentage_mean) ,y=percentage_mean, color=model))+
@@ -287,7 +324,7 @@ p = ggplot(means, aes(x=reorder(model,-percentage_mean) ,y=percentage_mean, colo
                                                                 axis.ticks.x=element_blank())
 p
 
-##plot of avg plantime per node
+##plot of avg plantime per action
 plantimeplots = list()
 for (i in 1:length(levels(plantimedata$agent_type))){
   agent = levels(plantimedata$agent_type)[i]
@@ -303,6 +340,11 @@ for (i in 1:length(levels(plantimedata$agent_type))){
 layout = matrix(c(1:length(plantimeplots)), ncol=1, byrow=TRUE)
 m = multiplot(plotlist = plantimeplots, layout=layout)
 ## save as 32x16
+
+
+
+
+
 
 ##plot of hyperparameter_idx_1 vs idx_3
 for (i in 1:length(levels(data$agent_type))){
@@ -372,16 +414,6 @@ get_diff = function(diffdata, model_run1, model_run2){
 }
 
 
-
-p = ggplot(plantimedata, aes(x=reorder(game_name,-max_levels_won), y=max_levels_won, fill=factor(modelrun_ID))) +
-  geom_bar(position='dodge', stat='identity')+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
-p
-
-p = ggplot(plantimedata, aes(x=game_name, y=score_efficiency, fill=factor(agent_type))) +
-  geom_bar(position='dodge', stat='identity')+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
-p
 
 
 # Multiple plot function
