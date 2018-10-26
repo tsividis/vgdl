@@ -262,7 +262,7 @@ class Agent:
 
                         except KeyError:
                             sprite.orientation = random.choice([(0,1), (0,-1), (1,0), (-1,0)])
-                            pass
+                            # pass
         for k,v in Vrle._game.sprite_groups.items():
             for sprite in v:
                 if sprite not in Vrle._game.kill_list:
