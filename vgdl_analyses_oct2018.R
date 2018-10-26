@@ -8,6 +8,8 @@ library("dplyr")
 library("colorspace")
 library("RColorBrewer")
 
+## oct23 actually now contains runs from 10/20,10/21,10/24,10/25: this is:
+## IW1 vs IW2, lha 2 vs 10, nF TF, and the beginnings of the absolute_max_nodes=50k
 date = c('oct23')
 path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
 data=read.csv(path, header=TRUE, na.strings='NA')
@@ -23,7 +25,7 @@ data$score = as.numeric(as.character(data$sparse_score))
 ## remove 'variant_' from names
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_variant_from_name)))
 
-data = transform(data,game_name=factor(game_name, levels=all_game_names))
+# data = transform(data,game_name=factor(game_name, levels=all_game_names))
 
 plotpath = paste('~/Projects/atari/vgdl/',date,'/plots', sep='')
 dir.create(plotpath)
@@ -137,7 +139,11 @@ for (i in 1:length(existing_games)){
   #ggsave(title, plot=p, width=15, height=10)
 }
 
-colors = c('firebrick2', 'tomato2', 'steelblue3', 'steelblue1', 'palegreen3', 'seagreen3', 'purple2', 'mediumorchid2',  'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
+colors = c('firebrick2', 'tomato2', 'salmon', 
+           'steelblue3', 'steelblue1', 
+           'palegreen3', 'seagreen3','darkolivegreen1',  
+           'purple2', 'mediumorchid2', 
+           'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
 
 names(colors)=levels(data$agent_type)
 colorScale = scale_color_manual(name="agent_type", values=colors)
@@ -214,8 +220,6 @@ layout = matrix(c(c(1:45),46,46,47), ncol=6, byrow=TRUE)
 m = multiplot(plotlist = c(plots[47:length(plots)], q[1]), layout=layout)
 
 ###
-###
-###(old version)
 games_to_levels = data.frame(game_name=as.character(), num_levels=as.numeric())
 for (i in 1:length(levels(data$game_name))){
   game_name=levels(data$game_name)[i]
