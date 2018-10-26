@@ -114,6 +114,8 @@ class Agent:
         self.IW_k = IW_k
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
         self.extra_atom = False
+        self.random_steps_on_plan_failure = 5
+        self.absolute_max_nodes = 50000
         self.shortHorizonNodes = 500
         self.longHorizonNodes = 1000
         self.shortHorizonAnnealing = 1.05
@@ -125,9 +127,9 @@ class Agent:
             self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = self.longhorizonAnnealing
         self.shortHorizonRandomChoice = [200,500,1000]
-        self.param_ID = "IW={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, 
-                self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice)
-        print self.param_ID
+        self.param_ID = "IW={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, 
+                self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice,self.absolute_max_nodes)
+        print self.param_I
         self.conservative = False
         self.regrounding = 1
         self.selective_regrounding = True
@@ -306,7 +308,8 @@ class Agent:
                         except KeyError:
                             # print "Failed to get params for Missile in main_agent"
                             # embed()
-                            pass
+                            sprite.orientation = random.choice([(0,1), (0,-1), (1,0), (-1,0)])
+                            # pass
         for k,v in Vrle._game.sprite_groups.items():
             for sprite in v:
                 if sprite not in Vrle._game.kill_list:
@@ -455,9 +458,9 @@ class Agent:
             allCompactStates = []
             t1 = time.time()
             first_time_playing_level = True
-
-            while not win and i<15:
-                gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
+            quit_level = False
+            while not win and not quit_level and i<15:
+                gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
                 
                 self.total_game_steps += steps
                 allCompactStates.append(compactStates)
@@ -647,6 +650,7 @@ class Agent:
     def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None):
         from vgdl.util import manhattanDist
 
+        quit_level = False
         ## Initialize external environment
         self.initializeEnvironment()
         if self.display_text:
@@ -707,6 +711,11 @@ class Agent:
                 self.seen_limits.append(resource)
 
         ended, win = self.rle._isDone()
+
+        legalActions = [0, K_UP, K_DOWN, K_LEFT, K_RIGHT]
+        if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
+            legalActions.append(K_SPACE)
+        print "legal actions: {}".format(legalActions)
 
         steps = self.rle._game.time
         emptyPlans = 0
@@ -857,9 +866,9 @@ class Agent:
                     ## If we're repeatedly dying in the same way, just switch hyperparameters blindly.
                     if self.checkForRepeatedDeaths(self.episodeRecord, 2):
                         if self.hyperparameter_index == 1:
-                            if self.display_text:
-                                print "Repeated deaths. Switching to short-range planning"
-                            new_index = 3 
+                            # if self.display_text:
+                                # print "Repeated deaths. Switching to short-range planning"
+                            new_index = 1
                             conservative = False
                         elif self.hyperparameter_index == 3:
                             if self.display_text:
@@ -922,7 +931,7 @@ class Agent:
                                 print "got solution"
                         else:
                             solution = []
-
+                takingRandomSteps = False
                 if (not solution) or p_quitting:
                     # Here we make a distinction between quitting because you've
                     # exhausted the number of nodes you can visit or because you
@@ -932,17 +941,24 @@ class Agent:
                         print "turning on extra atom"
                         self.extra_atom = True
                     if self.longHorizonObservations<self.longHorizonObservationLimit:
-                        if self.display_text:
-                            print "Didn't get solution. Observing, then replanning."
-                        self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates)
+                        # if self.display_text:
+                        print "Didn't get solution. Observing, then replanning."
+                        # self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates)
                         solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
+                        for i in range(self.random_steps_on_plan_failure):
+                            solution.append(random.choice(legalActions))
                         self.longHorizonObservations += 1
+                        takingRandomSteps = True
                     else:
+                        plannerNodes = p.total_nodes_opened
+                        action = 0
+                        hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
+                        run_induction = not flexible_goals)
                         quitting = True
                 
                 self.actionSeqLength += len(solution)
 
-                if solution and not p.quitting and self.display_states:
+                if solution and not p.quitting and not takingRandomSteps and self.display_states:
                     print "============================================="
                     print "got solution of length", len(solution)
                     print colored(p.gameString_array[0], 'green')
@@ -1020,7 +1036,7 @@ class Agent:
                         # (e.g. stochastic effects)
                         if (i+1)%self.regrounding==0:
 
-                            if self.checkForDangerOrAvatarMisLocation(self.rle, hypotheses[0], objectPositionsArray, i):
+                            if (not takingRandomSteps) and self.checkForDangerOrAvatarMisLocation(self.rle, hypotheses[0], objectPositionsArray, i):
                                 break
 
                         if self.reground_for_npcs: ## this is just exercising caution when near random objects, irrespective of whether they kill us or not
@@ -1051,14 +1067,21 @@ class Agent:
                 else:
                     ## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
                     ## Search more deeply next time.
+                    curr_max_nodes = self.max_nodes
                     self.max_nodes *= self.max_nodes_annealing
                     self.stored_max_nodes = self.max_nodes
+                    print "annealing up from {} to {} nodes".format(curr_max_nodes, self.max_nodes)
+                    if self.max_nodes > self.absolute_max_nodes:
+                        print "Exceeded absolute_max_nodes of {}. Annealing back down to {} and quitting the level".format(self.absolute_max_nodes, self.max_nodes/self.max_nodes_annealing)
+                        self.max_nodes /= self.max_nodes_annealing
+                        self.stored_max_nodes = self.max_nodes
+                        quit_level = True
                     win, effects = False, []
                     self.episodeRecord.insert(0, (win, effects))
                     print colored('________________________________________________________________', 'white', 'on_red')
                     print colored("Quitting", 'white', 'on_red')
                     print colored('________________________________________________________________', 'white', 'on_red')
-                    return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered, compactStates
+                    return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
 
             annealing *= self.annealingFactor
@@ -1091,7 +1114,7 @@ class Agent:
             print colored('________________________________________________________________', 'white', 'on_red')
 
 
-        return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates
+        return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
     def checkForRepeatedDeaths(self, episodeRecord, cutoff):
         count = 1
