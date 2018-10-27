@@ -99,6 +99,7 @@ class Agent:
     def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, IW_k=2, extra_atom_allowed=True, max_rand_steps=0, pickled_theory_path=None):
         self.modelType = modelType
         self.gameFilename = gameFilename
+        self.outpath = None ## set in playCurriculum and then used in outputlesionsnapshot for writing all the theories learned in a particular run of playCurriculum into a single folder.
         self.gameString = None
         self.levelString = None
         self.display_text = False
@@ -129,7 +130,7 @@ class Agent:
         self.shortHorizonRandomChoice = [200,500,1000]
         self.param_ID = "IW={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, 
                 self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice,self.absolute_max_nodes)
-        print self.param_I
+        print self.param_ID
         self.conservative = False
         self.regrounding = 1
         self.selective_regrounding = True
@@ -233,27 +234,7 @@ class Agent:
     # TODO: Rearrange file-writing so that the structure is game_name/batch_number/theory_rand_N 
     def outputLesionSnapshot(self, theory, steps):
 
-        gamepath = './lesions/rand_exploration/{}'.format(self.gameFilename)
-        # pickles the theory and saves it in the gameName folder as {s}steps{n}
-        # where s=steps and n=a counter so we don't overwrite earlier runs
-        try:
-            os.makedirs(gamepath)
-        except:
-            # already exists, yay
-            pass
-
-        batch_number = len([f for f in os.listdir(gamepath) if 'DS_Store' not in f])
-
-        outpath = gamepath+'/{}'.format(batch_number)
-        try:
-            os.makedirs(outpath)
-        except:
-            # already exists, yay
-            pass
-
-
-        picklepath = '{}/{:06}steps.pkl'.format(outpath, steps)
-
+        picklepath = '{}/{:06}steps.pkl'.format(self.outpath, steps)
         # n = 0
         # while os.path.exists(form.format(self.gameFilename, steps, n)):
             # n += 1
@@ -426,6 +407,24 @@ class Agent:
 
         ## used for time-stamping data related to this particular run of the model.
         timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M')
+
+        gamepath = './lesions/rand_exploration/{}'.format(self.gameFilename)
+        # pickles the theory and saves it in the gameName folder as {s}steps{n}
+        # where s=steps and n=a counter so we don't overwrite earlier runs
+        try:
+            os.makedirs(gamepath)
+        except:
+            # already exists, yay
+            pass
+
+        batch_number = len([f for f in os.listdir(gamepath) if 'DS_Store' not in f])
+
+        self.outpath = gamepath+'/{}'.format(batch_number)
+        try:
+            os.makedirs(self.outpath)
+        except:
+            # already exists, yay
+            pass
 
         if self.record_states:
             dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
@@ -695,7 +694,6 @@ class Agent:
             if not flexible_goals:
                 [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
-
         legalActions = [0, K_UP, K_DOWN, K_LEFT, K_RIGHT]
         if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
             legalActions.append(K_SPACE)
@@ -727,12 +725,7 @@ class Agent:
 
             self.max_nodes = self.stored_max_nodes
 
-            ## you don't need to worry about annealing, since you don't anneal up for shortHorizon planning.
-            if self.shortHorizon and self.shortHorizonRandomChoice:
-                self.max_nodes = random.choice(self.shortHorizonRandomChoice)
 
-            print "planning with hyperparameter index {}".format(self.hyperparameter_index)
-            print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
 
             if self.pickled_theory_path:
                 print "removing noveltyTerminations from the theory"
@@ -767,8 +760,10 @@ class Agent:
                 ##############################################
 
                 plannerNodes = 0
+                t1 = time.time()
                 hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                     run_induction = not flexible_goals)
+                print "execute step took {} seconds".format(time.time()-t1)
                 ##############################################
                 ##### STORE EFFECTS OF TAKING STEP ###########
                 ##############################################
@@ -822,7 +817,7 @@ class Agent:
                 sys.stdout = oldout
                 f.close()
                 self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps+steps)
-                return gameObject, win, self.rle._game.score, steps, statesEncountered, effectsEncountered, compactStates
+                return gameObject, win, self.rle._game.score, steps, statesEncountered, effectsEncountered, compactStates, False
             #############################################
             ##### IF NOT MOVING RANDOMLY ################
             #############################################
@@ -841,6 +836,14 @@ class Agent:
                     print "filter novelty", filter_novelty
 
                 planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
+
+
+                ## you don't need to worry about annealing, since you don't anneal up for shortHorizon planning.
+                if self.shortHorizon and self.shortHorizonRandomChoice:
+                    self.max_nodes = random.choice(self.shortHorizonRandomChoice)
+
+                print "planning with hyperparameter index {}".format(self.hyperparameter_index)
+                print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
 
                 ## also, you commented out the bottom part of the planner, where it will still return a high-reward sequence in shortHorizon. This could have a very detrimental effect on short-horizon games...
 

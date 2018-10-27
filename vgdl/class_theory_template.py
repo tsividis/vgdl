@@ -26,10 +26,24 @@ class Sprite(object):
         self.color = color
         self.className = className
         self.args = args
+        if not className:
+            className='null'
+        if type(className)==dict:
+            args = className
+            className=color
+        args = args if args else {}
+        try:
+            self._hash = hash((className, self.color, str(self.vgdlType), tuple(sorted(args.iteritems()))))
+        except:
+            print "problem with hash"
+            embed()
 
     # TODO: Should enforce proper syntax for properties
     def display(self):
         print (self.vgdlType, self.color, self.className, self.args)
+
+    def __hash__(self):
+        return self._hash
 
     def __eq__(self, other):
         return all([

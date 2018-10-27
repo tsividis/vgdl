@@ -33,6 +33,7 @@ if use_pickled_theories:
     ## think about whether you want each run of vgdl.load_games to use a particular theory for each game,
     ## or to loop through all of them, etc.
     embed()
+burn_in_episodes_per_game = 1
 
 if game_name==str(0):
     game_name = game_names[game_number]
@@ -171,12 +172,13 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps, pic
 #######
 
 if pickled_theory_path != str(0):
-    theories = os.listdir('./lesions/rand_exploration/{}/{}'.format(game_name,95))
-    pickled_theory_path = './lesions/rand_exploration/{}/{}/{}'.format(game_name,95,theories[0])
+    theories = os.listdir('./lesions/rand_exploration/{}/{}'.format(game_name,0))
+    pickled_theory_path = './lesions/rand_exploration/{}/{}/{}'.format(game_name,0,theories[0])
     max_rand_steps = 0 ## don't do random exploration if you're using a previously-acquired theory
     play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps, pickled_theory_path)
 else:
-    play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps)
+    for i in range(burn_in_episodes_per_game):
+        play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps)
 
 
 
