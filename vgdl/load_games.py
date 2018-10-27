@@ -153,6 +153,40 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps, pic
 
     return total_time
 
+def play_trainset_with_learned_theories(hyperparameter_sets, hyperparameter_index, max_rand_steps, pickled_theory_path=None):
+    start_time = time.time()
+
+    game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
+
+    if "{}.txt".format(game_name) in os.listdir(gameFileString):
+        gvgname = "./{}/{}".format(gameFileString, game_name)
+        game_description = read_gvgai_game('{}.txt'.format(gvgname))
+        game_descriptions = [game_description]*len(game_levels)
+    else:
+        game_descriptions = [read_gvgai_game("./{}/{}".format(gameFileString, d)) for d in sorted([e for e in os.listdir(gameFileString) if (game_name in e and 'desc' in e)])]
+    # embed()
+
+    level_game_pairs = []
+    gvgname = "./{}/{}".format(gameFileString, game_name)
+    for level_number in range(len(game_levels)):
+        with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
+            level_game_pairs.append([game_descriptions[level_number], level.read()])
+
+    agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, IW_k=IW_k, 
+            extra_atom_allowed=extra_atom_allowed, max_rand_steps=max_rand_steps, pickled_theory_path=pickled_theory_path)
+
+    ##then pass this down for multiple episodes
+    gameObject = None
+    print game_levels
+
+    agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie)
+
+    print game_levels
+
+    total_time = time.time() - start_time
+
+    return total_time
+
 #######
 ## To generate burn-in data, call with max_rand_steps>0 and no pickled_theory_path
 ## To generate normal behavior using a pickled theory, call with a pickled_theory_path
