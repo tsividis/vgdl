@@ -124,7 +124,7 @@ class InteractionRule(object):
 		self.args = args
 		self.preconditions = preconditions
 		self.generic = generic ## if generic, this interaction rule belongs to the generic prior that is meant to be overriden.
-
+		self._hash = hash((self.interaction, self.slot1, self.slot2, tuple(sorted(self.args.iteritems()))))
 
 	def display(self):
 		if not self.preconditions:
@@ -150,6 +150,9 @@ class InteractionRule(object):
 
 	def checkPreconditions(self, agentState):
 		return all([p.check(agentState) for p in self.preconditions])
+
+	def __hash__(self):
+		return self._hash #+hash(time.time())
 
 	def __eq__(self, other):
 		if isinstance(other, self.__class__):
@@ -290,6 +293,11 @@ class Theory(object):
 		self.goalColor = False ## TODO. Hack added 1/18/17 in lieu of termination set.
 
 		self.resource_limits = defaultdict(lambda:1)
+
+	## is to copy a theory and then change its interactionSet and spriteSet.
+	def __hash__(self):
+		return hash(sum([r.__hash__() for r in self.interactionSet]) + sum([s.__hash__() for s in self.spriteSet]))
+
 
 	def initializeSpriteSet(self, vgdlSpriteParse=False, spriteInductionResult=False):
 		if not (vgdlSpriteParse or spriteInductionResult):
