@@ -138,18 +138,6 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps, pic
         with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
             level_game_pairs.append([game_descriptions[level_number], level.read()])
 
-# def play_trainset(hyperparameters_sets, hyperparameter_index):
-#     start_time = time.time()
-
-#     gvgname = "./{}/{}".format(gameFileString,game_name)
-#     gameString = read_gvgai_game('{}.txt'.format(gvgname))
-#     game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
-#     print game_levels
-#     level_game_pairs = []
-#     for level_number in range(len(game_levels)):
-#     	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
-#     		level_game_pairs.append([gameString, level.read()])
-
     agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, IW_k=IW_k, 
             extra_atom_allowed=extra_atom_allowed, max_rand_steps=max_rand_steps, pickled_theory_path=pickled_theory_path)
 
@@ -172,8 +160,10 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps, pic
 #######
 
 if pickled_theory_path != str(0):
-    theories = os.listdir('./lesions/rand_exploration/{}/{}'.format(game_name,0))
-    pickled_theory_path = './lesions/rand_exploration/{}/{}/{}'.format(game_name,0,theories[0])
+    # theories = os.listdir('./lesions/rand_exploration/{}/{}'.format(game_name,0))
+    # pickled_theory_path = './lesions/rand_exploration/{}/{}/{}'.format(game_name,0,theories[0])
+
+    pickled_theory_path = './lesions/rand_exploration/{}'.format(game_name)
     max_rand_steps = 0 ## don't do random exploration if you're using a previously-acquired theory
     play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps, pickled_theory_path)
 else:

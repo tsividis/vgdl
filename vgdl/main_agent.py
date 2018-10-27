@@ -168,7 +168,7 @@ class Agent:
         self.max_rand_steps = max_rand_steps
         self.pickled_theory_path = pickled_theory_path
         if pickled_theory_path is not None:
-            self.exploration_burn_in = int(pickled_theory_path[pickled_theory_path.rfind('/')+1:pickled_theory_path.rfind('steps.pkl')])
+            self.exploration_burn_in = 1#int(pickled_theory_path[pickled_theory_path.rfind('/')+1:pickled_theory_path.rfind('steps.pkl')])
         else:
             self.exploration_burn_in = 0
 
@@ -425,6 +425,30 @@ class Agent:
         except:
             # already exists, yay
             pass
+
+        if self.pickled_theory_path:
+            all_theories = []
+            for folder in os.listdir(self.pickled_theory_path):
+                if 'DS_Store' not in folder:
+                    theories = os.listdir('{}/{}'.format(self.pickled_theory_path, folder))
+                    for t in theories:
+                        if 'DS_Store' not in t:
+                            file = open('{}/{}/{}'.format(self.pickled_theory_path,folder,t),'r')
+                            burn_in = int(t[:t.rfind('steps.pkl')])
+                            initialTheory = pickle.load(file)
+                            file.close()
+                            all_theories.append((initialTheory, burn_in))
+
+            set_theories = list(set([t[0] for t in all_theories]))
+            ## tag each theories with the burn-ins that correspond to it.
+            for t in set_theories:
+                t.burn_ins = []
+                for a in all_theories:
+                    if t==a[0]:
+                        t.burn_ins.append(a[1])
+
+            print "have generated set of unique theories, each tagged with the burn-in periods that generated it. Continue from here"
+            embed()
 
         if self.record_states:
             dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
