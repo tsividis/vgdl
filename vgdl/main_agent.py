@@ -22,7 +22,7 @@ from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
 
 # from line_profiler import LineProfiler
 
-MAX_STEPS = 1000
+MAX_STEPS = 10
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none'}
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
@@ -732,7 +732,12 @@ class Agent:
 
             self.max_nodes = self.stored_max_nodes
 
-
+            if self.total_game_steps > MAX_STEPS:
+                # score = self.rle._game.score
+                print "exceeded max_steps"
+                embed()
+                quit_level=False
+                return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
             if self.init_hypothesis:
                 print "removing noveltyTerminations from the theory"
@@ -1038,8 +1043,6 @@ class Agent:
                         # if self.total_game_steps > MAX_STEPS:
                             # score = self.rle._game.score
                             # return gameObject, win, score, steps, statesEncountered, effectsEncountered
-                        # if self.rle._game.time>13:
-                            # embed()
 
                         ## Make sure you're far enough from unpredictable dangerous objects.
                         # Check for disparities between plan and reality
