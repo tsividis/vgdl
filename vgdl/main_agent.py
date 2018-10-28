@@ -96,7 +96,7 @@ hyperparameter_sets = [
 
 
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, IW_k=2, extra_atom_allowed=True, max_rand_steps=0, pickled_theory_path=None):
+    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, IW_k=2, extra_atom_allowed=True, max_rand_steps=0, init_hypothesis=None):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.outpath = None ## set in playCurriculum and then used in outputlesionsnapshot for writing all the theories learned in a particular run of playCurriculum into a single folder.
@@ -166,11 +166,16 @@ class Agent:
 
         # MARK, EXPLORATION
         self.max_rand_steps = max_rand_steps
-        self.pickled_theory_path = pickled_theory_path
-        if pickled_theory_path is not None:
-            self.exploration_burn_in = 1#int(pickled_theory_path[pickled_theory_path.rfind('/')+1:pickled_theory_path.rfind('steps.pkl')])
+        self.init_hypothesis = init_hypothesis
+        if self.init_hypothesis is not None:
+            self.exploration_burn_ins = self.init_hypothesis.burn_ins
         else:
-            self.exploration_burn_in = 0
+            self.exploration_burn_ins = [0]
+        # self.pickled_theory_path = pickled_theory_path
+        # if pickled_theory_path is not None:
+        #     self.exploration_burn_in = 1#int(pickled_theory_path[pickled_theory_path.rfind('/')+1:pickled_theory_path.rfind('steps.pkl')])
+        # else:
+        #     self.exploration_burn_in = 0
 
     def hyperparameterSwitch(self, new_index):
         if new_index!=self.hyperparameter_index:
@@ -326,7 +331,7 @@ class Agent:
             tempHypothesis = copy.deepcopy(hypothesis)
             tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
             tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
-            if not flexible_goals and not self.pickled_theory_path:
+            if not flexible_goals and not self.init_hypothesis:
                 tempHypothesis.updateTerminations()
             VRLEs.append(self.initializeVrle(tempHypothesis))
 
@@ -344,13 +349,15 @@ class Agent:
         # MARK, EXPLORATION
         ## This will load a particular theory (e.g., theory learned after N random steps), and will then play/learn after that.
         ## Reminder, initializeHypotheses() is only called when len(self.hypotheses) == 0
-        if self.pickled_theory_path:
-            file = open(self.pickled_theory_path,'r')
-            initialTheory = pickle.load(file)
-            file.close()
+        if self.init_hypothesis:
+            # file = open(self.pickled_theory_path,'r')
+            # initialTheory = pickle.load(file)
+            # file.close()
+            initialTheory = self.init_hypothesis
             gameObject = Game(self.gameString)
-            print "initialized hypotheses with file", self.pickled_theory_path
-            print "hypotheses:", initialTheory
+            # print "initialized hypotheses with file", self.pickled_theory_path
+            print "initialized hypotheses with:", initialTheory
+            print "burn-ins that created it:", initialTheory.burn_ins
         else:
             if learnSprites:
                 if not self.skipInduction:
@@ -425,30 +432,6 @@ class Agent:
         except:
             # already exists, yay
             pass
-
-        if self.pickled_theory_path:
-            all_theories = []
-            for folder in os.listdir(self.pickled_theory_path):
-                if 'DS_Store' not in folder:
-                    theories = os.listdir('{}/{}'.format(self.pickled_theory_path, folder))
-                    for t in theories:
-                        if 'DS_Store' not in t:
-                            file = open('{}/{}/{}'.format(self.pickled_theory_path,folder,t),'r')
-                            burn_in = int(t[:t.rfind('steps.pkl')])
-                            initialTheory = pickle.load(file)
-                            file.close()
-                            all_theories.append((initialTheory, burn_in))
-
-            set_theories = list(set([t[0] for t in all_theories]))
-            ## tag each theories with the burn-ins that correspond to it.
-            for t in set_theories:
-                t.burn_ins = []
-                for a in all_theories:
-                    if t==a[0]:
-                        t.burn_ins.append(a[1])
-
-            print "have generated set of unique theories, each tagged with the burn-in periods that generated it. Continue from here"
-            embed()
 
         if self.record_states:
             dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
@@ -532,7 +515,7 @@ class Agent:
                     print "n_level", n_level
                     print len(episodeList)
                     with open(filename, 'wb') as f:
-                        cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'exploration_burn_in':self.exploration_burn_in, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
+                        cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'exploration_burn_ins':self.exploration_burn_ins, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
                     f.close()
 
                 ## will write video data at the end of each episode
@@ -541,7 +524,7 @@ class Agent:
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
                     fullStateList = [v for k,v in sorted(fullStateEpisodes.items())]
                     with open(videofilename, 'wb') as f:
-                        cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'exploration_burn_in':self.exploration_burn_in, 'episodes':fullStateList, 'time_elapsed':time.time()-starttime}, f)
+                        cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'exploration_burn_ins':self.exploration_burn_ins, 'episodes':fullStateList, 'time_elapsed':time.time()-starttime}, f)
                     f.close()
 
             if flexible_goals:
@@ -751,7 +734,7 @@ class Agent:
 
 
 
-            if self.pickled_theory_path:
+            if self.init_hypothesis:
                 print "removing noveltyTerminations from the theory"
                 ## Remove noveltyTerminations from the theory.
                 def is_not_novelty_rule(rule):
@@ -855,7 +838,7 @@ class Agent:
                 ## noveltyTerminations after the random step phase.
                 ## This flag is passed to the planner.
                 filter_novelty = False
-                if self.max_rand_steps > 0 or self.pickled_theory_path is not None:
+                if self.max_rand_steps > 0 or self.init_hypothesis is not None:
                     filter_novelty = True
                     print "filter novelty", filter_novelty
 
