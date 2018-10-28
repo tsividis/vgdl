@@ -1,7 +1,7 @@
 from main_agent import Agent
 from games_to_hyperparameters import *
 import time
-import dill
+import pickle
 import os
 from IPython import embed
 import argparse
@@ -172,16 +172,37 @@ def play_trainset_with_learned_theories(hyperparameter_sets, hyperparameter_inde
         with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
             level_game_pairs.append([game_descriptions[level_number], level.read()])
 
-    agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, IW_k=IW_k, 
-            extra_atom_allowed=extra_atom_allowed, max_rand_steps=max_rand_steps, pickled_theory_path=pickled_theory_path)
 
-    ##then pass this down for multiple episodes
-    gameObject = None
-    print game_levels
+    if pickled_theory_path:
+        all_theories = []
+        for folder in os.listdir(pickled_theory_path):
+            if 'DS_Store' not in folder:
+                theories = os.listdir('{}/{}'.format(pickled_theory_path, folder))
+                for t in theories:
+                    if 'DS_Store' not in t:
+                        file = open('{}/{}/{}'.format(pickled_theory_path,folder,t),'r')
+                        burn_in = int(t[:t.rfind('steps.pkl')])
+                        initialTheory = pickle.load(file)
+                        file.close()
+                        all_theories.append((initialTheory, burn_in))
 
-    agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie)
-
-    print game_levels
+        set_theories = list(set([t[0] for t in all_theories]))
+        ## tag each theories with the burn-ins that correspond to it.
+        for t in set_theories:
+            t.burn_ins = []
+            for a in all_theories:
+                if t==a[0]:
+                    t.burn_ins.append(a[1])
+    print [t.burn_ins for t in set_theories]
+    for i,t in enumerate(set_theories):
+        agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, IW_k=IW_k, 
+                extra_atom_allowed=extra_atom_allowed, max_rand_steps=max_rand_steps, init_hypothesis=t)
+        ##then pass this down for multiple episodes
+        gameObject = None
+        print "running curriculum for theory number {} of {}".format(i, len(set_theories))
+        print game_levels
+        agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie)
+        print game_levels
 
     total_time = time.time() - start_time
 
@@ -199,7 +220,7 @@ if pickled_theory_path != str(0):
 
     pickled_theory_path = './lesions/rand_exploration/{}'.format(game_name)
     max_rand_steps = 0 ## don't do random exploration if you're using a previously-acquired theory
-    play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps, pickled_theory_path)
+    play_trainset_with_learned_theories(hyperparameter_sets, hyperparameter_index, max_rand_steps, pickled_theory_path)
 else:
     for i in range(burn_in_episodes_per_game):
         play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps)
