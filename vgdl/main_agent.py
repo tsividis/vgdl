@@ -22,7 +22,7 @@ from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
 
 # from line_profiler import LineProfiler
 
-MAX_STEPS = 1000
+MAX_STEPS = 200
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none'}
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
@@ -127,7 +127,7 @@ class Agent:
             self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = self.longhorizonAnnealing
         self.shortHorizonRandomChoice = [200,500,1000]
-        self.param_ID = "IW={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=False_abmax={}".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, 
+        self.param_ID = "IW={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, 
                 self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice,self.absolute_max_nodes)
         print self.param_ID
         self.conservative = False
@@ -443,6 +443,8 @@ class Agent:
                     with open(videofilename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateList, 'time_elapsed':time.time()-starttime}, f)
                     f.close()
+                if self.total_game_steps > MAX_STEPS:
+                    print "reached max number of steps ({}>{}) in playCurriculum. Stopping experiment".format(self.total_game_steps, MAX_STEPS)
 
             # if heatmap:
             #     self.makeHeatmap(allStatesEncountered, '{}_{}_level{}_heatmap.pdf'.format(
@@ -646,6 +648,11 @@ class Agent:
         emptyPlans = 0
         while not ended:
 
+            if self.total_game_steps+steps > MAX_STEPS:
+                score = self.rle._game.score
+                quit_level = False
+                return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
+
             self.max_nodes = self.stored_max_nodes
 
             ## you don't need to worry about annealing, since you don't anneal up for shortHorizon planning.
@@ -780,6 +787,12 @@ class Agent:
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                         run_induction = not flexible_goals)
                     quitting = True
+                    if self.total_game_steps+steps > MAX_STEPS:
+                        score = self.rle._game.score
+                        quit_level = False
+                        return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
+
+
 
             # if K_SPACE in solution:
                 # embed()
@@ -816,6 +829,11 @@ class Agent:
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                         run_induction = not flexible_goals)
                     
+                    if self.total_game_steps+steps > MAX_STEPS:
+                        score = self.rle._game.score
+                        quit_level = False
+                        return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
+
                     if self.display_text:
                         print "executeStep took {} seconds".format(time.time()-t1)
                     sys.stdout.flush()
