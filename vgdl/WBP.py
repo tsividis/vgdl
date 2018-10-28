@@ -1512,8 +1512,6 @@ class Node():
 				heuristicVal += timeout_val
 
 			elif isinstance(term, NoveltyRule):
-				print "found a novelty rule..."
-				embed()
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=novelty_first_alpha, second_alpha=novelty_second_alpha)

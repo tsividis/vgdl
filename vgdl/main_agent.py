@@ -22,7 +22,7 @@ from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
 
 # from line_profiler import LineProfiler
 
-MAX_STEPS = 10
+MAX_STEPS = 200
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none'}
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
@@ -170,7 +170,7 @@ class Agent:
         if self.init_hypothesis is not None:
             self.exploration_burn_ins = self.init_hypothesis.burn_ins
         else:
-            self.exploration_burn_ins = [0]
+            self.exploration_burn_ins = 'NA'
         # self.pickled_theory_path = pickled_theory_path
         # if pickled_theory_path is not None:
         #     self.exploration_burn_in = 1#int(pickled_theory_path[pickled_theory_path.rfind('/')+1:pickled_theory_path.rfind('steps.pkl')])
@@ -527,6 +527,10 @@ class Agent:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'exploration_burn_ins':self.exploration_burn_ins, 'episodes':fullStateList, 'time_elapsed':time.time()-starttime}, f)
                     f.close()
 
+                if self.init_hypothesis and self.total_game_steps>MAX_STEPS:
+                    print "reached max number of steps ({}>{}) in playCurriculum. Stopping experiment".format(self.total_game_steps, MAX_STEPS)
+                    return
+
             if flexible_goals:
                 ## When you embed, you can manually input changes in theory. See flexible_goals.py for an example.
                 print "in main_agent; playing with flexible_goals"
@@ -701,11 +705,6 @@ class Agent:
             if not flexible_goals:
                 [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
-        legalActions = [0, K_UP, K_DOWN, K_LEFT, K_RIGHT]
-        if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
-            legalActions.append(K_SPACE)
-        print "legal actions: {}".format(legalActions)
-
         ## Do beginning-of-episode resource-management.
         resources = self.rle._game.getAvatars()[0].resources
         for resource, val in resources.items():
@@ -732,11 +731,9 @@ class Agent:
 
             self.max_nodes = self.stored_max_nodes
 
-            if self.total_game_steps > MAX_STEPS:
-                # score = self.rle._game.score
-                print "exceeded max_steps"
-                embed()
-                quit_level=False
+            if self.total_game_steps+steps > MAX_STEPS:
+                score = self.rle._game.score
+                quit_level = False
                 return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
             if self.init_hypothesis:
@@ -969,6 +966,10 @@ class Agent:
                         action = 0
                         hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                         run_induction = not flexible_goals)
+                        if self.total_game_steps+steps> MAX_STEPS:
+                            score = self.rle._game.score
+                            quit_level = False
+                            return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
                         quitting = True
                 
                 self.actionSeqLength += len(solution)
@@ -989,10 +990,7 @@ class Agent:
                 if not quitting:
                     for i, action in enumerate(solution):
                         self.hypotheses[0].dryingPaint = set()
-                        # if action==K_SPACE:
-                            # print "about to take a shot"
-                            # embed()
-                        # envPrev = copy.deepcopy(self.rle)
+
                         if self.display_text:
                             t1 = time.time()
                         effects = []
@@ -1000,6 +998,11 @@ class Agent:
                         hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                             run_induction = not flexible_goals)
                         
+                        if self.total_game_steps+steps> MAX_STEPS:
+                            score = self.rle._game.score
+                            quit_level = False
+                            return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
+
                         if self.display_text:
                             print "executeStep took {} seconds".format(time.time()-t1)
                         sys.stdout.flush()
@@ -1040,9 +1043,6 @@ class Agent:
                             # print "episode ended"
                             # embed()
                             break
-                        # if self.total_game_steps > MAX_STEPS:
-                            # score = self.rle._game.score
-                            # return gameObject, win, score, steps, statesEncountered, effectsEncountered
 
                         ## Make sure you're far enough from unpredictable dangerous objects.
                         # Check for disparities between plan and reality
@@ -1510,30 +1510,6 @@ class Agent:
             if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
                 theory_change_flag = True
 
-            # #  PRECONDITIONS HANDLING
-            # # Current assumptions:
-            # # - Only one resource can change for each timestep
-            # # - The first time a resource changes, it goes from 0 to a positive
-            # #   value
-            # for change_resource_effect in [e[3] for e in event['effectList'] if ('changeResource' in e)] + [e[3] for e in event['effectList'] if ('collectResource' in e)]:
-            #     resource = change_resource_effect['resource']
-            #     val = change_resource_effect['value']
-            #     limit = change_resource_effect['limit']
-
-            #     if (resource not in self.seen_resources and val>0):
-            #         self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
-            #         self.fakeInteractionRules = list(set(self.fakeInteractionRules))
-            #         self.seen_resources.append(resource)
-            #         hypotheses[0].resource_limits[resource] = limit
-            #         theory_change_flag = True
-
-            #     if agentState[resource]==limit and resource not in self.seen_limits:
-            #         self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
-            #         self.fakeInteractionRules = list(set(self.fakeInteractionRules))
-            #         self.seen_limits.append(resource)
-
-            #         theory_change_flag = True
-            #         # print "reached resource limit for", resource
 
         ## We need to update termination conditions even when we haven't seen a new event,
         ## because the state is informative about termination conditions.
